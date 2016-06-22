@@ -2003,6 +2003,7 @@ var FGToolbar = {
                     m.component(FGButton, {
                         onclick: function () {
                             doMultipleCheckout(items, window.contextVars.currentUser.id, false);
+                            window.location.reload();
                         },
                         icon: 'fa fa-sign-out',
                         className: 'text-warning'
@@ -2014,6 +2015,7 @@ var FGToolbar = {
                     m.component(FGButton, {
                         onclick: function () {
                             doMultipleCheckout(items, null, false);
+                            window.location.reload();
                         },
                         icon: 'fa fa-sign-in',
                         className: 'text-warning'
