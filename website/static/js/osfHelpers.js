@@ -77,6 +77,10 @@ var ajaxJSON = function(method, url, options) {
         contentType: 'application/json',
         dataType: 'json'
     };
+
+    if (options.bulk) {
+        ajaxFields.contentType = 'application/vnd.api+json; ext=bulk';
+    }
     // Add JSON payload if not a GET request
     if (method.toLowerCase() !== 'get') {
         ajaxFields.data = JSON.stringify(opts.data);
