@@ -9,12 +9,7 @@ require('css/quick-project-search-plugin.css');
 require('loaders.css/loaders.min.css');
  
 var Dropzone = require('dropzone');
- 
-var ZeroClipboard = require('zeroclipboard');
-var fileURL = '';
-var fileURLArray = [];
-var clip = '';
- 
+
 // Don't show dropped content if user drags outside dropzone
 window.ondragover = function (e) {
     e.preventDefault();
@@ -60,7 +55,7 @@ var PublicFilesDropzone = {
                 // When user clicks close button on top right, reset the number of files
                 var _this = this;
                 $('button.close').on('click', function () {
-                    _this.files.length = 0;
+                    _this.files = [];
                 });
  
             },
@@ -102,16 +97,14 @@ var PublicFilesDropzone = {
                 file.previewElement.classList.add("dz-preview-background-success");
                 if (this.getQueuedFiles().length === 0 && this.getUploadingFiles().length === 0) {
                     if (this.files.length === 1)
-                        $osf.growl("Upload Successful", this.files.length + " file was successfully uploaded to your public files project.", "success", 5000);
+                        $osf.growl("Upload Successful this file was successfully uploaded to your public files project.", "success", 5000);
                     else
                         $osf.growl("Upload Successful", this.files.length + " files were successfully uploaded to your public files project.", "success", 5000);
- 
                 }
             },
- 
- 
+
             error: function (file, message) {
-                this.files.length--;
+                this.files.pop();
                 // Keeping the old behavior in case we want to revert it some time
                 file.previewElement.classList.add("dz-error");
                 file.previewElement.classList.add("dz-preview-background-error");
@@ -169,9 +162,9 @@ var PublicFilesDropzone = {
         function headerTemplate() {
             return [
                 m('h2.col-xs-6', 'Dashboard'), m('m-b-lg.pull-right',
-                    m('button.btn.btn-primary.m-t-md.f-w-xl #ShareButton',
+                    m('button.btn.btn-primary #ShareButton',
                         m('span.glyphicon.glyphicon-chevron-down #glyphchevron'), ' Upload Public Files'), m.component(AddProject, {
-                            buttonTemplate: m('button.btn.btn-success.btn-success-high-contrast.m-t-md.f-w-xl.pull-right[data-toggle="modal"][data-target="#addProjectFromHome"]',
+                            buttonTemplate: m('button.btn.btn-success.pull-right[data-toggle="modal"][data-target="#addProjectFromHome"]',
                                 {
                                     onclick: function () {
                                         $osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');
