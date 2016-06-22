@@ -175,7 +175,7 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     @property
     def is_private(self):
         connection = GitLabClient(external_account=self.external_account)
-        return connection.repo(repo_id=self.repo_id).private
+        return not connection.repo(repo_id=self.repo_id)['public']
 
     # TODO: Delete me and replace with serialize_settings / Knockout
     def to_json(self, user):

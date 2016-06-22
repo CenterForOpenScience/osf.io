@@ -3,6 +3,7 @@
 from dateutil.parser import parse as dateparse
 import httplib as http
 import logging
+import pdb
 
 from flask import request, make_response
 
@@ -212,16 +213,11 @@ def gitlab_hgrid_data(node_settings, auth, **kwargs):
             # TODO: Add warning message
             logger.error('Could not access GitLab repo')
             return None
-        if repo.private:
+        if not repo['public']:
             return None
 
     try:
-        branch, sha, branches = get_refs(
-            node_settings,
-            branch=kwargs.get('branch'),
-            sha=kwargs.get('sha'),
-            connection=connection,
-        )
+        branch, sha, branches = get_refs(node_settings,branch=kwargs.get('branch'),sha=kwargs.get('sha'),connection=connection)
     except (NotFoundError, GitLabError):
         # TODO: Show an alert or change GitLab configuration?
         logger.error('GitLab repo not found')
@@ -229,9 +225,7 @@ def gitlab_hgrid_data(node_settings, auth, **kwargs):
 
     if branch is not None:
         ref = ref_to_params(branch, sha)
-        can_edit = check_permissions(
-            node_settings, auth, connection, branch, sha, repo=repo,
-        )
+        can_edit = check_permissions(node_settings, auth, connection, branch, sha, repo=repo)
     else:
         ref = None
         can_edit = False
@@ -253,7 +247,7 @@ def gitlab_hgrid_data(node_settings, auth, **kwargs):
         'repo': 'https://gitlab.com/{0}/{1}/tree/{2}'.format(node_settings.user, node_settings.repo, branch)
     }
 
-    branch_names = [each.name for each in branches]
+    branch_names = [each['name'] for each in branches]
     if not branch_names:
         branch_names = [branch]  # if repo un-init-ed then still add default branch to list of branches
 
