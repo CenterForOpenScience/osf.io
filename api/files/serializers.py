@@ -246,6 +246,8 @@ class FileSerializer(JSONAPISerializer):
 
         for attr, value in validated_data.items():
             if attr == 'checkout':
+                if value == '':
+                    value = None
                 user = self.context['request'].user
                 instance.check_in_or_out(user, value)
             else:
