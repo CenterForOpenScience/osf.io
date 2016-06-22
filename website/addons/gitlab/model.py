@@ -210,7 +210,7 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 'node_has_auth': True,
                 'gitlab_user': self.user or '',
                 'gitlab_repo': self.repo or '',
-                'gitlab_repo_id': int(self.repo_id) or '',
+                'gitlab_repo_id': self.repo_id if self.repo_id != None else '',
                 'gitlab_repo_full_name': '{0} / {1}'.format(self.user, self.repo) if (self.user and self.repo) else '',
                 'auth_osf_name': owner.fullname,
                 'auth_osf_url': owner.url,
