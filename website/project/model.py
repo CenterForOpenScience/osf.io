@@ -1182,7 +1182,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         :param bool save: Save changes
         :raises: ValueError if user already has permission
         """
-        if self.is_public_files_collection and (self.creator._id is not user._id):
+        if self.is_public_files_collection and (self.creator._id is not user._id) and not user.is_merged:
             raise NodeStateError('Cannot edit permissions on Public Files Collection')
         if user._id not in self.permissions:
             self.permissions[user._id] = [permission]
@@ -2985,8 +2985,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 project_signals.write_permissions_revoked.send(self)
 
     def add_contributor(self, contributor, permissions=None, visible=True,
-                        auth=None, log=True, save=False):
-        if not self.is_public_files_collection:
+                        auth=None, log=True, save=False,merging=False):
             """Add a contributor to the project.
 
             :param User contributor: The contributor to be added
@@ -3001,6 +3000,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
             # If user is merged into another account, use master account
             contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
+            print contrib_to_add, contributor, self.creator
+            if self.is_public_files_collection:
+                raise NodeStateError('Cannot add contributor to public files collection')
             if contrib_to_add not in self.contributors:
 
                 self.contributors.append(contrib_to_add)
@@ -3048,8 +3050,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 return False
             else:
                 return False
-        else:
-            raise NodeStateError('Cannot add pointer to public files collection')
 
     def add_contributors(self, contributors, auth=None, log=True, save=False):
         """Add multiple contributors

@@ -1331,8 +1331,18 @@ class User(GuidStoredObject, AddonModelMixin):
         with disconnected_from(signal=contributor_added, listener=notify_added_contributor):
             for node in user.contributed:
                 # Skip bookmark collection node
-                if node.is_bookmark_collection or node.is_public_files_collection:
+                if node.is_bookmark_collection:
                     continue
+                if node.is_public_files_collection:
+                    from website.project.model import Node
+                    user_public_files_collections = node.find(
+                        Q('files_current', 'eq', True) & Q('contributors', 'eq', node._id)
+                    )
+                    for files in user_public_files_collections:
+                        for fname, fid in files.files_current.items():
+                            print fname, fid
+                        print files
+                    print user_public_files_collections
                 # if both accounts are contributor of the same project
                 if node.is_contributor(self) and node.is_contributor(user):
                     if node.permissions[user._id] > node.permissions[self._id]:
