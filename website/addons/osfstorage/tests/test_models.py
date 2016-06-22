@@ -430,6 +430,88 @@ class TestOsfstorageFileNode(StorageTestCase):
             '/'+folder._id, provider='osfstorage', node=node)
         assert [] == all_guids
 
+    def test_get_file_guids_for_live_folder_recursive(self):
+        node = self.node_settings.owner
+        folder = models.OsfStorageFolder(name='foofolder', node=node)
+        folder.save()
+
+        files = []
+        for i in range(1,4):
+            files.append(folder.append_file('foo.{}'.format(i)))
+            files[-1].get_guid(create=True)
+
+        subfolder = folder.append_folder('subfoo')
+        for i in range(1,4):
+            files.append(subfolder.append_file('subfoo.{}'.format(i)))
+            files[-1].get_guid(create=True)
+
+        guids = [ file.get_guid()._id for file in files ]
+        assert len(guids) == len(files)
+
+        all_guids = models.OsfStorageFileNode.get_file_guids(
+            '/'+folder._id, provider='osfstorage', node=node)
+        assert guids == all_guids
+
+    def test_get_file_guids_for_trashed_folder_recursive(self):
+        node = self.node_settings.owner
+        folder = models.OsfStorageFolder(name='foofolder', node=node)
+        folder.save()
+
+        files = []
+        for i in range(1,4):
+            files.append(folder.append_file('foo.{}'.format(i)))
+            files[-1].get_guid(create=True)
+
+        subfolder = folder.append_folder('subfoo')
+        for i in range(1,4):
+            files.append(subfolder.append_file('subfoo.{}'.format(i)))
+            files[-1].get_guid(create=True)
+
+        guids = [ file.get_guid()._id for file in files ]
+        assert len(guids) == len(files)
+
+        folder.delete()
+
+        all_guids = models.OsfStorageFileNode.get_file_guids(
+            '/'+folder._id, provider='osfstorage', node=node)
+        assert guids == all_guids
+
+    def test_get_file_guids_for_live_folder_recursive_wo_guids(self):
+        node = self.node_settings.owner
+        folder = models.OsfStorageFolder(name='foofolder', node=node)
+        folder.save()
+
+        files = []
+        for i in range(1,4):
+            files.append(folder.append_file('foo.{}'.format(i)))
+
+        subfolder = folder.append_folder('subfoo')
+        for i in range(1,4):
+            files.append(subfolder.append_file('subfoo.{}'.format(i)))
+
+        all_guids = models.OsfStorageFileNode.get_file_guids(
+            '/'+folder._id, provider='osfstorage', node=node)
+        assert [] == all_guids
+
+    def test_get_file_guids_for_trashed_folder_recursive_wo_guids(self):
+        node = self.node_settings.owner
+        folder = models.OsfStorageFolder(name='foofolder', node=node)
+        folder.save()
+
+        files = []
+        for i in range(1,4):
+            files.append(folder.append_file('foo.{}'.format(i)))
+
+        subfolder = folder.append_folder('subfoo')
+        for i in range(1,4):
+            files.append(subfolder.append_file('subfoo.{}'.format(i)))
+
+        folder.delete()
+
+        all_guids = models.OsfStorageFileNode.get_file_guids(
+            '/'+folder._id, provider='osfstorage', node=node)
+        assert [] == all_guids
+
 
 class TestNodeSettingsModel(StorageTestCase):
 
