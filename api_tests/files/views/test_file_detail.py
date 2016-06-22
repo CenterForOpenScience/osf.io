@@ -33,7 +33,7 @@ class TestFileView(ApiTestCase):
         super(TestFileView, self).setUp()
         self.user = AuthUserFactory()
         self.node = ProjectFactory(creator=self.user)
-        self.file = api_utils.create_test_file(self.node, self.user)
+        self.file = api_utils.create_test_file(self.node, self.user, create_guid=False)
         self.file_url = '/{}files/{}/'.format(API_BASE, self.file._id)
 
     def test_must_have_auth(self):
@@ -44,6 +44,18 @@ class TestFileView(ApiTestCase):
         user = AuthUserFactory()
         res = self.app.get(self.file_url, auth=user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
+
+    def test_unvisited_file_has_no_guid(self):
+        res = self.app.get(self.file_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['attributes']['guid'], None)
+
+    def test_visited_file_has_guid(self):
+        guid = self.file.get_guid(create=True)
+        res = self.app.get(self.file_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_is_not_none(guid)
+        assert_equal(res.json['data']['attributes']['guid'], guid._id)
 
     def test_get_file(self):
         res = self.app.get(self.file_url, auth=self.user.auth)
@@ -69,14 +81,15 @@ class TestFileView(ApiTestCase):
         res = self.app.get(self.file_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_in('comments', res.json['data']['relationships'].keys())
-        expected_url = '/{}nodes/{}/comments/?filter[target]={}'.format(API_BASE, self.node._id, self.file.get_guid()._id)
+        guid = self.file.get_guid(create=True)
+        expected_url = '/{}nodes/{}/comments/?filter[target]={}'.format(API_BASE, self.node._id, guid._id)
         url = res.json['data']['relationships']['comments']['links']['related']['href']
         assert_in(expected_url, url)
 
     def test_file_has_correct_unread_comments_count(self):
         contributor = AuthUserFactory()
         self.node.add_contributor(contributor, auth=Auth(self.user), save=True)
-        comment = CommentFactory(node=self.node, target=self.file.get_guid(), user=contributor, page='files')
+        comment = CommentFactory(node=self.node, target=self.file.get_guid(create=True), user=contributor, page='files')
         res = self.app.get('/{}files/{}/?related_counts=True'.format(API_BASE, self.file._id), auth=self.user.auth)
         assert_equal(res.status_code, 200)
         unread_comments = res.json['data']['relationships']['comments']['links']['related']['meta']['unread']
