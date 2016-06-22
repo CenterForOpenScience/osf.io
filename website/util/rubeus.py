@@ -165,13 +165,20 @@ class NodeFileCollector(object):
 
     def _collect_components(self, node, visited):
         rv = []
+        if not node.can_view(self.auth):
+            return rv
         for child in node.nodes:
-            if not child.can_view(self.auth):
-                readable_descendants = child.find_readable_descendants(self.auth)
-                for desc in readable_descendants:
-                    visited.append(desc.resolve()._id)
-                    rv.append(self._serialize_node(desc, visited=visited))
-            elif child.resolve()._id not in visited and not child.is_deleted and node.can_view(self.auth):
+            if child.is_deleted:
+                continue
+            elif not child.can_view(self.auth):
+                if child.primary:
+                    readable_descendants = child.find_readable_descendants(self.auth)
+                    for desc in readable_descendants:
+                        visited.append(desc.resolve()._id)
+                        rv.append(self._serialize_node(desc, visited=visited))
+                else:
+                    continue
+            elif child.resolve()._id not in visited:
                 visited.append(child.resolve()._id)
                 rv.append(self._serialize_node(child, visited=visited))
         return rv
