@@ -11,7 +11,7 @@ WHEELHOUSE_PATH = os.environ.get('WHEELHOUSE')
 
 
 @task()
-def manage(cmd_str):
+def manage(ctx, cmd_str):
     """Take command string for manage commands
 
     :param cmd_str: ex. runserver, migrate, "migrate module"
@@ -19,11 +19,11 @@ def manage(cmd_str):
     manage_cmd = os.path.join(HERE, '..', 'manage.py')
     env = 'DJANGO_SETTINGS_MODULE="admin.base.settings"'
     cmd = '{} python {} {}'.format(env, manage_cmd, cmd_str)
-    run(cmd, echo=True, pty=True)
+    ctx.run(cmd, echo=True, pty=True)
 
 
 @task()
-def assets(dev=False, watch=False):
+def assets(ctx, dev=False, watch=False):
     """Install and build static assets for admin.
 
     use -d for dev environments
@@ -33,7 +33,7 @@ def assets(dev=False, watch=False):
     npm = 'npm install'
     if not dev:
         npm += ' --production'
-    run(npm, echo=True)
+    ctx.run(npm, echo=True)
     bower_install()
     # Always set clean=False to prevent possible mistakes
     # on prod
@@ -41,7 +41,7 @@ def assets(dev=False, watch=False):
 
 
 @task(aliases=['pack'])
-def webpack(clean=False, watch=False, dev=False):
+def webpack(ctx, clean=False, watch=False, dev=False):
     """Build static assets with webpack."""
     if clean:
         clean_assets()
@@ -59,21 +59,21 @@ def webpack(clean=False, watch=False, dev=False):
     config_file = 'webpack.admin.config.js' if dev else 'webpack.prod.config.js'
     args += ['--config {0}'.format(config_file)]
     command = ' '.join(args)
-    run(command, echo=True)
+    ctx.run(command, echo=True)
 
 
 @task
-def clean_assets():
+def clean_assets(ctx):
     """Remove built JS files."""
     public_path = os.path.join(HERE, 'static', 'public')
     js_path = os.path.join(public_path, 'js')
-    run('rm -rf {0}'.format(js_path), echo=True)
+    ctx.run('rm -rf {0}'.format(js_path), echo=True)
 
 
 @task(aliases=['bower'])
-def bower_install():
+def bower_install(ctx):
     if os.getcwd() != HERE:
         os.chdir(HERE)
     bower_bin = os.path.join(HERE, 'node_modules', 'bower', 'bin', 'bower')
-    run('{} prune'.format(bower_bin), echo=True)
-    run('{} install'.format(bower_bin), echo=True)
+    ctx.run('{} prune'.format(bower_bin), echo=True)
+    ctx.run('{} install'.format(bower_bin), echo=True)

@@ -6,7 +6,7 @@
 # To install metrics requirements: inv requirements --metrics
 # To install release requirements: inv requirements --release
 
-invoke==0.12.2
+invoke==0.13.0
 Werkzeug==0.10.4
 Flask==0.10.1
 gevent==1.0.2
