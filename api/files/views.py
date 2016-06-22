@@ -333,7 +333,6 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
 
 
 class FileList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMixin, WaterButlerMixin, bulk_views.BulkUpdateJSONAPIView):
-# class FileList(JSONAPIBaseView, NodeMixin, ListFilterMixin, WaterButlerMixin, bulk_views.BulkUpdateJSONAPIView):
     """Special case for getting lists from files on a node stored with OSFStorage.
     Used for bulk file checkout, and other simple metadata updates.
     """
