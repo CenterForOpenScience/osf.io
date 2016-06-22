@@ -1,6 +1,7 @@
 """
 Modified from https://gist.github.com/pamelafox/5855372
 """
+from django.conf import settings
 
 import requests
 import json
@@ -21,8 +22,8 @@ class DeskClient(object):
 
     def __init__(self, user):
         self.oauth = OAuth1Session(
-            user.desk_key,
-            client_secret=user.desk_key_secret,
+            settings.DESK_KEY,
+            client_secret=settings.DESK_KEY_SECRET,
             resource_owner_key=user.desk_token,
             resource_owner_secret=user.desk_token_secret
         )

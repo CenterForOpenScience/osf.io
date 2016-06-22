@@ -188,18 +188,6 @@ WEBPACK_LOADER = {
 TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 NOSE_ARGS = ['--verbosity=2']
 
-CKEDITOR_CONFIGS = {
-    'default': {
-        'toolbar': 'Custom',
-        'toolbar_Custom': [
-            ['Source'],
-            ['Bold', 'Italic', 'Underline'],
-            ['NumberedList', 'BulletedList'],
-            ['Link']
-        ]
-    },
-}
-
 # Keen.io settings in local.py
 KEEN_PROJECT_ID = osf_settings.KEEN_PROJECT_ID
 KEEN_READ_KEY = osf_settings.KEEN_READ_KEY
@@ -219,3 +207,7 @@ if KEEN_CREDENTIALS['keen_ready']:
 
 ENTRY_POINTS = {'osf4m': 'osf4m', 'prereg_challenge_campaign': 'prereg',
                 'institution_campaign': 'institution'}
+
+# Set in local.py
+DESK_KEY = ''
+DESK_KEY_SECRET = ''

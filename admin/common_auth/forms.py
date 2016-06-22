@@ -39,6 +39,4 @@ class UserRegistrationForm(UserCreationForm):
 class DeskUserForm(forms.ModelForm):
     class Meta:
         model = MyUser
-        fields = [
-            'desk_key', 'desk_key_secret', 'desk_token', 'desk_token_secret'
-        ]
+        fields = ['desk_token', 'desk_token_secret']
