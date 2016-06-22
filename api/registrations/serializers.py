@@ -83,7 +83,9 @@ class BaseRegistrationSerializer(NodeSerializer):
     comments = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-comments',
         related_view_kwargs={'node_id': '<pk>'},
-        related_meta={'unread': 'get_unread_comments_count'}))
+        related_meta={'unread': 'get_unread_comments_count'},
+        filter={'target': '<pk>'}
+    ))
 
     contributors = RelationshipField(
         related_view='registrations:registration-contributors',
