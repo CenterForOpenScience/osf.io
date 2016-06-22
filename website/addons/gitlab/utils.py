@@ -4,7 +4,6 @@ import urllib
 import hashlib
 import httplib as http
 # TODO: change to https://github.com/gpocentek/python-gitlab
-from github3.repos.branch import Branch
 
 from framework.exceptions import HTTPError
 from website.addons.base.exceptions import HookError
@@ -69,33 +68,20 @@ def get_refs(addon, branch=None, sha=None, connection=None):
 
     # Get default branch if not provided
     if not branch:
-        repo = connection.repo(addon.user, addon.repo)
+        repo = connection.repo(addon.repo_id)
         if repo is None:
             return None, None, None
-        branch = repo.default_branch
-    # Get registered branches if provided
-    registered_branches = (
-        [Branch.from_json(b) for b in addon.registration_data.get('branches', [])]
-        if addon.owner.is_registration
-        else []
-    )
-
-    registered_branch_names = [
-        each.name
-        for each in registered_branches
-    ]
-    # Fail if registered and branch not in registration data
-    if registered_branches and branch not in registered_branch_names:
-        raise HTTPError(http.BAD_REQUEST)
+        branch = repo['default_branch']
 
     # Get data from GitLab API if not registered
-    branches = registered_branches or connection.branches(addon.user, addon.repo)
+    branches = connection.branches(addon.repo_id)
 
     # Use registered SHA if provided
     for each in branches:
-        if branch == each.name:
-            sha = each.commit.sha
+        if branch == each['name']:
+            sha = each['commit']['id']
             break
+
     return branch, sha, branches
 
 
@@ -106,23 +92,18 @@ def check_permissions(node_settings, auth, connection, branch, sha=None, repo=No
 
     has_auth = bool(user_settings and user_settings.has_auth)
     if has_auth:
-        repo = repo or connection.repo(
-            node_settings.user, node_settings.repo
-        )
+        repo = repo or connection.repo(node_settings.repo_id)
 
         has_access = (
             repo is not None and (
-                'permissions' not in repo.to_json() or
-                repo.to_json()['permissions']['push']
+                repo['permissions']['project_access']['access_level'] >= 30
             )
         )
 
     if sha:
-        branches = connection.branches(
-            node_settings.user, node_settings.repo, branch
-        )
+        current_branch = connection.branches(node_settings.repo_id, branch)
         # TODO Will I ever return false?
-        is_head = next((True for branch in branches if sha == branch.commit.sha), None)
+        is_head = sha == current_branch['commit']['id']
     else:
         is_head = True
 

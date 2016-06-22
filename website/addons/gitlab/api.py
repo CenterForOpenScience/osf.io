@@ -67,7 +67,7 @@ class GitLabClient(object):
     def create_repo(self, repo, **kwargs):
         return self.gitlab.createproject({'name': repo})
 
-    def branches(self, user, repo, branch=None):
+    def branches(self, repo_id, branch=None):
         """List a repo's branches or get a single branch (in a list).
 
         :param str user: GitLab user name
@@ -77,9 +77,10 @@ class GitLabClient(object):
             http://developer.github.com/v3/repos/#list-branches
         """
         # TODO
-        #if branch:
-        #    return [self.repo(user, repo).branch(branch)]
-        #return self.repo(user, repo).iter_branches() or []
+        if branch:
+            return self.gitlab.getbranch(repo_id, branch)
+
+        return self.gitlab.getbranches(repo_id)
 
     # TODO: reimplement and test
     def starball(self, user, repo, archive='tar', ref='master'):
