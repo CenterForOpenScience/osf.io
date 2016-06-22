@@ -32,18 +32,16 @@ var LogFeed = {
     controller: function(options) {
         var self = this;
         self.node = options.node;
-        self.activityLogs = m.prop();
-        self.logRequestPending = m.prop();
+        self.activityLogs = m.prop([]);
+        self.logRequestPending = m.prop(false);
         self.limitLogs = options.limitLogs;
         self.failed = false;
         self.paginators = m.prop([]);
-        self.nextPage = m.prop();
-        self.prevPage = m.prop();
-        self.firstPage = 0;
-        self.lastPage = 0;
-        self.totalPages = 0;
-        self.currentPage = m.prop();
-        self.pageToGet = m.prop();
+        self.nextPage = m.prop('');
+        self.prevPage = m.prop('');
+        self.totalPages = m.prop(0);
+        self.currentPage = m.prop(0);
+        self.pageToGet = m.prop(0);
 
         self.getLogs = function _getLogs (url) {
             self.activityLogs([]); // Empty logs from other projects while load is happening;
@@ -55,13 +53,11 @@ var LogFeed = {
                 self.activityLogs(result.data);  // Set activity log data
                 self.nextPage(result.links.next);
                 self.prevPage(result.links.prev);
-                self.firstPage = result.links.first;
-                self.lastPage = result.links.last;
 
                 var params = $osf.urlParams(url);
                 var page = params.page || 1;
                 self.currentPage(parseInt(page));
-                self.totalPages = Math.ceil(result.links.meta.total / result.links.meta.per_page);
+                self.totalPages(Math.ceil(result.links.meta.total / result.links.meta.per_page));
             }
             self.logRequestPending(true);
             var promise = m.request({method : 'GET', url : url, config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})});
@@ -72,6 +68,7 @@ var LogFeed = {
                     return promise;
                 }, function(xhr, textStatus, error) {
                     self.failed = true;
+                    self.logRequestPending(false);
                     var message = 'Error retrieving logs for ' + self.node.id;
                     Raven.captureMessage(message, {extra: {url: url, textStatus: textStatus, error: error}});
                 }
@@ -91,7 +88,7 @@ var LogFeed = {
 
         var i;
         ctrl.paginators([]);
-        if (ctrl.totalPages > 1 && !ctrl.limitLogs) {
+        if (ctrl.totalPages() > 1 && !ctrl.limitLogs) {
             // previous page
             ctrl.paginators().push({
                 url: function() { return ctrl.prevPage(); },
@@ -108,8 +105,8 @@ var LogFeed = {
                 }
             });
             // no ellipses
-            if (ctrl.totalPages <= MAX_PAGES_ON_PAGINATOR) {
-                for (i = 2; i < ctrl.totalPages; i++) {
+            if (ctrl.totalPages() <= MAX_PAGES_ON_PAGINATOR) {
+                for (i = 2; i < ctrl.totalPages(); i++) {
                     ctrl.paginators().push({
                         text: i,
                         url: function() {
@@ -142,12 +139,12 @@ var LogFeed = {
                 });
             }
             // one ellipse at the beginning
-            else if (ctrl.currentPage() > ctrl.totalPages - MAX_PAGES_ON_PAGINATOR_SIDE) {
+            else if (ctrl.currentPage() > ctrl.totalPages() - MAX_PAGES_ON_PAGINATOR_SIDE) {
                 ctrl.paginators().push({
                     text: '...',
                     url: function() { }
                 });
-                for (i = ctrl.totalPages - MAX_PAGES_ON_PAGINATOR_SIDE; i < ctrl.totalPages - 1; i++) {
+                for (i = ctrl.totalPages() - MAX_PAGES_ON_PAGINATOR_SIDE; i < ctrl.totalPages() - 1; i++) {
                     ctrl.paginators().push({
                         text: i + 1,
                         url: function() {
@@ -185,9 +182,9 @@ var LogFeed = {
             }
             // last page
             ctrl.paginators().push({
-                text: ctrl.totalPages,
+                text: ctrl.totalPages(),
                 url: function() {
-                    ctrl.pageToGet(ctrl.totalPages);
+                    ctrl.pageToGet(ctrl.totalPages());
                     if (ctrl.pageToGet() !== ctrl.currentPage()) {
                         return _buildLogUrl(ctrl.node, ctrl.pageToGet());
                     }
@@ -215,10 +212,9 @@ var LogFeed = {
             // Display each log item (text and user image)
             [ctrl.activityLogs() ? ctrl.activityLogs().map(function(item) {
                 var image = m('i.fa.fa-desktop');
-                if (ctrl.node.anonymous) { item.anonymous = true; }
-                if (!item.anonymous && item.embeds.user && item.embeds.user.data) {
+                if (!ctrl.node.anonymous && item.embeds.user && item.embeds.user.data) {
                     image = m('img', { src : item.embeds.user.data.links.profile_image});
-                } else if (!item.anonymous && item.embeds.user && item.embeds.user.errors[0].meta){
+                } else if (!ctrl.node.anonymous && item.embeds.user && item.embeds.user.errors[0].meta){
                     image = m('img', { src : item.embeds.user.errors[0].meta.profile_image});
                 }
                 return m('.db-activity-item', [
