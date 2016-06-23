@@ -107,6 +107,9 @@ class NodeSerializer(JSONAPISerializer):
     current_user_permissions = ser.SerializerMethodField(help_text='List of strings representing the permissions '
                                                                    'for the current user on this node.')
 
+    # Whether a component inherits contributors from parent
+    inherit_contributors = ser.BooleanField(required=False)
+
     # Public is only write-able by admins--see update method
     public = ser.BooleanField(source='is_public', required=False,
                               help_text='Nodes that are made public will give read-only access '
@@ -248,9 +251,9 @@ class NodeSerializer(JSONAPISerializer):
         }
 
     def create(self, validated_data):
+        request = self.context['request']
+        user = request.user
         if 'template_from' in validated_data:
-            request = self.context['request']
-            user = request.user
             template_from = validated_data.pop('template_from')
             template_node = Node.load(key=template_from)
             if template_node is None:
@@ -263,6 +266,12 @@ class NodeSerializer(JSONAPISerializer):
             node = template_node.use_as_template(auth=get_user_auth(request), changes=changed_data)
         else:
             node = Node(**validated_data)
+        if 'inherit_contributors' in validated_data and validated_data['inherit_contributors'] and validated_data['parent'].has_permission(user, 'write'):
+            auth = get_user_auth(request)
+            parent = validated_data['parent']
+            for contributor in parent.contributors:
+                if contributor is not user:
+                    node.add_contributor(contributor, permissions=parent.get_permissions(contributor), auth=auth, log=False)
         try:
             node.save()
         except ValidationValueError as e:

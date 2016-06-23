@@ -229,8 +229,6 @@
 
 <%include file="project/modal_add_pointer.mako"/>
 
-<%include file="project/modal_add_component.mako"/>
-
 % if user['can_comment'] or node['has_comments']:
     <%include file="include/comment_pane_template.mako"/>
 % endif
@@ -393,7 +391,7 @@
             <h3 class="panel-title" style="padding-bottom: 5px; padding-top: 5px;">Components </h3>
             <div class="pull-right">
                 % if 'write' in user['permissions'] and not node['is_registration']:
-                    <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
+                    <span id="newComponent"></span>
                     <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
                 % endif
             </div>

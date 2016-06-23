@@ -20,6 +20,7 @@ var CitationList = require('js/citationList');
 var CitationWidget = require('js/citationWidget');
 var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
+var AddProject = require('js/addProjectPlugin');
 
 var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;
@@ -91,6 +92,32 @@ var institutionLogos = {
 
         return m('', {style: {float: 'left', width: ctrl.width, textAlign: 'center', marginRight: '10px'}, config: tooltips}, instCircles);
     }
+};
+
+/* Send with ajax calls to work with api2 */
+var xhrconfig = function (xhr) {
+    xhr.withCredentials = window.contextVars.isOnRootDomain,
+    xhr.setRequestHeader('Content-Type', 'application/vnd.api+json;');
+    xhr.setRequestHeader('Accept', 'application/vnd.api+json; ext=bulk');
+};
+var categoryList = [];
+// Load categories to pass in to create project
+var loadCategories = function _loadCategories () {
+    var promise = m.request({method : 'OPTIONS', url : $osf.apiV2Url('nodes/', { query : {}}), config : xhrconfig});
+    promise.then(function _success(results){
+        if(results.actions && results.actions.POST.category){
+            categoryList = results.actions.POST.category.choices;
+            categoryList.sort(function(a, b){ // Quick alphabetical sorting
+                if(a.value < b.value) return -1;
+                if(a.value > b.value) return 1;
+                return 0;
+            });
+        }
+    }, function _error(results){
+        var message = 'Error loading project category names.';
+        Raven.captureMessage(message, {extra: {requestReturn: results}});
+    });
+    return promise;
 };
 
 $(document).ready(function () {
@@ -209,22 +236,26 @@ $(document).ready(function () {
         }
     });
 
-    //Clear input fields on Add Component Modal
-    $('#confirm').on('click', function () {
-        $('#alert').text('');
-        $('#title').val('');
-        $('#category').val('');
-    });
+    loadCategories().then(function(){
+        var addProjectTemplate = m.component(AddProject, {
+            buttonTemplate: m('.btn.btn-sm.btn-default[data-toggle="modal"][data-target="#addSubComponent"]', {onclick: function() {
+                $osf.trackClick('project-dashboard', 'add-component', 'open-add-project-modal');
+            }}, 'Add Component'),
+            modalID: 'addSubComponent',
+            title: 'Create new component',
+            parentID: window.contextVars.node.id,
+            parentTitle: window.contextVars.node.title,
+            categoryList: categoryList,
+            stayCallback: function () {
+                var ap = this; // AddProject controller
+            },
+            trackingCategory: 'project-dashboard',
+            trackingAction: 'add-component',
+            contributors: window.contextVars.node.contributors,
+            currentUserCanEdit: window.contextVars.currentUser.canEdit
+        });
 
-    // only focus input field on modals when not IE
-    $('#newComponent').on('shown.bs.modal', function(){
-        if(!$osf.isIE()){
-            $('#title').focus();
-        }
-    });
-
-    $('#newComponent').on('hidden.bs.modal', function(){
-        $('#newComponent .modal-alert').text('');
+        m.mount(document.getElementById('newComponent'), m.component(addProjectTemplate, {wrapperSelector : '#addSubComponent'}));
     });
 
     $('#addPointer').on('shown.bs.modal', function(){
