@@ -60,7 +60,7 @@ def task(*args, **kwargs):
 def server(ctx, host=None, port=5000, debug=True, live=False, gitlogs=False):
     """Run the app server."""
     if gitlogs:
-        git_logs()
+        git_logs(ctx)
     from website.app import init_app
     os.environ['DJANGO_SETTINGS_MODULE'] = 'api.base.settings'
     app = init_app(set_backends=True, routes=True)
@@ -408,7 +408,7 @@ def rebuild_search(ctx):
                                              index=settings.ELASTIC_INDEX))
     ctx.run('curl -s -XPUT {uri}/{index}'.format(uri=settings.ELASTIC_URI,
                                           index=settings.ELASTIC_INDEX))
-    migrate_search()
+    migrate_search(ctx)
 
 
 @task
@@ -453,7 +453,7 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, metric
     if not(addons or dev or metrics):
         base = True
     if release or addons:
-        addon_requirements()
+        addon_requirements(ctx)
     # "release" takes precedence
     if release:
         req_file = os.path.join(HERE, 'requirements', 'release.txt')
@@ -516,7 +516,7 @@ def test_varnish(ctx):
     """Run the Varnish test suite."""
     proc = apiserver(wait=False)
     sleep(5)
-    test_module(module='api/caching/tests/test_caching.py')
+    test_module(ctx, module='api/caching/tests/test_caching.py')
     proc.kill()
 
 
@@ -537,39 +537,39 @@ def test(ctx, all=False, syntax=False):
     Run unit tests: OSF (always), plus addons and syntax checks (optional)
     """
     if syntax:
-        flake()
-        jshint()
+        flake(ctx)
+        jshint(ctx)
 
-    test_osf()
-    test_api()
-    test_admin()
+    test_osf(ctx)
+    test_api(ctx)
+    test_admin(ctx)
 
     if all:
-        test_addons()
-        karma(single=True, browsers='PhantomJS')
+        test_addons(ctx)
+        karma(ctx, single=True, browsers='PhantomJS')
 
 @task
 def test_travis_osf(ctx):
     """
     Run half of the tests to help travis go faster
     """
-    flake()
-    jshint()
-    test_osf()
+    flake(ctx)
+    jshint(ctx)
+    test_osf(ctx)
 
 @task
 def test_travis_else(ctx):
     """
     Run other half of the tests to help travis go faster
     """
-    test_addons()
-    test_api()
-    test_admin()
-    karma(single=True, browsers='PhantomJS')
+    test_addons(ctx)
+    test_api(ctx)
+    test_admin(ctx)
+    karma(ctx, single=True, browsers='PhantomJS')
 
 @task
 def test_travis_varnish(ctx):
-    test_varnish()
+    test_varnish(ctx)
 
 @task
 def karma(ctx, single=False, sauce=False, browsers=None):
@@ -733,13 +733,13 @@ def bower_install(ctx):
 @task
 def setup(ctx):
     """Creates local settings, installs requirements, and generates encryption key"""
-    copy_settings(addons=True)
-    packages()
-    requirements(addons=True, dev=True)
-    encryption()
+    copy_settings(ctx, addons=True)
+    packages(ctx)
+    requirements(ctx, addons=True, dev=True)
+    encryption(ctx)
     # Build nodeCategories.json before building assets
-    build_js_config_files()
-    assets(dev=True, watch=False)
+    build_js_config_files(ctx)
+    assets(ctx, dev=True, watch=False)
 
 
 @task
@@ -858,9 +858,9 @@ def request_ssl_cert(ctx, domain):
     Usage:
     > invoke request_ssl_cert pizza.osf.io
     """
-    generate_key(domain)
-    generate_key_nopass(domain)
-    generate_csr(domain)
+    generate_key(ctx, domain)
+    generate_key_nopass(ctx, domain)
+    generate_csr(ctx, domain)
 
 
 @task
@@ -897,7 +897,7 @@ def clean_assets(ctx):
 def webpack(ctx, clean=False, watch=False, dev=False, colors=False):
     """Build static assets with webpack."""
     if clean:
-        clean_assets()
+        clean_assets(ctx)
     webpack_bin = os.path.join(HERE, 'node_modules', 'webpack', 'bin', 'webpack.js')
     args = [webpack_bin]
     args += ['--progress']
@@ -927,11 +927,11 @@ def assets(ctx, dev=False, watch=False, colors=False):
     if not dev:
         npm += ' --production'
     ctx.run(npm, echo=True)
-    bower_install()
-    build_js_config_files()
+    bower_install(ctx)
+    build_js_config_files(ctx)
     # Always set clean=False to prevent possible mistakes
     # on prod
-    webpack(clean=False, watch=watch, dev=dev, colors=colors)
+    webpack(ctx, clean=False, watch=watch, dev=dev, colors=colors)
 
 @task
 def generate_self_signed(ctx, domain):
@@ -978,7 +978,7 @@ def set_maintenance(ctx, start=None, end=None):
         invoke set_maintenance_state --start 2016-03-16T15:41:00-04:00
         invoke set_maintenance_state --end 2016-03-16T15:41:00-04:00
     """
-    set_maintenance(start, end)
+    set_maintenance(ctx, start, end)
     state = get_maintenance()
     print('Maintenance notice up for {} to {}.'.format(state['start'], state['end']))
 
@@ -987,5 +987,5 @@ def set_maintenance(ctx, start=None, end=None):
 def unset_maintenance(ctx):
     from website.maintenance import unset_maintenance
     print('Taking down maintenance notice...')
-    unset_maintenance()
+    unset_maintenance(ctx)
     print('...Done.')
