@@ -546,28 +546,33 @@ var QuickSearchProject = {
     }
 };
 
-function getAncestorDescriptor(node, nodeTitle, ancestor) {
+function getAncestorDescriptor(node, nodeID, ancestor) {
     var ancestorDescriptor;
+    var ancestorID = lodashGet(node, 'embeds.' + ancestor + '.data.id', '');
     var ancestorTitleRequest = lodashGet(node, 'embeds.' + ancestor + '.data.attributes.title', '');
     var errorRequest = lodashGet(node, 'embeds.' + ancestor + '.errors[0].detail', '');
     switch(errorRequest) {
         case '':
-            if (ancestorTitleRequest === nodeTitle || ancestorTitleRequest === '') {
+            if (ancestorID === nodeID || ancestorID === '') {
                 ancestorDescriptor = '';
             }
             else {
-                ancestorDescriptor = ancestorTitleRequest.replace('.', '') + ' / ';
+//            Remove trailing period
+                if (ancestorTitleRequest[ancestorTitleRequest.length-1] === ".") {
+                    ancestorTitleRequest = ancestorTitleRequest.slice(0,-1);
+                }
+                ancestorDescriptor = ancestorTitleRequest + ' / ';
             }
             break;
 
         case 'You do not have permission to perform this action.':
-            ancestorDescriptor = m('em', 'Private ' + ' / ');
+            ancestorDescriptor = m('em', 'Private / ');
             break;
 
         default:
             ancestorDescriptor = m('em', 'Name Unavailable / ');
     }
-    return ancestorDescriptor;
+    return [ancestorDescriptor, ancestorID];
 }
 
 var QuickSearchNodeDisplay = {
@@ -583,18 +588,25 @@ var QuickSearchNodeDisplay = {
             return m('.', args.eligibleNodes().slice(0, args.countDisplayed()).map(function(n){
                 var project = args.nodes()[n];
                 var numContributors = project.embeds.contributors.links.meta.total;
+                var nodeID = project.id;
                 var title = project.attributes.title;
-                var root = getAncestorDescriptor(project, title, 'root');
-                var parent = getAncestorDescriptor(project, title, 'parent');
 
-                if (root === parent) {
-                    parent = '';
+                var rootInformation = getAncestorDescriptor(project, nodeID, 'root');
+                var root = rootInformation[0];
+                var rootID = rootInformation[1];
+
+                var parentInformation = getAncestorDescriptor(project, nodeID, 'parent');
+                var parent = parentInformation[0];
+                var parentID = parentInformation[1];
+
+                var grandParentID = lodashGet(project, 'embeds.parent.data.id', '');
+
+                if (grandParentID !== rootID && grandParentID !== '') {
+                    root += '... / ';
                 }
 
-                var grandParentURL = lodashGet(project, 'embeds.parent.data.relationships.parent.links.related.href', '');
-                var rootURL = lodashGet(project, 'embeds.root.data.links.self', '');
-                if (grandParentURL !== rootURL && grandParentURL !== '') {
-                    root += '... / ';
+                if (parentID === rootID) {
+                    parent = '';
                 }
 
                 return m('a', {href: '/' + project.id, onclick: function() {
