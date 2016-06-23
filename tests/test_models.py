@@ -524,15 +524,15 @@ class TestUser(OsfTestCase):
         u.save()
 
         with assert_raises(auth_exc.InvalidTokenError):
-            u._get_unconfirmed_email_for_token('badtoken')
+            u.get_unconfirmed_email_for_token('badtoken')
 
         valid_token = u.get_confirmation_token('foo@bar.com')
-        assert_true(u._get_unconfirmed_email_for_token(valid_token))
+        assert_true(u.get_unconfirmed_email_for_token(valid_token))
         manual_expiration = datetime.datetime.utcnow() - datetime.timedelta(0, 10)
         u._set_email_token_expiration(valid_token, expiration=manual_expiration)
 
         with assert_raises(auth_exc.ExpiredTokenError):
-            u._get_unconfirmed_email_for_token(valid_token)
+            u.get_unconfirmed_email_for_token(valid_token)
 
     def test_verify_confirmation_token_when_token_has_no_expiration(self):
         # A user verification token may not have an expiration
@@ -544,7 +544,7 @@ class TestUser(OsfTestCase):
         del u.email_verifications[token]['expiration']
         u.save()
 
-        assert_true(u._get_unconfirmed_email_for_token(token))
+        assert_true(u.get_unconfirmed_email_for_token(token))
 
     def test_factory(self):
         # Clear users
@@ -2008,7 +2008,8 @@ class TestNode(OsfTestCase):
         self.node.reload()
         assert_false(self.parent.nodes_active)
 
-    def test_register_node_makes_private_registration(self):
+    @mock.patch('website.project.signals.after_create_registration')
+    def test_register_node_makes_private_registration(self, mock_signal):
         user = UserFactory()
         node = NodeFactory(creator=user)
         node.is_public = True
@@ -2016,7 +2017,8 @@ class TestNode(OsfTestCase):
         registration = node.register_node(get_default_metaschema(), Auth(user), '', None)
         assert_false(registration.is_public)
 
-    def test_register_node_makes_private_child_registrations(self):
+    @mock.patch('website.project.signals.after_create_registration')
+    def test_register_node_makes_private_child_registrations(self, mock_signal):
         user = UserFactory()
         node = NodeFactory(creator=user)
         node.is_public = True
@@ -3310,7 +3312,7 @@ class TestProject(OsfTestCase):
     def test_permission_override_on_readded_contributor(self):
 
         # A child node created
-        self.child_node = NodeFactory(parent=self.project, creator=self.auth)
+        self.child_node = NodeFactory(parent=self.project, creator=self.auth.user)
 
         # A user is added as with read permission
         user = UserFactory()
@@ -4159,7 +4161,8 @@ class TestRegisterNode(OsfTestCase):
         assert_equal(self.registration.wiki_pages_current, {})
         assert_equal(self.registration.wiki_private_uuids, {})
 
-    def test_registration_clones_project_wiki_pages(self):
+    @mock.patch('website.project.signals.after_create_registration')
+    def test_registration_clones_project_wiki_pages(self, mock_signal):
         project = ProjectFactory(creator=self.user, is_public=True)
         wiki = NodeWikiFactory(node=project)
         current_wiki = NodeWikiFactory(node=project, version=2)

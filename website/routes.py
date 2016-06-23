@@ -30,6 +30,7 @@ from website import language
 from website.util import metrics
 from website.util import paths
 from website.util import sanitize
+from website import maintenance
 from website.models import Institution
 from website import landing_pages as landing_page_views
 from website import views as website_views
@@ -69,6 +70,7 @@ def get_globals():
         'user_timezone': user.timezone if user and user.timezone else '',
         'user_url': user.url if user else '',
         'user_gravatar': profile_views.current_user_gravatar(size=25)['gravatar_url'] if user else '',
+        'user_email_verifications': user.unconfirmed_email_info if user else [],
         'user_api_url': user.api_url if user else '',
         'user_entry_point': metrics.get_entry_point(user) if user else '',
         'user_institutions': user_institutions if user else None,
@@ -103,6 +105,7 @@ def get_globals():
         'enable_institutions': settings.ENABLE_INSTITUTIONS,
         'keen_project_id': settings.KEEN_PROJECT_ID,
         'keen_write_key': settings.KEEN_WRITE_KEY,
+        'maintenance': maintenance.get_maintenance(),
     }
 
 def is_private_link_anonymous_view():
@@ -239,6 +242,7 @@ def make_url_map(app):
             notemplate
         ),
         Rule('/about/', 'get', website_views.redirect_about, notemplate),
+        Rule('/help/', 'get', website_views.redirect_help, notemplate),
         Rule('/faq/', 'get', {}, OsfWebRenderer('public/pages/faq.mako', trust=False)),
         Rule(['/getting-started/', '/getting-started/email/', '/howosfworks/'], 'get', website_views.redirect_getting_started, notemplate),
         Rule('/support/', 'get', {}, OsfWebRenderer('public/pages/support.mako', trust=False)),
@@ -252,7 +256,6 @@ def make_url_map(app):
         Rule(
             [
                 '/messages/',
-                '/help/'
             ],
             'get',
             {},
@@ -395,6 +398,13 @@ def make_url_map(app):
             json_renderer,
         )
     ], prefix='/api/v1')
+
+    process_rules(app, [
+        Rule('/confirmed_emails/', 'put', auth_views.unconfirmed_email_add, json_renderer),
+        Rule('/confirmed_emails/', 'delete', auth_views.unconfirmed_email_remove, json_renderer)
+
+    ], prefix='/api/v1')
+
     ### Metadata ###
     process_rules(app, [
 

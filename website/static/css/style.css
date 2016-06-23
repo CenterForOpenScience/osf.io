@@ -372,6 +372,7 @@ a {
 }
 
 /* OSF-panel */
+
 .osf-panel {
     border: 1px solid #ddd;
     height: 764px;
@@ -379,6 +380,11 @@ a {
     display: block;
     position: relative;
     overflow-x: hidden;
+}
+
+/* removes the automatic height and overflow properties from the Edit Wiki pane */
+.osf-panel-edit {
+    height: auto;
 }
 
 @media (max-width: 991px) {
