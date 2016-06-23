@@ -24,6 +24,7 @@ from website.exceptions import NodeStateError
 from website.files.models import FileNode
 from website.project.model import DraftRegistration
 from website.prereg.utils import get_prereg_schema
+from website.files.models import OsfStorageFileNode
 
 from admin.base.utils import PreregAdmin
 
@@ -102,15 +103,21 @@ class DraftDetailView(PreregAdmin, DetailView):
     context_object_name = 'draft'
 
     def get_object(self, queryset=None):
+        draft = DraftRegistration.load(self.kwargs.get('draft_pk'))
+        self.checkout_files(draft)
         try:
-            return serializers.serialize_draft_registration(
-                DraftRegistration.load(self.kwargs.get('draft_pk'))
-            )
+            return serializers.serialize_draft_registration(draft)
         except AttributeError:
             raise Http404('{} with id "{}" not found.'.format(
                 self.context_object_name.title(),
                 self.kwargs.get('draft_pk')
             ))
+
+    def checkout_files(self, draft):
+        prereg_user = self.request.user.osf_user
+        for item in get_metadata_files(draft):
+            item.checkout = prereg_user
+            item.save()
 
 
 class DraftFormView(PreregAdmin, FormView):
@@ -169,6 +176,11 @@ class DraftFormView(PreregAdmin, FormView):
         self.draft.save()
         return super(DraftFormView, self).form_valid(form)
 
+    def checkin_files(self, draft):
+        for item in get_metadata_files(draft):
+            item.checkout = None
+            item.save()
+
     def get_success_url(self):
         return '{}?page={}'.format(reverse('pre_reg:prereg'),
                                    self.request.POST.get('page', 1))
@@ -209,3 +221,17 @@ def view_file(request, node_id, provider, file_id):
     fp = FileNode.load(file_id)
     wb_url = fp.generate_waterbutler_url()
     return redirect(wb_url)
+
+
+def get_metadata_files(draft):
+    for q in ['q7', 'q11', 'q12', 'q13', 'q16', 'q19', 'q26']:
+        for file_info in draft.registration_metadata[q]['value']['uploader']['extra']:
+            file_guid = file_info['data'].get('file_guid')
+            if file_guid is None:
+                raise Http404('File in {} does not have a guid.'.format(q))
+            item = OsfStorageFileNode.load(file_guid)
+            if item is None:
+                raise Http404('File with guid "{}" in {} does not exist'.format(
+                    file_guid, q
+                ))
+            yield item
