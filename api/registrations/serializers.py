@@ -83,7 +83,9 @@ class BaseRegistrationSerializer(NodeSerializer):
     comments = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-comments',
         related_view_kwargs={'node_id': '<pk>'},
-        related_meta={'unread': 'get_unread_comments_count'}))
+        related_meta={'unread': 'get_unread_comments_count'},
+        filter={'target': '<pk>'}
+    ))
 
     contributors = RelationshipField(
         related_view='registrations:registration-contributors',
@@ -152,6 +154,12 @@ class BaseRegistrationSerializer(NodeSerializer):
         related_view='nodes:node-registrations',
         related_view_kwargs={'node_id': '<pk>'}
     ))
+
+    draft_registrations = HideIfRegistration(RelationshipField(
+        related_view='nodes:node-draft-registrations',
+        related_view_kwargs={'node_id': '<pk>'}
+    ))
+
     identifiers = HideIfWithdrawal(RelationshipField(
         related_view='registrations:identifier-list',
         related_view_kwargs={'node_id': '<pk>'}

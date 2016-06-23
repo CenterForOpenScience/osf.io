@@ -66,10 +66,16 @@ try:
     logging.getLogger('requests').setLevel(logging.WARN)
     es.cluster.health(wait_for_status='yellow')
 except ConnectionError as e:
-    sentry.log_exception()
-    sentry.log_message('The SEARCH_ENGINE setting is set to "elastic", but there '
-            'was a problem starting the elasticsearch interface. Is '
-            'elasticsearch running?')
+    message = (
+        'The SEARCH_ENGINE setting is set to "elastic", but there '
+        'was a problem starting the elasticsearch interface. Is '
+        'elasticsearch running?'
+    )
+    try:
+        sentry.log_exception()
+        sentry.log_message(message)
+    except AssertionError:  # App has not yet been initialized
+        logger.exception(message)
     es = None
 
 
@@ -296,7 +302,7 @@ def update_node(node, index=None, bulk=False):
         update_file(file_, index=index)
 
     if node.is_deleted or not node.is_public or node.archiving:
-        delete_doc(elastic_document_id, node)
+        delete_doc(elastic_document_id, node, index=index)
     else:
         try:
             normalized_title = six.u(node.title)
@@ -365,7 +371,8 @@ def bulk_update_nodes(serialize, nodes, index=None):
                 '_index': index,
                 '_id': node._id,
                 '_type': get_doctype_from_node(node),
-                'doc': serialized
+                'doc': serialized,
+                'doc_as_upsert': True,
             })
     if actions:
         return helpers.bulk(es, actions)

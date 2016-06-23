@@ -10,7 +10,9 @@ var m = require('mithril');
 var URI = require('URIjs');
 var Raven = require('raven-js');
 var Treebeard = require('treebeard');
+var moment = require('moment');
 var Dropzone = require('dropzone');
+var lodashGet = require('lodash.get');
 
 var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
@@ -143,14 +145,16 @@ function cancelAllUploads() {
         tb.deleteNode(parent.id, item.id);
     };
     // Clear all synchronous uploads
-    SYNC_UPLOAD_ADDONS.forEach(function(provider) {
-        if (tb.dropzone.syncFileCache[provider] !== undefined) {
-            // Remove cached provider files from UI
-            tb.dropzone.syncFileCache[provider].forEach(removeFromUI);
-            // Clear provider cache
-            tb.dropzone.syncFileCache[provider].length = 0;
-        }
-    });
+    if (tb.dropzone.syncFileCache !== undefined) {
+        SYNC_UPLOAD_ADDONS.forEach(function(provider) {
+            if (tb.dropzone.syncFileCache[provider] !== undefined) {
+                // Remove cached provider files from UI
+                tb.dropzone.syncFileCache[provider].forEach(removeFromUI);
+                // Clear provider cache
+                tb.dropzone.syncFileCache[provider].length = 0;
+            }
+        });
+    }
     // Clear all ongoing uploads
     filesArr.forEach(function(file, index) {
         // Ignore completed files
@@ -1270,6 +1274,29 @@ function _fangornTitleColumn(item, col) {
 }
 
 /**
+ * Defines the contents of the modified column (does not include the toggle and folder sections
+ * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
+ * @param {Object} col Options for this particular column
+ * @this Treebeard.controller
+ * @returns {Array} Returns an array of mithril template objects using m()
+ * @private
+ */
+function _fangornModifiedColumn(item, col) {
+    var tb = this;
+    if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
+        return _connectCheckTemplate.call(this, item);
+    }
+    if (item.kind === 'file' && item.data.permissions.view && item.data.modified) {
+        return m(
+            'span',
+            // "new Date" required for non-ISO date formats
+            new moment(new Date(item.data.modified)).format('YYYY-MM-DD hh:mm A')
+        );
+    }
+    return m('span', '');
+}
+
+/**
  * Returns a reusable template for column titles when there is no connection
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
  * @this Treebeard.controller
@@ -1301,7 +1328,7 @@ function _connectCheckTemplate(item){
  */
 function _fangornResolveRows(item) {
     var tb = this;
-    var default_columns = [];
+    var defaultColumns = [];
     var configOption;
     item.css = '';
     if(tb.isMultiselected(item.id)){
@@ -1332,7 +1359,7 @@ function _fangornResolveRows(item) {
             item.data.accept = item.data.accept || item.parent().data.accept;
         }
     }
-    default_columns.push(
+    defaultColumns.push(
     {
         data : 'name',  // Data field name
         folderIcons : true,
@@ -1340,31 +1367,35 @@ function _fangornResolveRows(item) {
         custom : _fangornTitleColumn
     });
 
-    if (item.data.kind === 'file') {
-        default_columns.push(
-        {
-            data : 'size',  // Data field name
-            filter : true,
-            custom : function() {return item.data.size ? $osf.humanFileSize(item.data.size, true) : '';}
+    defaultColumns.push({
+        data : 'size',  // Data field name
+        sortInclude : false,
+        filter : false,
+        custom : function() {return item.data.size ? $osf.humanFileSize(item.data.size, true) : '';}
+    });
+    if (item.data.provider === 'osfstorage') {
+        defaultColumns.push({
+            data : 'downloads',
+            sortInclude : false,
+            filter : false,
+            custom: function() { return lodashGet(item, 'data.extra.downloads', '').toString(); }
         });
-        if (item.data.provider === 'osfstorage') {
-            default_columns.push({
-                data : 'downloads',
-                sortInclude : false,
-                filter : false,
-                custom: function() { return item.data.extra ? item.data.extra.downloads.toString() : ''; }
-            });
-        } else {
-            default_columns.push({
-                data : 'downloads',
-                sortInclude : false,
-                filter : false,
-                custom : function() { return m(''); }
-            });
-        }
+    } else {
+        defaultColumns.push({
+            data : 'downloads',
+            sortInclude : false,
+            filter : false,
+            custom : function() { return m(''); }
+        });
     }
+    defaultColumns.push(
+    {
+        data : 'modified',  // Data field name
+        filter : false,
+        custom : _fangornModifiedColumn
+    });
     configOption = resolveconfigOption.call(this, item, 'resolveRows', [item]);
-    return configOption || default_columns;
+    return configOption || defaultColumns;
 }
 
 /**
@@ -1378,17 +1409,22 @@ function _fangornColumnTitles () {
     columns.push(
     {
         title: 'Name',
-        width : '80%',
+        width : '64%',
         sort : true,
         sortType : 'text'
     }, {
         title : 'Size',
-        width : '10%',
+        width : '8%',
         sort : false
     }, {
         title : 'Downloads',
-        width : '10%',
+        width : '8%',
         sort : false
+    }, {
+        title : 'Modified',
+        width : '20%',
+        sort : true,
+        sortType : 'text'
     });
     return columns;
 }
@@ -2505,7 +2541,8 @@ Fangorn.ButtonEvents = {
 };
 
 Fangorn.DefaultColumns = {
-    _fangornTitleColumn: _fangornTitleColumn
+    _fangornTitleColumn: _fangornTitleColumn,
+    _fangornModifiedColumn: _fangornModifiedColumn
 };
 
 Fangorn.Utils = {

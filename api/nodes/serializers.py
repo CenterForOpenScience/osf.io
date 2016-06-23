@@ -18,7 +18,7 @@ from website.project.model import NodeUpdateError
 
 from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
-                                  TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly,
+                                  TargetTypeField, JSONAPIListField, LinksField, RelationshipField,
                                   HideIfRegistration, RestrictedDictSerializer,
                                   JSONAPIRelationshipSerializer, relationship_diff)
 from api.base.exceptions import InvalidModelValueError, RelationshipPostMakesNoChanges
@@ -132,7 +132,9 @@ class NodeSerializer(JSONAPISerializer):
     comments = RelationshipField(
         related_view='nodes:node-comments',
         related_view_kwargs={'node_id': '<pk>'},
-        related_meta={'unread': 'get_unread_comments_count'})
+        related_meta={'unread': 'get_unread_comments_count'},
+        filter={'target': '<pk>'}
+    )
 
     contributors = RelationshipField(
         related_view='nodes:node-contributors',
@@ -172,11 +174,16 @@ class NodeSerializer(JSONAPISerializer):
         filter_key='parent_node'
     )
 
-    registrations = DevOnly(HideIfRegistration(RelationshipField(
+    draft_registrations = HideIfRegistration(RelationshipField(
+        related_view='nodes:node-draft-registrations',
+        related_view_kwargs={'node_id': '<pk>'}
+    ))
+
+    registrations = HideIfRegistration(RelationshipField(
         related_view='nodes:node-registrations',
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_registration_count'}
-    )))
+    ))
 
     affiliated_institutions = RelationshipField(
         related_view='nodes:node-institutions',
