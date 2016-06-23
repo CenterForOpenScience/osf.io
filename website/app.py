@@ -24,6 +24,7 @@ from website.addons.base import init_addon
 from website.project.licenses import ensure_licenses
 from website.project.model import ensure_schemas
 from website.routes import make_url_map
+from website import maintenance
 
 # This import is necessary to set up the archiver signal listeners
 from website.archiver import listeners  # noqa
@@ -95,6 +96,7 @@ def build_log_templates(settings):
 
 def do_set_backends(settings):
     logger.debug('Setting storage backends')
+    maintenance.ensure_maintenance_collection()
     set_up_storage(
         website.models.MODELS,
         storage.MongoStorage,
