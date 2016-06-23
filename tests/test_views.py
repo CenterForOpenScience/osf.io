@@ -2553,13 +2553,12 @@ class TestClaimViews(OsfTestCase):
         res = self.app.get(url).maybe_follow()
         assert_equal(res.status_code, 200)
 
-    def test_invalid_claim_form_redirects_to_register_page(self):
+    def test_invalid_claim_form_raise_400(self):
         uid = self.user._primary_key
         pid = self.project._primary_key
         url = '/user/{uid}/{pid}/claim/?token=badtoken'.format(**locals())
         res = self.app.get(url, expect_errors=True).maybe_follow()
-        assert_equal(res.status_code, 200)
-        assert_equal(res.request.path, web_url_for('auth_login'))
+        assert_equal(res.status_code, 400)
 
     def test_posting_to_claim_form_with_valid_data(self):
         url = self.user.get_claim_url(self.project._primary_key)
@@ -2567,8 +2566,15 @@ class TestClaimViews(OsfTestCase):
             'username': self.user.username,
             'password': 'killerqueen',
             'password2': 'killerqueen'
-        }).maybe_follow()
-        assert_equal(res.status_code, 200)
+        })
+
+        assert_equal(res.status_code, 302)
+        location = res.headers.get('Location')
+        assert_in('login?service=', location)
+        assert_in('username', location)
+        assert_in('verification_key', location)
+        assert_in(self.project._primary_key, location)
+
         self.user.reload()
         assert_true(self.user.is_registered)
         assert_true(self.user.is_active)
@@ -3222,11 +3228,6 @@ class TestPublicViews(OsfTestCase):
         res = self.app.get("/explore/").maybe_follow()
         assert_equal(res.status_code, 200)
 
-    def test_forgot_password_get(self):
-        res = self.app.get(web_url_for('forgot_password_get'))
-        assert_equal(res.status_code, 200)
-        assert_in('Forgot Password', res.body)
-
 
 class TestAuthViews(OsfTestCase):
 
@@ -3234,41 +3235,6 @@ class TestAuthViews(OsfTestCase):
         super(TestAuthViews, self).setUp()
         self.user = AuthUserFactory()
         self.auth = self.user.auth
-
-    def test_merge_user(self):
-        dupe = UserFactory(
-            username="copy@cat.com",
-            emails=['copy@cat.com']
-        )
-        dupe.set_password("copycat")
-        dupe.save()
-        url = "/api/v1/user/merge/"
-        self.app.post_json(
-            url,
-            {
-                "merged_username": "copy@cat.com",
-                "merged_password": "copycat"
-            },
-            auth=self.auth,
-        )
-        self.user.reload()
-        dupe.reload()
-        assert_true(dupe.is_merged)
-
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_register_sends_confirm_email(self, send_mail):
-        url = '/register/'
-        self.app.post(url, {
-            'register-fullname': 'Freddie Mercury',
-            'register-username': 'fred@queen.com',
-            'register-password': 'killerqueen',
-            'register-username2': 'fred@queen.com',
-            'register-password2': 'killerqueen',
-        })
-        assert_true(send_mail.called)
-        assert_true(send_mail.called_with(
-            to_addr='fred@queen.com'
-        ))
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_register_ok(self, _):
@@ -3400,22 +3366,6 @@ class TestAuthViews(OsfTestCase):
                     'password': password,
                 }
             )
-        assert_equal(mock_signals.signals_sent(), set([auth.signals.user_registered,
-                                                       auth.signals.unconfirmed_user_created]))
-        assert_true(mock_send_confirm_email.called)
-
-    @mock.patch('framework.auth.views.send_confirm_email')
-    def test_register_post_sends_user_registered_signal(self, mock_send_confirm_email):
-        url = web_url_for('auth_register_post')
-        name, email, password = fake.name(), fake.email(), 'underpressure'
-        with capture_signals() as mock_signals:
-            self.app.post(url, {
-                'register-fullname': name,
-                'register-username': email,
-                'register-password': password,
-                'register-username2': email,
-                'register-password2': password
-            })
         assert_equal(mock_signals.signals_sent(), set([auth.signals.user_registered,
                                                        auth.signals.unconfirmed_user_created]))
         assert_true(mock_send_confirm_email.called)
