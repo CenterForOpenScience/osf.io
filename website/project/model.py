@@ -818,6 +818,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     # Project Organization
     is_bookmark_collection = fields.BooleanField(default=False, index=True)
+    is_public_files_collection = fields.BooleanField(default=False, index=True)
     is_collection = fields.BooleanField(default=False, index=True)
 
     is_deleted = fields.BooleanField(default=False, index=True)
@@ -1187,6 +1188,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         :param bool save: Save changes
         :raises: ValueError if user already has permission
         """
+        if self.is_public_files_collection and (self.creator._id is not user._id) and not user.is_merged:
+            raise NodeStateError('Cannot edit permissions on Public Files Collection')
         if user._id not in self.permissions:
             self.permissions[user._id] = [permission]
         else:
@@ -1204,6 +1207,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         :param bool save: Save changes
         :raises: ValueError if user does not have permission
         """
+        if self.is_public_files_collection:
+            raise NodeStateError('Cannot edit permissions on Public Files Collection')
         try:
             self.permissions[user._id].remove(permission)
         except (KeyError, ValueError):
@@ -1435,7 +1440,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             # Title and description have special methods for logging purposes
             if key == 'title':
                 if not self.is_bookmark_collection:
-                    self.set_title(title=value, auth=auth, save=False)
+                    if not self.is_public_files_collection:
+                        self.set_title(title=value, auth=auth, save=False)
+                    else:
+                        raise NodeUpdateError(reason='Public Files cannot be renamed.', key=key)
                 else:
                     raise NodeUpdateError(reason='Bookmark collections cannot be renamed.', key=key)
             elif key == 'description':
@@ -1513,10 +1521,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             if existing_bookmark_collections.count() > 0:
                 raise NodeStateError('Only one bookmark collection allowed per user.')
 
+        if first_save and self.is_public_files_collection:
+            existing_public_files_collections = Node.find(
+                Q('is_public_files_collection', 'eq', True) & Q('contributors', 'eq', self.creator._id)
+            )
+            if existing_public_files_collections.count() > 0:
+                raise NodeStateError("Only one public files collection allowed per user.")
+
         # Bookmark collections are always named 'Bookmarks'
         if self.is_bookmark_collection and self.title != 'Bookmarks':
             self.title = 'Bookmarks'
-
         is_original = not self.is_registration and not self.is_fork
         if 'suppress_log' in kwargs.keys():
             suppress_log = kwargs['suppress_log']
@@ -1715,6 +1729,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if node.is_bookmark_collection:
             raise ValueError(
                 'Pointer to bookmark collection ({0}) not allowed.'.format(node._id)
+            )
+        if node.is_public_files_collection:
+            raise ValueError(
+                'Pointer to public files collection ({0}) not allowed'.format(node._id)
             )
 
         # Append pointer
@@ -1962,6 +1980,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         #Called so validation does not have to wait until save.
         validate_title(title)
 
+        if self.is_public_files_collection:
+            raise NodeStateError('Cannot rename Public Files Collections')
+
         original_title = self.title
         new_title = sanitize.strip_html(title)
         # Title hasn't changed after sanitzation, bail out
@@ -2061,6 +2082,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if self.is_bookmark_collection:
             raise NodeStateError('Bookmark collections may not be deleted.')
 
+        if self.is_public_files_collection:
+            raise NodeStateError("Public Files may not be deleted.")
+
         if not self.can_edit(auth):
             raise PermissionsError('{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node'))
 
@@ -2111,23 +2135,37 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         return True
 
-    def fork_node(self, auth, title=None):
+<<<<<<< HEAD
+    def fork_node(self, auth, title='Fork of '):
         """Recursively fork a node.
 
         :param Auth auth: Consolidated authorization
         :param str title: Optional text to prepend to forked title
         :return: Forked node
         """
-        PREFIX = 'Fork of '
         user = auth.user
 
         # Non-contributors can't fork private nodes
         if not (self.is_public or self.has_permission(user, 'read')):
             raise PermissionsError('{0!r} does not have permission to fork node {1!r}'.format(user, self._id))
+=======
+    def fork_node(self, auth, title=None):
+        if not self.is_public_files_collection:
+            """Recursively fork a node.
+            :param Auth auth: Consolidated authorization
+            :param str title: Optional text to prepend to forked title
+            :return: Forked node
+            """
+            PREFIX = 'Fork of '
+            user = auth.user
+>>>>>>> 24e86e92f2c2b63924966b7467ce3da5b731fda4
 
         when = datetime.datetime.utcnow()
 
         original = self.load(self._primary_key)
+
+        if original.is_public_files_collection:
+            raise NodeStateError('Cannot fork public files Nodes')
 
         if original.is_deleted:
             raise NodeStateError('Cannot fork deleted node.')
@@ -2149,10 +2187,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 if forked_node is not None:
                     forked.nodes.append(forked_node)
 
-        if title is None:
-            forked.title = PREFIX + original.title
-        elif title == '':
-            forked.title = original.title
+<<<<<<< HEAD
+        if title == 'Fork of ' or title == '':
+            forked.title = title + forked.title
         else:
             forked.title = title
 
@@ -2176,6 +2213,42 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             forked.add_citation(
                 auth=auth,
                 citation=citation.clone(),
+=======
+            if title is None:
+                forked.title = PREFIX + original.title
+            elif title == '':
+                forked.title = original.title
+            else:
+                forked.title = title
+
+            forked.is_fork = True
+            forked.is_registration = False
+            forked.forked_date = when
+            forked.forked_from = original
+            forked.creator = user
+            forked.piwik_site_id = None
+            forked.node_license = original.license.copy() if original.license else None
+            forked.wiki_private_uuids = {}
+
+            # Forks default to private status
+            forked.is_public = False
+
+            # Clear permissions before adding users
+            forked.permissions = {}
+            forked.visible_contributor_ids = []
+
+            for citation in self.alternative_citations:
+                forked.add_citation(
+                    auth=auth,
+                    citation=citation.clone(),
+                    log=False,
+                    save=False
+                )
+
+            forked.add_contributor(
+                contributor=user,
+                permissions=CREATOR_PERMISSIONS,
+>>>>>>> 24e86e92f2c2b63924966b7467ce3da5b731fda4
                 log=False,
                 save=False
             )
@@ -2187,11 +2260,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             save=False
         )
 
+<<<<<<< HEAD
         # Need this save in order to access _primary_key
         forked.save()
-
-        # Need to call this after save for the notifications to be created with the _primary_key
-        project_signals.contributor_added.send(forked, contributor=user, auth=auth)
 
         forked.add_log(
             action=NodeLog.NODE_FORKED,
@@ -2205,6 +2276,23 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             log_date=when,
             save=False,
         )
+=======
+            # Need to call this after save for the notifications to be created with the _primary_key
+            project_signals.contributor_added.send(forked, contributor=user, auth=auth)
+
+            forked.add_log(
+                action=NodeLog.NODE_FORKED,
+                params={
+                    'parent_node': original.parent_id,
+                    'node': original._primary_key,
+                    'registration': forked._primary_key,  # TODO: Remove this in favor of 'fork'
+                    'fork': forked._primary_key,
+                },
+                auth=auth,
+                log_date=when,
+                save=False,
+            )
+>>>>>>> 24e86e92f2c2b63924966b7467ce3da5b731fda4
 
         # Clone each log from the original node for this fork.
         logs = original.logs
@@ -2224,6 +2312,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     def register_node(self, schema, auth, data, parent=None):
         """Make a frozen copy of a node.
 
+<<<<<<< HEAD
         :param schema: Schema object
         :param auth: All the auth information including user, API key.
         :param template: Template name
@@ -2237,8 +2326,144 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 'User {} does not have permission '
                 'to register this node'.format(auth.user._id)
             )
+=======
+            :param schema: Schema object
+            :param auth: All the auth information including user, API key.
+            :param template: Template name
+            :param data: Form data
+            :param parent Node: parent registration of registration to be created
+            """
+            # TODO(lyndsysimon): "template" param is not necessary - use schema.name?
+            # NOTE: Admins can register child nodes even if they don't have write access them
+            if not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user):
+                raise PermissionsError(
+                    'User {} does not have permission '
+                    'to register this node'.format(auth.user._id)
+
+                )
+            if self.is_collection:
+                raise NodeStateError('Folders may not be registered')
+
+            when = datetime.datetime.utcnow()
+
+            original = self.load(self._primary_key)
+
+            # Note: Cloning a node will clone each node wiki page version and add it to
+            # `registered.wiki_pages_current` and `registered.wiki_pages_versions`.
+            if original.is_deleted:
+                raise NodeStateError('Cannot register deleted node.')
+
+            registered = original.clone()
+
+            registered.is_registration = True
+            registered.registered_date = when
+            registered.registered_user = auth.user
+            registered.registered_schema.append(schema)
+            registered.registered_from = original
+            if not registered.registered_meta:
+                registered.registered_meta = {}
+            registered.registered_meta[schema._id] = data
+
+            registered.contributors = self.contributors
+            registered.forked_from = self.forked_from
+            registered.creator = self.creator
+            registered.tags = self.tags
+            registered.piwik_site_id = None
+            registered._affiliated_institutions = self._affiliated_institutions
+            registered.alternative_citations = self.alternative_citations
+            registered.node_license = original.license.copy() if original.license else None
+            registered.wiki_private_uuids = {}
+
+            registered.save()
+
+            # Clone each log from the original node for this registration.
+            logs = original.logs
+            for log in logs:
+                log.clone_node_log(registered._id)
+
+            registered.is_public = False
+            for node in registered.get_descendants_recursive():
+                node.is_public = False
+                node.save()
+
+            if parent:
+                registered._parent_node = parent
+
+            # After register callback
+            for addon in original.get_addons():
+                _, message = addon.after_register(original, registered, auth.user)
+                if message:
+                    status.push_status_message(message, kind='info', trust=False)
+
+            for node_contained in original.nodes:
+                if not node_contained.is_deleted:
+                    child_registration = node_contained.register_node(
+                        schema=schema,
+                        auth=auth,
+                        data=data,
+                        parent=registered,
+                )
+            if self.is_collection:
+                raise NodeStateError("Folders may not be registered")
+
+            when = datetime.datetime.utcnow()
+
+            original = self.load(self._primary_key)
+
+            # Note: Cloning a node will clone each node wiki page version and add it to
+            # `registered.wiki_pages_current` and `registered.wiki_pages_versions`.
+            if original.is_deleted:
+                raise NodeStateError('Cannot register deleted node.')
+
+            registered = original.clone()
+
+            registered.is_registration = True
+            registered.registered_date = when
+            registered.registered_user = auth.user
+            registered.registered_schema.append(schema)
+            registered.registered_from = original
+            if not registered.registered_meta:
+                registered.registered_meta = {}
+            registered.registered_meta[schema._id] = data
+
+            registered.contributors = self.contributors
+            registered.forked_from = self.forked_from
+            registered.creator = self.creator
+            registered.tags = self.tags
+            registered.piwik_site_id = None
+            registered.primary_institution = self.primary_institution
+            registered._affiliated_institutions = self._affiliated_institutions
+            registered.alternative_citations = self.alternative_citations
+            registered.node_license = original.license.copy() if original.license else None
+            registered.wiki_private_uuids = {}
+
+            registered.save()
+
+            # Clone each log from the original node for this registration.
+            logs = original.logs
+            for log in logs:
+                log.clone_node_log(registered._id)
+
+            registered.is_public = False
+            for node in registered.get_descendants_recursive():
+                node.is_public = False
+                node.save()
+
+            if parent:
+                registered._parent_node = parent
+
+            # After register callback
+            for addon in original.get_addons():
+                _, message = addon.after_register(original, registered, auth.user)
+                if message:
+                    status.push_status_message(message, kind='info', trust=False)
+>>>>>>> 24e86e92f2c2b63924966b7467ce3da5b731fda4
+
+        if self.is_public_files_collection:
+            raise NodeStateError('Public Files collections may not be registered')
+
         if self.is_collection:
-            raise NodeStateError('Folders may not be registered')
+            raise NodeStateError("Folders may not be registered")
 
         when = datetime.datetime.utcnow()
 
@@ -2265,6 +2490,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         registered.creator = self.creator
         registered.tags = self.tags
         registered.piwik_site_id = None
+        registered.primary_institution = self.primary_institution
         registered._affiliated_institutions = self._affiliated_institutions
         registered.alternative_citations = self.alternative_citations
         registered.node_license = original.license.copy() if original.license else None
@@ -2358,26 +2584,30 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 self.save()
 
     def add_citation(self, auth, save=False, log=True, citation=None, **kwargs):
-        if not citation:
-            citation = AlternativeCitation(**kwargs)
-        citation.save()
-        self.alternative_citations.append(citation)
-        citation_dict = {'name': citation.name, 'text': citation.text}
-        if log:
-            self.add_log(
-                action=NodeLog.CITATION_ADDED,
-                params={
-                    'node': self._primary_key,
-                    'citation': citation_dict
-                },
-                auth=auth,
-                save=False
-            )
-            if save:
-                self.save()
-        return citation
-
+        if not self.is_public_files_collection:
+            if not citation:
+                citation = AlternativeCitation(**kwargs)
+            citation.save()
+            self.alternative_citations.append(citation)
+            citation_dict = {'name': citation.name, 'text': citation.text}
+            if log:
+                self.add_log(
+                    action=NodeLog.CITATION_ADDED,
+                    params={
+                        'node': self._primary_key,
+                        'citation': citation_dict
+                    },
+                    auth=auth,
+                    save=False
+                )
+                if save:
+                    self.save()
+            return citation
+        else:
+            raise NodeStateError('Public Files collections cannot have citations')
     def edit_citation(self, auth, instance, save=False, log=True, **kwargs):
+        if self.is_public_files_collection:
+            return False
         citation = {'name': instance.name, 'text': instance.text}
         new_name = kwargs.get('name', instance.name)
         new_text = kwargs.get('text', instance.text)
@@ -2403,6 +2633,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         return instance
 
     def remove_citation(self, auth, instance, save=False, log=True):
+        if self.is_public_files_collection:
+            return False
         citation = {'name': instance.name, 'text': instance.text}
         self.alternative_citations.remove(instance)
         if log:
@@ -2488,6 +2720,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if self.is_collection:
             path = '/collections/{}/'.format(self._id)
             return api_v2_url(path)
+            pass
         path = '/nodes/{}/'.format(self._id)
         return api_v2_url(path)
 
@@ -2744,6 +2977,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         :param contributor: User object, the contributor to be removed
         :param auth: All the auth information including user, API key.
         """
+
+        if self.is_public_files_collection:
+            raise NodeStateError('Cannot remove self from Public Files Collection')
         # remove unclaimed record if necessary
         if self._primary_key in contributor.unclaimed_records:
             del contributor.unclaimed_records[self._primary_key]
@@ -2830,6 +3066,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             raise PermissionsError('Only admins can modify contributor permissions')
         permissions = expand_permissions(permission) or DEFAULT_CONTRIBUTOR_PERMISSIONS
         admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
+        if self.is_public_files_collection:
+            raise NodeStateError('Cannot change contributors for Public Files Collection')
         if not len(admins) > 1:
             # has only one admin
             admin = admins[0]
@@ -2961,69 +3199,72 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 project_signals.write_permissions_revoked.send(self)
 
     def add_contributor(self, contributor, permissions=None, visible=True,
-                        auth=None, log=True, save=False):
-        """Add a contributor to the project.
+                        auth=None, log=True, save=False,merging=False):
+            """Add a contributor to the project.
 
-        :param User contributor: The contributor to be added
-        :param list permissions: Permissions to grant to the contributor
-        :param bool visible: Contributor is visible in project dashboard
-        :param Auth auth: All the auth information including user, API key
-        :param bool log: Add log to self
-        :param bool save: Save after adding contributor
-        :returns: Whether contributor was added
-        """
-        MAX_RECENT_LENGTH = 15
+            :param User contributor: The contributor to be added
+            :param list permissions: Permissions to grant to the contributor
+            :param bool visible: Contributor is visible in project dashboard
+            :param Auth auth: All the auth information including user, API key
+            :param bool log: Add log to self
+            :param bool save: Save after adding contributor
+            :returns: Whether contributor was added
+            """
+            MAX_RECENT_LENGTH = 15
 
-        # If user is merged into another account, use master account
-        contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
-        if contrib_to_add not in self.contributors:
+            # If user is merged into another account, use master account
+            contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
+            print contrib_to_add, contributor, self.creator
+            if self.is_public_files_collection and not contributor.merged_by:
+                raise NodeStateError('Cannot add contributor to public files collection')
+            if contrib_to_add not in self.contributors:
 
-            self.contributors.append(contrib_to_add)
-            if visible:
-                self.set_visible(contrib_to_add, visible=True, log=False)
+                self.contributors.append(contrib_to_add)
+                if visible:
+                    self.set_visible(contrib_to_add, visible=True, log=False)
 
-            # Add default contributor permissions
-            permissions = permissions or DEFAULT_CONTRIBUTOR_PERMISSIONS
-            for permission in permissions:
-                self.add_permission(contrib_to_add, permission, save=False)
+                # Add default contributor permissions
+                permissions = permissions or DEFAULT_CONTRIBUTOR_PERMISSIONS
+                for permission in permissions:
+                    self.add_permission(contrib_to_add, permission, save=False)
 
-            # Add contributor to recently added list for user
-            if auth is not None:
-                user = auth.user
-                if contrib_to_add in user.recently_added:
-                    user.recently_added.remove(contrib_to_add)
-                user.recently_added.insert(0, contrib_to_add)
-                while len(user.recently_added) > MAX_RECENT_LENGTH:
-                    user.recently_added.pop()
+                # Add contributor to recently added list for user
+                if auth is not None:
+                    user = auth.user
+                    if contrib_to_add in user.recently_added:
+                        user.recently_added.remove(contrib_to_add)
+                    user.recently_added.insert(0, contrib_to_add)
+                    while len(user.recently_added) > MAX_RECENT_LENGTH:
+                        user.recently_added.pop()
 
-            if log:
-                self.add_log(
-                    action=NodeLog.CONTRIB_ADDED,
-                    params={
-                        'project': self.parent_id,
-                        'node': self._primary_key,
-                        'contributors': [contrib_to_add._primary_key],
-                    },
-                    auth=auth,
-                    save=False,
-                )
-            if save:
-                self.save()
+                if log:
+                    self.add_log(
+                        action=NodeLog.CONTRIB_ADDED,
+                        params={
+                            'project': self.parent_id,
+                            'node': self._primary_key,
+                            'contributors': [contrib_to_add._primary_key],
+                        },
+                        auth=auth,
+                        save=False,
+                    )
+                if save:
+                    self.save()
 
-            if self._id:
-                project_signals.contributor_added.send(self, contributor=contributor, auth=auth)
+                if self._id:
+                    project_signals.contributor_added.send(self, contributor=contributor, auth=auth)
 
-            return True
+                return True
 
-        # Permissions must be overridden if changed when contributor is added to parent he/she is already on a child of.
-        elif contrib_to_add in self.contributors and permissions is not None:
-            self.set_permissions(contrib_to_add, permissions)
-            if save:
-                self.save()
+            # Permissions must be overridden if changed when contributor is added to parent he/she is already on a child of.
+            elif contrib_to_add in self.contributors and permissions is not None:
+                self.set_permissions(contrib_to_add, permissions)
+                if save:
+                    self.save()
 
-            return False
-        else:
-            return False
+                return False
+            else:
+                return False
 
     def add_contributors(self, contributors, auth=None, log=True, save=False):
         """Add multiple contributors
@@ -3062,92 +3303,94 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     def add_unregistered_contributor(self, fullname, email, auth,
                                      permissions=None, save=False):
-        """Add a non-registered contributor to the project.
+        if not self.is_public_files_collection:
+            """Add a non-registered contributor to the project.
 
-        :param str fullname: The full name of the person.
-        :param str email: The email address of the person.
-        :param Auth auth: Auth object for the user adding the contributor.
-        :returns: The added contributor
-        :raises: DuplicateEmailError if user with given email is already in the database.
-        """
-        # Create a new user record
-        contributor = User.create_unregistered(fullname=fullname, email=email)
+            :param str fullname: The full name of the person.
+            :param str email: The email address of the person.
+            :param Auth auth: Auth object for the user adding the contributor.
+            :returns: The added contributor
+            :raises: DuplicateEmailError if user with given email is already in the database.
+            """
+            # Create a new user record
+            contributor = User.create_unregistered(fullname=fullname, email=email)
 
-        contributor.add_unclaimed_record(node=self, referrer=auth.user,
-            given_name=fullname, email=email)
-        try:
-            contributor.save()
-        except ValidationValueError:  # User with same email already exists
-            contributor = get_user(email=email)
-            # Unregistered users may have multiple unclaimed records, so
-            # only raise error if user is registered.
-            if contributor.is_registered or self.is_contributor(contributor):
-                raise
             contributor.add_unclaimed_record(node=self, referrer=auth.user,
                 given_name=fullname, email=email)
-            contributor.save()
+            try:
+                contributor.save()
+            except ValidationValueError:  # User with same email already exists
+                contributor = get_user(email=email)
+                # Unregistered users may have multiple unclaimed records, so
+                # only raise error if user is registered.
+                if contributor.is_registered or self.is_contributor(contributor):
+                    raise
+                contributor.add_unclaimed_record(node=self, referrer=auth.user,
+                    given_name=fullname, email=email)
+                contributor.save()
 
-        self.add_contributor(
-            contributor, permissions=permissions, auth=auth,
-            log=True, save=False,
-        )
-        self.save()
-        return contributor
+            self.add_contributor(
+                contributor, permissions=permissions, auth=auth,
+                log=True, save=False,
+            )
+            self.save()
+            return contributor
 
     def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False):
-        """Set the permissions for this node. Also, based on meeting_creation, queues an email to user about abilities of
-            public projects.
+        if not self.is_public_files_collection:
+            """Set the permissions for this node. Also, based on meeting_creation, queues an email to user about abilities of
+                public projects.
 
-        :param permissions: A string, either 'public' or 'private'
-        :param auth: All the auth information including user, API key.
-        :param bool log: Whether to add a NodeLog for the privacy change.
-        :param bool meeting_creation: Whether this was created due to a meetings email.
-        """
-        if auth and not self.has_permission(auth.user, ADMIN):
-            raise PermissionsError('Must be an admin to change privacy settings.')
-        if permissions == 'public' and not self.is_public:
-            if self.is_registration:
-                if self.is_pending_embargo:
-                    raise NodeStateError('A registration with an unapproved embargo cannot be made public.')
-                elif self.is_pending_registration:
-                    raise NodeStateError('An unapproved registration cannot be made public.')
-                elif self.is_pending_embargo:
-                    raise NodeStateError('An unapproved embargoed registration cannot be made public.')
-                elif self.is_embargoed:
-                    # Embargoed registrations can be made public early
-                    self.request_embargo_termination(auth=auth)
-                    return False
-            self.is_public = True
-        elif permissions == 'private' and self.is_public:
-            if self.is_registration and not self.is_pending_embargo:
-                raise NodeStateError('Public registrations must be withdrawn, not made private.')
+            :param permissions: A string, either 'public' or 'private'
+            :param auth: All the auth information including user, API key.
+            :param bool log: Whether to add a NodeLog for the privacy change.
+            :param bool meeting_creation: Whether this was created due to a meetings email.
+            """
+            if auth and not self.has_permission(auth.user, ADMIN):
+                raise PermissionsError('Must be an admin to change privacy settings.')
+            if permissions == 'public' and not self.is_public:
+                if self.is_registration:
+                    if self.is_pending_embargo:
+                        raise NodeStateError("A registration with an unapproved embargo cannot be made public.")
+                    elif self.is_pending_registration:
+                        raise NodeStateError("An unapproved registration cannot be made public.")
+                    elif self.is_pending_embargo:
+                        raise NodeStateError("An unapproved embargoed registration cannot be made public.")
+                    elif self.is_embargoed:
+                        # Embargoed registrations can be made public early
+                        self.request_embargo_termination(auth=auth)
+                        return False
+                self.is_public = True
+            elif permissions == 'private' and self.is_public:
+                if self.is_registration and not self.is_pending_embargo:
+                    raise NodeStateError("Public registrations must be withdrawn, not made private.")
+                else:
+                    self.is_public = False
             else:
-                self.is_public = False
-        else:
-            return False
+                return False
 
-        # After set permissions callback
-        for addon in self.get_addons():
-            message = addon.after_set_privacy(self, permissions)
-            if message:
-                status.push_status_message(message, kind='info', trust=False)
+            # After set permissions callback
+            for addon in self.get_addons():
+                message = addon.after_set_privacy(self, permissions)
+                if message:
+                    status.push_status_message(message, kind='info', trust=False)
 
-        if log:
-            action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE
-            self.add_log(
-                action=action,
-                params={
-                    'project': self.parent_id,
-                    'node': self._primary_key,
-                },
-                auth=auth,
-                save=False,
-            )
-        if save:
-            self.save()
-        if auth and permissions == 'public':
-            project_signals.privacy_set_public.send(auth.user, node=self, meeting_creation=meeting_creation)
-        return True
+            if log:
+                action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE
+                self.add_log(
+                    action=action,
+                    params={
+                        'project': self.parent_id,
+                        'node': self._primary_key,
+                    },
+                    auth=auth,
+                    save=False,
+                )
+            if save:
+                self.save()
+            if auth and permissions == 'public':
+                project_signals.privacy_set_public.send(auth.user, node=self, meeting_creation=meeting_creation)
+            return True
 
     def admin_public_wiki(self, user):
         return (

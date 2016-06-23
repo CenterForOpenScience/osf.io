@@ -507,7 +507,6 @@ var QuickSearchProject = {
         }
         else {
             return m('.row',
-                m('.col-xs-12', headerTemplate()),
                 m('.col-xs-12',[
                     m('.row.quick-project', m('.col-xs-12',
                     m('.m-b-sm.text-center', [

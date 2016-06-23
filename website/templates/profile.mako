@@ -142,6 +142,18 @@
     <div class="col-sm-6">
         <div class="panel panel-default">
             <div class="panel-heading clearfix">
+                <a href="/public_files/${profile['id']}" class="panel-title">
+                  <h4 class="" >Public Files</h4>
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+<div class="row">
+    <div class="col-sm-6">
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix">
               <h3 class="panel-title" >Public projects</h3>
             </div>
             <div class="panel-body">

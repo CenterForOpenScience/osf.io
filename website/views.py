@@ -220,6 +220,10 @@ def resolve_guid(guid, suffix=None):
     guid_object = Guid.load(guid)
     if guid_object:
 
+        # redirect if user tries to visit public files wiki or add contributors ect.
+        if Node.find(Q('_id', 'eq', guid_object._storage_key) & Q('is_public_files_collection', 'eq', True)):
+            return redirect('public_files/' + Node.load(guid_object._storage_key).creator._id)
+
         # verify that the object implements a GuidStoredObject-like interface. If a model
         #   was once GuidStoredObject-like but that relationship has changed, it's
         #   possible to have referents that are instances of classes that don't

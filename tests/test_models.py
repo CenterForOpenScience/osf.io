@@ -11,6 +11,7 @@ import urllib
 import itsdangerous
 import random
 import string
+import httpretty
 from dateutil import parser
 
 from modularodm import Q
@@ -62,7 +63,8 @@ from tests.factories import (
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, PrivateLinkFactory,
     AuthUserFactory, BookmarkCollectionFactory, CollectionFactory,
-    NodeLicenseRecordFactory, InstitutionFactory, CommentFactory
+    NodeLicenseRecordFactory, InstitutionFactory, CommentFactory,
+    PublicFilesFactory, MockAddonNodeSettings, MockAddonUserSettings,MockAddonUserSettingsMergeable,ExternalAccountFactory
 )
 from tests.test_features import requires_piwik
 from tests.utils import mock_archive
@@ -4651,6 +4653,164 @@ class TestPrivateLink(OsfTestCase):
         assert_equal(schema, draft.registration_schema)
         assert_equal(data, draft.registration_metadata)
         assert_equal(proj, draft.branched_from)
+
+class TestPublicFiles(OsfTestCase):
+    ADDONS_UNDER_TEST = {
+        'deletable': {
+            'user_settings': MockAddonUserSettings,
+            'node_settings': MockAddonNodeSettings,
+        },
+        'unmergeable': {
+            'user_settings': MockAddonUserSettings,
+            'node_settings': MockAddonNodeSettings,
+        },
+        'mergeable': {
+            'user_settings': MockAddonUserSettingsMergeable,
+            'node_settings': MockAddonNodeSettings,
+        }
+    }
+    def setUp(self):
+        super(TestPublicFiles, self).setUp()
+        self.user = UserFactory()
+        self.auth = Auth(user=self.user)
+        self.project = PublicFilesFactory(creator=self.user)
+        with self.context:
+            handlers.celery_before_request()
+
+    def tearDown(self):
+        super(TestPublicFiles, self).tearDown()
+        self.project.remove()
+
+    def test_file_upload(self):
+        pass
+
+    def test_cannot_delete_public_files_collection(self):
+        with assert_raises(NodeStateError):
+            self.project.remove_node(self.auth)
+
+    def test_public_files_is_right_type(self):
+        assert_equal(self.project.is_public_files_collection, True)
+
+    def test_cannot_have_two_public_files_collections(self):
+        with assert_raises(NodeStateError):
+            PublicFilesFactory(creator=self.user)
+
+    def test_cannot_link_to_public_files_collection(self):
+        new_node = ProjectFactory(creator=self.user)
+        with assert_raises(ValueError):
+            new_node.add_pointer(self.project, auth=self.auth)
+
+    def test_for_search(self):
+        from website.search.search import search
+        from website.search.util import build_query
+        results = search(build_query('is_public_files_collection'))['results']
+        assert_equal(len(results), 0)
+
+    def test_no_name_change(self):
+        with assert_raises(NodeStateError):
+            self.project.set_title('Look at me: I\'m the title now',auth=self.auth)
+
+    def test_forking(self):
+        with assert_raises(NodeStateError):
+            fork = self.project.fork_node(auth=self.auth)
+
+    def test_add_remove_permissions(self):
+        unauthorized_user = UserFactory()
+        with assert_raises(NodeStateError):
+            fork = self.project.add_permission(unauthorized_user,'write')
+
+        with assert_raises(NodeStateError):
+            fork = self.project.remove_permission(unauthorized_user,'write')
+
+    def test_cannot_register_public_node(self):
+        with assert_raises(NodeStateError):
+            self.project.register_node(
+                schema=None,
+                auth=self.auth,
+                data=None
+            )
+
+    def test_remove_creator_as_public_collections_owner(self):
+        with assert_raises(NodeStateError):
+            self.project.remove_contributor(self.user,auth=self.auth)
+
+    def test_update_contributor_public_files_collection(self):
+        # new_contrib = AuthUserFactory()
+        # with assert_raises(NodeStateError):
+        #     self.project.update_contributor(
+        #         new_contrib,
+        #         READ,
+        #         False,
+        #         auth=self.auth
+        #     )
+        pass
+
+    def test_changes_privacy_to_public_files_colletion(self):
+        self.project.set_privacy('private', self.auth)
+        assert_equal(self.project.is_public,True)
+
+    def test_citations_for_public_files(self):
+        with assert_raises(NodeStateError):
+            self.project.add_citation(self.auth)
+        assert_equal(self.project.edit_citation(self.auth,{})  , False)
+        assert_equal(self.project.remove_citation(self.auth,{}), False)
+
+    # OAUTH_PROVIDER = factories.MockOAuth2Provider.short_name
+    #
+    # ADDONS_UNDER_TEST = {
+    #     'mock': {
+    #         'user_settings': MockAddonUserSettings,
+    #         'node_settings': MockAddonNodeSettings,
+    #     },
+    #     'mock_merging': {
+    #         'user_settings': MockAddonUserSettingsMergeable,
+    #         'node_settings': MockAddonNodeSettings,
+    #     },
+    #     OAUTH_PROVIDER: {
+    #         'user_settings': MockOAuthAddonUserSettings,
+    #         'node_settings': MockOAuthAddonNodeSettings,
+    #     },
+    # }
+    def test_user_merge_with_whatever(self):
+        oldman =  UserFactory()
+        oldauth = Auth(user=oldman)
+        project = PublicFilesFactory(creator=oldman)
+
+        other_node_settings = project.get_addon('osfstorage')
+        move_to = other_node_settings.get_root().append_file('Cloud')
+
+        self.user.merge_user(oldman)
+        self.project.reload()
+        print project, self.project
+        assert_false(True)
+
+        # give the other user an external account
+        # external_account = ExternalAccountFactory(
+        #     provider=self.OAUTH_PROVIDER
+        # )
+        # self.other_user.external_accounts.append(external_account)
+        #
+        # # set up a project, whose addon is authenticated to the other user
+        # other_user_settings = self.other_user.get_or_add_addon(self.OAUTH_PROVIDER)
+        # node_settings = self.project.get_or_add_addon(self.OAUTH_PROVIDER, auth=Auth(self.other_user))
+        # node_settings.set_auth(
+        #     user=self.other_user,
+        #     external_account=external_account
+        # )
+        #
+        # user_settings = self.user.get_or_add_addon(self.OAUTH_PROVIDER)
+        #
+        # self.user.merge_user(self.other_user)
+        # self.user.save()
+        #
+        # self.project.reload()
+        # node_settings.reload()
+        # user_settings.reload()
+        # other_user_settings.reload()
+        #
+        # assert_true(node_settings.has_auth)
+        # assert_in(self.project._id, user_settings.oauth_grants)
+        # assert_equal(node_settings.user_settings, user_settings)
 
 
 if __name__ == '__main__':

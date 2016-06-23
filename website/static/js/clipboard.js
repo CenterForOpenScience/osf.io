@@ -2,12 +2,13 @@
 
 var $ = require('jquery');
 var ZeroClipboard = require('zeroclipboard');
+var m = require('mithril');
 
 ZeroClipboard.config({
     swfPath: '/static/vendor/bower_components/zeroclipboard/dist/ZeroClipboard.swf'
 });
 
-var makeClient = function(elm) {
+var makeClipboardClient = function(elm) {
     var $elm = $(elm);
     var client = new ZeroClipboard(elm);
 
@@ -26,4 +27,24 @@ var makeClient = function(elm) {
     return client;
 };
 
-module.exports = makeClient;
+function generateClipboard(url){
+
+    var cb = function(elem) {
+        makeClipboardClient(elem);
+    };
+    return m('div.input-group[style="width: 180px"]',
+                       [
+                           m('span.input-group-btn',
+                               m('button.btn.btn-default.btn-sm[type="button"][data-clipboard-text="'+url+ '"]', {config: cb},
+                                   m('.fa.fa-copy')
+                               )
+                           ),
+                           m('input[value="'+url+'"][readonly="readonly"][style="height: 30px;color:#333333;"]')
+                       ]
+           );
+}
+
+module.exports = {
+                    generateClipboard:generateClipboard,
+                    makeClipboardClient:makeClipboardClient
+                 };

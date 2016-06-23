@@ -27,19 +27,20 @@ def search(query, index=None, doc_type=None):
 
 @requires_search
 def update_node(node, index=None, bulk=False, async=True):
-    if async:
-        node_id = node._id
-        # We need the transaction to be committed before trying to run celery tasks.
-        # For example, when updating a Node's privacy, is_public must be True in the
-        # database in order for method that updates the Node's elastic search document
-        # to run correctly.
-        if settings.USE_CELERY:
-            enqueue_task(search_engine.update_node_async.s(node_id=node_id, index=index, bulk=bulk))
+    if not node.is_public_files_collection:
+        if async:
+            node_id = node._id
+            # We need the transaction to be committed before trying to run celery tasks.
+            # For example, when updating a Node's privacy, is_public must be True in the
+            # database in order for method that updates the Node's elastic search document
+            # to run correctly.
+            if settings.USE_CELERY:
+                enqueue_task(search_engine.update_node_async.s(node_id=node_id, index=index, bulk=bulk))
+            else:
+                search_engine.update_node_async(node_id=node_id, index=index, bulk=bulk)
         else:
-            search_engine.update_node_async(node_id=node_id, index=index, bulk=bulk)
-    else:
-        index = index or settings.ELASTIC_INDEX
-        return search_engine.update_node(node, index=index, bulk=bulk)
+            index = index or settings.ELASTIC_INDEX
+            return search_engine.update_node(node, index=index, bulk=bulk)
 
 @requires_search
 def bulk_update_nodes(serialize, nodes, index=None):
