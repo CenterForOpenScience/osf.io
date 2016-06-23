@@ -277,11 +277,11 @@ var mapByProperty = function(list, attr) {
 
 var valueProgressBar = {
     0: {'style': 'width: 0%'},
-    1: {'class': 'progress-bar progress-bar-danger', 'style': 'width: 20%'},
-    2: {'class': 'progress-bar progress-bar-danger', 'style': 'width: 40%'},
-    3: {'class': 'progress-bar progress-bar-warning', 'style': 'width: 60%'},
-    4: {'class': 'progress-bar progress-bar-warning', 'style': 'width: 80%'},
-    5: {'class': 'progress-bar progress-bar-success', 'style': 'width: 100%'},
+    1: {'class': 'progress-bar progress-bar-sm progress-bar-danger', 'style': 'width: 20%'},
+    2: {'class': 'progress-bar progress-bar-sm progress-bar-danger', 'style': 'width: 40%'},
+    3: {'class': 'progress-bar progress-bar-sm progress-bar-warning', 'style': 'width: 60%'},
+    4: {'class': 'progress-bar progress-bar-sm progress-bar-warning', 'style': 'width: 80%'},
+    5: {'class': 'progress-bar progress-bar-sm progress-bar-success', 'style': 'width: 100%'},
 };
 
 
