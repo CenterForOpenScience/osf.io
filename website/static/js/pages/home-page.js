@@ -21,7 +21,7 @@ $(document).ready(function(){
             return [
                 m('.quickSearch', m('.container.p-t-lg',
                     [
-                        m('.m-t-sm', [
+                        m('.m-t-lg', [
                             m(columnSizeClass, m.component(PublicFilesDropzone, {}))
                         ]),
 
