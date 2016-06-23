@@ -19,6 +19,7 @@ window.ondrop = function (e) {
     e.preventDefault();
 };
 
+
 var PublicFilesDropzone = {
     controller: function () {
         var dangerCount = 0;
@@ -118,6 +119,15 @@ var PublicFilesDropzone = {
         };
 
         var $publicFiles = $('#publicFilesDropzone');
+
+        $('.container', '.quickSearch', 'row', '.panel-body', '.dz-body-height', '#publicFilesDropzone').bind({
+            dragenter: function () {
+                $('#dz-dragmessage').show();
+            },
+            dragleave: function () {
+                $('#dz-dragmessage').hide();
+            }
+        });
 
         $publicFiles.on("click", ".dz-share", function (e) {
             var infoCount = document.getElementsByClassName('alert-info').length;
@@ -222,7 +232,7 @@ var PublicFilesDropzone = {
 
         function publicFilesHeader() {
             return [
-                m('h1.dz-p.text-center.f-w-xl', 'Upload ', m('a', {
+                m('h1.dz-p.text-center.f-w-lg', 'Upload ', m('a', {
                     href: '/public_files/', onclick: function (e) {
                     }
                 }, 'Public Files'))
@@ -234,11 +244,12 @@ var PublicFilesDropzone = {
         return m('.row',
             m('.col-xs-12', headerTemplate()
             ),
-            m('div.drop-zone-format.drop-zone-invis .panel .panel-default #publicFilesDropzone',
+            m('div.drop-zone-format.panel .panel-default #publicFilesDropzone',
                 m('.panel-heading', closeButton(),
                     publicFilesHelpButton(), publicFilesHeader()
                 ),
-                m('.panel-body.dz-body-height', m('div.h2.text-center.m-t-lg', 'Drop files to upload')
+                m('.panel-body.dz-body-height', m('div.h2.text-center.m-t-lg.dz-bold', 'Drop files to upload'),
+                    m('span#dz-dragmessage.fa.fa-plus-square-o.fa-5x.dz-dragmessage','')
                 ),
                 m('.panel-footer.dz-cursor-default.clearfix',
                     m('.pull-left',

@@ -25,7 +25,7 @@ function dropzoneResolveIcon(file) {
 
 function dropzonePreviewTemplate() {
     return [
-        m('div.table.col-lg-12.dz-preview.p-xs',
+            m('div.table.col-lg-12.dz-preview.p-xs',
 
             m('.col-sm-6.dz-center.p-xs',
                 m('div.dz-filename.col-sm-9.p-xs',

@@ -4,10 +4,10 @@
     display: inline-flex;
     margin: 7px 2.3% 7px 2.3%;
     width: 95%;
-    height: 60px;
+    height: 50px;
     vertical-align: top;
     border: 1px solid #acacac;
-    align-items:center;
+    align-items: center;
 }
 
 .dz-preview-background-success {
@@ -24,14 +24,14 @@
     height: 100%;
     white-space: nowrap;
     text-overflow: ellipsis;
-    width:auto;
-    max-width:300px;
+    width: auto;
+    max-width: 300px;
 }
 
 .dz-preview .dz-progress {
     position: relative;
     height: 12px;
-    width:80%;
+    width: 80%;
     background: #d7d7d7;
     display: none;
 }
@@ -66,7 +66,7 @@
 }
 
 .dz-preview .dz-success-mark {
-    color: #449d44;
+    color: #5cb85c;
 }
 
 .dz-preview .dz-error-mark {
@@ -81,25 +81,9 @@
     display: inline-flex;
 }
 
-.dz-preview .dz-error-message {
-    display: none;
-    position: absolute;
-    top: -5px;
-    left: -20px;
-    background: rgba(245, 245, 245, 0.8);
-    padding: 8px 10px;
-    color: #800;
-    min-width: 120px;
-    max-width: 500px;
-    z-index: 500;
-}
-
-.dz-preview:hover.dz-error .dz-error-message {
-    display: block;
-}
-
 .drop-zone-format {
     background: rgba(255, 255, 255, .49);
+    display:none;
     padding-bottom: 0;
     padding-left: 0;
     padding-right: 0;
@@ -122,15 +106,6 @@
     transition: opacity 0.4s ease-in-out;
 }
 
-.drop-zone-invis {
-    display: none;
-}
-
-/*.drop-zone-btns {*/
-    /*right: 8px;*/
-    /*top: 2px;*/
-    /*position: relative;*/
-/*}*/
 
 .dz-share {
     position: relative;
@@ -142,10 +117,6 @@
     -o-transition: color .4s ease;
     transition: color 0.4s ease;
 }
-/*}*/
-/*.dz-share.dz-share-success {*/
-    /*display:block;*/
-/*}*/
 
 .dz-share:hover {
     color: #337ab7;
@@ -156,7 +127,7 @@
     margin: auto;
     width: 100%;
     margin-top: 10px;
-    text-align:left;
+    text-align: left;
     color: #333333;
     font-size: 30px;
 }
@@ -179,7 +150,22 @@
 }
 
 .dz-center {
-    align-items:center;
-    display:flex;
-    min-width:50%;
+    align-items: center;
+    display: flex;
+    min-width: 50%;
+}
+
+.dz-bold {
+    font-weight: bold !important;
+}
+
+.dz-dragmessage {
+    display: none;
+}
+
+#dz-dragmessage {
+    text-align: center;
+    margin-left: 40%;
+    font-size: 150px;
+    color: #999;
 }
