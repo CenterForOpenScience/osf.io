@@ -7,8 +7,8 @@ import logging
 import pymongo
 import datetime
 import urlparse
-from collections import OrderedDict
 import warnings
+import jsonschema
 
 import pytz
 from django.core.urlresolvers import reverse
@@ -55,6 +55,7 @@ from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
 from website.project.commentable import Commentable
 from website.project.metadata.schemas import OSF_META_SCHEMAS
+from website.project.metadata.utils import create_jsonschema_from_metaschema
 from website.project.licenses import (
     NodeLicense,
     NodeLicenseRecord,
@@ -118,6 +119,28 @@ class MetaSchema(StoredObject):
     def has_files(self):
         return self._config.get('hasFiles', False)
 
+    @property
+    def absolute_api_v2_url(self):
+        path = '/metaschemas/{}/'.format(self._id)
+        return api_v2_url(path)
+
+    # used by django and DRF
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
+    def validate_metadata(self, metadata, reviewer=False, required_fields=False):
+        """
+        Validates registration_metadata field.
+        """
+        schema = create_jsonschema_from_metaschema(self.schema, required_fields=required_fields, is_reviewer=reviewer)
+        try:
+            jsonschema.validate(metadata, schema)
+        except jsonschema.ValidationError as e:
+            raise ValidationValueError(e.message)
+        except jsonschema.SchemaError as e:
+            raise ValidationValueError(e.message)
+        return
+
 def ensure_schema(schema, name, version=1):
     schema_obj = None
     try:
@@ -160,8 +183,8 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
 
     __guid_min_length__ = 12
 
-    OVERVIEW = "node"
-    FILES = "files"
+    OVERVIEW = 'node'
+    FILES = 'files'
     WIKI = 'wiki'
 
     _id = fields.StringField(primary=True)
@@ -490,10 +513,10 @@ class NodeLog(StoredObject):
     REGISTRATION_APPROVAL_APPROVED = 'registration_approved'
     PREREG_REGISTRATION_INITIATED = 'prereg_registration_initiated'
 
-    PRIMARY_INSTITUTION_CHANGED = 'primary_institution_changed'
-    PRIMARY_INSTITUTION_REMOVED = 'primary_institution_removed'
+    AFFILIATED_INSTITUTION_ADDED = 'affiliated_institution_added'
+    AFFILIATED_INSTITUTION_REMOVED = 'affiliated_institution_removed'
 
-    actions = [CHECKED_IN, CHECKED_OUT, FILE_TAG_REMOVED, FILE_TAG_ADDED, CREATED_FROM, PROJECT_CREATED, PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED, POINTER_CREATED, POINTER_FORKED, POINTER_REMOVED, WIKI_UPDATED, WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC, MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED, PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED, ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, MADE_CONTRIBUTOR_VISIBLE, MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED, RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED, PREREG_REGISTRATION_INITIATED, CITATION_ADDED, CITATION_EDITED, CITATION_REMOVED, PRIMARY_INSTITUTION_CHANGED, PRIMARY_INSTITUTION_REMOVED]
+    actions = [CHECKED_IN, CHECKED_OUT, FILE_TAG_REMOVED, FILE_TAG_ADDED, CREATED_FROM, PROJECT_CREATED, PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED, POINTER_CREATED, POINTER_FORKED, POINTER_REMOVED, WIKI_UPDATED, WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC, MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED, PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED, ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, MADE_CONTRIBUTOR_VISIBLE, MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED, RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED, PREREG_REGISTRATION_INITIATED, CITATION_ADDED, CITATION_EDITED, CITATION_REMOVED, AFFILIATED_INSTITUTION_ADDED, AFFILIATED_INSTITUTION_REMOVED]
 
     def __repr__(self):
         return ('<NodeLog({self.action!r}, params={self.params!r}) '
@@ -652,9 +675,9 @@ def get_pointer_parent(pointer):
 
 def validate_category(value):
     """Validator for Node#category. Makes sure that the value is one of the
-    categories defined in CATEGORY_MAP.
+    categories defined in NODE_CATEGORY_MAP.
     """
-    if value not in Node.CATEGORY_MAP.keys():
+    if value not in settings.NODE_CATEGORY_MAP.keys():
         raise ValidationValueError('Invalid value for category.')
     return True
 
@@ -765,25 +788,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         'wiki_pages_current',
         'is_retracted',
         'node_license',
-        'primary_institution'
+        '_affiliated_institutions',
     }
-
-    # Maps category identifier => Human-readable representation for use in
-    # titles, menus, etc.
-    # Use an OrderedDict so that menu items show in the correct order
-    CATEGORY_MAP = OrderedDict([
-        ('analysis', 'Analysis'),
-        ('communication', 'Communication'),
-        ('data', 'Data'),
-        ('hypothesis', 'Hypothesis'),
-        ('instrumentation', 'Instrumentation'),
-        ('methods and measures', 'Methods and Measures'),
-        ('procedure', 'Procedure'),
-        ('project', 'Project'),
-        ('software', 'Software'),
-        ('other', 'Other'),
-        ('', 'Uncategorized')
-    ])
 
     # Fields that are writable by Node.update
     WRITABLE_WHITELIST = [
@@ -952,7 +958,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     @property
     def category_display(self):
         """The human-readable representation of this node's category."""
-        return self.CATEGORY_MAP[self.category]
+        return settings.NODE_CATEGORY_MAP[self.category]
 
     # We need the following 2 properties in order to serialize related links in NodeRegistrationSerializer
     @property
@@ -1385,13 +1391,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     def set_node_license(self, license_id, year, copyright_holders, auth, save=False):
         if not self.has_permission(auth.user, ADMIN):
-            raise PermissionsError("Only admins can change a project's license.")
+            raise PermissionsError('Only admins can change a project\'s license.')
         try:
             node_license = NodeLicense.find_one(
                 Q('id', 'eq', license_id)
             )
         except NoResultsFound:
-            raise NodeStateError("Trying to update a Node with an invalid license.")
+            raise NodeStateError('Trying to update a Node with an invalid license.')
         record = self.node_license
         if record is None:
             record = NodeLicenseRecord(
@@ -1430,7 +1436,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             if key not in self.WRITABLE_WHITELIST:
                 continue
             if self.is_registration and key != 'is_public':
-                raise NodeUpdateError(reason="Registered content cannot be updated", key=key)
+                raise NodeUpdateError(reason='Registered content cannot be updated', key=key)
             # Title and description have special methods for logging purposes
             if key == 'title':
                 if not self.is_bookmark_collection:
@@ -1513,7 +1519,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 Q('is_bookmark_collection', 'eq', True) & Q('contributors', 'eq', self.creator._id)
             )
             if existing_bookmark_collections.count() > 0:
-                raise NodeStateError("Only one bookmark collection allowed per user.")
+                raise NodeStateError('Only one bookmark collection allowed per user.')
 
         if first_save and self.is_public_files_collection:
             existing_public_files_collections = Node.find(
@@ -1564,6 +1570,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 log_date=self.date_created,
                 save=True,
             )
+
+            project_signals.project_created.send(self)
 
         # Only update Solr if at least one stored field has changed, and if
         # public or privacy setting has changed
@@ -2032,11 +2040,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             log_exception()
 
     @classmethod
-    def bulk_update_search(cls, nodes):
+    def bulk_update_search(cls, nodes, index=None):
         from website import search
         try:
-            serialize = functools.partial(search.search.update_node, bulk=True, async=False)
-            search.search.bulk_update_nodes(serialize, nodes)
+            serialize = functools.partial(search.search.update_node, index=index, bulk=True, async=False)
+            search.search.bulk_update_nodes(serialize, nodes, index=index)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
@@ -2072,7 +2080,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         # TODO: rename "date" param - it's shadowing a global
 
         if self.is_bookmark_collection:
-            raise NodeStateError("Bookmark collections may not be deleted.")
+            raise NodeStateError('Bookmark collections may not be deleted.')
 
         if self.is_public_files_collection:
             raise NodeStateError("Public Files may not be deleted.")
@@ -2087,7 +2095,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                     pointed.node.remove_node(auth=auth)
 
         if [x for x in self.nodes_primary if not x.is_deleted]:
-            raise NodeStateError("Any child components must be deleted prior to deleting this project.")
+            raise NodeStateError('Any child components must be deleted prior to deleting this project.')
 
         # After delete callback
         for addon in self.get_addons():
@@ -2127,6 +2135,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         return True
 
+<<<<<<< HEAD
     def fork_node(self, auth, title='Fork of '):
         """Recursively fork a node.
 
@@ -2139,6 +2148,17 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         # Non-contributors can't fork private nodes
         if not (self.is_public or self.has_permission(user, 'read')):
             raise PermissionsError('{0!r} does not have permission to fork node {1!r}'.format(user, self._id))
+=======
+    def fork_node(self, auth, title=None):
+        if not self.is_public_files_collection:
+            """Recursively fork a node.
+            :param Auth auth: Consolidated authorization
+            :param str title: Optional text to prepend to forked title
+            :return: Forked node
+            """
+            PREFIX = 'Fork of '
+            user = auth.user
+>>>>>>> 24e86e92f2c2b63924966b7467ce3da5b731fda4
 
         when = datetime.datetime.utcnow()
 
@@ -2167,6 +2187,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 if forked_node is not None:
                     forked.nodes.append(forked_node)
 
+<<<<<<< HEAD
         if title == 'Fork of ' or title == '':
             forked.title = title + forked.title
         else:
@@ -2192,6 +2213,42 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             forked.add_citation(
                 auth=auth,
                 citation=citation.clone(),
+=======
+            if title is None:
+                forked.title = PREFIX + original.title
+            elif title == '':
+                forked.title = original.title
+            else:
+                forked.title = title
+
+            forked.is_fork = True
+            forked.is_registration = False
+            forked.forked_date = when
+            forked.forked_from = original
+            forked.creator = user
+            forked.piwik_site_id = None
+            forked.node_license = original.license.copy() if original.license else None
+            forked.wiki_private_uuids = {}
+
+            # Forks default to private status
+            forked.is_public = False
+
+            # Clear permissions before adding users
+            forked.permissions = {}
+            forked.visible_contributor_ids = []
+
+            for citation in self.alternative_citations:
+                forked.add_citation(
+                    auth=auth,
+                    citation=citation.clone(),
+                    log=False,
+                    save=False
+                )
+
+            forked.add_contributor(
+                contributor=user,
+                permissions=CREATOR_PERMISSIONS,
+>>>>>>> 24e86e92f2c2b63924966b7467ce3da5b731fda4
                 log=False,
                 save=False
             )
@@ -2203,6 +2260,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             save=False
         )
 
+<<<<<<< HEAD
         # Need this save in order to access _primary_key
         forked.save()
 
@@ -2218,6 +2276,23 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             log_date=when,
             save=False,
         )
+=======
+            # Need to call this after save for the notifications to be created with the _primary_key
+            project_signals.contributor_added.send(forked, contributor=user, auth=auth)
+
+            forked.add_log(
+                action=NodeLog.NODE_FORKED,
+                params={
+                    'parent_node': original.parent_id,
+                    'node': original._primary_key,
+                    'registration': forked._primary_key,  # TODO: Remove this in favor of 'fork'
+                    'fork': forked._primary_key,
+                },
+                auth=auth,
+                log_date=when,
+                save=False,
+            )
+>>>>>>> 24e86e92f2c2b63924966b7467ce3da5b731fda4
 
         # Clone each log from the original node for this fork.
         logs = original.logs
@@ -2237,6 +2312,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     def register_node(self, schema, auth, data, parent=None):
         """Make a frozen copy of a node.
 
+<<<<<<< HEAD
         :param schema: Schema object
         :param auth: All the auth information including user, API key.
         :param template: Template name
@@ -2250,6 +2326,138 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 'User {} does not have permission '
                 'to register this node'.format(auth.user._id)
             )
+=======
+            :param schema: Schema object
+            :param auth: All the auth information including user, API key.
+            :param template: Template name
+            :param data: Form data
+            :param parent Node: parent registration of registration to be created
+            """
+            # TODO(lyndsysimon): "template" param is not necessary - use schema.name?
+            # NOTE: Admins can register child nodes even if they don't have write access them
+            if not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user):
+                raise PermissionsError(
+                    'User {} does not have permission '
+                    'to register this node'.format(auth.user._id)
+
+                )
+            if self.is_collection:
+                raise NodeStateError('Folders may not be registered')
+
+            when = datetime.datetime.utcnow()
+
+            original = self.load(self._primary_key)
+
+            # Note: Cloning a node will clone each node wiki page version and add it to
+            # `registered.wiki_pages_current` and `registered.wiki_pages_versions`.
+            if original.is_deleted:
+                raise NodeStateError('Cannot register deleted node.')
+
+            registered = original.clone()
+
+            registered.is_registration = True
+            registered.registered_date = when
+            registered.registered_user = auth.user
+            registered.registered_schema.append(schema)
+            registered.registered_from = original
+            if not registered.registered_meta:
+                registered.registered_meta = {}
+            registered.registered_meta[schema._id] = data
+
+            registered.contributors = self.contributors
+            registered.forked_from = self.forked_from
+            registered.creator = self.creator
+            registered.tags = self.tags
+            registered.piwik_site_id = None
+            registered._affiliated_institutions = self._affiliated_institutions
+            registered.alternative_citations = self.alternative_citations
+            registered.node_license = original.license.copy() if original.license else None
+            registered.wiki_private_uuids = {}
+
+            registered.save()
+
+            # Clone each log from the original node for this registration.
+            logs = original.logs
+            for log in logs:
+                log.clone_node_log(registered._id)
+
+            registered.is_public = False
+            for node in registered.get_descendants_recursive():
+                node.is_public = False
+                node.save()
+
+            if parent:
+                registered._parent_node = parent
+
+            # After register callback
+            for addon in original.get_addons():
+                _, message = addon.after_register(original, registered, auth.user)
+                if message:
+                    status.push_status_message(message, kind='info', trust=False)
+
+            for node_contained in original.nodes:
+                if not node_contained.is_deleted:
+                    child_registration = node_contained.register_node(
+                        schema=schema,
+                        auth=auth,
+                        data=data,
+                        parent=registered,
+                )
+            if self.is_collection:
+                raise NodeStateError("Folders may not be registered")
+
+            when = datetime.datetime.utcnow()
+
+            original = self.load(self._primary_key)
+
+            # Note: Cloning a node will clone each node wiki page version and add it to
+            # `registered.wiki_pages_current` and `registered.wiki_pages_versions`.
+            if original.is_deleted:
+                raise NodeStateError('Cannot register deleted node.')
+
+            registered = original.clone()
+
+            registered.is_registration = True
+            registered.registered_date = when
+            registered.registered_user = auth.user
+            registered.registered_schema.append(schema)
+            registered.registered_from = original
+            if not registered.registered_meta:
+                registered.registered_meta = {}
+            registered.registered_meta[schema._id] = data
+
+            registered.contributors = self.contributors
+            registered.forked_from = self.forked_from
+            registered.creator = self.creator
+            registered.tags = self.tags
+            registered.piwik_site_id = None
+            registered.primary_institution = self.primary_institution
+            registered._affiliated_institutions = self._affiliated_institutions
+            registered.alternative_citations = self.alternative_citations
+            registered.node_license = original.license.copy() if original.license else None
+            registered.wiki_private_uuids = {}
+
+            registered.save()
+
+            # Clone each log from the original node for this registration.
+            logs = original.logs
+            for log in logs:
+                log.clone_node_log(registered._id)
+
+            registered.is_public = False
+            for node in registered.get_descendants_recursive():
+                node.is_public = False
+                node.save()
+
+            if parent:
+                registered._parent_node = parent
+
+            # After register callback
+            for addon in original.get_addons():
+                _, message = addon.after_register(original, registered, auth.user)
+                if message:
+                    status.push_status_message(message, kind='info', trust=False)
+>>>>>>> 24e86e92f2c2b63924966b7467ce3da5b731fda4
 
         if self.is_public_files_collection:
             raise NodeStateError('Public Files collections may not be registered')
@@ -2466,7 +2674,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if save:
             self.save()
         if user:
-            increment_user_activity_counters(user._primary_key, action, log.date)
+            increment_user_activity_counters(user._primary_key, action, log.date.isoformat())
         return log
 
     @classmethod
@@ -2635,7 +2843,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     @property
     def watch_url(self):
-        return os.path.join(self.api_url, "watch/")
+        return os.path.join(self.api_url, 'watch/')
 
     @property
     def parent_id(self):
@@ -2647,6 +2855,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     def forked_from_id(self):
         if self.forked_from:
             return self.forked_from._id
+        return None
+
+    @property
+    def registered_schema_id(self):
+        if self.registered_schema:
+            return self.registered_schema[0]._id
         return None
 
     @property
@@ -2849,7 +3063,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         Also checks to make sure unique admin is not removing own admin privilege.
         """
         if not self.has_permission(auth.user, ADMIN):
-            raise PermissionsError("Only admins can modify contributor permissions")
+            raise PermissionsError('Only admins can modify contributor permissions')
         permissions = expand_permissions(permission) or DEFAULT_CONTRIBUTOR_PERMISSIONS
         admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
         if self.is_public_files_collection:
@@ -3037,7 +3251,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 if save:
                     self.save()
 
-                project_signals.contributor_added.send(self, contributor=contributor, auth=auth)
+                if self._id:
+                    project_signals.contributor_added.send(self, contributor=contributor, auth=auth)
 
                 return True
 
@@ -3351,6 +3566,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         page = self.get_wiki_page(key)
 
         del self.wiki_pages_current[key]
+        if key != 'home':
+            del self.wiki_pages_versions[key]
 
         self.add_log(
             action=NodeLog.WIKI_DELETED,
@@ -3481,7 +3698,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if not self.has_permission(user, 'admin'):
             raise PermissionsError('Only admins may embargo a registration')
         if not self._is_embargo_date_valid(end_date):
-            raise ValidationValueError('Embargo end date must be more than one day in the future')
+            if (end_date - datetime.datetime.utcnow()) >= settings.EMBARGO_END_DATE_MIN:
+                raise ValidationValueError('Registrations can only be embargoed for up to four years.')
+            raise ValidationValueError('Embargo end date must be at least three days in the future.')
 
         embargo = self._initiate_embargo(user, end_date, for_existing_registration=for_existing_registration, notify_initiator_on_complete=notify_initiator_on_complete)
 
@@ -3502,9 +3721,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         """Initiates an EmbargoTerminationApproval to lift this Embargoed Registration's
         embargo early."""
         if not self.is_embargoed:
-            raise NodeStateError("This node is not under active embargo")
+            raise NodeStateError('This node is not under active embargo')
         if not self.root == self:
-            raise NodeStateError("Only the root of an embargoed registration can request termination")
+            raise NodeStateError('Only the root of an embargoed registration can request termination')
 
         approval = EmbargoTerminationApproval(
             initiated_by=auth.user,
@@ -3524,7 +3743,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         Adds a log to the registered_from Node.
         """
         if not self.is_embargoed:
-            raise NodeStateError("This node is not under active embargo")
+            raise NodeStateError('This node is not under active embargo')
 
         self.registered_from.add_log(
             action=NodeLog.EMBARGO_TERMINATED,
@@ -3649,25 +3868,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         return super(Node, cls).find_one(query, **kwargs)
 
     @classmethod
-    def find_by_institution(cls, inst, query=None):
+    def find_by_institutions(cls, inst, query=None):
         inst_node = inst.node
-        query = query & Q('_primary_institution', 'eq', inst_node) if query else Q('_primary_institution', 'eq', inst_node)
+        query = query & Q('_affiliated_institutions', 'eq', inst_node) if query else Q('_affiliated_institutions', 'eq', inst_node)
         return cls.find(query, allow_institution=True)
-
-    # Primary institution node is attached to
-    _primary_institution = fields.ForeignField('node')
-
-    @property
-    def primary_institution(self):
-        '''
-        Should behave as if this was a foreign field pointing to Institution
-        :return: this node's _primary_institution wrapped with Institution.
-        '''
-        return Institution(self._primary_institution) if self._primary_institution else None
-
-    @primary_institution.setter
-    def primary_institution(self, institution):
-        self._primary_institution = institution.node if institution else None
 
     _affiliated_institutions = fields.ForeignField('node', list=True)
 
@@ -3679,61 +3883,52 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         '''
         return AffiliatedInstitutionsList([Institution(node) for node in self._affiliated_institutions], obj=self, private_target='_affiliated_institutions')
 
-    def add_primary_institution(self, user, inst, log=True):
-        if not isinstance(inst, Institution):
-            raise TypeError
+    def add_affiliated_institution(self, inst, user, save=False, log=True):
         if not user.is_affiliated_with_institution(inst):
             raise UserNotAffiliatedError('User is not affiliated with {}'.format(inst.name))
-        if inst == self.primary_institution:
-            return False
-        previous = self.primary_institution if self.primary_institution else None
-        self.primary_institution = inst
         if inst not in self.affiliated_institutions:
             self.affiliated_institutions.append(inst)
         if log:
             self.add_log(
-                action=NodeLog.PRIMARY_INSTITUTION_CHANGED,
+                action=NodeLog.AFFILIATED_INSTITUTION_ADDED,
                 params={
                     'node': self._primary_key,
                     'institution': {
                         'id': inst._id,
                         'name': inst.name
-                    },
-                    'previous_institution': {
-                        'id': previous._id if previous else None,
-                        'name': previous.name if previous else 'None'
                     }
                 },
                 auth=Auth(user)
             )
+        if save:
+            self.save()
         return True
 
-    def remove_primary_institution(self, user, log=True):
-        inst = self.primary_institution
-        if not inst:
-            return False
-        self.primary_institution = None
+    def remove_affiliated_institution(self, inst, user, save=False, log=True):
         if inst in self.affiliated_institutions:
             self.affiliated_institutions.remove(inst)
-        if log:
-            self.add_log(
-                action=NodeLog.PRIMARY_INSTITUTION_REMOVED,
-                params={
-                    'node': self._primary_key,
-                    'institution': {
-                        'id': inst._id,
-                        'name': inst.name
-                    }
-                },
-                auth=Auth(user)
-            )
-        return True
+            if log:
+                self.add_log(
+                    action=NodeLog.AFFILIATED_INSTITUTION_REMOVED,
+                    params={
+                        'node': self._primary_key,
+                        'institution': {
+                            'id': inst._id,
+                            'name': inst.name
+                        }
+                    },
+                    auth=Auth(user)
+                )
+            if save:
+                self.save()
+            return True
+        return False
 
-    def institution_url(self):
-        return self.absolute_api_v2_url + 'institution/'
+    def institutions_url(self):
+        return self.absolute_api_v2_url + 'institutions/'
 
-    def institution_relationship_url(self):
-        return self.absolute_api_v2_url + 'relationships/institution/'
+    def institutions_relationship_url(self):
+        return self.absolute_api_v2_url + 'relationships/institutions/'
 
 
 @Node.subscribe('before_save')
@@ -3818,14 +4013,14 @@ class PrivateLink(StoredObject):
 
     def to_json(self):
         return {
-            "id": self._id,
-            "date_created": iso8601format(self.date_created),
-            "key": self.key,
-            "name": sanitize.unescape_entities(self.name),
-            "creator": {'fullname': self.creator.fullname, 'url': self.creator.profile_url},
-            "nodes": [{'title': x.title, 'url': x.url, 'scale': str(self.node_scale(x)) + 'px', 'category': x.category}
+            'id': self._id,
+            'date_created': iso8601format(self.date_created),
+            'key': self.key,
+            'name': sanitize.unescape_entities(self.name),
+            'creator': {'fullname': self.creator.fullname, 'url': self.creator.profile_url},
+            'nodes': [{'title': x.title, 'url': x.url, 'scale': str(self.node_scale(x)) + 'px', 'category': x.category}
                       for x in self.nodes if not x.is_deleted],
-            "anonymous": self.anonymous
+            'anonymous': self.anonymous
         }
 
 
@@ -3836,9 +4031,9 @@ class AlternativeCitation(StoredObject):
 
     def to_json(self):
         return {
-            "id": self._id,
-            "name": self.name,
-            "text": self.text
+            'id': self._id,
+            'name': self.name,
+            'text': self.text
         }
 
 
@@ -3942,6 +4137,16 @@ class DraftRegistration(StoredObject):
     @property
     def absolute_url(self):
         return urlparse.urljoin(settings.DOMAIN, self.url)
+
+    @property
+    def absolute_api_v2_url(self):
+        node = self.branched_from
+        path = '/nodes/{}/draft_registrations/{}/'.format(node._id, self._id)
+        return api_v2_url(path)
+
+    # used by django and DRF
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
 
     @property
     def requires_approval(self):
@@ -4053,3 +4258,9 @@ class DraftRegistration(StoredObject):
     def add_status_log(self, user, action):
         log = DraftRegistrationLog(action=action, user=user, draft=self)
         log.save()
+
+    def validate_metadata(self, *args, **kwargs):
+        """
+        Validates draft's metadata
+        """
+        return self.registration_schema.validate_metadata(*args, **kwargs)

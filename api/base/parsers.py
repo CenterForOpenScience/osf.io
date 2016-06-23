@@ -60,7 +60,7 @@ class JSONAPIParser(JSONParser):
             if not relationships:
                 raise JSONAPIException(source={'pointer': '/data/relationships'}, detail=NO_RELATIONSHIPS_ERROR)
         else:
-            if "attributes" not in resource_object and attributes_required and request_method != 'DELETE':
+            if 'attributes' not in resource_object and attributes_required and request_method != 'DELETE':
                 raise JSONAPIException(source={'pointer': '/data/attributes'}, detail=NO_ATTRIBUTES_ERROR)
 
         object_id = resource_object.get('id')

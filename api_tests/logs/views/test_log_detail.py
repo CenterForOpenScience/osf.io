@@ -43,8 +43,6 @@ class LogsTestCase(ApiTestCase):
         self.private_log_detail = self.url + '{}/'.format(self.log._id)
         self.log_public_nodes_url = self.url + '{}/nodes/'.format(self.public_log._id)
         self.public_log_detail = self.url + '{}/'.format(self.public_log._id)
-        self.private_log_contribs_url = self.url + '{}/contributors/'.format(self.log_add_contributor._id)
-        self.public_log_contribs_url = self.url + '{}/contributors/'.format(self.public_log_add_contributor._id)
 
     def tearDown(self):
         NodeLog.remove()

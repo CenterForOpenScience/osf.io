@@ -9,12 +9,7 @@ require('css/quick-project-search-plugin.css');
 require('loaders.css/loaders.min.css');
  
 var Dropzone = require('dropzone');
- 
-var ZeroClipboard = require('zeroclipboard');
-var fileURL = '';
-var fileURLArray = [];
-var clip = '';
- 
+
 // Don't show dropped content if user drags outside dropzone
 window.ondragover = function (e) {
     e.preventDefault();
@@ -26,6 +21,22 @@ window.ondrop = function (e) {
 var PublicFilesDropzone = {
     controller: function () {
         var dangerCount = 0;
+
+        var checkIfSameName = function(file){
+            var files;
+            var url = $osf.apiV2Url('nodes/' + window.contextVars.publicFilesId + '/files/osfstorage/');
+            return $osf.ajaxJSON('GET', url, { isCors: true}).done(function (response) {
+                var files = response;
+
+                files.forEach(function(nodeFile){
+                    if(nodeFile.attributes['name'] == file.name) return true;
+                });
+
+                return false;
+
+            });
+        };
+
         Dropzone.options.publicFilesDropzone = {
             // Dropzone is setup to upload multiple files in one request this configuration forces it to do upload file-by-
             //file, one request at a time.
@@ -44,11 +55,15 @@ var PublicFilesDropzone = {
                 // When user clicks close button on top right, reset the number of files
                 var _this = this;
                 $('button.close').on('click', function () {
-                    _this.files.length = 0;
+                    _this.files = [];
                 });
  
             },
             accept: function (file, done) {
+                if(checkIfSameName(file)){
+                    alert("file has same name.")
+                }
+
                 if (this.files.length <= this.options.maxFiles) {
                     this.options.url = waterbutler.buildUploadUrl(false, 'osfstorage', window.contextVars.publicFilesId, file, {});
                     this.processFile(file);
@@ -74,28 +89,22 @@ var PublicFilesDropzone = {
             },
  
             success: function (file, xhr) {
-                buttonContainer = document.createElement('div');
-                file.previewElement.appendChild(buttonContainer);
- 
-                var fileJson = JSON.parse((file.xhr.response));
-                var link = waterbutler.buildDownloadUrl(fileJson.path, 'osfstorage', window.contextVars.publicFilesId, file.name, {});
-                m.render(buttonContainer, dropzonePreviewTemplate.shareButton(link));
- 
+                var link = waterbutler.buildDownloadUrl(file.xhr.response['path'], 'osfstorage', window.contextVars.publicFilesId, file.name, {});
+                $osf.mergeMithrilwithDOM(file.previewElement, dropzonePreviewTemplate.shareButton(link));
+
                 this.processQueue();
                 file.previewElement.classList.add("dz-success");
                 file.previewElement.classList.add("dz-preview-background-success");
                 if (this.getQueuedFiles().length === 0 && this.getUploadingFiles().length === 0) {
                     if (this.files.length === 1)
-                        $osf.growl("Upload Successful", this.files.length + " file was successfully uploaded to your public files project.", "success", 5000);
+                        $osf.growl("Upload Successful this file was successfully uploaded to your public files project.", "success", 5000);
                     else
                         $osf.growl("Upload Successful", this.files.length + " files were successfully uploaded to your public files project.", "success", 5000);
- 
                 }
             },
- 
- 
+
             error: function (file, message) {
-                this.files.length--;
+                this.files.pop();
                 // Keeping the old behavior in case we want to revert it some time
                 file.previewElement.classList.add("dz-error");
                 file.previewElement.classList.add("dz-preview-background-error");
@@ -153,9 +162,9 @@ var PublicFilesDropzone = {
         function headerTemplate() {
             return [
                 m('h2.col-xs-6', 'Dashboard'), m('m-b-lg.pull-right',
-                    m('button.btn.btn-primary.m-t-md.f-w-xl #ShareButton',
+                    m('button.btn.btn-primary #ShareButton',
                         m('span.glyphicon.glyphicon-chevron-down #glyphchevron'), ' Upload Public Files'), m.component(AddProject, {
-                            buttonTemplate: m('button.btn.btn-success.btn-success-high-contrast.m-t-md.f-w-xl.pull-right[data-toggle="modal"][data-target="#addProjectFromHome"]',
+                            buttonTemplate: m('button.btn.btn-success.pull-right[data-toggle="modal"][data-target="#addProjectFromHome"]',
                                 {
                                     onclick: function () {
                                         $osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');

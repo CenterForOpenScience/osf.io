@@ -10,7 +10,11 @@ from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView
-from api.base.parsers import JSONAPIOnetoOneRelationshipParser, JSONAPIOnetoOneRelationshipParserForRegularJSON
+from api.base.parsers import (
+    JSONAPIRelationshipParser,
+    JSONAPIRelationshipParserForRegularJSON,
+)
+from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.base.pagination import CommentPagination, NodeContributorPagination
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
 from api.files.serializers import FileSerializer
@@ -25,9 +29,11 @@ from api.nodes.serializers import (
     NodeForksSerializer,
     NodeDetailSerializer,
     NodeProviderSerializer,
+    DraftRegistrationSerializer,
+    DraftRegistrationDetailSerializer,
     NodeContributorsSerializer,
     NodeContributorDetailSerializer,
-    NodeInstitutionRelationshipSerializer,
+    NodeInstitutionsRelationshipSerializer,
     NodeAlternativeCitationSerializer,
     NodeContributorsCreateSerializer
 )
@@ -36,12 +42,15 @@ from api.nodes.utils import get_file_object
 from api.registrations.serializers import RegistrationSerializer
 from api.institutions.serializers import InstitutionSerializer
 from api.nodes.permissions import (
+    IsAdmin,
     IsPublic,
     AdminOrPublic,
     ContributorOrPublic,
     ContributorOrPublicForPointers,
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
+    IsAdminOrReviewer,
+    AdminOrPublicForRelationshipInstitutions,
     ExcludeWithdrawals,
 )
 from api.logs.serializers import NodeLogSerializer
@@ -49,7 +58,7 @@ from api.logs.serializers import NodeLogSerializer
 from website.addons.wiki.model import NodeWikiPage
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
-from website.models import Node, Pointer, Comment, NodeLog, Institution
+from website.models import Node, Pointer, Comment, NodeLog, Institution, DraftRegistration
 from website.files.models import FileNode
 from framework.auth.core import User
 from api.base.utils import default_node_list_query, default_node_permission_query
@@ -77,6 +86,35 @@ class NodeMixin(object):
         if check_object_permissions:
             self.check_object_permissions(self.request, node)
         return node
+
+
+class DraftMixin(object):
+
+    serializer_class = DraftRegistrationSerializer
+
+    def get_draft(self, draft_id=None):
+        node_id = self.kwargs['node_id']
+        if draft_id is None:
+            draft_id = self.kwargs['draft_id']
+        draft = get_object_or_error(DraftRegistration, draft_id)
+
+        if not draft.branched_from._id == node_id:
+            raise ValidationError('This draft registration is not created from the given node.')
+
+        if self.request.method not in drf_permissions.SAFE_METHODS:
+            registered_and_deleted = draft.registered_node and draft.registered_node.is_deleted
+
+            if draft.registered_node and not draft.registered_node.is_deleted:
+                raise PermissionDenied('This draft has already been registered and cannot be modified.')
+
+            if draft.is_pending_review:
+                raise PermissionDenied('This draft is pending review and cannot be modified.')
+
+            if draft.requires_approval and draft.is_approved and (not registered_and_deleted):
+                raise PermissionDenied('This draft has already been approved and cannot be modified.')
+
+        self.check_object_permissions(self.request, draft)
+        return draft
 
 
 class WaterButlerMixin(object):
@@ -359,6 +397,10 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
     List of users who are contributors to this node. Contributors may have "read", "write", or "admin" permissions.
     A node must always have at least one "admin" contributor.  Contributors may be added via this endpoint.
 
+    ###Draft Registrations
+
+    List of draft registrations of the current node.
+
     ###Files
 
     List of top-level folders (actually cloud-storage providers) associated with this node. This is the starting point
@@ -492,10 +534,11 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
 
     `type` is "contributors"
 
-        name           type     description
+        name                        type     description
         ======================================================================================================
-        bibliographic  boolean  Whether the user will be included in citations for this node. Default is true.
-        permission     string   User permission level. Must be "read", "write", or "admin". Default is "write".
+        bibliographic               boolean  Whether the user will be included in citations for this node. Default is true.
+        permission                  string   User permission level. Must be "read", "write", or "admin". Default is "write".
+        unregistered_contributor    string   Contributor's assigned name if contributor hasn't yet claimed account
 
     ##Links
 
@@ -620,12 +663,12 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
         auth = get_user_auth(self.request)
         node = self.get_node()
         if len(node.visible_contributors) == 1 and node.get_visible(instance):
-            raise ValidationError("Must have at least one visible contributor")
+            raise ValidationError('Must have at least one visible contributor')
         if instance not in node.contributors:
                 raise NotFound('User cannot be found in the list of contributors.')
         removed = node.remove_contributor(instance, auth)
         if not removed:
-            raise ValidationError("Must have at least one registered admin contributor")
+            raise ValidationError('Must have at least one registered admin contributor')
 
 
 class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
@@ -646,10 +689,11 @@ class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
 
     `type` is "contributors"
 
-        name           type     description
+        name                        type     description
         ======================================================================================================
-        bibliographic  boolean  Whether the user will be included in citations for this node. Default is true.
-        permission     string   User permission level. Must be "read", "write", or "admin". Default is "write".
+        bibliographic               boolean  Whether the user will be included in citations for this node. Default is true.
+        permission                  string   User permission level. Must be "read", "write", or "admin". Default is "write".
+        unregistered_contributor    string   Contributor's assigned name if contributor hasn't yet claimed account
 
     ##Relationships
 
@@ -739,18 +783,215 @@ class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
         node = self.get_node()
         auth = get_user_auth(self.request)
         if len(node.visible_contributors) == 1 and node.get_visible(instance):
-            raise ValidationError("Must have at least one visible contributor")
+            raise ValidationError('Must have at least one visible contributor')
         removed = node.remove_contributor(instance, auth)
         if not removed:
-            raise ValidationError("Must have at least one registered admin contributor")
+            raise ValidationError('Must have at least one registered admin contributor')
 
 
-# TODO: Support creating registrations
-class NodeRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
+class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
+    """Draft registrations of the current node.
+
+     <!--- Copied partially from NodeDraftRegistrationDetail -->
+
+    Draft registrations contain the supplemental registration questions that accompany a registration. A registration
+    is a frozen version of the project that can never be edited or deleted but can be withdrawn.
+    Your original project remains editable but will now have the registration linked to it.
+
+    ###Permissions
+
+    Users must have admin permission on the node in order to view or create a draft registration.
+
+    ##Draft Registration Attributes
+
+
+    Draft Registrations have the "draft_registrations" `type`.
+
+        name                       type               description
+        ===========================================================================
+        registration_supplement    string             id of registration_schema, must be an active schema
+        registration_metadata      dictionary         dictionary of question ids and responses from registration schema
+        datetime_initiated         iso8601 timestamp  timestamp that the draft was created
+        datetime_updated           iso8601 timestamp  timestamp when the draft was last updated
+
+    ##Relationships
+
+    ###Branched From
+
+    Node that the draft is branched from.  The node endpoint is available in `/branched_from/links/related/href`.
+
+    ###Initiator
+
+    User who initiated the draft registration.  The user endpoint is available in `/initiator/links/related/href`.
+
+    ##Registration Schema
+
+    Detailed registration schema.  The schema endpoint is available in `/registration_schema/links/related/href`.
+
+    ##Actions
+
+    ###Create Draft Registration
+
+        Method:        POST
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                        "data": {
+                            "type": "draft_registrations",  # required
+                            "attributes": {
+                                "registration_supplement": {schema_id}, # required
+                                "registration_metadata": {"question_id": {"value": "question response"}} # optional
+                            }
+                        }
+                    }
+        Success:       201 OK + draft representation
+
+    To create a draft registration, issue a POST request to the `self` link.  Registration supplement must be the id of an
+    active registration schema.  Registration metadata is not required on the creation of the draft. If registration metadata is included,
+    it must be a dictionary with keys as question ids in the registration supplement, and values as nested dictionaries
+    matching the specific format in the registration schema.  See registration schema endpoints for specifics. If question
+    is multiple-choice, question response must exactly match one of the possible choices.
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    #This request/response
+
+    """
+    permission_classes = (
+        IsAdmin,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ExcludeWithdrawals
+    )
+
+    required_read_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_READ]
+    required_write_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]
+
+    serializer_class = DraftRegistrationSerializer
+    view_category = 'nodes'
+    view_name = 'node-draft-registrations'
+
+    # overrides ListCreateAPIView
+    def get_queryset(self):
+        node = self.get_node()
+        drafts = DraftRegistration.find(Q('branched_from', 'eq', node))
+        return [draft for draft in drafts if not draft.registered_node or draft.registered_node.is_deleted]
+
+    # overrides ListBulkCreateJSONAPIView
+    def perform_create(self, serializer):
+        user = self.request.user
+        serializer.save(initiator=user, node=self.get_node())
+
+
+class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, DraftMixin):
+    """Details about a given draft registration. *Writeable*.
+
+    Draft registrations contain the supplemental registration questions that accompany a registration. A registration
+    is a frozen version of the project that can never be edited or deleted but can be withdrawn.  Answer the questions
+    in the draft registration with PUT/PATCH requests until you are ready to submit.  Final submission will include sending the
+    draft registration id as part of a POST request to the Node Registrations endpoint.
+
+    ###Permissions
+
+    Users must have admin permission on the node in order to view, update, or delete a draft registration.
+
+    ##Attributes
+
+    Draft Registrations have the "draft_registrations" `type`.
+
+        name                       type               description
+        ===========================================================================
+        registration_supplement    string             id of registration_schema, must be an active schema
+        registration_metadata      dictionary         dictionary of question ids and responses from registration schema
+        datetime_initiated         iso8601 timestamp  timestamp that the draft was created
+        datetime_updated           iso8601 timestamp  timestamp when the draft was last updated
+
+    ##Relationships
+
+    ###Branched From
+
+    Node that the draft is branched from.  The node endpoint is available in `/branched_from/links/related/href`.
+
+    ###Initiator
+
+    User who initiated the draft registration.  The user endpoint is available in `/initiator/links/related/href`.
+
+    ##Registration Schema
+
+    Detailed registration schema.  The schema endpoint is available in `/registration_schema/links/related/href`.
+
+    ##Actions
+
+    ###Update Draft Registration
+
+        Method:        PUT/PATCH
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                        "data": {
+                            "id": {draft_registration_id},  # required
+                            "type": "draft_registrations",  # required
+                            "attributes": {
+                                "registration_metadata": {"question_id": {"value": "question response"}} # optional
+                            }
+                        }
+                    }
+        Success:       200 OK + draft representation
+
+    To update a draft registration, issue a PUT/PATCH request to the `self` link.  Registration supplement cannot be updated
+    after the draft registration has been created.  Registration metadata is required.  It must be a dictionary with
+    keys as question ids in the registration form, and values as nested dictionaries matching the specific format in the
+    registration schema. See registration schema endpoints for specifics. If question is multiple-choice, question response
+    must exactly match one of the possible choices.
+
+
+    ###Delete Draft Registration
+
+        Method:        DELETE
+        URL:           /links/self
+        Query Params:  <none>
+        Success:       204 No Content
+
+    To delete a draft registration, issue a DELETE request to the `self` link.  This request will remove the draft completely.
+    A draft that has already been registered cannot be deleted.
+
+    ##Query Params
+
+    + `view_only=<Str>` -- Allow users with limited access keys to access this node. Note that some keys are anonymous,
+    so using the view_only key will cause user-related information to no longer serialize. This includes blank ids for users and contributors and missing serializer fields and relationships.
+
+    #This Request/Response
+
+    """
+    permission_classes = (
+        IsAdminOrReviewer,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope
+    )
+
+    required_read_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_READ]
+    required_write_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]
+
+    serializer_class = DraftRegistrationDetailSerializer
+    view_category = 'nodes'
+    view_name = 'node-draft-registration-detail'
+
+    def get_object(self):
+        return self.get_draft()
+
+    def perform_destroy(self, draft):
+        DraftRegistration.remove_one(draft)
+
+
+class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, DraftMixin):
     """Registrations of the current node.
 
-    Registrations are read-only snapshots of a project. This view is a list of all the registrations and withdrawn
-    registrations of the current node.
+    Registrations are read-only snapshots of a project that can never be edited or deleted but can be withdrawn. This view
+    is a list of all the registrations and withdrawn registrations of the current node. To create a registration, first
+    create a draft registration and answer the required supplemental registration questions. Then, submit a POST request
+    to this endpoint with the draft registration id in the body of the request.
 
     <!--- Copied from RegistrationList -->
 
@@ -790,6 +1031,31 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
         registered_meta                 dictionary         registration supplementary information
         registration_supplement         string             registration template
 
+    ##Actions
+
+    ###Create Registration
+
+        Method:        POST
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                        "data": {
+                            "type": "registrations",                                         # required
+                            "attributes": {
+                                "draft_registration": {draft_registration_id},               # required, write-only
+                                "registration_choice": one of ['embargo', 'immediate'],      # required, write-only
+                                "lift_embargo": format %Y-%m-%dT%H:%M:%S'                    # required if registration_choice is 'embargo'
+                            }
+                        }
+                    }
+        Success:       201 OK + draft representation
+
+    To create a registration, issue a POST request to the `self` link.  'draft_registration' must be the id of a completed
+    draft registration created for the current node.  All required supplemental questions in the draft registration must
+    have been answered. Registration choice should be 'embargo' if you wish to add an embargo date to the registration.
+    Registrations can have embargo periods for up to four years. 'lift_embargo' should be the embargo end date.
+    When the embargo expires, the registration will be made public. If 'immediate' is selected as the "registration_choice",
+    the registration will be made public once it is approved.
 
     ##Relationships
 
@@ -801,6 +1067,10 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
 
     The registration was initiated by this user.
 
+    ##Registration Schema
+
+    Detailed registration schema.  The schema endpoint is available in `/registration_schema/links/related/href`.
+
     ##Links
 
     See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
@@ -809,7 +1079,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
 
     """
     permission_classes = (
-        ContributorOrPublic,
+        AdminOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ExcludeWithdrawals
@@ -822,13 +1092,22 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     view_category = 'nodes'
     view_name = 'node-registrations'
 
-    # overrides ListAPIView
+    # overrides ListCreateAPIView
     # TODO: Filter out withdrawals by default
     def get_queryset(self):
         nodes = self.get_node().registrations_all
         auth = get_user_auth(self.request)
         registrations = [node for node in nodes if node.can_view(auth)]
         return registrations
+
+    # overrides ListCreateJSONAPIView
+    def perform_create(self, serializer):
+        """Create a registration from a draft.
+        """
+        # On creation, make sure that current user is the creator
+        draft_id = self.request.data.get('draft_registration', None)
+        draft = self.get_draft(draft_id)
+        serializer.save(draft=draft)
 
 
 class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin, ODMFilterMixin):
@@ -1206,9 +1485,9 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ODMF
 
     # overrides ListCreateAPIView
     def get_queryset(self):
-        all_forks = self.get_node().forks
+        all_forks = self.get_node().forks.sort('-forked_date')
         auth = get_user_auth(self.request)
-        return sorted([node for node in all_forks if node.can_view(auth)], key=lambda n: n.forked_date, reverse=True)
+        return [node for node in all_forks if node.can_view(auth)]
 
     # overrides ListCreateAPIView
     def perform_create(self, serializer):
@@ -1246,25 +1525,26 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
         name          type       description
         =========================================================================
-        name          string     name of the file
-        path          string     unique identifier for this file entity for this
-                                 project and storage provider. may not end with '/'
-        materialized  string     the full path of the file relative to the storage
-                                 root.  may not end with '/'
-        kind          string     "file"
-        etag          string     etag - http caching identifier w/o wrapping quotes
-        modified      timestamp  last modified timestamp - format depends on provider
-        contentType   string     MIME-type when available
-        provider      string     id of provider e.g. "osfstorage", "s3", "googledrive".
-                                 equivalent to addon_short_name on the OSF
-        size          integer    size of file in bytes
-        extra         object     may contain additional data beyond what's described here,
-                                 depending on the provider
-          version     integer    version number of file. will be 1 on initial upload
-          downloads   integer    count of the number times the file has been downloaded
+        name          string            name of the file
+        path          string            unique identifier for this file entity for this
+                                        project and storage provider. may not end with '/'
+        materialized  string            the full path of the file relative to the storage
+                                        root.  may not end with '/'
+        kind          string            "file"
+        etag          string            etag - http caching identifier w/o wrapping quotes
+        modified      timestamp         last modified timestamp - format depends on provider
+        contentType   string            MIME-type when available
+        provider      string            id of provider e.g. "osfstorage", "s3", "googledrive".
+                                        equivalent to addon_short_name on the OSF
+        size          integer           size of file in bytes
+        tags          array of strings  list of tags that describes the file (osfstorage only)
+        extra         object            may contain additional data beyond what's described here,
+                                        depending on the provider
+          version     integer           version number of file. will be 1 on initial upload
+          downloads   integer           count of the number times the file has been downloaded
           hashes      object
-            md5       string     md5 hash of file
-            sha256    string     SHA-256 hash of file
+            md5       string            md5 hash of file
+            sha256    string            SHA-256 hash of file
 
     ####Folder Entity
 
@@ -2059,10 +2339,9 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
         serializer.validated_data['node'] = node
         serializer.save()
 
-
-class NodeInstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
-    """ Detail of the one primary_institution a node has, if any. Returns NotFound
-    if the node does not have a primary_institution.
+class NodeInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin, NodeMixin):
+    """ Detail of the affiliated institutions a node has, if any. Returns [] if the node has no
+    affiliated institution.
 
     ##Attributes
 
@@ -2091,82 +2370,107 @@ class NodeInstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin
 
     model = Institution
     view_category = 'nodes'
-    view_name = 'node-institution-detail'
+    view_name = 'node-institutions'
 
-    # overrides RetrieveAPIView
-    def get_object(self):
+    def get_queryset(self):
         node = self.get_node()
-        if not node.primary_institution:
-            raise NotFound
-        return node.primary_institution
+        return node.affiliated_institutions or []
 
 
-class NodeInstitutionRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
-    """ Relationship Endpoint for Node -> Institution Relationship
+class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, NodeMixin):
+    """ Relationship Endpoint for Node -> Institutions Relationship
 
-    Used to set the primary_institution of a node to an institution
+    Used to set, remove, update and retrieve the affiliated_institutions of a node to an institution
 
     ##Actions
 
     ###Create
 
+        Method:        POST
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "institutions",   # required
+                           "id": <institution_id>   # required
+                         }]
+                       }
+        Success:       201
+
+    This requires admin permissions on the node and for the user making the request to
+    have the institutions in the payload as affiliated in their account.
+
+    ###Update
+
         Method:        PUT || PATCH
         URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
-                         "data": {
+                         "data": [{
                            "type": "institutions",   # required
                            "id": <institution_id>   # required
-                         }
+                         }]
                        }
         Success:       200
 
-    This requires both admin permission on the node, and for the user that is
-    making the request to be affiliated with the institution (`User.affiliated_institutions`)
+        This requires admin permissions on the node and for the user making the request to
+        have the institutions in the payload as affiliated in their account. This will delete
+        all institutions not listed, meaning a data: [] payload does the same as a DELETE with all
+        the institutions.
 
     ###Destroy
 
-        Method:        PUT || PATCH
+        Method:        DELETE
         URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
-                         "data": {
-                           null
-                         }
+                         "data": [{
+                           "type": "institutions",   # required
+                           "id": <institution_id>   # required
+                         }]
                        }
         Success:       204
 
-    This requires admin permission on the node.
+    This requires admin permissions in the node.
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        AdminOrPublic
+        AdminOrPublicForRelationshipInstitutions
     )
-    required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.INSTITUTION_READ]
+    required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
-    serializer_class = NodeInstitutionRelationshipSerializer
-    parser_classes = (JSONAPIOnetoOneRelationshipParser, JSONAPIOnetoOneRelationshipParserForRegularJSON, )
+    serializer_class = NodeInstitutionsRelationshipSerializer
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
 
     view_category = 'nodes'
-    view_name = 'node-relationships-institution'
+    view_name = 'node-relationships-institutions'
 
-    # overrides RetrieveAPIView
     def get_object(self):
-        return self.get_node()
+        node = self.get_node(check_object_permissions=False)
+        obj = {
+            'data': node.affiliated_institutions,
+            'self': node
+        }
+        self.check_object_permissions(self.request, obj)
+        return obj
 
-    def update(self, request, *args, **kwargs):
-        # same as drf's update method from the update mixin, with the addition of
-        # returning a 204 when successfully deletes relationship with PUT/PATCH
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        inst = request.data.get('id', None)
-        if not inst:
+    def perform_destroy(self, instance):
+        data = self.request.data['data']
+        user = self.request.user
+        current_insts = {inst._id: inst for inst in instance['data']}
+        node = instance['self']
+        for val in data:
+            if val['id'] in current_insts:
+                node.remove_affiliated_institution(inst=current_insts[val['id']], user=user)
+        node.save()
+
+    def create(self, *args, **kwargs):
+        try:
+            ret = super(NodeInstitutionsRelationship, self).create(*args, **kwargs)
+        except RelationshipPostMakesNoChanges:
             return Response(status=HTTP_204_NO_CONTENT)
-        return Response(serializer.data)
+        return ret
 
 
 class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMixin):

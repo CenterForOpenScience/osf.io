@@ -1340,36 +1340,6 @@ class User(GuidStoredObject, AddonModelMixin):
                         Q('contributors', 'eq', self._id) & Q('is_public_files_collection','eq',True)
                     )
                     FileNode().merge_nodes(merger_public_files_collections, node)
-                    # from website.project.model import Node
-                    # from website.util import api_v2_url
-                    # import requests
-                    # import json
-                    # # mergee_public_files_collections = Node.find(
-                    # #     Q('contributors', 'eq', node._id) & Q('is_public_files_collection','eq',True)
-                    # # )
-                    # merger_public_files_collections = Node.find_one(
-                    #     Q('contributors', 'eq', self._id) & Q('is_public_files_collection','eq',True)
-                    # )
-                    # print merger_public_files_collections
-                    # path = '/nodes/{}/files/provider/osfstorage'.format(node._id)
-                    # print path
-                    # response = requests.get(api_v2_url(path), timeout=120)
-                    # node_pub = json.loads(response)
-                    # node_path = node_pub.path
-                    #
-                    # path = '/nodes/{}/files/provider/osfstorage'.format(merger_public_files_collections)
-                    # self_pub = json.parse(api_v2_url(path))
-                    # self_path = node_pub['path']
-                    # #
-                    # data = {
-                    #     'action' : 'move',
-                    #     'path': self_path,
-                    #     # mandatory
-                    #     'provider' : 'osfstorage'
-                    # }
-                    # url = node_path + '/links/move'
-                    # #
-                    # request.post(url,data = json.dumps(data))
                     node.save()
                     continue
                 # if both accounts are contributor of the same project
