@@ -7,6 +7,7 @@ var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
 var AddProject = require('js/addProjectPlugin');
 var NodeFetcher = require('js/myProjects').NodeFetcher;
+var lodashGet = require('lodash.get');
 
 // CSS
 require('css/quick-project-search-plugin.css');
@@ -46,7 +47,7 @@ var QuickSearchProject = {
         self.templateNodes.start();
 
         // Load up to first ten nodes
-        var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': 'contributors'}});
+        var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': ['contributors','root', 'parent']}});
         var promise = m.request({method: 'GET', url : url, config : xhrconfig, background: true});
         promise.then(function(result) {
             self.countDisplayed(result.data.length);
@@ -298,6 +299,12 @@ var QuickSearchProject = {
             return self.preSelectDirection() === sort ? 'selected' : 'not-selected';
         };
 
+        // Filtering on root project
+        self.rootMatch = function (node) {
+            var root = lodashGet(node, 'embeds.root.data.attributes.title', '');
+            return (root.toUpperCase().indexOf(self.filter().toUpperCase()) !== -1);
+        };
+
         // Filtering on title
         self.titleMatch = function (node) {
             return (node.attributes.title.toUpperCase().indexOf(self.filter().toUpperCase()) !== -1);
@@ -330,7 +337,7 @@ var QuickSearchProject = {
         self.filterNodes = function (){
             for (var n = 0;  n < self.nodes().length;  n++) {
                 var node = self.nodes()[n];
-                if (self.titleMatch(node) || self.contributorMatch(node) || self.tagMatch(node)) {
+                if (self.titleMatch(node) || self.contributorMatch(node) || self.tagMatch(node) || self.rootMatch(node)) {
                     self.eligibleNodes().push(n);
                 }
             }
@@ -434,11 +441,12 @@ var QuickSearchProject = {
         // Dropdown for XS screen - if sort on title on large screen, when resize to xs, 'title' is default selected
         function defaultSelected() {
             var selected = ctrl.preSelectField();
-            if (selected === 'alpha') {
-                return [m('option', {value: 'alpha', selected:'selected'}, 'Title'), m('option', {value: 'date'}, 'Modified')];
-            }
-            else {
-                return [m('option', {value: 'alpha'}, 'Title'), m('option', {value: 'date', selected:'selected'}, 'Modified')];
+            switch (selected) {
+                case 'title':
+                    return [m('option', {value: 'title', selected:'selected'}, 'Title'), m('option', {value: 'date'}, 'Modified')];
+
+                case 'date':
+                    return [m('option', {value: 'title'}, 'Title'), m('option', {value: 'date', selected:'selected'}, 'Modified')];
             }
         }
 
@@ -468,12 +476,10 @@ var QuickSearchProject = {
             }
         }
 
-
         function headerTemplate ( ){
-
             return [ m('h2.col-xs-9', 'Dashboard'), m('m-b-lg.col-xs-3', m('.pull-right', m.component(AddProject, {
-                buttonTemplate : m('button.btn.btn-success.btn-success-high-contrast.m-t-md.f-w-xl[data-toggle="modal"][data-target="#addProjectFromHome"]', {onclick: function() {
-                    $osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');
+                buttonTemplate : m('button.btn.btn-success.btn-success-high-contrast.m-t-md.f-w-xl[data-toggle="modal"][data-target="#addProjectFromHome"]', {onclick: function(){
+                                $osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');
                 }}, 'Create new project'),
                 modalID : 'addProjectFromHome',
                 stayCallback : function _stayCallback_inPanel() {
@@ -488,8 +494,7 @@ var QuickSearchProject = {
         if (ctrl.eligibleNodes().length === 0 && ctrl.filter() == null) {
             return m('.row',
                 m('.col-xs-12',[
-                    // remove double instance of header
-                  //  headerTemplate(),
+                    headerTemplate(),
                     m('.row.quick-project',
                         m('.col-sm-12.text-center', [
                             m('p','You have no projects yet. Create a project with the button on the top right.'),
@@ -502,7 +507,6 @@ var QuickSearchProject = {
         }
         else {
             return m('.row',
-                //m('.col-xs-12', headerTemplate()),
                 m('.col-xs-12',[
                     m('.row.quick-project', m('.col-xs-12',
                     m('.m-b-sm.text-center', [
@@ -514,9 +518,9 @@ var QuickSearchProject = {
                         m('a', {href: '/search/', onclick: function(){ $osf.trackClick('quickSearch', 'navigate', 'navigate-to-search-the-OSF'); }}, 'search'), ' the OSF' ]),
                     m('.quick-search-table', [
                         m('.row.node-col-headers.m-t-md', [
-                            m('.col-sm-4.col-md-5', m('.quick-search-col', 'Title', sortAlphaAsc(), sortAlphaDesc())),
-                            m('.col-sm-4.col-md-4', m('.quick-search-col', 'Contributors')),
-                            m('.col-sm-4.col-md-3', m('.quick-search-col','Modified', m('span.sort-group', sortDateAsc(), sortDateDesc())))
+                            m('.col-sm-3.col-md-6', m('.quick-search-col', 'Title', sortAlphaAsc(), sortAlphaDesc())),
+                            m('.col-sm-3.col-md-3', m('.quick-search-col', 'Contributors')),
+                            m('.col-sm-3.col-md-3', m('.quick-search-col','Modified', m('span.sort-group', sortDateAsc(), sortDateDesc())))
                         ]),
                         xsDropdown(),
                         m.component(QuickSearchNodeDisplay, {
@@ -541,9 +545,31 @@ var QuickSearchProject = {
     }
 };
 
+function getAncestorDescriptor(node, nodeTitle, ancestor) {
+    var ancestorDescriptor;
+    var ancestorTitleRequest = lodashGet(node, 'embeds.' + ancestor + '.data.attributes.title', '');
+    var errorRequest = lodashGet(node, 'embeds.' + ancestor + '.errors[0].detail', '');
+    switch(errorRequest) {
+        case '':
+            if (ancestorTitleRequest === nodeTitle || ancestorTitleRequest === '') {
+                ancestorDescriptor = '';
+            }
+            else {
+                ancestorDescriptor = ancestorTitleRequest.replace('.', '') + ' / ';
+            }
+            break;
+
+        case 'You do not have permission to perform this action.':
+            ancestorDescriptor = m('em', 'Private ' + ancestor + ' / ');
+            break;
+
+        default:
+            ancestorDescriptor = m('em', 'Name Unavailable / ');
+    }
+    return ancestorDescriptor;
+}
 
 var QuickSearchNodeDisplay = {
-
     view: function(ctrl, args) {
         if (args.eligibleNodes().length === 0 && args.filter() != null && args.loadingComplete() === true) {
             return m('.row.m-v-sm', m('.col-sm-12',
@@ -551,25 +577,32 @@ var QuickSearchNodeDisplay = {
                     m('.col-sm-12', m('em', 'No results found!'))
                 ))
             );
-        }else if(args.eligibleNodes().length === 1){
-              return m('.row.m-v-sm', m('.col-sm-12',
-                m('.row',
-                    m('.col-sm-12', m('em', 'No results found!'))
-                ))
-);
         }
         else {
             return m('.', args.eligibleNodes().slice(0, args.countDisplayed()).map(function(n){
                 var project = args.nodes()[n];
                 var numContributors = project.embeds.contributors.links.meta.total;
+                var title = project.attributes.title;
+                var root = getAncestorDescriptor(project, title, 'root');
+                var parent = getAncestorDescriptor(project, title, 'parent');
+
+                if (root === parent) {
+                    parent = '';
+                }
+
+                var grandParentURL = lodashGet(project, 'embeds.parent.data.relationships.parent.links.related.href', '');
+                var rootURL = lodashGet(project, 'embeds.root.data.links.self', '');
+                if (grandParentURL !== rootURL && grandParentURL !== '') {
+                    root += '... / ';
+                }
 
                 return m('a', {href: '/' + project.id, onclick: function() {
                     $osf.trackClick('quickSearch', 'navigate', 'navigate-to-specific-project');
                 }}, m('.m-v-sm.node-styling',  m('.row', m('div',
                     [
-                        m('.col-sm-4.col-md-5.p-v-xs', m('.quick-search-col',  project.attributes.title)),
-                        m('.col-sm-4.col-md-4.p-v-xs', m('.quick-search-col', $osf.contribNameFormat(project, numContributors, args.getFamilyName))),
-                        m('.col-sm-4.col-md-3.p-v-xs', m('.quick-search-col', args.formatDate(project)))
+                        m('.col-sm-3.col-md-6.p-v-xs', m('.quick-search-col', root, parent, m('strong', title))),
+                        m('.col-sm-3.col-md-3.p-v-xs', m('.quick-search-col', $osf.contribNameFormat(project, numContributors, args.getFamilyName))),
+                        m('.col-sm-3.col-md-3.p-v-xs', m('.quick-search-col', args.formatDate(project)))
                     ]
                 ))));
             }));

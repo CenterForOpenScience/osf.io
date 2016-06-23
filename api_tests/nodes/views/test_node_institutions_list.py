@@ -10,18 +10,18 @@ class TestNodeInstitutionDetail(ApiTestCase):
         super(TestNodeInstitutionDetail, self).setUp()
         self.institution = InstitutionFactory()
         self.node = NodeFactory(is_public=True)
-        self.node.primary_institution = self.institution
+        self.node.affiliated_institutions.append(self.institution)
         self.node.save()
         self.user = AuthUserFactory()
         self.node2 = NodeFactory(creator=self.user)
 
     def test_return_institution(self):
-        url = '/{0}nodes/{1}/institution/'.format(API_BASE, self.node._id)
+        url = '/{0}nodes/{1}/institutions/'.format(API_BASE, self.node._id)
         res = self.app.get(url)
 
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['attributes']['name'], self.institution.name)
-        assert_equal(res.json['data']['id'], self.institution._id)
+        assert_equal(res.json['data'][0]['attributes']['name'], self.institution.name)
+        assert_equal(res.json['data'][0]['id'], self.institution._id)
 
     def test_return_no_institution(self):
         url = '/{0}nodes/{1}/institution/'.format(API_BASE, self.node2._id)

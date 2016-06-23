@@ -25,6 +25,7 @@ from website import language
 from website import security
 from website import settings
 from website.models import Node
+from website.notifications.utils import check_if_all_global_subscriptions_are_none
 from website.profile import utils as profile_utils
 from website.project.decorators import (must_have_permission, must_be_valid_project,
         must_not_be_registration, must_be_contributor_or_public, must_be_contributor)
@@ -485,7 +486,8 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None):
             mails.CONTRIBUTOR_ADDED,
             user=contributor,
             node=node,
-            referrer_name=auth.user.fullname if auth else ''
+            referrer_name=auth.user.fullname if auth else '',
+            all_global_subscriptions_none=check_if_all_global_subscriptions_are_none(contributor)
         )
 
         contributor.contributor_added_email_records[node._id]['last_sent'] = get_timestamp()
@@ -557,7 +559,6 @@ def claim_user_registered(auth, node, **kwargs):
                 status.push_status_message(language.LOGIN_FAILED, kind='warning', trust=False)
         else:
             forms.push_errors_to_status(form.errors)
-
     if is_json_request():
         form_ret = forms.utils.jsonify(form)
         user_ret = profile_utils.serialize_user(current_user, full=False)

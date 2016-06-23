@@ -76,7 +76,7 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
         # fields that are visible for withdrawals
         visible_on_withdrawals = ['contributors', 'date_created', 'description', 'id', 'links', 'registration', 'title', 'type']
         # fields that do not appear on registrations
-        non_registration_fields = ['registrations']
+        non_registration_fields = ['registrations', 'draft_registrations']
 
         for field in NodeSerializer._declared_fields:
             assert_in(field, RegistrationSerializer._declared_fields)
@@ -177,6 +177,11 @@ class TestApiBaseSerializers(ApiTestCase):
         res = self.app.get(self.url, params={'embed': 'foo'}, expect_errors=True)
         assert_equal(res.status_code, http.BAD_REQUEST)
         assert_equal(res.json['errors'][0]['detail'], "The following fields are not embeddable: foo")
+
+    def test_embed_does_not_remove_relationship(self):
+        res = self.app.get(self.url, params={'embed': 'root'})
+        assert_equal(res.status_code, 200)
+        assert_in(self.url, res.json['data']['relationships']['root']['links']['related']['href'])
 
     def test_counts_included_in_children_field_with_children_related_counts_query_param(self):
 

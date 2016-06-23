@@ -11,6 +11,7 @@ require('loaders.css/loaders.min.css');
 var Dropzone = require('dropzone');
 var Fangorn = require('js/fangorn');
 
+
 // Don't show dropped content if user drags outside dropzone
 window.ondragover = function (e) {
     e.preventDefault();
@@ -19,10 +20,25 @@ window.ondrop = function (e) {
     e.preventDefault();
 };
 
-
 var PublicFilesDropzone = {
     controller: function () {
         var dangerCount = 0;
+
+        var checkIfSameName = function(file){
+            var files;
+            var url = $osf.apiV2Url('nodes/' + window.contextVars.publicFilesId + '/files/osfstorage/');
+            return $osf.ajaxJSON('GET', url, { isCors: true}).done(function (response) {
+                var files = response;
+
+                files.forEach(function(nodeFile){
+                    if(nodeFile.attributes['name'] == file.name) return true;
+                });
+
+                return false;
+
+            });
+        };
+
         Dropzone.options.publicFilesDropzone = {
             // Dropzone is setup to upload multiple files in one request this configuration forces it to do upload file-by-
             //file, one request at a time.
@@ -42,11 +58,16 @@ var PublicFilesDropzone = {
                 // When user clicks close button on top right, reset the number of files
                 var _this = this;
                 $('button.close').on('click', function () {
-                    _this.files.length = 0;
+                    _this.files = [];
                 });
+
             },
 
             accept: function (file, done) {
+                if(checkIfSameName(file)){
+                    alert("file has same name.")
+                }
+
                 if (this.files.length <= this.options.maxFiles) {
                     this.options.url = waterbutler.buildUploadUrl(false, 'osfstorage', window.contextVars.publicFilesId, file, {});
                     this.processFile(file);
@@ -94,15 +115,13 @@ var PublicFilesDropzone = {
                         $osf.growl("Upload Successful", this.files[0].name + " has been successfully uploaded to your public files project.", "success", 5000);
                     else
                         $osf.growl("Upload Successful", this.files.length + " files were successfully uploaded to your public files project.", "success", 5000);
-
                 }
                 // allow for multiple uploads of one file at a time
                 this.files.length--;
             },
 
-
             error: function (file, message) {
-                this.files.length--;
+                this.files.pop();
                 // Keeping the old behavior in case we want to revert it some time
                 file.previewElement.classList.add('dz-error');
                 file.previewElement.classList.add('dz-preview-background-error');
@@ -120,16 +139,7 @@ var PublicFilesDropzone = {
 
         var $publicFiles = $('#publicFilesDropzone');
 
-        $('.container', '.quickSearch', 'row', '.panel-body', '.dz-body-height', '#publicFilesDropzone').bind({
-            dragenter: function () {
-                $('#dz-dragmessage').show();
-            },
-            dragleave: function () {
-                $('#dz-dragmessage').hide();
-            }
-        });
-
-        $publicFiles.on("click", ".dz-share", function (e) {
+        $publicFiles.on("click", "div.dz-share", function (e) {
             var infoCount = document.getElementsByClassName('alert-info').length;
             if (infoCount === 0) {
                 $.growl({

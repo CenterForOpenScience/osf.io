@@ -33,8 +33,9 @@ SECRET_KEY = "CHANGEME"
 ## Default RabbitMQ broker
 BROKER_URL = 'amqp://'
 
-# Default RabbitMQ backend
-CELERY_RESULT_BACKEND = 'amqp://'
+# In-memory result backend
+CELERY_RESULT_BACKEND = 'cache'
+CELERY_CACHE_BACKEND = 'memory'
 
 USE_CDN_FOR_CLIENT_LIBS = False
 

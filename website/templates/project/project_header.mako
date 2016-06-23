@@ -3,22 +3,10 @@
 %>
 
 <div id="projectBanner" >
-
-
-     % if node['category_short']  == 'share window':
-        <style>
-        .container{width:100% !important;}
-        </style>
-        <header class="subhead" id="overview">
-        <nav role="navigation">
-        <div class="container">
-     % else:
         <header class="subhead" id="overview">
         <nav id="projectSubnav" class="navbar osf-project-navbar" role="navigation">
         <div class="container">
-     % endif
-       
-            % if node['category_short']  != 'share window':
+
                 <div class="navbar-header">
                     <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".project-nav">
                         <span class="sr-only">Toggle navigation</span>
@@ -101,7 +89,6 @@
 
                     </ul>
                 </div>
-                % endif
             </div>
         </nav>
     </header>
@@ -116,8 +103,12 @@
 
         % if not node['is_retracted']:
             % if not node['is_pending_registration']:
-                <div class="alert alert-info">This ${node['node_type']} is a registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been frozen and cannot be edited.</div>
-
+                % if file_name and urls.get('archived_from'):
+                        <div class="alert alert-info">This file is part of a registration and is being shown in its archived version (and cannot be altered).
+                            The <a class="link-solid" href="${urls['archived_from']}">active file</a> is viewable from within the <a class="link-solid" href="${node['registered_from_url']}">live ${node['node_type']}</a>.</div>
+                % else:
+                    <div class="alert alert-info">This ${node['node_type']} is a registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been frozen and cannot be edited.</div>
+                % endif
             % else:
                 <div class="alert alert-info">
                     <div>This is a pending registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>, awaiting approval from project administrators. This registration will be final when all project administrators approve the registration or 48 hours pass, whichever comes first.</div>
