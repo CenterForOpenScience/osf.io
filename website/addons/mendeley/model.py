@@ -5,9 +5,9 @@ import time
 import mendeley
 from mendeley.exception import MendeleyApiException
 from modularodm import fields
+from oauthlib.oauth2 import InvalidGrantError
 
 from website.addons.base import AddonOAuthUserSettingsBase
-from website.addons.base.exceptions import InvalidAuthError
 from website.addons.mendeley.serializer import MendeleySerializer
 from website.addons.mendeley import settings
 from website.addons.mendeley.api import APISession
@@ -74,7 +74,7 @@ class Mendeley(CitationsOauthProvider):
             if error.status == 401 and 'Token has expired' in error.message:
                 try:
                     refreshed_key = self.refresh_oauth_key()
-                except InvalidAuthError:
+                except InvalidGrantError:
                     self._client = None
                     raise HTTPError(401)
                 if not refreshed_key:

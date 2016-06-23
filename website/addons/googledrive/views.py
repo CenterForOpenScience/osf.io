@@ -2,11 +2,10 @@
 from flask import request
 
 from framework.exceptions import HTTPError
+from oauthlib.oauth2 import InvalidGrantError
 from website.project.decorators import must_have_addon, must_be_addon_authorizer
 
 from website.addons.base import generic_views
-from website.addons.base.exceptions import InvalidAuthError
-
 from website.addons.googledrive.utils import to_hgrid
 from website.addons.googledrive.client import GoogleDriveClient
 from website.addons.googledrive.serializer import GoogleDriveSerializer
@@ -61,7 +60,7 @@ def googledrive_folder_list(node_addon, **kwargs):
 
     try:
         access_token = node_addon.fetch_access_token()
-    except InvalidAuthError:
+    except InvalidGrantError:
         raise HTTPError(403)
 
     client = GoogleDriveClient(access_token)
