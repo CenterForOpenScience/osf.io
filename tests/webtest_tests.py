@@ -326,14 +326,6 @@ class TestComponents(OsfTestCase):
         self.project.save()
         self.project_url = self.project.web_url_for('view_project')
 
-    def test_can_create_component_from_a_project(self):
-        res = self.app.get(self.project.url, auth=self.user.auth).maybe_follow()
-        assert_in('Add Component', res)
-
-    def test_can_create_component_from_a_component(self):
-        res = self.app.get(self.component.url, auth=self.user.auth).maybe_follow()
-        assert_in('Add Component', res)
-
     def test_sees_parent(self):
         res = self.app.get(self.component.url, auth=self.user.auth).maybe_follow()
         parent_title = res.html.find_all('h2', class_='node-parent-title')
