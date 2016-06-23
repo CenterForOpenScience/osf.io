@@ -11,7 +11,6 @@ import uuid
 
 from flask import request
 from oauthlib.oauth2.rfc6749.errors import MissingTokenError
-from oauthlib.oauth2 import InvalidGrantError
 from requests.exceptions import HTTPError as RequestsHTTPError
 
 from modularodm import fields, Q
@@ -27,7 +26,6 @@ from framework.mongo.utils import unique_on
 from framework.mongo.validators import string_required
 from framework.sessions import session
 from website import settings
-from website.addons.base.exceptions import InvalidAuthError
 from website.oauth.utils import PROVIDER_LOOKUP
 from website.security import random_string
 from website.util import web_url_for, api_v2_url
@@ -415,19 +413,15 @@ class ExternalProvider(object):
             'client_secret': self.client_secret
         })
 
-        try:
-            token = client.refresh_token(
-                self.auto_refresh_url,
-                **extra
-            )
-        except InvalidGrantError:
-            raise InvalidAuthError()
-        else:
-            self.account.oauth_key = token[resp_auth_token_key]
-            self.account.refresh_token = token[resp_refresh_token_key]
-            self.account.expires_at = resp_expiry_fn(token)
-            self.account.save()
-            return True
+        token = client.refresh_token(
+            self.auto_refresh_url,
+            **extra
+        )
+        self.account.oauth_key = token[resp_auth_token_key]
+        self.account.refresh_token = token[resp_refresh_token_key]
+        self.account.expires_at = resp_expiry_fn(token)
+        self.account.save()
+        return True
 
     def _needs_refresh(self):
         """Determines whether or not an associated ExternalAccount needs
