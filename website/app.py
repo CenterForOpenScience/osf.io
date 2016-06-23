@@ -22,17 +22,15 @@ from framework.transactions import handlers as transaction_handlers
 from modularodm import storage
 from website.addons.base import init_addon
 from website.project.licenses import ensure_licenses
-from website.project.model import ensure_schemas, Node
+from website.project.model import ensure_schemas
 from website.routes import make_url_map
+from website import maintenance
 
 # This import is necessary to set up the archiver signal listeners
 from website.archiver import listeners  # noqa
 from website.mails import listeners  # noqa
+from website.notifications import listeners  # noqa
 from api.caching import listeners  # noqa
-
-def build_js_config_files(settings):
-    with open(os.path.join(settings.STATIC_FOLDER, 'built', 'nodeCategories.json'), 'wb') as fp:
-        json.dump(Node.CATEGORY_MAP, fp)
 
 
 def init_addons(settings, routes=True):
@@ -98,6 +96,7 @@ def build_log_templates(settings):
 
 def do_set_backends(settings):
     logger.debug('Setting storage backends')
+    maintenance.ensure_maintenance_collection()
     set_up_storage(
         website.models.MODELS,
         storage.MongoStorage,
@@ -121,7 +120,8 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
 
     build_log_templates(settings)
     init_addons(settings, routes)
-    build_js_config_files(settings)
+    with open(os.path.join(settings.STATIC_FOLDER, 'built', 'nodeCategories.json'), 'wb') as fp:
+        json.dump(settings.NODE_CATEGORY_MAP, fp)
 
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.base.settings')
     django.setup()

@@ -123,7 +123,7 @@
                  class="${'col-sm-{0}'.format(12 / num_columns)}"
                  style="${'' if 'edit' in panels_used else 'display: none' | n}">
               <form id="wiki-form" action="${urls['web']['edit']}" method="POST">
-                <div class="osf-panel panel panel-default" data-bind="css: { 'no-border': $root.singleVis() === 'edit' }">
+                <div class="osf-panel panel panel-default osf-panel-edit" data-bind="css: { 'no-border': $root.singleVis() === 'edit' }">
                   <div class="panel-heading wiki-panel-header clearfix" data-bind="css : { 'wiki-single-heading': $root.singleVis() === 'edit' }">
                     <div class="row">
                       <div class="col-md-6">

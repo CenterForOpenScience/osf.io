@@ -8,7 +8,7 @@ from datetime import timedelta
 
 
 class DashboardView(OSFAdmin, TemplateView):
-    template_name = "sales_analytics/dashboard.html"
+    template_name = 'sales_analytics/dashboard.html'
 
     def get_context_data(self, **kwargs):
         user_count = get_user_count(entry_points=ENTRY_POINTS)
