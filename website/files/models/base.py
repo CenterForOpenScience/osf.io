@@ -72,6 +72,8 @@ class TrashedFileNode(StoredObject, Commentable):
     suspended = fields.BooleanField(default=False)
     visit = fields.IntegerField(default=0)
 
+    copied_from = fields.ForeignField('StoredFileNode', default=None)
+
     @property
     def deep_url(self):
         """Allows deleted files to resolve to a view
@@ -187,6 +189,7 @@ class StoredFileNode(StoredObject, Commentable):
 
     node = fields.ForeignField('Node', required=True)
     parent = fields.ForeignField('StoredFileNode', default=None)
+    copied_from = fields.ForeignField('StoredFileNode', default=None)
 
     is_file = fields.BooleanField(default=True)
     provider = fields.StringField(required=True)
@@ -328,8 +331,8 @@ class FileNode(object):
             return cls.create(node=node, path=path)
 
     @classmethod
-    def get_file_guids(cls, materialized_path, provider, node, guids=None):
-        guids = guids or []
+    def get_file_guids(cls, materialized_path, provider, node):
+        guids = []
         materialized_path = '/' + materialized_path.lstrip('/')
         if materialized_path.endswith('/'):
             folder_children = cls.find(Q('provider', 'eq', provider) &
@@ -438,6 +441,18 @@ class FileNode(object):
         if isinstance(val, FileNode):
             val = val.stored_object
         self.stored_object.parent = val
+
+    @property
+    def copied_from(self):
+        if self.stored_object.copied_from:
+            return self.stored_object.copied_from
+        return None
+
+    @copied_from.setter
+    def copied_from(self, val):
+        if isinstance(val, FileNode):
+            val = val.stored_object
+        self.stored_object.copied_from = val
 
     @property
     def deep_url(self):

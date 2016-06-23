@@ -48,7 +48,7 @@ function Meeting(data) {
             ];
         },
         resolveRows : function _conferenceResolveRows(item){
-            var default_columns = [
+            var defaultColumns = [
                 {
                     data : 'title',  // Data field name
                     folderIcons : false,
@@ -94,7 +94,7 @@ function Meeting(data) {
 
                 },
             ];
-            return default_columns;
+            return defaultColumns;
         },
         sortButtonSelector : {
             up : 'i.fa.fa-chevron-up',

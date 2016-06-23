@@ -1332,6 +1332,10 @@ class User(GuidStoredObject, AddonModelMixin):
         security_messages.update(self.security_messages)
         self.security_messages = security_messages
 
+        notifications_configured = user.notifications_configured.copy()
+        notifications_configured.update(self.notifications_configured)
+        self.notifications_configured = notifications_configured
+
         for key, value in user.mailchimp_mailing_lists.iteritems():
             # subscribe to each list if either user was subscribed
             subscription = value or self.mailchimp_mailing_lists.get(key)

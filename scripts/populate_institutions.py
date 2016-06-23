@@ -120,16 +120,16 @@ def main(env):
                 'domains': ['osf.usc.edu'],
                 'email_domains': [],
             },
-            # {
-            #     '_id': 'uva',
-            #     'name': 'University of Virginia',
-            #     'description': 'Projects must abide by the University <a href="http://www.virginia.edu/informationpolicy/security.html">Security and Data Protection Policies</a>',
-            #     'banner_name': 'uva-banner.png',
-            #     'logo_name': 'uva-shield.png',
-            #     'auth_url': SHIBBOLETH_SP.format(encode_uri_component('urn:mace:incommon:virginia.edu')),
-            #     'domains': ['osf.virginia.edu'],
-            #     'email_domains': [],
-            # },
+            {
+                '_id': 'uva',
+                'name': 'University of Virginia',
+                'description': 'Projects must abide by the University <a href="http://www.virginia.edu/informationpolicy/security.html">Security and Data Protection Policies</a>',
+                'banner_name': 'uva-banner.png',
+                'logo_name': 'uva-shield.png',
+                'auth_url': SHIBBOLETH_SP.format(encode_uri_component('urn:mace:incommon:virginia.edu')),
+                'domains': ['osf.virginia.edu'],
+                'email_domains': [],
+            },
         ]
     if env == 'stage':
         INSTITUTIONS = [
