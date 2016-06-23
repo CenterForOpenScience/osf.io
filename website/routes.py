@@ -1243,11 +1243,6 @@ def make_url_map(app):
             '/project/<pid>/get_summary/',
             '/project/<pid>/node/<nid>/get_summary/',
         ], 'get', project_views.node.get_summary, json_renderer),
-
-        Rule([
-            '/project/<pid>/get_children/',
-            '/project/<pid>/node/<nid>/get_children/',
-        ], 'get', project_views.node.get_children, json_renderer),
         Rule([
             '/project/<pid>/get_readable_descendants/',
             '/project/<pid>/node/<nid>/get_readable_descendants/',

@@ -925,30 +925,11 @@ def get_readable_descendants(auth, node, **kwargs):
             descendants.append(child)
         else:
             if not child.primary:
-                if node.has_permission(auth.user, 'read'):
+                if node.has_permission(auth.user, 'write'):
                     descendants.append(child)
                 continue
         descendants.extend(child.find_readable_descendants(auth))
     return _render_nodes(descendants, auth)
-
-@must_be_contributor_or_public
-def get_children(auth, node, **kwargs):
-    user = auth.user
-    if request.args.get('permissions'):
-        perm = request.args['permissions'].lower().strip()
-        nodes = [
-            each
-            for each in node.nodes
-            if perm in each.get_permissions(user) and not each.is_deleted
-        ]
-    else:
-        nodes = [
-            each
-            for each in node.nodes
-            if not each.is_deleted
-        ]
-    return _render_nodes(nodes, auth)
-
 
 def node_child_tree(user, node_ids):
     """ Format data to test for node privacy settings for use in treebeard.
