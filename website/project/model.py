@@ -2135,20 +2135,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         return True
 
-<<<<<<< HEAD
-    def fork_node(self, auth, title='Fork of '):
-        """Recursively fork a node.
-
-        :param Auth auth: Consolidated authorization
-        :param str title: Optional text to prepend to forked title
-        :return: Forked node
-        """
-        user = auth.user
-
-        # Non-contributors can't fork private nodes
-        if not (self.is_public or self.has_permission(user, 'read')):
-            raise PermissionsError('{0!r} does not have permission to fork node {1!r}'.format(user, self._id))
-=======
     def fork_node(self, auth, title=None):
         if not self.is_public_files_collection:
             """Recursively fork a node.
@@ -2158,7 +2144,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             """
             PREFIX = 'Fork of '
             user = auth.user
->>>>>>> 24e86e92f2c2b63924966b7467ce3da5b731fda4
 
         when = datetime.datetime.utcnow()
 
@@ -2187,7 +2172,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 if forked_node is not None:
                     forked.nodes.append(forked_node)
 
-<<<<<<< HEAD
         if title == 'Fork of ' or title == '':
             forked.title = title + forked.title
         else:
@@ -2213,42 +2197,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             forked.add_citation(
                 auth=auth,
                 citation=citation.clone(),
-=======
-            if title is None:
-                forked.title = PREFIX + original.title
-            elif title == '':
-                forked.title = original.title
-            else:
-                forked.title = title
-
-            forked.is_fork = True
-            forked.is_registration = False
-            forked.forked_date = when
-            forked.forked_from = original
-            forked.creator = user
-            forked.piwik_site_id = None
-            forked.node_license = original.license.copy() if original.license else None
-            forked.wiki_private_uuids = {}
-
-            # Forks default to private status
-            forked.is_public = False
-
-            # Clear permissions before adding users
-            forked.permissions = {}
-            forked.visible_contributor_ids = []
-
-            for citation in self.alternative_citations:
-                forked.add_citation(
-                    auth=auth,
-                    citation=citation.clone(),
-                    log=False,
-                    save=False
-                )
-
-            forked.add_contributor(
-                contributor=user,
-                permissions=CREATOR_PERMISSIONS,
->>>>>>> 24e86e92f2c2b63924966b7467ce3da5b731fda4
                 log=False,
                 save=False
             )
@@ -2260,23 +2208,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             save=False
         )
 
-<<<<<<< HEAD
-        # Need this save in order to access _primary_key
-        forked.save()
-
-        forked.add_log(
-            action=NodeLog.NODE_FORKED,
-            params={
-                'parent_node': original.parent_id,
-                'node': original._primary_key,
-                'registration': forked._primary_key,  # TODO: Remove this in favor of 'fork'
-                'fork': forked._primary_key,
-            },
-            auth=auth,
-            log_date=when,
-            save=False,
-        )
-=======
             # Need to call this after save for the notifications to be created with the _primary_key
             project_signals.contributor_added.send(forked, contributor=user, auth=auth)
 
@@ -2292,7 +2223,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 log_date=when,
                 save=False,
             )
->>>>>>> 24e86e92f2c2b63924966b7467ce3da5b731fda4
 
         # Clone each log from the original node for this fork.
         logs = original.logs
@@ -2311,8 +2241,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     def register_node(self, schema, auth, data, parent=None):
         """Make a frozen copy of a node.
-
-<<<<<<< HEAD
         :param schema: Schema object
         :param auth: All the auth information including user, API key.
         :param template: Template name
@@ -2325,139 +2253,124 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             raise PermissionsError(
                 'User {} does not have permission '
                 'to register this node'.format(auth.user._id)
+
             )
-=======
-            :param schema: Schema object
-            :param auth: All the auth information including user, API key.
-            :param template: Template name
-            :param data: Form data
-            :param parent Node: parent registration of registration to be created
-            """
-            # TODO(lyndsysimon): "template" param is not necessary - use schema.name?
-            # NOTE: Admins can register child nodes even if they don't have write access them
-            if not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user):
-                raise PermissionsError(
-                    'User {} does not have permission '
-                    'to register this node'.format(auth.user._id)
+        if self.is_collection:
+            raise NodeStateError('Folders may not be registered')
 
-                )
-            if self.is_collection:
-                raise NodeStateError('Folders may not be registered')
+        when = datetime.datetime.utcnow()
 
-            when = datetime.datetime.utcnow()
+        original = self.load(self._primary_key)
 
-            original = self.load(self._primary_key)
+        # Note: Cloning a node will clone each node wiki page version and add it to
+        # `registered.wiki_pages_current` and `registered.wiki_pages_versions`.
+        if original.is_deleted:
+            raise NodeStateError('Cannot register deleted node.')
 
-            # Note: Cloning a node will clone each node wiki page version and add it to
-            # `registered.wiki_pages_current` and `registered.wiki_pages_versions`.
-            if original.is_deleted:
-                raise NodeStateError('Cannot register deleted node.')
+        registered = original.clone()
 
-            registered = original.clone()
+        registered.is_registration = True
+        registered.registered_date = when
+        registered.registered_user = auth.user
+        registered.registered_schema.append(schema)
+        registered.registered_from = original
+        if not registered.registered_meta:
+            registered.registered_meta = {}
+        registered.registered_meta[schema._id] = data
 
-            registered.is_registration = True
-            registered.registered_date = when
-            registered.registered_user = auth.user
-            registered.registered_schema.append(schema)
-            registered.registered_from = original
-            if not registered.registered_meta:
-                registered.registered_meta = {}
-            registered.registered_meta[schema._id] = data
+        registered.contributors = self.contributors
+        registered.forked_from = self.forked_from
+        registered.creator = self.creator
+        registered.tags = self.tags
+        registered.piwik_site_id = None
+        registered._affiliated_institutions = self._affiliated_institutions
+        registered.alternative_citations = self.alternative_citations
+        registered.node_license = original.license.copy() if original.license else None
+        registered.wiki_private_uuids = {}
 
-            registered.contributors = self.contributors
-            registered.forked_from = self.forked_from
-            registered.creator = self.creator
-            registered.tags = self.tags
-            registered.piwik_site_id = None
-            registered._affiliated_institutions = self._affiliated_institutions
-            registered.alternative_citations = self.alternative_citations
-            registered.node_license = original.license.copy() if original.license else None
-            registered.wiki_private_uuids = {}
+        registered.save()
 
-            registered.save()
+        # Clone each log from the original node for this registration.
+        logs = original.logs
+        for log in logs:
+            log.clone_node_log(registered._id)
 
-            # Clone each log from the original node for this registration.
-            logs = original.logs
-            for log in logs:
-                log.clone_node_log(registered._id)
+        registered.is_public = False
+        for node in registered.get_descendants_recursive():
+            node.is_public = False
+            node.save()
 
-            registered.is_public = False
-            for node in registered.get_descendants_recursive():
-                node.is_public = False
-                node.save()
+        if parent:
+            registered._parent_node = parent
 
-            if parent:
-                registered._parent_node = parent
+        # After register callback
+        for addon in original.get_addons():
+            _, message = addon.after_register(original, registered, auth.user)
+            if message:
+                status.push_status_message(message, kind='info', trust=False)
 
-            # After register callback
-            for addon in original.get_addons():
-                _, message = addon.after_register(original, registered, auth.user)
-                if message:
-                    status.push_status_message(message, kind='info', trust=False)
+        for node_contained in original.nodes:
+            if not node_contained.is_deleted:
+                child_registration = node_contained.register_node(
+                    schema=schema,
+                    auth=auth,
+                    data=data,
+                    parent=registered,
+            )
+        if self.is_collection:
+            raise NodeStateError("Folders may not be registered")
 
-            for node_contained in original.nodes:
-                if not node_contained.is_deleted:
-                    child_registration = node_contained.register_node(
-                        schema=schema,
-                        auth=auth,
-                        data=data,
-                        parent=registered,
-                )
-            if self.is_collection:
-                raise NodeStateError("Folders may not be registered")
+        when = datetime.datetime.utcnow()
 
-            when = datetime.datetime.utcnow()
+        original = self.load(self._primary_key)
 
-            original = self.load(self._primary_key)
+        # Note: Cloning a node will clone each node wiki page version and add it to
+        # `registered.wiki_pages_current` and `registered.wiki_pages_versions`.
+        if original.is_deleted:
+            raise NodeStateError('Cannot register deleted node.')
 
-            # Note: Cloning a node will clone each node wiki page version and add it to
-            # `registered.wiki_pages_current` and `registered.wiki_pages_versions`.
-            if original.is_deleted:
-                raise NodeStateError('Cannot register deleted node.')
+        registered = original.clone()
 
-            registered = original.clone()
+        registered.is_registration = True
+        registered.registered_date = when
+        registered.registered_user = auth.user
+        registered.registered_schema.append(schema)
+        registered.registered_from = original
+        if not registered.registered_meta:
+            registered.registered_meta = {}
+        registered.registered_meta[schema._id] = data
 
-            registered.is_registration = True
-            registered.registered_date = when
-            registered.registered_user = auth.user
-            registered.registered_schema.append(schema)
-            registered.registered_from = original
-            if not registered.registered_meta:
-                registered.registered_meta = {}
-            registered.registered_meta[schema._id] = data
+        registered.contributors = self.contributors
+        registered.forked_from = self.forked_from
+        registered.creator = self.creator
+        registered.tags = self.tags
+        registered.piwik_site_id = None
+        registered.primary_institution = self.primary_institution
+        registered._affiliated_institutions = self._affiliated_institutions
+        registered.alternative_citations = self.alternative_citations
+        registered.node_license = original.license.copy() if original.license else None
+        registered.wiki_private_uuids = {}
 
-            registered.contributors = self.contributors
-            registered.forked_from = self.forked_from
-            registered.creator = self.creator
-            registered.tags = self.tags
-            registered.piwik_site_id = None
-            registered.primary_institution = self.primary_institution
-            registered._affiliated_institutions = self._affiliated_institutions
-            registered.alternative_citations = self.alternative_citations
-            registered.node_license = original.license.copy() if original.license else None
-            registered.wiki_private_uuids = {}
+        registered.save()
 
-            registered.save()
+        # Clone each log from the original node for this registration.
+        logs = original.logs
+        for log in logs:
+            log.clone_node_log(registered._id)
 
-            # Clone each log from the original node for this registration.
-            logs = original.logs
-            for log in logs:
-                log.clone_node_log(registered._id)
+        registered.is_public = False
+        for node in registered.get_descendants_recursive():
+            node.is_public = False
+            node.save()
 
-            registered.is_public = False
-            for node in registered.get_descendants_recursive():
-                node.is_public = False
-                node.save()
+        if parent:
+            registered._parent_node = parent
 
-            if parent:
-                registered._parent_node = parent
-
-            # After register callback
-            for addon in original.get_addons():
-                _, message = addon.after_register(original, registered, auth.user)
-                if message:
-                    status.push_status_message(message, kind='info', trust=False)
->>>>>>> 24e86e92f2c2b63924966b7467ce3da5b731fda4
+        # After register callback
+        for addon in original.get_addons():
+            _, message = addon.after_register(original, registered, auth.user)
+            if message:
+                status.push_status_message(message, kind='info', trust=False)
 
         if self.is_public_files_collection:
             raise NodeStateError('Public Files collections may not be registered')
