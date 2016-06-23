@@ -1,0 +1,63 @@
+{
+    "name": "AsPredicted Preregistration",
+    "version": 2,
+    "description": "You will be asked to answer 8 questions about your study. This preregistration uses the content recommended on the website AsPredicted.org.",
+    "pages": [{
+        "title": "AsPredicted Preregistration",
+        "id": "page1",
+        "questions": [{
+            "qid": "data",
+            "title": "Have any data been collected for this study already?",
+            "nav": "Data Collection",
+            "type": "choose",
+            "format": "singleselect",
+            "options": [
+                "Yes, at least some data have been collected for this study already",
+                "No, no data have been collected for this study yet"
+            ],
+            "description": "Please choose"
+        },{
+            "qid": "hypothesis",
+            "title": "What's the main question being asked or hypothesis being tested in this study?",
+            "nav": "Hypothesis",
+            "type": "string",
+            "format": "textarea"
+        },{
+            "qid": "dependent",
+            "title": "Describe the key dependent variable(s) specifying how they will be measured.",
+            "nav": "Dependent variables",
+            "type": "string",
+            "format": "textarea"
+        },{
+            "qid": "conditions",
+            "title": "How many and which conditions will participants be assigned to?",
+            "nav": "Conditions",
+            "type": "string",
+            "format": "textarea"
+        },{
+            "qid": "analyses",
+            "title": "Specify exactly which analyses you will conduct to examine the main question/hypothesis.",
+            "nav": "Analyses",
+            "type": "string",
+            "format": "textarea"
+        },{
+            "qid": "analyses2",
+            "title": "Any secondary analyses?",
+            "nav": "More analyses",
+            "type": "string",
+            "format": "textarea"
+        },{
+            "qid": "sample",
+            "title": "How many observations will be collected or what will determine sample size? No need to justify decision, but be precise about exactly how the number will be determined.",
+            "nav": "Sample size",
+            "type": "string",
+            "format": "textarea"
+        },{
+            "qid": "other",
+            "title": "Anything else you would like to pre-register? (e.g., data exclusions, variables collected for exploratory purposes, unusual analyses planned?)",
+            "nav": "Other",
+            "type": "string",
+            "format": "textarea"
+        }]
+    }]
+}

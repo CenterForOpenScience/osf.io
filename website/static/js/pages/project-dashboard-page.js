@@ -121,7 +121,13 @@ $(document).ready(function () {
                     return [
                         {
                             title: 'Name',
-                            width : '100%',
+                            width : '70%',
+                            sort : true,
+                            sortType : 'text'
+                        },
+                        {
+                            title: 'Modified',
+                            width : '30%',
                             sort : true,
                             sortType : 'text'
                         }
@@ -141,7 +147,12 @@ $(document).ready(function () {
                                 data: 'name',
                                 folderIcons: true,
                                 filter: true,
-                                custom: Fangorn.DefaultColumns._fangornTitleColumn
+                                custom: Fangorn.DefaultColumns._fangornTitleColumn},
+                                {
+                                data: 'modified',
+                                folderIcons: false,
+                                filter: false,
+                                custom: Fangorn.DefaultColumns._fangornModifiedColumn
                             }];
                     if (item.parentID) {
                         item.data.permissions = item.data.permissions || item.parent().data.permissions;
