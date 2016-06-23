@@ -561,7 +561,7 @@ function getAncestorDescriptor(node, nodeTitle, ancestor) {
             break;
 
         case 'You do not have permission to perform this action.':
-            ancestorDescriptor = m('em', 'Private ' + ancestor + ' / ');
+            ancestorDescriptor = m('em', 'Private ' + ' / ');
             break;
 
         default:
