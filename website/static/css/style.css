@@ -694,6 +694,7 @@ button.close {
 .create-password {
     margin-top: 5px;
     margin-bottom: 5px;
+    height: inherit;
 }
 .more-replies {
     margin-right: 15px;
