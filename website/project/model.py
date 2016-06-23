@@ -3001,7 +3001,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             # If user is merged into another account, use master account
             contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
             print contrib_to_add, contributor, self.creator
-            if self.is_public_files_collection:
+            if self.is_public_files_collection and not contributor.merged_by:
                 raise NodeStateError('Cannot add contributor to public files collection')
             if contrib_to_add not in self.contributors:
 

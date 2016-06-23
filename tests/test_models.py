@@ -11,6 +11,7 @@ import urllib
 import itsdangerous
 import random
 import string
+import httpretty
 from dateutil import parser
 
 from modularodm import Q
@@ -4752,191 +4753,63 @@ class TestPublicFiles(OsfTestCase):
         assert_equal(self.project.edit_citation(self.auth,{})  , False)
         assert_equal(self.project.remove_citation(self.auth,{}), False)
 
-    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
-    def test_user_merge_with_whatever(self, mock_get_mailchimp_api):
-        # oldman =  UserFactory()
-        # oldauth = Auth(user=oldman)
-        # url = self.project.api_url()
-        # res = self.app.put_json(url, {
-        #     'page': 'wiki',
-        #     'rootId': 'random things'
-        # }
-        # oldman.merge_user(self.user)
-        # self.project.reload()
-        # print self.project.creator, self.user._id, self.oldman._id
-        # assert_false(True)
+    # OAUTH_PROVIDER = factories.MockOAuth2Provider.short_name
+    #
+    # ADDONS_UNDER_TEST = {
+    #     'mock': {
+    #         'user_settings': MockAddonUserSettings,
+    #         'node_settings': MockAddonNodeSettings,
+    #     },
+    #     'mock_merging': {
+    #         'user_settings': MockAddonUserSettingsMergeable,
+    #         'node_settings': MockAddonNodeSettings,
+    #     },
+    #     OAUTH_PROVIDER: {
+    #         'user_settings': MockOAuthAddonUserSettings,
+    #         'node_settings': MockOAuthAddonNodeSettings,
+    #     },
+    # }
+    def test_user_merge_with_whatever(self):
+        oldman =  UserFactory()
+        oldauth = Auth(user=oldman)
+        project = PublicFilesFactory(creator=oldman)
+
+        other_node_settings = project.get_addon('osfstorage')
+        move_to = other_node_settings.get_root().append_file('Cloud')
+
+        self.user.merge_user(oldman)
+        self.project.reload()
+        print project, self.project
+        assert_false(True)
+
+        # give the other user an external account
+        # external_account = ExternalAccountFactory(
+        #     provider=self.OAUTH_PROVIDER
+        # )
+        # self.other_user.external_accounts.append(external_account)
         #
-        other_user = UserFactory()
-        other_user.save()
+        # # set up a project, whose addon is authenticated to the other user
+        # other_user_settings = self.other_user.get_or_add_addon(self.OAUTH_PROVIDER)
+        # node_settings = self.project.get_or_add_addon(self.OAUTH_PROVIDER, auth=Auth(self.other_user))
+        # node_settings.set_auth(
+        #     user=self.other_user,
+        #     external_account=external_account
+        # )
+        #
+        # user_settings = self.user.get_or_add_addon(self.OAUTH_PROVIDER)
+        #
+        # self.user.merge_user(self.other_user)
+        # self.user.save()
+        #
+        # self.project.reload()
+        # node_settings.reload()
+        # user_settings.reload()
+        # other_user_settings.reload()
+        #
+        # assert_true(node_settings.has_auth)
+        # assert_in(self.project._id, user_settings.oauth_grants)
+        # assert_equal(node_settings.user_settings, user_settings)
 
-        # define values for users' fields
-        today = datetime.datetime.now()
-        yesterday = today - datetime.timedelta(days=1)
-
-        self.user.comments_viewed_timestamp['shared_gt'] = today
-        other_user.comments_viewed_timestamp['shared_gt'] = yesterday
-        self.user.comments_viewed_timestamp['shared_lt'] = yesterday
-        other_user.comments_viewed_timestamp['shared_lt'] = today
-        self.user.comments_viewed_timestamp['user'] = yesterday
-        other_user.comments_viewed_timestamp['other'] = yesterday
-
-        self.user.email_verifications = {'user': {'email': 'a'}}
-        other_user.email_verifications = {'other': {'email': 'b'}}
-
-        self.user.notifications_configured = {'abc12': True}
-        other_user.notifications_configured = {'123ab': True}
-
-        self.user.external_accounts = [ExternalAccountFactory()]
-        other_user.external_accounts = [ExternalAccountFactory()]
-
-        self.user.mailchimp_mailing_lists = {
-            'user': True,
-            'shared_gt': True,
-            'shared_lt': False,
-        }
-        other_user.mailchimp_mailing_lists = {
-            'other': True,
-            'shared_gt': False,
-            'shared_lt': True,
-        }
-
-        self.user.piwik_token = 'abc'
-        other_user.piwik_token = 'def'
-
-        self.user.security_messages = {
-            'user': today,
-            'shared': today,
-        }
-        other_user.security_messages = {
-            'other': today,
-            'shared': today,
-        }
-
-        self.user.system_tags = ['user', 'shared']
-        other_user.system_tags = ['other', 'shared']
-
-        self.user.watched = [WatchConfigFactory()]
-        other_user.watched = [WatchConfigFactory()]
-
-        self.user.save()
-        other_user.save()
-
-        # define expected behavior for ALL FIELDS of the User object
-        default_to_master_user_fields = [
-            '_id',
-            'date_confirmed',
-            'date_disabled',
-            'date_last_login',
-            'date_registered',
-            'email_last_sent',
-            'family_name',
-            'fullname',
-            'given_name',
-            'is_claimed',
-            'is_invited',
-            'is_registered',
-            'jobs',
-            'locale',
-            'merged_by',
-            'middle_names',
-            'password',
-            'piwik_token',
-            'recently_added',
-            'schools',
-            'social',
-            'suffix',
-            'timezone',
-            'username',
-            'mailing_lists',
-            'verification_key',
-            '_affiliated_institutions',
-            'contributor_added_email_records',
-            'requested_deactivation'
-        ]
-
-        calculated_fields = {
-            'comments_viewed_timestamp': {
-                'user': yesterday,
-                'other': yesterday,
-                'shared_gt': today,
-                'shared_lt': today,
-            },
-            'email_verifications': {
-                'user': {'email': 'a'},
-                'other': {'email': 'b'},
-            },
-            'notifications_configured': {
-                '123ab': True, 'abc12': True,
-            },
-            'emails': [
-                self.user.username,
-                other_user.username,
-            ],
-            'external_accounts': [
-                self.user.external_accounts[0]._id,
-                other_user.external_accounts[0]._id,
-            ],
-            'mailchimp_mailing_lists': {
-                'user': True,
-                'other': True,
-                'shared_gt': True,
-                'shared_lt': True,
-            },
-            'osf_mailing_lists': {
-                'Open Science Framework Help': True
-            },
-            'security_messages': {
-                'user': today,
-                'other': today,
-                'shared': today,
-            },
-            'system_tags': ['user', 'shared', 'other'],
-            'unclaimed_records': {},
-            'watched': [
-                self.user.watched[0]._id,
-                other_user.watched[0]._id,
-            ],
-        }
-
-        # from the explicit rules above, compile expected field/value pairs
-        expected = {}
-        expected.update(calculated_fields)
-        for key in default_to_master_user_fields:
-            expected[key] = getattr(self.user, key)
-
-        # ensure all fields of the user object have an explicit expectation
-        assert_equal(
-            set(expected.keys()),
-            set(self.user._fields),
-        )
-
-        # mock mailchimp
-        mock_client = mock.MagicMock()
-        mock_get_mailchimp_api.return_value = mock_client
-        mock_client.lists.list.return_value = {'data': [{'id': x, 'list_name': list_name} for x, list_name in enumerate(self.user.mailchimp_mailing_lists)]}
-
-        # perform the merge
-        self.user.merge_user(other_user)
-        self.user.save()
-        handlers.celery_teardown_request()
-
-        # check each field/value pair
-        for k, v in expected.iteritems():
-            assert_equal(
-                getattr(self.user, k),
-                v,
-                # "{} doesn't match expectation".format(k)
-            )
-
-        # check fields set on merged user
-        assert_equal(other_user.merged_by, self.user)
-
-        assert_equal(
-            0,
-            models.Session.find(
-                Q('data.auth_user_id', 'eq', other_user._id)
-            ).count()
-        )
 
 if __name__ == '__main__':
     unittest.main()
