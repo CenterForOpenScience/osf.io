@@ -12,9 +12,11 @@ def sync_project(project_node):
     from modularodm import Q
 
     sync_group(project_node)
-    update_topic_title(project_node)
-    update_topic_content(project_node)
-    update_topic_privacy(project_node)
+
+    if project_node.discourse_topic_id:
+        update_topic_title(project_node)
+        update_topic_content(project_node)
+        update_topic_privacy(project_node)
 
     for key, wiki_id in project_node.wiki_pages_current.items():
         wiki = NodeWikiPage.load(wiki_id)

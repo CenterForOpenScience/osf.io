@@ -286,7 +286,7 @@ class StoredFileNode(StoredObject, Commentable):
     # for Discourse compatibility
     @property
     def guid_id(self):
-        return get_guid()._id
+        return self.get_guid()._id
 
     # For Discourse API compatibility
     @property

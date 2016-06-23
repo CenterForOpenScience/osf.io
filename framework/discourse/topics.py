@@ -14,11 +14,12 @@ def _get_project_node(node):
         return node
 
 def get_topics(project_node):
-    if project_node.is_public:
-        return request('get', '/tags/' + project_node._id + '.json')
-    else:
-        username = get_username()
-        return request('get', '/topics/private-messages-group/' + username + '/' + project_node._id + '.json')
+    return request('get', '/projects/' + project_node._id + '.json')
+    #if project_node.is_public:
+    #    return request('get', '/tags/' + project_node._id + '.json')
+    #else:
+    #    username = get_username()
+    #    return request('get', '/topics/private-messages-group/' + username + '/' + project_node._id + '.json')
 
 def _escape_markdown(text):
     r = re.compile(r'([\\`*_{}[\]()#+.!-])')
@@ -35,7 +36,7 @@ def _make_topic_content(node):
     topic_content = ''#'`' + node_title + '`'
     topic_content += '\nThis is the discussion topic for ' + node_description + '.\n'
     topic_content += '\nContributors: ' + ', '.join(map(lambda c: c.display_full_name(), project_node.contributors))
-    topic_content += '\nDate Created: ' + node.date_created.strftime("%Y-%m-%d %H:%M:%S")
+    #topic_content += '\nDate Created: ' + node.date_created.strftime("%Y-%m-%d %H:%M:%S")
     topic_content += '\nCategory: ' + project_node.category
     topic_content += '\nDescription: ' + (project_node.description if project_node.description else "No Description")
     topic_content += '\nLicense: ' + (project_node.license if project_node.license else "No License")
@@ -46,17 +47,15 @@ def _make_topic_content(node):
 
     return topic_content
 
-def _get_topic_tags(node):
-    tags = [node.guid_id]#, node.guid_id + ':' + node.label]
+def _get_parent_guids(node):
+    parent_guids = []
     parent_node = _get_project_node(node)
-    if parent_node is node:
-        parent_node = node.parent_node
     while parent_node:
-        tags.append(parent_node._id)
+        parent_guids.append(parent_node._id)
         #tags.append(parent_node._id + ':' + parent_node.label)
         parent_node = parent_node.parent_node
 
-    return tags
+    return parent_guids
 
 def create_topic(node):
     data = {}
@@ -70,7 +69,7 @@ def create_topic(node):
     data['target_usernames'] = project_node._id
     data['title'] = node.label
     data['raw'] = _make_topic_content(node)
-    #data['tags[]'] = _get_topic_tags(node)
+    data['parent_guids[]'] = _get_parent_guids(node)
     data['project_guid'] = project_node._id
     data['topic_guid'] = node.guid_id
 
@@ -112,8 +111,12 @@ def update_topic_privacy(node):
     return result
 
 def update_topic_title(node):
+    if node.discourse_topic_id is None:
+        return
+
     data = {}
     data['title'] = node.label
+    data['parent_guids[]'] = _get_parent_guids(node)
     return request('put', '/t/' + node.guid_id + '/' + str(node.discourse_topic_id), data)
 
 def get_or_create_topic_id(node):
