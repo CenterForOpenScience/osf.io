@@ -1138,24 +1138,24 @@ class TestChildrenViews(OsfTestCase):
         OsfTestCase.setUp(self)
         self.user = AuthUserFactory()
 
-    def test_get_children(self):
+    def test_get_readable_descendants(self):
         project = ProjectFactory(creator=self.user)
         child = NodeFactory(parent=project, creator=self.user)
 
-        url = project.api_url_for('get_children')
+        url = project.api_url_for('get_readable_descendants')
         res = self.app.get(url, auth=self.user.auth)
 
         nodes = res.json['nodes']
         assert_equal(len(nodes), 1)
         assert_equal(nodes[0]['id'], child._primary_key)
 
-    def test_get_children_includes_pointers(self):
+    def test_get_readable_descendants_includes_pointers(self):
         project = ProjectFactory(creator=self.user)
         pointed = ProjectFactory()
         project.add_pointer(pointed, Auth(self.user))
         project.save()
 
-        url = project.api_url_for('get_children')
+        url = project.api_url_for('get_readable_descendants')
         res = self.app.get(url, auth=self.user.auth)
 
         nodes = res.json['nodes']
@@ -1164,7 +1164,7 @@ class TestChildrenViews(OsfTestCase):
         pointer = Pointer.find_one(Q('node', 'eq', pointed))
         assert_equal(nodes[0]['id'], pointer._primary_key)
 
-    def test_get_children_filter_for_permissions(self):
+    def test_get_readable_descendants_filter_for_permissions(self):
         # self.user has admin access to this project
         project = ProjectFactory(creator=self.user)
 
@@ -1185,19 +1185,19 @@ class TestChildrenViews(OsfTestCase):
         project.add_pointer(read_only_pointed, Auth(self.user))
         project.save()
 
-        url = project.api_url_for('get_children')
+        url = project.api_url_for('get_readable_descendants')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(len(res.json['nodes']), 2)
 
-        url = project.api_url_for('get_children', permissions='write')
+        url = project.api_url_for('get_readable_descendants', permissions='write')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(len(res.json['nodes']), 0)
 
-    def test_get_children_render_nodes_receives_auth(self):
+    def test_get_readable_descendants_render_nodes_receives_auth(self):
         project = ProjectFactory(creator=self.user)
         NodeFactory(parent=project, creator=self.user)
 
-        url = project.api_url_for('get_children')
+        url = project.api_url_for('get_readable_descendants')
         res = self.app.get(url, auth=self.user.auth)
 
         perm = res.json['nodes'][0]['permissions']

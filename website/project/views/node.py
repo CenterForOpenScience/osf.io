@@ -919,6 +919,10 @@ def get_summary(auth, node, **kwargs):
 def get_readable_descendants(auth, node, **kwargs):
     descendants = []
     for child in node.nodes:
+        if request.args.get('permissions'):
+            perm = request.args['permissions'].lower().strip()
+            if perm not in child.get_permissions(auth.user):
+                continue
         if child.is_deleted:
             continue
         elif child.can_view(auth):
