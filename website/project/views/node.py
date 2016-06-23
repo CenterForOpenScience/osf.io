@@ -925,8 +925,10 @@ def get_readable_descendants(auth, node, **kwargs):
             descendants.append(child)
         else:
             if not child.primary:
+                if node.has_permission(auth.user, 'read'):
+                    descendants.append(child)
                 continue
-            descendants.extend(child.find_readable_descendants(auth))
+        descendants.extend(child.find_readable_descendants(auth))
     return _render_nodes(descendants, auth)
 
 @must_be_contributor_or_public
