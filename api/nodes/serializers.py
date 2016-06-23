@@ -317,7 +317,7 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
 
     def get_absolute_url(self, obj):
         kwargs = self.context['request'].parser_context['kwargs']
-        if 'provider' not in kwargs:
+        if 'provider' not in kwargs or (obj and obj.config.short_name != kwargs.get('provider')):
             kwargs.update({'provider': obj.config.short_name})
 
         return absolute_reverse(
