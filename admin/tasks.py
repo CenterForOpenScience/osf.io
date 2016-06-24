@@ -34,7 +34,7 @@ def assets(ctx, dev=False, watch=False):
     if not dev:
         npm += ' --production'
     ctx.run(npm, echo=True)
-    bower_install()
+    bower_install(ctx)
     # Always set clean=False to prevent possible mistakes
     # on prod
     webpack(clean=False, watch=watch, dev=dev)
@@ -44,7 +44,7 @@ def assets(ctx, dev=False, watch=False):
 def webpack(ctx, clean=False, watch=False, dev=False):
     """Build static assets with webpack."""
     if clean:
-        clean_assets()
+        clean_assets(ctx)
     if os.getcwd() != HERE:
         os.chdir(HERE)
     webpack_bin = os.path.join(HERE, 'node_modules', 'webpack', 'bin',
