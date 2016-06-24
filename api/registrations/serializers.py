@@ -39,7 +39,6 @@ class BaseRegistrationSerializer(NodeSerializer):
                                         'node have implicit read permissions for all child nodes'))
     current_user_permissions = HideIfWithdrawal(ser.SerializerMethodField(help_text='List of strings representing the permissions '
                                                                    'for the current user on this node.'))
-    inherit_contributors = ser.BooleanField(read_only=True)
 
     pending_embargo_approval = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_pending_embargo',
                                                                  help_text='The associated Embargo is awaiting approval by project admins.'))

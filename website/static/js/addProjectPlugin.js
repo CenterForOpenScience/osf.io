@@ -86,7 +86,7 @@ var AddProject = {
             var data;
             self.viewState('processing');
             if(self.options.parentID) {
-                url = $osf.apiV2Url('nodes/' + self.options.parentID + '/children/', { query : {}});
+                url = $osf.apiV2Url('nodes/' + self.options.parentID + '/children/', { query : {'inherit_contributors' : self.newProjectInheritContribs()}});
             } else {
                 url = $osf.apiV2Url('nodes/', { query : {}});
             }
@@ -96,8 +96,7 @@ var AddProject = {
                         'attributes': {
                             'title': self.newProjectName(),
                             'category': self.newProjectCategory(),
-                            'description': self.newProjectDesc(),
-                            'inherit_contributors': self.newProjectInheritContribs()
+                            'description': self.newProjectDesc()
                         }
                     }
                 };
