@@ -927,12 +927,12 @@ def get_readable_descendants(auth, node, **kwargs):
             continue
         elif child.can_view(auth):
             descendants.append(child)
-        else:
-            if not child.primary:
+        elif not child.primary:
                 if node.has_permission(auth.user, 'write'):
                     descendants.append(child)
                 continue
-        descendants.extend(child.find_readable_descendants(auth))
+        else:
+            descendants.extend(child.find_readable_descendants(auth))
     return _render_nodes(descendants, auth)
 
 def node_child_tree(user, node_ids):

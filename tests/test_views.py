@@ -1164,6 +1164,87 @@ class TestChildrenViews(OsfTestCase):
         pointer = Pointer.find_one(Q('node', 'eq', pointed))
         assert_equal(nodes[0]['id'], pointer._primary_key)
 
+    def test_readable_descendants_masked_by_permissions(self):
+        # Users should be able to see through components they do not have
+        # permissions to.
+        # Users should not be able to see through links to nodes they do not
+        # have permissions to.
+        #
+        #                   1(AB)
+        #                  /  |  \
+        #                 *   |   \
+        #                /    |    \
+        #             2(A)  4(B)    7(A)
+        #               |     |     |    \
+        #               |     |     |     \
+        #             3(AB) 5(B)    8(AB) 9(B)
+        #                     |
+        #                     |
+        #                   6(A)
+        #
+        #
+        userA = AuthUserFactory()
+        userB = AuthUserFactory()
+
+        project1 = ProjectFactory(creator=self.user, title='One')
+        project1.add_contributor(userA, auth=Auth(self.user), permissions=['read'])
+        project1.add_contributor(userB, auth=Auth(self.user), permissions=['read'])
+
+        component2 = ProjectFactory(creator=self.user, title='Two')
+        component2.add_contributor(userA, auth=Auth(self.user), permissions=['read'])
+
+        component3 = ProjectFactory(creator=self.user, title='Three')
+        component3.add_contributor(userA, auth=Auth(self.user), permissions=['read'])
+        component3.add_contributor(userB, auth=Auth(self.user), permissions=['read'])
+
+        component4 = ProjectFactory(creator=self.user, title='Four')
+        component4.add_contributor(userB, auth=Auth(self.user), permissions=['read'])
+
+        component5 = ProjectFactory(creator=self.user, title='Five')
+        component5.add_contributor(userB, auth=Auth(self.user), permissions=['read'])
+
+        component6 = ProjectFactory(creator=self.user, title='Six')
+        component6.add_contributor(userA, auth=Auth(self.user), permissions=['read'])
+
+        component7 = ProjectFactory(creator=self.user, title='Seven')
+        component7.add_contributor(userA, auth=Auth(self.user), permissions=['read'])
+
+        component8 = ProjectFactory(creator=self.user, title='Eight')
+        component8.add_contributor(userA, auth=Auth(self.user), permissions=['read'])
+        component8.add_contributor(userB, auth=Auth(self.user), permissions=['read'])
+
+        component9 = ProjectFactory(creator=self.user, title='Nine')
+        component9.add_contributor(userB, auth=Auth(self.user), permissions=['read'])
+
+        project1.add_pointer(component2, Auth(self.user))
+        project1.nodes.append(component4)
+        project1.nodes.append(component7)
+        component2.nodes.append(component3)
+        component4.nodes.append(component5)
+        component5.nodes.append(component6)
+        component7.nodes.append(component8)
+        component7.nodes.append(component9)
+        project1.save()
+        component2.save()
+        component3.save()
+        component4.save()
+        component5.save()
+        component6.save()
+        component7.save()
+        component8.save()
+
+        url = project1.api_url_for('get_readable_descendants')
+
+        res = self.app.get(url, auth=userA.auth)
+        assert_equal(len(res.json['nodes']), 3)
+        for node in res.json['nodes']:
+            assert_in(node['title'], ['Two', 'Six', 'Seven'])
+
+        res = self.app.get(url, auth=userB.auth)
+        assert_equal(len(res.json['nodes']), 3)
+        for node in res.json['nodes']:
+            assert_in(node['title'], ['Four', 'Eight', 'Nine'])
+
     def test_get_readable_descendants_filter_for_permissions(self):
         # self.user has admin access to this project
         project = ProjectFactory(creator=self.user)
@@ -2849,22 +2930,22 @@ class TestPointerViews(OsfTestCase):
         project.add_pointer(node, auth=Auth(user=user), save=save)
 
     def test_pointer_list_write_contributor_can_remove_private_component_entry(self):
-         """Ensure that write contributors see the button to delete a pointer,
-             even if they cannot see what it is pointing at"""
-         url = web_url_for('view_project', pid=self.project._id)
-         user2 = AuthUserFactory()
-         self.project.add_contributor(user2,
-                                      auth=Auth(self.project.creator),
-                                      permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS)
+        """Ensure that write contributors see the button to delete a pointer,
+            even if they cannot see what it is pointing at"""
+        url = web_url_for('view_project', pid=self.project._id)
+        user2 = AuthUserFactory()
+        self.project.add_contributor(user2,
+                                     auth=Auth(self.project.creator),
+                                     permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS)
 
-         self._make_pointer_only_user_can_see(user2, self.project)
-         self.project.save()
+        self._make_pointer_only_user_can_see(user2, self.project)
+        self.project.save()
 
-         res = self.app.get(url, auth=self.user.auth).maybe_follow()
-         assert_equal(res.status_code, 200)
+        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        assert_equal(res.status_code, 200)
 
-         has_controls = res.lxml.xpath('//li[@node_reference]/p[starts-with(normalize-space(text()), "Private Link")]//i[contains(@class, "remove-pointer")]')
-         assert_true(has_controls)
+        has_controls = res.lxml.xpath('//li[@node_reference]/p[starts-with(normalize-space(text()), "Private Link")]//i[contains(@class, "remove-pointer")]')
+        assert_true(has_controls)
 
     def test_pointer_list_write_contributor_can_remove_public_component_entry(self):
         url = web_url_for('view_project', pid=self.project._id)
