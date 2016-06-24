@@ -546,9 +546,8 @@ var QuickSearchProject = {
     }
 };
 
-function getAncestorDescriptor(node, nodeID, ancestor) {
+function getAncestorDescriptor(node, nodeID, ancestor, ancestorID) {
     var ancestorDescriptor;
-    var ancestorID = lodashGet(node, 'embeds.' + ancestor + '.data.id', '');
     var ancestorTitleRequest = lodashGet(node, 'embeds.' + ancestor + '.data.attributes.title', '');
     var errorRequest = lodashGet(node, 'embeds.' + ancestor + '.errors[0].detail', '');
     switch(errorRequest) {
@@ -558,7 +557,7 @@ function getAncestorDescriptor(node, nodeID, ancestor) {
             }
             else {
 //            Remove trailing period
-                if (ancestorTitleRequest[ancestorTitleRequest.length-1] === ".") {
+                if (ancestorTitleRequest[ancestorTitleRequest.length-1] === '.') {
                     ancestorTitleRequest = ancestorTitleRequest.slice(0,-1);
                 }
                 ancestorDescriptor = ancestorTitleRequest + ' / ';
@@ -566,13 +565,18 @@ function getAncestorDescriptor(node, nodeID, ancestor) {
             break;
 
         case 'You do not have permission to perform this action.':
-            ancestorDescriptor = m('em', 'Private / ');
+            if (ancestor === 'root') {
+                ancestorDescriptor = m('em', 'Private Project / ');
+            }
+            if (ancestor === 'parent') {
+                ancestorDescriptor = m('em', 'Private / ');
+            }
             break;
 
         default:
-            ancestorDescriptor = m('em', 'Name Unavailable / ');
+            ancestorDescriptor = 'Name Unavailable / ';
     }
-    return [ancestorDescriptor, ancestorID];
+    return ancestorDescriptor;
 }
 
 var QuickSearchNodeDisplay = {
@@ -591,22 +595,24 @@ var QuickSearchNodeDisplay = {
                 var nodeID = project.id;
                 var title = project.attributes.title;
 
-                var rootInformation = getAncestorDescriptor(project, nodeID, 'root');
-                var root = rootInformation[0];
-                var rootID = rootInformation[1];
+                var rootID = lodashGet(project, 'embeds.root.data.id', '');
+                var rootURL = lodashGet(project, 'embeds.root.data.links.self')
+                var root = getAncestorDescriptor(project, nodeID, 'root', rootID);
 
-                var parentInformation = getAncestorDescriptor(project, nodeID, 'parent');
-                var parent = parentInformation[0];
-                var parentID = parentInformation[1];
+                var parentID = lodashGet(project, 'embeds.parent.data.id', '');
+                var parent = getAncestorDescriptor(project, nodeID, 'parent', parentID);
 
-                var grandParentID = lodashGet(project, 'embeds.parent.data.id', '');
+//              API doesn't provide grandparent GUID, so we have to use API URL.
+                var grandParentURL = lodashGet(project, 'embeds.parent.data.relationships.parent.links.related.href', '');
 
-                if (grandParentID !== rootID && grandParentID !== '') {
-                    root += '... / ';
+//              Parent and root ID are the same, and they aren't both private (would cause both to have empty ID)
+                if (parentID === rootID && parentID !== '') {
+                    parent = '';
                 }
 
-                if (parentID === rootID) {
-                    parent = '';
+//              There are projects in between root and parent and they aren't both private
+                if (grandParentURL !== rootURL && grandParentURL !== '' && rootID !== '') {
+                    root += '... / ';
                 }
 
                 return m('a', {href: '/' + project.id, onclick: function() {
