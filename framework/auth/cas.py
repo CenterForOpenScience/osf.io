@@ -1,26 +1,29 @@
 # -*- coding: utf-8 -*-
+
 import furl
+import httplib as http
 import json
 import urllib
-import requests
-import httplib as http
-from lxml import etree
 
-from website import settings
+from lxml import etree
+import requests
 
 from framework.auth import User
 from framework.auth import authenticate
 from framework.flask import redirect
 from framework.exceptions import HTTPError
+from website import settings
 
 
 class CasError(HTTPError):
     """General CAS-related error."""
+
     pass
 
 
 class CasHTTPError(CasError):
     """Error raised when an unexpected error is returned from the CAS server."""
+
     def __init__(self, code, message, headers, content):
         super(CasHTTPError, self).__init__(code, message)
         self.headers = headers
@@ -35,6 +38,7 @@ class CasHTTPError(CasError):
 
 class CasTokenError(CasError):
     """Raised if an invalid token is passed by the client."""
+
     def __init__(self, message):
         super(CasTokenError, self).__init__(http.BAD_REQUEST, message)
 
@@ -88,14 +92,15 @@ class CasClient(object):
         return url.url
 
     def service_validate(self, ticket, service_url):
-        """Send request to validate ticket.
+        """
+        Send request to CAS to validate ticket.
 
-        :param str ticket: CAS service ticket.
-        :param str service_url: Service URL from which the authentication request
-            originates.
+        :param str ticket: CAS service ticket
+        :param str service_url: Service URL from which the authentication request originates
         :rtype: CasResponse
         :raises: CasError if an unexpected response is returned
         """
+
         url = furl.furl(self.BASE_URL)
         url.path.segments.extend(('p3', 'serviceValidate',))
         url.args['ticket'] = ticket
@@ -108,12 +113,14 @@ class CasClient(object):
             self._handle_error(resp)
 
     def profile(self, access_token):
-        """Send request to get profile information, given an access token.
+        """
+        Send request to get profile information, given an access token.
 
         :param str access_token: CAS access_token.
         :rtype: CasResponse
         :raises: CasError if an unexpected response is returned.
         """
+
         url = self.get_profile_url()
         headers = {
             'Authorization': 'Bearer {}'.format(access_token),
@@ -175,9 +182,14 @@ class CasClient(object):
 
 
 def parse_auth_header(header):
-    """Given a Authorization header string, e.g. 'Bearer abc123xyz', return a token
-    or raise an error if the header is invalid.
     """
+    Given an Authorization header string, e.g. 'Bearer abc123xyz',
+    return a token or raise an error if the header is invalid.
+
+    :param header:
+    :return:
+    """
+
     parts = header.split()
     if parts[0].lower() != 'bearer':
         raise CasTokenError('Unsupported authorization type')
@@ -193,11 +205,13 @@ def get_client():
 
 
 def get_login_url(*args, **kwargs):
-    """Convenience function for getting a login URL for a service.
+    """
+    Convenience function for getting a login URL for a service.
 
     :param args: Same args that `CasClient.get_login_url` receives
     :param kwargs: Same kwargs that `CasClient.get_login_url` receives
     """
+
     return get_client().get_login_url(*args, **kwargs)
 
 
@@ -206,27 +220,28 @@ def get_institution_target(redirect_url):
 
 
 def get_logout_url(*args, **kwargs):
-    """Convenience function for getting a logout URL for a service.
+    """
+    Convenience function for getting a logout URL for a service.
 
     :param args: Same args that `CasClient.get_logout_url` receives
     :param kwargs: Same kwargs that `CasClient.get_logout_url` receives
     """
+
     return get_client().get_logout_url(*args, **kwargs)
 
 
 def get_profile_url():
-    """Convenience function for getting a profile URL for a user.
-    """
+    """Convenience function for getting a profile URL for a user."""
+
     return get_client().get_profile_url()
 
 
 def make_response_from_ticket(ticket, service_url):
     """
-    Given a CAS ticket and service URL, attempt to the user and return a proper redirect response.
+    Given a CAS ticket and service URL, attempt to validate the user and return a proper redirect response.
 
-    :param ticket:
-    :param service_url:
-    :param user_agent:
+    :param str ticket: CAS service ticket
+    :param str service_url: Service URL from which the authentication request originates
     :return:
     """
 
