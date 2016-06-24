@@ -6,7 +6,7 @@ import datetime
 import time
 
 from modularodm import Q
-from oauthlib.oauth2 import InvalidGrantError
+from oauthlib.oauth2 import OAuth2Error
 from dateutil.relativedelta import relativedelta
 
 from framework.celery_tasks import app as celery_app
@@ -68,7 +68,7 @@ def main(delta, Provider, rate_limit, dry_run):
             success = False
             try:
                 success = Provider(record).refresh_oauth_key(force=True)
-            except InvalidGrantError as e:
+            except OAuth2Error as e:
                 logger.error(e)
             else:
                 logger.info(
