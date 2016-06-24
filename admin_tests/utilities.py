@@ -29,6 +29,14 @@ def setup_form_view(view, request, form, *args, **kwargs):
     return view
 
 
+def setup_user_view(view, request, user, *args, **kwargs):
+    view.request = request
+    view.request.user = user
+    view.args = args
+    view.kwargs = kwargs
+    return view
+
+
 def setup_log_view(view, request, *args, **kwargs):
     view.request = request
     try:

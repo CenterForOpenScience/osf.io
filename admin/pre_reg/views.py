@@ -166,6 +166,7 @@ class DraftFormView(PreregAdmin, FormView):
                     self.draft.reject(osf_user)
             except PermissionsError as e:
                 return permission_denied(self.request, e)
+            self.checkin_files(self.draft)
             update_admin_log(self.request.user.id, self.kwargs.get('draft_pk'),
                              'Draft Registration', message, flag)
         admin_settings = form.cleaned_data
