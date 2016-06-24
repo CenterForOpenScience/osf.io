@@ -117,7 +117,7 @@ var callbacks = {
         });
     },
     matcher: function(flag, subtext, should_startWithSpace, acceptSpaceBar) {
-    /* Override upsream to support names with spaces */
+    /* Override upstream to support names with spaces */
         acceptSpaceBar = true;
         var _a, _y, match, regexp, space;
         flag = flag.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, '\\$&');
