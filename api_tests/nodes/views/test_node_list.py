@@ -635,18 +635,16 @@ class TestNodeCreate(ApiTestCase):
     def test_create_component_inherit_contributors(self):
         parent_project = ProjectFactory(creator=self.user_one)
         parent_project.add_contributor(self.user_two, permissions=[permissions.READ], save=True)
-        url = '/{}nodes/'.format(API_BASE) + parent_project._id + '/children/'
+        url = '/{}nodes/{}/children/{}'.format(API_BASE, parent_project._id, '?inherit_contributors=true')
         component_data = {
             'data': {
                 'type': 'nodes',
                 'attributes': {
                     'title': self.title,
                     'category': self.category,
-                    'inherit_contributors': True
                 }
             }
         }
-
         res = self.app.post_json_api(url, component_data, auth=self.user_one.auth)
         assert_equal(res.status_code, 201)
         json_data = res.json['data']
