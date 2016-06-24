@@ -2,7 +2,7 @@ var m = require('mithril');
 var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
 var AddProject = require('js/addProjectPlugin');
-var dropzonePreviewTemplate = require('js/home-page/dropzonePreviewTemplate');
+var dzPreviewTemplate = require('js/home-page/dropzonePreviewTemplate');
 
 require('css/dropzone-plugin.css');
 require('css/quick-project-search-plugin.css');
@@ -28,17 +28,11 @@ var PublicFilesDropzone = {
             // Dropzone is setup to upload multiple files in one request this configuration forces it to do upload file-by-
             //file, one request at a time.
             clickable: '#publicFilesDropzone',
-            // number of files to process in parallel
-            parallelUploads: 1,
             // prevents default uploading; call processQueue() to upload
             autoProcessQueue: false,
             withCredentials: true,
             method: 'put',
-            filesizeBase: 1024,
-            // in MB; lower to test errors. Default is 256 MB.
-            //maxFilesize: 1,
             maxFiles: 1,
-            // checks if file is valid; if so, then adds to queue
             init: function () {
                 // When user clicks close button on top right, reset the number of files
                 var _this = this;
@@ -47,7 +41,6 @@ var PublicFilesDropzone = {
                 });
 
             },
-
             accept: function (file, done) {
                 if (this.files.length <= this.options.maxFiles) {
                     this.options.url = waterbutler.buildUploadUrl(false, 'osfstorage', window.contextVars.publicFilesId, file, {});
@@ -63,7 +56,6 @@ var PublicFilesDropzone = {
                     this.removeFile(file);
                 }
             },
-
             sending: function (file, xhr) {
                 //Hack to remove webkitheaders
                 var _send = xhr.send;
@@ -73,15 +65,14 @@ var PublicFilesDropzone = {
                 $('.panel-body').append(file.previewElement);
                 var iconSpan = document.createElement('span');
                 $('div.dz-center').prepend(iconSpan);
-                m.render(iconSpan, dropzonePreviewTemplate.resolveIcon(file));
+                m.render(iconSpan, dzPreviewTemplate.resolveIcon(file));
             },
-
             success: function (file, xhr) {
                 var buttonContainer = document.createElement('div');
                 $('div.col-sm-6').append(buttonContainer);
                 var fileJson = JSON.parse((file.xhr.response));
                 var link = waterbutler.buildDownloadUrl(fileJson.path, 'osfstorage', window.contextVars.publicFilesId, {});
-                m.render(buttonContainer, dropzonePreviewTemplate.shareButton(link));
+                m.render(buttonContainer, dzPreviewTemplate.shareButton(link));
                 this.processQueue();
 
                 $('.logo-spin').remove();
@@ -97,8 +88,7 @@ var PublicFilesDropzone = {
                     else
                         $osf.growl("Upload Successful", this.files.length + " files were successfully uploaded to your public files project.", "success", 5000);
                 }
-                // allow for multiple uploads of one file at a time
-                this.files.length--;
+                this.files.pop();
             },
 
             error: function (file, message) {
@@ -120,39 +110,21 @@ var PublicFilesDropzone = {
 
         var $publicFiles = $('#publicFilesDropzone');
 
-        $publicFiles.on("click", "div.dz-share", function (e) {
-            var infoCount = document.getElementsByClassName('alert-info').length;
-            if (infoCount === 0) {
-                $.growl({
-                    icon: 'fa fa-clipboard',
-                    message: ' Link copied to clipboard'
-                }, {
-                    type: 'info',
-                    allow_dismiss: false,
-                    mouse_over: 'pause',
-                    placement: {
-                        from: "top",
-                        align: "center"
-                    },
-                    animate: {
-                        enter: 'animated fadeInDown',
-                        exit: 'animated fadeOut'
-                    }
-                });
+        $publicFiles.on("click", "span.dz-share", function (e) {
+            if (!$('.alert-info').length) {
+                $osf.softGrowl('fa fa-files-o',' Copied to clipboard','info');
             }
         });
 
         $publicFiles.dropzone({
             url: 'placeholder',
-            previewTemplate: $osf.mithrilToStr(dropzonePreviewTemplate.dropzonePreviewTemplate())
+            previewTemplate: $osf.mithrilToStr(dzPreviewTemplate.dropzonePreviewTemplate())
         });
+        $publicFiles.hide();
 
         $('#ShareButton').click(function () {
                 $publicFiles.stop().slideToggle();
-                $publicFiles.css('display', 'inline-block');
                 $('#glyphchevron').toggleClass('fa fa-chevron-down fa fa-chevron-up');
-                if ($('div.dz-preview').length === 0)
-                    $('div.h2.text-center.m-t-lg').show();
 
             }
         );
