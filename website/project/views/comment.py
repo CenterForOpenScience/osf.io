@@ -157,7 +157,7 @@ def send_mention_added_notification(comment, new_mentions, auth):
     )
     time_now = datetime.utcnow().replace(tzinfo=pytz.utc)
     notify_mentions(
-        event='mentions',
+        event='global_mentions',
         user=auth.user,
         node=node,
         timestamp=time_now,

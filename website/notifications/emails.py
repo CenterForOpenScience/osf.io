@@ -24,7 +24,6 @@ def notify(event, user, node, timestamp, **context):
     subscriptions = compile_subscriptions(node, event_type, event)
     sent_users = []
     target_user = context.get('target_user', None)
-
     if target_user:
         target_user_id = target_user._id
         if event_type in constants.USER_SUBSCRIPTIONS_AVAILABLE:
@@ -47,15 +46,13 @@ def notify(event, user, node, timestamp, **context):
 
 def notify_mentions(event, user, node, timestamp, **context):
     event_type = utils.find_subscription_type(event)
-    subscriptions = compile_subscriptions(node, event_type, event)
     sent_users = []
     new_mentions = context.get('new_mentions', None)
-
     for m in new_mentions:
-        subscriptions = compile_subscriptions(node, event_type, event)
+        subscriptions = get_user_subscriptions(user, event_type)
         for notification_type in subscriptions:
             if notification_type != 'none' and subscriptions[notification_type] and m in subscriptions[notification_type]:
-                store_emails([m], notification_type, event_type, user, node,
+                store_emails([m], notification_type, 'mentions', user, node,
                                  timestamp, **context)
                 sent_users.extend([m])
     return sent_users
