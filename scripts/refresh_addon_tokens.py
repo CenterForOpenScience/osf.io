@@ -43,9 +43,15 @@ def main(delta, Provider, rate_limit, dry_run):
     allowance = rate_limit[0]
     last_call = time.time()
     for record in get_targets(delta, Provider.short_name):
+        if Provider(record).has_expired_credentials:
+            logger.info(
+                'Found expired record {}, skipping'.format(record.__repr__())
+            )
+            continue
+
         logger.info(
             'Refreshing tokens on record {0}; expires at {1}'.format(
-                record._id,
+                record.__repr__(),
                 record.expires_at.strftime('%c')
             )
         )
@@ -67,7 +73,7 @@ def main(delta, Provider, rate_limit, dry_run):
             else:
                 logger.info(
                     'Status of record {}: {}'.format(
-                        record._id,
+                        record.__repr__(),
                         'SUCCESS' if success else 'FAILURE')
                 )
 
