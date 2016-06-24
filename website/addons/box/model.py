@@ -31,6 +31,7 @@ class Box(ExternalProvider):
     callback_url = settings.BOX_OAUTH_TOKEN_ENDPOINT
     auto_refresh_url = callback_url
     refresh_time = settings.REFRESH_TIME
+    expiry_time = settings.EXPIRY_TIME
     default_scopes = ['root_readwrite']
 
     def handle_callback(self, response):
