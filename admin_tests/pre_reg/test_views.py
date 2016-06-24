@@ -239,6 +239,7 @@ class TestPreregFiles(AdminTestCase):
             registration_metadata=data
         )
         self.prereg_user.save()
+        self.admin_user = UserFactory(osf_id=self.prereg_user.pk)
 
     def test_checkout_files(self):
         self.draft.submit_for_review(self.user, {}, save=True)

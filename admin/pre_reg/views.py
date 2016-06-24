@@ -227,6 +227,10 @@ def view_file(request, node_id, provider, file_id):
 def get_metadata_files(draft):
     for q in ['q7', 'q11', 'q12', 'q13', 'q16', 'q19', 'q26']:
         for file_info in draft.registration_metadata[q]['value']['uploader']['extra']:
+            if file_info['data']['provider'] != 'osfstorage':
+                raise Http404('File does not exist in OSFStorage: {} {}'.format(
+                    q, file_info
+                ))
             file_guid = file_info['data'].get('file_guid')
             if file_guid is None:
                 raise Http404('File in {} does not have a guid.'.format(q))
