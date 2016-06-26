@@ -38,16 +38,27 @@ class OsfStorageFileNode(FileNode):
         return cls.create(node=node, path=path)
 
     @classmethod
-    def get_file_guids(cls, materialized_path, provider, node=None, guids=None):
-        guids = guids or []
+    def get_file_guids(cls, materialized_path, provider, node=None):
+        guids = []
         path = materialized_path.strip('/')
         file_obj = cls.load(path)
         if not file_obj:
             file_obj = TrashedFileNode.load(path)
 
+        # At this point, file_obj may be an OsfStorageFile, an OsfStorageFolder, or a
+        # TrashedFileNode. TrashedFileNodes do not have *File and *Folder subclasses, since
+        # only osfstorage trashes folders. To search for children of TrashFileNodes
+        # representing ex-OsfStorageFolders, we will reimplement the `children` method of the
+        # Folder class here.
         if not file_obj.is_file:
-            for item in file_obj.children:
-                cls.get_file_guids(item.path, provider, node=node, guids=guids)
+            children = []
+            if isinstance(file_obj, TrashedFileNode):
+                children = TrashedFileNode.find(Q('parent', 'eq', file_obj._id))
+            else:
+                children = file_obj.children
+
+            for item in children:
+                guids.extend(cls.get_file_guids(item.path, provider, node=node))
         else:
             try:
                 guid = Guid.find(Q('referent', 'eq', file_obj))[0]
@@ -55,6 +66,7 @@ class OsfStorageFileNode(FileNode):
                 guid = None
             if guid:
                 guids.append(guid._id)
+
         return guids
 
     @property

@@ -7,6 +7,7 @@ import urlparse
 
 import httpretty
 from nose.tools import *  # noqa
+from oauthlib.oauth2 import OAuth2Error
 
 from framework.auth import authenticate
 from framework.exceptions import PermissionsError, HTTPError
@@ -674,6 +675,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
         )
         self.provider.client_id = None
         self.provider.client_secret = None
+        self.provider.account = external_account
 
         # mock a successful call to the provider to refresh tokens
         httpretty.register_uri(
@@ -712,3 +714,53 @@ class TestExternalProviderOAuth2(OsfTestCase):
         
         ret = self.provider.refresh_oauth_key(force=False)
         assert_false(ret)
+
+    @httpretty.activate
+    def test_refresh_with_expired_credentials(self):
+        external_account = ExternalAccountFactory(
+            provider='mock2',
+            provider_id='mock_provider_id',
+            provider_name='Mock Provider',
+            oauth_key='old_key',
+            oauth_secret='old_secret',
+            expires_at=datetime.utcfromtimestamp(time.time() - 10000)  # Causes has_expired_credentials to be True
+        )
+        self.provider.account = external_account
+
+        # mock a successful call to the provider to refresh tokens
+        httpretty.register_uri(
+            httpretty.POST,
+            self.provider.auto_refresh_url,
+             body=json.dumps({
+                'err': 'Should not be hit'
+            }),
+            status=500
+        )  
+        
+        ret = self.provider.refresh_oauth_key(force=False)
+        assert_false(ret)
+
+    @httpretty.activate
+    def test_force_refresh_with_expired_credentials(self):
+        external_account = ExternalAccountFactory(
+            provider='mock2',
+            provider_id='mock_provider_id',
+            provider_name='Mock Provider',
+            oauth_key='old_key',
+            oauth_secret='old_secret',
+            expires_at=datetime.utcfromtimestamp(time.time() - 10000)  # Causes has_expired_credentials to be True
+        )
+        self.provider.account = external_account
+
+        # mock a failing call to the provider to refresh tokens
+        httpretty.register_uri(
+            httpretty.POST,
+            self.provider.auto_refresh_url,
+             body=json.dumps({
+                'error': 'invalid_grant',
+            }),
+            status=401
+        )  
+        
+        with assert_raises(OAuth2Error):
+            ret = self.provider.refresh_oauth_key(force=True)

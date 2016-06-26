@@ -11,7 +11,6 @@ import uuid
 
 from flask import request
 from oauthlib.oauth2.rfc6749.errors import MissingTokenError
-from oauthlib.oauth2 import InvalidGrantError
 from requests.exceptions import HTTPError as RequestsHTTPError
 
 from modularodm import fields, Q
@@ -27,7 +26,6 @@ from framework.mongo.utils import unique_on
 from framework.mongo.validators import string_required
 from framework.sessions import session
 from website import settings
-from website.addons.base.exceptions import InvalidAuthError
 from website.oauth.utils import PROVIDER_LOOKUP
 from website.security import random_string
 from website.util import web_url_for, api_v2_url
@@ -117,7 +115,8 @@ class ExternalProvider(object):
 
     # Providers that have expiring tokens must override these
     auto_refresh_url = None
-    refresh_time = 0
+    refresh_time = 0  # When to refresh the oauth_key (seconds)
+    expiry_time = 0   # If/When the refresh token expires (seconds). 0 indicates a non-expiring refresh token
 
     def __init__(self, account=None):
         super(ExternalProvider, self).__init__()
@@ -398,6 +397,9 @@ class ExternalProvider(object):
         if not (force or self._needs_refresh()):
             return False
 
+        if self.has_expired_credentials and not force:
+            return False
+
         resp_expiry_fn = resp_expiry_fn or (lambda x: datetime.datetime.utcfromtimestamp(time.time() + float(x['expires_in'])))
 
         client = OAuth2Session(
@@ -415,19 +417,15 @@ class ExternalProvider(object):
             'client_secret': self.client_secret
         })
 
-        try:
-            token = client.refresh_token(
-                self.auto_refresh_url,
-                **extra
-            )
-        except InvalidGrantError:
-            raise InvalidAuthError()
-        else:
-            self.account.oauth_key = token[resp_auth_token_key]
-            self.account.refresh_token = token[resp_refresh_token_key]
-            self.account.expires_at = resp_expiry_fn(token)
-            self.account.save()
-            return True
+        token = client.refresh_token(
+            self.auto_refresh_url,
+            **extra
+        )
+        self.account.oauth_key = token[resp_auth_token_key]
+        self.account.refresh_token = token[resp_refresh_token_key]
+        self.account.expires_at = resp_expiry_fn(token)
+        self.account.save()
+        return True
 
     def _needs_refresh(self):
         """Determines whether or not an associated ExternalAccount needs
@@ -437,6 +435,17 @@ class ExternalProvider(object):
         """
         if self.refresh_time and self.account.expires_at:
             return (self.account.expires_at - datetime.datetime.utcnow()).total_seconds() < self.refresh_time
+        return False
+
+    @property
+    def has_expired_credentials(self):
+        """Determines whether or not an associated ExternalAccount has
+        expired credentials that can no longer be renewed
+
+        return bool: True if cannot be refreshed
+        """
+        if self.expiry_time and self.account.expires_at:
+            return (datetime.datetime.utcnow() - self.account.expires_at).total_seconds() > self.expiry_time
         return False
 
 
