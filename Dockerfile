@@ -73,25 +73,27 @@ RUN pip install -U pip
 COPY ./requirements.txt /code/
 COPY ./requirements/ /code/requirements/
 
+COPY ./website/addons/badges/requirements.txt /code/website/addons/badges/
 COPY ./website/addons/box/requirements.txt /code/website/addons/box/
 COPY ./website/addons/dataverse/requirements.txt /code/website/addons/dataverse/
 COPY ./website/addons/dropbox/requirements.txt /code/website/addons/dropbox/
-COPY ./website/addons/zotero/requirements.txt /code/website/addons/zotero/
 COPY ./website/addons/github/requirements.txt /code/website/addons/github/
 COPY ./website/addons/mendeley/requirements.txt /code/website/addons/mendeley/
 COPY ./website/addons/s3/requirements.txt /code/website/addons/s3/
 COPY ./website/addons/twofactor/requirements.txt /code/website/addons/twofactor/
+COPY ./website/addons/zotero/requirements.txt /code/website/addons/zotero/
 
 RUN pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/requirements/metrics.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/requirements/release.txt \
+    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/badges/requirements.txt \
+    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/box/requirements.txt \
+    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/dataverse/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/dropbox/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/github/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/mendeley/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/s3/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/twofactor/requirements.txt \
-    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/box/requirements.txt \
-    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/dataverse/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/zotero/requirements.txt \
     && (pip uninstall uritemplate.py --yes || true) \
     && pip install --no-cache-dir uritemplate.py==0.3.0
