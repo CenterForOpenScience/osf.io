@@ -626,9 +626,6 @@ def claim_user_form(auth, **kwargs):
     claimer_email = unclaimed_record.get('claimer_email') or unclaimed_record.get('email')
     form = SetEmailAndPasswordForm(request.form, token=token)
 
-    if request.method == 'GET':
-        pass
-
     if request.method == 'POST':
         if form.validate():
             username, password = claimer_email, form.password.data
