@@ -463,20 +463,37 @@ def make_url_map(app):
             notemplate
         ),
 
-        # reset password
+        # reset password get
         Rule(
             '/resetpassword/<verification_key>/',
-            ['get', 'post'],
-            auth_views.reset_password,
+            'get',
+            auth_views.reset_password_get,
             OsfWebRenderer('public/resetpassword.mako', render_mako_string, trust=False)
         ),
 
-        # resend confirmation
+        # reset password post
+        Rule(
+            '/resetpassword/<verification_key>/',
+            'post',
+            auth_views.reset_password_post,
+            OsfWebRenderer('public/resetpassword.mako', render_mako_string, trust=False)
+        ),
+
+        # resend confirmation get
         Rule(
             '/resend/',
-            ['get', 'post'],
-            auth_views.resend_confirmation,
+            'get',
+            auth_views.resend_confirmation_get,
             OsfWebRenderer('resend.mako', render_mako_string, trust=False)
+        ),
+
+        # resend confirmation post
+        Rule(
+            '/resend/',
+            'post',
+            auth_views.resend_confirmation_post,
+            OsfWebRenderer('resend.mako', render_mako_string, trust=False)
+
         ),
 
         # user sign up page
@@ -514,11 +531,19 @@ def make_url_map(app):
             notemplate
         ),
 
-        # forgot password
+        # forgot password get
         Rule(
             '/forgotpassword/',
-            ['get', 'post'],
-            auth_views.forgot_password,
+            'get',
+            auth_views.forgot_password_get,
+            OsfWebRenderer('public/forgot_password.mako', trust=False)
+        ),
+
+        # forgot password post
+        Rule(
+            '/forgotpassword/',
+            'post',
+            auth_views.forgot_password_post,
             OsfWebRenderer('public/forgot_password.mako', trust=False)
         ),
 
