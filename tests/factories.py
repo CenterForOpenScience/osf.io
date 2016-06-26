@@ -811,7 +811,7 @@ def create_fake_user():
         fullname=name,
         is_registered=True,
         is_claimed=True,
-        verification_key= generate_verification_key(),
+        verification_key=generate_verification_key(),
         date_registered=fake.date_time(),
         emails=[email],
         **parsed

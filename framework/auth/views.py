@@ -35,10 +35,6 @@ def reset_password_get(auth, verification_key=None, **kwargs):
     View for user to land on the reset password page.
     HTTp Method: GET
 
-    :param auth:
-    :param verification_key:
-    :param kwargs:
-    :returns:
     :raises: HTTPError(http.BAD_REQUEST) if verification_key is invalid
     """
 
@@ -66,10 +62,6 @@ def reset_password_post(auth, verification_key=None, **kwargs):
     View for user to submit reset password form.
     HTTP Method: POST
 
-    :param auth:
-    :param verification_key:
-    :param kwargs:
-    :return:
     :raises: HTTPError(http.BAD_REQUEST) if verification_key is invalid
     """
 
@@ -115,10 +107,6 @@ def forgot_password_get(auth, **kwargs):
     """
     View to user to land on forgot password page.
     HTTP Method: GET
-
-    :param auth:
-    :param kwargs:
-    :return:
     """
 
     # If user is already logged in, redirect to dashboard page.
@@ -133,10 +121,6 @@ def forgot_password_post(auth, **kwargs):
     """
     View for user to submit forgot password form.
     HTTP Method: POST
-
-    :param auth:
-    :param kwargs:
-    :return:
     """
 
     # If user is already logged in, redirect to dashboard page.
@@ -280,10 +264,10 @@ def auth_logout(redirect_url=None, **kwargs):
     # OSF log out, remove current OSF session
     logout()
     # set redirection to CAS log out (or log in if 'reauth' is present)
-    if 'reauth' not in request.args:
-        cas_endpoint = cas.get_logout_url(redirect_url)
-    else:
+    if 'reauth' in request.args:
         cas_endpoint = cas.get_login_url(redirect_url)
+    else:
+        cas_endpoint = cas.get_logout_url(redirect_url)
     resp = redirect(cas_endpoint)
     # delete OSF cookie
     resp.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
@@ -519,7 +503,6 @@ def register_user(**kwargs):
     :param-json str campaign:
 
     :raises: HTTPError(http.BAD_REQUEST) if validation fails or user already exists
-
     """
 
     # Verify email address match
@@ -566,8 +549,6 @@ def resend_confirmation_get():
     """
     View for user to land on resend confirmation page.
     HTTP Method: GET
-
-    :return:
     """
 
     form = ResendConfirmationForm(request.form)
@@ -579,7 +560,6 @@ def resend_confirmation_get():
 def resend_confirmation_post():
     """
     View for user to submit resend confirmation form.
-
     HTTP Method: POST
     """
 
