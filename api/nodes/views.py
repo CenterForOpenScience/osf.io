@@ -8,7 +8,7 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
-from api.base.exceptions import InvalidModelValueError
+from api.base.exceptions import InvalidModelValueError, JSONAPIException
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.parsers import (
@@ -18,7 +18,7 @@ from api.base.parsers import (
 from api.base.exceptions import RelationshipPostMakesNoChanges, EndpointNotImplementedError
 from api.base.pagination import CommentPagination, NodeContributorPagination
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
-from api.base.settings import ADDONS_OAUTH
+from api.base.settings import ADDONS_OAUTH, API_BASE
 from api.addons.views import AddonSettingsMixin
 from api.files.serializers import FileSerializer
 from api.comments.serializers import CommentSerializer, CommentCreateSerializer
@@ -2012,6 +2012,9 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
     def get_queryset(self):
         # TODO: [OSF-6120] refactor this/NS models to be generalizable
         node_addon = self.get_addon_settings()
+        if not node_addon.has_auth:
+            raise JSONAPIException(detail='This addon is enabled but an account has not been imported from your user settings',
+                meta={'link': '{}users/me/addons/{}/accounts/'.format(API_BASE, node_addon.config.short_name)})
 
         path = self.request.query_params.get('path', '')
         folder_id = self.request.query_params.get('id', 'root')
