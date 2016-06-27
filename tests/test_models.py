@@ -4665,30 +4665,13 @@ class TestPublicFiles(OsfTestCase):
         super(TestPublicFiles, self).tearDown()
         self.project.remove()
 
-    def test_file_upload(self):
-        pass
 
     def test_cannot_delete_public_files_collection(self):
-        with assert_raises(NodeStateError):
-            self.project.remove_node(self.auth)
+        assert_raises(NodeStateError, self.project.remove_node, self.auth)
 
     def test_public_files_is_right_type(self):
         assert_equal(self.project.is_public_files_collection, True)
 
-    def test_cannot_have_two_public_files_collections(self):
-        with assert_raises(NodeStateError):
-            PublicFilesFactory(creator=self.user)
-
-    def test_cannot_link_to_public_files_collection(self):
-        new_node = ProjectFactory(creator=self.user)
-        with assert_raises(NodeStateError):
-            new_node.add_pointer(self.project, auth=self.auth)
-
-    def test_for_search(self):
-        from website.search.search import search
-        from website.search.util import build_query
-        results = search(build_query('is_public_files_collection'))['results']
-        assert_equal(len(results), 0)
 
     def test_no_name_change(self):
         with assert_raises(NodeStateError):
@@ -4703,7 +4686,7 @@ class TestPublicFiles(OsfTestCase):
         with assert_raises(NodeStateError):
             fork = self.project.add_permission(unauthorized_user,'write')
 
-        with assert_raises(ValueError):
+        with assert_raises(NodeStateError):
             fork = self.project.remove_permission(unauthorized_user,'write')
 
     def test_cannot_register_public_node(self):
@@ -4724,8 +4707,7 @@ class TestPublicFiles(OsfTestCase):
             self.project.add_contributor(contributor=newman,permissions='WRITE',auth=Auth(newman))
 
     def test_changes_privacy_to_public_files_colletion(self):
-        with assert_raises(NodeStateError):
-            self.project.set_privacy('private', self.auth)
+        assert_raises(NodeStateError, self.project.set_privacy, 'private', self.auth)
         assert_equal(self.project.is_public,True)
 
     def test_citations_for_public_files(self):

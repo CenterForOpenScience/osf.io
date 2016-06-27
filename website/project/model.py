@@ -1198,6 +1198,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         :param bool save: Save changes
         :raises: ValueError if user already has permission
         """
+
+        if self._is_loaded and self.is_public_files_collection:
+            raise NodeStateError("This action is forbidden for a public files node.")
+
         if user._id not in self.permissions:
             self.permissions[user._id] = [permission]
         else:
@@ -1207,6 +1211,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if save:
             self.save()
 
+    @disable_for_public_files_collection
     def remove_permission(self, user, permission, save=False):
         """Revoke permission from a user.
 
@@ -1222,6 +1227,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if save:
             self.save()
 
+    @disable_for_public_files_collection
     def clear_permission(self, user, save=False):
         """Clear all permissions for a user.
 
@@ -1240,6 +1246,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if save:
             self.save()
 
+    @disable_for_public_files_collection
     def set_permissions(self, user, permissions, save=False):
         self.permissions[user._id] = permissions
         if save:
@@ -3122,6 +3129,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         self.save()
         return contributor
 
+    @disable_for_public_files_collection
     def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False):
         """Set the permissions for this node. Also, based on meeting_creation, queues an email to user about abilities of
             public projects.
