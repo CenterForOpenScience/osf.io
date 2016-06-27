@@ -245,7 +245,7 @@ def main(env):
                 'description': 'New York University [Test]',
                 'banner_name': 'nyu-banner.png',
                 'logo_name': 'nyu-shield.png',
-                'auth_url': SHIBBOLETH_SP.format(encode_uri_component('https://shibboleth.nyu.edu/idp/shibboleth')),
+                'auth_url': SHIBBOLETH_SP.format(encode_uri_component('https://shibbolethqa.es.its.nyu.edu/idp/shibboleth')),
                 'domains': ['test-osf-nyu.cos.io'],
                 'email_domains': [],
             },
