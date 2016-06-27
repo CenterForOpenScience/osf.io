@@ -169,10 +169,6 @@ NodeFetcher.prototype = {
     this.nextLink = results.links.next;
     this.loaded += results.data.length;
     for(var i = 0; i < results.data.length; i++) {
-      if(results.data[i].attributes.category === 'share window'){
-          continue; // Exclude share window
-      }
-
       if (this.type === 'registrations' && (results.data[i].attributes.withdrawn === true || results.data[i].attributes.pending_registration_approval === true))
           continue; // Exclude retracted and pending registrations
       else if (results.data[i].relationships.parent && this._handleOrphans)

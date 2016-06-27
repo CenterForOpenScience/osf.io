@@ -4,8 +4,6 @@ import httplib as http
 
 from flask import request
 from flask import send_from_directory
-from modularodm import Q
-from modularodm.exceptions import QueryException, NoResultsFound
 
 from framework import status
 from framework import sentry
@@ -21,6 +19,10 @@ from framework.routing import process_rules
 from framework.auth import views as auth_views
 from framework.routing import render_mako_string
 from framework.auth.core import _get_current_user
+
+from modularodm import Q
+from modularodm.exceptions import QueryException, NoResultsFound
+
 from website import util
 from website import prereg
 from website import settings
@@ -235,6 +237,7 @@ def make_url_map(app):
             website_views.dashboard,
             OsfWebRenderer('home.mako', trust=False)
         ),
+
         Rule(
             [
                 '/public_files/',
@@ -1056,6 +1059,7 @@ def make_url_map(app):
             project_views.register.node_registration_retraction_get,
             OsfWebRenderer('project/retract_registration.mako', trust=False)
         ),
+
         Rule(
             '/ids/<category>/<path:value>/',
             'get',
