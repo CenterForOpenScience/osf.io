@@ -24,5 +24,4 @@ def grid_data(auth, node, **kwargs):
     """
     data = request.args.to_dict()
 
-    data = {'data': rubeus.to_hgrid(node, auth, **data)}
-    return data
+    return {'data': rubeus.to_hgrid(node, auth, **data)}

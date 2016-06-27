@@ -123,7 +123,7 @@ def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=N
 def default_node_list_query():
     return (
         Q('is_deleted', 'ne', True) &
-        (Q('is_collection', 'ne', True) | Q('is_public_files_collection', 'eq', True)) &
+        Q('is_collection', 'ne', True) &
         Q('is_registration', 'ne', True)
     )
 
