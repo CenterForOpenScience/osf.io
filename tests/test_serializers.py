@@ -69,6 +69,8 @@ class TestNodeSerializers(OsfTestCase):
         assert_equal(res['primary'], node.primary)
         assert_equal(res['date_modified'], framework_utils.iso8601format(node.date_modified))
         assert_equal(res['category'], 'project')
+        assert_false(res['is_registration'])
+        assert_false(res['is_retracted'])
 
     def test_render_node_returns_permissions(self):
         node = ProjectFactory()

@@ -1,0 +1,5 @@
+{
+    "mendeley_folder_selected": "A user selected a folder in Mendeley in a project",
+    "mendeley_node_authorized": "A user authorized the Mendeley addon for a project",
+    "mendeley_node_deauthorized": "A user deauthorized the Mendeley addon for a project"
+}

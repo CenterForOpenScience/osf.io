@@ -377,8 +377,20 @@
 
         %endif
 
-
-        <%include file="log_list.mako" args="scripted=True" />
+        <!-- Recent Activity (Logs) -->
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix">
+                <h3 class="panel-title">Recent Activity</h3>
+            </div>
+            <div class="panel-body">
+                <div id="logFeed">
+                    <div class="spinner-loading-wrapper">
+                        <div class="logo-spin logo-lg"></div>
+                         <p class="m-t-sm fg-load-message"> Loading logs...  </p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
     </div>
 
@@ -446,6 +458,7 @@ ${parent.javascript_bottom()}
             canEdit: ${ user['can_edit'] | sjson, n },
         },
         node: {
+            id: ${node['id'] | sjson, n},
             hasChildren: ${ node['has_children'] | sjson, n },
             isRegistration: ${ node['is_registration'] | sjson, n },
             tags: ${ node['tags'] | sjson, n },

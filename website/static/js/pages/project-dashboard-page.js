@@ -12,7 +12,7 @@ var Raven = require('raven-js');
 require('truncate');
 
 var $osf = require('js/osfHelpers');
-var LogFeed = require('js/logFeed');
+var LogFeed = require('js/components/logFeed');
 var pointers = require('js/pointers');
 var Comment = require('js/comment'); //jshint ignore:line
 var NodeControl = require('js/nodeControl');
@@ -23,6 +23,7 @@ var md = require('js/markdown').full;
 var AddProject = require('js/addProjectPlugin');
 
 var ctx = window.contextVars;
+var node = window.contextVars.node;
 var nodeApiUrl = ctx.node.urls.api;
 var nodeCategories = ctx.nodeCategories || {};
 
@@ -31,7 +32,6 @@ $('body').on('nodeLoad', function(event, data) {
     if (!data.node.is_retracted) {
         // Initialize controller for "Add Links" modal
         new pointers.PointerManager('#addPointer', window.contextVars.node.title);
-        new LogFeed('#logScope', nodeApiUrl + 'log/');
     }
     // Initialize CitationWidget if user isn't viewing through an anonymized VOL
     if (!data.node.anonymous && !data.node.is_retracted) {
@@ -130,7 +130,11 @@ $(document).ready(function () {
         m.mount(document.getElementById('instLogo'), m.component(institutionLogos, {institutions: window.contextVars.node.institutions}));
     }
     $('#contributorsList').osfToggleHeight();
+
     if (!ctx.node.isRetracted) {
+        // Recent Activity widget
+        m.mount(document.getElementById('logFeed'), m.component(LogFeed.LogFeed, {node: node}));
+
         // Treebeard Files view
         $.ajax({
             url:  nodeApiUrl + 'files/grid/'
