@@ -138,6 +138,7 @@
 % endif
 </div>
 <script type="text/javascript">
+    window.contextVars = window.contextVars || {};
     var nodes = window.contextVars.nodes || [];
     nodes.push({
         node : ${summary | sjson, n},

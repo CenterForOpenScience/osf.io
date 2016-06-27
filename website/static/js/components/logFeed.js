@@ -212,6 +212,7 @@ var LogFeed = {
             // Display each log item (text and user image)
             [ctrl.activityLogs() ? ctrl.activityLogs().map(function(item) {
                 var image = m('i.fa.fa-desktop');
+                if (ctrl.node.anonymous) item.anonymous = true;
                 if (!ctrl.node.anonymous && item.embeds.user && item.embeds.user.data) {
                     image = m('img', { src : item.embeds.user.data.links.profile_image});
                 } else if (!ctrl.node.anonymous && item.embeds.user && item.embeds.user.errors[0].meta){
