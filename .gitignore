@@ -109,6 +109,7 @@ scripts/guid_blacklist.txt
 
 # Generated json
 website/static/js/_allLogTexts.json
+website/static/js/_anonymousLogTexts.json
 
 # Admin Specific
 #################
