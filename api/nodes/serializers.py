@@ -268,7 +268,7 @@ class NodeSerializer(JSONAPISerializer):
             parent = validated_data['parent']
             for contributor in parent.contributors:
                 if contributor is not user:
-                    node.add_contributor(contributor, permissions=parent.get_permissions(contributor), auth=auth, log=False)
+                    node.add_contributor(contributor, permissions=parent.get_permissions(contributor), auth=auth, visible=parent.get_visible(contributor), log=False)
         try:
             node.save()
         except ValidationValueError as e:
