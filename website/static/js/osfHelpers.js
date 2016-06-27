@@ -270,20 +270,6 @@ var mapByProperty = function(list, attr) {
 };
 
 
-/**
-  * Return CSS colors and percentage of a progress bar based on a value.
-  * Used to return a value for password complexity
-  */
-
-var valueProgressBar = {
-    0: {'style': 'width: 0%'},
-    1: {'class': 'progress-bar progress-bar-sm progress-bar-danger', 'style': 'width: 20%'},
-    2: {'class': 'progress-bar progress-bar-sm progress-bar-danger', 'style': 'width: 40%'},
-    3: {'class': 'progress-bar progress-bar-sm progress-bar-warning', 'style': 'width: 60%'},
-    4: {'class': 'progress-bar progress-bar-sm progress-bar-warning', 'style': 'width: 80%'},
-    5: {'class': 'progress-bar progress-bar-sm progress-bar-success', 'style': 'width: 100%'},
-};
-
 
 /**
   * Return whether or not a value is an email address.
@@ -950,6 +936,5 @@ module.exports = window.$.osf = {
     trackClick: trackClick,
     findContribName: findContribName,
     extractContributorNamesFromAPIData: extractContributorNamesFromAPIData,
-    onScrollToBottom: onScrollToBottom,
-    valueProgressBar: valueProgressBar
+    onScrollToBottom: onScrollToBottom
 };
