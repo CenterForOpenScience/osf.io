@@ -1198,6 +1198,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         :param bool save: Save changes
         :raises: ValueError if user already has permission
         """
+        first_save = not self._is_loaded
+        if not first_save and self.is_public_files_collection:
+            raise NodeStateError('Cannot add permissions to public files collection')
         if user._id not in self.permissions:
             self.permissions[user._id] = [permission]
         else:
@@ -1709,6 +1712,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     # Pointers #
     ############
 
+    @disable_for_public_files_collection
     def add_pointer(self, node, auth, save=True):
         """Add a pointer to a node.
 
@@ -1727,6 +1731,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         if self.is_registration:
             raise NodeStateError('Cannot add a pointer to a registration')
+        if node.is_public_files_collection:
+            raise NodeStateError('Cannot point to public files collection')
 
         # If a folder, prevent more than one pointer to that folder. This will prevent infinite loops on the project organizer.
         already_pointed = node.pointed
@@ -1977,6 +1983,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         """
         return self.logs.sort('-date')[:n]
 
+    @disable_for_public_files_collection
     def set_title(self, title, auth, save=False):
         """Set the title of this Node and log it.
 
@@ -2891,6 +2898,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 return True
         return False
 
+    @disable_for_public_files_collection
     def remove_contributor(self, contributor, auth, log=True):
         """Remove a contributor from this node.
 
@@ -2944,6 +2952,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         return True
 
+    @disable_for_public_files_collection
     def remove_contributors(self, contributors, auth=None, log=True, save=False):
 
         results = []
@@ -3113,6 +3122,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             if to_remove or permissions_changed and ['read'] in permissions_changed.values():
                 project_signals.write_permissions_revoked.send(self)
 
+    @disable_for_public_files_collection
     def add_contributor(self, contributor, permissions=None, visible=True,
                         auth=None, log=True, save=False):
         """Add a contributor to the project.
@@ -3256,6 +3266,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         :param bool log: Whether to add a NodeLog for the privacy change.
         :param bool meeting_creation: Whether this was created due to a meetings email.
         """
+        first_save = not self._is_loaded
+        if not first_save and self.is_public_files_collection:
+            raise NodeStateError('Privacy cannot be changed after first save for public files collection')
         if auth and not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Must be an admin to change privacy settings.')
         if permissions == 'public' and not self.is_public:

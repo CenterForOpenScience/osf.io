@@ -4681,7 +4681,7 @@ class TestPublicFiles(OsfTestCase):
 
     def test_cannot_link_to_public_files_collection(self):
         new_node = ProjectFactory(creator=self.user)
-        with assert_raises(ValueError):
+        with assert_raises(NodeStateError):
             new_node.add_pointer(self.project, auth=self.auth)
 
     def test_for_search(self):
@@ -4703,7 +4703,7 @@ class TestPublicFiles(OsfTestCase):
         with assert_raises(NodeStateError):
             fork = self.project.add_permission(unauthorized_user,'write')
 
-        with assert_raises(NodeStateError):
+        with assert_raises(ValueError):
             fork = self.project.remove_permission(unauthorized_user,'write')
 
     def test_cannot_register_public_node(self):
@@ -4724,14 +4724,15 @@ class TestPublicFiles(OsfTestCase):
             self.project.add_contributor(contributor=newman,permissions='WRITE',auth=Auth(newman))
 
     def test_changes_privacy_to_public_files_colletion(self):
-        self.project.set_privacy('private', self.auth)
+        with assert_raises(NodeStateError):
+            self.project.set_privacy('private', self.auth)
         assert_equal(self.project.is_public,True)
 
     def test_citations_for_public_files(self):
         with assert_raises(NodeStateError):
             self.project.add_citation(self.auth)
-        assert_equal(self.project.edit_citation(self.auth,{})  , False)
-        assert_equal(self.project.remove_citation(self.auth,{}), False)
+            self.project.edit_citation(self.auth,{})
+            self.project.remove_citation(self.auth,{})
 
     def test_user_merge_with_other_public_files_collection(self):
         from website.files.models.osfstorage import OsfStorageFile
