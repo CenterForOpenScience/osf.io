@@ -1199,8 +1199,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         :raises: ValueError if user already has permission
         """
         first_save = not self._is_loaded
-        if not first_save and self.is_public_files_collection:
-            raise NodeStateError('Cannot add permissions to public files collection')
         if user._id not in self.permissions:
             self.permissions[user._id] = [permission]
         else:
@@ -1531,13 +1529,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             if existing_bookmark_collections.count() > 0:
                 raise NodeStateError('Only one bookmark collection allowed per user.')
 
-        if first_save and self.is_public_files_collection:
-            existing_public_files_collections = Node.find(
-                Q('is_public_files_collection', 'eq', True) & Q('contributors', 'eq', self.creator._id)
-            )
-            if existing_public_files_collections.count() > 0:
-                raise NodeStateError("Only one public files collection allowed per user.")
-
         # Bookmark collections are always named 'Bookmarks'
         if self.is_bookmark_collection and self.title != 'Bookmarks':
             self.title = 'Bookmarks'
@@ -1731,8 +1722,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         if self.is_registration:
             raise NodeStateError('Cannot add a pointer to a registration')
-        if node.is_public_files_collection:
-            raise NodeStateError('Cannot point to public files collection')
 
         # If a folder, prevent more than one pointer to that folder. This will prevent infinite loops on the project organizer.
         already_pointed = node.pointed
@@ -2388,9 +2377,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             _, message = addon.after_register(original, registered, auth.user)
             if message:
                 status.push_status_message(message, kind='info', trust=False)
-
-        if self.is_public_files_collection:
-            raise NodeStateError('Public Files collections may not be registered')
 
         if self.is_collection:
             raise NodeStateError("Folders may not be registered")
@@ -3267,8 +3253,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         :param bool meeting_creation: Whether this was created due to a meetings email.
         """
         first_save = not self._is_loaded
-        if not first_save and self.is_public_files_collection:
-            raise NodeStateError('Privacy cannot be changed after first save for public files collection')
         if auth and not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Must be an admin to change privacy settings.')
         if permissions == 'public' and not self.is_public:
