@@ -1,0 +1,16 @@
+/* Logs */
+
+.db-activity-item {
+    font-size: 13px;
+    padding: 5px 10px;
+    background: #FFF;
+    margin-bottom: 3px;
+    border-bottom: 1px solid #eee;
+}
+.db-log-avatar {
+    display: inline-block;
+}
+
+#poFilter {
+    width : 300px;
+}
