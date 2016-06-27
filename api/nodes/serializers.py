@@ -362,12 +362,14 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
             }
         return set_folder, folder_info
 
-    def get_account_or_error(self, external_account_id, auth):
+    def get_account_or_error(self, addon_name, external_account_id, auth):
             external_account = ExternalAccount.load(external_account_id)
             if not external_account:
                 raise exceptions.NotFound('Unable to find requested account.')
             if external_account not in auth.user.external_accounts:
                 raise exceptions.PermissionDenied('Requested action requires account ownership.')
+            if external_account.provider != addon_name:
+                raise Conflict('Cannot authorize the {} addon with an account for {}'.format(addon_name, external_account.provider))
             return external_account
 
     def should_call_set_folder(self, folder_info, instance, auth, node_settings):
@@ -403,7 +405,7 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
             instance.deauthorize(auth=auth)  # clear_auth performs save
         elif external_account_id:
             # Settings may or may not be authorized, user requesting to set instance.external_account
-            account = self.get_account_or_error(external_account_id, auth)
+            account = self.get_account_or_error(addon_name, external_account_id, auth)
             if instance.external_account and external_account_id != instance.external_account._id:
                 # Ensure node settings are deauthorized first, logs
                 instance.deauthorize(auth=auth)
