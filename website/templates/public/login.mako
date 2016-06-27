@@ -13,7 +13,6 @@
             </p>
         </div>
     %endif
-
     %if campaign == "institution" and enable_institutions:
         <div class="text-center m-t-lg">
             <h3>OSF for Institutions </h3>
