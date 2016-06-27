@@ -51,6 +51,8 @@ def _render_node(node, auth=None):
         'category': node.category,
         'permissions': perm,  # A string, e.g. 'admin', or None,
         'archiving': node.archiving,
+        'is_retracted': node.is_retracted,
+        'is_registration': node.is_registration,
     }
 
 
