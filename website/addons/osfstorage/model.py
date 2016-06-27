@@ -26,6 +26,11 @@ class OsfStorageNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
     def get_root(self):
         return self.root_node.wrapped()
 
+    def set_root(self, new_node):
+        self.root_node = new_node.get_addon('osfstorage').root_node
+        self.save()
+        return self.root_node.wrapped()
+
     def on_add(self):
         if self.root_node:
             return

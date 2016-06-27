@@ -2208,21 +2208,21 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             save=False
         )
 
-            # Need to call this after save for the notifications to be created with the _primary_key
-            project_signals.contributor_added.send(forked, contributor=user, auth=auth)
+        # Need to call this after save for the notifications to be created with the _primary_key
+        project_signals.contributor_added.send(forked, contributor=user, auth=auth)
 
-            forked.add_log(
-                action=NodeLog.NODE_FORKED,
-                params={
-                    'parent_node': original.parent_id,
-                    'node': original._primary_key,
-                    'registration': forked._primary_key,  # TODO: Remove this in favor of 'fork'
-                    'fork': forked._primary_key,
-                },
-                auth=auth,
-                log_date=when,
-                save=False,
-            )
+        forked.add_log(
+            action=NodeLog.NODE_FORKED,
+            params={
+                'parent_node': original.parent_id,
+                'node': original._primary_key,
+                'registration': forked._primary_key,  # TODO: Remove this in favor of 'fork'
+                'fork': forked._primary_key,
+            },
+            auth=auth,
+            log_date=when,
+            save=False,
+        )
 
         # Clone each log from the original node for this fork.
         logs = original.logs
@@ -2316,7 +2316,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                     auth=auth,
                     data=data,
                     parent=registered,
-            )
+                )
         if self.is_collection:
             raise NodeStateError("Folders may not be registered")
 

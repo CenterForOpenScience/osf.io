@@ -544,11 +544,6 @@ class FileNode(object):
         if save:
             self.save()
 
-    def merge_nodes(self,user,merged_user):
-        files = StoredFileNode.find(Q('provider', 'eq', 'osfstorage') & Q('is_public_files_collection', 'eq', merged_user._id))
-        for files_obj in files:
-            print files_obj
-
     def _create_trashed(self, save=True, user=None, parent=None):
         trashed = TrashedFileNode(
             _id=self._id,

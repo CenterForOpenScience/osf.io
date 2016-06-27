@@ -4755,63 +4755,21 @@ class TestPublicFiles(OsfTestCase):
         assert_equal(self.project.edit_citation(self.auth,{})  , False)
         assert_equal(self.project.remove_citation(self.auth,{}), False)
 
-    # OAUTH_PROVIDER = factories.MockOAuth2Provider.short_name
-    #
-    # ADDONS_UNDER_TEST = {
-    #     'mock': {
-    #         'user_settings': MockAddonUserSettings,
-    #         'node_settings': MockAddonNodeSettings,
-    #     },
-    #     'mock_merging': {
-    #         'user_settings': MockAddonUserSettingsMergeable,
-    #         'node_settings': MockAddonNodeSettings,
-    #     },
-    #     OAUTH_PROVIDER: {
-    #         'user_settings': MockOAuthAddonUserSettings,
-    #         'node_settings': MockOAuthAddonNodeSettings,
-    #     },
-    # }
     def test_user_merge_with_whatever(self):
         oldman =  UserFactory()
         oldauth = Auth(user=oldman)
         project = PublicFilesFactory(creator=oldman)
+        print "Project ({0})".format(project.title)
 
-        other_node_settings = project.get_addon('osfstorage')
-        move_to = other_node_settings.get_root().append_file('Cloud')
-
+        other_node_settings = project.get_addon('osfstorage').get_root().append_file('Cloud')
+        print "Other node: ", other_node_settings, "   ",  other_node_settings.parent
         self.user.merge_user(oldman)
-        self.project.reload()
-        print project, self.project
+        print self.project._id, project._id
+        print other_node_settings.belongs_to_node(self.project._id)
+
+        for files in OsfStorageFile.find(Q('node', 'eq', self.project)):
+            print "Files ", files
         assert_false(True)
-
-        # give the other user an external account
-        # external_account = ExternalAccountFactory(
-        #     provider=self.OAUTH_PROVIDER
-        # )
-        # self.other_user.external_accounts.append(external_account)
-        #
-        # # set up a project, whose addon is authenticated to the other user
-        # other_user_settings = self.other_user.get_or_add_addon(self.OAUTH_PROVIDER)
-        # node_settings = self.project.get_or_add_addon(self.OAUTH_PROVIDER, auth=Auth(self.other_user))
-        # node_settings.set_auth(
-        #     user=self.other_user,
-        #     external_account=external_account
-        # )
-        #
-        # user_settings = self.user.get_or_add_addon(self.OAUTH_PROVIDER)
-        #
-        # self.user.merge_user(self.other_user)
-        # self.user.save()
-        #
-        # self.project.reload()
-        # node_settings.reload()
-        # user_settings.reload()
-        # other_user_settings.reload()
-        #
-        # assert_true(node_settings.has_auth)
-        # assert_in(self.project._id, user_settings.oauth_grants)
-        # assert_equal(node_settings.user_settings, user_settings)
-
 
 if __name__ == '__main__':
     unittest.main()
