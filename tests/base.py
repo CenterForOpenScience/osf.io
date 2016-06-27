@@ -422,7 +422,7 @@ class NotificationTestCase(OsfTestCase):
     """
     DISCONNECTED_SIGNALS = {
         # disconnect signals so that add_contributor does not send "fake" emails in tests
-        contributor_added: [subscribe_contributor],
+        contributor_added: [notify_added_contributor, subscribe_contributor],
         project_created: [subscribe_creator]
     }
 

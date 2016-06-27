@@ -218,7 +218,5 @@ $(function() {
             new KeenTracker(window.contextVars.keenProjectId, window.contextVars.keenWriteKey, params);
         }
     }
-
     confirmEmails(window.contextVars.currentUser.emailsToAdd);
-
 });

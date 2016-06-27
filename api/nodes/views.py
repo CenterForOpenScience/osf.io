@@ -402,6 +402,10 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
     List of users who are contributors to this node. Contributors may have "read", "write", or "admin" permissions.
     A node must always have at least one "admin" contributor.  Contributors may be added via this endpoint.
 
+    ###Draft Registrations
+
+    List of draft registrations of the current node.
+
     ###Files
 
     List of top-level folders (actually cloud-storage providers) associated with this node. This is the starting point
