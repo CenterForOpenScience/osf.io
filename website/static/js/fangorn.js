@@ -1382,7 +1382,7 @@ function _fangornResolveRows(item) {
                 sortInclude : false,
                 filter : false,
                 custom : function() {
-                    var link = 'http://localhost:5000/project/' + window.contextVars.publicFilesId + "/files/osfstorage" + item.data.path;
+                    var link = 'http://localhost:5000/project/' + window.contextVars.publicFilesId + '/files/osfstorage' + item.data.path;
                     return cb.generateClipboard(link); }
             });
         }

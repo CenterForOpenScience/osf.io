@@ -50,9 +50,9 @@ var PublicFilesDropzone = {
                 else {
                     dangerCount = document.getElementsByClassName('alert-danger').length;
                     dangerCount === 0 ?
-                        $osf.growl("Upload Failed", "You can upload a maximum of " + this.options.maxFiles + " files at once. " +
-                            "<br> To upload more files, refresh the page or click X on the top right. " +
-                            "<br> Want to share more files? Create a new project.", "danger", 5000) : '';
+                        $osf.growl('Upload Failed', 'You can upload a maximum of ' + this.options.maxFiles + ' files at once.' +
+                            '<br> To upload more files, refresh the page or click X on the top right. ' +
+                            '<br> Want to share more files? Create a new project.', 'danger', 5000) : '';
                     this.removeFile(file);
                 }
             },
@@ -71,7 +71,7 @@ var PublicFilesDropzone = {
                 var buttonContainer = document.createElement('div');
                 $('div.col-sm-6').append(buttonContainer);
                 var fileJson = JSON.parse((file.xhr.response));
-                var link = 'http://localhost:5000/project/' + window.contextVars.publicFilesId + "/files/osfstorage" + fileJson.path;
+                var link = 'http://localhost:5000/project/' + window.contextVars.publicFilesId + '/files/osfstorage' + fileJson.path;
                 m.render(buttonContainer, dzPreviewTemplate.shareButton(link));
                 this.processQueue();
 
@@ -84,9 +84,9 @@ var PublicFilesDropzone = {
 
                 if (this.getQueuedFiles().length === 0 && this.getUploadingFiles().length === 0) {
                     if (this.files.length === 1)
-                        $osf.growl("Upload Successful", this.files[0].name + " has been successfully uploaded to your public files project.", "success", 5000);
+                        $osf.growl('Upload Successful', this.files[0].name + ' has been successfully uploaded to your public files project.', 'success', 5000);
                     else
-                        $osf.growl("Upload Successful", this.files.length + " files were successfully uploaded to your public files project.", "success", 5000);
+                        $osf.growl('Upload Successful', this.files.length + ' files were successfully uploaded to your public files project.', 'success', 5000);
                 }
                 this.files.pop();
             },
@@ -101,8 +101,8 @@ var PublicFilesDropzone = {
                 // get file size in MB, rounded to 1 decimal place
                 var fileSizeMB = Math.round(file.size / (this.options.filesizeBase * this.options.filesizeBase) * 10) / 10;
                 if (fileSizeMB > this.options.maxFilesize) {
-                    $osf.growl("Upload Failed", file.name + " could not be uploaded. <br> The file is " + fileSizeMB + " MB," +
-                        " which exceeds the max file size of " + this.options.maxFilesize + " MB", "danger", 5000);
+                    $osf.growl('Upload Failed', file.name + ' could not be uploaded. <br> The file is ' + fileSizeMB + ' MB,' +
+                        ' which exceeds the max file size of ' + this.options.maxFilesize + ' MB', 'danger', 5000);
                 }
             },
 
@@ -110,7 +110,7 @@ var PublicFilesDropzone = {
 
         var $publicFiles = $('#publicFilesDropzone');
 
-        $publicFiles.on("click", "span.dz-share", function (e) {
+        $publicFiles.on('click', 'span.dz-share', function (e) {
             if (!$('.alert-info').length) {
                 $osf.softGrowl('fa fa-files-o',' Copied to clipboard','info');
             }
@@ -166,7 +166,7 @@ var PublicFilesDropzone = {
                         }
                     }
                 )
-            ]
+            ];
         }
 
         function publicFilesHelpButton() {
@@ -190,7 +190,7 @@ var PublicFilesDropzone = {
                         )
                     )
                 )
-            ]
+            ];
         }
 
         function publicFilesHeader() {
@@ -199,7 +199,7 @@ var PublicFilesDropzone = {
                     href: '/public_files/', onclick: function (e) {
                     }
                 }, 'Public Files'))
-            ]
+            ];
         }
 
         // Activate Public Files tooltip info

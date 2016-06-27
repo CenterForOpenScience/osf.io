@@ -39,8 +39,8 @@ var softGrowl = function(icon, message, type) {
         allow_dismiss: false,
         mouse_over: 'pause',
         placement: {
-            from: "top",
-            align: "center"
+            from: 'top',
+            align: 'center'
         },
         animate: {
             enter: 'animated fadeInDown',
