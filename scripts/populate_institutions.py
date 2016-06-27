@@ -96,7 +96,7 @@ def main(env):
                 'description': '...',
                 'banner_name': 'nyu-banner.png',
                 'logo_name': 'nyu-shield.png',
-                'auth_url': SHIBBOLETH_SP.format(encode_uri_component('https://shibboleth.nyu.edu/idp/shibboleth')),
+                'auth_url': SHIBBOLETH_SP.format(encode_uri_component('urn:mace:incommon:nyu.edu')),
                 'domains': ['osf.nyu.edu'],
                 'email_domains': [],
             },
