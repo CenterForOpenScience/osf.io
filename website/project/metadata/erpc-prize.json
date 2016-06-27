@@ -1,0 +1,151 @@
+{
+    "name": "Election Research Preacceptance Challenge",
+    "version": 1,
+    "flags": {
+        "payment_sent": false,
+        "proof_of_publication": false
+    },
+    "config": {
+        "requiresConsent": true,
+        "messages": {
+            "preConsentHeader": "<div class='text-center m-t-lg'><h3>Election Research Preacceptance Challenge </h3><hr><h2> Notice </h2></div><div class='row m-t-xl'><div class='col-lg-10 col-lg-offset-1'><p>There is a detailed description of the terms and conditions for the Election Research Preacceptance Contest to meet legal requirements and maximize the fair administration of the process. Here are highlights of key items:</p>",
+            "postConsentHeader": "<div class='text-center m-t-lg'><h3>Election Research Preacceptance Challenge </h3><hr><h2> Notice of Consent </h2></div><div class='row m-t-xl'><div class='col-lg-10 col-lg-offset-1'><p>Please read and agree to the terms before submitting your research plan to the Election Research Preacceptance Challenge.</p>",
+            "consentBody": "<ol id='consentList'> <li>Articles must be published in a Participating Journal. The Participating Journals are: <a href='https://ajps.org/'>American Journal of Political Science</a>, <a href='http://www.apsanet.org/apsr'>American Political Science Review</a>, <a href='http://apr.sagepub.com/'>American Politics Research</a>, <a href='http://pan.oxfordjournals.org/'>Political Analysis</a>, <a href='http://link.springer.com/journal/11109'>Political Behavior</a>, <a href='http://www.psqonline.org/'>Political Science Quarterly</a>, <a href='http://journals.cambridge.org/action/displayJournal?jid=RAM'>Political Science Research and Methods</a>, <a href='http://poq.oxfordjournals.org/'>Public Opinion Quarterly</a>, and  <a href='http://spa.sagepub.com/'>State Politics and Policy Quarterly</a></li><li>Entering the Contest requires Preregistration of a Research Plan that uses data from a 2016 American National Election Studies survey. To be eligible for the Contest, Preregistration must be complete prior to ANES’s release of the data.</li><li>Once a Preregistration is completed, it becomes a static, time stamped document.</li><li>If a Participating Journal accepts an Article using the Preregistered Research Plan, the Editor of the Journal and the Contest Administrators will affirm that the published paper contains a clear link to the Preregistered Research Plan, and that all supplemental and confirmatory analyses are clearly labeled as such.</li><li>U.S. law restricts eligibility of contests like this one from being administered within the U.S. State Department's  <a target='_blank' href='http://www.pmddtc.state.gov/embargoed_countries/'>list of embargoed countries</a>. Therefore, residents of those countries may not participate in the Contest.</li><li>When awarded, one prize is split equally between all listed co-authors of a paper unless all co-authors explicitly request an alternate arrangement.</li><li>Individuals can enter the Contest multiple times and earn multiple prizes.</li><li>Entering the Election Research Preacceptance Contest requires that you agree to all of its terms. If you do not agree to the terms you may still continue, use the form, and register your research study without entering the Contest.</li><li>The Election Research Preacceptance Contest is being administered by [responsibile entity], which is entirely responsible for its fair and legal administration. The Center for Open Science is hosting the content of the Contest entries on the Open Science Framework (OSF). Use of the OSF requires adherence to its <a href='https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md'>Terms of Use</a>.</li></ol></div></div>"
+        },
+        "fulfills": [{
+            "name": "Election Research Preacceptance Challenge",
+            "info": "http://www.erpc.org/"
+        }]
+    },
+    "description": "Election Research Preacceptance Challenge: You will be asked a series of questions to ensure that your sampling, design, and analysis plans are solidified prior to beginning your study. Publications that pre register with this template may be eligible for a $2,000 prize. See project page for complete information.",
+    "pages": [{
+        "id": "page1",
+        "title": "Study Information",
+        "questions": [{
+            "qid": "q1",
+            "nav": "Title",
+            "type": "string",
+            "format": "text",
+            "title": "Title",
+            "description": "Provide the working title of your study. It may be the same title that you submit for publication of your final manuscript, but it is not a requirement.",
+            "required": true
+        }, {
+            "qid": "q2",
+            "nav": "Authors",
+            "type": "string",
+            "title": "Authors",
+            "type": "osf-author-import",
+            "format": "textarea",
+            "required": true
+        }, {
+            "qid": "q3",
+            "nav": "Research Questions",
+            "type": "string",
+            "format": "textarea",
+            "title": "Research Questions",
+            "description": "Please list each research question included in this study.",
+            "required": true
+        }, {
+            "qid": "q4",
+            "nav": "Hypotheses",
+            "type": "string",
+            "format": "textarea",
+            "title": "Hypotheses",
+            "description": "For each of the research questions listed in the previous section, provide one or multiple specific and testable hypotheses. Please state if the hypotheses are directional or non-directional. If directional, state the direction. A predicted effect is also appropriate here.",
+            "required": true
+        }]
+    }, {
+        "id": "page2",
+        "title": "Variables",
+        "description": "In this section you can describe all variables (both manipulated and measured variables) that will later be used in your confirmatory analysis plan. In your analysis plan, you will have the opportunity to describe how each variable will be used. If you have variables which you are measuring for exploratory analyses, you are not required to list them, though you are permitted to do so.",
+        "questions": [{
+            "qid": "q5",
+            "nav": "Measured variables",
+            "title": "Measured variables",
+            "description": "Describe each variable that you will measure. This will include outcome measures, as well as any predictors or covariates that you will measure.",
+            "type": "string",
+            "format": "textarea",
+            "required": true
+        }, {
+            "qid": "q6",
+            "nav": "Indices",
+            "type": "string",
+            "format": "textarea",
+            "title": "Indices",
+            "description": "If any measurements are  going to be combined into an index (or even a mean), what measures will you use and how will they be combined? Include either a formula or a precise description of your method. If your are using a more complicated statistical method to combine measures (e.g. a factor analysis), you can note that here but describe the exact method in the analysis plan section.",
+            "required": false
+        }]
+    }, {
+        "id": "page3",
+        "title": "Analysis Plan",
+        "description": "<p>You may describe one or more analyses in this preregistration. Please remember that all analyses specified below must be reported in the final article, and any additional analyses must be noted as exploratory or hypothesis generating.</p><p> An analysis plan must state up front which variables are predictors (independent) and which are the outcomes (dependent), otherwise it is an exploratory analysis. You are allowed to describe any exploratory work here, but a clear confirmatory analysis is required.</p>",
+        "questions": [{
+            "qid": "q7",
+            "nav": "Statistical models",
+            "type": "string",
+            "format": "textarea",
+            "title": "Statistical models",
+            "description": "What statistical model will you use to test each hypothesis? Please include the type of model (e.g. ANOVA, multiple regression, SEM, etc) and the specification of the model (this includes each variable that will be included as predictors, outcomes, or covariates). Please specify any interactions that will be tested and remember that any test not included here must be noted as an exploratory test in your final article.",
+            "required": true
+            }, {
+            "qid": "q8",
+            "nav": "Transformations",
+            "type": "string",
+            "format": "textarea",
+            "title": "Transformations",
+            "description": "If you plan on transforming, centering, recoding the data, or will require a coding scheme for categorical variables, please describe that process.",
+            "required": false
+            }, {
+            "qid": "q9",
+            "nav": "Follow-up analyses",
+            "type": "string",
+            "format": "textarea",
+            "title": "Follow-up analyses",
+            "description": "If not specified previously, will you be conducting any confirmatory analyses to follow up on effects in your statistical model, such as subgroup analyses, pairwise or complex contrasts, or follow-up tests from interactions. Remember that any analyses not specified in this research plan must be noted as exploratory.",
+            "required": false
+            }, {
+            "qid": "q10",
+            "nav": "Inference criteria",
+            "type": "string",
+            "format": "textarea",
+            "title": "Inference criteria",
+            "description": "What criteria will you use to make inferences? Please describe the information youÍll use (e.g. p-values, bayes factors, specific model fit indices), as well as cut-off criterion, where appropriate. Will you be using one or two tailed tests for each of your analyses? If you are comparing multiple conditions or testing multiple hypotheses, will you account for this?",
+            "required": true
+            }, {
+            "qid": "q11",
+            "nav": "Data exclusion",
+            "type": "string",
+            "format": "textarea",
+            "title": "Data exclusion",
+            "description": "How will you determine what data or samples, if any, to exclude from your analyses? How will outliers be handled?",
+            "required": true
+            }, {
+            "qid": "q12",
+            "nav": "Missing data",
+            "type": "string",
+            "format": "textarea",
+            "title": "Missing data",
+            "description": "How will you deal with incomplete or missing data?",
+            "required": true
+            }, {
+            "qid": "q13",
+            "nav": "Exploratory analysis",
+            "type": "string",
+            "format": "textarea",
+            "title": "Exploratory analysis",
+            "description": "If you plan to explore your data set to look for unexpected differences or relationships, you may describe those tests here. An exploratory test is any test where a prediction is not made up front, or there are multiple possible tests that you are going to use. A statistically significant finding in an exploratory test is a great way to form a new confirmatory hypothesis, which could be registered at a later time.",
+            "required": false
+            }]
+        }, {
+        "id": "page4",
+        "title": "Other",
+        "questions": [{
+            "qid": "q14",
+            "nav": "Other",
+            "title": "Other",
+            "description": "If there is any additional information that you feel needs to be included in your preregistration, please enter it here.",
+            "type": "string",
+            "format": "textarea"
+        }]
+    }]
+}
