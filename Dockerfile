@@ -84,10 +84,10 @@ COPY ./website/addons/twofactor/requirements.txt /code/website/addons/twofactor/
 COPY ./website/addons/zotero/requirements.txt /code/website/addons/zotero/
 
 RUN pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/requirements.txt \
-    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/requirements/metrics.txt
+    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/requirements/metrics.txt \
+    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/requirements/release.txt
 
-RUN pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/requirements/release.txt \
-    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/badges/requirements.txt \
+RUN pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/badges/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/box/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/dataverse/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/dropbox/requirements.txt \
