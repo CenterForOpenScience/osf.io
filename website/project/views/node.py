@@ -362,10 +362,7 @@ def configure_comments(node, **kwargs):
 @process_token_or_pass
 def view_project(auth, node, **kwargs):
     primary = '/api/v1' not in request.path
-    if node.category == "share window":
-        return redirect(node.url + "public_files")
-    else:
-        ret = _view_project(node, auth, primary=primary)
+    ret = _view_project(node, auth, primary=primary)
 
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
     # Collect the URIs to the static assets for addons that have widgets
@@ -736,7 +733,8 @@ def _view_project(node, auth, primary=False):
             'institutions': get_affiliated_institutions(node) if node else [],
             'alternative_citations': [citation.to_json() for citation in node.alternative_citations],
             'has_draft_registrations': node.has_active_draft_registrations,
-            'contributors': [contributor._id for contributor in node.contributors]
+            'contributors': [contributor._id for contributor in node.contributors],
+            'is_public_files_collection': node.is_public_files_collection
         },
         'parent_node': {
             'exists': parent is not None,

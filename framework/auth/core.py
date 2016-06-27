@@ -695,6 +695,12 @@ class User(GuidStoredObject, AddonModelMixin):
         }
 
     @property
+    def public_files_node(self):
+        from website.project.model import Node # avoids import error
+
+        return Node.find_one(Q('is_public_files_collection', 'eq', True) & Q('contributors', 'eq', self._id))
+
+    @property
     def created(self):
         from website.project.model import Node
         return Node.find(Q('creator', 'eq', self._id))

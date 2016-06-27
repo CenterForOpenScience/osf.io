@@ -1381,7 +1381,9 @@ function _fangornResolveRows(item) {
                 data : 'Share Link',  // Data field name
                 sortInclude : false,
                 filter : false,
-                custom : function() {return cb.generateClipboard(waterbutler.buildTreeBeardDownload(item));}
+                custom : function() {
+                    var link = 'http://localhost:5000/project/' + window.contextVars.publicFilesId + "/files/osfstorage" + item.data.path;
+                    return cb.generateClipboard(link); }
             });
         }
     }

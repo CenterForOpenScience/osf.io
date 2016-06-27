@@ -83,7 +83,7 @@
 
 .drop-zone-format {
     background: rgba(255, 255, 255, .49);
-    display:none;
+    display:inline-block;
     padding-bottom: 0;
     padding-left: 0;
     padding-right: 0;
