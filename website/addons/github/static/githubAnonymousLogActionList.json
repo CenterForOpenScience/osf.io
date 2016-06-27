@@ -1,0 +1,10 @@
+{
+    "github_file_added" : "A user added a file to a GitHub repo in a project",
+    "github_file_removed" : "A user removed a file in a GitHub repo in a project",
+    "github_file_updated" : "A user updated a file in a GitHub repo in a project",
+    "github_folder_created" : "A user created a folder in a GitHub repo in a project",
+    "github_node_authorized" : "A user authorized the GitHub addon for a project",
+    "github_node_deauthorized" : "A user deauthorized the GitHub addon for a project",
+    "github_node_deauthorized_no_user" : "GitHub addon for a project deauthorized",
+    "github_repo_linked" : "A user linked a GitHub repo in a project"
+}
