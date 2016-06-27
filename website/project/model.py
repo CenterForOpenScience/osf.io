@@ -1198,8 +1198,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         :param bool save: Save changes
         :raises: ValueError if user already has permission
         """
-        if self.is_public_files_collection and (self.creator._id is not user._id) and not user.is_merged:
-            raise NodeStateError('Cannot edit permissions on Public Files Collection')
         if user._id not in self.permissions:
             self.permissions[user._id] = [permission]
         else:
@@ -1217,8 +1215,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         :param bool save: Save changes
         :raises: ValueError if user does not have permission
         """
-        if self.is_public_files_collection:
-            raise NodeStateError('Cannot edit permissions on Public Files Collection')
         try:
             self.permissions[user._id].remove(permission)
         except (KeyError, ValueError):
@@ -1538,6 +1534,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             )
             if existing_public_files_collections.count() > 0:
                 raise NodeStateError("Only one public files collection allowed per user.")
+
         # Bookmark collections are always named 'Bookmarks'
         if self.is_bookmark_collection and self.title != 'Bookmarks':
             self.title = 'Bookmarks'
@@ -1740,10 +1737,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if node.is_bookmark_collection:
             raise ValueError(
                 'Pointer to bookmark collection ({0}) not allowed.'.format(node._id)
-            )
-        if node.is_public_files_collection:
-            raise ValueError(
-                'Pointer to public files collection ({0}) not allowed'.format(node._id)
             )
 
         # Append pointer
@@ -1992,9 +1985,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         """
         #Called so validation does not have to wait until save.
         validate_title(title)
-
-        if self.is_public_files_collection:
-            raise NodeStateError('Cannot rename Public Files Collections')
 
         original_title = self.title
         new_title = sanitize.strip_html(title)
@@ -2260,6 +2250,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     @disable_for_public_files_collection
     def register_node(self, schema, auth, data, parent=None):
         """Make a frozen copy of a node.
+
         :param schema: Schema object
         :param auth: All the auth information including user, API key.
         :param template: Template name
@@ -2539,8 +2530,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     @disable_for_public_files_collection
     def edit_citation(self, auth, instance, save=False, log=True, **kwargs):
-        if self.is_public_files_collection:
-            return False
         citation = {'name': instance.name, 'text': instance.text}
         new_name = kwargs.get('name', instance.name)
         new_text = kwargs.get('text', instance.text)
@@ -2567,8 +2556,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     @disable_for_public_files_collection
     def remove_citation(self, auth, instance, save=False, log=True):
-        if self.is_public_files_collection:
-            return False
         citation = {'name': instance.name, 'text': instance.text}
         self.alternative_citations.remove(instance)
         if log:
@@ -2910,9 +2897,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         :param contributor: User object, the contributor to be removed
         :param auth: All the auth information including user, API key.
         """
-
-        if self.is_public_files_collection:
-            raise NodeStateError('Cannot remove self from Public Files Collection')
         # remove unclaimed record if necessary
         if self._primary_key in contributor.unclaimed_records:
             del contributor.unclaimed_records[self._primary_key]
@@ -2999,8 +2983,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             raise PermissionsError('Only admins can modify contributor permissions')
         permissions = expand_permissions(permission) or DEFAULT_CONTRIBUTOR_PERMISSIONS
         admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
-        if self.is_public_files_collection:
-            raise NodeStateError('Cannot change contributors for Public Files Collection')
         if not len(admins) > 1:
             # has only one admin
             admin = admins[0]
@@ -3132,57 +3114,54 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 project_signals.write_permissions_revoked.send(self)
 
     def add_contributor(self, contributor, permissions=None, visible=True,
-                        auth=None, log=True, save=False,merging=False):
-            """Add a contributor to the project.
+                        auth=None, log=True, save=False):
+        """Add a contributor to the project.
 
-            :param User contributor: The contributor to be added
-            :param list permissions: Permissions to grant to the contributor
-            :param bool visible: Contributor is visible in project dashboard
-            :param Auth auth: All the auth information including user, API key
-            :param bool log: Add log to self
-            :param bool save: Save after adding contributor
-            :returns: Whether contributor was added
-            """
-            MAX_RECENT_LENGTH = 15
+        :param User contributor: The contributor to be added
+        :param list permissions: Permissions to grant to the contributor
+        :param bool visible: Contributor is visible in project dashboard
+        :param Auth auth: All the auth information including user, API key
+        :param bool log: Add log to self
+        :param bool save: Save after adding contributor
+        :returns: Whether contributor was added
+        """
+        MAX_RECENT_LENGTH = 15
 
-            # If user is merged into another account, use master account
-            contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
-            print contrib_to_add, contributor, self.creator
-            if self.is_public_files_collection and not contributor.merged_by:
-                raise NodeStateError('Cannot add contributor to public files collection')
-            if contrib_to_add not in self.contributors:
+        # If user is merged into another account, use master account
+        contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
+        if contrib_to_add not in self.contributors:
 
-                self.contributors.append(contrib_to_add)
-                if visible:
-                    self.set_visible(contrib_to_add, visible=True, log=False)
+            self.contributors.append(contrib_to_add)
+            if visible:
+                self.set_visible(contrib_to_add, visible=True, log=False)
 
-                # Add default contributor permissions
-                permissions = permissions or DEFAULT_CONTRIBUTOR_PERMISSIONS
-                for permission in permissions:
-                    self.add_permission(contrib_to_add, permission, save=False)
+            # Add default contributor permissions
+            permissions = permissions or DEFAULT_CONTRIBUTOR_PERMISSIONS
+            for permission in permissions:
+                self.add_permission(contrib_to_add, permission, save=False)
 
-                # Add contributor to recently added list for user
-                if auth is not None:
-                    user = auth.user
-                    if contrib_to_add in user.recently_added:
-                        user.recently_added.remove(contrib_to_add)
-                    user.recently_added.insert(0, contrib_to_add)
-                    while len(user.recently_added) > MAX_RECENT_LENGTH:
-                        user.recently_added.pop()
+            # Add contributor to recently added list for user
+            if auth is not None:
+                user = auth.user
+                if contrib_to_add in user.recently_added:
+                    user.recently_added.remove(contrib_to_add)
+                user.recently_added.insert(0, contrib_to_add)
+                while len(user.recently_added) > MAX_RECENT_LENGTH:
+                    user.recently_added.pop()
 
-                if log:
-                    self.add_log(
-                        action=NodeLog.CONTRIB_ADDED,
-                        params={
-                            'project': self.parent_id,
-                            'node': self._primary_key,
-                            'contributors': [contrib_to_add._primary_key],
-                        },
-                        auth=auth,
-                        save=False,
-                    )
-                if save:
-                    self.save()
+            if log:
+                self.add_log(
+                    action=NodeLog.CONTRIB_ADDED,
+                    params={
+                        'project': self.parent_id,
+                        'node': self._primary_key,
+                        'contributors': [contrib_to_add._primary_key],
+                    },
+                    auth=auth,
+                    save=False,
+                )
+            if save:
+                self.save()
 
             if self._id:
                 project_signals.contributor_added.send(self, contributor=contributor, auth=auth)
