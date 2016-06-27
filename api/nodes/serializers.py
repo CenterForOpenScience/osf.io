@@ -263,16 +263,22 @@ class NodeSerializer(JSONAPISerializer):
             node = template_node.use_as_template(auth=get_user_auth(request), changes=changed_data)
         else:
             node = Node(**validated_data)
-        if request.GET.get('inherit_contributors') and validated_data['parent'].has_permission(user, 'write'):
-            auth = get_user_auth(request)
-            parent = validated_data['parent']
-            for contributor in parent.contributors:
-                if contributor is not user:
-                    node.add_contributor(contributor, permissions=parent.get_permissions(contributor), auth=auth, visible=parent.get_visible(contributor), log=False)
         try:
             node.save()
         except ValidationValueError as e:
             raise InvalidModelValueError(detail=e.message)
+        if request.GET.get('inherit_contributors') and validated_data['parent'].has_permission(user, 'write'):
+            auth = get_user_auth(request)
+            parent = validated_data['parent']
+            contributors = []
+            for contributor in parent.contributors:
+                if contributor is not user:
+                    contributors.append({
+                        'user': contributor,
+                        'permissions': parent.get_permissions(contributor),
+                        'visible': parent.get_visible(contributor)
+                    })
+            node.add_contributors(contributors, auth=auth, log=True, save=True)
         return node
 
     def update(self, node, validated_data):
