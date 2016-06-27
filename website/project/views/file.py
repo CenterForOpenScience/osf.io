@@ -23,5 +23,4 @@ def grid_data(auth, node, **kwargs):
     """View that returns the formatted data for rubeus.js/hgrid
     """
     data = request.args.to_dict()
-
     return {'data': rubeus.to_hgrid(node, auth, **data)}
