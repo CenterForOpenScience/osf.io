@@ -16,7 +16,7 @@ from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 from website.project.model import NodeUpdateError
 
-from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse
+from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse, is_truthy
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField,
                                   HideIfRegistration, RestrictedDictSerializer,
@@ -267,7 +267,7 @@ class NodeSerializer(JSONAPISerializer):
             node.save()
         except ValidationValueError as e:
             raise InvalidModelValueError(detail=e.message)
-        if request.GET.get('inherit_contributors') and validated_data['parent'].has_permission(user, 'write'):
+        if is_truthy(request.GET.get('inherit_contributors')) and validated_data['parent'].has_permission(user, 'write'):
             auth = get_user_auth(request)
             parent = validated_data['parent']
             contributors = []

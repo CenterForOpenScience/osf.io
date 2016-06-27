@@ -100,24 +100,28 @@ var xhrconfig = function (xhr) {
     xhr.setRequestHeader('Content-Type', 'application/vnd.api+json;');
     xhr.setRequestHeader('Accept', 'application/vnd.api+json; ext=bulk');
 };
-var categoryList = [];
+
 // Load categories to pass in to create project
-var loadCategories = function _loadCategories () {
-    var promise = m.request({method : 'OPTIONS', url : $osf.apiV2Url('nodes/', { query : {}}), config : xhrconfig});
-    promise.then(function _success(results){
-        if(results.actions && results.actions.POST.category){
-            categoryList = results.actions.POST.category.choices;
-            categoryList.sort(function(a, b){ // Quick alphabetical sorting
-                if(a.display_name < b.display_name) return -1;
-                if(a.display_name > b.display_name) return 1;
-                return 0;
-            });
-        }
-    }, function _error(results){
-        var message = 'Error loading project category names.';
-        Raven.captureMessage(message, {extra: {requestReturn: results}});
-    });
-    return promise;
+var loadCategories = function() {
+    var deferred = m.deferred();
+    var message = 'Error loading project category names.';
+    m.request({method : 'OPTIONS', url : $osf.apiV2Url('nodes/', { query : {}}), config : xhrconfig})
+        .then(function _success(results){
+            if(results.actions && results.actions.POST.category){
+                var categoryList = results.actions.POST.category.choices;
+                categoryList.sort(function(a, b){ // Quick alphabetical sorting
+                    if(a.display_name < b.display_name) return -1;
+                    if(a.display_name > b.display_name) return 1;
+                    return 0;
+                });
+                deferred.resolve(categoryList);
+            }
+            deferred.reject(message);
+        }, function _error(results){
+            Raven.captureMessage(message, {extra: {requestReturn: results}});
+            deferred.reject(message);
+        });
+    return deferred.promise;
 };
 
 $(document).ready(function () {
@@ -240,7 +244,7 @@ $(document).ready(function () {
         }
     });
 
-    loadCategories().then(function(){
+    loadCategories().then(function(categoryList) {
         var addProjectTemplate = m.component(AddProject, {
             buttonTemplate: m('.btn.btn-sm.btn-default[data-toggle="modal"][data-target="#addSubComponent"]', {onclick: function() {
                 $osf.trackClick('project-dashboard', 'add-component', 'open-add-project-modal');
