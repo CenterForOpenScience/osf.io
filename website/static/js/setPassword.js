@@ -17,6 +17,18 @@ ko.validation.rules.complexity = {
 
 ko.validation.registerExtenders();
 
+/**
+  * Return CSS colors and percentage of a progress bar based on a value.
+  * Used to return a value for password complexity
+  */
+var valueProgressBar = {
+    0: {'attr': {'style': 'width: 0%'}, 'text': '', 'text_attr':{}},
+    1: {'attr': {'class': 'progress-bar progress-bar-sm progress-bar-danger', 'style': 'width: 20%'}, 'text': 'Very weak', 'text_attr': {'style': 'color: grey'}},
+    2: {'attr': {'class': 'progress-bar progress-bar-sm progress-bar-danger', 'style': 'width: 40%'}, 'text': 'Weak', 'text_attr': {'style': 'color: orangered '}},
+    3: {'attr': {'class': 'progress-bar progress-bar-sm progress-bar-warning', 'style': 'width: 60%'}, 'text': 'So-so', 'text_attr': {'style': 'color: gold'}},
+    4: {'attr': {'class': 'progress-bar progress-bar-sm progress-bar-success', 'style': 'width: 80%; background-image: none; background-color: lawngreen'}, 'text': 'Good', 'text_attr': {'style': 'color: lawngreen'}},
+    5: {'attr': {'class': 'progress-bar progress-bar-sm progress-bar-success', 'style': 'width: 100%'}, 'text': 'Great!', 'text_attr': {'style': 'color: limegreen'}}
+};
 
 // Accepts a few different types of arguments, depending on
 // the desired fields and type of password reset.
@@ -30,15 +42,15 @@ var ViewModel = function(passwordViewType, submitUrl, campaign, redirectUrl) {
 
     self.typedPassword = ko.observable('');
 
-    self.passwordInfo = ko.computed(function() {
+    self.passwordInfo = ko.pureComputed(function() {
         if (self.typedPassword()) {
             return zxcvbn(self.typedPassword().slice(0, 100));
         }
     });
 
-    self.passwordFeedback = ko.computed(function () {
+    self.passwordFeedback = ko.pureComputed(function () {
         if (self.typedPassword()) {
-            return self.passwordInfo().feedback.warning;
+            return self.passwordInfo().feedback;
         }
     });
 
@@ -50,8 +62,8 @@ var ViewModel = function(passwordViewType, submitUrl, campaign, redirectUrl) {
         }
     });
 
-    self.passwordComplexityBar = ko.computed(function() {
-        return $osf.valueProgressBar[self.passwordComplexity()];
+    self.passwordComplexityInfo = ko.computed(function() {
+        return valueProgressBar[self.passwordComplexity()];
     });
 
     self.password = ko.observable('').extend({
@@ -91,47 +103,47 @@ var ViewModel = function(passwordViewType, submitUrl, campaign, redirectUrl) {
 
     // only include the following fields if the user is
     // signing up for the first time
-    if (passwordViewType === 'signup') {
-        self.fullName = ko.observable('').extend({
-            required: true,
-            minLength: 3
-        });
-        self.email1 = ko.observable('').extend({
-            required: true,
-            email: true
-        });
-        self.email2 = ko.observable('').extend({
-            required: true,
-            email: true,
-            validation: {
-                validator: function(val, other) {
-                    return String(val).toLowerCase() === String(other).toLowerCase();
-                },
-                'message': 'Email addresses must match.',
-                params: self.email1
-            }
-        });
+    // if (passwordViewType === 'signup') {
+    self.fullName = ko.observable('').extend({
+        required: true,
+        minLength: 3
+    });
+    self.email1 = ko.observable('').extend({
+        required: true,
+        email: true
+    });
+    self.email2 = ko.observable('').extend({
+        required: true,
+        email: true,
+        validation: {
+            validator: function(val, other) {
+                return String(val).toLowerCase() === String(other).toLowerCase();
+            },
+            'message': 'Email addresses must match.',
+            params: self.email1
+        }
+    });
 
-        self.password.extend({
-            validation: {
-                validator: function(val, other) {
-                    if (String(val).toLowerCase() === String(other).toLowerCase()) {
-                        self.typedPassword(' ');
-                        return false;
-                    } else {
-                        return true;
-                    }
-                },
-                'message': 'Your password cannot be the same as your username.',
-                params: self.email1
-            }
-        });
+    self.password.extend({
+        validation: {
+            validator: function(val, other) {
+                if (String(val).toLowerCase() === String(other).toLowerCase()) {
+                    self.typedPassword(' ');
+                    return false;
+                } else {
+                    return true;
+                }
+            },
+            'message': 'Your password cannot be the same as your email address.',
+            params: self.email1
+        }
+    });
 
-        validatedFields.fullName = self.fullName;
-        validatedFields.email1 = self.email1;
-        validatedFields.email2 = self.email2;
+    validatedFields.fullName = self.fullName;
+    validatedFields.email1 = self.email1;
+    validatedFields.email2 = self.email2;
 
-    }
+    // }
 
     // pick up the email from contextVars if we can't get it from first typing it in
     if (window.contextVars.username) {
@@ -198,7 +210,7 @@ var ViewModel = function(passwordViewType, submitUrl, campaign, redirectUrl) {
             self.flashMessage,
             self.flashMessageClass,
             response.message,
-            'text-info p-xs'
+            'ext-success p-xs'
         );
         if (redirectUrl) {
             setTimeout(function(){ window.location = redirectUrl; }, 3000);
