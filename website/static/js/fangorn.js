@@ -1287,10 +1287,11 @@ function _fangornModifiedColumn(item, col) {
         return _connectCheckTemplate.call(this, item);
     }
     if (item.kind === 'file' && item.data.permissions.view && item.data.modified) {
+        // "new Date" required for non-ISO date formats
+        item.data.modified = new moment(new Date(item.data.modified)).format('YYYY-MM-DD hh:mm A');
         return m(
             'span',
-            // "new Date" required for non-ISO date formats
-            new moment(new Date(item.data.modified)).format('YYYY-MM-DD hh:mm A')
+            item.data.modified
         );
     }
     return m('span', '');
