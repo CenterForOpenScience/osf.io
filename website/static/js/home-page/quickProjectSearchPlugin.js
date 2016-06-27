@@ -596,21 +596,21 @@ var QuickSearchNodeDisplay = {
                 var title = project.attributes.title;
 
                 var rootID = lodashGet(project, 'embeds.root.data.id', '');
-                var rootURL = lodashGet(project, 'embeds.root.data.links.self')
+                var rootURL = lodashGet(project, 'embeds.root.data.links.self');
                 var root = getAncestorDescriptor(project, nodeID, 'root', rootID);
 
                 var parentID = lodashGet(project, 'embeds.parent.data.id', '');
                 var parent = getAncestorDescriptor(project, nodeID, 'parent', parentID);
 
-//              API doesn't provide grandparent GUID, so we have to use API URL.
+                // API doesn't provide grandparent GUID, so we have to use API URL.
                 var grandParentURL = lodashGet(project, 'embeds.parent.data.relationships.parent.links.related.href', '');
 
-//              Parent and root ID are the same, and they aren't both private (would cause both to have empty ID)
+                // Parent and root ID are the same, and they aren't both private (would cause both to have empty ID)
                 if (parentID === rootID && parentID !== '') {
                     parent = '';
                 }
 
-//              There are projects in between root and parent and they aren't both private
+                // There are projects in between root and parent and they aren't both private
                 if (grandParentURL !== rootURL && grandParentURL !== '' && rootID !== '') {
                     root += '... / ';
                 }
