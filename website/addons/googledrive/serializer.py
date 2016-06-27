@@ -1,4 +1,4 @@
-from website.addons.base.exceptions import InvalidAuthError
+from oauthlib.oauth2 import InvalidGrantError
 from website.addons.base.serializer import StorageAddonSerializer
 from website.util import api_url_for
 
@@ -9,7 +9,7 @@ class GoogleDriveSerializer(StorageAddonSerializer):
     def credentials_are_valid(self, user_settings, client):
         try:
             self.node_settings.fetch_access_token()
-        except (InvalidAuthError, AttributeError):
+        except (InvalidGrantError, AttributeError):
             return False
         return True
 
@@ -40,7 +40,7 @@ class GoogleDriveSerializer(StorageAddonSerializer):
         if self.node_settings.external_account is not None:
             try:
                 self.node_settings.fetch_access_token()
-            except InvalidAuthError:
+            except InvalidGrantError:
                 valid_credentials = False
         result['validCredentials'] = valid_credentials
         return {'result': result}

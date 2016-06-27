@@ -43,21 +43,28 @@
                         <!-- ko if: log.hasTemplate() -->
                             <!-- ko if: log.hasUser() -->
                             <span data-bind="if:log.anonymous">
-                                <span class="contributor-anonymous">A user</span>
-                            </span>
-                                <span data-bind="ifnot:log.anonymous">
-                                    <span data-bind="if: log.user.registered">
-                                    <span data-bind="if: log.userURL">
-                                        <a class="overflow" data-bind="text: log.userFullName || log.apiKey, attr: {href: log.userURL}"></a>
-                                    </span>
-                                    <span data-bind="ifnot: log.userURL">
-                                        <span class="overflow" data-bind="text: log.userFullName"></span>
-                                    </span>
-                                    </span>
-                                    <span data-bind="ifnot: log.user.registered">
-                                        A deactivated user
-                                    </span>
+                                <span data-bind="if: log.user.registered" class="contributor-anonymous">
+                                    A user
                                 </span>
+                                <span data-bind="ifnot: log.user.registered">
+                                    A deactivated user
+                                </span>
+                            </span>
+
+                            <span data-bind="ifnot:log.anonymous">
+                                <span data-bind="if: log.user.registered">
+                                <span data-bind="if: log.userURL">
+                                    <a class="overflow" data-bind="text: log.userFullName || log.apiKey, attr: {href: log.userURL}"></a>
+                                </span>
+                                <span data-bind="ifnot: log.userURL">
+                                    <span class="overflow" data-bind="text: log.userFullName"></span>
+                                </span>
+                                </span>
+                                <span data-bind="ifnot: log.user.registered">
+                                    <span data-bind="text: log.userFullName"></span>
+                                </span>
+
+                            </span>
                                 <!-- Log actions are the same as their template name -->
                                     <span data-bind="template: {name: log.action, data: log}"></span>
                                 <!-- /ko -->

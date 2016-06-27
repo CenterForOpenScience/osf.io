@@ -129,7 +129,7 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
 TEST = Mail('test', subject='A test email to ${name}', categories=['test'])
 
 INITIAL_CONFIRM_EMAIL = Mail('initial_confirm', subject='Open Science Framework Account Verification')
-CONFIRM_EMAIL = Mail('confirm', subject='Open Science Framework Email Verification')
+CONFIRM_EMAIL = Mail('confirm', subject='Add a new email to your OSF account')
 CONFIRM_EMAIL_PREREG = Mail('confirm_prereg', subject='Open Science Framework Account Verification, Preregistration Challenge')
 
 CONFIRM_MERGE = Mail('confirm_merge', subject='Confirm account merge')
@@ -217,8 +217,9 @@ FILE_OPERATION_FAILED = Mail(
     subject='Your ${action} has failed',
 )
 
-UNESCAPE = "<% from website.util.sanitize import unescape_entities %> ${unescape_entities(src.title)}"
-PROBLEM_REGISTERING = "Problem registering " + UNESCAPE
+UNESCAPE = '<% from website.util.sanitize import unescape_entities %> ${unescape_entities(src.title)}'
+PROBLEM_REGISTERING = 'Problem registering ' + UNESCAPE
+PROBLEM_REGISTERING_STUCK = PROBLEM_REGISTERING + '- Stuck Registration'
 
 ARCHIVE_SIZE_EXCEEDED_DESK = Mail(
     'archive_size_exceeded_desk',
@@ -251,6 +252,12 @@ ARCHIVE_UNCAUGHT_ERROR_DESK = Mail(
     'archive_uncaught_error_desk',
     subject=PROBLEM_REGISTERING
 )
+
+ARCHIVE_REGISTRATION_STUCK_DESK = Mail(
+    'archive_registration_stuck_desk',
+    subject=PROBLEM_REGISTERING_STUCK
+)
+
 ARCHIVE_UNCAUGHT_ERROR_USER = Mail(
     'archive_uncaught_error_user',
     subject=PROBLEM_REGISTERING
@@ -258,7 +265,7 @@ ARCHIVE_UNCAUGHT_ERROR_USER = Mail(
 
 ARCHIVE_SUCCESS = Mail(
     'archive_success',
-    subject="Registration of " + UNESCAPE + " complete"
+    subject='Registration of ' + UNESCAPE + ' complete'
 )
 
 WELCOME = Mail(

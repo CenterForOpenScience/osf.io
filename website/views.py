@@ -152,10 +152,10 @@ def watched_logs_get(**kwargs):
     logs = (model.NodeLog.load(id) for id in paginated_logs)
 
     return {
-        "logs": [serialize_log(log) for log in logs],
-        "total": total,
-        "pages": pages,
-        "page": page
+        'logs': [serialize_log(log) for log in logs],
+        'total': total,
+        'pages': pages,
+        'page': page
     }
 
 
@@ -166,7 +166,7 @@ def serialize_log(node_log, auth=None, anonymous=False):
         'user': node_log.user.serialize()
         if isinstance(node_log.user, User)
         else {'fullname': node_log.foreign_user},
-        'contributors': [node_log._render_log_contributor(c) for c in node_log.params.get("contributors", [])],
+        'contributors': [node_log._render_log_contributor(c) for c in node_log.params.get('contributors', [])],
         'action': node_log.action,
         'params': sanitize.unescape_entities(node_log.params),
         'date': utils.iso8601format(node_log.date),
@@ -222,7 +222,8 @@ def resolve_guid(guid, suffix=None):
 
         # redirect if user tries to visit public files wiki or add contributors ect.
         if Node.find(Q('_id', 'eq', guid_object._storage_key) & Q('is_public_files_collection', 'eq', True)):
-            return redirect('public_files/' + Node.load(guid_object._storage_key).creator._id)
+            if suffix is None or "files/osfstorage/" not in suffix:
+                return redirect('public_files/' + Node.load(guid_object._storage_key).creator._id)
 
         # verify that the object implements a GuidStoredObject-like interface. If a model
         #   was once GuidStoredObject-like but that relationship has changed, it's
@@ -259,6 +260,9 @@ def resolve_guid(guid, suffix=None):
 # redirect osf.io/about/ to OSF wiki page osf.io/4znzp/wiki/home/
 def redirect_about(**kwargs):
     return redirect('https://osf.io/4znzp/wiki/home/')
+
+def redirect_help(**kwargs):
+    return redirect('/faq/')
 
 
 # redirect osf.io/howosfworks to osf.io/getting-started/

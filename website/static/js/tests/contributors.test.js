@@ -88,10 +88,10 @@ describe('addContributors', () => {
        describe('ViewModel', () => {
            var vm;
            beforeEach(() => {
-               sinon.stub(ko, 'applyBindings');
+               sinon.stub($osf, 'applyBindings');
                var addContribs = new addContributors('nothing', 'Fake title', '12345', 'parent', 'Parent title');
                vm = addContribs.viewModel;
-               ko.applyBindings.restore();
+               $osf.applyBindings.restore();
            });
            describe('getContributors', () => {
                var shouldBe = ['a1234', 'b1234', 'c1234'];

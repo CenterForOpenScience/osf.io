@@ -29,7 +29,7 @@ from website.util import api_url_for, rubeus
 from website.project import new_private_link
 from website.project.views.node import _view_project as serialize_node
 from website.addons.base import AddonConfig, AddonNodeSettingsBase, views
-from tests.base import OsfTestCase
+from tests.base import OsfTestCase, get_default_metaschema
 from tests.factories import AuthUserFactory, ProjectFactory
 from website.addons.github.exceptions import ApiError
 from website.addons.github.tests.factories import GitHubAccountFactory
@@ -605,6 +605,19 @@ class TestAddonFileViews(OsfTestCase):
         ret.save()
         return ret
 
+    def get_second_test_file(self):
+        version = models.FileVersion(identifier='1')
+        version.save()
+        ret = TestFile(
+            name='Test2',
+            node=self.project,
+            path='/test/Test2',
+            materialized_path='/test/Test2',
+            versions=[version]
+        )
+        ret.save()
+        return ret
+
     def get_mako_return(self):
         ret = serialize_node(self.project, Auth(self.user), primary=True)
         ret.update({
@@ -620,6 +633,7 @@ class TestAddonFileViews(OsfTestCase):
                 'mfr': '',
                 'gravatar': '',
                 'external': '',
+                'archived_from': '',
             },
             'size': '',
             'extra': '',
@@ -860,6 +874,48 @@ class TestAddonFileViews(OsfTestCase):
         assert_false(StoredFileNode.load(file_node._id))
         assert_true(TrashedFileNode.load(file_node._id))
         assert_false(StoredFileNode.load(subfolder._id))
+
+    @mock.patch('website.archiver.tasks.archive')
+    def test_archived_from_url(self, mock_archive):
+        file_node = self.get_test_file()
+        second_file_node = self.get_second_test_file()
+        file_node.copied_from = second_file_node
+
+        registered_node = self.project.register_node(
+            schema=get_default_metaschema(),
+            auth=Auth(self.user),
+            data=None,
+        )
+
+        archived_from_url = views.get_archived_from_url(registered_node, file_node)
+        view_url = self.project.web_url_for('addon_view_or_download_file', provider=file_node.provider, path=file_node.copied_from._id)
+        assert_true(archived_from_url)
+        assert_urls_equal(archived_from_url, view_url)
+
+    @mock.patch('website.archiver.tasks.archive')
+    def test_archived_from_url_without_copied_from(self, mock_archive):
+        file_node = self.get_test_file()
+
+        registered_node = self.project.register_node(
+            schema=get_default_metaschema(),
+            auth=Auth(self.user),
+            data=None,
+        )
+        archived_from_url = views.get_archived_from_url(registered_node, file_node)
+        assert_false(archived_from_url)
+
+    @mock.patch('website.archiver.tasks.archive')
+    def test_copied_from_id_trashed(self, mock_archive):
+        file_node = self.get_test_file()
+        second_file_node = self.get_second_test_file()
+        file_node.copied_from = second_file_node
+        self.project.register_node(
+            schema=get_default_metaschema(),
+            auth=Auth(self.user),
+            data=None,
+        )
+        trashed_node = second_file_node.delete()
+        assert_false(trashed_node.copied_from)
 
 
 class TestLegacyViews(OsfTestCase):
