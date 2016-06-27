@@ -384,8 +384,8 @@ var MyProjects = {
                 if(results.actions && results.actions.POST.category){
                     self.categoryList = results.actions.POST.category.choices;
                     self.categoryList.sort(function(a, b){ // Quick alphabetical sorting
-                        if(a.value < b.value) return -1;
-                        if(a.value > b.value) return 1;
+                        if(a.display_name < b.display_name) return -1;
+                        if(a.display_name > b.display_name) return 1;
                         return 0;
                     });
                 }
