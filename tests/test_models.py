@@ -11,7 +11,6 @@ import urllib
 import itsdangerous
 import random
 import string
-import httpretty
 from dateutil import parser
 
 from modularodm import Q
@@ -64,7 +63,7 @@ from tests.factories import (
     ProjectWithAddonFactory, UnconfirmedUserFactory, PrivateLinkFactory,
     AuthUserFactory, BookmarkCollectionFactory, CollectionFactory,
     NodeLicenseRecordFactory, InstitutionFactory, CommentFactory,
-    PublicFilesFactory, MockAddonNodeSettings, MockAddonUserSettings,MockAddonUserSettingsMergeable,ExternalAccountFactory
+    PublicFilesFactory
 )
 from tests.test_features import requires_piwik
 from tests.utils import mock_archive
@@ -4655,20 +4654,6 @@ class TestPrivateLink(OsfTestCase):
         assert_equal(proj, draft.branched_from)
 
 class TestPublicFiles(OsfTestCase):
-    ADDONS_UNDER_TEST = {
-        'deletable': {
-            'user_settings': MockAddonUserSettings,
-            'node_settings': MockAddonNodeSettings,
-        },
-        'unmergeable': {
-            'user_settings': MockAddonUserSettings,
-            'node_settings': MockAddonNodeSettings,
-        },
-        'mergeable': {
-            'user_settings': MockAddonUserSettingsMergeable,
-            'node_settings': MockAddonNodeSettings,
-        }
-    }
     def setUp(self):
         super(TestPublicFiles, self).setUp()
         self.user = UserFactory()
@@ -4735,15 +4720,9 @@ class TestPublicFiles(OsfTestCase):
             self.project.remove_contributor(self.user,auth=self.auth)
 
     def test_update_contributor_public_files_collection(self):
-        # new_contrib = AuthUserFactory()
-        # with assert_raises(NodeStateError):
-        #     self.project.update_contributor(
-        #         new_contrib,
-        #         READ,
-        #         False,
-        #         auth=self.auth
-        #     )
-        pass
+        newman = UserFactory()
+        with assert_raises(NodeStateError):
+            self.project.add_contributor(contributor=newman,permissions='WRITE',auth=Auth(newman))
 
     def test_changes_privacy_to_public_files_colletion(self):
         self.project.set_privacy('private', self.auth)
@@ -4755,21 +4734,17 @@ class TestPublicFiles(OsfTestCase):
         assert_equal(self.project.edit_citation(self.auth,{})  , False)
         assert_equal(self.project.remove_citation(self.auth,{}), False)
 
-    def test_user_merge_with_whatever(self):
+    def test_user_merge_with_other_public_files_collection(self):
+        from website.files.models.osfstorage import OsfStorageFile
         oldman =  UserFactory()
         oldauth = Auth(user=oldman)
         project = PublicFilesFactory(creator=oldman)
         print "Project ({0})".format(project.title)
-
-        other_node_settings = project.get_addon('osfstorage').get_root().append_file('Cloud')
-        print "Other node: ", other_node_settings, "   ",  other_node_settings.parent
+        files_read_in = {}
+        files_read_in.update({project.get_addon('osfstorage').get_root().append_file('Cloud'):'test1'})
+        files_read_in.update({project.get_addon('osfstorage').get_root().append_file('Clo'):'test2'})
+        files_read_in.update({project.get_addon('osfstorage').get_root().append_file('ud'):'test3'})
         self.user.merge_user(oldman)
-        print self.project._id, project._id
-        print other_node_settings.belongs_to_node(self.project._id)
-
-        for files in OsfStorageFile.find(Q('node', 'eq', self.project)):
-            print "Files ", files
-        assert_false(True)
 
 if __name__ == '__main__':
     unittest.main()

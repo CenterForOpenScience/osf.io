@@ -1334,16 +1334,15 @@ class User(GuidStoredObject, AddonModelMixin):
                 if node.is_bookmark_collection:
                     continue
                 if node.is_public_files_collection:
-                    from website.files.models.osfstorage import OsfStorageFile, OsfStorageFolder
+                    from website.files.models.osfstorage import OsfStorageFile
                     from website.project.model import Node
                     self_pf_node = Node.find_one(Q('is_public_files_collection', 'eq', True) & Q('creator', 'eq', self))
-                    for child in OsfStorageFile.find(Q('node', 'eq', node) & Q('title','ne','Public Files')):
-                            print "Child: ", child.move_under(self_pf_node.get_addon('osfstorage').get_root())
-                            print self_pf_node
-                    print "Here"
-                    self_pf_node.save()
-                    for child in OsfStorageFile.find(Q('node', 'eq', self_pf_node) & Q('title','ne','Public Files')):
-                        print child
+                    try:
+                        for child in OsfStorageFile.find(Q('node', 'eq', node) & Q('title','ne','Public Files')):
+                            child.move_under(self_pf_node.get_addon('osfstorage').get_root())
+                        self_pf_node.save()
+                    except:
+                        ValidationError('Files could not be moved from one public files collection to another')
                     continue
                 # if both accounts are contributor of the same project
                 if node.is_contributor(self) and node.is_contributor(user):

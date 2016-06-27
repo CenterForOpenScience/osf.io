@@ -2257,6 +2257,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             )
         if self.is_collection:
             raise NodeStateError('Folders may not be registered')
+        if self.is_public_files_collection:
+            raise NodeStateError('Public Files Collections may not be registered')
 
         when = datetime.datetime.utcnow()
 
