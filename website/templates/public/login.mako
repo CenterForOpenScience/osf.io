@@ -3,7 +3,6 @@
 <%def name="title()">Sign In</%def>
 
 <%def name="content()">
-
     %if campaign == "prereg":
         <div class="text-center m-t-lg">
             <h3>Preregistration Challenge </h3>
@@ -13,7 +12,6 @@
             </p>
         </div>
     %endif
-
     %if campaign == "institution" and enable_institutions:
         <div class="text-center m-t-lg">
             <h3>OSF for Institutions </h3>
@@ -142,14 +140,21 @@
                                 id="inputPassword3"
                                 placeholder="Password"
                                 data-bind="
-                                    textInput: typedPassword,
-                                    value: password,
-                                    disable: submitted(),
-                                    event: {
-                                        blur: trim.bind($data, password)
-                                    }"
+                            textInput: typedPassword,
+                            value: password,
+                            disable: submitted(),
+                            event: {
+                                blur: trim.bind($data, password)
+                            }"
                         >
-                        <p class="help-block" data-bind="validationMessage: password" style="display: none;"></p>
+                          <div class="progress create-password">
+                              <div class="progress-bar progress-bar-sm" role="progressbar" data-bind="attr: passwordComplexityInfo().attr"></div>
+                          </div>
+                        <!-- ko if: passwordFeedback() -->
+                        <p class="text-right" data-bind="text: passwordComplexityInfo().text, attr: passwordComplexityInfo().text_attr"></p>
+                        <p class="help-block osf-box-lt" data-bind="validationMessage: password" style="display: none;"></p>
+                        <p class="help-block osf-box-lt" data-bind="text: passwordFeedback().warning"></p>
+                        <!-- /ko -->
                     </div>
                 </div>
                 <!-- Flashed Messages -->
@@ -171,12 +176,10 @@
                         </div>
                     %endif
                     <div class="col-md-4 col-sm-12">
-                        <button type="submit" class="btn pull-right btn-success" data-bind="disable: submitted()">Create account</button>
+                        <button type="submit" class="btn pull-right btn-success" data-bind="css: {disabled: !password.isValid()}">Create account</button>
                     </div>
                 </div>
-
             </form>
-
         </div>
         <div class="row">
             <div id="termsAndConditions" class="m-t-md col-sm-6 col-sm-offset-3">
@@ -185,38 +188,6 @@
         </div>
     </div>
     %endif
-                    >
-                </div>
-                <div class="col-sm-8 col-sm-offset-4">
-                    <div class="progress create-password">
-                        <div class="progress-bar" role="progressbar" data-bind="attr: passwordComplexityBar"></div>
-                    </div>
-                    <p class="help-block" data-bind="validationMessage: password" style="display: none;"></p>
-                    <p class="help-block" data-bind="text: passwordFeedback"></p>
-                </div>
-            </div>
-            <!-- Flashed Messages -->
-            <div class="help-block" >
-                <p data-bind="html: flashMessage, attr: {class: flashMessageClass}"></p>
-            </div>
-            <div>
-                <p> By clicking "Create account", you agree to our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms</a> and that you have read our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>, including our information on <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies">Cookie Use</a>.</p>
-            </div>
-            <div class="form-group">
-                <div class="col-sm-offset-4 col-sm-8">
-                    <button type="submit" class="btn pull-right btn-success" data-bind="disable: submitted(), css: {disabled: !password.isValid()}">Create account</button>
-                </div>
-            </div>
-        </form>
-    </div>
-        %if redirect_url:
-            <div class="text-center m-b-sm col-sm-12" style="padding-top: 15px"> <a href="${domain}login/?campaign=institution&redirect_url=${redirect_url}">Login through your institution  <i class="fa fa-arrow-right"></i></a></div>
-        %else:
-            <div class="text-center m-b-sm col-sm-12" style="padding-top: 15px"> <a href="${domain}login/?campaign=institution">Login through your institution  <i class="fa fa-arrow-right"></i></a></div>
-        %endif
-    %endif
-</div>
-
 </%def>
 
 <%def name="javascript_bottom()">
