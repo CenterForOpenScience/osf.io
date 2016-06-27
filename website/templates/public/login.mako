@@ -3,6 +3,7 @@
 <%def name="title()">Sign In</%def>
 
 <%def name="content()">
+
     %if campaign == "prereg":
         <div class="text-center m-t-lg">
             <h3>Preregistration Challenge </h3>
@@ -12,6 +13,7 @@
             </p>
         </div>
     %endif
+
     %if campaign == "institution" and enable_institutions:
         <div class="text-center m-t-lg">
             <h3>OSF for Institutions </h3>

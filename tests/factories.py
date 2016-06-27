@@ -658,6 +658,7 @@ class MockOAuth2Provider(ExternalProvider):
     callback_url = "https://mock2.com/callback"
     auto_refresh_url = "https://mock2.com/callback"
     refresh_time = 300
+    expiry_time = 9001
 
     def handle_callback(self, response):
         return {
@@ -811,7 +812,7 @@ def create_fake_user():
         fullname=name,
         is_registered=True,
         is_claimed=True,
-        verification_key= generate_verification_key(),
+        verification_key=generate_verification_key(),
         date_registered=fake.date_time(),
         emails=[email],
         **parsed

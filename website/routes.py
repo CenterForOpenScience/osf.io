@@ -85,7 +85,6 @@ def get_globals():
         'allow_login': settings.ALLOW_LOGIN,
         'cookie_name': settings.COOKIE_NAME,
         'status': status.pop_status_messages(),
-        'prev_status': status.pop_previous_status_messages(),
         'domain': settings.DOMAIN,
         'api_domain': settings.API_DOMAIN,
         'disk_saving_mode': settings.DISK_SAVING_MODE,
@@ -439,6 +438,7 @@ def make_url_map(app):
     process_rules(app, [
         Rule('/forms/signin/', 'get', website_views.signin_form, json_renderer),
         Rule('/forms/forgot_password/', 'get', website_views.forgot_password_form, json_renderer),
+        Rule('/forms/reset_password/', 'get', website_views.reset_password_form, json_renderer),
     ], prefix='/api/v1')
 
     ### Discovery ###
@@ -465,20 +465,37 @@ def make_url_map(app):
             notemplate
         ),
 
-        # reset password
+        # reset password get
         Rule(
             '/resetpassword/<verification_key>/',
-            ['get', 'post'],
-            auth_views.reset_password,
+            'get',
+            auth_views.reset_password_get,
             OsfWebRenderer('public/resetpassword.mako', render_mako_string, trust=False)
         ),
 
-        # resend confirmation
+        # reset password post
+        Rule(
+            '/resetpassword/<verification_key>/',
+            'post',
+            auth_views.reset_password_post,
+            OsfWebRenderer('public/resetpassword.mako', render_mako_string, trust=False)
+        ),
+
+        # resend confirmation get
         Rule(
             '/resend/',
-            ['get', 'post'],
-            auth_views.resend_confirmation,
+            'get',
+            auth_views.resend_confirmation_get,
             OsfWebRenderer('resend.mako', render_mako_string, trust=False)
+        ),
+
+        # resend confirmation post
+        Rule(
+            '/resend/',
+            'post',
+            auth_views.resend_confirmation_post,
+            OsfWebRenderer('resend.mako', render_mako_string, trust=False)
+
         ),
 
         # user sign up page
@@ -516,11 +533,19 @@ def make_url_map(app):
             notemplate
         ),
 
-        # forgot password
+        # forgot password get
         Rule(
             '/forgotpassword/',
-            ['get', 'post'],
-            auth_views.forgot_password,
+            'get',
+            auth_views.forgot_password_get,
+            OsfWebRenderer('public/forgot_password.mako', trust=False)
+        ),
+
+        # forgot password post
+        Rule(
+            '/forgotpassword/',
+            'post',
+            auth_views.forgot_password_post,
             OsfWebRenderer('public/forgot_password.mako', trust=False)
         ),
 
@@ -1578,6 +1603,7 @@ def make_url_map(app):
             notification_views.configure_subscription,
             json_renderer,
         ),
+
         Rule(
             [
                 '/project/<pid>/settings/addons/',

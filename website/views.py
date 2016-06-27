@@ -18,10 +18,6 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.forms import utils as form_utils
 from framework.routing import proxy_url
 from website.institutions.views import view_institution
-from framework.auth.forms import RegistrationForm
-from framework.auth.forms import ForgotPasswordForm
-from framework.auth.decorators import must_be_logged_in
-
 from website.models import Guid
 from website.models import Node, Institution
 from website.project import model
