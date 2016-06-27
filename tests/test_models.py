@@ -58,12 +58,11 @@ from website.addons.wiki.exceptions import (
 from tests.base import OsfTestCase, Guid, fake, capture_signals, get_default_metaschema
 from tests.factories import (
     UserFactory, ApiOAuth2ApplicationFactory, NodeFactory, PointerFactory,
-    ProjectFactory, NodeLogFactory, WatchConfigFactory,
+    ProjectFactory, PublicFilesFactory, NodeLogFactory, WatchConfigFactory,
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, PrivateLinkFactory,
     AuthUserFactory, BookmarkCollectionFactory, CollectionFactory,
-    NodeLicenseRecordFactory, InstitutionFactory, CommentFactory,
-    PublicFilesFactory
+    NodeLicenseRecordFactory, InstitutionFactory, CommentFactory
 )
 from tests.test_features import requires_piwik
 from tests.utils import mock_archive
@@ -4739,7 +4738,6 @@ class TestPublicFiles(OsfTestCase):
         oldman =  UserFactory()
         oldauth = Auth(user=oldman)
         project = PublicFilesFactory(creator=oldman)
-        print "Project ({0})".format(project.title)
         files_read_in = {}
         files_read_in.update({project.get_addon('osfstorage').get_root().append_file('Cloud'):'test1'})
         files_read_in.update({project.get_addon('osfstorage').get_root().append_file('Clo'):'test2'})
