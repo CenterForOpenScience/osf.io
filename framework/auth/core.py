@@ -703,6 +703,12 @@ class User(GuidStoredObject, AddonModelMixin):
         }
 
     @property
+    def public_files_node(self):
+        from website.project.model import Node # avoids import error
+
+        return Node.find_one(Q('is_public_files_collection', 'eq', True) & Q('contributors', 'eq', self._id))
+
+    @property
     def created(self):
         from website.project.model import Node
         return Node.find(Q('creator', 'eq', self._id))
@@ -1396,7 +1402,10 @@ class User(GuidStoredObject, AddonModelMixin):
         with disconnected_from(signal=contributor_added, listener=notify_added_contributor):
             for node in user.contributed:
                 # Skip bookmark collection node
-                if node.is_bookmark_collection or node.is_public_files_collection:
+                if node.is_bookmark_collection:
+                    continue
+                if node.is_public_files_collection:
+                    node.merge_public_files(self.public_files_node)
                     continue
                 # if both accounts are contributor of the same project
                 if node.is_contributor(self) and node.is_contributor(user):

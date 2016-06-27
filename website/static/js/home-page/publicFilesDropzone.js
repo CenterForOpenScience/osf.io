@@ -71,7 +71,7 @@ var PublicFilesDropzone = {
                 var buttonContainer = document.createElement('div');
                 $('div.col-sm-6').append(buttonContainer);
                 var fileJson = JSON.parse((file.xhr.response));
-                var link = waterbutler.buildDownloadUrl(fileJson.path, 'osfstorage', window.contextVars.publicFilesId, {});
+                var link = 'http://localhost:5000/project/' + window.contextVars.publicFilesId + "/files/osfstorage" + fileJson.path;
                 m.render(buttonContainer, dzPreviewTemplate.shareButton(link));
                 this.processQueue();
 
