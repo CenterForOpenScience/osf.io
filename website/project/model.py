@@ -1198,6 +1198,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         :param bool save: Save changes
         :raises: ValueError if user already has permission
         """
+        first_save = not self._is_loaded
+        if not first_save and self.is_public_files_collection:
+            raise NodeStateError('Cannot add permissions to public files collection')
         if user._id not in self.permissions:
             self.permissions[user._id] = [permission]
         else:
@@ -1528,6 +1531,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             if existing_bookmark_collections.count() > 0:
                 raise NodeStateError('Only one bookmark collection allowed per user.')
 
+        if first_save and self.is_public_files_collection:
+            existing_public_files_collections = Node.find(
+                Q('is_public_files_collection', 'eq', True) & Q('contributors', 'eq', self.creator._id)
+            )
+            if existing_public_files_collections.count() > 0:
+                raise NodeStateError("Only one public files collection allowed per user.")
+
         # Bookmark collections are always named 'Bookmarks'
         if self.is_bookmark_collection and self.title != 'Bookmarks':
             self.title = 'Bookmarks'
@@ -1702,6 +1712,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     # Pointers #
     ############
 
+    @disable_for_public_files_collection
     def add_pointer(self, node, auth, save=True):
         """Add a pointer to a node.
 
@@ -1720,6 +1731,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         if self.is_registration:
             raise NodeStateError('Cannot add a pointer to a registration')
+        if node.is_public_files_collection:
+            raise NodeStateError('Cannot point to public files collection')
 
         # If a folder, prevent more than one pointer to that folder. This will prevent infinite loops on the project organizer.
         already_pointed = node.pointed
@@ -1970,6 +1983,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         """
         return self.logs.sort('-date')[:n]
 
+    @disable_for_public_files_collection
     def set_title(self, title, auth, save=False):
         """Set the title of this Node and log it.
 
@@ -2319,9 +2333,130 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                     data=data,
                     parent=registered,
                 )
+
+        if self.is_collection:
+            raise NodeStateError("Folders may not be registered")
+
+        when = datetime.datetime.utcnow()
+
+        original = self.load(self._primary_key)
+
+        # Note: Cloning a node will clone each node wiki page version and add it to
+        # `registered.wiki_pages_current` and `registered.wiki_pages_versions`.
+        if original.is_deleted:
+            raise NodeStateError('Cannot register deleted node.')
+
+        registered = original.clone()
+
+        registered.is_registration = True
+        registered.registered_date = when
+        registered.registered_user = auth.user
+        registered.registered_schema.append(schema)
+        registered.registered_from = original
+        if not registered.registered_meta:
+            registered.registered_meta = {}
+        registered.registered_meta[schema._id] = data
+
+        registered.contributors = self.contributors
+        registered.forked_from = self.forked_from
+        registered.creator = self.creator
+        registered.tags = self.tags
+        registered.piwik_site_id = None
+        registered.primary_institution = self.primary_institution
+        registered._affiliated_institutions = self._affiliated_institutions
+        registered.alternative_citations = self.alternative_citations
+        registered.node_license = original.license.copy() if original.license else None
+        registered.wiki_private_uuids = {}
+
+        registered.save()
+
+        # Clone each log from the original node for this registration.
+        logs = original.logs
+        for log in logs:
+            log.clone_node_log(registered._id)
+
+        registered.is_public = False
+        for node in registered.get_descendants_recursive():
+            node.is_public = False
+            node.save()
+
+        if parent:
+            registered._parent_node = parent
+
+        # After register callback
+        for addon in original.get_addons():
+            _, message = addon.after_register(original, registered, auth.user)
+            if message:
+                status.push_status_message(message, kind='info', trust=False)
+
+        if self.is_public_files_collection:
+            raise NodeStateError('Public Files collections may not be registered')
+
+        if self.is_collection:
+            raise NodeStateError("Folders may not be registered")
+
+        when = datetime.datetime.utcnow()
+
+        original = self.load(self._primary_key)
+
+        # Note: Cloning a node will clone each node wiki page version and add it to
+        # `registered.wiki_pages_current` and `registered.wiki_pages_versions`.
+        if original.is_deleted:
+            raise NodeStateError('Cannot register deleted node.')
+
+        registered = original.clone()
+
+        registered.is_registration = True
+        registered.registered_date = when
+        registered.registered_user = auth.user
+        registered.registered_schema.append(schema)
+        registered.registered_from = original
+        if not registered.registered_meta:
+            registered.registered_meta = {}
+        registered.registered_meta[schema._id] = data
+
+        registered.contributors = self.contributors
+        registered.forked_from = self.forked_from
+        registered.creator = self.creator
+        registered.tags = self.tags
+        registered.piwik_site_id = None
+        registered.primary_institution = self.primary_institution
+        registered._affiliated_institutions = self._affiliated_institutions
+        registered.alternative_citations = self.alternative_citations
+        registered.node_license = original.license.copy() if original.license else None
+        registered.wiki_private_uuids = {}
+
+        registered.save()
+
+        # Clone each log from the original node for this registration.
+        logs = original.logs
+        for log in logs:
+            log.clone_node_log(registered._id)
+
+        registered.is_public = False
+        for node in registered.get_descendants_recursive():
+            node.is_public = False
+            node.save()
+
+        if parent:
+            registered._parent_node = parent
+
+        # After register callback
+        for addon in original.get_addons():
+            _, message = addon.after_register(original, registered, auth.user)
+            if message:
+                status.push_status_message(message, kind='info', trust=False)
+
+        for node_contained in original.nodes:
+            if not node_contained.is_deleted:
+                child_registration = node_contained.register_node(
+                    schema=schema,
+                    auth=auth,
+                    data=data,
+                    parent=registered,
+                )
                 if child_registration and not child_registration.primary:
                     registered.nodes.append(child_registration)
-
         registered.save()
 
         if settings.ENABLE_ARCHIVER:
@@ -2763,6 +2898,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 return True
         return False
 
+    @disable_for_public_files_collection
     def remove_contributor(self, contributor, auth, log=True):
         """Remove a contributor from this node.
 
@@ -2816,6 +2952,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         return True
 
+    @disable_for_public_files_collection
     def remove_contributors(self, contributors, auth=None, log=True, save=False):
 
         results = []
@@ -2985,6 +3122,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             if to_remove or permissions_changed and ['read'] in permissions_changed.values():
                 project_signals.write_permissions_revoked.send(self)
 
+    @disable_for_public_files_collection
     def add_contributor(self, contributor, permissions=None, visible=True,
                         auth=None, log=True, save=False):
         """Add a contributor to the project.
@@ -3128,6 +3266,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         :param bool log: Whether to add a NodeLog for the privacy change.
         :param bool meeting_creation: Whether this was created due to a meetings email.
         """
+        first_save = not self._is_loaded
+        if not first_save and self.is_public_files_collection:
+            raise NodeStateError('Privacy cannot be changed after first save for public files collection')
         if auth and not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Must be an admin to change privacy settings.')
         if permissions == 'public' and not self.is_public:

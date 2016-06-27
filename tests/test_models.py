@@ -58,7 +58,7 @@ from website.addons.wiki.exceptions import (
 from tests.base import OsfTestCase, Guid, fake, capture_signals, get_default_metaschema
 from tests.factories import (
     UserFactory, ApiOAuth2ApplicationFactory, NodeFactory, PointerFactory,
-    ProjectFactory, NodeLogFactory, WatchConfigFactory,
+    ProjectFactory, PublicFilesFactory, NodeLogFactory, WatchConfigFactory,
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, PrivateLinkFactory,
     AuthUserFactory, BookmarkCollectionFactory, CollectionFactory,
@@ -4652,6 +4652,98 @@ class TestPrivateLink(OsfTestCase):
         assert_equal(data, draft.registration_metadata)
         assert_equal(proj, draft.branched_from)
 
+class TestPublicFiles(OsfTestCase):
+    def setUp(self):
+        super(TestPublicFiles, self).setUp()
+        self.user = UserFactory()
+        self.auth = Auth(user=self.user)
+        self.project = PublicFilesFactory(creator=self.user)
+        with self.context:
+            handlers.celery_before_request()
+
+    def tearDown(self):
+        super(TestPublicFiles, self).tearDown()
+        self.project.remove()
+
+    def test_file_upload(self):
+        pass
+
+    def test_cannot_delete_public_files_collection(self):
+        with assert_raises(NodeStateError):
+            self.project.remove_node(self.auth)
+
+    def test_public_files_is_right_type(self):
+        assert_equal(self.project.is_public_files_collection, True)
+
+    def test_cannot_have_two_public_files_collections(self):
+        with assert_raises(NodeStateError):
+            PublicFilesFactory(creator=self.user)
+
+    def test_cannot_link_to_public_files_collection(self):
+        new_node = ProjectFactory(creator=self.user)
+        with assert_raises(NodeStateError):
+            new_node.add_pointer(self.project, auth=self.auth)
+
+    def test_for_search(self):
+        from website.search.search import search
+        from website.search.util import build_query
+        results = search(build_query('is_public_files_collection'))['results']
+        assert_equal(len(results), 0)
+
+    def test_no_name_change(self):
+        with assert_raises(NodeStateError):
+            self.project.set_title('Look at me: I\'m the title now',auth=self.auth)
+
+    def test_forking(self):
+        with assert_raises(NodeStateError):
+            fork = self.project.fork_node(auth=self.auth)
+
+    def test_add_remove_permissions(self):
+        unauthorized_user = UserFactory()
+        with assert_raises(NodeStateError):
+            fork = self.project.add_permission(unauthorized_user,'write')
+
+        with assert_raises(ValueError):
+            fork = self.project.remove_permission(unauthorized_user,'write')
+
+    def test_cannot_register_public_node(self):
+        with assert_raises(NodeStateError):
+            self.project.register_node(
+                schema=None,
+                auth=self.auth,
+                data=None
+            )
+
+    def test_remove_creator_as_public_collections_owner(self):
+        with assert_raises(NodeStateError):
+            self.project.remove_contributor(self.user,auth=self.auth)
+
+    def test_update_contributor_public_files_collection(self):
+        newman = UserFactory()
+        with assert_raises(NodeStateError):
+            self.project.add_contributor(contributor=newman,permissions='WRITE',auth=Auth(newman))
+
+    def test_changes_privacy_to_public_files_colletion(self):
+        with assert_raises(NodeStateError):
+            self.project.set_privacy('private', self.auth)
+        assert_equal(self.project.is_public,True)
+
+    def test_citations_for_public_files(self):
+        with assert_raises(NodeStateError):
+            self.project.add_citation(self.auth)
+            self.project.edit_citation(self.auth,{})
+            self.project.remove_citation(self.auth,{})
+
+    def test_user_merge_with_other_public_files_collection(self):
+        from website.files.models.osfstorage import OsfStorageFile
+        oldman =  UserFactory()
+        oldauth = Auth(user=oldman)
+        project = PublicFilesFactory(creator=oldman)
+        files_read_in = {}
+        files_read_in.update({project.get_addon('osfstorage').get_root().append_file('Cloud'):'test1'})
+        files_read_in.update({project.get_addon('osfstorage').get_root().append_file('Clo'):'test2'})
+        files_read_in.update({project.get_addon('osfstorage').get_root().append_file('ud'):'test3'})
+        self.user.merge_user(oldman)
 
 if __name__ == '__main__':
     unittest.main()
