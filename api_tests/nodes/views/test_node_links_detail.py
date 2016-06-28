@@ -56,7 +56,7 @@ class TestNodeLinkDetail(ApiTestCase):
     def test_returns_private_node_pointer_detail_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
         assert_equal(res.status_code, 200)
-        assert_in('detail', res.json['errors'][0])
+        assert_in('errors', res.body)
 
     def test_returns_private_node_pointer_detail_logged_in_contributor(self):
         res = self.app.get(self.private_url, auth=self.user.auth)
@@ -69,7 +69,7 @@ class TestNodeLinkDetail(ApiTestCase):
     def test_returns_private_node_pointer_detail_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 200)
-        assert_in('detail', res.json['errors'][0])
+        assert_in('errors', res.body)
 
     def test_self_link_points_to_node_link_detail_url(self):
         res = self.app.get(self.public_url, auth=self.user.auth)
