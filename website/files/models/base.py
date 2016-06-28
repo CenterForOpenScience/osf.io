@@ -543,7 +543,6 @@ class FileNode(object):
         self._repoint_guids(trashed)
         self.node.save()
         StoredFileNode.remove_one(self.stored_object)
-        discourse.delete_topic(self)
         return trashed
 
     def copy_under(self, destination_parent, name=None):

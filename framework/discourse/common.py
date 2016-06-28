@@ -31,6 +31,7 @@ def request(method, path, data={}, user_name=None):
 
     if result.status_code < 200 or result.status_code > 299:
         raise DiscourseException('Discourse server responded to ' + method + ' request ' + result.url + ' with '
+                                 + ' post data ' + str(data) + ' with result code ' 
                                  + str(result.status_code) + ': ' + result.text[:500])
 
     try:

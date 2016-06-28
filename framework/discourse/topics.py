@@ -70,7 +70,6 @@ def create_topic(node):
     data['title'] = node.label
     data['raw'] = _make_topic_content(node)
     data['parent_guids[]'] = _get_parent_guids(node)
-    data['project_guid'] = project_node._id
     data['topic_guid'] = node.guid_id
 
     result = request('post', '/posts', data)

@@ -102,54 +102,48 @@ class TestDiscourse(DbTestCase):
         topic_json = get_topic(self.project_node)
         self.assertEquals(topic_json['archetype'], 'private_message')
         self.assertEquals(topic_json['details']['allowed_groups'][0]['name'], self.project_node._id)
-        #self.assertEquals(topic_json['tags'], [self.project_node._id])
 
         self.project_node.is_public = True
         update_topic_privacy(self.project_node)
         topic_json = get_topic(self.project_node)
         self.assertEquals(topic_json['archetype'], 'regular')
-        #self.assertEquals(topic_json['tags'], [self.project_node._id])
 
         self.project_node.is_public = False
         update_topic_privacy(self.project_node)
         topic_json = get_topic(self.project_node)
         self.assertEquals(topic_json['archetype'], 'private_message')
         self.assertEquals(topic_json['details']['allowed_groups'][0]['name'], self.project_node._id)
-        #self.assertEquals(topic_json['tags'], [self.project_node._id])
 
     def test_convert_topic_privacy2(self):
         self.project_node.is_public = True
         create_topic(self.project_node)
         topic_json = get_topic(self.project_node)
         self.assertEquals(topic_json['archetype'], 'regular')
-        #self.assertEquals(topic_json['tags'], [self.project_node._id])
 
         self.project_node.is_public = False
         update_topic_privacy(self.project_node)
         topic_json = get_topic(self.project_node)
         self.assertEquals(topic_json['archetype'], 'private_message')
         self.assertEquals(topic_json['details']['allowed_groups'][0]['name'], self.project_node._id)
-        #self.assertEquals(topic_json['tags'], [self.project_node._id])
 
     def test_custom_fields(self):
         create_topic(self.project_node)
         topic_json = get_topic(self.project_node)
-        self.assertEquals(topic_json['project_guid'], self.project_node._id)
         self.assertEquals(topic_json['topic_guid'], self.project_node._id)
         self.assertEquals(topic_json['slug'], self.project_node._id)
         self.assertEquals(topic_json['title'], self.project_node.label)
-        self.assertEquals(topic_json['parent_guids'], self.project_node._id)
+        self.assertEquals(topic_json['parent_guids'], [self.project_node._id])
+        self.assertEquals(topic_json['parent_names'], [self.project_node.label])
 
         create_topic(self.component_node)
         topic_json = get_topic(self.component_node)
-        self.assertEquals(topic_json['project_guid'], self.component_node._id)
         self.assertEquals(topic_json['topic_guid'], self.component_node._id)
         self.assertEquals(topic_json['slug'], self.component_node._id)
         self.assertEquals(topic_json['title'], self.component_node.label)
         self.assertEquals(topic_json['parent_guids'], [self.component_node._id, self.project_node._id])
+        self.assertEquals(topic_json['parent_names'], [self.component_node.label, self.project_node.label])
 
         topics_json = get_topics(self.project_node)
-        
 
 if __name__ == '__main__':
     unittest.main()
