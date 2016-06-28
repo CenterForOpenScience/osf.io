@@ -176,8 +176,6 @@ class NodeFileCollector(object):
                     for desc in readable_descendants:
                         visited.append(desc.resolve()._id)
                         rv.append(self._serialize_node(desc, visited=visited))
-                else:
-                    continue
             elif child.resolve()._id not in visited:
                 visited.append(child.resolve()._id)
                 rv.append(self._serialize_node(child, visited=visited))
