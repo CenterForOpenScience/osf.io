@@ -2514,6 +2514,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         return self.absolute_api_v2_url + 'linked_nodes/'
 
     @property
+    def linked_registrations_self_url(self):
+        return self.absolute_api_v2_url + 'relationships/linked_registrations/'
+
+    @property
+    def linked_registrations_related_url(self):
+        return self.absolute_api_v2_url + 'linked_registrations/'
+
+    @property
     def csl(self):  # formats node information into CSL format for citation parsing
         """a dict in CSL-JSON schema
 

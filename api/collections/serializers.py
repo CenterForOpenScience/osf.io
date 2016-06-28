@@ -44,6 +44,14 @@ class CollectionSerializer(JSONAPISerializer):
         self_view_kwargs={'collection_id': '<pk>'}
     )
 
+    linked_registrations = RelationshipField(
+        related_view='collections:linked-registrations',
+        related_view_kwargs={'collection_id': '<pk>'},
+        related_meta={'count': 'get_registration_links_count'},
+        self_view='collections:collection-registration-pointer-relationship',
+        self_view_kwargs={'collection_id': '<pk>'}
+    )
+
     class Meta:
         type_ = 'collections'
 
@@ -54,7 +62,15 @@ class CollectionSerializer(JSONAPISerializer):
         count = 0
         auth = get_user_auth(self.context['request'])
         for pointer in obj.nodes_pointer:
-            if not pointer.node.is_deleted and not pointer.node.is_collection and pointer.node.can_view(auth):
+            if not pointer.node.is_deleted and not pointer.node.is_collection and not pointer.node.is_registration and pointer.node.can_view(auth):
+                count += 1
+        return count
+
+    def get_registration_links_count(self, obj):
+        count = 0
+        auth = get_user_auth(self.context['request'])
+        for pointer in obj.nodes_pointer:
+            if not pointer.node.is_deleted and not pointer.node.is_collection and pointer.node.is_registration and pointer.node.can_view(auth):
                 count += 1
         return count
 
@@ -111,6 +127,12 @@ class LinkedNode(JSONAPIRelationshipSerializer):
     id = ser.CharField(source='node._id', required=False, allow_null=True)
     class Meta:
         type_ = 'linked_nodes'
+
+
+class LinkedRegistration(JSONAPIRelationshipSerializer):
+    id = ser.CharField(source='node._id', required=False, allow_null=True)
+    class Meta:
+        type_ = 'linked_registrations'
 
 
 class CollectionLinkedNodesRelationshipSerializer(ser.Serializer):
@@ -178,3 +200,73 @@ class CollectionLinkedNodesRelationshipSerializer(ser.Serializer):
             collection.add_pointer(node, auth)
 
         return self.make_instance_obj(collection)
+
+
+
+class CollectionLinkedRegistrationsRelationshipSerializer(ser.Serializer):
+
+    data = ser.ListField(child=LinkedRegistration())
+    links = LinksField({'self': 'get_self_url',
+                        'html': 'get_related_url'})
+
+    def get_self_url(self, obj):
+        return obj['self'].linked_registrations_self_url
+
+    def get_related_url(self, obj):
+        return obj['self'].linked_registrations_related_url
+
+    class Meta:
+        type_ = 'linked_registrations'
+
+    def get_pointers_to_add_remove(self, pointers, new_pointers):
+        diff = relationship_diff(
+            current_items={pointer.node._id: pointer for pointer in pointers},
+            new_items={val['node']['_id']: val for val in new_pointers}
+        )
+
+        nodes_to_add = []
+        for node_id in diff['add']:
+            node = Node.load(node_id)
+            if not node:
+                raise exceptions.NotFound(detail='Node with id "{}" was not found'.format(node_id))
+            nodes_to_add.append(node)
+
+        return nodes_to_add, diff['remove'].values()
+
+    def make_instance_obj(self, obj):
+        # Convenience method to format instance based on view's get_object
+        return {'data': [
+            pointer for pointer in
+            obj.nodes_pointer
+            if not pointer.node.is_deleted and not pointer.node.is_collection
+        ], 'self': obj}
+
+    def update(self, instance, validated_data):
+        collection = instance['self']
+        auth = get_user_auth(self.context['request'])
+
+        add, remove = self.get_pointers_to_add_remove(pointers=instance['data'], new_pointers=validated_data['data'])
+
+        for pointer in remove:
+            collection.rm_pointer(pointer, auth)
+        for node in add:
+            collection.add_pointer(node, auth)
+
+        return self.make_instance_obj(collection)
+
+    def create(self, validated_data):
+        instance = self.context['view'].get_object()
+        auth = get_user_auth(self.context['request'])
+        collection = instance['self']
+
+        add, remove = self.get_pointers_to_add_remove(pointers=instance['data'], new_pointers=validated_data['data'])
+
+        if not len(add):
+            raise RelationshipPostMakesNoChanges
+
+        for node in add:
+            collection.add_pointer(node, auth)
+
+        return self.make_instance_obj(collection)
+
+

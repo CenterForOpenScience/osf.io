@@ -17,7 +17,8 @@ from api.collections.serializers import (
     CollectionSerializer,
     CollectionDetailSerializer,
     CollectionNodeLinkSerializer,
-    CollectionLinkedNodesRelationshipSerializer
+    CollectionLinkedNodesRelationshipSerializer,
+    CollectionLinkedRegistrationsRelationshipSerializer
 )
 from api.nodes.serializers import NodeSerializer
 from api.registrations.serializers import RegistrationSerializer
@@ -662,7 +663,7 @@ class CollectionLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdate
             pointer for pointer in
             collection.nodes_pointer
             if not pointer.node.is_deleted and not pointer.node.is_collection and
-            pointer.node.can_view(auth)
+            pointer.node.can_view(auth) and not pointer.node.is_registration
         ], 'self': collection}
         self.check_object_permissions(self.request, obj)
         return obj
@@ -679,6 +680,53 @@ class CollectionLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdate
     def create(self, *args, **kwargs):
         try:
             ret = super(CollectionLinkedNodesRelationship, self).create(*args, **kwargs)
+        except RelationshipPostMakesNoChanges:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return ret
+
+
+class CollectionLinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, CollectionMixin):
+
+    permission_classes = (
+        ContributorOrPublicForRelationshipPointers,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ReadOnlyIfRegistration,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_LINKS_READ]
+    required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
+
+    serializer_class = CollectionLinkedRegistrationsRelationshipSerializer
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+
+    view_category = 'collections'
+    view_name = 'collection-registration-pointer-relationship'
+
+    def get_object(self):
+        collection = self.get_node(check_object_permissions=False)
+        auth = get_user_auth(self.request)
+        obj = {'data': [
+            pointer for pointer in
+            collection.nodes_pointer
+            if not pointer.node.is_deleted and not pointer.node.is_collection and
+            pointer.node.can_view(auth) and pointer.node.is_registration
+        ], 'self': collection}
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+    def perform_destroy(self, instance):
+        data = self.request.data['data']
+        auth = get_user_auth(self.request)
+        current_pointers = {pointer.node._id: pointer for pointer in instance['data']}
+        collection = instance['self']
+        for val in data:
+            if val['id'] in current_pointers:
+                collection.rm_pointer(current_pointers[val['id']], auth)
+
+    def create(self, *args, **kwargs):
+        try:
+            ret = super(CollectionLinkedRegistrationsRelationship, self).create(*args, **kwargs)
         except RelationshipPostMakesNoChanges:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return ret

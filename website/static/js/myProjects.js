@@ -47,8 +47,7 @@ if (!window.Set) {
   };
 }
 
-
-function NodeFetcher(type, link, handleOrphans) {
+function NodeFetcher(type, nextLink, handleOrphans) {
   this.type = type || 'nodes';
   this.loaded = 0;
   this._failed = 0;
@@ -66,7 +65,8 @@ function NodeFetcher(type, link, handleOrphans) {
     children: [],
     fetch : []
   };
-  this.nextLink = link || $osf.apiV2Url('users/me/' + this.type + '/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
+//  this.links = links || $osf.apiV2Url('users/me/' + this.type + '/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
+  this.nextLink = nextLink || $osf.apiV2Url('users/me/' + this.type + '/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
 }
 
 NodeFetcher.prototype = {
@@ -85,11 +85,40 @@ NodeFetcher.prototype = {
   pause: function() {
     this._continue = false;
   },
+
+  // :sadmatt:
   resume: function() {
     this._started = true;
     this._continue = true;
     if (!this.nextLink) return this._promise = null;
+//    if (!this.links) return this._promise = null;
     if (this._promise) return this._promise;
+
+//    // make two requests and build results data?
+//    // linked_nodes request -- assumes linked_nodes is first in the list
+//    m.request({method: 'GET', url: this.links[0], config: xhrconfig, background: true})
+//      .then(function(results) {this._promise = null; return results;}.bind(this))
+//      .then(this._success.bind(this), this._fail.bind(this))
+//      .then((function() {
+//          m.redraw(true);
+//          if(this.links && this._continue) return this.resume();
+//      }).bind(this));
+//
+//    var linked_nodes_res = m.request({method: 'GET', url: this.links[0], config: xhrconfig, background:true});
+//    var linked_registrations_res = m.request({method: 'GET', url: this.links[1], config: xhrconfig, background:true});
+//
+//    var results = linked_nodes_res + linked_registrations_res;
+//
+//    // linked_registrations request -- assumes linked_nodes is first in the list
+//    m.request({method: 'GET', url: this.links[1], config: xhrconfig, background: true})
+//      .then(function(results) {this._promise = null; return results;}.bind(this))
+//      .then(this._success.bind(this), this._fail.bind(this))
+//      .then((function() {
+//          m.redraw(true);
+//          if(this.links && this._continue) return this.resume();
+//      }).bind(this));
+
+//    OG
     return this._promise = m.request({method: 'GET', url: this.nextLink, config: xhrconfig, background: true})
       .then(function(results) {this._promise = null; return results;}.bind(this))
       .then(this._success.bind(this), this._fail.bind(this))
@@ -146,7 +175,8 @@ NodeFetcher.prototype = {
   },
   fetch: function(id) {
     // TODO This method is currently untested
-    var url =  $osf.apiV2Url(this.type + '/' + id + '/', {query: {related_counts: 'children', embed: 'contributors' }});
+     var url =  $osf.apiV2Url(this.type + '/' + id + '/', {query: {related_counts: 'children', embed: 'contributors' }});
+//      debugger;
     return m.request({method: 'GET', url: url, config: xhrconfig, background: true})
       .then((function(result) {
         this.add(result.data);
@@ -304,14 +334,16 @@ var LinkObject = function _LinkObject (type, data, label, institutionId) {
 };
 
 /**
- * Returns the object to send to the API to send a node_link to collection
- * @param id {String} unique id of the node like 'ez8f3'
- * @returns {{data: {type: string, relationships: {nodes: {data: {type: string, id: *}}}}}}
- */
-function buildCollectionNodeData (id) {
+* Returns the object to send to the API to send a node_link to collection
+* @param id {String} unique id of the node like 'ez8f3'
+* @returns {{data: {type: string, relationships: {nodes: {data: {type: string, id: *}}}}}}
+*/
+function buildCollectionNodeData (data) {
+    var type = data[0].data.type;
+    var id = data[0].data.id;
     return {
         'data': [{
-            'type': 'linked_nodes',
+            'type': type === 'nodes' ? 'linked_nodes' : 'linked_registrations',
             'id': id
         }]
     };
@@ -360,6 +392,9 @@ var MyProjects = {
         ];
 
         self.fetchers = {};
+        self.isEmpty = m.prop(false);
+        self.concat = m.prop([]);
+
         if (!options.systemCollections) {
           self.fetchers[self.systemCollections[0].id] = new NodeFetcher('nodes');
           self.fetchers[self.systemCollections[1].id] = new NodeFetcher('registrations');
@@ -488,15 +523,33 @@ var MyProjects = {
                 return self.generateFiltersList();
             }
 
-            if (self.currentView().fetcher)
-              self.currentView().fetcher.pause();
+            if (self.currentView().fetcher) {
+                if (Array.isArray(self.currentView().fetcher)) {
+                    self.currentView().fetcher[0].pause();
+                    self.currentView().fetcher[1].pause();
+                } else {
+                    self.currentView().fetcher.pause();
+                }
+            }
 
             self.currentView().tag = [];
             self.currentView().contributor = [];
 
             self.currentView().fetcher = self.fetchers[filter.id];
-            self.currentView().fetcher.resume();
-            self.loadValue(self.currentView().fetcher.isFinished() ? 100 : self.currentView().fetcher.progress());
+
+            if (Array.isArray(self.currentView().fetcher)) {
+                self.currentView().fetcher[0].resume();
+                self.currentView().fetcher[1].resume();
+            } else {
+                self.currentView().fetcher.resume();
+            }
+
+            // TODO @caseyrollins -- right now this is hardcoded to be the progress of the first NodeFetcher -- it really needs to be the lesser progress between the first and second (?)
+            if (Array.isArray(self.currentView().fetcher)) {
+                self.loadValue(self.currentView().fetcher[0].isFinished() ? 100 : self.currentView().fetcher[0].progress());
+            } else {
+                self.loadValue(self.currentView().fetcher.isFinished() ? 100 : self.currentView().fetcher.progress());
+            }
 
             self.generateFiltersList();
 
@@ -511,18 +564,32 @@ var MyProjects = {
 
             var data = {
               data: self.selected().map(function(item){
-                return {id: item.data.id, type: 'linked_nodes'};
+                return {
+                    id: item.data.id,
+                    type: item.data.type === 'nodes' ? 'linked_nodes' : 'linked_registrations'
+                };
               })
             };
 
+            // TODO: @caseyrollins -- this is a big one
+            // handle removing multiple types? if you move everything from one heterogeneous collection to another?
+
             m.request({
                 method : 'DELETE',
-                url : collectionNode.links.self + 'relationships/' + 'linked_nodes/',  //collection.links.self + 'node_links/' + item.data.id + '/', //collection.links.self + relationship/ + linked_nodes/
+                url : collectionNode.links.self + 'relationships/' + data.data[0].type + '/',  //collection.links.self + 'node_links/' + item.data.id + '/', //collection.links.self + relationship/ + linked_nodes/
                 config : xhrconfig,
                 data : data
             }).then(function(result) {
               data.data.forEach(function(item) {
-                  self.fetchers[currentCollection.id].remove(item.id);
+                  console.log('item to be removed');
+                  console.log(item);
+
+                  // figure out which NodeFetcher the item needs to be removed from -- make this way more better
+                  if (item.type == 'linked_nodes') {
+                      self.fetchers[currentCollection.id][0].remove(item.id);
+                  } else {
+                      self.fetchers[currentCollection.id][1].remove(item.id);
+                  }
                   currentCollection.data.count(currentCollection.data.count()-1);
                   self.updateSelected([]);
               });
@@ -567,26 +634,90 @@ var MyProjects = {
             var tags = self.currentView().tag;
             var contributors = self.currentView().contributor;
 
-            return self.currentView().fetcher._flat.filter(function(node) {
-              // var tagMatch = tags.length === 0;
-              // var contribMatch = contributors.length === 0;
-              var tagMatch = true;
-              var contribMatch = true;
+            if(Array.isArray(self.currentView().fetcher)) {
 
-              for (var i = 0; i < contributors.length; i++)
-                if (!node.contributorSet.has(contributors[i].data.id)) {
-                  contribMatch = false;
-                  break;
-                }
+                self.currentView().fetcher[0]._flat.filter(function(node) {
+                    var tagMatch = true;
+                    var contribMatch = true;
 
-              for (var j = 0; j < tags.length; j++)
-                if (!node.tagSet.has(tags[j].label)) {
-                  tagMatch = false;
-                  break;
-                }
+                    for (var i = 0; i < contributors.length; i++)
+                        if (!node.contributorSet.has(contributors[i].data.id)) {
+                          contribMatch = false;
+                          break;
+                    }
 
-              return tagMatch && contribMatch;
-            });
+                    for (var j = 0; j < tags.length; j++)
+                        if (!node.tagSet.has(tags[j].label)) {
+                        tagMatch = false;
+                        break;
+                    }
+                    return tagMatch && contribMatch;
+                });
+
+                self.currentView().fetcher[1]._flat.filter(function(node) {
+                    var tagMatch = true;
+                    var contribMatch = true;
+
+                    for (var i = 0; i < contributors.length; i++)
+                        if (!node.contributorSet.has(contributors[i].data.id)) {
+                          contribMatch = false;
+                          break;
+                    }
+
+                    for (var j = 0; j < tags.length; j++)
+                        if (!node.tagSet.has(tags[j].label)) {
+                        tagMatch = false;
+                        break;
+                    }
+                    return tagMatch && contribMatch;
+                });
+
+                var concat = self.currentView().fetcher[0]._flat.concat(self.currentView().fetcher[1]._flat);
+                self.concat(concat);
+                return concat;
+
+            } else {
+              return self.currentView().fetcher._flat.filter(function(node) {
+                  var tagMatch = true;
+                  var contribMatch = true;
+
+                  for (var i = 0; i < contributors.length; i++)
+                    if (!node.contributorSet.has(contributors[i].data.id)) {
+                      contribMatch = false;
+                      break;
+                    }
+
+                  for (var j = 0; j < tags.length; j++)
+                    if (!node.tagSet.has(tags[j].label)) {
+                      tagMatch = false;
+                      break;
+                    }
+
+                  return tagMatch && contribMatch;
+              });
+
+            }
+
+//            return self.currentView().fetcher._flat.filter(function(node) {
+//              // var tagMatch = tags.length === 0;
+//              // var contribMatch = contributors.length === 0;
+//              var tagMatch = true;
+//              var contribMatch = true;
+//
+//              for (var i = 0; i < contributors.length; i++)
+//                if (!node.contributorSet.has(contributors[i].data.id)) {
+//                  contribMatch = false;
+//                  break;
+//                }
+//
+//              for (var j = 0; j < tags.length; j++)
+//                if (!node.tagSet.has(tags[j].label)) {
+//                  tagMatch = false;
+//                  break;
+//                }
+//
+//              return tagMatch && contribMatch;
+//            });
         };
 
         self.updateTbMultiselect = function (itemsArray) {
@@ -616,10 +747,30 @@ var MyProjects = {
 
         self.nonLoadTemplate = function (){
             var template = '';
-            if(!self.currentView().fetcher.isEmpty()) {
-                return;
+
+//            console.log(self.currentView().fetcher);
+
+            if (Array.isArray(self.currentView().fetcher)) {
+//                console.log(self.currentView().fetcher[0]);
+//                console.log(self.currentView().fetcher[1]);
+                if (!self.currentView().fetcher[0].isEmpty() && !self.currentView().fetcher[1].isEmpty()) {
+                    self.isEmpty(false);
+                    return;
+                } else {
+                    self.isEmpty(true);
+                }
+            } else {
+                if (!self.currentView().fetcher.isEmpty()) {
+                    self.isEmpty(false);
+                    return;
+                } else {
+                    self.isEmpty(true);
+                }
             }
+
             var lastcrumb = self.breadcrumbs()[self.breadcrumbs().length-1];
+            console.log('last crumb type');
+            console.log(lastcrumb.type);
             var hasFilters = self.currentView().contributor.length || self.currentView().tag.length;
             if(hasFilters){
                 template = m('.db-non-load-template.m-md.p-md.osf-box', 'No projects match this filter.');
@@ -637,7 +788,7 @@ var MyProjects = {
                             'This collection is empty.' + self.viewOnly ? '' : ' To add projects or registrations, click "All my projects" or "All my registrations" in the sidebar, and then drag and drop items into the collection link.');
                     }
                 } else {
-                    if(!self.currentView().fetcher.isEmpty()){
+                    if(!self.isEmpty()){
                         template = m('.db-non-load-template.m-md.p-md.osf-box.text-center',
                             m('.ball-scale.text-center', m(''))
                         );
@@ -648,7 +799,6 @@ var MyProjects = {
                     }
                 }
             }
-
 
             return template;
         };
@@ -797,25 +947,87 @@ var MyProjects = {
         self.collectionsPageSize = m.prop(5);
         // Load collection list
         self.loadCollections = function _loadCollections (url){
-            var promise = m.request({method : 'GET', url : url, config : xhrconfig});
-            promise.then(function(result){
-                result.data.forEach(function(node){
-                    var count = node.relationships.linked_nodes.links.related.meta.count;
-                    self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, nodeType : 'collection', node : node, count : m.prop(count), loaded: 1 }, node.attributes.title));
 
-                    var link = $osf.apiV2Url('collections/' + node.id + '/linked_nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
-                    self.fetchers[self.collections()[self.collections().length-1].id] = new NodeFetcher('nodes', link, false);
-                    self.fetchers[self.collections()[self.collections().length-1].id].on(['page', 'done'], self.onPageLoad);
-                });
-                if(result.links.next){
-                    self.loadCollections(result.links.next);
-                }
-            }, function(){
-                var message = 'Collections could not be loaded.';
-                $osf.growl(message, 'Please reload the page.');
-                Raven.captureMessage(message, {extra: { url: url }});
+//            debugger;
+
+            var promise = m.request({method : 'GET', url : url, config : xhrconfig});
+
+            // BJG -- use two promise.then()'s -- one for linked_nodes and one for linked_registrations
+            // need some sort of check to make sure that
+            // 'All my projects' -- linked_nodes: TRUE, linked_registrations: FALSE
+            // 'All my registrations' -- linked_nodes: FALSE, linked_registrations: TRUE
+            //  All others -- linked_nodes: TRUE, linked_registrations: TRUE
+
+            promise.then(function(result) {
+                result.data.forEach(function(node) { // node param is really a collection
+
+                    // fix count later to be linked_nodes count + linked_registrations count
+                    var count = 1025;
+                    self.collections().push(new LinkObject('collection', { nodeType : 'collection', node : node, count : m.prop(count), loaded: 1 }, node.attributes.title));
+                    var linked_nodes_url = $osf.apiV2Url('collections/' + node.id + '/linked_nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
+                    var linked_reg_url = $osf.apiV2Url('collections/' + node.id + '/linked_registrations/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
+
+                    console.log(self.collections());
+                    console.log(self.collections()[self.collections().length-1].id);
+
+                    self.fetchers[self.collections()[self.collections().length-1].id] = [new NodeFetcher('nodes', linked_nodes_url, false), new NodeFetcher('registrations', linked_reg_url)];
+
+                    console.log(self.fetchers);
+
+                    self.fetchers[self.collections()[self.collections().length-1].id][0].on(['page', 'done'], self.onPageLoad); // linked_nodes
+                    self.fetchers[self.collections()[self.collections().length-1].id][1].on(['page', 'done'], self.onPageLoad); // linked_registrations
+
+                    if(result.links.next){
+                       self.loadCollections(result.links.next);
+                    }
+                })
             });
+
+//            promise.then(function(result) {
+//                result.data.forEach(function(node) { // node param is really a collection
+//                    var linked_reg_url = $osf.apiV2Url('collections/' + node.id + '/linked_registrations/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
+//                    self.fetchers[self.collections()[self.collections().length-1].id] = new NodeFetcher('registrations', linked_reg_url, false);
+//                    self.fetchers[self.collections()[self.collections().length-1].id].on(['page', 'done'], self.onPageLoad);
+//                    if(result.links.next){
+//                       self.loadCollections(result.links.next);
+//                    }
+//                })
+//            });
+
             return promise;
+
+//            promise.then(function(result){
+//                result.data.forEach(function(node){
+//                    // this count needs to include the linked nodes count + linked registrations count
+//                    var count = node.relationships.linked_nodes.links.related.meta.count;
+//
+////                    self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, nodeType : 'collection', node : node, count : m.prop(count), loaded: 1 }, node.attributes.title));
+//                    self.collections().push(new LinkObject('collection', { nodeType : 'collection', node : node, count : m.prop(count), loaded: 1 }, node.attributes.title));
+//
+//                    // the nodes linked to this collections
+//                    var nodes_link = $osf.apiV2Url('collections/' + node.id + '/linked_nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
+//                    self.fetchers[self.collections()[self.collections().length-1].id] = new NodeFetcher('nodes', nodes_link, false);
+//
+//                    // the registrations linked to this collections
+//                    var registrations_link = $osf.apiV2Url('collections/' + node.id + '/linked_registrations/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
+////                    self.fetchers[self.collections()[self.collections().length-1].id] = new NodeFetcher('registrations', registrations_link, false);
+//
+//                    self.fetchers[self.collections()[self.collections().length-1].id] = new NodeFetcher('nodes', [nodes_link, registrations_link], false);
+//
+//                    self.fetchers[self.collections()[self.collections().length-1].id].on(['page', 'done'], self.onPageLoad);
+//
+//                });
+//                if(result.links.next){
+//                    self.loadCollections(result.links.next);
+//                }
+//
+//            }, function(){
+//                var message = 'Collections could not be loaded.';
+//                $osf.growl(message, 'Please reload the page.');
+//                Raven.captureMessage(message, {extra: { url: url }});
+//            });
+//            return promise;
+
         };
 
         self.sidebarInit = function _sidebarInit (element, isInit) {
@@ -999,7 +1211,7 @@ var MyProjects = {
                 ]) : '',
                 ctrl.nonLoadTemplate(),
                 m('.db-poOrganizer', {
-                    style : ctrl.currentView().fetcher.isEmpty() ? 'display: none' : 'display: block'
+                    style : ctrl.isEmpty() ? 'display: none' : 'display: block'
                 },  m.component( ProjectOrganizer, projectOrganizerOptions))
             ]
             ),
@@ -1177,11 +1389,12 @@ var Collections = {
                     if (args.selected().length > 1) {
                         dataArray = args.selected().map(function(item){
                             $osf.trackClick('myProjects', 'projectOrganizer', 'multiple-projects-dragged-to-collection');
-                            return buildCollectionNodeData(item.data.id);
+                            return buildCollectionNodeData(item.data);
                         });
                     } else {
                         // if single items are passed use the event information
-                        dataArray.push(buildCollectionNodeData(ui.draggable.find('.title-text>a').attr('data-nodeID'))); // data-nodeID attribute needs to be set in project organizer building title column
+//                        dataArray.push(buildCollectionNodeData(ui.draggable.find('.title-text>a').attr('data-nodeID'))); // data-nodeID attribute needs to be set in project organizer building title column
+                        dataArray.push(buildCollectionNodeData(args.selected()));
                         var projectName = ui.draggable.find('.title-text>a').attr('data-nodeTitle');
                         $osf.trackClick('myProjects', 'projectOrganizer', 'single-project-dragged-to-collection');
                     }
@@ -1191,7 +1404,8 @@ var Collections = {
                         return args.currentView().fetcher === args.fetchers[collection.id] ? args.updateList() : null;
                       m.request({
                           method : 'POST',
-                          url : collection.data.node.links.self + 'relationships/linked_nodes/',
+//                          url : collection.data.node.links.self + 'relationships/linked_nodes/',
+                          url : collection.data.node.links.self + 'relationships/' + data[index].data[0].type + '/',
                           config : xhrconfig,
                           data : data[index]
                       }).then(function(result){
@@ -1199,7 +1413,12 @@ var Collections = {
                               return args.currentView().fetcher
                                 .get(result.data[(result.data).length - 1].id)
                                 .then(function(item) {
-                                    args.fetchers[collection.id].add(item);
+                                    // figure out which NodeFetcher the item needs to be added to
+                                    if (item.type == 'nodes') {
+                                        args.fetchers[collection.id][0].add(item);
+                                    } else {
+                                        args.fetchers[collection.id][1].add(item);
+                                    }
                                     collection.data.count(collection.data.count() + 1);
                                     save(index + 1, data);
                             });
@@ -1216,6 +1435,7 @@ var Collections = {
                     save(0, dataArray);
                 }
             });
+
         };
         self.validateName = function _validateName (val){
             if (val === 'Bookmarks') {
@@ -1695,7 +1915,7 @@ var Filters = {
         };
 
         var returnNameFilters = function _returnNameFilters(){
-            if (args.currentView().fetcher.isEmpty() || args.nameFilters.length < 1)
+            if (args.isEmpty() || args.nameFilters.length < 1)
                 return m('.text-muted.text-smaller', 'No contributors to display in this collection. Project administrators can add contributors.');
             var list = [];
             var item;
@@ -1718,7 +1938,7 @@ var Filters = {
             return list;
         };
         var returnTagFilters = function _returnTagFilters(){
-            if (args.currentView().fetcher.isEmpty() || args.tagFilters.length < 1)
+            if (args.isEmpty() || args.tagFilters.length < 1)
                 return m('.text-muted.text-smaller', 'No tags to display in this collection. Project administrators and write contributors can add tags.');
 
             var list = [];
@@ -1810,7 +2030,7 @@ var Information = {
         }
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
-            showRemoveFromCollection = collectionFilter.data.nodeType === 'collection' && args.selected()[0].depth === 1 && args.fetchers[collectionFilter.id]._flat.indexOf(item) !== -1; // Be able to remove top level items but not their children
+            showRemoveFromCollection = collectionFilter.data.nodeType === 'collection' && args.selected()[0].depth === 1 && args.concat().indexOf(item) !== -1; // Be able to remove top level items but not their children
             if(item.attributes.category === ''){
                 item.attributes.category = 'Uncategorized';
             }
