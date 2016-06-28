@@ -13,6 +13,7 @@ def copy_files(src, target_node, parent=None, name=None):
     cloned.parent = parent
     cloned.node = target_node
     cloned.name = name or cloned.name
+    cloned.copied_from = src
 
     if src.is_file:
         cloned.versions = src.versions

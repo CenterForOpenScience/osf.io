@@ -218,5 +218,30 @@ $(function() {
             new KeenTracker(window.contextVars.keenProjectId, window.contextVars.keenWriteKey, params);
         }
     }
+
     confirmEmails(window.contextVars.currentUser.emailsToAdd);
+
+    // Maintenance alert
+    if (window.contextVars.maintenance) {
+        var maintenancePersistKey = 'maintenance';
+        var $maintenance = $('#maintenance').on('closed.bs.alert', function() {
+            $.cookie(maintenancePersistKey, '0', { expires: 1, path: '/'});
+        });
+        var dismissed = $.cookie(maintenancePersistKey) === '0';
+        if (!dismissed) {
+            $maintenance.show();
+        }
+        // Localize maintenance period datetimes
+        var startMaintenance = moment(window.contextVars.maintenance.start);
+        var endMaintenance = moment(window.contextVars.maintenance.end);
+        $('#maintenanceTime').html(
+            '<strong>' +
+            startMaintenance.format('lll') +
+                ' and ' +
+                    endMaintenance.format('lll') + '</strong>' +
+                        ' (' + startMaintenance.format('ZZ') + ' UTC)'
+        );
+    }
+    // END Maintenance alert
+
 });

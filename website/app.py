@@ -24,6 +24,7 @@ from website.addons.base import init_addon
 from website.project.licenses import ensure_licenses
 from website.project.model import ensure_schemas
 from website.routes import make_url_map
+from website import maintenance
 
 # This import is necessary to set up the archiver signal listeners
 from website.archiver import listeners  # noqa
@@ -95,6 +96,7 @@ def build_log_templates(settings):
 
 def do_set_backends(settings):
     logger.debug('Setting storage backends')
+    maintenance.ensure_maintenance_collection()
     set_up_storage(
         website.models.MODELS,
         storage.MongoStorage,
@@ -125,6 +127,10 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
     django.setup()
 
     app.debug = settings.DEBUG_MODE
+
+    # default config for flask app, however, this does not affect setting cookie using set_cookie()
+    app.config['SESSION_COOKIE_SECURE'] = settings.SESSION_COOKIE_SECURE
+    app.config['SESSION_COOKIE_HTTPONLY'] = settings.SESSION_COOKIE_HTTPONLY
 
     if set_backends:
         do_set_backends(settings)

@@ -509,11 +509,10 @@ def assert_before(lst, item1, item2):
     assert_less(lst.index(item1), lst.index(item2),
         '{0!r} appears before {1!r}'.format(item1, item2))
 
-
 def assert_datetime_equal(dt1, dt2, allowance=500):
     """Assert that two datetimes are about equal."""
-    assert_less(dt1 - dt2, dt.timedelta(milliseconds=allowance))
 
+    assert abs(dt1 - dt2) < dt.timedelta(milliseconds=allowance)
 
 def init_mock_addon(short_name, user_settings=None, node_settings=None):
     """Add an addon to the settings, so that it is ready for app init

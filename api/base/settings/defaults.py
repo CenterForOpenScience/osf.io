@@ -29,6 +29,16 @@ AUTHENTICATION_BACKENDS = (
 DEBUG = osf_settings.DEBUG_MODE
 DEBUG_PROPAGATE_EXCEPTIONS = True
 
+# session:
+SESSION_COOKIE_NAME = 'api'
+SESSION_COOKIE_SECURE = osf_settings.SECURE_MODE
+SESSION_COOKIE_HTTPONLY = osf_settings.SESSION_COOKIE_HTTPONLY
+
+# csrf:
+CSRF_COOKIE_NAME = 'api-csrf'
+CSRF_COOKIE_SECURE = osf_settings.SECURE_MODE
+CSRF_COOKIE_HTTPONLY = osf_settings.SECURE_MODE
+
 ALLOWED_HOSTS = [
     '.osf.io'
 ]
@@ -47,6 +57,10 @@ INSTALLED_APPS = (
     'corsheaders',
     'raven.contrib.django.raven_compat',
 )
+
+# local development using https
+if osf_settings.SECURE_MODE and osf_settings.DEBUG_MODE:
+    INSTALLED_APPS += ('sslserver',)
 
 # TODO: Are there more granular ways to configure reporting specifically related to the API?
 RAVEN_CONFIG = {
