@@ -1086,6 +1086,15 @@ def make_url_map(app):
         ),
         Rule(
             [
+                '/api/v1/project/<pid>/files/<provider>/<path:path>/',
+                '/api/v1/project/<pid>/node/<nid>/files/<provider>/<path:path>/',
+            ],
+            'get',
+            addon_views.addon_view_or_download_file,
+            json_renderer
+        ),
+        Rule(
+            [
                 '/project/<pid>/files/deleted/<trashed_id>/',
                 '/project/<pid>/node/<nid>/files/deleted/<trashed_id>/',
             ],

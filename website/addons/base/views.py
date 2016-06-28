@@ -11,6 +11,7 @@ from flask import request
 import furl
 import jwe
 import jwt
+import json
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
@@ -642,6 +643,10 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     if action == 'download':
         return redirect(file_node.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier)))
+
+    if action == 'get_guid':
+        guid = file_node.get_guid(create=True)
+        return dict(guid=guid._id)
 
     if len(request.path.strip('/').split('/')) > 1:
         guid = file_node.get_guid(create=True)
