@@ -40,8 +40,8 @@ var getContributorList = function(input, nodeId) {
         // for any input areas that currently exist on page
         input.atwho('load','@', data).atwho('load', '+', data).atwho('run');
         // for future input areas so that data doesn't need to be reloaded
-        atjsConfig.at_config.data = data;
-        atjsConfig.plus_config.data = data;
+        atjsConfig.atConfig.data = data;
+        atjsConfig.plusConfig.data = data;
     });
     request.fail(function(xhr, status, error) {
         Raven.captureMessage('Error getting contributors', {
@@ -503,8 +503,8 @@ CommentModel.prototype.autosizeText = function(elm) {
     $(elm).find('textarea').autosize().focus();
     $(elm)
         .find('.atwho-input')
-        .atwho(atjsConfig.at_config)
-        .atwho(atjsConfig.plus_config)
+        .atwho(atjsConfig.atConfig)
+        .atwho(atjsConfig.plusConfig)
         .bind('paste', atjsConfig.onPaste)
         .on('focusin', atjsConfig.lastElementBr)
         .on('focusout', atjsConfig.onlyElementBr)
@@ -828,8 +828,8 @@ var onOpen = function(page, rootId, nodeApiUrl, currentUserId) {
 var init = function(commentLinkSelector, commentPaneSelector, options) {
     getContributorList(input, nodeId);
     input
-        .atwho(atjsConfig.at_config)
-        .atwho(atjsConfig.plus_config)
+        .atwho(atjsConfig.atConfig)
+        .atwho(atjsConfig.plusConfig)
         .bind('paste', atjsConfig.onPaste)
         .on('focusin keyup', atjsConfig.lastElementBr)
         .on('focusout', atjsConfig.onlyElementBr)

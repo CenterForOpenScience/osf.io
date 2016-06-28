@@ -104,6 +104,10 @@ def update_comment_node(root_target_id, source_node, destination_node):
     destination_node.save()
 
 
+def render_email_markdown(content):
+    return markdown.markdown(content, ['del_ins', 'markdown.extensions.tables', 'markdown.extensions.fenced_code'])
+
+
 @comment_added.connect
 def send_comment_added_notification(comment, auth):
     node = comment.node
@@ -111,7 +115,7 @@ def send_comment_added_notification(comment, auth):
 
     context = dict(
         gravatar_url=auth.user.profile_image_url(),
-        content=markdown.markdown(comment.content, ['del_ins', 'markdown.extensions.tables', 'markdown.extensions.fenced_code']),
+        content=render_email_markdown(comment.content),
         page_type=comment.get_comment_page_type(),
         page_title=comment.get_comment_page_title(),
         provider=PROVIDERS[comment.root_target.referent.provider] if comment.page == Comment.FILES else '',
@@ -146,7 +150,7 @@ def send_mention_added_notification(comment, new_mentions, auth):
 
     context = dict(
         gravatar_url=auth.user.profile_image_url(),
-        content=markdown.markdown(comment.content, ['del_ins', 'markdown.extensions.tables', 'markdown.extensions.fenced_code']),
+        content=render_email_markdown(comment.content),
         page_type='file' if comment.page == Comment.FILES else node.project_or_component,
         page_title=comment.root_target.referent.name if comment.page == Comment.FILES else '',
         provider=PROVIDERS[comment.root_target.referent.provider] if comment.page == Comment.FILES else '',
