@@ -79,7 +79,7 @@ def disable_for_public_files_collection(func):
     def wrapped(*args, **kwargs):
 
         if args[0].is_public_files_collection:
-            raise NodeStateError('Forbidden for a public files collection')
+            raise NodeStateError(func.__name__ + ' is forbidden for a public files collection')
 
         return func(*args, **kwargs)
 
