@@ -1288,10 +1288,10 @@ function _fangornModifiedColumn(item, col) {
     }
     if (item.kind === 'file' && item.data.permissions.view && item.data.modified) {
         // "new Date" required for non-ISO date formats
-        item.data.modified = new moment(new Date(item.data.modified)).format('YYYY-MM-DD hh:mm A');
+        var modifiedFormatted = new moment(new Date(item.data.modified)).format('YYYY-MM-DD hh:mm A');
         return m(
             'span',
-            item.data.modified
+            modifiedFormatted
         );
     }
     return m('span', '');
