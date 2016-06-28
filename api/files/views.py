@@ -65,6 +65,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
 
         name          type       description
         =========================================================================
+        guid          string            OSF GUID for this file (if one has been assigned)
         name          string            name of the file
         path          string            unique identifier for this file entity for this
                                         project and storage provider. may not end with '/'
