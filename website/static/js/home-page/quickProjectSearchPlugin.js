@@ -494,7 +494,6 @@ var QuickSearchProject = {
         if (ctrl.eligibleNodes().length === 0 && ctrl.filter() == null) {
             return m('.row',
                 m('.col-xs-12',[
-                    headerTemplate(),
                     m('.row.quick-project',
                         m('.col-sm-12.text-center', [
                             m('p','You have no projects yet. Create a project with the button on the top right.'),
