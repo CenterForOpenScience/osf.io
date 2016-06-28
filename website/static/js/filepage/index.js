@@ -50,7 +50,7 @@ var SharePopover =  {
                 }
                 m.render(document.getElementById('popOver'), [
                     m('ul.nav.nav-tabs.nav-justified', [
-                        m('li.active', m('a[href="#share"][data-toggle="tab"]', 'Share')),
+                        m('li.active', m('a[href="#share"][data-toggle="tab"]', 'SharePopup')),
                         m('li', m('a[href="#embed"][data-toggle="tab"]', 'Embed'))
                     ]), m('br'),
                     m('.tab-content', [
@@ -59,7 +59,7 @@ var SharePopover =  {
                                 CopyButton.view(ctrl, {link: link, height: copyButtonHeight}), //workaround to allow button to show up on first click
                                 m('input.form-control[readonly][type="text"][value="'+ link +'"]')
                             ]),
-                            m(SocialShare.ShareButtons, {file_name: 'FILENAME', share_url: link})
+                            SocialShare.ShareButtons.view(ctrl, {file_name: window.contextVars.file.name, share_url: link})
                         ]),
                         m('.tab-pane#embed', [
                             m('p', 'Dynamically render iframe with JavaScript'),

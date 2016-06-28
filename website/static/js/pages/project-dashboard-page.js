@@ -288,9 +288,9 @@ $(document).ready(function () {
     });
 
     if (window.contextVars.node.isPublic) {
-        m.mount(document.getElementById('shareDropdown'), m.component(SocialShare.ShareDropdown, {file_name: 'FILENAME', share_url: 'http://google.com/'}));
-
-        $osf.makeLinksOpenInPopup('div.share-buttons a');
+        m.mount(document.getElementById('shareDropdown'),
+                m.component(SocialShare.ShareDropdown,
+                    {file_name: window.contextVars.node.title, share_url: window.location.href}));
 
         // Make sure the drop down share menu is not obscured
         // by the tool tip when users are not logged-in

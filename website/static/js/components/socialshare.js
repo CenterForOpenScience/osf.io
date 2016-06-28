@@ -9,17 +9,25 @@ var utils = require('js/components/utils');
 var required = utils.required;
 
 var ShareButtons = {
+    openLinkInPopup: function(href) {
+        window.open(href, '', 'menubar=no,toolbar=no,resizable=yes,scrollbars=yes,width=600,height=400');
+        return false;
+    },
     view: function(ctrl, options) {
         var file_name = encodeURIComponent(required(options, 'file_name'));
         var share_url = encodeURIComponent(required(options, 'share_url'));
+        var twitterHref = 'https://twitter.com/intent/tweet?url=' + share_url + '&text=' + file_name + '&via=OSFramework';
+        var facebookHref = 'https://www.facebook.com/sharer/sharer.php?u=' + share_url;
+        var linkedinHref = 'https://www.linkedin.com/cws/share?url=' + share_url + '&title=' + file_name;
+        var emailHref = 'mailto:?subject=' + file_name + '&body=' + share_url;
         return m('div.share-buttons', {}, [
-            m('a', {href: 'https://twitter.com/intent/tweet?url=' + share_url + '&text=' + file_name + '&via=OSFramework', target: '_blank'},
+            m('a', {href: twitterHref, target: '_blank', onclick: this.openLinkInPopup.bind(this, twitterHref)},
                 m('i.fa.fa-twitter-square[aria-hidden=true]')),
-            m('a', {href: 'https://www.facebook.com/sharer/sharer.php?u=' + share_url, target: '_blank'},
+            m('a', {href: facebookHref, target: '_blank', onclick: this.openLinkInPopup.bind(this, facebookHref)},
                 m('i.fa.fa-facebook-square[aria-hidden=true]')),
-            m('a', {href: 'https://www.linkedin.com/cws/share?url=' + share_url + '&title=' + file_name, target: '_blank'},
+            m('a', {href: linkedinHref, target: '_blank', onclick: this.openLinkInPopup.bind(this, linkedinHref)},
                 m('i.fa.fa-linkedin-square[aria-hidden=true]')),
-            m('a', {href: 'mailto:?subject=' + file_name + '&amp;body=' + share_url, target: '_blank'},
+            m('a', {href: emailHref, target: '_blank', onclick: this.openLinkInPopup.bind(this, emailHref)},
                 m('i.fa.fa-envelope-square[aria-hidden=true]')),
         ])
     }
