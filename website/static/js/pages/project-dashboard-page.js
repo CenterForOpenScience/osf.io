@@ -29,6 +29,27 @@ var node = window.contextVars.node;
 var nodeApiUrl = ctx.node.urls.api;
 var nodeCategories = ctx.nodeCategories || {};
 
+var categoryList = m.prop([]);
+var addProjectTemplate = m.component(AddProject, {
+    buttonTemplate: m('.btn.btn-sm.btn-default[data-toggle="modal"][data-target="#addSubComponent"]', {onclick: function() {
+        $osf.trackClick('project-dashboard', 'add-component', 'open-add-project-modal');
+    }}, 'Add Component'),
+    modalID: 'addSubComponent',
+    title: 'Create new component',
+    parentID: window.contextVars.node.id,
+    parentTitle: window.contextVars.node.title,
+    categoryList: categoryList,
+    stayCallback: function() {
+        // We need to reload because the components list needs to be re-rendered serverside
+        window.location.reload();
+    },
+    trackingCategory: 'project-dashboard',
+    trackingAction: 'add-component',
+    contributors: window.contextVars.node.contributors,
+    currentUserCanEdit: window.contextVars.currentUser.canEdit
+});
+m.mount(document.getElementById('newComponent'), m.component(addProjectTemplate, {wrapperSelector : '#addSubComponent'}));
+
 // Listen for the nodeLoad event (prevents multiple requests for data)
 $('body').on('nodeLoad', function(event, data) {
     if (!data.node.is_retracted) {
@@ -100,7 +121,7 @@ var institutionLogos = {
 var loadCategories = function() {
     var deferred = m.deferred();
     var errorMsg;
-    m.request({method : 'OPTIONS', url : $osf.apiV2Url('nodes/', { query : {}}), config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})})
+    $osf.ajaxJSON('OPTIONS', $osf.apiV2Url('nodes/', { query : {}}), {isCors: true})
         .then(function _success(results){
             if(results.actions && lodashGet(results, 'actions.POST.category.choices', []).length) {
                 var categoryList = results.actions.POST.category.choices;
@@ -122,6 +143,10 @@ var loadCategories = function() {
         });
     return deferred.promise;
 };
+
+loadCategories().then(function(categories) {
+    categoryList(categories);
+});
 
 $(document).ready(function () {
 
@@ -243,28 +268,28 @@ $(document).ready(function () {
         }
     });
 
-    loadCategories().then(function(categoryList) {
-        var addProjectTemplate = m.component(AddProject, {
-            buttonTemplate: m('.btn.btn-sm.btn-default[data-toggle="modal"][data-target="#addSubComponent"]', {onclick: function() {
-                $osf.trackClick('project-dashboard', 'add-component', 'open-add-project-modal');
-            }}, 'Add Component'),
-            modalID: 'addSubComponent',
-            title: 'Create new component',
-            parentID: window.contextVars.node.id,
-            parentTitle: window.contextVars.node.title,
-            categoryList: categoryList,
-            stayCallback: function() {
-                // We need to reload because the components list needs to be re-rendered serverside
-                window.location.reload();
-            },
-            trackingCategory: 'project-dashboard',
-            trackingAction: 'add-component',
-            contributors: window.contextVars.node.contributors,
-            currentUserCanEdit: window.contextVars.currentUser.canEdit
-        });
 
-        m.mount(document.getElementById('newComponent'), m.component(addProjectTemplate, {wrapperSelector : '#addSubComponent'}));
-    });
+
+    // var addProjectTemplate = m.component(AddProject, {
+    //     buttonTemplate: m('.btn.btn-sm.btn-default[data-toggle="modal"][data-target="#addSubComponent"]', {onclick: function() {
+    //         $osf.trackClick('project-dashboard', 'add-component', 'open-add-project-modal');
+    //     }}, 'Add Component'),
+    //     modalID: 'addSubComponent',
+    //     title: 'Create new component',
+    //     parentID: window.contextVars.node.id,
+    //     parentTitle: window.contextVars.node.title,
+    //     categoryList: categoryList,
+    //     stayCallback: function() {
+    //         // We need to reload because the components list needs to be re-rendered serverside
+    //         window.location.reload();
+    //     },
+    //     trackingCategory: 'project-dashboard',
+    //     trackingAction: 'add-component',
+    //     contributors: window.contextVars.node.contributors,
+    //     currentUserCanEdit: window.contextVars.currentUser.canEdit
+    // });
+
+    // m.mount(document.getElementById('newComponent'), m.component(addProjectTemplate, {wrapperSelector : '#addSubComponent'}));
 
     $('#addPointer').on('shown.bs.modal', function(){
         if(!$osf.isIE()){

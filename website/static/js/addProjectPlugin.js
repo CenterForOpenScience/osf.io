@@ -7,6 +7,7 @@ require('css/add-project-plugin.css');
 var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
+var mHelpers = require('js/mithrilHelpers');
 var institutionComponents = require('js/components/institution');
 var SelectableInstitution = institutionComponents.SelectableInstitution;
 
@@ -261,7 +262,7 @@ var AddProject = {
                                         $osf.trackClick(options.trackingCategory, options.trackingAction, 'select-project-category');
                                     }},
                                     [
-                                        ctrl.options.categoryList.map(function(cat){
+                                        mHelpers.unwrap(ctrl.options.categoryList).map(function(cat){
                                             return m('option', {
                                                 type: 'option',
                                                 name: 'projectCategory',
