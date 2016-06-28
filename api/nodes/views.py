@@ -1385,7 +1385,6 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
             'node link'
         )
         # May raise a permission denied
-        self.check_object_permissions(self.request, node_link)
         return node_link
 
     # overrides DestroyAPIView
