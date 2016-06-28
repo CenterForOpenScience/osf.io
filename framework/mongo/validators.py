@@ -16,12 +16,14 @@ def comment_maxlength(max_length):
     def link_repl(matchobj):
         return matchobj.group(1)
 
+    mention_re = re.compile(r'\[([@|\+].*?)\]\(\/[a-z\d]{5}\/\)')
+
     def validator(value):
-        reduced_comment = re.sub(r"\[([@|\+].*?)\]\(\/[a-z\d]{5}\/\)", link_repl, value)
+        reduced_comment = mention_re.sub(link_repl, value)
 
         # two characters accounts for the \r\n at the end of comments
         if len(reduced_comment) > max_length + 2:
-            raise ValidationValueError('Value exceed maximum length of {}'.format(max_length))
+            raise ValidationValueError('Ensure this field has no more than {} characters.'.format(max_length))
         return True
     return validator
 

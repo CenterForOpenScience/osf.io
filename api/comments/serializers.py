@@ -113,8 +113,8 @@ class CommentSerializer(JSONAPISerializer):
                     comment.edit(content, auth=auth, save=True)
                 except PermissionsError:
                     raise PermissionDenied('Not authorized to edit this comment.')
-                except ValidationValueError:
-                    raise ValidationError('Ensure this field has no more than 500 characters.')
+                except ValidationValueError as err:
+                    raise ValidationError(err.args[0])
         return comment
 
     def get_target_type(self, obj):
@@ -174,8 +174,8 @@ class CommentCreateSerializer(CommentSerializer):
             comment = Comment.create(auth=auth, **validated_data)
         except PermissionsError:
             raise PermissionDenied('Not authorized to comment on this project.')
-        except ValidationValueError:
-            raise ValidationError('Ensure this field has no more than 500 characters.')
+        except ValidationValueError as err:
+            raise ValidationError(err.args[0])
         return comment
 
 
