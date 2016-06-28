@@ -1303,6 +1303,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if not self.is_public_files_collection:
             raise NodeStateError('must be Public Files collection to merge')
 
+        from website.files.models.osfstorage import OsfStorageFile
+
+        self_pf_node = Node.find_one(Q('is_public_files_collection', 'eq', True) & Q('creator', 'eq', self))
+        try:
+            for child in OsfStorageFile.find(Q('node', 'eq', node) & Q('title', 'ne', 'Public Files')):
+                child.move_under(self_pf_node.get_addon('osfstorage').get_root())
+            self_pf_node.save()
+        except:
+            NodeStateError('Files could not be moved from one public files collection to another')
+
     def get_permissions(self, user):
         """Get list of permissions for user.
 
