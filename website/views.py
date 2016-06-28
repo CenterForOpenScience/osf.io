@@ -10,7 +10,6 @@ from modularodm.exceptions import NoResultsFound
 from flask import request
 
 from framework import utils, sentry
-from framework.auth.core import User
 from framework.auth.decorators import must_be_logged_in
 from framework.auth.forms import SignInForm, ResetPasswordForm, ForgotPasswordForm
 from framework.exceptions import HTTPError
@@ -20,9 +19,8 @@ from framework.routing import proxy_url
 from website.institutions.views import view_institution
 from website.models import Guid
 from website.models import Node, Institution
-from website.project import model
 from website.project import new_bookmark_collection
-from website.util import sanitize, permissions
+from website.util import permissions
 
 logger = logging.getLogger(__name__)
 
@@ -125,50 +123,6 @@ def paginate(items, total, page, size):
     paginated_items = itertools.islice(items, start, start + size)
 
     return paginated_items, pages
-
-
-@must_be_logged_in
-def watched_logs_get(**kwargs):
-    user = kwargs['auth'].user
-    try:
-        page = int(request.args.get('page', 0))
-    except ValueError:
-        raise HTTPError(http.BAD_REQUEST, data=dict(
-            message_long='Invalid value for "page".'
-        ))
-    try:
-        size = int(request.args.get('size', 10))
-    except ValueError:
-        raise HTTPError(http.BAD_REQUEST, data=dict(
-            message_long='Invalid value for "size".'
-        ))
-
-    total = sum(1 for x in user.get_recent_log_ids())
-    paginated_logs, pages = paginate(user.get_recent_log_ids(), total, page, size)
-    logs = (model.NodeLog.load(id) for id in paginated_logs)
-
-    return {
-        'logs': [serialize_log(log) for log in logs],
-        'total': total,
-        'pages': pages,
-        'page': page
-    }
-
-
-def serialize_log(node_log, auth=None, anonymous=False):
-    '''Return a dictionary representation of the log.'''
-    return {
-        'id': str(node_log._primary_key),
-        'user': node_log.user.serialize()
-        if isinstance(node_log.user, User)
-        else {'fullname': node_log.foreign_user},
-        'contributors': [node_log._render_log_contributor(c) for c in node_log.params.get('contributors', [])],
-        'action': node_log.action,
-        'params': sanitize.unescape_entities(node_log.params),
-        'date': utils.iso8601format(node_log.date),
-        'node': node_log.original_node.serialize(auth) if node_log.original_node else None,
-        'anonymous': anonymous
-    }
 
 
 def reproducibility():
