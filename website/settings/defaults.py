@@ -63,9 +63,6 @@ LOG_PATH = os.path.join(APP_PATH, 'logs')
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
 ANALYTICS_PATH = os.path.join(BASE_PATH, 'analytics')
 
-CORE_TEMPLATES = os.path.join(BASE_PATH, 'templates/log_templates.mako')
-BUILT_TEMPLATES = os.path.join(BASE_PATH, 'templates/_log_templates.mako')
-
 GNUPG_HOME = os.path.join(BASE_PATH, 'gpg')
 GNUPG_BINARY = 'gpg'
 

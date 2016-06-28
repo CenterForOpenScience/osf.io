@@ -546,26 +546,35 @@ var QuickSearchProject = {
     }
 };
 
-function getAncestorDescriptor(node, nodeTitle, ancestor) {
+function getAncestorDescriptor(node, nodeID, ancestor, ancestorID) {
     var ancestorDescriptor;
     var ancestorTitleRequest = lodashGet(node, 'embeds.' + ancestor + '.data.attributes.title', '');
     var errorRequest = lodashGet(node, 'embeds.' + ancestor + '.errors[0].detail', '');
     switch(errorRequest) {
         case '':
-            if (ancestorTitleRequest === nodeTitle || ancestorTitleRequest === '') {
+            if (ancestorID === nodeID || ancestorID === '') {
                 ancestorDescriptor = '';
             }
             else {
-                ancestorDescriptor = ancestorTitleRequest.replace('.', '') + ' / ';
+//            Remove trailing period
+                if (ancestorTitleRequest[ancestorTitleRequest.length-1] === '.') {
+                    ancestorTitleRequest = ancestorTitleRequest.slice(0,-1);
+                }
+                ancestorDescriptor = ancestorTitleRequest + ' / ';
             }
             break;
 
         case 'You do not have permission to perform this action.':
-            ancestorDescriptor = m('em', 'Private ' + ancestor + ' / ');
+            if (ancestor === 'root') {
+                ancestorDescriptor = m('em', 'Private Project / ');
+            }
+            if (ancestor === 'parent') {
+                ancestorDescriptor = m('em', 'Private / ');
+            }
             break;
 
         default:
-            ancestorDescriptor = m('em', 'Name Unavailable / ');
+            ancestorDescriptor = 'Name Unavailable / ';
     }
     return ancestorDescriptor;
 }
@@ -583,17 +592,26 @@ var QuickSearchNodeDisplay = {
             return m('.', args.eligibleNodes().slice(0, args.countDisplayed()).map(function(n){
                 var project = args.nodes()[n];
                 var numContributors = project.embeds.contributors.links.meta.total;
+                var nodeID = project.id;
                 var title = project.attributes.title;
-                var root = getAncestorDescriptor(project, title, 'root');
-                var parent = getAncestorDescriptor(project, title, 'parent');
 
-                if (root === parent) {
+                var rootID = lodashGet(project, 'embeds.root.data.id', '');
+                var rootURL = lodashGet(project, 'embeds.root.data.links.self');
+                var root = getAncestorDescriptor(project, nodeID, 'root', rootID);
+
+                var parentID = lodashGet(project, 'embeds.parent.data.id', '');
+                var parent = getAncestorDescriptor(project, nodeID, 'parent', parentID);
+
+                // API doesn't provide grandparent GUID, so we have to use API URL.
+                var grandParentURL = lodashGet(project, 'embeds.parent.data.relationships.parent.links.related.href', '');
+
+                // Parent and root ID are the same, and they aren't both private (would cause both to have empty ID)
+                if (parentID === rootID && parentID !== '') {
                     parent = '';
                 }
 
-                var grandParentURL = lodashGet(project, 'embeds.parent.data.relationships.parent.links.related.href', '');
-                var rootURL = lodashGet(project, 'embeds.root.data.links.self', '');
-                if (grandParentURL !== rootURL && grandParentURL !== '') {
+                // There are projects in between root and parent and they aren't both private
+                if (grandParentURL !== rootURL && grandParentURL !== '' && rootID !== '') {
                     root += '... / ';
                 }
 

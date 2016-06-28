@@ -3,27 +3,25 @@
 """Functional tests using WebTest."""
 import httplib as http
 import logging
-import mock
-import re
 import unittest
 
 import markupsafe
+import mock
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
+import re
 
 from framework.mongo.utils import to_mongo_key
+from framework.auth import cas
 from framework.auth import exceptions as auth_exc
 from framework.auth.core import Auth
-from tests.base import OsfTestCase, fake
-from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
-                             WatchConfigFactory,
-                             NodeFactory, NodeWikiFactory, RegistrationFactory,
-                             UnregUserFactory, UnconfirmedUserFactory,
+from framework.auth.core import generate_verification_key
+from tests.base import OsfTestCase
+from tests.base import fake
+from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory, WatchConfigFactory, NodeFactory,
+                             NodeWikiFactory, RegistrationFactory,  UnregUserFactory, UnconfirmedUserFactory,
                              PrivateLinkFactory)
 from tests.test_features import requires_piwik
 from website import settings, language
-from website.security import random_string
-from website.project.metadata.schemas import OSF_META_SCHEMAS
-from website.project.model import ensure_schemas
 from website.util import web_url_for, api_url_for
 
 logging.getLogger('website.project.model').setLevel(logging.ERROR)
@@ -81,11 +79,27 @@ class TestAUser(OsfTestCase):
         res = self.app.get('/').maybe_follow()  # Redirects
         assert_equal(res.status_code, 200)
 
-    def test_is_redirected_to_dashboard_already_logged_in_at_login_page(self):
+    def test_is_redirected_to_cas_if_not_logged_in_at_login_page(self):
+        res = self.app.get('/login/')
+        assert_equal(res.status_code, 302)
+        location = res.headers.get('Location')
+        assert_in('login?service=', location)
+
+    def test_is_redirected_to_dashboard_if_already_logged_in_at_login_page(self):
         res = self.app.get('/login/', auth=self.user.auth)
         assert_equal(res.status_code, 302)
         res = res.follow(auth=self.user.auth)
-        assert_equal(res.request.path, '/')
+        assert_equal(res.request.path, '/dashboard/')
+
+    def test_register_page(self):
+        res = self.app.get('/register/')
+        assert_equal(res.status_code, 200)
+
+    def test_is_redirected_to_dashboard_if_already_logged_in_at_register_page(self):
+        res = self.app.get('/register/', auth=self.user.auth)
+        assert_equal(res.status_code, 302)
+        res = res.follow(auth=self.user.auth)
+        assert_equal(res.request.path, '/dashboard/')
 
     def test_sees_projects_in_her_dashboard(self):
         # the user already has a project
@@ -262,49 +276,6 @@ class TestAUser(OsfTestCase):
         td2 = td1.find_next_sibling('td')
         assert_equal(td2.text, user2.display_absolute_url)
 
-    # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1320
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_can_reset_password(self, mock_send_mail):
-        # A registered user
-        user = UserFactory()
-        # goes to the login page
-        url = web_url_for('forgot_password_get')
-        res = self.app.get(url)
-        # and fills out forgot password form
-        form = res.forms['forgotPasswordForm']
-        form['forgot_password-email'] = user.username
-        # submits
-        res = form.submit()
-        # mail was sent
-        assert_true(mock_send_mail.called)
-        # gets 200 response
-        assert_equal(res.status_code, 200)
-        # URL is /forgotpassword
-        assert_equal(res.request.path, web_url_for('forgot_password_post'))
-
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_cannot_reset_password_twice_quickly(self, mock_send_mail):
-        # A registered user
-        user = UserFactory()
-        # goes to the login page
-        url = web_url_for('forgot_password_get')
-        res = self.app.get(url)
-        # and fills out forgot password form
-        form = res.forms['forgotPasswordForm']
-        form['forgot_password-email'] = user.username
-        # submits
-        res = form.submit()
-        # mail was sent
-        assert_true(mock_send_mail.called)
-        # gets 200 response
-        assert_equal(res.status_code, 200)
-        assert_in_html('If there is an OSF account', res)
-        assert_not_in_html('Please wait', res)
-        # URL is /forgotpassword
-        assert_equal(res.request.path, web_url_for('forgot_password_post'))
-        res = form.submit()
-        assert_in_html('Please wait', res)
-        assert_not_in_html('If there is an OSF account', res)
 
 class TestComponents(OsfTestCase):
 
@@ -877,45 +848,169 @@ class TestExplorePublicActivity(OsfTestCase):
         assert_not_in(str(self.private_project.title), res)
 
 
-class TestForgotAndResetPasswordViews(OsfTestCase):
+class TestForgotPassword(OsfTestCase):
 
     def setUp(self):
-        super(TestForgotAndResetPasswordViews, self).setUp()
-        self.user = AuthUserFactory()
-        self.key = random_string(20)
-        # manually set verifification key
-        self.user.verification_key = self.key
-        self.user.save()
+        super(TestForgotPassword, self).setUp()
+        self.user = UserFactory()
+        self.get_url = web_url_for('forgot_password_get')
+        self.post_url = web_url_for('forgot_password_post')
+        self.user.verification_key = None
 
-        self.url = web_url_for('reset_password', verification_key=self.key)
+    # test that forgot password page is loaded correctly
+    def test_get_forgot_password(self):
+        res = self.app.get(self.get_url)
+        assert_equal(res.status_code, 200)
+        assert_in('Forgot Password', res.body)
+        assert_in('forgotPasswordForm', res.forms)
 
-    def test_reset_password_view_returns_200(self):
-        res = self.app.get(self.url)
+    # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1320
+    # test that existing user can receive reset password email
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_can_receive_reset_password_email(self, mock_send_mail):
+        # load forgot password page and submit email
+        res = self.app.get(self.get_url)
+        form = res.forms['forgotPasswordForm']
+        form['forgot_password-email'] = self.user.username
+        res = form.submit()
+
+        # check mail was sent
+        assert_true(mock_send_mail.called)
+
+        # check http 200 response
         assert_equal(res.status_code, 200)
 
-    def test_can_reset_password_if_form_success(self):
-        res = self.app.get(self.url)
+        # check request URL is /forgotpassword
+        assert_equal(res.request.path, self.post_url)
+
+        # check push notification
+        assert_in_html('If there is an OSF account', res)
+        assert_not_in_html('Please wait', res)
+
+        # check verification_key(OSF) is set
+        self.user.reload()
+        assert_not_equal(self.user.verification_key, None)
+
+    # test that non-existing user cannot receive reset password email
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_cannot_receive_reset_password_email(self, mock_send_mail):
+        # load forgot password page and submit email
+        res = self.app.get(self.get_url)
+        form = res.forms['forgotPasswordForm']
+        form['forgot_password-email'] = 'fake' + self.user.username
+        res = form.submit()
+
+        # check mail was not sent
+        assert_false(mock_send_mail.called)
+
+        # check http 200 response
+        assert_equal(res.status_code, 200)
+
+        # check request URL is /forgotpassword
+        assert_equal(res.request.path, self.post_url)
+
+        # check push notification
+        assert_in_html('If there is an OSF account', res)
+        assert_not_in_html('Please wait', res)
+
+        # check verification_key(OSF) is not set
+        self.user.reload()
+        assert_equal(self.user.verification_key, None)
+
+    # test that user cannot submit forgot password request too quickly
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_cannot_reset_password_twice_quickly(self, mock_send_mail):
+        # load forgot password page and submit email
+        res = self.app.get(self.get_url)
+        form = res.forms['forgotPasswordForm']
+        form['forgot_password-email'] = self.user.username
+        res = form.submit()
+        res = form.submit()
+
+        # check http 200 response
+        assert_equal(res.status_code, 200)
+
+        # check push notification
+        assert_in_html('Please wait', res)
+        assert_not_in_html('If there is an OSF account', res)
+
+
+class TestResetPassword(OsfTestCase):
+
+    def setUp(self):
+        super(TestResetPassword, self).setUp()
+        self.user = AuthUserFactory()
+        self.another_user = AuthUserFactory()
+        self.osf_key = generate_verification_key()
+        self.user.verification_key = self.osf_key
+        self.user.save()
+        self.cas_key = None
+        self.get_url = web_url_for('reset_password_get', verification_key=self.osf_key)
+        self.get_url_invalid_key = web_url_for('reset_password_get', verification_key=generate_verification_key())
+
+    # load reset password page if verification_key is valid
+    def test_reset_password_view_returns_200(self):
+        res = self.app.get(self.get_url)
+        assert_equal(res.status_code, 200)
+
+    # raise http 400 error if verification_key(OSF) is invalid
+    def test_reset_password_view_raises_400(self):
+        res = self.app.get(self.get_url_invalid_key, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    # successfully reset password if osf verification_key(OSF) is valid and form is valid
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_can_reset_password_if_form_success(self, mock_service_validate):
+        # load reset password page and submit email
+        res = self.app.get(self.get_url)
         form = res.forms['resetPasswordForm']
         form['password'] = 'newpassword'
         form['password2'] = 'newpassword'
         res = form.submit()
 
-        # password was updated
+        # check request URL is /resetpassword with verification_key(OSF)
+        request_url_path = res.request.path
+        assert_in('resetpassword', request_url_path)
+        assert_in(self.user.verification_key, request_url_path)
+
+        # check verification_key(OSF) is destroyed and a new verification_key(CAS) is in place
+        self.user.reload()
+        self.cas_key = self.user.verification_key
+        assert_not_equal(self.cas_key, self.osf_key)
+
+        # check redirection to CAS login with username and the new verification_key(CAS)
+        assert_equal(res.status_code, 302)
+        location = res.headers.get('Location')
+        assert_true('login?service=' in location)
+        assert_true('username={}'.format(self.user.username) in location)
+        assert_true('verification_key={}'.format(self.user.verification_key) in location)
+
+        # check if password was updated
         self.user.reload()
         assert_true(self.user.check_password('newpassword'))
 
-    @unittest.skip('TODO: Get this working with CAS setup')
+        # check if verification_key(CAS) is destroyed
+        mock_service_validate.return_value = cas.CasResponse(
+            authenticated=True,
+            user=self.user._primary_key,
+            attributes={'accessToken': fake.md5()}
+        )
+        ticket = fake.md5()
+        service_url = 'http://accounts.osf.io/?ticket=' + ticket
+        resp = cas.make_response_from_ticket(ticket, service_url)
+        assert_not_equal(self.user.verification_key, self.cas_key)
+
+    #  logged-in user should be automatically logged out upon before reset password
     def test_reset_password_logs_out_user(self):
-        another_user = AuthUserFactory()
-        # visits reset password link while another user is logged in
-        res = self.app.get(self.url, auth=another_user.auth)
-        assert_equal(res.status_code, 200)
-        # We check if another_user is logged in by checking if
-        # their full name appears on the page (it should be in the navbar).
-        # Yes, this is brittle.
-        assert_not_in(another_user.fullname, res)
-        # make sure the form is on the page
-        assert_true(res.forms['resetPasswordForm'])
+        # visit reset password link while another user is logged in
+        res = self.app.get(self.get_url, auth=self.another_user.auth)
+        # check redirection to CAS logout
+        assert_equal(res.status_code, 302)
+        location = res.headers.get('Location')
+        assert_not_in('reauth', location)
+        assert_in('logout?service=', location)
+        assert_in('resetpassword', location)
+
 
 class TestAUserProfile(OsfTestCase):
 
