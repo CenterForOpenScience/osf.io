@@ -543,8 +543,6 @@ WATERBUTLER_JWT_SECRET = 'ILiekTrianglesALot'
 WATERBUTLER_JWT_ALGORITHM = 'HS256'
 WATERBUTLER_JWT_EXPIRATION = 15
 
-ANALYTICS_SALT = 'ysosalty?'
-
 DRAFT_REGISTRATION_APPROVAL_PERIOD = datetime.timedelta(days=10)
 assert (DRAFT_REGISTRATION_APPROVAL_PERIOD > EMBARGO_END_DATE_MIN), 'The draft registration approval period should be more than the minimum embargo end date.'
 

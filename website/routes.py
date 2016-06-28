@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 import httplib as http
-from hashlib import sha256
 
 from flask import request
 from flask import send_from_directory
@@ -81,7 +80,6 @@ def get_globals():
         'user_institutions': user_institutions if user else None,
         'all_institutions': all_institutions,
         'display_name': get_display_name(user.fullname) if user else '',
-        'anon_user_id': sha256(user._primary_key + settings.ANALYTICS_SALT).hexdigest() if user else '',
         'anon_user_continent': getattr(location, 'continent', None),
         'anon_user_country': getattr(location, 'country', None),
         'anon_user_latitude': getattr(location, 'location', (None, None))[0],

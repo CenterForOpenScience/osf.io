@@ -187,7 +187,6 @@
                     institutions: ${ user_institutions | sjson, n},
                     emailsToAdd: ${ user_email_verifications | sjson, n },
                     anon: {
-                        id: ${ anon_user_id | sjson, n},
                         continent: ${ anon_user_continent | sjson, n},
                         country: ${ anon_user_country | sjson, n},
                         latitude: ${ anon_user_latitude | sjson, n},
