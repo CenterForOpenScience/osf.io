@@ -31,18 +31,18 @@ describe('@Mentions', () => {
         });
     });
     describe('convertMentionMarkdownToHtml', () => {
-            it('convert \\r\\n; to <br>', () => {
-                var converted = convertMentionMarkdownToHtml(returnMarkdown2);
-                assert.equal(converted, returnHTML);
-            });
-            it('convert @ mention markdown link to span', () => {
-                var converted = convertMentionMarkdownToHtml(atMentionMarkdown);
-                assert.equal(converted, atMentionHTML);
-            });
-            it('convert + mention markdown link to span', () => {
-                var converted = convertMentionMarkdownToHtml(plusMentionMarkdown);
-                assert.equal(converted, plusMentionHTML);
-            });
+        it('convert \\r\\n; to <br>', () => {
+            var converted = convertMentionMarkdownToHtml(returnMarkdown2);
+            assert.equal(converted, returnHTML);
+        });
+        it('convert @ mention markdown link to span', () => {
+            var converted = convertMentionMarkdownToHtml(atMentionMarkdown);
+            assert.equal(converted, atMentionHTML);
+        });
+        it('convert + mention markdown link to span', () => {
+            var converted = convertMentionMarkdownToHtml(plusMentionMarkdown);
+            assert.equal(converted, plusMentionHTML);
+        });
     });
 
 });
