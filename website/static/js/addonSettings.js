@@ -149,7 +149,6 @@ var OAuthAddonSettingsViewModel = oop.defclass({
                 return new ExternalAccount(account);
             }));
             $('#' + self.name + '-header').osfToggleHeight({height: 140});
-          });
         });
         request.fail(function(xhr, status, error) {
             Raven.captureMessage('Error while updating addon account', {
