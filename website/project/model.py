@@ -69,6 +69,8 @@ from website.project.sanctions import (
     RegistrationApproval,
     Retraction,
 )
+from website.files.models.osfstorage import OsfStorageFileNode
+from website.prereg.utils import get_prereg_schema
 
 logger = logging.getLogger(__name__)
 
@@ -3984,6 +3986,7 @@ class DraftRegistration(StoredObject):
         approval.save()
         self.approval = approval
         self.add_status_log(initiated_by, DraftRegistrationLog.SUBMITTED)
+        self.checkout_files(save=save)
         if save:
             self.save()
 
@@ -3998,6 +4001,7 @@ class DraftRegistration(StoredObject):
         )
         self.registered_node = register
         self.add_status_log(auth.user, DraftRegistrationLog.REGISTERED)
+        self.checkin_files(save=save)
         if save:
             self.save()
         return register
@@ -4006,15 +4010,50 @@ class DraftRegistration(StoredObject):
         self.approval.approve(user)
         self.add_status_log(user, DraftRegistrationLog.APPROVED)
         self.approval.save()
+        self.checkin_files(save=True)
 
     def reject(self, user):
         self.approval.reject(user)
         self.add_status_log(user, DraftRegistrationLog.REJECTED)
         self.approval.save()
+        self.checkin_files(save=True)
 
     def add_status_log(self, user, action):
         log = DraftRegistrationLog(action=action, user=user, draft=self)
         log.save()
+
+    def get_metadata_files(self):
+        for q in ['q7', 'q16', 'q11', 'q13', 'q12', 'q19', 'q26']:
+            for file_info in self.registration_metadata[q]['value']['uploader']['extra']:
+                if file_info['data']['provider'] != 'osfstorage':
+                    continue
+                fid = file_info['data']['path'].split('/')[1]
+                yield OsfStorageFileNode.load(fid)
+
+    def checkout_files(self, save=False):
+        """Check out all metadata files for prereg challenge"""
+        if self.registration_schema != get_prereg_schema():
+            return
+        user = User.load(settings.PREREG_FILE_CHECKOUT_USER)
+        for item in self.get_metadata_files():
+            try:
+                item.checkout = user
+            except AttributeError:
+                continue  # ignore files that have changed
+            if save:
+                item.save()
+
+    def checkin_files(self, save=False):
+        """Check in all metadata files"""
+        if self.registration_schema != get_prereg_schema():
+            return
+        for item in self.get_metadata_files():
+            try:
+                item.checkout = None
+            except AttributeError:
+                continue  # ignore files that are no longer there
+            if save:
+                item.save()
 
     def validate_metadata(self, *args, **kwargs):
         """
