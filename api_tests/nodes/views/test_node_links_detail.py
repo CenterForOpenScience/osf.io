@@ -55,7 +55,7 @@ class TestNodeLinkDetail(ApiTestCase):
 
     def test_returns_private_node_pointer_detail_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
-        assert_equal(res.status_code, 401)
+        assert_equal(res.status_code, 200)
         assert_in('detail', res.json['errors'][0])
 
     def test_returns_private_node_pointer_detail_logged_in_contributor(self):
@@ -68,7 +68,7 @@ class TestNodeLinkDetail(ApiTestCase):
 
     def test_returns_private_node_pointer_detail_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.user_two.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 200)
         assert_in('detail', res.json['errors'][0])
 
     def test_self_link_points_to_node_link_detail_url(self):
@@ -125,7 +125,7 @@ class TestDeleteNodeLink(ApiTestCase):
             pointer_id,
         )
         res = self.app.delete(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 404)
 
     def test_deletes_public_node_pointer_logged_out(self):
         res = self.app.delete(self.public_url, expect_errors=True)

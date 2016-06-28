@@ -1384,7 +1384,6 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
             self.kwargs[node_link_lookup_url_kwarg],
             'node link'
         )
-        # May raise a permission denied
         return node_link
 
     # overrides DestroyAPIView
