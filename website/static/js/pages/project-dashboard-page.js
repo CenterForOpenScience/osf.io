@@ -268,29 +268,6 @@ $(document).ready(function () {
         }
     });
 
-
-
-    // var addProjectTemplate = m.component(AddProject, {
-    //     buttonTemplate: m('.btn.btn-sm.btn-default[data-toggle="modal"][data-target="#addSubComponent"]', {onclick: function() {
-    //         $osf.trackClick('project-dashboard', 'add-component', 'open-add-project-modal');
-    //     }}, 'Add Component'),
-    //     modalID: 'addSubComponent',
-    //     title: 'Create new component',
-    //     parentID: window.contextVars.node.id,
-    //     parentTitle: window.contextVars.node.title,
-    //     categoryList: categoryList,
-    //     stayCallback: function() {
-    //         // We need to reload because the components list needs to be re-rendered serverside
-    //         window.location.reload();
-    //     },
-    //     trackingCategory: 'project-dashboard',
-    //     trackingAction: 'add-component',
-    //     contributors: window.contextVars.node.contributors,
-    //     currentUserCanEdit: window.contextVars.currentUser.canEdit
-    // });
-
-    // m.mount(document.getElementById('newComponent'), m.component(addProjectTemplate, {wrapperSelector : '#addSubComponent'}));
-
     $('#addPointer').on('shown.bs.modal', function(){
         if(!$osf.isIE()){
             $('#addPointer input').focus();
