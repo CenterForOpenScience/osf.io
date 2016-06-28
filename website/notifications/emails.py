@@ -47,7 +47,7 @@ def notify(event, user, node, timestamp, **context):
 def notify_mentions(event, user, node, timestamp, **context):
     event_type = utils.find_subscription_type(event)
     sent_users = []
-    new_mentions = context.get('new_mentions', None)
+    new_mentions = context.get('new_mentions', [])
     for m in new_mentions:
         subscriptions = get_user_subscriptions(user, event_type)
         for notification_type in subscriptions:

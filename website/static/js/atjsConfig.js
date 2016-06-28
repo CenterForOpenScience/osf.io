@@ -141,7 +141,7 @@ var callbacks = {
 var headerTemplate = '<div class="atwho-header">Contributors<small>&nbsp;↑&nbsp;↓&nbsp;</small></div>';
 var displayTemplate = '<li>${fullName}</li>';
 
-var at_config = {
+var atConfig = {
     at: '@',
     headerTpl: headerTemplate,
     insertTpl: '@${fullName}',
@@ -151,19 +151,14 @@ var at_config = {
     callbacks: callbacks
 };
 
-var plus_config = {
+var plusConfig = $.extend({}, atConfig, {
     at: '+',
-    headerTpl: headerTemplate,
-    insertTpl: '+${fullName}',
-    displayTpl: displayTemplate,
-    searchKey: 'fullName',
-    limit: 6,
-    callbacks: callbacks
-};
+    displayTemplate: '+${fullName}'
+});
 
 module.exports = {
-    at_config: at_config,
-    plus_config: plus_config,
+    atConfig: atConfig,
+    plusConfig: plusConfig,
     onPaste: onPaste,
     lastElementBr: lastElementBr,
     onlyElementBr: onlyElementBr,

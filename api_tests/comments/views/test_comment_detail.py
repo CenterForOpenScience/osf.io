@@ -203,7 +203,7 @@ class CommentDetailMixin(object):
 
     def test_update_comment_cannot_exceed_max_length(self):
         self._set_up_private_project_with_comment()
-        content = ''.join(['c' for c in range(osf_settings.COMMENT_MAXLENGTH + 3)])
+        content = ('c' * (osf_settings.COMMENT_MAXLENGTH + 3))
         payload = self._set_up_payload(self.comment._id, content=content)
         res = self.app.put_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)

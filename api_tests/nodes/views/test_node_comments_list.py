@@ -647,7 +647,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
             'data': {
                 'type': 'comments',
                 'attributes': {
-                    'content': (''.join(['c' for c in range(osf_settings.COMMENT_MAXLENGTH + 3)]))
+                    'content': ('c' * (osf_settings.COMMENT_MAXLENGTH + 3))
                 },
                 'relationships': {
                     'target': {
