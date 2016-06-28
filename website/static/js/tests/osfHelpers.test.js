@@ -178,14 +178,6 @@ describe('osfHelpers', () => {
         });
     });
 
-    describe('valueProgressBar', () => {
-        it('Returns a css class for a progress bar with a width specified on a scale of 1 to 5', () => {
-            for (var i = 0; i < 6; i++) {
-                assert.equal($osf.valueProgressBar[i].style, 'width: ' + i*20 + '%');
-            }
-        });
-    });
-
     describe('isEmail', () => {
         it('returns true for valid emails', () => {
             var emails = [
