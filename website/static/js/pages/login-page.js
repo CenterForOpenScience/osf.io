@@ -24,7 +24,7 @@ $(document).ready(function() {
     if (campaign === 'institution'){
         new InstitutionSignIn('#inst');
     } else {
-        new SetPassword('#signUpScope', registerUrl, campaign);
+        new SetPassword('#signUpScope', 'signup', registerUrl, campaign);
     }
 });
 
