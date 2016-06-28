@@ -1284,7 +1284,7 @@ function _fangornTitleColumn(item, col) {
 function _fangornModifiedColumn(item, col) {
     var tb = this;
     // Kludge for DropBox date format
-    // TODO: remove kludge when we either move to DropBox v2 API or implememnt
+    // TODO [OSF-6461]: remove kludge when we either move to DropBox v2 API or implememnt
     // normalized dates in WaterButler
     var myFormats = ['ddd, DD MMM YYYY HH:mm:ss ZZ', 'YYYY-MM-DD hh:mm A'];
     if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
