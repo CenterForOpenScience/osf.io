@@ -632,6 +632,28 @@ class TestNodeCreate(ApiTestCase):
         assert_equal(res.json['data']['attributes']['description'], strip_html(description))
         assert_equal(res.json['data']['attributes']['category'], self.category)
 
+    def test_create_component_inherit_contributors(self):
+        parent_project = ProjectFactory(creator=self.user_one)
+        parent_project.add_contributor(self.user_two, permissions=[permissions.READ], save=True)
+        url = '/{}nodes/{}/children/{}'.format(API_BASE, parent_project._id, '?inherit_contributors=true')
+        component_data = {
+            'data': {
+                'type': 'nodes',
+                'attributes': {
+                    'title': self.title,
+                    'category': self.category,
+                }
+            }
+        }
+        res = self.app.post_json_api(url, component_data, auth=self.user_one.auth)
+        assert_equal(res.status_code, 201)
+        json_data = res.json['data']
+
+        new_component_id = json_data['id']
+        new_component = Node.load(new_component_id)
+        assert_equal(len(new_component.contributors), 2)
+        assert_equal(len(new_component.contributors), len(parent_project.contributors))
+
     def test_creates_project_no_type(self):
         project = {
             'data': {
@@ -1779,7 +1801,7 @@ class TestNodeListPagination(ApiTestCase):
         # Ordered by date modified: oldest first
         self.users = [UserFactory() for _ in range(11)]
         self.projects = [ProjectFactory(is_public=True, creator=self.users[0]) for _ in range(11)]
-        
+
         self.url = '/{}nodes/'.format(API_BASE)
 
     def tearDown(self):

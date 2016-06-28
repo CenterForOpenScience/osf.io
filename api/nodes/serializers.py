@@ -16,7 +16,7 @@ from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 from website.project.model import NodeUpdateError
 
-from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse
+from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse, is_truthy
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField,
                                   HideIfRegistration, RestrictedDictSerializer,
@@ -248,9 +248,9 @@ class NodeSerializer(JSONAPISerializer):
         }
 
     def create(self, validated_data):
+        request = self.context['request']
+        user = request.user
         if 'template_from' in validated_data:
-            request = self.context['request']
-            user = request.user
             template_from = validated_data.pop('template_from')
             template_node = Node.load(key=template_from)
             if template_node is None:
@@ -267,6 +267,18 @@ class NodeSerializer(JSONAPISerializer):
             node.save()
         except ValidationValueError as e:
             raise InvalidModelValueError(detail=e.message)
+        if is_truthy(request.GET.get('inherit_contributors')) and validated_data['parent'].has_permission(user, 'write'):
+            auth = get_user_auth(request)
+            parent = validated_data['parent']
+            contributors = []
+            for contributor in parent.contributors:
+                if contributor is not user:
+                    contributors.append({
+                        'user': contributor,
+                        'permissions': parent.get_permissions(contributor),
+                        'visible': parent.get_visible(contributor)
+                    })
+            node.add_contributors(contributors, auth=auth, log=True, save=True)
         return node
 
     def update(self, node, validated_data):
