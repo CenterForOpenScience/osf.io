@@ -9,6 +9,7 @@ require('js/osfToggleHeight');
 var m = require('mithril');
 var Fangorn = require('js/fangorn');
 var Raven = require('raven-js');
+var lodashGet  = require('lodash.get');
 require('truncate');
 
 var $osf = require('js/osfHelpers');
@@ -101,7 +102,7 @@ var loadCategories = function() {
     var errorMsg;
     m.request({method : 'OPTIONS', url : $osf.apiV2Url('nodes/', { query : {}}), config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})})
         .then(function _success(results){
-            if(results.actions && results.actions.POST.category){
+            if(results.actions && lodashGet(results, 'actions.POST.category.choices', []).length) {
                 var categoryList = results.actions.POST.category.choices;
                 categoryList.sort(function(a, b){ // Quick alphabetical sorting
                     if(a.display_name < b.display_name) return -1;
@@ -109,14 +110,15 @@ var loadCategories = function() {
                     return 0;
                 });
                 deferred.resolve(categoryList);
+            } else {
+                errorMsg = 'API returned a success response, but no categories were returned';
+                Raven.captureMessage(errorMsg, {extra: {response: results}});
+                deferred.reject(errorMsg);
             }
-            errorMsg = 'API returned a success response, but no categories were returned';
-            Raven.captureMessage(errorMsg, {extra: {response: results}});
-            deferred.reject(message);
         }, function _error(results){
             errorMsg = 'Error loading project category names.';
             Raven.captureMessage(errorMsg, {extra: {response: results}});
-            deferred.reject(message);
+            deferred.reject(errorMsg);
         });
     return deferred.promise;
 };
@@ -251,8 +253,9 @@ $(document).ready(function () {
             parentID: window.contextVars.node.id,
             parentTitle: window.contextVars.node.title,
             categoryList: categoryList,
-            stayCallback: function () {
-                var ap = this; // AddProject controller
+            stayCallback: function() {
+                // We need to reload because the components list needs to be re-rendered serverside
+                window.location.reload();
             },
             trackingCategory: 'project-dashboard',
             trackingAction: 'add-component',
