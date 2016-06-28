@@ -316,7 +316,10 @@ def make_url_map(app):
         ),
 
         Rule(
-            '/prereg/',
+            [
+                '/prereg/',
+                '/erpc/'
+            ],
             'get',
             prereg.prereg_landing_page,
             OsfWebRenderer('prereg_landing_page.mako', trust=False)
@@ -337,7 +340,7 @@ def make_url_map(app):
         ),
 
         Rule(
-            '/api/v1/prereg/draft_registrations/',
+            '/api/v1/<campaign>/draft_registrations/',
             'get',
             prereg.prereg_draft_registrations,
             json_renderer,
