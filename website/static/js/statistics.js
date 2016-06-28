@@ -21,7 +21,7 @@ var KeenViz = function(){
                 event_collection: 'pageviews',
                 timeframe: 'this_7_days',
                 interval: 'daily',
-                target_property: 'visitor.session'
+                target_property: 'anon.id'
             }
         };
 
@@ -48,7 +48,7 @@ var KeenViz = function(){
             'queryParams': {
                 event_collection: 'pageviews',
                 timeframe: 'this_7_days',
-                target_property: 'keen.id',
+                target_property: 'anon.id',
                 group_by: 'referrer.info.domain'
             }
         };
@@ -85,7 +85,7 @@ var KeenViz = function(){
             'params': {
                 event_collection: 'pageviews',
                 timeframe: 'this_7_days',
-                target_property: 'keen.id',
+                target_property: 'anon.id',
                 group_by: 'time.local.hour_of_day',
             }
         };
@@ -110,7 +110,7 @@ var KeenViz = function(){
             params: {
                 event_collection: 'pageviews',
                 timeframe: 'this_7_days',
-                target_property: 'visitor.session',
+                target_property: 'anon.id',
                 group_by: 'page.title'
             }
         };

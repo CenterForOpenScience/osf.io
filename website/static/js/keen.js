@@ -3,6 +3,7 @@
 
 var $ = require('jquery');
 var Cookie = require('js-cookie');
+var md5 = require('js-md5');
 var Raven = require('raven-js');
 var lodashGet = require('lodash.get');
 var keenTracking = require('keen-tracking');
@@ -35,7 +36,6 @@ var KeenTracker = (function() {
 
     function _defaultKeenPayload() {
         _createOrUpdateKeenSession();
-        var returning = Boolean(Cookie.get('keenUserId'));
 
         var user = window.contextVars.currentUser;
         var node = window.contextVars.node;
@@ -53,12 +53,6 @@ var KeenTracker = (function() {
                 local: keenTracking.helpers.getDatetimeIndex(),
                 utc: keenTracking.helpers.getDatetimeIndex(_nowUTC()),
             },
-            visitor: {
-                id: _getOrCreateKeenId(),
-                // time_on_page: sessionTimer.value(),
-                session: Cookie.get('keenSessionId'),
-                returning: returning,
-            },
             node: {
                 id: lodashGet(node, 'id'),
                 title: lodashGet(node, 'title'),
@@ -68,7 +62,7 @@ var KeenTracker = (function() {
             user: {},
             geo: {},
             anon: {
-                id: user.anon.id,
+                id: md5(Cookie.get('keenSessionId')),
                 continent: user.anon.continent,
                 country: user.anon.country,
                 latitude: user.anon.latitude,
@@ -175,6 +169,11 @@ var KeenTracker = (function() {
             var _defaultPrivateKeenPayload = function() {
                 var payload = _defaultKeenPayload();
                 var user = window.contextVars.currentUser;
+                payload.visitor = {
+                    id: _getOrCreateKeenId(),
+                    session: Cookie.get('keenSessionId'),
+                    returning: Boolean(Cookie.get('keenUserId')),
+                };
                 payload.tech = {
                     browser: keenTracking.helpers.getBrowserProfile(),
                     ua: '${keen.user_agent}',
