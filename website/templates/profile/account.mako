@@ -124,12 +124,19 @@
                                             blur: trim.bind($data, password)
                                         }"
                                 >
-                                <div class="progress create-password">
-                                    <div class="progress-bar" role="progressbar" data-bind="attr: passwordComplexityBar"></div>
-                                </div>
-                                <p class="help-block" data-bind="validationMessage: password" style="display: none;"></p>
-                                <p class="help-block" data-bind="text: passwordFeedback"></p>
-
+                              <div class="progress create-password">
+                                  <div class="progress-bar progress-bar-sm" role="progressbar" data-bind="attr: passwordComplexityInfo().attr"></div>
+                              </div>
+                              <div>
+                                  <!-- ko if: passwordFeedback() -->
+                                  <p class="text-right" id="front-password-info" data-bind="text: passwordComplexityInfo().text, attr: passwordComplexityInfo().text_attr"></p>
+                                  <p class="help-block osf-box-lt" data-bind="validationMessage: password" style="display: none;"></p>
+                                  <p class="help-block osf-box-lt" data-bind="text: passwordFeedback().warning"></p>
+                                  <!-- /ko -->
+                                  <!-- ko if: !passwordFeedback() -->
+                                  <div style="padding-top:10px"></div>
+                                  <!-- /ko -->
+                              </div>
                             </div>
                             <div class="form-group">
                                 <label for="confirm_password">Confirm new password</label>
