@@ -127,7 +127,7 @@ class FileSerializer(JSONAPISerializer):
     name = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
     kind = ser.CharField(read_only=True, help_text='Either folder or file')
     path = ser.CharField(read_only=True, help_text='The unique path used to reference this object')
-    size = ser.SerializerMethodIntegerField(read_only=True, help_text='The size of this file at this version')
+    size = SerializerMethodIntegerField(read_only=True, help_text='The size of this file at this version')
     provider = ser.CharField(read_only=True, help_text='The Add-on service this file originates from')
     materialized_path = ser.CharField(
         read_only=True, help_text='The Unix-style path of this object relative to the provider root')
