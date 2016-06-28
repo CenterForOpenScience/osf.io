@@ -103,47 +103,47 @@ var ViewModel = function(passwordViewType, submitUrl, campaign, redirectUrl) {
 
     // only include the following fields if the user is
     // signing up for the first time
-    // if (passwordViewType === 'signup') {
-    self.fullName = ko.observable('').extend({
-        required: true,
-        minLength: 3
-    });
-    self.email1 = ko.observable('').extend({
-        required: true,
-        email: true
-    });
-    self.email2 = ko.observable('').extend({
-        required: true,
-        email: true,
-        validation: {
-            validator: function(val, other) {
-                return String(val).toLowerCase() === String(other).toLowerCase();
-            },
-            'message': 'Email addresses must match.',
-            params: self.email1
-        }
-    });
+    if (passwordViewType === 'signup') {
+        self.fullName = ko.observable('').extend({
+            required: true,
+            minLength: 3
+        });
+        self.email1 = ko.observable('').extend({
+            required: true,
+            email: true
+        });
+        self.email2 = ko.observable('').extend({
+            required: true,
+            email: true,
+            validation: {
+                validator: function(val, other) {
+                    return String(val).toLowerCase() === String(other).toLowerCase();
+                },
+                'message': 'Email addresses must match.',
+                params: self.email1
+            }
+        });
 
-    self.password.extend({
-        validation: {
-            validator: function(val, other) {
-                if (String(val).toLowerCase() === String(other).toLowerCase()) {
-                    self.typedPassword(' ');
-                    return false;
-                } else {
-                    return true;
-                }
-            },
-            'message': 'Your password cannot be the same as your email address.',
-            params: self.email1
-        }
-    });
+        self.password.extend({
+            validation: {
+                validator: function(val, other) {
+                    if (String(val).toLowerCase() === String(other).toLowerCase()) {
+                        self.typedPassword(' ');
+                        return false;
+                    } else {
+                        return true;
+                    }
+                },
+                'message': 'Your password cannot be the same as your email address.',
+                params: self.email1
+            }
+        });
 
-    validatedFields.fullName = self.fullName;
-    validatedFields.email1 = self.email1;
-    validatedFields.email2 = self.email2;
+        validatedFields.fullName = self.fullName;
+        validatedFields.email1 = self.email1;
+        validatedFields.email2 = self.email2;
 
-    // }
+    }
 
     // pick up the email from contextVars if we can't get it from first typing it in
     if (window.contextVars.username) {
@@ -274,6 +274,16 @@ var ViewModel = function(passwordViewType, submitUrl, campaign, redirectUrl) {
 var SetPassword = function(selector, passwordViewType, submitUrl, campaign, redirectUrl) {
     this.viewModel = new ViewModel(passwordViewType, submitUrl, campaign, redirectUrl);
     $osf.applyBindings(this.viewModel, selector);
+            $(selector).keypress(
+                event => {
+                    // If the enter key is pressed to submit a form, check if the password is valid
+                    if (event.which == '13') {
+                        if (!this.viewModel.password.isValid()) {
+                            return false;
+                        }
+                    }
+                }
+        );
 };
 
 module.exports = SetPassword;
