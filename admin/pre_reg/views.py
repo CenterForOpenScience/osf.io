@@ -231,7 +231,7 @@ def get_metadata_files(draft):
                 raise Http404('File does not exist in OSFStorage: {} {}'.format(
                     q, file_info
                 ))
-            file_guid = file_info['data'].get('file_guid')
+            file_guid = file_info['data'].get('fileId')
             if file_guid is None:
                 raise Http404('File in {} does not have a guid.'.format(q))
             item = OsfStorageFileNode.load(file_guid)

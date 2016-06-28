@@ -14,7 +14,6 @@ from tests.factories import (
 from website.files.models import OsfStorageFileNode
 from website.project.model import ensure_schemas
 from website.prereg.utils import get_prereg_schema
-from framework.auth.core import Auth
 
 from admin_tests.utilities import setup_view, setup_form_view, setup_user_view
 from admin_tests.factories import UserFactory
@@ -25,6 +24,7 @@ from admin.pre_reg.views import (
     DraftDetailView,
     DraftFormView,
     CommentUpdateView,
+    get_metadata_files,
 )
 from admin.pre_reg.forms import DraftRegistrationForm
 from admin.common_auth.logs import OSFLogEntry
@@ -220,6 +220,7 @@ class TestPreregFiles(AdminTestCase):
         }
         data = {}
         for q, f in self.d_of_qs.iteritems():
+            f.get_guid(create=True)
             f.save()
             data[q] = {
                 'value': {
@@ -227,7 +228,8 @@ class TestPreregFiles(AdminTestCase):
                         'extra': [{
                             'data': {
                                 'provider': 'osfstorage',
-                                'path': f.path
+                                'path': f.path,
+                                'fileId': f._id
                             }
                         }]
                         }
@@ -243,41 +245,27 @@ class TestPreregFiles(AdminTestCase):
 
     def test_checkout_files(self):
         self.draft.submit_for_review(self.user, {}, save=True)
-        self.request = RequestFactory().get('/fake_path')
-        self.view = DraftDetailView()
-        self.view = setup_user_view(self.view, self.request, self.prereg_user,
-                                    draft_pk=self.draft._id)
-        self.view.checkout_files(self.draft)
+        request = RequestFactory().get('/fake_path')
+        view = DraftDetailView()
+        view = setup_user_view(view, request, self.admin_user,
+                               draft_pk=self.draft._id)
+        view.checkout_files(self.draft)
         for q, f in self.d_of_qs.iteritems():
             nt.assert_equal(self.prereg_user, f.checkout)
 
     def test_checkin_files(self):
-        self.draft.checkout_files(save=True)
-        self.draft.checkin_files(save=True)
+        self.draft.submit_for_review(self.user, {}, save=True)
+        request = RequestFactory().get('/fake_path')
+        view = DraftDetailView()
+        view = setup_user_view(view, request, self.admin_user,
+                               draft_pk=self.draft._id)
+        view.checkout_files(self.draft)
+        view2 = DraftFormView()
+        view2 = setup_view(view2, request, draft_pk=self.draft._id)
+        view2.checkin_files(self.draft)
         for q, f in self.d_of_qs.iteritems():
             nt.assert_equal(None, f.checkout)
 
-    def test_submit_for_review_checkout(self):
-        self.draft.submit_for_review(self.user, None, save=True)
-        for q, f in self.d_of_qs.iteritems():
-            nt.assert_equal(self.prereg_user, f.checkout)
-
-    @mock.patch('website.project.model.DraftRegistrationApproval.approve')
-    def test_approve_checkin(self, mock_approve):
-        self.draft.submit_for_review(self.user, None, save=True)
-        self.draft.approve(self.prereg_user)
-        for q, f in self.d_of_qs.iteritems():
-            nt.assert_equal(None, f.checkout)
-
-    def test_reject_checkin(self):
-        self.draft.submit_for_review(self.user, None, save=True)
-        self.draft.reject(self.prereg_user)
-        for q, f in self.d_of_qs.iteritems():
-            nt.assert_equal(None, f.checkout)
-
-    @mock.patch('website.project.model.Node.register_node')
-    def test_register_checkin(self, mock_register_node):
-        self.draft.submit_for_review(self.user, None, save=True)
-        self.draft.register(Auth(self.user))
-        for q, f in self.d_of_qs.iteritems():
-            nt.assert_equal(None, f.checkout)
+    def test_get_meta_data_files(self):
+        for item in get_metadata_files(self.draft):
+            nt.assert_is_instance(item, OsfStorageFileNode)
