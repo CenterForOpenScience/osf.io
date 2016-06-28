@@ -1308,11 +1308,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
             from website.files.models.osfstorage import OsfStorageFile
 
-            for child in OsfStorageFile.find(Q('node', 'eq', node ) & Q('title', 'ne', "Public Files")):
+            for child in OsfStorageFile.find(Q('node', 'eq', node) & Q('title', 'ne', "Public Files")):
                 child.move_under(self.get_addon('osfstorage').get_root())
         except DuplicateKeyError:
             node.is_public_files_collection = False
-            node.replace_contributor(node.creator,self.creator)
+            node.replace_contributor(node.creator, self.creator)
             node.is_public = False
             node.title = node.creator.fullname + "'s old Public Files"
             node.description = """
