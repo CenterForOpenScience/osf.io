@@ -1304,13 +1304,6 @@ def make_url_map(app):
             '/project/drafts/schemas/',
         ], 'get', project_views.drafts.get_metaschemas, json_renderer),
 
-        Rule('/log/<log_id>/', 'get', project_views.log.get_log, json_renderer),
-
-        Rule([
-            '/project/<pid>/log/',
-            '/project/<pid>/node/<nid>/log/',
-        ], 'get', project_views.log.get_logs, json_renderer),
-
         Rule([
             '/project/<pid>/get_contributors/',
             '/project/<pid>/node/<nid>/get_contributors/',
@@ -1520,10 +1513,6 @@ def make_url_map(app):
             '/project/<pid>/togglewatch/',
             '/project/<pid>/node/<nid>/togglewatch/'
         ], 'post', project_views.node.togglewatch_post, json_renderer),
-
-        Rule([
-            '/watched/logs/'
-        ], 'get', website_views.watched_logs_get, json_renderer),
 
         # Combined files
         Rule(

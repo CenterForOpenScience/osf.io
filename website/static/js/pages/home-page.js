@@ -13,6 +13,7 @@ var QuickSearchProject = require('js/home-page/quickProjectSearchPlugin');
 var NewAndNoteworthy = require('js/home-page/newAndNoteworthyPlugin');
 var MeetingsAndConferences = require('js/home-page/meetingsAndConferencesPlugin');
 var InstitutionsPanel = require('js/home-page/institutionsPanelPlugin');
+var ensureUserTimezone = require('js/ensureUserTimezone');
 
 var columnSizeClass = '.col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2';
 
@@ -73,9 +74,14 @@ $(document).ready(function(){
             ];
         }
     };
-    // If logged in...
     m.mount(document.getElementById('osfHome'), m.component(osfHome, {}));
     $('#osfNavDashboard').addClass('active');
     PublicFilesDropzone.controller();
 
+    // If logged in...
+    var user = window.contextVars.currentUser;
+    if (user) {
+        // Update user's timezone and locale
+        ensureUserTimezone(user.timezone, user.locale, user.id);
+    }
 });

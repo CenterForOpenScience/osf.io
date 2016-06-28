@@ -18,8 +18,10 @@ from website.addons.forward.utils import serialize_settings
 
 @must_be_valid_project
 @must_have_addon('forward', 'node')
-def forward_config_get(node_addon, **kwargs):
-    return serialize_settings(node_addon)
+def forward_config_get(node, node_addon, **kwargs):
+    res = serialize_settings(node_addon)
+    res.update({'is_registration': node.is_registration})
+    return res
 
 
 @must_have_permission('write')

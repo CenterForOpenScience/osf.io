@@ -1,18 +1,12 @@
-/**
- * Initialization code for the dashboard pages.
- */
-
 'use strict';
-
-var Raven = require('raven-js');
-var $ = require('jquery');
 var jstz = require('jstimezonedetect');
+var Raven = require('raven-js');
 
 var $osf = require('js/osfHelpers');
-var MyProjects = require('js/myProjects.js').MyProjects;
-var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
-require('loaders.css/loaders.min.css');
 
+/**
+ * Detect the browser's timezone and locale and update the user with ID `id`.
+ */
 var ensureUserTimezone = function(savedTimezone, savedLocale, id) {
     var clientTimezone = jstz.determine().name();
     var clientLocale = window.navigator.userLanguage || window.navigator.language;
@@ -40,17 +34,4 @@ var ensureUserTimezone = function(savedTimezone, savedLocale, id) {
     }
 };
 
-$(document).ready(function() {
-    m.mount(document.getElementById('dashboard'), m.component(MyProjects, {wrapperSelector : '#dashboard'}));
-
-    // Appears in 10 second if the spinner is still there.
-    setTimeout(function(){
-        if($('#dashboard>.ball-scale').length > 0) {
-            $('#dashboard').append('<div class="text-danger text-center text-bigger">This is taking longer than normal. <br>  Try reloading the page. If the problem persist contact us at support@cos.io.</div>');
-        }
-    }, 10000);
-
-    // Add active class to navigation for my projects page
-    $('#osfNavMyProjects').addClass('active');
-});
-
+module.exports = ensureUserTimezone;
