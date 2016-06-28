@@ -9,6 +9,11 @@ var apiV2Config = function (options) {
     };
 };
 
+var unwrap = function (value) {
+    return typeof(value) === 'function' ? value() : value;
+};
+
 module.exports = {
-    apiV2Config: apiV2Config
+    apiV2Config: apiV2Config,
+    unwrap: unwrap
 };
