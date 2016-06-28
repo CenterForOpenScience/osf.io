@@ -49,11 +49,6 @@ var KeenTracker = (function() {
                 url: document.referrer,
                 info: {},
             },
-            tech: {
-                browser: keenTracking.helpers.getBrowserProfile(),
-                ua: '${keen.user_agent}',
-                info: {},
-            },
             time: {
                 local: keenTracking.helpers.getDatetimeIndex(),
                 utc: keenTracking.helpers.getDatetimeIndex(_nowUTC()),
@@ -81,13 +76,6 @@ var KeenTracker = (function() {
             },
             keen: {
                 addons: [
-                    {
-                        name: 'keen:ua_parser',
-                        input: {
-                            ua_string: 'tech.ua'
-                        },
-                        output: 'tech.info',
-                    },
                     {
                         name: 'keen:url_parser',
                         input: {
@@ -187,7 +175,12 @@ var KeenTracker = (function() {
             var _defaultPrivateKeenPayload = function() {
                 var payload = _defaultKeenPayload();
                 var user = window.contextVars.currentUser;
-                payload.tech.ip = '${keen.ip}';
+                payload.tech = {
+                    browser: keenTracking.helpers.getBrowserProfile(),
+                    ua: '${keen.user_agent}',
+                    ip: '${keen.ip}',
+                    info: {},
+                };
                 payload.user = {
                     id: user.id,
                     entry_point: user.entryPoint,
@@ -201,6 +194,13 @@ var KeenTracker = (function() {
                         ip: 'tech.ip',
                     },
                     output: 'geo',
+                });
+                payload.keen.addons.push({
+                    name: 'keen:ua_parser',
+                    input: {
+                        ua_string: 'tech.ua'
+                    },
+                    output: 'tech.info',
                 });
 
                 return payload;
