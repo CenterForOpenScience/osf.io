@@ -856,6 +856,76 @@ function onScrollToBottom(element, callback) {
         }
     });
 }
+/**
+ *  The following jquery functions are to fix the bootstrap affix issue
+ *  where having a top offset and a bottom offset can cause conflicts when the page is refreshed.
+ *  In this cause it caused the user settings side navigation bar to stick to the bottom of the page
+ *  when refreshed. The first function checks if the page has been shrunk to the mobile settings or not.
+ *  The second function affixes the element to the top of the screen window and the top of the page footer.
+ *  @param {String} panelID:
+ *  @param {Integer} panel_offset:
+ */
+var stickIt = function stickIt(panelID, panel_offset){
+    this.elementID = panelID;
+    this.offsetElement = panel_offset;
+
+    var lastWidth;
+    $(window).load(function(){
+        if($(window).width() > 769){
+            lastWidth = $(window).width();
+            sticky_element(panelID, panel_offset);
+        }
+    });
+
+    $(window).resize(function(){
+        if($(window).width()!=lastWidth){
+            if(lastWidth > 769 && $(window).width() <= 769){
+                $(window).scroll(function () {
+                    $(elementID).css('top', '');
+                });
+            }
+            lastWidth = $(window).width();
+        }
+
+    });
+
+    $(window).resize(function(){
+        if($(window).width()!=lastWidth){
+            if(lastWidth <= 769 && $(window).width() > 769){
+                lastWidth = $(window).width();
+                sticky_element(panelID, panel_offset);
+            }
+        }
+
+    });
+
+
+    function sticky_element(panelID, panel_offset){
+        var stickyE   = panelID,
+            bottomE   = "#pagefooter";
+        if($( stickyE ).length){
+            $( stickyE ).each(function(){
+                var fromTop = $( this ).offset().top - panel_offset, // number of pixels to the top of element
+                // offset from the top of the screen
+                fromBottom = $( document ).height()-($( this ).offset().top + $( this ).outerHeight()),
+                //number of pixels from the top of the bottom element, adding height to take into account padding/borders
+                stopOn = $( document ).height()-( $( bottomE ).offset().top)+($( this ).outerHeight() - $( this ).height());
+                if( (fromBottom-stopOn) > 200){
+                    $( this ).css('width', $( this ).width()).css('top', panel_offset).css('position', '');
+                    $( this ).affix({
+                        offset: {
+                            top: fromTop,
+                            bottom: stopOn
+                        }
+                        // position is fixed and at the top, not position relative
+                    }).on('affix.bs.affix', function(){ $( this ).css('top', panel_offset).css('position', ''); });
+                }
+                $( window ).trigger('scroll');
+            });
+        }
+    };
+
+};
 
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
@@ -896,5 +966,6 @@ module.exports = window.$.osf = {
     contribNameFormat: contribNameFormat,
     trackClick: trackClick,
     findContribName: findContribName,
-    onScrollToBottom: onScrollToBottom
+    onScrollToBottom: onScrollToBottom,
+    stickIt:stickIt
 };

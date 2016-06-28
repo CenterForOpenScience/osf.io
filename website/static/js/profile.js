@@ -11,6 +11,8 @@ var $osf = require('./osfHelpers');
 var koHelpers = require('./koHelpers');
 require('js/objectCreateShim');
 
+
+
 var socialRules = {
     orcid: /orcid\.org\/([-\d]+)/i,
     researcherId: /researcherid\.com\/rid\/([-\w]+)/i,
@@ -1048,6 +1050,9 @@ var Schools = function(selector, urls, modes) {
     this.viewModel = new SchoolsViewModel(urls, modes);
     $osf.applyBindings(this.viewModel, selector);
 };
+
+//making user settings panel sticky
+$osf.stickIt('#usersettingspanel', 60);
 
 /*global module */
 module.exports = {
