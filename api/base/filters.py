@@ -20,6 +20,7 @@ from api.base.exceptions import (
 )
 from api.base import utils
 from api.base.serializers import RelationshipField, TargetField
+from api.files.serializers import SerializerMethodIntegerField
 
 def lowercase(lower):
     if hasattr(lower, '__call__'):
@@ -373,11 +374,16 @@ class ListFilterMixin(FilterMixin):
         field = self.serializer_class._declared_fields[field_name]
         field_name = self.convert_key(field_name, field)
 
-        if isinstance(field, ser.SerializerMethodField):
+        if isinstance(field, ser.SerializerMethodField) and not isinstance(field. SerializerMethodIntegerField):
             return_val = [
                 item for item in default_queryset
                 if self.FILTERS[params['op']](self.get_serializer_method(field_name)(item), params['value'])
             ]
+        elif isinstance(field, SerializerMethodIntegerField):
+            return_val = [
+                item for item in default_queryset
+                if self.FILTERS[params['op']](self.get_serializer_method(field_name)(item), int(params['value']))
+                ]
         elif isinstance(field, ser.CharField):
             return_val = [
                 item for item in default_queryset
