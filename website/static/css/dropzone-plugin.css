@@ -34,6 +34,7 @@
     width: 80%;
     background: #d7d7d7;
     display: none;
+    left:25px;
 }
 
 .dz-preview .dz-progress .dz-upload {
@@ -129,7 +130,8 @@
     margin-top: 10px;
     text-align: left;
     color: #333333;
-    font-size: 30px;
+    font-size: 28px;
+    margin-bottom: 10px;
 }
 
 .dz-font {

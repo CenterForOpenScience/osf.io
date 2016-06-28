@@ -112,7 +112,7 @@ var PublicFilesDropzone = {
 
         $publicFiles.on('click', 'span.dz-share', function (e) {
             if (!$('.alert-info').length) {
-                $osf.softGrowl('fa fa-files-o',' Copied to clipboard','info');
+                $osf.softGrowl('fa fa-files-o', ' Link copied to clipboard', 'info');
             }
         });
 
@@ -125,7 +125,6 @@ var PublicFilesDropzone = {
         $('#ShareButton').click(function () {
                 $publicFiles.stop().slideToggle();
                 $('#glyphchevron').toggleClass('fa fa-chevron-down fa fa-chevron-up');
-
             }
         );
 
@@ -211,8 +210,8 @@ var PublicFilesDropzone = {
                 m('.panel-heading', closeButton(),
                     publicFilesHelpButton(), publicFilesHeader()
                 ),
-                m('.panel-body.dz-body-height', m('div.h2.text-center.m-t-lg.dz-bold', 'Drop files to upload'),
-                    m('span#dz-dragmessage.fa.fa-plus-square-o.fa-5x.dz-dragmessage','')
+                m('.panel-body.dz-body-height', m('div.h2.text-center.m-t-lg.dz-bold #splashDropText', 'Drop files to upload'),
+                    m('span#dz-dragmessage.fa.fa-plus-square-o.fa-5x.dz-dragmessage', '')
                 ),
                 m('.panel-footer.dz-cursor-default.clearfix',
                     m('.pull-left',
