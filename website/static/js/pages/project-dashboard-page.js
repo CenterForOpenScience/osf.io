@@ -12,7 +12,7 @@ var Raven = require('raven-js');
 require('truncate');
 
 var $osf = require('js/osfHelpers');
-var LogFeed = require('js/logFeed');
+var LogFeed = require('js/components/logFeed');
 var pointers = require('js/pointers');
 var Comment = require('js/comment'); //jshint ignore:line
 var NodeControl = require('js/nodeControl');
@@ -22,6 +22,7 @@ var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
 
 var ctx = window.contextVars;
+var node = window.contextVars.node;
 var nodeApiUrl = ctx.node.urls.api;
 var nodeCategories = ctx.nodeCategories || {};
 
@@ -30,7 +31,6 @@ $('body').on('nodeLoad', function(event, data) {
     if (!data.node.is_retracted) {
         // Initialize controller for "Add Links" modal
         new pointers.PointerManager('#addPointer', window.contextVars.node.title);
-        new LogFeed('#logScope', nodeApiUrl + 'log/');
     }
     // Initialize CitationWidget if user isn't viewing through an anonymized VOL
     if (!data.node.anonymous && !data.node.is_retracted) {
@@ -99,7 +99,11 @@ $(document).ready(function () {
         m.mount(document.getElementById('instLogo'), m.component(institutionLogos, {institutions: window.contextVars.node.institutions}));
     }
     $('#contributorsList').osfToggleHeight();
+
     if (!ctx.node.isRetracted) {
+        // Recent Activity widget
+        m.mount(document.getElementById('logFeed'), m.component(LogFeed.LogFeed, {node: node}));
+
         // Treebeard Files view
         $.ajax({
             url:  nodeApiUrl + 'files/grid/'
@@ -117,7 +121,13 @@ $(document).ready(function () {
                     return [
                         {
                             title: 'Name',
-                            width : '100%',
+                            width : '70%',
+                            sort : true,
+                            sortType : 'text'
+                        },
+                        {
+                            title: 'Modified',
+                            width : '30%',
                             sort : true,
                             sortType : 'text'
                         }
@@ -137,7 +147,12 @@ $(document).ready(function () {
                                 data: 'name',
                                 folderIcons: true,
                                 filter: true,
-                                custom: Fangorn.DefaultColumns._fangornTitleColumn
+                                custom: Fangorn.DefaultColumns._fangornTitleColumn},
+                                {
+                                data: 'modified',
+                                folderIcons: false,
+                                filter: false,
+                                custom: Fangorn.DefaultColumns._fangornModifiedColumn
                             }];
                     if (item.parentID) {
                         item.data.permissions = item.data.permissions || item.parent().data.permissions;

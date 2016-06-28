@@ -2019,11 +2019,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             log_exception()
 
     @classmethod
-    def bulk_update_search(cls, nodes):
+    def bulk_update_search(cls, nodes, index=None):
         from website import search
         try:
-            serialize = functools.partial(search.search.update_node, bulk=True, async=False)
-            search.search.bulk_update_nodes(serialize, nodes)
+            serialize = functools.partial(search.search.update_node, index=index, bulk=True, async=False)
+            search.search.bulk_update_nodes(serialize, nodes, index=index)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
@@ -3323,6 +3323,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         page = self.get_wiki_page(key)
 
         del self.wiki_pages_current[key]
+        if key != 'home':
+            del self.wiki_pages_versions[key]
 
         self.add_log(
             action=NodeLog.WIKI_DELETED,

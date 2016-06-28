@@ -33,19 +33,32 @@ class TestFileView(ApiTestCase):
         super(TestFileView, self).setUp()
         self.user = AuthUserFactory()
         self.node = ProjectFactory(creator=self.user)
-        self.file = api_utils.create_test_file(self.node, self.user)
+        self.file = api_utils.create_test_file(self.node, self.user, create_guid=False)
+        self.file_url = '/{}files/{}/'.format(API_BASE, self.file._id)
 
     def test_must_have_auth(self):
-        res = self.app.get('/{}files/{}/'.format(API_BASE, self.file._id), expect_errors=True)
+        res = self.app.get(self.file_url, expect_errors=True)
         assert_equal(res.status_code, 401)
 
     def test_must_be_contributor(self):
         user = AuthUserFactory()
-        res = self.app.get('/{}files/{}/'.format(API_BASE, self.file._id), auth=user.auth, expect_errors=True)
+        res = self.app.get(self.file_url, auth=user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+    def test_unvisited_file_has_no_guid(self):
+        res = self.app.get(self.file_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['attributes']['guid'], None)
+
+    def test_visited_file_has_guid(self):
+        guid = self.file.get_guid(create=True)
+        res = self.app.get(self.file_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_is_not_none(guid)
+        assert_equal(res.json['data']['attributes']['guid'], guid._id)
+
     def test_get_file(self):
-        res = self.app.get('/{}files/{}/'.format(API_BASE, self.file._id), auth=self.user.auth)
+        res = self.app.get(self.file_url, auth=self.user.auth)
         self.file.versions[-1]._clear_caches()
         self.file.versions[-1].reload()
         assert_equal(res.status_code, 200)
@@ -65,17 +78,18 @@ class TestFileView(ApiTestCase):
         assert_equal(attributes['tags'], [])
 
     def test_file_has_comments_link(self):
-        res = self.app.get('/{}files/{}/'.format(API_BASE, self.file._id), auth=self.user.auth)
+        guid = self.file.get_guid(create=True)
+        res = self.app.get(self.file_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_in('comments', res.json['data']['relationships'].keys())
-        expected_url = '/{}nodes/{}/comments/?filter[target]={}'.format(API_BASE, self.node._id, self.file.get_guid()._id)
+        expected_url = '/{}nodes/{}/comments/?filter[target]={}'.format(API_BASE, self.node._id, guid._id)
         url = res.json['data']['relationships']['comments']['links']['related']['href']
         assert_in(expected_url, url)
 
     def test_file_has_correct_unread_comments_count(self):
         contributor = AuthUserFactory()
         self.node.add_contributor(contributor, auth=Auth(self.user), save=True)
-        comment = CommentFactory(node=self.node, target=self.file.get_guid(), user=contributor, page='files')
+        comment = CommentFactory(node=self.node, target=self.file.get_guid(create=True), user=contributor, page='files')
         res = self.app.get('/{}files/{}/?related_counts=True'.format(API_BASE, self.file._id), auth=self.user.auth)
         assert_equal(res.status_code, 200)
         unread_comments = res.json['data']['relationships']['comments']['links']['related']['meta']['unread']
@@ -84,7 +98,7 @@ class TestFileView(ApiTestCase):
     def test_checkout(self):
         assert_equal(self.file.checkout, None)
         res = self.app.put_json_api(
-            '/{}files/{}/'.format(API_BASE, self.file._id),
+            self.file_url,
             {'data': {'id': self.file._id, 'type': 'files', 'attributes': {'checkout': self.user._id}}},
             auth=self.user.auth
         )
@@ -95,7 +109,7 @@ class TestFileView(ApiTestCase):
         assert_equal(self.file.checkout, self.user)
 
         res = self.app.get(
-            '/{}files/{}/'.format(API_BASE, self.file._id),
+            self.file_url,
             auth=self.user.auth
         )
         assert_equal(len(self.node.logs),2)
@@ -111,7 +125,7 @@ class TestFileView(ApiTestCase):
         )
 
         res = self.app.put_json_api(
-            '/{}files/{}/'.format(API_BASE, self.file._id),
+            self.file_url,
             {'data': {'id': self.file._id, 'type': 'files', 'attributes': {'checkout': None}}},
             auth=self.user.auth
         )
@@ -121,7 +135,7 @@ class TestFileView(ApiTestCase):
 
     def test_checkout_file_no_type(self):
         res = self.app.put_json_api(
-            '/{}files/{}/'.format(API_BASE, self.file._id),
+            self.file_url,
             {'data': {'id': self.file._id, 'attributes': {'checkout': self.user._id}}},
             auth=self.user.auth, expect_errors=True
         )
@@ -129,7 +143,7 @@ class TestFileView(ApiTestCase):
 
     def test_checkout_file_no_id(self):
         res = self.app.put_json_api(
-            '/{}files/{}/'.format(API_BASE, self.file._id),
+            self.file_url,
             {'data': {'type': 'files', 'attributes': {'checkout': self.user._id}}},
             auth=self.user.auth, expect_errors=True
         )
@@ -137,7 +151,7 @@ class TestFileView(ApiTestCase):
 
     def test_checkout_file_incorrect_type(self):
         res = self.app.put_json_api(
-            '/{}files/{}/'.format(API_BASE, self.file._id),
+            self.file_url,
             {'data': {'id': self.file._id, 'type': 'Wrong type.', 'attributes': {'checkout': self.user._id}}},
             auth=self.user.auth, expect_errors=True
         )
@@ -145,7 +159,7 @@ class TestFileView(ApiTestCase):
 
     def test_checkout_file_incorrect_id(self):
         res = self.app.put_json_api(
-            '/{}files/{}/'.format(API_BASE, self.file._id),
+            self.file_url,
             {'data': {'id': '12345', 'type': 'files', 'attributes': {'checkout': self.user._id}}},
             auth=self.user.auth, expect_errors=True
         )
@@ -153,7 +167,7 @@ class TestFileView(ApiTestCase):
 
     def test_checkout_file_no_attributes(self):
         res = self.app.put_json_api(
-            '/{}files/{}/'.format(API_BASE, self.file._id),
+            self.file_url,
             {'data': {'id': self.file._id, 'type': 'files'}},
             auth=self.user.auth, expect_errors=True
         )
@@ -163,7 +177,7 @@ class TestFileView(ApiTestCase):
         user = UserFactory()
         assert_equal(self.file.checkout, None)
         res = self.app.put_json_api(
-            '/{}files/{}/'.format(API_BASE, self.file._id),
+            self.file_url,
             {'data': {'id': self.file._id, 'type': 'files', 'attributes': {'checkout': user._id}}},
             auth=self.user.auth,
             expect_errors=True,
@@ -177,7 +191,7 @@ class TestFileView(ApiTestCase):
         self.file.checkout = self.user
         self.file.save()
         res = self.app.put_json_api(
-            '/{}files/{}/'.format(API_BASE, self.file._id),
+            self.file_url,
             {'data': {'id': self.file._id, 'type': 'files', 'attributes': {'checkout': user._id}}},
             auth=user.auth,
             expect_errors=True,
@@ -192,7 +206,7 @@ class TestFileView(ApiTestCase):
         self.file.checkout = user
         self.file.save()
         res = self.app.put_json_api(
-            '/{}files/{}/'.format(API_BASE, self.file._id),
+            self.file_url,
             {'data': {'id': self.file._id, 'type': 'files', 'attributes': {'checkout': None}}},
             auth=self.user.auth,
             expect_errors=True,
@@ -206,7 +220,7 @@ class TestFileView(ApiTestCase):
 
     def test_admin_can_checkout(self):
         res = self.app.put_json_api(
-            '/{}files/{}/'.format(API_BASE, self.file._id),
+            self.file_url,
             {'data': {'id': self.file._id, 'type': 'files', 'attributes': {'checkout': self.user._id}}},
             auth=self.user.auth,
             expect_errors=True,
@@ -222,7 +236,7 @@ class TestFileView(ApiTestCase):
         count = len(self.node.logs)
         assert_false(self.file.is_checked_out)
         res = self.app.put_json_api(
-            '/{}files/{}/'.format(API_BASE, self.file._id),
+            self.file_url,
             {'data': {'id': self.file._id, 'type': 'files', 'attributes': {'checkout': None}}},
             auth=self.user.auth,
             expect_errors=True,
@@ -240,7 +254,7 @@ class TestFileView(ApiTestCase):
         self.file.save()
         count = len(self.node.logs)
         res = self.app.put_json_api(
-            '/{}files/{}/'.format(API_BASE, self.file._id),
+            self.file_url,
             {'data': {'id': self.file._id, 'type': 'files', 'attributes': {'checkout': self.user._id}}},
             auth=self.user.auth,
             expect_errors=True,
@@ -256,7 +270,7 @@ class TestFileView(ApiTestCase):
         assert_equal(self.file.checkout, None)
         assert user._id not in self.node.permissions.keys()
         res = self.app.put_json_api(
-            '/{}files/{}/'.format(API_BASE, self.file._id),
+            self.file_url,
             {'data': {'id': self.file._id, 'type': 'files', 'attributes': {'checkout': self.user._id}}},
             auth=user.auth,
             expect_errors=True,
@@ -273,7 +287,7 @@ class TestFileView(ApiTestCase):
         self.node.save()
         assert_false(self.node.can_edit(user=user))
         res = self.app.put_json_api(
-            '/{}files/{}/'.format(API_BASE, self.file._id),
+            self.file_url,
             {'data': {'id': self.file._id, 'type': 'files', 'attributes': {'checkout': None}}},
             auth=user.auth,
             expect_errors=True
@@ -291,7 +305,7 @@ class TestFileView(ApiTestCase):
         self.file.checkout = user
         self.file.save()
         res = self.app.put_json_api(
-            '/{}files/{}/'.format(API_BASE, self.file._id),
+            self.file_url,
             {'data': {'id': self.file._id, 'type': 'files', 'attributes': {'checkout': None}}},
             auth=user.auth,
         )
@@ -317,7 +331,7 @@ class TestFileView(ApiTestCase):
         self.file.provider = 'github'
         self.file.save()
         res = self.app.put_json_api(
-            '/{}files/{}/'.format(API_BASE, self.file._id),
+            self.file_url,
             {'data': {'id': self.file._id, 'type': 'files', 'attributes': {'checkout': self.user._id}}},
             auth=self.user.auth,
             expect_errors=True,

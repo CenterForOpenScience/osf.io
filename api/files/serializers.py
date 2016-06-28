@@ -115,6 +115,9 @@ class FileSerializer(JSONAPISerializer):
     ])
     id = IDField(source='_id', read_only=True)
     type = TypeField()
+    guid = ser.SerializerMethodField(read_only=True,
+                                     method_name='get_file_guid',
+                                     help_text='OSF GUID for this file (if one has been assigned)')
     checkout = CheckoutField()
     name = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
     kind = ser.CharField(read_only=True, help_text='Either folder or file')

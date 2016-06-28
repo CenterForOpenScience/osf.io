@@ -11,13 +11,12 @@ import pytz
 import itsdangerous
 
 from modularodm import fields, Q
-from modularodm.exceptions import NoResultsFound
-from modularodm.exceptions import ValidationError, ValidationValueError, QueryException
+from modularodm.exceptions import NoResultsFound, ValidationError, ValidationValueError, QueryException
 from modularodm.validators import URLValidator
 
 import framework
-from framework.addons import AddonModelMixin
 from framework import analytics
+from framework.addons import AddonModelMixin
 from framework.auth import signals, utils
 from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError, InvalidTokenError,
                                        MergeConfirmedRequiredError, MergeConflictError)
@@ -29,7 +28,6 @@ from framework.sentry import log_exception
 from framework.sessions import session
 from framework.sessions.model import Session
 from framework.sessions.utils import remove_sessions_for_user
-
 from website import mails, settings, filters, security
 
 name_formatters = {
@@ -43,12 +41,17 @@ name_formatters = {
 
 logger = logging.getLogger(__name__)
 
+
 # Hide implementation of token generation
 def generate_confirm_token():
     return security.random_string(30)
 
 
 def generate_claim_token():
+    return security.random_string(30)
+
+
+def generate_verification_key():
     return security.random_string(30)
 
 
@@ -79,7 +82,6 @@ def validate_year(item):
         else:
             if len(item) != 4:
                 raise ValidationValueError('Please enter a valid year.')
-
 
 validate_url = URLValidator()
 
@@ -1331,6 +1333,10 @@ class User(GuidStoredObject, AddonModelMixin):
         security_messages = user.security_messages.copy()
         security_messages.update(self.security_messages)
         self.security_messages = security_messages
+
+        notifications_configured = user.notifications_configured.copy()
+        notifications_configured.update(self.notifications_configured)
+        self.notifications_configured = notifications_configured
 
         for key, value in user.mailchimp_mailing_lists.iteritems():
             # subscribe to each list if either user was subscribed
