@@ -20,12 +20,16 @@ from api.base.exceptions import (
 )
 from api.base import utils
 from api.base.serializers import RelationshipField, TargetField
+from api.files.serializers import SerializerIntegerField
+<<<<<<< HEAD
 
 def lowercase(lower):
     if hasattr(lower, '__call__'):
         return lower()
     return lower
 
+=======
+>>>>>>> 78b361300be9fbb180ae2980610199331e7ef7f8
 
 def sort_multiple(fields):
     fields = list(fields)
@@ -373,11 +377,16 @@ class ListFilterMixin(FilterMixin):
         field = self.serializer_class._declared_fields[field_name]
         field_name = self.convert_key(field_name, field)
 
-        if isinstance(field, ser.SerializerMethodField):
+        if isinstance(field, ser.SerializerMethodField) and not isinstance(field, SerializerIntegerField):
             return_val = [
                 item for item in default_queryset
-                if self.FILTERS[params['op']](self.get_serializer_method(field_name)(item), params['value'])
+                if self.FILTERS[params['op']](self.get_serializer_method(field_name)(item), (params['value']))
             ]
+        elif isinstance(field, ser.SerializerMethodField) and isinstance(field, SerializerIntegerField):
+            return_val = [
+                item for item in default_queryset
+                if self.FILTERS[params['op']](self.get_serializer_method(field_name)(item), int((params['value'])))
+                ]
         elif isinstance(field, ser.CharField):
             return_val = [
                 item for item in default_queryset
