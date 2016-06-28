@@ -11,7 +11,6 @@ from flask import request
 import furl
 import jwe
 import jwt
-import json
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound

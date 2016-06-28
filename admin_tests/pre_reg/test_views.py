@@ -225,16 +225,18 @@ class TestPreregFiles(AdminTestCase):
             data[q] = {
                 'value': {
                     'uploader': {
-                        'extra': [{
-                            'data': {
-                                'provider': 'osfstorage',
-                                'path': f.path,
-                                'fileId': f._id
+                        'extra': [
+                            {
+                                'data': {
+                                    'provider': 'osfstorage',
+                                    'path': f.path,
+                                    'fileId': f._id
+                                }
                             }
-                        }]
-                        }
+                        ]
                     }
                 }
+            }
         self.draft = DraftRegistrationFactory(
             initiator=self.user,
             registration_schema=prereg_schema,

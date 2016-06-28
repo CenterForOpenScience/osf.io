@@ -211,7 +211,7 @@ var Uploader = function(question) {
             return false;
 
         var guid = self.get_guid(file).then(function (val) {
-            self.set_guid(val, file.data.extra.hashes.sha256)
+            self.set_guid(val, file.data.extra.hashes.sha256);
         });
         self.selectedFiles.push({
             fileId: guid,
@@ -230,7 +230,7 @@ var Uploader = function(question) {
         var request = $osf.ajaxJSON('GET', url, {});
 
         request.done(function (resp) {
-            ret.resolve(resp.guid)
+            ret.resolve(resp.guid);
         });
 
         return ret.promise();

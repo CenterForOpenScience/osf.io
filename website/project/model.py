@@ -69,8 +69,6 @@ from website.project.sanctions import (
     RegistrationApproval,
     Retraction,
 )
-from website.prereg.utils import get_prereg_schema
-from website.files.models import OsfStorageFileNode
 
 logger = logging.getLogger(__name__)
 
