@@ -635,7 +635,7 @@ class TestNodeCreate(ApiTestCase):
     def test_create_component_inherit_contributors(self):
         parent_project = ProjectFactory(creator=self.user_one)
         parent_project.add_contributor(self.user_two, permissions=[permissions.READ], save=True)
-        url = '/{}nodes/{}/children/{}'.format(API_BASE, parent_project._id, '?inherit_contributors=true')
+        url = '/{}nodes/{}/children/?inherit_contributors=true'.format(API_BASE, parent_project._id)
         component_data = {
             'data': {
                 'type': 'nodes',

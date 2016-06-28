@@ -98,7 +98,7 @@ var institutionLogos = {
 // Load categories to pass in to create project
 var loadCategories = function() {
     var deferred = m.deferred();
-    var message = 'Error loading project category names.';
+    var errorMsg;
     m.request({method : 'OPTIONS', url : $osf.apiV2Url('nodes/', { query : {}}), config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})})
         .then(function _success(results){
             if(results.actions && results.actions.POST.category){
@@ -110,9 +110,12 @@ var loadCategories = function() {
                 });
                 deferred.resolve(categoryList);
             }
+            errorMsg = 'API returned a success response, but no categories were returned';
+            Raven.captureMessage(errorMsg, {extra: {response: results}});
             deferred.reject(message);
         }, function _error(results){
-            Raven.captureMessage(message, {extra: {requestReturn: results}});
+            errorMsg = 'Error loading project category names.';
+            Raven.captureMessage(errorMsg, {extra: {response: results}});
             deferred.reject(message);
         });
     return deferred.promise;
