@@ -11,7 +11,7 @@ from website.files.models import FileNode
 from website.project.model import Comment
 from api.base.utils import absolute_reverse
 from api.base.serializers import NodeFileHyperLinkField, WaterbutlerLink, format_relationship_links, FileCommentRelationshipField
-from api.base.serializers import Link, JSONAPISerializer, LinksField, IDField, TypeField, RestrictedDictSerializer
+from api.base.serializers import Link, JSONAPISerializer, LinksField, IDField, TypeField
 from website.util import api_v2_url
 
 
