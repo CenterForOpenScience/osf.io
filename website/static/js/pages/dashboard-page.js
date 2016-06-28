@@ -43,7 +43,10 @@ var ensureUserTimezone = function(savedTimezone, savedLocale, id) {
 $(document).ready(function() {
     m.mount(document.getElementById('dashboard'), m.component(MyProjects, {wrapperSelector : '#dashboard'}));
     // TODO: new data does not have timezone information
-    //ensureUserTimezone(result.timezone, result.locale, result.id);
+    var user = window.contextVars.currentUser;
+    if (user) {
+        ensureUserTimezone(user.timezone, user.locale, user.id);
+    }
 
     // Appears in 10 second if the spinner is still there.
     setTimeout(function(){
