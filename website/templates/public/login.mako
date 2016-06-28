@@ -59,13 +59,11 @@
                             'has-success': fullName() && fullName.isValid()
                         }"
                 >
-                    <label for="inputName" class="col-sm-4 control-label">Full Name</label>
+                    <label for="fullName" class="col-sm-4 control-label">Full Name</label>
                     <div class="col-sm-8">
                         <input
                                 autofocus
-                                type="text"
                                 class="form-control"
-                                id="inputName"
                                 placeholder="Name"
                                 data-bind="
                                 value: fullName, disable: submitted(),
