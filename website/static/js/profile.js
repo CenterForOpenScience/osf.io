@@ -1049,6 +1049,9 @@ var Schools = function(selector, urls, modes) {
     $osf.applyBindings(this.viewModel, selector);
 };
 
+//making user settings panel sticky
+$osf.stickIt('#usersettingspanel', 60);
+
 /*global module */
 module.exports = {
     Names: Names,

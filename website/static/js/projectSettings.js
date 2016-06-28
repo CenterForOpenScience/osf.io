@@ -174,6 +174,9 @@ var getConfirmationCode = function(nodeType) {
     });
 };
 
+//making project settings panel sticky
+$osf.stickIt('#projectsettingspanel', 105);
+
 module.exports = {
     ProjectSettings: ProjectSettings,
     getConfirmationCode: getConfirmationCode
