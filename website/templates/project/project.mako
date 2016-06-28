@@ -403,7 +403,9 @@
             <h3 class="panel-title" style="padding-bottom: 5px; padding-top: 5px;">Components </h3>
             <div class="pull-right">
                 % if 'write' in user['permissions'] and not node['is_registration']:
-                    <span id="newComponent"></span>
+                    <span id="newComponent">
+                        <span class="btn btn-sm btn-default">Add Component</span>
+                    </span>
                     <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
                 % endif
             </div>
