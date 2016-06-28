@@ -5,7 +5,7 @@ var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
 
 var util = require('./util.js');
-var makeClient = require('js/clipboard');
+var cb = require('js/clipboard');
 
 // Helper for filtering
 function TRUTHY(item) {
@@ -119,7 +119,7 @@ var FileRevisionsTable = {
         self.makeTableRow = function(revision, index) {
             var isSelected = index === model.selectedRevision;
             var clipBoard = function(element) {
-                makeClient(element);
+                cb.makeClipboardClient(element);
             };
             return m('tr' + (isSelected ? '.active' : ''), [
                 m('td',  isSelected ? revision.displayVersion :
