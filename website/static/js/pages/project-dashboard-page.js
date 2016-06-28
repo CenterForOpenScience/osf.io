@@ -27,28 +27,8 @@ var mHelpers = require('js/mithrilHelpers');
 var ctx = window.contextVars;
 var node = window.contextVars.node;
 var nodeApiUrl = ctx.node.urls.api;
-var nodeCategories = ctx.nodeCategories || {};
+var nodeCategories = ctx.nodeCategories || [];
 
-var categoryList = m.prop([]);
-var addProjectTemplate = m.component(AddProject, {
-    buttonTemplate: m('.btn.btn-sm.btn-default[data-toggle="modal"][data-target="#addSubComponent"]', {onclick: function() {
-        $osf.trackClick('project-dashboard', 'add-component', 'open-add-project-modal');
-    }}, 'Add Component'),
-    modalID: 'addSubComponent',
-    title: 'Create new component',
-    parentID: window.contextVars.node.id,
-    parentTitle: window.contextVars.node.title,
-    categoryList: categoryList,
-    stayCallback: function() {
-        // We need to reload because the components list needs to be re-rendered serverside
-        window.location.reload();
-    },
-    trackingCategory: 'project-dashboard',
-    trackingAction: 'add-component',
-    contributors: window.contextVars.node.contributors,
-    currentUserCanEdit: window.contextVars.currentUser.canEdit
-});
-m.mount(document.getElementById('newComponent'), m.component(addProjectTemplate, {wrapperSelector : '#addSubComponent'}));
 
 // Listen for the nodeLoad event (prevents multiple requests for data)
 $('body').on('nodeLoad', function(event, data) {
@@ -144,11 +124,27 @@ var loadCategories = function() {
     return deferred.promise;
 };
 
-loadCategories().then(function(categories) {
-    categoryList(categories);
-});
-
 $(document).ready(function () {
+
+    var AddComponentButton = m.component(AddProject, {
+        buttonTemplate: m('.btn.btn-sm.btn-default[data-toggle="modal"][data-target="#addSubComponent"]', {onclick: function() {
+            $osf.trackClick('project-dashboard', 'add-component', 'open-add-project-modal');
+        }}, 'Add Component'),
+        modalID: 'addSubComponent',
+        title: 'Create new component',
+        parentID: window.contextVars.node.id,
+        parentTitle: window.contextVars.node.title,
+        categoryList: nodeCategories,
+        stayCallback: function() {
+            // We need to reload because the components list needs to be re-rendered serverside
+            window.location.reload();
+        },
+        trackingCategory: 'project-dashboard',
+        trackingAction: 'add-component',
+        contributors: window.contextVars.node.contributors,
+        currentUserCanEdit: window.contextVars.currentUser.canEdit
+    });
+    m.mount(document.getElementById('newComponent'), AddComponentButton);
 
     if (ctx.node.institutions.length && !ctx.node.anonymous){
         m.mount(document.getElementById('instLogo'), m.component(institutionLogos, {institutions: window.contextVars.node.institutions}));

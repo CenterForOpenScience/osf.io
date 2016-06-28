@@ -775,7 +775,10 @@ def _view_project(node, auth, primary=False):
         'addon_widgets': widgets,
         'addon_widget_js': js,
         'addon_widget_css': css,
-        'node_categories': settings.NODE_CATEGORY_MAP
+        'node_categories': [
+            {'value': key, 'display_name': value}
+            for key, value in settings.NODE_CATEGORY_MAP.iteritems()
+        ]
     }
     return data
 
