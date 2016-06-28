@@ -23,7 +23,8 @@
         "googledrive": "partial",
         "github": "partial",
         "s3": "partial",
-        "wiki": "full"
+        "wiki": "full",
+        "forward": "full"
     },
     "addons_commentable": [
         "osfstorage",
