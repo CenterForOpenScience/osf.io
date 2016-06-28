@@ -47,29 +47,10 @@
                 <div class="panel-heading clearfix">
                     <h3 class="panel-title">Top Referrers</h3>
                 </div>
-                <div id="topReferrers" class="panel-body scripted">
-                    <!-- ko if: loadRefs -->
+                <div id="topReferrers" class="panel-body">
                     <div class="text-center">
                         <div class="logo-spin logo-lg"></div>
                     </div>
-                    <!-- /ko -->
-                    <!-- ko ifnot: loadRefs -->
-                        <!-- ko if: referrers().length == 0 -->
-                            <h4 class="text-centered">No referrers for this time period.</h4>
-                        <!-- /ko -->
-                        <!-- ko ifnot: referrers().length == 0 -->
-                            <table class="table">
-                                <thead>
-                                <th>Referrer</th>
-                                <th>Unique Visitors</th>
-                                </thead>
-                                <tbody data-bind="foreach: referrers">
-                                <td data-bind="text: referrer"></td>
-                                <td data-bind="text: count"></td>
-                                </tbody>
-                            </table>
-                        <!-- /ko -->
-                    <!-- /ko -->
                 </div>
             </div>
         </div>

@@ -3,7 +3,6 @@
 var keenAnalysis = require('keen-analysis');
 var keenDataviz = require('keen-dataviz');
 require('keen-dataviz/dist/keen-dataviz.min.css');
-var ko = require('knockout');
 var $osf = require('js/osfHelpers');
 
 var KeenViz = function(){
@@ -40,12 +39,9 @@ var KeenViz = function(){
     };
 
     self.topReferrers = function() {
-        self.referrers = ko.observableArray([]);
-        self.loadRefs = ko.observable(true);
-
         var topReferrersQuery = {
-            'queryType': 'count_unique',
-            'queryParams': {
+            type: 'count_unique',
+            params: {
                 event_collection: 'pageviews',
                 timeframe: 'this_7_days',
                 target_property: 'anon.id',
@@ -53,30 +49,18 @@ var KeenViz = function(){
             }
         };
 
-        var req = self.keenClient
-            .query(topReferrersQuery.queryType, topReferrersQuery.queryParams)
-            .then(function(res) {
-                self.parseTopReferrers(res.result);
-                self.loadRefs(false);
-            })
-            .catch(function(err){
-                new keenDataviz().el('#topReferrers').message(err.message);
-            });
+        var topReferrersViz = new keenDataviz()
+                .el('#topReferrers')
+                .chartType('pie')
+                .chartOptions({
+                    tooltip:{
+                        format:{
+                            name: function(){return 'Visits';}
+                        }
+                    }
+                });
 
-        $osf.applyBindings(self, '#topReferrers');
-    };
-
-    self.parseTopReferrers = function(data){
-        self.referrers(
-            (function(){
-            return data.map(function(obj){
-                return {
-                    'referrer': obj['referrer.info.domain'],
-                    'count': obj.result
-                };
-            });}())
-        );
-
+        self.buildChart(topReferrersViz, topReferrersQuery);
     };
 
     self.visitsServerTime = function() {
