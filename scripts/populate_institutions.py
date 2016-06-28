@@ -91,6 +91,16 @@ def main(env):
                 'email_domains': [],
             },
             {
+                '_id': 'nyu',
+                'name': 'New York University',
+                'description': '...',
+                'banner_name': 'nyu-banner.png',
+                'logo_name': 'nyu-shield.png',
+                'auth_url': SHIBBOLETH_SP.format(encode_uri_component('urn:mace:incommon:nyu.edu')),
+                'domains': ['osf.nyu.edu'],
+                'email_domains': [],
+            },
+            {
                 '_id': 'ucr',
                 'name': 'University of California Riverside',
                 'description': 'Policy prohibits storing PII or HIPAA data on this site, please see C&amp;C\'s <a href="http://cnc.ucr.edu/security/researchers.html">security site</a> for more information.',
@@ -227,6 +237,16 @@ def main(env):
                 'logo_name': 'nd-shield.png',
                 'auth_url': SHIBBOLETH_SP.format(encode_uri_component('https://login-test.cc.nd.edu/idp/shibboleth')),
                 'domains': ['test-osf-nd.cos.io'],
+                'email_domains': [],
+            },
+            {
+                '_id': 'nyu',
+                'name': 'New York University [Test]',
+                'description': 'New York University [Test]',
+                'banner_name': 'nyu-banner.png',
+                'logo_name': 'nyu-shield.png',
+                'auth_url': SHIBBOLETH_SP.format(encode_uri_component('https://shibbolethqa.es.its.nyu.edu/idp/shibboleth')),
+                'domains': ['test-osf-nyu.cos.io'],
                 'email_domains': [],
             },
             {
