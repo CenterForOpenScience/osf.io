@@ -208,7 +208,9 @@ var KeenTracker = (function() {
 
             self.trackPageView = function () {
                 var self = this;
-                self.trackPublicEvent('pageviews', {});
+                if (window.contextVars.node && window.contextVars.node.isPublic) {
+                    self.trackPublicEvent('pageviews', {});
+                }
                 self.trackPrivateEvent('pageviews', {});
             };
 
