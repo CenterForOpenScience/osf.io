@@ -1,9 +1,17 @@
-import pytz
-from dateutil.parser import parse
 from datetime import datetime, timedelta
+
+from dateutil.parser import parse
+
+from pymongo.errors import CollectionInvalid
+import pytz
 
 from framework.mongo import database
 
+def ensure_maintenance_collection():
+    try:
+        database.create_collection('maintenance')
+    except CollectionInvalid:
+        pass
 
 def set_maintenance(start=None, end=None):
     """Set the time period for the maintenance notice to be displayed.
@@ -26,7 +34,7 @@ def set_maintenance(start=None, end=None):
     if start > end:
         start = end - timedelta(1)
 
-    database.drop_collection('maintenance')
+    unset_maintenance()
     # NOTE: We store isoformatted dates in order to preserve timezone information (pymongo retrieves naive datetimes)
     database.maintenance.insert({'maintenance': True, 'start': start.isoformat(), 'end': end.isoformat()})
 
@@ -36,13 +44,14 @@ def get_maintenance():
     Return None for start and end if there is no maintenance state
     """
     maintenance_state = database.maintenance.find_one({'maintenance': True})
-    state = {}
     if maintenance_state:
-        state['start'] = maintenance_state.get('start')
-        state['end'] = maintenance_state.get('end')
-
-    return state if state else None
+        return {
+            'start': maintenance_state.get('start'),
+            'end': maintenance_state.get('end'),
+        }
+    else:
+        return None
 
 
 def unset_maintenance():
-    database.drop_collection('maintenance')
+    database['maintenance'].remove()

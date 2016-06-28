@@ -1,34 +1,28 @@
 # -*- coding: utf-8 -*-
-import logging
 import itertools
+import httplib as http
+import logging
 import math
 import urllib
-import httplib as http
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from flask import request
 
-from framework import utils
-from framework import sentry
+from framework import utils, sentry
 from framework.auth.core import User
-from framework.flask import redirect  # VOL-aware redirect
-from framework.routing import proxy_url
-from framework.exceptions import HTTPError
-from framework.auth.forms import SignInForm
-from framework.forms import utils as form_utils
-from framework.auth.forms import RegistrationForm
-from framework.auth.forms import ResetPasswordForm
-from framework.auth.forms import ForgotPasswordForm
 from framework.auth.decorators import must_be_logged_in
-
+from framework.auth.forms import SignInForm, ResetPasswordForm, ForgotPasswordForm
+from framework.exceptions import HTTPError
+from framework.flask import redirect  # VOL-aware redirect
+from framework.forms import utils as form_utils
+from framework.routing import proxy_url
+from website.institutions.views import view_institution
 from website.models import Guid
 from website.models import Node, Institution
-from website.institutions.views import view_institution
-from website.util import sanitize
 from website.project import model
-from website.util import permissions
 from website.project import new_bookmark_collection
+from website.util import sanitize, permissions
 
 logger = logging.getLogger(__name__)
 
@@ -179,10 +173,6 @@ def reproducibility():
     return redirect('/ezcuj/wiki')
 
 
-def registration_form():
-    return form_utils.jsonify(RegistrationForm(prefix='register'))
-
-
 def signin_form():
     return form_utils.jsonify(SignInForm())
 
@@ -273,6 +263,7 @@ def redirect_getting_started(**kwargs):
 # Redirect to home page
 def redirect_to_home():
     return redirect('/')
+
 
 def redirect_to_cos_news(**kwargs):
     # Redirect to COS News page

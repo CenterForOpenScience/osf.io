@@ -82,7 +82,7 @@ class TestNodeLogList(ApiTestCase):
         res = self.app.get(self.private_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']), len(self.public_project.logs))
-        assert_datetime_equal(datetime.datetime.strptime(res.json['data'][API_FIRST]['attributes']['date'], "%Y-%m-%dT%H:%M:%S.%f"),
+        assert_datetime_equal(parse_date(res.json['data'][API_FIRST]['attributes']['date']),
                               self.private_project.logs[OSF_FIRST].date)
         assert_equal(res.json['data'][API_FIRST]['attributes']['action'], self.private_project.logs[OSF_FIRST].action)
 

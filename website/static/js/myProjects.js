@@ -1802,7 +1802,7 @@ var Information = {
                     return 'Uncategorized';
             }
         }
-        var template = '';
+        var template = ''; 
         var showRemoveFromCollection;
         var collectionFilter = args.currentView().collection;
         if (args.selected().length === 0) {
