@@ -6,10 +6,9 @@ var $ = require('jquery');
 
 var SetPassword = require('js/setPassword');
 var verificationKey = window.contextVars.verification_key;
-var resetUrl = '/api/v1/resetpassword/' + verificationKey + '/';
-var redirectrUrl = '/login/';
+var resetUrl = '/resetpassword/' + verificationKey + '/';
 
 
 $(document).ready(function() {
-    new SetPassword('#resetPasswordForm', 'reset', resetUrl, '', redirectrUrl);
+    new SetPassword('#resetPasswordForm', 'reset', resetUrl, '');
 });
