@@ -8,6 +8,7 @@ require('js/components/autocomplete');
 require('js/projectsSelect.js');
 
 $(function(){
+    var campaignShort = window.contextVars.campaign || 'prereg';
     $('.prereg-button').qToggle();
     $('.prereg-button').click(function(){
         var target = $(this).attr('data-qToggle-target');
@@ -22,9 +23,9 @@ $(function(){
         }
         $osf.postJSON('/api/v1/project/new/', {
             title: title,
-            campaign: 'prereg'
+            campaign: campaignShort
         }).done(function(response) {
-            window.location = response.projectUrl + 'registrations/?campaign=prereg';
+            window.location = response.projectUrl + 'registrations/?campaign=' + campaignShort;
         }).fail(function() {
             $osf.growl('Project creation failed. Reload the page and try again.');
         });
@@ -33,7 +34,7 @@ $(function(){
     // Existing Nodes
     var allNodes = [];
     function onSelectProject (event, data) {
-        var link = data.links.html + 'registrations/';
+        var link = data.links.html + 'registrations/?campaign=' + campaignShort;
         $('#existingProject .projectRegButton').removeClass('disabled').attr('href', link);
         $('#existingProjectXS .projectRegButton').removeClass('disabled').attr('href', link);
     }
@@ -77,7 +78,8 @@ $(function(){
     }
 
     // Existing Draft Registrations
-    $.getJSON('/api/v1/prereg/draft_registrations/').then(function(response){
+    var draftRegistrationsUrl = '/api/v1/' + campaignShort + '/draft_registrations/';
+    $.getJSON(draftRegistrationsUrl).then(function(response){
         if (response.draftRegistrations.length) {
             $('#regDraftSearch').projectsSelect({data : response.draftRegistrations, type : 'registration', complete : onSelectRegistrations});
             $('#regDraftSearchXS').projectsSelect({data : response.draftRegistrations, type : 'registration', complete : onSelectRegistrations});
