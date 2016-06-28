@@ -277,7 +277,7 @@ var SetPassword = function(selector, passwordViewType, submitUrl, campaign, redi
             $(selector).keypress(
                 event => {
                     // If the enter key is pressed to submit a form, check if the password is valid
-                    if (event.which == '13') {
+                    if (event.which === '13') {
                         if (!this.viewModel.password.isValid()) {
                             return false;
                         }
