@@ -1405,7 +1405,7 @@ class User(GuidStoredObject, AddonModelMixin):
                 if node.is_bookmark_collection:
                     continue
                 if node.is_public_files_collection:
-                    node.merge_public_files(user.public_files_node)
+                    self.public_files_node.merge_public_files(node)
                     continue
                 # if both accounts are contributor of the same project
                 if node.is_contributor(self) and node.is_contributor(user):

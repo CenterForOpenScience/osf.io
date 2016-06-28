@@ -14,6 +14,8 @@ import pytz
 from django.core.urlresolvers import reverse
 from django.core.validators import URLValidator
 
+from pymongo.errors import DuplicateKeyError
+
 from modularodm import Q
 from modularodm import fields
 from modularodm.validators import MaxLengthValidator
@@ -1300,18 +1302,28 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         return False
 
     def merge_public_files(self, node):
-        if not self.is_public_files_collection:
-            raise NodeStateError('must be Public Files collection to merge')
-
-        from website.files.models.osfstorage import OsfStorageFile
-
-        self_pf_node = Node.find_one(Q('is_public_files_collection', 'eq', True) & Q('creator', 'eq', self))
         try:
-            for child in OsfStorageFile.find(Q('node', 'eq', node) & Q('title', 'ne', 'Public Files')):
-                child.move_under(self_pf_node.get_addon('osfstorage').get_root())
-            self_pf_node.save()
-        except:
-            NodeStateError('Files could not be moved from one public files collection to another')
+            if not self.is_public_files_collection:
+                raise NodeStateError('must be Public Files collection to merge')
+
+            from website.files.models.osfstorage import OsfStorageFile
+
+            for child in OsfStorageFile.find(Q('node', 'eq', node ) & Q('title', 'ne', "Public Files")):
+                child.move_under(self.get_addon('osfstorage').get_root())
+        except DuplicateKeyError:
+            node.is_public_files_collection = False
+            node.replace_contributor(node.creator,self.creator)
+            node.is_public = False
+            node.title = node.creator.fullname + "'s old Public Files"
+            node.description = """
+                                The OSF could not merge the Public Files of these accounts automatically, (likely
+                                because they contain files of the same name, but potentionally different versions) so
+                                it has created this new private project to allow manual merging of the users Public
+                                Files node.
+                                """
+            node.save()
+
+        self.save()
 
     def get_permissions(self, user):
         """Get list of permissions for user.
