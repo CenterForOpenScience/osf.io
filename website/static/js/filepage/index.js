@@ -50,7 +50,7 @@ var SharePopover =  {
                 }
                 m.render(document.getElementById('popOver'), [
                     m('ul.nav.nav-tabs.nav-justified', [
-                        m('li.active', m('a[href="#share"][data-toggle="tab"]', 'SharePopup')),
+                        m('li.active', m('a[href="#share"][data-toggle="tab"]', 'Share')),
                         m('li', m('a[href="#embed"][data-toggle="tab"]', 'Embed'))
                     ]), m('br'),
                     m('.tab-content', [
