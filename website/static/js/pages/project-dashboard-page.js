@@ -21,6 +21,7 @@ var CitationWidget = require('js/citationWidget');
 var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
 var AddProject = require('js/addProjectPlugin');
+var mHelpers = require('js/mithrilHelpers');
 
 var ctx = window.contextVars;
 var node = window.contextVars.node;
@@ -94,18 +95,11 @@ var institutionLogos = {
     }
 };
 
-/* Send with ajax calls to work with api2 */
-var xhrconfig = function (xhr) {
-    xhr.withCredentials = window.contextVars.isOnRootDomain,
-    xhr.setRequestHeader('Content-Type', 'application/vnd.api+json;');
-    xhr.setRequestHeader('Accept', 'application/vnd.api+json; ext=bulk');
-};
-
 // Load categories to pass in to create project
 var loadCategories = function() {
     var deferred = m.deferred();
     var message = 'Error loading project category names.';
-    m.request({method : 'OPTIONS', url : $osf.apiV2Url('nodes/', { query : {}}), config : xhrconfig})
+    m.request({method : 'OPTIONS', url : $osf.apiV2Url('nodes/', { query : {}}), config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})})
         .then(function _success(results){
             if(results.actions && results.actions.POST.category){
                 var categoryList = results.actions.POST.category.choices;
