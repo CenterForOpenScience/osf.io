@@ -10,8 +10,7 @@
                 name="resetPasswordForm"
                 method="POST"
                 action="/resetpassword/${verification_key}/"
-                data-bind="submit: submit"
-            >
+                >
 
             <div class="help-block" >
                 <p data-bind="html: flashMessage, attr: {class: flashMessageClass}"></p>
@@ -40,11 +39,19 @@
                                 blur: trim.bind($data, password)
                             }"
                     >
-                    <div class="progress create-password">
-                        <div class="progress-bar" role="progressbar" data-bind="attr: passwordComplexityBar"></div>
-                    </div>
-                    <p class="help-block" data-bind="text: passwordFeedback"></p>
-                    <p class="help-block" data-bind="validationMessage: password" style="display: none;"></p>
+                  <div class="progress create-password">
+                      <div class="progress-bar progress-bar-sm" role="progressbar" data-bind="attr: passwordComplexityInfo().attr"></div>
+                  </div>
+                  <div>
+                      <!-- ko if: passwordFeedback() -->
+                      <p class="text-right" id="front-password-info" data-bind="text: passwordComplexityInfo().text, attr: passwordComplexityInfo().text_attr"></p>
+                      <p class="help-block osf-box-lt" data-bind="validationMessage: password" style="display: none;"></p>
+                      <p class="help-block osf-box-lt" data-bind="text: passwordFeedback().warning"></p>
+                      <!-- /ko -->
+                      <!-- ko if: !passwordFeedback() -->
+                      <div style="padding-top:20px"></div>
+                      <!-- /ko -->
+                  </div>
                 </div>
             </div>
         </div>
