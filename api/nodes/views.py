@@ -8,15 +8,18 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
+from api.base.exceptions import InvalidModelValueError, JSONAPIException
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.parsers import (
     JSONAPIRelationshipParser,
     JSONAPIRelationshipParserForRegularJSON,
 )
-from api.base.exceptions import RelationshipPostMakesNoChanges
+from api.base.exceptions import RelationshipPostMakesNoChanges, EndpointNotImplementedError
 from api.base.pagination import CommentPagination, NodeContributorPagination
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
+from api.base.settings import ADDONS_OAUTH, API_BASE
+from api.addons.views import AddonSettingsMixin
 from api.files.serializers import FileSerializer
 from api.comments.serializers import CommentSerializer, CommentCreateSerializer
 from api.comments.permissions import CanCommentOrPublic
@@ -25,6 +28,7 @@ from api.wikis.serializers import WikiSerializer
 
 from api.nodes.serializers import (
     NodeSerializer,
+    NodeAddonSettingsSerializer,
     NodeLinksSerializer,
     NodeForksSerializer,
     NodeDetailSerializer,
@@ -39,6 +43,7 @@ from api.nodes.serializers import (
 )
 from api.nodes.utils import get_file_object
 
+from api.addons.serializers import NodeAddonFolderSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.institutions.serializers import InstitutionSerializer
 from api.nodes.permissions import (
@@ -1801,6 +1806,228 @@ class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin
             raise NotFound
 
         return fobj
+
+
+class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, NodeMixin, AddonSettingsMixin):
+    """List of addons connected to this node *Read-only*
+
+    Paginated list of node addons ordered by their `id` or `addon_short_name`. Attributes other than
+    `enabled` will be `null` if the addon is not enabled for this node.
+
+    ## <Addon\>NodeSettings Attributes
+
+    OSF <Addon\>NodeSettings entities have the "node_addons" `type`, and their `id` indicates the addon
+    service provider (eg. `box`, `googledrive`, etc).
+
+        name                    type                description
+        ======================================================================================================
+        external_account_id     string              _id of the associated ExternalAccount, if any
+        configured              boolean             has this node been configured with a folder?
+        enabled                 boolean             has a node settings object been associated with this node?
+        folder_id               string              folder id of linked folder, from third-party service
+        node_has_auth           boolean             is this node fully authorized to use an ExternalAccount?
+        folder_path             boolean             folder path of linked folder, from third-party service
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+        self:  the canonical api endpoint of this node_addon
+
+    #This Request/Response
+    """
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ContributorOrPublic,
+        ExcludeWithdrawals,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_ADDON_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = NodeAddonSettingsSerializer
+    view_category = 'nodes'
+    view_name = 'node-addons'
+
+    def get_default_queryset(self):
+        qs = []
+        for addon in ADDONS_OAUTH:
+            obj = self.get_addon_settings(provider=addon, fail_if_absent=False)
+            if obj:
+                qs.append(obj)
+        qs.sort()
+        return qs
+
+    get_queryset = get_default_queryset
+
+
+class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, NodeMixin, AddonSettingsMixin):
+    """
+    Detail of individual addon connected to this node *Writeable*.
+
+    Attributes other than `enabled` will be null if the addon is not enabled for this node.
+
+    ##Permissions
+
+    <Addon>NodeSettings that are attached to public Nodes will give read-only access to everyone. Private nodes require explicit read
+    permission. Write and admin access are the same for public and private nodes. Administrators on a parent node have
+    implicit read permissions for all child nodes.
+
+    Any users with write or admin access to the node are able to deauthorize an enabled addon, but only the addon authorizer is able
+    to change the configuration (i.e. selected folder) of an already-configured <Addon>NodeSettings entity.
+
+    ## <Addon>NodeSettings Attributes
+
+    OSF <Addon>NodeSettings entities have the "node_addons" `type`, and their `id` indicates the addon
+    service provider (eg. `box`, `googledrive`, etc).
+
+        name                    type                description
+        ======================================================================================================
+        external_account_id     string              _id of the associated ExternalAccount, if any
+        configured              boolean             has this node been configured with a folder?
+        enabled                 boolean             has a node settings object been associated with this node?
+        folder_id               string              folder id of linked folder, from third-party service
+        node_has_auth           boolean             is this node fully authorized to use an ExternalAccount?
+        folder_path             boolean             folder path of linked folder, from third-party service
+
+    ##Links
+
+        self:  the canonical api endpoint of this node_addon
+
+    ##Actions
+
+    ###Update
+
+        Method:        PUT / PATCH
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {"data": {
+                           "type": "node_addons",                   # required
+                           "id":   {provider},                      # required
+                           "attributes": {
+                             "external_account_id": {account_id},   # optional
+                             "folder_id":           {folder_id},    # optional
+                             "folder_path":         {folder_path},  # optional - Google Drive specific
+                           }
+                         }
+                       }
+        Success:       200 OK + node_addon representation
+
+    To update a node, issue either a PUT or a PATCH request against the `/links/self` URL.  The `external_account_id`,
+    `enabled`, and `folder_id` fields are mandatory if you PUT and optional if you PATCH. However, at least one is always mandatory.
+    Non-string values will be accepted and stringified, but we make no promises about the stringification output.  So
+    don't do that.
+
+    To delete or deauthorize a node_addon, issue a PUT with all fields set to `null` / `False`, or a PATCH with `enabled` set to `False`.
+
+    ####Note
+
+    Not all addons are currently configurable via the API. The current list of addons that accept PUT/PATCH is [`box`, `dropbox`, `s3`, `googledrive`]
+
+    #This Request/Response
+    """
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ContributorOrPublic,
+        ExcludeWithdrawals,
+        ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_ADDON_READ]
+    required_write_scopes = [CoreScopes.NODE_ADDON_WRITE]
+
+    serializer_class = NodeAddonSettingsSerializer
+    view_category = 'nodes'
+    view_name = 'node-addon-detail'
+
+    def get_object(self):
+        return self.get_addon_settings()
+
+    def perform_create(self, serializer):
+        addon = self.kwargs['provider']
+        if addon not in ADDONS_OAUTH:
+            raise NotFound('Requested addon unavailable')
+
+        node = self.get_node()
+        if node.has_addon(addon):
+            raise InvalidModelValueError(
+                detail='Add-on {} already enabled for node {}'.format(addon, node._id)
+            )
+
+        return super(NodeAddonDetail, self).perform_create(serializer)
+
+    def perform_destroy(self, instance):
+        addon = instance.config.short_name
+        node = self.get_node()
+        if not node.has_addon(instance.config.short_name):
+            raise NotFound('Node {} does not have add-on {}'.format(node._id, addon))
+
+        node.delete_addon(addon, auth=get_user_auth(self.request))
+
+
+class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, AddonSettingsMixin):
+    """List of folders that this node can connect to *Read-only*.
+
+    Paginated list of folders retrieved from the associated third-party service
+
+    ##Permissions
+
+    <Addon> Folders are visible only to the addon authorizer.
+
+    ## <Addon> Folder Attributes
+
+    OSF <Addon\> Folder entities have the "node_addon_folders" `type`, and their `id` indicates the folder_id
+    according to the associated service provider (eg. `box`, `googledrive`, etc).
+
+        name        type        description
+        ======================================================================================================
+        path        string      path of this folder, according to third-party service
+        kind        string      `"folder"`, typically.
+        provider    string      `short_name` of third-party service provider
+        name        string      name of this folder
+        folder_id   string      id of this folder, according to third-party service
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+        root:  the canonical api endpoint of the root folder for this account
+        children: the canonical api endpoint of this folder's children
+
+    #This Request/Response
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ContributorOrPublic,
+        ExcludeWithdrawals,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_ADDON_READ, CoreScopes.NODE_FILE_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = NodeAddonFolderSerializer
+    view_category = 'nodes'
+    view_name = 'node-addon-folders'
+
+    def get_queryset(self):
+        # TODO: [OSF-6120] refactor this/NS models to be generalizable
+        node_addon = self.get_addon_settings()
+        if not node_addon.has_auth:
+            raise JSONAPIException(detail='This addon is enabled but an account has not been imported from your user settings',
+                meta={'link': '{}users/me/addons/{}/accounts/'.format(API_BASE, node_addon.config.short_name)})
+
+        path = self.request.query_params.get('path', '')
+        folder_id = self.request.query_params.get('id', 'root')
+
+        if not hasattr(node_addon, 'get_folders'):
+            raise EndpointNotImplementedError('Endpoint not yet implemented for this addon')
+
+        return node_addon.get_folders(path=path, folder_id=folder_id)
 
 
 class NodeProvider(object):
