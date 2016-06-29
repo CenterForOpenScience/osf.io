@@ -22,8 +22,6 @@ window.ondrop = function (e) {
 
 var PublicFilesDropzone = {
     controller: function () {
-        var dangerCount = 0;
-
         Dropzone.options.publicFilesDropzone = {
             // Dropzone is setup to upload multiple files in one request this configuration forces it to do upload file-by-
             //file, one request at a time.
@@ -48,11 +46,12 @@ var PublicFilesDropzone = {
                     $('div.h2.text-center.m-t-lg').hide();
                 }
                 else {
-                    dangerCount = document.getElementsByClassName('alert-danger').length;
-                    dangerCount === 0 ?
-                        $osf.growl('Upload Failed', 'You can upload a maximum of ' + this.options.maxFiles + ' files at once.' +
+                    if(!$('.alert-danger').length){
+
+                        $osf.growl('Upload Failed', 'You can upload a maximum of ' + this.options.maxFiles + ' file at once.' +
                             '<br> To upload more files, refresh the page or click X on the top right. ' +
-                            '<br> Want to share more files? Create a new project.', 'danger', 5000) : '';
+                            '<br> Want to share more files? Create a new project.', 'danger', 5000);
+                    }
                     this.removeFile(file);
                 }
             },
@@ -70,8 +69,7 @@ var PublicFilesDropzone = {
             success: function (file, xhr) {
                 var buttonContainer = document.createElement('div');
                 $('div.col-sm-6').append(buttonContainer);
-                var fileJson = JSON.parse((file.xhr.response));
-                var link = 'http://localhost:5000/project/' + window.contextVars.publicFilesId + '/files/osfstorage' + fileJson.path;
+                var link = 'http://localhost:5000/project/' + window.contextVars.publicFilesId + '/files/osfstorage' +file.xhr.response['path'];
                 m.render(buttonContainer, dzPreviewTemplate.shareButton(link));
                 this.processQueue();
 
