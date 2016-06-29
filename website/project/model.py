@@ -1202,7 +1202,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         """
 
         if self._is_loaded and self.is_public_files_collection:
-            raise NodeStateError("This action is forbidden for a public files node.")
+            raise NodeStateError("You cannot modify permissions for a public files node.")
 
         if user._id not in self.permissions:
             self.permissions[user._id] = [permission]
@@ -1315,12 +1315,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             node.replace_contributor(node.creator, self.creator)
             node.is_public = False
             node.title = node.creator.fullname + "'s old Public Files"
-            node.description = """
-                                The OSF could not merge the Public Files of these accounts automatically, (likely
-                                because they contain files of the same name, but potentionally different versions) so
-                                it has created this new private project to allow manual merging of the users Public
-                                Files node.
-                                """
+            node.description = ('The OSF could not merge the Public Files of these accounts automatically, (likely'
+                                ' because they contain files of the same name, but potentionally different versions) so'
+                                ' it has created this new private project to allow manual merging of the users Public'
+                                ' Files node.')
             node.save()
 
         self.save()

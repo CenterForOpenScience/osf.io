@@ -3,8 +3,6 @@
 
 <%def name="og_description()">
     Hosted on the Open Science Framework
-
-
 </%def>
 
 ## To change the postion of alert on project pages, override alert()
@@ -21,16 +19,6 @@
 		<p class="m-t-sm fg-load-message"> Loading files...  </p>
 	</div>
 </div>
-<style>
-.container {
-    width: 100% !important;
-}
-
-</style>
-
-
-
-
 
 </%def>
 
@@ -41,13 +29,8 @@
 
 <script>
 
-    ## $script(['/static/addons/badges/badge-awarder.js'], function() {
-    ##     attachDropDown('${'{}badges/json/'.format(user_api_url)}');
-    ## });
-
     window.contextVars = $.extend(true, {}, window.contextVars, {
          nodeId : ${ node['id'] |sjson, n },
-         userApiUrl : ${ user_api_url | sjson, n },
          nodeApiUrl : ${ node['api_url'] | sjson, n },
          isPublicFilesCol : ${node['isPublicFilesCol']  | sjson, n },
      });
