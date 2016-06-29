@@ -402,11 +402,27 @@ class TestNodeFilesListFiltering(ApiTestCase):
 
     def test_node_files_are_filterable_by_size(self):
         files = self._create_test_file_for_size_filter(self.project, self.user)
-        url = '/{}nodes/{}/files/osfstorage/?filter[size]=123'.format(API_BASE, self.project._id,)
+        url = '/{}nodes/{}/files/osfstorage/?filter[size]=123'.format(API_BASE, self.project._id)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 1)  # filters out test_file_2
         assert_equal(res.json['data'][0]['attributes']['name'], files[0].name)
         assert_equal(res.json['data'][0]['attributes']['size'], files[0].get_version().size)
+
+    def test_node_files_are_filterable_by_size_operator(self):
+        files = self._create_test_file_for_size_filter(self.project, self.user)
+        url = '/{}nodes/{}/files/osfstorage/?filter[size][lt]=200'.format(API_BASE, self.project._id)
+        url2 = '/{}nodes/{}/files/osfstorage/?filter[size][gt]=200'.format(API_BASE, self.project._id)
+        res = self.app.get(url, auth=self.user.auth)
+        res2 = self.app.get(url2, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res2.status_code, 200)
+        assert_equal(len(res.json['data']), 1)  # filters out test_file
+        assert_equal(len(res2.json['data']), 1)  # filters out test_file_2
+        assert_equal(res.json['data'][0]['attributes']['name'], files[0].name)
+        assert_equal(res.json['data'][0]['attributes']['size'], files[0].get_version().size)
+        assert_equal(res2.json['data'][0]['attributes']['name'], files[1].name)
+        assert_equal(res2.json['data'][0]['attributes']['size'], files[1].get_version().size)
 
     def test_node_files_external_provider_can_filter_by_last_touched(self):
         yesterday_stamp = datetime.datetime.utcnow() - datetime.timedelta(days=1)
