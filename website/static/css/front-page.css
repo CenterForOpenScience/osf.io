@@ -73,7 +73,7 @@ h6 {
     /* W3C */
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#67a3bf', endColorstr='#000000', GradientType=1);
     /* IE6-9 fallback on horizontal gradient */
-    height: 850px;
+    height: 900px;
     color: #fff;
     padding-top: 100px;
     position: relative;
@@ -112,7 +112,7 @@ h6 {
     background: rgba(255, 255, 255, 0.15);
     position: absolute;
     bottom: 0;
-    height: 350px;
+    height: 400px;
     padding: 25px;
     margin-left: -15px;
 }
