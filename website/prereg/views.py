@@ -17,7 +17,7 @@ from website.prereg import utils
 @decorators.must_be_logged_in
 def prereg_landing_page(auth, **kwargs):
     """Landing page for the prereg challenge"""
-    campaign = request.path.strip('/')
+    campaign = request.path.strip('/') or 'prereg'
     registerable_nodes = [
         node for node
         in auth.user.contributor_to
