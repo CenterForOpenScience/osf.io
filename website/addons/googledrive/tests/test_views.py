@@ -47,7 +47,7 @@ class TestConfigViews(GoogleDriveAddonTestCase, views.OAuthAddonConfigViewsTestC
         self.node_settings.set_auth(external_account=self.external_account, user=self.user)
         self.node_settings.save()
 
-        url = self.project.api_url_for('googledrive_folder_list', folderId=folderId)
+        url = self.project.api_url_for('googledrive_folder_list', folder_id=folderId)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json), len(sample_folder_data['items']))
