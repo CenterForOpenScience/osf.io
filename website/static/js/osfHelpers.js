@@ -924,12 +924,6 @@ function mithrilToStr(element) {
     return tmp.innerHTML;
 }
 
-function mergeMithrilwithDOM(domElement, mithrilElement) {
-    var container = document.createElement('div');
-    domElement.appendChild(container);
-    m.render(container, mithrilElement);
-}
-
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
@@ -972,6 +966,5 @@ module.exports = window.$.osf = {
     findContribName: findContribName,
     onScrollToBottom: onScrollToBottom,
     mithrilToStr:mithrilToStr,
-    mergeMithrilwithDOM:mergeMithrilwithDOM,
     extractContributorNamesFromAPIData: extractContributorNamesFromAPIData,
 };
