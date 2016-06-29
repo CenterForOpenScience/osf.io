@@ -72,7 +72,7 @@ class FilterMixin(object):
         ser.ListField: 'contains',
     }
 
-    NUMERIC_FIELDS = (ser.IntegerField, ser.DecimalField, ser.FloatField)
+    NUMERIC_FIELDS = (ser.IntegerField, ser.DecimalField, ser.FloatField, SerializerMethodIntegerField)
 
     DATE_FIELDS = (ser.DateTimeField, ser.DateField)
     DATETIME_PATTERN = re.compile(r'^\d{4}\-\d{2}\-\d{2}(?P<time>T\d{2}:\d{2}(:\d{2}(\.\d{1,6})?)?)$')
