@@ -1,10 +1,12 @@
 import httplib as http
 
+import furl
 from werkzeug.datastructures import ImmutableDict
 from framework.exceptions import HTTPError
 
 from website import mails
 from website.util import web_url_for
+from website.settings import DOMAIN
 
 CAMPAIGNS = ImmutableDict({
     'prereg': {
@@ -18,7 +20,7 @@ CAMPAIGNS = ImmutableDict({
     },
     'erpc': {
         'system_tag': 'erp_challenge_campaign',
-        'redirect_url': lambda: web_url_for('prereg_landing_page'),
+        'redirect_url': lambda: furl.furl(DOMAIN).add(path='erpc/').url,
         'confirmation_email_template': mails.CONFIRM_EMAIL_ERPC,
     }})
 
