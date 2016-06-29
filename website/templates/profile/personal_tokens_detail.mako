@@ -37,7 +37,7 @@
                             % for scope in scope_options:
                                 <input type="checkbox" id="${scope[0]}" value="${scope[0]}" data-bind="checked: scopes">
                                 <label for="${scope[0]}">${scope[0]} </label>
-                                <i class="fa fa-info-circle text-muted" data-bind="tooltip: {title: ${scope[1] | sjson, n }, placement: 'bottom'}"></i>
+                                <i class="fa fa-info-circle text-muted" data-bind="tooltip: {title: '${scope[1]}', placement: 'right'}"></i>
                                 <br>
                             % endfor
                          </div>
