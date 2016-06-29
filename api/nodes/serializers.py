@@ -21,7 +21,11 @@ from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHy
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField,
                                   HideIfRegistration, RestrictedDictSerializer,
                                   JSONAPIRelationshipSerializer, relationship_diff)
-from api.base.exceptions import InvalidModelValueError, RelationshipPostMakesNoChanges
+from api.base.exceptions import (InvalidModelValueError, RelationshipPostMakesNoChanges, Conflict,
+                                 EndpointNotImplementedError)
+from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
+
+from website.oauth.models import ExternalAccount
 
 
 class NodeTagField(ser.Field):
@@ -301,6 +305,126 @@ class NodeSerializer(JSONAPISerializer):
                 raise InvalidModelValueError(detail=e.message)
 
         return node
+
+
+class NodeAddonSettingsSerializer(JSONAPISerializer):
+    class Meta:
+        type_ = 'node_addons'
+
+    id = ser.CharField(source='config.short_name', read_only=True)
+    external_account_id = ser.CharField(source='external_account._id', required=False, allow_null=True)
+    folder_id = ser.CharField(required=False, allow_null=True)
+    folder_path = ser.CharField(required=False, allow_null=True)
+    node_has_auth = ser.BooleanField(source='has_auth', read_only=True)
+    configured = ser.BooleanField(read_only=True)
+
+    links = LinksField({
+        'self': 'get_absolute_url',
+    })
+
+    def get_absolute_url(self, obj):
+        kwargs = self.context['request'].parser_context['kwargs']
+        if 'provider' not in kwargs or (obj and obj.config.short_name != kwargs.get('provider')):
+            kwargs.update({'provider': obj.config.short_name})
+
+        return absolute_reverse(
+            'nodes:node-addon-detail',
+            kwargs=kwargs
+        )
+
+    def check_for_update_errors(self, node_settings, folder_info, external_account_id):
+        if (not node_settings.has_auth and folder_info and not external_account_id):
+            raise Conflict('Cannot set folder without authorization')
+
+    def get_account_info(self, data):
+        try:
+            external_account_id = data['external_account']['_id']
+            set_account = True
+        except KeyError:
+            external_account_id = None
+            set_account = False
+        return set_account, external_account_id
+
+    def get_folder_info(self, data, addon_name):
+        try:
+            folder_info = data['folder_id']
+            set_folder = True
+        except KeyError:
+            folder_info = None
+            set_folder = False
+
+        if folder_info and addon_name == 'googledrive':
+            try:
+                folder_path = data['folder_path']
+            except KeyError:
+                folder_path = None
+            folder_info = {
+                'id': folder_info,
+                'path': folder_path
+            }
+        return set_folder, folder_info
+
+    def get_account_or_error(self, addon_name, external_account_id, auth):
+            external_account = ExternalAccount.load(external_account_id)
+            if not external_account:
+                raise exceptions.NotFound('Unable to find requested account.')
+            if external_account not in auth.user.external_accounts:
+                raise exceptions.PermissionDenied('Requested action requires account ownership.')
+            if external_account.provider != addon_name:
+                raise Conflict('Cannot authorize the {} addon with an account for {}'.format(addon_name, external_account.provider))
+            return external_account
+
+    def should_call_set_folder(self, folder_info, instance, auth, node_settings):
+        if (folder_info and not (   # If we have folder information to set
+                instance and getattr(instance, 'folder_id', False) and (  # and the settings aren't already configured with this folder
+                    instance.folder_id == folder_info or instance.folder_id == folder_info.get('id', False)
+                ))):
+            if auth.user._id != node_settings.user_settings.owner._id:  # And the user is allowed to do this
+                raise exceptions.PermissionDenied('Requested action requires addon ownership.')
+            return True
+        return False
+
+    def update(self, instance, validated_data):
+        addon_name = instance.config.short_name
+        if addon_name not in ADDONS_FOLDER_CONFIGURABLE:
+            raise EndpointNotImplementedError('Requested addon not currently configurable via API.')
+
+        auth = get_user_auth(self.context['request'])
+
+        set_account, external_account_id = self.get_account_info(validated_data)
+        set_folder, folder_info = self.get_folder_info(validated_data, addon_name)
+
+        # Maybe raise errors
+        self.check_for_update_errors(instance, folder_info, external_account_id)
+
+        if instance and instance.configured and set_folder and not folder_info:
+            # Enabled and configured, user requesting folder unset
+            instance.clear_settings()
+            instance.save()
+
+        if instance and instance.has_auth and set_account and not external_account_id:
+            # Settings authorized, User requesting deauthorization
+            instance.deauthorize(auth=auth)  # clear_auth performs save
+        elif external_account_id:
+            # Settings may or may not be authorized, user requesting to set instance.external_account
+            account = self.get_account_or_error(addon_name, external_account_id, auth)
+            if instance.external_account and external_account_id != instance.external_account._id:
+                # Ensure node settings are deauthorized first, logs
+                instance.deauthorize(auth=auth)
+            instance.set_auth(account, auth.user)
+
+        if set_folder and self.should_call_set_folder(folder_info, instance, auth, instance):
+            # Enabled, user requesting to set folder
+            instance.set_folder(folder_info, auth)
+
+        return instance
+
+    def create(self, validated_data):
+        auth = Auth(self.context['request'].user)
+        node = self.context['view'].get_node()
+        addon = self.context['request'].parser_context['kwargs']['provider']
+
+        return node.get_or_add_addon(addon, auth=auth)
 
 
 class NodeDetailSerializer(NodeSerializer):
