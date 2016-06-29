@@ -97,32 +97,6 @@ var institutionLogos = {
     }
 };
 
-// Load categories to pass in to create project
-var loadCategories = function() {
-    var deferred = m.deferred();
-    var errorMsg;
-    $osf.ajaxJSON('OPTIONS', $osf.apiV2Url('nodes/', { query : {}}), {isCors: true})
-        .then(function _success(results){
-            if(results.actions && lodashGet(results, 'actions.POST.category.choices', []).length) {
-                var categoryList = results.actions.POST.category.choices;
-                categoryList.sort(function(a, b){ // Quick alphabetical sorting
-                    if(a.display_name < b.display_name) return -1;
-                    if(a.display_name > b.display_name) return 1;
-                    return 0;
-                });
-                deferred.resolve(categoryList);
-            } else {
-                errorMsg = 'API returned a success response, but no categories were returned';
-                Raven.captureMessage(errorMsg, {extra: {response: results}});
-                deferred.reject(errorMsg);
-            }
-        }, function _error(results){
-            errorMsg = 'Error loading project category names.';
-            Raven.captureMessage(errorMsg, {extra: {response: results}});
-            deferred.reject(errorMsg);
-        });
-    return deferred.promise;
-};
 
 $(document).ready(function () {
 
