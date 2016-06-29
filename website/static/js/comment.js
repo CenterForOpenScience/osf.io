@@ -77,10 +77,8 @@ var relativeDate = function(datetime) {
 };
 
 var notEmpty = function(value) {
-    if (value === '<br>')  {
-        return false;
-    }
-    return !!$.trim(value);
+    var trimmed = $.trim(value).toLowerCase();
+    return !!trimmed && trimmed !== '<br>';
 };
 
 var exclusify = function(subscriber, subscribees) {
@@ -105,9 +103,9 @@ var exclusifyGroup = function() {
 
 var convertMentionHtmlToMarkdown = function(commentContent) {
     var content = commentContent || '';
-    var pattern = '<span[^>]*?data-atwho-guid="([a-z\\d]{5})"[^>]*?>((@|\\+)[\\w\\s]+)<\/span>',
-        regex = new RegExp(pattern),
-        regexG = new RegExp(pattern, 'g');
+    var pattern = '<span[^>]*?data-atwho-guid="([a-z\\d]{5})"[^>]*?>((@|\\+)[\\w\\s]+)<\/span>';
+    var regex = new RegExp(pattern);
+    var regexG = new RegExp(pattern, 'g');
     var matches = content.match(regexG);
     if (matches) {
         for (var i = 0; i < matches.length; i++) {
@@ -129,9 +127,9 @@ var convertMentionHtmlToMarkdown = function(commentContent) {
 
 var convertMentionMarkdownToHtml = function(commentContent) {
     var content = commentContent ||'';
-    var pattern = '\\[(@|\\+)(.*?)\\]\\(\\/([a-z\\d]{5})\\/\\)',
-        regex = new RegExp(pattern),
-        regexG = new RegExp(pattern, 'g');
+    var pattern = '\\[(@|\\+)(.*?)\\]\\(\\/([a-z\\d]{5})\\/\\)';
+    var regex = new RegExp(pattern);
+    var regexG = new RegExp(pattern, 'g');
     var matches = content.match(regexG);
     if (matches) {
         for (var i = 0; i < matches.length; i++) {
