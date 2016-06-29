@@ -22,10 +22,10 @@ PREREG_LANGUAGE = {
 
 def get_prereg_schema(campaign='prepreg'):
     from website.models import MetaSchema  # noqa
-    schame_name = PREREG_CAMPAIGNS.get(campaign) or PREREG_CAMPAIGNS.get('prereg')
+    schema_name = PREREG_CAMPAIGNS.get(campaign) or PREREG_CAMPAIGNS.get('prereg')
 
     return MetaSchema.find_one(
-        Q('name', 'eq', schame_name) &
+        Q('name', 'eq', schema_name) &
         Q('schema_version', 'eq', 2)
     )
 
