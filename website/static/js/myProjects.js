@@ -1809,8 +1809,8 @@ var Information = {
                         m('[role="tabpanel"].tab-pane.active#tab-information',[
                             m('p.db-info-meta.text-muted', [
                                 m('', 'Visibility : ' + (item.attributes.public ? 'Public' : 'Private')),
-                                m('.capitalize', 'Category: ' + item.attributes.category),
-                                m('.capitalize', 'My permission: ' + permission),
+                                m('.text-capitalize', 'Category: ' + item.attributes.category),
+                                m('.text-capitalize', 'My permission: ' + permission),
                                 m('', 'Last Modified on: ' + (item.date ? item.date.local : ''))
                             ]),
                             m('p', [
