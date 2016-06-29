@@ -321,9 +321,9 @@ class TestNodeFilesListFiltering(ApiTestCase):
             'service': 'cloud',
             osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
         }, {
-                                     'size': 1337,
-                                     'contentType': 'img/png'
-                                 }).save()
+            'size': 1337,
+            'contentType': 'img/png'
+        }).save()
         return test_file
 
     def _create_test_file_for_size_filter(self, node, user):
@@ -336,9 +336,9 @@ class TestNodeFilesListFiltering(ApiTestCase):
             'service': 'cloud',
             osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
         }, {
-                                     'size': 123,
-                                     'contentType': 'img/png'
-                                 }).save()
+            'size': 123,
+            'contentType': 'img/png'
+        }).save()
 
         test_file_2 = root_node.append_file('test_file_2')
         test_file_2.get_guid(create=True)
@@ -347,9 +347,9 @@ class TestNodeFilesListFiltering(ApiTestCase):
             'service': 'cloud',
             osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
         }, {
-                                       'size': 456,
-                                       'contentType': 'img/png'
-                                   }).save()
+            'size': 456,
+            'contentType': 'img/png'
+        }).save()
 
         return test_file, test_file_2
 
