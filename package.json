@@ -26,7 +26,7 @@
     "historyjs": "^1.8.0-b2",
     "html-loader": "^0.2.3",
     "imports-loader": "^0.6.3",
-    "jquery.cookie": "^1.4.1",
+    "js-cookie": "2.1.2",
     "json-loader": "^0.5.3",
     "jstimezonedetect": "^1.0.6",
     "keen-js": "^3.0.0",
