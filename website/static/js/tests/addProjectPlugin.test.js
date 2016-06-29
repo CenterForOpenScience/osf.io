@@ -25,6 +25,7 @@ describe('AddProjectPlugin', () => {
         project.viewState('error');
         project.newProjectDesc('Description');
         project.newProjectCategory('thesis');
+        project.newProjectInheritContribs(true);
         // Reset
         project.reset();
         // Assert the return to defaults;
@@ -32,5 +33,6 @@ describe('AddProjectPlugin', () => {
         assert.equal(project.viewState(), 'form');
         assert.equal(project.newProjectDesc(), '');
         assert.equal(project.newProjectCategory(), 'project');
+        assert.equal(project.project.newProjectInheritContribs(), false);
     });
 });
