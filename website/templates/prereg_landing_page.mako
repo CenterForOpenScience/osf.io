@@ -1,10 +1,34 @@
 <%inherit file="base.mako"/>
 
-% if campaign_short == 'erpc':
-    <%namespace name="campaign" file="erpc_landing_info.mako"/>
-% else:
-    <%namespace name="campaign" file="prereg_landing_info.mako"/>
-% endif
+<%namespace name="erpc" file="erpc_landing_info.mako"/>
+<%namespace name="prereg" file="prereg_landing_info.mako"/>
+
+<%def name="description()"> 
+    <%
+        if campaign_short == 'erpc':
+            return erpc.description()
+        elif campaign_short == 'prereg':
+            return prereg.description()
+    %>
+</%def>
+
+<%def name="kind()">
+    <%
+      if campaign_short == 'erpc':
+         return erpc.kind()
+      elif campaign_short == 'prereg':
+          return prereg.kind()
+    %>
+</%def>
+
+<%def name="steps()"> 
+  <%
+      if campaign_short == 'erpc':
+         return erpc.steps()
+      elif campaign_short == 'prereg':
+          return prereg.steps()
+  %>
+</%def>
 
 <%def name="title()">OSF ${campaign_long}</%def>
 
@@ -48,10 +72,10 @@
 <%def name="content()">
 <div class="prereg-container">
     <h1 class="m-t-xl m-b-lg text-center">Welcome to the ${campaign_long}!</h1>
-    <p>${campaign.description()}</p>
+    <p>${description()}</p>
     <p class="m-t-lg f-w-lg">Ready for the Challenge?</p>
     <p>
-        ${campaign.steps()}
+        ${steps()}
     </p>
     <div class="col-md-12 visible-xs">                  
       ## Always displayed
@@ -96,16 +120,16 @@
           <tr>
             ## Always displayed
             <td class="col-sm-${ num_cols } prereg-button-col">
-              <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round prereg" data-qtoggle-group="prereg" data-qtoggle-target="#newPrereg">Start a new ${campaign.kind()}</div>
+              <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round prereg" data-qtoggle-group="prereg" data-qtoggle-target="#newPrereg">Start a new ${kind()}</div>
             </td>
             %if has_draft_registrations:
             <td class="col-sm-${ num_cols } prereg-button-col">
-              <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingPrereg">Continue working on an existing ${campaign.kind()}</div>
+              <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingPrereg">Continue working on an existing ${kind()}</div>
             </td>
             %endif
             %if has_projects:
             <td class="col-sm-${ num_cols } prereg-button-col">
-              <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingProject">Make a ${campaign.kind()} for a project you already have on the OSF</div>
+              <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingProject">Make a ${kind()} for a project you already have on the OSF</div>
             </td>
             %endif
           </tr>
