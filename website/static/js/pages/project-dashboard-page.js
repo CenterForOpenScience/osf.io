@@ -118,7 +118,10 @@ $(document).ready(function () {
         contributors: window.contextVars.node.contributors,
         currentUserCanEdit: window.contextVars.currentUser.canEdit
     });
-    m.mount(document.getElementById('newComponent'), AddComponentButton);
+    var newComponentElem = document.getElementById('newComponent');
+    if (newComponentElem) {
+        m.mount(newComponentElem, AddComponentButton);
+    }
 
     if (ctx.node.institutions.length && !ctx.node.anonymous){
         m.mount(document.getElementById('instLogo'), m.component(institutionLogos, {institutions: window.contextVars.node.institutions}));
