@@ -12,7 +12,7 @@ require('../../css/search-bar.css');
 require('font-awesome-webpack');
 
 var $ = require('jquery');
-require('js-cookie');
+var Cookie = require('js-cookie');
 
 require('js/crossOrigin.js');
 var $osf = require('js/osfHelpers');

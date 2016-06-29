@@ -1,6 +1,6 @@
 'use strict';
 var $  = require('jquery');
-require('js-cookie');
+var Cookie = require('js-cookie');
 
 $(function(){
     // Make adblock message permanently dismissible
