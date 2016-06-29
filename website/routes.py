@@ -318,7 +318,7 @@ def make_url_map(app):
         Rule(
             [
                 '/prereg/',
-                '/erpc/'
+                '/erpc/',
             ],
             'get',
             prereg.prereg_landing_page,
