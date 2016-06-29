@@ -1100,6 +1100,8 @@ def _serialize_node_search(node):
         'title': title,
         'firstAuthor': first_author.family_name or first_author.given_name or first_author.full_name,
         'etal': len(node.visible_contributors) > 1,
+        'dateCreated': node.date_created.isoformat(),
+        'dateModified': node.date_modified.isoformat()
     }
 
 

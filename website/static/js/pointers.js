@@ -75,13 +75,18 @@ var AddPointerViewModel = oop.extend(Paginator, {
             ).done(function(result) {
                 if (!result.nodes.length) {
                     self.errorMsg('No results found.');
+                } else {
+                    result.nodes.forEach(function(each) {
+                        each.dateCreated = new osfHelpers.FormattableDate(each.dateCreated);
+                        each.dateModified = new osfHelpers.FormattableDate(each.dateModified);
+                    });
                 }
                 self.results(result.nodes);
                 self.currentPage(result.page);
                 self.numberOfPages(result.pages);
                 self.addNewPaginators();
             }).fail(function(xhr) {
-                    self.searchWarningMsg(xhr.responseJSON && xhr.responseJSON.message_long);
+                self.searchWarningMsg(xhr.responseJSON && xhr.responseJSON.message_long);
             }).always( function (){
                 self.searchAllProjectsSubmitText(SEARCH_ALL_SUBMIT_TEXT);
                 self.searchMyProjectsSubmitText(SEARCH_MY_PROJECTS_SUBMIT_TEXT);
