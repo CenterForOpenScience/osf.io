@@ -1202,7 +1202,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         """
 
         if self._is_loaded and self.is_public_files_collection:
-            raise NodeStateError("You cannot modify permissions for a public files node.")
+            raise NodeStateError('You cannot modify permissions for a public files node.')
 
         if user._id not in self.permissions:
             self.permissions[user._id] = [permission]
@@ -1308,7 +1308,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
             from website.files.models.osfstorage import OsfStorageFile
 
-            for child in OsfStorageFile.find(Q('node', 'eq', node) & Q('title', 'ne', "Public Files")):
+            for child in OsfStorageFile.find(Q('node', 'eq', node) & Q('title', 'ne', 'Public Files')):
                 child.move_under(self.get_addon('osfstorage').get_root())
         except DuplicateKeyError:
             node.is_public_files_collection = False

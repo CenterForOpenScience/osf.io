@@ -55,7 +55,7 @@ def get_globals():
     """
     user = _get_current_user()
     try:
-        public_files_id = Node.find_one(Q("contributors", "eq", user._id) & Q("is_public_files_collection", "eq", True))._id
+        public_files_id = Node.find_one(Q('contributors', 'eq', user._id) & Q('is_public_files_collection', 'eq', True))._id
     except (AttributeError, NoResultsFound):
         public_files_id = None
     user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path} for inst in user.affiliated_institutions] if user else []
