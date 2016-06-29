@@ -22,9 +22,12 @@ var onPaste = function(e) {
 var preventKeyboardShortcuts = function(e) {
     var k = e.keyCode;
     var c = e.ctrlKey || e.metaKey;
+    var B_KEY = 66;
+    var I_KEY = 73;
+    var U_KEY = 85;
 
     // bold, italic, underline
-    if ((k === 66 && c) || (k === 73 && c) || (k === 85 && c)){
+    if ((k === B_KEY && c) || (k === I_KEY && c) || (k === U_KEY && c)){
         e.preventDefault();
     } else {
         return;
@@ -138,7 +141,7 @@ var callbacks = {
     }
 };
 
-var headerTemplate = '<div class="atwho-header">Contributors<small>&nbsp;↑&nbsp;↓&nbsp;</small></div>';
+var headerTemplate = '<div class="atwho-header">Contributors</div>';
 var displayTemplate = '<li>${fullName}</li>';
 
 var atConfig = {

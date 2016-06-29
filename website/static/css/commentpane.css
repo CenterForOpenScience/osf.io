@@ -133,7 +133,7 @@
 
 .atwho-input[placeholder]:empty:before {
     content: attr(placeholder);
-    color: #555;
+    color: #bdbdbd;
 }
 
 .atwho-input[placeholder]:empty:focus:before {
