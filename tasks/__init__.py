@@ -526,7 +526,7 @@ def test_admin(ctx):
     # test_module(ctx, module="admin_tests/")
     module = 'admin_tests/'
     module_fmt = ' '.join(module) if isinstance(module, list) else module
-    admin_tasks.manage('test {}'.format(module_fmt))
+    admin_tasks.manage(ctx, 'test {}'.format(module_fmt))
 
 
 @task
