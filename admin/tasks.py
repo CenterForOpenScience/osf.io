@@ -37,7 +37,7 @@ def assets(ctx, dev=False, watch=False):
     bower_install(ctx)
     # Always set clean=False to prevent possible mistakes
     # on prod
-    webpack(clean=False, watch=watch, dev=dev)
+    webpack(ctx, clean=False, watch=watch, dev=dev)
 
 
 @task(aliases=['pack'])

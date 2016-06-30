@@ -532,7 +532,7 @@ def test_admin(ctx):
 @task
 def test_varnish(ctx):
     """Run the Varnish test suite."""
-    proc = apiserver(wait=False)
+    proc = apiserver(ctx, wait=False)
     sleep(5)
     test_module(ctx, module='api/caching/tests/test_caching.py')
     proc.kill()
@@ -718,7 +718,7 @@ def copy_settings(ctx, addons=False):
 
     # Addon settings
     if addons:
-        copy_addon_settings()
+        copy_addon_settings(ctx)
 
 
 @task
