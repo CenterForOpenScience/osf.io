@@ -69,7 +69,7 @@ class AddonConfig(object):
                  node_settings_model=None, user_settings_model=None, include_js=None, include_css=None,
                  widget_help=None, views=None, configs=None, models=None,
                  has_hgrid_files=False, get_hgrid_data=None, max_file_size=None, high_max_file_size=None,
-                 accept_extensions=True,
+                 accept_extensions=True, description='', url=None,
                  node_settings_template=None, user_settings_template=None,
                  **kwargs):
 
@@ -86,6 +86,8 @@ class AddonConfig(object):
 
         self.short_name = short_name
         self.full_name = full_name
+        self.description = description
+        self.url = url
         self.owners = owners
         self.categories = categories
 
@@ -1064,6 +1066,8 @@ def init_addon(app, addon_name, routes=True):
     addon_module = importlib.import_module(import_path)
 
     data = vars(addon_module)
+    data['description'] = settings.ADDONS_DESCRIPTION.get(addon_name, '')
+    data['url'] = settings.ADDONS_URL.get(addon_name, None)
 
     # Add routes
     if routes:

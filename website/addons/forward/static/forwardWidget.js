@@ -13,6 +13,7 @@ var ViewModel = function(url) {
 
     self.url = ko.observable();
     self.label = ko.observable();
+    self.isRegistration = ko.observable();
     self.linkDisplay = ko.computed(function() {
         if (self.label()) {
             return self.label();
@@ -29,7 +30,9 @@ var ViewModel = function(url) {
 
     self.queueRedirect = function() {
         self.redirecting(true);
-        $.blockUI({message: $('#forwardModal')});
+        if (!self.isRegistration()) {
+            $.blockUI({message: $('#forwardModal')});
+        }
     };
 
     self.cancelRedirect = function() {
@@ -48,7 +51,8 @@ var ViewModel = function(url) {
             dataType: 'json',
             success: function(response) {
                 self.url(response.url);
-        self.label(response.label);
+                self.isRegistration(response.is_registration);
+                self.label(response.label);
                 self.execute();
             }
         });

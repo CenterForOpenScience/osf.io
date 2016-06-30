@@ -53,6 +53,10 @@ git+git://github.com/mfraezz/kombu.git@v3.0.36
 certifi==2015.4.28
 sendgrid==1.5.13
 
+# avoid dbus-python requirement from secretstorage dependency
+# https://github.com/jaraco/keyring/blob/9.1/setup.py
+keyring==9.1
+
 requests==2.5.3
 urllib3==1.10.4
 requests-oauthlib==0.5.0

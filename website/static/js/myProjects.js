@@ -3,10 +3,12 @@
  */
 'use strict';
 
+require('css/log-feed.css');
 var $ = require('jquery');  // jQuery
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 var ProjectOrganizer = require('js/project-organizer');
 var $osf = require('js/osfHelpers');
+var mHelpers = require('js/mithrilHelpers');
 var Raven = require('raven-js');
 var LogText = require('js/logTextParser');
 var AddProject = require('js/addProjectPlugin');
@@ -16,6 +18,7 @@ var lodashFind = require('lodash.find');
 
 var MOBILE_WIDTH = 767; // Mobile view break point for responsiveness
 var NODE_PAGE_SIZE = 10; // Load 10 nodes at a time from server
+var PROFILE_IMAGE_SIZE = 16;
 
 /* Counter for unique ids for link objects */
 if (!window.fileBrowserCounter) {
@@ -90,7 +93,7 @@ NodeFetcher.prototype = {
     this._continue = true;
     if (!this.nextLink) return this._promise = null;
     if (this._promise) return this._promise;
-    return this._promise = m.request({method: 'GET', url: this.nextLink, config: xhrconfig, background: true})
+    return this._promise = m.request({method: 'GET', url: this.nextLink, config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain}), background: true})
       .then(function(results) {this._promise = null; return results;}.bind(this))
       .then(this._success.bind(this), this._fail.bind(this))
       .then((function() {
@@ -147,7 +150,7 @@ NodeFetcher.prototype = {
   fetch: function(id) {
     // TODO This method is currently untested
     var url =  $osf.apiV2Url(this.type + '/' + id + '/', {query: {related_counts: 'children', embed: 'contributors' }});
-    return m.request({method: 'GET', url: url, config: xhrconfig, background: true})
+    return m.request({method: 'GET', url: url, config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain}), background: true})
       .then((function(result) {
         this.add(result.data);
         return result.data;
@@ -155,7 +158,7 @@ NodeFetcher.prototype = {
   },
   fetchChildren: function(parent, link) {
     //TODO Allow suspending of children
-    return m.request({method: 'GET', url: link || parent.relationships.children.links.related.href + '?embed=contributors&related_counts=children', config: xhrconfig, background: true})
+    return m.request({method: 'GET', url: link || parent.relationships.children.links.related.href + '?embed=contributors&related_counts=children', config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain}), background: true})
       .then(this._childrenSuccess.bind(this, parent), this._fail.bind(this));
   },
   _success: function(results) {
@@ -250,13 +253,6 @@ function getUID() {
     window.fileBrowserCounter = window.fileBrowserCounter + 1;
     return window.fileBrowserCounter;
 }
-
-/* Send with ajax calls to work with api2 */
-var xhrconfig = function (xhr) {
-    xhr.withCredentials = window.contextVars.isOnRootDomain,
-    xhr.setRequestHeader('Content-Type', 'application/vnd.api+json;');
-    xhr.setRequestHeader('Accept', 'application/vnd.api+json; ext=bulk');
-};
 
 /* Adjust item data for treebeard to be able to filter tags and contributors not in the view */
 function _formatDataforPO(item) {
@@ -379,15 +375,10 @@ var MyProjects = {
 
         // Load categories to pass in to create project
         self.loadCategories = function _loadCategories () {
-            var promise = m.request({method : 'OPTIONS', url : $osf.apiV2Url('nodes/', { query : {}}), config : xhrconfig});
+            var promise = m.request({method : 'OPTIONS', url : $osf.apiV2Url('nodes/', { query : {}}), config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})});
             promise.then(function _success(results){
                 if(results.actions && results.actions.POST.category){
                     self.categoryList = results.actions.POST.category.choices;
-                    self.categoryList.sort(function(a, b){ // Quick alphabetical sorting
-                        if(a.value < b.value) return -1;
-                        if(a.value > b.value) return 1;
-                        return 0;
-                    });
                 }
             }, function _error(results){
                 var message = 'Error loading project category names.';
@@ -426,7 +417,7 @@ var MyProjects = {
                 _processResults(cachedResults);
             } else {
                 self.logRequestPending = true;
-                var promise = m.request({method : 'GET', url : url, config : xhrconfig});
+                var promise = m.request({method : 'GET', url : url, config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})});
                 promise.then(_processResults);
                 promise.then(function(){
                     self.logRequestPending = false;
@@ -442,7 +433,7 @@ var MyProjects = {
                 var id = item.data.id;
                 if(!item.data.attributes.retracted){
                     var urlPrefix = item.data.attributes.registration ? 'registrations' : 'nodes';
-                    var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['original_node', 'user', 'linked_node', 'template_node']}});
+                    var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['original_node', 'user', 'linked_node', 'template_node'], 'profile_image_size': PROFILE_IMAGE_SIZE}});
                     var promise = self.getLogs(url);
                     return promise;
                 }
@@ -518,7 +509,7 @@ var MyProjects = {
             m.request({
                 method : 'DELETE',
                 url : collectionNode.links.self + 'relationships/' + 'linked_nodes/',  //collection.links.self + 'node_links/' + item.data.id + '/', //collection.links.self + relationship/ + linked_nodes/
-                config : xhrconfig,
+                config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain}),
                 data : data
             }).then(function(result) {
               data.data.forEach(function(item) {
@@ -797,7 +788,7 @@ var MyProjects = {
         self.collectionsPageSize = m.prop(5);
         // Load collection list
         self.loadCollections = function _loadCollections (url){
-            var promise = m.request({method : 'GET', url : url, config : xhrconfig});
+            var promise = m.request({method : 'GET', url : url, config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})});
             promise.then(function(result){
                 result.data.forEach(function(node){
                     var count = node.relationships.linked_nodes.links.related.meta.count;
@@ -1086,7 +1077,7 @@ var Collections = {
                     }
                 }
             };
-            var promise = m.request({method : 'POST', url : url, config : xhrconfig, data : data});
+            var promise = m.request({method : 'POST', url : url, config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain}), data : data});
             promise.then(function(result){
                 var node = result.data;
                 var count = node.relationships.linked_nodes.links.related.meta.count || 0;
@@ -1118,7 +1109,7 @@ var Collections = {
         },
         self.deleteCollection = function _deleteCollection(){
             var url = self.collectionMenuObject().item.data.node.links.self;
-            var promise = m.request({method : 'DELETE', url : url, config : xhrconfig});
+            var promise = m.request({method : 'DELETE', url : url, config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})});
             promise.then(function(result){
                 for ( var i = 0; i < self.collections().length; i++) {
                     var item = self.collections()[i];
@@ -1153,7 +1144,7 @@ var Collections = {
                     }
                 }
             };
-            var promise = m.request({method : 'PATCH', url : url, config : xhrconfig, data : data});
+            var promise = m.request({method : 'PATCH', url : url, config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain}), data : data});
             promise.then(function(result){
                 self.collectionMenuObject().item.label = title;
             }, function(){
@@ -1192,7 +1183,7 @@ var Collections = {
                       m.request({
                           method : 'POST',
                           url : collection.data.node.links.self + 'relationships/linked_nodes/',
-                          config : xhrconfig,
+                          config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain}),
                           data : data[index]
                       }).then(function(result){
                           if (result){
@@ -1598,7 +1589,6 @@ var Breadcrumbs = {
                 if(index === arr.length-1){
                     if(item.type === 'node'){
                         var linkObject = args.breadcrumbs()[args.breadcrumbs().length - 1];
-                        var parentID = linkObject.data.id;
                         var showAddProject = true;
                         var addProjectTemplate = '';
                         var permissions = item.data.attributes.current_user_permissions;
@@ -1611,7 +1601,8 @@ var Breadcrumbs = {
                                 buttonTemplate: m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addSubComponent"]', {onclick: function() {
                                     $osf.trackClick('myProjects', 'add-component', 'open-add-component-modal');
                                 }}, [m('i.fa.fa-plus.m-r-xs', {style: 'font-size: 10px;'}), 'Create component']),
-                                parentID: parentID,
+                                parentID: linkObject.data.id,
+                                parentTitle: linkObject.data.name,
                                 modalID: 'addSubComponent',
                                 title: 'Create new component',
                                 categoryList: args.categoryList,
@@ -1635,7 +1626,9 @@ var Breadcrumbs = {
                                     });
                                 },
                                 trackingCategory: 'myProjects',
-                                trackingAction: 'add-component'
+                                trackingAction: 'add-component',
+                                contributors: Array.from(linkObject.data.contributorSet),
+                                currentUserCanEdit: ~linkObject.data.attributes.current_user_permissions.indexOf('write')
                             });
                         }
                         return [
@@ -1802,7 +1795,7 @@ var Information = {
                     return 'Uncategorized';
             }
         }
-        var template = '';
+        var template = ''; 
         var showRemoveFromCollection;
         var collectionFilter = args.currentView().collection;
         if (args.selected().length === 0) {

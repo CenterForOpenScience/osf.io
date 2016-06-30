@@ -229,8 +229,6 @@
 
 <%include file="project/modal_add_pointer.mako"/>
 
-<%include file="project/modal_add_component.mako"/>
-
 % if user['can_comment'] or node['has_comments']:
     <%include file="include/comment_pane_template.mako"/>
 % endif
@@ -379,8 +377,20 @@
 
         %endif
 
-
-        <%include file="log_list.mako" args="scripted=True" />
+        <!-- Recent Activity (Logs) -->
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix">
+                <h3 class="panel-title">Recent Activity</h3>
+            </div>
+            <div class="panel-body">
+                <div id="logFeed">
+                    <div class="spinner-loading-wrapper">
+                        <div class="logo-spin logo-lg"></div>
+                         <p class="m-t-sm fg-load-message"> Loading logs...  </p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
     </div>
 
@@ -393,7 +403,9 @@
             <h3 class="panel-title" style="padding-bottom: 5px; padding-top: 5px;">Components </h3>
             <div class="pull-right">
                 % if 'write' in user['permissions'] and not node['is_registration']:
-                    <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
+                    <span id="newComponent">
+                        <button class="btn btn-sm btn-default" disabled="true">Add Component</button>
+                    </span>
                     <a class="btn btn-sm btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
                 % endif
             </div>
@@ -448,6 +460,7 @@ ${parent.javascript_bottom()}
             canEdit: ${ user['can_edit'] | sjson, n },
         },
         node: {
+            id: ${node['id'] | sjson, n},
             hasChildren: ${ node['has_children'] | sjson, n },
             isRegistration: ${ node['is_registration'] | sjson, n },
             tags: ${ node['tags'] | sjson, n },
