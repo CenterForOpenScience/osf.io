@@ -11,10 +11,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 class Evernote(ExternalProvider):
-    """
-    First cut at the Evernote provider
 
-    """
     name = 'Evernote'
     short_name = 'evernote'
 
@@ -23,14 +20,11 @@ class Evernote(ExternalProvider):
 
     client_id = settings.EVERNOTE_CLIENT_ID
     client_secret = settings.EVERNOTE_CLIENT_SECRET
-    _sandbox = settings.EVERNOTE_SANDBOX
+    #_sandbox = settings.EVERNOTE_SANDBOX
 
-    BASE_URL = "https://www.evernote.com" if not _sandbox  \
-           else "https://sandbox.evernote.com"
-
-    auth_url_base = '{}/OAuth.action'.format(BASE_URL)
-    request_token_url = '{}/oauth'.format(BASE_URL)
-    callback_url = '{}/oauth'.format(BASE_URL)
+    auth_url_base = '{}/OAuth.action'.format(settings.BASE_URL)
+    request_token_url = '{}/oauth'.format(settings.BASE_URL)
+    callback_url = '{}/oauth'.format(settings.BASE_URL)
 
     _oauth_version = OAUTH1
 

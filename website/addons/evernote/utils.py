@@ -42,8 +42,8 @@ def notes_metadata(client, **input_kw):
     noteStore = client.get_note_store()
 
     # pull out offset and page_size value if supplied
-    offset = input_kw.pop("offset", 0)
-    page_size = input_kw.pop("page_size", 100)
+    offset = input_kw.pop('offset', 0)
+    page_size = input_kw.pop('page_size', 100)
 
     # let's update any keywords that are updated
     # http://dev.evernote.com/documentation/reference/NoteStore.html#Struct_NotesMetadataResultSpec

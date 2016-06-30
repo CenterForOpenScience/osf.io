@@ -1,4 +1,4 @@
-from website.addons.evernote import model, routes
+from website.addons.evernote import model, routes, views
 
 # MUST
 
