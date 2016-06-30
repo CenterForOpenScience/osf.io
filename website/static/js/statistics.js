@@ -116,7 +116,7 @@ var KeenViz = function(){
     };
 
     self.popularPages = function() {
-        var popularPagesQuery = {
+        var query = {
             type: 'count_unique',
             params: {
                 event_collection: 'pageviews',
@@ -126,7 +126,7 @@ var KeenViz = function(){
             }
         };
 
-        var popularPagesViz = new keenDataviz()
+        var dataviz = new keenDataviz()
                 .el('#popularPages')
                 .chartType('bar')
                 .chartOptions({
@@ -137,7 +137,20 @@ var KeenViz = function(){
                     }
                 });
 
-        self.buildChart(popularPagesViz, popularPagesQuery);
+        var munger = function() {
+            this.dataset.updateColumn(0, function(value, index, column) {
+                var title = value.replace(/^OSF \| /, '');
+                // Strip off the project title, if present at beginning of string
+                if (title.startsWith(window.contextVars.node.title)) {
+                    // strip off first N chars where N is project title length + 1 space
+                    var pageTitleIndex = window.contextVars.node.title.length + 1;
+                    title = title.slice(pageTitleIndex);
+                }
+                return title || 'Home';
+            });
+        };
+
+        self.buildChart(dataviz, query, munger);
     };
 
     self.buildChart = function(dataviz, query, munger){
