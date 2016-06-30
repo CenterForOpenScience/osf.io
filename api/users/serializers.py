@@ -11,6 +11,15 @@ from api.base.serializers import (
 )
 from api.base.utils import absolute_reverse
 
+class PublicFilesSerializer(JSONAPISerializer):
+
+    files = RelationshipField(
+        related_view='nodes:node-providers',
+        related_view_kwargs={'node_id': '<pk>'}
+    )
+
+    class Meta:
+        type_ = "nodes"
 
 class UserSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
