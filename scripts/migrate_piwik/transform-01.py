@@ -151,8 +151,8 @@ def main():
                 'returning': True if visit['visitor_returning'] else False,  # visit
             },
             'user': {
-                'id': user_id,  # private
-                'entryPoint': user_entry_point,
+                'id': user_id,
+                'entry_point': user_entry_point,
             },
             'node': {
                 'id': node_id,
