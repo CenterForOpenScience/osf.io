@@ -7,8 +7,6 @@ FULL_NAME = 'Evernote'
 
 ROUTES = [routes.api_routes]
 
-MODELS = []
-
 ADDED_DEFAULT = []
 ADDED_MANDATORY = []
 
@@ -16,7 +14,8 @@ ADDED_MANDATORY = []
 VIEWS = ['widget']
 
 # does this setting make it show up in the Files section?
-HAS_HGRID_FILES = False
+HAS_HGRID_FILES = True
+GET_HGRID_DATA = views.evernote_root_folder
 
 # SHOULD be one of documentation, storage, citations, security, bibliography, and other
 # Additional categories can be added to ADDON_CATEGORIES in website.settings.defaults
