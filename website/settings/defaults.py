@@ -53,16 +53,16 @@ PROXY_ADDRS = []
 # May set these to True in local.py for development
 DEV_MODE = False
 DEBUG_MODE = False
+SECURE_MODE = not DEBUG_MODE  # Set secure cookie
+
+PROTOCOL = 'https://' if SECURE_MODE else 'http://'
+DOMAIN = PROTOCOL + 'localhost:5000/'
+API_DOMAIN = PROTOCOL + 'localhost:8000/'
 
 LOG_PATH = os.path.join(APP_PATH, 'logs')
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
 ANALYTICS_PATH = os.path.join(BASE_PATH, 'analytics')
 
-CORE_TEMPLATES = os.path.join(BASE_PATH, 'templates/log_templates.mako')
-BUILT_TEMPLATES = os.path.join(BASE_PATH, 'templates/_log_templates.mako')
-
-DOMAIN = 'http://localhost:5000/'
-API_DOMAIN = 'http://localhost:8000/'
 GNUPG_HOME = os.path.join(BASE_PATH, 'gpg')
 GNUPG_BINARY = 'gpg'
 
@@ -81,13 +81,20 @@ SHARE_ELASTIC_INDEX = 'share'
 SHARE_ELASTIC_INDEX_TEMPLATE = 'share_v{}'
 
 # Sessions
+COOKIE_NAME = 'osf'
 # TODO: Override OSF_COOKIE_DOMAIN in local.py in production
 OSF_COOKIE_DOMAIN = None
-COOKIE_NAME = 'osf'
 # server-side verification timeout
 OSF_SESSION_TIMEOUT = 30 * 24 * 60 * 60  # 30 days in seconds
 # TODO: Override SECRET_KEY in local.py in production
 SECRET_KEY = 'CHANGEME'
+SESSION_COOKIE_SECURE = SECURE_MODE
+# TODO: Change to True after ticket #OSF-6339 has been resolved
+SESSION_COOKIE_HTTPONLY = False
+
+# local path to private key and cert for local development using https, overwrite in local.py
+OSF_SERVER_KEY = None
+OSF_SERVER_CERT = None
 
 # Change if using `scripts/cron.py` to manage crontab
 CRON_USER = None
@@ -221,6 +228,8 @@ with open(os.path.join(ROOT, 'addons.json')) as fp:
     ADDONS_ARCHIVABLE = addon_settings['addons_archivable']
     ADDONS_COMMENTABLE = addon_settings['addons_commentable']
     ADDONS_BASED_ON_IDS = addon_settings['addons_based_on_ids']
+    ADDONS_DESCRIPTION = addon_settings['addons_description']
+    ADDONS_URL = addon_settings['addons_url']
 
 ADDON_CATEGORIES = [
     'documentation',

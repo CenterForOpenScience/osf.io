@@ -85,8 +85,6 @@
         </style>
         <div id='devmode' data-bind='click: showHideMetaInfo'><strong>WARNING</strong>: This site is running in development mode.</div>
     </div>
-    %else:
-        <div id="devModeControls"></div>
     % endif
 
     <%namespace name="nav_file" file="nav.mako"/>

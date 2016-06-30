@@ -72,7 +72,12 @@ def server(ctx, host=None, port=5000, debug=True, live=False, gitlogs=False):
         server.watch(os.path.join(HERE, 'website', 'static', 'public'))
         server.serve(port=port)
     else:
-        app.run(host=host, port=port, debug=debug, threaded=debug, extra_files=[settings.ASSET_HASH_PATH])
+        if settings.SECURE_MODE:
+            context = (settings.OSF_SERVER_CERT, settings.OSF_SERVER_KEY)
+        else:
+            context = None
+        app.run(host=host, port=port, debug=debug, threaded=debug, extra_files=[settings.ASSET_HASH_PATH], ssl_context=context)
+
 
 @task
 def git_logs(ctx):
@@ -84,7 +89,12 @@ def git_logs(ctx):
 def apiserver(ctx, port=8000, wait=True, host='127.0.0.1'):
     """Run the API server."""
     env = os.environ.copy()
-    cmd = 'DJANGO_SETTINGS_MODULE=api.base.settings {} manage.py runserver {}:{} --nothreading'.format(sys.executable, host, port)
+    cmd = 'DJANGO_SETTINGS_MODULE=api.base.settings {} manage.py runserver {}:{} --nothreading'\
+        .format(sys.executable, host, port)
+    if settings.SECURE_MODE:
+        cmd = cmd.replace('runserver', 'runsslserver')
+        cmd += ' --certificate {} --key {}'.format(settings.OSF_SERVER_CERT, settings.OSF_SERVER_KEY)
+
     if wait:
         return ctx.run(cmd, echo=True, pty=True)
     from subprocess import Popen
@@ -97,6 +107,9 @@ def adminserver(ctx, port=8001, host='127.0.0.1'):
     """Run the Admin server."""
     env = 'DJANGO_SETTINGS_MODULE="admin.base.settings"'
     cmd = '{} python manage.py runserver {}:{} --nothreading'.format(env, host, port)
+    if settings.SECURE_MODE:
+        cmd = cmd.replace('runserver', 'runsslserver')
+        cmd += ' --certificate {} --key {}'.format(settings.OSF_SERVER_CERT, settings.OSF_SERVER_KEY)
     ctx.run(cmd, echo=True, pty=True)
 
 
@@ -218,6 +231,7 @@ def format_context(context):
         line = '{name}: {obj!r}'.format(**locals())
         lines.append(line)
     return '\n'.join(lines)
+
 
 # Shell command adapted from Flask-Script. See NOTICE for license info.
 @task
@@ -401,6 +415,7 @@ def migrate_search(ctx, delete=False, index=settings.ELASTIC_INDEX):
     from website.search_migration.migrate import migrate
     migrate(delete, index=index)
 
+
 @task
 def rebuild_search(ctx):
     """Delete and recreate the index for elasticsearch"""
@@ -498,10 +513,12 @@ def test_osf(ctx):
     """Run the OSF test suite."""
     test_module(module='tests/')
 
+
 @task
 def test_api(ctx):
     """Run the API test suite."""
     test_module(module='api_tests/')
+
 
 @task
 def test_admin(ctx):
@@ -510,6 +527,7 @@ def test_admin(ctx):
     module = 'admin_tests/'
     module_fmt = ' '.join(module) if isinstance(module, list) else module
     admin_tasks.manage('test {}'.format(module_fmt))
+
 
 @task
 def test_varnish(ctx):
@@ -548,6 +566,7 @@ def test(ctx, all=False, syntax=False):
         test_addons(ctx)
         karma(ctx, single=True, browsers='PhantomJS')
 
+
 @task
 def test_travis_osf(ctx):
     """
@@ -567,9 +586,11 @@ def test_travis_else(ctx):
     test_admin(ctx)
     karma(ctx, single=True, browsers='PhantomJS')
 
+
 @task
 def test_travis_varnish(ctx):
     test_varnish(ctx)
+
 
 @task
 def karma(ctx, single=False, sauce=False, browsers=None):
@@ -699,6 +720,7 @@ def copy_settings(ctx, addons=False):
     if addons:
         copy_addon_settings()
 
+
 @task
 def packages(ctx):
     brew_commands = [
@@ -721,6 +743,7 @@ def packages(ctx):
         # TODO: Write a script similar to brew bundle for Ubuntu
         # e.g., run('sudo apt-get install [list of packages]')
         pass
+
 
 @task(aliases=['bower'])
 def bower_install(ctx):
@@ -933,6 +956,7 @@ def assets(ctx, dev=False, watch=False, colors=False):
     # on prod
     webpack(ctx, clean=False, watch=watch, dev=dev, colors=colors)
 
+
 @task
 def generate_self_signed(ctx, domain):
     """Generate self-signed SSL key and certificate.
@@ -942,6 +966,7 @@ def generate_self_signed(ctx, domain):
         ' -keyout {0}.key -out {0}.crt'
     ).format(domain)
     ctx.run(cmd)
+
 
 @task
 def update_citation_styles(ctx):

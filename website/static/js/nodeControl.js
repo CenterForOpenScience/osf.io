@@ -24,7 +24,6 @@ var NodesPrivacy = require('js/nodesPrivacy').NodesPrivacy;
  */
 var ProjectViewModel = function(data, options) {
     var self = this;
-    self.categories = (options && options.categories) || {};
     
     self._id = data.node.id;
     self.apiUrl = data.node.api_url;
@@ -133,8 +132,9 @@ var ProjectViewModel = function(data, options) {
             }
         }));
 
-        var categoryOptions = $.map(self.categories, function(display, value) {
-            return {value: value, text: display};
+        var categories = (options && options.categories) || {};
+        var categoryOptions = $.map(categories, function(item) {
+            return {value: item.value, text: item.display_name};
         });
         $('#nodeCategoryEditable').editable($.extend({}, editableOptions, {
             type: 'select',
