@@ -69,7 +69,7 @@ var PublicFilesDropzone = {
             success: function (file, xhr) {
                 var buttonContainer = document.createElement('div');
                 $('div.col-sm-6').append(buttonContainer);
-                var response = JSON.parse(file.xhr.response)
+                var response = JSON.parse(file.xhr.response);
                 var link = 'http://localhost:5000/project/' + window.contextVars.publicFilesId + '/files/osfstorage' + response.path;
                 m.render(buttonContainer, dzPreviewTemplate.shareButton(link));
                 this.processQueue();
