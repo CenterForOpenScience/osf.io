@@ -29,9 +29,6 @@ class Evernote(ExternalProvider):
     _oauth_version = OAUTH1
 
     def handle_callback(self, response):
-        """View called when the Oauth flow is completed. Adds a new BoxUserSettings
-        record to the user and saves the user's access token and account info.
-        """
 
         client = utils.get_evernote_client(token=response.get('oauth_token'))
 
