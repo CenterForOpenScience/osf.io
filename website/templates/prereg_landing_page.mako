@@ -1,6 +1,36 @@
 <%inherit file="base.mako"/>
 
-<%def name="title()">OSF Prereg Challenge</%def>
+<%namespace name="erpc" file="erpc_landing_info.mako"/>
+<%namespace name="prereg" file="prereg_landing_info.mako"/>
+
+<%def name="description()"> 
+    <%
+        if campaign_short == 'erpc':
+            return erpc.description()
+        elif campaign_short == 'prereg':
+            return prereg.description()
+    %>
+</%def>
+
+<%def name="kind()">
+    <%
+      if campaign_short == 'erpc':
+         return erpc.kind()
+      elif campaign_short == 'prereg':
+          return prereg.kind()
+    %>
+</%def>
+
+<%def name="steps()"> 
+  <%
+      if campaign_short == 'erpc':
+         return erpc.steps()
+      elif campaign_short == 'prereg':
+          return prereg.steps()
+  %>
+</%def>
+
+<%def name="title()">OSF ${campaign_long}</%def>
 
 <%def name="stylesheets()">
     ${ parent.stylesheets() }
@@ -41,15 +71,11 @@
 
 <%def name="content()">
 <div class="prereg-container">
-    <h1 class="m-t-xl m-b-lg text-center">Welcome to the Preregistration Challenge!</h1>
-    <p>The process of <a href="http://www.cos.io/prereg">preregistering</a> your plans is beneficial to both the scientific field and to you, the scientist. By writing out detailed data collection methods, analysis plans, and rules for excluding or missing data, you can make important decisions that affect your workflow earlier, without the biases that occur once the data are in front of you.</p>
+    <h1 class="m-t-xl m-b-lg text-center">Welcome to the ${campaign_long}!</h1>
+    <p>${description()}</p>
     <p class="m-t-lg f-w-lg">Ready for the Challenge?</p>
     <p>
-        <ol>
-            <li>Specify all your study and analysis decisions prior to investigating your data</li>
-            <li>Publish your study in an eligible journal</li>
-            <li>Receive $1,000</li>
-        </ol>
+        ${steps()}
     </p>
     <div class="col-md-12 visible-xs">                  
       ## Always displayed
@@ -94,16 +120,16 @@
           <tr>
             ## Always displayed
             <td class="col-sm-${ num_cols } prereg-button-col">
-              <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round prereg" data-qtoggle-group="prereg" data-qtoggle-target="#newPrereg">Start a new preregistration</div>
+              <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round prereg" data-qtoggle-group="prereg" data-qtoggle-target="#newPrereg">Start a new ${kind()}</div>
             </td>
             %if has_draft_registrations:
             <td class="col-sm-${ num_cols } prereg-button-col">
-              <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingPrereg">Continue working on an existing preregistration</div>
+              <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingPrereg">Continue working on an existing ${kind()}</div>
             </td>
             %endif
             %if has_projects:
             <td class="col-sm-${ num_cols } prereg-button-col">
-              <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingProject">Preregister a project you already have on the OSF</div>
+              <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingProject">Make a ${kind()} for a project you already have on the OSF</div>
             </td>
             %endif
           </tr>
@@ -128,4 +154,8 @@
     </div>
 </div>
 <%include file="components/autocomplete.mako"/>
+<script type="text/javascript">
+  window.contextVars = window.contextVars || {};
+  window.contextVars.campaign = ${campaign_short | sjson};
+</script>
 </%def>

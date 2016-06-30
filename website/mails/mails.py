@@ -131,6 +131,7 @@ TEST = Mail('test', subject='A test email to ${name}', categories=['test'])
 INITIAL_CONFIRM_EMAIL = Mail('initial_confirm', subject='Open Science Framework Account Verification')
 CONFIRM_EMAIL = Mail('confirm', subject='Add a new email to your OSF account')
 CONFIRM_EMAIL_PREREG = Mail('confirm_prereg', subject='Open Science Framework Account Verification, Preregistration Challenge')
+CONFIRM_EMAIL_ERPC = Mail('confirm_erpc', subject='Open Science Framework Account Verification, Election Research Preacceptance Challenge')
 
 CONFIRM_MERGE = Mail('confirm_merge', subject='Confirm account merge')
 

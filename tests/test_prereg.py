@@ -2,7 +2,8 @@ from nose.tools import *  # noqa
 
 from modularodm import Q
 
-from website.prereg import prereg_landing_page as landing_page, drafts_for_user
+from website.prereg import prereg_landing_page as landing_page
+from website.prereg.utils import drafts_for_user
 from website.project.model import ensure_schemas, MetaSchema
 
 from tests.base import OsfTestCase
@@ -21,6 +22,8 @@ class PreregLandingPageTestCase(OsfTestCase):
             {
                 'has_projects': False,
                 'has_draft_registrations': False,
+                'campaign_long': 'Prereg Challenge',
+                'campaign_short': 'prereg',
             }
         )
 
@@ -32,6 +35,8 @@ class PreregLandingPageTestCase(OsfTestCase):
             {
                 'has_projects': True,
                 'has_draft_registrations': False,
+                'campaign_long': 'Prereg Challenge',
+                'campaign_short': 'prereg',
             }
         )
 
@@ -49,6 +54,8 @@ class PreregLandingPageTestCase(OsfTestCase):
             {
                 'has_projects': True,
                 'has_draft_registrations': True,
+                'campaign_long': 'Prereg Challenge',
+                'campaign_short': 'prereg',
             }
         )
 
@@ -72,7 +79,7 @@ class PreregLandingPageTestCase(OsfTestCase):
         )
         d1.registered_node = factories.ProjectFactory()
         d1.save()
-        drafts = drafts_for_user(self.user)
+        drafts = drafts_for_user(self.user, 'prereg')
         for d in drafts:
             assert_in(d._id, (d2._id, d3._id))
             assert_not_equal(d._id, d1._id)
