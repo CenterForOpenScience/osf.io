@@ -169,6 +169,16 @@ function confirmEmails(emailsToAdd) {
                             $osf.growl('Success', confirmMessage, 'success', 3000);
                             confirmEmails(emailsToAdd.slice(1));
                         }).fail(function (xhr, textStatus, error) {
+                            var response = JSON.parse(xhr['responseText'])
+                            if(response.status === "DuplicateKeyError"){
+                                Raven.captureMessage('Could not add email', {
+                                    url: confirmedEmailURL,
+                                    textStatus: textStatus,
+                                    error: error
+                                });
+                                $osf.growl(response.message_short,
+                                    response.message_long)
+                            }else{
                             Raven.captureMessage('Could not add email', {
                                 url: confirmedEmailURL,
                                 textStatus: textStatus,
@@ -178,6 +188,7 @@ function confirmEmails(emailsToAdd) {
                                 confirmFailMessage,
                                 'danger'
                             );
+                            }
                         });
                     }
                 }
