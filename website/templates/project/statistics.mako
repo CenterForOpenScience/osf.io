@@ -21,7 +21,7 @@
         <div class="col-sm-6">
             <div class="panel panel-default">
                 <div class="panel-heading clearfix">
-                    <h3 class="panel-title">Visits Over Time</h3>
+                    <h3 class="panel-title">Visits over past week</h3>
                 </div>
                 <div id="visits" class="panel-body">
                     <div class="text-center">
@@ -33,7 +33,7 @@
         <div class="col-sm-6">
           <div class="panel panel-default">
             <div class="panel-heading clearfix">
-              <h3 class="panel-title">Visits by Server Time</h3>
+              <h3 class="panel-title">Visits by server time</h3>
             </div>
             <div id="serverTimeVisits" class="panel-body">
               <div class="text-center">
@@ -45,7 +45,7 @@
         <div class="col-sm-6">
             <div class="panel panel-default">
                 <div class="panel-heading clearfix">
-                    <h3 class="panel-title">Top Referrers</h3>
+                    <h3 class="panel-title">Top referrers</h3>
                 </div>
                 <div id="topReferrers" class="panel-body">
                     <div class="text-center">
@@ -57,7 +57,7 @@
         <div class="col-sm-6">
             <div class="panel panel-default">
                 <div class="panel-heading clearfix">
-                    <h3 class="panel-title">Popular Pages</h3>
+                    <h3 class="panel-title">Popular pages by visits</h3>
                 </div>
                 <div id="popularPages" class="panel-body">
                     <div class="text-center">
