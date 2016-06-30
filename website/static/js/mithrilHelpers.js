@@ -5,7 +5,7 @@ var $ = require('jquery');
 var apiV2Config = function (options) {
     var defaults = {
         withCredentials: true
-    }
+    };
     var opts = $.extend({}, defaults, options);
     return function (xhr) {
         xhr.withCredentials = opts.withCredentials;
