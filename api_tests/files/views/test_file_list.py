@@ -189,7 +189,6 @@ class TestFileLists(ApiTestCase):
         admin = AuthUserFactory()
         self.node.add_contributor(admin, auth=self.auth, permissions=['read', 'write', 'admin'])
         self.node.save()
-        self.node.reload()
 
         nt.assert_equal(self.checked_in_one.checkout, self.user)
         nt.assert_equal(self.checked_in_two.checkout, self.user)
