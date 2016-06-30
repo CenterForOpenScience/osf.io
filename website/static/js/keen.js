@@ -2,9 +2,9 @@
 
 
 var $ = require('jquery');
-var Cookie = require('js-cookie');
 var md5 = require('js-md5');
 var Raven = require('raven-js');
+var Cookie = require('js-cookie');
 var lodashGet = require('lodash.get');
 var keenTracking = require('keen-tracking');
 

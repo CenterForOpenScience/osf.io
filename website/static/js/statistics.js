@@ -9,13 +9,21 @@ var keenAnalysis = require('keen-analysis');
 var KeenViz = function(){
     var self = this;
 
+    /**
+    * Manages the connections to Keen.  Needs a project id and valid read key for that project.
+    *
+    * @property keenClient
+    * @type {keenAnalysis}
+    */
     self.keenClient = new keenAnalysis({
         projectId: window.contextVars.keen.public.projectId,
         readKey : window.contextVars.keen.public.readKey,
     });
 
+
+    // show visits to this project over the last week
     self.visitsByDay = function() {
-        var visitsQuery = {
+        var query = {
             'type':'count_unique',
             'params' : {
                 event_collection: 'pageviews',
@@ -25,7 +33,7 @@ var KeenViz = function(){
             }
         };
 
-        var visitsViz = new keenDataviz()
+        var dataviz = new keenDataviz()
                 .el('#visits')
                 .chartType('line')
                 .chartOptions({
@@ -36,11 +44,13 @@ var KeenViz = function(){
                     }
                 });
 
-        self.buildChart(visitsViz, visitsQuery);
+        self.buildChart(query, dataviz);
     };
 
+
+    // show most common referrers to this project from the last week
     self.topReferrers = function() {
-        var topReferrersQuery = {
+        var query = {
             type: 'count_unique',
             params: {
                 event_collection: 'pageviews',
@@ -50,7 +60,7 @@ var KeenViz = function(){
             }
         };
 
-        var topReferrersViz = new keenDataviz()
+        var dataviz = new keenDataviz()
                 .el('#topReferrers')
                 .chartType('pie')
                 .chartOptions({
@@ -61,9 +71,10 @@ var KeenViz = function(){
                     },
                 });
 
-        self.buildChart(topReferrersViz, topReferrersQuery);
+        self.buildChart(query, dataviz);
     };
 
+    // The number of visits by hour across last week
     self.visitsServerTime = function() {
         var query = {
             'type': 'count_unique',
@@ -98,6 +109,7 @@ var KeenViz = function(){
                     },
                 });
 
+        // make sure all hours of the day 0-23 are present
         var munger = function() {
             var foundHours = {};
             for (var i=this.dataset.matrix.length-1; i>0; i--) {
@@ -111,10 +123,11 @@ var KeenViz = function(){
                 this.dataset.appendRow(stringyNum, [ foundHours[stringyNum] || 0 ]);
             }
         };
-        self.buildChart(dataviz, query, munger);
+        self.buildChart(query, dataviz, munger);
 
     };
 
+    // most popular sub-pages of this project
     self.popularPages = function() {
         var query = {
             type: 'count_unique',
@@ -150,10 +163,27 @@ var KeenViz = function(){
             });
         };
 
-        self.buildChart(dataviz, query, munger);
+        self.buildChart(query, dataviz, munger);
     };
 
-    self.buildChart = function(dataviz, query, munger){
+
+    /**
+     * Build a data chart on the page. The element on the page that the chart will be inserted into
+     * is defined in the `dataviz` parameter. A spinner will be displayed while the data is being
+     * loaded.  If an error is returned, it will be displayed within the chart element.
+     *
+     * @method buildChart
+     * @param {Object} query Defines the analysis to relay to Keen. Has two top-level keys, `type`
+     *                       and `params`. `type` is the type of aggregation to perform. `params`
+     *                       defines the parameters of the query.  See:
+     *                       https://keen.io/docs/api/?javascript#analyses
+     * @param {Keen.Dataviz} dataviz The Dataviz object that defines the look chart. See:
+     *                               https://github.com/keen/keen-dataviz.js/tree/master/docs
+     * @param {Function} [munger] *optional* A function that can munge the Keen.Dataset returned
+     *                            from the query.  Useful for formatting data before display. See:
+     *                            https://github.com/keen/keen-dataviz.js/tree/master/docs/dataset
+     */
+    self.buildChart = function(query, dataviz, munger){
         munger = munger || function() {};
 
         self.keenClient
@@ -166,7 +196,7 @@ var KeenViz = function(){
             });
     };
 
-    self.init = function () {
+    self.drawAllCharts = function () {
         self.visitsByDay();
         self.topReferrers();
         self.visitsServerTime();
@@ -178,8 +208,7 @@ var KeenViz = function(){
 
 function ProjectUsageStatistics() {
     var self = this;
-    self.KeenViz = new KeenViz();
-    self.KeenViz.init();
+    self.keenViz = new KeenViz();
 }
 
 module.exports = ProjectUsageStatistics;

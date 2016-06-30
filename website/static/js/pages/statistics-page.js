@@ -17,5 +17,6 @@ $(function(){
 });
 
 keenAnalysis.ready(function(){
-    new ProjectUsageStatistics();
+    var projectUsageStats = new ProjectUsageStatistics();
+    projectUsageStats.keenViz.drawAllCharts();
 });
