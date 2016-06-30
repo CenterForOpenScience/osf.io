@@ -19,7 +19,7 @@ class PublicFilesSerializer(JSONAPISerializer):
     )
 
     class Meta:
-        type_ = "nodes"
+        type_ = 'nodes'
 
 class UserSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
