@@ -46,3 +46,6 @@ class GuidSerializer(JSONAPISerializer):
 
     def get_type(self, guid):
         return get_type(guid.referent)
+
+    def get_absolute_url(self, obj):
+        return obj.referent.get_absolute_url()
