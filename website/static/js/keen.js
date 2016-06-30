@@ -59,14 +59,13 @@ var KeenTracker = (function() {
                 type: lodashGet(node, 'category'),
                 tags: lodashGet(node, 'tags'),
             },
-            user: {},
-            geo: {},
             anon: {
                 id: md5(Cookie.get('keenSessionId')),
                 continent: user.anon.continent,
                 country: user.anon.country,
-                latitude: user.anon.latitude,
-                longitude: user.anon.longitude,
+            },
+            meta: {
+                epoch: 1, // version of pageview event schema
             },
             keen: {
                 addons: [

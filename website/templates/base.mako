@@ -189,8 +189,6 @@
                     anon: {
                         continent: ${ anon_user_continent | sjson, n},
                         country: ${ anon_user_country | sjson, n},
-                        latitude: ${ anon_user_latitude | sjson, n},
-                        longitude: ${ anon_user_longitude | sjson, n},
                     },
                 },
                 allInstitutions: ${ all_institutions | sjson, n},

@@ -82,8 +82,6 @@ def get_globals():
         'display_name': get_display_name(user.fullname) if user else '',
         'anon_user_continent': getattr(location, 'continent', None),
         'anon_user_country': getattr(location, 'country', None),
-        'anon_user_latitude': getattr(location, 'location', (None, None))[0],
-        'anon_user_longitude': getattr(location, 'location', (None, None))[1],
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
         'sentry_dsn_js': settings.SENTRY_DSN_JS if sentry.enabled else None,
         'dev_mode': settings.DEV_MODE,
