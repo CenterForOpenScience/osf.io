@@ -89,6 +89,7 @@ class TestFileLists(ApiTestCase):
         super(TestFileLists, self).setUp()
         self.user = AuthUserFactory()
         self.node = ProjectFactory(creator=self.user)
+        self.auth = Auth(self.user)
 
         self.file_one = api_utils.create_test_file(self.node, self.user, filename="Man I'm the Macho")
         self.file_two = api_utils.create_test_file(self.node, self.user, filename="Like Randy")
@@ -170,6 +171,54 @@ class TestFileLists(ApiTestCase):
             ),
             bulk_file_payload,
             auth=self.user.auth,
+            bulk=True
+        )
+
+        nt.assert_equal(res.status_code, 200)
+
+        self.checked_in_one.reload()
+        self.checked_in_two.reload()
+
+        nt.assert_equal(self.checked_in_one.checkout, None)
+        nt.assert_equal(self.checked_in_two.checkout, None)
+
+    def test_admin_forced_checkin(self):
+        """
+        Test to see if an admin can bulk check in files that a user has checked out
+        """
+        admin = AuthUserFactory()
+        self.node.add_contributor(admin, auth=self.auth, permissions=['read', 'write', 'admin'])
+        self.node.save()
+        self.node.reload()
+
+        nt.assert_equal(self.checked_in_one.checkout, self.user)
+        nt.assert_equal(self.checked_in_two.checkout, self.user)
+
+        bulk_file_payload = {
+            'data': [
+                {
+                    'id': self.checked_in_one._id,
+                    'type': 'files',
+                    'attributes': {
+                        'checkout': None,
+                    }
+                },
+                {
+                    'id': self.checked_in_two._id,
+                    'type': 'files',
+                    'attributes': {
+                        'checkout': None,
+                    }
+                }
+            ]
+        }
+
+        res = self.app.put_json_api(
+            '/{}files/{}/list/osfstorage/'.format(
+                API_BASE, self.node.pk
+            ),
+            bulk_file_payload,
+            auth=admin.auth,
             bulk=True
         )
 
