@@ -1,4 +1,4 @@
-from website.models import Node, User
+from website.models import Node, User, Guid
 from website.files.models import FileNode
 
 from api.base.serializers import (JSONAPISerializer, IDField, TypeField, RelationshipField)
@@ -10,6 +10,8 @@ def get_type(record):
         return 'users'
     elif isinstance(record, FileNode):
         return 'files'
+    elif isinstance(record, Guid):
+        return get_type(record.referent)
 
 def get_related_view(record):
     kind = get_type(record)
@@ -17,8 +19,7 @@ def get_related_view(record):
     singular = kind.rstrip('s')
     return '{}:{}-detail'.format(kind, singular)
 
-def get_related_view_kwargs(guid):
-    record = guid.referent
+def get_related_view_kwargs(record):
     kind = get_type(record)
     # slight hack, works for existing types
     singular = kind.rstrip('s')

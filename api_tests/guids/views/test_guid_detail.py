@@ -120,3 +120,15 @@ class TestGuidDetail(ApiTestCase):
         related = res.json['data']['relationships']['referent']['links']['related']
         assert_equal(related['href'], related_url)
         assert_equal(related['meta']['type'], 'nodes')
+
+    def test_referent_is_embeddable(self):
+        project = ProjectFactory(creator=self.user)
+        url = '{}{}guids/{}/?resolve=false&embed=referent'.format(API_DOMAIN, API_BASE, project._id)
+        res = self.app.get(url, auth=self.user.auth)
+        related_url = '{}{}nodes/{}/'.format(API_DOMAIN, API_BASE, project._id)
+        related = res.json['data']['relationships']['referent']['links']['related']
+        assert_equal(related['href'], related_url)
+        assert_equal(related['meta']['type'], 'nodes')
+        referent = res.json['data']['embeds']['referent']['data']
+        assert_equal(referent['id'], project._id)
+        assert_equal(referent['type'], 'nodes')
