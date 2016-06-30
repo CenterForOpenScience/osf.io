@@ -58,14 +58,14 @@ var KeenViz = function(){
                         format:{
                             name: function(){return 'Visits';}
                         }
-                    }
+                    },
                 });
 
         self.buildChart(topReferrersViz, topReferrersQuery);
     };
 
     self.visitsServerTime = function() {
-        var serverTimeVisitsQuery = {
+        var query = {
             'type': 'count_unique',
             'params': {
                 event_collection: 'pageviews',
@@ -75,7 +75,7 @@ var KeenViz = function(){
             }
         };
 
-        var serverVisitsViz = new keenDataviz()
+        var dataviz = new keenDataviz()
                 .el('#serverTimeVisits')
                 .chartType('bar')
                 .chartOptions({
@@ -83,9 +83,35 @@ var KeenViz = function(){
                         format:{
                             name: function(){return 'Visits';}
                         }
-                    }
+                    },
+                    axis: {
+                        x: {
+                            label: {
+                                text: 'Hour of Day',
+                                position: 'outer-center',
+                            },
+                            tick: {
+                                centered: true,
+                                values: ['0', '4', '8', '12', '16', '20'],
+                            },
+                        },
+                    },
                 });
-        self.buildChart(serverVisitsViz, serverTimeVisitsQuery);
+
+        var munger = function() {
+            var foundHours = {};
+            for (var i=this.dataset.matrix.length-1; i>0; i--) {
+                var row = this.dataset.selectRow(i);
+                foundHours[ row[0] ] = row[1];
+                this.dataset.deleteRow(i);
+            }
+
+            for (var hour=0; hour<24; hour++) {
+                var stringyNum = '' + hour;
+                this.dataset.appendRow(stringyNum, [ foundHours[stringyNum] || 0 ]);
+            }
+        };
+        self.buildChart(dataviz, query, munger);
 
     };
 
@@ -114,11 +140,13 @@ var KeenViz = function(){
         self.buildChart(popularPagesViz, popularPagesQuery);
     };
 
-    self.buildChart = function(dataviz, query){
+    self.buildChart = function(dataviz, query, munger){
+        munger = munger || function() {};
+
         self.keenClient
             .query(query.type, query.params)
             .then(function(res) {
-                dataviz.title(' ').data(res).render();
+                dataviz.title(' ').data(res).call(munger).render();
             })
             .catch(function(err) {
                 dataviz.message(err.message);
