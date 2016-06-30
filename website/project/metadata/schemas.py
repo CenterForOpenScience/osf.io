@@ -1,6 +1,8 @@
 import os
 import json
 
+LATEST_SCHEMA_VERSION = 2
+
 def _id_to_name(id):
     return ' '.join(id.split('_'))
 
@@ -31,12 +33,16 @@ OSF_META_SCHEMAS = [
     ensure_schema_structure(from_json('prereg-prize.json')),
     ensure_schema_structure(from_json('confirmatory-general-2.json')),
     ensure_schema_structure(from_json('egap-project-2.json')),
+    ensure_schema_structure(from_json('veer-1.json')),
+    ensure_schema_structure(from_json('aspredicted.json')),
 ]
 
 ACTIVE_META_SCHEMAS = (
+    'Prereg Challenge',
     'Open-Ended Registration',
+    'AsPredicted Preregistration',
     'OSF-Standard Pre-Data Collection Registration',
     'Replication Recipe (Brandt et al., 2013): Pre-Registration',
     'Replication Recipe (Brandt et al., 2013): Post-Completion',
-    'Prereg Challenge',
+    "Pre-Registration in Social Psychology (van 't Veer & Giner-Sorolla, 2016): Pre-Registration",
 )

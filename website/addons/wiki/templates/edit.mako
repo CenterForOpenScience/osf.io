@@ -1,6 +1,5 @@
-<%page expression_filter="h"/>
 <%inherit file="project/project_base.mako"/>
-<%def name="title()">${node['title'] | n} Wiki</%def>
+<%def name="title()">${node['title']} Wiki</%def>
 
 <%def name="stylesheets()">
     ${parent.stylesheets()}
@@ -8,6 +7,10 @@
 </%def>
 ## Use full page width
 <%def name="container_class()">container-xxl</%def>
+
+% if (user['can_comment'] or node['has_comments']):
+    <%include file="include/comment_pane_template.mako"/>
+% endif
 
 <div class="row" style="margin-bottom: 5px;">
     <div class="col-sm-6">
@@ -21,10 +24,10 @@
 </div>
 
     <div class="row wiki-wrapper">
-        <div class="panel-toggle col-sm-${'3' if 'menu' in panels_used else '1' | n}">
+        <div class="panel-toggle col-sm-${'3' if 'menu' in panels_used else '1'}">
 
             <!-- Menu with toggle normal -->
-            <div class="osf-panel panel panel-default reset-height ${'' if 'menu' in panels_used else 'hidden visible-xs' | n}" data-bind="css: {  'osf-panel-flex': !$root.singleVis() }">
+            <div class="osf-panel panel panel-default reset-height ${'' if 'menu' in panels_used else 'hidden visible-xs'}" data-bind="css: {  'osf-panel-flex': !$root.singleVis() }">
                 <div class="panel-heading wiki-panel-header clearfix" data-bind="css: {  'osf-panel-heading-flex': !$root.singleVis()}">
                     % if user['can_edit']:
                         <div class="wiki-toolbar-icon text-success" data-toggle="modal" data-target="#newWiki">
@@ -52,7 +55,7 @@
             </div>
 
             <!-- Menu with toggle collapsed -->
-            <div class="osf-panel panel panel-default panel-collapsed hidden-xs text-center ${'hidden' if 'menu' in panels_used else '' | n}" >
+            <div class="osf-panel panel panel-default panel-collapsed hidden-xs text-center ${'hidden' if 'menu' in panels_used else ''}" >
                 <div class="panel-heading pointer">
                     <i class="fa fa-list"> </i>
                     <i class="fa fa-angle-right"> </i>
@@ -64,12 +67,12 @@
         </div>
 
     <div class="wiki" id="wikiPageContext">
-    <div class="panel-expand col-sm-${'9' if 'menu' in panels_used else '11' | n}">
+    <div class="panel-expand col-sm-${'9' if 'menu' in panels_used else '11'}">
       <div class="row">
 
           <div data-osf-panel="View"
-               class="${'col-sm-{0}'.format(12 / num_columns) | n}"
-               style="${'' if 'view' in panels_used else 'display: none' | n}">
+               class="${'col-sm-{0}'.format(12 / num_columns)}"
+               style="${'' if 'view' in panels_used else 'display: none'}">
               <div class="osf-panel panel panel-default no-border" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'view', 'osf-panel-flex': $root.singleVis() !== 'view' }">
                 <div class="panel-heading wiki-panel-header wiki-single-heading" data-bind="css: { 'osf-panel-heading-flex': $root.singleVis() !== 'view', 'wiki-single-heading': $root.singleVis() === 'view' }">
                     <div class="row">
@@ -105,7 +108,7 @@
                 <div id="wikiViewPanel"  class="panel-body" data-bind="css: { 'osf-panel-body-flex': $root.singleVis() !== 'view' }">
                   <div id="wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView, anchorScroll : { buffer: 50, elem : '#wikiViewPanel'}" class=" markdown-it-view">
                       % if wiki_content:
-                          ${wiki_content | n}
+                          ${wiki_content}
                       % else:
                           <p><em>No wiki content</em></p>
                       % endif
@@ -117,10 +120,10 @@
           % if user['can_edit_wiki_body']:
             <div data-bind="with: $root.editVM.wikiEditor.viewModel"
                  data-osf-panel="Edit"
-                 class="${'col-sm-{0}'.format(12 / num_columns) | n}"
+                 class="${'col-sm-{0}'.format(12 / num_columns)}"
                  style="${'' if 'edit' in panels_used else 'display: none' | n}">
               <form id="wiki-form" action="${urls['web']['edit']}" method="POST">
-                <div class="osf-panel panel panel-default" data-bind="css: { 'no-border': $root.singleVis() === 'edit' }">
+                <div class="osf-panel panel panel-default osf-panel-edit" data-bind="css: { 'no-border': $root.singleVis() === 'edit' }">
                   <div class="panel-heading wiki-panel-header clearfix" data-bind="css : { 'wiki-single-heading': $root.singleVis() === 'edit' }">
                     <div class="row">
                       <div class="col-md-6">
@@ -128,8 +131,8 @@
                       </div>
                         <div class="col-md-6">
                           <div class="pull-right">
-                            <div class="progress no-margin pointer " data-toggle="modal" data-bind="attr: {data-target: modalTarget}" >
-                                <div role="progressbar"data-bind="attr: progressBar">
+                            <div class="progress no-margin pointer " data-toggle="modal" data-bind="attr: {'data-target': modalTarget}" >
+                                <div role="progressbar" data-bind="attr: progressBar">
                                     <span class="progress-bar-content p-h-sm">
                                         <span data-bind="text: statusDisplay"></span>
                                         <span class="sharejs-info-btn">
@@ -147,16 +150,16 @@
                         <div class="row">
                         <div class="col-xs-12">
                           <div class="form-group wmd-panel">
-                          <ul class="list-inline" class="pull-right">
+                          <ul class="list-inline pull-right">
                           <!-- ko foreach: showCollaborators -->
-                             <!-- ko ifnot: id === '${user_id}' -->
+                             <!-- ko ifnot: id === ${ user_id | sjson, n } -->
                                 <li><a data-bind="attr: { href: url }" >
                                           <img data-container="body" data-bind="attr: {src: gravatar}, tooltip: {title: name, placement: 'top'}"
                                                style="border: 1px solid black;" width="30px" height="30px">
                                       </a></li>
                              <!-- /ko -->
-                          <!-- /ko --> 
-                                <li><span data-bind="text: andOthersMessage"></span></li>      
+                          <!-- /ko -->
+                                <li><span data-bind="text: andOthersMessage"></span></li>
                               </ul>
                               <div id="wmd-button-bar"></div>
                               <div id="editor" class="wmd-input wiki-editor"
@@ -192,8 +195,8 @@
 
 
           <div data-osf-panel="Compare"
-               class="${'col-sm-{0}'.format(12 / num_columns) | n}"
-               style="${'' if 'compare' in panels_used else 'display: none' | n}">
+               class="${'col-sm-{0}'.format(12 / num_columns)}"
+               style="${'' if 'compare' in panels_used else 'display: none'}">
             <div class="osf-panel panel panel-default osf-panel-flex" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'compare', 'osf-panel-flex': $root.singleVis() !== 'compare' }">
               <div class="panel-heading osf-panel-heading-flex" data-bind="css: {  'osf-panel-heading-flex': $root.singleVis() !== 'compare', 'wiki-single-heading': $root.singleVis() === 'compare'}">
                   <div class="row">
@@ -231,8 +234,9 @@
   </div>
 </div><!-- end wiki -->
 
-<!-- Wiki modals should also be placed here! --> 
+<!-- Wiki modals should also be placed here! -->
   <%include file="wiki/templates/add_wiki_page.mako"/>
+  <%include file="wiki/templates/wiki-bar-modal-help.mako"/>
 % if wiki_id and wiki_name != 'home':
   <%include file="wiki/templates/delete_wiki_page.mako"/>
 % endif
@@ -350,44 +354,42 @@
 </div>
 
 <%def name="javascript_bottom()">
-<% import json %>
 ${parent.javascript_bottom()}
 <script>
 
     var canEditBody = ${user['can_edit_wiki_body'] | sjson, n};
     var isContributor = ${user['can_edit']  | sjson, n};
 
-    var canEditPageName = isContributor && ${json.dumps(
-        wiki_id and wiki_name != 'home'
-    )};
+    var canEditPageName = isContributor && ${(wiki_id and wiki_name != 'home') | sjson, n };
 
     window.contextVars = window.contextVars || {};
     window.contextVars.wiki = {
         canEdit: canEditBody,
         canEditPageName: canEditPageName,
-        usePythonRender: ${json.dumps(use_python_render)},
-        versionSettings: ${json.dumps(version_settings) | n},
-        panelsUsed: ${json.dumps(panels_used) | n},
-        wikiID: '${wiki_id}',
+        usePythonRender: ${ use_python_render | sjson, n },
+        versionSettings: ${ version_settings | sjson, n },
+        panelsUsed: ${ panels_used | sjson, n },
+        wikiID: ${ wiki_id | sjson, n },
+        wikiName: ${wiki_name | sjson, n },
         urls: {
-            draft: '${urls['api']['draft']}',
-            content: '${urls['api']['content']}',
-            rename: '${urls['api']['rename']}',
-            grid: '${urls['api']['grid']}',
-            page: '${urls['web']['page']}',
-            base: '${urls['web']['base']}',
-            sharejs: '${sharejs_url}'
+            draft: ${ urls['api']['draft'] | sjson, n },
+            content: ${urls['api']['content'] | sjson, n },
+            rename: ${urls['api']['rename'] | sjson, n },
+            grid: ${urls['api']['grid'] | sjson, n },
+            page: ${urls['web']['page'] | sjson, n },
+            base: ${urls['web']['base'] | sjson, n },
+            sharejs: ${ sharejs_url | sjson, n }
         },
         metadata: {
             registration: true,
-            docId: '${sharejs_uuid}',
-            userId: '${user_id}',
-            userName: '${user_full_name}',
-            userUrl: '${user_url}',
-            userGravatar: '${urls['gravatar']}'.replace('&amp;', '&')
+            docId: ${ sharejs_uuid | sjson, n },
+            userId: ${user_id | sjson, n },
+            userName: ${ user_full_name | sjson, n },
+            userUrl: ${ user_url | sjson, n },
+            userGravatar: ${ urls['gravatar'] | sjson, n }.replace('&amp;', '&')
         }
     };
-    
+
 </script>
 <script src="//${sharejs_url}/text.js"></script>
 <script src="//${sharejs_url}/share.js"></script>

@@ -69,6 +69,7 @@ class Institution(object):
         'description': 'description',
         'email_domains': 'institution_email_domains',
         'banner_name': 'institution_banner_name',
+        'is_deleted': 'is_deleted'
     }
 
     def __init__(self, node=None):
@@ -87,13 +88,15 @@ class Institution(object):
         return self._id == other._id
 
     def save(self):
+        from website.search.search import update_institution
+        update_institution(self)
         for key, value in self.attribute_map.iteritems():
             if getattr(self, key) != getattr(self.node, value):
                 setattr(self.node, value, getattr(self, key))
         self.node.save()
 
     @classmethod
-    def find(cls, query=None, **kwargs):
+    def find(cls, query=None, deleted=False, **kwargs):
         from website.models import Node  # done to prevent import error
         if query and getattr(query, 'nodes', False):
             for node in query.nodes:
@@ -103,11 +106,12 @@ class Institution(object):
             replacement_attr = cls.attribute_map.get(query.attribute, False)
             query.attribute = replacement_attr or query.attribute
         query = query & Q('institution_id', 'ne', None) if query else Q('institution_id', 'ne', None)
+        query = query & Q('is_deleted', 'ne', True) if not deleted else query
         nodes = Node.find(query, allow_institution=True, **kwargs)
         return InstitutionQuerySet(nodes)
 
     @classmethod
-    def find_one(cls, query=None, **kwargs):
+    def find_one(cls, query=None, deleted=False, **kwargs):
         from website.models import Node
         if query and getattr(query, 'nodes', False):
             for node in query.nodes:
@@ -117,6 +121,7 @@ class Institution(object):
             replacement_attr = cls.attribute_map.get(query.attribute, False)
             query.attribute = replacement_attr if replacement_attr else query.attribute
         query = query & Q('institution_id', 'ne', None) if query else Q('institution_id', 'ne', None)
+        query = query & Q('is_deleted', 'ne', True) if not deleted else query
         node = Node.find_one(query, allow_institution=True, **kwargs)
         return cls(node)
 
@@ -144,6 +149,14 @@ class Institution(object):
     def absolute_api_v2_url(self):
         from api.base.utils import absolute_reverse
         return absolute_reverse('institutions:institution-detail', kwargs={'institution_id': self._id})
+
+    @property
+    def nodes_url(self):
+        return self.absolute_api_v2_url + 'nodes/'
+
+    @property
+    def nodes_relationship_url(self):
+        return self.absolute_api_v2_url + 'relationships/nodes/'
 
     @property
     def logo_path(self):

@@ -1,28 +1,30 @@
 
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
-from rest_framework.exceptions import NotAuthenticated
+from rest_framework.exceptions import NotAuthenticated, NotFound
 from django.contrib.auth.models import AnonymousUser
 
 from modularodm import Q
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from website.models import User, Node
+from website.models import User, Node, ExternalAccount
 
 from api.base import permissions as base_permissions
 from api.base.utils import get_object_or_error
 from api.base.exceptions import Conflict
+from api.base.serializers import AddonAccountSerializer
 from api.base.views import JSONAPIBaseView
-from api.base.filters import ODMFilterMixin
+from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
 from api.nodes.serializers import NodeSerializer
 from api.institutions.serializers import InstitutionSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.base.utils import default_node_list_query, default_node_permission_query
+from api.addons.views import AddonSettingsMixin
 
-from .serializers import UserSerializer, UserDetailSerializer, UserInstitutionsRelationshipSerializer
-from .permissions import ReadOnlyOrCurrentUser, ReadOnlyOrCurrentUserRelationship
+from .serializers import UserSerializer, UserAddonSettingsSerializer, UserDetailSerializer, UserInstitutionsRelationshipSerializer
+from .permissions import ReadOnlyOrCurrentUser, ReadOnlyOrCurrentUserRelationship, CurrentUser
 
 
 class UserMixin(object):
@@ -229,14 +231,197 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
         return context
 
 
+class UserAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, UserMixin):
+    """List of addons authorized by this user *Read-only*
+
+    Paginated list of user addons ordered by their `id` or `addon_short_name`.
+
+    ###Permissions
+
+    <Addon>UserSettings are visible only to the user that "owns" them.
+
+    ## <Addon\>UserSettings Attributes
+
+    OSF <Addon\>UserSettings entities have the "user_addons" `type`, and their `id` indicates the addon
+    service provider (eg. `box`, `googledrive`, etc).
+
+        name                type        description
+        =====================================================================================
+        user_has_auth       boolean     does this user have access to use an ExternalAccount?
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+        self:  the canonical api endpoint of this user_addon
+        accounts: dict keyed on an external_account_id
+            nodes_connected:    list of canonical api endpoints of connected nodes
+            account:            canonical api endpoint for this account
+
+    #This Request/Response
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        CurrentUser,
+    )
+
+    required_read_scopes = [CoreScopes.USER_ADDON_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = UserAddonSettingsSerializer
+    view_category = 'users'
+    view_name = 'user-addons'
+
+    def get_queryset(self):
+        qs = [addon for addon in self.get_user().get_addons() if 'accounts' in addon.config.configs]
+        qs.sort()
+        return qs
+
+
+class UserAddonDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin, AddonSettingsMixin):
+    """Detail of an individual addon authorized by this user *Read-only*
+
+    ##Permissions
+
+    <Addon>UserSettings are visible only to the user that "owns" them.
+
+    ## <Addon\>UserSettings Attributes
+
+    OSF <Addon\>UserSettings entities have the "user_addons" `type`, and their `id` indicates the addon
+    service provider (eg. `box`, `googledrive`, etc).
+
+        name                type        description
+        =====================================================================================
+        user_has_auth       boolean     does this user have access to use an ExternalAccount?
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+        self:  the canonical api endpoint of this user_addon
+        accounts: dict keyed on an external_account_id
+            nodes_connected:    list of canonical api endpoints of connected nodes
+            account:            canonical api endpoint for this account
+
+    #This Request/Response
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        CurrentUser,
+    )
+
+    required_read_scopes = [CoreScopes.USER_ADDON_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = UserAddonSettingsSerializer
+    view_category = 'users'
+    view_name = 'user-addon-detail'
+
+    def get_object(self):
+        return self.get_addon_settings()
+
+
+class UserAddonAccountList(JSONAPIBaseView, generics.ListAPIView, UserMixin, AddonSettingsMixin):
+    """List of an external_accounts authorized by this user *Read-only*
+
+    ##Permissions
+
+    ExternalAccounts are visible only to the user that has ownership of them.
+
+    ## ExternalAccount Attributes
+
+    OSF ExternalAccount entities have the "external_accounts" `type`, with `id` indicating the
+    `external_account_id` according to the OSF
+
+        name            type        description
+        =====================================================================================================
+        display_name    string      Display name on the third-party service
+        profile_url     string      Link to users profile on third-party service *presence varies by service*
+        provider        string      short_name of third-party service provider
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+        self:  the canonical api endpoint of this external_account
+
+    #This Request/Response
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        CurrentUser,
+    )
+
+    required_read_scopes = [CoreScopes.USER_ADDON_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = AddonAccountSerializer
+    view_category = 'users'
+    view_name = 'user-external_accounts'
+
+    def get_queryset(self):
+        return self.get_addon_settings().external_accounts
+
+class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin, AddonSettingsMixin):
+    """Detail of an individual external_account authorized by this user *Read-only*
+
+    ##Permissions
+
+    ExternalAccounts are visible only to the user that has ownership of them.
+
+    ## ExternalAccount Attributes
+
+    OSF ExternalAccount entities have the "external_accounts" `type`, with `id` indicating the
+    `external_account_id` according to the OSF
+
+        name            type        description
+        =====================================================================================================
+        display_name    string      Display name on the third-party service
+        profile_url     string      Link to users profile on third-party service *presence varies by service*
+        provider        string      short_name of third-party service provider
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+        self:  the canonical api endpoint of this external_account
+
+    #This Request/Response
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        CurrentUser,
+    )
+
+    required_read_scopes = [CoreScopes.USER_ADDON_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = AddonAccountSerializer
+    view_category = 'users'
+    view_name = 'user-external_account-detail'
+
+    def get_object(self):
+        user_settings = self.get_addon_settings()
+        account_id = self.kwargs['account_id']
+
+        account = ExternalAccount.load(account_id)
+        if not (account and account in user_settings.external_accounts):
+            raise NotFound('Requested addon unavailable')
+        return account
+
+
 class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin):
     """List of nodes that the user contributes to. *Read-only*.
 
-    Paginated list of nodes that the user contributes to ordered by `date_modified`.  Each resource contains the
-    full representation of the node, meaning additional requests to an individual node's detail view are not necessary.
-    If the user id in the path is the same as the logged-in user, all nodes will be visible.  Otherwise, you will only be
-    able to see the other user's publicly-visible nodes.  The special user id `me` can be used to represent the currently
-    logged-in user.
+    Paginated list of nodes that the user contributes to ordered by `date_modified`.  User registrations are not available
+    at this endpoint. Each resource contains the full representation of the node, meaning additional requests to an individual
+    node's detail view are not necessary. If the user id in the path is the same as the logged-in user, all nodes will be
+    visible.  Otherwise, you will only be able to see the other user's publicly-visible nodes.  The special user id `me`
+    can be used to represent the currently logged-in user.
 
     ##Node Attributes
 
@@ -244,18 +429,19 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
 
     OSF Node entities have the "nodes" `type`.
 
-        name           type               description
+        name                            type               description
         =================================================================================
-        title          string             title of project or component
-        description    string             description of the node
-        category       string             node category, must be one of the allowed values
-        date_created   iso8601 timestamp  timestamp that the node was created
-        date_modified  iso8601 timestamp  timestamp when the node was last updated
-        tags           array of strings   list of tags that describe the node
-        fork           boolean            is this project a fork?
-        registration   boolean            has this project been registered?
-        fork           boolean            is this node a fork of another node?
-        public         boolean            has this node been made publicly-visible?
+        title                           string             title of project or component
+        description                     string             description of the node
+        category                        string             node category, must be one of the allowed values
+        date_created                    iso8601 timestamp  timestamp that the node was created
+        date_modified                   iso8601 timestamp  timestamp when the node was last updated
+        tags                            array of strings   list of tags that describe the node
+        current_user_permissions        array of strings   list of strings representing the permissions for the current user on this node
+        registration                    boolean            is this a registration? (always false - may be deprecated in future versions)
+        fork                            boolean            is this node a fork of another node?
+        public                          boolean            has this node been made publicly-visible?
+        collection                      boolean            is this a collection? (always false - may be deprecated in future versions)
 
     ##Links
 
@@ -273,10 +459,11 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
 
     <!--- Copied Query Params from NodeList -->
 
-    Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, or `tags`.  `title`,
-    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
-    `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
-    that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
+    Nodes may be filtered by their `id`, `title`, `category`, `description`, `public`, `tags`, `date_created`, `date_modified`,
+    `root`, `parent`, and `contributors`.  Most are string fields and will be filtered using simple substring matching.  `public`
+    is a boolean, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note that quoting `true`
+    or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
+
 
     #This Request/Response
 
@@ -336,8 +523,12 @@ class UserRegistrations(UserNodes):
     registration, meaning additional requests to an individual registration's detail view are not necessary. If the user
     id in the path is the same as the logged-in user, all nodes will be visible.  Otherwise, you will only be able to
     see the other user's publicly-visible nodes.  The special user id `me` can be used to represent the currently
-    logged-in user. Retracted registrations will display a limited number of fields, namely, title, description,
-    date_created, registration, retracted, date_registered, retraction_justification, and registration supplement.
+    logged-in user.
+
+    A withdrawn registration will display a limited subset of information, namely, title, description,
+    date_created, registration, withdrawn, date_registered, withdrawal_justification, and registration supplement. All
+    other fields will be displayed as null. Additionally, the only relationships permitted to be accessed for a withdrawn
+    registration are the contributors - other relationships will return a 403.
 
     ##Registration Attributes
 
@@ -347,24 +538,24 @@ class UserRegistrations(UserNodes):
 
         name                            type               description
         =======================================================================================================
-        title                           string             Title of the registered project or component
-        description                     string             Description of the registered node
-        category                        string             Node category, must be one of the allowed values
-        date_created                    iso8601 timestamp  Timestamp that the node was created
-        date_modified                   iso8601 timestamp  Timestamp when the node was last updated
-        tags                            array of strings   List of tags that describe the registered node
-        current_user_permissions        array of strings   List of strings representing the permissions for the current user on this node
-        fork                            boolean            Is this project a fork?
-        registration                    boolean            Has this project been registered?
-        dashboard                       boolean            Is this registered node visible on the user dashboard?
-        public                          boolean            Has this registration been made publicly-visible?
-        retracted                       boolean            Has this registration been retracted?
-        date_registered                 iso8601 timestamp  Timestamp that the registration was created
-        embargo_end_date                iso8601 timestamp  When the embargo on this registration will be lifted (if applicable)
-        retraction_justification        string             Reasons for retracting the registration
-        pending_retraction              boolean            Is this registration pending retraction?
-        pending_registration_approval   boolean            Is this registration pending approval?
-        pending_embargo_approval        boolean            Is the associated Embargo awaiting approval by project admins?
+        title                           string             title of the registered project or component
+        description                     string             description of the registered node
+        category                        string             bode category, must be one of the allowed values
+        date_created                    iso8601 timestamp  timestamp that the node was created
+        date_modified                   iso8601 timestamp  timestamp when the node was last updated
+        tags                            array of strings   list of tags that describe the registered node
+        current_user_permissions        array of strings   list of strings representing the permissions for the current user on this node
+        fork                            boolean            is this project a fork?
+        registration                    boolean            has this project been registered? (always true - may be deprecated in future versions)
+        collection                      boolean            is this registered node a collection? (always false - may be deprecated in future versions)
+        public                          boolean            has this registration been made publicly-visible?
+        withdrawn                       boolean            has this registration been withdrawn?
+        date_registered                 iso8601 timestamp  timestamp that the registration was created
+        embargo_end_date                iso8601 timestamp  when the embargo on this registration will be lifted (if applicable)
+        withdrawal_justification        string             reasons for withdrawing the registration
+        pending_withdrawal              boolean            is this registration pending withdrawal?
+        pending_withdrawal_approval     boolean            is this registration pending approval?
+        pending_embargo_approval        boolean            is the associated Embargo awaiting approval by project admins?
         registered_meta                 dictionary         registration supplementary information
         registration_supplement         string             registration template
 
@@ -399,10 +590,10 @@ class UserRegistrations(UserNodes):
 
     <!--- Copied Query Params from NodeList -->
 
-    Registrations may be filtered by their `title`, `category`, `description`, `public`, or `tags`.  `title`, `description`,
-    and `category` are string fields and will be filtered using simple substring matching.  `public` is a boolean and
-    can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note that quoting `true` or `false` in
-    the query will cause the match to fail regardless.  `tags` is an array of simple strings.
+     Registrations may be filtered by their `id`, `title`, `category`, `description`, `public`, `tags`, `date_created`, `date_modified`,
+    `root`, `parent`, and `contributors`.  Most are string fields and will be filtered using simple substring matching.  `public`
+    is a boolean, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note that quoting `true`
+    or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
 
     #This Request/Response
 

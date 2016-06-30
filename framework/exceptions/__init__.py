@@ -44,6 +44,10 @@ class HTTPError(FrameworkError):
                 'not have occurred and the issue persists, please report it to '
                 '<a href="mailto:support@osf.io">support@osf.io</a>.'),
         },
+        451: {
+            'message_short': 'Content removed',
+            'message_long': ('This content has been removed'),
+        },
     }
 
     def __init__(self, code, message=None, redirect_url=None, data=None):
@@ -80,9 +84,10 @@ class HTTPError(FrameworkError):
             }
         else:
             data['message_short'] = 'Unable to resolve'
-            data['message_long'] = ('OSF was unable to resolve your request. If this '
-                'issue persists, please report it to '
-                '<a href="mailto:support@osf.io">support@osf.io</a>.')
+            data['message_long'] = (
+                'OSF was unable to resolve your request. If this issue persists, please report it to '
+                '<a href="mailto:support@osf.io">support@osf.io</a>.'
+            )
         data.update(self.data)
         data['code'] = self.code
         data['referrer'] = self.referrer

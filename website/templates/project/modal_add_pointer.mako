@@ -51,7 +51,7 @@
                                     <td class="osf-icon-td">
                                         <a
                                                 class="btn btn-success contrib-button"
-                                                data-bind="click:$root.add, tooltip: {title: 'Add link'}"
+                                                data-bind="click:$root.add.bind($root), tooltip: {title: 'Add link'}"
                                             ><i class="fa fa-plus"></i></a>
                                     </td>
                                     <td data-bind="text:title" class="overflow"></td>
@@ -69,7 +69,7 @@
 
                             <div data-bind='if: foundResults'>
                                 <ul class="pagination pagination-sm" data-bind="foreach: paginators">
-                                    <li data-bind="css: style"><a href="#" data-bind="click: handler, html: text"></a></li>
+                                    <li data-bind="css: style"><a href="#" data-bind="click: handler, text: text"></a></li>
                                 </ul>
                             </div>
                         </div>
@@ -86,7 +86,7 @@
                                     <td class="osf-icon-td">
                                         <a
                                                 class="btn btn-default contrib-button"
-                                                data-bind="click:$root.remove, tooltip: {title: 'Remove link'}"
+                                                data-bind="click:$root.remove.bind($root), tooltip: {title: 'Remove link'}"
                                             ><i class="fa fa-minus"></i></a>
                                     </td>
                                     <td  data-bind="text:title" class="overflow"></td>

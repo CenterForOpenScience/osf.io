@@ -4,6 +4,7 @@ import contextlib
 import mock
 
 from nose.tools import *  # flake8: noqa
+import re
 
 from tests.base import ApiTestCase, DbTestCase
 from tests import factories
@@ -13,6 +14,7 @@ from api.base.settings.defaults import API_BASE
 from api.base.serializers import JSONAPISerializer
 from api.base import serializers as base_serializers
 from api.nodes.serializers import NodeSerializer, RelationshipField
+from api.registrations.serializers import RegistrationSerializer
 
 
 class FakeModel(object):
@@ -37,22 +39,66 @@ class FakeSerializer(base_serializers.JSONAPISerializer):
         'null_field': 'null_field',
         'valued_field': 'valued_field',
     })
-    
     null_link_field = base_serializers.RelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<null>'},
     )
-    
     valued_link_field = base_serializers.RelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<foo>'},
     )
-          
     def null_field(*args, **kwargs):
         return None
 
     def valued_field(*args, **kwargs):
         return 'http://foo.com'
+
+
+class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
+    """
+    All fields on the Node Serializer other than the few we can serialize for withdrawals must be redeclared on the
+    Registration Serializer and wrapped in HideIfWithdrawal
+
+    HideIfRegistration fields should not be serialized on registrations.
+    """
+
+    def setUp(self):
+        super(TestNodeSerializerAndRegistrationSerializerDifferences, self).setUp()
+
+        self.node = factories.ProjectFactory(is_public=True)
+        self.registration = factories.RegistrationFactory(project = self.node, is_public=True)
+
+        self.url = '/{}nodes/{}/'.format(API_BASE, self.node._id)
+        self.reg_url = '/{}registrations/{}/'.format(API_BASE, self.registration._id)
+
+    def test_registration_serializer(self):
+
+        # fields that are visible for withdrawals
+        visible_on_withdrawals = ['contributors', 'date_created', 'description', 'id', 'links', 'registration', 'title', 'type']
+        # fields that do not appear on registrations
+        non_registration_fields = ['registrations', 'draft_registrations']
+
+        for field in NodeSerializer._declared_fields:
+            assert_in(field, RegistrationSerializer._declared_fields)
+            reg_field = RegistrationSerializer._declared_fields[field]
+
+            if field not in visible_on_withdrawals and field not in non_registration_fields:
+                assert_true(isinstance(reg_field, base_serializers.HideIfWithdrawal))
+
+    def test_hide_if_registration_fields(self):
+
+        node_res = self.app.get(self.url)
+        node_relationships = node_res.json['data']['relationships']
+
+        registration_res = self.app.get(self.reg_url)
+        registration_relationships = registration_res.json['data']['relationships']
+
+        hide_if_registration_fields = [field for field in NodeSerializer._declared_fields if isinstance(NodeSerializer._declared_fields[field], base_serializers.HideIfRegistration)]
+
+        for field in hide_if_registration_fields:
+            assert_in(field, node_relationships)
+            assert_not_in(field, registration_relationships)
+
 
 class TestNullLinks(ApiTestCase):
 
@@ -78,6 +124,15 @@ class TestApiBaseSerializers(ApiTestCase):
             factories.ProjectFactory(is_public=True, parent=self.node)
 
         self.url = '/{}nodes/{}/'.format(API_BASE, self.node._id)
+
+    def test_serializers_have_get_absolute_url_method(self):
+        serializers = JSONAPISerializer.__subclasses__()
+        base_get_absolute_url = JSONAPISerializer.get_absolute_url
+
+        for serializer in serializers:
+            if not re.match('^(api_test|test).*', serializer.__module__):
+                assert hasattr(serializer, 'get_absolute_url'), 'No get_absolute_url method'
+                assert_not_equal(serializer.get_absolute_url, base_get_absolute_url)
 
     def test_counts_not_included_in_link_fields_by_default(self):
 
@@ -122,6 +177,11 @@ class TestApiBaseSerializers(ApiTestCase):
         res = self.app.get(self.url, params={'embed': 'foo'}, expect_errors=True)
         assert_equal(res.status_code, http.BAD_REQUEST)
         assert_equal(res.json['errors'][0]['detail'], "The following fields are not embeddable: foo")
+
+    def test_embed_does_not_remove_relationship(self):
+        res = self.app.get(self.url, params={'embed': 'root'})
+        assert_equal(res.status_code, 200)
+        assert_in(self.url, res.json['data']['relationships']['root']['links']['related']['href'])
 
     def test_counts_included_in_children_field_with_children_related_counts_query_param(self):
 

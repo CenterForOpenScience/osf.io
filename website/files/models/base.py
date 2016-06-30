@@ -20,6 +20,7 @@ from framework.analytics import get_basic_counters
 from website import util
 from website.files import utils
 from website.files import exceptions
+from website.project.commentable import Commentable
 
 
 __all__ = (
@@ -36,8 +37,18 @@ PROVIDER_MAP = {}
 logger = logging.getLogger(__name__)
 
 
-class TrashedFileNode(StoredObject):
+class TrashedFileNode(StoredObject, Commentable):
     """The graveyard for all deleted FileNodes"""
+
+    __indices__ = [{
+        'unique': False,
+        'key_or_list': [
+            ('node', pymongo.ASCENDING),
+            ('is_file', pymongo.ASCENDING),
+            ('provider', pymongo.ASCENDING),
+        ]
+    }]
+
     _id = fields.StringField(primary=True)
 
     last_touched = fields.DateTimeField()
@@ -58,6 +69,9 @@ class TrashedFileNode(StoredObject):
     deleted_by = fields.AbstractForeignField('User')
     deleted_on = fields.DateTimeField(auto_now_add=True)
     tags = fields.ForeignField('Tag', list=True)
+    suspended = fields.BooleanField(default=False)
+
+    copied_from = fields.ForeignField('StoredFileNode', default=None)
 
     @property
     def deep_url(self):
@@ -65,6 +79,28 @@ class TrashedFileNode(StoredObject):
         that will provide a nice error message and http.GONE
         """
         return self.node.web_url_for('addon_deleted_file', trashed_id=self._id)
+
+    # For Comment API compatibility
+    @property
+    def target_type(self):
+        """The object "type" used in the OSF v2 API."""
+        return 'files'
+
+    @property
+    def root_target_page(self):
+        """The comment page type associated with TrashedFileNodes."""
+        return 'files'
+
+    @property
+    def is_deleted(self):
+        return True
+
+    def belongs_to_node(self, node_id):
+        """Check whether the file is attached to the specified node."""
+        return self.node._id == node_id
+
+    def get_extra_log_params(self, comment):
+        return {'file': {'name': self.name, 'url': comment.get_comment_page_url()}}
 
     def restore(self, recursive=True, parent=None):
         """Recreate a StoredFileNode from the data in this object
@@ -74,6 +110,7 @@ class TrashedFileNode(StoredObject):
         data = self.to_storage()
         data.pop('deleted_on')
         data.pop('deleted_by')
+        data.pop('suspended')
         if parent:
             data['parent'] = parent._id
         elif data['parent']:
@@ -84,6 +121,11 @@ class TrashedFileNode(StoredObject):
             raise ValueError('No parent to restore to')
         restored.save()
 
+        # repoint guid
+        for guid in Guid.find(Q('referent', 'eq', self)):
+            guid.referent = restored
+            guid.save()
+
         if recursive:
             for child in TrashedFileNode.find(Q('parent', 'eq', self)):
                 child.restore(recursive=recursive, parent=restored)
@@ -91,9 +133,20 @@ class TrashedFileNode(StoredObject):
         TrashedFileNode.remove_one(self)
         return restored
 
+    def get_guid(self):
+        """Attempt to find a Guid that points to this object.
+
+        :rtype: Guid or None
+        """
+        try:
+            # Note sometimes multiple GUIDs can exist for
+            # a single object. Just go with the first one
+            return Guid.find(Q('referent', 'eq', self))[0]
+        except IndexError:
+            return None
 
 @unique_on(['node', 'name', 'parent', 'is_file', 'provider', 'path'])
-class StoredFileNode(StoredObject):
+class StoredFileNode(StoredObject, Commentable):
     """The storage backend for FileNode objects.
     This class should generally not be used or created manually as FileNode
     contains all the helpers required.
@@ -135,6 +188,7 @@ class StoredFileNode(StoredObject):
 
     node = fields.ForeignField('Node', required=True)
     parent = fields.ForeignField('StoredFileNode', default=None)
+    copied_from = fields.ForeignField('StoredFileNode', default=None)
 
     is_file = fields.BooleanField(default=True)
     provider = fields.StringField(required=True)
@@ -170,6 +224,29 @@ class StoredFileNode(StoredObject):
         path = '/files/{}/'.format(self._id)
         return util.api_v2_url(path)
 
+    # For Comment API compatibility
+    @property
+    def target_type(self):
+        """The object "type" used in the OSF v2 API."""
+        return 'files'
+
+    @property
+    def root_target_page(self):
+        """The comment page type associated with StoredFileNodes."""
+        return 'files'
+
+    @property
+    def is_deleted(self):
+        if self.provider == 'osfstorage':
+            return False
+
+    def belongs_to_node(self, node_id):
+        """Check whether the file is attached to the specified node."""
+        return self.node._id == node_id
+
+    def get_extra_log_params(self, comment):
+        return {'file': {'name': self.name, 'url': comment.get_comment_page_url()}}
+
     # used by django and DRF
     def get_absolute_url(self):
         return self.absolute_api_v2_url
@@ -182,7 +259,9 @@ class StoredFileNode(StoredObject):
     def get_guid(self, create=False):
         """Attempt to find a Guid that points to this object.
         One will be created if requested.
-        :rtype: Guid
+
+        :param Boolean create: Should we generate a GUID if there isn't one?  Default: False
+        :rtype: Guid or None
         """
         try:
             # Note sometimes multiple GUIDs can exist for
@@ -251,8 +330,8 @@ class FileNode(object):
             return cls.create(node=node, path=path)
 
     @classmethod
-    def get_file_guids(cls, materialized_path, provider, node, guids=None):
-        guids = guids or []
+    def get_file_guids(cls, materialized_path, provider, node):
+        guids = []
         materialized_path = '/' + materialized_path.lstrip('/')
         if materialized_path.endswith('/'):
             folder_children = cls.find(Q('provider', 'eq', provider) &
@@ -361,6 +440,18 @@ class FileNode(object):
         if isinstance(val, FileNode):
             val = val.stored_object
         self.stored_object.parent = val
+
+    @property
+    def copied_from(self):
+        if self.stored_object.copied_from:
+            return self.stored_object.copied_from
+        return None
+
+    @copied_from.setter
+    def copied_from(self, val):
+        if isinstance(val, FileNode):
+            val = val.stored_object
+        self.stored_object.copied_from = val
 
     @property
     def deep_url(self):
@@ -576,7 +667,6 @@ class File(FileNode):
         if resp.status_code != 200:
             logger.warning('Unable to find {} got status code {}'.format(self, resp.status_code))
             return None
-
         return self.update(revision, resp.json()['data']['attributes'])
         # TODO Switch back to head requests
         # return self.update(revision, json.loads(resp.headers['x-waterbutler-metadata']))

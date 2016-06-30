@@ -1,3 +1,4 @@
+<div id="render-node">
 % if summary['can_view']:
 
     <li
@@ -24,7 +25,7 @@
                     <span class="label label-danger"><strong>Withdrawn</strong></span> |
                   % elif summary['is_pending_retraction']:
                     <span class="label label-info"><strong>Pending withdrawal</strong></span> |
-                  % elif summary['embargo_end_date']:
+                  % elif summary['is_embargoed']:
                     <span class="label label-info"><strong>Embargoed</strong></span> |
                   % elif summary['is_pending_embargo']:
                     <span class="label label-info"><strong>Pending embargo</strong></span> |
@@ -33,11 +34,10 @@
                     <span class="label label-primary"><strong>Archiving</strong></span> |
                   % endif
                 </span>
-            <span data-bind="getIcon: '${summary['category']}'"></span>
+            <span data-bind='getIcon: ${ summary["category"] | sjson, n }'></span>
             % if not summary['archiving']:
                 <a href="${summary['url']}">${summary['title']}</a>
-            % endif
-            % if summary['archiving']:
+            % else:
                 <span class="f-w-lg">${summary['title']}</span>
             % endif
 
@@ -51,7 +51,7 @@
             <!-- Show/Hide recent activity log -->
             % if not summary['archiving']:
             <div class="pull-right">
-                % if not summary['primary'] and 'admin' in user['permissions'] and not node['is_registration']:
+                % if not summary['primary'] and 'write' in user['permissions'] and not node['is_registration']:
                     <i class="fa fa-times remove-pointer" data-id="${summary['id']}" data-toggle="tooltip" title="Remove link"></i>
                     <i class="fa fa-code-fork" onclick="NodeActions.forkPointer('${summary['id']}', '${summary['primary_id']}');" data-toggle="tooltip" title="Fork this ${summary['node_type']} into ${node['node_type']} ${node['title']}"></i>
                 % endif
@@ -99,33 +99,14 @@
             % if summary['is_retracted']:
                 <h4>Recent activity information has been withdrawn.</h4>
             % else:
-                Recent activity
-                <!-- ko stopBinding: true -->
-                    <div id="logs-${summary['id']}" class="log-container" data-uri="${summary['api_url']}log/">
-                        <dl class="dl-horizontal activity-log" data-bind="foreach: {data: logs, as: 'log'}">
-                            <dt><span class="date log-date" data-bind="text: log.date.local, tooltip: {title: log.date.utc}"></span></dt>
-                            <dd class="log-content">
-                                <span data-bind="if:log.anonymous">
-                                    <span data-bind="html: $parent.anonymousUserName"></span>
-                                </span>
-
-                                <!-- ko ifnot: log.anonymous -->
-                                    <a data-bind="text: log.userFullName, attr: {href: log.userURL}"></a>
-                                <!-- /ko -->
-
-                                <!-- ko if: log.hasUser() -->
-                                    <!-- log actions are the same as their template name -->
-                                    <span data-bind="template: {name: log.action, data: log}"></span>
-                                <!-- /ko -->
-
-                                <!-- ko ifnot: log.hasUser() -->
-                                    <!-- Log actions are the same as their template name  + no_user -->
-                                    <span data-bind="template: {name: log.action + '_no_user', data: log}"></span>
-                                <!-- /ko -->
-                            </dd>
-                        </dl><!-- end foreach logs -->
+                <!-- Recent Activity (Logs) -->
+                Recent Activity
+                <div id="logFeed-${summary['primary_id'] if not summary['primary'] else summary['id']}">
+                    <div class="spinner-loading-wrapper">
+                        <div class="logo-spin logo-lg"></div>
+                         <p class="m-t-sm fg-load-message"> Loading logs...  </p>
                     </div>
-                <!-- /ko -->
+                </div>
             % endif
         </div>
         % endif
@@ -145,7 +126,25 @@
             %else:
                 Private Component
             %endif
+            % if not summary['primary'] and 'write' in user['permissions'] and not node['is_registration']:
+                ## Allow deletion of pointers, even if user doesn't know what they are deleting
+                <span class="pull-right">
+                    <i class="fa fa-times remove-pointer pointer" data-id="${summary['id']}" data-toggle="tooltip" title="Remove link"></i>
+                </span>
+            % endif
         </p>
     </li>
 
 % endif
+</div>
+<script type="text/javascript">
+    window.contextVars = window.contextVars || {};
+    var nodes = window.contextVars.nodes || [];
+    nodes.push({
+        node : ${summary | sjson, n},
+        id: ${summary['primary_id'] if not summary['primary'] and summary['can_view'] else summary['id'] | sjson, n}
+    });
+    window.contextVars = $.extend(true, {}, window.contextVars, {
+        nodes : nodes
+    });
+</script>

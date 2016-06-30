@@ -19,6 +19,7 @@ var koHelpers = require('./koHelpers');  // URL validators etc
 var $osf = require('./osfHelpers');
 var oop = require('js/oop');
 var language = require('js/osfLanguage');
+var makeClient = require('js/clipboard');
 
 
 /*
@@ -173,9 +174,11 @@ var TokensListViewModel = oop.defclass({
                 'danger');
 
             Raven.captureMessage('Error fetching list of registered personal access tokens', {
-                url: this.apiListUrl,
-                status: status,
-                error: error
+                extra: {
+                    url: this.apiListUrl,
+                    status: status,
+                    error: error
+                }
             });
         }.bind(this));
     },
@@ -262,9 +265,11 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
                             'danger');
 
                 Raven.captureMessage('Error fetching token data', {
-                    url: this.apiDetailUrl(),
-                    status: status,
-                    error: error
+                    extra: {
+                        url: this.apiDetailUrl(),
+                        status: status,
+                        error: error
+                    }
                 });
             }.bind(this));
         }
@@ -295,9 +300,11 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
                        'danger');
 
             Raven.captureMessage('Error updating instance', {
-                url: this.apiDetailUrl,
-                status: status,
-                error: error
+                extra: {
+                    url: this.apiDetailUrl,
+                    status: status,
+                    error: error
+                }
             });
         }.bind(this));
         return request;
@@ -319,9 +326,11 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
                        'danger');
 
             Raven.captureMessage('Error registering new OAuth2 personal access token', {
-                url: this.apiDetailUrl,
-                status: status,
-                error: error
+                extra: {
+                    url: this.apiDetailUrl,
+                    status: status,
+                    error: error
+                }
             });
         }.bind(this));
     },

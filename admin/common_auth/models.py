@@ -1,8 +1,9 @@
-from datetime import datetime
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
+from django.contrib.auth.models import (
+    AbstractBaseUser,
+    PermissionsMixin,
+    BaseUserManager,
+)
 from django.db import models
-
-from website.models import User as OsfUserModel
 
 
 class MyUserManager(BaseUserManager):
@@ -19,8 +20,7 @@ class MyUserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email, password):
-        user = self.create_user(email,
-            password=password, )
+        user = self.create_user(email, password=password, )
         user.is_superuser = True
         user.is_admin = True
         user.is_staff = True
@@ -39,21 +39,21 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
         unique=True,
     )
 
-    first_name = models.CharField(max_length=30, blank=True)
-    last_name = models.CharField(max_length=30, blank=True)
+    first_name = models.CharField(max_length=30, blank=False)
+    last_name = models.CharField(max_length=30, blank=False)
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
-    date_joined = models.DateTimeField(default=datetime.now)
+    date_joined = models.DateTimeField(auto_now_add=True)
     confirmed = models.BooleanField(default=False)
-    osf_id = models.CharField(default=False, max_length=10, blank=True)
+    osf_id = models.CharField(max_length=5, blank=True)
 
     objects = MyUserManager()
 
     USERNAME_FIELD = 'email'
 
     def get_full_name(self):
-        return ("{0} {1}".format(self.first_name, self.last_name)).strip() or self.email
+        return ('{0} {1}'.format(self.first_name, self.last_name)).strip() or self.email
 
     def get_short_name(self):
         # The user is identified by their email address
@@ -65,14 +65,11 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
     class Meta:
         ordering = ['email']
 
-    # Todo: implement this if needed
-    # @property
-    # def is_staff(self):
-    #     "Is the user a member of staff?"
-    #     return self.is_admin
-
     @property
     def osf_user(self):
+        # import on call to avoid interference w/ django's manage.py commands like collectstatic
+        from website.models import User as OsfUserModel
+
         if not self.osf_id:
             raise RuntimeError('This user does not have an associated Osf User')
         return OsfUserModel.load(self.osf_id)

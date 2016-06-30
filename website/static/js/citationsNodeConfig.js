@@ -5,7 +5,6 @@
 'use strict';
 
 var ko = require('knockout');
-require('knockout.punches');
 var $ = require('jquery');
 var Raven = require('raven-js');
 var bootbox = require('bootbox');
@@ -15,7 +14,6 @@ var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 var FolderPickerViewModel = require('js/folderPickerNodeConfig');
 
-ko.punches.enableAll();
 
 /**
  * View model to support instances of CitationsNodeConfig (folder picker widget)
@@ -76,9 +74,11 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         request.fail(function(xhr, textStatus, error) {
             self.changeMessage(self.messages.updateAccountsError(), 'text-danger');
             Raven.captureMessage('Could not GET ' + self.addonName + ' accounts for user', {
-                url: self.url,
-                textStatus: textStatus,
-                error: error
+                extra: {
+                    url: self.url,
+                    textStatus: textStatus,
+                    error: error
+                }
             });
             ret.reject(xhr, textStatus, error);
         });
@@ -139,13 +139,13 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             .then(function(){
                 if (self.accounts().length > 1) {
                     bootbox.prompt({
-                        title: 'Choose ' + self.addonName + ' Access Token to Import',
+                        title: 'Choose ' + $osf.htmlEscape(self.addonName) + ' Access Token to Import',
                         inputType: 'select',
                         inputOptions: ko.utils.arrayMap(
                             self.accounts(),
                             function(item) {
                                 return {
-                                    text: item.name,
+                                    text: $osf.htmlEscape(item.name),
                                     value: item.id
                                 };
                             }
@@ -164,7 +164,7 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                     });
                 } else {
                     bootbox.confirm({
-                        title: 'Import ' + self.addonName + ' access token',
+                        title: 'Import ' + $osf.htmlEscape(self.addonName) + ' access token',
                         message: self.messages.confirmAuth(),
                         callback: function(confirmed) {
                             if (confirmed) {

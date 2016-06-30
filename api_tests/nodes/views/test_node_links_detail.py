@@ -12,7 +12,6 @@ from tests.factories import (
     ProjectFactory,
     RegistrationFactory,
     AuthUserFactory,
-    RetractedRegistrationFactory
 )
 from tests.utils import assert_logs
 
@@ -37,13 +36,6 @@ class TestNodeLinkDetail(ApiTestCase):
                                                               auth=Auth(self.user),
                                                               save=True)
         self.public_url = '/{}nodes/{}/node_links/{}/'.format(API_BASE, self.public_project._id, self.public_pointer._id)
-
-    def test_cannot_access_retracted_node_links_detail(self):
-        registration = RegistrationFactory(creator=self.user, project=self.public_project)
-        url = '/{}nodes/{}/node_links/{}/'.format(API_BASE, registration._id, self.public_pointer._id)
-        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
 
     def test_returns_embedded_public_node_pointer_detail_logged_out(self):
         res = self.app.get(self.public_url)

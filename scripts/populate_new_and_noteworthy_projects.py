@@ -11,15 +11,16 @@ from website import models
 from framework.auth.core import Auth
 from scripts import utils as script_utils
 from framework.mongo import database as db
+from framework.celery_tasks import app as celery_app
 from framework.transactions.context import TokuTransaction
 from website.discovery.views import activity
 from website.settings import POPULAR_LINKS_NODE, NEW_AND_NOTEWORTHY_LINKS_NODE, NEW_AND_NOTEWORTHY_CONTRIBUTOR_BLACKLIST
 
 logger = logging.getLogger(__name__)
 
-
 def popular_activity_json():
     """ Return popular_public_projects node_ids """
+
     activity_json = activity()
     popular = activity_json['popular_public_projects']
     popular_ids = {'popular_node_ids': []}
@@ -27,13 +28,49 @@ def popular_activity_json():
         popular_ids['popular_node_ids'].append(project._id)
     return popular_ids
 
+def unique_contributors(nodes, node):
+    """ Projects in New and Noteworthy should not have common contributors """
+
+    for added_node in nodes:
+        if set(added_node['contributors']).intersection(node['contributors']) != set():
+            return False
+    return True
+
+def acceptable_title(node):
+    """ Omit projects that have certain words in the title """
+
+    omit_titles = ['test', 'photo', 'workshop', 'data']
+    if any(word in str(node['title']).lower() for word in omit_titles):
+        return False
+    return True
+
+def filter_nodes(node_list):
+    final_node_list = []
+    for node in node_list:
+        if unique_contributors(final_node_list, node) and acceptable_title(node):
+            final_node_list.append(node)
+    return final_node_list
+
 def get_new_and_noteworthy_nodes():
-    """ Fetches nodes created in the last month and returns 25 sorted by highest log activity """
+    """ Fetches new and noteworthy nodes
+
+    Mainly: public top-level projects with the greatest number of unique log actions
+
+    """
     today = datetime.datetime.now()
     last_month = (today - dateutil.relativedelta.relativedelta(months=1))
-    data = db.node.find({'date_created': {'$gt': last_month}, 'is_public': True, 'is_registration': False})
-    noteworthy_nodes = sorted(data, key=lambda node: len(node['logs']), reverse=True)[:25]
-    return [each['_id'] for each in noteworthy_nodes]
+    data = db.node.find({'date_created': {'$gt': last_month}, 'is_public': True, 'is_registration': False, 'parent_node': None,
+                         'is_deleted': False, 'is_collection': False})
+    nodes = []
+    for node in data:
+        unique_actions = len(db.nodelog.find({'node': node['_id']}).distinct('action'))
+        node['unique_actions'] = unique_actions
+        nodes.append(node)
+
+    noteworthy_nodes = sorted(nodes, key=lambda node: node.get('unique_actions'), reverse=True)[:25]
+    filtered_new_and_noteworthy = filter_nodes(noteworthy_nodes)
+
+    return [each['_id'] for each in filtered_new_and_noteworthy]
 
 def is_eligible_node(node):
     """
@@ -94,10 +131,13 @@ def main(dry_run=True):
         raise RuntimeError('Dry run -- transaction rolled back.')
 
 
-if __name__ == '__main__':
-    dry_run = 'dry' in sys.argv
+@celery_app.task(name='scripts.populate_new_and_noteworthy_projects')
+def run_main(dry_run=True):
     if not dry_run:
         script_utils.add_file_logger(logger, __file__)
     with TokuTransaction():
         main(dry_run=dry_run)
 
+if __name__ == "__main__":
+    dry_run = '--dry' in sys.argv
+    run_main(dry_run=dry_run)

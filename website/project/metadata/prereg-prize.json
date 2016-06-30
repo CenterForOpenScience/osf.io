@@ -7,6 +7,7 @@
         "assignee": null
     },
     "config": {
+	"hasFiles": true,
         "requiresApproval": true,
         "requiresConsent": true,
         "messages": {
@@ -75,23 +76,23 @@
             "format": "singleselect",
             "options": [
                 {
-                    "text": "Registration prior to creation of data ",
+                    "text": "Registration prior to creation of data",
                     "tooltip": "As of the date of submission of this research plan for preregistration, the data have not yet been collected, created, or realized."
                 },
                 {
-                    "text": "Registration prior to any human observation of the data ",
+                    "text": "Registration prior to any human observation of the data",
                     "tooltip": "As of the date of submission, the data exist but have not yet been quantified, constructed, observed, or reported by anyone - including individuals that are not associated with the proposed study. Examples include museum specimens that have not been measured and data that have been collected by non-human collectors and are inaccessible."
                 },
                 {
-                    "text": "Registration prior to accessing the data ",
+                    "text": "Registration prior to accessing the data",
                     "tooltip": "As of the date of submission, the data exist, but have not been accessed by you or your collaborators. Commonly, this includes data that has been collected by another researcher or institution."
                 },
                 {
-                    "text": "Registration prior to analysis of the data ",
+                    "text": "Registration prior to analysis of the data",
                     "tooltip": "As of the date of submission, the data exist and you have accessed it, though no analysis has been conducted related to the research plan (including calculation of summary statistics). A common situation for this scenario when a large dataset exists that is used for many different studies over time, or when a data set is randomly split into a sample for exploratory analyses, and the other section of data is reserved for later confirmatory data analysis."
                 },
                 {
-                    "text": "Registration following analysis of the data ",
+                    "text": "Registration following analysis of the data",
                     "tooltip": "As of the date of submission, you have accessed and analyzed some of the data relevant to the research plan. This includes preliminary analysis of variables, calculation of descriptive statistics, and observation of data distributions. Studies that fall into this category are ineligible for the Prereg Challenge. Please contact us (prereg@cos.io) and we will be happy to help you."
                 }
             ],
@@ -203,7 +204,7 @@
             "type": "object",
             "title": "Indices",
             "description": "If any measurements are  going to be combined into an index (or even a mean), what measures will you use and how will they be combined? Include either a formula or a precise description of your method. If your are using a more complicated statistical method to combine measures (e.g. a factor analysis), you can note that here but describe the exact method in the analysis plan section.",
-            "help": "We will take the mean of the two questions above to create a single measure of ‘brownie enjoyment.’ <br /><br /> How responses will be evaluated: If you are using multiple pieces of data to construct a single variable, how will this occur? Both the data that are included and the formula or weights for each measure m. Standard summary statistics, such as “means” do not require a formula, though more complicated indices require either the exact formula or, if it is an established index in the field, the index must be unambiguously defined. For example, “biodiversity index” is too broad, whereas “Shannon’s biodiversity index” is appropriate.",
+            "help": "We will take the mean of the two questions above to create a single measure of ‘brownie enjoyment.’ <br /><br /> How responses will be evaluated: If you are using multiple pieces of data to construct a single variable, how will this occur? Both the data that are included and the formula or weights for each measure must be specified. Standard summary statistics, such as “means” do not require a formula, though more complicated indices require either the exact formula or, if it is an established index in the field, the index must be unambiguously defined. For example, “biodiversity index” is too broad, whereas “Shannon’s biodiversity index” is appropriate.",
             "properties": [
                 {
                     "id": "question",

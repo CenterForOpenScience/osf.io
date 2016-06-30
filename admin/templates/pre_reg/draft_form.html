@@ -1,0 +1,100 @@
+<form action="{% url 'pre_reg:update_draft' draft.pk %}"
+      class="well" method="post">
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal">x</button>
+    <h4>Draft info form for: <strong>{{ draft.title }}</strong></h4>
+</div>
+<div class="modal-body">
+<div class="container">
+    <div class="row">
+    <h4 style="margin-top: 0px">
+    {% if draft.is_pending_approval %}
+    <span class="label label-warning">Pending Approval</span>
+    {% elif draft.is_approved %}
+    <span class="label label-lg label-success">Approved</span>
+    {% elif draft.is_rejected %}
+    <span class="label label-lg label-danger">Rejected</span>
+    {% endif %}
+    </h4>
+    </div>
+
+    <div class="row">
+        <span class="text-muted"> Applicant </span>
+        <strong> {{ draft.initiator.full_name }}</strong>
+        submitted on <strong>{{ draft.submitted | date:"N dS" }}</strong>
+        at <strong>{{draft.submitted | date:"g:i a" }}</strong>
+    </div>
+
+    <div class="row">
+    <a href="mailto:{{ draft.initiator.username }}">{{ draft.initiator.username }} </a>
+    </div>
+
+    <div class="row">Embargo release:
+        {% if draft.embargo == IMMEDIATE %}
+            <strong>{{ draft.embargo | capfirst }}</strong>
+        {% else %}
+            <strong>{{ draft.embargo | date:"N dS Y" }}</strong>
+            at <strong>{{draft.embargo | date:"g:i a" }}</strong>
+        {%  endif %}
+    </div>
+
+    <div class="row">
+        {% if draft.registered_node %}
+            <a href="{{ draft.registered_node }}">
+                {{ draft.registered_node }}
+            </a>
+        {% else %}
+            None
+        {% endif %}
+    </div>
+    <br>
+    {% csrf_token %}
+    {% for field in form %}
+        <div class="form-group">
+            <span style="color:red">{{ field.errors }}</span>
+            {{ field.label_tag }}
+            {% if field.label == 'Action' %}
+                {% if draft.is_approved or draft.is_rejected %}
+                    --
+                {% else %}
+                <div class="btn-group" data-toggle="buttons">
+                    {% for choice in field %}
+                        {{ choice.id }}
+                    {% if forloop.counter0 %}
+                        <label class="btn btn-danger">
+                    {% else %}
+                        <label class="btn btn-success">
+                    {% endif %}
+                        <input type="radio" id="{{ choice.id_for_label }}" autocomplete="off">{{ choice.choice_label }}{{ choice.tag }}
+                    </label>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            {% else %}
+                {{ field }}
+            {% endif %}
+        </div>
+    {% endfor %}
+    <div class="row">
+        <strong><h4>Logs</h4></strong>
+    </div>
+    {% for log in draft.logs %}
+        <div class="row">
+            {{ log }}
+        </div>
+    {% empty %}
+        <div class="row">
+            None: draft existed before logs.
+        </div>
+    {% endfor %}
+</div>
+</div>
+<div class="modal-footer">
+    <input type="hidden" name="page" value="{{ page_number }}" />
+    <input type="submit" class="btn btn-primary" value="Save" />
+    <button type="button" class="btn btn-default"
+            data-dismiss="modal">
+        Cancel
+    </button>
+</div>
+</form>

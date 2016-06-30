@@ -6,7 +6,7 @@ from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 from framework.guid.model import Guid
 from website.files.models import StoredFileNode
-from website.project.model import Comment, Node
+from website.project.model import Comment
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from api.base.exceptions import InvalidModelValueError, Conflict
 from api.base.utils import absolute_reverse
@@ -50,7 +50,9 @@ class CommentSerializer(JSONAPISerializer):
     date_modified = ser.DateTimeField(read_only=True)
     modified = ser.BooleanField(read_only=True, default=False)
     deleted = ser.BooleanField(read_only=True, source='is_deleted', default=False)
-    is_abuse = ser.SerializerMethodField(help_text='Whether the current user reported this comment.')
+    is_abuse = ser.SerializerMethodField(help_text='If the comment has been reported or confirmed.')
+    is_ham = ser.SerializerMethodField(help_text='Comment has been confirmed as ham.')
+    has_report = ser.SerializerMethodField(help_text='If the user reported this comment.')
     has_children = ser.SerializerMethodField(help_text='Whether this comment has any replies.')
     can_edit = ser.SerializerMethodField(help_text='Whether the current user can edit this comment.')
 
@@ -60,11 +62,21 @@ class CommentSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'comments'
 
-    def get_is_abuse(self, obj):
+    def get_is_ham(self, obj):
+        if obj.spam_status == Comment.HAM:
+            return True
+        return False
+
+    def get_has_report(self, obj):
         user = self.context['request'].user
         if user.is_anonymous():
             return False
         return user._id in obj.reports and not obj.reports[user._id].get('retracted', True)
+
+    def get_is_abuse(self, obj):
+        if obj.spam_status == Comment.FLAGGED or obj.spam_status == Comment.SPAM:
+            return True
+        return False
 
     def get_can_edit(self, obj):
         user = self.context['request'].user
@@ -88,6 +100,11 @@ class CommentSerializer(JSONAPISerializer):
                     comment.undelete(auth, save=True)
                 except PermissionsError:
                     raise PermissionDenied('Not authorized to undelete this comment.')
+            elif validated_data.get('is_deleted', None) is True and not comment.is_deleted:
+                try:
+                    comment.delete(auth, save=True)
+                except PermissionsError:
+                    raise PermissionDenied('Not authorized to delete this comment.')
             elif 'get_content' in validated_data:
                 content = validated_data.pop('get_content')
                 try:
@@ -97,17 +114,12 @@ class CommentSerializer(JSONAPISerializer):
         return comment
 
     def get_target_type(self, obj):
-        if isinstance(obj.referent, Node):
-            return 'nodes'
-        elif isinstance(obj.referent, Comment):
-            return 'comments'
-        elif isinstance(obj.referent, StoredFileNode):
-            return 'files'
-        else:
+        if not getattr(obj.referent, 'target_type', None):
             raise InvalidModelValueError(
                 source={'pointer': '/data/relationships/target/links/related/meta/type'},
                 detail='Invalid comment target type.'
             )
+        return obj.referent.target_type
 
     def sanitize_data(self):
         ret = super(CommentSerializer, self).sanitize_data()
@@ -126,30 +138,17 @@ class CommentCreateSerializer(CommentSerializer):
         target_type = self.context['request'].data.get('target_type')
         expected_target_type = self.get_target_type(target)
         if target_type != expected_target_type:
-            raise Conflict('Invalid target type. Expected "{0}", got "{1}."'.format(expected_target_type, target_type))
+            raise Conflict(detail=('The target resource has a type of "{}", but you set the json body\'s type field to "{}".  You probably need to change the type field to match the target resource\'s type.'.format(expected_target_type, target_type)))
         return target_type
 
     def get_target(self, node_id, target_id):
         target = Guid.load(target_id)
-        if not target:
+        if not target or not getattr(target.referent, 'belongs_to_node', None):
             raise ValueError('Invalid comment target.')
-
-        referent = target.referent
-
-        if isinstance(referent, Node):
-            if node_id != target_id:
-                raise ValueError('Cannot post comment to another node.')
-        elif isinstance(referent, Comment):
-            if referent.node._id != node_id:
-                raise ValueError('Cannot post reply to comment on another node.')
-        elif isinstance(referent, StoredFileNode):
-            if referent.provider not in osf_settings.ADDONS_COMMENTABLE:
+        elif not target.referent.belongs_to_node(node_id):
+            raise ValueError('Cannot post to comment target on another node.')
+        elif isinstance(target.referent, StoredFileNode) and target.referent.provider not in osf_settings.ADDONS_COMMENTABLE:
                 raise ValueError('Comments are not supported for this file provider.')
-            elif referent.node._id != node_id:
-                raise ValueError('Cannot post comment to file on another node.')
-        else:
-            raise ValueError('Invalid comment target.')
-
         return target
 
     def create(self, validated_data):

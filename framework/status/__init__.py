@@ -26,10 +26,24 @@ def push_status_message(message, kind='warning', dismissible=True, trust=True, j
     :param dismissible: Whether the status message can be dismissed by the user
     :param trust: Whether the text is safe to insert directly into HTML as given. (useful if the message includes
         custom code, eg links) If false, the message will be automatically escaped as an HTML-safe string.
-    :param jumbotron: Should this be in a jumbstron element rather than an alert
+    :param jumbotron: Should this be in a jumbotron element rather than an alert
     """
     # TODO: Change the default to trust=False once conversion to markupsafe rendering is complete
-    statuses = session.data.get('status')
+    try:
+        statuses = session.data.get('status')
+    except RuntimeError as e:
+        exception_message = getattr(e, 'message', None)
+        if exception_message == 'working outside of request context':
+            # Working outside of request context, so should be a DRF issue. Status messages are not appropriate there.
+            # If it's any kind of notification, then it doesn't make sense to send back to the API routes.
+            if kind == 'error':
+                #  If it's an error, then the call should fail with the error message. I do not know of any cases where
+                # this branch will be hit, but I'd like to avoid a silent failure.
+                from rest_framework.exceptions import ValidationError
+                raise ValidationError(message)
+            return
+        else:
+            raise
     if not statuses:
         statuses = []
     css_class = TYPE_MAP.get(kind, 'warning')

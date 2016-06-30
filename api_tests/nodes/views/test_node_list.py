@@ -18,7 +18,6 @@ from tests.factories import (
     RegistrationFactory,
     AuthUserFactory,
     UserFactory,
-    RetractedRegistrationFactory
 )
 
 
@@ -89,14 +88,6 @@ class TestNodeList(ApiTestCase):
         res = self.app.get(self.url, auth=self.user.auth)
         ids = [each['id'] for each in res.json['data']]
         assert_not_in(registration._id, ids)
-
-    def test_omit_retracted_registration(self):
-        registration = RegistrationFactory(creator=self.user, project=self.public)
-        res = self.app.get(self.url, auth=self.user.auth)
-        assert_equal(len(res.json['data']), 2)
-        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
-        res = self.app.get(self.url, auth=self.user.auth)
-        assert_equal(len(res.json['data']), 2)
 
     def test_node_list_has_root(self):
         res = self.app.get(self.url, auth=self.user.auth)
@@ -641,6 +632,28 @@ class TestNodeCreate(ApiTestCase):
         assert_equal(res.json['data']['attributes']['description'], strip_html(description))
         assert_equal(res.json['data']['attributes']['category'], self.category)
 
+    def test_create_component_inherit_contributors(self):
+        parent_project = ProjectFactory(creator=self.user_one)
+        parent_project.add_contributor(self.user_two, permissions=[permissions.READ], save=True)
+        url = '/{}nodes/{}/children/?inherit_contributors=true'.format(API_BASE, parent_project._id)
+        component_data = {
+            'data': {
+                'type': 'nodes',
+                'attributes': {
+                    'title': self.title,
+                    'category': self.category,
+                }
+            }
+        }
+        res = self.app.post_json_api(url, component_data, auth=self.user_one.auth)
+        assert_equal(res.status_code, 201)
+        json_data = res.json['data']
+
+        new_component_id = json_data['id']
+        new_component = Node.load(new_component_id)
+        assert_equal(len(new_component.contributors), 2)
+        assert_equal(len(new_component.contributors), len(parent_project.contributors))
+
     def test_creates_project_no_type(self):
         project = {
             'data': {
@@ -671,7 +684,7 @@ class TestNodeCreate(ApiTestCase):
         }
         res = self.app.post_json_api(self.url, project, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
+        assert_equal(res.json['errors'][0]['detail'], 'This resource has a type of "nodes", but you set the json body\'s type field to "Wrong type.". You probably need to change the type field to match the resource\'s type.')
 
     def test_creates_project_properties_not_nested(self):
         project = {
@@ -1788,7 +1801,7 @@ class TestNodeListPagination(ApiTestCase):
         # Ordered by date modified: oldest first
         self.users = [UserFactory() for _ in range(11)]
         self.projects = [ProjectFactory(is_public=True, creator=self.users[0]) for _ in range(11)]
-        
+
         self.url = '/{}nodes/'.format(API_BASE)
 
     def tearDown(self):

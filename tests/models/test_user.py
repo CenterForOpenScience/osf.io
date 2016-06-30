@@ -66,6 +66,12 @@ class TestUser(base.OsfTestCase):
             [user.username]
         )
 
+    # regression test for https://sentry.cos.io/sentry/osf/issues/6510/
+    def test_unconfirmed_email_info_when_email_verifications_is_none(self):
+        user = factories.UserFactory()
+        user.email_verifications = None
+        assert_equal(user.unconfirmed_email_info, [])
+
     def test_remove_unconfirmed_email(self):
         self.user.add_unconfirmed_email('foo@bar.com')
         self.user.save()
@@ -109,20 +115,57 @@ class TestUser(base.OsfTestCase):
         self.user.save()
         self.user.reload()
         assert_equal(token1, self.user.get_confirmation_token(email))
-        assert_equal(email, self.user._get_unconfirmed_email_for_token(token1))
+        assert_equal(email, self.user.get_unconfirmed_email_for_token(token1))
 
         token2 = self.user.add_unconfirmed_email(email)
         self.user.save()
         self.user.reload()
         assert_not_equal(token1, self.user.get_confirmation_token(email))
         assert_equal(token2, self.user.get_confirmation_token(email))
-        assert_equal(email, self.user._get_unconfirmed_email_for_token(token2))
+        assert_equal(email, self.user.get_unconfirmed_email_for_token(token2))
         with assert_raises(exceptions.InvalidTokenError):
-            self.user._get_unconfirmed_email_for_token(token1)
+            self.user.get_unconfirmed_email_for_token(token1)
 
     def test_contributed_property(self):
         projects_contributed_to = project.model.Node.find(Q('contributors', 'eq', self.user._id))
         assert_equal(list(self.user.contributed), list(projects_contributed_to))
+
+    def test_contributor_to_property(self):
+        normal_node = factories.ProjectFactory(creator=self.user)
+        normal_contributed_node = factories.ProjectFactory()
+        normal_contributed_node.add_contributor(self.user)
+        normal_contributed_node.save()
+        deleted_node = factories.ProjectFactory(creator=self.user, is_deleted=True)
+        bookmark_collection_node = factories.BookmarkCollectionFactory(creator=self.user)
+        collection_node = factories.CollectionFactory(creator=self.user)
+        project_to_be_invisible_on = factories.ProjectFactory()
+        project_to_be_invisible_on.add_contributor(self.user, visible=False)
+        project_to_be_invisible_on.save()
+        contributor_to_nodes = [node._id for node in self.user.contributor_to]
+
+        assert_in(normal_node._id, contributor_to_nodes)
+        assert_in(normal_contributed_node._id, contributor_to_nodes)
+        assert_in(project_to_be_invisible_on._id, contributor_to_nodes)
+        assert_not_in(deleted_node._id, contributor_to_nodes)
+        assert_not_in(bookmark_collection_node._id, contributor_to_nodes)
+        assert_not_in(collection_node._id, contributor_to_nodes)
+
+    def test_visible_contributor_to_property(self):
+        invisible_contributor = factories.UserFactory()
+        normal_node = factories.ProjectFactory(creator=invisible_contributor)
+        deleted_node = factories.ProjectFactory(creator=invisible_contributor, is_deleted=True)
+        bookmark_collection_node = factories.BookmarkCollectionFactory(creator=invisible_contributor)
+        collection_node = factories.CollectionFactory(creator=invisible_contributor)
+        project_to_be_invisible_on = factories.ProjectFactory()
+        project_to_be_invisible_on.add_contributor(invisible_contributor, visible=False)
+        project_to_be_invisible_on.save()
+        visible_contributor_to_nodes = [node._id for node in invisible_contributor.visible_contributor_to]
+
+        assert_in(normal_node._id, visible_contributor_to_nodes)
+        assert_not_in(deleted_node._id, visible_contributor_to_nodes)
+        assert_not_in(bookmark_collection_node._id, visible_contributor_to_nodes)
+        assert_not_in(collection_node._id, visible_contributor_to_nodes)
+        assert_not_in(project_to_be_invisible_on._id, visible_contributor_to_nodes)
 
     def test_created_property(self):
         # make sure there's at least one project
@@ -262,6 +305,9 @@ class TestUserMerging(base.OsfTestCase):
         self.user.email_verifications = {'user': {'email': 'a'}}
         other_user.email_verifications = {'other': {'email': 'b'}}
 
+        self.user.notifications_configured = {'abc12': True}
+        other_user.notifications_configured = {'123ab': True}
+
         self.user.external_accounts = [factories.ExternalAccountFactory()]
         other_user.external_accounts = [factories.ExternalAccountFactory()]
 
@@ -304,6 +350,7 @@ class TestUserMerging(base.OsfTestCase):
             'date_disabled',
             'date_last_login',
             'date_registered',
+            'email_last_sent',
             'family_name',
             'fullname',
             'given_name',
@@ -325,7 +372,8 @@ class TestUserMerging(base.OsfTestCase):
             'mailing_lists',
             'verification_key',
             '_affiliated_institutions',
-            'contributor_added_email_records'
+            'contributor_added_email_records',
+            'requested_deactivation'
         ]
 
         calculated_fields = {
@@ -338,6 +386,9 @@ class TestUserMerging(base.OsfTestCase):
             'email_verifications': {
                 'user': {'email': 'a'},
                 'other': {'email': 'b'},
+            },
+            'notifications_configured': {
+                '123ab': True, 'abc12': True,
             },
             'emails': [
                 self.user.username,
@@ -455,4 +506,4 @@ class TestUserMerging(base.OsfTestCase):
         other_user = factories.UserFactory()
         self.user.merge_user(other_user)
         assert_equal(other_user.merged_by._id, self.user._id)
-        mock_notify.assert_not_called()
+        assert_false(mock_notify.called)

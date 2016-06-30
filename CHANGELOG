@@ -2,6 +2,149 @@
 Changelog
 *********
 
+0.79.0 (2016-06-28)
+===================
+
+- APIv2: Add endpoints for managing addons.
+
+0.78.0 (2016-06-27)
+===================
+
+- Use CAS for all authentication for OSF.
+- On regisration's file pages, show links to original source file.
+- Creating a wiki page whose name is the same as a previously deleted wiki page will no longer restore the wiki page's versions.
+- Add more contextual information about component hierarchy to the My Projects widget.
+- Add Date Modified column to file browsers.
+- Automatically turn URLs in comments into clickable links.
+- Add new AsPredicted registration schema.
+- UI fixes.
+
+0.77.0 (2016-06-20)
+===================
+
+- Add "global" user notification settings.
+- Remove auto-forwarding behavior from External Link addon.
+- APIv2: Endpoints for creating registrations and draft registrations.
+- APIv2: Embedded resources return relationship links.
+- Many UI fixes and improvements.
+
+0.76.0 (2016-06-08)
+===================
+
+- Improve auth flow when adding a secondary email.
+- Admin: Bug fixes and improvements to prereg module.
+- Many UI fixes and security improvements.
+- APIv2: Add file tags to file endpoint responses.
+- APIv2: Read-only routes for wikis.
+- APIv2: Add license information to node endpoints.
+
+0.75.0 (2016-06-02)
+===================
+
+- Add support for affiliating users and projects with multiple institutions.
+- Use multiple celery queues and queue prioritization.
+
+Migrations
+----------
+
+- python -m scripts.migration.migrate_primary_institutions
+
+0.74.0 (2016-05-25)
+===================
+
+- Numerous fixes for displaying logs consistently.
+
+Migrations
+----------
+
+- python -m scripts.migrate_regressed_registration_logs
+
+0.73.0 (2016-05-19)
+===================
+
+- Allow category to be set from project dashboard page.
+- Improve algorithm for computing "New and Noteworthy" nodes.
+- Improve error messaging for file rendering.
+- Improve UI for personal access tokens page.
+- Responsiveness fixes for file grid.
+- Many UI fixes.
+- APIv2: Add forks endpoints.
+- APIv2: Fix sorting for /users/<user_id>/nodes/
+- APIv2: Add institutions to FULL_READ scope.
+
+0.72.0 (2016-05-17)
+===================
+
+- Make all pages escape user values on the frontend.
+- Remove usage of knockout-punches and remove strip_ko Mako filter.
+
+0.71.0 (2016-05-11)
+===================
+
+- Admin: create new user form.
+- Admin: refactor registration.
+- Admin: refactor and bugfixes for prereg module.
+- Admin: refactor and bugfixes for spam module.
+
+0.70.0 (2016-05-09)
+===================
+
+- Allow multiple files to be attached to pre-registrations.
+- Add "Pre-Registration in Social Psychology (van 't Veer & Giner-Sorolla, 2016)".
+
+Migrations
+----------
+
+- python -m scripts.migration.migrate_registration_extra_drafts
+- python -m scripts.migration.migrate_registration_extra
+
+0.69.0 (2016-05-03)
+===================
+
+- Add links to new Guides page at http://help.osf.io.
+
+0.68.0 (2016-04-28)
+===================
+
+- Wiki commenting.
+- End embargoes early.
+- UI fixes.
+
+Migrations
+----------
+
+See https://openscience.atlassian.net/browse/OSF-6081
+
+0.67.0 (2016-04-21)
+===================
+
+- Change "Retraction" to "Withdrawal".
+- Multiple GitHub accounts can be associated with a user account.
+- Multiple S3 accounts can be associated with a user account.
+- Dev: Remove various unnecessary backrefs, including nodelog -> node backref.
+- Dev: Lots of addons refactoring.
+- Dev: Use celerybeat for periodic task execution.
+- Bug fixes.
+
+Migrations
+----------
+
+See https://openscience.atlassian.net/browse/OSF-5986
+
+0.66.0 (2016-03-16)
+===================
+
+- Redesign of Dashboard and addition of "My Projects" page.
+- OSF4Institutions landing pages.
+- Commenting on addon files.
+- Admin: Marking comments as spam; disabling users; view registrations.
+- Various UI improvements.
+
+Migrations
+----------
+
+See https://openscience.atlassian.net/browse/OSF-5861
+
 0.65.0 (2016-03-02)
 ===================
 

@@ -67,8 +67,8 @@
     <div class="row">
         <div id="externalView" class="col-sm-9"></div>
         <div id="mfrIframeParent" class="col-sm-9">
-        <div id="mfrIframe" class="mfr mfr-file"></div>
-      </div>
+            <div id="mfrIframe" class="mfr mfr-file"></div>
+        </div>
 
     <!-- This section is built by mithril in revisions.js -->
       <div class="file-view-panels col-sm-3"></div>

@@ -19,7 +19,7 @@ class TestGitHubSerializer(StorageAddonSerializerTestSuiteMixin, OsfTestCase):
     client = GitHubClient()
 
     def set_provider_id(self, pid):
-        self.node_settings.folder_id = pid
+        self.node_settings.repo = pid
     
     ## Overrides ##
 

@@ -4,9 +4,12 @@ import os
 
 from modularodm import Q
 
+from framework.auth import Auth
 from framework.guid.model import Guid
+from website.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
 from website.files import exceptions
 from website.files.models.base import File, Folder, FileNode, FileVersion, TrashedFileNode
+from website.util import permissions
 
 
 __all__ = ('OsfStorageFile', 'OsfStorageFolder', 'OsfStorageFileNode')
@@ -35,16 +38,27 @@ class OsfStorageFileNode(FileNode):
         return cls.create(node=node, path=path)
 
     @classmethod
-    def get_file_guids(cls, materialized_path, provider, node=None, guids=None):
-        guids = guids or []
+    def get_file_guids(cls, materialized_path, provider, node=None):
+        guids = []
         path = materialized_path.strip('/')
         file_obj = cls.load(path)
         if not file_obj:
             file_obj = TrashedFileNode.load(path)
 
+        # At this point, file_obj may be an OsfStorageFile, an OsfStorageFolder, or a
+        # TrashedFileNode. TrashedFileNodes do not have *File and *Folder subclasses, since
+        # only osfstorage trashes folders. To search for children of TrashFileNodes
+        # representing ex-OsfStorageFolders, we will reimplement the `children` method of the
+        # Folder class here.
         if not file_obj.is_file:
-            for item in file_obj.children:
-                cls.get_file_guids(item.path, provider, guids, node)
+            children = []
+            if isinstance(file_obj, TrashedFileNode):
+                children = TrashedFileNode.find(Q('parent', 'eq', file_obj._id))
+            else:
+                children = file_obj.children
+
+            for item in children:
+                guids.extend(cls.get_file_guids(item.path, provider, node=node))
         else:
             try:
                 guid = Guid.find(Q('referent', 'eq', file_obj))[0]
@@ -52,6 +66,7 @@ class OsfStorageFileNode(FileNode):
                 guid = None
             if guid:
                 guids.append(guid._id)
+
         return guids
 
     @property
@@ -101,6 +116,46 @@ class OsfStorageFileNode(FileNode):
         if self.is_checked_out:
             raise exceptions.FileNodeCheckedOutError()
         return super(OsfStorageFileNode, self).move_under(destination_parent, name)
+
+    def check_in_or_out(self, user, checkout, save=False):
+        """
+        Updates self.checkout with the requesting user or None,
+        iff user has permission to check out file or folder.
+        Adds log to self.node.
+
+
+        :param user:        User making the request
+        :param checkout:    Either the same user or None, depending on in/out-checking
+        :param save:        Whether or not to save the user
+        """
+        from website.project.model import NodeLog  # Avoid circular import
+
+        if (self.is_checked_out and self.checkout != user and permissions.ADMIN not in self.node.permissions.get(user._id, []))\
+           or permissions.WRITE not in self.node.get_permissions(user):
+            raise exceptions.FileNodeCheckedOutError()
+
+        action = NodeLog.CHECKED_OUT if checkout else NodeLog.CHECKED_IN
+
+        if self.is_checked_out and action == NodeLog.CHECKED_IN or not self.is_checked_out and action == NodeLog.CHECKED_OUT:
+            self.checkout = checkout
+
+            self.node.add_log(
+                action=action,
+                params={
+                    'kind': self.kind,
+                    'project': self.node.parent_id,
+                    'node': self.node._id,
+                    'urls': {
+                        # web_url_for unavailable -- called from within the API, so no flask app
+                        'download': '/project/{}/files/{}/{}/?action=download'.format(self.node._id, self.provider, self._id),
+                        'view': '/project/{}/files/{}/{}'.format(self.node._id, self.provider, self._id)},
+                    'path': self.materialized_path
+                },
+                auth=Auth(user),
+            )
+
+            if save:
+                self.save()
 
     def save(self):
         self.path = ''
@@ -197,15 +252,22 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
     def remove_tag(self, tag, auth, save=True, log=True):
         from website.models import Tag, NodeLog  # Prevent import error
+        if self.node.is_registration:
+            # Can't perform edits on a registration
+            raise NodeStateError
+
         tag = Tag.load(tag)
-        if tag and tag in self.tags and not self.node.is_registration:
+        if not tag:
+            raise InvalidTagError
+        elif tag not in self.tags:
+            raise TagNotFoundError
+        else:
             self.tags.remove(tag)
             if log:
                 self.add_tag_log(NodeLog.FILE_TAG_REMOVED, tag._id, auth)
             if save:
                 self.save()
             return True
-        return False
 
     def delete(self, user=None, parent=None):
         from website.search import search

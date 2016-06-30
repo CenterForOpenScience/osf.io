@@ -19,6 +19,7 @@ from framework.mongo import database
 from website import settings
 
 from .model import Session
+from .utils import remove_session
 
 
 def add_key_to_url(url, scheme, key):
@@ -107,19 +108,20 @@ def create_session(response, data=None):
         cookie_value = itsdangerous.Signer(settings.SECRET_KEY).sign(session_id)
         set_session(session)
     if response is not None:
-        response.set_cookie(settings.COOKIE_NAME, value=cookie_value, domain=settings.OSF_COOKIE_DOMAIN)
+        response.set_cookie(settings.COOKIE_NAME, value=cookie_value, domain=settings.OSF_COOKIE_DOMAIN,
+                            secure=settings.SESSION_COOKIE_SECURE, httponly=settings.SESSION_COOKIE_HTTPONLY)
         return response
 
 
 sessions = WeakKeyDictionary()
 session = LocalProxy(get_session)
 
-# Request callbacks
 
-# NOTE: This gets attached in website.app.init_app to ensure correct callback
-# order
+# Request callbacks
+# NOTE: This gets attached in website.app.init_app to ensure correct callback order
 def before_request():
     from framework.auth import cas
+    from website.util import time as util_time
 
     # Central Authentication Server Ticket Validation and Authentication
     ticket = request.args.get('ticket')
@@ -166,12 +168,20 @@ def before_request():
             session = Session.load(session_id) or Session(_id=session_id)
         except itsdangerous.BadData:
             return
-        if session.data.get('auth_user_id') and 'api' not in request.url:
-            database['user'].update({'_id': session.data.get('auth_user_id')}, {'$set': {'date_last_login': datetime.utcnow()}}, w=0)
-        set_session(session)
+
+        if not util_time.throttle_period_expired(session.date_created, settings.OSF_SESSION_TIMEOUT):
+            if session.data.get('auth_user_id') and 'api' not in request.url:
+                database['user'].update({'_id': session.data.get('auth_user_id')}, {'$set': {'date_last_login': datetime.utcnow()}}, w=0)
+            set_session(session)
+        else:
+            remove_session(session)
+
 
 def after_request(response):
     if session.data.get('auth_user_id'):
         session.save()
+
+    # Disallow embeding in frames
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
 
     return response

@@ -10,6 +10,7 @@ import hurry.filesize
 from framework import sentry
 from framework.auth.decorators import Auth
 
+from website import settings
 from website.util import paths
 from website.util import sanitize
 from website.settings import DISK_SAVING_MODE
@@ -52,7 +53,7 @@ def to_hgrid(node, auth, **data):
 
 def build_addon_root(node_settings, name, permissions=None,
                      urls=None, extra=None, buttons=None, user=None,
-                     **kwargs):
+                     private_key=None, **kwargs):
     """Builds the root or "dummy" folder for an addon.
 
     :param addonNodeSettingsBase node_settings: Addon settings
@@ -65,12 +66,15 @@ def build_addon_root(node_settings, name, permissions=None,
     :param list of dicts buttons: List of buttons to appear in HGrid row. Each
         dict must have 'text', a string that will appear on the button, and
         'action', the name of a function in
+    :param bool private_key: Used to check if information should be stripped from anonymous links
     :param dict kwargs: Any additional information to add to the root folder
     :return dict: Hgrid formatted dictionary for the addon root folder
 
     """
+    from website.util import check_private_key_for_anonymized_link
+
     permissions = permissions or DEFAULT_PERMISSIONS
-    if name:
+    if name and not check_private_key_for_anonymized_link(private_key):
         name = u'{0}: {1}'.format(node_settings.config.full_name, name)
     else:
         name = node_settings.config.full_name
@@ -117,7 +121,7 @@ def build_addon_root(node_settings, name, permissions=None,
     return ret
 
 
-def build_addon_button(text, action, title=""):
+def build_addon_button(text, action, title=''):
     """Builds am action button to be rendered in HGrid
 
     :param str text: A string or html to appear on the button itself
@@ -228,7 +232,7 @@ class NodeFileCollector(object):
                         getattr(
                             e,
                             'data',
-                            "Unexpected error when fetching file contents for {0}.".format(addon.config.full_name)
+                            'Unexpected error when fetching file contents for {0}.'.format(addon.config.full_name)
                         )
                     )
                     sentry.log_exception()
@@ -266,21 +270,14 @@ def collect_addon_js(node, visited=None, filename='files.js', config_entry='file
     :return list: List of JavaScript include paths
 
     """
-    # NOTE: must coerce to list so it is JSON-serializable
-    visited = visited or []
-    visited.append(node._id)
-    js = set()
-    for addon in node.get_addons():
+    js = []
+    for addon_config in settings.ADDONS_AVAILABLE_DICT.values():
         # JS modules configured in each addon's __init__ file
-        js = js.union(addon.config.include_js.get(config_entry, []))
+        js.extend(addon_config.include_js.get(config_entry, []))
         # Webpack bundle
-        js_path = paths.resolve_addon_path(addon.config, filename)
+        js_path = paths.resolve_addon_path(addon_config, filename)
         if js_path:
-            js.add(js_path)
-    for each in node.nodes:
-        if each._id not in visited:
-            visited.append(each._id)
-            js = js.union(collect_addon_js(each, visited=visited))
+            js.append(js_path)
     return js
 
 
@@ -290,15 +287,10 @@ def collect_addon_css(node, visited=None):
     :return: List of CSS include paths
     :rtype: list
     """
-    visited = visited or []
-    visited.append(node._id)
-    css = set()
-    for addon in node.get_addons():
-        css = css.union(addon.config.include_css.get('files', []))
-    for each in node.nodes:
-        if each._id not in visited:
-            visited.append(each._id)
-            css = css.union(collect_addon_css(each, visited=visited))
+    css = []
+    for addon_config in settings.ADDONS_AVAILABLE_DICT.values():
+        # CSS modules configured in each addon's __init__ file
+        css.extend(addon_config.include_css.get('files', []))
     return css
 
 
