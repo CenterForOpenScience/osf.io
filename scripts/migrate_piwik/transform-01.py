@@ -3,19 +3,18 @@ import sys
 import json
 import uuid
 import sqlite3
-from hashlib import sha256
 from datetime import datetime
+from hashlib import sha256, md5
 
 from geoip import geolite2
 
 from website.app import init_app
-import website.settings as settings
 from website.models import User, Node
 from website.util.metrics import get_entry_point
 
 from scripts.migrate_piwik import utils
+from scripts.migrate_piwik import settings
 from scripts.migrate_piwik import lookup_data
-from scripts.migrate_piwik import settings as script_settings
 
 
 def main():
@@ -32,12 +31,12 @@ def main():
         print("You have unaddressed complaints! Bailing...")
         sys.exit()
 
-    sqlite_db = sqlite3.connect(script_settings.SQLITE_PATH)
+    sqlite_db = sqlite3.connect(settings.SQLITE_PATH)
     sqlite_setup(sqlite_db)
 
-    input_file = open(utils.get_dir_for('extract') + '/' + script_settings.EXTRACT_FILE, 'r')
+    input_file = open(utils.get_dir_for('extract') + '/' + settings.EXTRACT_FILE, 'r')
     transform_dir = utils.get_dir_for('transform01')
-    output_file = open(transform_dir + '/' + script_settings.TRANSFORM01_FILE, 'w')
+    output_file = open(transform_dir + '/' + settings.TRANSFORM01_FILE, 'w')
 
     history_file = utils.get_history_for('transform01', 'w')
     history_file.write('Run ID: {}\n'.format(complaints_run_id))
@@ -74,7 +73,7 @@ def main():
             if not user_cache.has_key(user_id):
                 user_obj = User.load(user_id)
                 user_cache[user_id] = {
-                    'anon': sha256(user_id + settings.ANALYTICS_SALT).hexdigest(),
+                    'anon': md5(session_id).hexdigest(),
                     'entry_point': None if user_obj is None else get_entry_point(user_obj)
                 }
 
