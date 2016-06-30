@@ -1,25 +1,22 @@
 # -*- coding: utf-8 -*-
 
-import furl
+from datetime import datetime
+import httplib as http
 import urllib
 import urlparse
+
 import bson.objectid
-import httplib as http
-from datetime import datetime
-
 import itsdangerous
-
 from flask import request
-from werkzeug.local import LocalProxy
+import furl
 from weakref import WeakKeyDictionary
+from werkzeug.local import LocalProxy
 
 from framework.flask import redirect
 from framework.mongo import database
-
+from framework.sessions.model import Session
+from framework.sessions.utils import remove_session
 from website import settings
-
-from .model import Session
-from .utils import remove_session
 
 
 def add_key_to_url(url, scheme, key):
