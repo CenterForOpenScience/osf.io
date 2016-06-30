@@ -1,9 +1,10 @@
 'use strict';
 
-var keenAnalysis = require('keen-analysis');
-var keenDataviz = require('keen-dataviz');
 require('keen-dataviz/dist/keen-dataviz.min.css');
+
 var $osf = require('js/osfHelpers');
+var keenDataviz = require('keen-dataviz');
+var keenAnalysis = require('keen-analysis');
 
 var KeenViz = function(){
     var self = this;
