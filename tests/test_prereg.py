@@ -3,16 +3,16 @@ from nose.tools import *  # noqa
 from modularodm import Q
 
 from website.prereg import prereg_landing_page as landing_page
-from website.prereg.utils import drafts_for_user
+from website.prereg.utils import drafts_for_user, get_prereg_schema
 from website.project.model import ensure_schemas, MetaSchema
 
 from tests.base import OsfTestCase
 from tests import factories
 
 
-class PreregLandingPageTestCase(OsfTestCase):
+class TestPreregLandingPage(OsfTestCase):
     def setUp(self):
-        super(PreregLandingPageTestCase, self).setUp()
+        super(TestPreregLandingPage, self).setUp()
         ensure_schemas()
         self.user = factories.UserFactory()
 
@@ -83,3 +83,24 @@ class PreregLandingPageTestCase(OsfTestCase):
         for d in drafts:
             assert_in(d._id, (d2._id, d3._id))
             assert_not_equal(d._id, d1._id)
+
+
+class TestPreregUtils(OsfTestCase):
+
+    def setUp(self):
+        super(TestPreregUtils, self).setUp()
+        ensure_schemas()
+
+    def test_get_prereg_schema_returns_prereg_metaschema(self):
+        schema = get_prereg_schema()
+        assert_is_instance(schema, MetaSchema)
+        assert_equal(schema.name, 'Prereg Challenge')
+
+    def test_get_prereg_schema_can_return_erpc_metaschema(self):
+        schema = get_prereg_schema('erpc')
+        assert_is_instance(schema, MetaSchema)
+        assert_equal(schema.name, 'Election Research Preacceptance Challenge')
+
+    def test_get_prereg_schema_raises_error_for_invalid_campaign(self):
+        with assert_raises(ValueError):
+            get_prereg_schema(campaign='invalid')
