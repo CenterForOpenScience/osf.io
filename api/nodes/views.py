@@ -1575,6 +1575,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
         name          type               description
         ===================================================================================================
+        guid              string             OSF GUID for this file (if one has been assigned)
         name              string             name of the file or folder; used for display
         kind              string             "file" or "folder"
         path              string             same as for corresponding WaterButler entity
