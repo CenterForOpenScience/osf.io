@@ -24,7 +24,6 @@ from django.test import TestCase as DjangoTestCase
 
 
 from api.base.wsgi import application as api_django_app
-from admin.base.wsgi import application as admin_django_app
 from framework.mongo import set_up_storage
 from framework.auth import User
 from framework.sessions.model import Session
@@ -159,7 +158,7 @@ class DbTestCase(unittest.TestCase):
         settings.BCRYPT_LOG_ROUNDS = cls._original_bcrypt_log_rounds
 
 
-class   AppTestCase(unittest.TestCase):
+class AppTestCase(unittest.TestCase):
     """Base `TestCase` for OSF tests that require the WSGI app (but no database).
     """
 

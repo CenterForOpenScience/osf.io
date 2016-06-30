@@ -25,7 +25,9 @@ def drafts_for_user(user, campaign):
 
 def get_prereg_schema(campaign='prereg'):
     from website.models import MetaSchema  # noqa
-    schema_name = PREREG_CAMPAIGNS.get(campaign) or PREREG_CAMPAIGNS.get('prereg')
+    if campaign not in PREREG_CAMPAIGNS:
+        raise ValueError('campaign must be one of: {}'.format(', '.join(PREREG_CAMPAIGNS.keys())))
+    schema_name = PREREG_CAMPAIGNS[campaign]
 
     return MetaSchema.find_one(
         Q('name', 'eq', schema_name) &
