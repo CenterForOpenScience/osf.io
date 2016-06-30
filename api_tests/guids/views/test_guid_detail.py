@@ -9,10 +9,10 @@ from tests.factories import (AuthUserFactory, ProjectFactory, RegistrationFactor
                              CommentFactory, NodeWikiFactory, CollectionFactory, PrivateLinkFactory)
 
 
-class TestGuidRedirect(ApiTestCase):
+class TestGuidDetail(ApiTestCase):
 
     def setUp(self):
-        super(TestGuidRedirect, self).setUp()
+        super(TestGuidDetail, self).setUp()
         self.user = AuthUserFactory()
 
     def _add_private_link(self, project, anonymous=False):
@@ -111,3 +111,12 @@ class TestGuidRedirect(ApiTestCase):
         redirect_url = '{}{}comments/{}/?view_only={}'.format(API_DOMAIN, API_BASE, comment._id, view_only_link.key)
         assert_equal(res.status_code, 302)
         assert_equal(res.location, redirect_url)
+
+    def test_resolve_query_param(self):
+        project = ProjectFactory()
+        url = '{}{}guids/{}/?resolve=false'.format(API_DOMAIN, API_BASE, project._id)
+        res = self.app.get(url, auth=self.user.auth)
+        related_url = '{}{}nodes/{}/'.format(API_DOMAIN, API_BASE, project._id)
+        related = res.json['data']['relationships']['referent']['links']['related']
+        assert_equal(related['href'], related_url)
+        assert_equal(related['meta']['type'], 'nodes')
