@@ -227,6 +227,8 @@ with open(os.path.join(ROOT, 'addons.json')) as fp:
     ADDONS_ARCHIVABLE = addon_settings['addons_archivable']
     ADDONS_COMMENTABLE = addon_settings['addons_commentable']
     ADDONS_BASED_ON_IDS = addon_settings['addons_based_on_ids']
+    ADDONS_DESCRIPTION = addon_settings['addons_description']
+    ADDONS_URL = addon_settings['addons_url']
 
 ADDON_CATEGORIES = [
     'documentation',
