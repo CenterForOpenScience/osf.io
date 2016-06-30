@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 import os
 
-from invoke import task, run
+from invoke import task
 
 from website import settings
 
