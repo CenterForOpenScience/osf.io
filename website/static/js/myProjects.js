@@ -624,8 +624,11 @@ var MyProjects = {
                             'You have not made any registrations yet. Go to ',
                             m('a', {href: 'http://help.osf.io/m/registrations'}, 'Getting Started'), ' to learn how registrations work.' );
                     } else {
-                        template = m('.db-non-load-template.m-md.p-md.osf-box',
-                            'This collection is empty.' + self.viewOnly ? '' : ' To add projects or registrations, click "All my projects" or "All my registrations" in the sidebar, and then drag and drop items into the collection link.');
+                        template = 'This collection is empty.';
+                        if (!self.viewOnly) {
+                            template +=' To add projects or registrations, click "All my projects" or "All my registrations" in the sidebar, and then drag and drop items into the collection link.';
+                        }
+                        template = m('.db-non-load-template.m-md.p-md.osf-box', template);
                     }
                 } else {
                     if(!self.currentView().fetcher.isEmpty()){
