@@ -511,19 +511,19 @@ def test_module(ctx, module=None, verbosity=2):
 @task
 def test_osf(ctx):
     """Run the OSF test suite."""
-    test_module(module='tests/')
+    test_module(ctx, module='tests/')
 
 
 @task
 def test_api(ctx):
     """Run the API test suite."""
-    test_module(module='api_tests/')
+    test_module(ctx, module='api_tests/')
 
 
 @task
 def test_admin(ctx):
     """Run the Admin test suite."""
-    # test_module(module="admin_tests/")
+    # test_module(ctx, module="admin_tests/")
     module = 'admin_tests/'
     module_fmt = ' '.join(module) if isinstance(module, list) else module
     admin_tasks.manage('test {}'.format(module_fmt))
@@ -546,7 +546,7 @@ def test_addons(ctx):
     for addon in settings.ADDONS_REQUESTED:
         module = os.path.join(settings.BASE_PATH, 'addons', addon)
         modules.append(module)
-    test_module(module=modules)
+    test_module(ctx, module=modules)
 
 
 @task
