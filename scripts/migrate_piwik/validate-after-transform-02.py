@@ -80,18 +80,18 @@ def verify_files(domain, batch_count, run_id, complaints_file):
             eventnum = 0
             for event in events:
                 eventnum += 1
-                if hasattr(event['tech'], 'ip'):
+                if hasattr(event, 'tech'):
                     complaints += 1
                     complaints_file.write(
-                        'Event {} in {} has private data! "tech.ip" should be None, not {}\n'.format(
-                            eventnum, filename, event['tech']['ip'],
+                        'Event {} in {} has private data! "tech" shouldn\'t be included\n'.format(
+                            eventnum, filename,
                         )
                     )
-                if hasattr(event['user'], 'id'):
+                if hasattr(event, 'user'):
                     complaints += 1
                     complaints_file.write(
-                        'Event {} in {} has private data! "user.id" should be None, not {}\n'.format(
-                            eventnum, filename, event['user']['id'],
+                        'Event {} in {} has private data! "user" shouldn\'t be included\n'.format(
+                            eventnum, filename,
                         )
                     )
 

@@ -43,11 +43,14 @@ def main():
         private_pageviews.append(pageview)
 
         public_pageview = copy.deepcopy(pageview)
-        del public_pageview['user']['id']
-        del public_pageview['tech']['ip']
+
+        for private_property in ('tech', 'user', 'visitor', 'geo' ):
+            del public_pageview[private_property]
+
         for addon in public_pageview['keen']['addons']:
-            if addon['name'] == 'keen:ip_to_geo':
+            if addon['name'] in ('keen:ip_to_geo', 'keen:ua_parser'):
                 public_pageview['keen']['addons'].remove(addon)
+
         public_pageviews.append(public_pageview)
 
         if linenum % settings.BATCH_SIZE == 0:
