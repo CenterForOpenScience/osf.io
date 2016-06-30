@@ -793,7 +793,7 @@ def hotfix(ctx, name, finish=False, push=False):
     ctx.run('git checkout {}'.format(name), echo=True)
     ctx.run('git branch -m {}'.format(new_branch_name), echo=True)
     if finish:
-        run('git flow hotfix finish {}'.format(next_patch_version), echo=True, pty=True)
+        ctx.run('git flow hotfix finish {}'.format(next_patch_version), echo=True, pty=True)
     if push:
         ctx.run('git push origin master', echo=True)
         ctx.run('git push --tags', echo=True)
