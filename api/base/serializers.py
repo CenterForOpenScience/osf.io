@@ -359,8 +359,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         assert (related_view is not None or self_view is not None), 'Self or related view must be specified.'
         if related_view:
             assert related_kwargs is not None, 'Must provide related view kwargs.'
-            assert isinstance(related_kwargs,
-                              dict), "Related view kwargs must have format {'lookup_url_kwarg: lookup_field}."
+            if not callable(related_kwargs):
+                assert isinstance(related_kwargs,
+                                  dict), "Related view kwargs must have format {'lookup_url_kwarg: lookup_field}."
         if self_view:
             assert self_kwargs is not None, 'Must provide self view kwargs.'
             assert isinstance(self_kwargs, dict), "Self view kwargs must have format {'lookup_url_kwarg: lookup_field}."
@@ -378,8 +379,12 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         """
         Resolves the view when embedding.
         """
+        lookup_url_kwarg = self.lookup_url_kwarg
+        if callable(lookup_url_kwarg):
+            lookup_url_kwarg = lookup_url_kwarg(getattr(resource, field_name))
+
         kwargs = {attr_name: self.lookup_attribute(resource, attr) for (attr_name, attr) in
-                  self.lookup_url_kwarg.items()}
+                  lookup_url_kwarg.items()}
         view = self.view_name
         if callable(self.view_name):
             view = view(getattr(resource, field_name))
@@ -469,6 +474,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         """
         For returning kwargs dictionary of format {"lookup_url_kwarg": lookup_value}
         """
+        if callable(kwargs_dict):
+            kwargs_dict = kwargs_dict(obj)
+
         kwargs_retrieval = {}
         for lookup_url_kwarg, lookup_field in kwargs_dict.items():
             try:
