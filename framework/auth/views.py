@@ -432,8 +432,8 @@ def unconfirmed_email_add(auth=None):
         raise HTTPError(http.BAD_REQUEST, data={
             'status': "DuplicateKeyError",
             'message_short': "Merge Failed",
-            'message_long': "Publics Files with the same name cannot be merged. Please delete "
-                            "conflicting files or move them to your primary account."
+            'message_long': 'Publics Files with the same name cannot be merged. Please delete '
+                            'conflicting files or move them to your primary account.'
         })
 
     user.save()

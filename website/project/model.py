@@ -1312,7 +1312,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         mergedUserFiles = OsfStorageFile.find(Q('node', 'eq', node) & Q('title', 'ne', 'Public Files'))
 
         #check
-        matches = [userFile for mergedUserFiles, userFile in zip(mergedUserFiles, primaryUserFiles) if userFile.name == mergedUserFiles.name]
+        matches = [primUserFile for mergUserFiles, primUserFile in zip(mergedUserFiles, primaryUserFiles) if primUserFile.name == mergUserFiles.name]
         if matches:
             raise DuplicateKeyError
 
