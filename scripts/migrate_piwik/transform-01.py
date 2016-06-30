@@ -65,6 +65,7 @@ def main():
 
             location = location_cache[ip_addr]
 
+        # artificial session id. actual value not important
         session_id = str(uuid.uuid4())
         keen_id = get_or_create_keen_id(visit['visitor_id'], sqlite_db)
 
@@ -74,11 +75,20 @@ def main():
                 user_obj = User.load(user_id)
                 user_cache[user_id] = {
                     'anon': md5(session_id).hexdigest(),
-                    'entry_point': None if user_obj is None else get_entry_point(user_obj)
+                    'entry_point': None if user_obj is None else get_entry_point(user_obj),
+                    'locale': user_obj.locale if user_obj else '',
+                    'timezone': user_obj.timezone if user_obj else '',
+                    'institutions': [
+                        {'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path}
+                        for inst in user.affiliated_institutions
+                    ] if user_obj else [],
                 }
 
             anon_id = user_cache[user_id]['anon']
             user_entry_point = user_cache[user_id]['entry_point']
+            user_locale = user_cache[user_id]['locale']
+            user_timezone = user_cache[user_id]['timezone']
+            user_institutions = user_cache[user_id]['institutions']
 
 
         node = None
@@ -111,7 +121,9 @@ def main():
             },
         }
 
-        node_tags = action['node_tags'] or ''
+        node_tags = None if action['node_tags'] is None else [
+            tag for tag in action['node_tags'].split(',')
+        ]
 
         # piwik stores resolution as 1900x600 mostly, but sometimes as a float?
         # For the sake of my sanity and yours, let's ignore floats.
@@ -119,7 +131,15 @@ def main():
         if re.search('x', visit['ua']['screen']):
             screen_resolution = visit['ua']['screen'].split('x')
 
+        # piwik fmt: '2016-05-11 20:30:00', keen fmt: '2016-06-30T17:12:50.070Z'
+        # piwik is always utc
+        timestamp = datetime.strptime(action['timestamp'], '%Y-%m-%d %H:%M:%S')
+        ts_formatted = timestamp.isoformat() + '.000Z'  # naive, but correct
+
         pageview = {
+            'meta': {
+                'epoch': 0,  # migrated from piwik
+            },
             'page': {
                 'title': action['page']['title'],
                 'url': action['page']['url_prefix'] + action['page']['url'],
@@ -142,7 +162,7 @@ def main():
                 'info': browser_info,
             },
             'time': {
-                'utc': parse_server_time(action['timestamp']),
+                'utc': timestamp_components(timestamp),
                 'local': {}
             },
             'visitor': {
@@ -152,24 +172,25 @@ def main():
             },
             'user': {
                 'id': user_id,
-                'entry_point': user_entry_point,
+                'entry_point': user_entry_point or '',  # empty string if no user
+                'locale': user_locale or '',  # empty string if no user
+                'timezone': user_timezone or '',  # empty string if no user
+                'institutions': user_institutions,  # null if no user, else []
             },
             'node': {
                 'id': node_id,
                 'title': getattr(node, 'title', None),
                 'type': getattr(node, 'category', None),
-                'tags': [tag for tag in node_tags.split(',')]
+                'tags': node_tags,
             },
             'geo': {},
             'anon': {
                 'id': anon_id,
                 'continent': getattr(location, 'continent', None),
                 'country': getattr(location, 'country', None),
-                'latitude': getattr(location, 'location', (None, None))[0],
-                'longitude': getattr(location, 'location', (None, None))[1],
             },
             'keen': {
-                'timestamp': action['timestamp'],
+                'timestamp': ts_formatted,
                 'addons': [
                     {
                         'name': 'keen:referrer_parser',
@@ -283,8 +304,7 @@ def parse_browser_family(browser_key):
     return lookup_data.browser_keys.get(browser_key, 'Unknown')
 
 
-def parse_server_time(server_time):
-    timestamp = datetime.strptime(server_time, '%Y-%m-%d %H:%M:%S')
+def timestamp_components(timestamp):
     return {
         'hour_of_day': timestamp.hour,
         'day_of_week': timestamp.isoweekday(),
