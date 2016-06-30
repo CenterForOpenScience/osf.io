@@ -23,7 +23,7 @@ def drafts_for_user(user, campaign):
         Q('branched_from', 'in', [p._id for p in user_projects])
     )
 
-def get_prereg_schema(campaign='prepreg'):
+def get_prereg_schema(campaign='prereg'):
     from website.models import MetaSchema  # noqa
     schema_name = PREREG_CAMPAIGNS.get(campaign) or PREREG_CAMPAIGNS.get('prereg')
 
