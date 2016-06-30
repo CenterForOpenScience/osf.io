@@ -13,6 +13,7 @@ import logging
 from time import sleep
 
 import invoke
+from invoke import run, Collection
 
 from website import settings
 from utils import pip_install, bin_prefix
