@@ -7,6 +7,10 @@ from admin.base.utils import OSFAdmin
 from admin.desk.utils import DeskClient, DeskError
 
 
+class DeskViewError(Exception):
+    pass
+
+
 class DeskCaseList(OSFAdmin, ListView):
     template_name = 'desk/cases.html'
     ordering = 'updated_at'
@@ -51,7 +55,7 @@ class DeskCustomer(OSFAdmin, DetailView):
     def dispatch(self, request, *args, **kwargs):
         try:
             return super(DeskCustomer, self).dispatch(request, *args, **kwargs)
-        except AttributeError as e:
+        except DeskViewError as e:
             return render(request, 'desk/user_not_found.html',
                           context={
                               'email': e.message,
@@ -73,7 +77,7 @@ class DeskCustomer(OSFAdmin, DetailView):
         params = {'email': email}
         customer = desk.find_customer(params)
         if customer == {}:
-            raise AttributeError(email)
+            raise DeskViewError(email)
         return customer
 
     def get_context_data(self, **kwargs):
