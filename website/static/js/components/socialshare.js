@@ -29,9 +29,9 @@ var ShareButtons = {
                 m('i.fa.fa-linkedin-square[aria-hidden=true]')),
             m('a', {href: emailHref, target: '_blank', onclick: this.openLinkInPopup.bind(this, emailHref)},
                 m('i.fa.fa-envelope-square[aria-hidden=true]')),
-        ])
+        ]);
     }
-}
+};
 
 var ShareDropdown = {
     view: function(ctrl, options) {
@@ -42,9 +42,9 @@ var ShareDropdown = {
                     m.component(ShareButtons, {file_name: options.file_name, share_url: options.share_url})
                 ])
             ])
-        ]
+        ];
     }
-}
+};
 
 module.exports = {
     ShareButtons: ShareButtons,

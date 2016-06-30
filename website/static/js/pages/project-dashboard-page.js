@@ -23,7 +23,7 @@ var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
 var AddProject = require('js/addProjectPlugin');
 var mHelpers = require('js/mithrilHelpers');
-var SocialShare = require('js/components/socialshare')
+var SocialShare = require('js/components/socialshare');
 
 var ctx = window.contextVars;
 var node = window.contextVars.node;

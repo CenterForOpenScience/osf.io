@@ -12,7 +12,7 @@ var makeClient = require('js/clipboard');
 var FileRevisionsTable = require('./revisions.js');
 var storageAddons = require('json!storageAddons.json');
 var CommentModel = require('js/comment');
-var SocialShare = require('js/components/socialshare')
+var SocialShare = require('js/components/socialshare');
 
 // Sanity
 var Panel = utils.Panel;
