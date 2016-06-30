@@ -59,14 +59,16 @@ def _get_parent_guids(node):
 
 def create_topic(node):
     data = {}
+    project_node = _get_project_node(node)
+
     # topics must be made private at first in order to correctly
     # address the project group. This can't be added in later.
     # But we can immediately convert to a public conversation after creation.
-    data['archetype'] = 'private_message'
+    data['archetype'] = 'regular'# if project_node.is_public else 'private_message'
+    data['project_is_public'] = project_node.is_public
 
-    project_node = _get_project_node(node)
     get_or_create_group_id(project_node) # insure existance of the group
-    data['target_usernames'] = project_node._id
+    #data['target_usernames'] = project_node._id
     data['title'] = node.label
     data['raw'] = _make_topic_content(node)
     data['parent_guids[]'] = _get_parent_guids(node)
@@ -79,8 +81,8 @@ def create_topic(node):
     node.discourse_post_id = result['id']
     node.save()
 
-    if project_node.is_public:
-        update_topic_privacy(node)
+    #if project_node.is_public:
+    #    update_topic_privacy(node)
 
     return result
 
