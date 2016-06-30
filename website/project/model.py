@@ -1302,24 +1302,22 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         return False
 
     def merge_public_files(self, node):
-        try:
-            if not self.is_public_files_collection:
-                raise NodeStateError('must be Public Files collection to merge')
 
-            from website.files.models.osfstorage import OsfStorageFile
+        if not self.is_public_files_collection:
+            raise NodeStateError('must be Public Files collection to merge')
 
-            for child in OsfStorageFile.find(Q('node', 'eq', node) & Q('title', 'ne', 'Public Files')):
-                child.move_under(self.get_addon('osfstorage').get_root())
-        except DuplicateKeyError:
-            node.is_public_files_collection = False
-            node.replace_contributor(node.creator, self.creator)
-            node.is_public = False
-            node.title = node.creator.fullname + "'s old Public Files"
-            node.description = ('The OSF could not merge the Public Files of these accounts automatically, (likely'
-                                ' because they contain files of the same name, but potentionally different versions) so'
-                                ' it has created this new private project to allow manual merging of the users Public'
-                                ' Files node.')
-            node.save()
+        from website.files.models.osfstorage import OsfStorageFile
+
+        primaryUserFiles = OsfStorageFile.find(Q('node', 'eq', self) & Q('title', 'ne', 'Public Files'))
+        mergedUserFiles = OsfStorageFile.find(Q('node', 'eq', node) & Q('title', 'ne', 'Public Files'))
+
+        #check
+        matches = [userFile for mergedUserFiles, userFile in zip(mergedUserFiles, primaryUserFiles) if userFile.name == mergedUserFiles.name]
+        if matches:
+            raise DuplicateKeyError
+
+        for child in OsfStorageFile.find(Q('node', 'eq', node) & Q('title', 'ne', 'Public Files')):
+            child.move_under(self.get_addon('osfstorage').get_root())
 
         self.save()
 
