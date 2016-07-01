@@ -932,7 +932,8 @@ def get_readable_descendants(auth, node, **kwargs):
                 descendants.append(child)
             continue
         else:
-            descendants.extend(child.find_readable_descendants(auth))
+            for descendant in child.find_readable_descendants(auth):
+                descendants.append(descendant)
     return _render_nodes(descendants, auth)
 
 def node_child_tree(user, node_ids):
