@@ -136,6 +136,10 @@ def main():
             },
         }
 
+        if '-' in visit['ua']['browser']['locale']:
+            browser_locale = visit['ua']['browser']['locale'].split('-')
+            browser_language = '-'.join([browser_locale[0], browser_locale[1].upper()])
+
         node_tags = None if action['node_tags'] is None else [
             tag for tag in action['node_tags'].split(',')
         ]
@@ -167,6 +171,7 @@ def main():
             'tech': {
                 'browser': {  # JS-side will be filled in by Keen.helpers.getBrowserProfile()
                     'cookies': True if visit['ua']['browser']['cookies'] else False,
+                    'language': browser_language,
                     'screen': {
                         'height': screen_resolution[1],
                         'width': screen_resolution[0],
