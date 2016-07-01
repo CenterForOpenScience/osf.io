@@ -10,10 +10,10 @@ from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin
 from api.base.views import JSONAPIBaseView
-from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
+from api.base.views import LinkedNodesRelationship
+
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth
 from api.base.exceptions import RelationshipPostMakesNoChanges
-from api.base.serializers import LinkedNodesRelationshipSerializer
 from api.collections.serializers import (
     CollectionSerializer,
     CollectionDetailSerializer,
@@ -25,7 +25,6 @@ from api.nodes.permissions import (
     ContributorOrPublic,
     ReadOnlyIfRegistration,
     ContributorOrPublicForPointers,
-    ContributorOrPublicForRelationshipPointers,
 )
 
 from website.exceptions import NodeStateError
@@ -538,7 +537,8 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
             raise ValidationError(err.message)
         node.save()
 
-class CollectionLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, CollectionMixin):
+
+class CollectionLinkedNodesRelationship(LinkedNodesRelationship, CollectionMixin):
     """ Relationship Endpoint for Collection -> Linked Node relationships
 
     Used to set, remove, update and retrieve the ids of the linked nodes attached to this collection. For each id, there
@@ -601,46 +601,7 @@ class CollectionLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdate
     This requires edit permission on the node. This will delete any node_links that have a
     corresponding node_id in the request.
     """
-    permission_classes = (
-        ContributorOrPublicForRelationshipPointers,
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-        ReadOnlyIfRegistration,
-    )
-
-    required_read_scopes = [CoreScopes.NODE_LINKS_READ]
-    required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
-
-    serializer_class = LinkedNodesRelationshipSerializer
-    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
 
     view_category = 'collections'
     view_name = 'collection-node-pointer-relationship'
 
-    def get_object(self):
-        collection = self.get_node(check_object_permissions=False)
-        auth = get_user_auth(self.request)
-        obj = {'data': [
-            pointer for pointer in
-            collection.nodes_pointer
-            if not pointer.node.is_deleted and not pointer.node.is_collection and
-            pointer.node.can_view(auth)
-        ], 'self': collection}
-        self.check_object_permissions(self.request, obj)
-        return obj
-
-    def perform_destroy(self, instance):
-        data = self.request.data['data']
-        auth = get_user_auth(self.request)
-        current_pointers = {pointer.node._id: pointer for pointer in instance['data']}
-        collection = instance['self']
-        for val in data:
-            if val['id'] in current_pointers:
-                collection.rm_pointer(current_pointers[val['id']], auth)
-
-    def create(self, *args, **kwargs):
-        try:
-            ret = super(CollectionLinkedNodesRelationship, self).create(*args, **kwargs)
-        except RelationshipPostMakesNoChanges:
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return ret
