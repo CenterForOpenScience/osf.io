@@ -14,7 +14,8 @@ from framework import forms, status
 from framework import auth as framework_auth
 from framework.auth import exceptions
 from framework.auth import cas, campaigns
-from framework.auth import logout, get_user
+from framework.auth import logout as osf_logout
+from framework.auth import get_user
 from framework.auth.exceptions import DuplicateEmailError, ExpiredTokenError, InvalidTokenError
 from framework.auth.core import generate_verification_key
 from framework.auth.decorators import collect_auth, must_be_logged_in
@@ -258,11 +259,14 @@ def auth_logout(redirect_url=None, **kwargs):
     """
     Log out, delete current session, delete CAS cookie and delete OSF cookie.
     HTTP Method: GET
+
+    :param redirect_url: url to redirect user after logout, default is 'goodbye'
+    :return: 
     """
 
     redirect_url = redirect_url or request.args.get('redirect_url') or web_url_for('goodbye', _absolute=True)
     # OSF log out, remove current OSF session
-    logout()
+    osf_logout()
     # set redirection to CAS log out (or log in if 'reauth' is present)
     if 'reauth' in request.args:
         cas_endpoint = cas.get_login_url(redirect_url)
