@@ -471,17 +471,25 @@ class NodeForksSerializer(NodeSerializer):
 
 
 class ContributorIDField(IDField):
-    """ID field to use with the contributor resources. Contributor IDs have the form "<node-id>-<user-id>"."""
+    """ID field to use with the contributor resource. Contributor IDs have the form "<node-id>-<user-id>"."""
 
     def __init__(self, *args, **kwargs):
         kwargs['source'] = kwargs.pop('source', '_id')
         kwargs['help_text'] = kwargs.get('help_text', 'Unique contributor ID. Has the form "<node-id>-<user-id>". Example: "abc12-xyz34"')
         super(ContributorIDField, self).__init__(*args, **kwargs)
 
+    def _get_node_id(self):
+        return self.context['request'].parser_context['kwargs']['node_id']
+
     # override IDField
     def get_id(self, obj):
-        node_id = self.context['request'].parser_context['kwargs']['node_id']
+        node_id = self._get_node_id()
         user_id = obj._id
+        return '{}-{}'.format(node_id, user_id)
+
+    def to_representation(self, value):
+        node_id = self._get_node_id()
+        user_id = super(ContributorIDField, self).to_representation(value)
         return '{}-{}'.format(node_id, user_id)
 
 
