@@ -258,8 +258,13 @@ def auth_logout(redirect_url=None, **kwargs):
     """
     Log out, delete current session, delete CAS cookie and delete OSF cookie.
     HTTP Method: GET
+
+    :param redirect_url: url to redirect user after logout, default is 'goodbye'
+    :return:
     """
 
+    # OSF tells CAS what it wants to be redirected back after successful logout. However, new CAS logout flow
+    # may not respect this url if user is authenticated through remote IdP such as institution login
     redirect_url = redirect_url or request.args.get('redirect_url') or web_url_for('goodbye', _absolute=True)
     # OSF log out, remove current OSF session
     logout()

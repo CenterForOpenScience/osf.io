@@ -1,17 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Populate development database with Institution fixtures."""
-import sys
+
 import logging
+import sys
 import urllib
 
 from modularodm import Q
 
+
+from framework.transactions.context import TokuTransaction
 from website import settings
 from website.app import init_app
 from website.models import Institution, Node
 from website.search.search import update_institution, update_node
-from framework.transactions.context import TokuTransaction
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -97,6 +99,7 @@ def main(env):
                 'banner_name': 'nyu-banner.png',
                 'logo_name': 'nyu-shield.png',
                 'auth_url': SHIBBOLETH_SP.format(encode_uri_component('urn:mace:incommon:nyu.edu')),
+                'auth_slo_url': 'https://shibbolethqa.es.its.nyu.edu/idp/profile/Logout',
                 'domains': ['osf.nyu.edu'],
                 'email_domains': [],
             },
@@ -246,6 +249,7 @@ def main(env):
                 'banner_name': 'nyu-banner.png',
                 'logo_name': 'nyu-shield.png',
                 'auth_url': SHIBBOLETH_SP.format(encode_uri_component('https://shibbolethqa.es.its.nyu.edu/idp/shibboleth')),
+                'auth_slo_url': 'https://shibbolethqa.es.its.nyu.edu/idp/profile/Logout',
                 'domains': ['test-osf-nyu.cos.io'],
                 'email_domains': [],
             },
