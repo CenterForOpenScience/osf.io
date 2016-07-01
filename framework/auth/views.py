@@ -545,11 +545,16 @@ def register_user(**kwargs):
         return {'message': 'You may now log in.'}
 
 
-def resend_confirmation_get():
+@collect_auth
+def resend_confirmation_get(auth):
     """
     View for user to land on resend confirmation page.
     HTTP Method: GET
     """
+
+    # If user is already logged in, log user out
+    if auth.logged_in:
+        return auth_logout(redirect_url=request.url)
 
     form = ResendConfirmationForm(request.form)
     return {
@@ -557,11 +562,16 @@ def resend_confirmation_get():
     }
 
 
-def resend_confirmation_post():
+@collect_auth
+def resend_confirmation_post(auth):
     """
     View for user to submit resend confirmation form.
     HTTP Method: POST
     """
+
+    # If user is already logged in, log user out
+    if auth.logged_in:
+        return auth_logout(redirect_url=request.url)
 
     form = ResendConfirmationForm(request.form)
 
