@@ -470,6 +470,21 @@ class NodeForksSerializer(NodeSerializer):
         return fork
 
 
+class ContributorIDField(IDField):
+    """ID field to use with the contributor resources. Contributor IDs have the form "<node-id>-<user-id>"."""
+
+    def __init__(self, *args, **kwargs):
+        kwargs['source'] = kwargs.pop('source', '_id')
+        kwargs['help_text'] = kwargs.get('help_text', 'Unique contributor ID. Has the form "<node-id>-<user-id>". Example: "abc12-xyz34"')
+        super(ContributorIDField, self).__init__(*args, **kwargs)
+
+    # override IDField
+    def get_id(self, obj):
+        node_id = self.context['request'].parser_context['kwargs']['node_id']
+        user_id = obj._id
+        return '{}-{}'.format(node_id, user_id)
+
+
 class NodeContributorsSerializer(JSONAPISerializer):
     """ Separate from UserSerializer due to necessity to override almost every field as read only
     """
@@ -480,7 +495,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
         'permission'
     ])
 
-    id = ser.SerializerMethodField()
+    id = ContributorIDField(read_only=True)
     type = TypeField()
 
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not.',
@@ -503,11 +518,6 @@ class NodeContributorsSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'contributors'
 
-    def get_id(self, obj):
-        node_id = self.context['request'].parser_context['kwargs']['node_id']
-        user_id = obj._id
-        return '{}-{}'.format(node_id, user_id)
-
     def get_absolute_url(self, obj):
         node_id = self.context['request'].parser_context['kwargs']['node_id']
         return absolute_reverse(
@@ -527,7 +537,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     """
     Overrides NodeContributorsSerializer to add target_type and required id field
     """
-    id = IDField(source='_id', required=True)
+    id = ContributorIDField(required=True)
     target_type = TargetTypeField(target_type='users')
 
     def create(self, validated_data):
@@ -546,12 +556,11 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
         contributor.node_id = node._id
         return contributor
 
-
 class NodeContributorDetailSerializer(NodeContributorsSerializer):
     """
     Overrides node contributor serializer to add additional methods
     """
-    id = IDField(source='_id', required=True)
+    id = ContributorIDField(required=True)
 
     def update(self, instance, validated_data):
         contributor = instance

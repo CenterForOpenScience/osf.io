@@ -145,6 +145,21 @@ class TestNodeContributorUpdate(ApiTestCase):
         res = self.app.put_json_api(self.url_contributor, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
+    def test_change_contributor_correct_id(self):
+        contrib_id = '{}-{}'.format(self.project._id, self.user_two._id)
+        data = {
+            'data': {
+                'id': contrib_id,
+                'type': 'contributors',
+                'attributes': {
+                    'permission': permissions.ADMIN,
+                    'bibliographic': True
+                }
+            }
+        }
+        res = self.app.put_json_api(self.url_contributor, data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 200)
+
     def test_change_contributor_incorrect_id(self):
         data = {
             'data': {
@@ -160,9 +175,10 @@ class TestNodeContributorUpdate(ApiTestCase):
         assert_equal(res.status_code, 409)
 
     def test_change_contributor_no_type(self):
+        contrib_id = '{}-{}'.format(self.project._id, self.user_two._id)
         data = {
             'data': {
-                'id': self.user_two._id,
+                'id': contrib_id,
                 'attributes': {
                     'permission': permissions.ADMIN,
                     'bibliographic': True
@@ -191,9 +207,10 @@ class TestNodeContributorUpdate(ApiTestCase):
     @assert_logs(NodeLog.PERMISSIONS_UPDATED, 'project', -2)
     @assert_logs(NodeLog.PERMISSIONS_UPDATED, 'project')
     def test_change_contributor_permissions(self):
+        contrib_id = '{}-{}'.format(self.project._id, self.user_two._id)
         data = {
             'data': {
-                'id': self.user_two._id,
+                'id': contrib_id,
                 'type': 'contributors',
                 'attributes': {
                     'permission': permissions.ADMIN,
@@ -211,7 +228,7 @@ class TestNodeContributorUpdate(ApiTestCase):
 
         data = {
             'data': {
-                'id': self.user_two._id,
+                'id': contrib_id,
                 'type': 'contributors',
                 'attributes': {
                     'permission': permissions.WRITE,
@@ -229,7 +246,7 @@ class TestNodeContributorUpdate(ApiTestCase):
 
         data = {
             'data': {
-                'id': self.user_two._id,
+                'id': contrib_id,
                 'type': 'contributors',
                 'attributes': {
                     'permission': permissions.READ,
@@ -248,9 +265,10 @@ class TestNodeContributorUpdate(ApiTestCase):
     @assert_logs(NodeLog.MADE_CONTRIBUTOR_INVISIBLE, 'project', -2)
     @assert_logs(NodeLog.MADE_CONTRIBUTOR_VISIBLE, 'project')
     def test_change_contributor_bibliographic(self):
+        contrib_id = '{}-{}'.format(self.project._id, self.user_two._id)
         data = {
             'data': {
-                'id': self.user_two._id,
+                'id': contrib_id,
                 'type': 'contributors',
                 'attributes': {
                     'bibliographic': False
@@ -267,7 +285,7 @@ class TestNodeContributorUpdate(ApiTestCase):
 
         data = {
             'data': {
-                'id': self.user_two._id,
+                'id': contrib_id,
                 'type': 'contributors',
                 'attributes': {
                     'bibliographic': True
@@ -285,9 +303,10 @@ class TestNodeContributorUpdate(ApiTestCase):
     @assert_logs(NodeLog.PERMISSIONS_UPDATED, 'project', -2)
     @assert_logs(NodeLog.MADE_CONTRIBUTOR_INVISIBLE, 'project')
     def test_change_contributor_permission_and_bibliographic(self):
+        contrib_id = '{}-{}'.format(self.project._id, self.user_two._id)
         data = {
             'data': {
-                'id': self.user_two._id,
+                'id': contrib_id,
                 'type': 'contributors',
                 'attributes': {
                     'permission': permissions.READ,
@@ -307,9 +326,10 @@ class TestNodeContributorUpdate(ApiTestCase):
 
     @assert_not_logs(NodeLog.PERMISSIONS_UPDATED, 'project')
     def test_not_change_contributor(self):
+        contrib_id = '{}-{}'.format(self.project._id, self.user_two._id)
         data = {
             'data': {
-                'id': self.user_two._id,
+                'id': contrib_id,
                 'type': 'contributors',
                 'attributes': {
                     'permission': None,
@@ -328,9 +348,10 @@ class TestNodeContributorUpdate(ApiTestCase):
         assert_true(self.project.get_visible(self.user_two))
 
     def test_invalid_change_inputs_contributor(self):
+        contrib_id = '{}-{}'.format(self.project._id, self.user_two._id)
         data = {
             'data': {
-                'id': self.user_two._id,
+                'id': contrib_id,
                 'type': 'contributors',
                 'attributes': {
                     'permission': 'invalid',
@@ -346,9 +367,10 @@ class TestNodeContributorUpdate(ApiTestCase):
     @assert_logs(NodeLog.PERMISSIONS_UPDATED, 'project')
     def test_change_admin_self_with_other_admin(self):
         self.project.add_permission(self.user_two, permissions.ADMIN, save=True)
+        contrib_id = '{}-{}'.format(self.project._id, self.user._id)
         data = {
             'data': {
-                'id': self.user._id,
+                'id': contrib_id,
                 'type': 'contributors',
                 'attributes': {
                     'permission': permissions.WRITE,
@@ -365,9 +387,10 @@ class TestNodeContributorUpdate(ApiTestCase):
         assert_equal(self.project.get_permissions(self.user), [permissions.READ, permissions.WRITE])
 
     def test_change_admin_self_without_other_admin(self):
+        contrib_id = '{}-{}'.format(self.project._id, self.user._id)
         data = {
             'data': {
-                'id': self.user._id,
+                'id': contrib_id,
                 'type': 'contributors',
                 'attributes': {
                     'permission': permissions.WRITE,
@@ -383,9 +406,10 @@ class TestNodeContributorUpdate(ApiTestCase):
 
     def test_remove_all_bibliographic_statuses_contributors(self):
         self.project.set_visible(self.user_two, False, save=True)
+        contrib_id = '{}-{}'.format(self.project._id, self.user._id)
         data = {
             'data': {
-                'id': self.user._id,
+                'id': contrib_id,
                 'type': 'contributors',
                 'attributes': {
                     'bibliographic': False
