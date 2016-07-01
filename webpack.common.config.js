@@ -76,7 +76,7 @@ var entry = {
         'loaders.css',
         'treebeard',
         'lodash.get',
-        'jquery.cookie',
+        'js-cookie',
         'URIjs',
         // Common internal modules
         'js/fangorn',

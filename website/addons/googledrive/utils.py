@@ -4,11 +4,12 @@
 import os
 from urllib import quote
 
+from website.util import api_v2_url
 
 def build_googledrive_urls(item, node, path):
     return {
-        'fetch': node.api_url_for('googledrive_folder_list', folderId=item['id']),
-        'folders': node.api_url_for('googledrive_folder_list', folderId=item['id'], path=path),
+        'fetch': api_v2_url('nodes/{}/addons/googledrive/folders/'.format(node._id), params={'path': path}),
+        'folders': api_v2_url('nodes/{}/addons/googledrive/folders/'.format(node._id), params={'path': path, 'id': item['id']})
     }
 
 def to_hgrid(item, node, path):

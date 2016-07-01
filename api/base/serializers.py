@@ -13,7 +13,7 @@ from rest_framework.fields import get_attribute as get_nested_attributes
 from api.base import utils
 from api.base.exceptions import InvalidQueryStringError, Conflict, JSONAPIException, TargetNotSupportedError
 from api.base.settings import BULK_SETTINGS
-from api.base.utils import extend_querystring_params
+from api.base.utils import absolute_reverse, extend_querystring_params
 from framework.auth import core as auth_core
 from website import settings
 from website import util as website_utils
@@ -1139,3 +1139,26 @@ def relationship_diff(current_items, new_items):
         'add': {k: new_items[k] for k in (set(new_items.keys()) - set(current_items.keys()))},
         'remove': {k: current_items[k] for k in (set(current_items.keys()) - set(new_items.keys()))}
     }
+
+
+class AddonAccountSerializer(JSONAPISerializer):
+    id = ser.CharField(source='_id', read_only=True)
+    provider = ser.CharField(read_only=True)
+    profile_url = ser.CharField(required=False, read_only=True)
+    display_name = ser.CharField(required=False, read_only=True)
+
+    links = links = LinksField({
+        'self': 'get_absolute_url',
+    })
+
+    class Meta:
+        type_ = 'external_accounts'
+
+    def get_absolute_url(self, obj):
+        kwargs = self.context['request'].parser_context['kwargs']
+        kwargs.update({'account_id': obj._id})
+        return absolute_reverse(
+            'users:user-external_account-detail',
+            kwargs=kwargs
+        )
+        return obj.get_absolute_url()

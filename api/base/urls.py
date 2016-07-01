@@ -14,6 +14,7 @@ urlpatterns = [
             [
                 url(r'^$', views.root, name='root'),
                 url(r'^applications/', include('api.applications.urls', namespace='applications')),
+                url(r'^addons/', include('api.addons.urls', namespace='addons')),
                 url(r'^comments/', include('api.comments.urls', namespace='comments')),
                 url(r'^nodes/', include('api.nodes.urls', namespace='nodes')),
                 url(r'^registrations/', include('api.registrations.urls', namespace='registrations')),
