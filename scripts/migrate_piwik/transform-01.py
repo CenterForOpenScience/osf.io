@@ -59,12 +59,13 @@ def main():
         visit = raw_pageview['visit']
         action = raw_pageview['action']
 
+        # lookup location by ip address. piwik strips last 16 bits, so may not be completely
+        # accurate, but should be close enough.
         location = None
         ip_addr = visit['ip_addr']
         if ip_addr is not None:
             if not location_cache.has_key(ip_addr):
                 location_cache[ip_addr] = geolite2.lookup(ip_addr)
-
             location = location_cache[ip_addr]
 
         # artificial session id. actual value not important

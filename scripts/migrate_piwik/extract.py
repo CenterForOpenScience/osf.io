@@ -85,7 +85,6 @@ def main():
                         'screen': visit['config_resolution'],
                         'device': visit['config_device_model'],
                     },
-                    'country': visit['location_country'],
                 },
                 'action': {
                     'id': action['visit_action_id'],
@@ -140,6 +139,9 @@ def get_visits(mysql_db):
         don't appear to be used.
       location_provider
         we're not tracking this
+      location_country
+        I think piwik is getting this from the locale, because it doesn't match the geo lookup
+        of the ip address.  Manual inspection suggests that geo lookup is more correct.
       location_{region,city,latitude,longitude}
         not being tracked in piwik (all NULL)
       referer_{name,keyword}
@@ -173,7 +175,6 @@ SELECT
   log_visit.idvisit,
   log_visit.idvisitor,
   log_visit.location_ip,
-  log_visit.location_country,
   log_visit.location_browser_lang,
   log_visit.config_os,
   log_visit.config_browser_version,
