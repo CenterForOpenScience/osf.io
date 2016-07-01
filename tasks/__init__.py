@@ -1003,7 +1003,7 @@ def set_maintenance(ctx, start=None, end=None):
         invoke set_maintenance_state --start 2016-03-16T15:41:00-04:00
         invoke set_maintenance_state --end 2016-03-16T15:41:00-04:00
     """
-    set_maintenance(ctx, start, end)
+    set_maintenance(start, end)
     state = get_maintenance()
     print('Maintenance notice up for {} to {}.'.format(state['start'], state['end']))
 
@@ -1012,5 +1012,5 @@ def set_maintenance(ctx, start=None, end=None):
 def unset_maintenance(ctx):
     from website.maintenance import unset_maintenance
     print('Taking down maintenance notice...')
-    unset_maintenance(ctx)
+    unset_maintenance()
     print('...Done.')
