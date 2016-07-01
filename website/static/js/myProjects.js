@@ -1770,32 +1770,8 @@ var Filters = {
  */
 var Information = {
     view : function (ctrl, args) {
-        function categoryMap(category) {
-            // TODO, you don't need to do this, CSS will do this case change
-            switch (category) {
-                case 'analysis':
-                    return 'Analysis';
-                case 'communication':
-                    return 'Communication';
-                case 'data':
-                    return 'Data';
-                case 'hypothesis':
-                    return 'Hypothesis';
-                case 'methods and measures':
-                    return 'Methods and Measures';
-                case 'procedure':
-                    return 'Procedure';
-                case 'project':
-                    return 'Project';
-                case 'software':
-                    return 'Software';
-                case 'other':
-                    return 'Other';
-                default:
-                    return 'Uncategorized';
-            }
-        }
-        var template = ''; 
+
+        var template = '';
         var showRemoveFromCollection;
         var collectionFilter = args.currentView().collection;
         if (args.selected().length === 0) {
@@ -1803,6 +1779,7 @@ var Information = {
         }
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
+            var permission = item.attributes.current_user_permissions.slice(-1)[0];
             showRemoveFromCollection = collectionFilter.data.nodeType === 'collection' && args.selected()[0].depth === 1 && args.fetchers[collectionFilter.id]._flat.indexOf(item) !== -1; // Be able to remove top level items but not their children
             if(item.attributes.category === ''){
                 item.attributes.category = 'Uncategorized';
@@ -1829,7 +1806,8 @@ var Information = {
                         m('[role="tabpanel"].tab-pane.active#tab-information',[
                             m('p.db-info-meta.text-muted', [
                                 m('', 'Visibility : ' + (item.attributes.public ? 'Public' : 'Private')),
-                                m('', 'Category: ' + categoryMap(item.attributes.category)),
+                                m('.text-capitalize', 'Category: ' + item.attributes.category),
+                                m('.text-capitalize', 'My permission: ' + permission),
                                 m('', 'Last Modified on: ' + (item.date ? item.date.local : ''))
                             ]),
                             m('p', [
