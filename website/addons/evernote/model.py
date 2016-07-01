@@ -1,5 +1,8 @@
+# -*- coding: utf-8 -*-
 
+from framework.exceptions import HTTPError
 from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase
+from website.addons.base import exceptions
 from website.addons.base import StorageAddonBase
 from website.addons.evernote import (settings, utils)
 from website.addons.evernote.serializer import EvernoteSerializer
@@ -52,7 +55,19 @@ class EvernoteNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     folder_name = fields.StringField()
     folder_path = fields.StringField()
 
+    _api = None
+
+    @property
+    def api(self):
+        """authenticated ExternalProvider instance"""
+        if self._api is None:
+            self._api = Evernote(self.external_account)
+        return self._api
+
     def set_user_auth(self, user_settings):
+
+        # TO DO:  but this function should go away upon switching to use the generic_views found in website/addons/base/
+        # https://github.com/CenterForOpenScience/osf.io/pull/4670#discussion_r67694204
 
         self.user_settings = user_settings
         self.nodelogger.log(action='node_authorized', save=True)
@@ -81,3 +96,35 @@ class EvernoteNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         # don't know why this would be needed for Evernote
 
         return self.folder_path
+
+    def clear_settings(self):
+        self.folder_id = None
+        self.folder_name = None
+        self.folder_path = None
+
+    def deauthorize(self, auth=None, add_log=True):
+        """Remove user authorization from this node and log the event."""
+        folder_id = self.folder_id
+        self.clear_settings()
+
+        if add_log:
+            extra = {'folder_id': folder_id}
+            self.nodelogger.log(action='node_deauthorized', extra=extra, save=True)
+
+        self.clear_auth()
+
+    def serialize_waterbutler_credentials(self):
+        if not self.has_auth:
+            raise exceptions.AddonError('Addon is not authorized')
+        try:
+            return {'token': self.external_account.oauth_key}
+        except Exception as error:
+            raise HTTPError(str(error), data={'message_long': error.message})
+
+    def serialize_waterbutler_settings(self):
+        if self.folder_id is None:
+            raise exceptions.AddonError('Folder is not configured')
+        return {'folder': self.folder_id}
+
+    # TO DO : may need create_waterbutler_log
+    # https://github.com/CenterForOpenScience/osf.io/pull/4670/#discussion_r67736406
