@@ -13,11 +13,11 @@ from api.base.views import JSONAPIBaseView
 from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth
 from api.base.exceptions import RelationshipPostMakesNoChanges
+from api.base.serializers import LinkedNodesRelationshipSerializer
 from api.collections.serializers import (
     CollectionSerializer,
     CollectionDetailSerializer,
     CollectionNodeLinkSerializer,
-    CollectionLinkedNodesRelationshipSerializer
 )
 from api.nodes.serializers import NodeSerializer
 
@@ -611,7 +611,7 @@ class CollectionLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdate
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]
     required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
 
-    serializer_class = CollectionLinkedNodesRelationshipSerializer
+    serializer_class = LinkedNodesRelationshipSerializer
     parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
 
     view_category = 'collections'
