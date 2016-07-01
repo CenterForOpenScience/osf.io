@@ -40,18 +40,24 @@ def main():
             print('Batching line {}'.format(linenum))
 
         pageview = json.loads(pageview_json)
+        made_public_date = pageview['node']['made_public_date']
+        del pageview['node']['made_public_date']
+
         private_pageviews.append(pageview)
 
-        public_pageview = copy.deepcopy(pageview)
+        # only pageviews logged after the most recent make public date are copied to public
+        # collection
+        if made_public_date is not None and made_public_date < pageview['keen']['timestamp']:
+            public_pageview = copy.deepcopy(pageview)
 
-        for private_property in ('tech', 'user', 'visitor', 'geo' ):
-            del public_pageview[private_property]
+            for private_property in ('tech', 'user', 'visitor', 'geo' ):
+                del public_pageview[private_property]
 
-        for addon in public_pageview['keen']['addons']:
-            if addon['name'] in ('keen:ip_to_geo', 'keen:ua_parser'):
-                public_pageview['keen']['addons'].remove(addon)
+            for addon in public_pageview['keen']['addons']:
+                if addon['name'] in ('keen:ip_to_geo', 'keen:ua_parser'):
+                    public_pageview['keen']['addons'].remove(addon)
 
-        public_pageviews.append(public_pageview)
+            public_pageviews.append(public_pageview)
 
         if linenum % settings.BATCH_SIZE == 0:
             batchnum += 1

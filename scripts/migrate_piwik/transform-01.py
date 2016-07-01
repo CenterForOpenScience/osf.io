@@ -8,8 +8,10 @@ from hashlib import sha256, md5
 
 from geoip import geolite2
 
+from modularodm import Q
+
 from website.app import init_app
-from website.models import User, Node
+from website.models import User, Node, NodeLog
 from website.util.metrics import get_entry_point
 
 from scripts.migrate_piwik import utils
@@ -98,6 +100,18 @@ def main():
                 node_cache[node_id] = Node.load(node_id)
             node = node_cache[node_id]
 
+
+        node_public_date = None
+        if node is not None:
+            print "Triggered at least once"
+            privacy_actions = NodeLog.find(
+                Q('node', 'eq', 'vjsdy')
+                & Q('action', 'in', [NodeLog.MADE_PUBLIC, NodeLog.MADE_PRIVATE])
+            ).sort('date')
+            if privacy_actions[-1].action == NodeLog.MADE_PUBLIC:
+                node_public_date = privacy_actions[-1].date.isoformat()
+                node_public_date = node_public_date[:-3] + 'Z'
+
         browser_version = [None, None]
         if visit['ua']['browser']['version']:
             browser_version = visit['ua']['browser']['version'].split('.')
@@ -182,6 +196,7 @@ def main():
                 'title': getattr(node, 'title', None),
                 'type': getattr(node, 'category', None),
                 'tags': node_tags,
+                'made_public_date': node_public_date,
             },
             'geo': {},
             'anon': {
