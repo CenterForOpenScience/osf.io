@@ -480,7 +480,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
         'permission'
     ])
 
-    id = IDField(source='_id', required=True)
+    id = ser.SerializerMethodField()
     type = TypeField()
 
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not.',
@@ -503,6 +503,11 @@ class NodeContributorsSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'contributors'
 
+    def get_id(self, obj):
+        node_id = self.context['request'].parser_context['kwargs']['node_id']
+        user_id = obj._id
+        return '{}-{}'.format(node_id, user_id)
+
     def get_absolute_url(self, obj):
         node_id = self.context['request'].parser_context['kwargs']['node_id']
         return absolute_reverse(
@@ -520,8 +525,9 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
 class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     """
-    Overrides NodeContributorsSerializer to add target_type field
+    Overrides NodeContributorsSerializer to add target_type and required id field
     """
+    id = IDField(source='_id', required=True)
     target_type = TargetTypeField(target_type='users')
 
     def create(self, validated_data):
@@ -545,6 +551,7 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
     """
     Overrides node contributor serializer to add additional methods
     """
+    id = IDField(source='_id', required=True)
 
     def update(self, instance, validated_data):
         contributor = instance
