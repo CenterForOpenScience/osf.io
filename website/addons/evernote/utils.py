@@ -1,4 +1,3 @@
-
 import datetime
 import settings
 from evernote.api.client import EvernoteClient
