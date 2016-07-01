@@ -32,7 +32,7 @@ class UserSerializer(JSONAPISerializer):
     active = HideIfDisabled(ser.BooleanField(read_only=True, source='is_active'))
 
     # Social Fields are broken out to get around DRF complex object bug and to make API updating more user friendly.
-    gitHub = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.github',
+    github = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.github',
                                                           allow_blank=True, help_text='GitHub Handle'), required=False, source='social.github')))
     scholar = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.scholar',
                                                            allow_blank=True, help_text='Google Scholar Account'), required=False, source='social.scholar')))
@@ -40,21 +40,21 @@ class UserSerializer(JSONAPISerializer):
                                                                    allow_blank=True, help_text='Personal Website'), required=False, source='social.personal')))
     twitter = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.twitter',
                                                            allow_blank=True, help_text='Twitter Handle'), required=False, source='social.twitter')))
-    linkedIn = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.linkedIn',
+    linkedin = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.linkedIn',
                                                             allow_blank=True, help_text='LinkedIn Account'), required=False, source='social.linkedIn')))
-    impactStory = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.impactStory',
+    impactstory = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.impactStory',
                                                                allow_blank=True, help_text='ImpactStory Account'), required=False, source='social.impactStory')))
     orcid = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.orcid',
                                                          allow_blank=True, help_text='ORCID'), required=False, source='social.orcid')))
-    researcherId = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.researcherId',
+    researcherid = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.researcherId',
                                                       allow_blank=True, help_text='ResearcherId Account'), required=False, source='social.researcherId')))
-    researchGate = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.researchGate',
+    researchgate = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.researchGate',
                                                       allow_blank=True, help_text='ResearchGate Account'), required=False, source='social.researchGate')))
-    academiaInstitution = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.academiaInstitution',
+    academia_institution = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.academiaInstitution',
                                                       allow_blank=True, help_text='AcademiaInstitution Field'), required=False, source='social.academiaInstitution')))
-    academiaProfileID = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.academiaProfileID',
+    academia_profile_id = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.academiaProfileID',
                                                       allow_blank=True, help_text='AcademiaProfileID Field'), required=False, source='social.academiaProfileID')))
-    baiduScholar = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.baiduScholar',
+    baiduscholar = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.baiduScholar',
                                                            allow_blank=True, help_text='Baidu Scholar Account'), required=False, source='social.baiduScholar')))
     timezone = HideIfDisabled(ser.CharField(required=False, help_text="User's timezone, e.g. 'Etc/UTC"))
     locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))
