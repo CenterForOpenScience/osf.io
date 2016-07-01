@@ -255,16 +255,18 @@ def auth_login(auth, **kwargs):
     return data, http.OK
 
 
-@collect_auth
-def auth_logout(auth, redirect_url=None, **kwargs):
+def auth_logout(redirect_url=None, **kwargs):
     """
     Log out, delete current session, delete CAS cookie and delete OSF cookie.
     HTTP Method: GET
+
+    :param redirect_url: url to redirect user after logout, default is 'goodbye'
+    :return: 
     """
 
     redirect_url = redirect_url or request.args.get('redirect_url') or web_url_for('goodbye', _absolute=True)
     # OSF log out, remove current OSF session
-    osf_logout(auth.user)
+    osf_logout()
     # set redirection to CAS log out (or log in if 'reauth' is present)
     if 'reauth' in request.args:
         cas_endpoint = cas.get_login_url(redirect_url)
