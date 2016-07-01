@@ -101,7 +101,7 @@ install:
     # - travis_retry invoke encryption
 
     - travis_retry pip install --upgrade pip
-    - travis_retry pip install invoke==0.9.0
+    - travis_retry pip install invoke==0.13.0
     - travis_retry pip install flake8==2.4.0 --force-reinstall --upgrade
     - travis_retry npm install jshint
     - travis_retry invoke wheelhouse --dev --addons
