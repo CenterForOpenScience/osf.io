@@ -11,7 +11,7 @@ from scripts.migrate_piwik import utils
 from scripts.migrate_piwik import settings as script_settings
 
 
-def main(dry_run=True):
+def main(dry_run=True, batch_count=None):
     """Upload the pageviews to Keen.
     """
 
@@ -31,7 +31,8 @@ def main(dry_run=True):
     history_file.write(script_settings.RUN_HEADER + '{}\n'.format(complaints_run_id))
     history_file.write('Beginning extraction at: {}Z\n'.format(datetime.utcnow()))
 
-    keen_client, es_client = None, None
+    keen_clients = {'public': None, 'private': None}
+    es_client = None
     if dry_run:
         es_client = Elasticsearch()
         try:
@@ -40,17 +41,26 @@ def main(dry_run=True):
             print(exc)
             pass
     else:
-        keen_client = KeenClient(project_id=settings.PROJECT_ID, write_key=settings.WRITE_KEY,)
+        keen_clients = {
+            'public': KeenClient(
+                project_id=settings.KEEN['public']['project_id'],
+                write_key=settings.KEEN['public']['write_key'],
+            ),
+            'private':  KeenClient(
+                project_id=settings.KEEN['private']['project_id'],
+                write_key=settings.KEEN['private']['write_key'],
+            )
+        }
 
     tally = {}
-    batch_count = utils.get_batch_count()
+    batch_count = utils.get_batch_count() if batch_count is None else batch_count
     print("Beginning Upload")
     for batch_id in range(1, batch_count+1):
         print("  Batch {}".format(batch_id))
         for domain in ('private', 'public'):
             print("    Domain: {}".format(domain))
             # print("Uploading batch {} for domain '{}'".format(batch_id, domain))
-            load_batch_for(batch_id, domain, tally, dry_run, es_client, keen_client)
+            load_batch_for(batch_id, domain, tally, dry_run, es_client, keen_clients[domain])
 
     print("Finished Upload")
     history_file.write('Finished extraction at: {}Z\n'.format(datetime.utcnow()))
@@ -68,20 +78,19 @@ def load_batch_for(batch_id, domain, tally, dry_run, es_client, keen_client):
     run_id = data_file.readline().rstrip()
     events = json.loads(data_file.readline())
 
-    collection_name = domain + '-pageviews'
-    actions = [{
-        '_index': script_settings.ES_INDEX,
-        '_type': collection_name,
-        '_source': event,
-    } for event in events]
-
     if dry_run:
+        actions = [{
+            '_index': script_settings.ES_INDEX,
+            '_type': domain + '-pageviews',
+            '_source': event,
+        } for event in events]
+
         stats = es_bulk(
             client=es_client, stats_only=True, actions=actions,
         )
         tally[domain + '-' + str(batch_id)] = stats
     else:
-        keen_client.add_events(collection_name, events)
+        keen_client.add_events({'pageviews': events})
 
 
 if __name__ == "__main__":
