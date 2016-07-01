@@ -1772,6 +1772,7 @@ class TestBulkDeleteCollectionNodeLinks(ApiTestCase):
         assert_equal(len(errors), 1)
         assert_equal(errors[0]['detail'], 'Node link does not belong to the requested node.')
 
+
 class TestCollectionRelationshipNodeLinks(ApiTestCase):
 
     def setUp(self):

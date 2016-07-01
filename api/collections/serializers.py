@@ -105,5 +105,3 @@ class CollectionNodeLinkSerializer(NodeLinksSerializer):
                 'node_link_id': obj._id
             }
         )
-
-
