@@ -415,7 +415,7 @@
                 <div id="containment">
                     <div mod-meta='{
                         "tpl": "util/render_nodes.mako",
-                        "uri": "${node["api_url"]}get_children/",
+                        "uri": "${node["api_url"]}get_readable_descendants/",
                         "replace": true,
                         "kwargs": {
                           "sortable" : ${'true' if not node['is_registration'] else 'false'},
