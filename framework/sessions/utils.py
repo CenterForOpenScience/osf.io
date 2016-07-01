@@ -9,7 +9,7 @@ def remove_sessions_for_user(user):
     """
     Permanently remove all stored sessions for the user from the DB.
 
-    :param user:
+    :param user: User
     :return:
     """
 
@@ -20,7 +20,7 @@ def remove_session(session):
     """
     Remove a session from database
 
-    :param session:
+    :param session: Session
     :return:
     """
 

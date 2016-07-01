@@ -261,7 +261,7 @@ def auth_logout(redirect_url=None, **kwargs):
     HTTP Method: GET
 
     :param redirect_url: url to redirect user after logout, default is 'goodbye'
-    :return: 
+    :return:
     """
 
     redirect_url = redirect_url or request.args.get('redirect_url') or web_url_for('goodbye', _absolute=True)
