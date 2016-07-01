@@ -338,6 +338,14 @@ class TestFileView(ApiTestCase):
         )
         assert_equal(res.status_code, 403)
 
+    def test_get_file_resolves_guids(self):
+        guid = self.file.get_guid(create=True)
+        url = '/{}files/{}/'.format(API_BASE, guid._id)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json.keys(), ['data'])
+        assert_equal(res.json['data']['attributes']['path'], self.file.path)
+
 
 class TestFileVersionView(ApiTestCase):
     def setUp(self):
