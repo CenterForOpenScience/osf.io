@@ -76,6 +76,7 @@ def main():
                     'user_id': visit['user_id'],
                     'ua': {
                         'os': visit['config_os'],
+                        'os_version': visit['config_os_version'],
                         'browser': {
                             'version': visit['config_browser_version'],
                             'name': visit['config_browser_name'],
@@ -177,6 +178,7 @@ SELECT
   log_visit.location_ip,
   log_visit.location_browser_lang,
   log_visit.config_os,
+  log_visit.config_os_version,
   log_visit.config_browser_version,
   log_visit.config_browser_name,
   log_visit.config_device_model,

@@ -117,15 +117,25 @@ def main():
         if visit['ua']['browser']['version']:
             browser_version = visit['ua']['browser']['version'].split('.')
 
+        os_version = [None, None]
+        if visit['ua']['os_version']:
+            os_version = visit['ua']['os_version'].split('.')
+            if len(os_version) == 1:
+                os_version.append(None)
+
+        os_family = parse_os_family(visit['ua']['os']);
+        if visit['ua']['os'] == 'WIN' and visit['ua']['os_version']:
+            os_family = os_family.replace('<Unknown Version>', visit['ua']['os_version'])
+
         browser_info = {
             'device': {
                 'family': visit['ua']['device'],
             },
             'os': {
-                'major': None,
+                'major': os_version[0],
                 'patch_minor': None,
-                'minor': None,
-                'family': parse_os_family(visit['ua']['os']),
+                'minor': os_version[1],
+                'family': os_family,
                 'patch': None,
             },
             'browser': {
