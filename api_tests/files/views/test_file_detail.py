@@ -346,6 +346,16 @@ class TestFileView(ApiTestCase):
         assert_equal(res.json.keys(), ['data'])
         assert_equal(res.json['data']['attributes']['path'], self.file.path)
 
+    def test_get_file_invalid_guid_gives_404(self):
+        url = '/{}files/{}/'.format(API_BASE, 'asdasasd')
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_get_file_non_file_guid_gives_404(self):
+        url = '/{}files/{}/'.format(API_BASE, self.node._id)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
 
 class TestFileVersionView(ApiTestCase):
     def setUp(self):

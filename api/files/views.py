@@ -5,8 +5,11 @@ from rest_framework.exceptions import NotFound
 from framework.auth.oauth_scopes import CoreScopes
 
 from website.models import Guid
-from website.files.models import FileNode
-from website.files.models import FileVersion
+from website.files.models import (
+    FileNode,
+    FileVersion,
+    StoredFileNode
+)
 
 from api.base.exceptions import Gone
 from api.base.permissions import PermissionWithGetter
@@ -33,7 +36,10 @@ class FileMixin(object):
         try:
             obj = get_object_or_error(FileNode, self.kwargs[self.file_lookup_url_kwarg])
         except (NotFound, Gone):
-            obj = get_object_or_error(Guid, self.kwargs[self.file_lookup_url_kwarg]).referent.wrapped()
+            obj = get_object_or_error(Guid, self.kwargs[self.file_lookup_url_kwarg]).referent
+            if not isinstance(obj, StoredFileNode):
+                raise NotFound
+            obj = obj.wrapped()
 
         if check_permissions:
             # May raise a permission denied
