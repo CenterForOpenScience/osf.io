@@ -30,11 +30,7 @@
                 </h2>
             </div>
             <div class="col-sm-7 col-md-5">
-                <div class="btn-toolbar node-control pull-right"
-                    % if not user_name:
-                        data-bind="tooltip: {title: 'Log-in or create an account to watch/duplicate this project', placement: 'bottom'}"
-                    % endif
-                     >
+                <div class="btn-toolbar node-control pull-right">
                     <div class="btn-group">
                     % if not node["is_public"]:
                         <button class="btn btn-default disabled">Private</button>
@@ -73,18 +69,22 @@
 
                     </div>
                     <!-- /ko -->
-                    <div class="btn-group">
-                        <a
-                        % if user_name:
-                            class="btn btn-default"
-                            data-bind="tooltip: {title: 'Duplicate', placement: 'bottom', container : 'body'}"
-                            data-target="#duplicateModal" data-toggle="modal"
-                        % else:
-                            class="btn btn-default disabled"
+                    <div class="btn-group"
+                        % if not user_name:
+                            data-bind="tooltip: {title: 'Log in or create an account to duplicate this project', placement: 'top'}"
                         % endif
-                            href="#">
-                            <span class="glyphicon glyphicon-share"></span>&nbsp; ${ node['templated_count'] + node['fork_count'] + node['points'] }
-                        </a>
+                        >
+                            <a
+                            % if user_name:
+                                class="btn btn-default"
+                                data-bind="tooltip: {title: 'Duplicate', placement: 'bottom', container : 'body'}"
+                                data-target="#duplicateModal" data-toggle="modal"
+                            % else:
+                                class="btn btn-default disabled"
+                            % endif
+                                href="#">
+                                <span class="glyphicon glyphicon-share"></span>&nbsp; ${ node['templated_count'] + node['fork_count'] + node['points'] }
+                            </a>
                     </div>
                     % if 'badges' in addons_enabled and badges and badges['can_award']:
                         <div class="btn-group">
