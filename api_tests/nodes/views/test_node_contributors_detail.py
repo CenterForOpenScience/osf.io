@@ -68,12 +68,12 @@ class TestContributorDetail(NodeCRUDTestCase):
     def test_get_public_contributor_detail(self):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['id'], self.user._id)
+        assert_equal(res.json['data']['id'], '{}-{}'.format(self.public_project._id, self.user._id))
 
     def test_get_private_node_contributor_detail_contributor_auth(self):
         res = self.app.get(self.private_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['id'], self.user._id)
+        assert_equal(res.json['data']['id'], '{}-{}'.format(self.private_project, self.user._id))
 
     def test_get_private_node_contributor_detail_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.user_two.auth, expect_errors=True)
