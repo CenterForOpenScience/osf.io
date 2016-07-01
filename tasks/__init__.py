@@ -76,10 +76,10 @@ def git_logs():
 
 
 @task
-def apiserver(port=8000, wait=True):
+def apiserver(port=8000, wait=True, host='127.0.0.1'):
     """Run the API server."""
     env = os.environ.copy()
-    cmd = 'DJANGO_SETTINGS_MODULE=api.base.settings {} manage.py runserver {} --nothreading'.format(sys.executable, port)
+    cmd = 'DJANGO_SETTINGS_MODULE=api.base.settings {} manage.py runserver {}:{} --nothreading'.format(sys.executable, host, port)
     if wait:
         return run(cmd, echo=True, pty=True)
     from subprocess import Popen
@@ -88,10 +88,10 @@ def apiserver(port=8000, wait=True):
 
 
 @task
-def adminserver(port=8001):
+def adminserver(port=8001, host='127.0.0.1'):
     """Run the Admin server."""
     env = 'DJANGO_SETTINGS_MODULE="admin.base.settings"'
-    cmd = '{} python manage.py runserver {} --nothreading'.format(env, port)
+    cmd = '{} python manage.py runserver {}:{} --nothreading'.format(env, host, port)
     run(cmd, echo=True, pty=True)
 
 
@@ -891,18 +891,17 @@ def clean_assets():
 
 
 @task(aliases=['pack'])
-def webpack(clean=False, watch=False, dev=False):
+def webpack(clean=False, watch=False, dev=False, colors=False):
     """Build static assets with webpack."""
     if clean:
         clean_assets()
     webpack_bin = os.path.join(HERE, 'node_modules', 'webpack', 'bin', 'webpack.js')
     args = [webpack_bin]
-    if settings.DEBUG_MODE and dev:
-        args += ['--colors']
-    else:
-        args += ['--progress']
+    args += ['--progress']
     if watch:
         args += ['--watch']
+    if colors:
+        args += ['--colors']
     config_file = 'webpack.dev.config.js' if dev else 'webpack.prod.config.js'
     args += ['--config {0}'.format(config_file)]
     command = ' '.join(args)

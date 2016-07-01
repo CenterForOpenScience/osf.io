@@ -772,8 +772,7 @@ Draft.prototype.reject = function() {
  * @property {Object} extensions: mapping of extenstion names to their view models
  **/
 var RegistrationEditor = function(urls, editorId, preview) {
-    var self = this;
-
+    var self = this; 
     self.urls = urls;
 
     self.readonly = ko.observable(false);
@@ -875,7 +874,8 @@ var RegistrationEditor = function(urls, editorId, preview) {
 			return unwrap(subQuestion);
 		    })
                 );
-            } else {
+            }
+	    else {
                 var value;
                 if (self.extensions[question.type] ) {
                     value = question.preview();
@@ -884,10 +884,9 @@ var RegistrationEditor = function(urls, editorId, preview) {
                 }
 		$elem.append(
 		    $('<span class="col-md-12">').append(
-                $('<p class="breaklines"><small><em>' + $osf.htmlEscape(question.description) + '</em></small></p>'),
-			    $('<span class="well breaklines col-md-12">').append($osf.htmlEscape(value))
-            )
-		);
+			$('<p class="breaklines"><small><em>' + $osf.htmlEscape(question.description) + '</em></small></p>'),
+                            $('<span class="well col-md-12">').append(value)
+		));
             }
 	    return $elem;
 	};
@@ -1052,8 +1051,10 @@ RegistrationEditor.prototype.updateData = function(response) {
     var self = this;
 
     var draft = self.draft();
+
     draft.pk = response.pk;
     draft.updated = new Date(response.updated);
+
     self.draft(draft);
 };
 

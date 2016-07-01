@@ -10,13 +10,18 @@ from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView
-from api.base.parsers import JSONAPIOnetoOneRelationshipParser, JSONAPIOnetoOneRelationshipParserForRegularJSON
+from api.base.parsers import (
+    JSONAPIRelationshipParser,
+    JSONAPIRelationshipParserForRegularJSON,
+)
+from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.base.pagination import CommentPagination, NodeContributorPagination
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
 from api.files.serializers import FileSerializer
 from api.comments.serializers import CommentSerializer, CommentCreateSerializer
 from api.comments.permissions import CanCommentOrPublic
 from api.users.views import UserMixin
+from api.wikis.serializers import WikiSerializer
 
 from api.nodes.serializers import (
     NodeSerializer,
@@ -26,7 +31,7 @@ from api.nodes.serializers import (
     NodeProviderSerializer,
     NodeContributorsSerializer,
     NodeContributorDetailSerializer,
-    NodeInstitutionRelationshipSerializer,
+    NodeInstitutionsRelationshipSerializer,
     NodeAlternativeCitationSerializer,
     NodeContributorsCreateSerializer
 )
@@ -41,10 +46,12 @@ from api.nodes.permissions import (
     ContributorOrPublicForPointers,
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
+    AdminOrPublicForRelationshipInstitutions,
     ExcludeWithdrawals,
 )
 from api.logs.serializers import NodeLogSerializer
 
+from website.addons.wiki.model import NodeWikiPage
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
 from website.models import Node, Pointer, Comment, NodeLog, Institution
@@ -144,6 +151,9 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         fork                            boolean            is this node a fork of another node?
         public                          boolean            has this node been made publicly-visible?
         collection                      boolean            is this a collection? (always false - may be deprecated in future versions)
+        node_license                    object             details of the license applied to the node
+            year                        string             date range of the license
+            copyright_holders           array of strings   holders of the applied license
 
     ##Links
 
@@ -335,6 +345,9 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
         fork                            boolean             is this node a fork of another node?
         public                          boolean             has this node been made publicly-visible?
         collection                      boolean             is this a collection? (always false - may be deprecated in future versions)
+        node_license                    object             details of the license applied to the node
+            year                        string             date range of the license
+            copyright_holders           array of strings   holders of the applied license
 
     ##Relationships
 
@@ -484,10 +497,11 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
 
     `type` is "contributors"
 
-        name           type     description
+        name                        type     description
         ======================================================================================================
-        bibliographic  boolean  Whether the user will be included in citations for this node. Default is true.
-        permission     string   User permission level. Must be "read", "write", or "admin". Default is "write".
+        bibliographic               boolean  Whether the user will be included in citations for this node. Default is true.
+        permission                  string   User permission level. Must be "read", "write", or "admin". Default is "write".
+        unregistered_contributor    string   Contributor's assigned name if contributor hasn't yet claimed account
 
     ##Links
 
@@ -638,10 +652,11 @@ class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
 
     `type` is "contributors"
 
-        name           type     description
+        name                        type     description
         ======================================================================================================
-        bibliographic  boolean  Whether the user will be included in citations for this node. Default is true.
-        permission     string   User permission level. Must be "read", "write", or "admin". Default is "write".
+        bibliographic               boolean  Whether the user will be included in citations for this node. Default is true.
+        permission                  string   User permission level. Must be "read", "write", or "admin". Default is "write".
+        unregistered_contributor    string   Contributor's assigned name if contributor hasn't yet claimed account
 
     ##Relationships
 
@@ -1238,25 +1253,26 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
         name          type       description
         =========================================================================
-        name          string     name of the file
-        path          string     unique identifier for this file entity for this
-                                 project and storage provider. may not end with '/'
-        materialized  string     the full path of the file relative to the storage
-                                 root.  may not end with '/'
-        kind          string     "file"
-        etag          string     etag - http caching identifier w/o wrapping quotes
-        modified      timestamp  last modified timestamp - format depends on provider
-        contentType   string     MIME-type when available
-        provider      string     id of provider e.g. "osfstorage", "s3", "googledrive".
-                                 equivalent to addon_short_name on the OSF
-        size          integer    size of file in bytes
-        extra         object     may contain additional data beyond what's described here,
-                                 depending on the provider
-          version     integer    version number of file. will be 1 on initial upload
-          downloads   integer    count of the number times the file has been downloaded
+        name          string            name of the file
+        path          string            unique identifier for this file entity for this
+                                        project and storage provider. may not end with '/'
+        materialized  string            the full path of the file relative to the storage
+                                        root.  may not end with '/'
+        kind          string            "file"
+        etag          string            etag - http caching identifier w/o wrapping quotes
+        modified      timestamp         last modified timestamp - format depends on provider
+        contentType   string            MIME-type when available
+        provider      string            id of provider e.g. "osfstorage", "s3", "googledrive".
+                                        equivalent to addon_short_name on the OSF
+        size          integer           size of file in bytes
+        tags          array of strings  list of tags that describes the file (osfstorage only)
+        extra         object            may contain additional data beyond what's described here,
+                                        depending on the provider
+          version     integer           version number of file. will be 1 on initial upload
+          downloads   integer           count of the number times the file has been downloaded
           hashes      object
-            md5       string     md5 hash of file
-            sha256    string     SHA-256 hash of file
+            md5       string            md5 hash of file
+            sha256    string            SHA-256 hash of file
 
     ####Folder Entity
 
@@ -1790,6 +1806,8 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMix
     * 'pointer_created': A Pointer is created
     * 'pointer_forked': A Pointer is forked
     * 'pointer_removed': A Pointer is removed
+    * 'node_removed': A component is deleted
+    * 'node_forked': A Node is forked
     ===
     * 'made_public': A Node is made public
     * 'made_private': A Node is made private
@@ -1842,8 +1860,6 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMix
     * 'registration_cancelled': A proposed Registration is cancelled
     ===
     * 'node_created': A Node is created (_deprecated_)
-    * 'node_forked': A Node is forked (_deprecated_)
-    * 'node_removed': A Node is deleted (_deprecated_)
 
    ##Log Attributes
 
@@ -2051,10 +2067,9 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
         serializer.validated_data['node'] = node
         serializer.save()
 
-
-class NodeInstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
-    """ Detail of the one primary_institution a node has, if any. Returns NotFound
-    if the node does not have a primary_institution.
+class NodeInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin, NodeMixin):
+    """ Detail of the affiliated institutions a node has, if any. Returns [] if the node has no
+    affiliated institution.
 
     ##Attributes
 
@@ -2083,79 +2098,176 @@ class NodeInstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin
 
     model = Institution
     view_category = 'nodes'
-    view_name = 'node-institution-detail'
+    view_name = 'node-institutions'
 
-    # overrides RetrieveAPIView
-    def get_object(self):
+    def get_queryset(self):
         node = self.get_node()
-        if not node.primary_institution:
-            raise NotFound
-        return node.primary_institution
+        return node.affiliated_institutions or []
 
 
-class NodeInstitutionRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
-    """ Relationship Endpoint for Node -> Institution Relationship
+class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, NodeMixin):
+    """ Relationship Endpoint for Node -> Institutions Relationship
 
-    Used to set the primary_institution of a node to an institution
+    Used to set, remove, update and retrieve the affiliated_institutions of a node to an institution
 
     ##Actions
 
     ###Create
 
+        Method:        POST
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "institutions",   # required
+                           "id": <institution_id>   # required
+                         }]
+                       }
+        Success:       201
+
+    This requires admin permissions on the node and for the user making the request to
+    have the institutions in the payload as affiliated in their account.
+
+    ###Update
+
         Method:        PUT || PATCH
         URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
-                         "data": {
+                         "data": [{
                            "type": "institutions",   # required
                            "id": <institution_id>   # required
-                         }
+                         }]
                        }
         Success:       200
 
-    This requires both admin permission on the node, and for the user that is
-    making the request to be affiliated with the institution (`User.affiliated_institutions`)
+        This requires admin permissions on the node and for the user making the request to
+        have the institutions in the payload as affiliated in their account. This will delete
+        all institutions not listed, meaning a data: [] payload does the same as a DELETE with all
+        the institutions.
 
     ###Destroy
 
-        Method:        PUT || PATCH
+        Method:        DELETE
         URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
-                         "data": {
-                           null
-                         }
+                         "data": [{
+                           "type": "institutions",   # required
+                           "id": <institution_id>   # required
+                         }]
                        }
         Success:       204
 
-    This requires admin permission on the node.
+    This requires admin permissions in the node.
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        AdminOrPublic
+        AdminOrPublicForRelationshipInstitutions
     )
-    required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.INSTITUTION_READ]
+    required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
-    serializer_class = NodeInstitutionRelationshipSerializer
-    parser_classes = (JSONAPIOnetoOneRelationshipParser, JSONAPIOnetoOneRelationshipParserForRegularJSON, )
+    serializer_class = NodeInstitutionsRelationshipSerializer
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
 
     view_category = 'nodes'
-    view_name = 'node-relationships-institution'
+    view_name = 'node-relationships-institutions'
 
-    # overrides RetrieveAPIView
     def get_object(self):
-        return self.get_node()
+        node = self.get_node(check_object_permissions=False)
+        obj = {
+            'data': node.affiliated_institutions,
+            'self': node
+        }
+        self.check_object_permissions(self.request, obj)
+        return obj
 
-    def update(self, request, *args, **kwargs):
-        # same as drf's update method from the update mixin, with the addition of
-        # returning a 204 when successfully deletes relationship with PUT/PATCH
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        inst = request.data.get('id', None)
-        if not inst:
+    def perform_destroy(self, instance):
+        data = self.request.data['data']
+        user = self.request.user
+        current_insts = {inst._id: inst for inst in instance['data']}
+        node = instance['self']
+        for val in data:
+            if val['id'] in current_insts:
+                node.remove_affiliated_institution(inst=current_insts[val['id']], user=user)
+        node.save()
+
+    def create(self, *args, **kwargs):
+        try:
+            ret = super(NodeInstitutionsRelationship, self).create(*args, **kwargs)
+        except RelationshipPostMakesNoChanges:
             return Response(status=HTTP_204_NO_CONTENT)
-        return Response(serializer.data)
+        return ret
+
+
+class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMixin):
+    """List of wiki pages on a node. *Read only*.
+
+    Paginated list of the node's current wiki page versions ordered by their `date_modified.` Each resource contains the
+    full representation of the wiki, meaning additional requests to an individual wiki's detail view are not necessary.
+
+    Note that if an anonymous view_only key is being used, the user relationship will not be exposed.
+
+    ###Permissions
+
+    Wiki pages on public nodes are given read-only access to everyone. Wiki pages on private nodes are only visible to
+    contributors and administrators on the parent node.
+
+    ##Attributes
+
+    OSF wiki entities have the "wikis" `type`.
+
+        name                type               description
+        =================================================================================
+        name                string             name of the wiki pag
+        path                string             the path of the wiki page
+        materialized_path   string             the path of the wiki page
+        date_modified       iso8601 timestamp  timestamp when the wiki was last updated
+        content_type        string             MIME-type
+        extra               object
+            version         integer            version number of the wiki
+
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Query Params
+
+    + `filter[name]=<Str>` -- filter wiki pages by name
+
+    + `filter[date_modified][comparison_operator]=YYYY-MM-DDTH:M:S` -- filter wiki pages based on date modified.
+
+    Wiki pages can be filtered based on their `date_modified` fields. Possible comparison
+    operators include 'gt' (greater than), 'gte'(greater than or equal to), 'lt' (less than) and 'lte'
+    (less than or equal to). The date must be in the format YYYY-MM-DD and the time is optional.
+
+
+    #This Request/Response
+    """
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ContributorOrPublic,
+        ExcludeWithdrawals
+    )
+
+    required_read_scopes = [CoreScopes.WIKI_BASE_READ]
+    required_write_scopes = [CoreScopes.NULL]
+    serializer_class = WikiSerializer
+
+    view_category = 'nodes'
+    view_name = 'node-wikis'
+
+    ordering = ('-date', )  # default ordering
+
+    # overrides ODMFilterMixin
+    def get_default_odm_query(self):
+        node = self.get_node()
+        node_wiki_pages = node.wiki_pages_current.values() if node.wiki_pages_current else []
+        return Q('_id', 'in', node_wiki_pages)
+
+    def get_queryset(self):
+        return NodeWikiPage.find(self.get_query_from_request())

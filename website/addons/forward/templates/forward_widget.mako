@@ -22,7 +22,7 @@
 
         <div>
             This project contains a forward to
-            <a data-bind="attr: {href: url}, text: linkDisplay" target="_blank"></a>.
+            <a data-bind="attr: {href: url}, text: linkDisplay"></a>.
         </div>
 
         <div class="spaced-buttons m-t-sm">

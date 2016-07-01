@@ -524,15 +524,15 @@ class TestUser(OsfTestCase):
         u.save()
 
         with assert_raises(auth_exc.InvalidTokenError):
-            u._get_unconfirmed_email_for_token('badtoken')
+            u.get_unconfirmed_email_for_token('badtoken')
 
         valid_token = u.get_confirmation_token('foo@bar.com')
-        assert_true(u._get_unconfirmed_email_for_token(valid_token))
+        assert_true(u.get_unconfirmed_email_for_token(valid_token))
         manual_expiration = datetime.datetime.utcnow() - datetime.timedelta(0, 10)
         u._set_email_token_expiration(valid_token, expiration=manual_expiration)
 
         with assert_raises(auth_exc.ExpiredTokenError):
-            u._get_unconfirmed_email_for_token(valid_token)
+            u.get_unconfirmed_email_for_token(valid_token)
 
     def test_verify_confirmation_token_when_token_has_no_expiration(self):
         # A user verification token may not have an expiration
@@ -544,7 +544,7 @@ class TestUser(OsfTestCase):
         del u.email_verifications[token]['expiration']
         u.save()
 
-        assert_true(u._get_unconfirmed_email_for_token(token))
+        assert_true(u.get_unconfirmed_email_for_token(token))
 
     def test_factory(self):
         # Clear users
@@ -1172,7 +1172,6 @@ class TestNodeWikiPage(OsfTestCase):
         wiki = NodeWikiFactory()
         assert_equal(wiki.page_name, 'home')
         assert_equal(wiki.version, 1)
-        assert_true(hasattr(wiki, 'is_current'))
         assert_equal(wiki.content, 'Some content')
         assert_true(wiki.user)
         assert_true(wiki.node)
@@ -1181,17 +1180,17 @@ class TestNodeWikiPage(OsfTestCase):
         assert_equal(self.wiki.url, '{project_url}wiki/home/'
                                     .format(project_url=self.project.url))
 
-    def test_absolute_url_for_wiki_page_name_with_spaces(self):
+    def test_url_for_wiki_page_name_with_spaces(self):
         wiki = NodeWikiFactory(user=self.user, node=self.project, page_name='Test Wiki')
-        url = '{}wiki/{}/'.format(self.project.absolute_url, urllib.quote(wiki.page_name))
-        assert_equal(wiki.get_absolute_url(), url)
+        url = '{}wiki/{}/'.format(self.project.url, urllib.quote(wiki.page_name))
+        assert_equal(wiki.url, url)
 
-    def test_absolute_url_for_wiki_page_name_with_special_characters(self):
+    def test_url_for_wiki_page_name_with_special_characters(self):
         wiki = NodeWikiFactory(user=self.user, node=self.project)
         wiki.page_name = 'Wiki!@#$%^&*()+'
         wiki.save()
-        url = '{}wiki/{}/'.format(self.project.absolute_url, urllib.quote(wiki.page_name))
-        assert_equal(wiki.get_absolute_url(), url)
+        url = '{}wiki/{}/'.format(self.project.url, urllib.quote(wiki.page_name))
+        assert_equal(wiki.url, url)
 
 
 class TestUpdateNodeWiki(OsfTestCase):
@@ -3933,7 +3932,7 @@ class TestForkNode(OsfTestCase):
     def test_forking_clones_project_wiki_pages(self):
         project = ProjectFactory(creator=self.user, is_public=True)
         wiki = NodeWikiFactory(node=project)
-        current_wiki = NodeWikiFactory(node=project, version=2, is_current=True)
+        current_wiki = NodeWikiFactory(node=project, version=2)
         fork = project.fork_node(self.auth)
         assert_equal(fork.wiki_private_uuids, {})
 
@@ -4150,11 +4149,10 @@ class TestRegisterNode(OsfTestCase):
     def test_registration_gets_institution_affiliation(self):
         node = NodeFactory()
         institution = InstitutionFactory()
-        node.primary_institution = institution
+        node.affiliated_institutions.append(institution)
         node.save()
         registration = RegistrationFactory(project=node)
-        assert_equal(registration.primary_institution._id, node.primary_institution._id)
-        assert_equal(set(registration.affiliated_institutions), set(node.affiliated_institutions))
+        assert_equal(registration.affiliated_institutions, node.affiliated_institutions)
 
     def test_registration_of_project_with_no_wiki_pages(self):
         assert_equal(self.registration.wiki_pages_versions, {})
@@ -4164,7 +4162,7 @@ class TestRegisterNode(OsfTestCase):
     def test_registration_clones_project_wiki_pages(self):
         project = ProjectFactory(creator=self.user, is_public=True)
         wiki = NodeWikiFactory(node=project)
-        current_wiki = NodeWikiFactory(node=project, version=2, is_current=True)
+        current_wiki = NodeWikiFactory(node=project, version=2)
         registration = project.register_node(get_default_metaschema(), Auth(self.user), '', None)
         assert_equal(self.registration.wiki_private_uuids, {})
 

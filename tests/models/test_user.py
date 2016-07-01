@@ -109,16 +109,16 @@ class TestUser(base.OsfTestCase):
         self.user.save()
         self.user.reload()
         assert_equal(token1, self.user.get_confirmation_token(email))
-        assert_equal(email, self.user._get_unconfirmed_email_for_token(token1))
+        assert_equal(email, self.user.get_unconfirmed_email_for_token(token1))
 
         token2 = self.user.add_unconfirmed_email(email)
         self.user.save()
         self.user.reload()
         assert_not_equal(token1, self.user.get_confirmation_token(email))
         assert_equal(token2, self.user.get_confirmation_token(email))
-        assert_equal(email, self.user._get_unconfirmed_email_for_token(token2))
+        assert_equal(email, self.user.get_unconfirmed_email_for_token(token2))
         with assert_raises(exceptions.InvalidTokenError):
-            self.user._get_unconfirmed_email_for_token(token1)
+            self.user.get_unconfirmed_email_for_token(token1)
 
     def test_contributed_property(self):
         projects_contributed_to = project.model.Node.find(Q('contributors', 'eq', self.user._id))
@@ -363,7 +363,8 @@ class TestUserMerging(base.OsfTestCase):
             'mailing_lists',
             'verification_key',
             '_affiliated_institutions',
-            'contributor_added_email_records'
+            'contributor_added_email_records',
+            'requested_deactivation'
         ]
 
         calculated_fields = {

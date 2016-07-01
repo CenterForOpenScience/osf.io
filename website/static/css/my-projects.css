@@ -326,10 +326,6 @@ div[data-growl="container"] {
     text-align: center;
 }
 
-#dashboard .ball-pulse-sync>div, #dashboard .ball-pulse>div, #dashboard .ball-scale>div, #dashboard .ball-beat-sync>div, #dashboard .ball-beat>div, #dashboard .ball-beat>div {
-    background-color: #BED1E2;
-}
-
 .text-muted-more {
     color: #999;
 }
