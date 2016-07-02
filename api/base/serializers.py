@@ -212,10 +212,13 @@ class IDField(ser.CharField):
         request = self.context.get('request')
         if request:
             if request.method in utils.UPDATE_METHODS and not utils.is_bulk_request(request):
-                id_field = getattr(self.root.instance, self.source, '_id')
+                id_field = self.get_id(self.root.instance)
                 if id_field != data:
                     raise Conflict(detail=('The id you used in the URL, "{}", does not match the id you used in the json body\'s id field, "{}". The object "{}" exists, otherwise you\'d get a 404, so most likely you need to change the id field to match.'.format(id_field, data, id_field)))
         return super(IDField, self).to_internal_value(data)
+
+    def get_id(self, obj):
+        return getattr(obj, self.source, '_id')
 
 
 class TypeField(ser.CharField):

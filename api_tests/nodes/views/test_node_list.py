@@ -1837,6 +1837,8 @@ class TestNodeListPagination(ApiTestCase):
 
         uids = [e['id'] for e in res.json['data'][0]['embeds']['contributors']['data']]
         for user in self.users[:9]:
-            assert_in(user._id, uids)
-        assert_not_in(self.users[10]._id, uids)
+            contrib_id = '{}-{}'.format(res.json['data'][0]['id'], user._id)
+            assert_in(contrib_id, uids)
+
+        assert_not_in('{}-{}'.format(res.json['data'][0]['id'], self.users[10]._id), uids)
         assert_equal(res.json['data'][0]['embeds']['contributors']['links']['meta']['per_page'], 10)
