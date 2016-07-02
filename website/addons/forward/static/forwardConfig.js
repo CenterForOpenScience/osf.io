@@ -75,18 +75,36 @@ var ViewModel = function(url, nodeId) {
     self.fetchFromServer();
 
     function onSubmitSuccess() {
-        self.changeMessage(
-            'Successfully linked to <a href="' + self.url() + '">' + self.url() + '</a>.',
-            'text-success',
-            MESSAGE_TIMEOUT
-        );
+        if (self.url() == null) {
+            self.changeMessage(
+                'Please fill in the required field.',
+                'text-danger'
+            );
+        }
+        else {
+            self.changeMessage(
+                'Successfully linked to <a href="' + self.url() + '">' + self.url() + '</a>.',
+                'text-success',
+                MESSAGE_TIMEOUT
+            );
+        }
     }
 
     function onSubmitError(xhr, status) {
-        self.changeMessage(
-            'Could not change settings. Please try again later.',
-            'text-danger'
-        );
+        var re = /^(https?):\/{2}/;
+        var b = self.url().replace(re, '');
+        if (b == '') {
+            self.changeMessage(
+                'Please fill in the required field.',
+                'text-danger'
+            );
+        }
+        else {
+            self.changeMessage(
+                'Could not change settings. Please try again later.',
+                'text-danger'
+            );
+        }
     }
 
     /**
