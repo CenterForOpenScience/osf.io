@@ -9,8 +9,8 @@ var dicPath =  '/static/dictionaries/en_US/en_US.dic';
 var affPath =  '/static/dictionaries/en_US/en_US.aff';
 
 // Make red underline for gutter and words.
-$('<style type="text/css">.ace_marker-layer .misspelled { position: absolute; z-index: -2; border-bottom: 1px solid red; margin-bottom: -1px; }</style>').appendTo('head');
-$('<style type="text/css">.misspelled { border-bottom: 1px solid red; margin-bottom: -1px; }</style>').appendTo('head');
+$('<style type="text/css">.ace_marker-layer .misspelled { position: absolute; z-index: -2; border-bottom: 1px dotted red; margin-bottom: -1px; }</style>').appendTo('head');
+$('<style type="text/css">.misspelled { border-bottom: 1px dotted red; margin-bottom: -1px; }</style>').appendTo('head');
 
 // Load the dictionary.
 // We have to load the dictionary files sequentially to ensure
