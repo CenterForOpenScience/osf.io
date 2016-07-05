@@ -673,6 +673,8 @@ class User(GuidStoredObject, AddonModelMixin):
         """
         had_existing_password = bool(self.password)
         self.password = generate_password_hash(raw_password)
+        if self.username == raw_password:
+            raise ChangePasswordError(['Password cannot be the same as your email address'])
         if had_existing_password and notify:
             mails.send_mail(
                 to_addr=self.username,
@@ -714,12 +716,14 @@ class User(GuidStoredObject, AddonModelMixin):
         raw_new_password = (raw_new_password or '').strip()
         raw_confirm_password = (raw_confirm_password or '').strip()
 
+        # TODO: Move validation to set_password
         issues = []
         if not self.check_password(raw_old_password):
             issues.append('Old password is invalid')
         elif raw_old_password == raw_new_password:
             issues.append('Password cannot be the same')
-
+        elif raw_new_password == self.username:
+            issues.append('Password cannot be the same as your email address')
         if not raw_old_password or not raw_new_password or not raw_confirm_password:
             issues.append('Passwords cannot be blank')
         elif len(raw_new_password) < 6:

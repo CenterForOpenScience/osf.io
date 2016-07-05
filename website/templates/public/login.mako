@@ -59,13 +59,11 @@
                             'has-success': fullName() && fullName.isValid()
                         }"
                 >
-                    <label for="inputName" class="col-sm-4 control-label">Full Name</label>
+                    <label for="fullName" class="col-sm-4 control-label">Full Name</label>
                     <div class="col-sm-8">
                         <input
                                 autofocus
-                                type="text"
                                 class="form-control"
-                                id="inputName"
                                 placeholder="Name"
                                 data-bind="
                                 value: fullName, disable: submitted(),
@@ -142,13 +140,21 @@
                                 id="inputPassword3"
                                 placeholder="Password"
                                 data-bind="
+                            textInput: typedPassword,
                             value: password,
                             disable: submitted(),
                             event: {
                                 blur: trim.bind($data, password)
                             }"
                         >
-                        <p class="help-block" data-bind="validationMessage: password" style="display: none;"></p>
+                          <div class="progress create-password">
+                              <div class="progress-bar progress-bar-sm" role="progressbar" data-bind="attr: passwordComplexityInfo().attr"></div>
+                          </div>
+                        <!-- ko if: passwordFeedback() -->
+                        <p class="text-right" data-bind="text: passwordComplexityInfo().text, attr: passwordComplexityInfo().text_attr"></p>
+                        <p class="help-block osf-box-lt" data-bind="validationMessage: password" style="display: none;"></p>
+                        <p class="help-block osf-box-lt" data-bind="text: passwordFeedback().warning"></p>
+                        <!-- /ko -->
                     </div>
                 </div>
                 <!-- Flashed Messages -->
@@ -170,12 +176,10 @@
                         </div>
                     %endif
                     <div class="col-md-4 col-sm-12">
-                        <button type="submit" class="btn pull-right btn-success" data-bind="disable: submitted()">Create account</button>
+                        <button type="submit" class="btn pull-right btn-success" data-bind="css: {disabled: !password.isValid()}">Create account</button>
                     </div>
                 </div>
-
             </form>
-
         </div>
         <div class="row">
             <div id="termsAndConditions" class="m-t-md col-sm-6 col-sm-offset-3">

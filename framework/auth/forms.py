@@ -119,6 +119,11 @@ confirm_password_field = PasswordField(
 )
 
 
+def match_email(form, field):
+    if field.data == form.email.data:
+        raise ValidationError('Your password cannot be the same as your email address.')
+
+
 class ResetPasswordForm(Form):
     password = PasswordField('New Password',
         [
@@ -141,9 +146,12 @@ class ResetPasswordForm(Form):
         widget=BootstrapPasswordInput()
     )
 
+    email = HiddenField()
+
 
 class SetEmailAndPasswordForm(ResetPasswordForm):
     token = HiddenField()
+    email = HiddenField()
 
 
 class SignInForm(Form):

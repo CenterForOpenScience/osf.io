@@ -356,7 +356,6 @@ var DeactivateAccountViewModel = oop.defclass({
     }
 });
 
-
 var ExportAccountViewModel = oop.defclass({
     constructor: function () {
         this.success = ko.observable(false);

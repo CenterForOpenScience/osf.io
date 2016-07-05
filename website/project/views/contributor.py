@@ -595,8 +595,8 @@ def replace_unclaimed_user_with_registered(user):
 
 @collect_auth
 def claim_user_form(auth, **kwargs):
-    """
-    View for rendering the set password page for a claimed user.
+    """View for rendering the set password page for a claimed user.
+
     Must have ``token`` as a querystring argument.
     Renders the set password form, validates it, and sets the user's password.
     HTTP Method: GET, POST
@@ -624,7 +624,7 @@ def claim_user_form(auth, **kwargs):
     user.update_guessed_names()
     # The email can be the original referrer email if no claimer email has been specified.
     claimer_email = unclaimed_record.get('claimer_email') or unclaimed_record.get('email')
-    form = SetEmailAndPasswordForm(request.form, token=token)
+    form = SetEmailAndPasswordForm(request.form, token=token, email=user.email)
 
     if request.method == 'POST':
         if form.validate():

@@ -94,17 +94,67 @@
                         <form id="changePasswordForm" role="form" action="${ web_url_for('user_account_password') }" method="post">
                             <div class="form-group">
                                 <label for="old_password">Old password</label>
-                                <input type="password" class="form-control" name="old_password" required>
+                                <input
+                                    type="password"
+                                    class="form-control"
+                                    id="changePassword"
+                                    placeholder="Old Password"
+                                    name="old_password"
+                                    data-bind="
+                                        textInput: oldPassword,
+                                        value: oldPassword,
+                                        event: {
+                                            blur: trim.bind($data, password)
+                                        }"
+                                >
+                                <p class="help-block" data-bind="validationMessage: oldPassword" style="display: none;"></p>
                             </div>
                             <div class="form-group">
                                 <label for="new_password">New password</label>
-                                <input type="password" class="form-control" name="new_password" required>
+                                <input
+                                    type="password"
+                                    class="form-control"
+                                    id="resetPassword"
+                                    placeholder="New Password"
+                                    name="new_password"
+                                    data-bind="
+                                        textInput: typedPassword,
+                                        value: password,
+                                        event: {
+                                            blur: trim.bind($data, password)
+                                        }"
+                                >
+                              <div class="progress create-password">
+                                  <div class="progress-bar progress-bar-sm" role="progressbar" data-bind="attr: passwordComplexityInfo().attr"></div>
+                              </div>
+                              <div>
+                                  <!-- ko if: passwordFeedback() -->
+                                  <p class="text-right" id="front-password-info" data-bind="text: passwordComplexityInfo().text, attr: passwordComplexityInfo().text_attr"></p>
+                                  <p class="help-block osf-box-lt" data-bind="validationMessage: password" style="display: none;"></p>
+                                  <p class="help-block osf-box-lt" data-bind="text: passwordFeedback().warning"></p>
+                                  <!-- /ko -->
+                                  <!-- ko if: !passwordFeedback() -->
+                                  <div style="padding-top:10px"></div>
+                                  <!-- /ko -->
+                              </div>
                             </div>
                             <div class="form-group">
                                 <label for="confirm_password">Confirm new password</label>
-                                <input type="password" class="form-control" name="confirm_password" required>
+                                <input
+                                    type="password"
+                                    class="form-control"
+                                    id="resetPasswordConfirmation"
+                                    placeholder="Verify Password"
+                                    name="confirm_password"
+                                    data-bind="
+                                        value: passwordConfirmation,
+                                        event: {
+                                            blur: trim.bind($data, passwordConfirmation)
+                                        }"
+                                >
+                                <p class="help-block" data-bind="validationMessage: passwordConfirmation" style="display: none;"></p>
                             </div>
-                            <button type="submit" class="btn btn-primary">Update password</button>
+                            <button type="submit" class="btn btn-primary" data-bind="css: {disabled: !password.isValid()}">Update password</button>
                         </form>
                     </div>
                 </div>
@@ -162,6 +212,12 @@
 </%def>
 
 <%def name="javascript_bottom()">
+    <script type="text/javascript">
+        window.contextVars = $.extend(true, {}, window.contextVars, {
+            username: ${user_name | sjson, n}
+        });
+    </script>
+    ${parent.javascript_bottom()}
     ## Webpack bundles
     % for js_asset in addons_js:
       <script src="${js_asset | webpack_asset}"></script>

@@ -695,6 +695,13 @@ button.close {
     margin-right: 15px;
 }
 
+.create-password {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    height: inherit;
+}
+
+
 div.ball-scale-blue>div {
     background-color: #BED1E2;
 }
