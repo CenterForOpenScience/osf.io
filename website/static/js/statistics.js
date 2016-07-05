@@ -6,7 +6,7 @@ var $osf = require('js/osfHelpers');
 var keenDataviz = require('keen-dataviz');
 var keenAnalysis = require('keen-analysis');
 
-var KeenViz = function(){
+var ProjectUsageStatistics = function(){
     var self = this;
 
     var defaultTimeframe = 'this_30_days';
@@ -24,7 +24,7 @@ var KeenViz = function(){
 
 
     // show visits to this project over the last week
-    self.visitsByDay = function() {
+    self.visitsByDay = function(elem) {
         var query = {
             'type':'count_unique',
             'params' : {
@@ -36,7 +36,7 @@ var KeenViz = function(){
         };
 
         var dataviz = new keenDataviz()
-                .el('#visits')
+                .el(elem)
                 .chartType('line')
                 .chartOptions({
                     tooltip: {
@@ -51,7 +51,7 @@ var KeenViz = function(){
 
 
     // show most common referrers to this project from the last week
-    self.topReferrers = function() {
+    self.topReferrers = function(elem) {
         var query = {
             type: 'count_unique',
             params: {
@@ -63,7 +63,7 @@ var KeenViz = function(){
         };
 
         var dataviz = new keenDataviz()
-                .el('#topReferrers')
+                .el(elem)
                 .chartType('pie')
                 .chartOptions({
                     tooltip:{
@@ -77,7 +77,7 @@ var KeenViz = function(){
     };
 
     // The number of visits by hour across last week
-    self.visitsServerTime = function() {
+    self.visitsServerTime = function(elem) {
         var query = {
             'type': 'count_unique',
             'params': {
@@ -89,7 +89,7 @@ var KeenViz = function(){
         };
 
         var dataviz = new keenDataviz()
-                .el('#serverTimeVisits')
+                .el(elem)
                 .chartType('bar')
                 .chartOptions({
                     tooltip:{
@@ -130,7 +130,7 @@ var KeenViz = function(){
     };
 
     // most popular sub-pages of this project
-    self.popularPages = function() {
+    self.popularPages = function(elem) {
         var query = {
             type: 'count_unique',
             params: {
@@ -142,7 +142,7 @@ var KeenViz = function(){
         };
 
         var dataviz = new keenDataviz()
-                .el('#popularPages')
+                .el(elem)
                 .chartType('bar')
                 .chartOptions({
                     tooltip:{
@@ -197,20 +197,6 @@ var KeenViz = function(){
                 dataviz.message(err.message);
             });
     };
-
-    self.drawAllCharts = function () {
-        self.visitsByDay();
-        self.topReferrers();
-        self.visitsServerTime();
-        self.popularPages();
-    };
-
-
 };
-
-function ProjectUsageStatistics() {
-    var self = this;
-    self.keenViz = new KeenViz();
-}
 
 module.exports = ProjectUsageStatistics;

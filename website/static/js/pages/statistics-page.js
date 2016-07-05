@@ -18,5 +18,9 @@ $(function(){
 
 keenAnalysis.ready(function(){
     var projectUsageStats = new ProjectUsageStatistics();
-    projectUsageStats.keenViz.drawAllCharts();
+
+    projectUsageStats.visitsByDay('#visits');
+    projectUsageStats.topReferrers('#topReferrers');
+    projectUsageStats.visitsServerTime('#serverTimeVisits');
+    projectUsageStats.popularPages('#popularPages');
 });
