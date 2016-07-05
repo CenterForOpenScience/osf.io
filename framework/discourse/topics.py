@@ -61,11 +61,8 @@ def create_topic(node):
     data = {}
     project_node = _get_project_node(node)
 
-    # topics must be made private at first in order to correctly
-    # address the project group. This can't be added in later.
-    # But we can immediately convert to a public conversation after creation.
-    data['archetype'] = 'regular'# if project_node.is_public else 'private_message'
-    data['project_is_public'] = project_node.is_public
+    # privacy is completely relegated to the group with the corresponding project_guid
+    data['archetype'] = 'regular'
 
     get_or_create_group_id(project_node) # insure existance of the group
     #data['target_usernames'] = project_node._id
@@ -81,9 +78,6 @@ def create_topic(node):
     node.discourse_post_id = result['id']
     node.save()
 
-    #if project_node.is_public:
-    #    update_topic_privacy(node)
-
     return result
 
 def update_topic_content(node):
@@ -93,23 +87,6 @@ def update_topic_content(node):
     data = {}
     data['post[raw]'] = _make_topic_content(node)
     return request('put', '/posts/' + str(node.discourse_post_id), data)
-
-def update_topic_privacy(node):
-    if node.discourse_topic_id is None:
-        return
-
-    project_node = _get_project_node(node)
-    if project_node.is_public == node.discourse_topic_public:
-        return
-
-    path = '/t/' + str(node.discourse_topic_id) + '/convert-topic'
-    path += '/public' if project_node.is_public else '/private'
-    result = request('put', path)
-
-    node.discourse_topic_public = project_node.is_public
-    node.save()
-
-    return result
 
 def update_topic_title(node):
     if node.discourse_topic_id is None:

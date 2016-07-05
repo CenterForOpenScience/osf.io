@@ -1837,20 +1837,25 @@ DISCOURSE_SERVER_SETTINGS = {'title': 'Open Science Framework',
                              'max_tag_length': '100',
                              'max_tags_per_topic': '20',
                              'min_trust_level_to_tag_topics': '4',
+                             'full_name_required': 'true',
+                             'prioritize_username_in_ux': 'false',
+                             'display_name_on_posts': 'true',
+                             'osf_domain': DOMAIN,
                              }
 
 DISCOURSE_SERVER_CUSTOMIZATIONS = [{'name': 'MFR',
                                     'enabled': 'true',
-                                    'head_tag': '<link href="https://mfr.osf.io/static/css/mfr.css" media="all" rel="stylesheet">',
-                                    'body_tag': '''
+                                    'head_tag': '''
+<script type='text/x-handlebars' data-template-name='/connectors/topic-title/mfr-view'>
 <style>
     #mfrIframe {
         width: 100%:
     }
 </style>
 
-<script src="https://mfr.osf.io/static/js/mfr.js"></script>
-<script>
+<link href="https://mfr.osf.io/static/css/mfr.css" media="all" rel="stylesheet">
+<scr{{!}}ipt src="https://mfr.osf.io/static/js/mfr.js"></scr{{!}}ipt>
+<scr{{!}}ipt>
 var observeDOM = (function(){
     var MutationObserver = window.MutationObserver || window.WebKitMutationObserver,
         eventListenerSupported = window.addEventListener;
@@ -1873,6 +1878,7 @@ observeDOM(document.body, function() {
 
     var topic_post = document.querySelector('.topic-post article#post_1 .cooked');
 
+    if (typeof mfr === 'undefined') return;
     if (!topic_post) return;
     if (document.getElementById("mfrIframe")) return;
 
@@ -1884,12 +1890,12 @@ observeDOM(document.body, function() {
     if (match) {
         var guid = match[1];
         topic_post.appendChild(mfr_div);
-        window.jQuery || document.write('<script src="//code.jquery.com/jquery-1.11.2.min.js">\\x3C/script>');
+        window.jQuery || document.write('\\x3Cscript src="//code.jquery.com/jquery-1.11.2.min.js">\\x3C/script>');
         var mfrRender = new mfr.Render("mfrIframe", "''' + MFR_SERVER_URL + '''/render?url=''' + DOMAIN + '''"+guid+"/?action=download%26mode=render");
     }
 });
 
-
+</scr{{!}}ipt>
 </script>
                                     ''',
                                     },
@@ -1931,59 +1937,11 @@ footer a:hover {
 }
                                     ''',
                                    },
-                                   {'name': 'Title Manager',
-                                    'enabled': 'true',
-                                    'body_tag': '''
-<script>(function(){
-
-var observeDOM = (function(){
-    var MutationObserver = window.MutationObserver || window.WebKitMutationObserver,
-        eventListenerSupported = window.addEventListener;
-
-    return function(obj, callback){
-        if( MutationObserver ){
-            // define a new observer
-            var obs = new MutationObserver(function(mutations, observer){
-                if( mutations[0].addedNodes.length || mutations[0].removedNodes.length )
-                    callback();
-            });
-            // have the observer observe foo for changes in children
-            obs.observe( obj, { childList:true, subtree:true });
-        }
-    }
-})();
-
-// Observe a specific DOM element:
-observeDOM(document.body, function() {
-    console.log('mutation!')
-
-    var embedded_title = document.querySelector('.topic-post article#post_1 .cooked code');
-    if (!embedded_title) return;
-    console.log('got topic post')
-
-    var topic_title = document.querySelector('#topic-title .title-wrapper .fancy-title')
-    if (!topic_title || topic_title.classList.contains('hacked')) return;
-    console.log('got topic title');
-
-    topic_title.innerHTML = embedded_title.textContent;
-    console.log(embedded_title);
-    console.log(embedded_title.parentNode)
-    embedded_title.parentNode.removeChild(embedded_title)
-    topic_title.classList.add('hacked')
-});
-
-})()</script>
-                                    ''',
-                                   },
-                                  {'name': 'Top Header',
+                                  {'name': 'Site Appearance',
                                    'enabled': 'true',
                                    'stylesheet': '''
-/********** Sticky Nav **********/
-
 a {
-
-font-family: 'Helvetica Neue', Helvetica, Arial, Utkal, sans-serif;
-font-weight: 300;
+    font-family: 'Open Sans','Helvetica Neue', sans-serif;
 }
 
 section.ember-application {
@@ -1994,72 +1952,109 @@ section.ember-application {
     position: fixed;
     top: 0;
     background-color: #263947;
-
 }
-.title a:after {
-    margin-left: 10px;
-    font-size: 24px;
-    content: "Open Science Framework";
+header .title a:after {
+    font-size: 18px;
+    line-height: 25px;
+    font-weight: normal;
+    @media (max-width: 767px) {
+        content: "OSF";
+    }
+    @media (min-width: 768px ) {
+        content: "Open Science Framework";
+    }
     font-family: 'Open Sans', 'Helvetica Neue', sans-serif;
+    vertical-align: middle;
+    color: white;
+    -webkit-font-smoothing: antialiased;
+}
 
-    &:hover {
-        color: #e0ebf3;
-      }
--webkit-font-smoothing: antialiased;
+header .title a:hover:after {
+    color: #e5e5e5;
+}
+
+header {
+    margin-bottom: 0px;
+}
+
+.d-header #site-logo {
+    max-height: 27px;
+    margin-right: 8px;
+    margin-top: 6px;
+    margin-bottom: 6px;
+}
+
+.d-header .contents {
+    margin: 6px ;
 }
 
 .desktop-view body #main {
-  padding-top: 74px;
+  padding-top: 54px;
 }
 
-#top-navbar {
-  height:60px;
-  background-color:#263947;
-  width:100%;
-  position: fixed;
-  z-index: 1001;
+.d-header {
+    height: 51px ;
 }
 
 .desktop-view body header.d-header {
   top: 59px;
-  padding-top: 6px;
+  padding-top: 0px;
 }
 
-div#top-navbar-links {
-  width:100%;
-  margin: 0 auto;
-  padding-top: 0;
-  max-width:1100px;
-  margin-top: 0;
+#main-outlet {
+    padding-top: 40px;
 }
 
-div#top-navbar-links a, div#top-navbar-links span {
-  color:#eee;
-  font-size: 14px;
+.d-header .icons .icon:hover{
+    color: #ccc;
+    background-color: #263947;
 }
 
-div.cos-icon--main {
-    float: left;
-    margin-right: 10px;
+.d-header .icons .icon {
+    -webkit-font-smoothing: antialiased;
+}
 
-    > a, > a:visited, > a:active {
-      display: inline-block;
-      padding: 6px 10px;
-      font-size: 14px;
-      color: #eeeeee;
+.d-header .icons [class^="fa fa-"] {
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+    line-height: 32px;
+    display: inline-block;
 
-      &:hover {
-        color: #e0ebf3;
-      }
+    padding-left: 4px ;
+    padding-right: 4px ;
+}
+
+.unread-private-messages {
+    color: #204762;
+    background-color: #c7ffc7;
+}
+
+.search-menu {
+    .menu-panel {
+        background-color: #b8ecc0;
     }
-  }
+}
 
-.navbar-brand {
-    float: left;
-    padding: 12.5px 15px ;
+img.avatar {
+    width: 26px !important ;
+    height: 26px !important ;
+    margin-top: 2px !important;
+}
+
+img.avatar a:after {
     font-size: 18px;
     line-height: 25px;
-    height: 50px ;
+
+    font-weight: normal;
+    content: title;
+    font-family: 'Open Sans', 'Helvetica Neue', sans-serif;
+    vertical-align: middle;
+    -webkit-font-smoothing: antialiased;
+}
+
+.extra-info-wrapper {
+    display: none ;
 }
 
 /* js dropdown navs */
@@ -2124,124 +2119,111 @@ div.cos-icon--main {
     }
   }
 }
+
+/* For centering of the project header */
+#project-header ul {
+    margin: 0 auto;
+    padding: 0;
+
+    @media (min-width: 768px) {
+        width: 750px;
+    }
+    @media (min-width: 864px) {
+        width: 850px;
+    }
+    @media (min-width: 928px) {
+        width: 920px;
+    }
+}
+
+#project-header {
+    background-color: #eee;
+    box-shadow: 0 0 9px -1px #838383;
+    overflow: hidden;
+    margin-left: auto;
+
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+#project-header > ul > li {
+    float: left;
+    margin-left: auto;
+    margin-right: auto;
+    list-style-type: none;
+
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+#project-header > ul > li > a {
+    display: inline-block;
+
+    color: #337ab7;
+    font-family: 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-size: 15px;
+    line-height: 20px;
+    -webkit-font-smoothing: antialiased;
+
+    padding-top: 12px;
+    padding-bottom: 12px;
+
+    padding-left: 5px;
+    padding-right: 5px;
+
+    @media (min-width: 864px) {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    @media (min-width: 928px) {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+}
+
+#project-header > ul > li.header-offset {
+    min-width: 29px;
+    min-height: 1px;
+}
+
+#project-header > ul > li > a.project-parent {
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+#project-header > ul > li > a.project-name {
+    font-weight: 300;
+    font-size: 20px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+#project-header > ul > li > a.project-forum {
+    background-color: #337ab7;
+    color: white;
+}
+
+#project-header > ul > li > a.project-forum:hover {
+    color: white;
+}
+
+#project-header > ul > li:hover {
+    background-color: #e1e1e1;
+}
+
+#project-header > ul > li > a:hover {
+    color: #337ab7;
+}
+
+span.second.username {
+    display: none;
+}
+
+.profiler-results {
+    display: none;
+}
                                 ''',
-                                'header': '''
-<!DOCTYPE html>
-
-    <div id="top-navbar" style='display:none;'>
-      <div id="top-navbar-links">
-          <div class="cos-icon--main">
-            <a class="navbar-brand hidden-sm hidden-xs" href="/" >
-                <img src="http://discourse.mechanysm.com/uploads/default/original/1X/0ea2d6e023b73a218200bded19cec4b95c58e667.png" class="cos-icon--main" width="27" alt="COS">
-                "Open Science Framework"
-            </a>
-          </div>
-        <div class="panel clearfix">
-            <ul id="top-external-nav" class="icons clearfix">
-
-              <li class="top-ext--main">
-                <a class="top-ext--link" href="http://osf.io/" target="blank">Dashboard</a>
-              </li>
-
-              <li class="top-ext--main">
-                <a class="top-ext--link" href="https://osf.io/myprojects/" target="blank">My Project</a>
-              </li>
-
-              <li class="top-ext--main" id="top-discourse-link">
-               ; <a class="top-ext--link top-discourse-link-main">Browse</a>
-                <ul class="top-ext--sub" id="top-discourse-sub">
-                  <li class="top-ext--sub-item">
-                    <a class="top-ext--link" href="https://osf.io/explore/activity/" target="blank">
-                      <span>New Project</span>
-                    </a>
-                  </li>
-                  <li class="top-ext--sub-item">
-                    <a class="top-ext--link" href="" target="blank">
-                      <span>Registry</span>
-                    </a>
-                  </li>
-                  <li class="top-ext--sub-item">
-                    <a class="top-ext--link" href="https://osf.io/meetings/" target="blank">
-                      <span>Meetings</span>
-                    </a>
-                  </li>
-                </ul>
-              </li>
-            </ul>
-        </div>
-      </div>
-    </div>
-                                   ''',
-                                   'head_tag': '''
-<!DOCTYPE html>
-<link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300' rel='stylesheet' type='text/css'>
-<script type="text/javascript">
-
-$(function() {
-  var $topDiscourseSub = $('#top-discourse-sub');
-  $('#top-discourse-link').hover(function() {
-    $topDiscourseSub.show();
-  }, function() {
-    $topDiscourseSub.hide();
-  });
-});
-</script>
-                                   ''',
-                                  },
-                                 {'name': 'Topic Header',
-                                  'enabled': 'true',
-                                  'head_tag': '',
-                                  'body_tag': '''
-<style>
-    #project_header {
-        background-color: #eee;
-        box-shadow: 0 3 10px 10px rgba(0,0,0,0.4);
-        overflow: hidden;
-    }
-    #project_header > ul > li {
-        float: left;
-        list-style-type: none;
-        padding: 10px;
-        color: #337ab7;
-    }
-    #project_header > ul > li:hover {
-        background-color: #e1e1e1;
-        color: #337;
-    }
-</style>
-<script>
-// Observe a specific DOM element:
-observeDOM(document.body, function() {
-    var discourse_header = document.querySelector('header.d-header');
-    var topic_post = document.querySelector('.topic-post article#post_1 .cooked');
-
-    if (!discourse_header) return;
-    if (!topic_post) return;
-    if (document.getElementById("project_header")) return;
-
-    var project_header = document.createElement('div');
-    project_header.id = "project_header";
-
-    var ul = document.createElement('ul');
-    ul.classList.add("wrap");
-    ul.style.margin = "0 auto";
-
-    [
-        "Project",
-        "Files",
-        "Wiki",
-        "Analytics",
-        "Registrations",
-        "Forks"
-    ].map(function(x) {
-        var li = document.createElement("li");
-        li.textContent = x
-        ul.appendChild(li);
-    });
-
-    project_header.appendChild(ul);
-    discourse_header.appendChild(project_header);
-});
-</script>
-                                  ''',
                                  }]

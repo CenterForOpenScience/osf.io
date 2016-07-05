@@ -104,12 +104,12 @@ class TestDiscourse(DbTestCase):
         self.assertEquals(topic_json['details']['allowed_groups'][0]['name'], self.project_node._id)
 
         self.project_node.is_public = True
-        update_topic_privacy(self.project_node)
+        sync_project(project_node)
         topic_json = get_topic(self.project_node)
         self.assertEquals(topic_json['archetype'], 'regular')
 
         self.project_node.is_public = False
-        update_topic_privacy(self.project_node)
+        sync_project(project_node)
         topic_json = get_topic(self.project_node)
         self.assertEquals(topic_json['archetype'], 'private_message')
         self.assertEquals(topic_json['details']['allowed_groups'][0]['name'], self.project_node._id)
@@ -121,7 +121,7 @@ class TestDiscourse(DbTestCase):
         self.assertEquals(topic_json['archetype'], 'regular')
 
         self.project_node.is_public = False
-        update_topic_privacy(self.project_node)
+        sync_project(project_node)
         topic_json = get_topic(self.project_node)
         self.assertEquals(topic_json['archetype'], 'private_message')
         self.assertEquals(topic_json['details']['allowed_groups'][0]['name'], self.project_node._id)
