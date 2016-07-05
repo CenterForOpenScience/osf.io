@@ -212,7 +212,8 @@ class NodeSerializer(JSONAPISerializer):
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_node_links_count'},
         self_view='nodes:node-pointer-relationship',
-        self_view_kwargs={'node_id': '<pk>'}
+        self_view_kwargs={'node_id': '<pk>'},
+        self_meta={'count': 'get_node_links_count'}
     )
 
     def get_current_user_permissions(self, obj):

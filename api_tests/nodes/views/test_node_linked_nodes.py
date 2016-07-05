@@ -33,7 +33,7 @@ class TestNodeRelationshipNodeLinks(ApiTestCase):
 
     def payload(self, node_ids=None):
         node_ids = node_ids or [self.admin_node._id]
-        env_linked_nodes = [{"type": "linked_nodes", "id": node_id} for node_id in node_ids]
+        env_linked_nodes = [{'type': 'linked_nodes', 'id': node_id} for node_id in node_ids]
         return {"data": env_linked_nodes}
 
     def test_get_relationship_linked_nodes(self):
@@ -228,6 +228,23 @@ class TestNodeRelationshipNodeLinks(ApiTestCase):
         )
         assert_equal(len(res.json['data']), number_of_links)
 
+    def test_delete_invalid_payload(self):
+        number_of_links = len(self.linking_node.nodes)
+        # No id in datum
+        payload = {'data': [{'type': 'linked_nodes'}]}
+        res = self.app.delete_json_api(
+            self.url, payload,
+            auth=self.user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        error = res.json['errors'][0]
+        assert_equal(error['detail'], 'Request must include /data/id.')
+
+        res = self.app.get(
+            self.url, auth=self.user.auth
+        )
+        assert_equal(len(res.json['data']), number_of_links)
 
     def test_node_doesnt_exist(self):
         res = self.app.post_json_api(

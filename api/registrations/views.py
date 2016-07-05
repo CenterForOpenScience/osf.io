@@ -412,13 +412,13 @@ class RegistrationLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveAPIV
     parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
 
     def get_object(self):
-        object = self.get_node(check_object_permissions=False)
+        node = self.get_node(check_object_permissions=False)
         auth = get_user_auth(self.request)
         obj = {'data': [
             pointer for pointer in
-            object.nodes_pointer
+            node.nodes_pointer
             if not pointer.node.is_deleted and not pointer.node.is_collection and
             pointer.node.can_view(auth)
-        ], 'self': object}
+        ], 'self': node}
         self.check_object_permissions(self.request, obj)
         return obj

@@ -1,8 +1,6 @@
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework import status
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
-from rest_framework.response import Response
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -13,7 +11,6 @@ from api.base.views import JSONAPIBaseView
 from api.base.views import LinkedNodesRelationship
 
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth
-from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.collections.serializers import (
     CollectionSerializer,
     CollectionDetailSerializer,
@@ -604,4 +601,3 @@ class CollectionLinkedNodesRelationship(LinkedNodesRelationship, CollectionMixin
 
     view_category = 'collections'
     view_name = 'collection-node-pointer-relationship'
-

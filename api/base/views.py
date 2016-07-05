@@ -172,7 +172,7 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
         Success:       201
 
     This requires both edit permission on the collection, and for the user that is
-    making the request to be able to read the nodes requested. Data can be contain any number of
+    making the request to be able to read the nodes requested. Data can contain any number of
     node identifiers. This will create a node_link for all node_ids in the request that
     do not currently have a corresponding node_link in this collection.
 
@@ -189,8 +189,8 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
                        }
         Success:       200
 
-    This requires both edit permission on the collection, and for the user that is
-    making the request to be able to read the nodes requested. Data can be contain any number of
+    This requires both edit permission on the collection and for the user that is
+    making the request to be able to read the nodes requested. Data can contain any number of
     node identifiers. This will replace the contents of the node_links for this collection with
     the contents of the request. It will delete all node links that don't have a node_id in the data
     array, create node links for the node_ids that don't currently have a node id, and do nothing
