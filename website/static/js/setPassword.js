@@ -175,26 +175,21 @@ var ViewModel = function(passwordViewType, submitUrl, campaign, redirectUrl) {
 
     self.flashMessage = ko.observable('');
     self.flashMessageClass = ko.observable('');
-    self.flashTimeout = null;
 
     self.trim = function(observable) {
         observable($.trim(observable()));
     };
 
     /** Change the flashed message. */
-    self.changeMessage = function(message, messageClass, text, css, timeout, timeoutClock) {
-        message(text);
-        var cssClass = css || 'text-info';
-        messageClass(cssClass);
+    self.changeMessage = function(message, className, timeout) {
+        self.flashMessage(message);
+        var cssClass = className || 'text-info';
+        self.flashMessageClass(cssClass);
         if (timeout) {
-            // Reset message after timeout period
-            if (timeoutClock) {
-                clearTimeout(timeoutClock);
-            }
-            self.timeout = setTimeout(
+            setTimeout(
                 function() {
-                    message('');
-                    messageClass('');
+                    self.flashMessage('');
+                    self.flashMessageClass('');
                 },
                 timeout
             );
@@ -207,8 +202,6 @@ var ViewModel = function(passwordViewType, submitUrl, campaign, redirectUrl) {
 
     self.submitSuccess = function(response) {
         self.changeMessage(
-            self.flashMessage,
-            self.flashMessageClass,
             response.message,
             'ext-success p-xs'
         );
@@ -221,28 +214,25 @@ var ViewModel = function(passwordViewType, submitUrl, campaign, redirectUrl) {
     self.submitError = function(xhr) {
         if (xhr.status === 400) {
             self.changeMessage(
-                self.flashMessage,
-                self.flashMessageClass,
                 'Your username cannot be the same as your password.',
                 'text-danger p-xs',
-                5000,
-                self.flashTimeout
+                5000
             );
         } else {
             self.changeMessage(
-                self.flashMessage,
-                self.flashMessageClass,
                 xhr.responseJSON.message_long,
                 'text-danger p-xs',
-                5000,
-                self.flashTimeout
+                5000
             );
         }
     };
 
     self.submit = function() {
         if (self.submitted()) {
-            self.changeMessage(self.flashMessage, self.flashMessageClass, 'You have already submitted. You cannot sign up more than once.', 'text-danger p-xs');
+            self.changeMessage(
+                'You have already submitted. You cannot sign up more than once.',
+                'text-danger p-xs'
+            );
             return false;
         }
         // Show errors if invalid
