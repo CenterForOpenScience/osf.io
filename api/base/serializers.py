@@ -11,12 +11,17 @@ from rest_framework.fields import SkipField
 from rest_framework.fields import get_attribute as get_nested_attributes
 
 from api.base import utils
-from api.base.exceptions import InvalidQueryStringError, Conflict, JSONAPIException, TargetNotSupportedError
+from api.base.exceptions import InvalidQueryStringError
+from api.base.exceptions import Conflict
+from api.base.exceptions import JSONAPIException
+from api.base.exceptions import TargetNotSupportedError
+from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.base.settings import BULK_SETTINGS
 from api.base.utils import absolute_reverse, extend_querystring_params
 from framework.auth import core as auth_core
 from website import settings
 from website import util as website_utils
+from website.models import Node
 from website.util.sanitize import strip_html
 
 
@@ -1173,3 +1178,77 @@ class AddonAccountSerializer(JSONAPISerializer):
             kwargs=kwargs
         )
         return obj.get_absolute_url()
+
+
+class LinkedNode(JSONAPIRelationshipSerializer):
+    id = ser.CharField(source='node._id', required=False, allow_null=True)
+
+    class Meta:
+        type_ = 'linked_nodes'
+
+
+class LinkedNodesRelationshipSerializer(ser.Serializer):
+
+    data = ser.ListField(child=LinkedNode())
+    links = LinksField({'self': 'get_self_url',
+                        'html': 'get_related_url'})
+
+    def get_self_url(self, obj):
+        return obj['self'].linked_nodes_self_url
+
+    def get_related_url(self, obj):
+        return obj['self'].linked_nodes_related_url
+
+    class Meta:
+        type_ = 'linked_nodes'
+
+    def get_pointers_to_add_remove(self, pointers, new_pointers):
+        diff = relationship_diff(
+            current_items={pointer.node._id: pointer for pointer in pointers},
+            new_items={val['node']['_id']: val for val in new_pointers}
+        )
+
+        nodes_to_add = []
+        for node_id in diff['add']:
+            node = Node.load(node_id)
+            if not node:
+                raise exceptions.NotFound(detail='Node with id "{}" was not found'.format(node_id))
+            nodes_to_add.append(node)
+
+        return nodes_to_add, diff['remove'].values()
+
+    def make_instance_obj(self, obj):
+        # Convenience method to format instance based on view's get_object
+        return {'data': [
+            pointer for pointer in
+            obj.nodes_pointer
+            if not pointer.node.is_deleted and not pointer.node.is_collection
+        ], 'self': obj}
+
+    def update(self, instance, validated_data):
+        collection = instance['self']
+        auth = utils.get_user_auth(self.context['request'])
+
+        add, remove = self.get_pointers_to_add_remove(pointers=instance['data'], new_pointers=validated_data['data'])
+
+        for pointer in remove:
+            collection.rm_pointer(pointer, auth)
+        for node in add:
+            collection.add_pointer(node, auth)
+
+        return self.make_instance_obj(collection)
+
+    def create(self, validated_data):
+        instance = self.context['view'].get_object()
+        auth = utils.get_user_auth(self.context['request'])
+        collection = instance['self']
+
+        add, remove = self.get_pointers_to_add_remove(pointers=instance['data'], new_pointers=validated_data['data'])
+
+        if not len(add):
+            raise RelationshipPostMakesNoChanges
+
+        for node in add:
+            collection.add_pointer(node, auth)
+
+        return self.make_instance_obj(collection)
