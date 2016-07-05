@@ -3,7 +3,6 @@ import datetime as dt
 import itertools
 import logging
 import re
-import httplib
 import urlparse
 from copy import deepcopy
 
@@ -19,7 +18,6 @@ import framework
 from framework import analytics
 from framework.addons import AddonModelMixin
 from framework.auth import signals, utils
-from framework.exceptions import HTTPError
 from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError, InvalidTokenError,
                                        MergeConfirmedRequiredError, MergeConflictError)
 from framework.bcrypt import generate_password_hash, check_password_hash
