@@ -72,7 +72,7 @@
 
 <%def name="javascript_bottom()">
   ${parent.javascript_bottom()}
-  % if keen_public_project_id and node['is_public']:
+  % if keen['public']['project_id'] and node['is_public']:
     <script>
      window.contextVars = $.extend(true, {}, window.contextVars, {
          keen: { public: { readKey: ${node['keenio_read_key'] | sjson, n} } }

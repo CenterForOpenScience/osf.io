@@ -80,8 +80,10 @@ def get_globals():
         'user_institutions': user_institutions if user else None,
         'all_institutions': all_institutions,
         'display_name': get_display_name(user.fullname) if user else '',
-        'anon_user_continent': getattr(location, 'continent', None),
-        'anon_user_country': getattr(location, 'country', None),
+        'anon': {
+            'continent': getattr(location, 'continent', None),
+            'country': getattr(location, 'country', None),
+        },
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
         'sentry_dsn_js': settings.SENTRY_DSN_JS if sentry.enabled else None,
         'dev_mode': settings.DEV_MODE,
@@ -106,10 +108,16 @@ def get_globals():
         'reauth_url': util.web_url_for('auth_logout', redirect_url=request.url, reauth=True),
         'profile_url': cas.get_profile_url(),
         'enable_institutions': settings.ENABLE_INSTITUTIONS,
-        'keen_public_project_id': settings.KEEN['public']['project_id'],
-        'keen_public_write_key': settings.KEEN['public']['write_key'],
-        'keen_private_project_id': settings.KEEN['private']['project_id'],
-        'keen_private_write_key': settings.KEEN['private']['write_key'],
+        'keen': {
+            'public': {
+                'project_id': settings.KEEN['public']['project_id'],
+                'write_key': settings.KEEN['public']['write_key'],
+            },
+            'private': {
+                'project_id': settings.KEEN['private']['project_id'],
+                'write_key': settings.KEEN['private']['write_key'],
+            },
+        },
         'maintenance': maintenance.get_maintenance(),
     }
 

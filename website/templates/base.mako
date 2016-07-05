@@ -186,10 +186,7 @@
                     entryPoint: ${ user_entry_point | sjson, n },
                     institutions: ${ user_institutions | sjson, n},
                     emailsToAdd: ${ user_email_verifications | sjson, n },
-                    anon: {
-                        continent: ${ anon_user_continent | sjson, n},
-                        country: ${ anon_user_country | sjson, n},
-                    },
+                    anon: ${ anon | sjson, n },
                 },
                 allInstitutions: ${ all_institutions | sjson, n},
                 popular: ${ popular_links_node | sjson, n },
@@ -198,17 +195,17 @@
             });
         </script>
 
-        % if keen_public_project_id:
+        % if keen['public']['project_id']:
             <script>
                 window.contextVars = $.extend(true, {}, window.contextVars, {
                     keen: {
                         public: {
-                            projectId: ${keen_public_project_id | sjson, n},
-                            writeKey: ${keen_public_write_key | sjson, n},
+                            projectId: ${ keen['public']['project_id'] | sjson, n },
+                            writeKey: ${ keen['public']['write_key'] | sjson, n },
                         },
                         private: {
-                            projectId: ${keen_private_project_id | sjson, n},
-                            writeKey: ${keen_private_write_key | sjson, n},
+                            projectId: ${ keen['private']['project_id'] | sjson, n },
+                            writeKey: ${ keen['private']['write_key'] | sjson, n },
                         },
                     },
                 });
