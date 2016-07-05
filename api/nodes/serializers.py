@@ -382,13 +382,18 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
             folder_info = None
             set_folder = False
 
-        if folder_info and addon_name == 'googledrive':
+        if addon_name == 'googledrive':
+            folder_id = folder_info
             try:
                 folder_path = data['folder_path']
             except KeyError:
                 folder_path = None
+
+            if (folder_id or folder_path) and not (folder_id and folder_path):
+                raise exceptions.ValidationError(detail='Must specify both folder_id and folder_path for {}'.format(addon_name))
+
             folder_info = {
-                'id': folder_info,
+                'id': folder_id,
                 'path': folder_path
             }
         return set_folder, folder_info
@@ -434,6 +439,7 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
         if instance and instance.has_auth and set_account and not external_account_id:
             # Settings authorized, User requesting deauthorization
             instance.deauthorize(auth=auth)  # clear_auth performs save
+            return instance
         elif external_account_id:
             # Settings may or may not be authorized, user requesting to set instance.external_account
             account = self.get_account_or_error(addon_name, external_account_id, auth)
