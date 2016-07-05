@@ -714,7 +714,7 @@ class TestNodeGoogleDriveAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTest
         with mock.patch.object(self.node_settings.__class__, 'fetch_access_token', return_value='asdfghjkl') as mock_fetch:
             super(TestNodeGoogleDriveAddon, self).test_folder_list_GET_expected_behavior()
 
-    def test_settings_detail_PATCH_only_folder_id_raises_error(self):
+    def test_settings_detail_PUT_PATCH_only_folder_id_raises_error(self):
         self.node_settings.clear_settings()
         self.node_settings.save()
         data = {'data': { 
@@ -725,15 +725,16 @@ class TestNodeGoogleDriveAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTest
                     }
                 }
             }
-        res = self.app.put_json_api(self.setting_detail_url, 
-            data, auth=self.user.auth,
-            expect_errors=True)
+        res_put = self.app.put_json_api(self.setting_detail_url, 
+            data, auth=self.user.auth, expect_errors=True)
+        res_patch = self.app.patch_json_api(self.setting_detail_url,
+            data, auth=self.user.auth, expect_errors=True)
 
-        assert_equal(res.status_code, 400)
-        assert_equal('Must specify both folder_id and folder_path for {}'.format(self.short_name),
-             res.json['errors'][0]['detail'])
+        assert res_put.status_code == res_patch.status_code == 400
+        assert ('Must specify both folder_id and folder_path for {}'.format(self.short_name) ==
+             res_put.json['errors'][0]['detail'] == res_patch.json['errors'][0]['detail'])
 
-    def test_settings_detail_PATCH_only_folder_path_raises_error(self):
+    def test_settings_detail_PUT_PATCH_only_folder_path_raises_error(self):
         self.node_settings.clear_settings()
         self.node_settings.save()
         data = {'data': { 
@@ -744,13 +745,14 @@ class TestNodeGoogleDriveAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTest
                     }
                 }
             }
-        res = self.app.put_json_api(self.setting_detail_url, 
-            data, auth=self.user.auth,
-            expect_errors=True)
+        res_put = self.app.put_json_api(self.setting_detail_url, 
+            data, auth=self.user.auth, expect_errors=True)
+        res_patch = self.app.patch_json_api(self.setting_detail_url,
+            data, auth=self.user.auth, expect_errors=True)
 
-        assert_equal(res.status_code, 400)
-        assert_equal('Must specify both folder_id and folder_path for {}'.format(self.short_name),
-             res.json['errors'][0]['detail'])
+        assert res_put.status_code == res_patch.status_code == 400
+        assert ('Must specify both folder_id and folder_path for {}'.format(self.short_name) ==
+             res_put.json['errors'][0]['detail'] == res_patch.json['errors'][0]['detail'])
 
     def test_settings_detail_incomplete_PUT_raises_error(self):
         self.node_settings.deauthorize(auth=self.auth)
