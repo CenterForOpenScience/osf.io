@@ -7,15 +7,18 @@ import urllib
 from modularodm import fields
 
 from framework.auth import Auth
+from framework.exceptions import HTTPError
 from website.oauth.models import ExternalProvider
 
 from website.addons.base import exceptions
 from website.addons.base import StorageAddonBase
 from website.addons.base import AddonOAuthNodeSettingsBase, AddonOAuthUserSettingsBase
+from website.util import api_v2_url
 
 from website.addons.googledrive import settings as drive_settings
 from website.addons.googledrive.serializer import GoogleDriveSerializer
 from website.addons.googledrive.client import GoogleAuthClient, GoogleDriveClient
+from website.addons.googledrive.utils import to_hgrid
 
 
 class GoogleDriveProvider(ExternalProvider):
@@ -29,6 +32,7 @@ class GoogleDriveProvider(ExternalProvider):
     callback_url = '{}{}'.format(drive_settings.API_BASE_URL, 'oauth2/v3/token')
     auto_refresh_url = callback_url
     refresh_time = drive_settings.REFRESH_TIME
+    expiry_time = drive_settings.EXPIRY_TIME
 
     default_scopes = drive_settings.OAUTH_SCOPE
     _auth_client = GoogleAuthClient()
@@ -97,6 +101,43 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.folder_id = None
         self.folder_path = None
 
+    def get_folders(self, **kwargs):
+        node = self.owner
+
+        path = kwargs.get('path', '')
+        folder_id = kwargs.get('folder_id', 'root')
+
+        try:
+            access_token = self.fetch_access_token()
+        except exceptions.InvalidAuthError:
+            raise HTTPError(403)
+
+        client = GoogleDriveClient(access_token)
+
+        if folder_id == 'root':
+            about = client.about()
+
+            return [{
+                'addon': self.config.short_name,
+                'path': '/',
+                'kind': 'folder',
+                'id': about['rootFolderId'],
+                'name': '/ (Full Google Drive)',
+                'urls': {
+                    'folders': api_v2_url('nodes/{}/addons/googledrive/folders/'.format(self.owner._id),
+                        params={
+                            'path': '/',
+                            'id': about['rootFolderId']
+                    })
+                }
+            }]
+
+        contents = [
+            to_hgrid(item, node, path=path)
+            for item in client.folders(folder_id)
+        ]
+        return contents
+
     def set_folder(self, folder, auth):
         """Configure this addon to point to a Google Drive folder
 
@@ -130,7 +171,7 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
         if add_log:
             extra = {'folder_id': self.folder_id}
-            self.nodelogger.log(action="node_deauthorized", extra=extra, save=True)
+            self.nodelogger.log(action='node_deauthorized', extra=extra, save=True)
 
         self.clear_settings()
         self.clear_auth()

@@ -7,6 +7,7 @@ var $ = require('jquery');
 var ko = require('knockout');
 var moment = require('moment');
 var Raven = require('raven-js');
+var linkifyHtml = require('linkifyjs/html');
 var koHelpers = require('./koHelpers');
 require('jquery-autosize');
 
@@ -281,6 +282,18 @@ var CommentModel = function(data, $parent, $root) {
     self.isAbuse = ko.observable(data.attributes.is_abuse);
     self.canEdit = ko.observable(data.attributes.can_edit);
     self.hasChildren = ko.observable(data.attributes.has_children);
+    self.hasReport = ko.observable(data.attributes.has_report);
+    self.isHam = ko.observable(data.attributes.is_ham);
+
+    self.isDeletedAbuse = ko.pureComputed(function() {
+        return self.isDeleted() && self.isAbuse();
+    });
+    self.isDeletedNotAbuse = ko.pureComputed(function() {
+        return self.isDeleted() && !self.isAbuse();
+    });
+    self.isAbuseNotDeleted = ko.pureComputed(function() {
+        return !self.isDeleted() && self.isAbuse();
+    });
 
     if (window.contextVars.node.anonymous) {
         self.author = {
@@ -289,7 +302,7 @@ var CommentModel = function(data, $parent, $root) {
             'fullname': 'A User',
             'gravatarUrl': ''
         };
-    } else if ('embeds' in data && 'user' in data.embeds) {
+    } else if ('embeds' in data && 'user' in data.embeds && 'data' in data.embeds.user) {
         var userData = data.embeds.user.data;
         self.author = {
             'id': userData.id,
@@ -297,15 +310,29 @@ var CommentModel = function(data, $parent, $root) {
             'fullname': userData.attributes.full_name,
             'gravatarUrl': userData.links.profile_image
         };
+    } else if ('embeds' in data && 'user' in data.embeds && 'errors' in data.embeds.user) {
+        var errors = data.embeds.user.errors;
+        for (var e in data.embeds.user.errors) {
+            if ('meta' in errors[e] && 'full_name' in errors[e].meta) {
+                self.author = {
+                    'id': null,
+                    'urls': {'profile': ''},
+                    'fullname': errors[e].meta.full_name,
+                    'gravatarUrl': ''
+                };
+                break;
+            }
+        }
     } else {
         self.author = self.$root.author;
     }
 
-    self.contentDisplay = ko.observable(markdown.full.render(self.content()));
+    var linkifyOpts = { target: function (href, type) { return type === 'url' ? '_top' : null; } };
+    self.contentDisplay = ko.observable(linkifyHtml(markdown.full.render(self.content()), linkifyOpts));
 
     // Update contentDisplay with rendered markdown whenever content changes
     self.content.subscribe(function(newContent) {
-        self.contentDisplay(markdown.full.render(newContent));
+        self.contentDisplay(linkifyHtml(markdown.full.render(newContent), linkifyOpts));
     });
 
     self.prettyDateCreated = ko.computed(function() {
@@ -453,6 +480,7 @@ CommentModel.prototype.submitAbuse = function() {
     request.done(function() {
         self.isAbuse(true);
         self.reporting(false);
+        self.hasReport(true);
     });
     request.fail(function(xhr, status, error) {
         self.errorMessage('Could not report abuse.');

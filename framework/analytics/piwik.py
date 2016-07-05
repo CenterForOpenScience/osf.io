@@ -4,9 +4,9 @@ import json
 import uuid
 from hashlib import md5
 from urllib import urlencode
-
 import requests
 
+from framework.mongo import database as db
 from website import settings
 
 
@@ -53,7 +53,7 @@ def _update_node_object(node, updated_fields=None):
     """
     # If no site has been created for the node, create one.
     if not node.piwik_site_id:
-        return _provision_node(node)
+        return _provision_node(node._id)
 
     # If contributors have changed
     if updated_fields is None or 'contributors' in updated_fields:
@@ -141,7 +141,7 @@ def _change_view_access(users, node, access):
         # Could also raise ValueError
         rv = json.loads(response.content)
         for x in rv:
-            if x.get("result" != "success"):
+            if x.get('result' != 'success'):
                 raise ValueError()
     except ValueError:
         raise PiwikException(
@@ -149,7 +149,9 @@ def _change_view_access(users, node, access):
         )
 
 
-def _provision_node(node):
+def _provision_node(node_id):
+    from website.project import Node
+    node = Node.load(node_id)
     response = requests.post(
         settings.PIWIK_HOST,
         data={
@@ -166,8 +168,9 @@ def _provision_node(node):
     )
 
     try:
-        node.piwik_site_id = json.loads(response.content)['value']
-        node.save(update_piwik=False)
+        # Use pymongo so that we can save a single field without overwriting node
+        piwik_site_id = json.loads(response.content)['value']
+        db.node.update({'_id': node._id}, {'$set': {'piwik_site_id': piwik_site_id}})
     except ValueError:
         raise PiwikException('Piwik site creation failed for ' + node._id)
 

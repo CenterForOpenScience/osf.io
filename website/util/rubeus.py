@@ -53,7 +53,7 @@ def to_hgrid(node, auth, **data):
 
 def build_addon_root(node_settings, name, permissions=None,
                      urls=None, extra=None, buttons=None, user=None,
-                     **kwargs):
+                     private_key=None, **kwargs):
     """Builds the root or "dummy" folder for an addon.
 
     :param addonNodeSettingsBase node_settings: Addon settings
@@ -66,12 +66,15 @@ def build_addon_root(node_settings, name, permissions=None,
     :param list of dicts buttons: List of buttons to appear in HGrid row. Each
         dict must have 'text', a string that will appear on the button, and
         'action', the name of a function in
+    :param bool private_key: Used to check if information should be stripped from anonymous links
     :param dict kwargs: Any additional information to add to the root folder
     :return dict: Hgrid formatted dictionary for the addon root folder
 
     """
+    from website.util import check_private_key_for_anonymized_link
+
     permissions = permissions or DEFAULT_PERMISSIONS
-    if name:
+    if name and not check_private_key_for_anonymized_link(private_key):
         name = u'{0}: {1}'.format(node_settings.config.full_name, name)
     else:
         name = node_settings.config.full_name
@@ -118,7 +121,7 @@ def build_addon_root(node_settings, name, permissions=None,
     return ret
 
 
-def build_addon_button(text, action, title=""):
+def build_addon_button(text, action, title=''):
     """Builds am action button to be rendered in HGrid
 
     :param str text: A string or html to appear on the button itself
@@ -162,8 +165,17 @@ class NodeFileCollector(object):
 
     def _collect_components(self, node, visited):
         rv = []
+        if not node.can_view(self.auth):
+            return rv
         for child in node.nodes:
-            if child.resolve()._id not in visited and not child.is_deleted and node.can_view(self.auth):
+            if child.is_deleted:
+                continue
+            elif not child.can_view(self.auth):
+                if child.primary:
+                    for desc in child.find_readable_descendants(self.auth):
+                        visited.append(desc.resolve()._id)
+                        rv.append(self._serialize_node(desc, visited=visited))
+            elif child.resolve()._id not in visited:
                 visited.append(child.resolve()._id)
                 rv.append(self._serialize_node(child, visited=visited))
         return rv
@@ -229,7 +241,7 @@ class NodeFileCollector(object):
                         getattr(
                             e,
                             'data',
-                            "Unexpected error when fetching file contents for {0}.".format(addon.config.full_name)
+                            'Unexpected error when fetching file contents for {0}.'.format(addon.config.full_name)
                         )
                     )
                     sentry.log_exception()

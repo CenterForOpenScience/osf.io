@@ -25,6 +25,7 @@ from website.addons.wiki.settings import WIKI_CHANGE_DATE
 from website.project.commentable import Commentable
 from website.project.model import Node
 from website.project.signals import write_permissions_revoked
+from website.util import api_v2_url
 
 from website.exceptions import NodeStateError
 
@@ -175,6 +176,11 @@ class NodeWikiPage(GuidStoredObject, Commentable):
     user = fields.ForeignField('user')
     node = fields.ForeignField('node')
 
+    # For Django compatibility
+    @property
+    def pk(self):
+        return self._id
+
     @property
     def is_current(self):
         key = to_mongo_key(self.page_name)
@@ -185,11 +191,11 @@ class NodeWikiPage(GuidStoredObject, Commentable):
 
     @property
     def deep_url(self):
-        return '{}wiki/{}/'.format(self.node.deep_url, self.page_name)
+        return '{}wiki/{}/'.format(self.node.deep_url, urllib.quote(self.page_name))
 
     @property
     def url(self):
-        return '{}wiki/{}/'.format(self.node.url, self.page_name)
+        return '{}wiki/{}/'.format(self.node.url, urllib.quote(self.page_name))
 
     @property
     def rendered_before_update(self):
@@ -211,6 +217,11 @@ class NodeWikiPage(GuidStoredObject, Commentable):
         key = mongo_utils.to_mongo_key(self.page_name)
         return key not in self.node.wiki_pages_current
 
+    @property
+    def absolute_api_v2_url(self):
+        path = '/wikis/{}/'.format(self._id)
+        return api_v2_url(path)
+
     def belongs_to_node(self, node_id):
         """Check whether the wiki is attached to the specified node."""
         return self.node._id == node_id
@@ -218,9 +229,9 @@ class NodeWikiPage(GuidStoredObject, Commentable):
     def get_extra_log_params(self, comment):
         return {'wiki': {'name': self.page_name, 'url': comment.get_comment_page_url()}}
 
-    # used by django and DRF - use v1 url since there are no v2 wiki routes
+    # used by django and DRF
     def get_absolute_url(self):
-        return '{}wiki/{}/'.format(self.node.absolute_url, urllib.quote(self.page_name))
+        return self.absolute_api_v2_url
 
     def html(self, node):
         """The cleaned HTML of the page"""
@@ -259,6 +270,23 @@ class NodeWikiPage(GuidStoredObject, Commentable):
                 return doc_item['_data']
 
         return self.content
+
+    def update_active_sharejs(self, node):
+        """
+        Update all active sharejs sessions with latest wiki content.
+        """
+
+        """
+        TODO: This def is meant to be used after updating wiki content via
+        the v2 API, once updating is has been implemented. It should be removed
+        if not used for that purpose.
+        """
+
+        sharejs_uuid = wiki_utils.get_sharejs_uuid(node, self.page_name)
+        contributors = [user._id for user in node.contributors]
+        wiki_utils.broadcast_to_sharejs('reload',
+                                        sharejs_uuid,
+                                        data=contributors)
 
     def save(self, *args, **kwargs):
         rv = super(NodeWikiPage, self).save(*args, **kwargs)

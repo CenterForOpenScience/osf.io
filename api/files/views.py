@@ -1,11 +1,17 @@
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
+from rest_framework.exceptions import NotFound
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from website.files.models import FileNode
-from website.files.models import FileVersion
+from website.models import Guid
+from website.files.models import (
+    FileNode,
+    FileVersion,
+    StoredFileNode
+)
 
+from api.base.exceptions import Gone
 from api.base.permissions import PermissionWithGetter
 from api.base.utils import get_object_or_error
 from api.base.views import JSONAPIBaseView
@@ -27,7 +33,13 @@ class FileMixin(object):
     file_lookup_url_kwarg = 'file_id'
 
     def get_file(self, check_permissions=True):
-        obj = get_object_or_error(FileNode, self.kwargs[self.file_lookup_url_kwarg])
+        try:
+            obj = get_object_or_error(FileNode, self.kwargs[self.file_lookup_url_kwarg])
+        except (NotFound, Gone):
+            obj = get_object_or_error(Guid, self.kwargs[self.file_lookup_url_kwarg]).referent
+            if not isinstance(obj, StoredFileNode):
+                raise NotFound
+            obj = obj.wrapped()
 
         if check_permissions:
             # May raise a permission denied
@@ -65,25 +77,27 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
 
         name          type       description
         =========================================================================
-        name          string     name of the file
-        path          string     unique identifier for this file entity for this
-                                 project and storage provider. may not end with '/'
-        materialized  string     the full path of the file relative to the storage
-                                 root.  may not end with '/'
-        kind          string     "file"
-        etag          string     etag - http caching identifier w/o wrapping quotes
-        modified      timestamp  last modified timestamp - format depends on provider
-        contentType   string     MIME-type when available
-        provider      string     id of provider e.g. "osfstorage", "s3", "googledrive".
-                                 equivalent to addon_short_name on the OSF
-        size          integer    size of file in bytes
-        extra         object     may contain additional data beyond what's described here,
-                                 depending on the provider
-          version     integer    version number of file. will be 1 on initial upload
-          downloads   integer    count of the number times the file has been downloaded
+        guid          string            OSF GUID for this file (if one has been assigned)
+        name          string            name of the file
+        path          string            unique identifier for this file entity for this
+                                        project and storage provider. may not end with '/'
+        materialized  string            the full path of the file relative to the storage
+                                        root.  may not end with '/'
+        kind          string            "file"
+        etag          string            etag - http caching identifier w/o wrapping quotes
+        modified      timestamp         last modified timestamp - format depends on provider
+        contentType   string            MIME-type when available
+        provider      string            id of provider e.g. "osfstorage", "s3", "googledrive".
+                                        equivalent to addon_short_name on the OSF
+        size          integer           size of file in bytes
+        tags          array of strings  list of tags that describes the file (osfstorage only)
+        extra         object            may contain additional data beyond what's described here,
+                                        depending on the provider
+          version     integer           version number of file. will be 1 on initial upload
+          downloads   integer           count of the number times the file has been downloaded
           hashes      object
-            md5       string     md5 hash of file
-            sha256    string     SHA-256 hash of file
+            md5       string            md5 hash of file
+            sha256    string            SHA-256 hash of file
 
     ####Folder Entity
 

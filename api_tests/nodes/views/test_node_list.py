@@ -632,6 +632,28 @@ class TestNodeCreate(ApiTestCase):
         assert_equal(res.json['data']['attributes']['description'], strip_html(description))
         assert_equal(res.json['data']['attributes']['category'], self.category)
 
+    def test_create_component_inherit_contributors(self):
+        parent_project = ProjectFactory(creator=self.user_one)
+        parent_project.add_contributor(self.user_two, permissions=[permissions.READ], save=True)
+        url = '/{}nodes/{}/children/?inherit_contributors=true'.format(API_BASE, parent_project._id)
+        component_data = {
+            'data': {
+                'type': 'nodes',
+                'attributes': {
+                    'title': self.title,
+                    'category': self.category,
+                }
+            }
+        }
+        res = self.app.post_json_api(url, component_data, auth=self.user_one.auth)
+        assert_equal(res.status_code, 201)
+        json_data = res.json['data']
+
+        new_component_id = json_data['id']
+        new_component = Node.load(new_component_id)
+        assert_equal(len(new_component.contributors), 2)
+        assert_equal(len(new_component.contributors), len(parent_project.contributors))
+
     def test_creates_project_no_type(self):
         project = {
             'data': {
@@ -662,7 +684,7 @@ class TestNodeCreate(ApiTestCase):
         }
         res = self.app.post_json_api(self.url, project, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
+        assert_equal(res.json['errors'][0]['detail'], 'This resource has a type of "nodes", but you set the json body\'s type field to "Wrong type.". You probably need to change the type field to match the resource\'s type.')
 
     def test_creates_project_properties_not_nested(self):
         project = {
@@ -1779,7 +1801,7 @@ class TestNodeListPagination(ApiTestCase):
         # Ordered by date modified: oldest first
         self.users = [UserFactory() for _ in range(11)]
         self.projects = [ProjectFactory(is_public=True, creator=self.users[0]) for _ in range(11)]
-        
+
         self.url = '/{}nodes/'.format(API_BASE)
 
     def tearDown(self):
@@ -1815,6 +1837,8 @@ class TestNodeListPagination(ApiTestCase):
 
         uids = [e['id'] for e in res.json['data'][0]['embeds']['contributors']['data']]
         for user in self.users[:9]:
-            assert_in(user._id, uids)
-        assert_not_in(self.users[10]._id, uids)
+            contrib_id = '{}-{}'.format(res.json['data'][0]['id'], user._id)
+            assert_in(contrib_id, uids)
+
+        assert_not_in('{}-{}'.format(res.json['data'][0]['id'], self.users[10]._id), uids)
         assert_equal(res.json['data'][0]['embeds']['contributors']['links']['meta']['per_page'], 10)

@@ -383,8 +383,8 @@ class TestStorageAddonBase(ArchiverTestCase):
         self._test__get_file_tree(addon_short_name)
 
     def test_addons(self):
-        #  Test that each addon in settings.ADDONS_ARCHIVABLE other than wiki implementes the StorageAddonBase interface
-        for addon in [a for a in settings.ADDONS_ARCHIVABLE if a not in ['wiki']]:
+        #  Test that each addon in settings.ADDONS_ARCHIVABLE other than wiki/forward implements the StorageAddonBase interface
+        for addon in [a for a in settings.ADDONS_ARCHIVABLE if a not in ['wiki', 'forward']]:
             self._test_addon(addon)
 
 class TestArchiverTasks(ArchiverTestCase):

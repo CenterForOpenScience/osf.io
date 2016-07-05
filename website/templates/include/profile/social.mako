@@ -113,7 +113,7 @@
                 <input class="form-control" data-bind="value: academiaProfileID" placeholder="profileID"/>
                 </div>
             </div>
-            
+
             <div class="form-group">
                 <label>Baidu Scholar</label>
                 <div class="input-group">
@@ -131,16 +131,17 @@
                     >Discard changes</button>
 
                 <button
+                        data-bind="disable: saving(), text: saving() ? 'Saving' : 'Save'"
                         type="submit"
                         class="btn btn-success"
                     >Save</button>
-
-                <!-- Flashed Messages -->
-                <div class="help-block flashed-message">
-                    <p data-bind="html: message, attr: {class: messageClass}"></p>
-                </div>
-
             </div>
+
+            <!-- Flashed Messages -->
+            <div class="help-block flashed-message">
+                <p data-bind="html: message, attr: {class: messageClass}"></p>
+            </div>
+
 
         </form>
 
@@ -153,7 +154,7 @@
                 <tr data-bind="if: hasProfileWebsites()">
                     <td data-bind="visible: profileWebsites().length > 1">Personal websites</td>
                     <td data-bind="visible: profileWebsites().length === 1">Personal website</td>
-                    <td data-bind="foreach: profileWebsites"><a target="_blank" data-bind="attr: {href: $data}, text: $data"></a><br></td>
+                    <td data-bind="foreach: profileWebsites"><a data-bind="attr: {href: $data}, text: $data"></a><br></td>
                 </tr>
             </tbody>
 

@@ -3,10 +3,12 @@
  */
 'use strict';
 
+require('css/log-feed.css');
 var $ = require('jquery');  // jQuery
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 var ProjectOrganizer = require('js/project-organizer');
 var $osf = require('js/osfHelpers');
+var mHelpers = require('js/mithrilHelpers');
 var Raven = require('raven-js');
 var LogText = require('js/logTextParser');
 var AddProject = require('js/addProjectPlugin');
@@ -16,6 +18,7 @@ var lodashFind = require('lodash.find');
 
 var MOBILE_WIDTH = 767; // Mobile view break point for responsiveness
 var NODE_PAGE_SIZE = 10; // Load 10 nodes at a time from server
+var PROFILE_IMAGE_SIZE = 16;
 
 /* Counter for unique ids for link objects */
 if (!window.fileBrowserCounter) {
@@ -90,7 +93,7 @@ NodeFetcher.prototype = {
     this._continue = true;
     if (!this.nextLink) return this._promise = null;
     if (this._promise) return this._promise;
-    return this._promise = m.request({method: 'GET', url: this.nextLink, config: xhrconfig, background: true})
+    return this._promise = m.request({method: 'GET', url: this.nextLink, config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain}), background: true})
       .then(function(results) {this._promise = null; return results;}.bind(this))
       .then(this._success.bind(this), this._fail.bind(this))
       .then((function() {
@@ -147,7 +150,7 @@ NodeFetcher.prototype = {
   fetch: function(id) {
     // TODO This method is currently untested
     var url =  $osf.apiV2Url(this.type + '/' + id + '/', {query: {related_counts: 'children', embed: 'contributors' }});
-    return m.request({method: 'GET', url: url, config: xhrconfig, background: true})
+    return m.request({method: 'GET', url: url, config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain}), background: true})
       .then((function(result) {
         this.add(result.data);
         return result.data;
@@ -155,7 +158,7 @@ NodeFetcher.prototype = {
   },
   fetchChildren: function(parent, link) {
     //TODO Allow suspending of children
-    return m.request({method: 'GET', url: link || parent.relationships.children.links.related.href + '?embed=contributors&related_counts=children', config: xhrconfig, background: true})
+    return m.request({method: 'GET', url: link || parent.relationships.children.links.related.href + '?embed=contributors&related_counts=children', config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain}), background: true})
       .then(this._childrenSuccess.bind(this, parent), this._fail.bind(this));
   },
   _success: function(results) {
@@ -251,13 +254,6 @@ function getUID() {
     return window.fileBrowserCounter;
 }
 
-/* Send with ajax calls to work with api2 */
-var xhrconfig = function (xhr) {
-    xhr.withCredentials = window.contextVars.isOnRootDomain,
-    xhr.setRequestHeader('Content-Type', 'application/vnd.api+json;');
-    xhr.setRequestHeader('Accept', 'application/vnd.api+json; ext=bulk');
-};
-
 /* Adjust item data for treebeard to be able to filter tags and contributors not in the view */
 function _formatDataforPO(item) {
     item.kind = 'folder';
@@ -269,18 +265,14 @@ function _formatDataforPO(item) {
     if (contributorsData){
         item.embeds.contributors.data.forEach(function(c){
             var attr;
-            var users = lodashGet(c, 'embeds.users.data', null);
-            if (users) {
-                if (users.errors) {
-                    attr = users.errors[0].meta;
-                } else {
-                    attr = users.attributes;
-                }
-            }
-            if (attr) {
-                item.contributors += attr.full_name + ' ' + attr.middle_names + ' ' + attr.given_name + ' ' + attr.family_name + ' ' ;
-            }
+            var contribNames = $osf.extractContributorNamesFromAPIData(c);
 
+            if (lodashGet(c, 'attributes.unregistered_contributor', null)) {
+                item.contributors += contribNames.fullName;
+            }
+            else {
+                item.contributors += contribNames.fullName + ' ' + contribNames.middleNames + ' ' + contribNames.givenName + ' ' + contribNames.familyName + ' ' ;
+            }
         });
     }
     item.date = new $osf.FormattableDate(item.attributes.date_modified);
@@ -288,7 +280,7 @@ function _formatDataforPO(item) {
     //
     //Sets for filtering
     item.tagSet = new Set(item.attributes.tags || []);
-    var contributors = item.embeds.contributors.data || [];
+    var contributors = lodashGet(item, 'embeds.contributors.data', []);
     item.contributorSet= new Set(contributors.map(function(contrib) {
       return contrib.id;
     }));
@@ -383,15 +375,10 @@ var MyProjects = {
 
         // Load categories to pass in to create project
         self.loadCategories = function _loadCategories () {
-            var promise = m.request({method : 'OPTIONS', url : $osf.apiV2Url('nodes/', { query : {}}), config : xhrconfig});
+            var promise = m.request({method : 'OPTIONS', url : $osf.apiV2Url('nodes/', { query : {}}), config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})});
             promise.then(function _success(results){
                 if(results.actions && results.actions.POST.category){
                     self.categoryList = results.actions.POST.category.choices;
-                    self.categoryList.sort(function(a, b){ // Quick alphabetical sorting
-                        if(a.value < b.value) return -1;
-                        if(a.value > b.value) return 1;
-                        return 0;
-                    });
                 }
             }, function _error(results){
                 var message = 'Error loading project category names.';
@@ -430,7 +417,7 @@ var MyProjects = {
                 _processResults(cachedResults);
             } else {
                 self.logRequestPending = true;
-                var promise = m.request({method : 'GET', url : url, config : xhrconfig});
+                var promise = m.request({method : 'GET', url : url, config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})});
                 promise.then(_processResults);
                 promise.then(function(){
                     self.logRequestPending = false;
@@ -446,7 +433,7 @@ var MyProjects = {
                 var id = item.data.id;
                 if(!item.data.attributes.retracted){
                     var urlPrefix = item.data.attributes.registration ? 'registrations' : 'nodes';
-                    var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['original_node', 'user', 'linked_node', 'template_node', 'contributors']}});
+                    var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['original_node', 'user', 'linked_node', 'template_node'], 'profile_image_size': PROFILE_IMAGE_SIZE}});
                     var promise = self.getLogs(url);
                     return promise;
                 }
@@ -522,7 +509,7 @@ var MyProjects = {
             m.request({
                 method : 'DELETE',
                 url : collectionNode.links.self + 'relationships/' + 'linked_nodes/',  //collection.links.self + 'node_links/' + item.data.id + '/', //collection.links.self + relationship/ + linked_nodes/
-                config : xhrconfig,
+                config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain}),
                 data : data
             }).then(function(result) {
               data.data.forEach(function(item) {
@@ -634,7 +621,8 @@ var MyProjects = {
                             'You have not created any projects yet.');
                     } else if (lastcrumb.data.nodeType === 'registrations'){
                         template = m('.db-non-load-template.m-md.p-md.osf-box',
-                            'You have not made any registrations yet.');
+                            'You have not made any registrations yet. Go to ',
+                            m('a', {href: 'http://help.osf.io/m/registrations'}, 'Getting Started'), ' to learn how registrations work.' );
                     } else {
                         template = m('.db-non-load-template.m-md.p-md.osf-box',
                             'This collection is empty.' + self.viewOnly ? '' : ' To add projects or registrations, click "All my projects" or "All my registrations" in the sidebar, and then drag and drop items into the collection link.');
@@ -679,11 +667,25 @@ var MyProjects = {
                         if(self.users[u.id] === undefined) {
                             self.users[u.id] = {
                                 data : u,
-                                count: 1
+                                count: 1,
+                                unregistered_contributors: u.attributes.unregistered_contributor
                         };
                     } else {
                         self.users[u.id].count++;
-                    }}
+                            var currentUnregisteredName = lodashGet(u, 'attributes.unregistered_contributor');
+                            if (currentUnregisteredName) {
+                                var otherUnregisteredName = lodashGet(self.users[u.id], 'unregistered_contributors');
+                                if (otherUnregisteredName) {
+                                     if (otherUnregisteredName.indexOf(currentUnregisteredName) === -1) {
+                                         self.users[u.id].unregistered_contributors += ' a.k.a. ' + currentUnregisteredName;
+                                     }
+                                }
+                                else {
+                                    self.users[u.id].unregistered_contributors = currentUnregisteredName;
+                                }
+                            }
+                        }
+                    }
                     var tags = item.attributes.tags || [];
                     for(var j = 0; j < tags.length; j++) {
                         var t = tags[j];
@@ -695,7 +697,6 @@ var MyProjects = {
                     }
                 }
             });
-
 
             // Sorting by number of items utility function
             function sortByCountDesc (a,b){
@@ -714,6 +715,9 @@ var MyProjects = {
             self.nameFilters = [];
 
             var userFinder = function(lo) {
+                if (u2.unregistered_contributors) {
+                    return lo.label === u2.unregistered_contributors;
+                }
               return lo.label === u2.data.embeds.users.data.attributes.full_name;
             };
 
@@ -721,7 +725,14 @@ var MyProjects = {
             for (var user in self.users) {
                 var u2 = self.users[user];
                 if (u2.data.embeds.users.data) {
-                  var link = oldNameFilters.find(userFinder) || new LinkObject('contributor', {id: u2.data.id, count: u2.count, query: { 'related_counts' : 'children' }}, u2.data.embeds.users.data.attributes.full_name, options.institutionId || false);
+                    var name;
+                    if (u2.unregistered_contributors) {
+                        name = u2.unregistered_contributors;
+                    }
+                    else {
+                        name = u2.data.embeds.users.data.attributes.full_name;
+                    }
+                  var link = oldNameFilters.find(userFinder) || new LinkObject('contributor', {id: u2.data.id, count: u2.count, query: { 'related_counts' : 'children' }}, name, options.institutionId || false);
                   link.data.count = u2.count;
                   self.nameFilters.push(link);
                 }
@@ -777,7 +788,7 @@ var MyProjects = {
         self.collectionsPageSize = m.prop(5);
         // Load collection list
         self.loadCollections = function _loadCollections (url){
-            var promise = m.request({method : 'GET', url : url, config : xhrconfig});
+            var promise = m.request({method : 'GET', url : url, config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})});
             promise.then(function(result){
                 result.data.forEach(function(node){
                     var count = node.relationships.linked_nodes.links.related.meta.count;
@@ -1066,7 +1077,7 @@ var Collections = {
                     }
                 }
             };
-            var promise = m.request({method : 'POST', url : url, config : xhrconfig, data : data});
+            var promise = m.request({method : 'POST', url : url, config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain}), data : data});
             promise.then(function(result){
                 var node = result.data;
                 var count = node.relationships.linked_nodes.links.related.meta.count || 0;
@@ -1095,11 +1106,10 @@ var Collections = {
             self.newCollectionName('');
             self.isValid(false);
             $('#addCollInput').val('');
-            $osf.trackClick('myProjects', 'add-collection', 'click-cancel-button');
         },
         self.deleteCollection = function _deleteCollection(){
             var url = self.collectionMenuObject().item.data.node.links.self;
-            var promise = m.request({method : 'DELETE', url : url, config : xhrconfig});
+            var promise = m.request({method : 'DELETE', url : url, config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})});
             promise.then(function(result){
                 for ( var i = 0; i < self.collections().length; i++) {
                     var item = self.collections()[i];
@@ -1134,7 +1144,7 @@ var Collections = {
                     }
                 }
             };
-            var promise = m.request({method : 'PATCH', url : url, config : xhrconfig, data : data});
+            var promise = m.request({method : 'PATCH', url : url, config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain}), data : data});
             promise.then(function(result){
                 self.collectionMenuObject().item.label = title;
             }, function(){
@@ -1173,7 +1183,7 @@ var Collections = {
                       m.request({
                           method : 'POST',
                           url : collection.data.node.links.self + 'relationships/linked_nodes/',
-                          config : xhrconfig,
+                          config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain}),
                           data : data[index]
                       }).then(function(result){
                           if (result){
@@ -1362,6 +1372,7 @@ var Collections = {
                             {
                                 onclick : function(){
                                     ctrl.resetAddCollection();
+                                    $osf.trackClick('myProjects', 'add-collection', 'click-cancel-button');
                                 }
                             }, 'Cancel'),
                         ctrl.isValid() ? m('button[type="button"].btn.btn-success', { onclick : function() {
@@ -1578,7 +1589,6 @@ var Breadcrumbs = {
                 if(index === arr.length-1){
                     if(item.type === 'node'){
                         var linkObject = args.breadcrumbs()[args.breadcrumbs().length - 1];
-                        var parentID = linkObject.data.id;
                         var showAddProject = true;
                         var addProjectTemplate = '';
                         var permissions = item.data.attributes.current_user_permissions;
@@ -1591,7 +1601,8 @@ var Breadcrumbs = {
                                 buttonTemplate: m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addSubComponent"]', {onclick: function() {
                                     $osf.trackClick('myProjects', 'add-component', 'open-add-component-modal');
                                 }}, [m('i.fa.fa-plus.m-r-xs', {style: 'font-size: 10px;'}), 'Create component']),
-                                parentID: parentID,
+                                parentID: linkObject.data.id,
+                                parentTitle: linkObject.data.name,
                                 modalID: 'addSubComponent',
                                 title: 'Create new component',
                                 categoryList: args.categoryList,
@@ -1615,7 +1626,9 @@ var Breadcrumbs = {
                                     });
                                 },
                                 trackingCategory: 'myProjects',
-                                trackingAction: 'add-component'
+                                trackingAction: 'add-component',
+                                contributors: Array.from(linkObject.data.contributorSet),
+                                currentUserCanEdit: ~linkObject.data.attributes.current_user_permissions.indexOf('write')
                             });
                         }
                         return [
@@ -1757,31 +1770,7 @@ var Filters = {
  */
 var Information = {
     view : function (ctrl, args) {
-        function categoryMap(category) {
-            // TODO, you don't need to do this, CSS will do this case change
-            switch (category) {
-                case 'analysis':
-                    return 'Analysis';
-                case 'communication':
-                    return 'Communication';
-                case 'data':
-                    return 'Data';
-                case 'hypothesis':
-                    return 'Hypothesis';
-                case 'methods and measures':
-                    return 'Methods and Measures';
-                case 'procedure':
-                    return 'Procedure';
-                case 'project':
-                    return 'Project';
-                case 'software':
-                    return 'Software';
-                case 'other':
-                    return 'Other';
-                default:
-                    return 'Uncategorized';
-            }
-        }
+
         var template = '';
         var showRemoveFromCollection;
         var collectionFilter = args.currentView().collection;
@@ -1790,6 +1779,7 @@ var Information = {
         }
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
+            var permission = item.attributes.current_user_permissions.slice(-1)[0];
             showRemoveFromCollection = collectionFilter.data.nodeType === 'collection' && args.selected()[0].depth === 1 && args.fetchers[collectionFilter.id]._flat.indexOf(item) !== -1; // Be able to remove top level items but not their children
             if(item.attributes.category === ''){
                 item.attributes.category = 'Uncategorized';
@@ -1816,7 +1806,8 @@ var Information = {
                         m('[role="tabpanel"].tab-pane.active#tab-information',[
                             m('p.db-info-meta.text-muted', [
                                 m('', 'Visibility : ' + (item.attributes.public ? 'Public' : 'Private')),
-                                m('', 'Category: ' + categoryMap(item.attributes.category)),
+                                m('.text-capitalize', 'Category: ' + item.attributes.category),
+                                m('.text-capitalize', 'Permission: ' + permission),
                                 m('', 'Last Modified on: ' + (item.date ? item.date.local : ''))
                             ]),
                             m('p', [

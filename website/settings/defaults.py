@@ -9,6 +9,7 @@ import os
 import json
 import hashlib
 from datetime import timedelta
+from collections import OrderedDict
 
 os_env = os.environ
 
@@ -52,16 +53,16 @@ PROXY_ADDRS = []
 # May set these to True in local.py for development
 DEV_MODE = False
 DEBUG_MODE = False
+SECURE_MODE = not DEBUG_MODE  # Set secure cookie
+
+PROTOCOL = 'https://' if SECURE_MODE else 'http://'
+DOMAIN = PROTOCOL + 'localhost:5000/'
+API_DOMAIN = PROTOCOL + 'localhost:8000/'
 
 LOG_PATH = os.path.join(APP_PATH, 'logs')
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
 ANALYTICS_PATH = os.path.join(BASE_PATH, 'analytics')
 
-CORE_TEMPLATES = os.path.join(BASE_PATH, 'templates/log_templates.mako')
-BUILT_TEMPLATES = os.path.join(BASE_PATH, 'templates/_log_templates.mako')
-
-DOMAIN = 'http://localhost:5000/'
-API_DOMAIN = 'http://localhost:8000/'
 GNUPG_HOME = os.path.join(BASE_PATH, 'gpg')
 GNUPG_BINARY = 'gpg'
 
@@ -80,11 +81,19 @@ SHARE_ELASTIC_INDEX = 'share'
 SHARE_ELASTIC_INDEX_TEMPLATE = 'share_v{}'
 
 # Sessions
+COOKIE_NAME = 'osf'
 # TODO: Override OSF_COOKIE_DOMAIN in local.py in production
 OSF_COOKIE_DOMAIN = None
-COOKIE_NAME = 'osf'
+# server-side verification timeout
+OSF_SESSION_TIMEOUT = 30 * 24 * 60 * 60  # 30 days in seconds
 # TODO: Override SECRET_KEY in local.py in production
 SECRET_KEY = 'CHANGEME'
+SESSION_COOKIE_SECURE = SECURE_MODE
+SESSION_COOKIE_HTTPONLY = True
+
+# local path to private key and cert for local development using https, overwrite in local.py
+OSF_SERVER_KEY = None
+OSF_SERVER_CERT = None
 
 # Change if using `scripts/cron.py` to manage crontab
 CRON_USER = None
@@ -193,6 +202,23 @@ WIKI_WHITELIST = {
     ]
 }
 
+# Maps category identifier => Human-readable representation for use in
+# titles, menus, etc.
+# Use an OrderedDict so that menu items show in the correct order
+NODE_CATEGORY_MAP = OrderedDict([
+    ('analysis', 'Analysis'),
+    ('communication', 'Communication'),
+    ('data', 'Data'),
+    ('hypothesis', 'Hypothesis'),
+    ('instrumentation', 'Instrumentation'),
+    ('methods and measures', 'Methods and Measures'),
+    ('procedure', 'Procedure'),
+    ('project', 'Project'),
+    ('software', 'Software'),
+    ('other', 'Other'),
+    ('', 'Uncategorized')
+])
+
 # Add-ons
 # Load addons from addons.json
 with open(os.path.join(ROOT, 'addons.json')) as fp:
@@ -201,6 +227,8 @@ with open(os.path.join(ROOT, 'addons.json')) as fp:
     ADDONS_ARCHIVABLE = addon_settings['addons_archivable']
     ADDONS_COMMENTABLE = addon_settings['addons_commentable']
     ADDONS_BASED_ON_IDS = addon_settings['addons_based_on_ids']
+    ADDONS_DESCRIPTION = addon_settings['addons_description']
+    ADDONS_URL = addon_settings['addons_url']
 
 ADDON_CATEGORIES = [
     'documentation',
@@ -298,6 +326,61 @@ JWT_ALGORITHM = 'HS256'
 
 ##### CELERY #####
 
+DEFAULT_QUEUE = 'celery'
+LOW_QUEUE = 'low'
+MED_QUEUE = 'med'
+HIGH_QUEUE = 'high'
+
+LOW_PRI_MODULES = {
+    'framework.analytics.tasks',
+    'framework.celery_tasks',
+    'scripts.osfstorage.usage_audit',
+    'scripts.osfstorage.glacier_inventory',
+    'scripts.analytics.tasks',
+    'scripts.osfstorage.files_audit',
+    'scripts.osfstorage.glacier_audit',
+    'scripts.populate_new_and_noteworthy_projects',
+    'website.search.elastic_search',
+}
+
+MED_PRI_MODULES = {
+    'framework.email.tasks',
+    'scripts.send_queued_mails',
+    'scripts.triggered_mails',
+    'website.mailchimp_utils',
+    'website.notifications.tasks',
+}
+
+HIGH_PRI_MODULES = {
+    'scripts.approve_embargo_terminations',
+    'scripts.approve_registrations',
+    'scripts.embargo_registrations',
+    'scripts.refresh_addon_tokens',
+    'scripts.retract_registrations',
+    'website.archiver.tasks',
+}
+
+try:
+    from kombu import Queue, Exchange
+except ImportError:
+    pass
+else:
+    CELERY_QUEUES = (
+        Queue(LOW_QUEUE, Exchange(LOW_QUEUE), routing_key=LOW_QUEUE,
+              consumer_arguments={'x-priority': -1}),
+        Queue(DEFAULT_QUEUE, Exchange(DEFAULT_QUEUE), routing_key=DEFAULT_QUEUE,
+              consumer_arguments={'x-priority': 0}),
+        Queue(MED_QUEUE, Exchange(MED_QUEUE), routing_key=MED_QUEUE,
+              consumer_arguments={'x-priority': 1}),
+        Queue(HIGH_QUEUE, Exchange(HIGH_QUEUE), routing_key=HIGH_QUEUE,
+              consumer_arguments={'x-priority': 10}),
+    )
+
+    CELERY_DEFAULT_EXCHANGE_TYPE = 'direct'
+    CELERY_ROUTES = ('framework.celery_tasks.routers.CeleryRouter', )
+    CELERY_IGNORE_RESULT = True
+    CELERY_STORE_ERRORS_EVEN_IF_IGNORED = True
+
 # Default RabbitMQ broker
 BROKER_URL = 'amqp://'
 
@@ -315,7 +398,7 @@ CELERY_IMPORTS = (
     'website.archiver.tasks',
     'website.search.search',
     'scripts.populate_new_and_noteworthy_projects',
-    'scripts.refresh_box_tokens',
+    'scripts.refresh_addon_tokens',
     'scripts.retract_registrations',
     'scripts.embargo_registrations',
     'scripts.approve_registrations',
@@ -343,19 +426,19 @@ else:
     #  Setting up a scheduler, essentially replaces an independent cron job
     CELERYBEAT_SCHEDULE = {
         '5-minute-emails': {
-            'task': 'notify.send_users_email',
+            'task': 'website.notifications.tasks.send_users_email',
             'schedule': crontab(minute='*/5'),
             'args': ('email_transactional',),
         },
         'daily-emails': {
-            'task': 'notify.send_users_email',
+            'task': 'website.notifications.tasks.send_users_email',
             'schedule': crontab(minute=0, hour=0),
             'args': ('email_digest',),
         },
-        'refresh_box': {
-            'task': 'scripts.refresh_box_tokens',
+        'refresh_addons': {
+            'task': 'scripts.refresh_addon_tokens',
             'schedule': crontab(minute=0, hour= 2),  # Daily 2:00 a.m
-            'kwargs': {'dry_run': False},
+            'kwargs': {'dry_run': False, 'addons': {'box': 60, 'googledrive': 14, 'mendeley': 14}},
         },
         'retract_registrations': {
             'task': 'scripts.retract_registrations',
@@ -412,22 +495,22 @@ else:
     #         'kwargs': {'dry_run': False},
     #     },
     #     'files_audit_0': {
-    #         'task': 'scripts.osfstorage.files_audit_0',
+    #         'task': 'scripts.osfstorage.files_audit.0',
     #         'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
     #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
     #     },
     #     'files_audit_1': {
-    #         'task': 'scripts.osfstorage.files_audit_1',
+    #         'task': 'scripts.osfstorage.files_audit.1',
     #         'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
     #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
     #     },
     #     'files_audit_2': {
-    #         'task': 'scripts.osfstorage.files_audit_2',
+    #         'task': 'scripts.osfstorage.files_audit.2',
     #         'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
     #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
     #     },
     #     'files_audit_3': {
-    #         'task': 'scripts.osfstorage.files_audit_3',
+    #         'task': 'scripts.osfstorage.files_audit.3',
     #         'schedule': crontab(minute=0, hour=2, day_of_week=0),  # Sunday 2:00 a.m.
     #         'kwargs': {'num_of_workers': 4, 'dry_run': False},
     #     },

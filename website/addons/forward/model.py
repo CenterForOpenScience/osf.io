@@ -2,7 +2,7 @@
 
 from modularodm import fields
 from modularodm.validators import (
-    URLValidator, MinValueValidator, MaxValueValidator
+    URLValidator
 )
 from modularodm.exceptions import ValidationValueError
 
@@ -17,11 +17,6 @@ class ForwardNodeSettings(AddonNodeSettingsBase):
 
     url = fields.StringField(validate=URLValidator())
     label = fields.StringField(validate=sanitized)
-    redirect_bool = fields.BooleanField(default=True, validate=True)
-    redirect_secs = fields.IntegerField(
-        default=15,
-        validate=[MinValueValidator(5), MaxValueValidator(60)]
-    )
 
     @property
     def link_text(self):
@@ -33,8 +28,14 @@ class ForwardNodeSettings(AddonNodeSettingsBase):
     def reset(self):
         self.url = None
         self.label = None
-        self.redirect_bool = True
-        self.redirect_secs = 15
+
+    def after_register(self, node, registration, user, save=True):
+        clone = self.clone()
+        clone.owner = registration
+        clone.on_add()
+        clone.save()
+
+        return clone, None
 
 
 @ForwardNodeSettings.subscribe('before_save')
