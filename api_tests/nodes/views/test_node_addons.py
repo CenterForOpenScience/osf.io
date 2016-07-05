@@ -298,15 +298,17 @@ class NodeAddonDetailMixin(object):
         except (ValueError, AttributeError):
             # If addon was mandatory or non-configurable -- OSFStorage, Wiki
             pass
-        res = self.app.patch_json_api(self.setting_detail_url, 
-            {'data': { 
-                'id': self.short_name,
-                'type': 'node_addons',
-                'attributes': {
-                    'folder_id': 'asdfghjkl',
-                    }
+
+        data = {'data': { 
+            'id': self.short_name,
+            'type': 'node_addons',
+            'attributes': {
                 }
-            }, auth=self.user.auth,
+            }
+        }
+        data['data']['attributes'].update(self._mock_folder_info)
+        res = self.app.patch_json_api(self.setting_detail_url, 
+            data, auth=self.user.auth,
             expect_errors=True)
         if not wrong_type:
             assert_equal(res.status_code, 409)
@@ -712,3 +714,60 @@ class TestNodeGoogleDriveAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTest
         with mock.patch.object(self.node_settings.__class__, 'fetch_access_token', return_value='asdfghjkl') as mock_fetch:
             super(TestNodeGoogleDriveAddon, self).test_folder_list_GET_expected_behavior()
 
+    def test_settings_detail_PATCH_only_folder_id_raises_error(self):
+        self.node_settings.clear_settings()
+        self.node_settings.save()
+        data = {'data': { 
+                'id': self.short_name,
+                'type': 'node_addons',
+                'attributes': {
+                    'folder_id': self._mock_folder_info['folder_id']
+                    }
+                }
+            }
+        res = self.app.put_json_api(self.setting_detail_url, 
+            data, auth=self.user.auth,
+            expect_errors=True)
+
+        assert_equal(res.status_code, 400)
+        assert_equal('Must specify both folder_id and folder_path for {}'.format(self.short_name),
+             res.json['errors'][0]['detail'])
+
+    def test_settings_detail_PATCH_only_folder_path_raises_error(self):
+        self.node_settings.clear_settings()
+        self.node_settings.save()
+        data = {'data': { 
+                'id': self.short_name,
+                'type': 'node_addons',
+                'attributes': {
+                    'folder_path': self._mock_folder_info['folder_path']
+                    }
+                }
+            }
+        res = self.app.put_json_api(self.setting_detail_url, 
+            data, auth=self.user.auth,
+            expect_errors=True)
+
+        assert_equal(res.status_code, 400)
+        assert_equal('Must specify both folder_id and folder_path for {}'.format(self.short_name),
+             res.json['errors'][0]['detail'])
+
+    def test_settings_detail_incomplete_PUT_raises_error(self):
+        self.node_settings.deauthorize(auth=self.auth)
+        self.node_settings.save()
+        data = {'data': { 
+                'id': self.short_name,
+                'type': 'node_addons',
+                'attributes': {
+                    'external_account_id': self.account_id,
+                    'folder_id': self._mock_folder_info['folder_id']
+                    }
+                }
+            }
+        res = self.app.put_json_api(self.setting_detail_url, 
+            data, auth=self.user.auth,
+            expect_errors=True)
+
+        assert_equal(res.status_code, 400)
+        assert_equal('Must specify both folder_id and folder_path for {}'.format(self.short_name),
+             res.json['errors'][0]['detail'])
