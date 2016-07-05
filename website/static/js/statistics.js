@@ -9,6 +9,8 @@ var keenAnalysis = require('keen-analysis');
 var KeenViz = function(){
     var self = this;
 
+    var defaultTimeframe = 'this_30_days';
+
     /**
     * Manages the connections to Keen.  Needs a project id and valid read key for that project.
     *
@@ -27,7 +29,7 @@ var KeenViz = function(){
             'type':'count_unique',
             'params' : {
                 event_collection: 'pageviews',
-                timeframe: 'this_7_days',
+                timeframe: defaultTimeframe,
                 interval: 'daily',
                 target_property: 'anon.id'
             }
@@ -54,7 +56,7 @@ var KeenViz = function(){
             type: 'count_unique',
             params: {
                 event_collection: 'pageviews',
-                timeframe: 'this_7_days',
+                timeframe: defaultTimeframe,
                 target_property: 'anon.id',
                 group_by: 'referrer.info.domain'
             }
@@ -80,7 +82,7 @@ var KeenViz = function(){
             'type': 'count_unique',
             'params': {
                 event_collection: 'pageviews',
-                timeframe: 'this_7_days',
+                timeframe: defaultTimeframe,
                 target_property: 'anon.id',
                 group_by: 'time.local.hour_of_day',
             }
@@ -133,7 +135,7 @@ var KeenViz = function(){
             type: 'count_unique',
             params: {
                 event_collection: 'pageviews',
-                timeframe: 'this_7_days',
+                timeframe: defaultTimeframe,
                 target_property: 'anon.id',
                 group_by: 'page.title'
             }
