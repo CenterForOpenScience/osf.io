@@ -7,6 +7,13 @@ from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 
 from api.base.serializers import HideIfWithdrawal
+from api.nodes.permissions import ReadOnlyIfRegistration
+from api.nodes.permissions import ContributorOrPublicForRelationshipPointers
+from api.base.serializers import LinkedNodesRelationshipSerializer
+from api.base.parsers import JSONAPIRelationshipParser
+from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
+from api.base.utils import get_user_auth
+
 from api.registrations.serializers import (
     RegistrationSerializer,
     RegistrationDetailSerializer,
@@ -19,7 +26,9 @@ from api.nodes.views import (
     NodeChildrenList, NodeCommentsList, NodeProvidersList, NodeLinksList,
     NodeContributorDetail, NodeFilesList, NodeLinksDetail, NodeFileDetail,
     NodeAlternativeCitationsList, NodeAlternativeCitationDetail, NodeLogList,
-    NodeInstitutionsList, WaterButlerMixin, NodeForksList, NodeWikiList)
+    NodeInstitutionsList, WaterButlerMixin, NodeForksList, NodeWikiList,
+    LinkedNodesList
+)
 
 from api.registrations.serializers import RegistrationNodeLinksSerializer, RegistrationFileSerializer
 
@@ -370,3 +379,46 @@ class RegistrationInstitutionsList(NodeInstitutionsList, RegistrationMixin):
 class RegistrationWikiList(NodeWikiList, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-wikis'
+
+
+class RegistrationLinkedNodesList(LinkedNodesList, RegistrationMixin):
+    view_category = 'registrations'
+    view_name = 'linked-nodes'
+
+
+class RegistrationLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveAPIView, RegistrationMixin):
+    """ Relationship Endpoint for Nodes -> Linked Node relationships
+
+    Used to retrieve the ids of the linked nodes attached to this collection. For each id, there
+    exists a node link that contains that node.
+
+    ##Actions
+
+    """
+    view_category = 'registrations'
+    view_name = 'node-pointer-relationship'
+
+    permission_classes = (
+        ContributorOrPublicForRelationshipPointers,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ReadOnlyIfRegistration,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_LINKS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = LinkedNodesRelationshipSerializer
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+
+    def get_object(self):
+        node = self.get_node(check_object_permissions=False)
+        auth = get_user_auth(self.request)
+        obj = {'data': [
+            pointer for pointer in
+            node.nodes_pointer
+            if not pointer.node.is_deleted and not pointer.node.is_collection and
+            pointer.node.can_view(auth)
+        ], 'self': node}
+        self.check_object_permissions(self.request, obj)
+        return obj

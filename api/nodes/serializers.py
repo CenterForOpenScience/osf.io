@@ -207,6 +207,15 @@ class NodeSerializer(JSONAPISerializer):
         related_meta={'count': 'get_logs_count'}
     )
 
+    linked_nodes = RelationshipField(
+        related_view='nodes:linked-nodes',
+        related_view_kwargs={'node_id': '<pk>'},
+        related_meta={'count': 'get_node_links_count'},
+        self_view='nodes:node-pointer-relationship',
+        self_view_kwargs={'node_id': '<pk>'},
+        self_meta={'count': 'get_node_links_count'}
+    )
+
     def get_current_user_permissions(self, obj):
         user = self.context['request'].user
         if user.is_anonymous():
@@ -242,6 +251,14 @@ class NodeSerializer(JSONAPISerializer):
 
     def get_pointers_count(self, obj):
         return len(obj.nodes_pointer)
+
+    def get_node_links_count(self, obj):
+        count = 0
+        auth = get_user_auth(self.context['request'])
+        for pointer in obj.nodes_pointer:
+            if not pointer.node.is_deleted and not pointer.node.is_collection and pointer.node.can_view(auth):
+                count += 1
+        return count
 
     def get_unread_comments_count(self, obj):
         user = get_user_auth(self.context['request']).user

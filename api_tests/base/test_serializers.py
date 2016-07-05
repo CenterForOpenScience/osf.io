@@ -117,11 +117,14 @@ class TestApiBaseSerializers(ApiTestCase):
 
     def setUp(self):
         super(TestApiBaseSerializers, self).setUp()
-
+        self.user = factories.AuthUserFactory()
+        self.auth = factories.Auth(self.user)
         self.node = factories.ProjectFactory(is_public=True)
 
         for i in range(5):
             factories.ProjectFactory(is_public=True, parent=self.node)
+        self.linked_node = factories.NodeFactory(creator=self.user, is_public=True)
+        self.node.add_pointer(self.linked_node, auth=self.auth)
 
         self.url = '/{}nodes/{}/'.format(API_BASE, self.node._id)
 
@@ -156,7 +159,7 @@ class TestApiBaseSerializers(ApiTestCase):
                 field = field.field
             if (field.related_meta or {}).get('count'):
                 link = relation['links'].values()[0]
-                assert_in('count', link['meta'])
+                assert_in('count', link['meta'], field)
 
     def test_related_counts_excluded_query_param_false(self):
 
