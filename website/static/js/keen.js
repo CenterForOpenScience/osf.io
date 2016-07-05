@@ -3,6 +3,7 @@
 var keen = require('keen-js');
 var oop = require('js/oop');
 var $ = require('jquery');
+var Cookie = require('js-cookie');
 var uuid = require('uuid');
 var Raven = require('raven-js');
 
@@ -21,25 +22,25 @@ var KeenTracker = oop.defclass({
         var expDate = new Date();
         var expiresInMinutes = 25;
         expDate.setTime(expDate.getTime() + (expiresInMinutes*60*1000));
-        var currentSessionId = $.cookie('keenSessionId') || uuid.v1();
-        $.cookie('keenSessionId', currentSessionId, {expires: expDate, path: '/'});
+        var currentSessionId = Cookie.get('keenSessionId') || uuid.v1();
+        Cookie.set('keenSessionId', currentSessionId, {expires: expDate, path: '/'});
     },
 
     getOrCreateKeenId: function() {
-        if(!$.cookie('keenUserId')){
-            $.cookie('keenUserId', uuid.v1(), {expires: 365, path: '/'});
+        if(!Cookie.get('keenUserId')){
+            Cookie.set('keenUserId', uuid.v1(), {expires: 365, path: '/'});
         }
 
-        return $.cookie('keenUserId');
+        return Cookie.get('keenUserId');
     },
 
     trackPageView: function(){
         this.createOrUpdateKeenSession();
-        var returning = Boolean($.cookie('keenUserId'));
+        var returning = Boolean(Cookie.get('keenUserId'));
         var pageView = {
             'pageUrl': document.URL,
             'keenUserId': this.getOrCreateKeenId(),
-            'sessionId': $.cookie('keenSessionId'),
+            'sessionId': Cookie.get('keenSessionId'),
             'pageTitle': document.title,
             'userAgent': '${keen.user_agent}',
             'referrer': {
