@@ -107,14 +107,18 @@ def reset_password_post(verification_key):
         raise HTTPError(400, data=error_data)
 
     user_obj.verification_key = security.random_string(20)
+    json_data = request.get_json()
     try:
-        user_obj.set_password(request.json['password'])
-    except HTTPError as e:
-        return e
-    user_obj.save()
-    status.push_status_message('Password reset, you may now login.', kind='success', trust=False)
-
-    return {'message': 'Password reset successful! You will now be redirected to the login page.'}
+        user_obj.set_password(json_data['password'])
+        user_obj.save()
+    except exceptions.ChangePasswordError as error:
+        return {
+            'verification_key': verification_key,
+            'errors': error.messages,
+        }, 400
+    return {
+        'verification_key': verification_key
+    }
 
 
 @collect_auth
