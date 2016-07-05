@@ -364,27 +364,31 @@ var FileViewPage = {
         }, 1000);
 
         self.mfrIframeParent = $('#mfrIframeParent');
-        function goToRevisions(e){
+        function toggleRevisions(e){
+            e.preventDefault();
             var editable = self.editor && self.editor.selected;
             var viewable = self.mfrIframeParent.is(':visible');
+            self.editor.selected = false;
+            var url = '';
             if (viewable){
                 self.mfrIframeParent.toggle();
+                self.revisions.selected = true;
+                url = '?show=revision';
+            } else {
+                self.mfrIframeParent.toggle();
+                self.revisions.selected = false;
+                url = '?show=view';
             }
-            if (editable) {
-                self.editor.selected = false;
-            }
-            self.revisions.selected = true;
 
             var state = {
                 scrollTop: $(window).scrollTop(),
             };
 
-            var url = '?show=revision';
             History.pushState(state, 'OSF | ' + window.contextVars.file.name, url);
         }
 
         function changeVersionHeader(){
-            m.render(document.getElementById('versionLink'), m('a', {onclick: goToRevisions}, document.getElementById('versionLink').innerHTML));
+            m.render(document.getElementById('versionLink'), m('a', {onclick: toggleRevisions}, document.getElementById('versionLink').innerHTML));
         }
 
         var urlParams = $osf.urlParams();
@@ -393,6 +397,8 @@ var FileViewPage = {
             if(urlParams.show === 'revision'){
                 self.mfrIframeParent.toggle();
                 self.revisions.selected = true;
+           } else if (urlParams.show === 'view' || urlParams.show === 'edit'){
+               self.revisions.selected = false;
            }
         }
 
@@ -407,7 +413,7 @@ var FileViewPage = {
         var state = {
             scrollTop: $(window).scrollTop(),
         };
-        
+
         var panelsShown = (
             ((ctrl.editor && ctrl.editor.selected) ? 1 : 0) + // Editor panel is active
             (ctrl.mfrIframeParent.is(':visible') ? 1 : 0)    // View panel is active
@@ -450,6 +456,13 @@ var FileViewPage = {
                         if ((!ctrl.editor.selected || panelsShown > 1)) {
                             ctrl.editor.selected = !ctrl.editor.selected;
                             ctrl.revisions.selected = false;
+                            var url = '?show=view';
+
+                            state = {
+                                scrollTop: $(window).scrollTop(),
+                            };
+
+                            History.pushState(state, 'OSF | ' + window.contextVars.file.name, url);
                         }
                     }
                 }, ctrl.editor.title);
