@@ -1807,7 +1807,7 @@ var Information = {
                             m('p.db-info-meta.text-muted', [
                                 m('', 'Visibility : ' + (item.attributes.public ? 'Public' : 'Private')),
                                 m('.text-capitalize', 'Category: ' + item.attributes.category),
-                                m('.text-capitalize', 'My permission: ' + permission),
+                                m('.text-capitalize', 'Permission: ' + permission),
                                 m('', 'Last Modified on: ' + (item.date ? item.date.local : ''))
                             ]),
                             m('p', [
