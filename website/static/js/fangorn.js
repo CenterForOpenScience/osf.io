@@ -1383,20 +1383,19 @@ function _fangornResolveRows(item) {
         custom : _fangornTitleColumn
     });
 
-    if (item.data.kind === 'file') {
-        default_columns.push(
-        {
-            data: 'version',
-            filter: true,
-            sortInclude : false,
-            custom: _fangornVersionColumn
-        });
-        default_columns.push(
-        {
-            data : 'size',  // Data field name
-            filter : true,
-            custom : function() {return item.data.size ? $osf.humanFileSize(item.data.size, true) : '';}
-
+    defaultColumns.push(
+    {
+        data: 'version',
+        filter: true,
+        sortInclude : false,
+        custom: _fangornVersionColumn
+    });
+    defaultColumns.push({
+        data : 'size',  // Data field name
+        sortInclude : false,
+        filter : false,
+        custom : function() {return item.data.size ? $osf.humanFileSize(item.data.size, true) : '';}
+    });
     if (item.data.provider === 'osfstorage') {
         defaultColumns.push({
             data : 'downloads',
