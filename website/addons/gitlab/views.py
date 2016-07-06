@@ -28,9 +28,6 @@ from website.util import rubeus
 
 logger = logging.getLogger(__name__)
 
-logging.getLogger('github3').setLevel(logging.WARNING)
-logging.getLogger('requests.packages.urllib3.connectionpool').setLevel(logging.WARNING)
-
 SHORT_NAME = 'gitlab'
 FULL_NAME = 'GitLab'
 
@@ -271,6 +268,8 @@ def gitlab_hgrid_data(node_settings, auth, **kwargs):
 @must_have_permission('write')
 def gitlab_create_repo(**kwargs):
     repo_name = request.json.get('name')
+    user = request.json.get('user')
+
     if not repo_name:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -284,8 +283,8 @@ def gitlab_create_repo(**kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     return {
-        'user': repo.owner.login,
-        'repo': repo.name,
+        'user': user,
+        'repo': repo_name,
     }
 
 #########

@@ -59,7 +59,7 @@ var GitLabConfigHelper = (function() {
 
                 $osf.postJSON(
                     nodeApiUrl + 'gitlab/repo/create/',
-                    {name: repoName}
+                    {name: repoName, user: $("#gitlabUser").val()}
                 ).done(function (response) {
                         var repoName = response.user + ' / ' + response.repo;
                         $select.append('<option value="' + repoName + '">' + $osf.htmlEscape(repoName) + '</option>');
