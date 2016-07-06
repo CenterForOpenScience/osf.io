@@ -1375,16 +1375,13 @@ function _fangornResolveRows(item) {
             item.data.accept = item.data.accept || item.parent().data.accept;
         }
     }
-    defaultColumns.push(
-    {
+    defaultColumns.push({
         data : 'name',  // Data field name
         folderIcons : true,
         filter : true,
         custom : _fangornTitleColumn
     });
-
-    defaultColumns.push(
-    {
+    defaultColumns.push({
         data: 'version',
         filter: true,
         sortInclude : false,
@@ -1411,8 +1408,7 @@ function _fangornResolveRows(item) {
             custom : function() { return m(''); }
         });
     }
-    defaultColumns.push(
-    {
+    defaultColumns.push({
         data : 'modified',  // Data field name
         filter : false,
         custom : _fangornModifiedColumn

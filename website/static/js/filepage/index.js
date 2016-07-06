@@ -379,11 +379,9 @@ var FileViewPage = {
                 self.revisions.selected = false;
                 url = '?show=view';
             }
-
             var state = {
                 scrollTop: $(window).scrollTop(),
             };
-
             History.pushState(state, 'OSF | ' + window.contextVars.file.name, url);
         }
 
@@ -397,7 +395,7 @@ var FileViewPage = {
             if(urlParams.show === 'revision'){
                 self.mfrIframeParent.toggle();
                 self.revisions.selected = true;
-           } else if (urlParams.show === 'view' || urlParams.show === 'edit'){
+            } else if (urlParams.show === 'view' || urlParams.show === 'edit'){
                self.revisions.selected = false;
            }
         }
@@ -457,11 +455,9 @@ var FileViewPage = {
                             ctrl.editor.selected = !ctrl.editor.selected;
                             ctrl.revisions.selected = false;
                             var url = '?show=view';
-
                             state = {
                                 scrollTop: $(window).scrollTop(),
                             };
-
                             History.pushState(state, 'OSF | ' + window.contextVars.file.name, url);
                         }
                     }
