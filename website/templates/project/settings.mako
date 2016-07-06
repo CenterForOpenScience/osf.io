@@ -21,7 +21,7 @@
 
         % if 'write' in user['permissions']:
 
-            <div class="panel panel-default osf-affix" data-spy="affix" data-offset-top="60" data-offset-bottom="263"><!-- Begin sidebar -->
+            <div class="panel panel-default osf-affix" data-spy="affix" data-offset-top="0" data-offset-bottom="263"><!-- Begin sidebar -->
                 <ul class="nav nav-stacked nav-pills">
 
                     % if not node['is_registration']:
@@ -313,6 +313,7 @@
                                <li>institutional logos to be displayed on public projects</li>
                                <li>public projects to be discoverable on specific institutional landing pages</li>
                                <li>single sign-on to the OSF with institutional credentials</li>
+                               <li><a href="http://help.osf.io/m/os4i">FAQ</a></li>
                             </ul>
                             <!-- /ko -->
                         </div>
@@ -368,20 +369,22 @@
                     <div class="panel-heading clearfix">
                         <h3 class="panel-title">Email Notifications</h3>
                     </div>
-                    <div class="help-block" style="padding-left: 15px">
-                        <p class="text-info">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
-                    </div>
-                    <form id="notificationSettings" class="osf-treebeard-minimal">
-                        <div id="grid">
-                            <div class="spinner-loading-wrapper">
-                                <div class="logo-spin logo-lg"></div>
-                                <p class="m-t-sm fg-load-message"> Loading notification settings...  </p>
+                    <div class="panel-body">
+                        <div class="help-block">
+                            <p class="text-muted">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
+                        </div>
+                        <form id="notificationSettings" class="osf-treebeard-minimal">
+                            <div id="grid">
+                                <div class="spinner-loading-wrapper">
+                                    <div class="logo-spin logo-lg"></div>
+                                    <p class="m-t-sm fg-load-message"> Loading notification settings...  </p>
+                                </div>
                             </div>
-                        </div>
-                        <div class="help-block" style="padding-left: 15px">
-                            <p id="configureNotificationsMessage"></p>
-                        </div>
-                    </form>
+                            <div class="help-block" style="padding-left: 15px">
+                                <p id="configureNotificationsMessage"></p>
+                            </div>
+                        </form>
+                    </div>
                 </div>
 
             %endif

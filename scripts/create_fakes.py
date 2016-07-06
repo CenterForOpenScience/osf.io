@@ -29,19 +29,22 @@ Examples:
 
 """
 from __future__ import print_function, absolute_import
+
 import ast
 import sys
 import argparse
 import logging
-from modularodm.query.querydialect import DefaultQueryDialect as Q
+
 from faker import Factory
+from faker.providers import BaseProvider
+from modularodm.query.querydialect import DefaultQueryDialect as Q
 
 from framework.auth import Auth
-from website.app import init_app
-from website import models, security
 from framework.auth import utils
+from framework.auth.core import generate_verification_key
 from tests.factories import UserFactory, ProjectFactory, NodeFactory, RegistrationFactory
-from faker.providers import BaseProvider
+from website import models
+from website.app import init_app
 
 
 class Sciencer(BaseProvider):
@@ -259,7 +262,7 @@ def create_fake_user():
     parsed = utils.impute_names(name)
     user = UserFactory(username=email, fullname=name,
                        is_registered=True, is_claimed=True,
-                       verification_key=security.random_string(15),
+                       verification_key=generate_verification_key(),
                        date_registered=fake.date_time(),
                        emails=[email],
                        **parsed

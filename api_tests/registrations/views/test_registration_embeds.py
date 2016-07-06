@@ -52,6 +52,7 @@ class TestRegistrationEmbeds(ApiTestCase):
         res = self.app.get(url, auth=self.user.auth)
         embeds = res.json['data']['embeds']
         ids = [c._id for c in self.contribs] + [self.user._id]
+        ids = ['{}-{}'.format(self.registration._id, id_) for id_ in ids]
         for contrib in embeds['contributors']['data']:
             assert_in(contrib['id'], ids)
 

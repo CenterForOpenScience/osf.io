@@ -11,13 +11,12 @@ import pytz
 import itsdangerous
 
 from modularodm import fields, Q
-from modularodm.exceptions import NoResultsFound
-from modularodm.exceptions import ValidationError, ValidationValueError, QueryException
+from modularodm.exceptions import NoResultsFound, ValidationError, ValidationValueError, QueryException
 from modularodm.validators import URLValidator
 
 import framework
-from framework.addons import AddonModelMixin
 from framework import analytics
+from framework.addons import AddonModelMixin
 from framework.auth import signals, utils
 from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError, InvalidTokenError,
                                        MergeConfirmedRequiredError, MergeConflictError)
@@ -29,7 +28,6 @@ from framework.sentry import log_exception
 from framework.sessions import session
 from framework.sessions.model import Session
 from framework.sessions.utils import remove_sessions_for_user
-
 from website import mails, settings, filters, security
 
 name_formatters = {
@@ -43,12 +41,17 @@ name_formatters = {
 
 logger = logging.getLogger(__name__)
 
+
 # Hide implementation of token generation
 def generate_confirm_token():
     return security.random_string(30)
 
 
 def generate_claim_token():
+    return security.random_string(30)
+
+
+def generate_verification_key():
     return security.random_string(30)
 
 
@@ -79,7 +82,6 @@ def validate_year(item):
         else:
             if len(item) != 4:
                 raise ValidationValueError('Please enter a valid year.')
-
 
 validate_url = URLValidator()
 
@@ -112,8 +114,8 @@ def get_user(email=None, password=None, verification_key=None):
     """
     # tag: database
     if password and not email:
-        raise AssertionError("If a password is provided, an email must also "
-                             "be provided.")
+        raise AssertionError('If a password is provided, an email must also '
+                             'be provided.')
 
     query_list = []
     if email:
@@ -334,13 +336,13 @@ class User(GuidStoredObject, AddonModelMixin):
                                            index=True)
 
     # watched nodes are stored via a list of WatchConfigs
-    watched = fields.ForeignField("WatchConfig", list=True)
+    watched = fields.ForeignField('WatchConfig', list=True)
 
     # list of collaborators that this user recently added to nodes as a contributor
-    recently_added = fields.ForeignField("user", list=True)
+    recently_added = fields.ForeignField('user', list=True)
 
     # Attached external accounts (OAuth)
-    external_accounts = fields.ForeignField("externalaccount", list=True)
+    external_accounts = fields.ForeignField('externalaccount', list=True)
 
     # CSL names
     given_name = fields.StringField()
@@ -410,6 +412,13 @@ class User(GuidStoredObject, AddonModelMixin):
 
     # whether the user has requested to deactivate their account
     requested_deactivation = fields.BooleanField(default=False)
+
+    # dictionary of projects a user has changed the setting on
+    notifications_configured = fields.DictionaryField()
+    # Format: {
+    #   <node.id>: True
+    #   ...
+    # }
 
     _meta = {'optimistic': True}
 
@@ -748,7 +757,7 @@ class User(GuidStoredObject, AddonModelMixin):
         email = email.lower().strip()
 
         if email in self.emails:
-            raise ValueError("Email already confirmed to this user.")
+            raise ValueError('Email already confirmed to this user.')
 
         utils.validate_email(email)
 
@@ -832,7 +841,7 @@ class User(GuidStoredObject, AddonModelMixin):
         """
         base = settings.DOMAIN if external else '/'
         token = self.get_confirmation_token(email, force=force)
-        return "{0}confirm/{1}/{2}/".format(base, self._primary_key, token)
+        return '{0}confirm/{1}/{2}/'.format(base, self._primary_key, token)
 
     def get_unconfirmed_email_for_token(self, token):
         """Return email if valid.
@@ -1295,7 +1304,7 @@ class User(GuidStoredObject, AddonModelMixin):
         """
         # Fail if the other user has conflicts.
         if not user.can_be_merged:
-            raise MergeConflictError("Users cannot be merged")
+            raise MergeConflictError('Users cannot be merged')
         # Move over the other user's attributes
         # TODO: confirm
         for system_tag in user.system_tags:
@@ -1324,6 +1333,10 @@ class User(GuidStoredObject, AddonModelMixin):
         security_messages = user.security_messages.copy()
         security_messages.update(self.security_messages)
         self.security_messages = security_messages
+
+        notifications_configured = user.notifications_configured.copy()
+        notifications_configured.update(self.notifications_configured)
+        self.notifications_configured = notifications_configured
 
         for key, value in user.mailchimp_mailing_lists.iteritems():
             # subscribe to each list if either user was subscribed

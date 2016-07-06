@@ -197,6 +197,16 @@ wss.on('connection', function(client) {
     return share.listen(stream);
 });
 
+// Update a document from storage
+app.post('/reload/:id', jsonParser, function (req, res, next) {
+    wss.broadcast(req.params.id, JSON.stringify({
+        type: 'reload',
+        contributors: req.body // All contributors to be updated
+    }));
+    console.info('[Document reloaded from storage] docId: %s', req.params.id);
+    res.send(util.format('%s was reloaded.', req.params.id));
+});
+
 // Lock a document
 app.post('/lock/:id', function (req, res, next) {
     locked[req.params.id] = true;

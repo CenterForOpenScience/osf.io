@@ -76,7 +76,7 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
         # fields that are visible for withdrawals
         visible_on_withdrawals = ['contributors', 'date_created', 'description', 'id', 'links', 'registration', 'title', 'type']
         # fields that do not appear on registrations
-        non_registration_fields = ['registrations']
+        non_registration_fields = ['registrations', 'draft_registrations']
 
         for field in NodeSerializer._declared_fields:
             assert_in(field, RegistrationSerializer._declared_fields)
@@ -117,11 +117,14 @@ class TestApiBaseSerializers(ApiTestCase):
 
     def setUp(self):
         super(TestApiBaseSerializers, self).setUp()
-
+        self.user = factories.AuthUserFactory()
+        self.auth = factories.Auth(self.user)
         self.node = factories.ProjectFactory(is_public=True)
 
         for i in range(5):
             factories.ProjectFactory(is_public=True, parent=self.node)
+        self.linked_node = factories.NodeFactory(creator=self.user, is_public=True)
+        self.node.add_pointer(self.linked_node, auth=self.auth)
 
         self.url = '/{}nodes/{}/'.format(API_BASE, self.node._id)
 
@@ -156,7 +159,7 @@ class TestApiBaseSerializers(ApiTestCase):
                 field = field.field
             if (field.related_meta or {}).get('count'):
                 link = relation['links'].values()[0]
-                assert_in('count', link['meta'])
+                assert_in('count', link['meta'], field)
 
     def test_related_counts_excluded_query_param_false(self):
 
@@ -177,6 +180,11 @@ class TestApiBaseSerializers(ApiTestCase):
         res = self.app.get(self.url, params={'embed': 'foo'}, expect_errors=True)
         assert_equal(res.status_code, http.BAD_REQUEST)
         assert_equal(res.json['errors'][0]['detail'], "The following fields are not embeddable: foo")
+
+    def test_embed_does_not_remove_relationship(self):
+        res = self.app.get(self.url, params={'embed': 'root'})
+        assert_equal(res.status_code, 200)
+        assert_in(self.url, res.json['data']['relationships']['root']['links']['related']['href'])
 
     def test_counts_included_in_children_field_with_children_related_counts_query_param(self):
 
@@ -253,6 +261,15 @@ class TestRelationshipField(DbTestCase):
             related_view_kwargs={'node_id': '12345'}
         )
 
+        # If related_view_kwargs is a callable, this field _must_ match the property name on
+        # the target record
+        registered_from = RelationshipField(
+            related_view=lambda n: 'registrations:registration-detail' if n and n.is_registration else 'nodes:node-detail',
+            related_view_kwargs=lambda n: {
+                'node_id': '<registered_from_id>'
+            }
+        )
+
         class Meta:
             type_ = 'nodes'
 
@@ -301,3 +318,20 @@ class TestRelationshipField(DbTestCase):
         data = self.BasicNodeSerializer(node, context={'request': req}).data['data']
         field = data['relationships']['not_attribute_on_target']['links']
         assert_in('/v2/nodes/{}/children/'.format('12345'), field['related']['href'])
+
+    def test_field_with_callable_related_attrs(self):
+        req = make_drf_request()
+        project = factories.ProjectFactory()
+        node = factories.NodeFactory(parent=project)
+        data = self.BasicNodeSerializer(node, context={'request': req}).data['data']
+        assert_not_in('registered_from', data['relationships'])
+
+        registration = factories.RegistrationFactory(project=node)
+        data = self.BasicNodeSerializer(registration, context={'request': req}).data['data']
+        field = data['relationships']['registered_from']['links']
+        assert_in('/v2/nodes/{}/'.format(node._id), field['related']['href'])
+
+        registration_registration = factories.RegistrationFactory(project=registration)
+        data = self.BasicNodeSerializer(registration_registration, context={'request': req}).data['data']
+        field = data['relationships']['registered_from']['links']
+        assert_in('/v2/registrations/{}/'.format(registration._id), field['related']['href'])

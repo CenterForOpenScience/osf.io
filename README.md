@@ -185,7 +185,7 @@ $ cp api/base/settings/local-dist.py api/base/settings/local.py
 - On MacOSX with [homebrew](http://brew.sh/), there is a script that should automate much of the install process:
 
 ```bash
-$ pip install invoke
+$ pip install invoke==0.12.2
 $ invoke setup
 ```
 

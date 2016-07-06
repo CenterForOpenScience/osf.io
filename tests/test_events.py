@@ -12,7 +12,7 @@ from website.notifications.events import utils
 from website.addons.base import signals
 from framework.auth import Auth
 from tests import factories
-from tests.base import OsfTestCase
+from tests.base import OsfTestCase, NotificationTestCase
 
 email_transactional = 'email_transactional'
 email_digest = 'email_digest'
@@ -182,7 +182,7 @@ class TestFileUpdated(OsfTestCase):
         assert_true(mock_notify.called)
 
 
-class TestFileAdded(OsfTestCase):
+class TestFileAdded(NotificationTestCase):
     def setUp(self):
         super(TestFileAdded, self).setUp()
         self.user = factories.UserFactory()
@@ -209,7 +209,7 @@ class TestFileAdded(OsfTestCase):
         assert_true(mock_notify.called)
 
 
-class TestFileRemoved(OsfTestCase):
+class TestFileRemoved(NotificationTestCase):
     def setUp(self):
         super(TestFileRemoved, self).setUp()
         self.user = factories.UserFactory()
@@ -244,7 +244,7 @@ class TestFileRemoved(OsfTestCase):
         assert_true(mock_notify.called)
 
 
-class TestFolderCreated(OsfTestCase):
+class TestFolderCreated(NotificationTestCase):
     def setUp(self):
         super(TestFolderCreated, self).setUp()
         self.user = factories.UserFactory()
@@ -317,7 +317,7 @@ class TestFolderFileRenamed(OsfTestCase):
         assert_equal(self.event.text_message, 'renamed folder "/One/Two/Three" to "/One/Two/Four".')
 
 
-class TestFileMoved(OsfTestCase):
+class TestFileMoved(NotificationTestCase):
     def setUp(self):
         super(TestFileMoved, self).setUp()
         self.user_1 = factories.AuthUserFactory()
@@ -410,7 +410,7 @@ class TestFileMoved(OsfTestCase):
         assert_equal(1, mock_store.call_count)
 
 
-class TestFileCopied(OsfTestCase):
+class TestFileCopied(NotificationTestCase):
     # Test the copying of files
     def setUp(self):
         super(TestFileCopied, self).setUp()
@@ -491,7 +491,7 @@ class TestFileCopied(OsfTestCase):
         assert_equal(0, mock_store.call_count)
 
 
-class TestCategorizeUsers(OsfTestCase):
+class TestCategorizeUsers(NotificationTestCase):
     def setUp(self):
         super(TestCategorizeUsers, self).setUp()
         self.user_1 = factories.AuthUserFactory()

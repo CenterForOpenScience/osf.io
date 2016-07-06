@@ -57,6 +57,8 @@ def make_node_payload(node, attributes):
         }
     }
 
+def make_contrib_id(node_id, user_id):
+    return '{}-{}'.format(node_id, user_id)
 
 class TestNodeContributorList(NodeCRUDTestCase):
 
@@ -65,6 +67,12 @@ class TestNodeContributorList(NodeCRUDTestCase):
         self.private_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.private_project._id)
         self.public_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.public_project._id)
 
+    def test_concatenated_id(self):
+        res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
+
+        assert_equal(res.json['data'][0]['id'].split('-')[0], self.public_project._id)
+        assert_equal(res.json['data'][0]['id'].split('-')[1], self.user._id)
 
     def test_return_public_contributor_list_logged_out(self):
         self.public_project.add_contributor(self.user_two, save=True)
@@ -73,15 +81,15 @@ class TestNodeContributorList(NodeCRUDTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(len(res.json['data']), 2)
-        assert_equal(res.json['data'][0]['id'], self.user._id)
-        assert_equal(res.json['data'][1]['id'], self.user_two._id)
+        assert_equal(res.json['data'][0]['id'], make_contrib_id(self.public_project._id, self.user._id))
+        assert_equal(res.json['data'][1]['id'], make_contrib_id(self.public_project._id, self.user_two._id))
 
     def test_return_public_contributor_list_logged_in(self):
         res = self.app.get(self.public_url, auth=self.user_two.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(len(res.json['data']), 1)
-        assert_equal(res.json['data'][0]['id'], self.user._id)
+        assert_equal(res.json['data'][0]['id'], make_contrib_id(self.public_project._id, self.user._id))
 
     def test_return_private_contributor_list_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
@@ -96,8 +104,8 @@ class TestNodeContributorList(NodeCRUDTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(len(res.json['data']), 2)
-        assert_equal(res.json['data'][0]['id'], self.user._id)
-        assert_equal(res.json['data'][1]['id'], self.user_two._id)
+        assert_equal(res.json['data'][0]['id'], make_contrib_id(self.private_project._id, self.user._id))
+        assert_equal(res.json['data'][1]['id'], make_contrib_id(self.private_project._id, self.user_two._id))
 
     def test_return_private_contributor_list_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.user_two.auth, expect_errors=True)
@@ -131,8 +139,8 @@ class TestNodeContributorList(NodeCRUDTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(len(res.json['data']), 2)
-        assert_equal(res.json['data'][0]['id'], self.user._id)
-        assert_equal(res.json['data'][1]['id'], self.user_two._id)
+        assert_equal(res.json['data'][0]['id'], make_contrib_id(self.public_project._id, self.user._id))
+        assert_equal(res.json['data'][1]['id'], make_contrib_id(self.public_project._id, self.user_two._id))
         assert_equal(res.json['data'][1]['embeds']['users']['errors'][0]['meta']['full_name'], self.user_two.fullname)
         assert_equal(res.json['data'][1]['embeds']['users']['errors'][0]['detail'], 'The requested user is no longer available.')
 
@@ -496,7 +504,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         del self.data_user_two['data']['attributes']['bibliographic']
         res = self.app.post_json_api(self.public_url, self.data_user_two, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], self.user_two._id)
+        assert_equal(res.json['data']['id'], '{}-{}'.format(self.public_project, self.user_two._id))
 
         self.public_project.reload()
         assert_in(self.user_two, self.public_project.contributors)
@@ -506,7 +514,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     def test_adds_bibliographic_contributor_public_project_admin(self):
         res = self.app.post_json_api(self.public_url, self.data_user_two, auth=self.user.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], self.user_two._id)
+        assert_equal(res.json['data']['id'], '{}-{}'.format(self.public_project, self.user_two._id))
 
         self.public_project.reload()
         assert_in(self.user_two, self.public_project.contributors)
@@ -531,7 +539,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         }
         res = self.app.post_json_api(self.private_url, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], self.user_two._id)
+        assert_equal(res.json['data']['id'], '{}-{}'.format(self.private_project, self.user_two._id))
         assert_equal(res.json['data']['attributes']['bibliographic'], False)
 
         self.private_project.reload()
@@ -561,7 +569,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     def test_adds_contributor_private_project_admin(self):
         res = self.app.post_json_api(self.private_url, self.data_user_two, auth=self.user.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], self.user_two._id)
+        assert_equal(res.json['data']['id'], '{}-{}'.format(self.private_project, self.user_two._id))
 
         self.private_project.reload()
         assert_in(self.user_two, self.private_project.contributors)
@@ -610,7 +618,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         }
         res = self.app.post_json_api(self.private_url, data, auth=self.user.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], self.user_two._id)
+        assert_equal(res.json['data']['id'], '{}-{}'.format(self.private_project, self.user_two._id))
 
         self.private_project.reload()
         assert_in(self.user_two, self.private_project.contributors)
@@ -637,7 +645,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         }
         res = self.app.post_json_api(self.private_url, data, auth=self.user.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], self.user_two._id)
+        assert_equal(res.json['data']['id'], '{}-{}'.format(self.private_project, self.user_two._id))
 
         self.private_project.reload()
         assert_in(self.user_two, self.private_project.contributors)
@@ -664,7 +672,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         }
         res = self.app.post_json_api(self.private_url, data, auth=self.user.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], self.user_two._id)
+        assert_equal(res.json['data']['id'], '{}-{}'.format(self.private_project, self.user_two._id))
 
         self.private_project.reload()
         assert_in(self.user_two, self.private_project.contributors)

@@ -11,7 +11,8 @@ from webtest_plus import TestApp
 
 from tests.base import OsfTestCase
 from tests.factories import (UserFactory, ProjectFactory, NodeFactory,
-                             AuthFactory, PointerFactory, RegistrationFactory)
+                             AuthFactory, PointerFactory, RegistrationFactory,
+                             PrivateLinkFactory)
 from framework.auth import Auth
 from website.util import rubeus
 from website.util.rubeus import sort_by_name
@@ -117,6 +118,38 @@ class TestRubeus(OsfTestCase):
         assert_equal(
             result['accept']['maxSize'],
             self.node_settings.config.high_max_file_size
+        )
+
+    def test_build_addon_root_for_anonymous_vols_hides_path(self):
+        private_anonymous_link = PrivateLinkFactory(anonymous=True)
+        private_anonymous_link.nodes.append(self.project)
+        private_anonymous_link.save()
+        project_viewer = UserFactory()
+
+        result = rubeus.build_addon_root(
+            self.node_settings,
+            self.node_settings.bucket,
+            user=project_viewer,
+            private_key=private_anonymous_link.key
+        )
+
+        assert result['name'] == 'Amazon S3'
+
+    def test_build_addon_root_for_anonymous_vols_shows_path(self):
+        private_link = PrivateLinkFactory()
+        private_link.nodes.append(self.project)
+        private_link.save()
+        project_viewer = UserFactory()
+
+        result = rubeus.build_addon_root(
+            self.node_settings,
+            self.node_settings.bucket,
+            user=project_viewer,
+            private_key=private_link.key
+        )
+
+        assert result['name'] == 'Amazon S3: {0}'.format(
+            self.node_settings.bucket
         )
 
     def test_hgrid_dummy_fail(self):

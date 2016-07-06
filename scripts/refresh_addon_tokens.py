@@ -3,8 +3,10 @@
 
 import logging
 import datetime
+import time
 
 from modularodm import Q
+from oauthlib.oauth2 import OAuth2Error
 from dateutil.relativedelta import relativedelta
 
 from framework.celery_tasks import app as celery_app
@@ -16,7 +18,6 @@ from website.addons.box.model import Box
 from website.addons.googledrive.model import GoogleDriveProvider
 from website.addons.mendeley.model import Mendeley
 from website.oauth.models import ExternalAccount
-from website.addons.base.exceptions import AddonError
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -38,31 +39,50 @@ def get_targets(delta, addon_short_name):
         Q('provider', 'eq', addon_short_name)
     )
 
-def main(delta, Provider, dry_run):
+def main(delta, Provider, rate_limit, dry_run):
+    allowance = rate_limit[0]
+    last_call = time.time()
     for record in get_targets(delta, Provider.short_name):
+        if Provider(record).has_expired_credentials:
+            logger.info(
+                'Found expired record {}, skipping'.format(record.__repr__())
+            )
+            continue
+
         logger.info(
             'Refreshing tokens on record {0}; expires at {1}'.format(
-                record._id,
+                record.__repr__(),
                 record.expires_at.strftime('%c')
             )
         )
         if not dry_run:
+            if allowance < 1:
+                try: 
+                    time.sleep(rate_limit[1] - (time.time() - last_call))
+                except ValueError:
+                    pass  # ValueError indicates a negative sleep time
+                allowance = rate_limit[0]
+
+            allowance -= 1
+            last_call = time.time()
             success = False
             try:
                 success = Provider(record).refresh_oauth_key(force=True)
-            except AddonError as ex:
-                logger.error(ex.message)
+            except OAuth2Error as e:
+                logger.error(e)
             else:
                 logger.info(
                     'Status of record {}: {}'.format(
-                        record._id,
+                        record.__repr__(),
                         'SUCCESS' if success else 'FAILURE')
                 )
 
+
 @celery_app.task(name='scripts.refresh_addon_tokens')
-def run_main(addons=None, dry_run=True):
+def run_main(addons=None, rate_limit=(5, 1), dry_run=True):
     """
     :param dict addons: of form {'<addon_short_name>': int(<refresh_token validity duration in days>)}
+    :param tuple rate_limit: of form (<requests>, <seconds>). Default is five per second
     """
     init_app(set_backends=True, routes=False)
     if not dry_run:
@@ -77,4 +97,4 @@ def run_main(addons=None, dry_run=True):
         if not Provider:
             logger.error('Unable to find Provider class for addon {}'.format(addon_short_name))
         else:
-            main(delta, Provider, dry_run=dry_run)
+            main(delta, Provider, rate_limit, dry_run=dry_run)

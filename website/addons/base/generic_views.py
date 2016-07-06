@@ -79,6 +79,7 @@ def root_folder(addon_short_name):
             permissions=auth,
             nodeUrl=node.url,
             nodeApiUrl=node.api_url,
+            private_key=kwargs.get('view_only', None),
         )
         return [root]
     _root_folder.__name__ = '{0}_root_folder'.format(addon_short_name)

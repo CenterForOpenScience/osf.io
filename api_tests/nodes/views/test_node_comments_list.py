@@ -506,7 +506,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
         }
         res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'Invalid target type. Expected "nodes", got "Invalid."')
+        assert_equal(res.json['errors'][0]['detail'], 'The target resource has a type of "nodes", but you set the json body\'s type field to "Invalid".  You probably need to change the type field to match the target resource\'s type.')
 
     def test_create_comment_no_target_type_in_relationships(self):
         self._set_up_private_project_with_private_comment_level()
@@ -572,7 +572,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
         }
         res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
+        assert_equal(res.json['errors'][0]['detail'], 'This resource has a type of "comments", but you set the json body\'s type field to "cookies". You probably need to change the type field to match the resource\'s type.')
 
     def test_create_comment_no_content(self):
         self._set_up_private_project_with_private_comment_level()
@@ -753,7 +753,7 @@ class TestFileCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
         }
         res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'Invalid target type. Expected "files", got "Invalid."')
+        assert_equal(res.json['errors'][0]['detail'], 'The target resource has a type of "files", but you set the json body\'s type field to "Invalid".  You probably need to change the type field to match the target resource\'s type.')
 
 
 class TestWikiCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
@@ -837,7 +837,7 @@ class TestWikiCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
         }
         res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'Invalid target type. Expected "wiki", got "Invalid."')
+        assert_equal(res.json['errors'][0]['detail'], 'The target resource has a type of "wiki", but you set the json body\'s type field to "Invalid".  You probably need to change the type field to match the target resource\'s type.')
 
 
 class TestCommentRepliesCreate(NodeCommentsCreateMixin, ApiTestCase):

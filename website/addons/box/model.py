@@ -31,6 +31,7 @@ class Box(ExternalProvider):
     callback_url = settings.BOX_OAUTH_TOKEN_ENDPOINT
     auto_refresh_url = callback_url
     refresh_time = settings.REFRESH_TIME
+    expiry_time = settings.EXPIRY_TIME
     default_scopes = ['root_readwrite']
 
     def handle_callback(self, response):
@@ -131,7 +132,7 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.folder_id = str(folder_id)
         self._update_folder_data()
         self.save()
-        self.nodelogger.log(action="folder_selected", save=True)
+        self.nodelogger.log(action='folder_selected', save=True)
 
     def clear_settings(self):
         self.folder_id = None
@@ -145,7 +146,7 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
         if add_log:
             extra = {'folder_id': folder_id}
-            self.nodelogger.log(action="node_deauthorized", extra=extra, save=True)
+            self.nodelogger.log(action='node_deauthorized', extra=extra, save=True)
 
         self._update_folder_data()
         self.clear_auth()

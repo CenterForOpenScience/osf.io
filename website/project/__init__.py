@@ -28,7 +28,7 @@ seqm is a difflib.SequenceMatcher instance whose a & b are strings"""
         elif opcode == 'replace':
             output.append(del_el + content_a + del_el_close + insert_el + content_b + ins_el_close)
         else:
-            raise RuntimeError("unexpected opcode")
+            raise RuntimeError('unexpected opcode')
     return ''.join(output)
 
 # TODO: This should be a class method of Node
@@ -73,7 +73,7 @@ def new_bookmark_collection(user):
     )
 
     if existing_bookmark_collection.count() > 0:
-        raise NodeStateError("Users may only have one bookmark collection")
+        raise NodeStateError('Users may only have one bookmark collection')
 
     node = Node(
         title='Bookmarks',
@@ -120,13 +120,13 @@ def new_private_link(name, user, nodes, anonymous):
     :return PrivateLink: Created private link
 
     """
-    key = str(uuid.uuid4()).replace("-", "")
+    key = str(uuid.uuid4()).replace('-', '')
     if name:
         name = strip_html(name)
         if name is None or not name.strip():
             raise ValidationValueError('Invalid link name.')
     else:
-        name = "Shared project link"
+        name = 'Shared project link'
 
     private_link = PrivateLink(
         key=key,

@@ -34,7 +34,7 @@ class EmailFormView(OSFAdmin, FormView):
     Gets user data and supplies email template. Logs mail sent to user.
     """
     form_class = EmailForm
-    template_name = "spam/email.html"
+    template_name = 'spam/email.html'
 
     def get_context_data(self, **kwargs):
         spam_id = self.kwargs.get('spam_id')

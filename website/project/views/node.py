@@ -307,7 +307,7 @@ def node_setting(auth, node, **kwargs):
         'level': node.comment_level,
     }
 
-    ret['categories'] = Node.CATEGORY_MAP
+    ret['categories'] = settings.NODE_CATEGORY_MAP
     ret['categories'].update({
         'project': 'Project'
     })
@@ -432,7 +432,7 @@ def project_statistics(auth, node, **kwargs):
 @must_be_valid_project
 @must_be_contributor_or_public
 def project_statistics_redirect(auth, node, **kwargs):
-    return redirect(node.web_url_for("project_statistics", _guid=True))
+    return redirect(node.web_url_for('project_statistics', _guid=True))
 
 ###############################################################################
 # Make Private/Public
@@ -646,7 +646,7 @@ def _view_project(node, auth, primary=False):
     """
     user = auth.user
 
-    parent = node.parent_node
+    parent = node.find_readable_antecedent(auth)
     if user:
         bookmark_collection = find_bookmark_collection(user)
         bookmark_collection_id = bookmark_collection._id
@@ -700,7 +700,7 @@ def _view_project(node, auth, primary=False):
             'is_retracted': node.is_retracted,
             'is_pending_retraction': node.is_pending_retraction,
             'retracted_justification': getattr(node.retraction, 'justification', None),
-            'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
+            'embargo_end_date': node.embargo_end_date.strftime('%A, %b. %d, %Y') if node.embargo_end_date else False,
             'is_pending_embargo': node.is_pending_embargo,
             'is_embargoed': node.is_embargoed,
             'is_pending_embargo_termination': node.is_embargoed and (
@@ -775,7 +775,10 @@ def _view_project(node, auth, primary=False):
         'addon_widgets': widgets,
         'addon_widget_js': js,
         'addon_widget_css': css,
-        'node_categories': Node.CATEGORY_MAP
+        'node_categories': [
+            {'value': key, 'display_name': value}
+            for key, value in settings.NODE_CATEGORY_MAP.iteritems()
+        ]
     }
     return data
 
@@ -859,7 +862,7 @@ def _get_summary(node, auth, primary=True, link_id=None, show_path=False):
         'is_pending_registration': node.is_pending_registration,
         'is_retracted': node.is_retracted,
         'is_pending_retraction': node.is_pending_retraction,
-        'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
+        'embargo_end_date': node.embargo_end_date.strftime('%A, %b. %d, %Y') if node.embargo_end_date else False,
         'is_pending_embargo': node.is_pending_embargo,
         'is_embargoed': node.is_embargoed,
         'archiving': node.archiving,
@@ -915,25 +918,26 @@ def get_summary(auth, node, **kwargs):
         node, auth, primary=primary, link_id=link_id, show_path=show_path
     )
 
-
 @must_be_contributor_or_public
-def get_children(auth, node, **kwargs):
-    user = auth.user
-    if request.args.get('permissions'):
-        perm = request.args['permissions'].lower().strip()
-        nodes = [
-            each
-            for each in node.nodes
-            if perm in each.get_permissions(user) and not each.is_deleted
-        ]
-    else:
-        nodes = [
-            each
-            for each in node.nodes
-            if not each.is_deleted
-        ]
-    return _render_nodes(nodes, auth)
-
+def get_readable_descendants(auth, node, **kwargs):
+    descendants = []
+    for child in node.nodes:
+        if request.args.get('permissions'):
+            perm = request.args['permissions'].lower().strip()
+            if perm not in child.get_permissions(auth.user):
+                continue
+        if child.is_deleted:
+            continue
+        elif child.can_view(auth):
+            descendants.append(child)
+        elif not child.primary:
+            if node.has_permission(auth.user, 'write'):
+                descendants.append(child)
+            continue
+        else:
+            for descendant in child.find_readable_descendants(auth):
+                descendants.append(descendant)
+    return _render_nodes(descendants, auth)
 
 def node_child_tree(user, node_ids):
     """ Format data to test for node privacy settings for use in treebeard.
