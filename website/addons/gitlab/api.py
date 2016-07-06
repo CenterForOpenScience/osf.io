@@ -1,4 +1,5 @@
 import urllib
+import requests
 import itertools
 
 import gitlab
@@ -82,27 +83,19 @@ class GitLabClient(object):
         return self.gitlab.getbranches(repo_id)
 
     # TODO: reimplement and test
-    def starball(self, user, repo, archive='tar', ref='master'):
+    def starball(self, user, repo, repo_id, ref='master'):
         """Get link for archive download.
 
         :param str user: GitLab user name
         :param str repo: GitLab repo name
-        :param str archive: Archive format [tar|zip]
         :param str ref: Git reference
         :returns: tuple: Tuple of headers and file location
         """
+        uri = "projects/{0}/repository/archive?sha={1}".format(repo_id, ref)
 
-        # github3 archive method writes file to disk
-        #repository = self.repo(user, repo)
-        #url = repository._build_url(archive + 'ball', ref, base_url=repository._api)
-        #resp = repository._get(url, allow_redirects=True, stream=True)
+        request = self._get_api_request(uri)
 
-        #return resp.headers, resp.content
-        return False, False
-
-    #########
-    # Hooks #
-    #########
+        return request.headers, request.content
 
     def hooks(self, user, repo):
 #TODO
@@ -159,6 +152,13 @@ class GitLabClient(object):
 #        if self.access_token:
 #            return self.gh3.revoke_authorization(self.access_token)
         return False
+
+
+    def _get_api_request(self, uri):
+        headers = {"Authorization": 'Bearer {}'.format(self.access_token)}
+
+        return requests.get("{0}/{1}/{2}".format(gitlab_settings.GITLAB_BASE_URL, 'api/v3', uri),
+                            verify=True, headers=headers)
 
 
 def ref_to_params(branch=None, sha=None):
