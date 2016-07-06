@@ -427,7 +427,7 @@ def project_statistics(auth, node, **kwargs):
     if not (node.can_edit(auth) or node.is_public):
         raise HTTPError(http.FORBIDDEN)
     ret = _view_project(node, auth, primary=True)
-    ret['node']['keenio_read_key'] = node.get_or_create_keenio_readkey()
+    ret['node']['keenio_read_key'] = node.keenio_read_key
     return ret
 
 

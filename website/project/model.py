@@ -1448,8 +1448,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if save:
             self.save()
 
-    def create_keenio_readkey(self):
-        api_readkey = scoped_keys.encrypt(settings.KEEN['public']['master_key'], options={
+    def generate_keenio_read_key(self):
+        return scoped_keys.encrypt(settings.KEEN['public']['master_key'], options={
             'filters': [{
                 'property_name': 'node.id',
                 'operator': 'eq',
@@ -1457,15 +1457,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             }],
             'allowed_operations': ['read']
         })
-        self.keenio_read_key = api_readkey
-        self.save()
-        return self.keenio_read_key
-
-    def get_or_create_keenio_readkey(self):
-        if self.is_public:
-            return self.keenio_read_key if self.keenio_read_key else self.create_keenio_readkey()
-        else:
-            return None
 
     def update(self, fields, auth=None, save=True):
         """Update the node with the given fields.
@@ -3168,7 +3159,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                     self.request_embargo_termination(auth=auth)
                     return False
             self.is_public = True
-            self.keenio_read_key = self.create_keenio_readkey()
+            self.keenio_read_key = self.generate_keenio_read_key()
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo:
                 raise NodeStateError('Public registrations must be withdrawn, not made private.')
