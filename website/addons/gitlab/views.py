@@ -156,12 +156,11 @@ def gitlab_set_config(auth, **kwargs):
 @must_have_addon('gitlab', 'node')
 def gitlab_download_starball(node_addon, **kwargs):
 
-    archive = kwargs.get('archive', 'tar')
     ref = request.args.get('sha', 'master')
 
     connection = GitLabClient(external_account=node_addon.external_account)
     headers, data = connection.starball(
-        node_addon.user, node_addon.repo, archive, ref
+        node_addon.user, node_addon.repo, node_addon.repo_id, ref
     )
 
     resp = make_response(data)
