@@ -7,7 +7,8 @@ var zxcvbn = require('zxcvbn');
 
 var oop = require('js/oop');
 var $osf = require('./osfHelpers');
-require('js/knockoutPassword')
+var ChangeMessageMixin = require('js/changeMessage');
+require('js/knockoutPassword');
 
 
 ko.validation.rules.complexity = {
@@ -36,9 +37,10 @@ var valueProgressBar = {
  * Base view model for other password-setting view-models. Stores password input
  * with password verification.
  */
-var BaseViewModel = oop.defclass({
+var BaseViewModel = oop.extend(ChangeMessageMixin, {
     constructor: function () {
         var self = this;
+        ChangeMessageMixin.call(self);
         self.typedPassword = ko.observable('').extend({passwordChecking: true});
         self.passwordFeedback = self.typedPassword.passwordFeedback;
 
@@ -63,11 +65,6 @@ var BaseViewModel = oop.defclass({
         self.validatedFields = ko.validatedObservable($.extend({}, validatedFields, self.getValidatedFields()));
 
         self.submitted = ko.observable(false);
-
-        // TODO: Use changeMessage.js
-        self.flashMessage = ko.observable('');
-        self.flashMessageClass = ko.observable('');
-
         self.trim = function(observable) {
             observable($.trim(observable()));
         };
@@ -84,21 +81,6 @@ var BaseViewModel = oop.defclass({
      */
     getValidatedFields: function() {
         return {};
-    },
-    changeMessage: function(message, className, timeout) {
-        var self = this;
-        self.flashMessage(message);
-        var cssClass = className || 'text-info';
-        self.flashMessageClass(cssClass);
-        if (timeout) {
-            setTimeout(
-                function() {
-                    self.flashMessage('');
-                    self.flashMessageClass('');
-                },
-                timeout
-            );
-        }
     }
 });
 
@@ -231,7 +213,8 @@ var SignUpViewModel = oop.extend(BaseViewModel, {
         // Show errors if invalid
         if (!self.isValid()) {
             // Ensure validation errors are displayed
-            $.each(validatedFields, function(key, value) {
+            $.each(self.validatedFields, function(key, value) {
+                console.log(value);
                 value.notifySubscribers();
             });
             return false;

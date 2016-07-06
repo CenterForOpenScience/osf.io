@@ -80,7 +80,7 @@
 
                           <!-- Flashed Messages -->
                           <div class="help-block osf-box-lt" >
-                              <p data-bind="html: flashMessage, attr: {class: flashMessageClass}" class=""></p>
+                              <p data-bind="html: message, attr: {class: messageClass}" class=""></p>
                           </div>
                           <!-- ko ifnot: submitted -->
                           <div>
@@ -88,7 +88,7 @@
                           </div>
                           <!-- /ko -->
                           <div>
-                              <button type="submit" class="btn btn-warning" data-bind="visible: !submitted(), css: {disabled: !password.isValid()}" id="signupSubmit">Sign up free</button>
+                              <button type="submit" class="btn btn-warning" data-bind="visible: !submitted()" id="signupSubmit">Sign up free</button>
                           </div>
                   </form>
 

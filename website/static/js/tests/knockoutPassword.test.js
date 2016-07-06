@@ -16,7 +16,7 @@ describe.only('the passwordChecking extender', () => {
         obs('');
         assert.equal(obs.passwordComplexity(), 0);
 
-        obs('supersecurepassword123456')
+        obs('supersecurepassword123456');
         assert.isNumber(obs.passwordComplexity());
 
         obs('password');

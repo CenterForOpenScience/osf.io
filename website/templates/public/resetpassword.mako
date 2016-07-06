@@ -13,7 +13,7 @@
                 >
 
             <div class="help-block" >
-                <p data-bind="html: flashMessage, attr: {class: flashMessageClass}"></p>
+                <p data-bind="html: message, attr: {class: messageClass}"></p>
             </div>
         <div class="row">
             <div

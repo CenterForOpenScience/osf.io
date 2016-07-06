@@ -1,4 +1,4 @@
-'use strict';
+var $ = require('jquery');
 var TweenLite = require('TweenLite');
 require('EasePack');
 require('vendor/youtube');
