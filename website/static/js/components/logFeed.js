@@ -21,8 +21,9 @@ var _buildLogUrl = function(node, page, limitLogs) {
     var urlPrefix = (node.isRegistration || node.is_registration) ? 'registrations' : 'nodes';
     var size = limitLogs ? LOG_PAGE_SIZE_LIMITED : LOG_PAGE_SIZE;
     var query = { 'page[size]': size, 'page': logPage, 'embed': ['original_node', 'user', 'linked_node', 'template_node'], 'profile_image_size': PROFILE_IMAGE_SIZE};
-    if (node.link) {
-        query.view_only = node.link;
+    var viewOnly = $osf.urlParams().view_only;
+    if (viewOnly) {
+        query.view_only = viewOnly;
     }
     return $osf.apiV2Url(urlPrefix + '/' + node.id + '/logs/', { query: query});
 };

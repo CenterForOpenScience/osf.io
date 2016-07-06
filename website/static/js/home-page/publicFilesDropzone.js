@@ -79,7 +79,6 @@ var PublicFilesDropzone = {
                         isCors: true
                     }
                 ).done(function(response) {
-                    console.log(response['data']['attributes'])
                     guid = response['data']['attributes']['guid'];
                     var link = 'http://localhost:5000/'+ guid;
                     m.render(buttonContainer, dzPreviewTemplate.shareButton(link));

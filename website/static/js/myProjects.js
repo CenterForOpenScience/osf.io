@@ -379,11 +379,6 @@ var MyProjects = {
             promise.then(function _success(results){
                 if(results.actions && results.actions.POST.category){
                     self.categoryList = results.actions.POST.category.choices;
-                    self.categoryList.sort(function(a, b){ // Quick alphabetical sorting
-                        if(a.value < b.value) return -1;
-                        if(a.value > b.value) return 1;
-                        return 0;
-                    });
                 }
             }, function _error(results){
                 var message = 'Error loading project category names.';
@@ -1594,7 +1589,6 @@ var Breadcrumbs = {
                 if(index === arr.length-1){
                     if(item.type === 'node'){
                         var linkObject = args.breadcrumbs()[args.breadcrumbs().length - 1];
-                        var parentID = linkObject.data.id;
                         var showAddProject = true;
                         var addProjectTemplate = '';
                         var permissions = item.data.attributes.current_user_permissions;
@@ -1607,7 +1601,8 @@ var Breadcrumbs = {
                                 buttonTemplate: m('.btn.btn-sm.text-muted[data-toggle="modal"][data-target="#addSubComponent"]', {onclick: function() {
                                     $osf.trackClick('myProjects', 'add-component', 'open-add-component-modal');
                                 }}, [m('i.fa.fa-plus.m-r-xs', {style: 'font-size: 10px;'}), 'Create component']),
-                                parentID: parentID,
+                                parentID: linkObject.data.id,
+                                parentTitle: linkObject.data.name,
                                 modalID: 'addSubComponent',
                                 title: 'Create new component',
                                 categoryList: args.categoryList,
@@ -1631,7 +1626,9 @@ var Breadcrumbs = {
                                     });
                                 },
                                 trackingCategory: 'myProjects',
-                                trackingAction: 'add-component'
+                                trackingAction: 'add-component',
+                                contributors: Array.from(linkObject.data.contributorSet),
+                                currentUserCanEdit: ~linkObject.data.attributes.current_user_permissions.indexOf('write')
                             });
                         }
                         return [
@@ -1781,6 +1778,7 @@ var Information = {
         }
         if (args.selected().length === 1) {
             var item = args.selected()[0].data;
+            var permission = item.attributes.current_user_permissions.slice(-1)[0];
             showRemoveFromCollection = collectionFilter.data.nodeType === 'collection' && args.selected()[0].depth === 1 && args.fetchers[collectionFilter.id]._flat.indexOf(item) !== -1; // Be able to remove top level items but not their children
             if(item.attributes.category === ''){
                 item.attributes.category = 'Uncategorized';
@@ -1808,6 +1806,7 @@ var Information = {
                             m('p.db-info-meta.text-muted', [
                                 m('', 'Visibility : ' + (item.attributes.public ? 'Public' : 'Private')),
                                 m('div.text-capitalize', 'Category: ' + item.attributes.category),
+                                m('.text-capitalize', 'Permission: ' + permission),
                                 m('', 'Last Modified on: ' + (item.date ? item.date.local : ''))
                             ]),
                             m('p', [
