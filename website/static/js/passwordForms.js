@@ -4,9 +4,10 @@ var ko = require('knockout');
 require('knockout.validation');
 var $ = require('jquery');
 var zxcvbn = require('zxcvbn');
-var oop = require('js/oop');
 
+var oop = require('js/oop');
 var $osf = require('./osfHelpers');
+require('js/knockoutPassword')
 
 
 ko.validation.rules.complexity = {
@@ -38,30 +39,11 @@ var valueProgressBar = {
 var BaseViewModel = oop.defclass({
     constructor: function () {
         var self = this;
-        self.typedPassword = ko.observable('');
-
-        self.passwordInfo = ko.pureComputed(function() {
-            if (self.typedPassword()) {
-                return zxcvbn(self.typedPassword().slice(0, 100));
-            }
-        });
-
-        self.passwordFeedback = ko.pureComputed(function () {
-            if (self.typedPassword()) {
-                return self.passwordInfo().feedback;
-            }
-        });
-
-        self.passwordComplexity = ko.pureComputed(function() {
-            if (self.typedPassword()) {
-                return self.passwordInfo().score + 1;
-            } else {
-                return 0;
-            }
-        });
+        self.typedPassword = ko.observable('').extend({passwordChecking: true});
+        self.passwordFeedback = self.typesPassword.passwordFeedback;
 
         self.passwordComplexityInfo = ko.computed(function() {
-            return valueProgressBar[self.passwordComplexity()];
+            return valueProgressBar[self.typedPassword.passwordComplexity()];
         });
 
         self.password = ko.observable('').extend({
