@@ -3,7 +3,7 @@
 var $ = require('jquery');
 var $osf = require('js/osfHelpers.js');
 var accountSettings = require('js/accountSettings.js');
-var SetPassword = require('js/setPassword');
+var passwordForms = require('js/passwordForms');
 
 
 $(function() {
@@ -11,7 +11,7 @@ $(function() {
     $osf.applyBindings(viewModel, '#connectedEmails');
     viewModel.init();
 
-    new SetPassword('#changePassword', 'change');
+    new passwordForms.ChangePassword('#changePassword');
 
     $osf.applyBindings(
         new accountSettings.DeactivateAccountViewModel(),

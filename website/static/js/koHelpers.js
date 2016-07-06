@@ -7,7 +7,6 @@ require('knockout.validation');
 var makeClient = require('js/clipboard');
 
 require('css/koHelpers.css');
-var zxcvbn = require('zxcvbn');
 
 var iconmap = require('js/iconmap');
 

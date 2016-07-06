@@ -13,6 +13,7 @@
             </p>
         </div>
     %endif
+
     %if campaign == "institution" and enable_institutions:
         <div class="text-center m-t-lg">
             <h3>OSF for Institutions </h3>
@@ -58,12 +59,13 @@
                             'has-success': fullName() && fullName.isValid()
                         }"
                 >
-                    <label for="fullName" class="col-sm-4 control-label">Full Name</label>
+                    <label for="inputName" class="col-sm-4 control-label">Full Name</label>
                     <div class="col-sm-8">
                         <input
                                 autofocus
                                 type="text"
                                 class="form-control"
+                                id="inputName"
                                 placeholder="Name"
                                 data-bind="
                                 value: fullName, disable: submitted(),
@@ -131,41 +133,34 @@
                         'has-error': password() && !password.isValid(),
                         'has-success': password() && password.isValid()
                     }"
-            >
-                <label for="inputPassword3" class="col-sm-4 control-label">Password</label>
-                <div class="col-sm-8">
-                    <input
-                        type="password"
-                        class="form-control"
-                        id="inputPassword3"
-                        placeholder="Password"
-                        data-bind="
+                >
+                    <label for="inputPassword3" class="col-sm-4 control-label">Password</label>
+                    <div class="col-sm-8">
+                        <input
+                                type="password"
+                                class="form-control"
+                                id="inputPassword3"
+                                placeholder="Password"
+                                data-bind="
                             textInput: typedPassword,
                             value: password,
                             disable: submitted(),
                             event: {
                                 blur: trim.bind($data, password)
                             }"
-                    >
-                </div>
-                <div class="col-sm-8 col-sm-offset-4">
-                    <div class="progress create-password">
-                        <div class="progress-bar" role="progressbar" data-bind="attr: passwordComplexityBar"></div>
+                        >
+                        <div class="progress create-password">
+                            <div class="progress-bar progress-bar-sm" role="progressbar" data-bind="attr: passwordComplexityInfo().attr"></div>
+                        </div>
+                        <div>
+                            <!-- ko if: passwordFeedback() -->
+                            <p class="text-right" id="front-password-info" data-bind="text: passwordComplexityInfo().text, attr: passwordComplexityInfo().text_attr"></p>
+                            <p class="help-block osf-box-lt" data-bind="validationMessage: password" style="display: none;"></p>
+                            <p class="help-block osf-box-lt" data-bind="text: passwordFeedback().warning"></p>
+                            <!-- /ko -->
+                        </div>
                     </div>
-                    <p class="help-block" data-bind="validationMessage: password" style="display: none;"></p>
-                    <p class="help-block" data-bind="text: passwordFeedback"></p>
-                </div>
-            </div>
-            <!-- Flashed Messages -->
-            <div class="help-block" >
-                <p data-bind="html: flashMessage, attr: {class: flashMessageClass}"></p>
-            </div>
-            <div>
-                <p> By clicking "Create account", you agree to our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms</a> and that you have read our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>, including our information on <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies">Cookie Use</a>.</p>
-            </div>
-            <div class="form-group">
-                <div class="col-sm-offset-4 col-sm-8">
-                    <button type="submit" class="btn pull-right btn-success" data-bind="disable: submitted(), css: {disabled: !password.isValid()}">Create account</button>
+
                 </div>
                 </br>
                 <div class="form-group">

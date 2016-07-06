@@ -4,9 +4,9 @@
 'use strict';
 var $ = require('jquery');
 
-var SetPassword = require('js/setPassword');
+var passwordForms = require('js/passwordForms');
 
 
 $(document).ready(function() {
-    new SetPassword('#setPasswordForm', 'reset', '', '', '');
+    new passwordForms.SetPassword('#setPasswordForm');
 });

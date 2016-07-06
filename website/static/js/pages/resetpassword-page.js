@@ -3,12 +3,8 @@
  */
 'use strict';
 var $ = require('jquery');
-
-var SetPassword = require('js/setPassword');
-var verificationKey = window.contextVars.verification_key;
-var resetUrl = '/resetpassword/' + verificationKey + '/';
-
+var passwordForms = require('js/passwordForms');
 
 $(document).ready(function() {
-    new SetPassword('#resetPasswordForm', 'reset', resetUrl, '');
+    new passwordForms.SetPassword('#resetPasswordForm');
 });
