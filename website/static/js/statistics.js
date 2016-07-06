@@ -9,8 +9,6 @@ var keenAnalysis = require('keen-analysis');
 var ProjectUsageStatistics = function(){
     var self = this;
 
-    var defaultTimeframe = 'this_30_days';
-
     /**
     * Manages the connections to Keen.  Needs a project id and valid read key for that project.
     *
@@ -22,14 +20,21 @@ var ProjectUsageStatistics = function(){
         readKey : window.contextVars.keen.public.readKey,
     });
 
+    // hide non-integer labels on charts for counts
+    self._hideNonIntegers = function(d) {
+        return (parseInt(d) === d) ? d : null;
+    };
 
     // show visits to this project over the last week
-    self.visitsByDay = function(elem) {
+    self.visitsByDay = function(elem, startDate, endDate) {
         var query = {
             'type':'count_unique',
             'params' : {
                 event_collection: 'pageviews',
-                timeframe: defaultTimeframe,
+                timeframe: {
+                    start: startDate.toISOString(),
+                    end: endDate.toISOString(),
+                },
                 interval: 'daily',
                 target_property: 'anon.id'
             }
@@ -38,12 +43,26 @@ var ProjectUsageStatistics = function(){
         var dataviz = new keenDataviz()
                 .el(elem)
                 .chartType('line')
+                .dateFormat('%b %d')
                 .chartOptions({
                     tooltip: {
                         format: {
+                            title: function(x) { return x.toDateString(); },
                             name: function(){return 'Visits';}
                         }
-                    }
+                    },
+                    axis: {
+                        y: {
+                            tick: {
+                                format: self._hideNonIntegers,
+                            }
+                        },
+                        x: {
+                            tick: {
+                                fit: false,
+                            },
+                        },
+                    },
                 });
 
         self.buildChart(query, dataviz);
@@ -51,12 +70,15 @@ var ProjectUsageStatistics = function(){
 
 
     // show most common referrers to this project from the last week
-    self.topReferrers = function(elem) {
+    self.topReferrers = function(elem, startDate, endDate) {
         var query = {
             type: 'count_unique',
             params: {
                 event_collection: 'pageviews',
-                timeframe: defaultTimeframe,
+                timeframe: {
+                    start: startDate.toISOString(),
+                    end: endDate.toISOString(),
+                },
                 target_property: 'anon.id',
                 group_by: 'referrer.info.domain'
             }
@@ -77,12 +99,15 @@ var ProjectUsageStatistics = function(){
     };
 
     // The number of visits by hour across last week
-    self.visitsServerTime = function(elem) {
+    self.visitsServerTime = function(elem, startDate, endDate) {
         var query = {
             'type': 'count_unique',
             'params': {
                 event_collection: 'pageviews',
-                timeframe: defaultTimeframe,
+                timeframe: {
+                    start: startDate.toISOString(),
+                    end: endDate.toISOString(),
+                },
                 target_property: 'anon.id',
                 group_by: 'time.local.hour_of_day',
             }
@@ -108,6 +133,11 @@ var ProjectUsageStatistics = function(){
                                 values: ['0', '4', '8', '12', '16', '20'],
                             },
                         },
+                        y: {
+                            tick: {
+                                format: self._hideNonIntegers,
+                            }
+                        }
                     },
                 });
 
@@ -130,12 +160,15 @@ var ProjectUsageStatistics = function(){
     };
 
     // most popular sub-pages of this project
-    self.popularPages = function(elem) {
+    self.popularPages = function(elem, startDate, endDate) {
         var query = {
             type: 'count_unique',
             params: {
                 event_collection: 'pageviews',
-                timeframe: defaultTimeframe,
+                timeframe: {
+                    start: startDate.toISOString(),
+                    end: endDate.toISOString(),
+                },
                 target_property: 'anon.id',
                 group_by: 'page.title'
             }
@@ -149,7 +182,14 @@ var ProjectUsageStatistics = function(){
                         format:{
                             name: function(){return 'Visits';}
                         }
-                    }
+                    },
+                    axis: {
+                        y: {
+                            tick: {
+                                format: self._hideNonIntegers,
+                            }
+                        }
+                    },
                 });
 
         var munger = function() {

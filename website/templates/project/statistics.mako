@@ -18,6 +18,21 @@
     </div>
 
     <div class="row m-lg">
+      <div class="col-sm-12">
+        <form class="form-inline" id="updateStatsDates">
+          <div class="form-group">
+            <label for="startDatePicker">From</label>
+            <input type="text" class="form-control" id="startDatePicker">
+          </div>
+          <div class="form-group">
+            <label for="endDatePicker">Until</label>
+            <input type="text" class="form-control" id="endDatePicker">
+          </div>
+          <button type="submit" class="btn btn-default">Update date range</button>
+        </form>
+      </div>
+    </div>
+    <div class="row m-lg">
         <div class="col-sm-6">
             <div class="panel panel-default">
                 <div class="panel-heading clearfix">
