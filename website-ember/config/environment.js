@@ -1,4 +1,5 @@
 /* jshint node: true */
+// jscs:disable disallowEmptyBlocks
 
 module.exports = function(environment) {
     var ENV = {
@@ -16,7 +17,7 @@ module.exports = function(environment) {
         i18n: {
             defaultLocale: 'en-US'
         },
-        
+
         EmberENV: {
             FEATURES: {
                 // Here you can enable experimental features on an ember canary build
@@ -50,7 +51,9 @@ module.exports = function(environment) {
         ENV.APP.rootElement = '#ember-testing';
     }
 
-    if (environment === 'production') {}
+    if (environment === 'production') {
+        // Add production settings here
+    }
 
     return ENV;
 };
