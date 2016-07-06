@@ -1687,6 +1687,25 @@ var Range = ace.require('ace/range').Range;
                 li.appendChild(label);
                 buttonRow.appendChild(li);
             };
+            var makeSpellCheckBox = function (div_id, cb_id, XShift, text) {
+                var li = document.createElement("li");
+                li.id = div_id;
+                li.style.left = xPosition + "px";
+                xPosition += 25;
+                li.XShift = XShift;
+                var span = document.createElement("span");
+                span.backgroundImage = '/static/public/vendor/pagedown/spellcheck.png'
+                var cb = document.createElement("input");
+                cb.id = cb_id;
+                cb.type = "checkbox";
+                cb.checked = "";
+                var sp = document.createElement("small");
+                sp.innerHTML = " " + text.trim();
+                span.appendChild(cb);
+                span.appendChild(sp);
+                li.appendChild(span);
+                buttonRow.appendChild(li);
+            };
             var makeSpacer = function (num) {
                 var spacer = document.createElement("li");
                 spacer.className = "wmd-spacer wmd-spacer" + num;
@@ -1724,6 +1743,7 @@ var Range = ace.require('ace/range').Range;
 
             makeSpacer(4);
             makeCheckBox("wmd-autocom-toggle", "autocom", "-240px", "Autocomplete");
+            makeSpellCheckBox("wmd-button", "spellcheck", "-240px", "   ");
 
             makeSpacer(5);
             buttons.help = makeHelpButton("wmd-help-button",getString("help"),"-240px");
