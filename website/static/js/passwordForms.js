@@ -57,12 +57,13 @@ var BaseViewModel = oop.extend(ChangeMessageMixin, {
 
 
         // Preserve object of validated fields for use in `submit`
-        var validatedFields = {
+        var validatedObservables = {
             password: self.password
         };
+        self.validatedObservables = $.extend({}, validatedObservables, self.getValidatedFields());
 
         // Collect validated fields
-        self.validatedFields = ko.validatedObservable($.extend({}, validatedFields, self.getValidatedFields()));
+        self.validatedFields = ko.validatedObservable(self.validatedObservables);
 
         self.submitted = ko.observable(false);
         self.trim = function(observable) {
@@ -88,7 +89,6 @@ var BaseViewModel = oop.extend(ChangeMessageMixin, {
 var ChangePasswordViewModel = oop.extend(BaseViewModel, {
     constructor: function () {
         var self = this;
-        self.super.constructor.call(this);
         self.passwordConfirmation = ko.observable('').extend({
             required: true,
             validation: {
@@ -100,6 +100,9 @@ var ChangePasswordViewModel = oop.extend(BaseViewModel, {
             }
         });
         self.oldPassword = ko.observable('').extend({required: true});
+
+        // Call constructor after declaring observables so that validatedFields is populated correctly
+        self.super.constructor.call(this);
     },
     getValidatedFields: function() {
         var self = this;
@@ -113,7 +116,6 @@ var ChangePasswordViewModel = oop.extend(BaseViewModel, {
 var SetPasswordViewModel = oop.extend(BaseViewModel, {
     constructor: function () {
         var self = this;
-        self.super.constructor.call(this);
         self.passwordConfirmation = ko.observable('').extend({
             required: true,
             validation: {
@@ -124,13 +126,13 @@ var SetPasswordViewModel = oop.extend(BaseViewModel, {
                 params: self.password
             }
         });
+        self.super.constructor.call(this);
     }
 });
 
 var SignUpViewModel = oop.extend(BaseViewModel, {
     constructor: function (submitUrl) {
         var self = this;
-        self.super.constructor.call(this, submitUrl);
         self.fullName = ko.observable('').extend({
             required: true,
             minLength: 3
@@ -151,6 +153,10 @@ var SignUpViewModel = oop.extend(BaseViewModel, {
                 params: self.email1
             }
         });
+
+        // Call constructor after declaring observables so that validatedFields is populated correctly
+        self.super.constructor.call(this, submitUrl);
+
         self.password.extend({
             validation: {
                 validator: function(val, other) {
@@ -213,8 +219,7 @@ var SignUpViewModel = oop.extend(BaseViewModel, {
         // Show errors if invalid
         if (!self.isValid()) {
             // Ensure validation errors are displayed
-            $.each(self.validatedFields, function(key, value) {
-                console.log(value);
+            $.each(self.validatedObservables, function(key, value) {
                 value.notifySubscribers();
             });
             return false;

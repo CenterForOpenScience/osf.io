@@ -85,7 +85,7 @@
             %if next_url:
                 <input type='hidden' name='next_url' value='${next_url}'>
             %endif
-            <button type='submit' class="btn btn-success pull-right" data-bind="css: {disabled: !password.isValid()}">Save</button>
+            <button type='submit' class="btn btn-success pull-right">Save</button>
         </form>
     </div>
 </div>

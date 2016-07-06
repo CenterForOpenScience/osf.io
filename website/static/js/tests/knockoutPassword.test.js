@@ -7,7 +7,7 @@ var koHelpers = require('../knockoutPassword');
 // Add sinon asserts to chai.assert, so we can do assert.calledWith instead of sinon.assert.calledWith
 sinon.assert.expose(assert, {prefix: ''});
 
-describe.only('the passwordChecking extender', () => {
+describe('the passwordChecking extender', () => {
     var obs;
     beforeEach(() => {
         obs = ko.observable().extend({passwordChecking: true});
@@ -33,7 +33,7 @@ describe.only('the passwordChecking extender', () => {
 
     it('should have password feedback', () => {
         obs('');
-        assert.equal(obs.passwordFeedback(), {});
+        assert.deepEqual(obs.passwordFeedback(), {});
 
         obs('password');
         assert.isObject(obs.passwordFeedback());
