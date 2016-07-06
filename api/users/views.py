@@ -1,28 +1,30 @@
 
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
-from rest_framework.exceptions import NotAuthenticated
+from rest_framework.exceptions import NotAuthenticated, NotFound
 from django.contrib.auth.models import AnonymousUser
 
 from modularodm import Q
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from website.models import User, Node
+from website.models import User, Node, ExternalAccount
 
 from api.base import permissions as base_permissions
 from api.base.utils import get_object_or_error
 from api.base.exceptions import Conflict
+from api.base.serializers import AddonAccountSerializer
 from api.base.views import JSONAPIBaseView
-from api.base.filters import ODMFilterMixin
+from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
 from api.nodes.serializers import NodeSerializer
 from api.institutions.serializers import InstitutionSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.base.utils import default_node_list_query, default_node_permission_query
+from api.addons.views import AddonSettingsMixin
 
-from .serializers import UserSerializer, UserDetailSerializer, UserInstitutionsRelationshipSerializer
-from .permissions import ReadOnlyOrCurrentUser, ReadOnlyOrCurrentUserRelationship
+from .serializers import UserSerializer, UserAddonSettingsSerializer, UserDetailSerializer, UserInstitutionsRelationshipSerializer
+from .permissions import ReadOnlyOrCurrentUser, ReadOnlyOrCurrentUserRelationship, CurrentUser
 
 
 class UserMixin(object):
@@ -227,6 +229,189 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
         context = JSONAPIBaseView.get_serializer_context(self)
         context['request'] = self.request
         return context
+
+
+class UserAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, UserMixin):
+    """List of addons authorized by this user *Read-only*
+
+    Paginated list of user addons ordered by their `id` or `addon_short_name`.
+
+    ###Permissions
+
+    <Addon>UserSettings are visible only to the user that "owns" them.
+
+    ## <Addon\>UserSettings Attributes
+
+    OSF <Addon\>UserSettings entities have the "user_addons" `type`, and their `id` indicates the addon
+    service provider (eg. `box`, `googledrive`, etc).
+
+        name                type        description
+        =====================================================================================
+        user_has_auth       boolean     does this user have access to use an ExternalAccount?
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+        self:  the canonical api endpoint of this user_addon
+        accounts: dict keyed on an external_account_id
+            nodes_connected:    list of canonical api endpoints of connected nodes
+            account:            canonical api endpoint for this account
+
+    #This Request/Response
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        CurrentUser,
+    )
+
+    required_read_scopes = [CoreScopes.USER_ADDON_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = UserAddonSettingsSerializer
+    view_category = 'users'
+    view_name = 'user-addons'
+
+    def get_queryset(self):
+        qs = [addon for addon in self.get_user().get_addons() if 'accounts' in addon.config.configs]
+        qs.sort()
+        return qs
+
+
+class UserAddonDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin, AddonSettingsMixin):
+    """Detail of an individual addon authorized by this user *Read-only*
+
+    ##Permissions
+
+    <Addon>UserSettings are visible only to the user that "owns" them.
+
+    ## <Addon\>UserSettings Attributes
+
+    OSF <Addon\>UserSettings entities have the "user_addons" `type`, and their `id` indicates the addon
+    service provider (eg. `box`, `googledrive`, etc).
+
+        name                type        description
+        =====================================================================================
+        user_has_auth       boolean     does this user have access to use an ExternalAccount?
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+        self:  the canonical api endpoint of this user_addon
+        accounts: dict keyed on an external_account_id
+            nodes_connected:    list of canonical api endpoints of connected nodes
+            account:            canonical api endpoint for this account
+
+    #This Request/Response
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        CurrentUser,
+    )
+
+    required_read_scopes = [CoreScopes.USER_ADDON_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = UserAddonSettingsSerializer
+    view_category = 'users'
+    view_name = 'user-addon-detail'
+
+    def get_object(self):
+        return self.get_addon_settings()
+
+
+class UserAddonAccountList(JSONAPIBaseView, generics.ListAPIView, UserMixin, AddonSettingsMixin):
+    """List of an external_accounts authorized by this user *Read-only*
+
+    ##Permissions
+
+    ExternalAccounts are visible only to the user that has ownership of them.
+
+    ## ExternalAccount Attributes
+
+    OSF ExternalAccount entities have the "external_accounts" `type`, with `id` indicating the
+    `external_account_id` according to the OSF
+
+        name            type        description
+        =====================================================================================================
+        display_name    string      Display name on the third-party service
+        profile_url     string      Link to users profile on third-party service *presence varies by service*
+        provider        string      short_name of third-party service provider
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+        self:  the canonical api endpoint of this external_account
+
+    #This Request/Response
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        CurrentUser,
+    )
+
+    required_read_scopes = [CoreScopes.USER_ADDON_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = AddonAccountSerializer
+    view_category = 'users'
+    view_name = 'user-external_accounts'
+
+    def get_queryset(self):
+        return self.get_addon_settings().external_accounts
+
+class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin, AddonSettingsMixin):
+    """Detail of an individual external_account authorized by this user *Read-only*
+
+    ##Permissions
+
+    ExternalAccounts are visible only to the user that has ownership of them.
+
+    ## ExternalAccount Attributes
+
+    OSF ExternalAccount entities have the "external_accounts" `type`, with `id` indicating the
+    `external_account_id` according to the OSF
+
+        name            type        description
+        =====================================================================================================
+        display_name    string      Display name on the third-party service
+        profile_url     string      Link to users profile on third-party service *presence varies by service*
+        provider        string      short_name of third-party service provider
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+        self:  the canonical api endpoint of this external_account
+
+    #This Request/Response
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        CurrentUser,
+    )
+
+    required_read_scopes = [CoreScopes.USER_ADDON_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = AddonAccountSerializer
+    view_category = 'users'
+    view_name = 'user-external_account-detail'
+
+    def get_object(self):
+        user_settings = self.get_addon_settings()
+        account_id = self.kwargs['account_id']
+
+        account = ExternalAccount.load(account_id)
+        if not (account and account in user_settings.external_accounts):
+            raise NotFound('Requested addon unavailable')
+        return account
 
 
 class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin):

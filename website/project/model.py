@@ -1265,6 +1265,34 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         return False
 
+    def find_readable_antecedent(self, auth):
+        """ Returns first antecendant node readable by <user>.
+        """
+
+        next_parent = self.parent_node
+        while next_parent:
+            if next_parent.can_view(auth):
+                return next_parent
+            next_parent = next_parent.parent_node
+
+    def find_readable_descendants(self, auth):
+        """ Returns a generator of first descendant node(s) readable by <user>
+        in each descendant branch.
+        """
+        new_branches = []
+        for node in self.nodes:
+            if not node.primary or node.is_deleted:
+                continue
+
+            if node.can_view(auth):
+                yield node
+            else:
+                new_branches.append(node)
+
+        for bnode in new_branches:
+            for node in bnode.find_readable_descendants(auth):
+                yield node
+
     def has_addon_on_children(self, addon):
         """Checks if a given node has a specific addon on child nodes
             that are not registrations or deleted
@@ -2019,11 +2047,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             log_exception()
 
     @classmethod
-    def bulk_update_search(cls, nodes):
+    def bulk_update_search(cls, nodes, index=None):
         from website import search
         try:
-            serialize = functools.partial(search.search.update_node, bulk=True, async=False)
-            search.search.bulk_update_nodes(serialize, nodes)
+            serialize = functools.partial(search.search.update_node, index=index, bulk=True, async=False)
+            search.search.bulk_update_nodes(serialize, nodes, index=index)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()

@@ -83,7 +83,7 @@ def add_poster_by_email(conference, message):
             created.append(user)
             user.system_tags.append('osf4m')
             set_password_url = web_url_for(
-                'reset_password',
+                'reset_password_get',
                 verification_key=user.verification_key,
                 _absolute=True,
             )

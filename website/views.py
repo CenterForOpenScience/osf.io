@@ -1,34 +1,26 @@
 # -*- coding: utf-8 -*-
-import logging
 import itertools
+import httplib as http
+import logging
 import math
 import urllib
-import httplib as http
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from flask import request
 
-from framework import utils
-from framework import sentry
-from framework.auth.core import User
-from framework.flask import redirect  # VOL-aware redirect
-from framework.routing import proxy_url
-from framework.exceptions import HTTPError
-from framework.auth.forms import SignInForm
-from framework.forms import utils as form_utils
-from framework.auth.forms import RegistrationForm
-from framework.auth.forms import ResetPasswordForm
-from framework.auth.forms import ForgotPasswordForm
+from framework import utils, sentry
 from framework.auth.decorators import must_be_logged_in
-
+from framework.auth.forms import SignInForm, ResetPasswordForm, ForgotPasswordForm
+from framework.exceptions import HTTPError
+from framework.flask import redirect  # VOL-aware redirect
+from framework.forms import utils as form_utils
+from framework.routing import proxy_url
+from website.institutions.views import view_institution
 from website.models import Guid
 from website.models import Node, Institution
-from website.institutions.views import view_institution
-from website.util import sanitize
-from website.project import model
-from website.util import permissions
 from website.project import new_bookmark_collection
+from website.util import permissions
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +49,8 @@ def _render_node(node, auth=None):
         'category': node.category,
         'permissions': perm,  # A string, e.g. 'admin', or None,
         'archiving': node.archiving,
+        'is_retracted': node.is_retracted,
+        'is_registration': node.is_registration,
     }
 
 
@@ -131,56 +125,8 @@ def paginate(items, total, page, size):
     return paginated_items, pages
 
 
-@must_be_logged_in
-def watched_logs_get(**kwargs):
-    user = kwargs['auth'].user
-    try:
-        page = int(request.args.get('page', 0))
-    except ValueError:
-        raise HTTPError(http.BAD_REQUEST, data=dict(
-            message_long='Invalid value for "page".'
-        ))
-    try:
-        size = int(request.args.get('size', 10))
-    except ValueError:
-        raise HTTPError(http.BAD_REQUEST, data=dict(
-            message_long='Invalid value for "size".'
-        ))
-
-    total = sum(1 for x in user.get_recent_log_ids())
-    paginated_logs, pages = paginate(user.get_recent_log_ids(), total, page, size)
-    logs = (model.NodeLog.load(id) for id in paginated_logs)
-
-    return {
-        'logs': [serialize_log(log) for log in logs],
-        'total': total,
-        'pages': pages,
-        'page': page
-    }
-
-
-def serialize_log(node_log, auth=None, anonymous=False):
-    '''Return a dictionary representation of the log.'''
-    return {
-        'id': str(node_log._primary_key),
-        'user': node_log.user.serialize()
-        if isinstance(node_log.user, User)
-        else {'fullname': node_log.foreign_user},
-        'contributors': [node_log._render_log_contributor(c) for c in node_log.params.get('contributors', [])],
-        'action': node_log.action,
-        'params': sanitize.unescape_entities(node_log.params),
-        'date': utils.iso8601format(node_log.date),
-        'node': node_log.original_node.serialize(auth) if node_log.original_node else None,
-        'anonymous': anonymous
-    }
-
-
 def reproducibility():
     return redirect('/ezcuj/wiki')
-
-
-def registration_form():
-    return form_utils.jsonify(RegistrationForm(prefix='register'))
 
 
 def signin_form():
@@ -273,6 +219,7 @@ def redirect_getting_started(**kwargs):
 # Redirect to home page
 def redirect_to_home():
     return redirect('/')
+
 
 def redirect_to_cos_news(**kwargs):
     # Redirect to COS News page
