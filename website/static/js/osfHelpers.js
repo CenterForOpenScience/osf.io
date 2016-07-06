@@ -936,6 +936,5 @@ module.exports = window.$.osf = {
     trackClick: trackClick,
     findContribName: findContribName,
     extractContributorNamesFromAPIData: extractContributorNamesFromAPIData,
-    onScrollToBottom: onScrollToBottom,
-    valueProgressBar: valueProgressBar
+    onScrollToBottom: onScrollToBottom
 };

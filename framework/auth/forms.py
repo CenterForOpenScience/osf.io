@@ -119,7 +119,7 @@ confirm_password_field = PasswordField(
 )
 
 
-class SetEmailAndPasswordForm(Form):
+class ResetPasswordForm(Form):
     password = PasswordField('New Password',
         [
             validators.Required(message=u'Password is required'),
@@ -141,6 +141,8 @@ class SetEmailAndPasswordForm(Form):
         widget=BootstrapPasswordInput()
     )
 
+
+class SetEmailAndPasswordForm(ResetPasswordForm):
     token = HiddenField()
 
 class SignInForm(Form):

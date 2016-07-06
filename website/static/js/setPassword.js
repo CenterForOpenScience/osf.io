@@ -264,16 +264,6 @@ var ViewModel = function(passwordViewType, submitUrl, campaign, redirectUrl) {
 var SetPassword = function(selector, passwordViewType, submitUrl, campaign, redirectUrl) {
     this.viewModel = new ViewModel(passwordViewType, submitUrl, campaign, redirectUrl);
     $osf.applyBindings(this.viewModel, selector);
-            $(selector).keypress(
-                event => {
-                    // If the enter key is pressed to submit a form, check if the password is valid
-                    if (event.which === 13) {
-                        if (!this.viewModel.password.isValid()) {
-                            return false;
-                        }
-                    }
-                }
-        );
 };
 
 module.exports = SetPassword;
