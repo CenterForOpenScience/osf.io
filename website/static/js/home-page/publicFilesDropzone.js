@@ -70,15 +70,31 @@ var PublicFilesDropzone = {
                 var buttonContainer = document.createElement('div');
                 $('div.col-sm-6').append(buttonContainer);
                 var response = JSON.parse(file.xhr.response);
-                var link = 'http://localhost:5000/project/' + window.contextVars.publicFilesId + '/files/osfstorage' + response.path;
-                m.render(buttonContainer, dzPreviewTemplate.shareButton(link));
+                var guid = '';
+
+                $osf.ajaxJSON(
+                    'GET',
+                    $osf.apiV2Url('files' + response.path + '/'),
+                    {
+                        isCors: true
+                    }
+                ).done(function(response) {
+                    console.log(response['data']['attributes'])
+                    guid = response['data']['attributes']['guid'];
+                    var link = 'http://localhost:5000/'+ guid;
+                    m.render(buttonContainer, dzPreviewTemplate.shareButton(link));
+                    $('.logo-spin').remove();
+                    $('span.p-md').remove();
+                    $('span.button.close').css('visibility', 'hidden');
+                    file.previewElement.classList.add('dz-success');
+                    file.previewElement.classList.add('dz-preview-background-success');
+                }).fail(function(xhr) {
+                    console.log(xhr)
+                });
+
                 this.processQueue();
 
-                $('.logo-spin').remove();
-                $('span.p-md').remove();
-                $('span.button.close').css('visibility', 'hidden');
-                file.previewElement.classList.add('dz-success');
-                file.previewElement.classList.add('dz-preview-background-success');
+
                 $('div.dz-progress').remove();
 
                 if (this.getQueuedFiles().length === 0 && this.getUploadingFiles().length === 0) {
