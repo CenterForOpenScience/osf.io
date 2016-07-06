@@ -40,7 +40,7 @@ var BaseViewModel = oop.defclass({
     constructor: function () {
         var self = this;
         self.typedPassword = ko.observable('').extend({passwordChecking: true});
-        self.passwordFeedback = self.typesPassword.passwordFeedback;
+        self.passwordFeedback = self.typedPassword.passwordFeedback;
 
         self.passwordComplexityInfo = ko.computed(function() {
             return valueProgressBar[self.typedPassword.passwordComplexity()];
@@ -72,22 +72,6 @@ var BaseViewModel = oop.defclass({
             observable($.trim(observable()));
         };
 
-        /** Change the flashed message. */
-        self.changeMessage = function(message, className, timeout) {
-            self.flashMessage(message);
-            var cssClass = className || 'text-info';
-            self.flashMessageClass(cssClass);
-            if (timeout) {
-                setTimeout(
-                    function() {
-                        self.flashMessage('');
-                        self.flashMessageClass('');
-                    },
-                    timeout
-                );
-            }
-        };
-
         self.isValid = ko.computed(function() {
             return self.validatedFields.isValid();
         });
@@ -100,6 +84,21 @@ var BaseViewModel = oop.defclass({
      */
     getValidatedFields: function() {
         return {};
+    },
+    changeMessage: function(message, className, timeout) {
+        var self = this;
+        self.flashMessage(message);
+        var cssClass = className || 'text-info';
+        self.flashMessageClass(cssClass);
+        if (timeout) {
+            setTimeout(
+                function() {
+                    self.flashMessage('');
+                    self.flashMessageClass('');
+                },
+                timeout
+            );
+        }
     }
 });
 
@@ -242,9 +241,9 @@ var SignUpViewModel = oop.extend(BaseViewModel, {
             submitUrl,
             ko.toJS(self)
         ).done(
-            self.submitSuccess
+            self.submitSuccess.bind(self)
         ).fail(
-            self.submitError
+            self.submitError.bind(self)
         );
     },
 
