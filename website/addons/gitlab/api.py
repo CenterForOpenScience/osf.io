@@ -37,8 +37,7 @@ class GitLabClient(object):
     def repo(self, repo_id):
         """Get a single Github repo's info.
 
-        :param str user: GitLab user name
-        :param str repo: GitLab repo name
+        :param str repo_id: GitLab repository id
         :return: Dict of repo information
             See #TODO: link gitlab docs
         """
@@ -65,7 +64,7 @@ class GitLabClient(object):
         #)
 
     def create_repo(self, repo, **kwargs):
-        return self.gitlab.createproject({'name': repo})
+        return self.gitlab.createproject(repo)
 
     def branches(self, repo_id, branch=None):
         """List a repo's branches or get a single branch (in a list).

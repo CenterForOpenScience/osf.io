@@ -1,4 +1,4 @@
-<form role="form" id="addonSettings${addon_short_name.capitalize()}" data-addon="${addon_short_name}">
+<form role="form" id="addonSettingsGitLab" data-addon="${addon_short_name}">
 
     <div>
         <h4 class="addon-title">
@@ -91,7 +91,7 @@
     <script type="text/javascript">
         window.contextVars = $.extend({}, window.contextVars, {
             ## Short name never changes
-            'gitlabSettingsSelector': '#addonSettings${addon_short_name.capitalize()}'
+            'gitlabSettingsSelector': '#addonSettingsGitLab'
         });
     </script>
 </%def>
