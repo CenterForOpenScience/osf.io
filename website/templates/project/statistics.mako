@@ -19,7 +19,7 @@
 
     <div class="row m-lg">
       <div class="col-sm-12">
-        <form class="form-inline" id="updateStatsDates">
+        <form class="form-inline pull-right" id="updateStatsDates">
           <div class="form-group">
             <label for="startDatePicker">From</label>
             <input type="text" class="form-control" id="startDatePicker">
@@ -48,7 +48,7 @@
         <div class="col-sm-6">
           <div class="panel panel-default">
             <div class="panel-heading clearfix">
-              <h3 class="panel-title">Visits by server time</h3>
+              <h3 class="panel-title">Time of day of visits</h3>
             </div>
             <div id="serverTimeVisits" class="panel-body">
               <div class="text-center">
@@ -72,7 +72,7 @@
         <div class="col-sm-6">
             <div class="panel panel-default">
                 <div class="panel-heading clearfix">
-                    <h3 class="panel-title">Popular pages by visits</h3>
+                    <h3 class="panel-title">Popular pages</h3>
                 </div>
                 <div id="popularPages" class="panel-body">
                     <div class="text-center">
