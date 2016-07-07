@@ -3669,6 +3669,7 @@ class TestFileViews(OsfTestCase):
         self.project.save()
 
     def test_files_get(self):
+
         url = self.project.api_url_for('collect_file_trees')
         res = self.app.get(url, auth=self.user.auth)
         expected = _view_project(self.project, auth=Auth(user=self.user))
