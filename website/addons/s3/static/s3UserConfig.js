@@ -51,7 +51,7 @@ function ViewModel(url) {
                 externalAccount.secretKey = account.oauth_secret;
                 return externalAccount;
             }));
-            $('#s3-header').osfToggleHeight({height: 140});
+            $('#s3-header').osfToggleHeight({height: 150});
         }).fail(function(xhr, status, error) {
             self.changeMessage(language.userSettingsError, 'text-danger');
             Raven.captureMessage('Error while updating addon account', {
