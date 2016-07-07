@@ -14,6 +14,8 @@ import pytz
 from django.core.urlresolvers import reverse
 from django.core.validators import URLValidator
 
+from pymongo.errors import DuplicateKeyError
+
 from modularodm import Q
 from modularodm import fields
 from modularodm.validators import MaxLengthValidator
@@ -72,6 +74,16 @@ from website.project.sanctions import (
 
 logger = logging.getLogger(__name__)
 
+def disable_for_public_files_collection(func):
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+
+        if args[0].is_public_files_collection:
+            raise NodeStateError(func.__name__ + ' is forbidden for a public files collection')
+
+        return func(*args, **kwargs)
+
+    return wrapped
 
 def has_anonymous_link(node, auth):
     """check if the node is anonymous to the user
@@ -818,6 +830,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     # Project Organization
     is_bookmark_collection = fields.BooleanField(default=False, index=True)
+    is_public_files_collection = fields.BooleanField(default=False, index=True)
     is_collection = fields.BooleanField(default=False, index=True)
 
     is_deleted = fields.BooleanField(default=False, index=True)
@@ -1187,6 +1200,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         :param bool save: Save changes
         :raises: ValueError if user already has permission
         """
+
+        if self._is_loaded and self.is_public_files_collection:
+            raise NodeStateError('You cannot modify permissions for a public files node.')
+
         if user._id not in self.permissions:
             self.permissions[user._id] = [permission]
         else:
@@ -1196,6 +1213,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if save:
             self.save()
 
+    @disable_for_public_files_collection
     def remove_permission(self, user, permission, save=False):
         """Revoke permission from a user.
 
@@ -1211,6 +1229,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if save:
             self.save()
 
+    @disable_for_public_files_collection
     def clear_permission(self, user, save=False):
         """Clear all permissions for a user.
 
@@ -1229,6 +1248,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if save:
             self.save()
 
+    @disable_for_public_files_collection
     def set_permissions(self, user, permissions, save=False):
         self.permissions[user._id] = permissions
         if save:
@@ -1308,6 +1328,26 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 return True
 
         return False
+
+    def merge_public_files(self, node):
+
+        if not self.is_public_files_collection:
+            raise NodeStateError('must be Public Files collection to merge')
+
+        from website.files.models.osfstorage import OsfStorageFile
+
+        primaryUserFiles = OsfStorageFile.find(Q('node', 'eq', self) & Q('title', 'ne', 'Public Files'))
+        mergedUserFiles = OsfStorageFile.find(Q('node', 'eq', node) & Q('title', 'ne', 'Public Files'))
+
+        #check
+        matches = [primUserFile for mergUserFiles, primUserFile in zip(mergedUserFiles, primaryUserFiles) if primUserFile.name == mergUserFiles.name]
+        if matches:
+            raise DuplicateKeyError
+
+        for child in OsfStorageFile.find(Q('node', 'eq', node) & Q('title', 'ne', 'Public Files')):
+            child.move_under(self.get_addon('osfstorage').get_root())
+
+        self.save()
 
     def get_permissions(self, user):
         """Get list of permissions for user.
@@ -1715,6 +1755,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     # Pointers #
     ############
 
+    @disable_for_public_files_collection
     def add_pointer(self, node, auth, save=True):
         """Add a pointer to a node.
 
@@ -1981,6 +2022,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         """
         return self.logs.sort('-date')[:n]
 
+    @disable_for_public_files_collection
     def set_title(self, title, auth, save=False):
         """Set the title of this Node and log it.
 
@@ -2074,6 +2116,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         for child in self.nodes_primary:
             child.delete_registration_tree(save=save)
 
+    @disable_for_public_files_collection
     def remove_node(self, auth, date=None):
         """Marks a node as deleted.
 
@@ -2139,6 +2182,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         return True
 
+    @disable_for_public_files_collection
     def fork_node(self, auth, title=None):
         """Recursively fork a node.
 
@@ -2249,6 +2293,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         return forked
 
+    @disable_for_public_files_collection
     def register_node(self, schema, auth, data, parent=None):
         """Make a frozen copy of a node.
 
@@ -2338,6 +2383,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         return registered
 
+    @disable_for_public_files_collection
     def remove_tag(self, tag, auth, save=True):
         if not tag:
             raise InvalidTagError
@@ -2359,6 +2405,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 self.save()
             return True
 
+    @disable_for_public_files_collection
     def add_tag(self, tag, auth, save=True, log=True):
         if not isinstance(tag, Tag):
             tag_instance = Tag.load(tag)
@@ -2385,6 +2432,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             if save:
                 self.save()
 
+    @disable_for_public_files_collection
     def add_citation(self, auth, save=False, log=True, citation=None, **kwargs):
         if not citation:
             citation = AlternativeCitation(**kwargs)
@@ -2405,6 +2453,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 self.save()
         return citation
 
+    @disable_for_public_files_collection
     def edit_citation(self, auth, instance, save=False, log=True, **kwargs):
         citation = {'name': instance.name, 'text': instance.text}
         new_name = kwargs.get('name', instance.name)
@@ -2430,6 +2479,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             self.save()
         return instance
 
+    @disable_for_public_files_collection
     def remove_citation(self, auth, instance, save=False, log=True):
         citation = {'name': instance.name, 'text': instance.text}
         self.alternative_citations.remove(instance)
@@ -2766,6 +2816,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 return True
         return False
 
+    @disable_for_public_files_collection
     def remove_contributor(self, contributor, auth, log=True):
         """Remove a contributor from this node.
 
@@ -2819,6 +2870,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         return True
 
+    @disable_for_public_files_collection
     def remove_contributors(self, contributors, auth=None, log=True, save=False):
 
         results = []
@@ -2988,6 +3040,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             if to_remove or permissions_changed and ['read'] in permissions_changed.values():
                 project_signals.write_permissions_revoked.send(self)
 
+    @disable_for_public_files_collection
     def add_contributor(self, contributor, permissions=None, visible=True,
                         auth=None, log=True, save=False):
         """Add a contributor to the project.
@@ -3122,6 +3175,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         self.save()
         return contributor
 
+    @disable_for_public_files_collection
     def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False):
         """Set the permissions for this node. Also, based on meeting_creation, queues an email to user about abilities of
             public projects.

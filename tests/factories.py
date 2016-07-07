@@ -185,6 +185,11 @@ class AbstractNodeFactory(ModularOdmFactory):
 class ProjectFactory(AbstractNodeFactory):
     category = 'project'
 
+class PublicFilesFactory(AbstractNodeFactory):
+    title = "Public Files"
+    category ='project'
+    is_public = True
+    is_public_files_collection = True
 
 class CollectionFactory(ProjectFactory):
     is_collection = True

@@ -1,6 +1,7 @@
 'use strict';
 var ko = require('knockout');
 var $ = require('jquery');
+var m = require('mithril');
 require('jquery-blockui');
 var Raven = require('raven-js');
 var moment = require('moment');
@@ -28,6 +29,26 @@ var growl = function(title, message, type, delay) {
     new GrowlBox(title, message, type || 'danger', delay);
 };
 
+var softGrowl = function(icon, message, type) {
+
+    $.growl({
+        message: message,
+        icon: icon
+        }, {
+        type: type,
+        allow_dismiss: false,
+        mouse_over: 'pause',
+        placement: {
+            from: 'top',
+            align: 'center'
+        },
+        animate: {
+            enter: 'animated fadeInDown',
+            exit: 'animated fadeOut'
+        }
+    });
+
+};
 
 /**
  * Generate OSF absolute URLs, including prefix and arguments. Assumes access to mako globals for pieces of URL.
@@ -767,9 +788,9 @@ var any = function(listOfBools, check) {
     return false;
 };
 
-/** 
+/**
  * A helper for creating a style-guide conformant bootbox modal. Returns a promise.
- * @param {String} title: 
+ * @param {String} title:
  * @param {String} message:
  * @param {String} actionButtonLabel:
  * @param {Object} options: optional options
@@ -895,6 +916,14 @@ function onScrollToBottom(element, callback) {
     });
 }
 
+// Mithril elements converted to HTML string, example m('div', 'hello world') returns '<div>hello world</div>', for
+// readablity of templates that only take strings as parameter
+function mithrilToStr(element) {
+    var tmp = document.createElement('div');
+    var el = m.render(tmp, element);
+    return tmp.innerHTML;
+}
+
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
@@ -908,6 +937,7 @@ module.exports = window.$.osf = {
     block: block,
     unblock: unblock,
     growl: growl,
+    softGrowl: softGrowl,
     apiV2Url: apiV2Url,
     joinPrompts: joinPrompts,
     mapByProperty: mapByProperty,
@@ -934,6 +964,7 @@ module.exports = window.$.osf = {
     contribNameFormat: contribNameFormat,
     trackClick: trackClick,
     findContribName: findContribName,
+    onScrollToBottom: onScrollToBottom,
+    mithrilToStr:mithrilToStr,
     extractContributorNamesFromAPIData: extractContributorNamesFromAPIData,
-    onScrollToBottom: onScrollToBottom
 };
