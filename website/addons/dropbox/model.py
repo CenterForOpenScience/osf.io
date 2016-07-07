@@ -117,12 +117,6 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     folder = fields.StringField(default=None)
 
-    #: Information saved at the time of registration
-    #: Note: This is unused right now
-    registration_data = fields.DictionaryField()
-
-    _folder_data = None
-
     _api = None
 
     @property
@@ -138,7 +132,7 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     @property
     def folder_name(self):
-        return os.path.split(self.folder or '')[1]
+        return os.path.split(self.folder or '')[1] or '/ (Full Dropbox)' if self.folder else None
 
     @property
     def folder_path(self):
@@ -152,7 +146,7 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.folder = None
 
     def fetch_folder_name(self):
-        return self.folder
+        return self.folder_name
 
     def get_folders(self, **kwargs):
         folder_id = kwargs.get('folder_id')
@@ -213,11 +207,6 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         # Add log to node
         self.nodelogger.log(action='folder_selected', save=True)
 
-    # TODO: Is this used? If not, remove this and perhaps remove the 'deleted' field
-    def delete(self, save=True):
-        self.deauthorize(add_log=False)
-        super(DropboxNodeSettings, self).delete(save)
-
     def deauthorize(self, auth=None, add_log=True):
         """Remove user authorization from this node and log the event."""
         folder = self.folder
@@ -260,114 +249,10 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         return u'<DropboxNodeSettings(node_id={self.owner._primary_key!r})>'.format(self=self)
 
     ##### Callback overrides #####
-
-    def before_register_message(self, node, user):
-        """Return warning text to display if user auth will be copied to a
-        registration.
-        """
-        category = node.project_or_component
-        if self.user_settings and self.user_settings.has_auth:
-            return (
-                u'The contents of Dropbox add-ons cannot be registered at this time; '
-                u'the Dropbox folder linked to this {category} will not be included '
-                u'as part of this registration.'
-            ).format(category=markupsafe.escape(category))
-
-    # backwards compatibility
-    before_register = before_register_message
-
-    def before_remove_contributor_message(self, node, removed):
-        """Return warning text to display if removed contributor is the user
-        who authorized the Dropbox addon
-        """
-        if self.user_settings and self.user_settings.owner == removed:
-            category = node.project_or_component
-            name = removed.fullname
-            return (u'The Dropbox add-on for this {category} is authenticated by {name}. '
-                    u'Removing this user will also remove write access to Dropbox '
-                    u'unless another contributor re-authenticates the add-on.'
-                    ).format(category=markupsafe.escape(category),
-                             name=markupsafe.escape(name))
-
-    # backwards compatibility
-    before_remove_contributor = before_remove_contributor_message
-
-    # Note: Registering Dropbox content is disabled for now; leaving this code
-    # here in case we enable registrations later on.
-    # @jmcarp
-    # def after_register(self, node, registration, user, save=True):
-    #     """After registering a node, copy the user settings and save the
-    #     chosen folder.
-    #
-    #     :return: A tuple of the form (cloned_settings, message)
-    #     """
-    #     clone, message = super(DropboxNodeSettings, self).after_register(
-    #         node, registration, user, save=False
-    #     )
-    #     # Copy user_settings and add registration data
-    #     if self.has_auth and self.folder is not None:
-    #         clone.user_settings = self.user_settings
-    #         clone.registration_data['folder'] = self.folder
-    #     if save:
-    #         clone.save()
-    #     return clone, message
-
-    def after_fork(self, node, fork, user, save=True):
-        """After forking, copy user settings if the user is the one who authorized
-        the addon.
-
-        :return: A tuple of the form (cloned_settings, message)
-        """
-        clone, _ = super(DropboxNodeSettings, self).after_fork(
-            node=node, fork=fork, user=user, save=False
-        )
-
-        if self.user_settings and self.user_settings.owner == user:
-            clone.user_settings = self.user_settings
-            message = (
-                'Dropbox authorization copied to forked {cat}.'
-            ).format(
-                cat=markupsafe.escape(fork.project_or_component)
-            )
-        else:
-            message = (
-                u'Dropbox authorization not copied to forked {cat}. You may '
-                u'authorize this fork on the <u><a href="{url}">Settings</a></u> '
-                u'page.'
-            ).format(
-                url=fork.web_url_for('node_setting'),
-                cat=markupsafe.escape(fork.project_or_component)
-            )
-        if save:
-            clone.save()
-        return clone, message
-
-    def after_remove_contributor(self, node, removed, auth=None):
-        """If the removed contributor was the user who authorized the Dropbox
-        addon, remove the auth credentials from this node.
-        Return the message text that will be displayed to the user.
-        """
-        if self.user_settings and self.user_settings.owner == removed:
-            self.user_settings = None
-            self.save()
-
-            message = (
-                u'Because the Dropbox add-on for {category} "{title}" was authenticated '
-                u'by {user}, authentication information has been deleted.'
-            ).format(
-                category=markupsafe.escape(node.category_display),
-                title=markupsafe.escape(node.title),
-                user=markupsafe.escape(removed.fullname)
-            )
-
-            if not auth or auth.user != removed:
-                url = node.web_url_for('node_setting')
-                message += (
-                    u' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
-                ).format(url=url)
-            #
-            return message
-
     def after_delete(self, node, user):
         self.deauthorize(Auth(user=user), add_log=True)
+        self.save()
+
+    def on_delete(self):
+        self.deauthorize(add_log=False)
         self.save()
