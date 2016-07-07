@@ -29,15 +29,9 @@ class TestAuthViews(BoxAddonTestCase, testing.views.OAuthAddonAuthViewsTestCaseM
         self.mock_refresh = mock.patch("website.addons.box.model.Box.refresh_oauth_key")
         self.mock_refresh.return_value = True
         self.mock_refresh.start()
-        self.mock_update_data = mock.patch.object(
-            BoxNodeSettings,
-            '_update_folder_data'
-        )
-        self.mock_update_data.start()
         super(TestAuthViews, self).setUp()
 
     def tearDown(self):
-        self.mock_update_data.stop()
         self.mock_refresh.stop()
         super(TestAuthViews, self).tearDown()
 
@@ -59,25 +53,21 @@ class TestConfigViews(BoxAddonTestCase, testing.views.OAuthAddonConfigViewsTestC
     client = mock_client
 
     def setUp(self):
-        self.mock_update_data = mock.patch.object(
+        self.mock_data = mock.patch.object(
             BoxNodeSettings,
-            '_update_folder_data'
+            '_folder_data',
+            return_value=(self.folder['id'], self.folder['path'])
         )
-        self.mock_update_data.start()
+        self.mock_data.start()
         super(TestConfigViews, self).setUp()
 
     def tearDown(self):
-        self.mock_update_data.stop()
+        self.mock_data.stop()
         super(TestConfigViews, self).tearDown()
 
     @mock.patch.object(BoxSerializer, 'credentials_are_valid', return_value=True)
     def test_import_auth(self, *args):
         super(TestConfigViews, self).test_import_auth()
-
-    @mock.patch.object(BoxNodeSettings, 'fetch_full_folder_path', return_value='/Foo')
-    def test_get_config(self, mock_update_folder_data):
-        super(TestConfigViews, self).test_get_config()
-
 
 class TestFilebrowserViews(BoxAddonTestCase):
 
@@ -86,15 +76,11 @@ class TestFilebrowserViews(BoxAddonTestCase):
         self.user.add_addon('box')
         self.node_settings.external_account = self.user_settings.external_accounts[0]
         self.node_settings.save()
-        self.patcher_fetch = mock.patch('website.addons.box.model.BoxNodeSettings.fetch_folder_name')
-        self.patcher_fetch.return_value = 'Camera Uploads'
-        self.patcher_fetch.start()
         self.patcher_refresh = mock.patch('website.addons.box.model.Box.refresh_oauth_key')
         self.patcher_refresh.return_value = True
         self.patcher_refresh.start()
 
     def tearDown(self):
-        self.patcher_fetch.stop()
         self.patcher_refresh.stop()
 
     def test_box_list_folders(self):
