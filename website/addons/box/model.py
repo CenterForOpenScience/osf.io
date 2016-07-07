@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
+import httplib as http
 import logging
+import os
 
 from box import CredentialsV2, BoxClient
 from box.client import BoxClientException
 from modularodm import fields
 import requests
+from urllib3.exceptions import MaxRetryError
 
 from framework.auth import Auth
 from framework.exceptions import HTTPError
@@ -12,6 +15,7 @@ from framework.exceptions import HTTPError
 from website.addons.base import exceptions
 from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase
 from website.addons.base import StorageAddonBase
+from website.util import api_v2_url
 
 from website.addons.box import settings
 from website.addons.box.serializer import BoxSerializer
@@ -127,6 +131,64 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 + [self._folder_data['name']]
             )
             self.save()
+
+    def get_folders(self, **kwargs):
+        folder_id = kwargs.get('folder_id')
+        if folder_id is None:
+            return [{
+                'id': '0',
+                'path': 'All Files',
+                'addon': 'box',
+                'kind': 'folder',
+                'name': '/ (Full Box)',
+                'urls': {
+                    # 'folders': node.api_url_for('box_folder_list', folderId=0),
+                    'folders': api_v2_url('nodes/{}/addons/box/folders/'.format(self.owner._id),
+                        params={'id': '0'}
+                    )
+                }
+            }]
+
+        try:
+            Box(self.external_account).refresh_oauth_key()
+            client = BoxClient(self.external_account.oauth_key)
+        except BoxClientException:
+            raise HTTPError(http.FORBIDDEN)
+
+        try:
+            metadata = client.get_folder(folder_id)
+        except BoxClientException:
+            raise HTTPError(http.NOT_FOUND)
+        except MaxRetryError:
+            raise HTTPError(http.BAD_REQUEST)
+
+        # Raise error if folder was deleted
+        if metadata.get('is_deleted'):
+            raise HTTPError(http.NOT_FOUND)
+
+        folder_path = '/'.join(
+            [
+                x['name']
+                for x in metadata['path_collection']['entries']
+            ] + [metadata['name']]
+        )
+
+        return [
+            {
+                'addon': 'box',
+                'kind': 'folder',
+                'id': item['id'],
+                'name': item['name'],
+                'path': os.path.join(folder_path, item['name']),
+                'urls': {
+                    'folders': api_v2_url('nodes/{}/addons/box/folders/'.format(self.owner._id),
+                        params={'id': item['id']}
+                    )
+                }
+            }
+            for item in metadata['item_collection']['entries']
+            if item['type'] == 'folder'
+        ]
 
     def set_folder(self, folder_id, auth):
         self.folder_id = str(folder_id)
