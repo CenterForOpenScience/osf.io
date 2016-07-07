@@ -1,4 +1,5 @@
 from .common import *
+from .categories import *
 from .groups import *
 
 from website import settings
@@ -70,6 +71,7 @@ def create_topic(node):
     data['raw'] = _make_topic_content(node)
     data['parent_guids[]'] = _get_parent_guids(node)
     data['topic_guid'] = node.guid_id
+    data['category'] = {'wiki': wiki_category, 'files': file_category, 'nodes': project_category}[node.target_type]
 
     result = request('post', '/posts', data)
 
@@ -88,13 +90,14 @@ def update_topic_content(node):
     data['post[raw]'] = _make_topic_content(node)
     return request('put', '/posts/' + str(node.discourse_post_id), data)
 
-def update_topic_title(node):
+def update_topic_metadata(node):
     if node.discourse_topic_id is None:
         return
 
     data = {}
     data['title'] = node.label
     data['parent_guids[]'] = _get_parent_guids(node)
+    data['category_id'] = {'wiki': wiki_category, 'files': file_category, 'nodes': project_category}[node.target_type]
     return request('put', '/t/' + node.guid_id + '/' + str(node.discourse_topic_id), data)
 
 def get_or_create_topic_id(node):

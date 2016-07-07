@@ -1810,6 +1810,8 @@ DISCOURSE_SERVER_URL = 'http://192.168.99.100'
 DISCOURSE_API_KEY = 'changeme'
 DISCOURSE_API_ADMIN_USER = 'changeme'
 
+DISCOURSE_CATEGORY_COLORS = ['BF1E2E', '3AB54A', '652D90']
+
 DISCOURSE_SERVER_SETTINGS = {'title': 'Open Science Framework',
                              'site_description': 'A scholarly commons to connect the entire research cycle',
                              'contact_email': 'changeme',

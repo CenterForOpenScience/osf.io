@@ -14,7 +14,7 @@ def sync_project(project_node):
     sync_group(project_node)
 
     if project_node.discourse_topic_id:
-        update_topic_title(project_node)
+        update_topic_metadata(project_node)
         update_topic_content(project_node)
 
 def delete_project(project_node):
