@@ -137,7 +137,7 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         if folder_id is None:
             return [{
                 'id': '0',
-                'path': 'All Files',
+                'path': '/',
                 'addon': 'box',
                 'kind': 'folder',
                 'name': '/ (Full Box)',
