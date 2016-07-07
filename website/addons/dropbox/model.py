@@ -7,6 +7,7 @@ from dropbox.client import DropboxOAuth2Flow, DropboxClient
 from dropbox.rest import ErrorResponse
 from flask import request
 import markupsafe
+from urllib3.exceptions import MaxRetryError
 
 from modularodm import fields
 
@@ -14,7 +15,7 @@ from framework.auth import Auth
 from framework.exceptions import HTTPError
 from framework.sessions import session
 
-from website.util import web_url_for
+from website.util import web_url_for, api_v2_url
 from website.addons.base import exceptions
 from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase
 from website.addons.base import StorageAddonBase
@@ -152,6 +153,60 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     def fetch_folder_name(self):
         return self.folder
+
+    def get_folders(self, **kwargs):
+        folder_id = kwargs.get('folder_id')
+        if folder_id is None:
+            return [{
+                'id': '/',
+                'path': '/',
+                'kind': 'folder',
+                'name': '/ (Full Dropbox)',
+                'urls': {
+                    'folders': api_v2_url('nodes/{}/addons/dropbox/folders/'.format(self.owner._id),
+                        params={'id': '/'}
+                    )
+                }
+            }]
+
+        client = DropboxClient(self.external_account.oauth_key)
+        file_not_found = HTTPError(http.NOT_FOUND, data={
+            'message_short': 'File not found',
+            'message_long': 'The Dropbox file you requested could not be found.'
+        })
+
+        max_retry_error = HTTPError(http.REQUEST_TIMEOUT, data={
+            'message_short': 'Request Timeout',
+            'message_long': 'Dropbox could not be reached at this time.'
+        })
+
+        try:
+            metadata = client.metadata(folder_id)
+        except ErrorResponse:
+            raise file_not_found
+        except MaxRetryError:
+            raise max_retry_error
+
+        # Raise error if folder was deleted
+        if metadata.get('is_deleted'):
+            raise file_not_found
+
+        return [
+            {
+                'addon': 'dropbox',
+                'kind': 'folder',
+                'id': item['path'],
+                'name': item['path'].split('/')[-1],
+                'path': item['path'],
+                'urls': {
+                    'folders': api_v2_url('nodes/{}/addons/box/folders/'.format(self.owner._id),
+                        params={'id': item['path']}
+                    )
+                }
+            }
+            for item in metadata['contents']
+            if item['is_dir']
+        ]
 
     def set_folder(self, folder, auth):
         self.folder = folder
