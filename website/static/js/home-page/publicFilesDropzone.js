@@ -79,7 +79,7 @@ var PublicFilesDropzone = {
                         isCors: true
                     }
                 ).done(function(response) {
-                    guid = response['data']['attributes']['guid'];
+                    guid = response.data.attributes.guid;
                     var link = 'http://localhost:5000/'+ guid;
                     m.render(buttonContainer, dzPreviewTemplate.shareButton(link));
                     $('.logo-spin').remove();
@@ -87,8 +87,9 @@ var PublicFilesDropzone = {
                     $('span.button.close').css('visibility', 'hidden');
                     file.previewElement.classList.add('dz-success');
                     file.previewElement.classList.add('dz-preview-background-success');
-                }).fail(function(xhr) {
-                    console.log(xhr)
+                }).fail(function(xhr, error) {
+                    console.log(xhr);
+                    console.log(error);
                 });
 
                 this.processQueue();
