@@ -11,8 +11,7 @@ module.exports = function(environment) {
         authorizationType: 'cookie',
         'ember-simple-auth': {
             authorizer: 'authorizer:osf-cookie',
-            authenticator: 'authenticator:osf-cookie',
-            authenticationRoute: 'cookielogin'
+            authenticator: 'authenticator:osf-cookie'
         },
         i18n: {
             defaultLocale: 'en-US'
