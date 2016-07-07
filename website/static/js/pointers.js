@@ -77,8 +77,12 @@ var AddPointerViewModel = oop.extend(Paginator, {
                     self.errorMsg('No results found.');
                 } else {
                     result.nodes.forEach(function(each) {
-                        each.dateCreated = new osfHelpers.FormattableDate(each.dateCreated);
-                        each.dateModified = new osfHelpers.FormattableDate(each.dateModified);
+                        if (each.isRegistration) {
+                            each.dateRegistered = new osfHelpers.FormattableDate(each.dateRegistered);
+                        } else {
+                            each.dateCreated = new osfHelpers.FormattableDate(each.dateCreated);
+                            each.dateModified = new osfHelpers.FormattableDate(each.dateModified);
+                        }
                     });
                 }
                 self.results(result.nodes);
@@ -100,16 +104,24 @@ var AddPointerViewModel = oop.extend(Paginator, {
             self.searchMyProjectsSubmitText(SEARCH_MY_PROJECTS_SUBMIT_TEXT);
         }
     },
-    addTips: function(elements) {
+    addTips: function(elements, data) {
         elements.forEach(function(element) {
-            $(element).find('.contrib-button').tooltip();
+            var titleText = '';
+            if (data.isRegistration) {
+                titleText = 'Registered: ' + data.dateRegistered.local;
+            } else {
+                titleText = 'Created: ' + data.dateCreated.local + '\nModified: ' + data.dateModified.local;
+            }
+            $(element).tooltip({
+                title: titleText
+            });
         });
     },
     add: function(data) {
         this.selection.push(data);
         // Hack: Hide and refresh tooltips
         $('.tooltip').hide();
-        $('.contrib-button').tooltip();
+        $('.pointer-row').tooltip();
     },
     remove: function(data) {
         var self = this;
@@ -118,7 +130,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
         );
         // Hack: Hide and refresh tooltips
         $('.tooltip').hide();
-        $('.contrib-button').tooltip();
+        $('.pointer-row').tooltip();
     },
     addAll: function() {
         var self = this;

@@ -47,7 +47,7 @@
                         <div class="error" data-bind="text:errorMsg"></div>
                         <table class="table table-striped">
                             <tbody data-bind="foreach:{data:results, afterRender:addTips}">
-                                <tr data-bind="if:!($root.selected($data)), tooltip: {title: 'Created: ' + $data.dateCreated.local + '\nModified: ' + $data.dateModified.local}">
+                                <tr class="pointer-row" data-bind="if:!($root.selected($data))">
                                     <td class="osf-icon-td">
                                         <a
                                                 class="btn btn-success contrib-button"
@@ -82,7 +82,7 @@
                         </div>
                         <table class="table table-striped">
                             <tbody data-bind="foreach:{data:selection, afterRender:addTips}">
-                                <tr data-bind="tooltip: {title: 'Created: ' + $data.dateCreated.local + '\nModified: ' + $data.dateModified.local}">
+                                <tr class="pointer-row">
                                     <td class="osf-icon-td">
                                         <a
                                                 class="btn btn-default contrib-button"
