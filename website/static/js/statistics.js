@@ -6,7 +6,7 @@ var $osf = require('js/osfHelpers');
 var keenDataviz = require('keen-dataviz');
 var keenAnalysis = require('keen-analysis');
 
-var ProjectUsageStatistics = function(){
+var ProjectUsageStatistics = function(keenProjectId, keenReadKey){
     var self = this;
 
     /**
@@ -16,8 +16,8 @@ var ProjectUsageStatistics = function(){
     * @type {keenAnalysis}
     */
     self.keenClient = new keenAnalysis({
-        projectId: window.contextVars.keen.public.projectId,
-        readKey : window.contextVars.keen.public.readKey,
+        projectId: keenProjectId,
+        readKey : keenReadKey,
     });
 
     // hide non-integer labels on charts for counts
@@ -160,7 +160,7 @@ var ProjectUsageStatistics = function(){
     };
 
     // most popular sub-pages of this project
-    self.popularPages = function(elem, startDate, endDate) {
+    self.popularPages = function(elem, startDate, endDate, nodeTitle) {
         var query = {
             type: 'count_unique',
             params: {
@@ -196,9 +196,9 @@ var ProjectUsageStatistics = function(){
             this.dataset.updateColumn(0, function(value, index, column) {
                 var title = value.replace(/^OSF \| /, '');
                 // Strip off the project title, if present at beginning of string
-                if (title.startsWith(window.contextVars.node.title)) {
+                if (title.startsWith(nodeTitle)) {
                     // strip off first N chars where N is project title length + 1 space
-                    var pageTitleIndex = window.contextVars.node.title.length + 1;
+                    var pageTitleIndex = nodeTitle.length + 1;
                     title = title.slice(pageTitleIndex);
                 }
                 return title || 'Home';

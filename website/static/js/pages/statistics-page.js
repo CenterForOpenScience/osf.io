@@ -24,7 +24,7 @@ keenAnalysis.ready(function(){
     function drawAllCharts(statsStartDate, statsEndDate) {
         projectUsageStats.visitsByDay('#visits', startDate, endDate);
         projectUsageStats.topReferrers('#topReferrers', startDate, endDate);
-        projectUsageStats.popularPages('#popularPages', startDate, endDate);
+        projectUsageStats.popularPages('#popularPages', startDate, endDate, window.contextVars.node.title);
         projectUsageStats.visitsServerTime('#serverTimeVisits', startDate, endDate);
     }
 
@@ -85,7 +85,10 @@ keenAnalysis.ready(function(){
     updateStartDate();
     updateEndDate();
 
-    var projectUsageStats = new ProjectUsageStatistics();
+    var projectUsageStats = new ProjectUsageStatistics(
+        window.contextVars.keen.public.projectId,
+        window.contextVars.keen.public.readKey
+    );
     drawAllCharts(startDate, endDate);
 
     $('#updateStatsDates').on('submit', function() {
