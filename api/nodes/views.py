@@ -646,7 +646,7 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView
     def get_queryset(self):
-        queryset = self.get_queryset_from_request()
+        queryset = self.get_default_queryset()
 
         # If bulk request, queryset only contains contributors in request
         if is_bulk_request(self.request):
