@@ -2,9 +2,13 @@
     margin: 3px 20px;
 }
 
-.share-buttons a {
+.share-buttons a, .share-buttons a:hover {
     padding: 0px 2px;
     display: inline-block;
+    width: 35px;
+    text-align: center;
+    margin: 0 2px;
+    background-color: #EAEAEA;
 }
 
 .share-buttons .fa {
@@ -25,13 +29,4 @@
     min-width: 0px;
     white-space: nowrap;
     background-color: #f8f8f8;
-}
-
-#shareDropdown .dropdown-menu a:hover {
-    background-image: none;
-    background-color: #f8f8f8;
-}
-
-#shareContentHolder {
-    display: none;
 }

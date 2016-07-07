@@ -280,25 +280,9 @@ $(document).ready(function () {
         });
     }
 
-    if (window.contextVars.node.isRegistration && window.contextVars.node.tags.length === 0) {
-        $('div.tags').remove();
-    }
-    $('a.btn').mouseup(function(){
-        $(this).blur();
-    });
-
     if (window.contextVars.node.isPublic) {
         m.mount(document.getElementById('shareDropdown'),
                 m.component(SocialShare.ShareDropdown,
-                    {file_name: window.contextVars.node.title, share_url: window.location.href}));
-
-        // Make sure the drop down share menu is not obscured
-        // by the tool tip when users are not logged-in
-        $('#shareDropdown').on('mouseenter focusin', function() {
-            return false;
-        });
-        $('#shareDropdown').on('mouseover', function() {
-            $('.tooltip').tooltip('hide');
-        });
+                    {title: window.contextVars.node.title, url: window.location.href}));
     }
 });

@@ -59,7 +59,7 @@ var SharePopover =  {
                                 CopyButton.view(ctrl, {link: link, height: copyButtonHeight}), //workaround to allow button to show up on first click
                                 m('input.form-control[readonly][type="text"][value="'+ link +'"]')
                             ]),
-                            SocialShare.ShareButtons.view(ctrl, {file_name: window.contextVars.file.name, share_url: link})
+                            SocialShare.ShareButtons.view(ctrl, {title: window.contextVars.file.name, url: link})
                         ]),
                         m('.tab-pane#embed', [
                             m('p', 'Dynamically render iframe with JavaScript'),
