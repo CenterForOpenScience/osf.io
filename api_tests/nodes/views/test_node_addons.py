@@ -667,8 +667,14 @@ class TestNodeBoxAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
     AccountFactory = BoxAccountFactory
     NodeSettingsFactory = BoxNodeSettingsFactory
 
-    def test_settings_detail_PUT_all_sets_settings(self):
-        with mock.patch.object(self.node_settings.__class__, '_update_folder_data') as mock_update:
+    @mock.patch('website.addons.box.model.BoxClient.get_folder')
+    def test_settings_detail_PUT_all_sets_settings(self, mock_get):
+        mock_get.return_value = {
+            'id': self._mock_folder_info['folder_id'],
+            'name': 'FAKEFOLDERNAME',
+            'path_collection': {'entries': {}}
+        }
+        with mock.patch('website.addons.box.model.Box.refresh_oauth_key') as mock_update:
             super(TestNodeBoxAddon, self).test_settings_detail_PUT_all_sets_settings()
 
 
