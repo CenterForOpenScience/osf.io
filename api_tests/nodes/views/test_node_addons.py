@@ -18,6 +18,13 @@ from website.addons.mendeley.tests.factories import MendeleyAccountFactory, Mend
 from website.addons.s3.tests.factories import S3AccountFactory, S3NodeSettingsFactory
 from website.addons.zotero.tests.factories import ZoteroAccountFactory, ZoteroNodeSettingsFactory
 
+# Varies between addons. Some need to make a call to get the root,
+# 'FAKEROOTID' should be the result of a mocked call in that case.
+VALID_ROOT_FOLDER_IDS = (
+    '/',
+    '0',
+    'FAKEROOTID',
+)
 
 class NodeAddonListMixin(object):
     def set_setting_list_url(self):
@@ -452,7 +459,7 @@ class NodeAddonFolderMixin(object):
         )
 
     def test_folder_list_GET_expected_behavior(self):
-        wrong_type = self.short_name != 'googledrive'
+        wrong_type = self.short_name not in ('googledrive', 'box', 'dropbox', )
         res = self.app.get(
             self.folder_url,
             auth=self.user.auth,
@@ -460,10 +467,10 @@ class NodeAddonFolderMixin(object):
 
         if not wrong_type:
             addon_data = res.json['data'][0]['attributes']
-            assert_equal(addon_data['path'], '/')
             assert_equal(addon_data['kind'], 'folder')
-            assert_equal(addon_data['name'], '/ (Full Google Drive)')
-            assert_equal(addon_data['folder_id'], 'FAKEROOTID')
+            assert '/ (Full ' in addon_data['name']
+            assert_equal(addon_data['path'], '/')
+            assert addon_data['folder_id'] in VALID_ROOT_FOLDER_IDS
         if wrong_type:
             assert_in(res.status_code, [404, 501])
 

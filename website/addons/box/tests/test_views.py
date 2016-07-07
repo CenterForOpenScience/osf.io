@@ -89,7 +89,7 @@ class TestFilebrowserViews(BoxAddonTestCase):
         self.patcher_fetch = mock.patch('website.addons.box.model.BoxNodeSettings.fetch_folder_name')
         self.patcher_fetch.return_value = 'Camera Uploads'
         self.patcher_fetch.start()
-        self.patcher_refresh = mock.patch('website.addons.box.views.Box.refresh_oauth_key')
+        self.patcher_refresh = mock.patch('website.addons.box.model.Box.refresh_oauth_key')
         self.patcher_refresh.return_value = True
         self.patcher_refresh.start()
 
@@ -98,8 +98,8 @@ class TestFilebrowserViews(BoxAddonTestCase):
         self.patcher_refresh.stop()
 
     def test_box_list_folders(self):
-        with patch_client('website.addons.box.views.BoxClient'):
-            url = self.project.api_url_for('box_folder_list', folderId='foo')
+        with patch_client('website.addons.box.model.BoxClient'):
+            url = self.project.api_url_for('box_folder_list', folder_id='foo')
             res = self.app.get(url, auth=self.user.auth)
             contents = mock_client.get_folder('', list=True)['item_collection']['entries']
             expected = [each for each in contents if each['type']=='folder']
@@ -117,7 +117,7 @@ class TestFilebrowserViews(BoxAddonTestCase):
         assert_equal(len(res.json), 1)
 
     def test_box_list_folders_if_folder_is_none_and_folders_only(self):
-        with patch_client('website.addons.box.views.BoxClient'):
+        with patch_client('website.addons.box.model.BoxClient'):
             self.node_settings.folder_name = None
             self.node_settings.save()
             url = api_url_for('box_folder_list',
@@ -128,7 +128,7 @@ class TestFilebrowserViews(BoxAddonTestCase):
             assert_equal(len(res.json), len(expected))
 
     def test_box_list_folders_folders_only(self):
-        with patch_client('website.addons.box.views.BoxClient'):
+        with patch_client('website.addons.box.model.BoxClient'):
             url = self.project.api_url_for('box_folder_list', foldersOnly=True)
             res = self.app.get(url, auth=self.user.auth)
             contents = mock_client.get_folder('', list=True)['item_collection']['entries']
@@ -136,15 +136,15 @@ class TestFilebrowserViews(BoxAddonTestCase):
             assert_equal(len(res.json), len(expected))
 
     def test_box_list_folders_doesnt_include_root(self):
-        with patch_client('website.addons.box.views.BoxClient'):
-            url = self.project.api_url_for('box_folder_list', folderId=0)
+        with patch_client('website.addons.box.model.BoxClient'):
+            url = self.project.api_url_for('box_folder_list', folder_id=0)
             res = self.app.get(url, auth=self.user.auth)
             contents = mock_client.get_folder('', list=True)['item_collection']['entries']
             expected = [each for each in contents if each['type'] == 'folder']
 
             assert_equal(len(res.json), len(expected))
 
-    @mock.patch('website.addons.box.views.BoxClient.get_folder')
+    @mock.patch('website.addons.box.model.BoxClient.get_folder')
     def test_box_list_folders_deleted(self, mock_metadata):
         # Example metadata for a deleted folder
         mock_metadata.return_value = {
@@ -162,21 +162,21 @@ class TestFilebrowserViews(BoxAddonTestCase):
             u'size': u'0 bytes',
             u'thumb_exists': False
         }
-        url = self.project.api_url_for('box_folder_list', folderId='foo')
+        url = self.project.api_url_for('box_folder_list', folder_id='foo')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.NOT_FOUND)
 
-    @mock.patch('website.addons.box.views.BoxClient.get_folder')
+    @mock.patch('website.addons.box.model.BoxClient.get_folder')
     def test_box_list_folders_returns_error_if_invalid_path(self, mock_metadata):
         mock_metadata.side_effect = BoxClientException(status_code=404, message='File not found')
-        url = self.project.api_url_for('box_folder_list', folderId='lolwut')
+        url = self.project.api_url_for('box_folder_list', folder_id='lolwut')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.NOT_FOUND)
 
-    @mock.patch('website.addons.box.views.BoxClient.get_folder')
+    @mock.patch('website.addons.box.model.BoxClient.get_folder')
     def test_box_list_folders_handles_max_retry_error(self, mock_metadata):
         mock_response = mock.Mock()
-        url = self.project.api_url_for('box_folder_list', folderId='fo')
+        url = self.project.api_url_for('box_folder_list', folder_id='fo')
         mock_metadata.side_effect = MaxRetryError(mock_response, url)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.BAD_REQUEST)
