@@ -118,7 +118,7 @@ def set_config(addon_short_name, addon_full_name, Serializer, set_folder):
         return {
             'result': {
                 'folder': {
-                    'name': path.replace('All Files', '') if path != 'All Files' else '/ (Full {0})'.format(
+                    'name': path.replace('All Files', '') if path != '/' else '/ (Full {0})'.format(
                         addon_full_name
                     ),
                     'path': path,
