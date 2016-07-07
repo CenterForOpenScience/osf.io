@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 if __name__ == '__main__':
     init_app(routes=False)
 
-    public_nodes = Node.find(Q('is_public', 'eq', True))
+    public_nodes = Node.find(Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False))
     total = len(public_nodes)
     logger.info('Adding keen.io read keys to {} public nodes'.format(total))
     count = 0
@@ -26,7 +26,10 @@ if __name__ == '__main__':
     logger.info('Done! {} nodes updated.'.format(count))
 
     logger.info('Verifying...')
-    nodes_with_keen_keys = Node.find(Q('is_public', 'eq', True) & Q('keenio_read_key', 'nin', ['', None]))
+    nodes_with_keen_keys = Node.find(
+        Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False)
+        & Q('keenio_read_key', 'nin', ['', None])
+    )
     total_with_keys = len(nodes_with_keen_keys)
     logger.info('Found {} nodes with keenio keys, expected {}'.format(total_with_keys, count))
     if total_with_keys != total:
