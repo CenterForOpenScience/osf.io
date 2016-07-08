@@ -36,8 +36,3 @@ class FedoraNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
     @property
     def has_auth(self):
         return True
-
-    @property
-    def has_auth(self):
-        return True
-
