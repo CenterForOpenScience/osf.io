@@ -93,7 +93,7 @@
 
     </div>
 
-    <div class="space-top space-bottom socarxiv">
+    <div id="socarxiv" class="space-top space-bottom socarxiv">
       <div class="container">
         <div class="row">
           <div class="col-md-3">
