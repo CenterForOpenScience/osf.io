@@ -51,7 +51,7 @@ from website.exceptions import (
 from website.institutions.model import Institution, AffiliatedInstitutionsList
 from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
-from website.util.permissions import expand_permissions
+from website.util.permissions import expand_permissions, reduce_permissions
 from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
 from website.project.commentable import Commentable
 from website.project.metadata.schemas import OSF_META_SCHEMAS
@@ -1230,6 +1230,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             self.save()
 
     def set_permissions(self, user, permissions, save=False):
+        # Ensure that user's permissions cannot be lowered if they are the only admin
+        if reduce_permissions(self.permissions[user._id]) == ADMIN and reduce_permissions(permissions) != ADMIN:
+            reduced_permissions = [
+                reduce_permissions(perms) for user_id, perms in self.permissions.iteritems()
+                if user_id != user._id
+            ]
+            if ADMIN not in reduced_permissions:
+                raise NodeStateError('Must have at least one registered admin contributor')
         self.permissions[user._id] = permissions
         if save:
             self.save()
