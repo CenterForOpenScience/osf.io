@@ -127,7 +127,6 @@ class AddonModelMixin(StoredObject):
                 if getattr(addon, 'external_account'):
                     addon.deauthorize(auth=auth)
             addon.delete(save=True)
-            print("Did a thing")
             return True
         return False
 
