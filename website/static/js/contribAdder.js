@@ -235,8 +235,9 @@ AddContributorViewModel = oop.extend(Paginator, {
             xhrFields: {withCredentials: true},
             processData: false
         }).done(function (response) {
-            var contributors = response.data.map(function (user) {
-                return user.id;
+            var contributors = response.data.map(function (contributor) {
+                // contrib ID has the form <nodeid>-<userid>
+                return contributor.id.split('-')[1];
             });
             self.contributors(contributors);
         });
