@@ -230,7 +230,7 @@ def make_url_map(app):
         process_rules(app, [
             Rule(
                 [
-                    '/ember-sample',
+                    '/ember-sample/',
                 ],
                 'get',
                 ember_app,
