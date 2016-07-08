@@ -30,13 +30,16 @@ var getContributorList = function(input, nodeId) {
             return item.embeds.users.data.attributes.active === true;
         });
         var data = activeContributors.map(function(item) {
+            var userData = item.embeds.users.data;
             return {
-                'id': item.id,
-                'name': item.embeds.users.data.attributes.given_name,
-                'fullName': item.embeds.users.data.attributes.full_name,
-                'link': item.embeds.users.data.links.html
+                'id': userData.id,
+                'name': userData.attributes.given_name,
+                'fullName': userData.attributes.full_name,
+                'link': userData.links.html
             };
         });
+        console.log(data);
+
         // for any input areas that currently exist on page
         input.atwho('load','@', data).atwho('load', '+', data).atwho('run');
         // for future input areas so that data doesn't need to be reloaded

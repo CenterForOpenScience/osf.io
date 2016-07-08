@@ -103,7 +103,6 @@ var onReturn = function (e) {
 var callbacks = {
     beforeInsert: function(value, $li) {
         var data = $li.data('item-data');
-        var model = ko.dataFor(this.$inputor[0]);
         this.query.el.attr('data-atwho-guid', '' + data.id);
         return value;
     },
