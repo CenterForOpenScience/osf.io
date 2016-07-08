@@ -940,7 +940,7 @@ class TestNotificationUtils(OsfTestCase):
                 'children': []
             },
         ]
-        assert_equal(data, expected)
+        assert_items_equal(data, expected)
 
     def test_get_global_notification_type(self):
         notification_type = utils.get_global_notification_type(self.user_subscription[1] ,self.user)

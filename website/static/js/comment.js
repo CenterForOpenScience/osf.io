@@ -38,7 +38,6 @@ var getContributorList = function(input, nodeId) {
                 'link': userData.links.html
             };
         });
-        console.log(data);
 
         // for any input areas that currently exist on page
         input.atwho('load','@', data).atwho('load', '+', data).atwho('run');
