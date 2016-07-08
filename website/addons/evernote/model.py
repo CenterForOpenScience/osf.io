@@ -97,6 +97,12 @@ class EvernoteNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
         return self.folder_path
 
+    def fetch_folder_name(self):
+        # don't know why this would be needed for Evernote
+
+        return self.folder_path
+
+
     def clear_settings(self):
         self.folder_id = None
         self.folder_name = None
