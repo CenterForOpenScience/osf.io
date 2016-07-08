@@ -180,7 +180,7 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             client = BoxClient(self.external_account.oauth_key)
             folder_data = client.get_folder(self.folder_id)
         except BoxClientException:
-            return
+            raise exceptions.InvalidFolderError()
 
         folder_name = folder_data['name'].replace('All Files', '') or '/ (Full Box)'
         folder_path = '/'.join(
