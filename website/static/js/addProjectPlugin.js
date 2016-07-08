@@ -7,6 +7,9 @@ require('css/add-project-plugin.css');
 var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
+var mHelpers = require('js/mithrilHelpers');
+var institutionComponents = require('js/components/institution');
+var SelectableInstitution = institutionComponents.SelectableInstitution;
 
 // XHR configuration to get apiserver connection to work
 var xhrconfig = function (xhr) {
@@ -20,12 +23,14 @@ var AddProject = {
         self.defaults = {
             buttonTemplate : m('.btn.btn-primary[data-toggle="modal"][data-target="#addProjectModal"]', 'Create new project'),
             parentID : null,
-            title: 'Create new project',
+            parentTitle : '',
+            title : 'Create new project',
             modalID : 'addProjectModal',
             stayCallback :null, // Function to call when user decides to stay after project creation
-            categoryList : []
+            categoryList : [],
+            contributors : [],
+            currentUserCanEdit : false
         };
-
         self.viewState = m.prop('form'); // 'processing', 'success', 'error';
         self.options = $.extend({}, self.defaults, options);
         self.nodeType = self.options.parentID === null ? 'project' : 'component';
@@ -35,6 +40,15 @@ var AddProject = {
         self.newProjectDesc = m.prop('');
         self.newProjectCategory = m.prop(self.defaultCat);
         self.newProjectTemplate = m.prop('');
+        self.newProjectInheritContribs = m.prop(false);
+        self.institutions = options.institutions || window.contextVars.currentUser.institutions || [];
+        self.checkedInstitutions = {};
+        self.institutions.map(
+            function(inst){
+                self.checkedInstitutions[inst.id] = true;
+                return inst.id;
+            }
+        );
         self.goToProjectLink = m.prop('');
         self.saveResult = m.prop({});
         self.errorMessageType = m.prop('unknown');
@@ -45,6 +59,8 @@ var AddProject = {
 
         // Validation
         self.isValid = m.prop(false);
+
+        self.isAdding = m.prop(false);
 
         self.mapTemplates = function() {
             self.userProjects([]);
@@ -63,11 +79,15 @@ var AddProject = {
 
 
         self.add = function _add () {
+            if (self.isAdding()) {
+                return;
+            }
+            self.isAdding(true);
             var url;
             var data;
             self.viewState('processing');
             if(self.options.parentID) {
-                url = $osf.apiV2Url('nodes/' + self.options.parentID + '/children/', { query : {}});
+                url = $osf.apiV2Url('nodes/' + self.options.parentID + '/children/', { query : {'inherit_contributors' : self.newProjectInheritContribs()}});
             } else {
                 url = $osf.apiV2Url('nodes/', { query : {}});
             }
@@ -77,7 +97,7 @@ var AddProject = {
                         'attributes': {
                             'title': self.newProjectName(),
                             'category': self.newProjectCategory(),
-                            'description' : self.newProjectDesc()
+                            'description': self.newProjectDesc()
                         }
                     }
                 };
@@ -90,12 +110,38 @@ var AddProject = {
                 self.viewState('success');
                 self.goToProjectLink(result.data.links.html);
                 self.saveResult(result);
+                self.isAdding(false);
             };
             var error = function _error (result) {
                 self.viewState('error');
+                self.isAdding(false);
             };
-            m.request({method : 'POST', url : url, data : data, config : xhrconfig})
-                .then(success, error);
+            var request = m.request({method : 'POST', url : url, data : data, config : xhrconfig});
+            if (self.institutions.length > 0) {
+                request.then(function (result) {
+                    var newNodeApiUrl = $osf.apiV2Url('nodes/' + result.data.id + '/relationships/institutions/');
+                    var data = {
+                        data: self.institutions.filter(
+                            function (inst) {
+                                return self.checkedInstitutions[inst.id];
+                            }
+                        ).map(
+                            function (inst) {
+                                return {type: 'institutions', id: inst.id};
+                            }
+                        )
+                    };
+                    if (data.data.length > 0){
+                        m.request({method: 'POST', url: newNodeApiUrl, data: data, config: xhrconfig}).then(
+                            function(){},
+                            function(){
+                                self.viewState('instError');
+                            }
+                        );
+                    }
+                });
+            }
+            request.then(success, error);
             self.newProjectName('');
             self.newProjectDesc('');
             self.isValid(false);
@@ -107,6 +153,7 @@ var AddProject = {
             self.viewState('form');
             self.newProjectDesc('');
             self.newProjectCategory(self.defaultCat);
+            self.newProjectInheritContribs(false);
             $('.modal').modal('hide');
             self.isValid(false);
         };
@@ -144,6 +191,48 @@ var AddProject = {
                                 name : 'projectName'
                             })
                         ]),
+                        ctrl.institutions.length ? m('.form-group.m-v-sm', [
+                            m('label.f-w-lg.text-bigger', 'Affiliation'),
+                            m('a', {onclick: function(){
+                                ctrl.institutions.map(
+                                    function(inst){
+                                        ctrl.checkedInstitutions[inst.id] = false;
+                                    }
+                                );
+                            }, style: {float: 'right'}},'Remove all'),
+                            m('a', {onclick: function(){
+                                ctrl.institutions.map(
+                                    function(inst){
+                                        ctrl.checkedInstitutions[inst.id] = true;
+                                    }
+                                );
+                            }, style: {float: 'right', marginRight: '12px'}}, 'Select all'),
+                            m('table', m('tr', ctrl.institutions.map(
+                                function(inst){
+                                    return m('td',
+                                        m('a', {onclick: function(){
+                                            ctrl.checkedInstitutions[inst.id] = !ctrl.checkedInstitutions[inst.id];
+
+                                        }},m('', {style: {position: 'relative',  margin: '10px'}, width: '45px', height: '45px'},
+                                            m.component(SelectableInstitution, {name: inst.name, width: '45px', logoPath: inst.logo_path, checked: ctrl.checkedInstitutions[inst.id]})
+                                        ))
+                                    );
+                                }
+                            ))),
+                        ]): '',
+                        ctrl.options.parentID !== null && options.contributors.length && options.currentUserCanEdit ? m('.form-group.m-v-sm', [
+                            m('label.f-w-md',
+
+                                m('input', {
+                                    type: 'checkbox',
+                                    name: 'inherit_contributors',
+                                    value: true,
+                                    onchange : function() {
+                                        ctrl.newProjectInheritContribs(this.checked);
+                                    }
+                                }), ' Add contributors from ', m('b', options.parentTitle)
+                            )
+                        ]) : '',
                         m('.text-muted.pointer', { onclick : function(){
                             ctrl.showMore(!ctrl.showMore());
                             $osf.trackClick(options.trackingCategory, options.trackingAction, 'show-more-or-less');
@@ -166,22 +255,23 @@ var AddProject = {
                                 })
                             ]),
                             ctrl.options.parentID !== null ? [
-                                m('.f-w-lg.text-bigger','Category'),
-                                m('.category-radio.p-h-md', [
-                                    ctrl.options.categoryList.map(function(cat){
-                                        return m('.radio', m('label', [  m('input', {
-                                            type: 'radio',
-                                            name: 'projectCategory',
-                                            value: cat.value,
-                                            checked: ctrl.newProjectCategory() === cat.value,
-                                            onchange : function(event) {
-                                                ctrl.newProjectCategory(cat.value);
-                                                $osf.trackClick(options.trackingCategory, options.trackingAction, 'select-project-category');
-                                            }
-                                        }), cat.display_name|| m('i.text-muted', '(Empty category)') ]));
+                                m('label.f-w-lg.text-bigger','Category'),
+                                m('select.form-control', {
+                                    onchange : function(event) {
+                                        ctrl.newProjectCategory(this.value);
+                                        $osf.trackClick(options.trackingCategory, options.trackingAction, 'select-project-category');
+                                    }},
+                                    [
+                                        mHelpers.unwrap(ctrl.options.categoryList).map(function(cat){
+                                            return m('option', {
+                                                type: 'option',
+                                                name: 'projectCategory',
+                                                value: cat.value,
+                                                selected: ctrl.newProjectCategory() === cat.value
+                                            }, cat.display_name|| m('i.text-muted', '(Empty category)'));
 
-                                    })
-                                ])
+                                        })
+                                    ])
                             ] : '',
                              ctrl.options.parentID === null ? m('.form-group.m-v-md', [
                                 m('label[for="projectTemplate].f-w-lg.text-bigger', 'Template (optional)'),
@@ -267,6 +357,31 @@ var AddProject = {
                         m('button[type="button"].btn.btn-default[data-dismiss="modal"]', {onclick: function() {
                             $osf.trackClick(options.trackingCategory, options.trackingAction, 'click-OK-couldn\'t-create-your-project');
                         }},  'OK')
+                    ])
+                )
+            ]),
+            instError: m('.modal-content', [
+                m('.modal-content',
+                    m('.modal-body.text-left', [
+                            m('button.close[data-dismiss="modal"][aria-label="Close"]',{ onclick : function() {
+                                ctrl.reset();
+                                }}, [
+                                m('span[aria-hidden="true"]','×')
+                            ]),
+                            m('h4.add-project-error.text-danger', 'Could not add institution affiliation to your new ' + ctrl.nodeType + ''),
+                            m('p', ctrl.errorMessage[ctrl.errorMessageType()])
+                        ]
+                    ),
+                    m('.modal-footer', [
+                        m('button[type="button"].btn.btn-default[data-dismiss="modal"]', {
+                            onclick : function() {
+                                ctrl.reset();
+                                ctrl.options.stayCallback.call(ctrl); // results are at ctrl.saveResult
+                            }
+                        },  'Keep working here'),
+                        m('a.btn.btn-success', {
+                            href : ctrl.goToProjectLink()
+                        },'Go to new ' + ctrl.nodeType + '')
                     ])
                 )
             ])

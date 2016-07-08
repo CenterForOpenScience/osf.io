@@ -165,10 +165,10 @@ class InvalidFilterValue(JSONAPIParameterException):
         if not detail:
             detail = "Value '{0}' is not valid".format(value)
             if field_type:
-                detail += " for a filter on type {0}".format(
+                detail += ' for a filter on type {0}'.format(
                     field_type
                 )
-            detail += "."
+            detail += '.'
         super(InvalidFilterValue, self).__init__(detail=detail, parameter='filter')
 
 

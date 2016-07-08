@@ -35,7 +35,9 @@
           <span data-bind="ifnot: currentBucket">
             None
           </span>
-          <a data-bind="if: currentBucket, attr: {href: urls().files}, text: currentBucket"></a>
+          <a data-bind="if: currentBucket, attr: {href: urls().files}">
+              <span data-bind="text: currentBucket"></span>
+          </a>
         </p>
         <div data-bind="attr: {disabled: creating}">
           <button data-bind="visible: canChange, click: toggleSelect,

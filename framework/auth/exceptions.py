@@ -31,13 +31,13 @@ class EmailConfirmTokenError(FrameworkError):
 
 class InvalidTokenError(EmailConfirmTokenError):
     """Raised if an email confirmation token is not found."""
-    message_short = "Invalid Token"
+    message_short = 'Invalid Token'
     message_long = language.INVALID_EMAIL_CONFIRM_TOKEN
 
 
 class ExpiredTokenError(EmailConfirmTokenError):
     """Raised if an email confirmation token is expired."""
-    message_short = "Expired Token"
+    message_short = 'Expired Token'
     message_long = language.EXPIRED_EMAIL_CONFIRM_TOKEN
 
 

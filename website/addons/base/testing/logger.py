@@ -35,7 +35,7 @@ class StorageAddonNodeLoggerTestSuiteMixin(AddonNodeLoggerTestSuiteMixinBase):
         self.logger.log('file_added', save=True)
         last_log = self.node.logs[-1]
 
-        assert_equal(last_log.action, "{0}_{1}".format(self.addon_short_name, 'file_added'))
+        assert_equal(last_log.action, '{0}_{1}'.format(self.addon_short_name, 'file_added'))
 
     def test_log_file_removed(self):
         self.logger.log('file_removed', save=True)

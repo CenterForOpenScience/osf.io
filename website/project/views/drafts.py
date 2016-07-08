@@ -242,7 +242,7 @@ def new_draft_registration(auth, node, *args, **kwargs):
     if node.is_registration:
         raise HTTPError(http.FORBIDDEN, data={
             'message_short': "Can't create draft",
-            'message_long': "Creating draft registrations on registered projects is not allowed."
+            'message_long': 'Creating draft registrations on registered projects is not allowed.'
         })
     data = request.values
 

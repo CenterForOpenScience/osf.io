@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load render_bundle from webpack_loader %}
+
+{% load static %}
+{% block title %}
+    <title>OSF Admin | Meetings</title>
+{% endblock title %}
+{% block content %}
+    <a href="{% url 'meetings:create' %}" class="btn btn-primary">
+        Add meeting
+    </a>
+    <h2>List of Meetings</h2>
+    {% include "util/pagination.html" with items=page status=status %}
+    <table class="table table-striped, table-hover table-responsive">
+    <thead>
+        <tr>
+            <th>Endpoint</th>
+            <th>Name</th>
+            <th>Active</th>
+            <th>Public Projects</th>
+            <th>Submissions</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for meeting in meetings %}
+        <tr>
+            <td>
+                <a href="{% url 'meetings:detail' endpoint=meeting.endpoint %}"
+                   target="_blank" class="btn btn-primary">
+                    {{ meeting.endpoint }}
+                </a>
+            </td>
+            <td>
+                {{ meeting.name }}
+            </td>
+            <td>
+                {{ meeting.active }}
+            </td>
+            <td>
+                {{ meeting.public_projects }}
+            </td>
+            <td>
+                {{ meeting.num_submissions }}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+    </table>
+{% endblock content %}

@@ -50,7 +50,7 @@ class S3NodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.bucket = str(folder_id)
         self.save()
 
-        self.nodelogger.log(action="bucket_linked", extra={'bucket': str(folder_id)}, save=True)
+        self.nodelogger.log(action='bucket_linked', extra={'bucket': str(folder_id)}, save=True)
 
     @property
     def complete(self):

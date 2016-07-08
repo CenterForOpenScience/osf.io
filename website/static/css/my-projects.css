@@ -214,26 +214,6 @@ border-bottom: 1px solid #ddd;
     font-size: 34px;
     color: #ccc;
 }
-/* Logs */
-
-.db-activity-item {
-    font-size: 13px;
-    padding: 5px 10px;
-    background: #FFF;
-    margin-bottom: 3px;
-    border-bottom: 1px solid #eee;
-}
-.db-log-avatar img {
-    width: 16px;
-    height: 16px;
-}
-.db-log-avatar {
-    display: inline-block;
-}
-
-#poFilter {
-    width : 300px;
-}
 
 /* Treebeard override */
 #projectOrganizer #tb-tbody {
@@ -324,10 +304,6 @@ div[data-growl="container"] {
     font-weight: bold;
     color: #C98509;
     text-align: center;
-}
-
-#dashboard .ball-pulse-sync>div, #dashboard .ball-pulse>div, #dashboard .ball-scale>div, #dashboard .ball-beat-sync>div, #dashboard .ball-beat>div, #dashboard .ball-beat>div {
-    background-color: #BED1E2;
 }
 
 .text-muted-more {

@@ -50,7 +50,9 @@ class CommentSerializer(JSONAPISerializer):
     date_modified = ser.DateTimeField(read_only=True)
     modified = ser.BooleanField(read_only=True, default=False)
     deleted = ser.BooleanField(read_only=True, source='is_deleted', default=False)
-    is_abuse = ser.SerializerMethodField(help_text='Whether the current user reported this comment.')
+    is_abuse = ser.SerializerMethodField(help_text='If the comment has been reported or confirmed.')
+    is_ham = ser.SerializerMethodField(help_text='Comment has been confirmed as ham.')
+    has_report = ser.SerializerMethodField(help_text='If the user reported this comment.')
     has_children = ser.SerializerMethodField(help_text='Whether this comment has any replies.')
     can_edit = ser.SerializerMethodField(help_text='Whether the current user can edit this comment.')
 
@@ -60,11 +62,21 @@ class CommentSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'comments'
 
-    def get_is_abuse(self, obj):
+    def get_is_ham(self, obj):
+        if obj.spam_status == Comment.HAM:
+            return True
+        return False
+
+    def get_has_report(self, obj):
         user = self.context['request'].user
         if user.is_anonymous():
             return False
         return user._id in obj.reports and not obj.reports[user._id].get('retracted', True)
+
+    def get_is_abuse(self, obj):
+        if obj.spam_status == Comment.FLAGGED or obj.spam_status == Comment.SPAM:
+            return True
+        return False
 
     def get_can_edit(self, obj):
         user = self.context['request'].user
@@ -88,6 +100,11 @@ class CommentSerializer(JSONAPISerializer):
                     comment.undelete(auth, save=True)
                 except PermissionsError:
                     raise PermissionDenied('Not authorized to undelete this comment.')
+            elif validated_data.get('is_deleted', None) is True and not comment.is_deleted:
+                try:
+                    comment.delete(auth, save=True)
+                except PermissionsError:
+                    raise PermissionDenied('Not authorized to delete this comment.')
             elif 'get_content' in validated_data:
                 content = validated_data.pop('get_content')
                 try:
@@ -121,7 +138,7 @@ class CommentCreateSerializer(CommentSerializer):
         target_type = self.context['request'].data.get('target_type')
         expected_target_type = self.get_target_type(target)
         if target_type != expected_target_type:
-            raise Conflict('Invalid target type. Expected "{0}", got "{1}."'.format(expected_target_type, target_type))
+            raise Conflict(detail=('The target resource has a type of "{}", but you set the json body\'s type field to "{}".  You probably need to change the type field to match the target resource\'s type.'.format(expected_target_type, target_type)))
         return target_type
 
     def get_target(self, node_id, target_id):

@@ -64,7 +64,7 @@ function subscribe(item, notification_type) {
 function NodeSelectTreebeard(divID, data, nodesState) {
     /**
      *  nodesState is a knockout variable that syncs the mithril checkbox list with information on the view.  The
-     *  changed boolean parameter is used to sync the checkbox with changes, the canWrite boolean parameter is used
+     *  changed boolean parameter is used to sync the checkbox with changes, the isAdmin boolean parameter is used
      *  to disable the checkbox
      * */
     var tbOptions = $.extend({}, projectSettingsTreebeardBase.defaults, {

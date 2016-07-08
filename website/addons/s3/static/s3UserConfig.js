@@ -51,7 +51,7 @@ function ViewModel(url) {
                 externalAccount.secretKey = account.oauth_secret;
                 return externalAccount;
             }));
-            $('.addon-auth-table').osfToggleHeight({height: 140});
+            $('#s3-header').osfToggleHeight({height: 160});
         }).fail(function(xhr, status, error) {
             self.changeMessage(language.userSettingsError, 'text-danger');
             Raven.captureMessage('Error while updating addon account', {
@@ -107,7 +107,7 @@ function ViewModel(url) {
             title: 'Disconnect Amazon S3 Account?',
             message: '<p class="overflow">' +
                 'Are you sure you want to disconnect the S3 account <strong>' +
-                $osf.htmlEscape(account.name) + '</strong>? This will revoke access to S3 for all projects associated with this account.' +
+                osfHelpers.htmlEscape(account.name) + '</strong>? This will revoke access to S3 for all projects associated with this account.' +
                 '</p>',
             callback: function (confirm) {
                 if (confirm) {

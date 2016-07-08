@@ -107,10 +107,10 @@ class Sanction(StoredObject):
         return self.state == Sanction.REJECTED
 
     def approve(self, user):
-        raise NotImplementedError("Sanction subclasses must implement an approve method.")
+        raise NotImplementedError('Sanction subclasses must implement an approve method.')
 
     def reject(self, user):
-        raise NotImplementedError("Sanction subclasses must implement an approve method.")
+        raise NotImplementedError('Sanction subclasses must implement an approve method.')
 
     def _on_reject(self, user):
         """Callback for rejection of a Sanction
@@ -501,7 +501,8 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
         parent_registration.registered_from.add_log(
             action=NodeLog.EMBARGO_CANCELLED,
             params={
-                'node': parent_registration._id,
+                'node': parent_registration.registered_from_id,
+                'registration': parent_registration._id,
                 'embargo_id': self._id,
             },
             auth=Auth(user),
@@ -527,7 +528,8 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
         parent_registration.registered_from.add_log(
             action=NodeLog.EMBARGO_APPROVED,
             params={
-                'node': parent_registration._id,
+                'node': parent_registration.registered_from_id,
+                'registration': parent_registration._id,
                 'embargo_id': self._id,
             },
             auth=Auth(self.initiated_by),
@@ -647,7 +649,8 @@ class Retraction(EmailApprovableSanction):
         parent_registration.registered_from.add_log(
             action=NodeLog.RETRACTION_CANCELLED,
             params={
-                'node': parent_registration._id,
+                'node': parent_registration.registered_from_id,
+                'registration': parent_registration._id,
                 'retraction_id': self._id,
             },
             auth=Auth(user),
@@ -661,8 +664,9 @@ class Retraction(EmailApprovableSanction):
         parent_registration.registered_from.add_log(
             action=NodeLog.RETRACTION_APPROVED,
             params={
-                'node': parent_registration._id,
+                'node': parent_registration.registered_from_id,
                 'retraction_id': self._id,
+                'registration': parent_registration._id
             },
             auth=Auth(self.initiated_by),
         )
@@ -672,7 +676,8 @@ class Retraction(EmailApprovableSanction):
             parent_registration.registered_from.add_log(
                 action=NodeLog.EMBARGO_CANCELLED,
                 params={
-                    'node': parent_registration._id,
+                    'node': parent_registration.registered_from_id,
+                    'registration': parent_registration._id,
                     'embargo_id': parent_registration.embargo._id,
                 },
                 auth=Auth(self.initiated_by),
@@ -807,6 +812,7 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
             action=NodeLog.REGISTRATION_APPROVAL_APPROVED,
             params={
                 'node': registered_from._id,
+                'registration': register._id,
                 'registration_approval_id': self._id,
             },
             auth=auth,
@@ -826,7 +832,8 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
         registered_from.add_log(
             action=NodeLog.REGISTRATION_APPROVAL_CANCELLED,
             params={
-                'node': register._id,
+                'node': registered_from._id,
+                'registration': register._id,
                 'registration_approval_id': self._id,
             },
             auth=Auth(user),
@@ -858,13 +865,13 @@ class DraftRegistrationApproval(Sanction):
 
     def approve(self, user):
         if settings.PREREG_ADMIN_TAG not in user.system_tags:
-            raise PermissionsError("This user does not have permission to approve this draft.")
+            raise PermissionsError('This user does not have permission to approve this draft.')
         self.state = Sanction.APPROVED
         self._on_complete(user)
 
     def reject(self, user):
         if settings.PREREG_ADMIN_TAG not in user.system_tags:
-            raise PermissionsError("This user does not have permission to approve this draft.")
+            raise PermissionsError('This user does not have permission to approve this draft.')
         self.state = Sanction.REJECTED
         self._on_reject(user)
 

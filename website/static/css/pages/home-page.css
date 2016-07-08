@@ -14,6 +14,12 @@ h3, h4 {
     color: #FFF;
 }
 
+.institutions-panel {
+    background: #166595 url("/static/img/front-page/bg-web.png") no-repeat center top;
+    background-size: cover;
+    padding-top: 25px;
+}
+
 .meetings {
     background: #166595 url("/static/img/front-page/bg-web.png") no-repeat center top;
     background-size: cover;

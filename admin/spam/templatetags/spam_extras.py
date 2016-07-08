@@ -1,6 +1,6 @@
 from django import template
 
-from admin.base.templatetags.base_extras import reverse_qs
+from admin.base.utils import reverse_qs
 
 register = template.Library()
 

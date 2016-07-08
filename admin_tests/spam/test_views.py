@@ -1,3 +1,5 @@
+import mock
+
 from django.db import transaction
 from django.test import RequestFactory
 from django.http import Http404
@@ -177,7 +179,8 @@ class TestEmailFormView(AdminTestCase):
         self.view = setup_form_view(self.view, self.request, self.form,
                                     spam_id=self.comment._id)
 
-    def test_get_context_data(self):
+    @mock.patch('admin.spam.views.render')
+    def test_get_context_data(self, mock_render):
         res = self.view.get_context_data()
         nt.assert_equal(res['status'], '1')
         nt.assert_equal(res['page_number'], '1')
@@ -188,7 +191,8 @@ class TestEmailFormView(AdminTestCase):
         with nt.assert_raises(Http404):
             view.get_context_data()
 
-    def test_get_initial(self):
+    @mock.patch('admin.spam.views.render')
+    def test_get_initial(self, mock_render):
         self.view.get_initial()
         res = self.view.initial
         nt.assert_is_instance(res, dict)
