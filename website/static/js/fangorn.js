@@ -1791,7 +1791,7 @@ var FGToolbar = {
         self.helpText = m.prop('');
         self.dismissToolbar = dismissToolbar.bind(self.tb, self.helpText);
         self.createFolder = function(event){
-            _createFolder.call(self.tb, event, self.dismissToolbar, self.helpText );
+            _createFolder.call(self.tb, event, self.dismissToolbar, self.helpText);
         };
     },
     view : function(ctrl) {
