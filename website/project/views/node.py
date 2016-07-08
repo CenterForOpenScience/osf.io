@@ -1103,7 +1103,7 @@ def _serialize_node_search(node):
         data['dateModified'] = node.date_modified.isoformat()
 
     first_author = node.visible_contributors[0]
-    data['firstAuthor'] = first_author.family_name or first_author.given_name or first_author.full_name,
+    data['firstAuthor'] = first_author.family_name or first_author.given_name or first_author.full_name
 
     return data
 
