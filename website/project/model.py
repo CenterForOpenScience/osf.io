@@ -179,6 +179,32 @@ class MetaData(GuidStoredObject):
     date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
 
 
+def validate_contributor(guid, contributors):
+    user = User.find(
+        Q('_id', 'eq', guid) &
+        Q('is_claimed', 'eq', True)
+    )
+    if user.count() != 1:
+        raise ValidationValueError('User does not exist or is not active.')
+    elif guid not in contributors:
+        raise ValidationValueError('Mentioned user is not a contributor.')
+    return True
+
+def get_valid_mentioned_users_guids(comment, contributors):
+    """ Get a list of valid users that are mentioned in the comment content.
+
+    :param Node comment: Node that has content and ever_mentioned
+    :param list contributors: List of contributors on the node
+    :return list new_mentions: List of valid users mentioned in the comment content
+    """
+    new_mentions = set(re.findall(r"\[[@|\+].*?\]\(\/([a-z\d]{5})\/\)", comment.content))
+    new_mentions = [
+        m for m in new_mentions if
+        m not in comment.ever_mentioned and
+        validate_contributor(m, contributors)
+    ]
+    return new_mentions
+
 class Comment(GuidStoredObject, SpamMixin, Commentable):
 
     __guid_min_length__ = 12
@@ -204,7 +230,9 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
     # The type of root_target: node/files
     page = fields.StringField()
     content = fields.StringField(required=True,
-                                 validate=[MaxLengthValidator(settings.COMMENT_MAXLENGTH), validators.string_required])
+                                 validate=[validators.comment_maxlength(settings.COMMENT_MAXLENGTH), validators.string_required])
+    # The mentioned users
+    ever_mentioned = fields.ListField(fields.StringField())
 
     # For Django compatibility
     @property
@@ -312,6 +340,12 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
 
         log_dict.update(comment.root_target.referent.get_extra_log_params(comment))
 
+        if comment.content:
+            new_mentions = get_valid_mentioned_users_guids(comment, comment.node.contributors)
+            if new_mentions:
+                project_signals.mention_added.send(comment, new_mentions=new_mentions, auth=auth)
+                comment.ever_mentioned.extend(new_mentions)
+
         comment.save()
 
         comment.node.add_log(
@@ -339,7 +373,12 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
         self.content = content
         self.modified = True
         self.date_modified = datetime.datetime.utcnow()
+        new_mentions = get_valid_mentioned_users_guids(self, self.node.contributors)
+
         if save:
+            if new_mentions:
+                project_signals.mention_added.send(self, new_mentions=new_mentions, auth=auth)
+                self.ever_mentioned.extend(new_mentions)
             self.save()
             self.node.add_log(
                 NodeLog.COMMENT_UPDATED,
