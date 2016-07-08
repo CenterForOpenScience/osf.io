@@ -6,7 +6,6 @@ import os
 from dropbox.client import DropboxOAuth2Flow, DropboxClient
 from dropbox.rest import ErrorResponse
 from flask import request
-import markupsafe
 from urllib3.exceptions import MaxRetryError
 
 from modularodm import fields
