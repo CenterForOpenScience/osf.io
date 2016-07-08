@@ -190,6 +190,13 @@ var BaseComment = function() {
     self.validateReply = ko.pureComputed(function() {
         return self.replyNotEmpty() && self.underMaxLength();
     });
+
+};
+
+BaseComment.prototype.handleEditableUpdate = function(element, underMaxLength, charLimit) {
+    var self = this;
+    self.underMaxLength(underMaxLength);
+    self.errorMessage(underMaxLength ? '' : 'Exceeds character limit. Please reduce to ' + charLimit + ' characters or less.');
 };
 
 BaseComment.prototype.abuseLabel = function(item) {

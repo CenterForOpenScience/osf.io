@@ -462,40 +462,29 @@ ko.bindingHandlers.datePicker = {
  * Bind content of contenteditable to observable. Looks for maxlength attr
  * and underMaxLength binding to limit input.
  * Example:
- * <div contenteditable="true" data-bind="editableHTML: <observable_name>" maxlength="500"></div>
+ * <div contenteditable="true" data-bind="editableHTML: {observable: <observable_name>, onUpdate: handleUpdate" maxlength="500"></div>
  */
 ko.bindingHandlers.editableHTML = {
     init: function(element, valueAccessor, allBindings, bindingContext) {
         var $element = $(element);
-        var initialValue = ko.utils.unwrapObservable(valueAccessor());
+        var options = valueAccessor();
+        var initialValue = options.observable();
         $element.html(initialValue);
         $element.on('change input paste keyup blur', function() {
-            var observable = valueAccessor();
-            observable($element.html());
+            options.observable($element.html());
         });
     },
-    update: function(element, valueAccessor, allBindings, bindingContext) {
+    update: function(element, valueAccessor, allBindings, viewModel) {
         var $element = $(element);
-        var initialValue = ko.utils.unwrapObservable(valueAccessor());
+        var options = valueAccessor();
+        var initialValue = options.observable();
+        // NOTE: Maybe we should leave this up to onUpdate? Rethink.
         var charLimit = $element.attr('maxlength');
-        if (charLimit && bindingContext.underMaxLength) {
-            var inputTextLength = $element[0].innerText.length;
-            var errorExceedsCharacterLimit = 'Exceeds character limit. Please reduce to ' +
-                charLimit + ' characters or less.';
-            // + 1 to account for the <br> that is added to the end of the contenteditable content
-            // <br> is necessary for the return key to function properly
-            if (inputTextLength > parseInt(charLimit) + 1) {
-                bindingContext.underMaxLength(false);
-                if (bindingContext.errorMessage) {
-                    bindingContext.errorMessage(errorExceedsCharacterLimit);
-                }
-            } else {
-                bindingContext.underMaxLength(true);
-                if (bindingContext.errorMessage) {
-                    bindingContext.errorMessage('');
-                }
-            }
-        }
+        var inputTextLength = $element[0].innerText.length || 0;
+        // + 1 to account for the <br> that is added to the end of the contenteditable content
+        // <br> is necessary for the return key to function properly
+        var underOrEqualMaxLength = inputTextLength <= parseInt(charLimit) + 1 || charLimit == undefined;  // jshint ignore: line
+        options.onUpdate.call(viewModel, element, underOrEqualMaxLength, charLimit);
         if (initialValue === '') {
             $(element).html(initialValue);
         }
