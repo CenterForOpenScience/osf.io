@@ -19,8 +19,6 @@ from website.project.decorators import must_be_contributor_or_public
 from osf.models import Node
 from website.project.signals import comment_added, mention_added
 
-import ipdb
-
 @file_updated.connect
 def update_file_guid_referent(self, node, event_type, payload, user=None):
     if event_type == 'addon_file_moved' or event_type == 'addon_file_renamed':
@@ -38,7 +36,7 @@ def update_file_guid_referent(self, node, event_type, payload, user=None):
                 obj = Guid.load(guid)
                 old_file_name = obj.referent.name
                 obj.referent.name = destination['name']
-                discourse.update_topic_metadata(obj.referent)
+                discourse.sync_topic(obj.referent)
                 obj.referent.name = old_file_name
                 #discourse.create_comment(obj.referent, 'This file has been renamed to ' + destination['name'])
 
@@ -60,8 +58,6 @@ def update_file_guid_referent(self, node, event_type, payload, user=None):
 
                 obj.referent = create_new_file(obj, source, destination, destination_node)
                 obj.save()
-
-                #ipdb.set_trace()
 
                 obj.referent.discourse_topic_id = old_file.discourse_topic_id
                 old_file.discourse_topic_id = None

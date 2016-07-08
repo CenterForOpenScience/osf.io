@@ -4,6 +4,7 @@ import api.sso
 from framework.sessions import session
 from framework.auth import User
 
+# Safe to call if the user has already been created
 def create_user(user):
     payload = {}
     payload['external_id'] = user._id

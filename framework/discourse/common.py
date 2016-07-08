@@ -2,8 +2,12 @@ from website import settings
 import requests
 from simplejson.scanner import JSONDecodeError
 
+log_requests = False
+
 class DiscourseException(Exception):
-    pass
+    def __init__(self, message, result):
+        super(DiscourseException, self).__init__(message)
+        self.result = result
 
 def request(method, path, data={}, user_name=None):
     params = {}
@@ -13,10 +17,14 @@ def request(method, path, data={}, user_name=None):
     url = requests.compat.urljoin(settings.DISCOURSE_SERVER_URL, path)
     result = getattr(requests, method)(url, data=data, params=params)
 
+    if log_requests:
+        print(method + ' \t' + result.url + ' with ' + str(data))
+
     if result.status_code < 200 or result.status_code > 299:
         raise DiscourseException('Discourse server responded to ' + method + ' request ' + result.url + ' with '
                                  + ' post data ' + str(data) + ' with result code '
-                                 + str(result.status_code) + ': ' + result.text[:500])
+                                 + str(result.status_code) + ': ' + result.text[:500],
+                                 result)
 
     try:
         return result.json()

@@ -16,11 +16,6 @@ def _get_project_node(node):
 
 def get_topics(project_node):
     return request('get', '/projects/' + project_node._id + '.json')
-    #if project_node.is_public:
-    #    return request('get', '/tags/' + project_node._id + '.json')
-    #else:
-    #    username = get_username()
-    #    return request('get', '/topics/private-messages-group/' + username + '/' + project_node._id + '.json')
 
 def _escape_markdown(text):
     r = re.compile(r'([\\`*_{}[\]()#+.!-])')
@@ -34,8 +29,7 @@ def _make_topic_content(node):
 
     project_node = _get_project_node(node)
 
-    topic_content = ''#'`' + node_title + '`'
-    topic_content += '\nThis is the discussion topic for ' + node_description + '.\n'
+    topic_content = 'This is the discussion topic for ' + node_description + '.\n'
     topic_content += '\nContributors: ' + ', '.join(map(lambda c: c.display_full_name(), project_node.contributors))
     #topic_content += '\nDate Created: ' + node.date_created.strftime("%Y-%m-%d %H:%M:%S")
     topic_content += '\nCategory: ' + project_node.category
@@ -53,11 +47,11 @@ def _get_parent_guids(node):
     parent_node = _get_project_node(node)
     while parent_node:
         parent_guids.append(parent_node._id)
-        #tags.append(parent_node._id + ':' + parent_node.label)
         parent_node = parent_node.parent_node
 
     return parent_guids
 
+# Safe to call multiple times, but will make a new topic each time!
 def create_topic(node):
     data = {}
     project_node = _get_project_node(node)
@@ -66,7 +60,6 @@ def create_topic(node):
     data['archetype'] = 'regular'
 
     get_or_create_group_id(project_node) # insure existance of the group
-    #data['target_usernames'] = project_node._id
     data['title'] = node.label
     data['raw'] = _make_topic_content(node)
     data['parent_guids[]'] = _get_parent_guids(node)
@@ -76,13 +69,14 @@ def create_topic(node):
     result = request('post', '/posts', data)
 
     node.discourse_topic_id = result['topic_id']
-    node.discourse_topic_public = False
+    node.discourse_topic_title = data['title']
+    node.discourse_topic_parent_guids = data['parent_guids[]']
     node.discourse_post_id = result['id']
     node.save()
 
     return result
 
-def update_topic_content(node):
+def _update_topic_content(node):
     if node.discourse_post_id is None:
         return
 
@@ -90,15 +84,34 @@ def update_topic_content(node):
     data['post[raw]'] = _make_topic_content(node)
     return request('put', '/posts/' + str(node.discourse_post_id), data)
 
-def update_topic_metadata(node):
+def _update_topic_metadata(node):
     if node.discourse_topic_id is None:
         return
 
     data = {}
     data['title'] = node.label
     data['parent_guids[]'] = _get_parent_guids(node)
-    data['category_id'] = {'wiki': wiki_category, 'files': file_category, 'nodes': project_category}[node.target_type]
+    # this shouldn't ever need to be changed once created...
+    #data['category_id'] = {'wiki': wiki_category, 'files': file_category, 'nodes': project_category}[node.target_type]
     return request('put', '/t/' + node.guid_id + '/' + str(node.discourse_topic_id), data)
+
+def sync_topic(node):
+    if node.discourse_topic_id is None:
+        create_topic(node)
+        return
+
+    parent_guids = _get_parent_guids(node)
+    guids_changed = parent_guids != node.discourse_topic_parent_guids
+    title_changed = node.label != node.discourse_topic_title
+
+    if guids_changed or title_changed:
+        if title_changed:
+            _update_topic_content(node)
+        _update_topic_metadata(node)
+
+        node.discourse_topic_title = node.label
+        node.discourse_topic_parent_guids = parent_guids
+        node.save()
 
 def get_or_create_topic_id(node):
     if node is None:

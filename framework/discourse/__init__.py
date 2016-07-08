@@ -4,18 +4,13 @@ from groups import *
 from topics import *
 from users import *
 
-import ipdb
-
 def sync_project(project_node):
-    from website.addons.wiki.model import NodeWikiPage
-    from website.files.models import StoredFileNode
-    from modularodm import Q
-
     sync_group(project_node)
 
     if project_node.discourse_topic_id:
-        update_topic_metadata(project_node)
-        update_topic_content(project_node)
+        sync_topic(project_node)
+    else:
+        create_topic(project_node)
 
 def delete_project(project_node):
     delete_group(project_node)

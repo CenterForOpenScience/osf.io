@@ -8,7 +8,7 @@ def create_comment(node, comment_text, user=None, reply_to_post_number=None):
     else:
         user_name = get_username(user)
         if user_name is None:
-            raise DiscourseException('The user ' + str(user) + ' given does not exist in discourse')
+            raise DiscourseException('The user ' + str(user) + ' given does not exist in the osf/discourse')
 
     data = {}
     topic_id = get_or_create_topic_id(node)
