@@ -3312,18 +3312,27 @@ class TestProject(OsfTestCase):
     def test_permission_override_on_readded_contributor(self):
 
         # A child node created
-        self.child_node = NodeFactory(parent=self.project, creator=self.auth.user)
+        child_node = NodeFactory(parent=self.project, creator=self.auth.user)
 
         # A user is added as with read permission
         user = UserFactory()
-        self.child_node.add_contributor(user, permissions=['read'])
+        child_node.add_contributor(user, permissions=['read'])
 
         # user is readded with permission admin
-        self.child_node.add_contributor(user, permissions=['read','write','admin'])
-        self.child_node.save()
+        child_node.add_contributor(user, permissions=['read', 'write','admin'])
+        child_node.save()
 
-        assert(self.child_node.has_permission(user, 'admin'))
+        assert child_node.has_permission(user, 'admin') is True
 
+    def test_permission_override_fails_if_no_admins(self):
+
+        user = UserFactory()
+        # User has admin permissions because they are the creator
+        node = ProjectFactory(creator=user)
+
+        # Cannot lower permissions
+        with assert_raises(NodeStateError):
+            node.add_contributor(user, permissions=['read', 'write'])
 
 class TestParentNode(OsfTestCase):
     def setUp(self):
