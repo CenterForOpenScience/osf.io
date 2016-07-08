@@ -99,7 +99,7 @@ class TokenDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
         try:
             obj.deactivate(save=True)
         except cas.CasHTTPError:
-            raise APIException("Could not revoke tokens; please try again later")
+            raise APIException('Could not revoke tokens; please try again later')
 
     def perform_update(self, serializer):
         """Necessary to prevent owner field from being blanked on updates"""

@@ -1,0 +1,9 @@
+.git
+node_modules
+**/local.py
+*tests
+**/tests
+**/bower_components
+*.pyc
+**/*.pyc
+website/static/built

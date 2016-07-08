@@ -74,7 +74,7 @@ function ViewModel(url) {
                 externalAccount.dataverseUrl = account.host_url;
                 return externalAccount;
             }));
-            $('.addon-auth-table').osfToggleHeight({height: 140});
+            $('#dataverse-header').osfToggleHeight({height: 160});
         });
         request.fail(function(xhr, status, error) {
             Raven.captureMessage('Error while updating addon account', {
@@ -135,7 +135,7 @@ function ViewModel(url) {
             title: 'Disconnect Dataverse Account?',
             message: '<p class="overflow">' +
                 'Are you sure you want to disconnect the Dataverse account on <strong>' +
-                $osf.htmlEscape(account.name) + '</strong>? This will revoke access to Dataverse for all projects associated with this account.' +
+                osfHelpers.htmlEscape(account.name) + '</strong>? This will revoke access to Dataverse for all projects associated with this account.' +
                 '</p>',
             callback: function (confirm) {
                 if (confirm) {

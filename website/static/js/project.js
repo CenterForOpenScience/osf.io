@@ -9,10 +9,11 @@ var Raven = require('raven-js');
 var ko = require('knockout');
 
 var $osf = require('js/osfHelpers');
-var LogFeed = require('js/logFeed.js');
 
 var ctx = window.contextVars;
 var NodeActions = {}; // Namespace for NodeActions
+require('loaders.css/loaders.min.css');
+
 
 // TODO: move me to the NodeControl or separate module
 NodeActions.beforeForkNode = function(url, done) {
@@ -135,38 +136,10 @@ NodeActions.useAsTemplate = function() {
     });
 };
 
-
-$(function() {
-
-    $('#newComponent form').on('submit', function(e) {
-
-        $('#add-component-submit')
-            .attr('disabled', 'disabled')
-            .text('Adding');
-
-        if ($.trim($('#title').val()) === '') {
-
-            $('#newComponent .modal-alert').text('This field is required.');
-
-            $('#add-component-submit')
-                .removeAttr('disabled', 'disabled')
-                .text('Add');
-
-            e.preventDefault();
-        } else if ($(e.target).find('#title').val().length > 200) {
-            $('#newComponent .modal-alert').text('The new component title cannot be more than 200 characters.'); //This alert never appears...
-
-            $('#add-component-submit')
-                .removeAttr('disabled', 'disabled')
-                .text('Add');
-
-            e.preventDefault();
-
-        }
-    });
-});
-
-NodeActions._openCloseNode = function(nodeId) {
+/*
+Hide/show recent logs for for a node on the project view page.
+*/
+NodeActions.openCloseNode = function(nodeId) {
 
     var icon = $('#icon-' + nodeId);
     var body = $('#body-' + nodeId);
@@ -207,30 +180,6 @@ NodeActions.removePointer = function(pointerId, pointerElm) {
     }).fail(
         $osf.handleJSONError
     );
-};
-
-
-/*
-Display recent logs for for a node on the project view page.
-*/
-NodeActions.openCloseNode = function(nodeId) {
-    var $logs = $('#logs-' + nodeId);
-    if (!$logs.hasClass('active')) {
-        if (!$logs.hasClass('served')) {
-            $.getJSON(
-                $logs.attr('data-uri'),
-                {count: 3}
-            ).done(function(response) {
-                new LogFeed('#logs-' + nodeId, response.logs);
-                $logs.addClass('served');
-            });
-        }
-        $logs.addClass('active');
-    } else {
-        $logs.removeClass('active');
-    }
-    // Hide/show the html
-    NodeActions._openCloseNode(nodeId);
 };
 
 // TODO: remove this

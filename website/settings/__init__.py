@@ -6,6 +6,7 @@
     >>> settings.MAIL_SERVER
     'smtp.sendgrid.net'
 '''
+import os
 from .defaults import *  # noqa
 
 try:
@@ -13,6 +14,9 @@ try:
 except ImportError as error:
     raise ImportError("No local.py settings file found. Did you remember to "
                         "copy local-dist.py to local.py?")
+
+# apply environment variables
+globals().update(os.environ)
 
 if not DEV_MODE:
     from . import local

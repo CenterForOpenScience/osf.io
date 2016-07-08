@@ -16,7 +16,7 @@ from website import settings
 def get_mailchimp_api():
     if not settings.MAILCHIMP_API_KEY:
         raise mailchimp.InvalidApiKeyError(
-            "An API key is required to connect to Mailchimp."
+            'An API key is required to connect to Mailchimp.'
         )
     return mailchimp.Mailchimp(settings.MAILCHIMP_API_KEY)
 

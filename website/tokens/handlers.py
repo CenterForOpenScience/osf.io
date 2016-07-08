@@ -76,7 +76,7 @@ def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
         return redirect(request.base_url)
     elif sanction.is_rejected:
         err_code = http.GONE if kind in ['registration', 'embargo'] else http.BAD_REQUEST
-        err_message = "This registration {0} has been rejected.".format(
+        err_message = 'This registration {0} has been rejected.'.format(
             markupsafe.escape(sanction.DISPLAY_NAME))
     if err_code:
         raise HTTPError(err_code, data=dict(

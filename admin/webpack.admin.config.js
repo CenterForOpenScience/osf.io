@@ -29,11 +29,12 @@ var config = assign({}, common, {
     entry: {
         'admin-base-page': staticAdminPath('js/pages/base-page.js'),
         'prereg-admin-page': staticAdminPath('js/pages/prereg-admin-page.js'),
-        'admin-registration-edit-page': staticAdminPath('js/pages/admin-registration-edit-page.js')
+        'admin-registration-edit-page': staticAdminPath('js/pages/admin-registration-edit-page.js'),
+        'dashboard': staticAdminPath('js/sales_analytics/dashboard.js'),
     },
     plugins: plugins,
     debug: true,
-    devtool: 'source-map'
+    devtool: 'source-map',
 });
 config.resolve.root = [websiteRoot, adminRoot];
 module.exports = config;

@@ -264,7 +264,7 @@ function ContribRemover(selector, nodeTitle, nodeId, userName, userId, contribSh
 
 ContribRemover.prototype.init = function() {
     var self = this;
-    ko.applyBindings(self.viewModel, self.$element[0]);
+    $osf.applyBindings(self.viewModel, self.$element[0]);
     // Clear popovers on dismiss start
     self.$element.on('hide.bs.modal', function() {
         self.$element.find('.popover').popover('hide');

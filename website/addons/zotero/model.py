@@ -17,8 +17,8 @@ from website.citations.providers import CitationsOauthProvider
 MAX_CITATION_LOAD = 200
 
 class Zotero(CitationsOauthProvider):
-    name = "Zotero"
-    short_name = "zotero"
+    name = 'Zotero'
+    short_name = 'zotero'
     _oauth_version = 1
 
     client_id = settings.ZOTERO_CLIENT_ID

@@ -383,8 +383,8 @@ class TestStorageAddonBase(ArchiverTestCase):
         self._test__get_file_tree(addon_short_name)
 
     def test_addons(self):
-        #  Test that each addon in settings.ADDONS_ARCHIVABLE other than wiki implementes the StorageAddonBase interface
-        for addon in [a for a in settings.ADDONS_ARCHIVABLE if a not in ['wiki']]:
+        #  Test that each addon in settings.ADDONS_ARCHIVABLE other than wiki/forward implements the StorageAddonBase interface
+        for addon in [a for a in settings.ADDONS_ARCHIVABLE if a not in ['wiki', 'forward']]:
             self._test_addon(addon)
 
 class TestArchiverTasks(ArchiverTestCase):
@@ -512,7 +512,6 @@ class TestArchiverTasks(ArchiverTestCase):
             selected_files,
             node_index
         )
-
         schema = generate_schema_from_data(data)
         with test_utils.mock_archive(node, schema=schema, data=data, autocomplete=True, autoapprove=True) as registration:
             with mock.patch.object(StorageAddonBase, '_get_file_tree', mock.Mock(return_value=file_trees[node._id])):

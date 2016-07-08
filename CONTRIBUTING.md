@@ -6,6 +6,8 @@ REPORTING ISSUES
 
 If you find a bug in osf.io or would like to propose a new feature, please file an issue report in CenterForOpenScience/osf.io. Below we have some information on how to best report the issue, but if you’re short on time or new to this, don’t worry! We really want to know about the problem, so go ahead and report it.
 
+If you would like to report a security issue, please email contact@cos.io for instructions on how to report the security issue. Do not include details of the issue in that email.
+
 If you do this a lot, or you just want to know how to make it easier for us to find and fix the problem, keep reading.
 
 Quick link

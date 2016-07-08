@@ -72,6 +72,7 @@
                 >Discard changes</button>
 
             <button
+                    data-bind="disable: saving(), text: saving() ? 'Saving' : 'Save'"
                     type="submit"
                     class="btn btn-success"
                 >Save</button>
@@ -82,7 +83,6 @@
         <div class="help-block">
             <p data-bind="html: message, attr: {class: messageClass}"></p>
         </div>
-
     </form>
 
 </script>

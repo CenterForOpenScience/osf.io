@@ -14,9 +14,13 @@ git+https://github.com/jmcarp/HTTPretty@matcher-priority
 
 # Syntax checking
 flake8==2.4.0
+flake8-quotes==0.3.0
 
 # Livereload
 livereload==2.3.2
 
 # Avoid eating cpu with live reloading
 watchdog==0.8.3
+
+# Django SSL for local https development
+django-sslserver==0.19

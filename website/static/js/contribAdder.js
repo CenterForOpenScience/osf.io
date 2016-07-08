@@ -147,7 +147,7 @@ AddContributorViewModel = oop.extend(Paginator, {
         for (var key in nodesState) {
             var i;
             var node = nodesState[key];
-            var enabled = nodesState[key].canWrite;
+            var enabled = nodesState[key].isAdmin;
             var checked = nodesState[key].checked;
             if (enabled) {
                 var nodeContributors = [];
@@ -466,7 +466,7 @@ AddContributorViewModel = oop.extend(Paginator, {
             //parent node is changed by default
             nodesState[nodeParent].checked = true;
             //parent node cannot be changed
-            nodesState[nodeParent].canWrite = false;
+            nodesState[nodeParent].isAdmin = false;
             self.nodesState(nodesState);
         }).fail(function (xhr, status, error) {
             $osf.growl('Error', 'Unable to retrieve project settings');
@@ -508,7 +508,7 @@ ContribAdder.prototype.init = function() {
     self.viewModel.fetchNodeTree(treebeardUrl).done(function(response) {
         new NodeSelectTreebeard('addContributorsTreebeard', response, self.viewModel.nodesState);
     });
-    ko.applyBindings(self.viewModel, self.$element[0]);
+    $osf.applyBindings(self.viewModel, self.$element[0]);
     // Clear popovers on dismiss start
     self.$element.on('hide.bs.modal', function() {
         self.$element.find('.popover').popover('hide');
