@@ -6,6 +6,7 @@ import os
 from box import CredentialsV2, BoxClient
 from box.client import BoxClientException
 from modularodm import fields
+from oauthlib.oauth2 import InvalidGrantError
 import requests
 from urllib3.exceptions import MaxRetryError
 
@@ -176,7 +177,10 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         # Split out from set_folder for ease of testing, due to
         # outgoing requests. Should only be called by set_folder
         try:
-            Box(self.external_account).refresh_oauth_key()
+            Box(self.external_account).refresh_oauth_key(force=True)
+        except InvalidGrantError:
+            raise exceptions.InvalidAuthError()
+        try:
             client = BoxClient(self.external_account.oauth_key)
             folder_data = client.get_folder(self.folder_id)
         except BoxClientException:

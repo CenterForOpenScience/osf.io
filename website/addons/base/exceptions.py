@@ -8,5 +8,8 @@ class AddonError(Exception):
 class InvalidFolderError(AddonError):
     pass
 
+class InvalidAuthError(AddonError):
+    pass
+
 class HookError(AddonError):
     pass

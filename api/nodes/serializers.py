@@ -9,7 +9,7 @@ from framework.exceptions import PermissionsError
 
 from django.conf import settings
 
-from website.addons.base.exceptions import InvalidFolderError
+from website.addons.base.exceptions import InvalidFolderError, InvalidAuthError
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.models import Node, User, Comment, Institution, MetaSchema, DraftRegistration
@@ -455,6 +455,8 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
                 instance.set_folder(folder_info, auth)
             except InvalidFolderError:
                 raise exceptions.NotFound('Unable to find requested folder.')
+            except InvalidAuthError:
+                raise exceptions.PermissionDenied('Addon credentials are invalid.')
 
         return instance
 
