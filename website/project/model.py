@@ -1229,9 +1229,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if save:
             self.save()
 
-    def set_permissions(self, user, permissions, save=False):
+    def set_permissions(self, user, permissions, validate=True, save=False):
         # Ensure that user's permissions cannot be lowered if they are the only admin
-        if reduce_permissions(self.permissions[user._id]) == ADMIN and reduce_permissions(permissions) != ADMIN:
+        if validate and reduce_permissions(self.permissions[user._id]) == ADMIN and reduce_permissions(permissions) != ADMIN:
             reduced_permissions = [
                 reduce_permissions(perms) for user_id, perms in self.permissions.iteritems()
                 if user_id != user._id
@@ -2927,7 +2927,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                     )
                 permissions = expand_permissions(user_dict['permission'])
                 if set(permissions) != set(self.get_permissions(user)):
-                    self.set_permissions(user, permissions, save=False)
+                    # Validate later
+                    self.set_permissions(user, permissions, validate=False, save=False)
                     permissions_changed[user._id] = permissions
                 # visible must be added before removed to ensure they are validated properly
                 if user_dict['visible']:
@@ -2952,7 +2953,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
             admins = list(self.get_admin_contributors(users))
             if users is None or not admins:
-                raise ValueError(
+                raise NodeStateError(
                     'Must have at least one registered admin contributor'
                 )
 
