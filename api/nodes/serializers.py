@@ -207,6 +207,15 @@ class NodeSerializer(JSONAPISerializer):
         related_meta={'count': 'get_logs_count'}
     )
 
+    linked_nodes = RelationshipField(
+        related_view='nodes:linked-nodes',
+        related_view_kwargs={'node_id': '<pk>'},
+        related_meta={'count': 'get_node_links_count'},
+        self_view='nodes:node-pointer-relationship',
+        self_view_kwargs={'node_id': '<pk>'},
+        self_meta={'count': 'get_node_links_count'}
+    )
+
     def get_current_user_permissions(self, obj):
         user = self.context['request'].user
         if user.is_anonymous():
@@ -242,6 +251,14 @@ class NodeSerializer(JSONAPISerializer):
 
     def get_pointers_count(self, obj):
         return len(obj.nodes_pointer)
+
+    def get_node_links_count(self, obj):
+        count = 0
+        auth = get_user_auth(self.context['request'])
+        for pointer in obj.nodes_pointer:
+            if not pointer.node.is_deleted and not pointer.node.is_collection and pointer.node.can_view(auth):
+                count += 1
+        return count
 
     def get_unread_comments_count(self, obj):
         user = get_user_auth(self.context['request']).user
@@ -365,13 +382,18 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
             folder_info = None
             set_folder = False
 
-        if folder_info and addon_name == 'googledrive':
+        if addon_name == 'googledrive':
+            folder_id = folder_info
             try:
                 folder_path = data['folder_path']
             except KeyError:
                 folder_path = None
+
+            if (folder_id or folder_path) and not (folder_id and folder_path):
+                raise exceptions.ValidationError(detail='Must specify both folder_id and folder_path for {}'.format(addon_name))
+
             folder_info = {
-                'id': folder_info,
+                'id': folder_id,
                 'path': folder_path
             }
         return set_folder, folder_info
@@ -417,6 +439,7 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
         if instance and instance.has_auth and set_account and not external_account_id:
             # Settings authorized, User requesting deauthorization
             instance.deauthorize(auth=auth)  # clear_auth performs save
+            return instance
         elif external_account_id:
             # Settings may or may not be authorized, user requesting to set instance.external_account
             account = self.get_account_or_error(addon_name, external_account_id, auth)
@@ -470,6 +493,29 @@ class NodeForksSerializer(NodeSerializer):
         return fork
 
 
+class ContributorIDField(IDField):
+    """ID field to use with the contributor resource. Contributor IDs have the form "<node-id>-<user-id>"."""
+
+    def __init__(self, *args, **kwargs):
+        kwargs['source'] = kwargs.pop('source', '_id')
+        kwargs['help_text'] = kwargs.get('help_text', 'Unique contributor ID. Has the form "<node-id>-<user-id>". Example: "abc12-xyz34"')
+        super(ContributorIDField, self).__init__(*args, **kwargs)
+
+    def _get_node_id(self):
+        return self.context['request'].parser_context['kwargs']['node_id']
+
+    # override IDField
+    def get_id(self, obj):
+        node_id = self._get_node_id()
+        user_id = obj._id
+        return '{}-{}'.format(node_id, user_id)
+
+    def to_representation(self, value):
+        node_id = self._get_node_id()
+        user_id = super(ContributorIDField, self).to_representation(value)
+        return '{}-{}'.format(node_id, user_id)
+
+
 class NodeContributorsSerializer(JSONAPISerializer):
     """ Separate from UserSerializer due to necessity to override almost every field as read only
     """
@@ -480,7 +526,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
         'permission'
     ])
 
-    id = IDField(source='_id', required=True)
+    id = ContributorIDField(read_only=True)
     type = TypeField()
 
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not.',
@@ -520,8 +566,9 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
 class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     """
-    Overrides NodeContributorsSerializer to add target_type field
+    Overrides NodeContributorsSerializer to add target_type and required id field
     """
+    id = ContributorIDField(required=True)
     target_type = TargetTypeField(target_type='users')
 
     def create(self, validated_data):
@@ -540,11 +587,11 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
         contributor.node_id = node._id
         return contributor
 
-
 class NodeContributorDetailSerializer(NodeContributorsSerializer):
     """
     Overrides node contributor serializer to add additional methods
     """
+    id = ContributorIDField(required=True)
 
     def update(self, instance, validated_data):
         contributor = instance

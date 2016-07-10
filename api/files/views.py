@@ -1,11 +1,17 @@
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
+from rest_framework.exceptions import NotFound
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from website.files.models import FileNode
-from website.files.models import FileVersion
+from website.models import Guid
+from website.files.models import (
+    FileNode,
+    FileVersion,
+    StoredFileNode
+)
 
+from api.base.exceptions import Gone
 from api.base.permissions import PermissionWithGetter
 from api.base.utils import get_object_or_error
 from api.base.views import JSONAPIBaseView
@@ -27,7 +33,13 @@ class FileMixin(object):
     file_lookup_url_kwarg = 'file_id'
 
     def get_file(self, check_permissions=True):
-        obj = get_object_or_error(FileNode, self.kwargs[self.file_lookup_url_kwarg])
+        try:
+            obj = get_object_or_error(FileNode, self.kwargs[self.file_lookup_url_kwarg])
+        except (NotFound, Gone):
+            obj = get_object_or_error(Guid, self.kwargs[self.file_lookup_url_kwarg]).referent
+            if not isinstance(obj, StoredFileNode):
+                raise NotFound
+            obj = obj.wrapped()
 
         if check_permissions:
             # May raise a permission denied

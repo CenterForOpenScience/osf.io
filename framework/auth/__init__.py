@@ -3,14 +3,13 @@
 from datetime import datetime
 import uuid
 
-from modularodm import Q
-
 from framework import bcrypt
 from framework.auth import signals
+from framework.auth.core import User, Auth
+from framework.auth.core import get_user, generate_verification_key
 from framework.auth.exceptions import DuplicateEmailError
-from framework.sessions import session, create_session, Session
-from .core import User, Auth
-from .core import get_user, generate_verification_key
+from framework.sessions import session, create_session
+from framework.sessions.utils import remove_session
 
 
 __all__ = [
@@ -52,14 +51,15 @@ def authenticate(user, access_token, response):
     return response
 
 
-# TODO: should we destroy all sessions?
 def logout():
+    """Clear users' session(s) and log them out of OSF."""
+
     for key in ['auth_user_username', 'auth_user_id', 'auth_user_fullname', 'auth_user_access_token']:
         try:
             del session.data[key]
         except KeyError:
             pass
-    Session.remove(Q('_id', 'eq', session._id))
+    remove_session(session)
     return True
 
 
