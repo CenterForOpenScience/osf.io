@@ -511,7 +511,7 @@ CommentModel.prototype.autosizeText = function(elm) {
     var self = this;
     var $elm = $(elm);
     $elm.find('textarea').autosize().focus();
-    initAtMention(self.$root.nodeId(), $elm.find('.atwho-input'));
+    initAtMention(self.$root.nodeId(), $elm.find(self.$root.inputSelector));
 };
 
 CommentModel.prototype.cancelEdit = function() {
@@ -737,6 +737,7 @@ var CommentListModel = function(options) {
     self.$root = self;
     self.MAXLENGTH = MAXLENGTH;
 
+    self.inputSelector = options.inputSelector;
     self.editors = 0;
     self.nodeId = ko.observable(options.nodeId);
     self.nodeApiUrl = options.nodeApiUrl;
@@ -832,7 +833,7 @@ function initAtMention(nodeId, selectorOrElem) {
  */
 var init = function(commentLinkSelector, commentPaneSelector, options) {
     // TODO: Don't hardcode selector here; pass argument in page module
-    initAtMention(options.nodeId, '.atwho-input');
+    initAtMention(options.nodeId, options.inputSelector);
     var cp = new CommentPane(commentPaneSelector, {
         onOpen: function(){
             return onOpen(options.page, options.rootId, options.nodeApiUrl, options.currentUser.id);
