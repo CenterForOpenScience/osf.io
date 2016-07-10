@@ -73,8 +73,6 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 200)
         target_node = res.json['data']['embeds']['target_node']
-        assert_in('errors', target_node)
-        assert_equal(target_node['errors'][0]['detail'], 'The requested node link is no longer available.')
 
     def test_cannot_access_withdrawn_node_links_list(self):
         url = '/{}registrations/{}/node_links/'.format(API_BASE, self.registration._id)
