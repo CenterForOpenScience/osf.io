@@ -14,45 +14,47 @@ require('jquery-autosize');
 var osfHelpers = require('js/osfHelpers');
 var CommentPane = require('js/commentpane');
 var markdown = require('js/markdown');
-var atjsConfig = require('js/atjsConfig');
+var atMention = require('js/atMention');
 
-var input = $('.atwho-input');
-var nodeId = window.nodeId;
+// Cached contributor data, to prevent multiple fetches for @mentions
+var __contributorCache = null;
 
-var getContributorList = function(input, nodeId) {
+var getContributorList = function(nodeId) {
     var url = osfHelpers.apiV2Url('nodes/' + nodeId + '/contributors/', {});
-    var request = osfHelpers.ajaxJSON(
-        'GET',
-        url,
-        {'isCors': true});
-    request.done(function(response) {
-        var activeContributors = response.data.filter(function(item) {
-            return item.embeds.users.data.attributes.active === true;
+    var ret = $.Deferred();
+    if (__contributorCache !== null) {
+        ret.resolve(__contributorCache);
+    } else {
+        var request = osfHelpers.ajaxJSON(
+            'GET',
+            url,
+            {'isCors': true});
+        request.done(function(response) {
+            var activeContributors = response.data.filter(function(item) {
+                return item.embeds.users.data.attributes.active === true;
+            });
+            var data = activeContributors.map(function(item) {
+                var userData = item.embeds.users.data;
+                return {
+                    'id': userData.id,
+                    'name': userData.attributes.given_name,
+                    'fullName': userData.attributes.full_name,
+                    'link': userData.links.html
+                };
+            });
+            __contributorCache = data;
+            ret.resolve(data);
         });
-        var data = activeContributors.map(function(item) {
-            var userData = item.embeds.users.data;
-            return {
-                'id': userData.id,
-                'name': userData.attributes.given_name,
-                'fullName': userData.attributes.full_name,
-                'link': userData.links.html
-            };
+        request.fail(function(xhr, status, error) {
+            Raven.captureMessage('Error getting contributors', {
+                url: url,
+                status: status,
+                error: error
+            });
+            ret.reject(xhr, status, error);
         });
-
-        // for any input areas that currently exist on page
-        input.atwho('load','@', data).atwho('load', '+', data).atwho('run');
-        // for future input areas so that data doesn't need to be reloaded
-        atjsConfig.atConfig.data = data;
-        atjsConfig.plusConfig.data = data;
-    });
-    request.fail(function(xhr, status, error) {
-        Raven.captureMessage('Error getting contributors', {
-            url: url,
-            status: status,
-            error: error
-        });
-    });
-    return request;
+    }
+    return ret.promise();
 };
 
 // Maximum length for comments, in characters
@@ -506,21 +508,10 @@ CommentModel.prototype.edit = function() {
 };
 
 CommentModel.prototype.autosizeText = function(elm) {
-    $(elm).find('textarea').autosize().focus();
-    $(elm)
-        .find('.atwho-input')
-        .atwho(atjsConfig.atConfig)
-        .atwho(atjsConfig.plusConfig)
-        .bind('paste', atjsConfig.onPaste)
-        .on('focusin', atjsConfig.lastElementBr)
-        .on('focusout', atjsConfig.onlyElementBr)
-        .keydown(function(e) {
-            if(e.which === 13 && !e.isDefaultPrevented()) {
-                atjsConfig.onReturn(e);
-            } else {
-                atjsConfig.preventKeyboardShortcuts(e);
-            }
-        });
+    var self = this;
+    var $elm = $(elm);
+    $elm.find('textarea').autosize().focus();
+    initAtMention(self.$root.nodeId(), $elm.find('.atwho-input'));
 };
 
 CommentModel.prototype.cancelEdit = function() {
@@ -818,6 +809,14 @@ var onOpen = function(page, rootId, nodeApiUrl, currentUserId) {
     return request;
 };
 
+
+function initAtMention(nodeId, selectorOrElem) {
+    return getContributorList(nodeId)
+        .then(function(contributors) {
+            atMention(selectorOrElem, contributors);
+        });
+}
+
 /* options example: {
  *      nodeId: Node._id,
  *      nodeApiUrl: Node.api_url,
@@ -832,20 +831,8 @@ var onOpen = function(page, rootId, nodeApiUrl, currentUserId) {
  * }
  */
 var init = function(commentLinkSelector, commentPaneSelector, options) {
-    getContributorList(input, nodeId);
-    input
-        .atwho(atjsConfig.atConfig)
-        .atwho(atjsConfig.plusConfig)
-        .bind('paste', atjsConfig.onPaste)
-        .on('focusin keyup', atjsConfig.lastElementBr)
-        .on('focusout', atjsConfig.onlyElementBr)
-        .keydown(function(e) {
-            if(e.which === 13 && !e.isDefaultPrevented()) {
-                atjsConfig.onReturn(e);
-            } else {
-                atjsConfig.preventKeyboardShortcuts(e);
-            }
-        });
+    // TODO: Don't hardcode selector here; pass argument in page module
+    initAtMention(options.nodeId, '.atwho-input');
     var cp = new CommentPane(commentPaneSelector, {
         onOpen: function(){
             return onOpen(options.page, options.rootId, options.nodeApiUrl, options.currentUser.id);

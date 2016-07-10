@@ -158,12 +158,21 @@ var plusConfig = $.extend({}, atConfig, {
     displayTemplate: '+${fullName}'
 });
 
-module.exports = {
-    atConfig: atConfig,
-    plusConfig: plusConfig,
-    onPaste: onPaste,
-    lastElementBr: lastElementBr,
-    onlyElementBr: onlyElementBr,
-    onReturn: onReturn,
-    preventKeyboardShortcuts: preventKeyboardShortcuts
+module.exports = function init(selector, data) {
+    var $input = $(selector);
+    // for any input areas that currently exist on page
+    $input.atwho('load','@', data).atwho('load', '+', data).atwho('run');
+    $input
+        .atwho($.extend({}, atConfig, {data: data}))
+        .atwho($.extend({}, plusConfig, {data: data}))
+        .bind('paste', onPaste)
+        .on('focusin keyup', lastElementBr)
+        .on('focusout', onlyElementBr)
+        .keydown(function(e) {
+            if(e.which === 13 && !e.isDefaultPrevented()) {
+                onReturn(e);
+            } else {
+                preventKeyboardShortcuts(e);
+            }
+        });
 };
