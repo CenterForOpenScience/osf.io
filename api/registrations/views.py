@@ -420,5 +420,4 @@ class RegistrationLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveAPIV
             if not pointer.node.is_deleted and not pointer.node.is_collection and
             pointer.node.can_view(auth)
         ], 'self': node}
-        self.check_object_permissions(self.request, obj)
         return obj
