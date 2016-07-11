@@ -135,7 +135,6 @@ class AddonModelMixin(StoredObject):
 
         :param dict config: Mapping between add-on names and enabled / disabled
             statuses
-
         """
 
         for addon_name, enabled in config.iteritems():
