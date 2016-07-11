@@ -14,7 +14,8 @@ from framework import forms, status
 from framework import auth as framework_auth
 from framework.auth import exceptions
 from framework.auth import cas, campaigns
-from framework.auth import logout, get_user
+from framework.auth import logout as osf_logout
+from framework.auth import get_user
 from framework.auth.exceptions import DuplicateEmailError, ExpiredTokenError, InvalidTokenError
 from framework.auth.core import generate_verification_key
 from framework.auth.decorators import collect_auth, must_be_logged_in
@@ -160,7 +161,7 @@ def forgot_password_post(auth, **kwargs):
                 status.push_status_message(status_message, kind='success', trust=False)
             else:
                 status.push_status_message('You have recently requested to change your password. Please wait a '
-                                           'little while before trying again.', kind='error', trust=False)
+                                           'few minutes before trying again.', kind='error', trust=False)
         else:
             status.push_status_message(status_message, kind='success', trust=False)
     else:
@@ -258,11 +259,14 @@ def auth_logout(redirect_url=None, **kwargs):
     """
     Log out, delete current session, delete CAS cookie and delete OSF cookie.
     HTTP Method: GET
+
+    :param redirect_url: url to redirect user after logout, default is 'goodbye'
+    :return:
     """
 
     redirect_url = redirect_url or request.args.get('redirect_url') or web_url_for('goodbye', _absolute=True)
     # OSF log out, remove current OSF session
-    logout()
+    osf_logout()
     # set redirection to CAS log out (or log in if 'reauth' is present)
     if 'reauth' in request.args:
         cas_endpoint = cas.get_login_url(redirect_url)
@@ -545,11 +549,16 @@ def register_user(**kwargs):
         return {'message': 'You may now log in.'}
 
 
-def resend_confirmation_get():
+@collect_auth
+def resend_confirmation_get(auth):
     """
     View for user to land on resend confirmation page.
     HTTP Method: GET
     """
+
+    # If user is already logged in, log user out
+    if auth.logged_in:
+        return auth_logout(redirect_url=request.url)
 
     form = ResendConfirmationForm(request.form)
     return {
@@ -557,11 +566,16 @@ def resend_confirmation_get():
     }
 
 
-def resend_confirmation_post():
+@collect_auth
+def resend_confirmation_post(auth):
     """
     View for user to submit resend confirmation form.
     HTTP Method: POST
     """
+
+    # If user is already logged in, log user out
+    if auth.logged_in:
+        return auth_logout(redirect_url=request.url)
 
     form = ResendConfirmationForm(request.form)
 
@@ -573,12 +587,19 @@ def resend_confirmation_post():
                           'you should have, please contact OSF Support.').format(clean_email)
         kind = 'success'
         if user:
-            try:
-                send_confirm_email(user, clean_email)
-            except KeyError:
-                # already confirmed, redirect to dashboard
-                status_message = 'This email {0} has already been confirmed.'.format(clean_email)
-                kind = 'warning'
+            if throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+                try:
+                    send_confirm_email(user, clean_email)
+                except KeyError:
+                    # already confirmed, redirect to dashboard
+                    status_message = 'This email {0} has already been confirmed.'.format(clean_email)
+                    kind = 'warning'
+                user.email_last_sent = datetime.datetime.utcnow()
+                user.save()
+            else:
+                status_message = ('You have recently requested to resend your confirmation email. '
+                                 'Please wait a few minutes before trying again.')
+                kind = 'error'
         status.push_status_message(status_message, kind=kind, trust=False)
     else:
         forms.push_errors_to_status(form.errors)

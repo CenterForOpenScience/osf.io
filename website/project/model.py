@@ -51,7 +51,7 @@ from website.exceptions import (
 from website.institutions.model import Institution, AffiliatedInstitutionsList
 from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
-from website.util.permissions import expand_permissions
+from website.util.permissions import expand_permissions, reduce_permissions
 from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
 from website.project.commentable import Commentable
 from website.project.metadata.schemas import OSF_META_SCHEMAS
@@ -1229,7 +1229,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if save:
             self.save()
 
-    def set_permissions(self, user, permissions, save=False):
+    def set_permissions(self, user, permissions, validate=True, save=False):
+        # Ensure that user's permissions cannot be lowered if they are the only admin
+        if validate and reduce_permissions(self.permissions[user._id]) == ADMIN and reduce_permissions(permissions) != ADMIN:
+            reduced_permissions = [
+                reduce_permissions(perms) for user_id, perms in self.permissions.iteritems()
+                if user_id != user._id
+            ]
+            if ADMIN not in reduced_permissions:
+                raise NodeStateError('Must have at least one registered admin contributor')
         self.permissions[user._id] = permissions
         if save:
             self.save()
@@ -1264,6 +1272,34 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 return True
 
         return False
+
+    def find_readable_antecedent(self, auth):
+        """ Returns first antecendant node readable by <user>.
+        """
+
+        next_parent = self.parent_node
+        while next_parent:
+            if next_parent.can_view(auth):
+                return next_parent
+            next_parent = next_parent.parent_node
+
+    def find_readable_descendants(self, auth):
+        """ Returns a generator of first descendant node(s) readable by <user>
+        in each descendant branch.
+        """
+        new_branches = []
+        for node in self.nodes:
+            if not node.primary or node.is_deleted:
+                continue
+
+            if node.can_view(auth):
+                yield node
+            else:
+                new_branches.append(node)
+
+        for bnode in new_branches:
+            for node in bnode.find_readable_descendants(auth):
+                yield node
 
     def has_addon_on_children(self, addon):
         """Checks if a given node has a specific addon on child nodes
@@ -2891,7 +2927,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                     )
                 permissions = expand_permissions(user_dict['permission'])
                 if set(permissions) != set(self.get_permissions(user)):
-                    self.set_permissions(user, permissions, save=False)
+                    # Validate later
+                    self.set_permissions(user, permissions, validate=False, save=False)
                     permissions_changed[user._id] = permissions
                 # visible must be added before removed to ensure they are validated properly
                 if user_dict['visible']:
@@ -2916,7 +2953,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
             admins = list(self.get_admin_contributors(users))
             if users is None or not admins:
-                raise ValueError(
+                raise NodeStateError(
                     'Must have at least one registered admin contributor'
                 )
 

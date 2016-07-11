@@ -2,6 +2,26 @@
 Changelog
 *********
 
+0.81.0 (2016-07-07)
+===================
+
+- APIv2: By default, GUID endpoint returns the data for the GUID's referent instead of redirecting to the referent's URL. Use the `?resolve=true` parameter to redirect.
+- APIv2: IDs for contributors are of the form <nodeid>-<userid>.
+- APIv2: All keys returned in "user" endpoint response objects are snake_case.
+- On "My projects" page, show permissions information when a project is selected.
+- Use HTTPS URLS on DOI links.
+- Set HttpOnly flag on cookies.
+- Replace jquery.cookie (deprecated) with js-cookie.
+- Improved error messaging for DropBox addon.
+- More help text for Collections and Bookmarks.
+- Upgrade to invoke 0.13.0.
+
+0.80.0 (2016-06-30)
+===================
+
+- Make log feed UI and language consistent across pages.
+- Make "Add component" UI and language consistent across pages.
+
 0.79.0 (2016-06-28)
 ===================
 
