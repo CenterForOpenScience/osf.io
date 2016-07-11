@@ -5,6 +5,8 @@ var utils = require('tests/utils');
 var faker = require('faker');
 var moment = require('moment');
 
+console.log('UTC offset: ' + moment().utcOffset());
+
 var RegistrationModal = require('js/registrationModal').ViewModel;
 
 // Add sinon asserts to chai.assert, so we can do assert.calledWith instead of sinon.assert.calledWith
