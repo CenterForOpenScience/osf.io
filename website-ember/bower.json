@@ -1,6 +1,7 @@
 {
   "name": "website-ember",
   "dependencies": {
+    "bootstrap": "~3.3.5",
     "ember": "~2.4.3",
     "ember-cli-shims": "0.1.1",
     "ember-cli-test-loader": "0.2.2",
