@@ -31,6 +31,7 @@ var PublicFilesDropzone = {
             withCredentials: true,
             method: 'put',
             maxFiles: 1,
+            maxFilesize: 500,
             init: function () {
                 // When user clicks close button on top right, reset the number of files
                 var _this = this;
@@ -54,6 +55,52 @@ var PublicFilesDropzone = {
                     }
                     this.removeFile(file);
                 }
+            },
+            addedfile: function(file) {
+                var node, removeFileEvent, removeLink, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2, _results,
+                _this = this;
+                if (this.element === this.previewsContainer) {
+                  this.element.classList.add('dz-started');
+                }
+                file.previewElement = Dropzone.createElement(this.options.previewTemplate.trim());
+                file.previewTemplate = file.previewElement;
+                this.previewsContainer.appendChild(file.previewElement);
+                _ref = file.previewElement.querySelectorAll('[data-dz-name]');
+                for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+                  node = _ref[_i];
+                  node.textContent = file.name;
+                }
+                _ref1 = file.previewElement.querySelectorAll('[data-dz-size]');
+                for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+                  node = _ref1[_j];
+                  node.innerHTML = this.filesize(file.size);
+                }
+                if (this.options.addRemoveLinks) {
+                  file._removeLink = Dropzone.createElement('<a class=\'dz-remove\' href=\'javascript:undefined;\' data-dz-remove>' + this.options.dictRemoveFile + '</a>');
+                  file.previewElement.appendChild(file._removeLink);
+                }
+                removeFileEvent = function(e) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (file.status === Dropzone.UPLOADING) {
+                    return _this.removeFile(file);
+                  } else {
+                    if (_this.options.dictRemoveFileConfirmation) {
+                      return Dropzone.confirm(_this.options.dictRemoveFileConfirmation, function() {
+                        return _this.removeFile(file);
+                      });
+                    } else {
+                      return _this.removeFile(file);
+                    }
+                  }
+                };
+                _ref2 = file.previewElement.querySelectorAll('[data-dz-remove]');
+                _results = [];
+                for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
+                  removeLink = _ref2[_k];
+                  _results.push(removeLink.addEventListener('click', removeFileEvent));
+                }
+                return _results;
             },
             sending: function (file, xhr) {
                 //Hack to remove webkitheaders
@@ -80,15 +127,20 @@ var PublicFilesDropzone = {
                     }
                 ).done(function(response) {
                     guid = response.data.attributes.guid;
-                    var link = 'http://localhost:5000/'+ guid;
+                    var link = location.protocol+ '//' + location.host + '/' + guid;
                     m.render(buttonContainer, dzPreviewTemplate.shareButton(link));
                     $('.logo-spin').remove();
                     $('span.p-md').remove();
                     $('span.button.close').css('visibility', 'hidden');
                     file.previewElement.classList.add('dz-success');
                     file.previewElement.classList.add('dz-preview-background-success');
-                }).fail(function(xhr) {
+
+                }).fail(function(xhr, status, error) {
+                    $('.logo-spin').remove();
+                    $('span.p-md').remove();
                     console.log(xhr);
+                    console.log(status);
+                    console.log(error);
                 });
 
                 this.processQueue();
@@ -104,12 +156,12 @@ var PublicFilesDropzone = {
                 }
                 this.files.pop();
             },
+            canceled: function (file) {
+                $osf.softGrowl('fa fa-files-o', ' Upload Canceled', 'info');
 
+            },
             error: function (file, message) {
                 this.files.pop();
-                // Keeping the old behavior in case we want to revert it some time
-                file.previewElement.classList.add('dz-error');
-                file.previewElement.classList.add('dz-preview-background-error');
                 file.previewElement.remove(); // Doesn't show the preview
                 // Need the padding change twice because the padding doesn't resize when there is an error
                 // get file size in MB, rounded to 1 decimal place
@@ -121,7 +173,6 @@ var PublicFilesDropzone = {
             },
 
         };
-
         var $publicFiles = $('#publicFilesDropzone');
 
         $publicFiles.on('click', 'span.dz-share', function (e) {
