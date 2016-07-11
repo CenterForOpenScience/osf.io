@@ -18,7 +18,7 @@ describe('mithrilHelpers', () => {
         });
     });
 
-    describe.only('apiV2Config', () => {
+    describe('apiV2Config', () => {
         it('can be called with no arguments', () => {
             var func = mHelpers.apiV2Config();
             assert.isFunction(func);

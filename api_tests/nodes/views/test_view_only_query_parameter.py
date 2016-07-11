@@ -91,7 +91,7 @@ class TestNodeDetailViewOnlyLinks(ViewOnlyTestCase):
         assert_equal(res.status_code, 200)
         contributors = res.json['data']['embeds']['contributors']['data']
         for contributor in contributors:
-            assert_in(contributor['id'], self.valid_contributors)
+            assert_in(contributor['id'].split('-')[1], self.valid_contributors)
 
     def test_private_node_logged_in_with_anonymous_link_does_not_expose_contributor_id(self):
         res = self.app.get(self.private_node_one_url, {
@@ -101,7 +101,7 @@ class TestNodeDetailViewOnlyLinks(ViewOnlyTestCase):
         assert_equal(res.status_code, 200)
         contributors = res.json['data']['embeds']['contributors']['data']
         for contributor in contributors:
-            assert_in(contributor['id'], self.valid_contributors)
+            assert_in(contributor['id'].split('-')[1], self.valid_contributors)
 
     def test_public_node_with_link_anonymous_does_not_expose_user_id(self):
         res = self.app.get(self.public_node_one_url, {
@@ -121,7 +121,7 @@ class TestNodeDetailViewOnlyLinks(ViewOnlyTestCase):
         assert_equal(res.status_code, 200)
         contributors = res.json['data']['embeds']['contributors']['data']
         for contributor in contributors:
-            assert_in(contributor['id'], self.valid_contributors)
+            assert_in(contributor['id'].split('-')[1], self.valid_contributors)
 
     def test_public_node_with_link_unused_does_expose_contributor_id(self):
         res = self.app.get(self.public_node_one_url, {
@@ -130,7 +130,7 @@ class TestNodeDetailViewOnlyLinks(ViewOnlyTestCase):
         assert_equal(res.status_code, 200)
         contributors = res.json['data']['embeds']['contributors']['data']
         for contributor in contributors:
-            assert_in(contributor['id'], self.valid_contributors)
+            assert_in(contributor['id'].split('-')[1], self.valid_contributors)
 
     def test_view_only_link_does_not_grant_write_permission(self):
         payload = {
@@ -228,5 +228,5 @@ class TestNodeListViewOnlyLinks(ViewOnlyTestCase):
             contributors = node['embeds']['contributors']['data']
             for contributor in contributors:
                 assertions += 1
-                assert_in(contributor['id'], self.valid_contributors)
+                assert_in(contributor['id'].split('-')[1], self.valid_contributors)
         assert_not_equal(assertions, 0)
