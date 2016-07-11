@@ -1387,7 +1387,7 @@ function _fangornResolveRows(item) {
                 sortInclude : false,
                 filter : false,
                 custom : function() {
-                    var link = 'http://localhost:5000/' + item.data.guid;
+                    var link = location.protocol+ '//' + location.host + '/' + item.data.extra.guid;
                     return cb.generateClipboard(link); }
             });
         }
