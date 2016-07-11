@@ -157,7 +157,7 @@
                             </div>
                             <div class="col-xs-4">
                                 <!-- ko if: passwordFeedback() -->
-                                <p class="text-center" id="front-password-info" data-bind="text: passwordComplexityInfo().text, attr: passwordComplexityInfo().text_attr"></p>
+                                <p class="f-w-xl" id="front-password-info" data-bind="text: passwordComplexityInfo().text, attr: passwordComplexityInfo().text_attr"></p>
                                 <!-- /ko -->
                             </div>
                         </div>
