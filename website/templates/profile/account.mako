@@ -70,7 +70,7 @@
                                             <span class="fa fa-info-circle" data-bind="tooltip: {title: 'Merging accounts will move all projects and components associated with two emails into one account. All projects and components will be displayed under the email address listed as primary.',
                                              placement: 'bottom', container : 'body'}"></span>
                                             </p>
-                  
+
                                             <div class="form-group">
                                                 ## email input verification is not supported on safari
                                               <input placeholder="Email address" type="email" data-bind="value: emailInput" class="form-control" required maxlength="254">
@@ -124,19 +124,25 @@
                                             blur: trim.bind($data, password)
                                         }"
                                 >
-                              <div class="progress create-password">
-                                  <div class="progress-bar progress-bar-sm" role="progressbar" data-bind="attr: passwordComplexityInfo().attr"></div>
-                              </div>
-                              <div>
-                                  <!-- ko if: passwordFeedback() -->
-                                  <p class="text-right" id="front-password-info" data-bind="text: passwordComplexityInfo().text, attr: passwordComplexityInfo().text_attr"></p>
-                                  <p class="help-block osf-box-lt" data-bind="validationMessage: password" style="display: none;"></p>
-                                  <p class="help-block osf-box-lt" data-bind="text: passwordFeedback().warning"></p>
-                                  <!-- /ko -->
-                                  <!-- ko if: !passwordFeedback() -->
-                                  <div style="padding-top:10px"></div>
-                                  <!-- /ko -->
-                              </div>
+                                <div class="row" data-bind="visible: typedPassword().length > 0">
+                                    <div class="col-xs-8">
+                                        <div class="progress create-password">
+                                            <div class="progress-bar progress-bar-sm" role="progressbar" data-bind="attr: passwordComplexityInfo().attr"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-4 f-w-xl">
+                                        <!-- ko if: passwordFeedback() -->
+                                        <p id="front-password-info" data-bind="text: passwordComplexityInfo().text, attr: passwordComplexityInfo().text_attr"></p>
+                                        <!-- /ko -->
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <!-- ko if: passwordFeedback() -->
+                                    <p class="help-block osf-box-lt p-xs" data-bind="validationMessage: password" style="display: none;"></p>
+                                    <p class="osf-box-lt " data-bind="css : { 'p-xs': passwordFeedback().warning }, visible: typedPassword().length > 0, text: passwordFeedback().warning"></p>
+                                    <!-- /ko -->
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label for="confirm_password">Confirm new password</label>
