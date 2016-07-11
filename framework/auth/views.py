@@ -161,7 +161,7 @@ def forgot_password_post(auth, **kwargs):
                 status.push_status_message(status_message, kind='success', trust=False)
             else:
                 status.push_status_message('You have recently requested to change your password. Please wait a '
-                                           'little while before trying again.', kind='error', trust=False)
+                                           'few minutes before trying again.', kind='error', trust=False)
         else:
             status.push_status_message(status_message, kind='success', trust=False)
     else:
@@ -597,8 +597,8 @@ def resend_confirmation_post(auth):
                 user.email_last_sent = datetime.datetime.utcnow()
                 user.save()
             else:
-                status_message = 'You have recently requested to resend confirmation email.' \
-                                 'Please wait a little while before trying again.'
+                status_message = ('You have recently requested to resend your confirmation email. '
+                                 'Please wait a few minutes before trying again.')
                 kind = 'error'
         status.push_status_message(status_message, kind=kind, trust=False)
     else:
