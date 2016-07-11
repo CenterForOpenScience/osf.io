@@ -371,13 +371,13 @@ class TestProjectViews(OsfTestCase):
                 'users': [dict2, dict3],
                 'node_ids': [project._id],
             },
-            content_type="application/json",
+            content_type='application/json',
             auth=self.auth,
         ).maybe_follow()
         project.reload()
         assert_in(user2._id, project.contributors)
         # A log event was added
-        assert_equal(project.logs[-1].action, "contributor_added")
+        assert_equal(project.logs[-1].action, 'contributor_added')
         assert_equal(len(project.contributors), 3)
         assert_in(user2._id, project.permissions)
         assert_in(user3._id, project.permissions)
@@ -385,7 +385,6 @@ class TestProjectViews(OsfTestCase):
         assert_equal(project.permissions[user3._id], ['read', 'write'])
 
     def test_manage_permissions(self):
-
         url = self.project.api_url + 'contributors/manage/'
         self.app.post_json(
             url,

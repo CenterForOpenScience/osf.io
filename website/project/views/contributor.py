@@ -281,8 +281,8 @@ def project_manage_contributors(auth, node, **kwargs):
     # Update permissions and order
     try:
         node.manage_contributors(contributors, auth=auth, save=True)
-    except ValueError as error:
-        raise HTTPError(http.BAD_REQUEST, data={'message_long': error.message})
+    except (ValueError, NodeStateError) as error:
+        raise HTTPError(http.BAD_REQUEST, data={'message_long': error.args[0]})
 
     # If user has removed herself from project, alert; redirect to
     # node summary if node is public, else to user's dashboard page
