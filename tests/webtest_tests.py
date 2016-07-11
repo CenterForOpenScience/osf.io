@@ -20,7 +20,6 @@ from tests.base import fake
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory, WatchConfigFactory, NodeFactory,
                              NodeWikiFactory, RegistrationFactory,  UnregUserFactory, UnconfirmedUserFactory,
                              PrivateLinkFactory)
-from tests.test_features import requires_piwik
 from website import settings, language
 from website.util import web_url_for, api_url_for
 
@@ -545,62 +544,6 @@ class TestShortUrls(OsfTestCase):
         assert_equal(
             self._url_to_body(self.wiki.deep_url),
             self._url_to_body(self.wiki.url),
-        )
-
-
-@requires_piwik
-class TestPiwik(OsfTestCase):
-
-    def setUp(self):
-        super(TestPiwik, self).setUp()
-        self.users = [
-            AuthUserFactory()
-            for _ in range(3)
-        ]
-        self.consolidate_auth = Auth(user=self.users[0])
-        self.project = ProjectFactory(creator=self.users[0], is_public=True)
-        self.project.add_contributor(contributor=self.users[1])
-        self.project.save()
-
-    def test_contains_iframe_and_src(self):
-        res = self.app.get(
-            '/{0}/statistics/'.format(self.project._primary_key),
-            auth=self.users[0].auth
-        ).maybe_follow()
-        assert_in('iframe', res)
-        assert_in('src', res)
-        assert_in(settings.PIWIK_HOST, res)
-
-    def test_anonymous_no_token(self):
-        res = self.app.get(
-            '/{0}/statistics/'.format(self.project._primary_key),
-            auth=self.users[2].auth
-        ).maybe_follow()
-        assert_in('token_auth=anonymous', res)
-
-    def test_contributor_token(self):
-        res = self.app.get(
-            '/{0}/statistics/'.format(self.project._primary_key),
-            auth=self.users[1].auth
-        ).maybe_follow()
-        assert_in(self.users[1].piwik_token, res)
-
-    def test_no_user_token(self):
-        res = self.app.get(
-            '/{0}/statistics/'.format(self.project._primary_key)
-        ).maybe_follow()
-        assert_in('token_auth=anonymous', res)
-
-    def test_private_alert(self):
-        self.project.set_privacy('private', auth=self.consolidate_auth)
-        self.project.save()
-        res = self.app.get(
-            '/{0}/statistics/'.format(self.project._primary_key),
-            auth=self.users[0].auth
-        ).maybe_follow().normal_body
-        assert_in(
-            'Usage statistics are collected only for public resources.',
-            res
         )
 
 
