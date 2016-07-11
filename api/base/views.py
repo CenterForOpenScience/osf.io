@@ -3,13 +3,26 @@ from django.http import JsonResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import generics
-# from rest_framework.serializers
+from rest_framework import status
+from rest_framework import permissions as drf_permissions
+
+from framework.auth.oauth_scopes import CoreScopes
+
 from rest_framework.mixins import ListModelMixin
+from api.base import permissions as base_permissions
+from api.base.exceptions import RelationshipPostMakesNoChanges
 
 from api.users.serializers import UserSerializer
+from api.base.parsers import JSONAPIRelationshipParser
+from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
+from api.base.serializers import LinkedNodesRelationshipSerializer
+from api.nodes.permissions import ReadOnlyIfRegistration
+from api.nodes.permissions import ContributorOrPublicForRelationshipPointers
 
 from django.conf import settings as django_settings
-from .utils import absolute_reverse, is_truthy
+from .utils import absolute_reverse
+from .utils import is_truthy
+from .utils import get_user_auth
 
 from .requests import EmbeddedRequest
 
@@ -135,6 +148,112 @@ class JSONAPIBaseView(generics.GenericAPIView):
             'envelope': self.request.query_params.get('envelope', 'data'),
         })
         return context
+
+
+class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView):
+    """ Relationship Endpoint for Linked Node relationships
+
+    Used to set, remove, update and retrieve the ids of the linked nodes attached to this collection. For each id, there
+    exists a node link that contains that node.
+
+    ##Actions
+
+    ###Create
+
+        Method:        POST
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "linked_nodes",   # required
+                           "id": <node_id>   # required
+                         }]
+                       }
+        Success:       201
+
+    This requires both edit permission on the collection, and for the user that is
+    making the request to be able to read the nodes requested. Data can contain any number of
+    node identifiers. This will create a node_link for all node_ids in the request that
+    do not currently have a corresponding node_link in this collection.
+
+    ###Update
+
+        Method:        PUT || PATCH
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "linked_nodes",   # required
+                           "id": <node_id>   # required
+                         }]
+                       }
+        Success:       200
+
+    This requires both edit permission on the collection and for the user that is
+    making the request to be able to read the nodes requested. Data can contain any number of
+    node identifiers. This will replace the contents of the node_links for this collection with
+    the contents of the request. It will delete all node links that don't have a node_id in the data
+    array, create node links for the node_ids that don't currently have a node id, and do nothing
+    for node_ids that already have a corresponding node_link. This means a update request with
+    {"data": []} will remove all node_links in this collection
+
+    ###Destroy
+
+        Method:        DELETE
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "linked_nodes",   # required
+                           "id": <node_id>   # required
+                         }]
+                       }
+        Success:       204
+
+    This requires edit permission on the node. This will delete any node_links that have a
+    corresponding node_id in the request.
+    """
+    permission_classes = (
+        ContributorOrPublicForRelationshipPointers,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ReadOnlyIfRegistration,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_LINKS_READ]
+    required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
+
+    serializer_class = LinkedNodesRelationshipSerializer
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+
+    def get_object(self):
+        object = self.get_node(check_object_permissions=False)
+        auth = get_user_auth(self.request)
+        obj = {'data': [
+            pointer for pointer in
+            object.nodes_pointer
+            if not pointer.node.is_deleted and not pointer.node.is_collection and
+            pointer.node.can_view(auth)
+        ], 'self': object}
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+    def perform_destroy(self, instance):
+        data = self.request.data['data']
+        auth = get_user_auth(self.request)
+        current_pointers = {pointer.node._id: pointer for pointer in instance['data']}
+        collection = instance['self']
+        for val in data:
+            if val['id'] in current_pointers:
+                collection.rm_pointer(current_pointers[val['id']], auth)
+
+    def create(self, *args, **kwargs):
+        try:
+            ret = super(LinkedNodesRelationship, self).create(*args, **kwargs)
+        except RelationshipPostMakesNoChanges:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return ret
+
 
 @api_view(('GET',))
 def root(request, format=None):

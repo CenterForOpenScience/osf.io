@@ -302,7 +302,7 @@ def update_node(node, index=None, bulk=False):
         update_file(file_, index=index)
 
     if node.is_deleted or not node.is_public or node.archiving:
-        delete_doc(elastic_document_id, node)
+        delete_doc(elastic_document_id, node, index=index)
     else:
         try:
             normalized_title = six.u(node.title)
@@ -371,7 +371,8 @@ def bulk_update_nodes(serialize, nodes, index=None):
                 '_index': index,
                 '_id': node._id,
                 '_type': get_doctype_from_node(node),
-                'doc': serialized
+                'doc': serialized,
+                'doc_as_upsert': True,
             })
     if actions:
         return helpers.bulk(es, actions)

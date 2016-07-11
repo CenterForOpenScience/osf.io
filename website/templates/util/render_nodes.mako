@@ -15,8 +15,6 @@
                 }'></div>
         % endfor
       </span>
-    ## TODO: make sure these templates are only included once on a page.
-    <%include file='_log_templates.mako'/>
     </ul>
     <script>
     % if sortable and 'write' in user['permissions']:

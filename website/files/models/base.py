@@ -330,8 +330,8 @@ class FileNode(object):
             return cls.create(node=node, path=path)
 
     @classmethod
-    def get_file_guids(cls, materialized_path, provider, node, guids=None):
-        guids = guids or []
+    def get_file_guids(cls, materialized_path, provider, node):
+        guids = []
         materialized_path = '/' + materialized_path.lstrip('/')
         if materialized_path.endswith('/'):
             folder_children = cls.find(Q('provider', 'eq', provider) &
@@ -797,6 +797,16 @@ class FileVersion(StoredObject):
     """A version of an OsfStorageFileNode. contains information
     about where the file is located, hashes and datetimes
     """
+
+    __indices__ = [{
+        'unique': False,
+        'key_or_list': [
+            ('_id', pymongo.ASCENDING),
+            ('metadata.vault', pymongo.ASCENDING),
+            ('metadata.archive', pymongo.ASCENDING),
+            ('metadata.sha256', pymongo.ASCENDING),
+        ]
+    }]
 
     _id = fields.StringField(primary=True, default=lambda: str(bson.ObjectId()))
 
