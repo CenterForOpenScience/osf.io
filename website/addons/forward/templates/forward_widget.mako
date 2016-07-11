@@ -6,7 +6,7 @@
 
         <div>
             This project contains a forward to
-            <a data-bind="attr: {href: url}, text: url"></a>.
+            <a data-bind="attr: {href: url}, text: linkDisplay"></a>.
         </div>
 
         <div class="spaced-buttons m-t-md" data-bind="visible: redirecting">
