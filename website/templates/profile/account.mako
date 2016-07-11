@@ -70,7 +70,7 @@
                                             <span class="fa fa-info-circle" data-bind="tooltip: {title: 'Merging accounts will move all projects and components associated with two emails into one account. All projects and components will be displayed under the email address listed as primary.',
                                              placement: 'bottom', container : 'body'}"></span>
                                             </p>
-                  
+
                                             <div class="form-group">
                                                 ## email input verification is not supported on safari
                                               <input placeholder="Email address" type="email" data-bind="value: emailInput" class="form-control" required maxlength="254">
@@ -140,7 +140,7 @@
                                 <div>
                                     <!-- ko if: passwordFeedback() -->
                                     <p class="help-block osf-box-lt p-xs" data-bind="validationMessage: password" style="display: none;"></p>
-                                    <p class="help-block osf-box-lt " data-bind="css : { 'p-xs': passwordFeedback().warning }, visible: typedPassword().length > 0, text: passwordFeedback().warning"></p>
+                                    <p class="osf-box-lt " data-bind="css : { 'p-xs': passwordFeedback().warning }, visible: typedPassword().length > 0, text: passwordFeedback().warning"></p>
                                     <!-- /ko -->
                                 </div>
                             </div>

@@ -55,7 +55,7 @@
                     <div>
                         <!-- ko if: passwordFeedback() -->
                         <p class="help-block osf-box-lt p-xs" data-bind="validationMessage: password" style="display: none;"></p>
-                        <p class="help-block osf-box-lt " data-bind="css : { 'p-xs': passwordFeedback().warning }, visible: typedPassword().length > 0, text: passwordFeedback().warning"></p>
+                        <p class="osf-box-lt " data-bind="css : { 'p-xs': passwordFeedback().warning }, visible: typedPassword().length > 0, text: passwordFeedback().warning"></p>
                         <!-- /ko -->
                     </div>
 
