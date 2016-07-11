@@ -15,6 +15,10 @@ class DeskError(Exception):
         self.content = content
 
 
+class DeskCustomerNotFound(Exception):
+    pass
+
+
 class DeskClient(object):
     """ Initialize the client with the given sitename, username,
     and password. The suggested way to do this in the Desk docs for
@@ -56,22 +60,22 @@ class DeskClient(object):
             Documentation: http://dev.desk.com/API/customers/#search
             Example URL: https://yoursite.desk.com/api/v2/customers/search?email=andrew@example.com
         """
-        customer_data = {}
         try:
             customer_json = self.call_get('customers/search', params)
-            if customer_json['total_entries'] > 0:
-                customer = customer_json['_embedded']['entries'][0]
-                customer_data = {
-                    'id': customer['id'],
-                    'name': '{} {}'.format(
-                        customer['first_name'], customer['last_name']),
-                    'emails': customer['emails'],
-                    'background': customer['background'],
-                    'company': customer['company'],
-                    'link': customer['_links']['self']
-                }
         except DeskError:
             raise
+        if customer_json['total_entries'] == 0:
+            raise DeskCustomerNotFound('Could not find customer with params: {}'.format(params))
+        customer = customer_json['_embedded']['entries'][0]
+        customer_data = {
+            'id': customer['id'],
+            'name': '{} {}'.format(
+                customer['first_name'], customer['last_name']),
+            'emails': customer['emails'],
+            'background': customer['background'],
+            'company': customer['company'],
+            'link': customer['_links']['self']
+        }
         return customer_data
 
     def cases(self, params):

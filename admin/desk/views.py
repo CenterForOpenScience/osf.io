@@ -4,11 +4,7 @@ from django.views.generic import ListView, DetailView
 from website.project.model import User
 
 from admin.base.utils import OSFAdmin
-from admin.desk.utils import DeskClient, DeskError
-
-
-class DeskViewError(Exception):
-    pass
+from admin.desk.utils import DeskClient, DeskError, DeskCustomerNotFound
 
 
 class DeskCaseList(OSFAdmin, ListView):
@@ -55,10 +51,10 @@ class DeskCustomer(OSFAdmin, DetailView):
     def dispatch(self, request, *args, **kwargs):
         try:
             return super(DeskCustomer, self).dispatch(request, *args, **kwargs)
-        except DeskViewError as e:
+        except DeskCustomerNotFound as e:
             return render(request, 'desk/user_not_found.html',
                           context={
-                              'email': e.message,
+                              'message': e.message,
                               'desk_inbox': 'https://{}.desk.com/web/agent/filters/inbox'.format(DeskClient.SITE_NAME)
                           })
         except DeskError as e:
@@ -76,8 +72,6 @@ class DeskCustomer(OSFAdmin, DetailView):
         desk = DeskClient(self.request.user)
         params = {'email': email}
         customer = desk.find_customer(params)
-        if customer == {}:
-            raise DeskViewError(email)
         return customer
 
     def get_context_data(self, **kwargs):
