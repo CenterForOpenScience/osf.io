@@ -703,3 +703,14 @@ button.close {
 div.ball-scale-blue>div {
     background-color: #BED1E2;
 }
+
+/* Lighter danger text for dark backgrounds  */
+.pv-darkbg .text-danger {
+    color: #f97773;
+}
+.pv-darkbg .text-warning {
+    color: #f0ad4e;
+}
+.pv-darkbg .text-warning {
+    color: #5cb85c;
+}
