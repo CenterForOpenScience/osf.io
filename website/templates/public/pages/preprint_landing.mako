@@ -92,6 +92,28 @@
       </div>
 
     </div>
+
+    <div id="socarxiv" class="space-top space-bottom socarxiv">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-3">
+            <a href="http://www.terpconnect.umd.edu/~pnc//socarxiv.html"><img src="/static/img/SocArXiv.png" width="95%" style="margin-top: 20px;"></a>
+          </div>
+          <div class="col-md-9 text-center">
+            <h2>An open archive of the social sciences.</h2>
+            <h4>Under development. Get updates on <a href="https://twitter.com/socarxiv">@socarxiv</a>
+              <a href="https://www.facebook.com/socarxiv" aria-label="Facebook"><i class="fa fa-facebook fa-lg fa-2x"></i></a>
+              <a href="http://twitter.com/socarxiv" aria-label="Twitter"><i class="fa fa-twitter fa-lg fa-2x"></i></a>
+              <a href="https://instagram.com/socarxiv" aria-label="Instagram"><i class="fa fa-instagram fa-lg fa-2x"></i></a>
+              <a href="mailto:socarxiv@gmail.com" aria-label="Email"><i class="fa fa-envelope fa-lg fa-2x"></i></a>
+              <a href="https://osf.io/8byjq" aria-label="OSF"><img src="/static/img/cos-gray.png" style="padding-bottom: 5px;"></a>
+            </h4>
+            <div style="vertical-align: bottom;">
+              arXiv is a trademark of Cornell University, used under license.
+            </div>
+          </div>
+        </div>
+      </div>
 </%def>
 
 
