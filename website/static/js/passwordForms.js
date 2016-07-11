@@ -29,11 +29,11 @@ ko.validation.registerExtenders();
   */
 var valueProgressBar = {
     0: {'attr': {'style': 'width: 0%'}, 'text': '', 'text_attr':{}},
-    1: {'attr': {'class': 'progress-bar progress-bar-sm progress-bar-danger', 'style': 'width: 20%'}, 'text': 'Very weak', 'text_attr': {'style': 'color: grey'}},
-    2: {'attr': {'class': 'progress-bar progress-bar-sm progress-bar-danger', 'style': 'width: 40%'}, 'text': 'Weak', 'text_attr': {'style': 'color: orangered '}},
-    3: {'attr': {'class': 'progress-bar progress-bar-sm progress-bar-warning', 'style': 'width: 60%'}, 'text': 'So-so', 'text_attr': {'style': 'color: gold'}},
-    4: {'attr': {'class': 'progress-bar progress-bar-sm progress-bar-success', 'style': 'width: 80%; background-image: none; background-color: lawngreen'}, 'text': 'Good', 'text_attr': {'style': 'color: lawngreen'}},
-    5: {'attr': {'class': 'progress-bar progress-bar-sm progress-bar-success', 'style': 'width: 100%'}, 'text': 'Great!', 'text_attr': {'style': 'color: limegreen'}}
+    1: {'attr': {'class': 'progress-bar progress-bar-sm progress-bar-danger', 'style': 'width: 20%'}, 'text': 'Very weak', 'text_attr': {'style': 'color: #d9534f'}},
+    2: {'attr': {'class': 'progress-bar progress-bar-sm progress-bar-danger', 'style': 'width: 40%'}, 'text': 'Weak', 'text_attr': {'style': 'color: #d9534f '}},
+    3: {'attr': {'class': 'progress-bar progress-bar-sm progress-bar-warning', 'style': 'width: 60%'}, 'text': 'So-so', 'text_attr': {'style': 'color: #f0ad4e'}},
+    4: {'attr': {'class': 'progress-bar progress-bar-sm progress-bar-success', 'style': 'width: 80%;'}, 'text': 'Good', 'text_attr': {'style': 'color: #5cb85c'}},
+    5: {'attr': {'class': 'progress-bar progress-bar-sm progress-bar-success', 'style': 'width: 100%'}, 'text': 'Great!', 'text_attr': {'style': 'color: #5cb85c'}}
 };
 
 /**
