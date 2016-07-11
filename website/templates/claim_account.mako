@@ -39,19 +39,29 @@
                     >
                 </div>
             </div>
-              <div class="progress create-password">
-                  <div class="progress-bar progress-bar-sm" role="progressbar" data-bind="attr: passwordComplexityInfo().attr"></div>
-              </div>
-              <div>
-                  <!-- ko if: passwordFeedback() -->
-                  <p class="text-right" id="front-password-info" data-bind="text: passwordComplexityInfo().text, attr: passwordComplexityInfo().text_attr"></p>
-                  <p class="help-block osf-box-lt" data-bind="validationMessage: password" style="display: none;"></p>
-                  <p class="help-block osf-box-lt" data-bind="text: passwordFeedback().warning"></p>
-                  <!-- /ko -->
-                  <!-- ko if: !passwordFeedback() -->
-                  <div style="padding-top:20px"></div>
-                  <!-- /ko -->
-              </div>
+            <div class="row" data-bind="visible: typedPassword().length > 0">
+                <div class="col-xs-8">
+                    <div class="progress create-password">
+                        <div class="progress-bar progress-bar-sm" role="progressbar" data-bind="attr: passwordComplexityInfo().attr"></div>
+                    </div>
+                </div>
+                <div class="col-xs-4 f-w-xl">
+                    <!-- ko if: passwordFeedback() -->
+                    <p id="front-password-info" data-bind="text: passwordComplexityInfo().text, attr: passwordComplexityInfo().text_attr"></p>
+                    <!-- /ko -->
+                </div>
+            </div>
+
+            <div>
+                <!-- ko if: passwordFeedback() -->
+                <p class="help-block osf-box-lt p-xs" data-bind="validationMessage: password" style="display: none;"></p>
+                <p class="help-block osf-box-lt " data-bind="css : { 'p-xs': passwordFeedback().warning }, visible: typedPassword().length > 0, text: passwordFeedback().warning"></p>
+                <!-- /ko -->
+            </div>
+
+
+
+
             <div
                 class="form-group"
                 data-bind="
