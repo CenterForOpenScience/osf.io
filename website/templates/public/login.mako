@@ -48,7 +48,7 @@
         </div>
     %endif
     %if campaign != "institution" or not enable_institutions:
-        <div id="signUpScope" class="col-sm-6 col-sm-offset-3 signup-form p-b-md m-b-m bg-color-light">
+        <div id="signUpScope" class="col-sm-8 col-sm-offset-2 col-md-6 col-md-offset-3 signup-form p-b-md m-b-m bg-color-light">
             <form data-bind="submit: submit" class="form-horizontal">
                 <h3 class="m-b-lg"> Create a free account </h3>
                 <div
