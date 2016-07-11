@@ -10,6 +10,9 @@ var $osf = require('./osfHelpers');
 var ChangeMessageMixin = require('js/changeMessage');
 require('js/knockoutPassword');
 
+ko.validation.init({
+    insertMessages : false
+});
 
 ko.validation.rules.complexity = {
     validator: function (val, minimumComplexity) {
