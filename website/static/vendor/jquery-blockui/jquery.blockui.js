@@ -132,6 +132,7 @@
 				color:		'#000',
 				border:		'3px solid #aaa',
 				backgroundColor:'#fff',
+				cursor:     'wait'
 			},
 
 			// minimal style set used when themes are used
@@ -145,6 +146,7 @@
 			overlayCSS:  {
 				backgroundColor:	'#000',
 				opacity:			0.6,
+				cursor:				'wait'
 			},
 
 			// style to replace wait cursor before unblocking to correct issue
