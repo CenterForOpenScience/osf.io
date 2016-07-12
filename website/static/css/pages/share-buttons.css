@@ -9,6 +9,7 @@
     text-align: center;
     margin: 0 2px;
     background-color: #EAEAEA;
+    background-color: rgba(0, 0, 0, 0.06);
 }
 
 .share-buttons .fa {
