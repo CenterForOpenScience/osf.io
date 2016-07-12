@@ -23,5 +23,7 @@ module.exports = function(defaults) {
 
     // Make OSF styles available
     app.import(path.join(app.bowerDirectory, 'osf-style/css/base.css'));
+    // Add the custom-compiled addon styles to this project
+    app.import('vendor/assets/ember-osf.css');
     return app.toTree();
 };
