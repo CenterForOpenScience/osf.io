@@ -644,6 +644,13 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         return redirect(file_node.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier)))
 
     if action == 'get_guid':
+        draft_id = extras.get('draft')
+        draft = DraftRegistration.load(draft_id)
+        if draft is None or draft.is_approved:
+            raise HTTPError(httplib.BAD_REQUEST, data={
+                'message_short': 'Bad Request',
+                'message_long': 'File not associated with required object.'
+            })
         guid = file_node.get_guid(create=True)
         return dict(guid=guid._id)
 

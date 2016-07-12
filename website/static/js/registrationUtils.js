@@ -778,6 +778,7 @@ var RegistrationEditor = function(urls, editorId, preview) {
     self.readonly = ko.observable(false);
 
     self.draft = ko.observable();
+    self.pk = null;
 
     self.currentQuestion = ko.observable();
     self.showValidation = ko.observable(false);
@@ -909,6 +910,7 @@ RegistrationEditor.prototype.init = function(draft) {
     var self = this;
 
     self.draft(draft);
+    self.pk = draft.pk;
     var metaSchema = draft ? draft.metaSchema: null;
 
     self.saveManager = null;
@@ -981,7 +983,7 @@ RegistrationEditor.prototype.context = function(data, $root, preview) {
     });
 
     if (this.extensions[data.type]) {
-        return new this.extensions[data.type](data, $root, preview);
+        return new this.extensions[data.type](data, $root.pk, preview);
     }
     return data;
 };

@@ -165,10 +165,11 @@ ko.bindingHandlers.osfUploader = {
 
 
 var uploaderCount = 0;
-var Uploader = function(question) {
+var Uploader = function(question, pk) {
 
     var self = this;
 
+    self.draft_id = pk;
     question.showUploader = ko.observable(false);
     self.toggleUploader = function() {
         question.showUploader(!question.showUploader());
@@ -210,8 +211,8 @@ var Uploader = function(question) {
         if(self.fileAlreadySelected(file))
             return false;
 
-        var guid = self.get_guid(file).then(function (val) {
-            self.set_guid(val, file.data.extra.hashes.sha256);
+        var guid = self.getGuid(file).then(function (val) {
+            self.setGuid(val, file.data.extra.hashes.sha256);
         });
         self.selectedFiles.push({
             fileId: guid,
@@ -224,9 +225,9 @@ var Uploader = function(question) {
         return true;
     };
 
-    self.get_guid = function (file) {
+    self.getGuid = function (file) {
         var ret = $.Deferred();
-        var url = '/api/v1/project/' + file.data.nodeId + '/files/osfstorage' + file.data.path + '/?action=get_guid';
+        var url = '/api/v1/project/' + file.data.nodeId + '/files/osfstorage' + file.data.path + '/?action=get_guid&draft=' + self.draft_id;
         var request = $osf.ajaxJSON('GET', url, {});
 
         request.done(function (resp) {
@@ -236,7 +237,7 @@ var Uploader = function(question) {
         return ret.promise();
     };
 
-    self.set_guid = function (guid, sha256) {
+    self.setGuid = function (guid, sha256) {
         var files = question.extra();
 
         for (var i = 0; i < files.length; i++) {
