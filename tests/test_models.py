@@ -2696,7 +2696,7 @@ class TestProject(OsfTestCase):
         user2 = UserFactory()
         self.project.add_contributor(contributor=user2, permissions=[READ, WRITE], auth=self.auth)
         self.project.save()
-        with assert_raises(ValueError):
+        with assert_raises(NodeStateError):
             self.project.manage_contributors(
                 user_dicts=[{'id': user2._id,
                              'permission': WRITE,
@@ -2756,12 +2756,12 @@ class TestProject(OsfTestCase):
         mock_property.return_value(mock.MagicMock())
         mock_property.anonymous = False
 
-        link2 = PrivateLinkFactory(key="link2")
+        link2 = PrivateLinkFactory(key='link2')
         link2.nodes.append(self.project)
         link2.save()
 
         user3 = UserFactory()
-        auth3 = Auth(user=user3, private_key="link2")
+        auth3 = Auth(user=user3, private_key='link2')
 
         assert_false(has_anonymous_link(self.project, auth3))
 
@@ -2781,8 +2781,8 @@ class TestProject(OsfTestCase):
     def test_manage_contributors_new_contributor(self):
         user = UserFactory()
         users = [
-            {'id': self.project.creator._id, 'permission': READ, 'visible': True},
             {'id': user._id, 'permission': READ, 'visible': True},
+            {'id': self.project.creator._id, 'permission': [READ, WRITE, ADMIN], 'visible': True},
         ]
         with assert_raises(ValueError):
             self.project.manage_contributors(
@@ -2790,7 +2790,7 @@ class TestProject(OsfTestCase):
             )
 
     def test_manage_contributors_no_contributors(self):
-        with assert_raises(ValueError):
+        with assert_raises(NodeStateError):
             self.project.manage_contributors(
                 [], auth=self.auth, save=True,
             )
@@ -2806,7 +2806,7 @@ class TestProject(OsfTestCase):
             {'id': self.project.creator._id, 'permission': 'read', 'visible': True},
             {'id': user._id, 'permission': 'read', 'visible': True},
         ]
-        with assert_raises(ValueError):
+        with assert_raises(NodeStateError):
             self.project.manage_contributors(
                 users, auth=self.auth, save=True,
             )
@@ -2822,7 +2822,7 @@ class TestProject(OsfTestCase):
             {'id': self.project.creator._id, 'permission': READ, 'visible': True},
             {'id': unregistered._id, 'permission': ADMIN, 'visible': True},
         ]
-        with assert_raises(ValueError):
+        with assert_raises(NodeStateError):
             self.project.manage_contributors(
                 users, auth=self.auth, save=True,
             )
@@ -2932,8 +2932,9 @@ class TestProject(OsfTestCase):
     def test_is_admin_parent_parent_write(self):
         user = UserFactory()
         node = NodeFactory(parent=self.project, creator=user)
-        self.project.set_permissions(self.project.creator, [READ, WRITE])
-        assert_false(node.is_admin_parent(self.project.creator))
+        contrib = UserFactory()
+        self.project.add_contributor(contrib, auth=Auth(self.project.creator), permissions=[READ, WRITE])
+        assert_false(node.is_admin_parent(contrib))
 
     def test_has_permission_read_parent_admin(self):
         user = UserFactory()
@@ -2982,9 +2983,10 @@ class TestProject(OsfTestCase):
     def test_can_view_parent_write(self):
         user = UserFactory()
         node = NodeFactory(parent=self.project, creator=user)
-        self.project.set_permissions(self.project.creator, ['read', 'write'])
-        assert_false(node.can_view(Auth(user=self.project.creator)))
-        assert_false(node.can_edit(Auth(user=self.project.creator)))
+        contrib = UserFactory()
+        self.project.add_contributor(contrib, auth=Auth(self.project.creator), permissions=['read', 'write'])
+        assert_false(node.can_view(Auth(user=contrib)))
+        assert_false(node.can_edit(Auth(user=contrib)))
 
     def test_creator_cannot_edit_project_if_they_are_removed(self):
         creator = UserFactory()
@@ -3028,10 +3030,12 @@ class TestProject(OsfTestCase):
         child2 = ProjectFactory(parent=child1)
         assert_equal(child1.admin_contributor_ids, {self.project.creator._id})
         assert_equal(child2.admin_contributor_ids, {self.project.creator._id, child1.creator._id})
+        admin = UserFactory()
+        self.project.add_contributor(admin, auth=Auth(self.project.creator), permissions=['read', 'write', 'admin'])
         self.project.set_permissions(self.project.creator, ['read', 'write'])
         self.project.save()
-        assert_equal(child1.admin_contributor_ids, set())
-        assert_equal(child2.admin_contributor_ids, {child1.creator._id})
+        assert_equal(child1.admin_contributor_ids, {admin._id})
+        assert_equal(child2.admin_contributor_ids, {child1.creator._id, admin._id})
 
     def test_admin_contributors(self):
         assert_equal(self.project.admin_contributors, [])
@@ -3042,10 +3046,12 @@ class TestProject(OsfTestCase):
             child2.admin_contributors,
             sorted([self.project.creator, child1.creator], key=lambda user: user.family_name)
         )
+        admin = UserFactory()
+        self.project.add_contributor(admin, auth=Auth(self.project.creator), permissions=['read', 'write', 'admin'])
         self.project.set_permissions(self.project.creator, ['read', 'write'])
         self.project.save()
-        assert_equal(child1.admin_contributors, [])
-        assert_equal(child2.admin_contributors, [child1.creator])
+        assert_equal(child1.admin_contributors, [admin])
+        assert_equal(child2.admin_contributors, [child1.creator, admin])
 
     def test_is_contributor(self):
         contributor = UserFactory()
@@ -3312,18 +3318,27 @@ class TestProject(OsfTestCase):
     def test_permission_override_on_readded_contributor(self):
 
         # A child node created
-        self.child_node = NodeFactory(parent=self.project, creator=self.auth.user)
+        child_node = NodeFactory(parent=self.project, creator=self.auth.user)
 
         # A user is added as with read permission
         user = UserFactory()
-        self.child_node.add_contributor(user, permissions=['read'])
+        child_node.add_contributor(user, permissions=['read'])
 
         # user is readded with permission admin
-        self.child_node.add_contributor(user, permissions=['read','write','admin'])
-        self.child_node.save()
+        child_node.add_contributor(user, permissions=['read', 'write','admin'])
+        child_node.save()
 
-        assert(self.child_node.has_permission(user, 'admin'))
+        assert child_node.has_permission(user, 'admin') is True
 
+    def test_permission_override_fails_if_no_admins(self):
+
+        user = UserFactory()
+        # User has admin permissions because they are the creator
+        node = ProjectFactory(creator=user)
+
+        # Cannot lower permissions
+        with assert_raises(NodeStateError):
+            node.add_contributor(user, permissions=['read', 'write'])
 
 class TestParentNode(OsfTestCase):
     def setUp(self):

@@ -840,6 +840,82 @@ class TestExplorePublicActivity(OsfTestCase):
         assert_not_in(str(self.private_project.title), res)
 
 
+class TestResendConfirmation(OsfTestCase):
+
+    def setUp(self):
+        super(TestResendConfirmation, self).setUp()
+        self.unconfirmed_user = UnconfirmedUserFactory()
+        self.confirmed_user = UserFactory()
+        self.get_url = web_url_for('resend_confirmation_get')
+        self.post_url = web_url_for('resend_confirmation_post')
+
+    # test that resend confirmation page is load correctly
+    def test_resend_confirmation_get(self):
+        res = self.app.get(self.get_url)
+        assert_equal(res.status_code, 200)
+        assert_in('Resend Confirmation', res.body)
+        assert_in('resendForm', res.forms)
+
+    # test that unconfirmed user can receive resend confirmation email
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_can_receive_resend_confirmation_email(self, mock_send_mail):
+        # load resend confirmation page and submit email
+        res = self.app.get(self.get_url)
+        form = res.forms['resendForm']
+        form['email'] = self.unconfirmed_user.unconfirmed_emails[0]
+        res = form.submit()
+
+        # check email, request and response
+        assert_true(mock_send_mail.called)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.request.path, self.post_url)
+        assert_in_html('If there is an OSF account', res)
+
+    # test that confirmed user cannot receive resend confirmation email
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_cannot_receive_resend_confirmation_email_1(self, mock_send_mail):
+        # load resend confirmation page and submit email
+        res = self.app.get(self.get_url)
+        form = res.forms['resendForm']
+        form['email'] = self.confirmed_user.emails[0]
+        res = form.submit()
+
+        # check email, request and response
+        assert_false(mock_send_mail.called)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.request.path, self.post_url)
+        assert_in_html('has already been confirmed', res)
+
+    # test that non-existing user cannot receive resend confirmation email
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_cannot_receive_resend_confirmation_email_2(self, mock_send_mail):
+        # load resend confirmation page and submit email
+        res = self.app.get(self.get_url)
+        form = res.forms['resendForm']
+        form['email'] = 'random@random.com'
+        res = form.submit()
+
+        # check email, request and response
+        assert_false(mock_send_mail.called)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.request.path, self.post_url)
+        assert_in_html('If there is an OSF account', res)
+
+    # test that user cannot submit resend confirmation request too quickly
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_cannot_resend_confirmation_twice_quickly(self, mock_send_mail):
+        # load resend confirmation page and submit email
+        res = self.app.get(self.get_url)
+        form = res.forms['resendForm']
+        form['email'] = self.unconfirmed_user.email
+        res = form.submit()
+        res = form.submit()
+
+        # check request and response
+        assert_equal(res.status_code, 200)
+        assert_in_html('Please wait', res)
+
+
 class TestForgotPassword(OsfTestCase):
 
     def setUp(self):

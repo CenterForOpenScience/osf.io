@@ -184,13 +184,13 @@ public_scopes = {
                             description='View and edit all information associated with this account, including for '
                                         'private projects.',
                             is_public=True),
+    'osf.users.all_read': scope(parts_=frozenset(ComposedScopes.USERS_READ),
+                                description='Read your profile data',
+                                is_public=True),
 }
 
 if settings.DEV_MODE:
     public_scopes.update({
-        'osf.users.all_read': scope(parts_=frozenset(ComposedScopes.USERS_READ),
-                                    description='Read your profile data',
-                                    is_public=True),
         'osf.users.all_write': scope(parts_=frozenset(ComposedScopes.USERS_WRITE),
                                      description='Read and edit your profile data',
                                      is_public=True),
