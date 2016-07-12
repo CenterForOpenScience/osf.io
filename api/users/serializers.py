@@ -109,7 +109,10 @@ class UserSerializer(JSONAPISerializer):
         return user.profile_image_url(size=size)
 
     def public_files_url(self, obj):
-        return obj.public_files_node.absolute_url
+        if obj.is_registered:
+            return obj.public_files_node.absolute_url
+        else:
+            return None
 
     def update(self, instance, validated_data):
         assert isinstance(instance, User), 'instance must be a User'
