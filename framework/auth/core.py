@@ -294,6 +294,15 @@ class User(GuidStoredObject, AddonModelMixin):
     # verification key used for resetting password
     verification_key = fields.StringField()
 
+    # verification key with username and expiration time
+    verification_key_v2 = fields.DictionaryField(default=dict)
+    # Format: {
+    #   'token': <the verification key string>
+    #   'username': <the user to whom this key binds>
+    #   'expires': <the expiration time for the key>
+    # }
+
+
     email_last_sent = fields.DateTimeField()
 
     # confirmed emails
