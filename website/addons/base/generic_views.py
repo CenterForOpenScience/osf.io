@@ -54,7 +54,7 @@ def account_list(addon_short_name, Serializer):
     return _account_list
 
 def folder_list(addon_short_name, addon_full_name, get_folders):
-    # TODO: Generalize this for API use after node settings have been refactored
+    # TODO [OSF-6678]: Generalize this for API use after node settings have been refactored
     @must_have_addon(addon_short_name, 'node')
     @must_be_addon_authorizer(addon_short_name)
     def _folder_list(node_addon, **kwargs):
