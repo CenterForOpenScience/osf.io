@@ -56,13 +56,11 @@ def generate_verification_key():
     return security.random_string(30)
 
 
-def generate_verification_key_v2(user):
+def generate_verification_key_v2():
     token = security.random_string(30)
-    username = user.username
     expires = dt.datetime.utcnow() + dt.timedelta(minutes=30)
     return {
         'token': token,
-        'user': username,
         'expires': expires,
     }
 
@@ -336,11 +334,10 @@ class User(GuidStoredObject, AddonModelMixin):
     # verification key used for resetting password
     verification_key = fields.StringField()
 
-    # verification key with username and expiration time
+    # verification key with expiration time
     verification_key_v2 = fields.DictionaryField(default=dict)
     # Format: {
     #   'token': <the verification key string>
-    #   'user': <the user to whom this key binds>
     #   'expires': <the expiration time for the key>
     # }
 
