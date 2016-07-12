@@ -453,6 +453,7 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
             # Enabled, user requesting to set folder
             try:
                 instance.set_folder(folder_info, auth)
+                instance.save()
             except InvalidFolderError:
                 raise exceptions.NotFound('Unable to find requested folder.')
             except InvalidAuthError:
