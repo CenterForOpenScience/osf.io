@@ -1,13 +1,9 @@
 # -*- coding: utf-8 -*-
 from flask import request
 
-from framework.exceptions import HTTPError
-from oauthlib.oauth2 import InvalidGrantError
 from website.project.decorators import must_have_addon, must_be_addon_authorizer
 
 from website.addons.base import generic_views
-from website.addons.googledrive.utils import to_hgrid
-from website.addons.googledrive.client import GoogleDriveClient
 from website.addons.googledrive.serializer import GoogleDriveSerializer
 
 SHORT_NAME = 'googledrive'
@@ -53,33 +49,7 @@ def googledrive_folder_list(node_addon, **kwargs):
     """ Returns all the subsequent folders under the folder id passed.
         Not easily generalizable due to `path` kwarg.
     """
-    node = kwargs.get('node') or node_addon.owner
-
     path = request.args.get('path', '')
-    folder_id = request.args.get('folderId', 'root')
+    folder_id = request.args.get('folder_id', 'root')
 
-    try:
-        access_token = node_addon.fetch_access_token()
-    except InvalidGrantError:
-        raise HTTPError(403)
-
-    client = GoogleDriveClient(access_token)
-
-    if folder_id == 'root':
-        about = client.about()
-
-        return [{
-            'path': '/',
-            'kind': 'folder',
-            'id': about['rootFolderId'],
-            'name': '/ (Full Google Drive)',
-            'urls': {
-                'folders': node.api_url_for('googledrive_folder_list', folderId=about['rootFolderId'])
-            }
-        }]
-
-    contents = [
-        to_hgrid(item, node, path=path)
-        for item in client.folders(folder_id)
-    ]
-    return contents
+    return node_addon.get_folders(folder_path=path, folder_id=folder_id)

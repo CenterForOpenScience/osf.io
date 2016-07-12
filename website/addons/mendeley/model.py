@@ -30,6 +30,8 @@ class Mendeley(CitationsOauthProvider):
     auto_refresh_url = callback_url
     default_scopes = ['all']
 
+    expiry_time = settings.EXPIRY_TIME
+
     serializer = MendeleySerializer
 
     def handle_callback(self, response):

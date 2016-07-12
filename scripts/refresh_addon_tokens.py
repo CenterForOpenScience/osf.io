@@ -6,7 +6,7 @@ import datetime
 import time
 
 from modularodm import Q
-from oauthlib.oauth2 import InvalidGrantError
+from oauthlib.oauth2 import OAuth2Error
 from dateutil.relativedelta import relativedelta
 
 from framework.celery_tasks import app as celery_app
@@ -43,9 +43,15 @@ def main(delta, Provider, rate_limit, dry_run):
     allowance = rate_limit[0]
     last_call = time.time()
     for record in get_targets(delta, Provider.short_name):
+        if Provider(record).has_expired_credentials:
+            logger.info(
+                'Found expired record {}, skipping'.format(record.__repr__())
+            )
+            continue
+
         logger.info(
             'Refreshing tokens on record {0}; expires at {1}'.format(
-                record._id,
+                record.__repr__(),
                 record.expires_at.strftime('%c')
             )
         )
@@ -62,12 +68,12 @@ def main(delta, Provider, rate_limit, dry_run):
             success = False
             try:
                 success = Provider(record).refresh_oauth_key(force=True)
-            except InvalidGrantError as e:
+            except OAuth2Error as e:
                 logger.error(e)
             else:
                 logger.info(
                     'Status of record {}: {}'.format(
-                        record._id,
+                        record.__repr__(),
                         'SUCCESS' if success else 'FAILURE')
                 )
 

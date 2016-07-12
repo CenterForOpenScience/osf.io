@@ -165,6 +165,14 @@ class BaseRegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<pk>'}
     ))
 
+    linked_nodes = HideIfWithdrawal(RelationshipField(
+        related_view='registrations:linked-nodes',
+        related_view_kwargs={'node_id': '<pk>'},
+        related_meta={'count': 'get_node_links_count'},
+        self_view='registrations:node-pointer-relationship',
+        self_view_kwargs={'node_id': '<pk>'}
+    ))
+
     links = LinksField({'self': 'get_registration_url', 'html': 'get_absolute_html_url'})
 
     def get_registration_url(self, obj):
@@ -172,6 +180,14 @@ class BaseRegistrationSerializer(NodeSerializer):
 
     def get_absolute_url(self, obj):
         return self.get_registration_url(obj)
+
+    def get_node_links_count(self, obj):
+        count = 0
+        auth = get_user_auth(self.context['request'])
+        for pointer in obj.nodes_pointer:
+            if not pointer.node.is_deleted and not pointer.node.is_collection and pointer.node.can_view(auth):
+                count += 1
+        return count
 
     def create(self, validated_data):
         auth = get_user_auth(self.context['request'])

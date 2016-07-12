@@ -1,0 +1,9 @@
+{
+    "figshare_content_linked" : "A user linked content from Figshare in a project",
+    "figshare_content_unlinked" : "A user unlinked content from Figshare in a project",
+    "figshare_file_added" : "A user added a file to Figshare in a project",
+    "figshare_file_removed" : "A user removed a file from Figshare in a project",
+    "figshare_node_authorized" : "A user authorized the Figshare addon from a project",
+    "figshare_node_deauthorized" : "A user deauthorized the Figshare addon from a project",
+    "figshare_node_deauthorized_no_user" : "figshare addon for a project deauthorized"
+}
