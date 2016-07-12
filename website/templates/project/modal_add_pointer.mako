@@ -47,11 +47,11 @@
                         <div class="error" data-bind="text:errorMsg"></div>
                         <table class="table table-striped">
                             <tbody data-bind="foreach:{data:results, afterRender:addTips}">
-                                <tr data-bind="if:!($root.selected($data))">
+                                <tr class="pointer-row" data-bind="if:!($root.selected($data))">
                                     <td class="osf-icon-td">
                                         <a
                                                 class="btn btn-success contrib-button"
-                                                data-bind="click:$root.add.bind($root), tooltip: {title: 'Add link'}"
+                                                data-bind="click:$root.add.bind($root)"
                                             ><i class="fa fa-plus"></i></a>
                                     </td>
                                     <td data-bind="text:title" class="overflow"></td>
@@ -82,11 +82,11 @@
                         </div>
                         <table class="table table-striped">
                             <tbody data-bind="foreach:{data:selection, afterRender:addTips}">
-                                <tr>
+                                <tr class="pointer-row">
                                     <td class="osf-icon-td">
                                         <a
                                                 class="btn btn-default contrib-button"
-                                                data-bind="click:$root.remove.bind($root), tooltip: {title: 'Remove link'}"
+                                                data-bind="click:$root.remove.bind($root)"
                                             ><i class="fa fa-minus"></i></a>
                                     </td>
                                     <td  data-bind="text:title" class="overflow"></td>
