@@ -116,7 +116,7 @@ var convertMentionHtmlToMarkdown = function(commentContent) {
             var match = regex.exec(matches[i]);
             var guid = match[1];
             var mention = match[2];
-            var url = '/' + guid + '/';
+            var url = osfHelpers.getDomain() + '/' + guid + '/';
             content = content.replace(match[0], '['+ mention + '](' + url + ')');
         }
     }
