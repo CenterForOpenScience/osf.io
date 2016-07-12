@@ -21,7 +21,7 @@ def _escape_markdown(text):
     r = re.compile(r'([\\`*_{}[\]()#+.!-])')
     return r.sub(r'\\\1', text)
 
-def _make_topic_content(node):
+def make_topic_content(node):
     node_title = {'wiki': 'Wiki page:', 'files': 'File: ', 'nodes': ''}[node.target_type]
     node_title += node.label
     node_description = {'wiki': 'the wiki page ', 'files': 'the file ', 'nodes': ''}[node.target_type]
@@ -42,7 +42,7 @@ def _make_topic_content(node):
 
     return topic_content
 
-def _get_parent_guids(node):
+def get_parent_guids(node):
     parent_guids = []
     parent_node = _get_project_node(node)
     while parent_node:
@@ -61,8 +61,8 @@ def create_topic(node):
 
     get_or_create_group_id(project_node) # insure existance of the group
     data['title'] = node.label
-    data['raw'] = _make_topic_content(node)
-    data['parent_guids[]'] = _get_parent_guids(node)
+    data['raw'] = make_topic_content(node)
+    data['parent_guids[]'] = get_parent_guids(node)
     data['topic_guid'] = node.guid_id
     data['category'] = {'wiki': wiki_category, 'files': file_category, 'nodes': project_category}[node.target_type]
 
@@ -81,7 +81,7 @@ def _update_topic_content(node):
         return
 
     data = {}
-    data['post[raw]'] = _make_topic_content(node)
+    data['post[raw]'] = make_topic_content(node)
     return request('put', '/posts/' + str(node.discourse_post_id), data)
 
 def _update_topic_metadata(node):
@@ -90,7 +90,7 @@ def _update_topic_metadata(node):
 
     data = {}
     data['title'] = node.label
-    data['parent_guids[]'] = _get_parent_guids(node)
+    data['parent_guids[]'] = get_parent_guids(node)
     # this shouldn't ever need to be changed once created...
     #data['category_id'] = {'wiki': wiki_category, 'files': file_category, 'nodes': project_category}[node.target_type]
     return request('put', '/t/' + node.guid_id + '/' + str(node.discourse_topic_id), data)
@@ -100,7 +100,7 @@ def sync_topic(node):
         create_topic(node)
         return
 
-    parent_guids = _get_parent_guids(node)
+    parent_guids = get_parent_guids(node)
     guids_changed = parent_guids != node.discourse_topic_parent_guids
     title_changed = node.label != node.discourse_topic_title
 
