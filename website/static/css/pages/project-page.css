@@ -152,7 +152,3 @@ span#nodeDescriptionEditable{
     white-space: -pre-wrap;      /* Opera 4-6 */
     white-space: -o-pre-wrap;    /* Opera 7 */
 }
-
-#markdownRender {
-    display: none;
-}
