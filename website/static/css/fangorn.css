@@ -263,6 +263,7 @@ a.fangorn-toolbar-icon {
 .file-extension._gdoc {background: url('/static/img/hgrid/googledrive/icon_1_document_x16.png');	}
 .file-extension._gdraw {background: url('/static/img/hgrid/googledrive/icon_1_drawing_x16.png');	}
 .file-extension._gform {background: url('/static/img/hgrid/googledrive/icon_1_form_x16.png');	}
+.file-extension._gmap {background: url('/static/img/hgrid/googledrive/icon_1_map_x16.png'); }
 .file-extension._gslides {background: url('/static/img/hgrid/googledrive/icon_1_presentation_x16.png');	}
 .file-extension._gsheet {background: url('/static/img/hgrid/googledrive/icon_1_spreadsheet_x16.png');	}
 .file-extension._gif {background: url('/static/img/hgrid/fatcowicons/file_extension_gif.png');	}
