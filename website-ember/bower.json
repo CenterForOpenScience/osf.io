@@ -8,6 +8,7 @@
     "ember-qunit-notifications": "0.1.0",
     "bootstrap-sass": "^3.3.6",
     "osf-style": "https://github.com/CenterForOpenScience/osf-style.git#5dcf5997ad2808ffc7c8564f94cde102bf7a4a96",
-    "font-awesome": "~4.5.0"
+    "font-awesome": "~4.5.0",
+    "dropzone": "^4.3.0"
   }
 }
