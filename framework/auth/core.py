@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 import datetime as dt
 import itertools
 import logging
@@ -53,6 +54,17 @@ def generate_claim_token():
 
 def generate_verification_key():
     return security.random_string(30)
+
+
+def generate_verification_key_v2(user):
+    token = security.random_string(30)
+    username = user.username
+    expires = dt.datetime.utcnow() + dt.timedelta(minutes=30)
+    return {
+        'token': token,
+        'user': username,
+        'expires': expires,
+    }
 
 
 def validate_history_item(item):
@@ -298,10 +310,9 @@ class User(GuidStoredObject, AddonModelMixin):
     verification_key_v2 = fields.DictionaryField(default=dict)
     # Format: {
     #   'token': <the verification key string>
-    #   'username': <the user to whom this key binds>
+    #   'user': <the user to whom this key binds>
     #   'expires': <the expiration time for the key>
     # }
-
 
     email_last_sent = fields.DateTimeField()
 
