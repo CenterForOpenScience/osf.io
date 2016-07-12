@@ -48,9 +48,9 @@ function ViewModel(url) {
         return Boolean(self.selectedHost());
     });
     self.tokenUrl = ko.pureComputed(function() {
-        var token_path = self.host() === 'dataverse.lib.virginia.edu'
+        var tokenPath = self.host() === 'dataverse.lib.virginia.edu'
                 ? '/account/apitoken' : '/dataverseuser.xhtml?selectTab=apiTokenTab';
-        return self.host() ? 'https://' + self.host() + token_path : null;
+        return self.host() ? 'https://' + self.host() + tokenPath : null;
     });
 
     // Flashed messages
