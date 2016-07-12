@@ -11,7 +11,7 @@
                     "name": "resetpassword",
                     "id": "resetPasswordForm",
                     "method_string": "POST",
-                    "action_string": "/resetpassword/${verification_key}/",
+                    "action_string": "/resetpassword/${username}/${verification_key}/",
                     "form_class": "form-stacked",
                     "submit_string": "Reset Password"
                 },

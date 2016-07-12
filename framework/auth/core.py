@@ -111,6 +111,25 @@ def validate_social(value):
     validate_profile_websites(value.get('profileWebsites'))
 
 
+def validate_user_with_verification_key(username=None, verification_key=None):
+    """
+    Validate requests with username and one-time verification key.
+
+    :param username: user's username
+    :param verification_key: one-time verification key
+    :rtype: User or None
+    """
+
+    if not username or not verification_key:
+        return None
+    user_obj = get_user(username=username)
+    if user_obj:
+        if user_obj.verification_key_v2['token'] == verification_key:
+            if user_obj.verification_key_v2['expires'] > dt.datetime.utcnow():
+                return user_obj
+    return None
+
+
 # TODO - rename to _get_current_user_from_session /HRYBACKI
 def _get_current_user():
     uid = session._get_current_object() and session.data.get('auth_user_id')
@@ -118,18 +137,29 @@ def _get_current_user():
 
 
 # TODO: This should be a class method of User?
-def get_user(email=None, password=None, verification_key=None):
-    """Get an instance of User matching the provided params.
+def get_user(email=None, password=None, verification_key=None, username=None):
+    """
+    Get an instance of User matching the provided params. Here are all valid usages:
+        1. email and password
+        2. email
+        3. username (for verification key version 2)
+        4. verification key (for verification key version 1)
 
+    :param email: email
+    :param password: password
+    :param verification_key: verification key v1
+    :param username: username
     :return: The instance of User requested
     :rtype: User or None
     """
     # tag: database
     if password and not email:
-        raise AssertionError('If a password is provided, an email must also '
-                             'be provided.')
+        raise AssertionError('If a password is provided, an email must also be provided.')
 
     query_list = []
+
+    if username:
+        query_list.append(Q('username', 'eq', username))
     if email:
         email = email.strip().lower()
         query_list.append(Q('emails', 'eq', email) | Q('username', 'eq', email))

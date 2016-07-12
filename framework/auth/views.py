@@ -17,7 +17,7 @@ from framework.auth import cas, campaigns
 from framework.auth import logout as osf_logout
 from framework.auth import get_user
 from framework.auth.exceptions import DuplicateEmailError, ExpiredTokenError, InvalidTokenError
-from framework.auth.core import generate_verification_key
+from framework.auth.core import generate_verification_key, generate_verification_key_v2, validate_user_with_verification_key
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import ResendConfirmationForm, ResetPasswordForm, ForgotPasswordForm
 from framework.exceptions import HTTPError
@@ -31,12 +31,17 @@ from website.util.time import throttle_period_expired
 
 
 @collect_auth
-def reset_password_get(auth, verification_key=None, **kwargs):
+def reset_password_get(auth, username=None, verification_key=None, **kwargs):
     """
     View for user to land on the reset password page.
     HTTp Method: GET
 
-    :raises: HTTPError(http.BAD_REQUEST) if verification_key is invalid
+    :param auth: the authentication state
+    :param username: the user who requests to reset password
+    :param verification_key: the verification key
+    :param kwargs:
+    :return:
+    :raises: HTTPError(http.BAD_REQUEST) if verification key for the user is invalid or has expired
     """
 
     # If user is already logged in, log user out
@@ -44,21 +49,22 @@ def reset_password_get(auth, verification_key=None, **kwargs):
         return auth_logout(redirect_url=request.url)
 
     # Check if request bears a valid verification_key
-    user_obj = get_user(verification_key=verification_key)
+    user_obj = validate_user_with_verification_key(username=username, verification_key=verification_key)
     if not user_obj:
         error_data = {
-            'message_short': 'Invalid url.',
-            'message_long': 'The verification key in the URL is invalid or has expired.'
+            'message_short': 'Invalid Request.',
+            'message_long': 'The url is invalid or has expired.'
         }
         raise HTTPError(400, data=error_data)
 
     return {
-        'verification_key': verification_key,
+        'username': username,
+        'verification_key': user_obj.verification_key_v2['token'],
     }
 
 
 @collect_auth
-def reset_password_post(auth, verification_key=None, **kwargs):
+def reset_password_post(auth, username=None, verification_key=None, **kwargs):
     """
     View for user to submit reset password form.
     HTTP Method: POST
@@ -73,7 +79,7 @@ def reset_password_post(auth, verification_key=None, **kwargs):
     form = ResetPasswordForm(request.form)
 
     # Check if request bears a valid verification_key
-    user_obj = get_user(verification_key=verification_key)
+    user_obj = validate_user_with_verification_key(username=username, verification_key=verification_key)
     if not user_obj:
         error_data = {
             'message_short': 'Invalid url.',
@@ -99,7 +105,8 @@ def reset_password_post(auth, verification_key=None, **kwargs):
         # Don't go anywhere
 
     return {
-        'verification_key': verification_key
+        'username': user_obj.username,
+        'verification_key': user_obj.verification_key
     }
 
 
@@ -143,14 +150,15 @@ def forgot_password_post(auth, **kwargs):
                 # new random verification key, allows OSF to check whether the reset_password request is valid,
                 # this verification key is used twice, one for GET reset_password and one for POST reset_password
                 # and it will be destroyed when POST reset_password succeeds
-                user_obj.verification_key = generate_verification_key()
+                user_obj.verification_key_v2 = generate_verification_key_v2(user_obj)
                 user_obj.email_last_sent = datetime.datetime.utcnow()
                 user_obj.save()
                 reset_link = furl.urljoin(
                     settings.DOMAIN,
                     web_url_for(
                         'reset_password_get',
-                        verification_key=user_obj.verification_key
+                        username=user_obj.username,
+                        verification_key=user_obj.verification_key_v2['token']
                     )
                 )
                 mails.send_mail(
