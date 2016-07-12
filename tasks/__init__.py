@@ -574,16 +574,16 @@ def test_travis_osf(ctx):
     """
     flake(ctx)
     jshint(ctx)
-    # test_osf(ctx)
+    test_osf(ctx)
 
 @task
 def test_travis_else(ctx):
     """
     Run other half of the tests to help travis go faster
     """
-    # test_addons(ctx)
-    # test_api(ctx)
-    # test_admin(ctx)
+    test_addons(ctx)
+    test_api(ctx)
+    test_admin(ctx)
     karma(ctx, single=True, browsers='PhantomJS')
 
 
