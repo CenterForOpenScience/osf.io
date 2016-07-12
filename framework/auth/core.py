@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
+from copy import deepcopy
 import datetime as dt
 import itertools
 import logging
 import re
 import urlparse
-from copy import deepcopy
 
 import bson
 import pytz
