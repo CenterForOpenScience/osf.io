@@ -235,6 +235,14 @@ def make_url_map(app):
                 'get',
                 ember_app,
                 json_renderer
+            ),
+            Rule(
+                [
+                    '/guid/',
+                ],
+                'get',
+                ember_app,
+                json_renderer
             )
         ])
 
