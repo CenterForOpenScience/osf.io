@@ -107,7 +107,7 @@ var exclusifyGroup = function() {
 
 var convertMentionHtmlToMarkdown = function(commentContent) {
     var content = commentContent || '';
-    var pattern = '<span[^>]*?data-atwho-guid="([a-z\\d]{5})"[^>]*?>((@|\\+)[\\w\\s]+)<\/span>';
+    var pattern = '<span[^>]*?data-atwho-guid="([a-z\\d]{5})"[^>]*?>((@|\\+).+)<\/span>';
     var regex = new RegExp(pattern);
     var regexG = new RegExp(pattern, 'g');
     var matches = content.match(regexG);
