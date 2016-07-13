@@ -32,7 +32,7 @@ export default Ember.Controller.extend(CommentableMixin, TaggableMixin, {
         delete() {
             let file = this.get('model');
             this.get('fileManager').deleteFile(file).then(() => {
-                window.location.replace(config.OSF.url + 'project/' + file.get('node').get('id') + '/files/');
+                window.location.replace(config.OSF.url + 'project/' + this.get('node').get('id') + '/files/');
             });
         },
 
