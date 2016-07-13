@@ -1,4 +1,5 @@
 import Ember from 'ember';
+import config from 'ember-get-config';
 
 import CommentableMixin from 'ember-osf/mixins/commentable';
 import TaggableMixin from 'ember-osf/mixins/taggable-mixin';
@@ -31,7 +32,7 @@ export default Ember.Controller.extend(CommentableMixin, TaggableMixin, {
         delete() {
             let file = this.get('model');
             this.get('fileManager').deleteFile(file).then(() => {
-                this.transitionToRoute('nodes.detail.files', this.get('node'));
+                window.location.replace(config.OSF.url + 'project/' + this.get('node').get('id') + '/files/');
             });
         },
 
