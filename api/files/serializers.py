@@ -1,30 +1,31 @@
+from django.core.urlresolvers import resolve, reverse
 import furl
+from rest_framework import serializers as ser
 import pytz
+
 from modularodm import Q
 
-from rest_framework import serializers as ser
-from django.core.urlresolvers import resolve, reverse
-
-from website import settings
 from framework.auth.core import User
+from website import settings
 from website.files.models import FileNode
 from website.project.model import Comment
-from api.base.utils import absolute_reverse
+from website.util import api_v2_url
+
 from api.base.serializers import (
-    NodeFileHyperLinkField,
-    WaterbutlerLink,
-    format_relationship_links,
     FileCommentRelationshipField,
-    JSONAPIListField,
-    Link,
-    JSONAPISerializer,
-    LinksField,
+    format_relationship_links,
     IDField,
+    JSONAPIListField,
+    JSONAPISerializer,
+    Link,
+    LinksField,
+    NodeFileHyperLinkField,
     TypeField,
+    WaterbutlerLink,
 )
 from api.base.exceptions import Conflict
+from api.base.utils import absolute_reverse
 from api.base.utils import get_user_auth
-from website.util import api_v2_url
 
 
 class CheckoutField(ser.HyperlinkedRelatedField):
