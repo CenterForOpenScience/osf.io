@@ -69,7 +69,7 @@ var ShareButtonsPopover = {
                         });
                     }
                 }
-            }, "Share"),
+            }, 'Share'),
         ];
     },
 };
