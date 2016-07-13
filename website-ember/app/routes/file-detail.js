@@ -1,10 +1,10 @@
 import Ember from 'ember';
 import AuthenticatedRouteMixin from 'ember-simple-auth/mixins/authenticated-route-mixin';
 
-export default Ember.Route.extend({
+export default Ember.Route.extend(AuthenticatedRouteMixin, {
     fileManager: Ember.inject.service(),
     model() {
-        return this.store.findRecord('file', '5783db51f69cacf2b35a58d4');
+        return this.store.findRecord('file', '5785573463ca2f872bdbdd32');
     },
     setupController(controller, model) {
         this._super(controller, model);

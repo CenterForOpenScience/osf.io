@@ -231,7 +231,8 @@ def make_url_map(app):
             Rule(
                 [
                     '/ember-sample/',
-                    '/file-detail/'
+                    '/file-detail/',
+                    '/file-detail/revisions/'
                 ],
                 'get',
                 ember_app,
