@@ -157,7 +157,7 @@ def robots():
         mimetype='text/plain'
     )
 
-def ember_app():
+def ember_app(guid=None):
     """Serve the contents of the ember application"""
     # Be sure to build the ember app first, and adjust asset paths in index.html:
     #  ember build --output-path <STATIC_FOLER>/ember --watch
@@ -197,15 +197,16 @@ def make_url_map(app):
     ### GUID ###
     process_rules(app, [
 
-        Rule(
-            [
-                '/<guid>/',
-                '/<guid>/<path:suffix>',
-            ],
-            ['get', 'post', 'put', 'patch', 'delete'],
-            website_views.resolve_guid,
-            notemplate,
-        ),
+        # TODO Uncomment. For demonstration, allowing ember guid route to be used instead. More work needed on routing.
+        # Rule(
+        #     [
+        #         '/<guid>/',
+        #         '/<guid>/<path:suffix>',
+        #     ],
+        #     ['get', 'post', 'put', 'patch', 'delete'],
+        #     website_views.resolve_guid,
+        #     notemplate,
+        # ),
 
         Rule(
             [
@@ -231,6 +232,7 @@ def make_url_map(app):
             Rule(
                 [
                     '/ember-sample/',
+                    '/<guid>/',
                     '/file-detail/',
                     '/file-detail/revisions/'
                 ],
