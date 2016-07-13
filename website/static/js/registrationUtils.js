@@ -501,11 +501,15 @@ MetaSchema.prototype.askConsent = function(pre) {
             $osf.unblock();
             bootbox.hideAll();
             ret.resolve();
+            $(document.body).css('overflow', '');
+            $('.modal').css('overflow-y', 'hidden');
         },
         cancel: function() {
             $osf.unblock();
             bootbox.hideAll();
             ret.reject();
+            $(document.body).css('overflow', '');
+            $('.modal').css('overflow-y', 'hidden');
         }
     };
 
@@ -513,9 +517,15 @@ MetaSchema.prototype.askConsent = function(pre) {
         size: 'large',
         message: function() {
             ko.renderTemplate('preRegistrationConsent', viewModel, {}, this);
+            $(document.body).css('overflow', 'hidden');
         }
     });
 
+    $('.bootbox-close-button.close').click(function() {
+        $(document.body).css('overflow', '');
+        $('.modal').css('overflow-y', 'hidden');
+    });
+    $('.modal').css('overflow-y', 'scroll');
     return ret.promise();
 };
 
@@ -1422,6 +1432,8 @@ RegistrationManager.prototype.createDraftModal = function(selected) {
                     var selectedSchema = self.selectedSchema();
                     if (selectedSchema.requiresConsent) {
                         selectedSchema.askConsent(true).then(function() {
+                            $(document.body).css('overflow', '');
+                            $('.modal').css('overflow-y', 'hidden');
                             $('#newDraftRegistrationForm').submit();
                         });
                     }
