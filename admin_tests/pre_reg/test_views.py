@@ -25,6 +25,7 @@ from admin.pre_reg.views import (
     DraftFormView,
     CommentUpdateView,
     get_metadata_files,
+    get_file_questions,
 )
 from admin.pre_reg.forms import DraftRegistrationForm
 from admin.common_auth.logs import OSFLogEntry
@@ -271,3 +272,11 @@ class TestPreregFiles(AdminTestCase):
     def test_get_meta_data_files(self):
         for item in get_metadata_files(self.draft):
             nt.assert_is_instance(item, OsfStorageFileNode)
+
+    def test_get_file_questions(self):
+        questions = get_file_questions('prereg-prize.json')
+        nt.assert_equal(7, len(questions))
+        nt.assert_list_equal(
+            ['q7', 'q11', 'q12', 'q13', 'q16', 'q19', 'q26'],
+            questions
+        )
