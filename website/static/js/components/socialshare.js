@@ -35,20 +35,46 @@ var ShareButtons = {
     }
 };
 
-var ShareDropdown = {
+var ShareButtonsPopover = {
+    controller: function() {
+        this.justBlurred = true;
+    },
     view: function(ctrl, options) {
         return [
-            m('a.btn.btn-default[data-toggle=dropdown]', 'Share'),
-            m('ul.dropdown-menu.pull-right[role=menu]', {}, [
-                m('li', {}, [
-                    m.component(ShareButtons, {title: options.title, url: options.url})
-                ])
-            ])
+            m('a#sharePopoverBtn.btn.btn-default[href=#][data-toggle=popover]', {
+                onclick: function() {
+                    if (!ctrl.justBlurred) {
+                        $('#sharePopoverBtn').blur();
+                    } else {
+                        ctrl.justBlurred = false;
+                    }
+                },
+                onfocus: function() {
+                    $('#sharePopoverBtn').popover('show');
+                    m.render(document.getElementById('shareButtonsPopoverContent'),
+                             ShareButtons.view(ctrl, {title: options.title, url: options.url}));
+                },
+                onblur: function() {
+                    ctrl.justBlurred = true;
+                    $('#sharePopoverBtn').popover('hide');
+                },
+                config: function(el, isInitialized) {
+                    if (!isInitialized) {
+                        $('#sharePopoverBtn').popover({
+                            html: true,
+                            container: 'body',
+                            placement: 'bottom',
+                            content: '<div id="shareButtonsPopoverContent"></div>',
+                            trigger: 'manual'
+                        });
+                    }
+                }
+            }, "Share"),
         ];
-    }
+    },
 };
 
 module.exports = {
     ShareButtons: ShareButtons,
-    ShareDropdown: ShareDropdown,
+    ShareButtonsPopover: ShareButtonsPopover,
 };

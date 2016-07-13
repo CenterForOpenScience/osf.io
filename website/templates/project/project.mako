@@ -95,7 +95,7 @@
                         </div>
                     % endif
                     % if node["is_public"]:
-                    <div class="btn-group dropdown" id="shareDropdown"></div>
+                    <div class="btn-group" id="shareButtonsPopover"></div>
                     % endif
                 </div>
             </div>

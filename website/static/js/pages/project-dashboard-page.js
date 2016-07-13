@@ -281,8 +281,8 @@ $(document).ready(function () {
     }
 
     if (window.contextVars.node.isPublic) {
-        m.mount(document.getElementById('shareDropdown'),
-                m.component(SocialShare.ShareDropdown,
+        m.mount(document.getElementById('shareButtonsPopover'),
+                m.component(SocialShare.ShareButtonsPopover,
                     {title: window.contextVars.node.title, url: window.location.href}));
     }
 });

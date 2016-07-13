@@ -1,5 +1,5 @@
 .share-buttons {
-    margin: 3px 20px;
+    margin: 3px 6px;
 }
 
 .share-buttons a, .share-buttons a:hover {
@@ -8,8 +8,11 @@
     width: 35px;
     text-align: center;
     margin: 0 2px;
-    background-color: #EAEAEA;
-    background-color: rgba(0, 0, 0, 0.06);
+    background-color: #f0f0f0;
+}
+
+.share-buttons a:hover {
+    background-color: #e0e0e0;
 }
 
 .share-buttons .fa {
@@ -26,8 +29,7 @@
     vertical-align: top;
 }
 
-#shareDropdown .dropdown-menu {
-    min-width: 0px;
-    white-space: nowrap;
-    background-color: #f8f8f8;
+#shareButtonsPopoverContent {
+    max-width: 168px;
+    width: 168px;
 }
