@@ -26,6 +26,8 @@ module.exports = function(defaults) {
     app.import(path.join(app.bowerDirectory, 'dropzone/dist/dropzone.css'));
     app.import(path.join(app.bowerDirectory, 'dropzone/dist/dropzone.js'));
 
+    app.import(path.join(app.bowerDirectory, 'jquery.tagsinput/src/jquery.tagsinput.js'));
+
     // Make OSF styles available
     app.import(path.join(app.bowerDirectory, 'osf-style/css/base.css'));
     // Add the custom-compiled addon styles to this project
