@@ -148,11 +148,11 @@ class FileSerializer(JSONAPISerializer):
                                             related_view_kwargs={'node_id': '<node._id>'},
                                             related_meta={'unread': 'get_unread_comments_count'},
                                             filter={'target': 'get_file_guid'}
-    )
+                                            )
     node = RelationshipField(related_view='nodes:node-detail',
                              related_view_kwargs={'node_id': '<node._id>'},
                              help_text='The project that this file belongs to'
-    )
+                             )
     links = LinksField({
         'info': Link('files:file-detail', kwargs={'file_id': '<_id>'}),
         'move': WaterbutlerLink(),
