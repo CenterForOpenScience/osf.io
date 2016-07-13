@@ -4,6 +4,7 @@ import httplib
 import logging
 from datetime import datetime
 
+import markdown
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
@@ -213,11 +214,20 @@ def conference_results(meeting):
         raise HTTPError(httplib.NOT_FOUND)
 
     data = conference_data(meeting)
+    conference_serialized = conf.to_storage()
+    if conf.description:
+        description_rendered = markdown.markdown(
+            conf.description,
+            ['del_ins', 'markdown.extensions.tables', 'markdown.extensions.fenced_code']
+        )
+    else:
+        description_rendered = ''
+    conference_serialized['description_rendered'] = description_rendered
 
     return {
         'data': data,
         'label': meeting,
-        'meeting': conf.to_storage(),
+        'meeting': conference_serialized,
         # Needed in order to use base.mako namespace
         'settings': settings,
     }

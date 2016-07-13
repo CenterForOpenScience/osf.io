@@ -63,6 +63,7 @@ class MeetingFormView(OSFAdmin, FormView):
             admin_users = get_admin_users(data.get('admins'))
             self.conf.admins = admin_users
         self.conf.name = data.get('name')
+        self.conf.description = data.get('description')
         self.conf.info_url = data.get('info_url')
         self.conf.logo_url = data.get('logo_url')
         self.conf.active = data.get('active')
