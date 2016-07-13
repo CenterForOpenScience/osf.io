@@ -8,7 +8,7 @@ from modularodm.exceptions import ValidationError, ValidationValueError
 from framework import forms, status
 from framework.auth import cas
 from framework.auth import User
-from framework.auth.core import get_user, generate_confirm_token, generate_verification_key
+from framework.auth.core import get_user, generate_verification_key
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import PasswordForm, SetEmailAndPasswordForm
 from framework.auth.signals import user_registered
@@ -369,7 +369,7 @@ def send_claim_registered_email(claimer, unreg_user, node, throttle=24 * 3600):
         raise HTTPError(400, data=dict(
             message_long='User account can only be claimed with an existing user once every 24 hours'
         ))
-    unclaimed_record['token'] = generate_confirm_token()
+    unclaimed_record['token'] = generate_verification_key()
     unclaimed_record['claimer_email'] = claimer.username
     unreg_user.save()
     referrer = User.load(unclaimed_record['referrer_id'])
@@ -434,7 +434,7 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
                 message_long='User account can only be claimed with an existing user once every 24 hours'
             ))
         unclaimed_record['last_sent'] = get_timestamp()
-        unclaimed_record['token'] = generate_confirm_token()
+        unclaimed_record['token'] = generate_verification_key()
         unclaimed_record['claimer_email'] = claimer_email
         user.save()
         claim_url = user.get_claim_url(node._primary_key, external=True)

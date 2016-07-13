@@ -43,19 +43,12 @@ name_formatters = {
 logger = logging.getLogger(__name__)
 
 
-# Hide implementation of token generation
-def generate_confirm_token():
-    return security.random_string(30)
-
-
-def generate_claim_token():
-    return security.random_string(30)
-
-
+# verification key v1
 def generate_verification_key():
     return security.random_string(30)
 
 
+# verification key v2, expires in 30 minutes
 def generate_verification_key_v2():
     token = security.random_string(30)
     expires = dt.datetime.utcnow() + dt.timedelta(minutes=30)
@@ -311,7 +304,8 @@ class User(GuidStoredObject, AddonModelMixin):
     #   <project_id>: {
     #       'name': <name that referrer provided>,
     #       'referrer_id': <user ID of referrer>,
-    #       'token': <token used for verification urls>,
+    #       'token': <verification key v1, used for verification urls>,
+    #       'expires': <expiration time for this record>,
     #       'email': <email the referrer provided or None>,
     #       'claimer_email': <email the claimer entered or None>,
     #       'last_sent': <timestamp of last email sent to referrer or None>
@@ -320,13 +314,13 @@ class User(GuidStoredObject, AddonModelMixin):
     # }
 
     # Time of last sent notification email to newly added contributors
+    contributor_added_email_records = fields.DictionaryField(default=dict)
     # Format : {
     #   <project_id>: {
     #       'last_sent': time.time()
     #   }
     #   ...
     # }
-    contributor_added_email_records = fields.DictionaryField(default=dict)
 
     # The user into which this account was merged
     merged_by = fields.ForeignField('user', default=None, index=True)
@@ -648,7 +642,8 @@ class User(GuidStoredObject, AddonModelMixin):
         record = {
             'name': given_name,
             'referrer_id': referrer_id,
-            'token': generate_confirm_token(),
+            'token': generate_verification_key(),
+            'expires': dt.datetime.utcnow() + dt.timedelta(days=7),
             'email': clean_email
         }
         self.unclaimed_records[project_id] = record
@@ -680,32 +675,52 @@ class User(GuidStoredObject, AddonModelMixin):
                 self.is_confirmed)
 
     def get_unclaimed_record(self, project_id):
-        """Get an unclaimed record for a given project_id.
+        """
+        Get an unclaimed record for a given project_id.
 
         :raises: ValueError if there is no record for the given project.
         """
         try:
             return self.unclaimed_records[project_id]
-        except KeyError:  # reraise as ValueError
+        except KeyError:  # re-raise as ValueError
             raise ValueError('No unclaimed record for user {self._id} on node {project_id}'
-                                .format(**locals()))
+                             .format(**locals()))
+
+    def verify_claim_token(self, token, project_id):
+        """
+        Verify the claim token for this user for a given node
+        which she/he was added as a unregistered contributor for.
+
+        :param token: the verification token
+        :param project_id: the project node id
+        :rtype boolean
+        :return: whether or not a claim token is valid
+        """
+        try:
+            record = self.get_unclaimed_record(project_id)
+        except ValueError:  # No unclaimed record for given pid
+            return False
+        return record['token'] == token and record['expires'] > dt.datetime.utcnow()
 
     def get_claim_url(self, project_id, external=False):
-        """Return the URL that an unclaimed user should use to claim their
-        account. Return ``None`` if there is no unclaimed_record for the given
-        project ID.
-
-        :param project_id: The project ID for the unclaimed record
-        :raises: ValueError if a record doesn't exist for the given project ID
-        :rtype: dict
-        :returns: The unclaimed record for the project
         """
+        Return the URL that an unclaimed user should use to claim their account.
+        Return `None` if there is no unclaimed_record for the given project ID.
+
+        :param project_id: the project ID for the unclaimed record
+        :param external:
+        :rtype: string
+        :returns: the claim url
+        """
+        try:
+            unclaimed_record = self.get_unclaimed_record(project_id)
+        except ValueError:
+            return None
         uid = self._primary_key
         base_url = settings.DOMAIN if external else '/'
-        unclaimed_record = self.get_unclaimed_record(project_id)
         token = unclaimed_record['token']
-        return '{base_url}user/{uid}/{project_id}/claim/?token={token}'\
-                    .format(**locals())
+        return '{base_url}user/{uid}/{project_id}/claim/?token={token}'.\
+            format(**locals())
 
     def set_password(self, raw_password, notify=True):
         """Set the password for this user to the hash of ``raw_password``.
@@ -812,7 +827,7 @@ class User(GuidStoredObject, AddonModelMixin):
         if email in self.unconfirmed_emails:
             self.remove_unconfirmed_email(email)
 
-        token = generate_confirm_token()
+        token = generate_verification_key()
 
         # handle when email_verifications is None
         if not self.email_verifications:
@@ -921,16 +936,6 @@ class User(GuidStoredObject, AddonModelMixin):
             if token == given_token:
                 email_verifications.pop(token)
         self.email_verifications = email_verifications
-
-    def verify_claim_token(self, token, project_id):
-        """Return whether or not a claim token is valid for this user for
-        a given node which they were added as a unregistered contributor for.
-        """
-        try:
-            record = self.get_unclaimed_record(project_id)
-        except ValueError:  # No unclaimed record for given pid
-            return False
-        return record['token'] == token
 
     def confirm_email(self, token, merge=False):
         """Confirm the email address associated with the token"""
