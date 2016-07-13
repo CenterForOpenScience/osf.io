@@ -149,6 +149,10 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
 
     ##Relationships
 
+    ###Node
+
+    The `node` endpoint describes the project or registration that this file belongs to.
+
     ###Files (*folders*)
 
     The `files` endpoint lists all of the subfiles and folders of the current folder. Will be null for files.
