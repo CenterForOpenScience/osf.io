@@ -7,7 +7,7 @@ const Router = Ember.Router.extend({
 
 Router.map(function() {
   this.route('ember-sample');
-  this.route('guid');
+  this.route('file-detail');
 });
 
 export default Router;
