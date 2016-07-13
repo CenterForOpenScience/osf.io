@@ -231,14 +231,7 @@ def make_url_map(app):
             Rule(
                 [
                     '/ember-sample/',
-                ],
-                'get',
-                ember_app,
-                json_renderer
-            ),
-            Rule(
-                [
-                    '/guid/',
+                    '/file-detail/'
                 ],
                 'get',
                 ember_app,
