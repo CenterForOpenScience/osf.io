@@ -42,11 +42,6 @@ class MeetingForm(forms.Form):
         required=False,
         widget=forms.TextInput(attrs={'size': '60'}),
     )
-    description = forms.CharField(
-        label='Description',
-        required=False,
-        widget=forms.Textarea(),
-    )
     location = forms.CharField(
         label='Location',
         required=False,

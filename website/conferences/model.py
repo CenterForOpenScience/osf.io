@@ -28,7 +28,6 @@ class Conference(StoredObject):
     endpoint = fields.StringField(primary=True, required=True, unique=True)
     #: Full name, e.g. "SPSP 2014"
     name = fields.StringField(required=True)
-    description = fields.StringField(required=False)
     info_url = fields.StringField(required=False, default=None)
     logo_url = fields.StringField(required=False, default=None)
     location = fields.StringField(required=False, default=None)
