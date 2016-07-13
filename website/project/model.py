@@ -1350,7 +1350,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         #check
         matches = [primUserFile for mergUserFiles, primUserFile in zip(mergedUserFiles, primaryUserFiles) if primUserFile.name == mergUserFiles.name]
         if matches:
-            raise DuplicateKeyError
+            raise DuplicateKeyError(BaseException)
 
         for child in OsfStorageFile.find(Q('node', 'eq', node) & Q('title', 'ne', 'Public Files')):
             child.move_under(self.get_addon('osfstorage').get_root())
