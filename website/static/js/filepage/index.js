@@ -365,10 +365,10 @@ var FileViewPage = {
 
         self.mfrIframeParent = $('#mfrIframeParent');
         function toggleRevisions(e){
-            e.preventDefault();
-            var editable = self.editor && self.editor.selected;
+            if(self.editor){
+                self.editor.selected = false;
+            }
             var viewable = self.mfrIframeParent.is(':visible');
-            self.editor.selected = false;
             var url = '';
             if (viewable){
                 self.mfrIframeParent.toggle();

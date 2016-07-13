@@ -1281,7 +1281,10 @@ function _fangornTitleColumn(item, col) {
 
 function _fangornVersionColumn(item,col) {
     var tb = this;
-    return _fangornTitleColumnHelper(tb,item,col,String(item.data.extra.version),'/?show=revision','fg-version-links');
+    if (item.kind !== 'folder'){
+        return _fangornTitleColumnHelper(tb,item,col,String(item.data.extra.version),'/?show=revision','fg-version-links');
+    }
+    return;
 }
 
 /**
@@ -1428,7 +1431,7 @@ function _fangornColumnTitles () {
     columns.push(
     {
         title: 'Name',
-        width : '64%',
+        width : '54%',
         sort : true,
         sortType : 'text'
     }, {
