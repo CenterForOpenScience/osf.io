@@ -5,7 +5,11 @@
 % if meeting['logo_url']:
     <img src="${ meeting['logo_url'] }" class="img-responsive" />
     <br /><br />
-  % endif
+% endif
+
+% if meeting['description']:
+  ${meeting['description_rendered'] | n}
+% endif
 
 % if meeting['active']:
     <div>
