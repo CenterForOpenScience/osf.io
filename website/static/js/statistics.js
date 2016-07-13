@@ -6,8 +6,11 @@ var $osf = require('js/osfHelpers');
 var keenDataviz = require('keen-dataviz');
 var keenAnalysis = require('keen-analysis');
 
-var ProjectUsageStatistics = function(keenProjectId, keenReadKey){
+var ProjectUsageStatistics = function(keenProjectId, keenReadKey, params){
     var self = this;
+
+    params = params || {};
+    self.MAX_DISPLAY_ENTRIES = params.maxDisplayEntries || 10;
 
     /**
     * Manages the connections to Keen.  Needs a project id and valid read key for that project.
@@ -95,7 +98,19 @@ var ProjectUsageStatistics = function(keenProjectId, keenReadKey){
                     },
                 });
 
-        self.buildChart(query, dataviz);
+        var munger = function() {
+            this.dataset.sortRows('desc', function(row) {
+                return row[1];
+            });
+            this.dataset.filterRows(function(row, index) {
+                return index < self.MAX_DISPLAY_ENTRIES;
+            });
+            this.dataset.updateColumn(0, function(value, index, column) {
+                return value === 'null' ? 'direct link' : value;
+            });
+        };
+
+        self.buildChart(query, dataviz, munger);
     };
 
     // The number of visits by hour across last week
@@ -176,7 +191,7 @@ var ProjectUsageStatistics = function(keenProjectId, keenReadKey){
 
         var dataviz = new keenDataviz()
                 .el(elem)
-                .chartType('bar')
+                .chartType('horizontal-bar')
                 .chartOptions({
                     tooltip:{
                         format:{
@@ -193,7 +208,14 @@ var ProjectUsageStatistics = function(keenProjectId, keenReadKey){
                 });
 
         var munger = function() {
-            this.dataset.updateColumn(0, function(value, index, column) {
+            var dataset = this.dataset;
+            dataset.sortRows('asc', function(row) { return row[1]; });
+
+            var nbrRows = dataset.matrix.length;
+            var minimumIndex = nbrRows <= self.MAX_DISPLAY_ENTRIES ? 0 : nbrRows - self.MAX_DISPLAY_ENTRIES;
+            dataset.filterRows(function(row, index) { return index >= minimumIndex; });
+
+            dataset.updateColumn(0, function(value, index, column) {
                 var title = value.replace(/^OSF \| /, '');
                 // Strip off the project title, if present at beginning of string
                 if (title.startsWith(nodeTitle)) {
