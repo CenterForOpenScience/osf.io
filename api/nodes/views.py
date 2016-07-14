@@ -498,7 +498,7 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
         ContributorOrPublic,
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
-        ExcludeWithdrawals,
+        ExcludeWithdr[awals,
     )
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
@@ -869,7 +869,6 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
         IsAdmin,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        ExcludeWithdrawals
     )
 
     required_read_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_READ]
@@ -1370,6 +1369,8 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
     permission_classes = (
         ContributorOrPublicForPointers,
         ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope,
+        drf_permissions.IsAuthenticatedOrReadOnly,
         ExcludeWithdrawals
     )
 
@@ -1388,7 +1389,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
             self.kwargs[node_link_lookup_url_kwarg],
             'node link'
         )
-        self.check_object_permissions(self.request, node_link)
+
         return node_link
 
     # overrides DestroyAPIView

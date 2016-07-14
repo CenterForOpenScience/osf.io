@@ -400,6 +400,8 @@ class RegistrationLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveAPIV
 
     permission_classes = (
         ContributorOrPublicForRelationshipPointers,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
         ReadOnlyIfRegistration,
     )
 
