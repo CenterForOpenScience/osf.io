@@ -22,6 +22,16 @@ $(function(){
 
 
 keenAnalysis.ready(function(){
+    function updateDateRangeDisplay(statsStartDate, statsEndDate) {
+        $('#startDateString').removeClass('logo-spin logo-sm').text(statsStartDate.toLocaleDateString());
+        $('#endDateString').removeClass('logo-spin logo-sm').text(statsEndDate.toLocaleDateString());
+    }
+
+    function toggleDateRangePickerView() {
+        $('#dateRange').toggleClass('hidden');
+        $('#dateRangeForm').toggleClass('hidden');
+    }
+
     function drawAllCharts(statsStartDate, statsEndDate) {
         projectUsageStats.visitsByDay('#visits', statsStartDate, statsEndDate);
         projectUsageStats.topReferrers('#topReferrers', statsStartDate, statsEndDate);
@@ -44,6 +54,8 @@ keenAnalysis.ready(function(){
     var endPickerElem = document.getElementById('endDatePicker');
     var endDate = new Date(Date.now() - oneDayInMs);
 
+    updateDateRangeDisplay(startDate, endDate);
+
     var dateRangePicker = new DateRangePicker(
         startPickerElem, startDate,
         endPickerElem, endDate,
@@ -56,8 +68,12 @@ keenAnalysis.ready(function(){
     );
     drawAllCharts(dateRangePicker.startDate, dateRangePicker.endDate);
 
-    $('#updateStatsDates').on('submit', function() {
+    $('#showDateRangeForm').on('click', function() { toggleDateRangePickerView(); });
+
+    $('#dateRangeForm').on('submit', function() {
+        updateDateRangeDisplay(dateRangePicker.startDate, dateRangePicker.endDate);
         drawAllCharts(dateRangePicker.startDate, dateRangePicker.endDate);
+        toggleDateRangePickerView();
         return false;
     });
 

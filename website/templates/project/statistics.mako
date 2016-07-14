@@ -19,17 +19,25 @@
 
     <div class="row m-lg">
       <div class="col-sm-12">
-        <form class="form-inline pull-right" id="updateStatsDates">
+
+        <div id="dateRange" class="pull-right">
+          Showing analytics from <span class="m-l-xs text-bigger f-w-xl logo-spin logo-sm" id="startDateString"></span>
+          until <span class="m-l-xs text-bigger f-w-xl logo-spin logo-sm" id="endDateString"></span>
+          <button class="btn btn-default m-l-xs" id="showDateRangeForm">Update</button>
+        </div>
+
+        <form class="form-inline pull-right hidden" id="dateRangeForm">
           <div class="form-group">
             <label for="startDatePicker">From</label>
             <input type="text" class="form-control" id="startDatePicker">
           </div>
-          <div class="form-group">
+          <div class="form-group m-l-sm">
             <label for="endDatePicker">Until</label>
             <input type="text" class="form-control" id="endDatePicker">
           </div>
           <button type="submit" class="btn btn-default">Update date range</button>
         </form>
+
       </div>
     </div>
     <div class="row m-lg">
