@@ -17,7 +17,7 @@
                         class="form-control"
                         data-bind="value: url"
                         placeholder="Required"
-                        required />
+                        />
             </div>
 
             <div class="form-group">
@@ -30,20 +30,6 @@
                         />
                 </div>
 
-            <div class="form-group">
-                <label>Automatic Forward:&nbsp;<input type="radio" name="forward"  data-bind="checked: redirectBool, checkedValue: true"/> &nbsp;Yes &nbsp;&nbsp;</label>
-                <label><input type="radio" name="forward"  data-bind="checked: redirectBool, checkedValue: false"/> &nbsp;No &nbsp;&nbsp; </label>
-            </div>
-
-            <div class="form-group">
-                <label for="forwardSecs">Forward Delay</label>
-                <input
-                        id="forwardSecs"
-                        class="form-control"
-                        data-bind="value: redirectSecs, enable: redirectBool"
-                        type="number"
-                    />
-            </div>
 
             <div class="row">
                 <div class="col-md-10 overflow">
@@ -53,7 +39,6 @@
                     <input type="submit"
                            class="btn btn-success pull-right"
                            value="Save"
-                           data-bind="disable: !validators.isValid()"
                     />
                 </div>
             </div>

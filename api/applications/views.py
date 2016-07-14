@@ -106,7 +106,7 @@ class ApplicationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, 
         try:
             obj.deactivate(save=True)
         except cas.CasHTTPError:
-            raise APIException("Could not revoke application auth tokens; please try again later")
+            raise APIException('Could not revoke application auth tokens; please try again later')
 
     def perform_update(self, serializer):
         """Necessary to prevent owner field from being blanked on updates"""

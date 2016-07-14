@@ -69,6 +69,7 @@ class Institution(object):
         'description': 'description',
         'email_domains': 'institution_email_domains',
         'banner_name': 'institution_banner_name',
+        'is_deleted': 'is_deleted'
     }
 
     def __init__(self, node=None):
@@ -148,6 +149,14 @@ class Institution(object):
     def absolute_api_v2_url(self):
         from api.base.utils import absolute_reverse
         return absolute_reverse('institutions:institution-detail', kwargs={'institution_id': self._id})
+
+    @property
+    def nodes_url(self):
+        return self.absolute_api_v2_url + 'nodes/'
+
+    @property
+    def nodes_relationship_url(self):
+        return self.absolute_api_v2_url + 'relationships/nodes/'
 
     @property
     def logo_path(self):

@@ -13,6 +13,8 @@ from flask import request, url_for
 
 from website import settings as website_settings
 from api.base import settings as api_settings
+from modularodm import Q
+from modularodm.exceptions import NoResultsFound
 
 # Keep me: Makes rubeus importable from website.util
 from . import rubeus  # noqa
@@ -193,3 +195,17 @@ def disconnected_from(signal, listener):
     signal.disconnect(listener)
     yield
     signal.connect(listener)
+
+
+def check_private_key_for_anonymized_link(private_key):
+    from website.project.model import PrivateLink
+
+    is_anonymous = False
+    if private_key is not None:
+        try:
+            link = PrivateLink.find_one(Q('key', 'eq', private_key))
+        except NoResultsFound:
+            link = None
+        if link is not None:
+            is_anonymous = link.anonymous
+    return is_anonymous

@@ -55,7 +55,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False):
         'registered': user.is_registered,
         'surname': user.family_name,
         'fullname': fullname,
-        'shortname': fullname if len(fullname) < 50 else fullname[:23] + "..." + fullname[-23:],
+        'shortname': fullname if len(fullname) < 50 else fullname[:23] + '...' + fullname[-23:],
         'gravatar_url': gravatar(
             user, use_ssl=True,
             size=settings.PROFILE_IMAGE_MEDIUM
@@ -79,7 +79,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False):
             'url': user.url,
             'absolute_url': user.absolute_url,
             'display_absolute_url': user.display_absolute_url,
-            'date_registered': user.date_registered.strftime("%Y-%m-%d"),
+            'date_registered': user.date_registered.strftime('%Y-%m-%d'),
         })
 
     if full:

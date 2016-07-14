@@ -66,6 +66,12 @@ class TestUser(base.OsfTestCase):
             [user.username]
         )
 
+    # regression test for https://sentry.cos.io/sentry/osf/issues/6510/
+    def test_unconfirmed_email_info_when_email_verifications_is_none(self):
+        user = factories.UserFactory()
+        user.email_verifications = None
+        assert_equal(user.unconfirmed_email_info, [])
+
     def test_remove_unconfirmed_email(self):
         self.user.add_unconfirmed_email('foo@bar.com')
         self.user.save()
@@ -109,16 +115,16 @@ class TestUser(base.OsfTestCase):
         self.user.save()
         self.user.reload()
         assert_equal(token1, self.user.get_confirmation_token(email))
-        assert_equal(email, self.user._get_unconfirmed_email_for_token(token1))
+        assert_equal(email, self.user.get_unconfirmed_email_for_token(token1))
 
         token2 = self.user.add_unconfirmed_email(email)
         self.user.save()
         self.user.reload()
         assert_not_equal(token1, self.user.get_confirmation_token(email))
         assert_equal(token2, self.user.get_confirmation_token(email))
-        assert_equal(email, self.user._get_unconfirmed_email_for_token(token2))
+        assert_equal(email, self.user.get_unconfirmed_email_for_token(token2))
         with assert_raises(exceptions.InvalidTokenError):
-            self.user._get_unconfirmed_email_for_token(token1)
+            self.user.get_unconfirmed_email_for_token(token1)
 
     def test_contributed_property(self):
         projects_contributed_to = project.model.Node.find(Q('contributors', 'eq', self.user._id))
@@ -299,6 +305,9 @@ class TestUserMerging(base.OsfTestCase):
         self.user.email_verifications = {'user': {'email': 'a'}}
         other_user.email_verifications = {'other': {'email': 'b'}}
 
+        self.user.notifications_configured = {'abc12': True}
+        other_user.notifications_configured = {'123ab': True}
+
         self.user.external_accounts = [factories.ExternalAccountFactory()]
         other_user.external_accounts = [factories.ExternalAccountFactory()]
 
@@ -363,7 +372,8 @@ class TestUserMerging(base.OsfTestCase):
             'mailing_lists',
             'verification_key',
             '_affiliated_institutions',
-            'contributor_added_email_records'
+            'contributor_added_email_records',
+            'requested_deactivation'
         ]
 
         calculated_fields = {
@@ -376,6 +386,9 @@ class TestUserMerging(base.OsfTestCase):
             'email_verifications': {
                 'user': {'email': 'a'},
                 'other': {'email': 'b'},
+            },
+            'notifications_configured': {
+                '123ab': True, 'abc12': True,
             },
             'emails': [
                 self.user.username,

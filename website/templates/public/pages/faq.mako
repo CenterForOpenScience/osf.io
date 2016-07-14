@@ -81,7 +81,7 @@
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> What is the cap on data per user?</h5>
-                            <div class="support-body">There is a limit on the size of individual files uploaded to the OSF. This limit is 5 GB. If you have larger files to upload, you might consider utilizing add-ons. When archiving files during the registration process, there is a 1 GB total limit across all storage add-ons being archived.</div>
+                            <div class="support-body">There is a limit on the size of individual files uploaded to the OSF. This limit is 5 GB. If you have larger files to upload, you might consider utilizing add-ons. When archiving files during the registration process, there is a 5 GB total limit per registration across all storage being archived (OSF Storage plus Add-ons).</div>
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How do I get a DOI or ARK for my project?</h5>
@@ -104,13 +104,15 @@
                                 password. This provides extra security. No one but you can know your
                                 password. When you click "Forgot your password," the OSF sends you a new random
                                 password because it neither stores nor has the ability to compute your password.
-                                <br/><br/>
-                                Data and materials posted on the OSF are not yet encrypted, unless you encrypt
-                                them before uploading to the site. This means that if our servers were
-                                compromised, the intruder would have access to raw data. While we have taken
-                                technological measures to minimize this risk, the level of security can be
-                                improved further. We will offer encryption soon, and we will partner with
-                                data storage services that offer strong security features.</div>
+                                </div>
+                        </div>
+                        <div class="support-item">
+                            <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> Is data stored on OSF Storage encrypted? What are my options?</h5>
+                            <div class="support-body">Transfer of data to OSF storage is encrypted with SSL. If you would like your data to be encrypted at rest, you can encrypt it before uploading to OSF Storage. You can also use the Amazon S3 add-on and implement server-side encryption to encrypt your data before saving it on S3 servers and decrypt it when you download it. Otherwise, data at rest is not encrypted on OSF Storage.</div>
+                        </div>
+                        <div class="support-item">
+                            <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How do I report a potential security issue?</h5>
+                            <div class="support-body">If you would like to report a security issue, please email <a href="mailto:support@osf.io">support@osf.io</a> for instructions on how to report the security issue. Do not include details of the issue in that email.</div>
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> Is the OSF HIPAA compliant?</h5>

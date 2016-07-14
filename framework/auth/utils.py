@@ -20,15 +20,15 @@ DOMAIN_REGEX = re.compile(
 
 def validate_email(email):
     if len(email) > 254:
-        raise ValidationError("Invalid Email")
+        raise ValidationError('Invalid Email')
 
     if not email or '@' not in email:
-        raise ValidationError("Invalid Email")
+        raise ValidationError('Invalid Email')
 
     user_part, domain_part = email.rsplit('@', 1)
 
     if not USER_REGEX.match(user_part):
-        raise ValidationError("Invalid Email")
+        raise ValidationError('Invalid Email')
 
     if not DOMAIN_REGEX.match(domain_part):
         try:
@@ -38,7 +38,7 @@ def validate_email(email):
         else:
             if DOMAIN_REGEX.match(domain_part):
                 return True
-        raise ValidationError("Invalid Email")
+        raise ValidationError('Invalid Email')
 
     return True
 

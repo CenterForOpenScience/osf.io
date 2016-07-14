@@ -9,6 +9,7 @@ var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');  // TODO: Why is this required? Is it? See [#OSF-6100]
 var Raven = require('raven-js');
+var lodashGet = require('lodash.get');
 
 var oop = require('js/oop');
 var $osf = require('js/osfHelpers');
@@ -147,7 +148,7 @@ AddContributorViewModel = oop.extend(Paginator, {
         for (var key in nodesState) {
             var i;
             var node = nodesState[key];
-            var enabled = nodesState[key].canWrite;
+            var enabled = nodesState[key].isAdmin;
             var checked = nodesState[key].checked;
             if (enabled) {
                 var nodeContributors = [];
@@ -234,8 +235,9 @@ AddContributorViewModel = oop.extend(Paginator, {
             xhrFields: {withCredentials: true},
             processData: false
         }).done(function (response) {
-            var contributors = response.data.map(function (user) {
-                return user.id;
+            var contributors = response.data.map(function (contributor) {
+                // contrib ID has the form <nodeid>-<userid>
+                return contributor.id.split('-')[1];
             });
             self.contributors(contributors);
         });
@@ -402,7 +404,8 @@ AddContributorViewModel = oop.extend(Paginator, {
         }).fail(function (xhr, status, error) {
             self.hide();
             $osf.unblock();
-            $osf.growl('Could not add contributors', 'There was a problem trying to add contributors. ' + osfLanguage.REFRESH_OR_SUPPORT);
+            var errorMessage = lodashGet(xhr, 'responseJSON.message') || ('There was a problem trying to add contributors.' + osfLanguage.REFRESH_OR_SUPPORT);
+            $osf.growl('Could not add contributors', errorMessage);
             Raven.captureMessage('Error adding contributors', {
                 extra: {
                     url: url,
@@ -466,7 +469,7 @@ AddContributorViewModel = oop.extend(Paginator, {
             //parent node is changed by default
             nodesState[nodeParent].checked = true;
             //parent node cannot be changed
-            nodesState[nodeParent].canWrite = false;
+            nodesState[nodeParent].isAdmin = false;
             self.nodesState(nodesState);
         }).fail(function (xhr, status, error) {
             $osf.growl('Error', 'Unable to retrieve project settings');
@@ -508,7 +511,7 @@ ContribAdder.prototype.init = function() {
     self.viewModel.fetchNodeTree(treebeardUrl).done(function(response) {
         new NodeSelectTreebeard('addContributorsTreebeard', response, self.viewModel.nodesState);
     });
-    ko.applyBindings(self.viewModel, self.$element[0]);
+    $osf.applyBindings(self.viewModel, self.$element[0]);
     // Clear popovers on dismiss start
     self.$element.on('hide.bs.modal', function() {
         self.$element.find('.popover').popover('hide');

@@ -1,6 +1,6 @@
 <div id="addContributors" class="modal fade">
     <div class="modal-dialog modal-lg">
-        <div class="modal-content">
+        <div class="modal-content scripted">
             <div class="modal-header">
                 <a href="#" class='close' data-bind="click: clear" data-dismiss="modal">&times;</a>
                 <h3 class="modal-title" data-bind="text:pageTitle"></h3>

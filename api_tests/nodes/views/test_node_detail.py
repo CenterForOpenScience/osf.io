@@ -154,6 +154,8 @@ class TestNodeDetail(ApiTestCase):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
         assert_in('comments', res.json['data']['relationships'].keys())
+        assert_in('filter[target]={}'.format(self.public_project._id),
+                  res.json['data']['relationships']['comments']['links']['related']['href'])
 
     def test_node_has_correct_unread_comments_count(self):
         contributor = AuthUserFactory()
@@ -887,10 +889,11 @@ class TestNodeTags(ApiTestCase):
         self.read_only_contributor = AuthUserFactory()
 
         self.public_project = ProjectFactory(title="Project One", is_public=True, creator=self.user)
+        self.public_project.add_contributor(self.admin, permissions=permissions.CREATOR_PERMISSIONS, save=True)
         self.public_project.add_contributor(self.user, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
         self.private_project = ProjectFactory(title="Project Two", is_public=False, creator=self.user)
-        self.private_project.add_contributor(self.user, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
         self.private_project.add_contributor(self.admin, permissions=permissions.CREATOR_PERMISSIONS, save=True)
+        self.private_project.add_contributor(self.user, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
         self.public_url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
         self.private_url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
 
@@ -1045,10 +1048,11 @@ class TestNodeLicense(ApiTestCase):
         self.read_only_contributor = AuthUserFactory()
 
         self.public_project = ProjectFactory(title="Project One", is_public=True, creator=self.user)
+        self.public_project.add_contributor(self.admin, permissions=permissions.CREATOR_PERMISSIONS, save=True)
         self.public_project.add_contributor(self.user, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
         self.private_project = ProjectFactory(title="Project Two", is_public=False, creator=self.user)
-        self.private_project.add_contributor(self.user, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
         self.private_project.add_contributor(self.admin, permissions=permissions.CREATOR_PERMISSIONS, save=True)
+        self.private_project.add_contributor(self.user, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
         self.public_url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
         self.private_url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
         ensure_licenses()

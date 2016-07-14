@@ -3,9 +3,13 @@ import httplib as http
 from .model import Institution
 from framework.exceptions import HTTPError
 
+from modularodm import Q
+from modularodm.exceptions import NoResultsFound
+
 def view_institution(inst_id, **kwargs):
-    inst = Institution.load(inst_id)
-    if not inst:
+    try:
+        inst = Institution.find_one(Q('_id', 'eq', inst_id) & Q('is_deleted', 'ne', True))
+    except NoResultsFound:
         raise HTTPError(http.NOT_FOUND)
     return {
         'id': inst._id,

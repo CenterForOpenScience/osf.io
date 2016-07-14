@@ -5,6 +5,7 @@
  */
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 var logActions = require('json!js/_allLogTexts.json');
+var anonymousLogActions = require('json!js/_anonymousLogTexts.json');
 var $ = require('jquery');  // jQuery
 var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
@@ -103,7 +104,9 @@ var LogText = {
         var logText = function() {
             var text = logActions[logObject.attributes.action];
             if (text) {
-                if (text.indexOf('${user}') !== -1) {
+                if (logObject.anonymous) {
+                    return anonymousLogActions[logObject.attributes.action];
+                } else if (text.indexOf('${user}') !== -1) {
                     var userObject = logObject.embeds.user;
                     if (userInfoReturned(userObject)) {
                         return text;
@@ -112,14 +115,16 @@ var LogText = {
                         var newAction = logObject.attributes.action + '_no_user';
                         return logActions[newAction] ? logActions[newAction]: text;
                     }
+                } else {
+                    return text;
                 }
-                return text;
             }
         return null;
         };
         var message = '';
         var text = logText();
         if(text){
+            if (logObject.anonymous) { return m('span.osf-log-item', text); }
             var list = text.split(/(\${.*?})/);
             return m('span.osf-log-item', [
                 list.map(function(piece){
@@ -142,7 +147,10 @@ var LogText = {
                 })
             ]);
         } else {
-            message = 'There is no text entry in dictionary for the action :' + logObject.attributes.action;
+            message = 'The log viewer has encountered an unexpected log action: ' + logObject.attributes.action +
+                '. Please add a new log entry for this action to logActionsList.json' +
+                ' and anonymousLogActionsList.json, or, if this log relates to an addon, ' +
+                'to {addonName}LogActionList.json and {addonName}AnonymousLogActionList.json';
             ravenMessage(message, logObject);
             return m('em', 'Unable to retrieve log details');
         }
@@ -205,9 +213,9 @@ var LogPieces = {
     // Contributor list of added, updated etc.
     contributors: {
         view: function (ctrl, logObject) {
-            var contributors = logObject.embeds.contributors;
+            var contributors = logObject.attributes.params.contributors;
             if(paramIsReturned(contributors, logObject)) {
-                return m('span', contributors.data.map(function(item, index, arr){
+                return m('span', contributors.map(function(item, index, arr){
                     var comma = ' ';
                     if(index !== arr.length - 1){
                         comma = ', ';
@@ -216,24 +224,14 @@ var LogPieces = {
                         comma = ' and ';
                     }
 
-
-                    var attributes = item.attributes;
-                    if (attributes == null && item.data && item.data.attributes) {
-                        attributes = item.data.attributes;
+                    if (item.active) {
+                        return [ m('a', {href: '/' + item.id + '/'}, item.full_name), comma];
                     }
-
-                    var links = item.links;
-                    if (links == null && item.data && item.data.links){
-                        links = item.data.links;
-                    }
-
-                    if (attributes) {
-                        if (attributes.active && links) {
-                            return [ m('a', {href: links.html}, attributes.full_name), comma];
+                    else {
+                        if (item.unregistered_name) {
+                            return [item.unregistered_name, comma];
                         }
-                        else {
-                            return [attributes.full_name, comma];
-                        }
+                        return [item.full_name, comma];
                     }
                 }));
             }
@@ -612,20 +610,6 @@ var LogPieces = {
             return returnTextParams('addon', '', logObject);
         }
     },
-
-    previous_institution: {
-        view: function(ctrl, logObject){
-            var previous_institution = logObject.attributes.params.previous_institution;
-            if (paramIsReturned(previous_institution, logObject)){
-                if (previous_institution.id !== null) {
-                    return m('a', {'href': '/institutions/' + previous_institution.id + '/'}, previous_institution.name);
-                }
-                return m('span', previous_institution.name);
-            }
-            return m('span', 'an institution');
-        }
-    },
-
     institution: {
         view: function(ctrl, logObject){
             var institution = logObject.attributes.params.institution;

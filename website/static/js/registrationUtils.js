@@ -617,7 +617,7 @@ Draft.prototype.preRegisterPrompts = function(response, confirm) {
         };
     }
     var preRegisterPrompts = response.prompts || [];
-
+    
     var registrationModal = new RegistrationModal.ViewModel(
         confirm, preRegisterPrompts, validator
     );
@@ -773,7 +773,6 @@ Draft.prototype.reject = function() {
  **/
 var RegistrationEditor = function(urls, editorId, preview) {
     var self = this;
-
     self.urls = urls;
 
     self.readonly = ko.observable(false);
@@ -886,7 +885,7 @@ var RegistrationEditor = function(urls, editorId, preview) {
 		$elem.append(
 		    $('<span class="col-md-12">').append(
 			$('<p class="breaklines"><small><em>' + $osf.htmlEscape(question.description) + '</em></small></p>'),
-                            $('<span class="well col-md-12">').append(value)
+                            $('<span class="well col-xs-12">').append(value)
 		));
             }
 	    return $elem;
@@ -1052,8 +1051,10 @@ RegistrationEditor.prototype.updateData = function(response) {
     var self = this;
 
     var draft = self.draft();
+
     draft.pk = response.pk;
     draft.updated = new Date(response.updated);
+
     self.draft(draft);
 };
 

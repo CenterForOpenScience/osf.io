@@ -9,4 +9,5 @@ urlpatterns = [
     url(r'^(?P<institution_id>\w+)/nodes/$', views.InstitutionNodeList.as_view(), name=views.InstitutionNodeList.view_name),
     url(r'^(?P<institution_id>\w+)/registrations/$', views.InstitutionRegistrationList.as_view(), name=views.InstitutionRegistrationList.view_name),
     url(r'^(?P<institution_id>\w+)/users/$', views.InstitutionUserList.as_view(), name=views.InstitutionUserList.view_name),
+    url(r'^(?P<institution_id>\w+)/relationships/nodes/$', views.InstitutionNodesRelationship.as_view(), name=views.InstitutionNodesRelationship.view_name),
 ]

@@ -48,7 +48,9 @@ function ViewModel(url) {
         return Boolean(self.selectedHost());
     });
     self.tokenUrl = ko.pureComputed(function() {
-       return self.host() ? 'https://' + self.host() + '/account/apitoken' : null;
+        var tokenPath = self.host() === 'dataverse.lib.virginia.edu'
+                ? '/account/apitoken' : '/dataverseuser.xhtml?selectTab=apiTokenTab';
+        return self.host() ? 'https://' + self.host() + tokenPath : null;
     });
 
     // Flashed messages
@@ -74,7 +76,7 @@ function ViewModel(url) {
                 externalAccount.dataverseUrl = account.host_url;
                 return externalAccount;
             }));
-            $('.addon-auth-table').osfToggleHeight({height: 140});
+            $('#dataverse-header').osfToggleHeight({height: 160});
         });
         request.fail(function(xhr, status, error) {
             Raven.captureMessage('Error while updating addon account', {

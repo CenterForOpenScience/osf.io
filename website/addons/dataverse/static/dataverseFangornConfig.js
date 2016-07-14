@@ -3,6 +3,7 @@
 var m = require('mithril');
 var URI = require('URIjs');
 var $ = require('jquery');
+var Raven = require('raven-js');
 
 var Fangorn = require('js/fangorn');
 var waterbutler = require('js/waterbutler');
@@ -254,24 +255,35 @@ function _fangornDataverseTitle(item, col) {
 
 function _fangornColumns(item) {
     var tb = this;
-    var selectClass = '';
     var columns = [];
     columns.push({
         data : 'name',
         folderIcons : true,
         filter : true,
-        css: selectClass,
         custom: _fangornDataverseTitle
     });
-
     if (tb.options.placement === 'project-files') {
         columns.push(
-            {
-                data: 'downloads',
-                filter: false,
-                css: ''
-            }
-        );
+        {
+            data  : 'size',
+            sortInclude : false,
+            filter : false,
+            custom : function() {return m('');}
+        });
+        columns.push(
+        {
+            data  : 'downloads',
+            sortInclude : false,
+            filter : false,
+            custom : function() {return m('');}
+        });
+    }
+    if(tb.options.placement !== 'fileview') {
+        columns.push({
+            data : 'modified',
+            filter: false,
+            custom : function() {return m('');}
+        });
     }
     return columns;
 }

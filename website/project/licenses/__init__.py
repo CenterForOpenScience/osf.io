@@ -97,7 +97,7 @@ def ensure_licenses(warn=True):
             except NoResultsFound:
                 if warn:
                     warnings.warn(
-                        "License {name} ({id}) not already in the database. Adding it now.".format(
+                        'License {name} ({id}) not already in the database. Adding it now.'.format(
                             name=name,
                             id=id
                         )

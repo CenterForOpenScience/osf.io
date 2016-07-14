@@ -54,7 +54,7 @@ class DataverseSerializer(OAuthAddonSerializer):
             'importAuth': node.api_url_for('dataverse_import_auth'),
             'deauthorize': node.api_url_for('dataverse_deauthorize_node'),
             'getDatasets': node.api_url_for('dataverse_get_datasets'),
-            'datasetPrefix': 'http://dx.doi.org/',
+            'datasetPrefix': 'https://doi.org/',
             'dataversePrefix': 'http://{0}/dataverse/'.format(host),
             'accounts': api_url_for('dataverse_account_list'),
         }
