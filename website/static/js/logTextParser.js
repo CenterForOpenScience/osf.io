@@ -660,4 +660,7 @@ var LogPieces = {
     }
 };
 
-module.exports = LogText;
+module.exports = {
+    LogText: LogText,
+    toRelativeUrl: toRelativeUrl
+};
