@@ -498,7 +498,7 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
         ContributorOrPublic,
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
-        ExcludeWithdr[awals,
+        ExcludeWithdrawals,
     )
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
