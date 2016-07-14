@@ -8,7 +8,8 @@ const Router = Ember.Router.extend({
 Router.map(function() {
     this.route('ember-sample');
     this.route('file-detail', { path: '/:guid' }, function() {
-        this.route('revisions');
+      this.route('revisions');
+      this.route('edit');
     });
 });
 
