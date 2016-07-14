@@ -88,6 +88,7 @@ var ViewModel = function(params) {
     self.currentPage = ko.observable(1);
     self.totalResults = ko.observable(0);
     self.results = ko.observableArray([]);
+    self.urlLists = ko.observableArray([]);
     self.searching = ko.observable(false);
     self.resultsPerPage = ko.observable(10);
     self.categories = ko.observableArray([]);
@@ -356,6 +357,7 @@ var ViewModel = function(params) {
             self.tags([]);
             self.tagMaxCount(1);
             self.results.removeAll();
+            self.urlLists.removeAll();
             self.categories.removeAll();
             self.shareCategory('');
 
@@ -384,7 +386,10 @@ var ViewModel = function(params) {
 
             data.results.forEach(function(result){
                 if(result.category === 'user'){
-                    self.results.push(new User(result));
+                    if ($.inArray(result.url, self.urlLists()) === -1) {
+                        self.results.push(new User(result));
+                        self.urlLists.push(result.url);
+                    }
                 }
                 else {
                     if(typeof result.url !== 'undefined'){
