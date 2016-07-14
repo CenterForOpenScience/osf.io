@@ -37,5 +37,5 @@ GET_HGRID_DATA = views.s3_root_folder
 MAX_FILE_SIZE = 128  # MB
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-NODE_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 's3_node_settings.mako')
+# NODE_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 's3_node_settings.mako')
 USER_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 's3_user_settings.mako')
