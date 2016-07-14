@@ -501,15 +501,15 @@ MetaSchema.prototype.askConsent = function(pre) {
             $osf.unblock();
             bootbox.hideAll();
             ret.resolve();
-            $(document.body).css('overflow', '');
-            $('.modal').css('overflow-y', 'hidden');
+            $(document.body).removeClass('background-unscrollable');
+            $('.modal').removeClass('modal-scrollable');
         },
         cancel: function() {
             $osf.unblock();
             bootbox.hideAll();
             ret.reject();
-            $(document.body).css('overflow', '');
-            $('.modal').css('overflow-y', 'hidden');
+            $(document.body).removeClass('background-unscrollable');
+            $('.modal').removeClass('modal-scrollable');
         }
     };
 
@@ -517,15 +517,15 @@ MetaSchema.prototype.askConsent = function(pre) {
         size: 'large',
         message: function() {
             ko.renderTemplate('preRegistrationConsent', viewModel, {}, this);
-            $(document.body).css('overflow', 'hidden');
+            $(document.body).addClass('background-unscrollable');
         }
     });
 
     $('.bootbox-close-button.close').click(function() {
-        $(document.body).css('overflow', '');
-        $('.modal').css('overflow-y', 'hidden');
+        $(document.body).removeClass('background-unscrollable');
+        $('.modal').removeClass('modal-scrollable');
     });
-    $('.modal').css('overflow-y', 'scroll');
+    $('.modal').addClass('modal-scrollable');
     return ret.promise();
 };
 
@@ -1432,8 +1432,8 @@ RegistrationManager.prototype.createDraftModal = function(selected) {
                     var selectedSchema = self.selectedSchema();
                     if (selectedSchema.requiresConsent) {
                         selectedSchema.askConsent(true).then(function() {
-                            $(document.body).css('overflow', '');
-                            $('.modal').css('overflow-y', 'hidden');
+                            $(document.body).removeClass('background-unscrollable');
+                            $('.modal').removeClass('modal-scrollable');
                             $('#newDraftRegistrationForm').submit();
                         });
                     }

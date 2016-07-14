@@ -698,3 +698,14 @@ button.close {
 div.ball-scale-blue>div {
     background-color: #BED1E2;
 }
+
+/* Make registrations modal scrollable and background hidden
+-------------------------------------------------- */
+
+.background-unscrollable {
+    overflow: hidden;
+}
+
+.modal-scrollable {
+    overflow: scroll;
+}
