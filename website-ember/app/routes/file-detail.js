@@ -3,17 +3,19 @@ import AuthenticatedRouteMixin from 'ember-simple-auth/mixins/authenticated-rout
 
 export default Ember.Route.extend(AuthenticatedRouteMixin, {
     fileManager: Ember.inject.service(),
+    // TODO Find a better way to load node.  Node needs to be loaded before file-browser component renders.
     model(params) {
-        return this.store.findRecord('file', params.guid);
-    },
-    setupController(controller, model) {
-        this._super(controller, model);
-        let node = model.get('node');
-        controller.set('node', node);
+        return Ember.RSVP.hash({
+            file: this.store.findRecord('file', params.guid),
+            node: this.store.findRecord('file', params.guid).then(function (file) {
+                return file.get('node');
+            })
+        });
+
     },
     actions: {
         download(versionID) {
-            let file = this.modelFor(this.routeName);
+            let file = this.modelFor(this.routeName).file;
             let options = {};
             if (typeof versionID !== 'undefined') {
                 options.query = {

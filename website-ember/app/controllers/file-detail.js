@@ -8,10 +8,10 @@ export default Ember.Controller.extend(CommentableMixin, TaggableMixin, {
     fileManager: Ember.inject.service(),
     session: Ember.inject.service(),
 
-    checkedIn: Ember.computed.none('model.checkout'),
-    canCheckIn: Ember.computed('model.checkout',
+    checkedIn: Ember.computed.none('model.file.checkout'),
+    canCheckIn: Ember.computed('model.file.checkout',
                                'session.data.authenticated.id', function() {
-        let checkoutID = this.get('model.checkout');
+        let checkoutID = this.get('model.file.checkout');
         let userID = this.get('session.data.authenticated.id');
         return checkoutID === userID;
     }),
@@ -19,30 +19,29 @@ export default Ember.Controller.extend(CommentableMixin, TaggableMixin, {
 
     actions: {
         fileDetail(file) {
-            this.transitionToRoute('nodes.detail.files.provider.file',
-                                   this.get('node'),
-                                   file.get('provider'),
-                                   file);
+            this.transitionToRoute('file-detail', file.get('id'));
         },
 
         nodeDetail(node) {
-            this.transitionToRoute('nodes.detail', node);
+            // TODO Test this.
+            window.location.replace(config.OSF.url + node.id);
         },
 
         delete() {
-            let file = this.get('model');
+            let file = this.get('model').file;
+            let node = this.get('model').node;
             this.get('fileManager').deleteFile(file).then(() => {
-                window.location.replace(config.OSF.url + 'project/' + this.get('node').get('id') + '/files/');
+                window.location.replace(config.OSF.url + 'project/' + node.get('id') + '/files/');
             });
         },
 
         checkOut() {
-            let file = this.get('model');
+            let file = this.get('model').file;
             this.get('fileManager').checkOut(file);
         },
 
         checkIn() {
-            let file = this.get('model');
+            let file = this.get('model').file;
             this.get('fileManager').checkIn(file);
         },
     }

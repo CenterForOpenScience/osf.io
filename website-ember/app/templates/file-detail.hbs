@@ -5,13 +5,13 @@
 <div class="container">
     <div class='row'>
         <div class='col-sm-5'>
-            <h2>{{model.name}}</h2>
+            <h2>{{model.file.name}}</h2>
         </div>
         <div class='col-sm-7'>
             {{#unless canEdit}}
                 <p class='bg-warning'>
                     This file is checked out by a
-                    {{link-to 'collaborator' 'users.detail' model.checkout}}.
+                    {{link-to 'collaborator' 'users.detail' model.file.checkout}}.
                 </p>
             {{/unless}}
             <div class='pull-right'>
@@ -42,13 +42,13 @@
     <div class='row'>
         <div class='col-md-3'>
             {{file-browser rootItem=model.node
-            selectedFile=model
+            selectedFile=model.file
             openFile=(action 'fileDetail')
             openNode=(action 'nodeDetail')
             }}
             <div>
                 <p><label> Tags </label></p>
-                {{tags-widget addATag=(action 'addATag') removeATag=(action 'removeATag') tags=model.tags}}
+                {{tags-widget addATag=(action 'addATag') removeATag=(action 'removeATag') tags=model.file.tags}}
             </div>
         </div>
         <div class='col-md-9'>
