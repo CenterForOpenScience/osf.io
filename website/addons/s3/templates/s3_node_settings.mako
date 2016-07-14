@@ -43,7 +43,7 @@
           <button data-bind="visible: canChange, click: toggleSelect,
                              css: {active: showSelect}" class="btn btn-primary">Change</button>
           <button data-bind="visible: showNewBucket, click: openCreateBucket,
-                             attr: {disabled: creating}" class="btn btn-success" id="newBucket">Create Bucket</button>
+                             attr: {disabled: creating}" class="btn btn-success" id="newBucket">Create bucket</button>
         </div>
         <br />
         <br />
