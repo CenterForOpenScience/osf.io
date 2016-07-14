@@ -133,8 +133,8 @@ ViewModel.prototype.selectBucket = function() {
         ret.reject();
     } else {
         $osf.putJSON(
-                self.urls().set_bucket, {
-                    's3_bucket': self.selectedBucket(),
+                self.urls().config, {
+                    'selected': self.selectedBucket(),
                     'encrypt_uploads': self.encryptUploads()
                 }
             )
@@ -152,7 +152,7 @@ ViewModel.prototype.selectBucket = function() {
                     '<a href="mailto:support@osf.io">support@osf.io</a>.';
                 self.changeMessage(message, 'text-danger', null, true);
                 Raven.captureMessage('Could not set S3 bucket', {
-                    url: self.urls().setBucket,
+                    url: self.urls().config,
                     textStatus: status,
                     error: error
                 });
@@ -207,7 +207,7 @@ ViewModel.prototype.deauthorizeNode = function() {
 ViewModel.prototype._importAuthConfirm = function() {
     var self = this;
     return $osf.putJSON(
-        self.urls().import_auth, {}
+        self.urls().importAuth, {}
     ).done(function(response) {
         self.changeMessage('Successfully imported S3 credentials.', 'text-success', null, true);
         self.updateFromData(response);
@@ -228,7 +228,7 @@ ViewModel.prototype._importAuthConfirm = function() {
 ViewModel.prototype.connectExistingAccount = function(accountId) {
     var self = this;
     return $osf.putJSON(
-            self.urls().import_auth,
+            self.urls().importAuth,
             {'external_account_id': accountId}
     ).done(function() {
             if($osf.isIE()){
@@ -355,7 +355,7 @@ ViewModel.prototype.createBucket = function(bucketName, bucketLocation) {
     self.creating(true);
     bucketName = bucketName.toLowerCase();
     return $osf.postJSON(
-        self.urls().create_bucket, {
+        self.urls().createBucket, {
             bucket_name: bucketName,
             bucket_location: bucketLocation
         }
@@ -431,6 +431,9 @@ ViewModel.prototype.openCreateBucket = function() {
                                 '</div>' +
                             '</div>' +
                         '</form>' +
+                        '<span>For more information on locations, click ' +
+                            '<a href="http://www.bucketexplorer.com/documentation/amazon-s3--amazon-s3-buckets-and-regions.html">here</a>' + 
+                        '</span>' +
                     '</div>' +
                 '</div>',
         buttons: {
@@ -484,7 +487,7 @@ ViewModel.prototype.fetchBucketList = function() {
     }
     else{
          $.ajax({
-            url: self.urls().bucket_list,
+            url: self.urls().folders,
             type: 'GET',
             dataType: 'json'
         }).done(function(response) {
@@ -497,7 +500,7 @@ ViewModel.prototype.fetchBucketList = function() {
                 '<a href="mailto:support@osf.io">support@osf.io</a>.';
             self.changeMessage(message, 'text-danger', null, null);
             Raven.captureMessage('Could not GET s3 bucket list', {
-                url: self.urls().bucketList,
+                url: self.urls().folders,
                 textStatus: status,
                 error: error
             });
