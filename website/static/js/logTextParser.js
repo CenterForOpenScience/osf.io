@@ -25,10 +25,21 @@ function ravenMessage (message, logObject) {
     }
 }
 
+/**
+ * Utility function to convert absolute URLs to relative urls
+ * See:
+ *      http://stackoverflow.com/questions/736513/how-do-i-parse-a-url-into-hostname-and-path-in-javascript
+ * This method have no effect on external urls.
+ * @param url {string} url to be converted
+ * @returns {string} converted relative url
+ */
 function toRelativeUrl(url) {
     var parser = document.createElement('a');
     parser.href = url;
-    var relative_url = parser.pathname + parser.search + parser.hash;
+    var relative_url = url;
+    if (window.location.hostname === parser.hostname){
+        relative_url = parser.pathname + parser.search + parser.hash;
+    }
     return relative_url;
 }
 
