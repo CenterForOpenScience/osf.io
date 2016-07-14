@@ -44,7 +44,7 @@
         <div class="col-sm-6">
             <div class="panel panel-default">
                 <div class="panel-heading clearfix">
-                    <h3 class="panel-title">Visits over past week</h3>
+                    <h3 class="panel-title">Unique visits</h3>
                 </div>
                 <div id="visits" class="panel-body">
                     <div class="text-center">
