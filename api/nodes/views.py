@@ -185,6 +185,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         date_created                    iso8601 timestamp  timestamp that the node was created
         date_modified                   iso8601 timestamp  timestamp when the node was last updated
         tags                            array of strings   list of tags that describe the node
+        current_user_can_comment        boolean            Whether the current user is allowed to post comments
         current_user_permissions        array of strings   list of strings representing the permissions for the current user on this node
         registration                    boolean            is this a registration? (always false - may be deprecated in future versions)
         fork                            boolean            is this node a fork of another node?
@@ -379,14 +380,15 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
         date_created                    iso8601 timestamp   timestamp that the node was created
         date_modified                   iso8601 timestamp   timestamp when the node was last updated
         tags                            array of strings    list of tags that describe the node
+        current_user_can_comment        boolean            Whether the current user is allowed to post comments
         current_user_permissions        array of strings    list of strings representing the permissions for the current user on this node
         registration                    boolean             is this a registration? (always false - may be deprecated in future versions)
         fork                            boolean             is this node a fork of another node?
         public                          boolean             has this node been made publicly-visible?
         collection                      boolean             is this a collection? (always false - may be deprecated in future versions)
         node_license                    object             details of the license applied to the node
-            year                        string             date range of the license
-            copyright_holders           array of strings   holders of the applied license
+        year                            string             date range of the license
+        copyright_holders               array of strings   holders of the applied license
 
     ##Relationships
 
@@ -1022,6 +1024,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
         date_created                    iso8601 timestamp  timestamp that the node was created
         date_modified                   iso8601 timestamp  timestamp when the node was last updated
         tags                            array of strings   list of tags that describe the registered node
+        current_user_can_comment        boolean            Whether the current user is allowed to post comments
         current_user_permissions        array of strings   list of strings representing the permissions for the current user on this node
         fork                            boolean            is this project a fork?
         registration                    boolean            is this node a registration? (always true - may be deprecated in future versions)
@@ -1137,6 +1140,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
         date_created                    iso8601 timestamp   timestamp that the node was created
         date_modified                   iso8601 timestamp   timestamp when the node was last updated
         tags                            array of strings    list of tags that describe the node
+        current_user_can_comment        boolean            Whether the current user is allowed to post comments
         current_user_permissions        array of strings    list of strings representing the permissions for the current user on this node
         registration                    boolean             is this a registration? (always false - may be deprecated in future versions)
         fork                            boolean             is this node a fork of another node?
@@ -1432,6 +1436,7 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ODMF
         fork                        boolean            is this node a fork of another node? (always True)
         public                      boolean            has this node been made publicly-visible?
         forked_date                 iso8601 timestamp  timestamp when the node was forked
+        current_user_can_comment    boolean            Whether the current user is allowed to post comments
         current_user_permissions    array of strings   List of strings representing the permissions for the current user on this node
 
     ##Links
