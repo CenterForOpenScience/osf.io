@@ -42,7 +42,7 @@
     </div>
     <div class="row m-lg">
         <div class="col-sm-6">
-            <div class="panel panel-default">
+            <div class="panel panel-default project-analytics">
                 <div class="panel-heading clearfix">
                     <h3 class="panel-title">Unique visits</h3>
                 </div>
@@ -54,7 +54,7 @@
             </div>
         </div>
         <div class="col-sm-6">
-          <div class="panel panel-default">
+          <div class="panel panel-default project-analytics">
             <div class="panel-heading clearfix">
               <h3 class="panel-title">Time of day of visits</h3>
             </div>
@@ -66,7 +66,7 @@
           </div>
         </div>
         <div class="col-sm-6">
-            <div class="panel panel-default">
+            <div class="panel panel-default project-analytics">
                 <div class="panel-heading clearfix">
                     <h3 class="panel-title">Top referrers</h3>
                 </div>
@@ -78,7 +78,7 @@
             </div>
         </div>
         <div class="col-sm-6">
-            <div class="panel panel-default">
+            <div class="panel panel-default project-analytics">
                 <div class="panel-heading clearfix">
                     <h3 class="panel-title">Popular pages</h3>
                 </div>
@@ -92,6 +92,11 @@
     </div>
 
 %endif
+
+<%def name="stylesheets()">
+  ${parent.stylesheets()}
+  <link rel="stylesheet" href="/static/css/pages/statistics-page.css">
+</%def>
 
 <%def name="javascript_bottom()">
   ${parent.javascript_bottom()}
