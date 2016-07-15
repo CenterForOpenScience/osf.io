@@ -157,6 +157,4 @@ def create_bucket(auth, node_addon, **kwargs):
             'title': 'Error connecting to S3',
         }, httplib.BAD_REQUEST
 
-    return {
-        'buckets': utils.get_bucket_names(node_addon)
-    }
+    return {}
