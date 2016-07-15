@@ -928,7 +928,6 @@ function toRelativeUrl(url, window) {
     var parser = document.createElement('a');
     parser.href = url;
     var relative_url = url;
-    console.log(window.location);
     if (window.location.hostname === parser.hostname){
         relative_url = parser.pathname + parser.search + parser.hash;
     }
