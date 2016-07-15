@@ -41,23 +41,19 @@ keenAnalysis.ready(function(){
 
     var oneDayInMs = 24 * 60 * 60 * 1000;
     var thirtyDaysAgoInMs = 30 * oneDayInMs;
-
-    var statsMinDate = new Date(2013, 5, 1);
-    var statsMaxDate = new Date();
-
-    var startPickerElem = document.getElementById('startDatePicker');
     var startDate = new Date(Date.now() - thirtyDaysAgoInMs);
-
-    var endPickerElem = document.getElementById('endDatePicker');
     var endDate = new Date(Date.now());
 
     updateDateRangeDisplay(startDate, endDate);
 
-    var dateRangePicker = new DateRangePicker(
-        startPickerElem, startDate,
-        endPickerElem, endDate,
-        statsMinDate, statsMaxDate
-    );
+    var dateRangePicker = new DateRangePicker({
+        startPickerElem: document.getElementById('startDatePicker'),
+        startDate: startDate,
+        endPickerElem: document.getElementById('endDatePicker'),
+        endDate: endDate,
+        statsMinDate: new Date(2013, 5, 1),
+        statsMaxDate: new Date(),
+    });
 
     var authParams = {
         keenProjectId: window.contextVars.keen.public.projectId,
