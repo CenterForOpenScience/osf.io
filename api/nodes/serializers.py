@@ -526,7 +526,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
         'permission'
     ])
 
-    id = ContributorIDField(read_only=True)
+    id = ContributorIDField(read_only=True, source='_id')
     type = TypeField()
 
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not.',
@@ -591,7 +591,7 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
     """
     Overrides node contributor serializer to add additional methods
     """
-    id = ContributorIDField(required=True)
+    id = ContributorIDField(required=True, source='_id')
 
     def update(self, instance, validated_data):
         contributor = instance

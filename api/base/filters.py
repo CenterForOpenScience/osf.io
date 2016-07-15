@@ -171,7 +171,7 @@ class FilterMixin(object):
         return values
 
     def parse_query_params(self, query_params):
-        """Maps query params to a dict useable for filtering
+        """Maps query params to a dict usable for filtering
         :param dict query_params:
         :return dict: of the format {
             <resolved_field_name>: {
@@ -191,8 +191,9 @@ class FilterMixin(object):
                 op = match_dict.get('op') or self._get_default_operator(field)
                 self._validate_operator(field, field_name, op)
 
+                source_field_name = field_name
                 if not isinstance(field, ser.SerializerMethodField):
-                    field_name = self.convert_key(field_name, field)
+                    source_field_name = self.convert_key(field_name, field)
 
                 if field_name not in query:
                     query[field_name] = []
@@ -203,12 +204,14 @@ class FilterMixin(object):
                 elif not isinstance(value, int) and (field_name == '_id' or field_name == 'root'):
                     query[field_name].append({
                         'op': 'in',
-                        'value': self.bulk_get_values(value, field)
+                        'value': self.bulk_get_values(value, field),
+                        'source_field': source_field_name
                     })
                 else:
                     query[field_name].append({
                         'op': op,
-                        'value': self.convert_value(value, field)
+                        'value': self.convert_value(value, field),
+                        'source_field_name': source_field_name
                     })
         return query
 
@@ -314,7 +317,8 @@ class ODMFilterMixin(FilterMixin):
             query_parts = []
             for field_name, params in filters.iteritems():
                 for group in params:
-                    query = Q(field_name, group['op'], group['value'])
+                    # Query based on the DB field, not the name of the serializer parameter
+                    query = Q(params['source_field_name'], group['op'], group['value'])
                     query_parts.append(query)
             try:
                 query = functools.reduce(operator.and_, query_parts)
@@ -371,7 +375,7 @@ class ListFilterMixin(FilterMixin):
     def get_filtered_queryset(self, field_name, params, default_queryset):
         """filters default queryset based on the serializer field type"""
         field = self.serializer_class._declared_fields[field_name]
-        field_name = self.convert_key(field_name, field)
+        source_field_name = params['source_field_name']
 
         if isinstance(field, ser.SerializerMethodField):
             return_val = [
@@ -379,22 +383,23 @@ class ListFilterMixin(FilterMixin):
                 if self.FILTERS[params['op']](self.get_serializer_method(field_name)(item), params['value'])
             ]
         elif isinstance(field, ser.CharField):
+            # TODO: What is {}.lower()? Possible bug
             return_val = [
                 item for item in default_queryset
-                if params['value'].lower() in getattr(item, field_name, {}).lower()
+                if params['value'].lower() in getattr(item, source_field_name, {}).lower()
             ]
         elif isinstance(field, ser.ListField):
             return_val = [
                 item for item in default_queryset
                 if params['value'].lower() in [
-                    lowercase(i.lower) for i in getattr(item, field_name, [])
+                    lowercase(i.lower) for i in getattr(item, source_field_name, [])
                 ]
             ]
         else:
             try:
                 return_val = [
                     item for item in default_queryset
-                    if self.FILTERS[params['op']](getattr(item, field_name, None), params['value'])
+                    if self.FILTERS[params['op']](getattr(item, source_field_name, None), params['value'])
                 ]
             except TypeError:
                 raise InvalidFilterValue(detail='Could not apply filter to specified field')
