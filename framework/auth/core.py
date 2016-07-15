@@ -298,7 +298,7 @@ class User(GuidStoredObject, AddonModelMixin):
     is_invited = fields.BooleanField(default=False, index=True)
 
     # Per-project unclaimed user data:
-    # TODO: add validation
+    # TODO: add a validation function that ensures that all required keys are present in the input values for that field
     unclaimed_records = fields.DictionaryField(required=False)
     # Format: {
     #   <project_id>: {
@@ -325,10 +325,10 @@ class User(GuidStoredObject, AddonModelMixin):
     # The user into which this account was merged
     merged_by = fields.ForeignField('user', default=None, index=True)
 
-    # verification key used for resetting password
+    # verification key v1,
     verification_key = fields.StringField()
 
-    # verification key with expiration time
+    # verification key v2, with expiration time and one-time only
     verification_key_v2 = fields.DictionaryField(default=dict)
     # Format: {
     #   'token': <the verification key string>
@@ -643,7 +643,7 @@ class User(GuidStoredObject, AddonModelMixin):
             'name': given_name,
             'referrer_id': referrer_id,
             'token': generate_verification_key(),
-            'expires': dt.datetime.utcnow() + dt.timedelta(days=7),
+            'expires': dt.datetime.utcnow() + dt.timedelta(days=30),
             'email': clean_email
         }
         self.unclaimed_records[project_id] = record

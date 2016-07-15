@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import datetime as dt
 import httplib as http
 
 from flask import request
@@ -189,8 +190,7 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
                 given_name=fullname,
                 email=email)
             contributor.save()
-            unreg_contributor_added.send(node, contributor=contributor,
-                auth=auth)
+            unreg_contributor_added.send(node, contributor=contributor, auth=auth)
 
         contribs.append({
             'user': contributor,
@@ -370,6 +370,7 @@ def send_claim_registered_email(claimer, unreg_user, node, throttle=24 * 3600):
             message_long='User account can only be claimed with an existing user once every 24 hours'
         ))
     unclaimed_record['token'] = generate_verification_key()
+    unclaimed_record['expires'] = dt.datetime.utcnow() + dt.timedelta(days=30)
     unclaimed_record['claimer_email'] = claimer.username
     unreg_user.save()
     referrer = User.load(unclaimed_record['referrer_id'])
@@ -426,6 +427,7 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
         to_addr = claimer_email
         unclaimed_record['claimer_email'] = claimer_email
         user.save()
+
     else:  # Otherwise have the referrer forward the email to the user
         # roll the valid token for each email, thus user cannot change email and approve a different email address
         timestamp = unclaimed_record.get('last_sent')
@@ -435,6 +437,7 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
             ))
         unclaimed_record['last_sent'] = get_timestamp()
         unclaimed_record['token'] = generate_verification_key()
+        unclaimed_record['expires'] = dt.datetime.utcnow() + dt.timedelta(days=30)
         unclaimed_record['claimer_email'] = claimer_email
         user.save()
         claim_url = user.get_claim_url(node._primary_key, external=True)
@@ -450,6 +453,7 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
             )
         mail_tpl = mails.FORWARD_INVITE
         to_addr = referrer.username
+
     mails.send_mail(
         to_addr,
         mail_tpl,
