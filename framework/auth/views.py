@@ -19,17 +19,12 @@ from framework.auth import get_user
 from framework.auth.exceptions import DuplicateEmailError, ExpiredTokenError, InvalidTokenError
 from framework.auth.core import generate_verification_key
 from framework.auth.decorators import collect_auth, must_be_logged_in
-from framework.auth.forms import (
-    MergeAccountForm, RegistrationForm, ResendConfirmationForm,
-    ResetPasswordForm, ForgotPasswordForm
-)
-
-from website import settings
-from website import mails
-from website import language
-from website import security
-from website.util.time import throttle_period_expired
-from website.models import User, Node
+from framework.auth.forms import ResendConfirmationForm, ResetPasswordForm, ForgotPasswordForm
+from framework.exceptions import HTTPError
+from framework.flask import redirect  # VOL-aware redirect
+from framework.sessions.utils import remove_sessions_for_user
+from website import settings, mails, language
+from website.models import User
 from website.util import web_url_for
 from website.util.sanitize import strip_html
 from website.util.time import throttle_period_expired
@@ -535,7 +530,6 @@ def register_user(**kwargs):
             full_name,
             campaign=campaign,
         )
-
         framework_auth.signals.user_registered.send(user)
     except (ValidationValueError, DuplicateEmailError):
         raise HTTPError(
