@@ -28,17 +28,14 @@ def make_topic_content(node):
     node_description += _escape_markdown(node.label)
 
     project_node = _get_project_node(node)
-
-    topic_content = 'This is the discussion topic for ' + node_description + '.\n'
-    topic_content += '\nContributors: ' + ', '.join(map(lambda c: c.display_full_name(), project_node.contributors))
-    #topic_content += '\nDate Created: ' + node.date_created.strftime("%Y-%m-%d %H:%M:%S")
-    topic_content += '\nCategory: ' + project_node.category
-    topic_content += '\nDescription: ' + (project_node.description if project_node.description else "No Description")
-    topic_content += '\nLicense: ' + (project_node.license if project_node.license else "No License")
+    topic_content = 'This is the discussion topic for ' + node_description + '.'
+    topic_content += '\nRelevant contributors: ' + ', '.join([c.display_full_name() for c in project_node.contributors[:6]])
+    if len(project_node.contributors) > 6:
+        topic_content += '...'
 
     if node.target_type == 'files':
         file_url = requests.compat.urljoin(settings.DOMAIN, node.guid_id)
-        topic_content += '\nFile url: ' + file_url + '/'
+        topic_content += '\nFile url: ' + file_url
 
     return topic_content
 
