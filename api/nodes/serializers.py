@@ -134,7 +134,7 @@ class NodeSerializer(JSONAPISerializer):
     )
 
     comments = RelationshipField(
-        related_view='nodes:node-comments',
+        related_view=lambda n: 'registrations:registration-comments' if getattr(n, 'is_registration', False) else 'nodes:node-comments',
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'unread': 'get_unread_comments_count'},
         filter={'target': '<pk>'}
