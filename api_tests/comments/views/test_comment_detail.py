@@ -478,6 +478,28 @@ class TestCommentDetailView(CommentDetailMixin, ApiTestCase):
         res = self.app.delete_json_api(url, auth=self.non_contributor.auth)
         assert_equal(res.status_code, 204)
 
+    def test_registration_comment_has_usable_replies_relationship_link(self):
+        self._set_up_registration_with_comment()
+        res = self.app.get(self.registration_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        relationships = res.json['data']['relationships']
+        comments_url = relationships['replies']['links']['related']['href']
+        comments_res = self.app.get(comments_url, auth=self.user.auth)
+        assert_equal(comments_res.status_code, 200)
+        ids = [item['id'] for item in comments_res.json['data']]
+        assert_in(self.registration_comment._id, ids)
+
+    def test_registration_comment_has_usable_node_relationship_link(self):
+        self._set_up_registration_with_comment()
+        res = self.app.get(self.registration_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        relationships = res.json['data']['relationships']
+        comments_url = relationships['node']['links']['related']['href']
+        comments_res = self.app.get(comments_url, auth=self.user.auth)
+        assert_equal(comments_res.status_code, 200)
+        ids = [item['id'] for item in comments_res.json['data']]
+        assert_in(self.registration_comment._id, ids)
+
 
 class TestFileCommentDetailView(CommentDetailMixin, ApiTestCase):
 
