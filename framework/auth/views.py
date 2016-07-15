@@ -451,7 +451,7 @@ def unconfirmed_email_add(auth=None):
     }, 200
 
 
-def send_confirm_email(user, email):
+def send_confirm_email(user, email, renew=False):
     """
     Sends a confirmation email to `user` to a given email.
 
@@ -462,6 +462,7 @@ def send_confirm_email(user, email):
         email,
         external=True,
         force=True,
+        renew = renew,
     )
 
     try:
@@ -601,7 +602,7 @@ def resend_confirmation_post(auth):
         if user:
             if throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
                 try:
-                    send_confirm_email(user, clean_email)
+                    send_confirm_email(user, clean_email, renew=True)
                 except KeyError:
                     # already confirmed, redirect to dashboard
                     status_message = 'This email {0} has already been confirmed.'.format(clean_email)

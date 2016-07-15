@@ -347,8 +347,11 @@ class User(GuidStoredObject, AddonModelMixin):
     #   see also ``unconfirmed_emails``
     email_verifications = fields.DictionaryField(default=dict)
     # Format: {
-    #   <token> : {'email': <email address>,
-    #              'expiration': <datetime>}
+    #   <token> : {
+    #       'email': <email address>,
+    #       'expiration': <datetime>,
+    #       'confirmed': whether user is confirmed or not
+    #   }
     # }
 
     # TODO remove this field once migration (scripts/migration/migrate_mailing_lists_to_mailchimp_fields.py)
@@ -870,7 +873,7 @@ class User(GuidStoredObject, AddonModelMixin):
                         removed_email=email,
                         security_addr='primary email address ({})'.format(self.username))
 
-    def get_confirmation_token(self, email, force=False):
+    def get_confirmation_token(self, email, force=False, renew=False):
         """Return the confirmation token for a given email.
 
         :param str email: Email to get the token for.
@@ -886,6 +889,10 @@ class User(GuidStoredObject, AddonModelMixin):
                 # Old records will not have an expiration key. If it's missing,
                 # assume the token is expired
                 expiration = info.get('expiration')
+                if renew:
+                    new_token = self.add_unconfirmed_email(email)
+                    self.save()
+                    return new_token
                 if not expiration or (expiration and expiration < dt.datetime.utcnow()):
                     if not force:
                         raise ExpiredTokenError('Token for email "{0}" is expired'.format(email))
@@ -896,14 +903,14 @@ class User(GuidStoredObject, AddonModelMixin):
                 return token
         raise KeyError('No confirmation token for email "{0}"'.format(email))
 
-    def get_confirmation_url(self, email, external=True, force=False):
+    def get_confirmation_url(self, email, external=True, force=False, renew=False):
         """Return the confirmation url for a given email.
 
         :raises: ExpiredTokenError if trying to access a token that is expired.
         :raises: KeyError if there is no token for the email.
         """
         base = settings.DOMAIN if external else '/'
-        token = self.get_confirmation_token(email, force=force)
+        token = self.get_confirmation_token(email, force=force, renew=renew)
         return '{0}confirm/{1}/{2}/'.format(base, self._primary_key, token)
 
     def get_unconfirmed_email_for_token(self, token):
