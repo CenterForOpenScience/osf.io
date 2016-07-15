@@ -42,7 +42,7 @@ class FakeRecord(object):
             self,
             _id=None,
             string_field='foo',
-            list_field=[1, 2, 3],
+            list_field=None,
             date_field=datetime.datetime.now(),
             datetime_field=datetime.datetime.now(),
             int_field=42,
@@ -51,7 +51,7 @@ class FakeRecord(object):
     ):
         self._id = _id
         self.string_field = string_field
-        self.list_field = list_field
+        self.list_field = list_field or [1, 2, 3]
         self.date_field = date_field
         self.datetime_field = datetime_field
         self.int_field = int_field
@@ -91,8 +91,8 @@ class TestFilterMixin(ApiTestCase):
         assert_in('int_field', fields)
         assert_equal(fields['int_field'][0]['op'], 'eq')
 
-        assert_in('foobar', fields)
-        assert_equal(fields['foobar'][0]['op'], 'eq')
+        assert_in('bool_field', fields)
+        assert_equal(fields['bool_field'][0]['op'], 'eq')
 
     def test_parse_query_params_casts_values(self):
         query_params = {
@@ -112,8 +112,8 @@ class TestFilterMixin(ApiTestCase):
         assert_in('int_field', fields)
         assert_equal(fields['int_field'][0]['value'], 42)
 
-        assert_in('foobar', fields)
-        assert_equal(fields['foobar'][0]['value'], False)
+        assert_in('bool_field', fields)
+        assert_equal(fields['bool_field'][0]['value'], False)
 
     def test_parse_query_params_uses_field_source_attribute(self):
         query_params = {
@@ -121,9 +121,10 @@ class TestFilterMixin(ApiTestCase):
         }
 
         fields = self.view.parse_query_params(query_params)
-        assert_in('foobar', fields)
-        assert_equal(fields['foobar'][0]['value'], False)
-        assert_equal(fields['foobar'][0]['op'], 'eq')
+        parsed_field = fields['bool_field'][0]
+        assert_equal(parsed_field['source_field_name'], 'foobar')
+        assert_equal(parsed_field ['value'], False)
+        assert_equal(parsed_field ['op'], 'eq')
 
     def test_parse_query_params_generalizes_dates(self):
         query_params = {
@@ -223,7 +224,7 @@ class TestFilterMixin(ApiTestCase):
             'filter[string_field]': 'foo',
             'filter[string_field]': 'bar',
         }
-
+        # FIXME: This test may only be checking one field
         fields = self.view.parse_query_params(query_params)
         assert_in('string_field', fields)
         for match in fields['string_field']:
@@ -265,7 +266,8 @@ class TestListFilterMixin(ApiTestCase):
     def test_get_filtered_queryset_for_list_field_converts_to_lowercase(self):
         field_name = 'list_field'
         params = {
-            'value': 'FOO'
+            'value': 'FOO',
+            'source_field_name': field_name
         }
         default_queryset = [
             FakeRecord(_id=1, list_field=['fOO', 'Foo', 'Bar', 'baR']),
@@ -277,6 +279,18 @@ class TestListFilterMixin(ApiTestCase):
             assert_not_equal(record._id, 3)
         for id in (1, 2):
             assert_in(id, [f._id for f in filtered])
+
+    def test_parse_query_params_uses_field_source_attribute(self):
+        # TODO: Test that the source attribute is respected on a request
+        query_params = {
+            'filter[bool_field]': 'false',
+        }
+
+        fields = self.view.parse_query_params(query_params)
+        parsed_field = fields['bool_field'][0]
+        assert_equal(parsed_field['source_field_name'], 'foobar')
+        assert_equal(parsed_field ['value'], False)
+        assert_equal(parsed_field ['op'], 'eq')
 
 
 class TestODMOrderingFilter(ApiTestCase):

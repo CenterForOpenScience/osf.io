@@ -134,7 +134,7 @@ class FilterMixin(object):
                     detail="Field '{0}' does not support match operators in a filter.".format(field_name)
                 )
 
-    def _parse_date_param(self, field, field_name, op, value):
+    def _parse_date_param(self, field, source_field_name, op, value):
         """
         Allow for ambiguous date filters. This supports operations like finding Nodes created on a given day
         even though Node.date_created is a specific datetime.
@@ -145,17 +145,20 @@ class FilterMixin(object):
         if op != 'eq' or time_match:
             return [{
                 'op': op,
-                'value': self.convert_value(value, field)
+                'value': self.convert_value(value, field),
+                'source_field_name': source_field_name
             }]
         else:  # TODO: let times be as generic as possible (i.e. whole month, whole year)
             start = self.convert_value(value, field)
             stop = start + datetime.timedelta(days=1)
             return [{
                 'op': 'gte',
-                'value': start
+                'value': start,
+                'source_field_name': source_field_name
             }, {
                 'op': 'lt',
-                'value': stop
+                'value': stop,
+                'source_field_name': source_field_name
             }]
 
     def bulk_get_values(self, value, field):
@@ -176,7 +179,8 @@ class FilterMixin(object):
         :return dict: of the format {
             <resolved_field_name>: {
                 'op': <comparison_operator>,
-                'value': <resolved_value>
+                'value': <resolved_value>,
+                'source_field_name': <model_field_source_of_serializer_field>
             }
         }
         """
@@ -200,12 +204,12 @@ class FilterMixin(object):
 
                 # Special case date(time)s to allow for ambiguous date matches
                 if isinstance(field, self.DATE_FIELDS):
-                    query[field_name].extend(self._parse_date_param(field, field_name, op, value))
-                elif not isinstance(value, int) and (field_name == '_id' or field_name == 'root'):
+                    query[field_name].extend(self._parse_date_param(field, source_field_name, op, value))
+                elif not isinstance(value, int) and (source_field_name == '_id' or source_field_name == 'root'):
                     query[field_name].append({
                         'op': 'in',
                         'value': self.bulk_get_values(value, field),
-                        'source_field': source_field_name
+                        'source_field_name': source_field_name
                     })
                 else:
                     query[field_name].append({
@@ -318,7 +322,7 @@ class ODMFilterMixin(FilterMixin):
             for field_name, params in filters.iteritems():
                 for group in params:
                     # Query based on the DB field, not the name of the serializer parameter
-                    query = Q(params['source_field_name'], group['op'], group['value'])
+                    query = Q(group['source_field_name'], group['op'], group['value'])
                     query_parts.append(query)
             try:
                 query = functools.reduce(operator.and_, query_parts)
