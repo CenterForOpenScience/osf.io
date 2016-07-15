@@ -18,18 +18,6 @@ def collect_file_trees(auth, node, **kwargs):
     serialized.update(rubeus.collect_addon_assets(node))
     return serialized
 
-
-@must_be_contributor_or_public
-def collect_file_trees_for_share_window(auth, node, **kwargs):
-    """Collect file trees for all add-ons implementing HGrid views, then
-    format data as appropriate.
-    """
-    serialized = _view_project(node, auth, primary=True)
-    # Add addon static assets
-    serialized.update(rubeus.collect_addon_assets(node))
-    return serialized
-
-
 @must_be_contributor_or_public
 def grid_data(auth, node, **kwargs):
     """View that returns the formatted data for rubeus.js/hgrid

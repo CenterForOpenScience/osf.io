@@ -254,12 +254,6 @@ def node_registrations(auth, node, **kwargs):
 
 @must_be_valid_project
 @must_be_contributor_or_public_but_not_anonymized
-def node_share_window(auth, node, **kwargs):
-    return _view_project(node, auth, primary=True)
-
-
-@must_be_valid_project
-@must_be_contributor_or_public_but_not_anonymized
 def node_forks(auth, node, **kwargs):
     return _view_project(node, auth, primary=True)
 
@@ -368,10 +362,6 @@ def configure_comments(node, **kwargs):
 @process_token_or_pass
 def view_project(auth, node, **kwargs):
     primary = '/api/v1' not in request.path
-    if node.category == "share window":
-        return redirect(node.url+"share_window")
-    else:
-        ret = _view_project(node, auth, primary=primary)
 
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
     # Collect the URIs to the static assets for addons that have widgets
