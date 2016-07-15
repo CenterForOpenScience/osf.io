@@ -58,6 +58,7 @@
     "raven": "^0.7.2",
     "raw-loader": "^0.5.1",
     "share": "0.7.27",
+    "share-js": "0.0.3",
     "style-loader": "^0.8.3",
     "treebeard": "git://github.com/caneruguz/treebeard.git#89895536486e3535d9980b8f20a73f72bbb64222",
     "typeahead.js": "^0.10.5",

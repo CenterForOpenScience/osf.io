@@ -34,6 +34,8 @@ var Range = ace.require('ace/range').Range;
         italic: "Emphasis <em>",
         italicexample: "emphasized text",
 
+        spellcheck: "Misspellings Toggle spellcheck on and off",
+
         link: "Hyperlink <a>",
         linkdescription: "enter link description here",
         linkdialog: "<div class='modal-header'> <h4 class='modal-title f-w-lg'>Add hyperlink</h4></div><div class='modal-body'> <p><b>Example:</b><br>http://example.com/ \"optional title\"</p></div>",
@@ -1687,25 +1689,6 @@ var Range = ace.require('ace/range').Range;
                 li.appendChild(label);
                 buttonRow.appendChild(li);
             };
-            var makeSpellCheckBox = function (div_id, cb_id, XShift, text) {
-                var li = document.createElement("li");
-                li.id = div_id;
-                li.style.left = xPosition + "px";
-                xPosition += 25;
-                li.XShift = XShift;
-                var span = document.createElement("span");
-                span.backgroundImage = '/static/public/vendor/pagedown/spellcheck.png'
-                var cb = document.createElement("input");
-                cb.id = cb_id;
-                cb.type = "checkbox";
-                cb.checked = "";
-                var sp = document.createElement("small");
-                sp.innerHTML = " " + text.trim();
-                span.appendChild(cb);
-                span.appendChild(sp);
-                li.appendChild(span);
-                buttonRow.appendChild(li);
-            };
             var makeSpacer = function (num) {
                 var spacer = document.createElement("li");
                 spacer.className = "wmd-spacer wmd-spacer" + num;
@@ -1716,6 +1699,7 @@ var Range = ace.require('ace/range').Range;
 
             buttons.bold = makeButton("wmd-bold-button", getStringAndKey("bold"), "0px", bindCommand("doBold"));
             buttons.italic = makeButton("wmd-italic-button", getStringAndKey("italic"), "-20px", bindCommand("doItalic"));
+            buttons.spellcheck = makeButton("wmd-spellcheck-button",getString("spellcheck"),"-280px", bindCommand("doMisspelled"));
             makeSpacer(1);
             buttons.link = makeButton("wmd-link-button", getStringAndKey("link"), "-40px", bindCommand(function (chunk, postProcessing) {
                 return this.doLinkOrImage(chunk, postProcessing, false);
@@ -1743,7 +1727,6 @@ var Range = ace.require('ace/range').Range;
 
             makeSpacer(4);
             makeCheckBox("wmd-autocom-toggle", "autocom", "-240px", "Autocomplete");
-            makeSpellCheckBox("wmd-button", "spellcheck", "-240px", "   ");
 
             makeSpacer(5);
             buttons.help = makeHelpButton("wmd-help-button",getString("help"),"-240px");
@@ -1813,6 +1796,13 @@ var Range = ace.require('ace/range').Range;
 
     commandProto.doItalic = function (chunk, postProcessing) {
         return this.doBorI(chunk, postProcessing, 1, this.getString("italicexample"));
+    };
+
+    commandProto.doMisspelled = function () {
+        var body_spelling = document.getElementById('ace_editor_body');
+        var line_tag = document.getElementById('ace_editor_line_numbers');
+        body_spelling.innerHTML = body_spelling.innerHTML ? '' : '.ace_marker-layer .misspelled { position: absolute; z-index: -2; border-bottom: 1px dotted red; margin-bottom: -1px; }';
+        line_tag.innerHTML = line_tag.innerHTML ? '' : '.misspelled { border-bottom: 1px dotted red; margin-bottom: -1px; }';
     };
 
     // chunk: The selected region that will be enclosed with */**
