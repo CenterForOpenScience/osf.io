@@ -65,7 +65,7 @@ class S3NodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
         self.nodelogger.log(action='bucket_linked', extra={'bucket': str(folder_id)}, save=True)
 
-    def get_folders(self, folder_id=None):
+    def get_folders(self, **kwargs):
         # This really gets only buckets, not subfolders,
         # as that's all we want to be linkable on a node.
         try:
