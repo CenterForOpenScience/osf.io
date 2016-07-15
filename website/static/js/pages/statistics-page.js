@@ -32,14 +32,11 @@ keenAnalysis.ready(function(){
         $('#dateRangeForm').toggleClass('hidden');
     }
 
-    function drawAllCharts(statsStartDate, statsEndDate) {
-        projectUsageStats.visitsByDay('#visits', statsStartDate, statsEndDate);
-        projectUsageStats.topReferrers('#topReferrers', statsStartDate, statsEndDate);
-        projectUsageStats.visitsServerTime('#serverTimeVisits', statsStartDate, statsEndDate);
-        projectUsageStats.popularPages(
-            '#popularPages', statsStartDate, statsEndDate,
-            window.contextVars.node.title
-        );
+    function drawAllCharts(allCharts, statsStartDate, statsEndDate) {
+        allCharts.forEach(function(chart) {
+            chart.setDateRange(statsStartDate, statsEndDate);
+            chart.buildChart();
+        });
     }
 
     var oneDayInMs = 24 * 60 * 60 * 1000;
@@ -52,7 +49,7 @@ keenAnalysis.ready(function(){
     var startDate = new Date(Date.now() - thirtyDaysAgoInMs);
 
     var endPickerElem = document.getElementById('endDatePicker');
-    var endDate = new Date(Date.now() - oneDayInMs);
+    var endDate = new Date(Date.now());
 
     updateDateRangeDisplay(startDate, endDate);
 
@@ -62,18 +59,37 @@ keenAnalysis.ready(function(){
         statsMinDate, statsMaxDate
     );
 
-    var projectUsageStats = new ProjectUsageStatistics(
-        window.contextVars.keen.public.projectId,
-        window.contextVars.keen.public.readKey
-    );
-    drawAllCharts(dateRangePicker.startDate, dateRangePicker.endDate);
+    var authParams = {
+        keenProjectId: window.contextVars.keen.public.projectId,
+        keenReadKey: window.contextVars.keen.public.readKey,
+    };
+
+    var allCharts = [
+        new ProjectUsageStatistics.ChartUniqueVisits(
+            $.extend({}, authParams, {containingElement: '#visits'})
+        ),
+        new ProjectUsageStatistics.ChartTopReferrers(
+            $.extend({}, authParams, {containingElement: '#topReferrers'})
+        ),
+        new ProjectUsageStatistics.ChartVisitsServerTime(
+            $.extend({}, authParams, {containingElement: '#serverTimeVisits'})
+        ),
+        new ProjectUsageStatistics.ChartPopularPages(
+            $.extend({}, authParams, {
+                containingElement: '#popularPages',
+                nodeTitle: window.contextVars.node.title,
+            })
+        ),
+    ];
+
+    drawAllCharts(allCharts, dateRangePicker.startDate, dateRangePicker.endDate);
 
     $('#showDateRangeForm').on('click', function() { toggleDateRangePickerView(); });
 
     $('#dateRangeForm').on('submit', function() {
         updateDateRangeDisplay(dateRangePicker.startDate, dateRangePicker.endDate);
-        drawAllCharts(dateRangePicker.startDate, dateRangePicker.endDate);
         toggleDateRangePickerView();
+        drawAllCharts(allCharts, dateRangePicker.startDate, dateRangePicker.endDate);
         return false;
     });
 
