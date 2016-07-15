@@ -6,7 +6,7 @@ from rest_framework import serializers as ser
 from django.core.urlresolvers import resolve, reverse
 
 from website import settings
-from framework.auth.core import User
+from framework.auth.core import Auth, User
 from website.files.models import FileNode
 from website.project.model import Comment
 from api.base.utils import absolute_reverse
@@ -131,6 +131,7 @@ class FileSerializer(JSONAPISerializer):
     date_created = ser.SerializerMethodField(read_only=True, help_text='Timestamp when the file was created')
     extra = ser.SerializerMethodField(read_only=True, help_text='Additional metadata about this file')
     tags = JSONAPIListField(child=FileTagField(), required=False)
+    current_user_can_comment = ser.SerializerMethodField(help_text='Whether the current user is allowed to post comments')
 
     files = NodeFileHyperLinkField(
         related_view='nodes:node-files',
@@ -200,6 +201,10 @@ class FileSerializer(JSONAPISerializer):
             'sha256': metadata.get('sha256', None),
         }
         return extras
+
+    def get_current_user_can_comment(self, obj):
+        auth = Auth(self.context['request'].user)
+        return obj.node.can_comment(auth)
 
     def get_unread_comments_count(self, obj):
         user = self.context['request'].user
