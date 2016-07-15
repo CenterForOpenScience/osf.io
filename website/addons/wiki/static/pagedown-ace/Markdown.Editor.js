@@ -7,6 +7,16 @@
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var Range = ace.require('ace/range').Range;
+var Cookie = require('js-cookie');
+
+$(function(){
+    var toggled_off = Cookie.get('spellcheckPersistKey' + window.location.toString()) === '0';
+    if (toggled_off) {
+        document.getElementById('ace_editor_body').innerHTML = '';
+        document.getElementById('ace_editor_line_numbers').innerHTML = '';
+
+    }
+});
 
 (function () {
 
@@ -34,7 +44,7 @@ var Range = ace.require('ace/range').Range;
         italic: "Emphasis <em>",
         italicexample: "emphasized text",
 
-        spellcheck: "Misspellings Toggle spellcheck on and off",
+        spellcheck: "Spellcheck: Toggle spellcheck on and off",
 
         link: "Hyperlink <a>",
         linkdescription: "enter link description here",
@@ -1803,6 +1813,11 @@ var Range = ace.require('ace/range').Range;
         var line_tag = document.getElementById('ace_editor_line_numbers');
         body_spelling.innerHTML = body_spelling.innerHTML ? '' : '.ace_marker-layer .misspelled { position: absolute; z-index: -2; border-bottom: 1px dotted red; margin-bottom: -1px; }';
         line_tag.innerHTML = line_tag.innerHTML ? '' : '.misspelled { border-bottom: 1px dotted red; margin-bottom: -1px; }';
+        if(body_spelling.innerHTML !== ''){
+            Cookie.set('spellcheckPersistKey' + window.location.toString(), '1', { expires: 1, path: '/'});
+        } else{
+            Cookie.set('spellcheckPersistKey' + window.location.toString(), '0', { expires: 1, path: '/'});
+        }
     };
 
     // chunk: The selected region that will be enclosed with */**
