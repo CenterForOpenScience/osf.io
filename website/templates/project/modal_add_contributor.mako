@@ -124,7 +124,12 @@
                                     <p class="text-muted">Searching contributors...</p>
                                 </div>
                                 <div data-bind="if: noResults">
-                                    No results found. Try a more specific search
+                                    <div data-bind='if: emailSearch'>
+                                      No results found. Try a more specific search.
+                                    </div>
+                                    <div data-bind='ifnot: emailSearch'>
+                                      No results found. Try a more specific search
+                                    </div>
                                     <div data-bind="ifnot: emailSearch"> or
                                         <a href="#" data-bind="click:gotoInvite">add <strong><em data-bind="text: query"></em></strong> as an unregistered contributor</a>.
                                     </div>
@@ -277,3 +282,4 @@
         </div><!-- end modal-content -->
     </div><!-- end modal-dialog -->
 </div><!-- end modal -->
+
