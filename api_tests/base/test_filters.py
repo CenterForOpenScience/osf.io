@@ -47,7 +47,7 @@ class FakeRecord(object):
             datetime_field=datetime.datetime.now(),
             int_field=42,
             float_field=41.99999,
-            bool_field=True
+            foobar=True
     ):
         self._id = _id
         self.string_field = string_field
@@ -56,7 +56,8 @@ class FakeRecord(object):
         self.datetime_field = datetime_field
         self.int_field = int_field
         self.float_field = float_field
-        self.bool_field = bool_field
+        # bool_field in serializer corresponds to foobar in model
+        self.foobar = foobar
 
 class FakeView(ODMFilterMixin):
 
@@ -280,8 +281,25 @@ class TestListFilterMixin(ApiTestCase):
         for id in (1, 2):
             assert_in(id, [f._id for f in filtered])
 
+    def test_get_filtered_queryset_for_list_respects_serializer_field_with_different_name_than_model(self):
+        field_name = 'bool_field'
+        params = {
+            'value': True,
+            'op': 'eq',
+            'source_field_name': 'foobar'
+        }
+        default_queryset = [
+            FakeRecord(_id=1, foobar=True),
+            FakeRecord(_id=2, foobar=True),
+            FakeRecord(_id=3, foobar=False)
+        ]
+        filtered = self.view.get_filtered_queryset(field_name, params, default_queryset)
+        for record in filtered:
+            assert_not_equal(record._id, 3)
+        for id in (1, 2):
+            assert_in(id, [f._id for f in filtered])
+
     def test_parse_query_params_uses_field_source_attribute(self):
-        # TODO: Test that the source attribute is respected on a request
         query_params = {
             'filter[bool_field]': 'false',
         }
