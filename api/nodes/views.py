@@ -1424,7 +1424,7 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ODMF
     OSF Node Fork entities have the "nodes" `type`.
 
         name                        type               description
-        =================================================================================
+        ===============================================================================================================================
         title                       string             title of project or component
         description                 string             description of the node
         category                    string             node category, must be one of the allowed values
