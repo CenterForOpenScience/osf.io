@@ -99,8 +99,7 @@ class CasClient(object):
         url.args['ticket'] = ticket
         url.args['service'] = service_url
 
-        verify = not (settings.ENABLE_INSTITUTIONS and settings.DEBUG_MODE)
-        resp = requests.get(url.url, verify=verify)
+        resp = requests.get(url.url)
         if resp.status_code == 200:
             return self._parse_service_validation(resp.content)
         else:
