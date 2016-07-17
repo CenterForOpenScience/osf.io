@@ -63,13 +63,14 @@ class Institution(object):
     attribute_map = {
         '_id': 'institution_id',
         'auth_url': 'institution_auth_url',
+        'logout_url': 'institution_logout_url',
         'domains': 'institution_domains',
         'name': 'title',
         'logo_name': 'institution_logo_name',
         'description': 'description',
         'email_domains': 'institution_email_domains',
         'banner_name': 'institution_banner_name',
-        'is_deleted': 'is_deleted'
+        'is_deleted': 'is_deleted',
     }
 
     def __init__(self, node=None):

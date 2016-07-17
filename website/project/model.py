@@ -3645,6 +3645,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     institution_id = fields.StringField(unique=True, index=True)
     institution_domains = fields.StringField(list=True)
     institution_auth_url = fields.StringField(validate=URLValidator())
+    institution_logout_url = fields.StringField(validate=URLValidator())
     institution_logo_name = fields.StringField()
     institution_email_domains = fields.StringField(list=True)
     institution_banner_name = fields.StringField()

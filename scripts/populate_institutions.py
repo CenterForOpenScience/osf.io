@@ -1,17 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Populate development database with Institution fixtures."""
-import sys
+
 import logging
+import sys
 import urllib
 
 from modularodm import Q
 
+
+from framework.transactions.context import TokuTransaction
 from website import settings
 from website.app import init_app
 from website.models import Institution, Node
 from website.search.search import update_institution, update_node
-from framework.transactions.context import TokuTransaction
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -57,6 +59,7 @@ def main(env):
                 'banner_name': 'busara-banner.png',
                 'logo_name': 'busara-shield.png',
                 'auth_url': None,
+                'logout_url': None,
                 'domains': [],
                 'email_domains': ['busaracenter.org'],
             },
@@ -67,6 +70,7 @@ def main(env):
                 'banner_name': 'cos-banner.png',
                 'logo_name': 'cos-shield.png',
                 'auth_url': None,
+                'logout_url': None,
                 'domains': ['osf.cos.io'],
                 'email_domains': ['cos.io'],
             },
@@ -77,6 +81,7 @@ def main(env):
                 'banner_name': 'esip-banner.png',
                 'logo_name': 'esip-shield.png',
                 'auth_url': None,
+                'logout_url': None,
                 'domains': [],
                 'email_domains': ['esipfed.org'],
             },
@@ -87,6 +92,7 @@ def main(env):
                 'banner_name': 'nd-banner.png',
                 'logo_name': 'nd-shield.png',
                 'auth_url': SHIBBOLETH_SP.format(encode_uri_component('https://login.nd.edu/idp/shibboleth')),
+                'logout_url': None,
                 'domains': ['osf.nd.edu'],
                 'email_domains': [],
             },
@@ -97,6 +103,7 @@ def main(env):
                 'banner_name': 'nyu-banner.png',
                 'logo_name': 'nyu-shield.png',
                 'auth_url': SHIBBOLETH_SP.format(encode_uri_component('urn:mace:incommon:nyu.edu')),
+                'logout_url': 'https://shibboleth.nyu.edu/idp/profile/Logout',
                 'domains': ['osf.nyu.edu'],
                 'email_domains': [],
             },
@@ -107,6 +114,7 @@ def main(env):
                 'banner_name': 'ucr-banner.png',
                 'logo_name': 'ucr-shield.png',
                 'auth_url': SHIBBOLETH_SP.format(encode_uri_component('urn:mace:incommon:ucr.edu')),
+                'logout_url': None,
                 'domains': ['osf.ucr.edu'],
                 'email_domains': [],
             },
@@ -117,6 +125,7 @@ def main(env):
                 'banner_name': 'ugent-banner.png',
                 'logo_name': 'ugent-shield.png',
                 'auth_url': SHIBBOLETH_SP.format(encode_uri_component('https://identity.ugent.be/simplesaml/saml2/idp/metadata.php')),
+                'logout_url': None,
                 'domains': ['osf.ugent.be'],
                 'email_domains': [],
             },
@@ -127,6 +136,7 @@ def main(env):
                 'banner_name': 'usc-banner.png',
                 'logo_name': 'usc-shield.png',
                 'auth_url': SHIBBOLETH_SP.format(encode_uri_component('urn:mace:incommon:usc.edu')),
+                'logout_url': None,
                 'domains': ['osf.usc.edu'],
                 'email_domains': [],
             },
@@ -137,6 +147,7 @@ def main(env):
                 'banner_name': 'uva-banner.png',
                 'logo_name': 'uva-shield.png',
                 'auth_url': SHIBBOLETH_SP.format(encode_uri_component('urn:mace:incommon:virginia.edu')),
+                'logout_url': None,
                 'domains': ['osf.virginia.edu'],
                 'email_domains': [],
             },
@@ -160,6 +171,7 @@ def main(env):
                 'banner_name': 'cos-banner.png',
                 'logo_name': 'cos-shield.png',
                 'auth_url': None,
+                'logout_url': None,
                 'domains': ['staging-osf.cos.io'],
                 'email_domains': ['cos.io'],
             },
@@ -170,6 +182,7 @@ def main(env):
                 'banner_name': 'nd-banner.png',
                 'logo_name': 'nd-shield.png',
                 'auth_url': SHIBBOLETH_SP.format(encode_uri_component('https://login-test.cc.nd.edu/idp/shibboleth')),
+                'logout_url': None,
                 'domains': ['staging-osf-nd.cos.io'],
                 'email_domains': [],
             },
@@ -180,6 +193,7 @@ def main(env):
                 'banner_name': 'google-banner.png',
                 'logo_name': 'google-shield.png',
                 'auth_url': None,
+                'logout_url': None,
                 'domains': [],
                 'email_domains': ['gmail.com'],
             },
@@ -203,6 +217,7 @@ def main(env):
                 'banner_name': 'cos-banner.png',
                 'logo_name': 'cos-shield.png',
                 'auth_url': None,
+                'logout_url': None,
                 'domains': ['staging2-osf.cos.io'],
                 'email_domains': ['cos.io'],
             },
@@ -216,6 +231,7 @@ def main(env):
                 'banner_name': 'busara-banner.png',
                 'logo_name': 'busara-shield.png',
                 'auth_url': None,
+                'logout_url': None,
                 'domains': [],
                 'email_domains': ['busaracenter.org'],
             },
@@ -226,6 +242,7 @@ def main(env):
                 'banner_name': 'cos-banner.png',
                 'logo_name': 'cos-shield.png',
                 'auth_url': None,
+                'logout_url': None,
                 'domains': ['test-osf.cos.io'],
                 'email_domains': ['cos.io'],
             },
@@ -236,6 +253,7 @@ def main(env):
                 'banner_name': 'esip-banner.png',
                 'logo_name': 'esip-shield.png',
                 'auth_url': None,
+                'logout_url': None,
                 'domains': [],
                 'email_domains': ['esipfed.org'],
             },
@@ -246,6 +264,7 @@ def main(env):
                 'banner_name': 'nd-banner.png',
                 'logo_name': 'nd-shield.png',
                 'auth_url': SHIBBOLETH_SP.format(encode_uri_component('https://login-test.cc.nd.edu/idp/shibboleth')),
+                'logout_url': None,
                 'domains': ['test-osf-nd.cos.io'],
                 'email_domains': [],
             },
@@ -256,6 +275,7 @@ def main(env):
                 'banner_name': 'nyu-banner.png',
                 'logo_name': 'nyu-shield.png',
                 'auth_url': SHIBBOLETH_SP.format(encode_uri_component('https://shibbolethqa.es.its.nyu.edu/idp/shibboleth')),
+                'logout_url': 'https://shibbolethqa.es.its.nyu.edu/idp/profile/Logout',
                 'domains': ['test-osf-nyu.cos.io'],
                 'email_domains': [],
             },
@@ -266,6 +286,7 @@ def main(env):
                 'banner_name': 'ucr-banner.png',
                 'logo_name': 'ucr-shield.png',
                 'auth_url': SHIBBOLETH_SP.format(encode_uri_component('urn:mace:incommon:ucr.edu')),
+                'logout_url': None,
                 'domains': ['test-osf-ucr.cos.io'],
                 'email_domains': [],
             },
@@ -276,6 +297,7 @@ def main(env):
                 'banner_name': 'ugent-banner.png',
                 'logo_name': 'ugent-shield.png',
                 'auth_url': SHIBBOLETH_SP.format(encode_uri_component('https://identity.ugent.be/simplesaml/saml2/idp/metadata.php')),
+                'logout_url': None,
                 'domains': ['test-osf-ugent.cos.io'],
                 'email_domains': [],
             },
@@ -286,6 +308,7 @@ def main(env):
                 'banner_name': 'usc-banner.png',
                 'logo_name': 'usc-shield.png',
                 'auth_url': SHIBBOLETH_SP.format(encode_uri_component('urn:mace:incommon:usc.edu')),
+                'logout_url': None,
                 'domains': ['test-osf-usc.cos.io'],
                 'email_domains': [],
             },
@@ -296,6 +319,7 @@ def main(env):
                 'banner_name': 'uva-banner.png',
                 'logo_name': 'uva-shield.png',
                 'auth_url': SHIBBOLETH_SP.format(encode_uri_component('https://shibidp-test.its.virginia.edu/idp/shibboleth')),
+                'logout_url': None,
                 'domains': ['test-osf-virginia.cos.io'],
                 'email_domains': [],
             },
@@ -306,6 +330,7 @@ def main(env):
                 'banner_name': 'vt-banner.png',
                 'logo_name': 'vt-shield.png',
                 'auth_url': SHIBBOLETH_SP.format(encode_uri_component('urn:mace:incommon:vt.edu')),
+                'logout_url': None,
                 'domains': ['osf.vt.edu'],
                 'email_domains': [],
             },
