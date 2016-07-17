@@ -103,7 +103,7 @@ def main(env):
                 'banner_name': 'nyu-banner.png',
                 'logo_name': 'nyu-shield.png',
                 'auth_url': SHIBBOLETH_SP.format(encode_uri_component('urn:mace:incommon:nyu.edu')),
-                'logout_url': 'https://shibbolethqa.es.its.nyu.edu/idp/profile/Logout',
+                'logout_url': 'https://shibboleth.nyu.edu/idp/profile/Logout',
                 'domains': ['osf.nyu.edu'],
                 'email_domains': [],
             },
