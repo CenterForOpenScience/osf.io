@@ -301,7 +301,7 @@ def main(env):
             },
             {
                 '_id': 'vt',
-                'name': 'Virginia Tech',
+                'name': 'Virginia Tech [Test]',
                 'description': None,
                 'banner_name': 'vt-banner.png',
                 'logo_name': 'vt-shield.png',
