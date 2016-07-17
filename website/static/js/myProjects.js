@@ -662,6 +662,7 @@ var MyProjects = {
                 if (contributors) {
                     for(var i = 0; i < contributors.length; i++) {
                         var u = contributors[i];
+                        u.id = (u.id.indexOf('-') > -1) ? u.id.split('-')[1] : u.id;
                         if ((u.id === window.contextVars.currentUser.id) && !(self.institutionId)) {
                           continue;
                         }

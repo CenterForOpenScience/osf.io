@@ -9,6 +9,7 @@ from framework.exceptions import PermissionsError
 
 from django.conf import settings
 
+from website.addons.base.exceptions import InvalidFolderError, InvalidAuthError
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.models import Node, User, Comment, Institution, MetaSchema, DraftRegistration
@@ -411,7 +412,7 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
     def should_call_set_folder(self, folder_info, instance, auth, node_settings):
         if (folder_info and not (   # If we have folder information to set
                 instance and getattr(instance, 'folder_id', False) and (  # and the settings aren't already configured with this folder
-                    instance.folder_id == folder_info or instance.folder_id == folder_info.get('id', False)
+                    instance.folder_id == folder_info or (hasattr(folder_info, 'get') and instance.folder_id == folder_info.get('id', False))
                 ))):
             if auth.user._id != node_settings.user_settings.owner._id:  # And the user is allowed to do this
                 raise exceptions.PermissionDenied('Requested action requires addon ownership.')
@@ -450,7 +451,13 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
 
         if set_folder and self.should_call_set_folder(folder_info, instance, auth, instance):
             # Enabled, user requesting to set folder
-            instance.set_folder(folder_info, auth)
+            try:
+                instance.set_folder(folder_info, auth)
+                instance.save()
+            except InvalidFolderError:
+                raise exceptions.NotFound('Unable to find requested folder.')
+            except InvalidAuthError:
+                raise exceptions.PermissionDenied('Addon credentials are invalid.')
 
         return instance
 
