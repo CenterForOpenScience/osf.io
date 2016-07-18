@@ -49,13 +49,19 @@ ALLOWED_HOSTS = [
 INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
+    'django.contrib.messages',
+    'django.contrib.sessions',
     'django.contrib.staticfiles',
+    'django.contrib.admin',
 
     # 3rd party
     'rest_framework',
     'rest_framework_swagger',
     'corsheaders',
     'raven.contrib.django.raven_compat',
+    'django_extensions',
+    'debug_toolbar',
+    'osf_models'
 )
 
 # local development using https
