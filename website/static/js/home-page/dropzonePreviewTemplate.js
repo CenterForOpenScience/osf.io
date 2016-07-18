@@ -36,7 +36,7 @@ function dropzonePreviewTemplate() {
             ),
 
 
-            m('div.col-sm-6.p-xs.text-center', m('span.p-md', 'Generating Share Link'),
+            m('div.col-sm-6.p-xs.text-center', m('span.p-md', 'Generating Share Link...'),
                 m('div.dz-progress',
                     m('span[data-dz-uploadprogress].dz-upload')
                 )

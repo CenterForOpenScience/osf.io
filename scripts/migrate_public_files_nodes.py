@@ -2,8 +2,8 @@
 # encoding: utf-8
 """Migrate Share Windows to existing users
 
-Run dry run: python -m scripts.migrate_share_window dry
-Run migration: python -m scripts.migrate_share_window
+Run dry run: python -m scripts.migrate_public_files dry
+Run migration: python -m scripts.migrate_public_files
 
 """
 import sys
