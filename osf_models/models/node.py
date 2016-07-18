@@ -7,7 +7,7 @@ from modularodm import Q
 
 from osf_models.models.contributor import Contributor
 from osf_models.models import MetaSchema
-from osf_models.models.sanctions import Embargo, RegistrationApproval
+from osf_models.models.sanctions import Embargo, RegistrationApproval, Retraction
 from osf_models.models.tag import Tag
 from osf_models.models.user import User
 from osf_models.models.validators import validate_title
@@ -44,8 +44,8 @@ class Node(GuidMixin, BaseModel):
     is_public = models.BooleanField(default=False, db_index=True)
 
     # permissions = Permissions are now on contributors
-    # visible_contributor_ids was moved to this property
 
+    # visible_contributor_ids was moved to this property
     @property
     def visible_contributor_ids(self):
         return self.contributor_set.filter(visible=True)
@@ -68,7 +68,7 @@ class Node(GuidMixin, BaseModel):
 
     registered_meta = DatetimeAwareJSONField(default={})
     registration_approval = models.ForeignKey(RegistrationApproval, null=True)
-    # retraction = models.ForeignKey(Retraction)
+    retraction = models.ForeignKey(Retraction, null=True)
     embargo = models.ForeignKey(Embargo, null=True)
 
     is_fork = models.BooleanField(default=False, db_index=True)

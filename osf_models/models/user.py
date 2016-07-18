@@ -232,7 +232,12 @@ class User(GuidMixin, BaseModel):
     # user language and locale data (e.g. 'en_US')
     locale = models.CharField(max_length=255, default='en_US')
 
+    # whether the user has requested to deactivate their account
+    requested_deactivation = models.BooleanField(default=False)
+
     _affiliated_institutions = models.ManyToManyField('Node')
+
+    notifications_configured = DatetimeAwareJSONField(default={})
 
     def __unicode__(self):
         return u'{}: {} {}'.format(self.username, self.given_name, self.family_name)

@@ -11,8 +11,9 @@ from django.db import transaction
 from framework.auth import User as MODMUser
 from modularodm import Q as MQ
 from osf_models.models import Contributor, Guid, Node, Tag, User
-from osf_models.models.sanctions import Embargo
+from osf_models.models.sanctions import Embargo, Retraction
 from website.models import Embargo as MODMEmbargo
+from website.models import Retraction as MODMRetraction
 from website.models import Node as MODMNode
 from website.models import Tag as MODMTag
 from website.project.model import Pointer
@@ -27,7 +28,9 @@ fk_node_fields = [
     '_primary_institution', 'embargo'
 ]
 m2m_node_fields = ['nodes', '_affiliated_institutions']
-fk_user_fields = ['registered_user', 'creator', 'merged_by']
+fk_user_fields = ['registered_user', 'creator', 'merged_by', 'initiated_by']
+fk_retraction_fields = ['retraction', ]
+fk_embargo_fields = ['embargo', ]
 m2m_user_fields = [
     'permissions',
     'recently_added',
@@ -56,11 +59,11 @@ node_key_blacklist = [
     #  'institution_auth_url',
     #  'institution_logo_name',
     'contributors',  # done elsewhere
-    'retraction',
+    # 'retraction',
     # 'embargo',
     'node_license',
     'embargo_termination_approval',
-] + fk_user_fields + fk_node_fields + m2m_node_fields + m2m_user_fields + m2m_tag_fields
+] + fk_user_fields + fk_node_fields + m2m_node_fields + m2m_user_fields + m2m_tag_fields + fk_retraction_fields
 user_key_blacklist = [
     '__backrefs',
     '_version',
@@ -85,14 +88,15 @@ def save_bare_nodes(page_size=20000):
     count = 0
     start = datetime.now()
     total = MODMNode.find(allow_institution=True).count()
+    guid_lookup_table = {x['guid']: x['pk']
+                      for x in Guid.objects.all().values('guid', 'pk')}
     while count < total:
         with transaction.atomic():
             nids = []
             for modm_node in MODMNode.find(
                     allow_institution=True).sort('-date_modified')[
                         count:count + page_size]:
-                guid = Guid.objects.get(guid=modm_node._id)
-                node_fields = dict(_guid_id=guid.pk, **modm_node.to_storage())
+                node_fields = dict(_guid_id=guid_lookup_table[modm_node._id], **modm_node.to_storage())
 
                 # remove fields not yet implemented
                 cleaned_node_fields = {key: node_fields[key]
@@ -137,14 +141,15 @@ def save_bare_users(page_size=20000):
     count = 0
     start = datetime.now()
     total = MODMUser.find().count()
+    guid_lookup_table = {x['guid']: x['pk']
+                      for x in Guid.objects.all().values('guid', 'pk')}
 
     while count < total:
         with transaction.atomic():
             users = []
             for modm_user in MODMUser.find().sort('-date_registered')[
                     count:count + page_size]:
-                guid = Guid.objects.get(guid=modm_user._id)
-                user_fields = dict(_guid_id=guid.pk, **modm_user.to_storage())
+                user_fields = dict(_guid_id=guid_lookup_table[modm_user._id], **modm_user.to_storage())
 
                 cleaned_user_fields = {key: user_fields[key]
                                        for key in user_fields
@@ -274,12 +279,14 @@ def save_bare_embargos(page_size=10000):
                 for k, v in cleaned_embargo_fields.iteritems():
                     if isinstance(v, datetime):
                         cleaned_embargo_fields[k] = pytz.utc.localize(v)
+                cleaned_embargo_fields['guid'] = cleaned_embargo_fields['_id']
+                del cleaned_embargo_fields['_id']
 
                 try:
                     initiated_by_id = modm_to_django[cleaned_embargo_fields[
                         'initiated_by']]
                 except KeyError:
-                    print 'Couldn\'t find user with guid {}'.format()
+                    print 'Couldn\'t find user with guid {}'.format(cleaned_embargo_fields['initiated_by'])
                 else:
                     cleaned_embargo_fields['initiated_by_id'] = initiated_by_id
                     del cleaned_embargo_fields['initiated_by']
@@ -309,6 +316,53 @@ def save_bare_embargos(page_size=10000):
         sys._getframe().f_code.co_name,
         (datetime.now() - start).total_seconds())
 
+
+def save_bare_retractions(page_size=10000):
+    print 'Starting {}...'.format(sys._getframe().f_code.co_name)
+    key_blacklist = ['__backrefs', '_version', ]
+
+    start = datetime.now()
+    count = 0
+    total = MODMRetraction.find().count()
+
+    while count < total:
+        with transaction.atomic():
+            retractions = []
+            for modm_retraction in MODMRetraction.find().sort('-_id')[count:count+page_size]:
+                retraction_fields = modm_retraction.to_storage()
+                cleaned_retraction_fields = {key: retraction_fields[key] for key in retraction_fields if key not in key_blacklist}
+                for k, v in cleaned_retraction_fields.iteritems():
+                    if isinstance(v, datetime):
+                        cleaned_retraction_fields[k] = pytz.utc.localize(v)
+                cleaned_retraction_fields['guid'] = cleaned_retraction_fields['_id']
+                del cleaned_retraction_fields['_id']
+                try:
+                    initiated_by_id = modm_to_django[cleaned_retraction_fields[
+                        'initiated_by']]
+                except KeyError:
+                    print 'Couldn\'t find user with guid {}'.format()
+                else:
+                    cleaned_retraction_fields['initiated_by_id'] = initiated_by_id
+                    del cleaned_retraction_fields['initiated_by']
+
+                retractions.append(Retraction(**cleaned_retraction_fields))
+                count += 1
+                if count % page_size == 0 or count == total:
+                    then = datetime.now()
+                    print 'Saving retractions {} through {}...'.format(count - page_size, count)
+                    woot = Retraction.objects.bulk_create(retractions)
+                    for wit in woot:
+                        modm_to_django[wit.guid] = wit.pk
+
+                    print 'Done with {} retractions in {} seconds...'.format(len(woot), (datetime.now()-then).total_seconds())
+                    retractions = None
+                    guid = None
+                    retraction_fields = None
+                    cleaned_retraction_fields = None
+                    print 'Took out {} trashes'.format(gc.collect())
+    print 'MOMD retractions: {}'.format(total)
+    print 'django retractions: {}'.format(Retraction.objects.count())
+    print 'Done with {} in {} seconds...'.format(sys._getframe().f_code.co_name, (datetime.now()-start).total_seconds())
 
 def set_node_foreign_keys_on_nodes(page_size=10000):
     print 'Starting {}...'.format(sys._getframe().f_code.co_name)
@@ -386,6 +440,115 @@ def set_node_foreign_keys_on_nodes(page_size=10000):
         sys._getframe().f_code.co_name,
         (datetime.now() - start).total_seconds())
 
+
+def set_retraction_foreign_keys_on_nodes(page_size=10000):
+    print 'Starting {}...'.format(sys._getframe().f_code.co_name)
+    node_count = 0
+    fk_count = 0
+    cache_hits = 0
+    cache_misses = 0
+    start = datetime.now()
+    total = MODMNode.find(build_query(fk_retraction_fields, MODMNode), allow_institution=True).count()
+
+    while node_count < total:
+        with transaction.atomic():
+            for modm_node in MODMNode.find(build_query(fk_retraction_fields, MODMNode), allow_institution=True).sort('-date_modified')[node_count:node_count+page_size]:
+                django_node = Node.objects.get(_guid__guid=modm_node._id)
+                for fk_retraction_field in fk_retraction_fields:
+                    value = getattr(modm_node, fk_retraction_field, None)
+                    if value is not None:
+                        if isinstance(value, basestring):
+                            if value in modm_to_django:
+                                setattr(django_node, '{}_id'.format(fk_retraction_field), modm_to_django[value])
+                                cache_hits += 1
+                            else:
+                                retraction_id = Retraction.objects.get(guid=value).pk
+                                setattr(django_node, '{}_id'.format(fk_retraction_field), retraction_id)
+                                modm_to_django[value] = retraction_id
+                                cache_misses += 1
+                        elif isinstance(value, MODMRetraction):
+                            if value._id in modm_to_django:
+                                setattr(django_node, '{}_id'.format(fk_retraction_field), modm_to_django[value._id])
+                                cache_hits += 1
+                            else:
+                                retraction_id = Retraction.objects.get(guid=value._id).pk
+                                setattr(django_node, '{}_id'.format(fk_retraction_field), retraction_id)
+                                modm_to_django[value] = retraction_id
+                                cache_misses += 1
+                        else:
+                            # whu happened?
+                            print '\a'
+                            print '\a'
+                            print '\a'
+                            print '\a'
+                            print '\a'
+                            print '\a'
+                            import bpdb
+
+                            bpdb.set_trace()
+                        fk_count += 1
+                django_node.save()
+                node_count += 1
+                if node_count % page_size == 0 or node_count == total:
+                    print 'Through {} nodes and {} foreign keys'.format(node_count, fk_count)
+                    print 'Cache: Hits {} Misses {}'.format(cache_hits, cache_misses)
+    print 'Done with {} in {} seconds...'.format(sys._getframe().f_code.co_name, (datetime.now() - start).total_seconds())
+
+
+def set_embargo_foreign_keys_on_nodes(page_size=10000):
+    print 'Starting {}...'.format(sys._getframe().f_code.co_name)
+    node_count = 0
+    fk_count = 0
+    cache_hits = 0
+    cache_misses = 0
+    start = datetime.now()
+    total = MODMNode.find(build_query(fk_embargo_fields, MODMNode), allow_institution=True).count()
+
+    while node_count < total:
+        with transaction.atomic():
+            for modm_node in MODMNode.find(build_query(fk_embargo_fields, MODMNode), allow_institution=True).sort(
+                    '-date_modified')[node_count:node_count + page_size]:
+                django_node = Node.objects.get(_guid__guid=modm_node._id)
+                for fk_embargo_field in fk_embargo_fields:
+                    value = getattr(modm_node, fk_embargo_field, None)
+                    if value is not None:
+                        if isinstance(value, basestring):
+                            if value in modm_to_django:
+                                setattr(django_node, '{}_id'.format(fk_embargo_field), modm_to_django[value])
+                                cache_hits += 1
+                            else:
+                                embargo_id = Embargo.objects.get(guid=value).pk
+                                setattr(django_node, '{}_id'.format(fk_embargo_field), embargo_id)
+                                modm_to_django[value] = embargo_id
+                                cache_misses += 1
+                        elif isinstance(value, MODMEmbargo):
+                            if value._id in modm_to_django:
+                                setattr(django_node, '{}_id'.format(fk_embargo_field), modm_to_django[value._id])
+                                cache_hits += 1
+                            else:
+                                embargo_id = Embargo.objects.get(guid=value._id).pk
+                                setattr(django_node, '{}_id'.format(fk_embargo_field), embargo_id)
+                                modm_to_django[value._id] = embargo_id
+                                cache_misses += 1
+                        else:
+                            # whu happened?
+                            print '\a'
+                            print '\a'
+                            print '\a'
+                            print '\a'
+                            print '\a'
+                            print '\a'
+                            import bpdb
+
+                            bpdb.set_trace()
+                        fk_count += 1
+                django_node.save()
+                node_count += 1
+                if node_count % page_size == 0 or node_count == total:
+                    print 'Through {} nodes and {} foreign keys'.format(node_count, fk_count)
+                    print 'Cache: Hits {} Misses {}'.format(cache_hits, cache_misses)
+    print 'Done with {} in {} seconds...'.format(sys._getframe().f_code.co_name,
+                                                 (datetime.now() - start).total_seconds())
 
 def set_user_foreign_keys_on_nodes(page_size=10000):
     print 'Starting {}...'.format(sys._getframe().f_code.co_name)
@@ -551,8 +714,12 @@ def set_node_many_to_many_on_nodes(page_size=5000):
                     build_query(m2m_node_fields, MODMNode),
                     allow_institution=True).sort('-date_modified')[
                         node_count:page_size + node_count]:
-                django_node = Node.objects.get(
-                    pk=modm_to_django[modm_node._id])
+                try:
+                    django_node = Node.objects.get(
+                        pk=modm_to_django[modm_node._id])
+                except Node.DoesNotExist:
+                    print 'BROKEN modm_node._id: {} pk: {}'.format(modm_node._id, modm_to_django[modm_node._id])
+                    raise
                 for m2m_node_field in m2m_node_fields:
                     attr = getattr(django_node, m2m_node_field)
                     django_pks = []
@@ -922,41 +1089,10 @@ def build_pk_caches():
     modm_to_django.update({'{}:not_system'.format(x['_id']): x['pk']
                            for x in Tag.objects.filter(system=False).values(
                                '_id', 'pk')})
+    modm_to_django.update({x['guid']: x['pk'] for x in Embargo.objects.all().values('guid', 'pk')})
     return modm_to_django
 
-# def main(dry=True):
-# start = datetime.now()
-# # save_bare_nodes()
-# # save_bare_users()
-# # save_bare_tags()
-# # save_bare_system_tags()
-# # global modm_to_django
-# # if modm_to_django == {}:
-# #     # build a lookup table of all guids to pks
-# #     modm_to_django = {x['_guid__guid']: x['pk']
-# #                           for x in Node.objects.all().values('_guid__guid',
-# #                                                              'pk')}
-# #     modm_to_django.update({x['_guid__guid']: x['pk']
-# #                            for x in User.objects.all().values('_guid__guid',
-# #                                                               'pk')})
-#
-# modm_to_django = build_pk_caches()
-#
-# print 'cached {} modm to django key mappings'.format(len(
-#     modm_to_django.keys()))
-#
-# # set_node_foreign_keys_on_nodes()
-# # set_user_foreign_keys_on_nodes()
-# # set_user_foreign_keys_on_users()
-# # set_node_many_to_many_on_nodes()
-# # set_user_many_to_many_on_nodes()
-# # set_node_many_to_many_on_users()
-# # set_user_many_to_many_on_users()
-# set_tag_many_to_many_on_users()
-# print 'Finished in {} seconds...'.format((datetime.now() - start
-#                                           ).total_seconds())
-# # if dry:
-# #     raise DryMigrationException()
+
 global modm_to_django
 modm_to_django = build_pk_caches()
 print 'Cached {} MODM to django mappings...'.format(len(modm_to_django.keys()))
