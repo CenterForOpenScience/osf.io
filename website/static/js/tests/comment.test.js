@@ -2,15 +2,16 @@
 'use strict';
 var assert = require('chai').assert;
 
+var osfHelpers = require('js/osfHelpers');
 var comment = require('js/comment');
 var convertMentionHtmlToMarkdown = comment.convertMentionHtmlToMarkdown;
 var convertMentionMarkdownToHtml = comment.convertMentionMarkdownToHtml;
 
 describe('@Mentions', () => {
     var atMentionHTML = 'Hello, <span class="atwho-inserted" contenteditable="false" data-atwho-guid="12345" data-atwho-at-query="@">@Test User</span>';
-    var atMentionMarkdown = 'Hello, [@Test User](http://localhost:5000/12345/)';
+    var atMentionMarkdown = 'Hello, [@Test User](' + osfHelpers.getDomain() + '/12345/)';
     var plusMentionHTML = 'Hello, <span class="atwho-inserted" contenteditable="false" data-atwho-guid="12345" data-atwho-at-query="+">+Test User</span>';
-    var plusMentionMarkdown = 'Hello, [+Test User](http://localhost:5000/12345/)';
+    var plusMentionMarkdown = 'Hello, [+Test User](' + osfHelpers.getDomain() + '/12345/)';
     var returnHTML = 'Test.<br>';
     var returnMarkdown = 'Test.&#13;&#10;';
     var returnMarkdown2 = 'Test.\r\n';
