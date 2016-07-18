@@ -28,8 +28,8 @@ function dropzonePreviewTemplate() {
             m('div.table.col-lg-12.dz-preview.p-xs',
 
             m('.col-sm-6.dz-center.p-xs',
-                m('div.dz-filename.col-sm-9.p-xs',
-                    m('span[data-dz-name]')
+                m('col-sm-6.p-xs',
+                    m('a[data-dz-name].dz-filename', {href : '/public_files'})
                 ),
                 m('span', ' - '),
                 m('div[data-dz-size].col-sm-3.p-xs')

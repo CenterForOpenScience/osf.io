@@ -30,7 +30,7 @@ var PublicFilesDropzone = {
             autoProcessQueue: false,
             withCredentials: true,
             method: 'put',
-            maxFiles: 1,
+            maxFiles: 3,
             maxFilesize: 500,
             init: function () {
                 // When user clicks close button on top right, reset the number of files
@@ -41,20 +41,23 @@ var PublicFilesDropzone = {
 
             },
             accept: function (file, done) {
+                this.options.url = waterbutler.buildUploadUrl(false, 'osfstorage', window.contextVars.publicFilesId, file, {});
+
                 if (this.files.length <= this.options.maxFiles) {
-                    this.options.url = waterbutler.buildUploadUrl(false, 'osfstorage', window.contextVars.publicFilesId, file, {});
-                    this.processFile(file);
                     $('div.h2.text-center.m-t-lg').hide();
                 }
                 else {
                     if(!$('.alert-danger').length){
 
-                        $osf.growl('Upload Failed', 'You can upload a maximum of ' + this.options.maxFiles + ' file at once.' +
-                            '<br> To upload more files, refresh the page or click X on the top right. ' +
-                            '<br> Want to share more files? Create a new project.', 'danger', 5000);
+                        $osf.softGrowl('This feature is for sharing files, if you would like to store a many files for ' +
+                        'a collaborative work or large presentation consider creating a project, this will give you access' +
+                        ' to a large array of features and services', 'warning', 30000);
+
+                        $( "#createNewProjectBtn" ).effect("highlight", {}, 3000);
+
                     }
-                    this.removeFile(file);
                 }
+                this.processFile(file);
             },
             addedfile: function(file) {
                 var node, removeFileEvent, removeLink, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2, _results,
@@ -103,6 +106,7 @@ var PublicFilesDropzone = {
                 return _results;
             },
             sending: function (file, xhr) {
+                this.options.url = waterbutler.buildUploadUrl(false, 'osfstorage', window.contextVars.publicFilesId, file, {});
                 //Hack to remove webkitheaders
                 var _send = xhr.send;
                 xhr.send = function () {
@@ -115,7 +119,7 @@ var PublicFilesDropzone = {
             },
             success: function (file, xhr) {
                 var buttonContainer = document.createElement('div');
-                $('div.col-sm-6').append(buttonContainer);
+                $(file.previewElement).find('div.col-sm-6').append(buttonContainer);
                 var response = JSON.parse(file.xhr.response);
                 var guid = '';
 
@@ -134,6 +138,10 @@ var PublicFilesDropzone = {
                     $('span.button.close').css('visibility', 'hidden');
                     file.previewElement.classList.add('dz-success');
                     file.previewElement.classList.add('dz-preview-background-success');
+                    $(file.previewElement).find('.dz-filename').attr('href', guid);
+                    if($('.alert-danger').length){
+                        $( "#createNewProjectBtn" ).effect("highlight", {}, 3000);
+                    }
 
                 }).fail(function(xhr, status, error) {
                     $('.logo-spin').remove();
@@ -143,18 +151,11 @@ var PublicFilesDropzone = {
                     console.log(error);
                 });
 
-                this.processQueue();
-
-
                 $('div.dz-progress').remove();
 
-                if (this.getQueuedFiles().length === 0 && this.getUploadingFiles().length === 0) {
-                    if (this.files.length === 1)
-                        $osf.growl('Upload Successful', this.files[0].name + ' has been successfully uploaded to your public files project.', 'success', 5000);
-                    else
-                        $osf.growl('Upload Successful', this.files.length + ' files were successfully uploaded to your public files project.', 'success', 5000);
-                }
                 this.files.pop();
+                this.processQueue();
+
             },
             canceled: function (file) {
                 $osf.softGrowl('fa fa-files-o', ' Upload Canceled', 'info');
@@ -177,7 +178,7 @@ var PublicFilesDropzone = {
 
         $publicFiles.on('click', 'span.dz-share', function (e) {
             if (!$('.alert-info').length) {
-                $osf.softGrowl('fa fa-files-o', ' Link copied to clipboard', 'info');
+                $osf.softGrowl('Link copied to clipboard', 'info', 20000 ,'fa fa-files-o');
             }
         });
 
@@ -198,10 +199,13 @@ var PublicFilesDropzone = {
     view: function (ctrl, args) {
         function headerTemplate() {
             return [
-                m('h2.col-xs-6', 'Dashboard'), m('m-b-lg.pull-right',
+                m('h2.col-xs-6', 'Dashboard'),
+                m('m-b-lg.pull-right',
                     m('button.btn.btn-primary.m-t-md.m-r-sm.f-w-xl #ShareButton',
-                        'Upload Public Files ', m('span.fa.fa-chevron-down #glyphchevron')), m.component(AddProject, {
-                            buttonTemplate: m('button.btn.btn-success.btn-success-high-contrast.m-t-md.f-w-xl.pull-right[data-toggle="modal"][data-target="#addProjectFromHome"]',
+                        'Upload Public Files ', m('span.fa.fa-chevron-down #glyphchevron')
+                    ),
+                    m.component(AddProject, {
+                            buttonTemplate: m('button.btn.btn-success.btn-success-high-contrast.m-t-md.f-w-xl.pull-right[data-toggle="modal"][data-target="#addProjectFromHome"] #createNewProjectBtn',
                                 {
                                     onclick: function () {
                                         $osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');
@@ -210,10 +214,10 @@ var PublicFilesDropzone = {
                             modalID: 'addProjectFromHome',
                             stayCallback: function _stayCallback_inPanel() {
                                 document.location.reload(true);
-                            },
-                            trackingCategory: 'quickSearch',
-                            trackingAction: 'add-project',
-                            templatesFetcher: ctrl.templateNodes
+                        },
+                        trackingCategory: 'quickSearch',
+                        trackingAction: 'add-project',
+                        templatesFetcher: ctrl.templateNodes
                         }
                     )
                 )
@@ -259,10 +263,9 @@ var PublicFilesDropzone = {
 
         function publicFilesHeader() {
             return [
-                m('h1.dz-p.text-center.f-w-lg', 'Upload ', m('a', {
-                    href: '/public_files/', onclick: function (e) {
-                    }
-                }, 'Public Files'))
+                m('a.btn.btn-primary.btn-success-high-contrasts.f-w-xl',
+                    {href: '/public_files/'},
+                 'Your Public Files')
             ];
         }
 
@@ -275,18 +278,14 @@ var PublicFilesDropzone = {
                 m('.panel-heading', closeButton(),
                     publicFilesHelpButton(), publicFilesHeader()
                 ),
-                m('.panel-body.dz-body-height', m('div.h2.text-center.m-t-lg.dz-bold #splashDropText', 'Drop files to upload'),
+                m('.panel-body.dz-body-height', m('div.h2.text-center.m-t-lg.dz-bold #splashDropText', 'Drop a file to upload'),
                     m('span#dz-dragmessage.fa.fa-plus-square-o.fa-5x.dz-dragmessage', '')
                 ),
                 m('.panel-footer.dz-cursor-default.clearfix',
                     m('.pull-left',
                         m('h5', 'Files are uploaded to your ',
-                            m('a', {
-                                href: '/public_files/', onclick: function (e) {
-                                    // Prevent clicking of link from opening file uploader
-                                    e.stopImmediatePropagation();
-                                }
-                            }, 'Public Files'), ' ', m('i.fa.fa-question-circle.text-muted', {
+                            m('a', { href: '/public_files/' },
+                             'Public Files'), ' ', m('i.fa.fa-question-circle.text-muted', {
                                 'data-toggle': 'tooltip',
                                 'title': 'The Public Files Project allows you to easily collaborate and share your files with anybody.',
                                 'data-placement': 'bottom'
