@@ -151,6 +151,7 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         folder_id = kwargs.get('folder_id')
         if folder_id is None:
             return [{
+                'addon': 'dropbox',
                 'id': '/',
                 'path': '/',
                 'kind': 'folder',
