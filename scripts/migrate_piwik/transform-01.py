@@ -68,9 +68,10 @@ def main():
                 location_cache[ip_addr] = geolite2.lookup(ip_addr)
             location = location_cache[ip_addr]
 
-        # artificial session id. actual value not important
-        session_id = str(uuid.uuid4())
-        keen_id = get_or_create_keen_id(visit['visitor_id'], sqlite_db)
+        # user has many visitor ids, visitor id has many session ids.
+        # in keen, visitor id will refresh 1/per year, session 1/per 30min.
+        visitor_id = get_or_create_visitor_id(visit['visitor_id'], sqlite_db)
+        session_id = get_or_create_session_id(visit['id'], sqlite_db)
 
         user_id = visit['user_id']
         if user_id is not None:
@@ -171,7 +172,7 @@ def main():
             },
             'page': {
                 'title': action['page']['title'],
-                'url': action['page']['url_prefix'] + action['page']['url'],
+                'url': action['page']['url_prefix'] + action['page']['url'] if action['page']['url'] is not None else None,
                 'info': {}  # (add-on)
             },
             'referrer': {
@@ -196,8 +197,8 @@ def main():
                 'local': {}
             },
             'visitor': {
-                'id': keen_id,
-                'session': session_id,  # random val (sessionId)
+                'id': visitor_id,
+                'session': session_id,
                 'returning': True if visit['visitor_returning'] else False,  # visit
             },
             'user': {
@@ -272,45 +273,80 @@ def main():
 
 
 def sqlite_setup(sqlite_db):
-    """Test whether we already have an sqlite db for mapping Piwik user_ids to new keen ids,
-    and if not create one. 
+    """Test whether we already have an sqlite db for mapping Piwik visitor ids to keen visitor ids,
+    and Piwik visit ids to session ids. If not, create them.
     :return:
     """
     cursor = sqlite_db.cursor()
 
     try:
-        cursor.execute('SELECT COUNT(*) FROM matched_ids')
+        cursor.execute('SELECT COUNT(*) FROM visitor_ids')
     except sqlite3.OperationalError:
-        cursor.execute('CREATE TABLE matched_ids (piwik_id TEXT, keen_id TEXT)')
+        cursor.execute('CREATE TABLE visitor_ids (piwik_id TEXT, keen_id TEXT)')
+        sqlite_db.commit()
+
+    try:
+        cursor.execute('SELECT COUNT(*) FROM session_ids')
+    except sqlite3.OperationalError:
+        cursor.execute('CREATE TABLE session_ids (visit_id TEXT, session_id TEXT)')
         sqlite_db.commit()
 
 
-def get_or_create_keen_id(user_id, sqlite_db):
-    """Gets or creates a new Keen Id given a Piwik User Id from the db
+def get_or_create_visitor_id(piwik_id, sqlite_db):
+    """Gets or creates a new Keen visitor UUID given a Piwik visitor ID.
 
-    :param user_id: Piwik User Id from current row in database
+    :param piwik_id: Piwik visitor ID from current row in database
     :param sqlite_db: SQLite3 database handle
-    :return: Keen Id as str
+    :return: Keen visitor UUID as str
     """
     cursor = sqlite_db.cursor()
-    query = "SELECT * FROM matched_ids WHERE piwik_id='{p_id}'".format(p_id=user_id)
+    query = "SELECT * FROM visitor_ids WHERE piwik_id='{p_id}'".format(p_id=piwik_id)
     cursor.execute(query)
 
-    keen_id = cursor.fetchall()
+    keen_ids = cursor.fetchall()
 
-    if len(keen_id) > 1:
+    if len(keen_ids) > 1:
         raise Exception("Multiple ID's found for single Piwik User ID")
 
-    if not keen_id:
-        keen_id = uuid.uuid4()
-        query = "INSERT INTO matched_ids (piwik_id, keen_id) VALUES ('{p_id}', '{n_id}');".format(
-            p_id=str(user_id), n_id=str(keen_id)
-        )
-        cursor.execute(query)
-        sqlite_db.commit()
-        return str(keen_id)
+    if keen_ids:
+        return str(keen_ids[0][1])
 
-    return str(keen_id[0][1])
+    keen_id = str(uuid.uuid4())
+    query = "INSERT INTO visitor_ids (piwik_id, keen_id) VALUES ('{p_id}', '{k_id}');".format(
+        p_id=piwik_id, k_id=keen_id
+    )
+    cursor.execute(query)
+    sqlite_db.commit()
+    return keen_id
+
+
+
+def get_or_create_session_id(visit_id, sqlite_db):
+    """Gets or creates a new session UUID given a Piwik visit ID.
+
+    :param user_id: Piwik visit ID from current row in database
+    :param sqlite_db: SQLite3 database handle
+    :return: session UUID as str
+    """
+    cursor = sqlite_db.cursor()
+    query = "SELECT * FROM session_ids WHERE visit_id='{p_id}'".format(p_id=str(visit_id))
+    cursor.execute(query)
+
+    session_ids = cursor.fetchall()
+
+    if len(session_ids) > 1:
+        raise Exception("Multiple session ID\'s found for single Piwik visit ID")
+
+    if session_ids:
+        return str(session_ids[0][1])
+
+    session_uuid = str(uuid.uuid4())
+    query = "INSERT INTO session_ids (visit_id, session_id) VALUES ('{visit}', '{session}');".format(
+        visit=str(visit_id), session=session_uuid
+    )
+    cursor.execute(query)
+    sqlite_db.commit()
+    return session_uuid
 
 
 def parse_os_family(os_key):
