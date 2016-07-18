@@ -30,7 +30,7 @@ var PublicFilesDropzone = {
             autoProcessQueue: false,
             withCredentials: true,
             method: 'put',
-            maxFiles: 3,
+            maxFiles: 1,
             maxFilesize: 500,
             init: function () {
                 // When user clicks close button on top right, reset the number of files
@@ -45,6 +45,7 @@ var PublicFilesDropzone = {
 
                 if (this.files.length <= this.options.maxFiles) {
                     $('div.h2.text-center.m-t-lg').hide();
+                    this.processFile(file);
                 }
                 else {
                     if(!$('.alert-danger').length){
@@ -54,9 +55,8 @@ var PublicFilesDropzone = {
                         ' to a large array of features and services.', 'warning', 30000);
                     }
                     $( "#createNewProjectBtn" ).effect("highlight", {}, 3000);
-
+                    this.removeFile(file);
                 }
-                this.processFile(file);
             },
             addedfile: function(file) {
                 var node, removeFileEvent, removeLink, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2, _results,
@@ -169,7 +169,7 @@ var PublicFilesDropzone = {
                     $osf.growl('Upload Failed', file.name + ' could not be uploaded. <br> The file is ' + fileSizeMB + ' MB,' +
                         ' which exceeds the max file size of ' + this.options.maxFilesize + ' MB to upload a larger file' +
                         ' use a project', 'danger', 5000);
-                    $( "#createNewProjectBtn" ).effect("highlight", {}, 3000);
+                    $( "#createNewProjectBtn" ).effect('highlight', {}, 3000);
 
                 }
             },
