@@ -11,19 +11,19 @@ var pikaday = require('pikaday');
 
 
 var DateRangePicker = oop.defclass({
-    constructor: function(startPickerElem, startDate, endPickerElem, endDate, minDate, maxDate) {
+    constructor: function(params) {
         var self = this;
 
-        self.minDate = minDate;
-        self.maxDate = maxDate;
+        self.minDate = params.minDate;
+        self.maxDate = params.maxDate;
 
-        self.startDate = startDate;
-        self.startPickerElem = startPickerElem;
-        self._startPicker = self._makePicker(startPickerElem, 'startDate', 'updateStartDate');
+        self.startDate = params.startDate;
+        self.startPickerElem = params.startPickerElem;
+        self._startPicker = self._makePicker(params.startPickerElem, 'startDate', 'updateStartDate');
 
-        self.endDate = endDate;
-        self.endPickerElem = endPickerElem;
-        self._endPicker = self._makePicker(endPickerElem, 'endDate', 'updateEndDate');
+        self.endDate = params.endDate;
+        self.endPickerElem = params.endPickerElem;
+        self._endPicker = self._makePicker(params.endPickerElem, 'endDate', 'updateEndDate');
 
         self.updateStartDate(self.startDate);
         self.updateEndDate(self.endDate);

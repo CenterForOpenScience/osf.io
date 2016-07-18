@@ -22,42 +22,70 @@ $(function(){
 
 
 keenAnalysis.ready(function(){
-    function drawAllCharts(statsStartDate, statsEndDate) {
-        projectUsageStats.visitsByDay('#visits', statsStartDate, statsEndDate);
-        projectUsageStats.topReferrers('#topReferrers', statsStartDate, statsEndDate);
-        projectUsageStats.visitsServerTime('#serverTimeVisits', statsStartDate, statsEndDate);
-        projectUsageStats.popularPages(
-            '#popularPages', statsStartDate, statsEndDate,
-            window.contextVars.node.title
-        );
+    function updateDateRangeDisplay(statsStartDate, statsEndDate) {
+        $('#startDateString').removeClass('logo-spin logo-sm').text(statsStartDate.toLocaleDateString());
+        $('#endDateString').removeClass('logo-spin logo-sm').text(statsEndDate.toLocaleDateString());
+    }
+
+    function toggleDateRangePickerView() {
+        $('#dateRange').toggleClass('hidden');
+        $('#dateRangeForm').toggleClass('hidden');
+    }
+
+    function drawAllCharts(allCharts, statsStartDate, statsEndDate) {
+        allCharts.forEach(function(chart) {
+            chart.setDateRange(statsStartDate, statsEndDate);
+            chart.buildChart();
+        });
     }
 
     var oneDayInMs = 24 * 60 * 60 * 1000;
     var thirtyDaysAgoInMs = 30 * oneDayInMs;
-
-    var statsMinDate = new Date(2013, 5, 1);
-    var statsMaxDate = new Date();
-
-    var startPickerElem = document.getElementById('startDatePicker');
     var startDate = new Date(Date.now() - thirtyDaysAgoInMs);
+    var endDate = new Date(Date.now());
 
-    var endPickerElem = document.getElementById('endDatePicker');
-    var endDate = new Date(Date.now() - oneDayInMs);
+    updateDateRangeDisplay(startDate, endDate);
 
-    var dateRangePicker = new DateRangePicker(
-        startPickerElem, startDate,
-        endPickerElem, endDate,
-        statsMinDate, statsMaxDate
-    );
+    var dateRangePicker = new DateRangePicker({
+        startPickerElem: document.getElementById('startDatePicker'),
+        startDate: startDate,
+        endPickerElem: document.getElementById('endDatePicker'),
+        endDate: endDate,
+        statsMinDate: new Date(2013, 5, 1),
+        statsMaxDate: new Date(),
+    });
 
-    var projectUsageStats = new ProjectUsageStatistics(
-        window.contextVars.keen.public.projectId,
-        window.contextVars.keen.public.readKey
-    );
-    drawAllCharts(dateRangePicker.startDate, dateRangePicker.endDate);
+    var authParams = {
+        keenProjectId: window.contextVars.keen.public.projectId,
+        keenReadKey: window.contextVars.keen.public.readKey,
+    };
 
-    $('#updateStatsDates').on('submit', function() {
-        drawAllCharts(dateRangePicker.startDate, dateRangePicker.endDate);
+    var allCharts = [
+        new ProjectUsageStatistics.ChartUniqueVisits(
+            $.extend({}, authParams, {containingElement: '#visits'})
+        ),
+        new ProjectUsageStatistics.ChartTopReferrers(
+            $.extend({}, authParams, {containingElement: '#topReferrers'})
+        ),
+        new ProjectUsageStatistics.ChartVisitsServerTime(
+            $.extend({}, authParams, {containingElement: '#serverTimeVisits'})
+        ),
+        new ProjectUsageStatistics.ChartPopularPages(
+            $.extend({}, authParams, {
+                containingElement: '#popularPages',
+                nodeTitle: window.contextVars.node.title,
+            })
+        ),
+    ];
+
+    drawAllCharts(allCharts, dateRangePicker.startDate, dateRangePicker.endDate);
+
+    $('#showDateRangeForm').on('click', function() { toggleDateRangePickerView(); });
+
+    $('#dateRangeForm').on('submit', function() {
+        updateDateRangeDisplay(dateRangePicker.startDate, dateRangePicker.endDate);
+        toggleDateRangePickerView();
+        drawAllCharts(allCharts, dateRangePicker.startDate, dateRangePicker.endDate);
         return false;
     });
 
