@@ -94,11 +94,16 @@ AddContributorViewModel = oop.extend(Paginator, {
         self.notification = ko.observable('');
         self.inviteError = ko.observable('');
         self.doneSearching = ko.observable(false);
+        self.parentImport = ko.observable(false);
         self.totalPages = ko.observable(0);
         self.childrenToChange = ko.observableArray();
 
         self.foundResults = ko.pureComputed(function () {
-            return self.query() && self.results().length;
+            return self.query() && self.results().length && !self.parentImport();
+        });
+
+        self.parentPagination = ko.pureComputed(function () {
+            return self.doneSearching() && self.parentImport();
         });
 
         self.noResults = ko.pureComputed(function () {
@@ -189,6 +194,7 @@ AddContributorViewModel = oop.extend(Paginator, {
      * currently logged-in user has in common with the contributor.
      */
     startSearch: function () {
+        this.parentImport(false);
         this.pageToGet(0);
         this.fetchResults();
     },
@@ -211,7 +217,7 @@ AddContributorViewModel = oop.extend(Paginator, {
                     self.results(contributors);
                     self.currentPage(result.page);
                     self.numberOfPages(result.pages);
-                    self.addNewPaginators();
+                    self.addNewPaginators(false);
                 }
             );
         } else {
@@ -242,10 +248,16 @@ AddContributorViewModel = oop.extend(Paginator, {
             self.contributors(contributors);
         });
     },
+    startSearchParent: function () {
+        this.parentImport(true);
+        this.pageToGet(0);
+        this.importFromParent();
+    },
     importFromParent: function () {
         var self = this;
+        self.doneSearching(false);
         self.notification(false);
-        $.getJSON(
+        return $.getJSON(
             self.nodeApiUrl + 'get_contributors_from_parent/', {},
             function (result) {
                 var contributors = result.contributors.map(function (user) {
@@ -253,8 +265,22 @@ AddContributorViewModel = oop.extend(Paginator, {
                     var updatedUser = $.extend({}, user, {added: added});
                     return updatedUser;
                 });
-                self.results(contributors);
+                var pageToShow = [];
+                var startingSpot = (self.pageToGet() * 5);
+                if (contributors.length > startingSpot + 5){
+                    for (var i = startingSpot; i < startingSpot + 5; i++) {
+                        pageToShow.push(contributors[i]);
+                    }
+                } else {
+                    for (var i = startingSpot; i < contributors.length; i++) {
+                        pageToShow.push(contributors[i]);
+                    }
+                }
                 self.doneSearching(true);
+                self.results(pageToShow);
+                self.currentPage(self.pageToGet());
+                self.numberOfPages(Math.ceil(contributors.length/5));
+                self.addNewPaginators(true);
             }
         );
     },
