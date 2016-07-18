@@ -2,8 +2,8 @@ from setuptools import setup
 
 setup(name='osf_models',
       version='0.1',
-      description='The funniest joke in the world',
-      url='http://github.com/cwisecarver/osf_models',
+      description='Django models for the OSF',
+      url='http://github.com/CenterForOpenScience/osf_models',
       author='Chris Wisecarver',
       author_email='cwisecarver@cos.io',
       license='MIT',
