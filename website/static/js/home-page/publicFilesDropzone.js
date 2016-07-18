@@ -177,6 +177,11 @@ var PublicFilesDropzone = {
         };
         var $publicFiles = $('#publicFilesDropzone');
 
+        $('#publicFilesDropzoneUploadBtn').click(function (e) {
+            $publicFiles.click();
+        });
+
+
         $publicFiles.on('click', 'span.dz-share', function (e) {
             if (!$('.alert-info').length) {
                 $osf.softGrowl('Link copied to clipboard', 'info', 20000 ,'fa fa-files-o');
