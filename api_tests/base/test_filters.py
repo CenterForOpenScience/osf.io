@@ -26,8 +26,9 @@ from api.base.exceptions import (
 
 class FakeSerializer(ser.Serializer):
 
-    filterable_fields = ('string_field', 'list_field', 'date_field', 'int_field', 'bool_field')
+    filterable_fields = ('id', 'string_field', 'list_field', 'date_field', 'int_field', 'bool_field')
 
+    id = ser.CharField()
     string_field = ser.CharField()
     list_field = ser.ListField()
     date_field = ser.DateField()
@@ -281,7 +282,7 @@ class TestListFilterMixin(ApiTestCase):
         for id in (1, 2):
             assert_in(id, [f._id for f in filtered])
 
-    def test_get_filtered_queryset_for_list_respects_serializer_field_with_different_name_than_model(self):
+    def test_get_filtered_queryset_for_list_respects_special_case_of_ids_being_list(self):
         field_name = 'bool_field'
         params = {
             'value': True,
@@ -298,6 +299,24 @@ class TestListFilterMixin(ApiTestCase):
             assert_not_equal(record._id, 3)
         for id in (1, 2):
             assert_in(id, [f._id for f in filtered])
+
+    def test_get_filtered_queryset_for_list_respects_id_always_being_list(self):
+        field_name = 'id'
+        params = {
+            'value': '2',
+            'op': 'in',
+            'source_field_name': '_id'
+        }
+        default_queryset = [
+            FakeRecord(_id='1', foobar=True),
+            FakeRecord(_id='2', foobar=True),
+            FakeRecord(_id='3', foobar=False)
+        ]
+        filtered = self.view.get_filtered_queryset(field_name, params, default_queryset)
+        for record in filtered:
+            assert_equal(record._id, '2')
+        for id in ('1', '3'):
+            assert_not_in(id, [f._id for f in filtered])
 
     def test_parse_query_params_uses_field_source_attribute(self):
         query_params = {

@@ -387,11 +387,20 @@ class ListFilterMixin(FilterMixin):
                 if self.FILTERS[params['op']](self.get_serializer_method(field_name)(item), params['value'])
             ]
         elif isinstance(field, ser.CharField):
-            # TODO: What is {}.lower()? Possible bug
-            return_val = [
-                item for item in default_queryset
-                if params['value'].lower() in getattr(item, source_field_name, {}).lower()
-            ]
+            if source_field_name in ('_id', 'root'):
+                # Param parser treats certain ID fields as bulk queries: a list of options, instead of just one
+                # Respect special-case behavior, and enforce exact match for these list fields.
+                options = set(item.lower() for item in params['value'])
+                return_val = [
+                    item for item in default_queryset
+                    if getattr(item, source_field_name, '') in options
+                ]
+            else:
+                # TODO: What is {}.lower()? Possible bug
+                return_val = [
+                    item for item in default_queryset
+                    if params['value'].lower() in getattr(item, source_field_name, {}).lower()
+                ]
         elif isinstance(field, ser.ListField):
             return_val = [
                 item for item in default_queryset
