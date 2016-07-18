@@ -37,34 +37,34 @@ class Command(BaseCommand):
         init_app()
         start = datetime.now()
 
-        # load_guids()
-        # print 'Loaded Guids in {} seconds...'.format((datetime.now() - start
-        #                                               ).total_seconds())
-        # snap = datetime.now()
-        # load_blacklist_guids()
-        # print 'Loaded Blacklist in {} seconds...'.format((datetime.now() - snap
-        #                                                   ).total_seconds())
-        # save_bare_nodes()
-        # save_bare_users()
-        # save_bare_tags()
-        # save_bare_system_tags()
-        #
-        # global modm_to_django
-        # modm_to_django = build_pk_caches()
-        # print 'Cached {} MODM to django mappings...'.format(len(
-        #     modm_to_django.keys()))
-        #
-        # save_bare_embargos()
-        # save_bare_retractions()
-        # print '\a\a\a\a\a\a\a\a\a\a\a\a'
-        #
+        load_guids()
+        print 'Loaded Guids in {} seconds...'.format((datetime.now() - start
+                                                      ).total_seconds())
+        snap = datetime.now()
+        load_blacklist_guids()
+        print 'Loaded Blacklist in {} seconds...'.format((datetime.now() - snap
+                                                          ).total_seconds())
+        save_bare_nodes()
+        save_bare_users()
+        save_bare_tags()
+        save_bare_system_tags()
+
         global modm_to_django
         modm_to_django = build_pk_caches()
         print 'Cached {} MODM to django mappings...'.format(len(
             modm_to_django.keys()))
-        #
-        # # fk
-        # set_node_foreign_keys_on_nodes()
+
+        save_bare_embargos()
+        save_bare_retractions()
+        print '\a\a\a\a\a\a\a\a\a\a\a\a'
+
+        global modm_to_django
+        modm_to_django = build_pk_caches()
+        print 'Cached {} MODM to django mappings...'.format(len(
+            modm_to_django.keys()))
+
+        # fk
+        set_node_foreign_keys_on_nodes()
         set_retraction_foreign_keys_on_nodes()
         set_embargo_foreign_keys_on_nodes()
         set_user_foreign_keys_on_nodes()
