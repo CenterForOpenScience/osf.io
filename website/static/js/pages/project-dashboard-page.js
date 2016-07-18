@@ -139,6 +139,7 @@ $(document).ready(function () {
             var fangornOpts = {
                 divID: 'treeGrid',
                 filesData: data.data,
+                allowMove: !node.isRegistration,
                 uploads : true,
                 showFilter : true,
                 placement: 'dashboard',
