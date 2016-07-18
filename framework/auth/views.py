@@ -161,7 +161,7 @@ def forgot_password_post(auth, **kwargs):
                 status.push_status_message(status_message, kind='success', trust=False)
             else:
                 status.push_status_message('You have recently requested to change your password. Please wait a '
-                                           'little while before trying again.', kind='error', trust=False)
+                                           'few minutes before trying again.', kind='error', trust=False)
         else:
             status.push_status_message(status_message, kind='success', trust=False)
     else:
@@ -587,12 +587,19 @@ def resend_confirmation_post(auth):
                           'you should have, please contact OSF Support.').format(clean_email)
         kind = 'success'
         if user:
-            try:
-                send_confirm_email(user, clean_email)
-            except KeyError:
-                # already confirmed, redirect to dashboard
-                status_message = 'This email {0} has already been confirmed.'.format(clean_email)
-                kind = 'warning'
+            if throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+                try:
+                    send_confirm_email(user, clean_email)
+                except KeyError:
+                    # already confirmed, redirect to dashboard
+                    status_message = 'This email {0} has already been confirmed.'.format(clean_email)
+                    kind = 'warning'
+                user.email_last_sent = datetime.datetime.utcnow()
+                user.save()
+            else:
+                status_message = ('You have recently requested to resend your confirmation email. '
+                                 'Please wait a few minutes before trying again.')
+                kind = 'error'
         status.push_status_message(status_message, kind=kind, trust=False)
     else:
         forms.push_errors_to_status(form.errors)
