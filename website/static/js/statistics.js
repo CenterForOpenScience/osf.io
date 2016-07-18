@@ -16,7 +16,7 @@ var UserFacingChart = oop.defclass({
         var required = ['keenProjectId', 'keenReadKey', 'containingElement'];
         required.forEach(function(paramName) {
             if (!params[paramName]) {
-                throw 'Missing required argument "' + paramName + '"';
+                throw new Error('Missing required argument "' + paramName + '"');
             }
         });
 
@@ -61,7 +61,7 @@ var UserFacingChart = oop.defclass({
      * @return {Object}
      */
     baseQuery: function() {
-        throw 'Concrete class does not provide a "baseQuery" method!';
+        throw new Error('Concrete class does not provide a "baseQuery" method!');
     },
 
     /**
