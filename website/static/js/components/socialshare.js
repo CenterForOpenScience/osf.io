@@ -64,7 +64,7 @@ var ShareButtonsPopover = {
                             html: true,
                             container: 'body',
                             placement: 'bottom',
-                            content: '<div id="shareButtonsPopoverContent"></div>',
+                            content: '<div id="shareButtonsPopoverContent" class="shareButtonsPopoverContent"></div>',
                             trigger: 'manual'
                         });
                     }
