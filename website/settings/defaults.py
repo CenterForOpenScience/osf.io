@@ -24,6 +24,7 @@ APP_PATH = parent_dir(BASE_PATH)
 ADDON_PATH = os.path.join(BASE_PATH, 'addons')
 STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = '/static'
+EMBER_FOLDER = os.path.join(STATIC_FOLDER, 'public', 'ember')
 ASSET_HASH_PATH = os.path.join(APP_PATH, 'webpack-assets.json')
 ROOT = os.path.join(BASE_PATH, '..')
 BCRYPT_LOG_ROUNDS = 12
@@ -52,6 +53,7 @@ PROXY_ADDRS = []
 
 # May set these to True in local.py for development
 DEV_MODE = False
+USE_EMBER = False
 DEBUG_MODE = False
 SECURE_MODE = not DEBUG_MODE  # Set secure cookie
 

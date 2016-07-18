@@ -77,6 +77,14 @@ class TestFileView(ApiTestCase):
         assert_equal(attributes['extra']['hashes']['sha256'], None)
         assert_equal(attributes['tags'], [])
 
+    def test_file_has_rel_link_to_owning_project(self):
+        res = self.app.get(self.file_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_in('node', res.json['data']['relationships'].keys())
+        expected_url = self.node.api_v2_url
+        actual_url = res.json['data']['relationships']['node']['links']['related']['href']
+        assert_in(expected_url, actual_url)
+
     def test_file_has_comments_link(self):
         guid = self.file.get_guid(create=True)
         res = self.app.get(self.file_url, auth=self.user.auth)

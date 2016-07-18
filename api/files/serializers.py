@@ -1,30 +1,32 @@
+from django.core.urlresolvers import resolve, reverse
 import furl
+from rest_framework import serializers as ser
 import pytz
+
 from modularodm import Q
 
-from rest_framework import serializers as ser
-from django.core.urlresolvers import resolve, reverse
-
-from website import settings
 from framework.auth.core import User
+from website import settings
 from website.files.models import FileNode
 from website.project.model import Comment
-from api.base.utils import absolute_reverse
+from website.util import api_v2_url
+
 from api.base.serializers import (
-    NodeFileHyperLinkField,
-    WaterbutlerLink,
-    format_relationship_links,
     FileCommentRelationshipField,
-    JSONAPIListField,
-    Link,
-    JSONAPISerializer,
-    LinksField,
+    format_relationship_links,
     IDField,
+    JSONAPIListField,
+    JSONAPISerializer,
+    Link,
+    LinksField,
+    NodeFileHyperLinkField,
+    RelationshipField,
     TypeField,
+    WaterbutlerLink,
 )
 from api.base.exceptions import Conflict
+from api.base.utils import absolute_reverse
 from api.base.utils import get_user_auth
-from website.util import api_v2_url
 
 
 class CheckoutField(ser.HyperlinkedRelatedField):
@@ -145,7 +147,12 @@ class FileSerializer(JSONAPISerializer):
     comments = FileCommentRelationshipField(related_view='nodes:node-comments',
                                             related_view_kwargs={'node_id': '<node._id>'},
                                             related_meta={'unread': 'get_unread_comments_count'},
-                                            filter={'target': 'get_file_guid'})
+                                            filter={'target': 'get_file_guid'}
+                                            )
+    node = RelationshipField(related_view='nodes:node-detail',
+                             related_view_kwargs={'node_id': '<node._id>'},
+                             help_text='The project that this file belongs to'
+                             )
     links = LinksField({
         'info': Link('files:file-detail', kwargs={'file_id': '<_id>'}),
         'move': WaterbutlerLink(),

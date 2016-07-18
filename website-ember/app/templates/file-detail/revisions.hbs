@@ -1,0 +1,15 @@
+<h3>Revisions</h3>
+<table class='table table-bordered'>
+    <thead>
+        <tr>
+            <th>Version</th>
+            <th>Size</th>
+            <th>Download</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#each model as |version|}}
+            {{file-version version=version download='download'}}
+        {{/each}}
+    </tbody>
+</table>
