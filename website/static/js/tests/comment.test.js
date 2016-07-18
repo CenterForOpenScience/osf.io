@@ -8,9 +8,9 @@ var convertMentionMarkdownToHtml = comment.convertMentionMarkdownToHtml;
 
 describe('@Mentions', () => {
     var atMentionHTML = 'Hello, <span class="atwho-inserted" contenteditable="false" data-atwho-guid="12345" data-atwho-at-query="@">@Test User</span>';
-    var atMentionMarkdown = 'Hello, [@Test User](/12345/)';
+    var atMentionMarkdown = 'Hello, [@Test User](http://localhost:5000/12345/)';
     var plusMentionHTML = 'Hello, <span class="atwho-inserted" contenteditable="false" data-atwho-guid="12345" data-atwho-at-query="+">+Test User</span>';
-    var plusMentionMarkdown = 'Hello, [+Test User](/12345/)';
+    var plusMentionMarkdown = 'Hello, [+Test User](http://localhost:5000/12345/)';
     var returnHTML = 'Test.<br>';
     var returnMarkdown = 'Test.&#13;&#10;';
     var returnMarkdown2 = 'Test.\r\n';
