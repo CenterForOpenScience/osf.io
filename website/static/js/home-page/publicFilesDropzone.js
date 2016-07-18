@@ -48,7 +48,7 @@ var PublicFilesDropzone = {
                     this.processFile(file);
                 }
                 else {
-                    if(!$('.alert-danger').length){
+                    if(!$('.alert-warning').length){
 
                         $osf.softGrowl('This feature is for sharing files, if you would like to store a many files for ' +
                         'a collaborative work or large presentation consider creating a project, this will give you access' +
