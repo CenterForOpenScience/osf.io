@@ -15,19 +15,11 @@ $(document).ready(function(){
     $.ajax({
       url: nodeApiUrl + 'files/grid/'
     }).done(function(data) {
-        function register() {
-            if(node.isRegistered){
-                return false;
-            }
-            else{
-                return true;
-            }
-        }
         new Fangorn({
             placement: 'project-files',
             divID: 'treeGrid',
             filesData: data.data,
-            allowMove: register(),
+            allowMove: !node.isRegistration,
             xhrconfig: $osf.setXHRAuthorization
         });
     });

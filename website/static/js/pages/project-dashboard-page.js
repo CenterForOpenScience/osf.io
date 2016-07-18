@@ -136,18 +136,10 @@ $(document).ready(function () {
         $.ajax({
             url:  nodeApiUrl + 'files/grid/'
         }).done(function (data) {
-            function register() {
-                if(node.isRegistered){
-                    return false;
-                }
-                else{
-                    return true;
-                }
-            }
             var fangornOpts = {
                 divID: 'treeGrid',
                 filesData: data.data,
-                allowMove: register(),
+                allowMove: !node.isRegistration,
                 uploads : true,
                 showFilter : true,
                 placement: 'dashboard',
