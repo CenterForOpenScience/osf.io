@@ -115,6 +115,7 @@ new OauthAddonNodeConfig('Amazon S3', '#s3Scope', url, '#s3Grid',
                 }
             ).done(function(response) {
                 $osf.unblock();
+                self.loadedFolders(false);
                 self.activatePicker();
                 var msg = 'Successfully created bucket "' + $osf.htmlEscape(bucketName) + '". You can now select it from the list.';
                 var msgType = 'text-success';
