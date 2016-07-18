@@ -157,6 +157,12 @@ def robots():
         mimetype='text/plain'
     )
 
+def ember_app(guid=None):
+    """Serve the contents of the ember application"""
+    # Be sure to build the ember app first, and adjust asset paths in index.html:
+    #  ember build --output-path <STATIC_FOLER>/ember --watch
+    return send_from_directory(settings.EMBER_FOLDER, 'index.html')
+
 
 def goodbye():
     # Redirect to dashboard if logged in
@@ -191,15 +197,16 @@ def make_url_map(app):
     ### GUID ###
     process_rules(app, [
 
-        Rule(
-            [
-                '/<guid>/',
-                '/<guid>/<path:suffix>',
-            ],
-            ['get', 'post', 'put', 'patch', 'delete'],
-            website_views.resolve_guid,
-            notemplate,
-        ),
+        # TODO Uncomment. For demonstration, allowing ember guid route to be used instead. More work needed on routing.
+        # Rule(
+        #     [
+        #         '/<guid>/',
+        #         '/<guid>/<path:suffix>',
+        #     ],
+        #     ['get', 'post', 'put', 'patch', 'delete'],
+        #     website_views.resolve_guid,
+        #     notemplate,
+        # ),
 
         Rule(
             [
@@ -218,6 +225,22 @@ def make_url_map(app):
         Rule('/favicon.ico', 'get', favicon, json_renderer),
         Rule('/robots.txt', 'get', robots, json_renderer),
     ])
+
+    if settings.USE_EMBER:
+        # Routes that serve up the Ember application. Hide behind feature flag.
+        process_rules(app, [
+            Rule(
+                [
+                    '/ember-sample/',
+                    '/<guid>/',
+                    '/file-detail/',
+                    '/file-detail/revisions/'
+                ],
+                'get',
+                ember_app,
+                json_renderer
+            )
+        ])
 
     ### Base ###
 
