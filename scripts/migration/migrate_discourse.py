@@ -58,10 +58,10 @@ def serialize_projects(file_out):
         data['is_public'] = project.is_public
         contributors = [int(user._id, 36) for user in project.contributors if user.username]
         data['contributors'] = contributors
+        data['is_deleted'] = project.is_deleted
 
         logger.info('Serializing project %s' % project.label)
         json.dump(data, file_out)
-
 
 def serialize_comments(file_out):
     comments = models.Comment.find().sort('date_created')
@@ -87,6 +87,7 @@ def serialize_comments(file_out):
             data['content'] = discourse.make_topic_content(comment.node)
             data['parent_guids'] = discourse.get_parent_guids(comment.node)
             data['topic_guid'] = comment.node.guid_id
+            data['is_deleted'] = comment.is_deleted
 
             logger.info('Serializing topic %s' % comment.node.label)
             json.dump(data, file_out)
@@ -102,6 +103,7 @@ def serialize_comments(file_out):
             data['reply_to'] = int(comment.node.guid_id, 36)
         else:
             data['reply_to'] = comment.target._id
+        data['is_deleted'] = comment.is_deleted
 
         logger.info('Serializing comment %s' % comment._id)
         json.dump(data, file_out)
