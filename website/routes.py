@@ -1454,7 +1454,13 @@ def make_url_map(app):
             '/project/<pid>/withdraw/',
             '/project/<pid>/node/<nid>/withdraw/'
         ], 'post', project_views.register.node_registration_retraction_post, json_renderer),
-
+        
+        Rule(
+            '/ids/<category>/<path:value>/',
+            'get',
+            project_views.register.get_referent_by_identifier,
+            notemplate,
+        ),
         Rule(
             [
                 '/project/<pid>/identifiers/',
