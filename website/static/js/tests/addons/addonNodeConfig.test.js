@@ -7,7 +7,6 @@ var faker = require('faker');
 
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
-var ZeroClipboard = require('zeroclipboard');
 var AddonNodeConfigVM = require('js/addonNodeConfig')._AddonNodeConfigViewModel;
 var testUtils = require('./folderPickerTestUtils.js');
 

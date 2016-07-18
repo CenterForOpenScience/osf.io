@@ -4,7 +4,7 @@ var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 var $osf = require('./osfHelpers');
-var clipboard = require('./clipboard');
+var Clipboard = require('clipboard');
 require('js/osfToggleHeight');
 
 require('bootstrap-editable');
@@ -151,7 +151,7 @@ function ViewModel(url, nodeIsPublic, table) {
             self.onWindowResize();
         }
         var target = $tr.find('button>i.fa.fa-copy')[0].parentElement;
-        clipboard(target);
+        new Clipboard(target);
         $tr.find('.remove-private-link').tooltip();
         self.setupEditable(elm, data);
         $('.private-link-list').osfToggleHeight({height: 50});

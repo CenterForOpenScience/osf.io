@@ -8,8 +8,6 @@ var ko = require('knockout');
 var $ = require('jquery');
 var Raven = require('raven-js');
 
-var ZeroClipboard = require('zeroclipboard');
-ZeroClipboard.config('/static/vendor/bower_components/zeroclipboard/dist/ZeroClipboard.swf');
 var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 var FolderPickerViewModel = require('js/folderPickerNodeConfig');
