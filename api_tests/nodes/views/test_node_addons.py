@@ -18,6 +18,13 @@ from website.addons.mendeley.tests.factories import MendeleyAccountFactory, Mend
 from website.addons.s3.tests.factories import S3AccountFactory, S3NodeSettingsFactory
 from website.addons.zotero.tests.factories import ZoteroAccountFactory, ZoteroNodeSettingsFactory
 
+# Varies between addons. Some need to make a call to get the root,
+# 'FAKEROOTID' should be the result of a mocked call in that case.
+VALID_ROOT_FOLDER_IDS = (
+    '/',
+    '0',
+    'FAKEROOTID',
+)
 
 class NodeAddonListMixin(object):
     def set_setting_list_url(self):
@@ -452,7 +459,7 @@ class NodeAddonFolderMixin(object):
         )
 
     def test_folder_list_GET_expected_behavior(self):
-        wrong_type = self.short_name != 'googledrive'
+        wrong_type = self.short_name not in ('googledrive', 'box', 'dropbox', )
         res = self.app.get(
             self.folder_url,
             auth=self.user.auth,
@@ -460,10 +467,10 @@ class NodeAddonFolderMixin(object):
 
         if not wrong_type:
             addon_data = res.json['data'][0]['attributes']
-            assert_equal(addon_data['path'], '/')
             assert_equal(addon_data['kind'], 'folder')
-            assert_equal(addon_data['name'], '/ (Full Google Drive)')
-            assert_equal(addon_data['folder_id'], 'FAKEROOTID')
+            assert '/ (Full ' in addon_data['name']
+            assert_equal(addon_data['path'], '/')
+            assert addon_data['folder_id'] in VALID_ROOT_FOLDER_IDS
         if wrong_type:
             assert_in(res.status_code, [404, 501])
 
@@ -660,8 +667,14 @@ class TestNodeBoxAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
     AccountFactory = BoxAccountFactory
     NodeSettingsFactory = BoxNodeSettingsFactory
 
-    def test_settings_detail_PUT_all_sets_settings(self):
-        with mock.patch.object(self.node_settings.__class__, '_update_folder_data') as mock_update:
+    @mock.patch('website.addons.box.model.BoxClient.get_folder')
+    def test_settings_detail_PUT_all_sets_settings(self, mock_get):
+        mock_get.return_value = {
+            'id': self._mock_folder_info['folder_id'],
+            'name': 'FAKEFOLDERNAME',
+            'path_collection': {'entries': {}}
+        }
+        with mock.patch('website.addons.box.model.Box.refresh_oauth_key') as mock_update:
             super(TestNodeBoxAddon, self).test_settings_detail_PUT_all_sets_settings()
 
 

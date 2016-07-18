@@ -2022,8 +2022,8 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
             raise JSONAPIException(detail='This addon is enabled but an account has not been imported from your user settings',
                 meta={'link': '{}users/me/addons/{}/accounts/'.format(API_BASE, node_addon.config.short_name)})
 
-        path = self.request.query_params.get('path', '')
-        folder_id = self.request.query_params.get('id', 'root')
+        path = self.request.query_params.get('path')
+        folder_id = self.request.query_params.get('id')
 
         if not hasattr(node_addon, 'get_folders'):
             raise EndpointNotImplementedError('Endpoint not yet implemented for this addon')

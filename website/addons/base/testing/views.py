@@ -135,6 +135,7 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         assert_equal(res.status_code, http.FORBIDDEN)
 
     def test_set_config(self):
+        self.node_settings.set_auth(self.external_account, self.user)
         url = self.project.api_url_for('{0}_set_config'.format(self.ADDON_SHORT_NAME))
         res = self.app.put_json(url, {
             'selected': self.folder
