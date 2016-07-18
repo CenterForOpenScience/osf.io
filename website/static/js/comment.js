@@ -107,7 +107,7 @@ var exclusifyGroup = function() {
 
 var convertMentionHtmlToMarkdown = function(commentContent) {
     var content = commentContent || '';
-    var pattern = '<span[^>]*?data-atwho-guid="([a-z\\d]{5})"[^>]*?>((@|\\+)[\\w\\s]+)<\/span>';
+    var pattern = '<span[^>]*?data-atwho-guid="([a-z\\d]{5})"[^>]*?>((@|\\+)[^<]+)<\/span>';
     var regex = new RegExp(pattern);
     var regexG = new RegExp(pattern, 'g');
     var matches = content.match(regexG);
@@ -116,7 +116,7 @@ var convertMentionHtmlToMarkdown = function(commentContent) {
             var match = regex.exec(matches[i]);
             var guid = match[1];
             var mention = match[2];
-            var url = '/' + guid + '/';
+            var url = osfHelpers.getDomain() + '/' + guid + '/';
             content = content.replace(match[0], '['+ mention + '](' + url + ')');
         }
     }
@@ -131,7 +131,7 @@ var convertMentionHtmlToMarkdown = function(commentContent) {
 
 var convertMentionMarkdownToHtml = function(commentContent) {
     var content = commentContent ||'';
-    var pattern = '\\[(@|\\+)(.*?)\\]\\(\\/([a-z\\d]{5})\\/\\)';
+    var pattern = '\\[(@|\\+)(.*?)\\]\\(htt[ps]{1,2}:\\/\\/[a-z\\d:.]+?\\/([a-z\\d]{5})\\/\\)';
     var regex = new RegExp(pattern);
     var regexG = new RegExp(pattern, 'g');
     var matches = content.match(regexG);
