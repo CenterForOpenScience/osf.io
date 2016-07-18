@@ -29,13 +29,14 @@ var growl = function(title, message, type, delay) {
     new GrowlBox(title, message, type || 'danger', delay);
 };
 
-var softGrowl = function(icon, message, type) {
+var softGrowl = function(message, type, delay, icon) {
 
     $.growl({
         message: message,
         icon: icon
         }, {
         type: type,
+        delay: delay,
         allow_dismiss: false,
         mouse_over: 'pause',
         placement: {
