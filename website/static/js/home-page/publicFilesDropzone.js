@@ -125,7 +125,7 @@ var PublicFilesDropzone = {
 
                 $osf.ajaxJSON(
                     'GET',
-                    $osf.apiV2Url('files' + response.path + '/'),
+                    $osf.apiV2Url('files' + response.path + '/',{ query : {'giveGuid': 1 }}),
                     {
                         isCors: true
                     }
