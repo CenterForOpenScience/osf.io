@@ -121,13 +121,23 @@ def get_topic(node):
     return request('get', '/t/' + str(node.discourse_topic_id) + '.json')
 
 def delete_topic(node):
-    if node.discourse_topic_id is None:
+    if node.discourse_topic_id is None or node.discourse_topic_deleted:
         return
 
     result = request('delete', '/t/' + str(node.discourse_topic_id) + '.json')
 
-    node.discourse_topic_id = None
-    node.discourse_post_id = None
+    node.discourse_topic_deleted = True
+    node.save()
+
+    return result
+
+def undelete_topic(node):
+    if node.discourse_topic_id is None or not node.discourse_topic_deleted:
+        return
+
+    result = request('put', '/t/' + str(node.discourse_topic_id) + '/recover')
+
+    node.discourse_topic_deleted = False
     node.save()
 
     return result

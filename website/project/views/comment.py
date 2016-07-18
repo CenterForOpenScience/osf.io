@@ -31,15 +31,6 @@ def update_file_guid_referent(self, node, event_type, payload, user=None):
             provider=source['provider'],
             node=source_node)
 
-        if event_type == 'addon_file_renamed':
-            for guid in file_guids:
-                obj = Guid.load(guid)
-                old_file_name = obj.referent.name
-                obj.referent.name = destination['name']
-                discourse.sync_topic(obj.referent)
-                obj.referent.name = old_file_name
-                #discourse.create_comment(obj.referent, 'This file has been renamed to ' + destination['name'])
-
         if event_type == 'addon_file_renamed' and source['provider'] in settings.ADDONS_BASED_ON_IDS:
             return
         if event_type == 'addon_file_moved' and (source['provider'] == destination['provider'] and
@@ -48,20 +39,23 @@ def update_file_guid_referent(self, node, event_type, payload, user=None):
 
         for guid in file_guids:
             obj = Guid.load(guid)
-
             if source_node != destination_node and Comment.find(Q('root_target._id', 'eq', guid)).count() != 0:
                 update_comment_node(guid, source_node, destination_node)
 
-
             if source['provider'] != destination['provider'] or source['provider'] != 'osfstorage':
                 old_file = FileNode.load(obj.referent._id)
-
                 obj.referent = create_new_file(obj, source, destination, destination_node)
                 obj.save()
 
                 obj.referent.discourse_topic_id = old_file.discourse_topic_id
-                old_file.discourse_topic_id = None
+                obj.referent.discourse_topic_title = old_file.discourse_topic_title
+                obj.referent.discourse_topic_parent_guids = old_file.discourse_topic_parent_guids
+                obj.referent.discourse_topic_deleted = old_file.discourse_topic_deleted
+                obj.referent.discourse_post_id = old_file.discourse_post_id
                 obj.referent.save()
+
+                old_file.discourse_topic_id = None
+                old_file.discourse_post_id = None
 
                 if old_file and not TrashedFileNode.load(old_file._id):
                     old_file.delete()

@@ -954,6 +954,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
     discourse_topic_id = fields.StringField(default=None)
     discourse_topic_title = fields.StringField(default=None)
     discourse_topic_parent_guids = fields.StringField(default=None, list=True)
+    discourse_topic_deleted = fields.BooleanField(default=False)
     discourse_post_id = fields.StringField(default=None)
 
     _meta = {
