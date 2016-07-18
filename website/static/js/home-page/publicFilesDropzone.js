@@ -51,11 +51,10 @@ var PublicFilesDropzone = {
 
                         $osf.softGrowl('This feature is for sharing files, if you would like to store a many files for ' +
                         'a collaborative work or large presentation consider creating a project, this will give you access' +
-                        ' to a large array of features and services', 'warning', 30000);
-
-                        $( "#createNewProjectBtn" ).effect("highlight", {}, 3000);
-
+                        ' to a large array of features and services.', 'warning', 30000);
                     }
+                    $( "#createNewProjectBtn" ).effect("highlight", {}, 3000);
+
                 }
                 this.processFile(file);
             },
@@ -118,8 +117,12 @@ var PublicFilesDropzone = {
                 m.render(iconSpan, dzPreviewTemplate.resolveIcon(file));
             },
             success: function (file, xhr) {
+                $('#publicFilesDropzoneUploadBtn').html('Upload another file');
                 var buttonContainer = document.createElement('div');
                 $(file.previewElement).find('div.col-sm-6').append(buttonContainer);
+                file.previewElement.classList.add('dz-success');
+                file.previewElement.classList.add('dz-preview-background-success');
+
                 var response = JSON.parse(file.xhr.response);
                 var guid = '';
 
@@ -136,12 +139,7 @@ var PublicFilesDropzone = {
                     $('.logo-spin').remove();
                     $('span.p-md').remove();
                     $('span.button.close').css('visibility', 'hidden');
-                    file.previewElement.classList.add('dz-success');
-                    file.previewElement.classList.add('dz-preview-background-success');
                     $(file.previewElement).find('.dz-filename').attr('href', guid);
-                    if($('.alert-danger').length){
-                        $( "#createNewProjectBtn" ).effect("highlight", {}, 3000);
-                    }
 
                 }).fail(function(xhr, status, error) {
                     $('.logo-spin').remove();
@@ -169,7 +167,10 @@ var PublicFilesDropzone = {
                 var fileSizeMB = Math.round(file.size / (this.options.filesizeBase * this.options.filesizeBase) * 10) / 10;
                 if (fileSizeMB > this.options.maxFilesize) {
                     $osf.growl('Upload Failed', file.name + ' could not be uploaded. <br> The file is ' + fileSizeMB + ' MB,' +
-                        ' which exceeds the max file size of ' + this.options.maxFilesize + ' MB', 'danger', 5000);
+                        ' which exceeds the max file size of ' + this.options.maxFilesize + ' MB to upload a larger file' +
+                        ' use a project', 'danger', 5000);
+                    $( "#createNewProjectBtn" ).effect("highlight", {}, 3000);
+
                 }
             },
 
@@ -293,7 +294,7 @@ var PublicFilesDropzone = {
                         )
                     ),
                     m('.pull-right',
-                        m('button.btn.btn-success.m-r-sm #publicFilesDropzone', 'Choose a file'),
+                        m('button.btn.btn-success.m-r-sm #publicFilesDropzoneUploadBtn', 'Choose a file'),
                         m('button.btn.btn-default', {
                             onclick: function () {
                                 $('#publicFilesDropzone').hide();

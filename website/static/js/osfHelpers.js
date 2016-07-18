@@ -37,6 +37,7 @@ var softGrowl = function(message, type, delay, icon) {
         }, {
         type: type,
         delay: delay,
+        offset :  47,
         allow_dismiss: false,
         mouse_over: 'pause',
         placement: {
