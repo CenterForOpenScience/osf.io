@@ -15,7 +15,7 @@ def _get_project_node(node):
         return node
 
 def get_topics(project_node):
-    return request('get', '/projects/' + project_node._id + '.json')
+    return request('get', '/forum/' + project_node._id + '.json')
 
 def _escape_markdown(text):
     r = re.compile(r'([\\`*_{}[\]()#+.!-])')

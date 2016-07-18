@@ -16,6 +16,15 @@ logger = logging.getLogger(__name__)
 
 def serialize_users(file_out):
     users = models.User.find()
+
+    data = {}
+    data['object_type'] = 'count'
+    data['target_type'] = 'user'
+    data['count'] = users.count()
+
+    logger.info('Serializing %i users' % data['count'])
+    json.dump(data, file_out)
+
     for user in users:
         if user.username == None:
             continue
@@ -32,6 +41,15 @@ def serialize_users(file_out):
 
 def serialize_projects(file_out):
     projects = models.Node.find()
+
+    data = {}
+    data['object_type'] = 'count'
+    data['target_type'] = 'project'
+    data['count'] = projects.count()
+
+    logger.info('Serializing %i projects' % data['count'])
+    json.dump(data, file_out)
+
     for project in projects:
         data = {}
         data['object_type'] = 'project'
@@ -47,6 +65,15 @@ def serialize_projects(file_out):
 
 def serialize_comments(file_out):
     comments = models.Comment.find().sort('date_created')
+
+    data = {}
+    data['object_type'] = 'count'
+    data['target_type'] = 'post'
+    data['count'] = comments.count()
+
+    logger.info('Serializing %i comments' % data['count'])
+    json.dump(data, file_out)
+
     for comment in comments:
         if comment.target == comment.root_target:
             # First create the topic itself
