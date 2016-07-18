@@ -229,7 +229,8 @@ class NodeSerializer(JSONAPISerializer):
         return permissions
 
     def get_current_user_can_comment(self, obj):
-        auth = Auth(self.context['request'].user)
+        user = self.context['request'].user
+        auth = Auth(user if not user.is_anonymous() else None)
         return obj.can_comment(auth)
 
     class Meta:

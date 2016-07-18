@@ -203,7 +203,8 @@ class FileSerializer(JSONAPISerializer):
         return extras
 
     def get_current_user_can_comment(self, obj):
-        auth = Auth(self.context['request'].user)
+        user = self.context['request'].user
+        auth = Auth(user if not user.is_anonymous() else None)
         return obj.node.can_comment(auth)
 
     def get_unread_comments_count(self, obj):
