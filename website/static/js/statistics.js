@@ -47,6 +47,12 @@ var UserFacingChart = oop.defclass({
          * @type {integer}
          */
         self.MAX_DISPLAY_ENTRIES = params.maxDisplayEntries || 10;
+
+        var spinnerHtml = '';
+        spinnerHtml += '<div class="text-center">';
+        spinnerHtml += '    <div class="logo-spin logo-lg"></div>';
+        spinnerHtml += '</div>';
+        self._spinnerHtml = spinnerHtml;
     },
 
     /**
@@ -117,6 +123,10 @@ var UserFacingChart = oop.defclass({
         self.endDate = endDate;
     },
 
+    getElement: function() { return document.getElementById(this.containingElement.replace(/^#/, '')); },
+    startSpinner: function() { this.getElement().innerHTML = this._spinnerHtml; },
+    endSpinner: function() { this.getElement().innerHTML = ''; },
+
     /**
      * Build a data chart on the page. The element on the page that the chart will be inserted into
      * is defined in the `dataviz` parameter. A spinner will be displayed while the data is being
@@ -132,14 +142,17 @@ var UserFacingChart = oop.defclass({
             self.chart = self._initDataviz();
         }
 
-        self.chart.prepare();
+        self.startSpinner();
         var query = self.query();
         self.keenClient
             .query(query.type, query.params)
             .then(function(res) {
-                self.chart.title(' ').data(res).call(self.munger.bind(self)).render();
+                self.chart.title(' ').data(res).call(self.munger.bind(self));
+                self.endSpinner();
+                self.chart.render();
             })
             .catch(function(err) {
+                self.endSpinner();
                 self.chart.message(err.message);
             });
     },
