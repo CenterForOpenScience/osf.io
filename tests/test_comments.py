@@ -137,7 +137,7 @@ class TestCommentModel(OsfTestCase):
                 node=self.comment.node,
                 target=self.comment.target,
                 is_public=True,
-                content=''.join(['c' for c in range(settings.COMMENT_MAXLENGTH - 8)]) + '[@George Ant](/' + self.comment.user._id + '/)'
+                content=''.join(['c' for c in range(settings.COMMENT_MAXLENGTH - 8)]) + '[@George Ant](http://localhost:5000/' + self.comment.user._id + '/)'
             )
 
     def test_create_comment_content_does_not_exceed_max_length_complex(self):
@@ -147,7 +147,7 @@ class TestCommentModel(OsfTestCase):
             node=self.comment.node,
             target=self.comment.target,
             is_public=True,
-            content=''.join(['c' for c in range(settings.COMMENT_MAXLENGTH - 12)]) + '[@George Ant](/' + self.comment.user._id + '/)'
+            content=''.join(['c' for c in range(settings.COMMENT_MAXLENGTH - 12)]) + '[@George Ant](http://localhost:5000/' + self.comment.user._id + '/)'
         )
 
     def test_create_comment_content_cannot_be_none(self):
@@ -207,7 +207,7 @@ class TestCommentModel(OsfTestCase):
                 node=self.comment.node,
                 target=self.comment.target,
                 is_public=True,
-                content='This is a comment with a bad mention [@Unconfirmed User](/' + self.comment.user._id + '/).'
+                content='This is a comment with a bad mention [@Unconfirmed User](http://localhost:5000/' + self.comment.user._id + '/).'
             )
         assert_equal(mock_signals.signals_sent(), set([comment_added, mention_added]))
 
@@ -227,7 +227,7 @@ class TestCommentModel(OsfTestCase):
                     node=self.comment.node,
                     target=self.comment.target,
                     is_public=True,
-                    content='This is a comment with a bad mention [@Unconfirmed User](/' + user._id + '/).'
+                    content='This is a comment with a bad mention [@Unconfirmed User](http://localhost:5000/' + user._id + '/).'
                 )
         assert_equal(mock_signals.signals_sent(), set([contributor_added]))
         assert_equal(error.exception.message, 'User does not exist or is not active.')
@@ -242,7 +242,7 @@ class TestCommentModel(OsfTestCase):
                     node=self.comment.node,
                     target=self.comment.target,
                     is_public=True,
-                    content='This is a comment with a bad mention [@Non-contributor User](/' + user._id + '/).'
+                    content='This is a comment with a bad mention [@Non-contributor User](http://localhost:5000/' + user._id + '/).'
                 )
         assert_equal(mock_signals.signals_sent(), set([]))
         assert_equal(error.exception.message, 'Mentioned user is not a contributor.')
@@ -256,7 +256,7 @@ class TestCommentModel(OsfTestCase):
                     node=self.comment.node,
                     target=self.comment.target,
                     is_public=True,
-                    content='This is a comment with a bad mention [@Not a User](/qwert/).'
+                    content='This is a comment with a bad mention [@Not a User](http://localhost:5000/qwert/).'
                 )
         assert_equal(mock_signals.signals_sent(), set([]))
         assert_equal(error.exception.message, 'User does not exist or is not active.')
@@ -276,7 +276,7 @@ class TestCommentModel(OsfTestCase):
         with capture_signals() as mock_signals:
             self.comment.edit(
                 auth=self.auth,
-                content='This is a comment with a bad mention [@Mentioned User](/' + self.comment.user._id + '/).',
+                content='This is a comment with a bad mention [@Mentioned User](http://localhost:5000/' + self.comment.user._id + '/).',
                 save=True
             )
         assert_equal(mock_signals.signals_sent(), set([mention_added]))
@@ -286,7 +286,7 @@ class TestCommentModel(OsfTestCase):
             with capture_signals() as mock_signals:
                 self.comment.edit(
                     auth=self.auth,
-                    content='This is a comment with a bad mention [@Not a User](/qwert/).',
+                    content='This is a comment with a bad mention [@Not a User](http://localhost:5000/qwert/).',
                     save=True
                 )
         assert_equal(mock_signals.signals_sent(), set([]))
@@ -298,7 +298,7 @@ class TestCommentModel(OsfTestCase):
                 user = UserFactory()
                 self.comment.edit(
                     auth=self.auth,
-                    content='This is a comment with a bad mention [@Non-contributor User](/' + user._id + '/).',
+                    content='This is a comment with a bad mention [@Non-contributor User](http://localhost:5000/' + user._id + '/).',
                     save=True
                 )
         assert_equal(mock_signals.signals_sent(), set([]))
@@ -316,7 +316,7 @@ class TestCommentModel(OsfTestCase):
 
                 self.comment.edit(
                     auth=self.auth,
-                    content='This is a comment with a bad mention [@Unconfirmed User](/' + user._id + '/).',
+                    content='This is a comment with a bad mention [@Unconfirmed User](http://localhost:5000/' + user._id + '/).',
                     save=True
                 )
         assert_equal(mock_signals.signals_sent(), set([contributor_added]))
@@ -327,7 +327,7 @@ class TestCommentModel(OsfTestCase):
             self.comment.ever_mentioned=[self.comment.user._id]
             self.comment.edit(
                 auth=self.auth,
-                content='This is a comment with a bad mention [@Already Mentioned User](/' + self.comment.user._id + '/).',
+                content='This is a comment with a bad mention [@Already Mentioned User](http://localhost:5000/' + self.comment.user._id + '/).',
                 save=True
             )
         assert_equal(mock_signals.signals_sent(), set([]))

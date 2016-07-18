@@ -16,7 +16,7 @@ def comment_maxlength(max_length):
     def link_repl(matchobj):
         return matchobj.group(1)
 
-    mention_re = re.compile(r'\[([@|\+].*?)\]\(\/[a-z\d]{5}\/\)')
+    mention_re = re.compile(r'\[([@|\+].*?)\]\(htt[ps]{1,2}:\/\/[a-z\d:.]+?\/[a-z\d]{5}\/\)')
 
     def validator(value):
         reduced_comment = mention_re.sub(link_repl, value)
