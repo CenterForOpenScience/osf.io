@@ -19,24 +19,32 @@
 
     <div class="row m-lg">
       <div class="col-sm-12">
-        <form class="form-inline pull-right" id="updateStatsDates">
+
+        <div id="dateRange" class="pull-right">
+          Showing analytics from <span class="m-l-xs text-bigger f-w-xl logo-spin logo-sm" id="startDateString"></span>
+          until <span class="m-l-xs text-bigger f-w-xl logo-spin logo-sm" id="endDateString"></span>
+          <button class="btn btn-default m-l-xs" id="showDateRangeForm">Update</button>
+        </div>
+
+        <form class="form-inline pull-right hidden" id="dateRangeForm">
           <div class="form-group">
             <label for="startDatePicker">From</label>
             <input type="text" class="form-control" id="startDatePicker">
           </div>
-          <div class="form-group">
+          <div class="form-group m-l-sm">
             <label for="endDatePicker">Until</label>
             <input type="text" class="form-control" id="endDatePicker">
           </div>
           <button type="submit" class="btn btn-default">Update date range</button>
         </form>
+
       </div>
     </div>
     <div class="row m-lg">
         <div class="col-sm-6">
-            <div class="panel panel-default">
+            <div class="panel panel-default project-analytics">
                 <div class="panel-heading clearfix">
-                    <h3 class="panel-title">Visits over past week</h3>
+                    <h3 class="panel-title">Unique visits</h3>
                 </div>
                 <div id="visits" class="panel-body">
                     <div class="text-center">
@@ -46,7 +54,7 @@
             </div>
         </div>
         <div class="col-sm-6">
-          <div class="panel panel-default">
+          <div class="panel panel-default project-analytics">
             <div class="panel-heading clearfix">
               <h3 class="panel-title">Time of day of visits</h3>
             </div>
@@ -58,7 +66,7 @@
           </div>
         </div>
         <div class="col-sm-6">
-            <div class="panel panel-default">
+            <div class="panel panel-default project-analytics">
                 <div class="panel-heading clearfix">
                     <h3 class="panel-title">Top referrers</h3>
                 </div>
@@ -70,7 +78,7 @@
             </div>
         </div>
         <div class="col-sm-6">
-            <div class="panel panel-default">
+            <div class="panel panel-default project-analytics">
                 <div class="panel-heading clearfix">
                     <h3 class="panel-title">Popular pages</h3>
                 </div>
@@ -84,6 +92,11 @@
     </div>
 
 %endif
+
+<%def name="stylesheets()">
+  ${parent.stylesheets()}
+  <link rel="stylesheet" href="/static/css/pages/statistics-page.css">
+</%def>
 
 <%def name="javascript_bottom()">
   ${parent.javascript_bottom()}
