@@ -5,8 +5,9 @@ var m = require('mithril');
 var Raven = require('raven-js');
 var Treebeard = require('treebeard');
 var citations = require('js/citations');
-var clipboard = require('js/clipboard');
 var $osf = require('js/osfHelpers');
+
+var Clipboard = require('clipboard');
 
 var apaStyle = require('raw!styles/apa.csl');
 
@@ -81,6 +82,7 @@ var mergeConfigs = function() {
     var unloads = [];
     var args = Array.prototype.slice.call(arguments);
     return function(elm, isInit, ctx) {
+        new Clipboard(elm);
         for (var i = 0; i < args.length; i++) {
             args[i] && args[i](elm, isInit, ctx);
             ctx.onunload && unloads.push(ctx.onunload);
@@ -118,7 +120,7 @@ var makeButtons = function(item, col, buttons) {
                         class: button.css,
                         'data-toggle': 'tooltip',
                         'data-placement': 'bottom',
-                        'data-clipboard-target': item.data.csl ? item.data.csl.id : button.clipboard,
+                        'data-clipboard-text': item.data.csl ? item.data.csl.id : button.clipboard,
                         config: mergeConfigs(button.config, tooltipConfig),
                         onclick: button.onclick ?
                             function(event) {
@@ -149,24 +151,6 @@ var buildExternalUrl = function(csl) {
     return null;
 };
 
-var makeClipboardConfig = function(getText) {
-    return function(elm, isInit, ctx) {
-        var $elm = $(elm);
-        if (!elm._client) {
-            elm._client = clipboard(elm);
-            // Attach `beforecopy` handler to ensure updated clipboard text
-            if (getText) {
-                elm._client.on('beforecopy', function() {
-                    $elm.attr('data-clipboard-text', getText());
-                });
-            }
-        }
-        ctx.onunload = function() {
-            elm._client && elm._client.destroy();
-        };
-    };
-};
-
 var renderActions = function(item, col) {
     var self = this;
     var buttons = [];
@@ -177,7 +161,6 @@ var renderActions = function(item, col) {
             css: 'btn btn-default btn-xs',
             tooltip: 'Copy citation',
             clipboard: self.getCitation(item),
-            config: makeClipboardConfig()
         });
         // Add link to external document
         var externalUrl = buildExternalUrl(item.data.csl);
@@ -209,10 +192,7 @@ var renderActions = function(item, col) {
             name: '',
             icon: 'fa fa-file-o',
             css: 'btn btn-default btn-xs',
-            tooltip: 'Copy citations',
-            config: makeClipboardConfig(function() {
-                return self.getCitations(item).join('\n');
-            })
+            tooltip: 'Copy citations'
         });
         buttons.push({
             name: '',

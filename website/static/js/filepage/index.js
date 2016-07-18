@@ -8,7 +8,7 @@ var waterbutler = require('js/waterbutler');
 // Local requires
 var utils = require('./util.js');
 var FileEditor = require('./editor.js');
-var makeClient = require('js/clipboard');
+var Clipboard = require('clipboard');
 var FileRevisionsTable = require('./revisions.js');
 var storageAddons = require('json!storageAddons.json');
 var CommentModel = require('js/comment');
@@ -21,7 +21,7 @@ var EDITORS = {'text': FileEditor};
 
 var clipboardConfig = function(element, isInitialized) {
     if (!isInitialized) {
-        makeClient(element);
+        new Clipboard(element);
     }
 };
 
