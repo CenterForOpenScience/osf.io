@@ -147,7 +147,7 @@ var LogFeed = {
                 });
                 for (i = ctrl.totalPages() - MAX_PAGES_ON_PAGINATOR_SIDE; i < ctrl.totalPages() - 1; i++) {
                     ctrl.paginators().push({
-                        text: i + 1,
+                        text: i,
                         url: function() {
                             ctrl.pageToGet(parseInt(this.text));
                             if (ctrl.pageToGet() !== ctrl.currentPage()) {
@@ -166,7 +166,7 @@ var LogFeed = {
                 });
                 for (i = parseInt(ctrl.currentPage()) - 1; i <= parseInt(ctrl.currentPage()) + 1; i++) {
                     ctrl.paginators().push({
-                        text: i + 1,
+                        text: i,
                         url: function() {
                             ctrl.pageToGet(parseInt(this.text));
                             if (ctrl.pageToGet() !== ctrl.currentPage()) {

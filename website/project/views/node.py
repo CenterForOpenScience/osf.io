@@ -252,7 +252,6 @@ def node_fork_page(auth, node, **kwargs):
 def node_registrations(auth, node, **kwargs):
     return _view_project(node, auth, primary=True)
 
-
 @must_be_valid_project
 @must_be_contributor_or_public_but_not_anonymized
 def node_forks(auth, node, **kwargs):
@@ -363,7 +362,6 @@ def configure_comments(node, **kwargs):
 @process_token_or_pass
 def view_project(auth, node, **kwargs):
     primary = '/api/v1' not in request.path
-    ret = _view_project(node, auth, primary=primary)
 
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
     # Collect the URIs to the static assets for addons that have widgets
@@ -638,7 +636,6 @@ def _should_show_wiki_widget(node, user):
         return has_wiki and wiki_page and wiki_page.html(node)
     else:
         return has_wiki
-
 
 def _view_project(node, auth, primary=False):
     """Build a JSON object containing everything needed to render
@@ -1090,18 +1087,23 @@ def _serialize_node_search(node):
     :return: Dictionary of node data
 
     """
-    title = node.title
+    data = {
+        'id': node._id,
+        'title': node.title,
+        'etal': len(node.visible_contributors) > 1,
+        'isRegistration': node.is_registration
+    }
     if node.is_registration:
-        title += ' (registration)'
+        data['title'] += ' (registration)'
+        data['dateRegistered'] = node.registered_date.isoformat()
+    else:
+        data['dateCreated'] = node.date_created.isoformat()
+        data['dateModified'] = node.date_modified.isoformat()
 
     first_author = node.visible_contributors[0]
+    data['firstAuthor'] = first_author.family_name or first_author.given_name or first_author.full_name
 
-    return {
-        'id': node._id,
-        'title': title,
-        'firstAuthor': first_author.family_name or first_author.given_name or first_author.full_name,
-        'etal': len(node.visible_contributors) > 1,
-    }
+    return data
 
 
 @must_be_logged_in
