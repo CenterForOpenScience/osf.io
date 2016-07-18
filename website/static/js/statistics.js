@@ -48,6 +48,7 @@ var UserFacingChart = oop.defclass({
          */
         self.MAX_DISPLAY_ENTRIES = params.maxDisplayEntries || 10;
 
+        // prebuild html for showing spinner
         var spinnerHtml = '';
         spinnerHtml += '<div class="text-center">';
         spinnerHtml += '    <div class="logo-spin logo-lg"></div>';
@@ -88,6 +89,16 @@ var UserFacingChart = oop.defclass({
         };
         return baseQuery;
     },
+
+    /**
+     * Builds underlying dataviz object, binds it to the containingElement.  Inheriting classes
+     * should extend this method to set chart properties. Make sure to call the parent method!
+     *
+     * See: https://github.com/keen/keen-dataviz.js/tree/master/docs
+     *
+     * @method _initDataviz
+     * @return {KeenDataviz}
+     */
     _initDataviz: function() {
         var self = this;
         return new keenDataviz().el(self.containingElement);
@@ -109,8 +120,8 @@ var UserFacingChart = oop.defclass({
 
 
     /**
-     * Sets the date range over which the metric should apply.  Sets the startDate and endDate
-     * properties.  These 
+     * Sets the date range over which the metric should apply, specifically the startDate and
+     * endDate properties.
      *
      * @method setDataRange
      * @param {Date} startDate first day (inclusive) for which to display stats
@@ -123,18 +134,21 @@ var UserFacingChart = oop.defclass({
         self.endDate = endDate;
     },
 
+    // Fetch the DOM element the chart is rendered to.
     getElement: function() { return document.getElementById(this.containingElement.replace(/^#/, '')); },
+
+    // Put up a COS spinner in the chart container.
     startSpinner: function() { this.getElement().innerHTML = this._spinnerHtml; },
+
+    // Remove the COS spinner from the chart container.
     endSpinner: function() { this.getElement().innerHTML = ''; },
 
     /**
-     * Build a data chart on the page. The element on the page that the chart will be inserted into
-     * is defined in the `dataviz` parameter. A spinner will be displayed while the data is being
-     * loaded.  If an error is returned, it will be displayed within the chart element.
+     * Show a spinner, issue the query to keen, then render the chart  If an error is returned, it
+     * will be displayed within the chart element.
      *
      * @method buildChart
-     * @param {Keen.Dataviz} dataviz The Dataviz object that defines the look chart. See:
-     *                               https://github.com/keen/keen-dataviz.js/tree/master/docs
+     * @return {null}
      */
     buildChart: function() {
         var self = this;
@@ -338,7 +352,7 @@ var ChartPopularPages = oop.extend(UserFacingChart, {
             params: {
                 event_collection: 'pageviews',
                 target_property: 'anon.id',
-                group_by: 'page.title'
+                group_by: 'page.title',
             }
         };
     },
