@@ -135,7 +135,7 @@
                                     </div>
                                 </div>
                                 <div data-bind="if: emailSearch">
-                                    <p>It looks like you are trying to search by email address. If you search by name, you can add an unregistered contributor.</p>
+                                    <p>It looks like you are trying to search by email address. Please try your search again using your collaborator's name. You will be able to add users without OSF accounts as unregistered contributors.</p>
                                 </div>
                             </div>
                         </div><!-- ./col-md -->
