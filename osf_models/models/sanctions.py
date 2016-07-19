@@ -1,3 +1,6 @@
+import functools
+
+from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from osf_models.models import MetaSchema
 from osf_models.models.base import BaseModel
@@ -6,6 +9,10 @@ from django.db import models
 from osf_models.utils.datetime_aware_jsonfield import DatetimeAwareJSONField
 from website import (tokens, settings, mails)
 from website.exceptions import InvalidSanctionRejectionToken, InvalidSanctionApprovalToken
+
+from dateutil.parser import parse as parse_date
+
+from website.prereg import utils as prereg_utils
 
 VIEW_PROJECT_URL_TEMPLATE = settings.DOMAIN + '{node_id}/'
 
@@ -536,5 +543,445 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
         self.save()
 
 
+
+class Retraction(EmailApprovableSanction):
+    """
+    Retraction object for public registrations.
+    Externally (specifically in user-facing language) retractions should be referred to as "Withdrawals", i.e.
+    "Retract Registration" -> "Withdraw Registration", "Retracted" -> "Withdrawn", etc.
+    """
+
+    DISPLAY_NAME = 'Retraction'
+    SHORT_NAME = 'retraction'
+
+    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_RETRACTION_ADMIN
+    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_RETRACTION_NON_ADMIN
+
+    VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
+    APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
+    REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
+
+    initiated_by = models.ForeignKey('User', null=True)
+    justification = models.CharField(max_length=2048, null=True)
+
+    # def __repr__(self):
+        # return ('<Retraction(parent_registration={0}, initiated_by={1}) with _id {2}>'.format(self.node_set.get(), self.initiated_by, self._id))
+
+    def _view_url_context(self, user_id, node):
+        from website.project.model import Node
+
+        registration = Node.find_one(Q('retraction', 'eq', self))
+        return {
+            'node_id': registration._id
+        }
+
+    def _approval_url_context(self, user_id):
+        user_approval_state = self.approval_state.get(user_id, {})
+        approval_token = user_approval_state.get('approval_token')
+        if approval_token:
+            from website.project.model import Node
+
+            root_registration = Node.find_one(Q('retraction', 'eq', self))
+            node_id = user_approval_state.get('node_id', root_registration._id)
+            return {
+                'node_id': node_id,
+                'token': approval_token,
+            }
+
+    def _rejection_url_context(self, user_id):
+        user_approval_state = self.approval_state.get(user_id, {})
+        rejection_token = user_approval_state.get('rejection_token')
+        if rejection_token:
+            from website.project.model import Node
+
+            root_registration = Node.find_one(Q('retraction', 'eq', self))
+            node_id = user_approval_state.get('node_id', root_registration._id)
+            registration = Node.load(node_id)
+            return {
+                'node_id': registration.registered_from._id,
+                'token': rejection_token,
+            }
+
+    def _email_template_context(self, user, node, is_authorizer=False, urls=None):
+        urls = urls or self.stashed_urls.get(user._id, {})
+        registration_link = urls.get('view', self._view_url(user._id, node))
+        if is_authorizer:
+            from website.project.model import Node
+
+            approval_link = urls.get('approve', '')
+            disapproval_link = urls.get('reject', '')
+            approval_time_span = settings.RETRACTION_PENDING_TIME.days * 24
+
+            registration = Node.find_one(Q('retraction', 'eq', self))
+
+            return {
+                'is_initiator': self.initiated_by == user,
+                'initiated_by': self.initiated_by.fullname,
+                'project_name': registration.title,
+                'registration_link': registration_link,
+                'approval_link': approval_link,
+                'disapproval_link': disapproval_link,
+                'approval_time_span': approval_time_span,
+            }
+        else:
+            return {
+                'initiated_by': self.initiated_by.fullname,
+                'registration_link': registration_link,
+            }
+
+    def _on_reject(self, user):
+        from website.project.model import Node, NodeLog
+
+        parent_registration = Node.find_one(Q('retraction', 'eq', self))
+        parent_registration.registered_from.add_log(
+            action=NodeLog.RETRACTION_CANCELLED,
+            params={
+                'node': parent_registration.registered_from_id,
+                'registration': parent_registration._id,
+                'retraction_id': self._id,
+            },
+            auth=Auth(user),
+            save=True,
+        )
+
+    def _on_complete(self, user):
+        from website.project.model import Node, NodeLog
+
+        parent_registration = Node.find_one(Q('retraction', 'eq', self))
+        parent_registration.registered_from.add_log(
+            action=NodeLog.RETRACTION_APPROVED,
+            params={
+                'node': parent_registration.registered_from_id,
+                'retraction_id': self._id,
+                'registration': parent_registration._id
+            },
+            auth=Auth(self.initiated_by),
+        )
+        # Remove any embargoes associated with the registration
+        if parent_registration.embargo_end_date or parent_registration.is_pending_embargo:
+            parent_registration.embargo.state = self.REJECTED
+            parent_registration.registered_from.add_log(
+                action=NodeLog.EMBARGO_CANCELLED,
+                params={
+                    'node': parent_registration.registered_from_id,
+                    'registration': parent_registration._id,
+                    'embargo_id': parent_registration.embargo._id,
+                },
+                auth=Auth(self.initiated_by),
+            )
+            parent_registration.embargo.save()
+        # Ensure retracted registration is public
+        # Pass auth=None because the registration initiator may not be
+        # an admin on components (component admins had the opportunity
+        # to disapprove the retraction by this point)
+        for node in parent_registration.node_and_primary_descendants():
+            node.set_privacy('public', auth=None, save=True, log=False)
+            node.update_search()
+
+    def approve_retraction(self, user, token):
+        self.approve(user, token)
+
+    def disapprove_retraction(self, user, token):
+        self.reject(user, token)
+
+
 class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
-    pass
+    DISPLAY_NAME = 'Approval'
+    SHORT_NAME = 'registration_approval'
+
+    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_REGISTRATION_ADMIN
+    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_REGISTRATION_NON_ADMIN
+
+    VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
+    APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
+    REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
+
+    initiated_by = models.ForeignKey('User', null=True)
+
+    def _get_registration(self):
+        from website.project.model import Node
+
+        return Node.find_one(Q('registration_approval', 'eq', self))
+
+    def _view_url_context(self, user_id, node):
+        user_approval_state = self.approval_state.get(user_id, {})
+        node_id = user_approval_state.get('node_id', node._id)
+        return {
+            'node_id': node_id
+        }
+
+    def _approval_url_context(self, user_id):
+        user_approval_state = self.approval_state.get(user_id, {})
+        approval_token = user_approval_state.get('approval_token')
+        if approval_token:
+            registration = self._get_registration()
+            node_id = user_approval_state.get('node_id', registration._id)
+            return {
+                'node_id': node_id,
+                'token': approval_token,
+            }
+
+    def _rejection_url_context(self, user_id):
+        user_approval_state = self.approval_state.get(user_id, {})
+        rejection_token = self.approval_state.get(user_id, {}).get('rejection_token')
+        if rejection_token:
+            from website.project.model import Node
+
+            root_registration = self._get_registration()
+            node_id = user_approval_state.get('node_id', root_registration._id)
+            registration = Node.load(node_id)
+            return {
+                'node_id': registration.registered_from._id,
+                'token': rejection_token,
+            }
+
+    def _email_template_context(self, user, node, is_authorizer=False, urls=None):
+        context = super(RegistrationApproval, self)._email_template_context(user, node, is_authorizer, urls)
+        urls = urls or self.stashed_urls.get(user._id, {})
+        registration_link = urls.get('view', self._view_url(user._id, node))
+        if is_authorizer:
+            approval_link = urls.get('approve', '')
+            disapproval_link = urls.get('reject', '')
+
+            approval_time_span = settings.REGISTRATION_APPROVAL_TIME.days * 24
+
+            registration = self._get_registration()
+
+            context.update({
+                'is_initiator': self.initiated_by == user,
+                'initiated_by': self.initiated_by.fullname,
+                'registration_link': registration_link,
+                'approval_link': approval_link,
+                'disapproval_link': disapproval_link,
+                'approval_time_span': approval_time_span,
+                'project_name': registration.title,
+            })
+        else:
+            context.update({
+                'initiated_by': self.initiated_by.fullname,
+                'registration_link': registration_link,
+            })
+        return context
+
+    def _add_success_logs(self, node, user):
+        from website.project.model import NodeLog
+
+        src = node.registered_from
+        src.add_log(
+            action=NodeLog.PROJECT_REGISTERED,
+            params={
+                'parent_node': src.parent_id,
+                'node': src._primary_key,
+                'registration': node._primary_key,
+            },
+            auth=Auth(user),
+            save=False
+        )
+        src.save()
+
+    def _on_complete(self, user):
+        from website.project.model import NodeLog
+
+        super(RegistrationApproval, self)._on_complete(user)
+        self.state = Sanction.APPROVED
+        register = self._get_registration()
+        registered_from = register.registered_from
+        # Pass auth=None because the registration initiator may not be
+        # an admin on components (component admins had the opportunity
+        # to disapprove the registration by this point)
+        register.set_privacy('public', auth=None, log=False)
+        for child in register.get_descendants_recursive(lambda n: n.primary):
+            child.set_privacy('public', auth=None, log=False)
+        # Accounts for system actions where no `User` performs the final approval
+        auth = Auth(user) if user else None
+        registered_from.add_log(
+            action=NodeLog.REGISTRATION_APPROVAL_APPROVED,
+            params={
+                'node': registered_from._id,
+                'registration': register._id,
+                'registration_approval_id': self._id,
+            },
+            auth=auth,
+        )
+        for node in register.root.node_and_primary_descendants():
+            self._add_success_logs(node, user)
+            node.update_search()  # update search if public
+
+        self.save()
+
+    def _on_reject(self, user):
+        from website.project.model import NodeLog
+
+        register = self._get_registration()
+        registered_from = register.registered_from
+        register.delete_registration_tree(save=True)
+        registered_from.add_log(
+            action=NodeLog.REGISTRATION_APPROVAL_CANCELLED,
+            params={
+                'node': registered_from._id,
+                'registration': register._id,
+                'registration_approval_id': self._id,
+            },
+            auth=Auth(user),
+        )
+
+
+class DraftRegistrationApproval(Sanction):
+    mode = Sanction.ANY
+
+    # Since draft registrations that require approval are not immediately registered,
+    # meta stores registration_choice and embargo_end_date (when applicable)
+    meta = DatetimeAwareJSONField(default={})
+
+    def _send_rejection_email(self, user, draft):
+        schema = draft.registration_schema
+        prereg_schema = prereg_utils.get_prereg_schema()
+
+        if schema._id == prereg_schema._id:
+            mails.send_mail(
+                user.username,
+                mails.PREREG_CHALLENGE_REJECTED,
+                user=user,
+                draft_url=draft.absolute_url
+            )
+        else:
+            raise NotImplementedError(
+                'TODO: add a generic email template for registration approvals'
+            )
+
+    def approve(self, user):
+        if settings.PREREG_ADMIN_TAG not in user.system_tags:
+            raise PermissionsError("This user does not have permission to approve this draft.")
+        self.state = Sanction.APPROVED
+        self._on_complete(user)
+
+    def reject(self, user):
+        if settings.PREREG_ADMIN_TAG not in user.system_tags:
+            raise PermissionsError("This user does not have permission to approve this draft.")
+        self.state = Sanction.REJECTED
+        self._on_reject(user)
+
+    def _on_complete(self, user):
+        from website.project.model import DraftRegistration
+
+        draft = DraftRegistration.find_one(
+            Q('approval', 'eq', self)
+        )
+        auth = Auth(draft.initiator)
+        registration = draft.register(
+            auth=auth,
+            save=True
+        )
+        registration_choice = self.meta['registration_choice']
+
+        if registration_choice == 'immediate':
+            sanction = functools.partial(registration.require_approval, draft.initiator)
+        elif registration_choice == 'embargo':
+            sanction = functools.partial(
+                registration.embargo_registration,
+                draft.initiator,
+                parse_date(self.meta.get('embargo_end_date'), ignoretz=True)
+            )
+        else:
+            raise ValueError("'registration_choice' must be either 'embargo' or 'immediate'")
+        sanction(notify_initiator_on_complete=True)
+
+    def _on_reject(self, user, *args, **kwargs):
+        from website.project.model import DraftRegistration
+
+        # clear out previous registration options
+        self.meta = {}
+        self.save()
+
+        draft = DraftRegistration.find_one(
+            Q('approval', 'eq', self)
+        )
+        self._send_rejection_email(draft.initiator, draft)
+
+
+class EmbargoTerminationApproval(EmailApprovableSanction):
+    DISPLAY_NAME = 'Embargo Termination Request'
+    SHORT_NAME = 'embargo_termination_approval'
+
+    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_EMBARGO_TERMINATION_ADMIN
+    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_EMBARGO_TERMINATION_NON_ADMIN
+
+    VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
+    APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
+    REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
+
+    embargoed_registration = models.ForeignKey('node')
+
+    def _get_registration(self):
+        return self.embargoed_registration
+
+    def _view_url_context(self, user_id, node):
+        registration = node or self._get_registration()
+        return {
+            'node_id': registration._id
+        }
+
+    def _approval_url_context(self, user_id):
+        user_approval_state = self.approval_state.get(user_id, {})
+        approval_token = user_approval_state.get('approval_token')
+        if approval_token:
+            registration = self._get_registration()
+            node_id = user_approval_state.get('node_id', registration._id)
+            return {
+                'node_id': node_id,
+                'token': approval_token,
+            }
+
+    def _rejection_url_context(self, user_id):
+        user_approval_state = self.approval_state.get(user_id, {})
+        rejection_token = user_approval_state.get('rejection_token')
+        if rejection_token:
+            root_registration = self._get_registration()
+            node_id = user_approval_state.get('node_id', root_registration._id)
+            return {
+                'node_id': node_id,
+                'token': rejection_token,
+            }
+
+    def _email_template_context(self, user, node, is_authorizer=False, urls=None):
+        context = super(EmbargoTerminationApproval, self)._email_template_context(
+            user,
+            node,
+            is_authorizer=is_authorizer
+        )
+        urls = urls or self.stashed_urls.get(user._id, {})
+        registration_link = urls.get('view', self._view_url(user._id, node))
+        if is_authorizer:
+            approval_link = urls.get('approve', '')
+            disapproval_link = urls.get('reject', '')
+            approval_time_span = settings.EMBARGO_TERMINATION_PENDING_TIME.days * 24
+
+            registration = self._get_registration()
+
+            context.update({
+                'is_initiator': self.initiated_by == user,
+                'initiated_by': self.initiated_by.fullname,
+                'approval_link': approval_link,
+                'project_name': registration.title,
+                'disapproval_link': disapproval_link,
+                'registration_link': registration_link,
+                'embargo_end_date': self.end_date,
+                'approval_time_span': approval_time_span,
+            })
+        else:
+            context.update({
+                'initiated_by': self.initiated_by.fullname,
+                'registration_link': registration_link,
+                'embargo_end_date': self.end_date,
+            })
+        return context
+
+    def _on_complete(self, user=None):
+        super(EmbargoTerminationApproval, self)._on_complete(user)
+        registration = self._get_registration()
+        registration.terminate_embargo(Auth(user) if user else None)
+
+    def _on_reject(self, user=None):
+        # Just forget this ever happened.
+        self.embargoed_registration.embargo_termination_approval = None
+        self.embargoed_registration.save()

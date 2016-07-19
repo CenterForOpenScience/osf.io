@@ -9,3 +9,4 @@ from osf_models.models.node import Node  # noqa
 from osf_models.models.nodelog import NodeLog  # noqa
 from osf_models.models.tag import Tag  # noqa
 from osf_models.models.sanctions import Embargo  # noqa
+from osf_models.models.sanctions import Retraction  # noqa
