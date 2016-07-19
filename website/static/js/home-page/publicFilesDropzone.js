@@ -54,7 +54,7 @@ var PublicFilesDropzone = {
                         'a collaborative work or large presentation consider creating a project, this will give you access' +
                         ' to a large array of features and services.', 'warning', 30000);
                     }
-                    $( "#createNewProjectBtn" ).effect("highlight", {}, 3000);
+                    $('#createNewProjectBtn' ).effect('highlight', {}, 3000);
                     this.removeFile(file);
                 }
             },
@@ -169,7 +169,7 @@ var PublicFilesDropzone = {
                     $osf.growl('Upload Failed', file.name + ' could not be uploaded. <br> The file is ' + fileSizeMB + ' MB,' +
                         ' which exceeds the max file size of ' + this.options.maxFilesize + ' MB to upload a larger file' +
                         ' use a project', 'danger', 5000);
-                    $( "#createNewProjectBtn" ).effect('highlight', {}, 3000);
+                    $( '#createNewProjectBtn' ).effect('highlight', {}, 3000);
 
                 }
             },
