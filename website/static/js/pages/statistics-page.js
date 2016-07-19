@@ -73,7 +73,7 @@ keenAnalysis.ready(function(){
         new ProjectUsageStatistics.ChartPopularPages(
             $.extend({}, authParams, {
                 containingElement: '#popularPages',
-                nodeTitle: window.contextVars.node.title,
+                nodeId: window.contextVars.node.id,
             })
         ),
     ];
