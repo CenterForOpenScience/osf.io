@@ -244,7 +244,19 @@ var SignUpViewModel = oop.extend(BaseViewModel, {
 
 /** Wrapper classes */
 var ChangePassword = function(selector) {
-    $osf.applyBindings(new ChangePasswordViewModel(), selector);
+    this.ChangePasswordViewModel = new ChangePasswordViewModel();
+    $osf.applyBindings(this.ChangePasswordViewModel, selector);
+        // Necessary to prevent enter submitting forms with invalid frontend zxcvbn validation
+        $(selector).keypress(
+            event => {
+            // If the enter key is pressed to submit a form, check if the password is valid
+            if (event.which === 13) {
+                    if (!this.ChangePasswordViewModel.password.isValid()) {
+                        return false;
+                    }
+                }
+            }
+        )
 };
 
 var SetPassword = function(selector) {
