@@ -121,6 +121,28 @@ var SetPasswordViewModel = oop.extend(BaseViewModel, {
         var self = this;
         // Call constructor at the begining so that self.password exists
         self.super.constructor.call(this);
+
+        // pick up the email from contextVars if we can't get it from first typing it in
+        self.email1 = ko.observable(window.contextVars.username || '').extend({
+            required: true,
+            email: true
+        });
+
+        self.password.extend({
+            validation: {
+                validator: function(val, other) {
+                    if (String(val).toLowerCase() === String(other).toLowerCase()) {
+                        self.typedPassword(' ');
+                        return false;
+                    } else {
+                        return true;
+                    }
+                },
+                'message': 'Your password cannot be the same as your email address.',
+                params: self.email1
+            }
+        });
+
         self.passwordConfirmation = ko.observable('').extend({
             required: true,
             validation: {
@@ -276,7 +298,6 @@ var SetPassword = function(selector) {
 };
 
 var SignUp = function(selector) {
-    $osf.applyBindings(new SignUpViewModel(), selector);
     this.SignUpViewModel = new SignUpViewModel();
     $osf.applyBindings(this.SignUpViewModel, selector);
         // Necessary to prevent enter submitting forms with invalid frontend zxcvbn validation
