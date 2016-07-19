@@ -194,9 +194,9 @@ var PublicFilesDropzone = {
         });
         $publicFiles.hide();
 
-        $('#ShareButton').click(function () {
+        $('#glyphchevron').click(function () {
                 $publicFiles.stop().slideToggle();
-                $('#glyphchevron').toggleClass('fa fa-chevron-down fa fa-chevron-up');
+                $('#glyphchevron').toggleClass('glyphicon-menu-down glyphicon-menu-up');
             }
         );
 
@@ -207,8 +207,9 @@ var PublicFilesDropzone = {
             return [
                 m('h2.col-xs-6', 'Dashboard'),
                 m('m-b-lg.pull-right',
-                    m('button.btn.btn-primary.m-t-md.m-r-sm.f-w-xl #ShareButton',
-                        'Upload Public Files ', m('span.fa.fa-chevron-down #glyphchevron')
+                    m('.btn-group.m-t-md.m-r-sm.f-w-xl',
+                        m('a.btn.btn-primary', {href: '/public_files'}, 'My Public Files '),
+                        m('button.btn.btn-primary.glyphicon.glyphicon-menu-down #glyphchevron', {style : {top : '0px'}})
                     ),
                     m.component(AddProject, {
                             buttonTemplate: m('button.btn.btn-success.btn-success-high-contrast.m-t-md.f-w-xl.pull-right[data-toggle="modal"][data-target="#addProjectFromHome"] #createNewProjectBtn',
@@ -236,7 +237,7 @@ var PublicFilesDropzone = {
                         onclick: function () {
                             $('#publicFilesDropzone').hide();
                             $('div.dz-preview').remove();
-                            $('#glyphchevron').toggleClass('fa fa-chevron-up fa fa-chevron-down');
+                            $('#glyphchevron').toggleClass('glyphicon-menu-down glyphicon-menu-down');
                         }
                     }
                 )
@@ -304,7 +305,7 @@ var PublicFilesDropzone = {
                             onclick: function () {
                                 $('#publicFilesDropzone').hide();
                                 $('div.dz-preview').remove();
-                                $('#glyphchevron').toggleClass('fa fa-chevron-up fa fa-chevron-down');
+                                $('#glyphchevron').toggleClass('glyphicon glyphicon-menu-up glyphicon glyphicon-menu-down');
                             }
                         }, 'Done')
                     )
