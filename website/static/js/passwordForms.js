@@ -119,6 +119,8 @@ var ChangePasswordViewModel = oop.extend(BaseViewModel, {
 var SetPasswordViewModel = oop.extend(BaseViewModel, {
     constructor: function () {
         var self = this;
+        // Call constructor at the begining so that self.password exists
+        self.super.constructor.call(this);
         self.passwordConfirmation = ko.observable('').extend({
             required: true,
             validation: {
@@ -129,7 +131,6 @@ var SetPasswordViewModel = oop.extend(BaseViewModel, {
                 params: self.password
             }
         });
-        self.super.constructor.call(this);
     }
 });
 
