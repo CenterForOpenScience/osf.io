@@ -603,37 +603,6 @@ def replace_unclaimed_user_with_registered(user):
 
 
 @collect_auth
-def claim_user_form_get(auth, uid=None, pid=None, token=None, **kwargs):
-    """
-
-    :param auth:
-    :param uid:
-    :param pid:
-    :param token:
-    :param kwargs:
-    :return:
-    """
-
-    pass
-
-
-@collect_auth
-
-def claim_user_form_post(auth, uid=None, pid=None, token=None, **kwargs):
-    """
-
-    :param auth:
-    :param uid:
-    :param pid:
-    :param token:
-    :param kwargs:
-    :return:
-    """
-
-    pass
-
-
-@collect_auth
 def claim_user_form(auth, **kwargs):
     """
     View for rendering the set password page for a claimed user.
