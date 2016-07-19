@@ -248,7 +248,19 @@ var ChangePassword = function(selector) {
 };
 
 var SetPassword = function(selector) {
-    $osf.applyBindings(new SetPasswordViewModel(), selector);
+    this.setPasswprdViewModel = new SetPasswordViewModel();
+    $osf.applyBindings(this.setPasswprdViewModel, selector);
+        // Necessary to prevent enter submitting forms with invalid frontend zxcvbn validation
+        $(selector).keypress(
+            event => {
+            // If the enter key is pressed to submit a form, check if the password is valid
+            if (event.which === 13) {
+                    if (!this.setPasswprdViewModel.password.isValid()) {
+                        return false;
+                    }
+                }
+            }
+        )
 };
 
 var SignUp = function(selector) {
