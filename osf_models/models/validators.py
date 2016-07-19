@@ -1,6 +1,6 @@
 from django.core.exceptions import ValidationError
 
-from website.util import sanitize
+from osf_models.utils.base import strip_html
 
 
 def validate_title(value):
@@ -10,7 +10,7 @@ def validate_title(value):
     if value is None or not value.strip():
         raise ValidationError('Title cannot be blank.')
 
-    value = sanitize.strip_html(value)
+    value = strip_html(value)
 
     if value is None or not value.strip():
         raise ValidationError('Invalid title.')
