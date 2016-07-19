@@ -13,6 +13,8 @@ setup(name='osf_models',
       install_requires=[
         'django>=1.9',
         'psycopg2',
-        'django-extensions==1.6.1'
+        'django-extensions==1.6.1',
+        'pymongo==2.5.1',
+        'git+https://github.com/CenterForOpenScience/modular-odm.git@master'
       ],
       zip_safe=False)
