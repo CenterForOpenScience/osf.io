@@ -80,9 +80,9 @@ def server(ctx, host=None, port=5000, debug=True, live=False, gitlogs=False):
 
 
 @task
-def git_logs(ctx):
+def git_logs(ctx, branch=None):
     from scripts.meta import gatherer
-    gatherer.main()
+    gatherer.main(branch=branch)
 
 
 @task
