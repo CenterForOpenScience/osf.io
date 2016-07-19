@@ -73,11 +73,11 @@ class BaseModel(models.Model):
         abstract = True
 
     @classmethod
-    def load(cls, id):
+    def load(cls, data):
         try:
             if issubclass(cls, GuidMixin):
-                return cls.objects.get(_guid__guid=id)
-            return cls.objects.getQ(pk=id)
+                return cls.objects.get(_guid__guid=data)
+            return cls.objects.getQ(pk=data)
         except cls.DoesNotExist:
             return None
 
@@ -93,3 +93,7 @@ class BaseModel(models.Model):
     @classmethod
     def find(cls, query):
         return cls.objects.filter(query.to_django_query())
+
+    @property
+    def _primary_name(self):
+        return '_id'
