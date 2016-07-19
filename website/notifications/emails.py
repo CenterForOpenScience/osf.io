@@ -49,7 +49,8 @@ def notify_mentions(event, user, node, timestamp, **context):
     sent_users = []
     new_mentions = context.get('new_mentions', [])
     for m in new_mentions:
-        subscriptions = get_user_subscriptions(user, event_type)
+        mentioned_user = website_models.User.load(m)
+        subscriptions = get_user_subscriptions(mentioned_user, event_type)
         for notification_type in subscriptions:
             if notification_type != 'none' and subscriptions[notification_type] and m in subscriptions[notification_type]:
                 store_emails([m], notification_type, 'mentions', user, node,
