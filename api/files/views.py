@@ -300,12 +300,8 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
 
     ##Query Params
 
-    For this endpoint,
-
-    + giveGuid={bool} if true will give the file metadata a guid, a unique identifier for internal use. You must be an
-
-    admin on the node to force the API to create a guid for your file.
-
+     For this endpoint, *none*.  Actions may permit or require certain query parameters.  See the individual action
+     documentation.
 
     #This Request/Response
 
