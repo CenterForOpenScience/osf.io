@@ -370,7 +370,7 @@ def send_claim_registered_email(claimer, unreg_user, node, throttle=24 * 3600):
             message_long='User account can only be claimed with an existing user once every 24 hours'
         ))
     unclaimed_record['token'] = generate_verification_key()
-    unclaimed_record['expires'] = dt.datetime.utcnow() + dt.timedelta(days=30)
+    unclaimed_record['expires'] = dt.datetime.utcnow() + dt.timedelta(days=settings.CLAIM_TOKEN_EXPIRATION)
     unclaimed_record['claimer_email'] = claimer.username
     unreg_user.save()
     referrer = User.load(unclaimed_record['referrer_id'])
@@ -437,7 +437,7 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
             ))
         unclaimed_record['last_sent'] = get_timestamp()
         unclaimed_record['token'] = generate_verification_key()
-        unclaimed_record['expires'] = dt.datetime.utcnow() + dt.timedelta(days=30)
+        unclaimed_record['expires'] = dt.datetime.utcnow() + dt.timedelta(days=settings.CLAIM_TOKEN_EXPIRATION)
         unclaimed_record['claimer_email'] = claimer_email
         user.save()
         claim_url = user.get_claim_url(node._primary_key, external=True)

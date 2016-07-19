@@ -51,7 +51,7 @@ def generate_verification_key():
 # verification key v2, expires in 30 minutes
 def generate_verification_key_v2():
     token = security.random_string(30)
-    expires = dt.datetime.utcnow() + dt.timedelta(minutes=30)
+    expires = dt.datetime.utcnow() + dt.timedelta(minutes=settings.VERIFICATION_KEY_V2_EXPIRATION)
     return {
         'token': token,
         'expires': expires,
@@ -646,7 +646,7 @@ class User(GuidStoredObject, AddonModelMixin):
             'name': given_name,
             'referrer_id': referrer_id,
             'token': generate_verification_key(),
-            'expires': dt.datetime.utcnow() + dt.timedelta(days=30),
+            'expires': dt.datetime.utcnow() + dt.timedelta(days=settings.CLAIM_TOKEN_EXPIRATION),
             'email': clean_email
         }
         self.unclaimed_records[project_id] = record
@@ -703,8 +703,7 @@ class User(GuidStoredObject, AddonModelMixin):
             record = self.get_unclaimed_record(project_id)
         except ValueError:  # No unclaimed record for given pid
             return False
-        # TODO: add `expires` check after fix contributo logic
-        return record['token'] == token  # and record['expires'] > dt.datetime.utcnow()
+        return record['token'] == token and record['expires'] > dt.datetime.utcnow()
 
     def get_claim_url(self, project_id, external=False):
         """
