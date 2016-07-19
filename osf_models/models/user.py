@@ -3,11 +3,10 @@ from .base import BaseModel, GuidMixin
 from django.db import models
 from .tag import Tag
 from osf_models.utils.datetime_aware_jsonfield import DatetimeAwareJSONField
-from website import settings
 
 
 def get_default_mailing_lists():
-    return {settings.OSF_HELP_LIST: True}
+    return {'Open Science Framework Help': True}
 
 
 class User(GuidMixin, BaseModel):

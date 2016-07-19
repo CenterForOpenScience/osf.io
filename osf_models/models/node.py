@@ -14,9 +14,9 @@ from osf_models.models.validators import validate_title
 from osf_models.utils.datetime_aware_jsonfield import DatetimeAwareJSONField
 from .base import BaseModel, GuidMixin
 
-from website.util import api_v2_url
+from osf_models.utils.base import api_v2_url
 
-from website import settings
+from osf_models.app import ModelsConfig as app_config
 
 
 class Node(GuidMixin, BaseModel):
@@ -199,7 +199,7 @@ class Node(GuidMixin, BaseModel):
     def absolute_url(self):
         if not self.url:
             return None
-        return urlparse.urljoin(settings.DOMAIN, self.url)
+        return urlparse.urljoin(app_config.domain, self.url)
 
     def get_absolute_url(self):
         return self.absolute_api_v2_url
