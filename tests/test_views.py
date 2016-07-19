@@ -3198,10 +3198,6 @@ class TestAuthViews(OsfTestCase):
                                                        auth.signals.unconfirmed_user_created]))
         assert_true(mock_send_confirm_email.called)
 
-    def test_resend_confirmation_get(self):
-        res = self.app.get('/resend/')
-        assert_equal(res.status_code, 200)
-
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_resend_confirmation(self, send_mail):
         email = 'test@example.com'
