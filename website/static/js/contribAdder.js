@@ -444,6 +444,7 @@ AddContributorViewModel = oop.extend(Paginator, {
     clear: function () {
         var self = this;
         self.page('whom');
+        self.parentImport(false);
         self.query('');
         self.results([]);
         self.selection([]);
