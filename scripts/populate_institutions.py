@@ -331,7 +331,7 @@ def main(env):
                 'description': None,
                 'banner_name': 'vt-banner.png',
                 'logo_name': 'vt-shield.png',
-                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:vt.edu')),
+                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shib-pprd.middleware.vt.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['osf.vt.edu'],
                 'email_domains': [],
