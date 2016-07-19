@@ -26,15 +26,16 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase)
     UserSettingsFactory = BoxUserSettingsFactory
 
     def setUp(self):
-        self.mock_update_data = mock.patch.object(
+        self.mock_data = mock.patch.object(
             BoxNodeSettings,
-            '_update_folder_data'
+            '_folder_data',
+            return_value=('12235', '/Foo')
         )
-        self.mock_update_data.start()
+        self.mock_data.start()
         super(TestNodeSettings, self).setUp()
 
     def tearDown(self):
-        self.mock_update_data.stop()
+        self.mock_data.stop()
         super(TestNodeSettings, self).tearDown()
 
     def test_folder_defaults_to_none(self):
