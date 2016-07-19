@@ -328,7 +328,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     def get_object(self):
         user = get_user_auth(self.request).user
 
-        if self.request.GET.get('giveGuid', False) and self.get_node().has_permission(user, 'admin'):
+        if self.request.GET.get('create_guid', False) and self.get_node().has_permission(user, 'admin'):
             self.get_file(check_permissions=True).get_guid(create=True)
 
         return self.get_file()
