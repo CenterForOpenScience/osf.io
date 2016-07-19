@@ -268,11 +268,11 @@ AddContributorViewModel = oop.extend(Paginator, {
                 var pageToShow = [];
                 var startingSpot = (self.pageToGet() * 5);
                 if (contributors.length > startingSpot + 5){
-                    for (var iterate = startingSpot; i < startingSpot + 5; i++) {
+                    for (var iterate = startingSpot; iterate < startingSpot + 5; iterate++) {
                         pageToShow.push(contributors[iterate]);
                     }
                 } else {
-                    for (var iterateTwo = startingSpot; i < contributors.length; i++) {
+                    for (var iterateTwo = startingSpot; iterateTwo < contributors.length; iterateTwo++) {
                         pageToShow.push(contributors[iterateTwo]);
                     }
                 }
