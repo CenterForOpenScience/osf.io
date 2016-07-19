@@ -35,6 +35,7 @@ class TestNodeSerializer(DbTestCase):
         assert_equal(attributes['description'], node.description)
         assert_equal(attributes['public'], node.is_public)
         assert_equal(attributes['tags'], [str(each) for each in node.tags])
+        assert_equal(attributes['current_user_can_comment'], False)
         assert_equal(attributes['category'], node.category)
         assert_equal(attributes['registration'], node.is_registration)
         assert_equal(attributes['fork'], node.is_fork)

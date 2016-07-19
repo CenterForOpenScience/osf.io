@@ -5,8 +5,9 @@ import pytz
 
 from modularodm import Q
 
-from framework.auth.core import User
+from framework.auth.core import Auth, User
 from website import settings
+
 from website.files.models import FileNode
 from website.project.model import Comment
 from website.util import api_v2_url
@@ -133,6 +134,7 @@ class FileSerializer(JSONAPISerializer):
     date_created = ser.SerializerMethodField(read_only=True, help_text='Timestamp when the file was created')
     extra = ser.SerializerMethodField(read_only=True, help_text='Additional metadata about this file')
     tags = JSONAPIListField(child=FileTagField(), required=False)
+    current_user_can_comment = ser.SerializerMethodField(help_text='Whether the current user is allowed to post comments')
 
     files = NodeFileHyperLinkField(
         related_view='nodes:node-files',
@@ -207,6 +209,11 @@ class FileSerializer(JSONAPISerializer):
             'sha256': metadata.get('sha256', None),
         }
         return extras
+
+    def get_current_user_can_comment(self, obj):
+        user = self.context['request'].user
+        auth = Auth(user if not user.is_anonymous() else None)
+        return obj.node.can_comment(auth)
 
     def get_unread_comments_count(self, obj):
         user = self.context['request'].user
