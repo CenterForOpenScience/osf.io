@@ -35,7 +35,7 @@ var Paginator = oop.defclass({
                 handler: function() {
                     self.pageToGet(0);
                     if (self.pageToGet() !== self.currentPage()) {
-                        if (isFromParent == true){
+                        if (isFromParent === true){
                             self.importFromParent();
                         } else {
                             self.fetchResults();
@@ -51,7 +51,7 @@ var Paginator = oop.defclass({
                         handler: function() {
                             self.pageToGet(parseInt(this.text) - 1);
                             if (self.pageToGet() !== self.currentPage()) {
-                                if (isFromParent == true){
+                                if (isFromParent === true){
                                     self.importFromParent();
                                 } else {
                                     self.fetchResults();
@@ -69,7 +69,7 @@ var Paginator = oop.defclass({
                         handler: function() {
                             self.pageToGet(parseInt(this.text) - 1);
                             if (self.pageToGet() !== self.currentPage()) {
-                                if (isFromParent == true){
+                                if (isFromParent === true){
                                     self.importFromParent();
                                 } else {
                                     self.fetchResults();
@@ -98,7 +98,7 @@ var Paginator = oop.defclass({
                         handler: function() {
                             self.pageToGet(parseInt(this.text) - 1);
                             if (self.pageToGet() !== self.currentPage()) {
-                                if (isFromParent == true){
+                                if (isFromParent === true){
                                     self.importFromParent();
                                 } else {
                                     self.fetchResults();
@@ -122,7 +122,7 @@ var Paginator = oop.defclass({
                         handler: function() {
                             self.pageToGet(parseInt(this.text) - 1);
                             if (self.pageToGet() !== self.currentPage()) {
-                                if (isFromParent == true){
+                                if (isFromParent === true){
                                     self.importFromParent();
                                 } else {
                                     self.fetchResults();
@@ -145,7 +145,7 @@ var Paginator = oop.defclass({
                 handler: function() {
                     self.pageToGet(self.numberOfPages() - 1);
                     if (self.pageToGet() !== self.currentPage()) {
-                        if (isFromParent == true){
+                        if (isFromParent === true){
                             self.importFromParent();
                         } else {
                             self.fetchResults();
