@@ -7,7 +7,8 @@ from modularodm import Q
 
 from osf_models.models.contributor import Contributor
 from osf_models.models import MetaSchema
-from osf_models.models.sanctions import Embargo, RegistrationApproval, Retraction
+# TODO Add back in once dependencies are resolved
+# from osf_models.models.sanctions import Embargo, RegistrationApproval, Retraction
 from osf_models.models.tag import Tag
 from osf_models.models.user import User
 from osf_models.models.validators import validate_title
@@ -67,9 +68,10 @@ class Node(GuidMixin, BaseModel):
     registered_schema = models.ManyToManyField(MetaSchema)
 
     registered_meta = DatetimeAwareJSONField(default={})
-    registration_approval = models.ForeignKey(RegistrationApproval, null=True)
-    retraction = models.ForeignKey(Retraction, null=True)
-    embargo = models.ForeignKey(Embargo, null=True)
+    # TODO Add back in once dependencies are resolved
+    # registration_approval = models.ForeignKey(RegistrationApproval, null=True)
+    # retraction = models.ForeignKey(Retraction, null=True)
+    # embargo = models.ForeignKey(Embargo, null=True)
 
     is_fork = models.BooleanField(default=False, db_index=True)
     forked_date = models.DateTimeField(db_index=True, null=True)
