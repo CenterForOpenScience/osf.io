@@ -39,10 +39,12 @@ var KeenTracker = (function() {
 
         var user = window.contextVars.currentUser;
         var node = window.contextVars.node;
+        var pageMeta = lodashGet(window.contextVars, 'analyticsMeta.pageMeta');
         return {
             page: {
                 title: document.title,
                 url: document.URL,
+                meta: pageMeta,
                 info: {},
             },
             referrer: {
@@ -206,7 +208,8 @@ var KeenTracker = (function() {
 
             self.trackPageView = function () {
                 var self = this;
-                if (window.contextVars.node && window.contextVars.node.isPublic) {
+                if (lodashGet(window.contextVars, 'node').isPublic &&
+                    lodashGet(window.contextVars, 'analyticsMeta.pageMeta').public) {
                     self.trackPublicEvent('pageviews', {});
                 }
                 self.trackPrivateEvent('pageviews', {});

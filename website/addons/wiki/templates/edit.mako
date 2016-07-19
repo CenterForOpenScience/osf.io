@@ -389,6 +389,12 @@ ${parent.javascript_bottom()}
             userGravatar: ${ urls['gravatar'] | sjson, n }.replace('&amp;', '&')
         }
     };
+    window.contextVars.analyticsMeta = $.extend(true, {}, window.contextVars.analyticsMeta, {
+        pageMeta: {
+            title: 'Wiki: ' + ${wiki_name | sjson, n },
+            public: true,
+        },
+    });
 
 </script>
 <script src="//${sharejs_url}/text.js"></script>
