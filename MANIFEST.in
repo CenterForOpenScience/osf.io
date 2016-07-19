@@ -1,0 +1,3 @@
+include *.ipynb
+include *.py
+recursive-include osf_models *.py
