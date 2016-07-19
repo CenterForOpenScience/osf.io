@@ -104,12 +104,6 @@ class UserFactory(ModularOdmFactory):
     verification_key = None
 
     @post_generation
-    def create_public_files_collection(self, create, extracted):
-        from website.project import new_public_files_collection
-        new_public_files_collection(self)
-
-
-    @post_generation
     def set_names(self, create, extracted):
         parsed = impute_names_model(self.fullname)
         for key, value in parsed.items():
