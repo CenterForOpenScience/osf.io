@@ -25,17 +25,18 @@ def add_global_subscriptions():
     user_events = constants.USER_SUBSCRIPTIONS_AVAILABLE
 
     for user in models.User.find():
-        for user_event in user_events:
-            user_event_id = to_subscription_key(user._id, user_event)
+        if user.is_active and user.is_registered:
+            for user_event in user_events:
+                user_event_id = to_subscription_key(user._id, user_event)
 
-            subscription = NotificationSubscription.load(user_event_id)
-            if not subscription:
-                subscription = NotificationSubscription(_id=user_event_id, owner=user, event_name=user_event)
-                subscription.add_user_to_subscription(user, notification_type)
-                subscription.save()
-                logger.info('No subscription found. {} created.'.format(subscription))
-            else:
-                logger.info('Subscription {} found.'.format(subscription))
+                subscription = NotificationSubscription.load(user_event_id)
+                if not subscription:
+                    subscription = NotificationSubscription(_id=user_event_id, owner=user, event_name=user_event)
+                    subscription.add_user_to_subscription(user, notification_type)
+                    subscription.save()
+                    logger.info('No subscription found. {} created.'.format(subscription))
+                else:
+                    logger.info('Subscription {} found.'.format(subscription))
 
 if __name__ == '__main__':
     dry = '--dry' in sys.argv
