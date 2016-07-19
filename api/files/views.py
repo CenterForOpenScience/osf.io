@@ -300,8 +300,12 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
 
     ##Query Params
 
-    For this endpoint, *none*.  Actions may permit or require certain query parameters.  See the individual action
-    documentation.
+    For this endpoint,
+
+    + giveGuid={bool} if true will give the file metadata a guid, a unique identifier for internal use. You must be an
+    admin on the node to add a guid to a file.
+
+    Other actions may permit or require certain query parameters.  See the individual action documentation.
 
     #This Request/Response
 
@@ -326,6 +330,10 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
 
     # overrides RetrieveAPIView
     def get_object(self):
+
+        if CoreScopes.NODE_CONTRIBUTORS_WRITE and self.request.GET.get('giveGuid', False):
+            self.get_file().get_guid(create=True)
+
         return self.get_file()
 
 
