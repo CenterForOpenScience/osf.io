@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='osf_models',
-      version='0.1',
+      version='0.2.dev0',
       description='Django models for the OSF',
       url='https://github.com/CenterForOpenScience/osf-models',
       author='Center for Open Science',
