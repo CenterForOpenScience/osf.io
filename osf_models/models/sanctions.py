@@ -1,20 +1,16 @@
 import functools
 
-from framework.auth import Auth
-from framework.exceptions import PermissionsError
 from osf_models.models import MetaSchema
+from osf_models.app import ModelsConfig as app_config
 from osf_models.models.base import BaseModel
 from osf_models.utils.base import get_object_id
 from django.db import models
 from osf_models.utils.datetime_aware_jsonfield import DatetimeAwareJSONField
-from website import (tokens, settings, mails)
-from website.exceptions import InvalidSanctionRejectionToken, InvalidSanctionApprovalToken
+from osf_models.exceptions import InvalidSanctionRejectionToken, InvalidSanctionApprovalToken
 
 from dateutil.parser import parse as parse_date
 
-from website.prereg import utils as prereg_utils
-
-VIEW_PROJECT_URL_TEMPLATE = settings.DOMAIN + '{node_id}/'
+VIEW_PROJECT_URL_TEMPLATE = app_config.DOMAIN + '{node_id}/'
 
 
 class PreregCallbackMixin(object):
@@ -835,7 +831,7 @@ class DraftRegistrationApproval(Sanction):
 
     def _send_rejection_email(self, user, draft):
         schema = draft.registration_schema
-        prereg_schema = prereg_utils.get_prereg_schema()
+        prereg_schema = MetaSchema.get_prereg_schema()
 
         if schema._id == prereg_schema._id:
             mails.send_mail(
