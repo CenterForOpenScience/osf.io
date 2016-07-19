@@ -278,7 +278,7 @@ var ChangePassword = function(selector) {
                     }
                 }
             }
-        )
+        );
 };
 
 var SetPassword = function(selector) {
@@ -294,7 +294,7 @@ var SetPassword = function(selector) {
                     }
                 }
             }
-        )
+        );
 };
 
 var SignUp = function(selector) {
@@ -310,7 +310,7 @@ var SignUp = function(selector) {
                     }
                 }
             }
-        )
+        );
 };
 
 module.exports = {
