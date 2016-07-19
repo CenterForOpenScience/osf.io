@@ -8,6 +8,8 @@ setup(name='osf_models',
       author_email='pypipackages@cos.io',
       license='MIT',
       packages=['osf_models'],
+      package_dir={'osf_models':'osf_models'},
+      include_package_data=True,
       install_requires=[
         'django>=1.9',
         'psycopg2',
