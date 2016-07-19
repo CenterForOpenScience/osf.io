@@ -119,7 +119,7 @@ var ChangePasswordViewModel = oop.extend(BaseViewModel, {
 var SetPasswordViewModel = oop.extend(BaseViewModel, {
     constructor: function () {
         var self = this;
-        // Call constructor at the begining so that self.password exists
+        // Call constructor at the beginning so that self.password exists
         self.super.constructor.call(this);
 
         // pick up the email from contextVars if we can't get it from first typing it in
