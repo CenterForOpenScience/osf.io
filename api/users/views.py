@@ -668,6 +668,9 @@ class UserPublicFiles(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilte
     view_category = 'users'
     serializer_class = PublicFilesSerializer
 
+    required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_REGISTRATIONS_READ]
+    required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_REGISTRATIONS_WRITE]
+
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
