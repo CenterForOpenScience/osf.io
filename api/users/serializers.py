@@ -86,7 +86,6 @@ class UserSerializer(JSONAPISerializer):
         {
             'html': 'absolute_url',
             'profile_image': 'profile_image_url',
-            'public_files': 'public_files_url',
         }
     ))
 
@@ -121,12 +120,6 @@ class UserSerializer(JSONAPISerializer):
     def profile_image_url(self, user):
         size = self.context['request'].query_params.get('profile_image_size')
         return user.profile_image_url(size=size)
-
-    def public_files_url(self, obj):
-        if obj.is_registered:
-            return obj.public_files_node.absolute_url
-        else:
-            return None
 
     def update(self, instance, validated_data):
         assert isinstance(instance, User), 'instance must be a User'

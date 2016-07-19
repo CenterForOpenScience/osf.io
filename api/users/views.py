@@ -673,9 +673,6 @@ class UserPublicFiles(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilte
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_BASE_READ]
-    required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_BASE_WRITE]
-
     def get_queryset(self):
 
         return Node.find(Q('contributors', 'eq', self.get_user()._id) & Q('is_public_files_collection', 'eq', True))
