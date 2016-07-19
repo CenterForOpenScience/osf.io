@@ -1,4 +1,5 @@
 from django.core.urlresolvers import reverse
+from django.db.models.query import QuerySet as DjangoQuerySet
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
@@ -40,8 +41,15 @@ class AffiliatedInstitutionsList(list):
 
 
 class InstitutionQuerySet(MongoQuerySet):
+
     def __init__(self, queryset):
-        super(InstitutionQuerySet, self).__init__(queryset.schema, queryset.data)
+        if isinstance(queryset, DjangoQuerySet):
+            model = queryset.model
+            data = queryset.all()
+        else:
+            model = queryset.schema
+            data = queryset.data
+        super(InstitutionQuerySet, self).__init__(model, data)
 
     def __iter__(self):
         for each in super(InstitutionQuerySet, self).__iter__():
