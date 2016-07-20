@@ -56,3 +56,30 @@ $(window).resize(function() {
         '-moz-transform': 'translate3d(0, ' + (-scrollTop) + 'px, 0)'
     });
 });
+
+window.activeAjaxCount = 0;
+
+function isAllXhrComplete(){
+    window.activeAjaxCount--;
+    if (window.activeAjaxCount === 0){
+        $("meta[name=prerender-status-code]").attr("content", "200");
+        console.log('prerender ready');
+        window.prerenderReady = true;
+    }
+
+}
+
+(function(open) {
+    XMLHttpRequest.prototype.open = function(method, url, async, user, pass) {
+        this.addEventListener("load", isAllXhrComplete);
+        return open.call(this, method, url, async, user, pass);
+    };
+})(XMLHttpRequest.prototype.open);
+
+
+(function(send) {
+    XMLHttpRequest.prototype.send = function (data) {
+        window.activeAjaxCount++;
+        return send.apply(this, data);
+    };
+})(XMLHttpRequest.prototype.send);
