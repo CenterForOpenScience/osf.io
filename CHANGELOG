@@ -2,6 +2,24 @@
 Changelog
 *********
 
+0.82.0 (2016-07-19)
+===================
+
+- APIv2: Add "current_user_can_comment" field to nodes, registrations, wikis, and files.
+- APIv2: Add "node" relationship to file representations.
+- APIv2: Fix filtering fields whose name does not match source field name.
+- APIv2: Add support for folder listing for Box and Dropbox.
+- Add contextual information to search results in "Add links" modal.
+- Fix bug that generated extra addon deauthorization logs.
+- Fix page numbering on log feeds.
+- Add rate limit for resending confirmation emails.
+- Fix for search UI.
+
+Migrations
+----------
+
+- python -m scripts.box.migrate_folder_language
+
 0.81.0 (2016-07-07)
 ===================
 

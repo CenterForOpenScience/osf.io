@@ -93,7 +93,10 @@ class DraftDownloadListView(DraftListView):
         for draft in queryset:
             draft.pop('registration_schema')
             draft.update({'initiator': draft['initiator']['username']})
-            writer.writerow(draft)
+            writer.writerow(
+                {k: v.encode('utf8') if isinstance(v, unicode) else v
+                 for k, v in draft.items()}
+            )
         return response
 
 

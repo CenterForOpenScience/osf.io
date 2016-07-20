@@ -74,7 +74,7 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
     def test_registration_serializer(self):
 
         # fields that are visible for withdrawals
-        visible_on_withdrawals = ['contributors', 'date_created', 'description', 'id', 'links', 'registration', 'title', 'type']
+        visible_on_withdrawals = ['contributors', 'date_created', 'description', 'id', 'links', 'registration', 'title', 'type', 'current_user_can_comment']
         # fields that do not appear on registrations
         non_registration_fields = ['registrations', 'draft_registrations']
 

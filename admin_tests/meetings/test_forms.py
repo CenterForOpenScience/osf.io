@@ -27,6 +27,7 @@ data = dict(
     mail_subject='Awesome',
     mail_message_body='Nothings',
     mail_attachment='Again',
+    homepage_link_text='Need to add to tests',
 )
 
 
