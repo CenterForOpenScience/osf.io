@@ -1,4 +1,7 @@
 import datetime
+
+from django.contrib.auth.base_user import AbstractBaseUser
+
 from .base import BaseModel, GuidMixin
 from django.db import models
 from .tag import Tag
@@ -9,7 +12,7 @@ def get_default_mailing_lists():
     return {'Open Science Framework Help': True}
 
 
-class User(GuidMixin, BaseModel):
+class User(GuidMixin, BaseModel, AbstractBaseUser):
     # Node fields that trigger an update to the search engine on save
     SEARCH_UPDATE_FIELDS = {
         'fullname',
