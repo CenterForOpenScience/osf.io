@@ -202,7 +202,6 @@ AddContributorViewModel = oop.extend(Paginator, {
         if (this.parentImport()){
             this.importFromParent();
         } else {
-            console.log("fetchResults Running");
             var self = this;
             self.doneSearching(false);
             self.notification(false);
