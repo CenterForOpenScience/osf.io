@@ -1,12 +1,6 @@
 <%inherit file="base.mako"/>
+
 <%def name="title()"> ${node['owner_name']}'s Public Files</%def>
-
-<%def name="og_description()">
-    Hosted on the Open Science Framework
-</%def>
-
-## To change the postion of alert on project pages, override alert()
-<%def name="alert()"> </%def>
 
 <%def name="content()">
 <div class="page-header  visible-xs">
@@ -23,33 +17,13 @@
 </%def>
 
 <%def name="javascript_bottom()">
-
-<script src="/static/vendor/citeproc-js/xmldom.js"></script>
-<script src="/static/vendor/citeproc-js/citeproc.js"></script>
-
 <script>
-
     window.contextVars = $.extend(true, {}, window.contextVars, {
          nodeId : ${ node['node_id'] |sjson, n },
          nodeApiUrl : ${ node['api_url'] | sjson, n },
          isPublicFilesCol : ${node['is_public_files_node']  | sjson, n },
      });
+</script>
 
-
-</script>
-<script type="text/x-mathjax-config">
-    MathJax.Hub.Config({
-        tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']], processEscapes: true},
-        // Don't automatically typeset the whole page. Must explicitly use MathJax.Hub.Typeset
-        skipStartupTypeset: true
-    });
-</script>
-<script type="text/javascript"
-    src="/static/vendor/bower_components/MathJax/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-</script>
 <script src=${"/static/public/js/publicfiles-page.js" | webpack_asset}></script>
-
-
-
-<script src=${"/static/public/js/project-base-page.js" | webpack_asset}> </script>
 </%def>
