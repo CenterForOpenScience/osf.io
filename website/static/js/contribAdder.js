@@ -199,32 +199,37 @@ AddContributorViewModel = oop.extend(Paginator, {
         this.fetchResults();
     },
     fetchResults: function () {
-        var self = this;
-        self.doneSearching(false);
-        self.notification(false);
-        if (self.query()) {
-            return $.getJSON(
-                '/api/v1/user/search/', {
-                    query: self.query(),
-                    page: self.pageToGet
-                },
-                function (result) {
-                    var contributors = result.users.map(function (userData) {
-                        userData.added = (self.contributors().indexOf(userData.id) !== -1);
-                        return new Contributor(userData);
-                    });
-                    self.doneSearching(true);
-                    self.results(contributors);
-                    self.currentPage(result.page);
-                    self.numberOfPages(result.pages);
-                    self.addNewPaginators(false);
-                }
-            );
+        if (this.parentImport()){
+            this.importFromParent();
         } else {
-            self.results([]);
-            self.currentPage(0);
-            self.totalPages(0);
-            self.doneSearching(true);
+            console.log("fetchResults Running");
+            var self = this;
+            self.doneSearching(false);
+            self.notification(false);
+            if (self.query()) {
+                return $.getJSON(
+                    '/api/v1/user/search/', {
+                        query: self.query(),
+                        page: self.pageToGet
+                    },
+                    function (result) {
+                        var contributors = result.users.map(function (userData) {
+                            userData.added = (self.contributors().indexOf(userData.id) !== -1);
+                            return new Contributor(userData);
+                        });
+                        self.doneSearching(true);
+                        self.results(contributors);
+                        self.currentPage(result.page);
+                        self.numberOfPages(result.pages);
+                        self.addNewPaginators(false);
+                    }
+                );
+            } else {
+                self.results([]);
+                self.currentPage(0);
+                self.totalPages(0);
+                self.doneSearching(true);
+            }
         }
     },
     getContributors: function () {
@@ -250,7 +255,6 @@ AddContributorViewModel = oop.extend(Paginator, {
     },
     startSearchParent: function () {
         this.parentImport(true);
-        this.pageToGet(0);
         this.importFromParent();
     },
     importFromParent: function () {

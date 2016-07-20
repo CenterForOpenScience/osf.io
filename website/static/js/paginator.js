@@ -17,14 +17,14 @@ var Paginator = oop.defclass({
         this.currentPage = ko.observable(0);
         this.paginators = ko.observableArray([]);
     },
-    addNewPaginators: function(isFromParent=false) {
+    addNewPaginators: function() {
         var self = this;
         var i;
         self.paginators.removeAll();
         if (self.numberOfPages() > 1) {
             self.paginators.push({
                 style: (self.currentPage() === 0) ? 'disabled' : '',
-                handler: self.previousPage.bind(self, isFromParent),
+                handler: self.previousPage.bind(self),
                 text: '<'
             }); /* jshint ignore:line */
                 /* functions defined inside loop */
@@ -35,11 +35,7 @@ var Paginator = oop.defclass({
                 handler: function() {
                     self.pageToGet(0);
                     if (self.pageToGet() !== self.currentPage()) {
-                        if (isFromParent === true){
-                            self.importFromParent();
-                        } else {
-                            self.fetchResults();
-                        }
+                        self.fetchResults();
                     }
                 }
             });
@@ -51,11 +47,7 @@ var Paginator = oop.defclass({
                         handler: function() {
                             self.pageToGet(parseInt(this.text) - 1);
                             if (self.pageToGet() !== self.currentPage()) {
-                                if (isFromParent === true){
-                                    self.importFromParent();
-                                } else {
-                                    self.fetchResults();
-                                }
+                                self.fetchResults();
                             }
                         }
                     });/* jshint ignore:line */
@@ -69,11 +61,7 @@ var Paginator = oop.defclass({
                         handler: function() {
                             self.pageToGet(parseInt(this.text) - 1);
                             if (self.pageToGet() !== self.currentPage()) {
-                                if (isFromParent === true){
-                                    self.importFromParent();
-                                } else {
-                                    self.fetchResults();
-                                }
+                                self.fetchResults();
                             }
                         }
                     });/* jshint ignore:line */
@@ -98,11 +86,7 @@ var Paginator = oop.defclass({
                         handler: function() {
                             self.pageToGet(parseInt(this.text) - 1);
                             if (self.pageToGet() !== self.currentPage()) {
-                                if (isFromParent === true){
-                                    self.importFromParent();
-                                } else {
-                                    self.fetchResults();
-                                }
+                                self.fetchResults();
                             }
                         }
                     });/* jshint ignore:line */
@@ -122,11 +106,7 @@ var Paginator = oop.defclass({
                         handler: function() {
                             self.pageToGet(parseInt(this.text) - 1);
                             if (self.pageToGet() !== self.currentPage()) {
-                                if (isFromParent === true){
-                                    self.importFromParent();
-                                } else {
-                                    self.fetchResults();
-                                }
+                                self.fetchResults();
                             }
                         }
                     });/* jshint ignore:line */
@@ -145,46 +125,31 @@ var Paginator = oop.defclass({
                 handler: function() {
                     self.pageToGet(self.numberOfPages() - 1);
                     if (self.pageToGet() !== self.currentPage()) {
-                        if (isFromParent === true){
-                            self.importFromParent();
-                        } else {
-                            self.fetchResults();
-                        }
+                        self.fetchResults();
                     }
                 }
             });
             self.paginators.push({
                 style: (self.currentPage() === self.numberOfPages() - 1) ? 'disabled' : '',
-                handler: self.nextPage.bind(self, isFromParent),
+                handler: self.nextPage.bind(self),
                 text: '>'
             });
         }
     },
-    nextPage: function(isFromParent) {
+    nextPage: function() {
         this.pageToGet(this.currentPage() + 1);
         if (this.pageToGet() < this.numberOfPages()){
-            if (isFromParent){
-                this.importFromParent();
-            } else {
-                this.fetchResults();
-            }
+            this.fetchResults();
         }
     },
-    previousPage: function(isFromParent) {
+    previousPage: function() {
         this.pageToGet(this.currentPage() - 1);
         if (this.pageToGet() >= 0) {
-            if (isFromParent){
-                this.importFromParent();
-            } else {
-                this.fetchResults();
-            }
+            this.fetchResults();
         }
     },
     fetchResults: function() {
         throw new Error('Paginator subclass must define a "fetchResults" method.');
-    },
-    importFromParent: function() {
-        throw new Error('Paginator subclass must define a "importFromParent" method.');
     }
 });
 
