@@ -475,22 +475,6 @@ var QuickSearchProject = {
                 ));
             }
         }
-
-        function headerTemplate ( ){
-            return [ m('h2.col-xs-9', 'Dashboard'), m('m-b-lg.col-xs-3', m('.pull-right', m.component(AddProject, {
-                buttonTemplate : m('button.btn.btn-success.btn-success-high-contrast.m-t-md.f-w-xl[data-toggle="modal"][data-target="#addProjectFromHome"]', {onclick: function(){
-                                $osf.trackClick('quickSearch', 'add-project', 'open-add-project-modal');
-                }}, 'Create new project'),
-                modalID : 'addProjectFromHome',
-                stayCallback : function _stayCallback_inPanel() {
-                                document.location.reload(true);
-                },
-                trackingCategory: 'quickSearch',
-                trackingAction: 'add-project',
-                templatesFetcher: ctrl.templateNodes
-            })))];
-        }
-
         if (ctrl.eligibleNodes().length === 0 && ctrl.filter() == null) {
             return m('.row',
                 m('.col-xs-12',[
