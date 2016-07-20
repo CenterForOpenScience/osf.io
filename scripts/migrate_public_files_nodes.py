@@ -23,13 +23,12 @@ logging.basicConfig(level=logging.INFO)
 def main(dry_run):
     users = core.User.find()
 
-    with TokuTransaction():
-        for user in users:
-            if user.is_registered and user.public_files_node is None:
-                give_user_public_files_node(user)
+    for user in users:
+        if user.is_registered and user.public_files_node is None:
+            give_user_public_files_node(user)
 
-        if dry_run:
-            raise BaseException
+    if dry_run:
+        raise BaseException
 
 if __name__ == '__main__':
     init_app(set_backends=True, routes=False)
@@ -39,4 +38,5 @@ if __name__ == '__main__':
     if not dry_run:
         script_utils.add_file_logger(logger, __file__)
 
-    main(dry_run=dry_run)
+    with TokuTransaction():
+        main(dry_run=dry_run)
