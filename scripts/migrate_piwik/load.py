@@ -32,7 +32,7 @@ def main(dry_run=True, batch_count=None, force=False):
 
     history_file = utils.get_history_for('load', 'w')
     history_file.write(script_settings.RUN_HEADER + '{}\n'.format(complaints_run_id))
-    history_file.write('Beginning extraction at: {}Z\n'.format(datetime.utcnow()))
+    history_file.write('Beginning upload at: {}Z\n'.format(datetime.utcnow()))
 
     keen_clients = {'public': None, 'private': None}
     es_client = None
@@ -63,11 +63,12 @@ def main(dry_run=True, batch_count=None, force=False):
         print("  Batch {}".format(batch_id))
         for domain in ('private', 'public'):
             print("    Domain: {}".format(domain))
-            # print("Uploading batch {} for domain '{}'".format(batch_id, domain))
+            history_file.write('Uploading for {} project, batch {}'.format(domain, batch_id))
             load_batch_for(batch_id, domain, tally, dry_run, es_client, keen_clients[domain])
+            history_file.write('  ...finished\n')
 
     print("Finished Upload")
-    history_file.write('Finished extraction at: {}Z\n'.format(datetime.utcnow()))
+    history_file.write('Finished upload at: {}Z\n'.format(datetime.utcnow()))
     history_file.write('Tally was:\n')
     for k, v in sorted(tally.items()):
         history_file.write('  {}: {}\n'.format(k, v))
