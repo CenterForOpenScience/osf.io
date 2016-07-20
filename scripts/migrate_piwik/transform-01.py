@@ -86,7 +86,7 @@ def main(force=False):
                     'timezone': user_obj.timezone if user_obj else '',
                     'institutions': [
                         {'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path}
-                        for inst in user.affiliated_institutions
+                        for inst in user_obj.affiliated_institutions
                     ] if user_obj else [],
                 }
 
@@ -107,14 +107,19 @@ def main(force=False):
 
         node_public_date = None
         if node is not None:
-            print "Triggered at least once"
             privacy_actions = NodeLog.find(
-                Q('node', 'eq', 'vjsdy')
+                Q('node', 'eq', node_id)
                 & Q('action', 'in', [NodeLog.MADE_PUBLIC, NodeLog.MADE_PRIVATE])
-            ).sort('date')
-            if privacy_actions[-1].action == NodeLog.MADE_PUBLIC:
-                node_public_date = privacy_actions[-1].date.isoformat()
-                node_public_date = node_public_date[:-3] + 'Z'
+            ).sort('-date')
+
+            try:
+                privacy_action = privacy_actions[0]
+            except IndexError as e:
+                pass
+            else:
+                if privacy_action.action == NodeLog.MADE_PUBLIC:
+                    node_public_date = privacy_action.date.isoformat()
+                    node_public_date = node_public_date[:-3] + 'Z'
 
         browser_version = [None, None]
         if visit['ua']['browser']['version']:
