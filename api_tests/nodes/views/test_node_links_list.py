@@ -847,7 +847,7 @@ class TestBulkDeleteNodeLinks(ApiTestCase):
         url = '/{}registrations/{}/node_links/'.format(API_BASE, registration._id)
 
         res = self.app.delete_json_api(url, self.public_payload, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 403)
 
     def test_bulk_deletes_public_node_pointers_logged_out(self):
         res = self.app.delete_json_api(self.public_url, self.public_payload, expect_errors=True, bulk=True)
