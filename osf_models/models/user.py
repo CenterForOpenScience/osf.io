@@ -300,6 +300,10 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin):
     def is_confirmed(self):
         return bool(self.date_confirmed)
 
+    @property
+    def email(self):
+        return self.username
+
     def is_authenticated(self):  # Needed for django compat
         return True
 
@@ -314,7 +318,7 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin):
         return self.fullname
 
     def get_short_name(self):
-        return self.email
+        return self.username
 
     def __unicode__(self):
         return self.get_short_name()
