@@ -32,7 +32,6 @@ module.exports = function(defaults) {
     app.import(path.join(app.bowerDirectory, 'ace-builds/src-noconflict/ext-language_tools.js'));
     app.import(path.join(app.bowerDirectory, 'raven-js/dist/raven.min.js'));
 
-
     // Make OSF styles available
     app.import(path.join(app.bowerDirectory, 'osf-style/css/base.css'));
     // Add the custom-compiled addon styles to this project
