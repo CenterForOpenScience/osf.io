@@ -1393,14 +1393,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
             self.kwargs[node_link_lookup_url_kwarg],
             'node link'
         )
-        node = get_object_or_error(
-            Node,
-            self.kwargs[self.node_lookup_url_kwarg],
-            display_name='node'
-        )
-
-        if node.is_collection or node.is_registration:
-            raise NotFound
+        node = self.get_node()
         if node not in node_link.parent:
             raise NotFound
         return node_link
