@@ -545,6 +545,7 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
         bibliographic               boolean  Whether the user will be included in citations for this node. Default is true.
         permission                  string   User permission level. Must be "read", "write", or "admin". Default is "write".
         unregistered_contributor    string   Contributor's assigned name if contributor hasn't yet claimed account
+        index                       integer  The index of the contributor for sorting. Currently read-only
 
     ##Links
 
@@ -621,16 +622,20 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
     serializer_class = NodeContributorsSerializer
     view_category = 'nodes'
     view_name = 'node-contributors'
+    ordering = ('index',)  # default ordering
 
     def get_default_queryset(self):
         node = self.get_node()
         visible_contributors = set(node.visible_contributor_ids)
         contributors = []
+        index = 0
         for contributor in node.contributors:
+            contributor.index = index
             contributor.bibliographic = contributor._id in visible_contributors
             contributor.permission = node.get_permissions(contributor)[-1]
             contributor.node_id = node._id
             contributors.append(contributor)
+            index += 1
         return contributors
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDeleteJSONAPIView
