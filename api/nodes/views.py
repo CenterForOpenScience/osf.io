@@ -1388,12 +1388,14 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
     # overrides RetrieveAPIView
     def get_object(self):
         node_link_lookup_url_kwarg = 'node_link_id'
+        node = self.get_node()
         node_link = get_object_or_error(
             Pointer,
             self.kwargs[node_link_lookup_url_kwarg],
             'node link'
         )
-
+        if node_link.node != node:
+            raise NotFound
         return node_link
 
     # overrides DestroyAPIView
