@@ -994,7 +994,7 @@ class TestCollectionNodeLinkDetail(ApiTestCase):
         assert_equal(res.status_code, 404)
         errors = res.json['errors']
         assert_equal(len(errors), 1)
-        assert_equal(errors[0]['detail'], 'Not found.')
+        assert_equal(errors[0]['detail'], 'Not Found.')
 
 
 class TestReturnDeletedCollection(ApiTestCase):
