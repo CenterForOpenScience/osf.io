@@ -6,7 +6,6 @@ var Raven = require('raven-js');
 var moment = require('moment');
 var URI = require('URIjs');
 var bootbox = require('bootbox');
-var iconmap = require('js/iconmap');
 var lodashGet = require('lodash.get');
 
 

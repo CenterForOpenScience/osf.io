@@ -228,18 +228,15 @@ var uploadRowTemplate = function(item) {
  * @returns {Object}  Returns a mithril template with the m() function.
  */
 function resolveIconView(item) {
-    var componentIcons = iconmap.componentIcons;
-    var projectIcons = iconmap.projectIcons;
+    var icons = iconmap.projectComponentIcons;
     function returnView(type, category) {
-        var iconType = projectIcons[type];
-        if (type === 'component' || type === 'registeredComponent') {
-            if (!item.data.permissions.view) {
-                return null;
+        var iconType = icons[type];
+        if(type === 'project' || type === 'component' || type === 'registeredProject' || type === 'registeredComponent') {
+            if (item.data.permissions.view) {
+                iconType = icons[category];
             } else {
-                iconType = componentIcons[category];
+                return null;
             }
-        } else if (type === 'project' || type === 'registeredProject') {
-            iconType = projectIcons[category];
         }
         if (type === 'registeredComponent' || type === 'registeredProject') {
             iconType += ' po-icon-registered';

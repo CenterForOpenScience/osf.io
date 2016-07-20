@@ -466,14 +466,8 @@ ko.bindingHandlers.datePicker = {
  */
 ko.bindingHandlers.getIcon = {
     init: function(elem, valueAccessor) {
-        var icon;
         var category = valueAccessor();
-        if (Object.keys(iconmap.componentIcons).indexOf(category) >=0 ){
-            icon = iconmap.componentIcons[category];
-        }
-        else {
-            icon = iconmap.projectIcons[category];
-        }
+        var icon =  iconmap.projectComponentIcons[category];
         $(elem).addClass(icon);
     }
 };
