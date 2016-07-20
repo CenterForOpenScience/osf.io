@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 
@@ -20,6 +20,7 @@ class OSFUserManager(BaseUserManager):
         user = self.model(
             username=self.normalize_email(username),
             is_active=True,
+            date_registered=datetime.today()
             **kwargs
         )
 
