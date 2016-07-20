@@ -13,6 +13,8 @@ def get_default_mailing_lists():
 
 
 class User(GuidMixin, BaseModel, AbstractBaseUser):
+    USERNAME_FIELD = 'username'
+
     # Node fields that trigger an update to the search engine on save
     SEARCH_UPDATE_FIELDS = {
         'fullname',
