@@ -10,7 +10,7 @@ from osf_models.models import MetaSchema
 # TODO Add back in once dependencies are resolved
 # from osf_models.models.sanctions import Embargo, RegistrationApproval, Retraction
 from osf_models.models.tag import Tag
-from osf_models.models.user import User
+from osf_models.models.user import OSFUser
 from osf_models.models.validators import validate_title
 from osf_models.utils.datetime_aware_jsonfield import DatetimeAwareJSONField
 from .base import BaseModel, GuidMixin
@@ -68,7 +68,7 @@ class Node(GuidMixin, BaseModel):
 
     is_registration = models.BooleanField(default=False, db_index=True)
     registered_date = models.DateTimeField(db_index=True, null=True)
-    registered_user = models.ForeignKey(User,
+    registered_user = models.ForeignKey(OSFUser,
                                         related_name='related_to',
                                         on_delete=models.SET_NULL,
                                         null=True)
@@ -102,16 +102,16 @@ class Node(GuidMixin, BaseModel):
     wiki_private_uuids = DatetimeAwareJSONField(default={})
     file_guid_to_share_uuids = DatetimeAwareJSONField(default={})
 
-    creator = models.ForeignKey(User,
+    creator = models.ForeignKey(OSFUser,
                                 db_index=True,
                                 related_name='created',
                                 on_delete=models.SET_NULL,
                                 null=True)
-    contributors = models.ManyToManyField(User,
+    contributors = models.ManyToManyField(OSFUser,
                                           through=Contributor,
                                           related_name='contributed_to')
     # TODO why is this here if it's empty
-    users_watching_node = models.ManyToManyField(User, related_name='watching')
+    users_watching_node = models.ManyToManyField(OSFUser, related_name='watching')
 
     # logs = Logs have a reverse relation to nodes
     tags = models.ManyToManyField(Tag, related_name='tagged')

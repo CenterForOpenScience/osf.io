@@ -7,7 +7,7 @@ class Contributor(models.Model):
     admin = models.BooleanField(default=False)
     visible = models.BooleanField(default=False)
 
-    user = models.ForeignKey('User')
+    user = models.ForeignKey('OSFUser')
     node = models.ForeignKey('Node')
 
     class Meta:

@@ -75,7 +75,7 @@ class NodeLog(BaseModel):
     action = models.CharField(max_length=255, db_index=True, choices=ACTIONS)
     params = DatetimeAwareJSONField(default={})
     should_hide = models.BooleanField(default=False)
-    user = models.ForeignKey('User', related_name='logs', db_index=True, null=True)
+    user = models.ForeignKey('OSFUser', related_name='logs', db_index=True, null=True)
     foreign_user = models.CharField(max_length=255, blank=True)
     node = models.ForeignKey('Node', related_name='logs', db_index=True, null=True)
 

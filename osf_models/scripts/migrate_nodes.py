@@ -10,7 +10,7 @@ import pytz
 from django.db import transaction
 from framework.auth import User as MODMUser
 from modularodm import Q as MQ
-from osf_models.models import Contributor, Guid, Node, Tag, User
+from osf_models.models import Contributor, Guid, Node, Tag, OSFUser
 from osf_models.models.sanctions import Embargo, Retraction
 from website.models import Embargo as MODMEmbargo
 from website.models import Retraction as MODMRetraction
@@ -163,13 +163,13 @@ def save_bare_users(page_size=20000):
                                        for k, v in
                                        cleaned_user_fields.iteritems()
                                        if v is not None}
-                users.append(User(**cleaned_user_fields))
+                users.append(OSFUser(**cleaned_user_fields))
                 count += 1
                 if count % page_size == 0 or count == total:
                     then = datetime.now()
                     print 'Saving users {} through {}...'.format(
                         count - page_size, count)
-                    woot = User.objects.bulk_create(users)
+                    woot = OSFUser.objects.bulk_create(users)
                     for wit in woot:
                         modm_to_django[wit._guid.guid] = wit.pk
                     now = datetime.now()
@@ -184,7 +184,7 @@ def save_bare_users(page_size=20000):
                     print 'Took out {} trashes'.format(trash)
 
     print 'Modm Users: {}'.format(total)
-    print 'django Users: {}'.format(User.objects.all().count())
+    print 'django Users: {}'.format(OSFUser.objects.all().count())
     print 'Done with {} in {} seconds...'.format(
         sys._getframe().f_code.co_name,
         (datetime.now() - start).total_seconds())
@@ -580,7 +580,7 @@ def set_user_foreign_keys_on_nodes(page_size=10000):
                                 cache_hits += 1
                             else:
                                 # it's not in the cache, do the query
-                                user_id = User.objects.get(
+                                user_id = OSFUser.objects.get(
                                     _guid__guid=value).pk
                                 setattr(django_node,
                                         '{}_id'.format(fk_user_field), user_id)
@@ -596,7 +596,7 @@ def set_user_foreign_keys_on_nodes(page_size=10000):
                                 cache_hits += 1
                             else:
                                 # it's not in the cache, do the query
-                                user_id = User.objects.get(
+                                user_id = OSFUser.objects.get(
                                     _guid__guid=value._id).pk
                                 setattr(django_node,
                                         '{}_id'.format(fk_user_field), user_id)
@@ -640,7 +640,7 @@ def set_user_foreign_keys_on_users(page_size=10000):
             for modm_user in MODMUser.find(build_query(
                     fk_user_fields, MODMUser)).sort('-date_registered')[
                         user_count:user_count + page_size]:
-                django_user = User.objects.get(_guid__guid=modm_user._id)
+                django_user = OSFUser.objects.get(_guid__guid=modm_user._id)
                 for fk_user_field in fk_user_fields:
                     value = getattr(modm_user, fk_user_field, None)
                     if value is not None:
@@ -653,7 +653,7 @@ def set_user_foreign_keys_on_users(page_size=10000):
                                 cache_hits += 1
                             else:
                                 # it's not in the cache, do the query
-                                user_id = User.objects.get(
+                                user_id = OSFUser.objects.get(
                                     _guid__guid=value).pk
                                 setattr(django_user,
                                         '{}_id'.format(fk_user_field), user_id)
@@ -669,7 +669,7 @@ def set_user_foreign_keys_on_users(page_size=10000):
                                 cache_hits += 1
                             else:
                                 # it's not in the cache, do the query
-                                user_id = User.objects.get(
+                                user_id = OSFUser.objects.get(
                                     _guid__guid=value._id).pk
                                 setattr(django_user,
                                         '{}_id'.format(fk_user_field), user_id)
@@ -857,7 +857,7 @@ def set_node_many_to_many_on_users(page_size=5000):
             for modm_user in MODMUser.find(build_query(
                     m2m_node_fields, MODMUser)).sort('-date_registered')[
                         user_count:page_size + user_count]:
-                django_user = User.objects.get(
+                django_user = OSFUser.objects.get(
                     pk=modm_to_django[modm_user._id])
                 for m2m_node_field in m2m_node_fields:
                     try:
@@ -915,7 +915,7 @@ def set_user_many_to_many_on_users(page_size=5000):
             for modm_user in MODMUser.find(build_query(
                     m2m_user_fields, MODMUser)).sort('-date_registered')[
                         user_count:page_size + user_count]:
-                django_user = User.objects.get(
+                django_user = OSFUser.objects.get(
                     pk=modm_to_django[modm_user._id])
                 for m2m_user_field in m2m_user_fields:
                     try:
@@ -971,7 +971,7 @@ def set_system_tag_many_to_many_on_users(page_size=10000):
             for modm_user in MODMUser.find(build_query(
                     m2m_tag_fields, MODMUser)).sort('-date_registered')[
                         user_count:page_size + user_count]:
-                django_user = User.objects.get(
+                django_user = OSFUser.objects.get(
                     pk=modm_to_django[modm_user._id])
                 for m2m_tag_field in m2m_tag_fields:
                     try:
@@ -1081,7 +1081,7 @@ def build_pk_caches():
     modm_to_django = {x['_guid__guid']: x['pk']
                       for x in Node.objects.all().values('_guid__guid', 'pk')}
     modm_to_django.update({x['_guid__guid']: x['pk']
-                           for x in User.objects.all().values('_guid__guid',
+                           for x in OSFUser.objects.all().values('_guid__guid',
                                                               'pk')})
     modm_to_django.update({'{}:system'.format(x['_id']): x['pk']
                            for x in Tag.objects.filter(system=True).values(

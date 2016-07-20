@@ -2,7 +2,7 @@ import gc
 
 from framework.auth import User as MODMUser
 from modularodm import Q
-from osf_models.models import Node, NodeLog, User
+from osf_models.models import Node, NodeLog, OSFUser
 from django.db import transaction
 
 from website.models import Node as MODMNode

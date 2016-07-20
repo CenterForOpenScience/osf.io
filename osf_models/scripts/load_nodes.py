@@ -8,7 +8,7 @@ from website.models import Node as MODMNode
 from website.models import Tag as MODMTag
 from website.models import Pointer as MODMPointer
 from modularodm import Q
-from osf_models.models import Node, User, Tag, Guid, Contributor
+from osf_models.models import Node, OSFUser, Tag, Guid, Contributor
 import pytz
 from datetime import datetime
 import gc
@@ -181,8 +181,8 @@ def get_or_create_user(modm_user):
         print 'Got {} from cache'.format(user)
     except KeyError:
         try:
-            user = User.objects.get(_guid__guid=modm_user._id)
-        except User.DoesNotExist:
+            user = OSFUser.objects.get(_guid__guid=modm_user._id)
+        except OSFUser.DoesNotExist:
             user_fk_nodes = process_node_fk_fields(modm_user)
             user_m2m_nodes = process_node_m2m_fields(modm_user)
             user_fk_users = process_user_fk_fields(modm_user)
@@ -197,7 +197,7 @@ def get_or_create_user(modm_user):
             for k, v in user_fields.iteritems():
                 if isinstance(v, datetime):
                     user_fields[k] = pytz.utc.localize(v)
-            user = User.objects.create(**{key: user_fields[key] for key in user_fields if key not in user_key_blacklist})
+            user = OSFUser.objects.create(**{key: user_fields[key] for key in user_fields if key not in user_key_blacklist})
             global users
             users += 1
             set_m2m_fields(user, user_m2m_nodes)
@@ -235,8 +235,8 @@ def get_or_create_tag(modm_tag, system=False):
 def set_contributors(node, modm_node):
     for modm_contributor in modm_node.contributors:
         try:
-            user = User.objects.get(_guid__guid=modm_contributor._id)
-        except User.DoesNotExist:
+            user = OSFUser.objects.get(_guid__guid=modm_contributor._id)
+        except OSFUser.DoesNotExist:
             user = get_or_create_user(modm_contributor)
         visible = modm_contributor._id in modm_node.visible_contributor_ids
         admin = 'admin' in modm_node.permissions[modm_contributor._id]

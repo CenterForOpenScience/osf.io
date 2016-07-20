@@ -5,9 +5,9 @@ from pprint import pprint
 from collections import OrderedDict
 
 from modularodm import Q as MQ
-from osf_models.models import (MetaSchema, Guid, BlackListGuid, User, Contributor, Node, NodeLog, Tag, Embargo, Retraction)
+from osf_models.models import (MetaSchema, Guid, BlackListGuid, OSFUser, Contributor, Node, NodeLog, Tag, Embargo, Retraction)
 
-models = [MetaSchema, Guid, BlackListGuid, User, Contributor, Node, NodeLog, Tag, Embargo, Retraction]
+models = [MetaSchema, Guid, BlackListGuid, OSFUser, Contributor, Node, NodeLog, Tag, Embargo, Retraction]
 
 
 # def get_model_topology(models):
