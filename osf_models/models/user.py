@@ -53,7 +53,7 @@ class User(GuidMixin, BaseModel, AbstractBaseUser):
     username = models.CharField(max_length=255, db_index=True)
 
     # Hashed. Use `User.set_password` and `User.check_password`
-    password = models.CharField(max_length=255)
+    # password = models.CharField(max_length=255)
 
     fullname = models.CharField(max_length=255, blank=True)
 
