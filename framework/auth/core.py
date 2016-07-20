@@ -574,8 +574,6 @@ class User(GuidStoredObject, AddonModelMixin):
         self.date_confirmed = dt.datetime.utcnow()
         self.update_search()
         self.update_search_nodes()
-        from website.project import new_public_files_collection
-        new_public_files_collection(self)
         # Emit signal that a user has confirmed
         signals.user_confirmed.send(self)
 

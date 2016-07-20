@@ -109,24 +109,6 @@ def new_collection(title, user):
 
     return node
 
-def new_public_files_collection(user):
-
-    if user.public_files_node is not None:
-        raise NodeStateError('Users may only have one public files collection')
-
-    node = Node(
-        title='Public Files',
-        creator=user,
-        category='project',
-        is_public=True,
-        is_public_files_collection=True,
-    )
-
-    node.save()
-
-    return node
-
-
 def new_private_link(name, user, nodes, anonymous):
     """Create a new private link.
 
