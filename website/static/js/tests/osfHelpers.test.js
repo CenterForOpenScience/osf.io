@@ -534,7 +534,7 @@ describe('osfHelpers', () => {
                 internalRelativeUrlWithSearch: '/mst3k/files/?q=random',
                 internalRelativeUrlWithHash: '/mst3k/files/#hashhash',
                 internalRelativeUrlWithSearchAndHash: '/mst3k/files/?q=random#hashhash'
-            }
+            };
     
             describe('Does not affect external URLs with Http as protocol', () => {
                 it('URLs that does not contain search or hash', () => {
