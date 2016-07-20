@@ -14,6 +14,8 @@ var DateRangePicker = oop.defclass({
     constructor: function(params) {
         var self = this;
 
+        self._oneDayInMs = 24 * 60 * 60 * 1000;
+
         self.minDate = params.minDate;
         self.maxDate = params.maxDate;
 
@@ -46,14 +48,20 @@ var DateRangePicker = oop.defclass({
     },
     updateStartDate: function(start) {
         var self = this;
+
+        var startPlusOne = new Date(start.getTime() + self._oneDayInMs);
+        self._endPicker.setMinDate(startPlusOne);
+
         self._startPicker.setStartRange(start);
         self._endPicker.setStartRange(start);
-        self._endPicker.setMinDate(start);
     },
     updateEndDate: function(end) {
         var self = this;
+
+        var endMinusOne = new Date(end.getTime() - self._oneDayInMs);
+        self._startPicker.setMaxDate(endMinusOne);
+
         self._startPicker.setEndRange(end);
-        self._startPicker.setMaxDate(end);
         self._endPicker.setEndRange(end);
     },
 });

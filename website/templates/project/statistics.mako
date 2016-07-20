@@ -100,6 +100,14 @@
 
 <%def name="javascript_bottom()">
   ${parent.javascript_bottom()}
+  <script>
+      window.contextVars.analyticsMeta = $.extend(true, {}, window.contextVars.analyticsMeta, {
+          pageMeta: {
+              title: 'Analytics',
+              public: true,
+          },
+      });
+  </script>
   % if keen['public']['project_id'] and node['is_public']:
     <script>
      window.contextVars = $.extend(true, {}, window.contextVars, {

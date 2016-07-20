@@ -4,6 +4,7 @@ require('keen-dataviz/dist/keen-dataviz.min.css');
 
 var oop = require('js/oop');
 var $osf = require('js/osfHelpers');
+var keenDataset = require('keen-dataset');
 var keenDataviz = require('keen-dataviz');
 var keenAnalysis = require('keen-analysis');
 
@@ -16,7 +17,7 @@ var UserFacingChart = oop.defclass({
         var required = ['keenProjectId', 'keenReadKey', 'containingElement'];
         required.forEach(function(paramName) {
             if (!params[paramName]) {
-                throw 'Missing required argument "' + paramName + '"';
+                throw new Error('Missing required argument "' + paramName + '"');
             }
         });
 
@@ -47,6 +48,13 @@ var UserFacingChart = oop.defclass({
          * @type {integer}
          */
         self.MAX_DISPLAY_ENTRIES = params.maxDisplayEntries || 10;
+
+        // prebuild html for showing spinner
+        var spinnerHtml = '';
+        spinnerHtml += '<div class="text-center">';
+        spinnerHtml += '    <div class="logo-spin logo-lg"></div>';
+        spinnerHtml += '</div>';
+        self._spinnerHtml = spinnerHtml;
     },
 
     /**
@@ -61,7 +69,7 @@ var UserFacingChart = oop.defclass({
      * @return {Object}
      */
     baseQuery: function() {
-        throw 'Concrete class does not provide a "baseQuery" method!';
+        throw new Error('Concrete class does not provide a "baseQuery" method!');
     },
 
     /**
@@ -82,10 +90,35 @@ var UserFacingChart = oop.defclass({
         };
         return baseQuery;
     },
+
+    /**
+     * Builds underlying dataviz object, binds it to the containingElement.  Inheriting classes
+     * should extend this method to set chart properties. Make sure to call the parent method!
+     *
+     * See: https://github.com/keen/keen-dataviz.js/tree/master/docs
+     *
+     * @method _initDataviz
+     * @return {KeenDataviz}
+     */
     _initDataviz: function() {
         var self = this;
         return new keenDataviz().el(self.containingElement);
     },
+
+    /**
+     * Processes the raw Keen response before passing to the chart.  If dataParser returns the raw
+     * response or a similarly formatted Object, the chart will do its own parsing based on the type
+     * of chart.  To bypass the charts default parsing, construct and return a KeenDataset object
+     * here.
+     *
+     * See: https://github.com/keen/keen-dataviz.js/tree/master/docs/dataset
+     * Default parsers:
+     *   https://github.com/keen/keen-dataviz.js/blob/master/lib/dataset/utils/parsers.js
+     *
+     * @method dataParser
+     * @return {Object} or {KeenDataviz}
+     **/
+    dataParser: function(resp) { return resp; },
 
     /**
      * A function that is called after the data from the query is set, but before the chart is
@@ -101,10 +134,9 @@ var UserFacingChart = oop.defclass({
      */
     munger: function() { },
 
-
     /**
-     * Sets the date range over which the metric should apply.  Sets the startDate and endDate
-     * properties.  These 
+     * Sets the date range over which the metric should apply, specifically the startDate and
+     * endDate properties.
      *
      * @method setDataRange
      * @param {Date} startDate first day (inclusive) for which to display stats
@@ -117,14 +149,21 @@ var UserFacingChart = oop.defclass({
         self.endDate = endDate;
     },
 
+    // Fetch the DOM element the chart is rendered to.
+    getElement: function() { return document.getElementById(this.containingElement.replace(/^#/, '')); },
+
+    // Put up a COS spinner in the chart container.
+    startSpinner: function() { this.getElement().innerHTML = this._spinnerHtml; },
+
+    // Remove the COS spinner from the chart container.
+    endSpinner: function() { this.getElement().innerHTML = ''; },
+
     /**
-     * Build a data chart on the page. The element on the page that the chart will be inserted into
-     * is defined in the `dataviz` parameter. A spinner will be displayed while the data is being
-     * loaded.  If an error is returned, it will be displayed within the chart element.
+     * Show a spinner, issue the query to keen, then render the chart  If an error is returned, it
+     * will be displayed within the chart element.
      *
      * @method buildChart
-     * @param {Keen.Dataviz} dataviz The Dataviz object that defines the look chart. See:
-     *                               https://github.com/keen/keen-dataviz.js/tree/master/docs
+     * @return {null}
      */
     buildChart: function() {
         var self = this;
@@ -132,14 +171,20 @@ var UserFacingChart = oop.defclass({
             self.chart = self._initDataviz();
         }
 
-        self.chart.prepare();
+        self.startSpinner();
         var query = self.query();
         self.keenClient
             .query(query.type, query.params)
             .then(function(res) {
-                self.chart.title(' ').data(res).call(self.munger.bind(self)).render();
+                self.chart
+                    .title(' ')
+                    .data(self.dataParser(res))
+                    .call(self.munger.bind(self));
+                self.endSpinner();
+                self.chart.render();
             })
             .catch(function(err) {
+                self.endSpinner();
                 self.chart.message(err.message);
             });
     },
@@ -198,10 +243,8 @@ var ChartUniqueVisits = oop.extend(UserFacingChart, {
                 },
             });
     },
-
-
-
 });
+
 
 // show most common referrers to this project from the last week
 var ChartTopReferrers = oop.extend(UserFacingChart, {
@@ -311,21 +354,36 @@ var ChartVisitsServerTime = oop.extend(UserFacingChart, {
     },
 });
 
+
 // most popular sub-pages of this project
 var ChartPopularPages = oop.extend(UserFacingChart, {
     constructor: function(params) {
         var self = this;
         self.super.constructor.call(self, params);
-        self.nodeTitle = params.nodeTitle || '';
+        self.nodeId = params.nodeId || '';
+        self.titleForPath = {
+            files: 'Files',
+            analytics: 'Analytics',
+            forks: 'Forks',
+            registrations: 'Registrations',
+            wiki: 'Wiki',
+        };
     },
     baseQuery: function() {
         var self = this;
         return {
-            type: 'count_unique',
+            type: 'count',
             params: {
                 event_collection: 'pageviews',
-                target_property: 'anon.id',
-                group_by: 'page.title'
+                group_by: ['page.info.path', 'page.title'],
+                filters: [
+                    {
+                        property_name: 'page.info.path',
+                        operator: 'not_contains',
+                        property_value: '/project/',
+                    },
+                ],
+
             }
         };
     },
@@ -348,27 +406,66 @@ var ChartPopularPages = oop.extend(UserFacingChart, {
                 },
             });
     },
+
+    // url path => page title is not 1:1, so we have to do our own aggregation
+    dataParser: function(resp) {
+        var self = this;
+        var aggregatedResults = {};
+        resp.result.forEach(function(result) {
+            var path = result['page.info.path'];
+            var pathParts = path.split('/');
+            pathParts.shift(); // get rid of leading ""
+
+            // if path begins with our node id: it's a project page.  Lookup the title using
+            // the second part of the path. All wiki pages are consolidated under 'Wiki'.
+            // If path begins with a guid-ish that is not the current node id, assume it's a
+            // file and use the title provided.
+            var pageTitle, pagePath;
+            if (pathParts[0] === self.nodeId) {
+                pageTitle = pathParts[1] ? self.titleForPath[pathParts[1]] : 'Home';
+                pagePath = '/' + pathParts[0] + '/' + (pathParts[1] || '');
+            }
+            else if (/^\/[a-z0-9]{5}\/$/.test(path)) {
+                pageTitle = 'File: ' + result['page.title'].replace(/^OSF \| /, '');
+                pagePath = path;
+            }
+
+            // Didn't recognize the path, exclude the entry from the popular pages list.
+            if (!pageTitle) {
+                return;
+            }
+
+            if (!aggregatedResults[pagePath]) {
+                aggregatedResults[pagePath] = {
+                    path: pagePath,
+                    result: 0,
+                    title: pageTitle,
+                };
+            }
+            aggregatedResults[pagePath].result += result.result;
+            return;
+        });
+
+        var dataset = new keenDataset().type('double-grouped-metric');
+        for (var path in aggregatedResults) {
+            var result = aggregatedResults[path];
+            dataset.set([ 'Result', result.title ], result.result);
+        }
+        return dataset;
+    },
     munger: function() {
         var self = this;
         var dataset = self.chart.dataset;
+
         dataset.sortRows('asc', function(row) { return row[1]; });
 
         var nbrRows = dataset.matrix.length;
         var minimumIndex = nbrRows <= self.MAX_DISPLAY_ENTRIES ? 0 : nbrRows - self.MAX_DISPLAY_ENTRIES;
         dataset.filterRows(function(row, index) { return index >= minimumIndex; });
 
-        dataset.updateColumn(0, function(value, index, column) {
-            var title = value.replace(/^OSF \| /, '');
-            // Strip off the project title, if present at beginning of string
-            if (title.startsWith(self.nodeTitle)) {
-                // strip off first N chars where N is project title length + 1 space
-                var pageTitleIndex = self.nodeTitle.length + 1;
-                title = title.slice(pageTitleIndex);
-            }
-            return title || 'Home';
-        });
     },
 });
+
 
 module.exports = {
     UserFacingChart: UserFacingChart,

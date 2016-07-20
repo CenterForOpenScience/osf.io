@@ -51,8 +51,8 @@ keenAnalysis.ready(function(){
         startDate: startDate,
         endPickerElem: document.getElementById('endDatePicker'),
         endDate: endDate,
-        statsMinDate: new Date(2013, 5, 1),
-        statsMaxDate: new Date(),
+        minDate: new Date(2013, 5, 1),
+        maxDate: new Date(),
     });
 
     var authParams = {
@@ -73,7 +73,7 @@ keenAnalysis.ready(function(){
         new ProjectUsageStatistics.ChartPopularPages(
             $.extend({}, authParams, {
                 containingElement: '#popularPages',
-                nodeTitle: window.contextVars.node.title,
+                nodeId: window.contextVars.node.id,
             })
         ),
     ];
