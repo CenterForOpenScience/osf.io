@@ -202,5 +202,5 @@ class TestDeleteNodeLink(ApiTestCase):
         assert_equal(res.status_code, 404)
         errors = res.json['errors']
         assert_equal(len(errors), 1)
-        assert_equal(errors[0]['detail'], 'Node link does not belong to the requested node.')
+        assert_equal(errors[0]['detail'], 'Not Found.')
 
