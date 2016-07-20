@@ -185,6 +185,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         date_created                    iso8601 timestamp  timestamp that the node was created
         date_modified                   iso8601 timestamp  timestamp when the node was last updated
         tags                            array of strings   list of tags that describe the node
+        current_user_can_comment        boolean            Whether the current user is allowed to post comments
         current_user_permissions        array of strings   list of strings representing the permissions for the current user on this node
         registration                    boolean            is this a registration? (always false - may be deprecated in future versions)
         fork                            boolean            is this node a fork of another node?
@@ -379,14 +380,15 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
         date_created                    iso8601 timestamp   timestamp that the node was created
         date_modified                   iso8601 timestamp   timestamp when the node was last updated
         tags                            array of strings    list of tags that describe the node
+        current_user_can_comment        boolean            Whether the current user is allowed to post comments
         current_user_permissions        array of strings    list of strings representing the permissions for the current user on this node
         registration                    boolean             is this a registration? (always false - may be deprecated in future versions)
         fork                            boolean             is this node a fork of another node?
         public                          boolean             has this node been made publicly-visible?
         collection                      boolean             is this a collection? (always false - may be deprecated in future versions)
         node_license                    object             details of the license applied to the node
-            year                        string             date range of the license
-            copyright_holders           array of strings   holders of the applied license
+        year                            string             date range of the license
+        copyright_holders               array of strings   holders of the applied license
 
     ##Relationships
 
@@ -1022,6 +1024,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
         date_created                    iso8601 timestamp  timestamp that the node was created
         date_modified                   iso8601 timestamp  timestamp when the node was last updated
         tags                            array of strings   list of tags that describe the registered node
+        current_user_can_comment        boolean            Whether the current user is allowed to post comments
         current_user_permissions        array of strings   list of strings representing the permissions for the current user on this node
         fork                            boolean            is this project a fork?
         registration                    boolean            is this node a registration? (always true - may be deprecated in future versions)
@@ -1137,6 +1140,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
         date_created                    iso8601 timestamp   timestamp that the node was created
         date_modified                   iso8601 timestamp   timestamp when the node was last updated
         tags                            array of strings    list of tags that describe the node
+        current_user_can_comment        boolean            Whether the current user is allowed to post comments
         current_user_permissions        array of strings    list of strings representing the permissions for the current user on this node
         registration                    boolean             is this a registration? (always false - may be deprecated in future versions)
         fork                            boolean             is this node a fork of another node?
@@ -1420,7 +1424,7 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ODMF
     OSF Node Fork entities have the "nodes" `type`.
 
         name                        type               description
-        =================================================================================
+        ===============================================================================================================================
         title                       string             title of project or component
         description                 string             description of the node
         category                    string             node category, must be one of the allowed values
@@ -1432,6 +1436,7 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ODMF
         fork                        boolean            is this node a fork of another node? (always True)
         public                      boolean            has this node been made publicly-visible?
         forked_date                 iso8601 timestamp  timestamp when the node was forked
+        current_user_can_comment    boolean            Whether the current user is allowed to post comments
         current_user_permissions    array of strings   List of strings representing the permissions for the current user on this node
 
     ##Links
@@ -1529,28 +1534,30 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
     ####File Entity
 
-        name          type       description
-        =========================================================================
-        name          string            name of the file
-        path          string            unique identifier for this file entity for this
-                                        project and storage provider. may not end with '/'
-        materialized  string            the full path of the file relative to the storage
-                                        root.  may not end with '/'
-        kind          string            "file"
-        etag          string            etag - http caching identifier w/o wrapping quotes
-        modified      timestamp         last modified timestamp - format depends on provider
-        contentType   string            MIME-type when available
-        provider      string            id of provider e.g. "osfstorage", "s3", "googledrive".
-                                        equivalent to addon_short_name on the OSF
-        size          integer           size of file in bytes
-        tags          array of strings  list of tags that describes the file (osfstorage only)
-        extra         object            may contain additional data beyond what's described here,
-                                        depending on the provider
-          version     integer           version number of file. will be 1 on initial upload
-          downloads   integer           count of the number times the file has been downloaded
-          hashes      object
-            md5       string            md5 hash of file
-            sha256    string            SHA-256 hash of file
+        name                        type              description
+        ==========================================================================================================
+        name                        string            name of the file
+        path                        string            unique identifier for this file entity for this
+                                                        project and storage provider. may not end with '/'
+        materialized                string            the full path of the file relative to the storage
+                                                        root.  may not end with '/'
+        kind                        string            "file"
+        etag                        string            etag - http caching identifier w/o wrapping quotes
+        modified                    timestamp         last modified timestamp - format depends on provider
+        contentType                 string            MIME-type when available
+        provider                    string            id of provider e.g. "osfstorage", "s3", "googledrive".
+                                                        equivalent to addon_short_name on the OSF
+        size                        integer           size of file in bytes
+        current_user_can_comment    boolean           Whether the current user is allowed to post comments
+
+        tags                        array of strings  list of tags that describes the file (osfstorage only)
+        extra                       object            may contain additional data beyond what's described here,
+                                                       depending on the provider
+        version                     integer           version number of file. will be 1 on initial upload
+        downloads                   integer           count of the number times the file has been downloaded
+        hashes                      object
+        md5                         string            md5 hash of file
+        sha256                      string            SHA-256 hash of file
 
     ####Folder Entity
 
@@ -2022,8 +2029,8 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
             raise JSONAPIException(detail='This addon is enabled but an account has not been imported from your user settings',
                 meta={'link': '{}users/me/addons/{}/accounts/'.format(API_BASE, node_addon.config.short_name)})
 
-        path = self.request.query_params.get('path', '')
-        folder_id = self.request.query_params.get('id', 'root')
+        path = self.request.query_params.get('path')
+        folder_id = self.request.query_params.get('id')
 
         if not hasattr(node_addon, 'get_folders'):
             raise EndpointNotImplementedError('Endpoint not yet implemented for this addon')
@@ -2720,15 +2727,16 @@ class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMi
 
     OSF wiki entities have the "wikis" `type`.
 
-        name                type               description
-        =================================================================================
-        name                string             name of the wiki pag
-        path                string             the path of the wiki page
-        materialized_path   string             the path of the wiki page
-        date_modified       iso8601 timestamp  timestamp when the wiki was last updated
-        content_type        string             MIME-type
-        extra               object
-            version         integer            version number of the wiki
+        name                    type               description
+        ======================================================================================================
+        name                        string             name of the wiki pag
+        path                        string             the path of the wiki page
+        materialized_path           string             the path of the wiki page
+        date_modified               iso8601 timestamp  timestamp when the wiki was last updated
+        content_type                string             MIME-type
+        current_user_can_comment    boolean            Whether the current user is allowed to post comments
+        extra                       object
+        version                     integer            version number of the wiki
 
 
     ##Links
