@@ -253,7 +253,6 @@ $(document).ready(function() {
         window.location = '/search/?q=(tags:"' + $(e.target).text().toString().trim()+ '")';
     });
 
-
     // Portlet feature for the dashboard, to be implemented in later versions.
     // $( ".osf-dash-col" ).sortable({
     //   connectWith: ".osf-dash-col",
