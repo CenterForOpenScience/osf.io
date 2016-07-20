@@ -1,5 +1,5 @@
 <%inherit file="base.mako"/>
-<%def name="title()"> ${node['ownerName']}'s Public Files</%def>
+<%def name="title()"> ${node['owner_name']}'s Public Files</%def>
 
 <%def name="og_description()">
     Hosted on the Open Science Framework
@@ -11,7 +11,7 @@
 <%def name="content()">
 <div class="page-header  visible-xs">
 </div>
-    <h2 class="text-center"> ${node['ownerName']}'s Public Files</h2>
+    <h2 class="text-center"> ${node['owner_name']}'s Public Files</h2>
 
 <div id="treeGrid">
 	<div class="spinner-loading-wrapper">
@@ -30,9 +30,9 @@
 <script>
 
     window.contextVars = $.extend(true, {}, window.contextVars, {
-         nodeId : ${ node['id'] |sjson, n },
+         nodeId : ${ node['node_id'] |sjson, n },
          nodeApiUrl : ${ node['api_url'] | sjson, n },
-         isPublicFilesCol : ${node['isPublicFilesCol']  | sjson, n },
+         isPublicFilesCol : ${node['is_public_files_node']  | sjson, n },
      });
 
 

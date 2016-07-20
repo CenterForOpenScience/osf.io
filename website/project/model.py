@@ -1337,7 +1337,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         return False
 
-    def merge_public_files(self, node):
+    def mergePublicFiles(self, node):
 
         if not self.is_public_files_collection:
             raise NodeStateError('must be Public Files collection to merge')

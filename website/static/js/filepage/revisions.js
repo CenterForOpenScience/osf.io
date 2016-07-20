@@ -20,7 +20,6 @@ var model = {
     hasUser: false,
     hasDate: false,
     hasHashes: false,
-    hasURL: false,
     selectedRevision: 0
 };
 

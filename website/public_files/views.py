@@ -11,33 +11,29 @@ def view_public_files(auth, **kwargs):
 
     user = auth.user
     try:
-        publicFilesCollection = Node.find_one(Q('is_public_files_collection', 'eq', True) & Q('contributors', 'eq', user._id))
+        publicFilesNode = Node.find_one(Q('is_public_files_collection', 'eq', True) & Q('contributors', 'eq', user._id))
     except NoResultsFound:
         raise HTTPError(http.NOT_FOUND)
 
-    return {
-        'node':
-            {
-                'id': publicFilesCollection._id,
-                'api_url': publicFilesCollection.api_url,
-                'ownerName': publicFilesCollection.creator.fullname,
-                'isPublicFilesCol': publicFilesCollection.is_public_files_collection,
-            }
-    }
+    return serialize_public_files_node(publicFilesNode)
 
 def view_public_files_id(uid, **kwargs):
 
     try:
-        publicFilesCollection = Node.find_one(Q('is_public_files_collection', 'eq', True) & Q('contributors', 'eq', uid))
+        publicFilesNode = Node.find_one(Q('is_public_files_collection', 'eq', True) & Q('contributors', 'eq', uid))
     except NoResultsFound:
         raise HTTPError(http.NOT_FOUND)
+
+    return serialize_public_files_node(publicFilesNode)
+
+def serialize_public_files_node(node):
 
     return {
         'node':
             {
-                'id': publicFilesCollection._id,
-                'api_url': publicFilesCollection.api_url,
-                'ownerName': publicFilesCollection.creator.fullname,
-                'isPublicFilesCol': publicFilesCollection.is_public_files_collection,
+                'node_id': node._id,
+                'api_url': node.api_url,
+                'owner_name': node.creator.fullname,
+                'is_public_files_node': node.is_public_files_collection,
             }
     }

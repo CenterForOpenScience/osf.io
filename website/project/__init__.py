@@ -110,24 +110,12 @@ def new_collection(title, user):
     return node
 
 def new_public_files_collection(user):
-    """Create a new folder project.
 
-    :param str title: Node title
-    :param User user: User object
-    :return Node: Created node
-
-    """
-    existing_public_files_collections = Node.find(
-        Q('is_public_files_collection', 'eq', True) & Q('contributors', 'eq', user._id)
-    )
-
-    if existing_public_files_collections.count() > 0:
+    if user.public_files_node is not None:
         raise NodeStateError('Users may only have one public files collection')
 
-    title = 'Public Files'
-
     node = Node(
-        title=title,
+        title='Public Files',
         creator=user,
         category='project',
         is_public=True,

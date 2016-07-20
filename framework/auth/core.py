@@ -1032,6 +1032,7 @@ class User(GuidStoredObject, AddonModelMixin):
         if self.is_registered:
             return Node.find_one(Q('contributors', 'eq', self._id) & Q('is_public_files_collection', 'eq', True))
         return None
+
     @property
     def url(self):
         return '/{}/'.format(self._primary_key)
