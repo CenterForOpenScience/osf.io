@@ -1030,7 +1030,10 @@ class User(GuidStoredObject, AddonModelMixin):
     def public_files_node(self):
         from website.project.model import Node
         if self.is_registered:
-            return Node.find_one(Q('contributors', 'eq', self._id) & Q('is_public_files_collection', 'eq', True))
+            try:
+                return Node.find_one(Q('contributors', 'eq', self._id) & Q('is_public_files_collection', 'eq', True))
+            except NoResultsFound:
+                None
         return None
 
     @property
