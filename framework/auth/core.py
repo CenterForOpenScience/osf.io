@@ -713,17 +713,15 @@ class User(GuidStoredObject, AddonModelMixin):
     def get_claim_url(self, project_id, external=False):
         """
         Return the URL that an unclaimed user should use to claim their account.
-        Return `None` if there is no unclaimed_record for the given project ID.
+        Raise `ValueError` if there is no unclaimed_record for the given project ID.
 
         :param project_id: the project ID for the unclaimed record
         :param external:
         :rtype: string
         :returns: the claim url
+        :raises: ValueError if there is no record for the given project.
         """
-        try:
-            unclaimed_record = self.get_unclaimed_record(project_id)
-        except ValueError:
-            return None
+        unclaimed_record = self.get_unclaimed_record(project_id)
         uid = self._primary_key
         base_url = settings.DOMAIN if external else '/'
         token = unclaimed_record['token']
