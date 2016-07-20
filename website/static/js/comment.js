@@ -19,9 +19,9 @@ var atMention = require('js/atMention');
 // Cached contributor data, to prevent multiple fetches for @mentions
 var __contributorCache = null;
 
-var getContributorList = function(nodeId) {
-    var url = osfHelpers.apiV2Url('nodes/' + nodeId + '/contributors/', {});
-    var ret = $.Deferred();
+var getContributorList = function(url, contributors, ret) {
+    contributors = contributors || [];
+    ret = ret || $.Deferred();
     if (__contributorCache !== null) {
         ret.resolve(__contributorCache);
     } else {
@@ -33,7 +33,11 @@ var getContributorList = function(nodeId) {
             var activeContributors = response.data.filter(function(item) {
                 return item.embeds.users.data.attributes.active === true;
             });
-            var data = activeContributors.map(function(item) {
+            contributors = contributors.concat(activeContributors);
+            if (response.links.next) {
+                return getContributorList(response.links.next, contributors, ret);
+            }
+            var data = contributors.map(function(item) {
                 var userData = item.embeds.users.data;
                 return {
                     'id': userData.id,
@@ -812,7 +816,13 @@ var onOpen = function(page, rootId, nodeApiUrl, currentUserId) {
 
 
 function initAtMention(nodeId, selectorOrElem) {
-    return getContributorList(nodeId)
+    var url = osfHelpers.apiV2Url('nodes/' + nodeId + '/contributors/', {
+        query: {
+            'sort': '_id',
+            'page[size]': 50
+        }
+    });
+    return getContributorList(url)
         .then(function(contributors) {
             atMention(selectorOrElem, contributors);
         });
