@@ -123,7 +123,7 @@ class TestDeleteNodeLink(ApiTestCase):
         assert_equal(res.status_code, 200)
         pointer_id = res.json['data'][0]['id']
 
-        url = '/{}nodes/{}/node_links/{}/'.format(
+        url = '/{}registrations/{}/node_links/{}/'.format(
             API_BASE,
             registration._id,
             pointer_id,
