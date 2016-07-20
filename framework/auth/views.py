@@ -462,7 +462,7 @@ def send_confirm_email(user, email, renew=False):
         email,
         external=True,
         force=True,
-        renew = renew,
+        renew=renew,
     )
 
     try:

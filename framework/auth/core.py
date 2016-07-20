@@ -115,9 +115,14 @@ def validate_user_with_verification_key(username=None, verification_key=None):
         return None
     user_obj = get_user(username=username)
     if user_obj:
-        if user_obj.verification_key_v2['token'] == verification_key:
-            if user_obj.verification_key_v2['expires'] > dt.datetime.utcnow():
-                return user_obj
+        try:
+            if user_obj.verification_key_v2:
+                if user_obj.verification_key_v2['token'] == verification_key:
+                    if user_obj.verification_key_v2['expires'] > dt.datetime.utcnow():
+                        return user_obj
+        except AttributeError:
+            # if user does not have verification_key_v2
+            return None
     return None
 
 

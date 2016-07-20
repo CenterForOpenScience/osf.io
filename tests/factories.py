@@ -102,6 +102,7 @@ class UserFactory(ModularOdmFactory):
     merged_by = None
     email_verifications = {}
     verification_key = None
+    verification_key_v2 = {}
 
     @post_generation
     def set_names(self, create, extracted):
