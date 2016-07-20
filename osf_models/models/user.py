@@ -52,7 +52,7 @@ class User(GuidMixin, BaseModel, AbstractBaseUser):
     # This value is unique, but multiple "None" records exist for:
     #   * unregistered contributors where an email address was not provided.
     # TODO: Update mailchimp subscription on username change in user.save()
-    username = models.CharField(max_length=255, db_index=True)
+    username = models.CharField(max_length=255, db_index=True, unique=True)
 
     # Hashed. Use `User.set_password` and `User.check_password`
     # password = models.CharField(max_length=255)
