@@ -1344,11 +1344,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         from website.files.models.osfstorage import OsfStorageFile
 
-        primaryUserFiles = OsfStorageFile.find(Q('node', 'eq', self) & Q('title', 'ne', 'Public Files'))
-        mergedUserFiles = OsfStorageFile.find(Q('node', 'eq', node) & Q('title', 'ne', 'Public Files'))
+        primary_user_files = OsfStorageFile.find(Q('node', 'eq', self) & Q('title', 'ne', 'Public Files'))
+        merged_user_files = OsfStorageFile.find(Q('node', 'eq', node) & Q('title', 'ne', 'Public Files'))
 
         #check that no files share the same key before merging.
-        matches = [primUserFile for mergUserFiles, primUserFile in zip(mergedUserFiles, primaryUserFiles) if primUserFile.name == mergUserFiles.name]
+        matches = [primary_user_file for merged_user_file, primary_user_file in zip(merged_user_files, primary_user_files) if primary_user_file.name == merged_user_file.name]
         if matches:
             raise DuplicateKeyError(BaseException)
 
