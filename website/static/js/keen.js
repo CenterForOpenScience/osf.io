@@ -39,7 +39,7 @@ var KeenTracker = (function() {
 
         var user = window.contextVars.currentUser;
         var node = window.contextVars.node;
-        var pageMeta = lodashGet(window.contextVars, 'analyticsMeta.pageMeta');
+        var pageMeta = lodashGet(window, 'contextVars.analyticsMeta.pageMeta', {});
         return {
             page: {
                 title: document.title,
@@ -208,8 +208,8 @@ var KeenTracker = (function() {
 
             self.trackPageView = function () {
                 var self = this;
-                if (lodashGet(window.contextVars, 'node').isPublic &&
-                    lodashGet(window.contextVars, 'analyticsMeta.pageMeta').public) {
+                if (lodashGet(window, 'contextVars.node.isPublic', false) &&
+                    lodashGet(window, 'contextVars.analyticsMeta.pageMeta.public', false)) {
                     self.trackPublicEvent('pageviews', {});
                 }
                 self.trackPrivateEvent('pageviews', {});
