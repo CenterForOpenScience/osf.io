@@ -13,7 +13,7 @@ def get_default_mailing_lists():
 
 
 class OSFUserManager(BaseUserManager):
-    def create_user(self, username, password=None, **kwargs):
+    def create_user(self, username, password=None):
         if not username:
             raise ValueError('Users must have a username')
 
@@ -21,7 +21,6 @@ class OSFUserManager(BaseUserManager):
             username=self.normalize_email(username),
             is_active=True,
             date_registered=datetime.today()
-            **kwargs
         )
 
         user.set_password(password)
