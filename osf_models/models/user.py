@@ -13,6 +13,8 @@ def get_default_mailing_lists():
 
 
 class User(GuidMixin, BaseModel, AbstractBaseUser):
+
+    last_login = models.DateTimeField(auto_now=True)
     # Node fields that trigger an update to the search engine on save
     SEARCH_UPDATE_FIELDS = {
         'fullname',
