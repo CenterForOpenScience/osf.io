@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
+from django.contrib.auth.models import PermissionsMixin
 
 from .base import BaseModel, GuidMixin
 from django.db import models
@@ -36,7 +37,7 @@ class OSFUserManager(BaseUserManager):
         return user
 
 
-class OSFUser(GuidMixin, BaseModel, AbstractBaseUser):
+class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = 'username'
 
     # Node fields that trigger an update to the search engine on save
@@ -270,7 +271,6 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser):
     objects = OSFUserManager()
 
     is_active = models.BooleanField(default=False)
-    is_superuser = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
 
     def __unicode__(self):
