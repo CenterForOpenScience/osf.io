@@ -4,12 +4,16 @@ from website.util import api_url_for
 
 from box.client import BoxClient, BoxClientException
 
-
 class BoxSerializer(StorageAddonSerializer):
 
     addon_short_name = 'box'
 
     def credentials_are_valid(self, user_settings, client):
+        from website.addons.box.model import Box  # Avoid circular import
+        if self.node_settings.has_auth:
+            if Box(self.node_settings.external_account).refresh_oauth_key():
+                return True
+
         if user_settings:
             client = client or BoxClient(user_settings.external_accounts[0].oauth_key)
             try:
@@ -22,7 +26,7 @@ class BoxSerializer(StorageAddonSerializer):
         path = node_settings.fetch_full_folder_path()
         return {
             'path': path,
-            'name': path.replace('All Files', '', 1) if path != 'All Files' else '/ (Full Box)'
+            'name': path.replace('All Files', '', 1) if path != '/' else '/ (Full Box)'
         }
 
     @property
