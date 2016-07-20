@@ -1,7 +1,7 @@
 import Ember from 'ember';
 
 export default Ember.Component.extend({
-    value: 'Initial text',
+    value: 'initial text',
     initializeAce: function(editor) {
         // editor.getSession().setMode('ace/mode/markdown');
         editor.getSession().setUseSoftTabs(true);   // Replace tabs with spaces
@@ -15,5 +15,13 @@ export default Ember.Component.extend({
             enableSnippets: false,
             enableLiveAutocompletion: false
         });
-    }
+    },
+    fileManager: Ember.inject.service(),
+    actions: {
+        saveFile(file) {
+            var data = ace.edit('editor').getValue();
+            this.set('value', data);
+            this.get('fileManager').updateContents(file, data);
+        }
+    },
 });
