@@ -22,13 +22,21 @@ from osf_models.app import ModelsConfig as app_config
 
 class Node(GuidMixin, BaseModel):
     # TODO: Alphabetize properties because sanity
-    CATEGORY_MAP = dict(
-        (('analysis', 'Analysis'), ('communication', 'Communication'),
-         ('data', 'Data'), ('hypothesis', 'Hypothesis'), (
-             'instrumentation', 'Instrumentation'), (
-                 'methods and measures', 'Methods and Measures'), (
-                     'procedure', 'Procedure'), ('project', 'Project'),
-         ('software', 'Software'), ('other', 'Other'), ('', 'Uncategorized')))
+
+
+    CATEGORY_MAP = {
+        'analysis': 'Analysis',
+        'communication': 'Communication',
+        'data': 'Data',
+        'hypothesis': 'Hypothesis',
+        'instrumentation': 'Instrumentation',
+        'methods and measures': 'Methods and Measures',
+        'procedure': 'Procedure',
+        'project': 'Project',
+        'software': 'Software',
+        'other': 'Other',
+        '': 'Uncategorized',
+    }
 
     @classmethod
     def find_one(cls, query=None, allow_institution=False, **kwargs):
