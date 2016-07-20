@@ -11,7 +11,7 @@ from scripts.migrate_piwik import utils
 from scripts.migrate_piwik import settings as script_settings
 
 
-def main(dry_run=True, batch_count=None):
+def main(dry_run=True, batch_count=None, force=False):
     """Upload the pageviews to Keen.
     """
 
@@ -24,8 +24,11 @@ def main(dry_run=True, batch_count=None):
     extract_complaints = utils.get_complaints_for('transform02', 'r')
     extract_complaints.readline()  # toss header
     if extract_complaints.readline():
-        print("You have unaddressed complaints in your second-phase transform! Bailing...")
-        sys.exit()
+        print("You have unaddressed complaints in your second-phase transform!")
+        if not force:
+            print("  ...pass --force to ignore")
+            sys.exit()
+
 
     history_file = utils.get_history_for('load', 'w')
     history_file.write(script_settings.RUN_HEADER + '{}\n'.format(complaints_run_id))
@@ -34,6 +37,7 @@ def main(dry_run=True, batch_count=None):
     keen_clients = {'public': None, 'private': None}
     es_client = None
     if dry_run:
+        print("Doing dry-run upload to Elastic search.  Pass --for-reals to upload to Keen")
         es_client = Elasticsearch()
         try:
             es_client.indices.delete(script_settings.ES_INDEX)
@@ -94,5 +98,6 @@ def load_batch_for(batch_id, domain, tally, dry_run, es_client, keen_client):
 
 
 if __name__ == "__main__":
-    dry_run = True
-    main(dry_run=dry_run)
+    dry_run = '--for-reals' not in sys.argv
+    force = '--force' in sys.argv
+    main(dry_run=dry_run, force=force)

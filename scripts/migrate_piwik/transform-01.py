@@ -19,7 +19,7 @@ from scripts.migrate_piwik import settings
 from scripts.migrate_piwik import lookup_data
 
 
-def main():
+def main(force=False):
 
     history_run_id = utils.get_history_run_id_for('extract')
     complaints_run_id = utils.get_complaints_run_id_for('extract')
@@ -30,8 +30,10 @@ def main():
     extract_complaints = utils.get_complaints_for('extract', 'r')
     extract_complaints.readline()  # toss header
     if extract_complaints.readline():
-        print("You have unaddressed complaints! Bailing...")
-        sys.exit()
+        print("You have unaddressed complaints!")
+        if not force:
+            print("  ...pass --force to ignore")
+            sys.exit()
 
     sqlite_db = sqlite3.connect(settings.SQLITE_PATH)
     sqlite_setup(sqlite_db)
@@ -320,7 +322,6 @@ def get_or_create_visitor_id(piwik_id, sqlite_db):
     return keen_id
 
 
-
 def get_or_create_session_id(visit_id, sqlite_db):
     """Gets or creates a new session UUID given a Piwik visit ID.
 
@@ -382,4 +383,5 @@ def timestamp_components(timestamp):
 
 if __name__ == "__main__":
     init_app(set_backends=True, routes=False)
-    main()
+    force = '--force' in sys.argv
+    main(force=force)

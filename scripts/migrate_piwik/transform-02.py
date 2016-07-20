@@ -7,7 +7,7 @@ from scripts.migrate_piwik import utils
 from scripts.migrate_piwik import settings
 
 
-def main():
+def main(force=False):
 
     history_run_id = utils.get_history_run_id_for('transform01')
     complaints_run_id = utils.get_complaints_run_id_for('transform01')
@@ -18,8 +18,11 @@ def main():
     extract_complaints = utils.get_complaints_for('transform01', 'r')
     extract_complaints.readline()  # toss header
     if extract_complaints.readline():
-        print("You have unaddressed complaints in your first-phase transform! Bailing...")
-        sys.exit()
+        print("You have unaddressed complaints in your first-phase transform!")
+        if not force:
+            print("  ...pass --force to ignore")
+            sys.exit()
+
 
     history_file = utils.get_history_for('transform02', 'w')
     history_file.write('Run ID: {}\n'.format(complaints_run_id))
@@ -81,4 +84,6 @@ def write_batch(batchnum, run_id, domain, pageviews, base_dir):
 
 
 if __name__ == "__main__":
-    main()
+    force = '--force' in sys.argv
+    main(force=force)
+

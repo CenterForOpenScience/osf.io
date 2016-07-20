@@ -23,15 +23,6 @@ def main():
         visit = pageview['visit']
         action = pageview['action']
 
-        # # nodes agree?
-        # if action['project_id'] != action['node_id']:
-        #     complaints += 1
-        #     complaints_file.write(
-        #         'Line {}, ID {}: unequal action node ids! project({}), node({})\n'.format(
-        #             linenum, action['id'], action['project_id'], action['node_id']
-        #         )
-        #     )
-
         # ip address are all scrubbed?
         if not re.search('0\.0$', visit['ip_addr']):
             complaints += 1
