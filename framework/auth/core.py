@@ -335,6 +335,8 @@ class User(GuidStoredObject, AddonModelMixin):
     date_registered = fields.DateTimeField(auto_now_add=dt.datetime.utcnow,
                                            index=True)
 
+    date_modified = fields.DateTimeField()
+
     # watched nodes are stored via a list of WatchConfigs
     watched = fields.ForeignField('WatchConfig', list=True)
 

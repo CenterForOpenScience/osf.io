@@ -29,6 +29,7 @@ class UserSerializer(JSONAPISerializer):
     family_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     suffix = HideIfDisabled(ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations'))
     date_registered = HideIfDisabled(ser.DateTimeField(read_only=True))
+    date_modified = ser.DateTimeField(read_only=True)
     active = HideIfDisabled(ser.BooleanField(read_only=True, source='is_active'))
 
     # Social Fields are broken out to get around DRF complex object bug and to make API updating more user friendly.

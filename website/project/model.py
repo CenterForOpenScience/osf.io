@@ -1618,6 +1618,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if settings.PIWIK_HOST and update_piwik:
             piwik_tasks.update_node(self._id, saved_fields)
 
+        # Send signal to notify that the node has been updated.
+        project_signals.node_updated.send(self)
+
         # Return expected value for StoredObject::save
         return saved_fields
 
