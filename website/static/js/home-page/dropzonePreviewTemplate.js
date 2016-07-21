@@ -3,21 +3,6 @@
 var clipboard = require('js/clipboard');
 var m = require('mithril');
 
-function shareButton(link) {
-    var cb = function (elem) {
-        clipboard.makeClipboardClient(elem);
-    };
-
-    return m('div.input-group',
-
-        m('span.dz-share.input-group-btn',
-            m('button.btn.btn-default.btn-sm.copy[type="button"][data-clipboard-text="' + link + '"]', {config: cb},
-                m('span', 'Copy Share Link')
-            )
-        ),
-        m('input[value="' + link + '"][readonly="readonly"][onclick="this.select();"][style="height: 30px;color:#333333;min-width:175px;"]')
-    );
-}
 
 function dropzoneResolveIcon(file) {
     return m('div.file-extension', {'class': '_' + file.name.split('.').pop().toLowerCase()});
@@ -61,6 +46,5 @@ function dropzonePreviewTemplate() {
 
 module.exports = {
     dropzonePreviewTemplate: dropzonePreviewTemplate,
-    shareButton: shareButton,
     resolveIcon: dropzoneResolveIcon,
 };

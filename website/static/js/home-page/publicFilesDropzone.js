@@ -1,6 +1,7 @@
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
+var cb = require('js/clipboard');
 var AddProject = require('js/addProjectPlugin');
 var dzPreviewTemplate = require('js/home-page/dropzonePreviewTemplate');
 
@@ -135,7 +136,7 @@ var PublicFilesDropzone = {
                 ).done(function(response) {
                     guid = response.data.attributes.guid;
                     var link = location.protocol+ '//' + location.host + '/' + guid;
-                    m.render(buttonContainer, dzPreviewTemplate.shareButton(link));
+                    m.render(buttonContainer, cb.generateClipboard(link));
                     $('.logo-spin').remove();
                     $('span.p-md').remove();
                     $('span.button.close').css('visibility', 'hidden');
@@ -179,13 +180,6 @@ var PublicFilesDropzone = {
 
         $('#publicFilesDropzoneUploadBtn').click(function (e) {
             $publicFiles.click();
-        });
-
-
-        $publicFiles.on('click', 'span.dz-share', function (e) {
-            if (!$('.alert-info').length) {
-                $osf.softGrowl('Link copied to clipboard', 'info', 20000 ,'fa fa-files-o');
-            }
         });
 
         $publicFiles.dropzone({
