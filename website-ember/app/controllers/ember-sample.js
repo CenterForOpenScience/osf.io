@@ -1,9 +1,8 @@
 import Ember from 'ember';
 
-import MarkdownIt from 'npm:markdown-it';
+import markdown from 'npm:markdown';
 
-let md = new MarkdownIt();
-var result = md.render('# markdown-it rulezz!');
+var result = markdown.full.render('# markdown-it rulezz!');
 
 export default Ember.Controller.extend({
     markdownText: result,
