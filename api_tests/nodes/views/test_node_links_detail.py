@@ -129,7 +129,7 @@ class TestDeleteNodeLink(ApiTestCase):
             pointer_id,
         )
         res = self.app.delete(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 403)
 
     def test_deletes_public_node_pointer_logged_out(self):
         res = self.app.delete(self.public_url, expect_errors=True)
