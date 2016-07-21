@@ -5,6 +5,9 @@ from pprint import pprint
 from django.apps import apps
 from osf_models import models
 
+# https://github.com/django/django/blob/master/django/db/migrations/topological_sort.py
+# https://github.com/django/django/blob/master/django/db/migrations/graph.py#L310
+
 def get_model_topology():
     classes = set([tup[1] for tup in inspect.getmembers(models) if isinstance(tup[1], type)])
     all_models = set(apps.get_models())
