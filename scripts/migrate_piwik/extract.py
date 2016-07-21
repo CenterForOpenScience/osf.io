@@ -48,6 +48,10 @@ def main():
     visit_cursor = get_visits(mysql_db)
     visit = visit_cursor.fetchone()
     while visit is not None:
+        visit['tz_offset'] = calculate_tz_offset(
+            str(visit['visitor_localtime']), str(visit['first_contact_server_time'])
+        )
+
         action_cursor = get_actions_for_visit(mysql_db, visit['idvisit'])
         action = action_cursor.fetchone()
 
@@ -74,6 +78,7 @@ def main():
                     'visitor_returning': visit['visitor_returning'],
                     'ip_addr': None if visit['location_ip'] == NULL_IP else inet_ntoa(visit['location_ip']),
                     'user_id': visit['user_id'],
+                    'tz_offset': visit['tz_offset'],
                     'ua': {
                         'os': visit['config_os'],
                         'os_version': visit['config_os_version'],
@@ -188,10 +193,15 @@ SELECT
   log_visit.referer_type,
   log_visit.visitor_returning,
   log_visit.custom_var_v1 AS user_id,
-  log_visit.custom_var_v2 AS user_name
+  log_visit.custom_var_v2 AS user_name,
+  log_visit.visitor_localtime,
+  (SELECT server_time
+   FROM piwik_log_link_visit_action AS action
+   WHERE action.idvisit=log_visit.idvisit
+   ORDER BY action.idlink_va
+   LIMIT 1) AS first_contact_server_time
 FROM piwik_log_visit AS log_visit
 WHERE log_visit.idsite in (1)
-GROUP BY log_visit.idvisit
 ORDER BY log_visit.idsite, log_visit.visit_last_action_time DESC
 '''
 
@@ -268,6 +278,31 @@ ORDER BY server_time ASC;
     cursor = mysql_db.cursor(MySQLdb.cursors.DictCursor)
     cursor.execute(query)
     return cursor
+
+
+def calculate_tz_offset(local_time_str, server_datetime_str):
+    """Given a local_time without date and a server_datetime in UTC, calculate the user's
+    timezone offset in minutes.  This is not accurate for all cases, but should be approximately
+    correct for the most common ones.  It assumes all offsets are less than 12 hours magnitude.
+    A positive offset of 13 hours is assumed to be a negative offset of one hour.
+    """
+
+    local_datetime = datetime.strptime(local_time_str, '%H:%M:%S')
+    server_datetime = datetime.strptime(server_datetime_str, '%Y-%m-%d %H:%M:%S')
+
+    # minutes since midnight
+    local_minutes = local_datetime.hour * 60 + local_datetime.minute
+    server_minutes = server_datetime.hour * 60 + server_datetime.minute
+
+    tz_offset = None
+    if local_minutes == server_minutes:
+        return 0  # local_timezone is same as utc
+    elif local_minutes > server_minutes:
+        minutes_difference = local_minutes - server_minutes
+        return minutes_difference * 1 if minutes_difference <= 12*60 else -1
+    else:
+        minutes_difference = server_minutes - local_minutes
+        return minutes_difference * -1 if minutes_difference <= 12*60 else 1
 
 
 if __name__ == "__main__":

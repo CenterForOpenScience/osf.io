@@ -3,7 +3,7 @@ import sys
 import json
 import uuid
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 from hashlib import sha256, md5
 
 from geoip import geolite2
@@ -170,8 +170,11 @@ def main(force=False):
 
         # piwik fmt: '2016-05-11 20:30:00', keen fmt: '2016-06-30T17:12:50.070Z'
         # piwik is always utc
-        timestamp = datetime.strptime(action['timestamp'], '%Y-%m-%d %H:%M:%S')
-        ts_formatted = timestamp.isoformat() + '.000Z'  # naive, but correct
+        utc_timestamp = datetime.strptime(action['timestamp'], '%Y-%m-%d %H:%M:%S')
+        utc_ts_formatted = utc_timestamp.isoformat() + '.000Z'  # naive, but correct
+
+        local_timedelta = timedelta(minutes=visit['tz_offset'])
+        local_timestamp = utc_timestamp + local_timedelta
 
         pageview = {
             'meta': {
@@ -200,8 +203,8 @@ def main(force=False):
                 'info': browser_info,
             },
             'time': {
-                'utc': timestamp_components(timestamp),
-                'local': {}
+                'utc': timestamp_components(utc_timestamp),
+                'local':  timestamp_components(local_timestamp),
             },
             'visitor': {
                 'id': visitor_id,
@@ -229,7 +232,7 @@ def main(force=False):
                 'country': getattr(location, 'country', None),
             },
             'keen': {
-                'timestamp': ts_formatted,
+                'timestamp': utc_ts_formatted,
                 'addons': [
                     {
                         'name': 'keen:referrer_parser',
