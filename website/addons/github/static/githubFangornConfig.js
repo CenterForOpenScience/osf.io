@@ -85,7 +85,7 @@ function _removeEvent (event, items) {
         // If all items can be deleted
         if(canDelete){
             mithrilContentMultiple = m('div', [
-                    m('p', 'This action is irreversible.'),
+                    m('p.text-danger',, 'This folder and ALL its contents will be deleted. This action is irreversible.'),
                     deleteList.map(function(item){
                         return m('.fangorn-canDelete.text-success', item.data.name);
                     })
