@@ -1421,7 +1421,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
             display_name='node'
         )
         if node.is_registration:
-            raise MethodNotAllowed
+            raise MethodNotAllowed(method=self.request.method)
         node = self.get_node()
         pointer = self.get_object()
         try:
