@@ -163,6 +163,21 @@ describe('addContributors', () => {
                    });
                });
            });
+
+           describe('emailSearch', () => {
+               it('should return true with an email address entered', () => {
+                   vm.query(
+                       'a1234@gmail.com'
+                   );
+                   assert.isTrue(vm.emailSearch());
+               });
+               it('should return false with a name entered', () => {
+                   vm.query(
+                       faker.name.findName()
+                   );
+                   assert.isFalse(vm.emailSearch());
+               });
+           });
        });
    });
 });
