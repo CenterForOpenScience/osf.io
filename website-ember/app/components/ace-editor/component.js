@@ -1,6 +1,6 @@
 import Ember from 'ember';
 
-/** Borrowed from here https://gist.github.com/ViktorQvarfordt/10432265
+/** Adapted from here https://gist.github.com/ViktorQvarfordt/10432265
 */
 export default Ember.Component.extend({
     fileManager: Ember.inject.service(),
