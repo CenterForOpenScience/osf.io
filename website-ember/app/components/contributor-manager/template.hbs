@@ -35,8 +35,16 @@
                     <a href={{contributor.users.links.html}}> {{if contributor.unregisteredContributor contributor.unregisteredContributor contributor.users.fullName}} </a>
                 </td>
                 <td> </td>
-                <td>{{contributor.permission}} </td>
-                <td> {{contributor.bibliographic}} </td>
+                <td class="permissions">
+                    <select class='form-control input-sm' onchange={{action (action 'permissionChange' contributor) value='target.value'}}>
+                        <option value='read' selected={{eq contributor.permission 'read'}}> Read</option>
+                        <option value='write' selected={{eq contributor.permission 'write'}}> Read + Write</option>
+                        <option value='admin' selected={{eq contributor.permission 'admin'}}> Administrator</option>
+                    </select>
+                </td>
+                <td>
+                    <input onchange={{action (action 'bibliographicChange' contributor) value='target.checked'}} checked={{eq contributor.bibliographic true}} type="checkbox" name="bibliographic">
+                </td>
                 <td> <button class="btn btn-danger to-top-element">Remove</button> </td>
             </tr>
         {{/each}}
