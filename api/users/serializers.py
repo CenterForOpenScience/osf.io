@@ -11,30 +11,6 @@ from api.base.serializers import (
 )
 from api.base.utils import absolute_reverse
 
-class PublicFilesSerializer(JSONAPISerializer):
-
-    files = RelationshipField(
-        related_view='nodes:node-providers',
-        related_view_kwargs={'node_id': '<pk>'}
-    )
-
-    links = LinksField(
-        {
-            'html': 'absolute_url',
-        }
-    )
-
-    def absolute_url(self, obj):
-        if obj is not None:
-            return obj.absolute_url
-        return None
-
-    def get_absolute_url(self, obj):
-        return obj.public_files_node.absolute_url
-
-    class Meta:
-        type_ = 'nodes'
-
 class UserSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'full_name',

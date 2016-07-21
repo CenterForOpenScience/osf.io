@@ -23,7 +23,7 @@ from api.registrations.serializers import RegistrationSerializer
 from api.base.utils import default_node_list_query, default_node_permission_query
 from api.addons.views import AddonSettingsMixin
 
-from .serializers import UserSerializer, UserAddonSettingsSerializer, UserDetailSerializer, UserInstitutionsRelationshipSerializer, PublicFilesSerializer
+from .serializers import UserSerializer, UserAddonSettingsSerializer, UserDetailSerializer, UserInstitutionsRelationshipSerializer
 from .permissions import ReadOnlyOrCurrentUser, ReadOnlyOrCurrentUserRelationship, CurrentUser
 
 
@@ -662,20 +662,3 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
             if val['id'] in current_institutions:
                 user.remove_institution(val['id'])
         user.save()
-
-class UserPublicFiles(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin):
-    view_name = 'user-public-files'
-    view_category = 'users'
-    serializer_class = PublicFilesSerializer
-
-    required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_REGISTRATIONS_READ]
-    required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_REGISTRATIONS_WRITE]
-
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-    )
-
-    def get_queryset(self):
-
-        return Node.find(Q('contributors', 'eq', self.get_user()._id) & Q('is_public_files_collection', 'eq', True))

@@ -2924,3 +2924,21 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
         res = super(LinkedNodesList, self).get_parser_context(http_request)
         res['is_relationship'] = True
         return res
+
+class UserPublicFiles(NodeFilesList, UserMixin):
+    view_name = 'public-files-node'
+
+    def get_default_queryset(self):
+        # Don't bother going to waterbutler for osfstorage
+        user = self.get_user()
+
+        files_list = self.get_file_object(user.public_files_node, '/', 'osfstorage', check_object_permissions=False)
+
+        if isinstance(files_list, list):
+            return [self.get_file_item(file) for file in files_list]
+
+        if isinstance(files_list, dict) or getattr(files_list, 'is_file', False):
+            # We should not have gotten a file here
+            raise NotFound
+
+        return list(files_list.children)
