@@ -3,7 +3,4 @@
     min-height: 500px;
 }
 
-// TODO get component styles working
-.editor {
-    height: 300px;
-}
+@import 'app/components/file-editor/style'
