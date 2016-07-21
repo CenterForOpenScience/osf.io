@@ -1430,7 +1430,7 @@ function _fangornColumnTitles () {
         columns.push(
         {
             title: 'Name',
-            width : '30%',
+            width : '40%',
             sort : true,
             sortType : 'text'
         }, {
@@ -1439,7 +1439,7 @@ function _fangornColumnTitles () {
             sort : false
         }, {
             title : 'Share Link',
-            width : '30%',
+            width : '20%',
             sort : false
         }, {
             title : 'Downloads',

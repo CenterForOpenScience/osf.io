@@ -32,14 +32,14 @@ function generateClipboard(url){
     var cb = function(elem) {
         makeClipboardClient(elem);
     };
-    return m('div.input-group[style="width: 180px"]',
+    return m('div.input-group[style="width: 100%"]',
                        [
                            m('span.input-group-btn',
                                m('button.btn.btn-default.btn-sm[type="button"][data-clipboard-text="'+url+ '"]', {config: cb},
                                    m('.fa.fa-copy')
                                )
                            ),
-                           m('input[value="'+url+'"][readonly="readonly"][style="height: 30px;color:#333333;"]')
+                           m('input[value="'+url+'"][readonly="readonly"][style="height: 30px;color:#333333;width: 100%"]')
                        ]
            );
 }
