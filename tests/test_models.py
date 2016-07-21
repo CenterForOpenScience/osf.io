@@ -4673,74 +4673,42 @@ class TestPublicFiles(OsfTestCase):
         self.user = UserFactory()
         self.auth = Auth(user=self.user)
         self.project = PublicFilesFactory(creator=self.user)
-        with self.context:
-            handlers.celery_before_request()
 
     def tearDown(self):
         super(TestPublicFiles, self).tearDown()
         self.project.remove()
 
+    def test_normal_node_methods_disabled(self):
+        user = UserFactory()
 
-    def test_cannot_delete_public_files_collection(self):
-        assert_raises(NodeStateError, self.project.remove_node, self.auth)
-
-    def test_public_files_is_right_type(self):
-        assert_equal(self.project.is_public_files_collection, True)
-
-
-    def test_no_name_change(self):
         with assert_raises(NodeStateError):
             self.project.set_title('Look at me: I\'m the title now',auth=self.auth)
-
-    def test_forking(self):
-        with assert_raises(NodeStateError):
-            fork = self.project.fork_node(auth=self.auth)
-
-    def test_add_remove_permissions(self):
-        unauthorized_user = UserFactory()
-        with assert_raises(NodeStateError):
-            fork = self.project.add_permission(unauthorized_user,'write')
-
-        with assert_raises(NodeStateError):
-            fork = self.project.remove_permission(unauthorized_user,'write')
-
-    def test_cannot_register_public_node(self):
-        with assert_raises(NodeStateError):
-            self.project.register_node(
-                schema=None,
-                auth=self.auth,
-                data=None
-            )
-
-    def test_remove_creator_as_public_collections_owner(self):
-        with assert_raises(NodeStateError):
+            self.project.remove_node(auth=self.auth)
+            self.project.fork_node(auth=self.auth)
+            self.project.add_permission(user,'write')
+            self.project.remove_permission(user,'write')
             self.project.remove_contributor(self.user,auth=self.auth)
-
-    def test_update_contributor_public_files_collection(self):
-        newman = UserFactory()
-        with assert_raises(NodeStateError):
-            self.project.add_contributor(contributor=newman,permissions='WRITE',auth=Auth(newman))
-
-    def test_changes_privacy_to_public_files_colletion(self):
-        assert_raises(NodeStateError, self.project.set_privacy, 'private', self.auth)
-        assert_equal(self.project.is_public,True)
-
-    def test_citations_for_public_files(self):
-        with assert_raises(NodeStateError):
+            self.project.add_contributor(contributor=user,permissions='WRITE',auth=Auth(user))
+            self.project.set_privacy(permissions='private', auth=self.auth)
             self.project.add_citation(self.auth)
             self.project.edit_citation(self.auth,{})
             self.project.remove_citation(self.auth,{})
+            self.project.register_node(
+                auth=self.auth
+            )
 
     def test_user_merge_with_other_public_files_collection(self):
-        from website.files.models.osfstorage import OsfStorageFile
         oldman =  UserFactory()
-        oldauth = Auth(user=oldman)
         project = PublicFilesFactory(creator=oldman)
-        files_read_in = {}
-        files_read_in.update({project.get_addon('osfstorage').get_root().append_file('Cloud'):'test1'})
-        files_read_in.update({project.get_addon('osfstorage').get_root().append_file('Clo'):'test2'})
-        files_read_in.update({project.get_addon('osfstorage').get_root().append_file('ud'):'test3'})
+        self.project.get_addon('osfstorage').get_root().append_file('same')
+        project.get_addon('osfstorage').get_root().append_file('same')
+        with assert_raises(BaseException):
+            self.user.merge_user(oldman)
+
+        project.get_addon('osfstorage').get_root().delete()
         self.user.merge_user(oldman)
+        assert len(self.project.get_addon('osfstorage').get_root().children) == 1
+        assert self.project.get_addon('osfstorage').get_root().children[0].name == 'same'
 
 if __name__ == '__main__':
     unittest.main()
