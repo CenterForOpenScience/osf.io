@@ -1320,7 +1320,7 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
         auth = get_user_auth(self.request)
-        node = self.get_node(delete=True)
+        node = self.get_node()
         try:
             node.rm_pointer(instance, auth=auth)
         except ValueError as err:  # pointer doesn't belong to node
