@@ -266,51 +266,42 @@ var SignUpViewModel = oop.extend(BaseViewModel, {
 
 /** Wrapper classes */
 var ChangePassword = function(selector) {
-    this.ChangePasswordViewModel = new ChangePasswordViewModel();
-    $osf.applyBindings(this.ChangePasswordViewModel, selector);
-        // Necessary to prevent enter submitting forms with invalid frontend zxcvbn validation
-        $(selector).keypress(
-            event => {
-            // If the enter key is pressed to submit a form, check if the password is valid
-            if (event.which === 13) {
-                    if (!this.ChangePasswordViewModel.password.isValid()) {
-                        return false;
-                    }
-                }
+    var ChangePasswordViewModel = new ChangePasswordViewModel();
+    $osf.applyBindings(ChangePasswordViewModel, selector);
+    // Necessary to prevent enter submitting forms with invalid frontend zxcvbn validation
+    $(selector).keypress(function(event) {
+        if (event.which == 13) {
+            if (!SignUpViewModel.password.isValid()) {
+                return false;
             }
-        );
+        }
+    });
 };
 
 var SetPassword = function(selector) {
-    this.SetPasswprdViewModel = new SetPasswordViewModel();
-    $osf.applyBindings(this.SetPasswprdViewModel, selector);
-        // Necessary to prevent enter submitting forms with invalid frontend zxcvbn validation
-        $(selector).keypress(
-            event => {
-            // If the enter key is pressed to submit a form, check if the password is valid
-            if (event.which === 13) {
-                    if (!this.SetPasswprdViewModel.password.isValid()) {
-                        return false;
-                    }
-                }
+    var SetPasswordViewModel = new SetPasswordViewModel();
+    $osf.applyBindings(SetPasswordViewModel, selector);
+    // Necessary to prevent enter submitting forms with invalid frontend zxcvbn validation
+    $(selector).keypress(function(event) {
+        if (event.which == 13) {
+            if (!SignUpViewModel.password.isValid()) {
+                return false;
             }
-        );
+        }
+    });
 };
 
 var SignUp = function(selector) {
-    this.SignUpViewModel = new SignUpViewModel();
-    $osf.applyBindings(this.SignUpViewModel, selector);
-        // Necessary to prevent enter submitting forms with invalid frontend zxcvbn validation
-        $(selector).keypress(
-            event => {
-            // If the enter key is pressed to submit a form, check if the password is valid
-            if (event.which === 13) {
-                    if (!this.SignUpViewModel.password.isValid()) {
-                        return false;
-                    }
-                }
+    SignUpViewModel = new SignUpViewModel();
+    $osf.applyBindings(SignUpViewModel, selector);
+    // Necessary to prevent enter submitting forms with invalid frontend zxcvbn validation
+    $(selector).keypress(function(event) {
+        if (event.which == 13) {
+            if (!SignUpViewModel.password.isValid()) {
+                return false;
             }
-        );
+        }
+    });
 };
 
 module.exports = {
