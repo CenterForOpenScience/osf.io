@@ -89,7 +89,7 @@ def main(env):
             {
                 '_id': 'ljaf',
                 'name': 'Laura and John Arnold Foundation',
-                'description': 'Please refer to the <a href="http://www.arnoldfoundation.org/wp-content/uploads/Guidelines-for-Investments-in-Research.pdf">LJAF Guidelines for Investments in Research</a> for more information and requirements',
+                'description': 'Projects listed below are for grants awarded by the Foundation. Please see the <a href="http://www.arnoldfoundation.org/wp-content/uploads/Guidelines-for-Investments-in-Research.pdf">LJAF Guidelines for Investments in Research</a> for more information and requirements',
                 'banner_name': 'ljaf-banner.png',
                 'logo_name': 'ljaf-shield.png',
                 'auth_url': None,
@@ -273,7 +273,7 @@ def main(env):
             {
                 '_id': 'ljaf',
                 'name': 'Laura and John Arnold Foundation [Test]',
-                'description': 'Please refer to the <a href="http://www.arnoldfoundation.org/wp-content/uploads/Guidelines-for-Investments-in-Research.pdf">LJAF Guidelines for Investments in Research</a> for more information and requirements',
+                'description': 'Projects listed below are for grants awarded by the Foundation. Please see the <a href="http://www.arnoldfoundation.org/wp-content/uploads/Guidelines-for-Investments-in-Research.pdf">LJAF Guidelines for Investments in Research</a> for more information and requirements',
                 'banner_name': 'ljaf-banner.png',
                 'logo_name': 'ljaf-shield.png',
                 'auth_url': None,
