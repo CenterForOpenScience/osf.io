@@ -1,6 +1,6 @@
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
+from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed
 from rest_framework.status import HTTP_204_NO_CONTENT
 from rest_framework.response import Response
 
@@ -78,7 +78,7 @@ class NodeMixin(object):
     serializer_class = NodeSerializer
     node_lookup_url_kwarg = 'node_id'
 
-    def get_node(self, check_object_permissions=True):
+    def get_node(self, check_object_permissions=True, delete=False):
         node = get_object_or_error(
             Node,
             self.kwargs[self.node_lookup_url_kwarg],
@@ -86,7 +86,11 @@ class NodeMixin(object):
         )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a collection through a node endpoint, we return a 404
-        if node.is_collection or node.is_registration:
+        if node.is_collection:
+            raise NotFound
+        if node.is_registration:
+            if delete:
+                raise MethodNotAllowed
             raise NotFound
         # May raise a permission denied
         if check_object_permissions:
@@ -518,6 +522,8 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
     def perform_destroy(self, instance):
         auth = get_user_auth(self.request)
         node = self.get_object()
+        if node.is_registration:
+            raise MethodNotAllowed
         try:
             node.remove_node(auth=auth)
         except NodeStateError as err:
@@ -669,7 +675,7 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
         auth = get_user_auth(self.request)
-        node = self.get_node()
+        node = self.get_node(delete=True)
         if len(node.visible_contributors) == 1 and node.get_visible(instance):
             raise ValidationError('Must have at least one visible contributor')
         if instance not in node.contributors:
@@ -788,7 +794,7 @@ class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
 
     # overrides DestroyAPIView
     def perform_destroy(self, instance):
-        node = self.get_node()
+        node = self.get_node(delete=True)
         auth = get_user_auth(self.request)
         if len(node.visible_contributors) == 1 and node.get_visible(instance):
             raise ValidationError('Must have at least one visible contributor')
@@ -1314,7 +1320,7 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
         auth = get_user_auth(self.request)
-        node = self.get_node()
+        node = self.get_node(delete=True)
         try:
             node.rm_pointer(instance, auth=auth)
         except ValueError as err:  # pointer doesn't belong to node
@@ -1407,7 +1413,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
     # overrides DestroyAPIView
     def perform_destroy(self, instance):
         auth = get_user_auth(self.request)
-        node = self.get_node()
+        node = self.get_node(delete=True)
         pointer = self.get_object()
         try:
             node.rm_pointer(pointer, auth=auth)
@@ -1976,7 +1982,7 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, ge
 
     def perform_destroy(self, instance):
         addon = instance.config.short_name
-        node = self.get_node()
+        node = self.get_node(delete=True)
         if not node.has_addon(instance.config.short_name):
             raise NotFound('Node {} does not have add-on {}'.format(node._id, addon))
 
@@ -2299,7 +2305,8 @@ class NodeAlternativeCitationDetail(JSONAPIBaseView, generics.RetrieveUpdateDest
             raise NotFound
 
     def perform_destroy(self, instance):
-        self.get_node().remove_citation(get_user_auth(self.request), instance, save=True)
+        node = self.get_node(delete=True)
+        node.remove_citation(get_user_auth(self.request), instance, save=True)
 
 
 class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMixin):
@@ -2703,6 +2710,10 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
         user = self.request.user
         current_insts = {inst._id: inst for inst in instance['data']}
         node = instance['self']
+
+        if node.is_registration:
+            raise MethodNotAllowed
+
         for val in data:
             if val['id'] in current_insts:
                 node.remove_affiliated_institution(inst=current_insts[val['id']], user=user)
