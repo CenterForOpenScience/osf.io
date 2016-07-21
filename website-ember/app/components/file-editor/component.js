@@ -1,7 +1,7 @@
 import Ember from 'ember';
 
 export default Ember.Component.extend({
-    value: 'initial text',
+    value: '',
     initializeAce: function(editor) {
         // editor.getSession().setMode('ace/mode/markdown');
         editor.getSession().setUseSoftTabs(true);   // Replace tabs with spaces
