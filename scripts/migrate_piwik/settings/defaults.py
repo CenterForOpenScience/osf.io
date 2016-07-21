@@ -4,9 +4,6 @@ PIWIK_DB_USER = 'root'
 PIWIK_DB_PASSWORD = 'changeme'
 PIWIK_DB_NAME = 'piwik_staging'
 
-PROJECT_ID = 'keen-project-id'
-WRITE_KEY = 'keen-write-key'
-
 OUTPUT_DIR = 'piwik-migration'
 
 SQLITE_NAME = 'piwik-users.sqlite'
