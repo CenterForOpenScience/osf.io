@@ -63,7 +63,6 @@ function isAllXhrComplete(){
     window.activeAjaxCount--;
     if (window.activeAjaxCount === 0){
         $("meta[name=prerender-status-code]").attr("content", "200");
-        console.log('prerender ready');
         window.prerenderReady = true;
     }
 
@@ -72,7 +71,7 @@ function isAllXhrComplete(){
 (function(open) {
     XMLHttpRequest.prototype.open = function(method, url, async, user, pass) {
         this.addEventListener("load", isAllXhrComplete);
-        return open.call(this, method, url, async, user, pass);
+        open.call(this, method, url, async, user, pass);
     };
 })(XMLHttpRequest.prototype.open);
 
@@ -80,6 +79,6 @@ function isAllXhrComplete(){
 (function(send) {
     XMLHttpRequest.prototype.send = function (data) {
         window.activeAjaxCount++;
-        return send.apply(this, data);
+        send.call(this, data);
     };
 })(XMLHttpRequest.prototype.send);
