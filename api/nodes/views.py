@@ -1297,7 +1297,6 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
-        ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
         ExcludeWithdrawals,
     )
@@ -1320,7 +1319,7 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
         auth = get_user_auth(self.request)
-        node = self.get_node()
+        node = self.get_node(delete=True)
         try:
             node.rm_pointer(instance, auth=auth)
         except ValueError as err:  # pointer doesn't belong to node
@@ -1378,7 +1377,6 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
     """
     permission_classes = (
         ContributorOrPublicForPointers,
-        ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
         drf_permissions.IsAuthenticatedOrReadOnly,
         ExcludeWithdrawals
@@ -1406,6 +1404,9 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
         )
         if node.is_collection or node.is_registration:
             raise NotFound
+        if node_link.node.is_registration:
+            if self.request.method not in drf_permissions.SAFE_METHODS:
+                raise MethodNotAllowed
         if node not in node_link.parent:
             raise NotFound
         return node_link
