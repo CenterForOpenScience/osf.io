@@ -8,14 +8,7 @@ from framework.auth.decorators import must_be_logged_in
 
 @must_be_logged_in
 def view_public_files(auth, **kwargs):
-
-    user = auth.user
-    try:
-        publicFilesNode = Node.find_one(Q('is_public_files_collection', 'eq', True) & Q('contributors', 'eq', user._id))
-    except NoResultsFound:
-        raise HTTPError(http.NOT_FOUND)
-
-    return serialize_public_files_node(publicFilesNode)
+    return serialize_public_files_node(auth.user.public_files_node)
 
 def view_public_files_id(uid, **kwargs):
 
