@@ -157,7 +157,7 @@ def robots():
         mimetype='text/plain'
     )
 
-def ember_app():
+def ember_app(pid=None):
     """Serve the contents of the ember application"""
     # Be sure to build the ember app first, and adjust asset paths in index.html:
     #  ember build --output-path <STATIC_FOLER>/ember --watch
@@ -231,6 +231,7 @@ def make_url_map(app):
             Rule(
                 [
                     '/ember-sample/',
+                    '/<pid>/contributors/'
                 ],
                 'get',
                 ember_app,
