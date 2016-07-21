@@ -8,6 +8,13 @@ module.exports = function(environment) {
         baseURL: '/',
         locationType: 'auto',
 
+        // Custom browserify behavior
+        browserify: {
+            paths: [
+                '../../../website/static/js',
+                ]
+        },
+
         authorizationType: 'cookie',
         'ember-simple-auth': {
             authorizer: 'authorizer:osf-cookie',
