@@ -1,0 +1,44 @@
+<table id="manageContributorsTable" class="table responsive-table responsive-table-xxs">
+    <thead>
+        <tr>
+            <th class="responsive-table-hide"> Name </th>
+            <th></th>
+            <th>
+                Permissions
+                <i class="fa fa-question-circle permission-info"
+                    data-toggle="popover"
+                    data-title="Permission Information"
+                    data-container="body"
+                    data-placement="right"
+                    data-html="true"
+                ></i>
+            </th>
+            <th class="biblio-contrib">
+                Bibliographic Contributor
+                <i class="fa fa-question-circle visibility-info"
+                    data-toggle="popover"
+                    data-title="Bibliographic Contributor Information"
+                    data-container="body"
+                    data-placement="right"
+                    data-html="true"
+                ></i>
+            </th>
+            <th class="remove"></th>
+        </tr>
+    </thead>
+    <tbody >
+        {{#each contributors as |contributor|}}
+            <tr>
+                <td>
+                    <span class="fa fa-bars sortable-bars"></span>
+                    <img class="m-l-xs" src={{contributor.users.links.profile_image}}>
+                    <a href={{contributor.users.links.html}}> {{if contributor.unregisteredContributor contributor.unregisteredContributor contributor.users.fullName}} </a>
+                </td>
+                <td> </td>
+                <td>{{contributor.permission}} </td>
+                <td> {{contributor.bibliographic}} </td>
+                <td> <button class="btn btn-danger to-top-element">Remove</button> </td>
+            </tr>
+        {{/each}}
+    </tbody>
+</table>
