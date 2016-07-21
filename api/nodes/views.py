@@ -545,7 +545,6 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
         bibliographic               boolean  Whether the user will be included in citations for this node. Default is true.
         permission                  string   User permission level. Must be "read", "write", or "admin". Default is "write".
         unregistered_contributor    string   Contributor's assigned name if contributor hasn't yet claimed account
-        index                       integer  The index of the contributor for sorting. Currently read-only
 
     ##Links
 
