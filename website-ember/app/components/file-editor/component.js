@@ -19,8 +19,7 @@ export default Ember.Component.extend({
     fileManager: Ember.inject.service(),
     actions: {
         saveFile(file) {
-            var data = ace.edit('editor').getValue();
-            this.set('value', data);
+            var data = this.value;
             this.get('fileManager').updateContents(file, data);
         }
     },
