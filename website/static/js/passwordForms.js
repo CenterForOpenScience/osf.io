@@ -58,12 +58,9 @@ var BaseViewModel = oop.extend(ChangeMessageMixin, {
             complexity: 2,
         });
 
-
-        // Preserve object of validated fields for use in `submit`
-        var validatedObservables = {
-            password: self.password
-        };
-        self.validatedObservables = $.extend({}, validatedObservables, self.getValidatedFields());
+        // To ensure that validated fields are populated correctly
+        self.validatedObservables = self.getValidatedFields();
+        self.validatedFields = ko.validatedObservable(self.validatedObservables);
 
         // Collect validated fields
         self.validatedFields = ko.validatedObservable(self.validatedObservables);
@@ -84,7 +81,8 @@ var BaseViewModel = oop.extend(ChangeMessageMixin, {
      * Hook to add validated observables to the validation group.
      */
     getValidatedFields: function() {
-        return {};
+        var self = this;
+        return {password: self.password};
     }
 });
 
@@ -92,6 +90,31 @@ var BaseViewModel = oop.extend(ChangeMessageMixin, {
 var ChangePasswordViewModel = oop.extend(BaseViewModel, {
     constructor: function () {
         var self = this;
+
+        // Call constructor at the beginning so that self.password exists
+        self.super.constructor.call(this);
+
+        // pick up the email from contextVars
+        self.email1 = ko.observable(window.contextVars.username || '').extend({
+            required: true,
+            email: true
+        });
+
+        self.password.extend({
+            validation: {
+                validator: function(val, other) {
+                    if (String(val).toLowerCase() === String(other).toLowerCase()) {
+                        self.typedPassword(' ');
+                        return false;
+                    } else {
+                        return true;
+                    }
+                },
+                'message': 'Your password cannot be the same as your email address.',
+                params: self.email1
+            }
+        });
+
         self.passwordConfirmation = ko.observable('').extend({
             required: true,
             validation: {
@@ -104,12 +127,12 @@ var ChangePasswordViewModel = oop.extend(BaseViewModel, {
         });
         self.oldPassword = ko.observable('').extend({required: true});
 
-        // Call constructor after declaring observables so that validatedFields is populated correctly
-        self.super.constructor.call(this);
     },
     getValidatedFields: function() {
         var self = this;
         return {
+            password: self.password,
+            passwordConfirmation: self.passwordConfirmation,
             oldPassword: self.oldPassword
         };
     }
@@ -119,6 +142,30 @@ var ChangePasswordViewModel = oop.extend(BaseViewModel, {
 var SetPasswordViewModel = oop.extend(BaseViewModel, {
     constructor: function () {
         var self = this;
+        // Call constructor at the beginning so that self.password exists
+        self.super.constructor.call(this);
+
+        // pick up the email from contextVars if we can't get it from first typing it in
+        self.email1 = ko.observable(window.contextVars.username || '').extend({
+            required: true,
+            email: true
+        });
+
+        self.password.extend({
+            validation: {
+                validator: function(val, other) {
+                    if (String(val).toLowerCase() === String(other).toLowerCase()) {
+                        self.typedPassword(' ');
+                        return false;
+                    } else {
+                        return true;
+                    }
+                },
+                'message': 'Your password cannot be the same as your email address.',
+                params: self.email1
+            }
+        });
+
         self.passwordConfirmation = ko.observable('').extend({
             required: true,
             validation: {
@@ -129,7 +176,6 @@ var SetPasswordViewModel = oop.extend(BaseViewModel, {
                 params: self.password
             }
         });
-        self.super.constructor.call(this);
     }
 });
 
@@ -179,6 +225,7 @@ var SignUpViewModel = oop.extend(BaseViewModel, {
     getValidatedFields: function() {
         var self = this;
         return {
+            password: self.password,
             fullName: self.fullName,
             email1: self.email1,
             email2: self.email2
@@ -243,15 +290,42 @@ var SignUpViewModel = oop.extend(BaseViewModel, {
 
 /** Wrapper classes */
 var ChangePassword = function(selector) {
-    $osf.applyBindings(new ChangePasswordViewModel(), selector);
+    var viewModel = new ChangePasswordViewModel();
+    $osf.applyBindings(viewModel, selector);
+    // Necessary to prevent enter submitting forms with invalid frontend zxcvbn validation
+    $(selector).keypress(function(event) {
+        if (event.which === 13) {
+            if (!viewModel.password.isValid() || !viewModel.passwordConfirmation.isValid()) {
+                return false;
+            }
+        }
+    });
 };
 
 var SetPassword = function(selector) {
-    $osf.applyBindings(new SetPasswordViewModel(), selector);
+    var viewModel = new SetPasswordViewModel();
+    $osf.applyBindings(viewModel, selector);
+    // Necessary to prevent enter submitting forms with invalid frontend zxcvbn validation
+    $(selector).keypress(function(event) {
+        if (event.which === 13) {
+            if (!viewModel.password.isValid() || !viewModel.passwordConfirmation.isValid()) {
+                return false;
+            }
+        }
+    });
 };
 
 var SignUp = function(selector) {
-    $osf.applyBindings(new SignUpViewModel(), selector);
+    var viewModel = new SignUpViewModel();
+    $osf.applyBindings(viewModel, selector);
+    // Necessary to prevent enter submitting forms with invalid frontend zxcvbn validation
+    $(selector).keypress(function(event) {
+        if (event.which === 13) {
+            if (!viewModel.password.isValid()) {
+                return false;
+            }
+        }
+    });
 };
 
 module.exports = {

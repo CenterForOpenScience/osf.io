@@ -169,8 +169,10 @@
                             <!-- /ko -->
                         </div>
                     </div>
-
-                </div>
+                    <!-- Flashed Messages -->
+                    <div class="help-block osf-box-lt" >
+                        <p data-bind="html: message, attr: {class: messageClass}" class=""></p>
+                    </div>
                 </br>
                 <div class="form-group">
                     <div class="col-md-8 col-sm-12" style="padding-left: 25px">
