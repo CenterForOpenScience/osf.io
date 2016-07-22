@@ -80,8 +80,6 @@
                 <a href="https://groups.google.com/forum/#!forum/openscienceframework" class="btn btn-link"><i class="fa fa-users"></i> Join our mailing list </a>
                 <a href="https://www.facebook.com/OpenScienceFramework" class="btn btn-link"><i class="fa fa-facebook"></i> Follow us on Facebook </a>
                 <a href="https://github.com/centerforopenscience" class="btn btn-link"><i class="fa fa-github"></i> Connect with COS on Github</a>
-                <a href="https://api.osf.io/v2/docs/" class="btn btn-link"><i class="fa fa-cogs"></i> Access our powerful dev facing API</a>
-
             </div>
         </div>
 
