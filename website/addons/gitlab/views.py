@@ -156,7 +156,7 @@ def gitlab_set_config(auth, **kwargs):
 @must_have_addon('gitlab', 'node')
 def gitlab_download_starball(node_addon, **kwargs):
 
-    ref = request.args.get('sha', 'master')
+    ref = request.args.get('ref', 'master')
 
     connection = GitLabClient(external_account=node_addon.external_account)
     headers, data = connection.starball(
@@ -239,7 +239,7 @@ def gitlab_hgrid_data(node_settings, auth, **kwargs):
         'upload': node_settings.owner.api_url + 'gitlab/file/' + (ref or ''),
         'fetch': node_settings.owner.api_url + 'gitlab/hgrid/' + (ref or ''),
         'branch': node_settings.owner.api_url + 'gitlab/hgrid/root/',
-        'zip': node_settings.owner.api_url + 'gitlab/zipball/' + (ref or ''),
+        'zip': node_settings.owner.api_url + 'gitlab/zipball/',
         'repo': 'https://gitlab.com/{0}/{1}/tree/{2}'.format(node_settings.user, node_settings.repo, branch)
     }
 
