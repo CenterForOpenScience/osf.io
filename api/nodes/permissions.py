@@ -145,7 +145,7 @@ class RegistrationAndPermissionCheckForPointers(permissions.BasePermission):
         node = Node.load(request.parser_context['kwargs'][view.node_lookup_url_kwarg])
         auth = get_user_auth(request)
         if request.method == 'DELETE':
-            if node.is_registeration:
+            if node.is_registration:
                 raise exceptions.MethodNotAllowed(method=request.method)
             if not node.can_edit(auth):
                 raise exceptions.PermissionDenied
