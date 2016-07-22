@@ -52,7 +52,7 @@ from api.nodes.permissions import (
     IsPublic,
     AdminOrPublic,
     ContributorOrPublic,
-    ContributorOrPublicForPointers,
+    RegistrationCheckForPointers,
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
     IsAdminOrReviewer,
@@ -1379,6 +1379,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
     permission_classes = (
         base_permissions.TokenHasScope,
         drf_permissions.IsAuthenticatedOrReadOnly,
+        RegistrationCheckForPointers,
         ExcludeWithdrawals
     )
 
@@ -1388,29 +1389,15 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
     serializer_class = NodeLinksSerializer
     view_category = 'nodes'
     view_name = 'node-pointer-detail'
+    node_link_lookup_url_kwarg = 'node_link_id'
 
     # overrides RetrieveAPIView
     def get_object(self):
-        node_link_lookup_url_kwarg = 'node_link_id'
         node_link = get_object_or_error(
             Pointer,
-            self.kwargs[node_link_lookup_url_kwarg],
+            self.kwargs[self.node_link_lookup_url_kwarg],
             'node link'
         )
-        node = get_object_or_error(
-            Node,
-            self.kwargs[self.node_lookup_url_kwarg],
-            display_name='node'
-        )
-        if node.is_registration and self.request.method == 'DELETE':
-            raise MethodNotAllowed(method=self.request.method)
-        if node.is_collection or node.is_registration:
-            raise NotFound
-        if node_link.node.is_registration:
-            if self.request.method not in drf_permissions.SAFE_METHODS:
-                raise MethodNotAllowed
-        if node not in node_link.parent:
-            raise NotFound
         self.check_object_permissions(self.request, node_link)
         return node_link
 
