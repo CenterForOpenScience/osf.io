@@ -21,7 +21,7 @@
     window.contextVars = $.extend(true, {}, window.contextVars, {
          nodeId : ${ node['node_id'] |sjson, n },
          nodeApiUrl : ${ node['api_url'] | sjson, n },
-         isPublicFilesCol : ${node['is_public_files_node']  | sjson, n },
+         isPublicFilesNode : ${node['is_public_files_node']  | sjson, n },
      });
 </script>
 

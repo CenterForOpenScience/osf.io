@@ -1379,7 +1379,7 @@ function _fangornResolveRows(item) {
         custom : function() {return item.data.size ? $osf.humanFileSize(item.data.size, true) : '';}
     });
 
-    if(window.contextVars.isPublicFilesCol) {
+    if(window.contextVars.isPublicFilesNode) {
         if (item.data.kind === 'file') {
             defaultColumns.push(
             {
@@ -1426,7 +1426,7 @@ function _fangornResolveRows(item) {
  */
 function _fangornColumnTitles () {
     var columns = [];
-    if(window.contextVars.isPublicFilesCol) {
+    if(window.contextVars.isPublicFilesNode) {
         columns.push(
         {
             title: 'Name',
