@@ -144,11 +144,8 @@ class RegistrationAndPermissionCheckForPointers(permissions.BasePermission):
         node_link = Pointer.load(request.parser_context['kwargs']['node_link_id'])
         node = Node.load(request.parser_context['kwargs'][view.node_lookup_url_kwarg])
         auth = get_user_auth(request)
-        if request.method == 'DELETE':
-            if node.is_registration:
-                raise exceptions.MethodNotAllowed(method=request.method)
-            if not node.can_edit(auth):
-                raise exceptions.PermissionDenied
+        if request.method == 'DELETE'and node.is_registration:
+            raise exceptions.MethodNotAllowed(method=request.method)
         if node.is_collection or node.is_registration:
             raise exceptions.NotFound
         if node_link.node.is_registration:
@@ -156,6 +153,8 @@ class RegistrationAndPermissionCheckForPointers(permissions.BasePermission):
                 raise exceptions.MethodNotAllowed
         if node not in node_link.parent:
             raise exceptions.NotFound
+        if request.method == 'DELETE' and not node.can_edit(auth):
+            return False
         return True
 
 
