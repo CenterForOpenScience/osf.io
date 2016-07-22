@@ -284,13 +284,17 @@ def auth_login(auth, **kwargs):
 
 def auth_logout(redirect_url=None, **kwargs):
     """
-    Log out, delete current session, delete CAS cookie and delete OSF cookie.
+    Log out, delete current session and remove OSF cookie.
+    Redirect to CAS logout which clears sessions and cookies for CAS and Shibboleth (if any).
+    Final landing page may vary.
     HTTP Method: GET
 
-    :param redirect_url: url to redirect user after logout, default is 'goodbye'
+    :param redirect_url: url to redirect user after CAS logout, default is 'goodbye'
     :return:
     """
 
+    # OSF tells CAS where it wants to be redirected back after successful logout. However, CAS logout flow
+    # may not respect this url if user is authenticated through remote IdP such as institution login
     redirect_url = redirect_url or request.args.get('redirect_url') or web_url_for('goodbye', _absolute=True)
     # OSF log out, remove current OSF session
     osf_logout()
