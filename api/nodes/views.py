@@ -50,6 +50,7 @@ from api.institutions.serializers import InstitutionSerializer
 from api.nodes.permissions import (
     IsAdmin,
     IsPublic,
+    IsPublicFiles,
     AdminOrPublic,
     ContributorOrPublic,
     ContributorOrPublicForPointers,
@@ -2927,6 +2928,10 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
 
 class UserPublicFiles(NodeFilesList, UserMixin):
     view_name = 'public-files-node'
+
+    permission_classes = (
+        IsPublicFiles,
+    )
 
     def get_default_queryset(self):
         # Don't bother going to waterbutler for osfstorage

@@ -30,6 +30,12 @@ class IsPublic(permissions.BasePermission):
         auth = get_user_auth(request)
         return obj.is_public or obj.can_view(auth)
 
+class IsPublicFiles(permissions.BasePermission):
+
+    def has_object_permission(self, request, view, obj):
+        assert isinstance(obj, (User)), 'obj must be a User got {}'.format(obj)
+        return True
+
 
 class IsAdmin(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
