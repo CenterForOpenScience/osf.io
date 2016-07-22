@@ -99,7 +99,8 @@ def sync_topic(node):
 
     parent_guids = get_parent_guids(node)
     guids_changed = parent_guids != node.discourse_topic_parent_guids
-    title_changed = node.label != node.discourse_topic_title
+    # We don't want problems with case, since discourse change case sometimes.
+    title_changed = node.label.lower() != node.discourse_topic_title.lower()
 
     if guids_changed or title_changed:
         if title_changed:

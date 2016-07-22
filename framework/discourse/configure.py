@@ -7,7 +7,7 @@ def _get_embeddable_hosts():
     result = request('get', '/admin/customize/embedding.json')
     return result['embeddable_hosts']
 
-def _config_embeddable_host():
+def configure_embeddable_host():
     # just make sure one exists...
     embeddable_hosts = _get_embeddable_hosts()
     if len(embeddable_hosts):
@@ -21,7 +21,7 @@ def _get_customizations():
     result = request('get', '/admin/customize/css_html.json')
     return result['site_customizations']
 
-def _config_customization():
+def configure_customizations():
     old_ids = [c['id'] for c in _get_customizations()]
     for old_id in old_ids:
         request('delete', '/admin/site_customizations/' + str(old_id))
@@ -42,8 +42,7 @@ def configure_server_settings():
 
         time.sleep(0.1)
 
-    _config_embeddable_host()
-    _config_customization()
-
 if __name__ == '__main__':
     configure_server_settings()
+    configure_customizations()
+    configure_embeddable_host()

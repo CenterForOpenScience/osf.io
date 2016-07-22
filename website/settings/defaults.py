@@ -1836,7 +1836,8 @@ DISCOURSE_SERVER_SETTINGS = {'title': 'Open Science Framework',
                              'title_min_entropy': '0',
                              'title_prettify': 'false',
                              'allow_duplicate_topic_titles': 'true',
-                             'tagging_enabled': 'true',
+                             'allow_uppercase_posts': 'true',
+                             'tagging_enabled': 'false',
                              'max_tag_length': '100',
                              'max_tags_per_topic': '20',
                              'min_trust_level_to_tag_topics': '4',
@@ -1850,14 +1851,6 @@ DISCOURSE_SERVER_CUSTOMIZATIONS = [{'name': 'MFR',
                                     'enabled': 'true',
                                     'head_tag': '''
 <script type='text/x-handlebars' data-template-name='/connectors/topic-title/mfr-view'>
-<style>
-    #mfrIframe {
-        width: 100%:
-    }
-</style>
-
-<link href="https://mfr.osf.io/static/css/mfr.css" media="all" rel="stylesheet">
-<scr{{!}}ipt src="https://mfr.osf.io/static/js/mfr.js"></scr{{!}}ipt>
 <scr{{!}}ipt>
 var observeDOM = (function(){
     var MutationObserver = window.MutationObserver || window.WebKitMutationObserver,
@@ -1880,21 +1873,50 @@ var observeDOM = (function(){
 observeDOM(document.body, function() {
 
     var topic_post = document.querySelector('.topic-post article#post_1 .cooked');
-
-    if (typeof mfr === 'undefined') return;
     if (!topic_post) return;
-    if (document.getElementById("mfrIframe")) return;
+    if (document.getElementById("mfrButton")) return;
 
-    var mfr_div = document.createElement('div');
-    mfr_div.id = "mfrIframe";
-    mfr_div.classList.add('mfr', 'mrf-file');
     var reg = new RegExp('\:\/\/(?:osf|local)[^\/]*\/([a-z0-9]*)\/?');
-    var match = reg.exec(topic_post.textContent)
+    var match = reg.exec(topic_post.textContent);
     if (match) {
         var guid = match[1];
-        topic_post.appendChild(mfr_div);
-        window.jQuery || document.write('\\x3Cscript src="//code.jquery.com/jquery-1.11.2.min.js">\\x3C/script>');
-        var mfrRender = new mfr.Render("mfrIframe", "''' + MFR_SERVER_URL + '''/render?url=''' + DOMAIN + '''"+guid+"/?action=download%26mode=render");
+
+        var mfrButton = document.createElement('button');
+        mfrButton.id = "mfrButton";
+        mfrButton.appendChild(document.createTextNode('Show File View'));
+        topic_post.appendChild(mfrButton);
+
+        var showMfrView = function() {
+            var mfrJs = document.createElement('script');
+            mfrJs.src = 'https://mfr.osf.io/static/js/mfr.js';
+            mfrJs.onload = function() {
+                var mfrRender = new mfr.Render("mfrIframe", "http://localhost:7778/render?url=http://localhost:5000/" + guid + "/?action=download%26mode=render");
+                mfrButton.style.display = 'None';
+            };
+            document.head.appendChild(mfrJs);
+        }
+
+        mfrButton.onclick = function() {
+            var mfrDiv = document.createElement('div');
+            mfrDiv.id = "mfrIframe";
+            mfrDiv.className = "mfr mfr-file";
+            topic_post.appendChild(mfrDiv);
+
+            var mfrCss = document.createElement('link');
+            mfrCss.href = 'https://mfr.osf.io/static/css/mfr.css';
+            mfrCss.media = 'all';
+            mfrCss.rel = 'stylesheet';
+            document.head.appendChild(mfrCss)
+
+            if (!window.jQuery) {
+                var jqScript = document.createElement('script');
+                jqScript.src = '//code.jquery.com/jquery-1.11.2.min.js';
+                jqScript.onload = showMfrView;
+                document.head.appendChild(jqScript);
+            } else {
+                showMfrView();
+            }
+        }
     }
 });
 
@@ -1942,6 +1964,10 @@ footer a:hover {
                                    },
                                   {'name': 'Site Appearance',
                                    'enabled': 'true',
+                                   'header': '''
+<link href='//fonts.googleapis.com/css?family=Carrois+Gothic|Inika|Patua+One' rel='stylesheet' type='text/css'>
+<link href='https://fonts.googleapis.com/css?family=Open+Sans:400,600,300,700' rel='stylesheet' type='text/css'>
+                                   ''',
                                    'stylesheet': '''
 a {
     font-family: 'Open Sans','Helvetica Neue', sans-serif;
@@ -2139,6 +2165,12 @@ header {
     }
 }
 
+#project-header * {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
 #project-header {
     background-color: #eee;
     box-shadow: 0 0 9px -1px #838383;
@@ -2161,7 +2193,7 @@ header {
 }
 
 #project-header > ul > li > a {
-    display: inline-block;
+    display: block;
 
     color: #337ab7;
     font-family: 'Open Sans', 'Helvetica Neue', sans-serif;
@@ -2201,6 +2233,15 @@ header {
     font-size: 20px;
     white-space: nowrap;
     text-overflow: ellipsis;
+    overflow: hidden;
+
+    max-width: 190px;
+    @media (min-width: 864px) {
+        max-width: 210px;
+    }
+    @media (min-width: 992px) {
+        max-width: 300px;
+    }
 }
 
 #project-header > ul > li > a.project-forum {
@@ -2218,6 +2259,16 @@ header {
 
 #project-header > ul > li > a:hover {
     color: #337ab7;
+}
+
+.embed-responsive {
+    position: relative;
+    height: 100%;
+}
+
+.embed-responsive iframe {
+    position: absolute;
+    height: 100%;
 }
 
 span.second.username {

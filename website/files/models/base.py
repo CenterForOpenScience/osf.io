@@ -154,6 +154,17 @@ class TrashedFileNode(StoredObject, Commentable):
         except IndexError:
             return None
 
+    # for Discourse compatibility
+    @property
+    def guid_id(self):
+        guid_obj = self.get_guid()
+        return guid_obj._id if guid_obj else None
+
+    # For Discourse API compatibility
+    @property
+    def label(self):
+        return self.name
+
 @unique_on(['node', 'name', 'parent', 'is_file', 'provider', 'path'])
 class StoredFileNode(StoredObject, Commentable):
     """The storage backend for FileNode objects.

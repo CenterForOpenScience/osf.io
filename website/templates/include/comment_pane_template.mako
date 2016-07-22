@@ -19,21 +19,9 @@
                 <span data-bind="if: page() == 'wiki'">Wiki | <span data-bind="text: pageTitle"></span> Discussion</span>
                 <span data-bind="if: page() == 'node'"><span data-bind="text: pageTitle"></span> | Discussion</span>
             </h4>
-            
-            ## Discourse comment embedding
-            <div id='discourse-comments'></div>
-            <script type="text/javascript">
-                if ('${ discourse_topic_id }' !== 'None') {
-                    DiscourseEmbed = { discourseUrl: '${ discourse_url }/',
-                                     topicId: ${ discourse_topic_id } };
 
-                    (function() {
-                        var d = document.createElement('script'); d.type = 'text/javascript'; d.async = true;
-                        d.src = DiscourseEmbed.discourseUrl + 'javascripts/embed.js';
-                        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(d);
-                    })();
-                }
-            </script>
+            ## Discourse comment embedding
+            <div id='discourse-comments' data-discourse-url='${ discourse_url }/' data-discourse-topic-id='${ discourse_topic_id }'></div>
         </div>
     </div>
 
