@@ -1319,7 +1319,7 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
             display_name='node'
         )
         if node.is_registration:
-            raise MethodNotAllowed
+            raise MethodNotAllowed(method=self.request.method)
         node = self.get_node()
         try:
             node.rm_pointer(instance, auth=auth)
