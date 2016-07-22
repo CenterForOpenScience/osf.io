@@ -184,14 +184,14 @@ public_scopes = {
                             description='View and edit all information associated with this account, including for '
                                         'private projects.',
                             is_public=True),
-    'osf.users.all_read': scope(parts_=frozenset(ComposedScopes.USERS_READ),
+    'osf.users.profile_read': scope(parts_=frozenset(ComposedScopes.USERS_READ),
                                 description='Read your profile data',
                                 is_public=True),
 }
 
 if settings.DEV_MODE:
     public_scopes.update({
-        'osf.users.all_write': scope(parts_=frozenset(ComposedScopes.USERS_WRITE),
+        'osf.users.profile_write': scope(parts_=frozenset(ComposedScopes.USERS_WRITE),
                                      description='Read and edit your profile data',
                                      is_public=True),
 
@@ -225,11 +225,11 @@ if settings.DEV_MODE:
                                                     'registrations.',
                                         is_public=True),  # TODO: Language: Does registrations endpoint allow creation of registrations? Is that planned?
 
-        'osf.nodes.all_read': scope(parts_=frozenset(ComposedScopes.NODE_ALL_READ),
+        'osf.nodes.full_read': scope(parts_=frozenset(ComposedScopes.NODE_ALL_READ),
                                     description='View all metadata, files, and access rights associated with all public '
                                                 'and private projects accessible to this account.',
                                     is_public=True),
-        'osf.nodes.all_write': scope(parts_=frozenset(ComposedScopes.NODE_ALL_WRITE),
+        'osf.nodes.full_write': scope(parts_=frozenset(ComposedScopes.NODE_ALL_WRITE),
                                      description='View and edit all metadata, files, and access rights associated with '
                                                  'all public and private projects accessible to this account.',
                                      is_public=True),

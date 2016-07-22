@@ -92,6 +92,31 @@ var BaseViewModel = oop.extend(ChangeMessageMixin, {
 var ChangePasswordViewModel = oop.extend(BaseViewModel, {
     constructor: function () {
         var self = this;
+
+        // Call constructor at the beginning so that self.password exists
+        self.super.constructor.call(this);
+
+        // pick up the email from contextVars
+        self.email1 = ko.observable(window.contextVars.username || '').extend({
+            required: true,
+            email: true
+        });
+
+        self.password.extend({
+            validation: {
+                validator: function(val, other) {
+                    if (String(val).toLowerCase() === String(other).toLowerCase()) {
+                        self.typedPassword(' ');
+                        return false;
+                    } else {
+                        return true;
+                    }
+                },
+                'message': 'Your password cannot be the same as your email address.',
+                params: self.email1
+            }
+        });
+
         self.passwordConfirmation = ko.observable('').extend({
             required: true,
             validation: {
@@ -104,8 +129,6 @@ var ChangePasswordViewModel = oop.extend(BaseViewModel, {
         });
         self.oldPassword = ko.observable('').extend({required: true});
 
-        // Call constructor after declaring observables so that validatedFields is populated correctly
-        self.super.constructor.call(this);
     },
     getValidatedFields: function() {
         var self = this;
@@ -119,6 +142,30 @@ var ChangePasswordViewModel = oop.extend(BaseViewModel, {
 var SetPasswordViewModel = oop.extend(BaseViewModel, {
     constructor: function () {
         var self = this;
+        // Call constructor at the beginning so that self.password exists
+        self.super.constructor.call(this);
+
+        // pick up the email from contextVars if we can't get it from first typing it in
+        self.email1 = ko.observable(window.contextVars.username || '').extend({
+            required: true,
+            email: true
+        });
+
+        self.password.extend({
+            validation: {
+                validator: function(val, other) {
+                    if (String(val).toLowerCase() === String(other).toLowerCase()) {
+                        self.typedPassword(' ');
+                        return false;
+                    } else {
+                        return true;
+                    }
+                },
+                'message': 'Your password cannot be the same as your email address.',
+                params: self.email1
+            }
+        });
+
         self.passwordConfirmation = ko.observable('').extend({
             required: true,
             validation: {
@@ -129,7 +176,6 @@ var SetPasswordViewModel = oop.extend(BaseViewModel, {
                 params: self.password
             }
         });
-        self.super.constructor.call(this);
     }
 });
 
@@ -243,15 +289,42 @@ var SignUpViewModel = oop.extend(BaseViewModel, {
 
 /** Wrapper classes */
 var ChangePassword = function(selector) {
-    $osf.applyBindings(new ChangePasswordViewModel(), selector);
+    ChangePasswordViewModel = new ChangePasswordViewModel();
+    $osf.applyBindings(ChangePasswordViewModel, selector);
+    // Necessary to prevent enter submitting forms with invalid frontend zxcvbn validation
+    $(selector).keypress(function(event) {
+        if (event.which === 13) {
+            if (!ChangePasswordViewModel.password.isValid()) {
+                return false;
+            }
+        }
+    });
 };
 
 var SetPassword = function(selector) {
-    $osf.applyBindings(new SetPasswordViewModel(), selector);
+    SetPasswordViewModel = new SetPasswordViewModel();
+    $osf.applyBindings(SetPasswordViewModel, selector);
+    // Necessary to prevent enter submitting forms with invalid frontend zxcvbn validation
+    $(selector).keypress(function(event) {
+        if (event.which === 13) {
+            if (!SetPasswordViewModel.password.isValid()) {
+                return false;
+            }
+        }
+    });
 };
 
 var SignUp = function(selector) {
-    $osf.applyBindings(new SignUpViewModel(), selector);
+    SignUpViewModel = new SignUpViewModel();
+    $osf.applyBindings(SignUpViewModel, selector);
+    // Necessary to prevent enter submitting forms with invalid frontend zxcvbn validation
+    $(selector).keypress(function(event) {
+        if (event.which === 13) {
+            if (!SignUpViewModel.password.isValid()) {
+                return false;
+            }
+        }
+    });
 };
 
 module.exports = {

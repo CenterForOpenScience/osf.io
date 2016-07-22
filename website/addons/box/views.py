@@ -1,15 +1,10 @@
 """Views for the node settings page."""
 # -*- coding: utf-8 -*-
-import os
-import httplib as http
+from flask import request
 
-from box.client import BoxClient, BoxClientException
-from urllib3.exceptions import MaxRetryError
-
-from framework.exceptions import HTTPError
-from website.addons.box.model import Box
 from website.addons.base import generic_views
 from website.addons.box.serializer import BoxSerializer
+from website.project.decorators import must_have_addon, must_be_addon_authorizer
 
 SHORT_NAME = 'box'
 FULL_NAME = 'Box'
@@ -24,64 +19,14 @@ box_import_auth = generic_views.import_auth(
     BoxSerializer
 )
 
-def _get_folders(node_addon, folder_id):
-    node = node_addon.owner
-    if folder_id is None:
-        return [{
-            'id': '0',
-            'path': 'All Files',
-            'addon': 'box',
-            'kind': 'folder',
-            'name': '/ (Full Box)',
-            'urls': {
-                'folders': node.api_url_for('box_folder_list', folderId=0),
-            }
-        }]
+@must_have_addon(SHORT_NAME, 'node')
+@must_be_addon_authorizer(SHORT_NAME)
+def box_folder_list(node_addon, **kwargs):
+    """ Returns all the subsequent folders under the folder id passed.
+    """
+    folder_id = request.args.get('folder_id')
 
-    try:
-        Box(node_addon.external_account).refresh_oauth_key()
-        client = BoxClient(node_addon.external_account.oauth_key)
-    except BoxClientException:
-        raise HTTPError(http.FORBIDDEN)
-
-    try:
-        metadata = client.get_folder(folder_id)
-    except BoxClientException:
-        raise HTTPError(http.NOT_FOUND)
-    except MaxRetryError:
-        raise HTTPError(http.BAD_REQUEST)
-
-    # Raise error if folder was deleted
-    if metadata.get('is_deleted'):
-        raise HTTPError(http.NOT_FOUND)
-
-    folder_path = '/'.join(
-        [
-            x['name']
-            for x in metadata['path_collection']['entries']
-        ] + [metadata['name']]
-    )
-
-    return [
-        {
-            'addon': 'box',
-            'kind': 'folder',
-            'id': item['id'],
-            'name': item['name'],
-            'path': os.path.join(folder_path, item['name']),
-            'urls': {
-                'folders': node.api_url_for('box_folder_list', folderId=item['id']),
-            }
-        }
-        for item in metadata['item_collection']['entries']
-        if item['type'] == 'folder'
-    ]
-
-box_folder_list = generic_views.folder_list(
-    SHORT_NAME,
-    FULL_NAME,
-    _get_folders
-)
+    return node_addon.get_folders(folder_id=folder_id)
 
 box_get_config = generic_views.get_config(
     SHORT_NAME,

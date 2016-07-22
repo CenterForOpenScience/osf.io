@@ -49,6 +49,7 @@
                         <button class="btn btn-default disabled">Public</button>
                     % endif
                     </div>
+
                     <!-- ko if: canBeOrganized -->
                     <div class="btn-group" style="display: none;" data-bind="visible: true">
 
@@ -92,6 +93,9 @@
                                 <i class="fa fa-plus"></i> Award
                             </button>
                         </div>
+                    % endif
+                    % if node["is_public"]:
+                    <div class="btn-group" id="shareButtonsPopover"></div>
                     % endif
                 </div>
             </div>
