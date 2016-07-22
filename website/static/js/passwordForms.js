@@ -58,7 +58,6 @@ var BaseViewModel = oop.extend(ChangeMessageMixin, {
             complexity: 2,
         });
 
-
         // Preserve object of validated fields for use in `submit`
         var validatedObservables = {
             password: self.password
@@ -133,6 +132,7 @@ var ChangePasswordViewModel = oop.extend(BaseViewModel, {
     getValidatedFields: function() {
         var self = this;
         return {
+            password: self.password,
             oldPassword: self.oldPassword
         };
     }
@@ -289,12 +289,12 @@ var SignUpViewModel = oop.extend(BaseViewModel, {
 
 /** Wrapper classes */
 var ChangePassword = function(selector) {
-    ChangePasswordViewModel = new ChangePasswordViewModel();
-    $osf.applyBindings(ChangePasswordViewModel, selector);
+    var viewModel = new ChangePasswordViewModel();
+    $osf.applyBindings(viewModel, selector);
     // Necessary to prevent enter submitting forms with invalid frontend zxcvbn validation
     $(selector).keypress(function(event) {
         if (event.which === 13) {
-            if (!ChangePasswordViewModel.password.isValid()) {
+            if (!viewModel.password.isValid()) {
                 return false;
             }
         }
@@ -302,12 +302,12 @@ var ChangePassword = function(selector) {
 };
 
 var SetPassword = function(selector) {
-    SetPasswordViewModel = new SetPasswordViewModel();
-    $osf.applyBindings(SetPasswordViewModel, selector);
+    var viewModel = new SetPasswordViewModel();
+    $osf.applyBindings(viewModel, selector);
     // Necessary to prevent enter submitting forms with invalid frontend zxcvbn validation
     $(selector).keypress(function(event) {
         if (event.which === 13) {
-            if (!SetPasswordViewModel.password.isValid()) {
+            if (!viewModel.password.isValid()) {
                 return false;
             }
         }
@@ -315,12 +315,12 @@ var SetPassword = function(selector) {
 };
 
 var SignUp = function(selector) {
-    SignUpViewModel = new SignUpViewModel();
-    $osf.applyBindings(SignUpViewModel, selector);
+    var viewModel = new SignUpViewModel();
+    $osf.applyBindings(viewModel, selector);
     // Necessary to prevent enter submitting forms with invalid frontend zxcvbn validation
     $(selector).keypress(function(event) {
         if (event.which === 13) {
-            if (!SignUpViewModel.password.isValid()) {
+            if (!viewModel.password.isValid()) {
                 return false;
             }
         }
