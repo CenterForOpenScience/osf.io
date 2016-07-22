@@ -827,6 +827,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     is_registration = fields.BooleanField(default=False, index=True)
     registered_date = fields.DateTimeField(index=True)
     registered_user = fields.ForeignField('user')
+    withdrawl_date = fields.DateTimeField(index=True)
 
     # A list of all MetaSchemas for which this Node has registered_meta
     registered_schema = fields.ForeignField('metaschema', list=True, default=list)
@@ -3448,6 +3449,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         self.retraction = retraction
         if save:
             self.save()
+        self.withdrawl_date = datetime.datetime.utcnow()
         return retraction
 
     def _is_embargo_date_valid(self, end_date):

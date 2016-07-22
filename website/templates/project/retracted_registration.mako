@@ -37,6 +37,8 @@
                 <br />
                 Date Created: <span data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}" class="date node-date-created"></span>
                 | Date Registered:  <span data-bind="text: dateRegistered.local, tooltip: {title: dateRegistered.utc}" class="date node-date-registered"></span>
+                <br />
+                Date Withdrawn: <span data-bind="text: dateWithdrawn.local, tooltip {title: dateWithdrawn.utc}" class="date"></span>
 
                 % if parent_node['id']:
                     <br />Category: <span class="node-category">${ node['category'] }</span>
