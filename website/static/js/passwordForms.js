@@ -58,11 +58,9 @@ var BaseViewModel = oop.extend(ChangeMessageMixin, {
             complexity: 2,
         });
 
-        // Preserve object of validated fields for use in `submit`
-        var validatedObservables = {
-            password: self.password
-        };
-        self.validatedObservables = $.extend({}, validatedObservables, self.getValidatedFields());
+        // To ensure that validated fields are populated correctly
+        self.validatedObservables = self.getValidatedFields();
+        self.validatedFields = ko.validatedObservable(self.validatedObservables);
 
         // Collect validated fields
         self.validatedFields = ko.validatedObservable(self.validatedObservables);
@@ -83,7 +81,8 @@ var BaseViewModel = oop.extend(ChangeMessageMixin, {
      * Hook to add validated observables to the validation group.
      */
     getValidatedFields: function() {
-        return {};
+        var self = this;
+        return {password: self.password};
     }
 });
 
@@ -133,6 +132,7 @@ var ChangePasswordViewModel = oop.extend(BaseViewModel, {
         var self = this;
         return {
             password: self.password,
+            passwordConfirmation: self.passwordConfirmation,
             oldPassword: self.oldPassword
         };
     }
@@ -225,6 +225,7 @@ var SignUpViewModel = oop.extend(BaseViewModel, {
     getValidatedFields: function() {
         var self = this;
         return {
+            password: self.password,
             fullName: self.fullName,
             email1: self.email1,
             email2: self.email2
@@ -294,7 +295,7 @@ var ChangePassword = function(selector) {
     // Necessary to prevent enter submitting forms with invalid frontend zxcvbn validation
     $(selector).keypress(function(event) {
         if (event.which === 13) {
-            if (!viewModel.password.isValid()) {
+            if (!viewModel.password.isValid() || !viewModel.passwordConfirmation.isValid()) {
                 return false;
             }
         }
@@ -307,7 +308,7 @@ var SetPassword = function(selector) {
     // Necessary to prevent enter submitting forms with invalid frontend zxcvbn validation
     $(selector).keypress(function(event) {
         if (event.which === 13) {
-            if (!viewModel.password.isValid()) {
+            if (!viewModel.password.isValid() || !viewModel.passwordConfirmation.isValid()) {
                 return false;
             }
         }
