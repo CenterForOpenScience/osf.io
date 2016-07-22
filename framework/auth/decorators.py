@@ -12,7 +12,6 @@ from framework.flask import redirect
 from framework.exceptions import HTTPError
 from .core import Auth
 from .core import User
-from types import NoneType
 
 
 def collect_auth(func):
