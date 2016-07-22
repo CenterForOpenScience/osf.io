@@ -2,12 +2,14 @@
 import itsdangerous
 import mock
 from nose.tools import *  # flake8: noqa
-from api.base.settings.defaults import API_BASE
+import unittest
 
 from tests.base import ApiTestCase
 from tests.factories import (
     AuthUserFactory
 )
+
+from api.base.settings.defaults import API_BASE
 
 from framework.auth.oauth_scopes import public_scopes
 from framework.auth.cas import CasResponse
@@ -58,6 +60,7 @@ class TestWelcomeToApi(ApiTestCase):
         assert_not_in('admin', res.json['meta'].keys())
 
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
+    @unittest.skipIf(not settings.DEV_MODE, 'DEV_MODE disabled, osf.admin unavailable')  # TODO: Remove when available outside of DEV_MODE
     def test_admin_scoped_token_has_admin(self, mock_auth):
         token = ApiOAuth2PersonalToken(
             owner=self.user,
