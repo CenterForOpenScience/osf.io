@@ -8,6 +8,7 @@ module.exports = {
         instrumentation: 'fa fa-flask',
         data: 'fa fa-database',
         software: 'fa fa-laptop',
+        project: 'fa fa-cube',
         analysis: 'fa fa-bar-chart',
         communication: 'fa fa-comment',
         other: 'fa fa-th-large',
