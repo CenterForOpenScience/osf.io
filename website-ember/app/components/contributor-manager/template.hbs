@@ -36,14 +36,14 @@
                 </td>
                 <td> </td>
                 <td class="permissions">
-                    <select class='form-control input-sm' onchange={{action (action 'permissionChange' contributor) value='target.value'}}>
+                    <select class='form-control input-sm' onchange={{action (action 'permissionChange' contributor contributors) value='target.value'}}>
                         <option value='read' selected={{eq contributor.permission 'read'}}> Read</option>
                         <option value='write' selected={{eq contributor.permission 'write'}}> Read + Write</option>
                         <option value='admin' selected={{eq contributor.permission 'admin'}}> Administrator</option>
                     </select>
                 </td>
                 <td>
-                    <input onchange={{action (action 'bibliographicChange' contributor) value='target.checked'}} checked={{eq contributor.bibliographic true}} type="checkbox" name="bibliographic">
+                    <input onchange={{action (action 'bibliographicChange' contributor contributors) value='target.checked'}} checked={{eq contributor.bibliographic true}} type="checkbox" name="bibliographic">
                 </td>
                 <td> <button class="btn btn-danger to-top-element">Remove</button> </td>
             </tr>
@@ -51,4 +51,11 @@
     </tbody>
 </table>
 
-<button {{action 'updateContributors'}} class="btn btn-success"> Save Changes </button>
+<div class="m-b-sm">
+    {{#if changed}}
+        <a class="btn btn-danger contrib-button">Discard Changes</a>
+    {{/if}}
+    {{#if canSubmit}}
+        <a {{action 'updateContributors'}} class="btn btn-success contrib-button">Save Changes</a>
+    {{/if}}
+</div>
