@@ -1403,7 +1403,11 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
             self.kwargs[self.node_lookup_url_kwarg],
             display_name='node'
         )
-        if node.is_collection or node.is_registration:
+        if node.is_collection:
+            raise NotFound
+        if node.is_registration:
+            if self.request.method == 'DELETE':
+                raise MethodNotAllowed(method=self.request.method)
             raise NotFound
         if node_link.node.is_registration:
             if self.request.method not in drf_permissions.SAFE_METHODS:
@@ -1415,13 +1419,6 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
     # overrides DestroyAPIView
     def perform_destroy(self, instance):
         auth = get_user_auth(self.request)
-        node = get_object_or_error(
-            Node,
-            self.kwargs[self.node_lookup_url_kwarg],
-            display_name='node'
-        )
-        if node.is_registration:
-            raise MethodNotAllowed(method=self.request.method)
         node = self.get_node()
         pointer = self.get_object()
         try:
