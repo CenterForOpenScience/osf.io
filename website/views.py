@@ -168,7 +168,7 @@ def resolve_guid(guid, suffix=None):
 
         # 404 if user tries to visit public files wiki or add contributors ect, redirect if they try to visit the root
         # project page.
-        if Node.find(Q('_id', 'eq', guid) & Q('is_public_files_collection', 'eq', True)):
+        if Node.find(Q('_id', 'eq', guid) & Q('is_public_files_node', 'eq', True)):
             if suffix:
                 raise HTTPError(http.NOT_FOUND)
             else:

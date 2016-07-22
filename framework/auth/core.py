@@ -1029,7 +1029,7 @@ class User(GuidStoredObject, AddonModelMixin):
         from website.project.model import Node
         if self.is_registered:
             try:
-                return Node.find_one(Q('contributors', 'eq', self._id) & Q('is_public_files_collection', 'eq', True))
+                return Node.find_one(Q('contributors', 'eq', self._id) & Q('is_public_files_node', 'eq', True))
             except NoResultsFound:
                 None
         return None
@@ -1407,7 +1407,7 @@ class User(GuidStoredObject, AddonModelMixin):
                 # Skip bookmark collection node
                 if node.is_bookmark_collection:
                     continue
-                if node.is_public_files_collection:
+                if node.is_public_files_node:
                     self.public_files_node.merge_public_files(node)
                     continue
                 # if both accounts are contributor of the same project

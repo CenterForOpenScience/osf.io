@@ -15,7 +15,7 @@
 
 <%def name="content()">
 
-% if not node['is_public_files_collection']:
+% if not node['is_public_files_node']:
     <%include file="project_header.mako"/>
 % endif
 

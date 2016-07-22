@@ -62,7 +62,7 @@ var PublicFilesDropzone = {
                 $(file.previewElement).find('.col-sm-7.p-xs').append(buttonContainer);
                 file.previewElement.classList.add('dz-success');
                 file.previewElement.classList.add('dz-preview-background-success');
-                $(file.previewElement).find('.generating-share-link').effect("pulsate", { times:100 }, 300000);
+                $(file.previewElement).find('.generating-share-link').effect('pulsate', { times:100 }, 300000);
 
                 $osf.ajaxJSON(
                     'GET',
@@ -76,13 +76,13 @@ var PublicFilesDropzone = {
                     m.render(buttonContainer, cb.generateClipboard(link));
                     $(file.previewElement).find('.dz-filename').attr('href', guid);
                     $('.generating-share-link').remove();
-                })
+                });
 
                 this.files.pop();
                 this.processQueue();
             },
             error: function (file, message) {
-                $osf.softGrowl(message + ' For larger files create a project.','danger');
+                $osf.softGrowl(message,'danger');
                 $('.dz-preview').remove();
                 this.files.pop();
             }
@@ -127,19 +127,21 @@ var PublicFilesDropzone = {
         }
         function publicFilesHelpModal() {
             return [
-                m('button.btn.fa.fa-info.close.dz-font[aria-label="Drag-and-Drop Help"][data-toggle="modal"][data-target="#dropZoneHelpModal"]'),
+                m('button.btn.fa.fa-info.close[aria-label="Drag-and-Drop Help"][data-toggle="modal"][data-target="#dropZoneHelpModal"]'),
                 m('.modal.fade #dropZoneHelpModal',
                     m('.modal-dialog',
                         m('.modal-content',
                             m('.modal-header',
                                 m('button.close[data-dismiss="modal"]', '×'),
-                                m('h4.modal-title', 'Public Files Drag-and-Drop Help')),
-                            m('.modal-body', m('p', 'Files uploaded here will be automatically added to your public files. Additionally: '),
+                                m('h4.modal-title', 'Public Files Drag-and-Drop Help')
+                            ),
+                            m('.modal-body',
+                                m('p', 'Files uploaded here will be automatically added to your public files. Additionally: '),
                                 m('ul',
                                     m('li', 'File uploads may be up to 500 MB.'),
                                     m('li', 'To upload more files, refresh the page or click ', m('span.i.fa.fa-times')),
-                                    m('li', 'To show and hide your uploads, toggle the ', m('strong', 'Upload Public Files'), ' button.'),
-                                    m('li', 'Click ', m('span.i.fa.fa-share-alt'), ' to copy a link for that file to your clipboard.'))
+                                    m('li', 'To show and hide your uploads, toggle the ', m('strong', 'Choose a file'), ' button.')
+                                )
                             ),
                             m('.modal-footer', m('button.btn.btn-default[data-dismiss="modal"]', 'Close'))
                         )
@@ -160,7 +162,7 @@ var PublicFilesDropzone = {
                     publicFilesHelpModal(), publicFilesHeader()
                 ),
                 m('.panel-body.m-lg.text-center',
-                    m('h2.splash-text', 'Drop a file to upload')
+                    m('h2.splash-text', m('strong', 'Drop a file to upload'))
                 ),
                 m('.panel-footer.clearfix',
                     m('.pull-left',

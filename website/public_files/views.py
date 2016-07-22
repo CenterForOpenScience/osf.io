@@ -13,7 +13,7 @@ def view_public_files(auth, **kwargs):
 def view_public_files_id(uid, **kwargs):
 
     try:
-        publicFilesNode = Node.find_one(Q('is_public_files_collection', 'eq', True) & Q('contributors', 'eq', uid))
+        publicFilesNode = Node.find_one(Q('is_public_files_node', 'eq', True) & Q('contributors', 'eq', uid))
     except NoResultsFound:
         raise HTTPError(http.NOT_FOUND)
 
@@ -27,6 +27,6 @@ def serialize_public_files_node(node):
                 'node_id': node._id,
                 'api_url': node.api_url,
                 'owner_name': node.creator.fullname,
-                'is_public_files_node': node.is_public_files_collection,
+                'is_public_files_node': node.is_public_files_node,
             }
     }

@@ -1,6 +1,5 @@
 'use strict';
 
-var clipboard = require('js/clipboard');
 var m = require('mithril');
 
 function dropzonePreviewTemplate() {

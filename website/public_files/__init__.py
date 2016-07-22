@@ -16,7 +16,7 @@ def give_user_public_files_node(user):
         creator=user,
         category='project',
         is_public=True,
-        is_public_files_collection=True,
+        is_public_files_node=True,
     )
 
     node.save()

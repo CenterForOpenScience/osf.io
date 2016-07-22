@@ -27,7 +27,7 @@ def search(query, index=None, doc_type=None):
 
 @requires_search
 def update_node(node, index=None, bulk=False, async=True):
-    if not node.is_public_files_collection:
+    if not node.is_public_files_node:
         if async:
             node_id = node._id
             # We need the transaction to be committed before trying to run celery tasks.

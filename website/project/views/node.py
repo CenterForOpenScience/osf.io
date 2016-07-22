@@ -736,7 +736,7 @@ def _view_project(node, auth, primary=False):
             'alternative_citations': [citation.to_json() for citation in node.alternative_citations],
             'has_draft_registrations': node.has_active_draft_registrations,
             'contributors': [contributor._id for contributor in node.contributors],
-            'is_public_files_collection': node.is_public_files_collection
+            'is_public_files_node': node.is_public_files_node
         },
         'parent_node': {
             'exists': parent is not None,

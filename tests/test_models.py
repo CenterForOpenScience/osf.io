@@ -4685,10 +4685,10 @@ class TestPublicFiles(OsfTestCase):
             self.project.set_title('Look at me: I\'m the title now',auth=self.auth)
             self.project.remove_node(auth=self.auth)
             self.project.fork_node(auth=self.auth)
-            self.project.add_permission(user,'write')
-            self.project.remove_permission(user,'write')
-            self.project.remove_contributor(self.user,auth=self.auth)
-            self.project.add_contributor(contributor=user,permissions='WRITE',auth=Auth(user))
+            self.project.add_permission(user, WRITE)
+            self.project.remove_permission(user, WRITE)
+            self.project.remove_contributor(self.user, auth=self.auth)
+            self.project.add_contributor(contributor=user,permissions=WRITE, auth=Auth(user))
             self.project.set_privacy(permissions='private', auth=self.auth)
             self.project.add_citation(self.auth)
             self.project.edit_citation(self.auth,{})
@@ -4697,16 +4697,16 @@ class TestPublicFiles(OsfTestCase):
                 auth=self.auth
             )
 
-    def test_user_merge_with_other_public_files_collection(self):
-        oldman =  UserFactory()
-        project = PublicFilesFactory(creator=oldman)
+    def test_user_merge_with_other_public_files_node(self):
+        old_account = UserFactory()
+        project = PublicFilesFactory(creator=old_account)
         self.project.get_addon('osfstorage').get_root().append_file('same')
         project.get_addon('osfstorage').get_root().append_file('same')
         with assert_raises(BaseException):
-            self.user.merge_user(oldman)
+            self.user.merge_user(old_account)
 
         project.get_addon('osfstorage').get_root().delete()
-        self.user.merge_user(oldman)
+        self.user.merge_user(old_account)
         assert len(self.project.get_addon('osfstorage').get_root().children) == 1
         assert self.project.get_addon('osfstorage').get_root().children[0].name == 'same'
 
