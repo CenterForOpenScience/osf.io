@@ -407,11 +407,9 @@ function _fangornResolveToggle(item) {
         return togglePlus;
       }
     }
-    // if(item.children.length === 0){
-    //     var tb = this;
-    //     var index = tb.returnIndex(item.id);
-    //     tb.toggleFolder(index);
-    // }
+    if(item.children.length === 0){
+        item.open = false;
+    }
     if (item.data.provider === 'osfstorage' && item.kind === 'file') {
         if (item.data.extra && item.data.extra.checkout) {
             if (item.data.extra.checkout === window.contextVars.currentUser.id){
