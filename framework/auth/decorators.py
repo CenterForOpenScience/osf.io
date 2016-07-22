@@ -12,6 +12,7 @@ from framework.flask import redirect
 from framework.exceptions import HTTPError
 from .core import Auth
 from .core import User
+from types import NoneType
 
 
 def collect_auth(func):
@@ -30,13 +31,16 @@ def must_be_confirmed(func):
     def wrapped(*args, **kwargs):
 
         user = User.load(kwargs['uid'])
-        if user.is_active:
-            return func(*args, **kwargs)
+        if user is not None:
+            if user.is_confirmed:
+                return func(*args, **kwargs)
+            else:
+                raise HTTPError(httplib.BAD_REQUEST, data={
+                    'message_short': 'Account not yet confirmed',
+                    'message_long': 'The profile page could not be displayed as the user has not confirmed the account.'
+                })
         else:
-            raise HTTPError(httplib.BAD_REQUEST, data={
-                'message_short': 'Account not yet confirmed',
-                'message_long': 'The profile page could not be displayed as the user has not confirmed the account.'
-            })
+            raise HTTPError(httplib.NOT_FOUND)
 
     return wrapped
 
