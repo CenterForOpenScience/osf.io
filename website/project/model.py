@@ -1603,8 +1603,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 need_update = False
         if self.is_collection or self.archiving:
             need_update = False
-        # if need_update:
-        #     self.update_search()
+        if need_update:
+            self.update_search()
 
         if 'node_license' in saved_fields:
             children = [c for c in self.get_descendants_recursive(
