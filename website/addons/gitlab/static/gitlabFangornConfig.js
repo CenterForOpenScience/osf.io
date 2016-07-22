@@ -181,17 +181,19 @@ var _gitlabItemButtons = {
                     }
                 }
                 if (item.data.addonFullname) {
+                    var branchParamUrl = '?ref=' + item.data.branch;
+
                     buttons.push(
                         m.component(Fangorn.Components.button, {
                             onclick: function (event) {
-                                window.location = item.data.urls.zip;
+                                window.location = item.data.urls.zip + branchParamUrl;
                             },
                             icon: 'fa fa-download',
                             className: 'text-primary'
                         }, 'Download'),
                         m.component(Fangorn.Components.button, {
                             onclick: function (event) {
-                                window.open(item.data.urls.repo, '_blank');
+                                window.open(item.data.urls.repo + branchParamUrl, '_blank');
                             },
                             icon: 'fa fa-external-link',
                             className: 'text-info'
