@@ -1403,11 +1403,9 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
             self.kwargs[self.node_lookup_url_kwarg],
             display_name='node'
         )
-        if node.is_collection:
-            raise NotFound
-        if node.is_registration:
-            if self.request.method == 'DELETE':
-                raise MethodNotAllowed(method=self.request.method)
+        if node.is_registration and self.request.method == 'DELETE':
+            raise MethodNotAllowed(method=self.request.method)
+        if node.is_collection or node.is_registration:
             raise NotFound
         if node_link.node.is_registration:
             if self.request.method not in drf_permissions.SAFE_METHODS:
