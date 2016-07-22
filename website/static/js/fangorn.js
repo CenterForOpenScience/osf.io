@@ -393,6 +393,11 @@ function _fangornResolveToggle(item) {
         checkedByOther = m('i.fa.fa-sign-out[style="color: #d9534f; font-size: 120%; cursor: default; padding-top: 10px; padding-bottom: 10px; padding-right: 4px;"]', '');
     // check if folder has children whether it's lazyloaded or not.
     if (item.kind === 'folder' && item.depth > 1) {
+      var self = this;
+      if (!item.open) {
+          self.updateFolder(null, item);
+      }
+      if(item.children.length !== 0){
         if(!item.data.permissions.view){
             return '';
         }
@@ -400,7 +405,13 @@ function _fangornResolveToggle(item) {
             return toggleMinus;
         }
         return togglePlus;
+      }
     }
+    // if(item.children.length === 0){
+    //     var tb = this;
+    //     var index = tb.returnIndex(item.id);
+    //     tb.toggleFolder(index);
+    // }
     if (item.data.provider === 'osfstorage' && item.kind === 'file') {
         if (item.data.extra && item.data.extra.checkout) {
             if (item.data.extra.checkout === window.contextVars.currentUser.id){
