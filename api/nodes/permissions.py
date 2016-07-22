@@ -138,13 +138,17 @@ class ContributorOrPublicForRelationshipPointers(permissions.BasePermission):
             return has_pointer_auth
 
 
-class RegistrationCheckForPointers(permissions.BasePermission):
+class RegistrationAndPermissionCheckForPointers(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         node_link = Pointer.load(request.parser_context['kwargs']['node_link_id'])
         node = Node.load(request.parser_context['kwargs'][view.node_lookup_url_kwarg])
-        if node.is_registration and request.method == 'DELETE':
-            raise exceptions.MethodNotAllowed(method=request.method)
+        auth = get_user_auth(request)
+        if request.method == 'DELETE':
+            if node.is_registeration:
+                raise exceptions.MethodNotAllowed(method=request.method)
+            if not node.can_edit(auth):
+                raise exceptions.PermissionDenied
         if node.is_collection or node.is_registration:
             raise exceptions.NotFound
         if node_link.node.is_registration:

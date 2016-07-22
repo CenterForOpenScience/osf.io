@@ -52,7 +52,7 @@ from api.nodes.permissions import (
     IsPublic,
     AdminOrPublic,
     ContributorOrPublic,
-    RegistrationCheckForPointers,
+    RegistrationAndPermissionCheckForPointers,
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
     IsAdminOrReviewer,
@@ -1379,7 +1379,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
     permission_classes = (
         base_permissions.TokenHasScope,
         drf_permissions.IsAuthenticatedOrReadOnly,
-        RegistrationCheckForPointers,
+        RegistrationAndPermissionCheckForPointers,
         ExcludeWithdrawals
     )
 
@@ -1405,8 +1405,6 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
     def perform_destroy(self, instance):
         auth = get_user_auth(self.request)
         node = self.get_node()
-        if not node.can_edit(auth):
-            raise PermissionDenied
         pointer = self.get_object()
         try:
             node.rm_pointer(pointer, auth=auth)
