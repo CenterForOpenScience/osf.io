@@ -1377,7 +1377,6 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
     #This Request/Response
     """
     permission_classes = (
-        ContributorOrPublicForPointers,
         base_permissions.TokenHasScope,
         drf_permissions.IsAuthenticatedOrReadOnly,
         ExcludeWithdrawals
@@ -1412,6 +1411,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
                 raise MethodNotAllowed
         if node not in node_link.parent:
             raise NotFound
+        self.check_object_permissions(self.request, node_link)
         return node_link
 
     # overrides DestroyAPIView
