@@ -2931,6 +2931,8 @@ class UserPublicFiles(NodeFilesList, UserMixin):
 
     permission_classes = (
         IsPublicFiles,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
     )
 
     def get_default_queryset(self):
