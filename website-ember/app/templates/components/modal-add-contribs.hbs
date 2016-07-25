@@ -5,9 +5,9 @@
 
     {{#bs-modal-body}}
         {{!-- TODO: break widget pages into separate components, but first, just translate over the OSF code --}}
-        <!-- Whom to add -->
+        {{!-- Whom to add --}}
         {{#if (eq page 'whom')}}
-            <!-- Find contributors -->
+            {{!-- Find contributors --}}
             <form class='form' {{action 'searchPeople' on='submit'}}>
                 <div class="row">
                     <div class="col-md-6">
@@ -19,7 +19,7 @@
                         </div>
                     </div>
                 </div>
-                <hr />
+                <hr>
                 <div class="row search-contributor-links">
                     <div class="col-md-12">
                         <div>
@@ -32,7 +32,7 @@
             </form>
 
 
-            <!-- Choose which to add -->
+            {{!-- Choose which to add --}}
             <div class="row">
 
                 <div class="col-md-6">
@@ -66,30 +66,30 @@
                                             </div>
                                         </td>
                                         <td>
-                                            <!-- height and width are explicitly specified for faster rendering -->
-                                            <img data-bind="attr: {src: contributor.gravatar_url}" height=35 width=35 />
+                                            {{!-- height and width are explicitly specified for faster rendering --}}
+                                            <img data-bind="attr: {src: contributor.gravatar_url}" height=35 width=35>
                                         </td>
                                         <td width="75%">
                                             <a data-bind = "attr: {href: contributor.profile_url}" target="_blank">
                                                 <span data-bind= "text:contributor.fullname"></span>
-                                            </a><br>
+                                            </a>
+                                            <br>
 
-
-                                                <span data-bind="if: contributor.employment">
-                                                    <span class='small'
-                                                        data-bind="text: contributor.employment">
-                                                    </span><br>
-                                                </span>
-
-                                                <span data-bind="if: contributor.education">
-                                                    <span
-                                                        class ='small'
-                                                        data-bind= "text: contributor.education">
-                                                    </span><br>
-                                                </span>
+                                            <span data-bind="if: contributor.employment">
                                                 <span class='small'
-                                                      data-bind= "text: contributor.displayProjectsInCommon">
-                                                </span>
+                                                    data-bind="text: contributor.employment">
+                                                </span><br>
+                                            </span>
+
+                                            <span data-bind="if: contributor.education">
+                                                <span
+                                                    class ='small'
+                                                    data-bind= "text: contributor.education">
+                                                </span><br>
+                                            </span>
+                                            <span class='small'
+                                                  data-bind= "text: contributor.displayProjectsInCommon">
+                                            </span>
                                             <span class='text-muted' data-bind="visible: !contributor.registered">(unregistered)</span>
                                         </td>
                                     </tr>
@@ -98,7 +98,7 @@
                         </table>
                     {{/if}}
 
-                    <!-- Link to add non-registered contributor -->
+                    {{!-- Link to add non-registered contributor --}}
                     <div class='help-block'>
                         <div data-bind='if: foundResults'>
                             <ul class="pagination pagination-sm" data-bind="foreach: paginators">
@@ -111,12 +111,12 @@
                         <div data-bind="if: showLoading">
                             <p class="text-muted">Searching contributors...</p>
                         </div>
-                            <div data-bind="if: noResults">
-                                No results found. Try a more specific search or
-                                <a href="#" data-bind="click:gotoInvite">add <strong><em data-bind="text: query"></em></strong> as an unregistered contributor</a>.
-                            </div>
+                        <div data-bind="if: noResults">
+                            No results found. Try a more specific search or
+                            <a href="#" data-bind="click:gotoInvite">add <strong><em data-bind="text: query"></em></strong> as an unregistered contributor</a>.
+                        </div>
                     </div>
-                </div><!-- ./col-md -->
+                </div>{{!-- ./col-md --}}
 
                 <div class="col-md-6">
                     <div>
@@ -124,7 +124,7 @@
                         <a data-bind="visible: removeAllVisible, click:removeAll">Remove all</a>
                     </div>
 
-                    <!-- TODO: Duplication here: Put this in a KO template -->
+                    {{!-- TODO: Duplication here: Put this in a KO template --}}
                     <table class="table-condensed">
                         <thead data-bind="visible: selection().length">
                             <th width="10%"></th>
@@ -143,22 +143,18 @@
                         <tbody data-bind="foreach:{data:selection, as: 'contributor', afterRender:makeAfterRender()}">
                             <tr>
                                 <td class="p-r-sm osf-icon-td">
-                                    <a
-                                            class="btn btn-default contrib-button btn-mini"
-                                            data-bind="click:$root.remove.bind($root), tooltip: {title: 'Remove contributor'}"
-                                        ><i class="fa fa-minus"></i></a>
+                                    <a class="btn btn-default contrib-button btn-mini" data-bind="click:$root.remove.bind($root), tooltip: {title: 'Remove contributor'}">
+                                        <i class="fa fa-minus"></i>
+                                    </a>
                                 </td>
                                 <td>
-                                    <!-- height and width are explicitly specified for faster rendering -->
+                                    {{!-- height and width are explicitly specified for faster rendering --}}
                                     <img data-bind="attr: {src: contributor.gravatar_url || '/static/img/unreg_gravatar.png'}" height=35 width=35>
                                 </td>
 
                                 <td>
                                     <span   data-bind="text: contributor.fullname"></span>
-
-                                    <span
-                                            class='text-muted'
-                                            data-bind="visible: !contributor.registered">(unregistered)</span>
+                                    <span class='text-muted' data-bind="visible: !contributor.registered">(unregistered)</span>
                                 </td>
 
                                 <td>
@@ -176,7 +172,7 @@
             </div>
 
         {{/if}}
-        <!-- Component selection page -->
+        {{!-- Component selection page --}}
 
         {{#if (eq page 'which')}}
             <div>
@@ -185,7 +181,7 @@
                 to <span data-bind="text:title"></span>.
             </div>
 
-            <hr />
+            <hr>
 
             <div style="margin-bottom:10px;">
                 You can also add the contributor(s) to any components on which you are an admin.
@@ -212,20 +208,20 @@
             </div>
         {{/if}}
 
-        <!-- Invite user page -->
+        {{!-- Invite user page --}}
         {{#if (eq page 'invite')}}
             <form class='form'>
                 <div class="form-group">
                     <label for="inviteUserName">Full Name</label>
                     <input type="text" class='form-control' id="inviteName"
-                        placeholder="Full name" data-bind='value: inviteName, valueUpdate: "input"'/>
+                        placeholder="Full name" data-bind='value: inviteName, valueUpdate: "input"'>
                 </div>
                 <div class="form-group">
                     <label for="inviteUserEmail">Email</label>
                     <input type="email" class='form-control' id="inviteUserEmail"
-                            placeholder="Email" data-bind='value: inviteEmail' autofocus/>
+                            placeholder="Email" data-bind='value: inviteEmail' autofocus>
                 </div>
-                 <div class="help-block">
+                <div class="help-block">
                     <p>We will notify the user that they have been added to your project.</p>
                     <p class='text-danger' data-bind='text: inviteError'></p>
                 </div>
@@ -234,14 +230,14 @@
     {{/bs-modal-body}}
 
     {{#bs-modal-footer}}
-        <button class="btn btn-default" {{action "close" target=footer}}>Cancel</button>
+        <button class="btn btn-default" {{action 'close' target=footer}}>Cancel</button>
 
-        {{#if (and contribsToAdd (eq page 'whom')}}
+        {{#if (and contribsToAdd (eq page 'whom'))}}
             {{!-- TODO: children check should not require server call? --}}
             {{#if model.children}}
                 <button class="btn btn-primary" {{action 'selectPage' 'which'}}>Next</button>
             {{else}}
-                <button class="btn btn-success" {{action 'submitContributors'>Add</button>
+                <button class="btn btn-success" {{action 'submitContributors'}}>Add</button>
             {{/if}}
         {{/if}}
 
@@ -251,7 +247,7 @@
         {{/if}}
 
         {{#if (eq page 'invite')}}
-            <button class="btn btn-primary" {{action 'selectPage' 'whom')}}>Back</button>
+            <button class="btn btn-primary" {{action 'selectPage' 'whom'}}>Back</button>
             <button class="btn btn-success" {{action 'submitInvite'}} type="submit">Add</button>
         {{/if}}
     {{/bs-modal-footer}}

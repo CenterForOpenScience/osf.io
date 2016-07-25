@@ -32,7 +32,7 @@ export default Ember.Component.extend({
     actions: {
         selectPage(pageName) {
             this.set('page', pageName);
-        }
+        },
 
         //////////////////////////////////
         //  Actions for the whom page   //
