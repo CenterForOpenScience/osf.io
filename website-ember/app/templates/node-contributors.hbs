@@ -63,8 +63,11 @@
             {{!-- /ko --}}
         </h3>
 
+        {{#if isAdmin}}
+            <p class="m-b-xs">Drag and drop contributors to change listing order.</p>
+        {{/if}}
         {{!-- % if 'admin' in user['permissions'] and not node['is_registration']: --}}
-        <p class="m-b-xs">Drag and drop contributors to change listing order.</p>
+
         {{!-- % endif --}}
 
     {{!-- <div data-bind="filters: {
@@ -95,7 +98,7 @@
             }
         }"> --}}
         <div>
-            {{contributor-manager contributors=model.contributors editContributors=(action 'updateContributors')}}
+            {{contributor-manager contributors=model.contributors isAdmin=isAdmin editContributors=(action 'updateContributors')}}
         </div>
         {{!--<div data-bind="visible: $root.empty" class="no-items text-danger m-b-md">
             No contributors found

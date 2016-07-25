@@ -4,8 +4,8 @@ export default Ember.Component.extend({
     permissionChanges: {},
     bibliographicChanges: {},
     changed: false,
-    hasMinAdmins: false,
-    hasMinBibliographic: false,
+    hasMinAdmins: true,
+    hasMinBibliographic: true,
     canSubmit: Ember.computed('hasMinAdmins', 'hasMinBibliographic', 'changed', function() {
         return this.get('hasMinAdmins') && this.get('hasMinBibliographic') && this.get('changed');
     }),
