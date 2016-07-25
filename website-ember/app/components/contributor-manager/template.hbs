@@ -32,7 +32,11 @@
                 <td>
                     <span class="fa fa-bars sortable-bars"></span>
                     <img class="m-l-xs" src={{concat contributor.users.links.profile_image '&s=40'}}>
-                    <a href={{contributor.users.links.html}}> {{if contributor.unregisteredContributor contributor.unregisteredContributor contributor.users.fullName}} </a>
+                    {{#if contributor.unregisteredContributor}}
+                        {{contributor.unregisteredContributor}}
+                    {{else}}
+                        <a href={{contributor.users.links.html}}> {{contributor.users.fullName}} </a>
+                    {{/if}}
                 </td>
                 <td> </td>
                 <td class="permissions">
