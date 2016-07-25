@@ -1147,7 +1147,7 @@ function doMultipleCheckout(items, checkout, showError) {
 
     return $osf.ajaxJSON(
         'PUT',
-        window.contextVars.apiV2Prefix + 'files' + items[0].data.nodeUrl + 'list/osfstorage/',
+        $osf.apiV2Url('files/' + items[0].data.nodeUrl + 'list/osfstorage/', {}),
         {
             isCors: true,
             data: {data: checkoutData},
