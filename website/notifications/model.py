@@ -13,7 +13,7 @@ def validate_subscription_type(value):
 
 
 def validate_event_type(value):
-    if value not in NODE_SUBSCRIPTIONS_AVAILABLE or USER_SUBSCRIPTIONS_AVAILABLE:
+    if value not in (NODE_SUBSCRIPTIONS_AVAILABLE or USER_SUBSCRIPTIONS_AVAILABLE):
         raise ValidationValueError
 
 
