@@ -1,13 +1,24 @@
 import Ember from 'ember';
 
 export default Ember.Component.extend({
+    session: Ember.inject.service(),
+    currentUser: Ember.inject.service(),
     permissionChanges: {},
     bibliographicChanges: {},
     changed: false,
     hasMinAdmins: true,
     hasMinBibliographic: true,
+    isRegistration: Ember.computed(function() {
+        return this.get('node').get('registration');
+    }),
     canSubmit: Ember.computed('hasMinAdmins', 'hasMinBibliographic', 'changed', function() {
         return this.get('hasMinAdmins') && this.get('hasMinBibliographic') && this.get('changed');
+    }),
+    isAdmin: Ember.computed(function() {
+        return this.get('node').get('currentUserPermissions').indexOf('admin') >= 0;
+    }),
+    canEdit: Ember.computed('isAdmin', 'isRegistration', function() {
+        return this.get('isAdmin') && !(this.get('isRegistration'));
     }),
     actions: {
         permissionChange(contributor, contributors, permission) {

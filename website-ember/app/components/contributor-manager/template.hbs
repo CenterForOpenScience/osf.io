@@ -45,7 +45,11 @@
                 <td>
                     <input onchange={{action (action 'bibliographicChange' contributor contributors) value='target.checked'}} checked={{eq contributor.bibliographic true}} type="checkbox" name="bibliographic">
                 </td>
-                <td> <button class="btn btn-danger to-top-element">Remove</button> </td>
+                <td>
+                    {{#if (or canEdit (canRemoveContributor contributor currentUser isRegistration))}}
+                        <button class="btn btn-danger to-top-element">Remove</button>
+                    {{/if}}
+                </td>
             </tr>
         {{/each}}
     </tbody>
