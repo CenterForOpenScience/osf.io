@@ -8,26 +8,24 @@
         <!-- Whom to add -->
         {{#if (eq page 'whom')}}
             <!-- Find contributors -->
-            <form class='form' data-bind="submit: startSearch">
+            <form class='form' {{action 'searchPeople' on='submit'}}>
                 <div class="row">
                     <div class="col-md-6">
                         <div class="input-group m-b-sm">
-                            <input class='form-control'
-                                    data-bind="value:query"
-                                    placeholder='Search by name' autofocus/>
+                            {{input value=_searchText class='form-control' placeholder='Search by name' autofocus=true}}
                             <span class="input-group-btn">
                                 <input type="submit" value="Search" class="btn btn-default">
                             </span>
                         </div>
                     </div>
                 </div>
-            <hr />
+                <hr />
                 <div class="row search-contributor-links">
                     <div class="col-md-12">
                         <div>
-                            <!-- ko if:parentId -->
-                                <a class="f-w-lg" data-bind="click:importFromParent, text:'Import contributors from ' + parentTitle"></a>
-                            <!-- /ko -->
+                            {{#if canViewParent}}
+                                <button {{action 'importContribsFromParent'}} class="f-w-lg btn-link">Import contributors from {{model.parent.title}}</button>
+                            {{/if}}
                         </div>
                     </div>
                 </div>
@@ -40,11 +38,11 @@
                 <div class="col-md-6">
                     <div>
                         <span class="modal-subheader">Results</span>
-                        <a data-bind="visible: addAllVisible, click:addAll">Add all</a>
+                        {{#if showAddAll}}
+                            <button {{action 'addAllContributors'}} class="btn-link">Add all</button>
+                        {{/if}}
                     </div>
-                    <!-- ko if: notification -->
-                    <div data-bind="html: notification().message, css: 'alert alert-' + notification().level"></div>
-                    <!-- /ko -->
+                    {{!-- Note: Removed "notifications" block because it seemed to be no longer used in staticjs code. TODO: Verify this is correct --}}
                     <!-- ko if: doneSearching -->
                     <table class="table-condensed">
                         <thead data-bind="visible: foundResults">
