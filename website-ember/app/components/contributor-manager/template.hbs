@@ -40,14 +40,19 @@
                 </td>
                 <td> </td>
                 <td class="permissions">
-                    <select class='form-control input-sm' onchange={{action (action 'permissionChange' contributor contributors) value='target.value'}}>
-                        <option value='read' selected={{eq contributor.permission 'read'}}> Read</option>
-                        <option value='write' selected={{eq contributor.permission 'write'}}> Read + Write</option>
-                        <option value='admin' selected={{eq contributor.permission 'admin'}}> Administrator</option>
-                    </select>
+                    {{#if canEdit}}
+                        <select class='form-control input-sm' onchange={{action (action 'permissionChange' contributor contributors) value='target.value'}}>
+                            <option value='read' selected={{eq contributor.permission 'read'}}> Read</option>
+                            <option value='write' selected={{eq contributor.permission 'write'}}> Read + Write</option>
+                            <option value='admin' selected={{eq contributor.permission 'admin'}}> Administrator</option>
+                        </select>
+                    {{else}}
+                        {{permissionMap contributor.permission}}
+                    {{/if}}
                 </td>
                 <td>
-                    <input onchange={{action (action 'bibliographicChange' contributor contributors) value='target.checked'}} checked={{eq contributor.bibliographic true}} type="checkbox" name="bibliographic">
+                    <input disabled={{if canEdit false true}} onchange={{action (action 'bibliographicChange' contributor contributors) value='target.checked'}} checked={{eq contributor.bibliographic true}} type="checkbox" name="bibliographic">
+
                 </td>
                 <td>
                     {{#if (or canEdit (canRemoveContributor contributor currentUser isRegistration))}}
