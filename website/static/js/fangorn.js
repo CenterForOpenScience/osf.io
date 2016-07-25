@@ -916,6 +916,7 @@ function _downloadZipEvent (event, item, col) {
 
 function _createFolder(event, dismissCallback, helpText) {
     var tb = this;
+    helpText('');
     var val = $.trim(tb.select('#createFolderInput').val());
     var parent = tb.multiselected()[0];
     if (!parent.open) {
@@ -953,6 +954,7 @@ function _createFolder(event, dismissCallback, helpText) {
     }, function(data) {
         if (data && data.code === 409) {
             helpText(data.message);
+            m.redraw();
         } else {
             helpText('Folder creation failed.');
         }
@@ -1784,13 +1786,14 @@ var FGItemButtons = {
     }
 };
 
-var dismissToolbar = function(){
+var dismissToolbar = function(helpText){
     var tb = this;
     if (tb.toolbarMode() === toolbarModes.FILTER){
         tb.resetFilter();
     }
     tb.toolbarMode(toolbarModes.DEFAULT);
     tb.filterText('');
+    helpText('');
     m.redraw();
 };
 
@@ -1804,9 +1807,9 @@ var FGToolbar = {
         self.mode = self.tb.toolbarMode;
         self.isUploading = args.treebeard.isUploading;
         self.helpText = m.prop('');
-        self.dismissToolbar = dismissToolbar.bind(self.tb);
+        self.dismissToolbar = dismissToolbar.bind(self.tb, self.helpText);
         self.createFolder = function(event){
-            _createFolder.call(self.tb, event, self.dismissToolbar, self.helpText );
+            _createFolder.call(self.tb, event, self.dismissToolbar, self.helpText);
         };
     },
     view : function(ctrl) {
