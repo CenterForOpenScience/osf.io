@@ -221,7 +221,6 @@ var ProjectViewModel = function(data, options) {
 
     self.canCreateIdentifiers = ko.pureComputed(function() {
         return !self.hasIdentifiers() &&
-            self.isRegistration &&
             self.nodeIsPublic &&
             self.userPermissions.indexOf('admin') !== -1;
     });
