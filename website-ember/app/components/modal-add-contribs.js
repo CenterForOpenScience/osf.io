@@ -61,23 +61,23 @@ export default Ember.Component.extend({
 
             // TODO: Query from search.js is generic; can we simplify for this page?
             let simplestQuery = {
-                "query": {
-                    "filtered": {
-                        "query": {
-                            "query_string": {
-                                "default_field": "_all",
-                                "fields": ["_all", "job^1", "school^1", "all_jobs^0.125", "all_schools^0.125"],
-                                "query": text,
-                                "analyze_wildcard": true,
-                                "lenient": true
+                query: {
+                    filtered: {
+                        query: {
+                            query_string: {
+                                default_field: '_all',
+                                fields: ['_all', 'job^1', 'school^1', 'all_jobs^0.125', 'all_schools^0.125'],
+                                query: text,
+                                analyze_wildcard: true,
+                                lenient: true
                             }
                         }
                     }
                 },
-                "from": 0,  // TODO: Make configurable for pagination
-                "size": 10  // TODO: Make configurable for pagination
+                from: 0,  // TODO: Make configurable for pagination
+                size: 10  // TODO: Make configurable for pagination
             };
-            // TODO: add payload fields for "from" and "size" to control response?
+            // TODO: add payload fields for 'from' and 'size' to control response?
             let resp = Ember.$.ajax({
                 method: 'POST',
                 url: '/api/v1/search/user/',
@@ -89,10 +89,11 @@ export default Ember.Component.extend({
                 let ids = res.results.map((item) => item.id);
                 // As long as # records < # api results pagesize, this will be fine wrt pagination. (TODO: specify parameter to be safe)
                 if (ids) {
-                    return this.get('store').query('user', {'filter[id]': ids.join(',')});
+                    return this.get('store').query('user', { 'filter[id]': ids.join(',') });
                 } else {
                     return [];  // TODO: Do something with this result
-                }}).catch(() => console.log('Query failed with error'));  // TODO: Show errors to user
+                }
+            }).catch(() => console.log('Query failed with error'));  // TODO: Show errors to user
         },
         importContribsFromParent() {
             //TODO: Import contributors from parent
