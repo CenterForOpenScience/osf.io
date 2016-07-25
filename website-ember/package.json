@@ -41,7 +41,6 @@
     "ember-export-application-global": "^1.0.5",
     "ember-font-awesome": "2.1.1",
     "ember-load-initializers": "^0.5.1",
-    "ember-modal-dialog": "0.8.8",
     "ember-osf": "file:../../ember-osf",
     "ember-resolver": "^2.0.3",
     "loader.js": "^4.0.1"

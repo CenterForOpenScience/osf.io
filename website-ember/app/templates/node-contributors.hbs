@@ -12,13 +12,7 @@
         <input type="text" class="form-control searchable" id="nameSearch" placeholder="Filter by name">
         <h5 class="m-t-md">
             Permissions
-            <i class="fa fa-question-circle permission-info"
-                data-toggle="popover"
-                data-title="Permission Information"
-                data-container="body"
-                data-placement="right"
-                data-html="true">
-            </i>
+            <i class="fa fa-question-circle permission-info" title="Permission Information"></i>
         </h5>
         <div class="btn-group btn-group-justified-vertical filtergroup" id='permissionFilter'>
             <div class="btn-group">
@@ -60,9 +54,9 @@
                 <button {{action 'toggleAddContributorModal'}} class="btn btn-success btn-sm m-l-md">
                     <i class="fa fa-plus" aria-hidden="true"></i> Add
                 </button>
-                {{#if showModalAddContributors}}
-                    {{modal-add-contribs close=(action 'toggleAddContributorModal')}}
-                {{/if}}
+
+                    {{modal-add-contribs model=model isOpen=showModalAddContributors}}
+
             {{/if}}
         </h3>
 
