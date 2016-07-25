@@ -56,11 +56,14 @@
     <div id="manageContributors" class="scripted">
         <h3>
             Contributors
-            {{!-- ko if: canEdit --}}
-            <a href="#addContributors" data-toggle="modal" class="btn btn-success btn-sm m-l-md">
-                <i class="fa fa-plus"></i> Add
-            </a>
-            {{!-- /ko --}}
+            {{#if canEdit}}
+                <button {{action 'toggleAddContributorModal'}} class="btn btn-success btn-sm m-l-md">
+                    <i class="fa fa-plus" aria-hidden="true"></i> Add
+                </button>
+                {{#if showModalAddContributors}}
+                    {{modal-add-contribs close=(action 'toggleAddContributorModal')}}
+                {{/if}}
+            {{/if}}
         </h3>
 
         {{!-- % if 'admin' in user['permissions'] and not node['is_registration']: --}}
