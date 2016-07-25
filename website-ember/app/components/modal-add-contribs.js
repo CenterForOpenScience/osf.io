@@ -1,5 +1,7 @@
 import Ember from 'ember';
 
+import deferredPromise from '../utils/deferred-promise';
+
 /**
  * Modal that handles adding and removing contributors from a project
  * @class modal-add-contribs
@@ -54,6 +56,24 @@ export default Ember.Component.extend({
             if (!text) {
                 return;
             }
+
+            // TODO: Improve this query and add weightings from search.js
+            let simplestQuery = {
+                "query": {
+                    "match": {
+                        "_all": text
+                    }
+                }
+            };
+            // TODO: add payload fields for "from" and "size" to control response?
+            let resp = Ember.$.ajax({
+                method: 'POST',
+                url: '/api/v1/search/user/',
+                data: simplestQuery
+            });
+            resp = deferredPromise(resp);
+            resp.then((res)=> console.log('Sent query! Response: ', res))
+                .catch(() => console.log('Query failed'));
         },
         importContribsFromParent() {
             //TODO: Import contributors from parent

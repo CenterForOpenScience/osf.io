@@ -5,8 +5,9 @@
  * @returns {boolean}
  */
 export default function deferredPromise(jqDeferred) {
-  return new Ember.RSVP.promise((resolve, reject) => ){
-        jqDeferred.done(() => resolve(...arguments));
-        jqDeferred.fail(() => reject(...arguments));
-    };
+  return new Ember.RSVP.Promise((resolve, reject) => {
+        // TODO: Improve param capture
+        jqDeferred.done((value) => resolve(value));
+        jqDeferred.fail((reason) => reject(reason));
+    });
 }
