@@ -97,7 +97,7 @@
       <div class="container">
         <div class="row">
           <div class="col-md-3">
-            <a href="http://www.terpconnect.umd.edu/~pnc//socarxiv.html"><img src="/static/img/SocArXiv.png" width="95%" style="margin-top: 20px;"></a>
+            <a href="https://osf.io/view/socarxiv/"><img src="/static/img/SocArXiv.png" width="95%" style="margin-top: 20px;"></a>
           </div>
           <div class="col-md-9 text-center">
             <h2>An open archive of the social sciences.</h2>
