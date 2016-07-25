@@ -148,6 +148,12 @@ class TestNotificationsModels(OsfTestCase):
             event_name='global_file_updated'
         ).add_user_to_subscription(user, 'none')
 
+        factories.NotificationSubscriptionFactory(
+            _id=user._id + '_' + 'global_mentions',
+            owner=user,
+            event_name='global_mentions'
+        ).add_user_to_subscription(user, 'email_digest')
+
         node = factories.ProjectFactory(creator=user)
 
         user_subscriptions = list(utils.get_all_user_subscriptions(user))
@@ -156,11 +162,12 @@ class TestNotificationsModels(OsfTestCase):
         file_updated_subscription = NotificationSubscription.find_one(Q('_id', 'eq', node._id + '_file_updated'))
         comments_subscription = NotificationSubscription.find_one(Q('_id', 'eq', node._id + '_comments'))
 
-        assert_equal(len(user_subscriptions), 4)  # subscribed to both node and user settings
+        assert_equal(len(user_subscriptions), 5)  # subscribed to both node and user settings
         assert_in('file_updated', event_types)
         assert_in('comments', event_types)
         assert_in('global_file_updated', event_types)
         assert_in('global_comments', event_types)
+        assert_in('global_mentions', event_types)
         assert_equal(len(file_updated_subscription.none), 1)
         assert_equal(len(file_updated_subscription.email_transactional), 0)
         assert_equal(len(comments_subscription.email_digest), 1)
@@ -181,14 +188,28 @@ class TestNotificationsModels(OsfTestCase):
             event_name='global_file_updated'
         ).add_user_to_subscription(user, 'none')
 
+        factories.NotificationSubscriptionFactory(
+            _id=user._id + '_' + 'global_comment_replies',
+            owner=user,
+            event_name='global_comment_replies'
+        ).add_user_to_subscription(user, 'email_transactional')
+
+        factories.NotificationSubscriptionFactory(
+            _id=user._id + '_' + 'global_mentions',
+            owner=user,
+            event_name='global_mentions'
+        ).add_user_to_subscription(user, 'email_transactional')
+
         node = factories.NodeFactory(creator=user)
 
         user_subscriptions = list(utils.get_all_user_subscriptions(user))
         event_types = [sub.event_name for sub in user_subscriptions]
 
-        assert_equal(len(user_subscriptions), 2)  # subscribed to only user settings
+        assert_equal(len(user_subscriptions), 4)  # subscribed to only user settings
         assert_in('global_file_updated', event_types)
         assert_in('global_comments', event_types)
+        assert_in('global_comment_replies', event_types)
+        assert_in('global_mentions', event_types)
 
     def test_new_project_creator_is_subscribed_with_default_global_settings(self):
         user = factories.UserFactory()
@@ -205,6 +226,18 @@ class TestNotificationsModels(OsfTestCase):
             event_name='global_file_updated'
         ).add_user_to_subscription(user, 'email_transactional')
 
+        factories.NotificationSubscriptionFactory(
+            _id=user._id + '_' + 'global_comment_replies',
+            owner=user,
+            event_name='global_comment_replies'
+        ).add_user_to_subscription(user, 'email_transactional')
+
+        factories.NotificationSubscriptionFactory(
+            _id=user._id + '_' + 'global_mentions',
+            owner=user,
+            event_name='global_mentions'
+        ).add_user_to_subscription(user, 'email_transactional')
+
         node = factories.ProjectFactory(creator=user)
 
         user_subscriptions = list(utils.get_all_user_subscriptions(user))
@@ -213,11 +246,13 @@ class TestNotificationsModels(OsfTestCase):
         file_updated_subscription = NotificationSubscription.find_one(Q('_id', 'eq', node._id + '_file_updated'))
         comments_subscription = NotificationSubscription.find_one(Q('_id', 'eq', node._id + '_comments'))
 
-        assert_equal(len(user_subscriptions), 4)  # subscribed to both node and user settings
+        assert_equal(len(user_subscriptions), 6)  # subscribed to both node and user settings
         assert_in('file_updated', event_types)
         assert_in('comments', event_types)
         assert_in('global_file_updated', event_types)
         assert_in('global_comments', event_types)
+        assert_in('global_comment_replies', event_types)
+        assert_in('global_mentions', event_types)
         assert_equal(len(file_updated_subscription.email_transactional), 1)
         assert_equal(len(comments_subscription.email_transactional), 1)
 
@@ -237,6 +272,12 @@ class TestNotificationsModels(OsfTestCase):
             event_name='global_file_updated'
         ).add_user_to_subscription(user, 'email_transactional')
 
+        factories.NotificationSubscriptionFactory(
+            _id=user._id + '_' + 'global_mentions',
+            owner=user,
+            event_name='global_mentions'
+        ).add_user_to_subscription(user, 'email_transactional')
+
         node = factories.ForkFactory(project=project)
 
         user_subscriptions = list(utils.get_all_user_subscriptions(user))
@@ -247,11 +288,12 @@ class TestNotificationsModels(OsfTestCase):
         project_file_updated_subscription = NotificationSubscription.find_one(Q('_id', 'eq', project._id + '_file_updated'))
         project_comments_subscription = NotificationSubscription.find_one(Q('_id', 'eq', project._id + '_comments'))
 
-        assert_equal(len(user_subscriptions), 6)  # subscribed to project, fork, and user settings
+        assert_equal(len(user_subscriptions), 7)  # subscribed to project, fork, and user settings
         assert_in('file_updated', event_types)
         assert_in('comments', event_types)
         assert_in('global_file_updated', event_types)
         assert_in('global_comments', event_types)
+        assert_in('global_mentions', event_types)
         assert_equal(len(node_file_updated_subscription.email_transactional), 1)
         assert_equal(len(node_comments_subscription.email_transactional), 1)
         assert_equal(len(project_file_updated_subscription.email_transactional), 1)
@@ -272,14 +314,29 @@ class TestNotificationsModels(OsfTestCase):
             event_name='global_file_updated'
         ).add_user_to_subscription(user, 'email_transactional')
 
+        factories.NotificationSubscriptionFactory(
+            _id=user._id + '_' + 'global_comment_replies',
+            owner=user,
+            event_name='global_comment_replies'
+        ).add_user_to_subscription(user, 'email_transactional')
+
+        factories.NotificationSubscriptionFactory(
+            _id=user._id + '_' + 'global_mentions',
+            owner=user,
+            event_name='global_mentions'
+        ).add_user_to_subscription(user, 'email_transactional')
+
         node = factories.NodeFactory(creator=user)
 
         user_subscriptions = list(utils.get_all_user_subscriptions(user))
         event_types = [sub.event_name for sub in user_subscriptions]
 
-        assert_equal(len(user_subscriptions), 2)  # subscribed to only user settings
+        assert_equal(len(user_subscriptions), 4)  # subscribed to only user settings
         assert_in('global_file_updated', event_types)
         assert_in('global_comments', event_types)
+        assert_in('global_comment_replies', event_types)
+        assert_in('global_mentions', event_types)
+
 
     def test_contributor_subscribed_when_added_to_project(self):
         user = factories.UserFactory()
@@ -865,6 +922,15 @@ class TestNotificationUtils(OsfTestCase):
                 'children': []
             }, {
                 'event': {
+                    'title': 'global_mentions',
+                    'description': constants.USER_SUBSCRIPTIONS_AVAILABLE['global_mentions'],
+                    'notificationType': 'email_transactional',
+                    'parent_notification_type': None
+                },
+                'kind': 'event',
+                'children': []
+            }, {
+                'event': {
                     'title': 'global_comments',
                     'description': constants.USER_SUBSCRIPTIONS_AVAILABLE['global_comments'],
                     'notificationType': 'email_transactional',
@@ -872,9 +938,9 @@ class TestNotificationUtils(OsfTestCase):
                 },
                 'kind': 'event',
                 'children': []
-            }
+            },
         ]
-        assert_equal(data, expected)
+        assert_items_equal(data, expected)
 
     def test_get_global_notification_type(self):
         notification_type = utils.get_global_notification_type(self.user_subscription[1] ,self.user)
@@ -1319,6 +1385,35 @@ class TestSendEmails(NotificationTestCase):
         sent = emails.notify('comments', user=user, node=node, timestamp=datetime.datetime.utcnow())
         assert_false(mock_store.called)
         assert_equal(sent, [])
+
+    @mock.patch('website.notifications.emails.store_emails')
+    def test_notify_mentions_does_not_send_to_mentioned_users_subscribed_to_none(self, mock_store):
+        node = factories.NodeFactory()
+        user = factories.UserFactory()
+        factories.NotificationSubscriptionFactory(
+            _id=user._id + '_global_mentions',
+            owner=user,
+            event_name='global_mentions'
+        ).add_user_to_subscription(user, 'none')
+        time_now = datetime.datetime.utcnow()
+        sent = emails.notify_mentions('global_mentions', user=user, node=node, timestamp=time_now, new_mentions=[user._id])
+        assert_false(mock_store.called)
+        assert_equal(sent, [])
+
+    @mock.patch('website.notifications.emails.store_emails')
+    def test_notify_mentions_does_send_to_mentioned_users(self, mock_store):
+        user = factories.UserFactory()
+        factories.NotificationSubscriptionFactory(
+            _id=user._id + '_global_mentions',
+            owner=user,
+            event_name='global_mentions'
+        ).add_user_to_subscription(user, 'email_transactional')
+        node = factories.ProjectFactory(creator=user)
+        time_now = datetime.datetime.utcnow()
+        emails.notify_mentions('global_mentions', user=user, node=node, timestamp=time_now, new_mentions=[user._id])
+        assert_true(mock_store.called)
+        mock_store.assert_called_with([node.creator._id], 'email_transactional', 'mentions', user,
+                                      node, time_now, new_mentions=[node.creator._id])
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_sends_comment_reply_event_if_comment_is_direct_reply(self, mock_store):

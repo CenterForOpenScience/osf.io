@@ -566,7 +566,8 @@ if ($comments.length) {
         canComment: window.contextVars.currentUser.canComment,
         hasChildren: window.contextVars.node.hasChildren,
         currentUser: window.contextVars.currentUser,
-        pageTitle: window.contextVars.file.name
+        pageTitle: window.contextVars.file.name,
+        inputSelector: '.atwho-input'
     };
     CommentModel.init('#commentsLink', '.comment-pane', options);
 }

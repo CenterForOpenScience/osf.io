@@ -269,6 +269,7 @@ var mapByProperty = function(list, attr) {
 };
 
 
+
 /**
   * Return whether or not a value is an email address.
   * Adapted from Knockout-Validation.
@@ -894,6 +895,22 @@ function onScrollToBottom(element, callback) {
     });
 }
 
+/**
+ * Return the current domain as a string, e.g. 'http://localhost:5000'
+ */
+function getDomain(location) {
+    var ret = '';
+    var loc = location || window.location;
+    var hostname = loc.hostname;
+    var protocol = hostname === 'localhost' ? 'http://' : 'https://';
+    var port = loc.port;
+    ret = protocol + hostname;
+    if (port) {
+        ret += ':' + port;
+    }
+    return ret;
+}
+
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
@@ -934,5 +951,6 @@ module.exports = window.$.osf = {
     trackClick: trackClick,
     findContribName: findContribName,
     extractContributorNamesFromAPIData: extractContributorNamesFromAPIData,
-    onScrollToBottom: onScrollToBottom
+    onScrollToBottom: onScrollToBottom,
+    getDomain: getDomain
 };

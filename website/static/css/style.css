@@ -691,6 +691,11 @@ button.close {
     margin-top: 10px;
 }
 
+.create-password {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    height: inherit;
+}
 .more-replies {
     margin-right: 15px;
 }
@@ -708,4 +713,19 @@ div.ball-scale-blue>div {
 
 .modal-scrollable {
     overflow: scroll;
+}
+
+/* Password strength check component colors for darker backgrounds  */
+.pv-darkbg .text-danger {
+    color: #f97773;
+}
+.pv-darkbg .text-warning {
+    color: #f0ad4e;
+}
+.pv-darkbg .text-success {
+    color: #5cb85c;
+}
+
+.pv-darkbg .osf-box-lt {
+    background-color: #a8bbc9
 }
