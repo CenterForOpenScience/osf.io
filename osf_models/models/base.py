@@ -67,8 +67,27 @@ class GuidMixin(models.Model):
     class Meta:
         abstract = True
 
+class MODMCompatibilityQuerySet(models.QuerySet):
+    def sort(self, *fields):
+        # Fields are passed in as e.g. [('title', 1), ('date_created', -1)]
+        if isinstance(fields[0], list):
+            fields = fields[0]
+        def sort_key(item):
+            if isinstance(item, basestring):
+                return item
+            elif isinstance(item, tuple):
+                field_name, direction = item
+                prefix = '-' if direction == -1 else ''
+                return ''.join([prefix, field_name])
+        sort_keys = [sort_key(each) for each in fields]
+        return self.order_by(*sort_keys)
+
+    def limit(self, n):
+        return self[:n]
 
 class BaseModel(models.Model):
+    objects = MODMCompatibilityQuerySet.as_manager()
+
     class Meta:
         abstract = True
 
