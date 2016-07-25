@@ -43,66 +43,61 @@
                         {{/if}}
                     </div>
                     {{!-- Note: Removed "notifications" block because it seemed to be no longer used in staticjs code. TODO: Verify this is correct --}}
-                    <!-- ko if: doneSearching -->
-                    <table class="table-condensed">
-                        <thead data-bind="visible: foundResults">
-                        </thead>
-                        <tbody data-bind="foreach:{data:results, as: 'contributor', afterRender:addTips}">
-                            <tr data-bind="if:!($root.selected($data))">
-                                <td class="p-r-sm osf-icon-td" >
-                                    <a
-                                            class="btn btn-success contrib-button btn-mini"
-                                            data-bind="visible: !contributor.added,
-                                                       click:$root.add.bind($root),
-                                                       tooltip: {title: 'Add contributor'}"
-                                        ><i class="fa fa-plus"></i></a>
-                                    <div data-bind="visible: contributor.added,
-                                                    tooltip: {title: 'Already added'}"
-                                        ><div
-                                            class="btn btn-default contrib-button btn-mini disabled"
-                                            ><i class="fa fa-check"></i></div></div>
-                                </td>
-                                <td>
-                                    <!-- height and width are explicitly specified for faster rendering -->
-                                    <img data-bind="attr: {src: contributor.gravatar_url}" height=35 width=35 />
-                                </td>
-                                <td width="75%">
-                                    <a data-bind = "attr: {href: contributor.profile_url}" target="_blank">
-                                        <span data-bind= "text:contributor.fullname"></span>
-                                    </a><br>
+
+                    {{!-- Intent: Only show search results if done loading and results were found --}}
+                    {{#if (and searchResults searchResults.isFulfilled)}}
+                        <table class="table-condensed">
+                            <tbody>
+                                {{#each searchResults as |person|}}
+                                    {{!-- TODO: Identify mechanism for detecting whether this is selected/ binned --}}
+                                    <tr data-bind="if:!($root.selected($data))">
+                                        <td class="p-r-sm osf-icon-td" >
+                                            <button class="btn btn-success contrib-button btn-mini"
+                                                    data-bind="visible: !contributor.added,
+                                                               click:$root.add.bind($root)"
+                                                    title="Add contributor">
+                                                <i class="fa fa-plus"></i>
+                                            </button>
+                                            <div data-bind="visible: contributor.added,
+                                                            tooltip: {title: 'Already added'}">
+                                                <div class="btn btn-default contrib-button btn-mini disabled">
+                                                    <i class="fa fa-check"></i>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <!-- height and width are explicitly specified for faster rendering -->
+                                            <img data-bind="attr: {src: contributor.gravatar_url}" height=35 width=35 />
+                                        </td>
+                                        <td width="75%">
+                                            <a data-bind = "attr: {href: contributor.profile_url}" target="_blank">
+                                                <span data-bind= "text:contributor.fullname"></span>
+                                            </a><br>
 
 
-                                        <span data-bind="if: contributor.employment">
-                                            <span
-                                                class = 'small'
-                                                data-bind="text: contributor.employment">
-                                            </span><br>
-                                        </span>
+                                                <span data-bind="if: contributor.employment">
+                                                    <span class='small'
+                                                        data-bind="text: contributor.employment">
+                                                    </span><br>
+                                                </span>
 
+                                                <span data-bind="if: contributor.education">
+                                                    <span
+                                                        class ='small'
+                                                        data-bind= "text: contributor.education">
+                                                    </span><br>
+                                                </span>
+                                                <span class='small'
+                                                      data-bind= "text: contributor.displayProjectsInCommon">
+                                                </span>
+                                            <span class='text-muted' data-bind="visible: !contributor.registered">(unregistered)</span>
+                                        </td>
+                                    </tr>
+                                {{/each}}
+                            </tbody>
+                        </table>
+                    {{/if}}
 
-                                        <span data-bind="if: contributor.education">
-                                            <span
-                                                class = 'small'
-                                                data-bind= "text: contributor.education">
-                                            </span><br>
-                                        </span>
-
-                                        <span class= 'small'
-                                              data-bind= "text: contributor.displayProjectsInCommon">
-                                        </span>
-
-                                    <span
-                                            class='text-muted'
-                                            data-bind="visible: !contributor.registered">(unregistered)</span>
-
-                                </td>
-
-                            </tr>
-
-
-                        </tbody>
-                    </table>
-                    <!-- /ko -->
                     <!-- Link to add non-registered contributor -->
                     <div class='help-block'>
                         <div data-bind='if: foundResults'>
@@ -239,23 +234,25 @@
     {{/bs-modal-body}}
 
     {{#bs-modal-footer}}
-        <a href="#" class="btn btn-default" data-bind="click: clear" data-dismiss="modal">Cancel</a>
+        <button class="btn btn-default" {{action "close" target=footer}}>Cancel</button>
 
-        <span data-bind="if: page() === 'invite'">
-            <button class="btn btn-primary" data-bind='click:selectWhom'>Back</button>
-            <button class='btn btn-success'
-                 data-bind='click: postInvite'
-                            type="submit">Add</button>
-        </span>
+        {{#if (and contribsToAdd (eq page 'whom')}}
+            {{!-- TODO: children check should not require server call? --}}
+            {{#if model.children}}
+                <button class="btn btn-primary" {{action 'selectPage' 'which'}}>Next</button>
+            {{else}}
+                <button class="btn btn-success" {{action 'submitContributors'>Add</button>
+            {{/if}}
+        {{/if}}
 
-        <span data-bind="if:selection().length && page() == 'whom'">
-            <a class="btn btn-success" data-bind="visible:!hasChildren(), click:submit">Add</a>
-            <a class="btn btn-primary" data-bind="visible: hasChildren(), click:selectWhich">Next</a>
-        </span>
+        {{#if (eq page 'which')}}
+            <button class="btn btn-primary" {{action 'selectPage' 'whom'}}>Back</button>
+            <button class="btn btn-success" {{action 'submitContributors'}}>Add</button>
+        {{/if}}
 
-        <span data-bind="if: page() == 'which'">
-            <a class="btn btn-primary" data-bind="click:selectWhom">Back</a>
-            <a class="btn btn-success" data-bind="click:submit">Add</a>
-        </span>
+        {{#if (eq page 'invite')}}
+            <button class="btn btn-primary" {{action 'selectPage' 'whom')}}>Back</button>
+            <button class="btn btn-success" {{action 'submitInvite'}} type="submit">Add</button>
+        {{/if}}
     {{/bs-modal-footer}}
 {{/bs-modal}}
