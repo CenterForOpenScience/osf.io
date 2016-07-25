@@ -2,10 +2,8 @@
 import mock
 from contextlib import contextmanager
 
-from modularodm import storage
 
-from framework.mongo import set_up_storage
-
+from framework.mongo import storage, set_up_storage
 from website.addons.base.testing import OAuthAddonTestCaseMixin, AddonTestCase
 from website.addons.dropbox import MODELS
 from website.addons.dropbox.model import DropboxProvider

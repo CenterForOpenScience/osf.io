@@ -19,13 +19,12 @@ import mock
 from faker import Factory
 from nose.tools import *  # noqa (PEP8 asserts)
 from pymongo.errors import OperationFailure
-from modularodm import storage
 from django.test import SimpleTestCase, override_settings
 from django.test import TestCase as DjangoTestCase
 
 
 from api.base.wsgi import application as api_django_app
-from framework.mongo import set_up_storage
+from framework.mongo import set_up_storage, storage
 from framework.auth import User
 from framework.auth.core import Auth
 from framework.sessions.model import Session
@@ -367,7 +366,7 @@ class ApiAddonTestCase(ApiTestCase):
             AddonOAuthNodeSettingsBase, AddonNodeSettingsBase,
             AddonOAuthUserSettingsBase, AddonUserSettingsBase
         )
-        assert self.addon_type in ('CONFIGURABLE', 'OAUTH', 'UNMANAGEABLE', 'INVALID')  
+        assert self.addon_type in ('CONFIGURABLE', 'OAUTH', 'UNMANAGEABLE', 'INVALID')
         self.account = None
         self.node_settings = None
         self.user_settings = None
@@ -387,7 +386,7 @@ class ApiAddonTestCase(ApiTestCase):
             if self.addon_type in ('OAUTH', 'CONFIGURABLE'):
                 self.node_settings.set_auth(self.account, self.user)
                 self._apply_auth_configuration()
-            
+
         if self.addon_type in ('OAUTH', 'CONFIGURABLE'):
             assert isinstance(self.node_settings, AddonOAuthNodeSettingsBase)
             assert isinstance(self.user_settings, AddonOAuthUserSettingsBase)

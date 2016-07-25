@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
-from modularodm import storage
-
-from framework.mongo import set_up_storage
-
+from framework.mongo import storage, set_up_storage
 from website.addons.base.testing import OAuthAddonTestCaseMixin, AddonTestCase
 from website.addons.base.testing.utils import MockFolder
 from website.addons.zotero.tests.factories import ZoteroAccountFactory

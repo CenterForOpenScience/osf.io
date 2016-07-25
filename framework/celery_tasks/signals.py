@@ -4,9 +4,8 @@ imported by Celery and is not used elsewhere in the application.
 """
 
 from celery import signals
-from modularodm import storage
 
-from framework.mongo import set_up_storage, StoredObject
+from framework.mongo import storage, set_up_storage, StoredObject
 
 from website import models
 

@@ -16,12 +16,11 @@ from framework.addons.utils import render_addon_capabilities
 from framework.flask import app, add_handlers
 from framework.logging import logger
 from framework.mongo import handlers as mongo_handlers
-from framework.mongo import set_up_storage
+from framework.mongo import set_up_storage, storage
 from framework.postcommit_tasks import handlers as postcommit_handlers
 from framework.sentry import sentry
 from framework.celery_tasks import handlers as celery_task_handlers
 from framework.transactions import handlers as transaction_handlers
-from modularodm import storage
 from website.addons.base import init_addon
 from website.project.licenses import ensure_licenses
 from website.project.model import ensure_schemas

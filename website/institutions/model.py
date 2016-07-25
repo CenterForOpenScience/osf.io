@@ -4,7 +4,7 @@ from django.db.models.query import QuerySet as DjangoQuerySet
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from modularodm.query.query import RawQuery
-from modularodm.storage.mongostorage import MongoQuerySet
+from framework.mongo.storage import MongoQuerySet
 
 
 class AffiliatedInstitutionsList(list):
@@ -50,6 +50,10 @@ class InstitutionQuerySet(MongoQuerySet):
             model = queryset.schema
             data = queryset.data
         super(InstitutionQuerySet, self).__init__(model, data)
+
+    def sort(self, *field_names):
+        actual_field_names = [Institution.attribute_map.get(each, each) for each in field_names]
+        return super(InstitutionQuerySet, self).sort(*actual_field_names)
 
     def __iter__(self):
         for each in super(InstitutionQuerySet, self).__iter__():

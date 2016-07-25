@@ -5,14 +5,14 @@ import unittest  # noqa
 from nose.tools import *  # noqa (PEP8 asserts)
 
 import datetime
-from modularodm import fields, storage, Q
+from modularodm import fields, Q
 
 from tests.base import OsfTestCase
 from tests import factories
 from tests.utils import mock_archive, assert_logs
 
 from framework.auth import Auth
-from framework.mongo import handlers
+from framework.mongo import handlers, storage
 
 from website.exceptions import NodeStateError
 from website.project.model import ensure_schemas, Node, NodeLog
