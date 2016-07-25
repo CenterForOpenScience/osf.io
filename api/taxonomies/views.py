@@ -1,9 +1,5 @@
-from rest_framework import generics, permissions as drf_permissions
-from framework.auth.oauth_scopes import CoreScopes
+from rest_framework import generics
 
-from api.base.filters import ODMFilterMixin
-from api.base import permissions as base_permissions
-from api.base.utils import get_object_or_error
 from api.taxonomies.serializers import TaxonomySerializer
 from api.base.views import JSONAPIBaseView
 
@@ -11,33 +7,32 @@ from modularodm import fields
 from framework.mongo import (
     ObjectId,
     StoredObject,
-    utils as mongo_utils
 )
-from website.project.licenses import NodeLicense
 
 import json
 
+class TaxonomyMixin(JSONAPIBaseView, generics.RetrieveAPIView):
+    permission_classes = (
+    )
+    serializer_class = TaxonomySerializer
+    view_category = 'taxonomies'
+    view_name = 'taxonomy'
+    data_file = ''
+
+    def get_object(self):
+        with open(self.data_file, 'r') as json_file:
+            data = json.load(json_file)
+        return data
 
 class TaxonomyObject(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     id = fields.StringField(required=True, unique=True, editable=False)
     data = fields.StringField(list=True)
 
-class Taxonomy(JSONAPIBaseView, generics.RetrieveAPIView):
+class TaxonomyFlat(TaxonomyMixin):
+    data_file = 'api/static/json/top_3_levels_flat.json'
+    id = 'flat'
 
-    permission_classes = (
-
-    )
-
-    # required_read_scopes = [CoreScopes.LICENSE_READ]
-    # required_write_scopes = [CoreScopes.NULL]
-
-    serializer_class = TaxonomySerializer
-    view_category = 'taxonomies'
-    view_name = 'taxonomy'
-
-    def get_object(self):
-
-        data = json.load('{"data": ["Hello world"]}')
-        # self.check_object_permissions(self.request, license)
-        return data
+class TaxonomyTreeview(TaxonomyMixin):
+    data_file = 'api/static/json/top_3_levels_treeview.json'
+    id = 'treeview'
