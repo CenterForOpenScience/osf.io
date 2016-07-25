@@ -7,6 +7,8 @@ var moment = require('moment');
 var URI = require('URIjs');
 var bootbox = require('bootbox');
 var lodashGet = require('lodash.get');
+var linkify = require('linkifyjs/html');
+var markdown = require('js/markdown');
 
 
 // TODO: For some reason, this require is necessary for custom ko validators to work
@@ -911,6 +913,11 @@ function getDomain(location) {
     return ret;
 }
 
+function markdownAcceptsLinks(content){
+    var linkify_opts = { target: function (href, type) { return type === 'url' ? '_top' : null; } };
+    return linkify(markdown.full.render(content), linkify_opts);
+}
+
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
@@ -952,5 +959,6 @@ module.exports = window.$.osf = {
     findContribName: findContribName,
     extractContributorNamesFromAPIData: extractContributorNamesFromAPIData,
     onScrollToBottom: onScrollToBottom,
-    getDomain: getDomain
+    getDomain: getDomain,
+    markdownAcceptsLinks:markdownAcceptsLinks
 };
