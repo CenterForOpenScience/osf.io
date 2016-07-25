@@ -58,4 +58,13 @@
     {{#if canSubmit}}
         <a {{action 'updateContributors'}} class="btn btn-success contrib-button">Save Changes</a>
     {{/if}}
+    <p>
+        {{#unless hasMinAdmins}}
+            Must have at least one registered admin contributor </p>
+        {{/unless}}
+
+        {{#unless hasMinBibliographic}}
+            Must have at least one bibliographic contributor </p>
+        {{/unless}}
+    </p>
 </div>
