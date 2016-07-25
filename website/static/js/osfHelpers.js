@@ -8,6 +8,8 @@ var URI = require('URIjs');
 var bootbox = require('bootbox');
 var lodashGet = require('lodash.get');
 var KeenTracker = require('js/keen');
+var linkify = require('linkifyjs/html');
+var markdown = require('js/markdown');
 
 
 // TODO: For some reason, this require is necessary for custom ko validators to work
@@ -915,23 +917,9 @@ function getDomain(location) {
     return ret;
 }
 
-
-/**
- * Utility function to convert absolute URLs to relative urls
- * See:
- *      http://stackoverflow.com/questions/736513/how-do-i-parse-a-url-into-hostname-and-path-in-javascript
- * This method have no effect on external urls.
- * @param url {string} url to be converted
- * @returns {string} converted relative url
- */
-function toRelativeUrl(url, window) {
-    var parser = document.createElement('a');
-    parser.href = url;
-    var relative_url = url;
-    if (window.location.hostname === parser.hostname){
-        relative_url = parser.pathname + parser.search + parser.hash;
-    }
-    return relative_url;
+function markdownAcceptsLinks(content){
+    var linkify_opts = { target: function (href, type) { return type === 'url' ? '_top' : null; } };
+    return linkify(markdown.full.render(content), linkify_opts);
 }
 
 // Also export these to the global namespace so that these can be used in inline
@@ -976,5 +964,5 @@ module.exports = window.$.osf = {
     extractContributorNamesFromAPIData: extractContributorNamesFromAPIData,
     onScrollToBottom: onScrollToBottom,
     getDomain: getDomain,
-    toRelativeUrl: toRelativeUrl
+    markdownAcceptsLinks:markdownAcceptsLinks
 };

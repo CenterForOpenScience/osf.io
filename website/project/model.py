@@ -10,6 +10,8 @@ import urlparse
 import warnings
 import jsonschema
 
+from bleach import linkify
+
 import pytz
 from django.core.urlresolvers import reverse
 from django.core.validators import URLValidator
