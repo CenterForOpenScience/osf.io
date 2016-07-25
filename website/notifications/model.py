@@ -4,7 +4,7 @@ from framework.mongo import StoredObject, ObjectId
 from modularodm.exceptions import ValidationValueError
 
 from website.project.model import Node
-from website.notifications.constants import NOTIFICATION_TYPES
+from website.notifications.constants import NOTIFICATION_TYPES, NODE_SUBSCRIPTIONS_AVAILABLE, USER_SUBSCRIPTIONS_AVAILABLE
 
 
 def validate_subscription_type(value):
@@ -12,10 +12,15 @@ def validate_subscription_type(value):
         raise ValidationValueError
 
 
+def validate_event_type(value):
+    if value not in NODE_SUBSCRIPTIONS_AVAILABLE or USER_SUBSCRIPTIONS_AVAILABLE:
+        raise ValidationValueError
+
+
 class NotificationSubscription(StoredObject):
     _id = fields.StringField(primary=True)  # pxyz_wiki_updated, uabc_comment_replies
 
-    event_name = fields.StringField()      # wiki_updated, comment_replies
+    event_name = fields.StringField(index=True, validate=validate_event_type)      # wiki_updated, comment_replies
     owner = fields.AbstractForeignField()
 
     # Notification types
@@ -64,6 +69,6 @@ class NotificationDigest(StoredObject):
     user_id = fields.StringField(index=True)
     timestamp = fields.DateTimeField()
     send_type = fields.StringField(index=True, validate=validate_subscription_type)
-    event = fields.StringField()
+    event = fields.StringField(index=True, validate=validate_event_type)
     message = fields.StringField()
     node_lineage = fields.StringField(list=True)
