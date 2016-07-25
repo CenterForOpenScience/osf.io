@@ -19,8 +19,17 @@ export default Ember.Component.extend({
     // Store results array from search. TODO: Make this store a promise so we can check fulfilled status
     searchResults: null,
 
-    // People to add as contributors
+    // People selected to add as contributors
     contribsToAdd: Ember.A(),
+    contribsNotYetAdded: Ember.computed('searchResults', 'contribsToAdd', function() {
+        // TODO: Implement: searchResults not yet in contribsToAdd.
+        // Use this for rendering the row widget.
+
+    }),
+    displayContribNamesToAdd: Ember.computed('contribsToAdd', function() {
+        // TODO: Implement: join all names in list as string.
+        // Was: addingSummary
+    }),
 
     // Some computed properties
     canViewParent: Ember.computed.alias('model.parent'), // TODO : verify first whether user can view parent. May need a new model field.
@@ -31,6 +40,7 @@ export default Ember.Component.extend({
 
     actions: {
         selectPage(pageName) {
+            console.log('Resetting component to page: ', pageName);
             this.set('page', pageName);
         },
 
@@ -58,6 +68,7 @@ export default Ember.Component.extend({
             // TODO: Implement. Was $root.add
         },
         submitContributors() {
+            console.log('Submitted contributors');
             // TODO: Implement. Send contribs list to server.
 
         },

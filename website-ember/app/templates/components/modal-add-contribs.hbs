@@ -48,9 +48,9 @@
                     {{#if (and searchResults searchResults.isFulfilled)}}
                         <table class="table-condensed">
                             <tbody>
-                                {{#each searchResults as |person|}}
+                                {{#each contribsNotYetAdded as |person|}}
                                     {{!-- TODO: Identify mechanism for detecting whether this is selected/ binned --}}
-                                    <tr data-bind="if:!($root.selected($data))">
+                                    <tr>
                                         <td class="p-r-sm osf-icon-td" >
                                             <button class="btn btn-success contrib-button btn-mini"
                                                     data-bind="visible: !contributor.added,
@@ -70,8 +70,8 @@
                                             <img data-bind="attr: {src: contributor.gravatar_url}" height=35 width=35>
                                         </td>
                                         <td width="75%">
-                                            <a data-bind = "attr: {href: contributor.profile_url}" target="_blank">
-                                                <span data-bind= "text:contributor.fullname"></span>
+                                            <a data-bind="attr: {href: contributor.profile_url}" target="_blank">
+                                                <span data-bind="text:contributor.fullname"></span>
                                             </a>
                                             <br>
 
@@ -83,12 +83,12 @@
 
                                             <span data-bind="if: contributor.education">
                                                 <span
-                                                    class ='small'
-                                                    data-bind= "text: contributor.education">
+                                                    class='small'
+                                                    data-bind="text: contributor.education">
                                                 </span><br>
                                             </span>
                                             <span class='small'
-                                                  data-bind= "text: contributor.displayProjectsInCommon">
+                                                  data-bind="text: contributor.displayProjectsInCommon">
                                             </span>
                                             <span class='text-muted' data-bind="visible: !contributor.registered">(unregistered)</span>
                                         </td>
@@ -96,24 +96,28 @@
                                 {{/each}}
                             </tbody>
                         </table>
+
+                        {{!-- TODO: Support paginated result fetching widget --}}
+                        <ul class="pagination pagination-sm" data-bind="foreach: paginators">
+                            <li data-bind="css: style"><a href="#" data-bind="click: handler, text: text"></a></li>
+                        </ul>
+                        <p>
+                            <a href="#" data-bind="click:gotoInvite">Add <strong><em>{{_searchText}}</em></strong> as an unregistered contributor</a>.
+                        </p>
+
                     {{/if}}
 
                     {{!-- Link to add non-registered contributor --}}
                     <div class='help-block'>
                         <div data-bind='if: foundResults'>
-                            <ul class="pagination pagination-sm" data-bind="foreach: paginators">
-                                <li data-bind="css: style"><a href="#" data-bind="click: handler, text: text"></a></li>
-                            </ul>
-                            <p>
-                                <a href="#" data-bind="click:gotoInvite">Add <strong><em data-bind="text: query"></em></strong> as an unregistered contributor</a>.
-                            </p>
+
                         </div>
-                        <div data-bind="if: showLoading">
+                        {{#if searchResults.isPending}}
                             <p class="text-muted">Searching contributors...</p>
-                        </div>
+                        {{/if}}
                         <div data-bind="if: noResults">
                             No results found. Try a more specific search or
-                            <a href="#" data-bind="click:gotoInvite">add <strong><em data-bind="text: query"></em></strong> as an unregistered contributor</a>.
+                            <a href="#" data-bind="click:gotoInvite">add <strong><em>{{_searchText}}</em></strong> as an unregistered contributor</a>.
                         </div>
                     </div>
                 </div>{{!-- ./col-md --}}
@@ -177,8 +181,8 @@
         {{#if (eq page 'which')}}
             <div>
                 Adding contributor(s)
-                <span data-bind="text:addingSummary()"></span>
-                to <span data-bind="text:title"></span>.
+                {{displayContribNamesToAdd}}
+                to {{model.title}}
             </div>
 
             <hr>
@@ -209,6 +213,7 @@
         {{/if}}
 
         {{!-- Invite user page --}}
+        {{!-- TODO: This creates unregistered contribs, which is blocked pending OSF changes. Implement/ convert later --}}
         {{#if (eq page 'invite')}}
             <form class='form'>
                 <div class="form-group">
@@ -230,7 +235,8 @@
     {{/bs-modal-body}}
 
     {{#bs-modal-footer}}
-        <button class="btn btn-default" {{action 'close' target=footer}}>Cancel</button>
+        {{!-- FIXME: Cancel button needs appropriate action --}}
+        <button class="btn btn-default" {{action 'close'}}>Cancel</button>
 
         {{#if (and contribsToAdd (eq page 'whom'))}}
             {{!-- TODO: children check should not require server call? --}}
