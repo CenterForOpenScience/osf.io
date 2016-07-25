@@ -11,6 +11,7 @@ from django.db import transaction
 from framework.auth import User as MODMUser
 from modularodm import Q as MQ
 from osf_models.models import Contributor, Guid, Node, Tag, OSFUser
+from osf_models.models.node import AbstractNode
 from osf_models.models.sanctions import Embargo, Retraction
 from website.models import Embargo as MODMEmbargo
 from website.models import Retraction as MODMRetraction
@@ -43,21 +44,35 @@ node_key_blacklist = [
     '__backrefs',
     '_version',
     'expanded',
+    # collections
+    'is_collection',
+    'is_bookmark_collection',
+    # registrations
+    'is_registration',
+    'registered_date',
+    'registered_user',
+    'registered_schema',
+    'registered_meta',
+    'registration_approval',
+    'retraction',
+    'embargo',
+    'registered_from',
     # foreign keys not yet implemented
     'logs',
+    'is_collection',
     'primary_institution',
     #  '_primary_institution',
-    #  'institution_email_domains',
-    #  'institution_domains',
+     'institution_email_domains',
+     'institution_domains',
     'registration_approval',
     'alternative_citations',
     'registered_schema',
     'affiliated_institutions',
     #  '_affiliated_institutions',
-    #  'institution_banner_name',
-    #  'institution_id',
-    #  'institution_auth_url',
-    #  'institution_logo_name',
+     'institution_banner_name',
+     'institution_id',
+     'institution_auth_url',
+     'institution_logo_name',
     'contributors',  # done elsewhere
     # 'retraction',
     # 'embargo',
@@ -94,8 +109,10 @@ def save_bare_nodes(page_size=20000):
         with transaction.atomic():
             nids = []
             for modm_node in MODMNode.find(
-                    allow_institution=True).sort('-date_modified')[
-                        count:count + page_size]:
+                        allow_institution=False,
+                        is_collection=False,
+                        is_registration=False
+                    ).sort('-date_modified')[count:count + page_size]:
                 node_fields = dict(_guid_id=guid_lookup_table[modm_node._id], **modm_node.to_storage())
 
                 # remove fields not yet implemented
@@ -113,7 +130,7 @@ def save_bare_nodes(page_size=20000):
                                        for k, v in
                                        cleaned_node_fields.iteritems()
                                        if v is not None}
-                nids.append(Node(**cleaned_node_fields))
+                nids.append(AbstractNode(**cleaned_node_fields))
                 count += 1
                 if count % page_size == 0 or count == total:
                     then = datetime.now()

@@ -8,7 +8,7 @@ class Contributor(models.Model):
     visible = models.BooleanField(default=False)
 
     user = models.ForeignKey('OSFUser')
-    node = models.ForeignKey('Node')
+    node = models.ForeignKey('AbstractNode')
 
     class Meta:
         unique_together = ('user', 'node')

@@ -2,13 +2,13 @@ import urlparse
 
 from django.core.exceptions import ValidationError
 from django.db import models
-
 from modularodm import Q
+from typedmodels.models import TypedModel
 
-from osf_models.models.contributor import Contributor
 from osf_models.models import MetaSchema
-# TODO Add back in once dependencies are resolved
-# from osf_models.models.sanctions import Embargo, RegistrationApproval, Retraction
+from osf_models.models.contributor import Contributor
+from osf_models.models.mixins import Loggable
+from osf_models.models.sanctions import Embargo, RegistrationApproval, Retraction
 from osf_models.models.tag import Tag
 from osf_models.models.user import OSFUser
 from osf_models.models.validators import validate_title
@@ -19,10 +19,11 @@ from osf_models.utils.base import api_v2_url
 
 from osf_models.app import ModelsConfig as app_config
 
-
-class Node(GuidMixin, BaseModel):
-    # TODO: Alphabetize properties because sanity
-
+class AbstractNode(TypedModel, Loggable, GuidMixin, BaseModel):
+    """
+    All things that inherit from AbstractNode will appear in
+    the same table and will be differentiated by the `type` column.
+    """
 
     CATEGORY_MAP = {
         'analysis': 'Analysis',
@@ -38,137 +39,106 @@ class Node(GuidMixin, BaseModel):
         '': 'Uncategorized',
     }
 
-    @classmethod
-    def find_one(cls, query=None, allow_institution=False, **kwargs):
-        if not allow_institution:
-            query = (query & Q('institution_id', 'eq', None)) if query else Q(
-                'institution_id', 'eq', None)
-        return super(Node, cls).find_one(query, **kwargs)
-
-    # TODO: Uncomment auto_* attributes after migration is complete
-    date_created = models.DateTimeField(null=False)  # auto_now_add=True)
-    date_modified = models.DateTimeField(null=True,
-                                         db_index=True)  # auto_now=True)
-
-    is_public = models.BooleanField(default=False, db_index=True)
-
-    # permissions = Permissions are now on contributors
-
-    # visible_contributor_ids was moved to this property
-    @property
-    def visible_contributor_ids(self):
-        return self.contributor_set.filter(visible=True)
-
-    is_bookmark_collection = models.BooleanField(default=False, db_index=True)
-    is_collection = models.BooleanField(default=False, db_index=True)
-
-    is_deleted = models.BooleanField(default=False, db_index=True)
-    deleted_date = models.DateTimeField(null=True)
-    suspended = models.BooleanField(default=False, db_index=True)
-
-    is_registration = models.BooleanField(default=False, db_index=True)
-    registered_date = models.DateTimeField(db_index=True, null=True)
-    registered_user = models.ForeignKey(OSFUser,
-                                        related_name='related_to',
-                                        on_delete=models.SET_NULL,
-                                        null=True)
-
-    registered_schema = models.ManyToManyField(MetaSchema)
-
-    registered_meta = DatetimeAwareJSONField(default={})
-    # TODO Add back in once dependencies are resolved
-    # registration_approval = models.ForeignKey(RegistrationApproval, null=True)
-    # retraction = models.ForeignKey(Retraction, null=True)
-    # embargo = models.ForeignKey(Embargo, null=True)
-
-    is_fork = models.BooleanField(default=False, db_index=True)
-    forked_date = models.DateTimeField(db_index=True, null=True)
-
-    title = models.TextField(
-        validators=[validate_title]
-    )  # this should be a charfield but data from mongo didn't fit in 255
-    description = models.TextField()
+    _affiliated_institutions = models.ManyToManyField('self')
+    _primary_institution = models.ForeignKey(
+        'self',
+        related_name='primary_institution',
+        null=True)
+    # alternative_citations = models.ManyToManyField(AlternativeCitation)
     category = models.CharField(max_length=255,
                                 choices=CATEGORY_MAP.items(),
                                 default=CATEGORY_MAP[''])
-    # node_license = models.ForeignKey(NodeLicenseRecord)
-
-    public_comments = models.BooleanField(default=True)
-
-    wiki_pages_current = DatetimeAwareJSONField(default={})
-    wiki_pages_versions = DatetimeAwareJSONField(default={})
-    # Dictionary field mapping node wiki page to sharejs private uuid.
-    # {<page_name>: <sharejs_id>}
-    wiki_private_uuids = DatetimeAwareJSONField(default={})
-    file_guid_to_share_uuids = DatetimeAwareJSONField(default={})
-
+    # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
+    # {<User.id>: [<Node._id>, <Node2._id>, ...] }
+    # TODO: Can this be a reference instead of data?
+    child_node_subscriptions = DatetimeAwareJSONField(default={})
+    contributors = models.ManyToManyField(OSFUser,
+                                          through=Contributor,
+                                          related_name='contributed_to')
     creator = models.ForeignKey(OSFUser,
                                 db_index=True,
                                 related_name='created',
                                 on_delete=models.SET_NULL,
                                 null=True)
-    contributors = models.ManyToManyField(OSFUser,
-                                          through=Contributor,
-                                          related_name='contributed_to')
-    # TODO why is this here if it's empty
-    users_watching_node = models.ManyToManyField(OSFUser, related_name='watching')
-
-    # logs = Logs have a reverse relation to nodes
-    tags = models.ManyToManyField(Tag, related_name='tagged')
-
-    # Tags for internal use
-    system_tags = models.ManyToManyField(Tag, related_name='tagged_by_system')
-
-    nodes = models.ManyToManyField('self', related_name='children')
+    # TODO: Uncomment auto_* attributes after migration is complete
+    date_created = models.DateTimeField()  # auto_now_add=True)
+    date_modified = models.DateTimeField(db_index=True)  # auto_now=True)
+    deleted_date = models.DateTimeField(null=True)
+    description = models.TextField()
+    file_guid_to_share_uuids = DatetimeAwareJSONField(default={})
+    forked_date = models.DateTimeField(db_index=True, null=True)
     forked_from = models.ForeignKey('self',
                                     related_name='forks',
                                     on_delete=models.SET_NULL,
                                     null=True)
-    registered_from = models.ForeignKey('self',
-                                        related_name='registrations',
-                                        on_delete=models.SET_NULL,
-                                        null=True)
-    root = models.ForeignKey('self',
-                             related_name='absolute_parent',
-                             on_delete=models.SET_NULL,
-                             null=True)
+    is_fork = models.BooleanField(default=False, db_index=True)
+    is_public = models.BooleanField(default=False, db_index=True)
+    is_deleted = models.BooleanField(default=False, db_index=True)
+    # logs = Logs have a reverse relation to nodes
+    # node_license = models.ForeignKey(NodeLicenseRecord)
+    nodes = models.ManyToManyField('self', related_name='children')
     parent_node = models.ForeignKey('self',
                                     related_name='parent',
                                     on_delete=models.SET_NULL,
                                     null=True)
-
+    # permissions = Permissions are now on contributors
+    piwik_site_id = models.IntegerField(null=True)
+    public_comments = models.BooleanField(default=True)
+    root = models.ForeignKey('self',
+                             related_name='absolute_parent',
+                             on_delete=models.SET_NULL,
+                             null=True)
+    suspended = models.BooleanField(default=False, db_index=True)
+    # Tags for internal use
+    system_tags = models.ManyToManyField(Tag, related_name='tagged_by_system')
+    tags = models.ManyToManyField(Tag, related_name='tagged')
     # The node (if any) used as a template for this node's creation
     template_node = models.ForeignKey('self',
                                       related_name='templated_from',
                                       on_delete=models.SET_NULL,
                                       null=True)
-
-    piwik_site_id = models.IntegerField(null=True)
-
-    # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
-    # {<User.id>: [<Node._id>, <Node2._id>, ...] }
-    # TODO: Can this be a reference instead of data?
-    child_node_subscriptions = DatetimeAwareJSONField(default={})
-
-    # TODO: Sort this out so it's not awful
-    institution_id = models.CharField(db_index=True,
-                                      max_length=255,
-                                      blank=True)
-    institution_domains = DatetimeAwareJSONField(default=None)
-    institution_auth_url = models.URLField(blank=True)
-    institution_logo_name = models.CharField(max_length=255, blank=True)
-    institution_email_domains = DatetimeAwareJSONField(default=None)
-    institution_banner_name = models.CharField(max_length=255, blank=True)
-    _primary_institution = models.ForeignKey(
-        'self',
-        related_name='primary_institution',
-        null=True)
-    _affiliated_institutions = models.ManyToManyField('self')
-
-    # alternative_citations = models.ManyToManyField(AlternativeCitation)
+    title = models.TextField(
+        validators=[validate_title]
+    )  # this should be a charfield but data from mongo didn't fit in 255
+    # TODO why is this here if it's empty
+    users_watching_node = models.ManyToManyField(OSFUser, related_name='watching')
+    wiki_pages_current = DatetimeAwareJSONField(default={})
+    wiki_pages_versions = DatetimeAwareJSONField(default={})
+    # Dictionary field mapping node wiki page to sharejs private uuid.
+    # {<page_name>: <sharejs_id>}
+    wiki_private_uuids = DatetimeAwareJSONField(default={})
 
     def __unicode__(self):
         return u'{} : ({})'.format(self.title, self._id)
+
+    @property  # TODO Separate out for submodels
+    def absolute_api_v2_url(self):
+        if self.is_registration:
+            path = '/registrations/{}/'.format(self._id)
+            return api_v2_url(path)
+        if self.is_collection:
+            path = '/collections/{}/'.format(self._id)
+            return api_v2_url(path)
+        path = '/nodes/{}/'.format(self._id)
+        return api_v2_url(path)
+
+    @property
+    def absolute_url(self):
+        if not self.url:
+            return None
+        return urlparse.urljoin(app_config.domain, self.url)
+
+    def can_view(self, auth):
+        if auth and getattr(auth.private_link, 'anonymous', False):
+            return self._id in auth.private_link.nodes
+
+        if not auth and not self.is_public:
+            return False
+
+        return (self.is_public or
+                (auth.user and self.has_permission(auth.user, 'read')) or
+                auth.private_key in self.private_link_keys_active or
+                self.is_admin_parent(auth.user))
 
     @property
     def comment_level(self):
@@ -187,6 +157,9 @@ class Node(GuidMixin, BaseModel):
             raise ValidationError(
                 'comment_level must be either `public` or `private`')
 
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
     def get_permissions(self, user):
         contrib = user.contributor_set.get(node=self)
         perm = []
@@ -202,45 +175,73 @@ class Node(GuidMixin, BaseModel):
         return getattr(user.contributor_set.get(node=self), permission, False)
 
     @property
-    def url(self):
-        return '/{}/'.format(self._id)
-
-    @property
-    def absolute_url(self):
-        if not self.url:
-            return None
-        return urlparse.urljoin(app_config.domain, self.url)
-
-    def get_absolute_url(self):
-        return self.absolute_api_v2_url
-
-    @property
-    def absolute_api_v2_url(self):
-        if self.is_registration:
-            path = '/registrations/{}/'.format(self._id)
-            return api_v2_url(path)
-        if self.is_collection:
-            path = '/collections/{}/'.format(self._id)
-            return api_v2_url(path)
-        path = '/nodes/{}/'.format(self._id)
-        return api_v2_url(path)
-
-    def can_view(self, auth):
-        if auth and getattr(auth.private_link, 'anonymous', False):
-            return self._id in auth.private_link.nodes
-
-        if not auth and not self.is_public:
-            return False
-
-        return (self.is_public or
-                (auth.user and self.has_permission(auth.user, 'read')) or
-                auth.private_key in self.private_link_keys_active or
-                self.is_admin_parent(auth.user))
-
-    @property
     def is_retracted(self):
-        return False
+        return False  # TODO wat
 
     @property
     def nodes_pointer(self):
         return []
+
+    @property
+    def url(self):
+        return '/{}/'.format(self._id)
+
+    # visible_contributor_ids was moved to this property
+    @property
+    def visible_contributor_ids(self):
+        return self.contributor_set.filter(visible=True)
+
+class Node(AbstractNode):
+    """
+    Concrete Node class: Instance of AbstractNode(TypedModel). All things that inherit from AbstractNode will appear in
+    the same table and will be differentiated by the `type` column.
+
+    FYI: Behaviors common between Registration and Node should be on the parent class.
+    """
+    pass
+
+
+class Registration(AbstractNode):
+    is_registration = models.NullBooleanField(default=False, db_index=True)  # TODO SEPARATE CLASS
+    registered_date = models.DateTimeField(db_index=True, null=True)
+    registered_user = models.ForeignKey(OSFUser,
+                                        related_name='related_to',
+                                        on_delete=models.SET_NULL,
+                                        null=True)
+
+    registered_schema = models.ManyToManyField(MetaSchema)
+
+    registered_meta = DatetimeAwareJSONField(default={})
+    # TODO Add back in once dependencies are resolved
+    registration_approval = models.ForeignKey(RegistrationApproval, null=True)
+    retraction = models.ForeignKey(Retraction, null=True)
+    embargo = models.ForeignKey(Embargo, null=True)
+
+    registered_from = models.ForeignKey('self',
+                                        related_name='registrations',
+                                        on_delete=models.SET_NULL,
+                                        null=True)
+
+
+class Collection(GuidMixin, BaseModel):
+    # TODO: Uncomment auto_* attributes after migration is complete
+    date_created = models.DateTimeField(null=False)  # auto_now_add=True)
+    date_modified = models.DateTimeField(null=True,
+                                         db_index=True)  # auto_now=True)
+    is_bookmark_collection = models.BooleanField(default=False, db_index=True)
+    nodes = models.ManyToManyField('Node', related_name='children')
+    title = models.TextField(
+        validators=[validate_title]
+    )  # this should be a charfield but data from mongo didn't fit in 255
+
+    @property
+    def nodes_pointer(self):
+        return self.nodes.filter(primary=False)
+
+    @property
+    def is_collection(self):
+        """
+        Just to keep compatibility with previous code.
+        :return:
+        """
+        return True
