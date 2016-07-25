@@ -52,8 +52,8 @@ def get_globals():
     OSFWebRenderer.
     """
     user = _get_current_user()
-    user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path} for inst in user.affiliated_institutions] if user else []
-    all_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path} for inst in Institution.find().sort('name')]
+    user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in user.affiliated_institutions] if user else []
+    all_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in Institution.find().sort('name')]
     if request.host_url != settings.DOMAIN:
         try:
             inst_id = (Institution.find_one(Q('domains', 'eq', request.host.lower())))._id

@@ -162,7 +162,14 @@ class Institution(object):
     @property
     def logo_path(self):
         if self.logo_name:
-            return '/static/img/institutions/{}'.format(self.logo_name)
+            return '/static/img/institutions/shields/{}'.format(self.logo_name)
+        else:
+            return None
+
+    @property
+    def logo_path_rounded_corners(self):
+        if self.logo_name:
+            return '/static/img/institutions/shields-rounded-corners/{}'.format(self.logo_name + '-rounded-corners')
         else:
             return None
 
