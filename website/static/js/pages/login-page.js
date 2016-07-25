@@ -4,11 +4,8 @@
 'use strict';
 var $ = require('jquery');
 
-var SignUp = require('js/signUp');
+var passwordForms = require('js/passwordForms');
 var InstitutionSignIn = require('js/institutionSignIn');
-
-var registerUrl = window.contextVars.registerUrl;
-
 
 var activateToggleBox = function () {
     var el = $(this);
@@ -24,7 +21,7 @@ $(document).ready(function() {
     if (campaign === 'institution'){
         new InstitutionSignIn('#inst');
     } else {
-        new SignUp('#signUpScope', registerUrl, campaign);
+        new passwordForms.SignUp('#signUpScope');
     }
 });
 
