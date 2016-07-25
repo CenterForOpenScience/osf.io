@@ -381,7 +381,7 @@ class FileList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMixin
         # If bulk request, queryset only contains contributors in request
         if is_bulk_request(self.request):
             file_ids = [item['id'] for item in self.request.data]
-            queryset[:] = [file for file in queryset if file._id in file_ids]
+            queryset = [file for file in queryset if file._id in file_ids]
 
         return queryset
 
