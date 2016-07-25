@@ -7,6 +7,8 @@ import deferredPromise from '../utils/deferred-promise';
  * @class modal-add-contribs
  */
 export default Ember.Component.extend({
+    store: Ember.inject.service('store'),
+
     /**
      * @property {String} page Which page of the modal to display
      * @default whom|which|invite
@@ -57,23 +59,40 @@ export default Ember.Component.extend({
                 return;
             }
 
-            // TODO: Improve this query and add weightings from search.js
+            // TODO: Query from search.js is generic; can we simplify for this page?
             let simplestQuery = {
                 "query": {
-                    "match": {
-                        "_all": text
+                    "filtered": {
+                        "query": {
+                            "query_string": {
+                                "default_field": "_all",
+                                "fields": ["_all", "job^1", "school^1", "all_jobs^0.125", "all_schools^0.125"],
+                                "query": text,
+                                "analyze_wildcard": true,
+                                "lenient": true
+                            }
+                        }
                     }
-                }
+                },
+                "from": 0,  // TODO: Make configurable for pagination
+                "size": 10  // TODO: Make configurable for pagination
             };
             // TODO: add payload fields for "from" and "size" to control response?
             let resp = Ember.$.ajax({
                 method: 'POST',
                 url: '/api/v1/search/user/',
-                data: simplestQuery
+                contentType: 'application/json',
+                data: JSON.stringify(simplestQuery)
             });
             resp = deferredPromise(resp);
-            resp.then((res)=> console.log('Sent query! Response: ', res))
-                .catch(() => console.log('Query failed'));
+            resp.then((res) => {
+                let ids = res.results.map((item) => item.id);
+                // As long as # records < # api results pagesize, this will be fine wrt pagination. (TODO: specify parameter to be safe)
+                if (ids) {
+                    return this.get('store').query('user', {'filter[id]': ids.join(',')});
+                } else {
+                    return [];  // TODO: Do something with this result
+                }}).catch(() => console.log('Query failed with error'));  // TODO: Show errors to user
         },
         importContribsFromParent() {
             //TODO: Import contributors from parent
