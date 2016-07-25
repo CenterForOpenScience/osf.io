@@ -65,7 +65,7 @@ select.input-sm {
     background-color: #eee;
 }
 
-#manageContributorsTableth:first-child(:not(.sortable)),
+#manageContributorsTable th:first-child(:not(.sortable)),
 #adminContributorsTable th:first-child(:not(.sortable)) {
     width: 40px;
 }
