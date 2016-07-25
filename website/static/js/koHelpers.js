@@ -195,7 +195,6 @@ ko.validation.rules.mustEqual = {
     message: 'The field does not match the required input.'
 };
 
-
 // Add custom effects
 
 // fadeVisible : http://knockoutjs.com/examples/animatedTransitions.html
