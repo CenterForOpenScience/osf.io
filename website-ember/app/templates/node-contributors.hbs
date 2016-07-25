@@ -98,7 +98,7 @@
             }
         }"> --}}
         <div>
-            {{contributor-manager contributors=model.contributors node=model editContributors=(action 'updateContributors')}}
+            {{contributor-manager contributors=model.contributors node=model isAdmin=isAdmin canEdit=canEdit editContributors=(action 'updateContributors')}}
         </div>
         {{!--<div data-bind="visible: $root.empty" class="no-items text-danger m-b-md">
             No contributors found

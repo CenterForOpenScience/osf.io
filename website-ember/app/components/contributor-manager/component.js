@@ -14,12 +14,6 @@ export default Ember.Component.extend({
     canSubmit: Ember.computed('hasMinAdmins', 'hasMinBibliographic', 'changed', function() {
         return this.get('hasMinAdmins') && this.get('hasMinBibliographic') && this.get('changed');
     }),
-    isAdmin: Ember.computed(function() {
-        return this.get('node').get('currentUserPermissions').indexOf('admin') >= 0;
-    }),
-    canEdit: Ember.computed('isAdmin', 'isRegistration', function() {
-        return this.get('isAdmin') && !(this.get('isRegistration'));
-    }),
     actions: {
         permissionChange(contributor, contributors, permission) {
             this.set(`permissionChanges.${contributor.id}`, permission);
@@ -41,6 +35,20 @@ export default Ember.Component.extend({
                 this.get('permissionChanges'),
                 this.get('bibliographicChanges')
             );
+        },
+        cancel() {
+            var _this = this;
+            var contributors = _this.get('contributors');
+            contributors.content.canonicalState.slice(0).forEach(function(contrib, index) {
+                $('tr#' + contrib.id + ' td.permissions select').val(contrib._data.permission);
+                $('tr#' + contrib.id + ' td.permissions select').attr('style', 'font-weight:bold');
+                $('tr#' + contrib.id + ' td.bibliographic input')[0].checked = contrib._data.bibliographic;
+            });
+            this.set('hasMinAdmins', true);
+            this.set('hasMinBibliographic', true);
+            this.set('changed', false);
+            this.set('permissionChanges', {});
+            this.set('bibliographicChanges', {});
         }
     },
     updateAttributes: function(contributors) {

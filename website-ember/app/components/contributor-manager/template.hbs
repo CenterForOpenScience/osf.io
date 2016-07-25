@@ -28,7 +28,7 @@
     </thead>
     <tbody>
         {{#each contributors as |contributor|}}
-            <tr>
+            <tr id={{contributor.id}}>
                 <td>
                     <span class="fa fa-bars sortable-bars"></span>
                     <img class="m-l-xs" src={{concat contributor.users.links.profile_image '&s=40'}}>
@@ -50,13 +50,13 @@
                         {{permissionMap contributor.permission}}
                     {{/if}}
                 </td>
-                <td>
+                <td class="bibliographic">
                     <input disabled={{if canEdit false true}} onchange={{action (action 'bibliographicChange' contributor contributors) value='target.checked'}} checked={{eq contributor.bibliographic true}} type="checkbox" name="bibliographic">
 
                 </td>
                 <td>
                     {{#if (or canEdit (canRemoveContributor contributor currentUser isRegistration))}}
-                        <button class="btn btn-danger to-top-element">Remove</button>
+                        <button class="btn btn-danger btn-sm m-l-md">Remove</button>
                     {{/if}}
                 </td>
             </tr>
@@ -67,7 +67,7 @@
 <div class="m-b-sm">
     {{#if isAdmin}}
         {{#if changed}}
-            <a class="btn btn-danger contrib-button">Discard Changes</a>
+            <a {{action 'cancel'}} class="btn btn-danger contrib-button">Discard Changes</a>
         {{/if}}
         {{#if canSubmit}}
             <a {{action 'updateContributors'}} class="btn btn-success contrib-button">Save Changes</a>
