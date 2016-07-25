@@ -228,3 +228,48 @@ class TestFileLists(ApiTestCase):
 
         nt.assert_equal(self.checked_in_one.checkout, None)
         nt.assert_equal(self.checked_in_two.checkout, None)
+
+
+    def test_bulk_checkout_non_osfstorage(self):
+        """Right now, only osfstorage should  be allowed for the API bulk file checkout endpoint.
+        An error should be returned if the API is attempted for a file outside of osfstorage
+        """
+        github_file = api_utils.create_test_file(self.node, self.user, create_guid=False, filename="test one")
+        github_file.provider = 'github'
+        github_file.save()
+
+        github_file_two = api_utils.create_test_file(self.node, self.user, create_guid=False, filename="test two")
+        github_file_two.provider = 'github'
+        github_file_two.save()
+
+        nt.assert_equal(github_file.checkout, None)
+
+        bulk_file_payload = {
+            'data': [
+                {
+                    'id': github_file._id,
+                    'type': 'files',
+                    'attributes': {
+                        'checkout': self.user._id,
+                    }
+                },
+                {
+                    'id': github_file_two._id,
+                    'type': 'files',
+                    'attributes': {
+                        'checkout': self.user._id,
+                    }
+                }
+            ]
+        }
+
+        res = self.app.put_json_api(
+            '/{}files/{}/list/osfstorage/'.format(
+                API_BASE, self.node.pk
+            ),
+            bulk_file_payload,
+            auth=self.user.auth,
+            bulk=True
+        )
+
+        nt.assert_equal(res.status_code, 409)
