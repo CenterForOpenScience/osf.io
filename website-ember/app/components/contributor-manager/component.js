@@ -24,6 +24,11 @@ export default Ember.Component.extend({
         permissionChange(contributor, contributors, permission) {
             this.set(`permissionChanges.${contributor.id}`, permission);
             this.updateAttributes(contributors);
+            if (contributor.get('permission') !== permission) {
+                event.currentTarget.style['font-weight'] = 'normal';
+            } else {
+                event.currentTarget.style['font-weight'] = 'bold';
+            }
         },
         bibliographicChange(contributor, contributors, isBibliographic) {
             this.set(`bibliographicChanges.${contributor.id}`, isBibliographic);

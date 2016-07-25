@@ -41,7 +41,7 @@
                 <td> </td>
                 <td class="permissions">
                     {{#if canEdit}}
-                        <select class='form-control input-sm' onchange={{action (action 'permissionChange' contributor contributors) value='target.value'}}>
+                        <select style='font-weight:bold' class='form-control input-sm' onchange={{action (action 'permissionChange' contributor contributors) value='target.value'}}>
                             <option value='read' selected={{eq contributor.permission 'read'}}> Read</option>
                             <option value='write' selected={{eq contributor.permission 'write'}}> Read + Write</option>
                             <option value='admin' selected={{eq contributor.permission 'admin'}}> Administrator</option>
