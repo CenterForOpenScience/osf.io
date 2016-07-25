@@ -1,6 +1,6 @@
 var ko = require('knockout');
 var moment = require('moment');
-var pikaday = require('pikaday');
+require('pikaday');
 require('pikaday-css');
 var bootbox = require('bootbox');
 var $ = require('jquery');
@@ -35,16 +35,7 @@ var RegistrationViewModel = function(confirm, prompts, validator) {
     self.registrationChoice = ko.observable(MAKE_PUBLIC.value);
 
     self.pikaday = ko.observable(today);
-    var picker = new pikaday(
-        {
-            bound: true,
-            field: document.getElementById('endDatePicker'),
-            onSelect: function() {
-                self.pikaday(picker.toString());
-                self.isEmbargoEndDateValid();
-            }
-        }
-    );
+
     self.embargoEndDate = ko.computed(function() {
         return moment(new Date(self.pikaday()));
     });
