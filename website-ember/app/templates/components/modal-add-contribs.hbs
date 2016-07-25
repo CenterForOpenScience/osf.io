@@ -4,8 +4,9 @@
     {{/bs-modal-header}}
 
     {{#bs-modal-body}}
+        {{!-- TODO: break widget pages into separate components, but first, just translate over the OSF code --}}
         <!-- Whom to add -->
-        <div data-bind="if: page() == 'whom'">
+        {{#if (eq page 'whom')}}
             <!-- Find contributors -->
             <form class='form' data-bind="submit: startSearch">
                 <div class="row">
@@ -181,10 +182,10 @@
 
             </div>
 
-        </div>
+        {{/if}}
         <!-- Component selection page -->
-        <div data-bind="visible:page()=='which'">
 
+        {{#if (eq page 'which')}}
             <div>
                 Adding contributor(s)
                 <span data-bind="text:addingSummary()"></span>
@@ -216,11 +217,10 @@
                     </div>
                 </div>
             </div>
-
-        </div><!-- end component selection page -->
+        {{/if}}
 
         <!-- Invite user page -->
-        <div data-bind='if:page() === "invite"'>
+        {{#if (eq page 'invite')}}
             <form class='form'>
                 <div class="form-group">
                     <label for="inviteUserName">Full Name</label>
@@ -237,7 +237,7 @@
                     <p class='text-danger' data-bind='text: inviteError'></p>
                 </div>
             </form>
-        </div><!-- end invite user page -->
+        {{/if}}
     {{/bs-modal-body}}
 
     {{#bs-modal-footer}}
