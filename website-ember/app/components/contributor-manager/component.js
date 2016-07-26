@@ -16,6 +16,7 @@ export default Ember.Component.extend({
     }),
     showModalRemoveContributors: false,
     canRemoveContributor: false,
+    contributorToRemove: null,
     actions: {
         permissionChange(contributor, contributors, permission) {
             this.set(`permissionChanges.${contributor.id}`, permission);
@@ -55,6 +56,7 @@ export default Ember.Component.extend({
         toggleRemoveContributorModal(contributor) {
             this.toggleProperty('showModalRemoveContributors');
             this.set('canRemoveContributor', this.contributorRemovalPrecheck(contributor, this.get('contributors')));
+            this.set('contributorToRemove', contributor);
         }
     },
     updateAttributes: function(contributors) {

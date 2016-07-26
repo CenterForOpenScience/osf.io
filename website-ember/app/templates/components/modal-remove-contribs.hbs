@@ -6,7 +6,7 @@
     {{/bs-modal-header}}
     {{#bs-modal-body}}
 
-        {{!-- <div data-bind="if: canRemoveNode() && !pageChanged()">
+        {{#if (and canRemoveNode (not pageChanged))}}
             <!-- remove page -->
             <div data-bind='if:page() === REMOVE'>
                 <div class="form-group">
@@ -74,11 +74,14 @@
                     </div>
                 </div>
             </div><!-- end removeAll page -->
-        </div> --}}
+        {{/if}}
+
 
         {{#if (and (not canRemoveNode) (not pageChanged))}}
-            <span><b data-bind="text:removeSelf() ? 'You' : contributorToRemove()['fullname']"></b> cannot be
-                removed as a contributor.  You need at least one administrator, bibliographic contributor, and registered user.</span>
+            <span>
+                <b> {{if removeSelf 'You' contributorToRemove.users.fullName}} </b> cannot be
+                removed as a contributor.  You need at least one administrator, bibliographic contributor, and registered user.
+            </span>
         {{/if}}
         {{#if pageChanged}}
             <span>Please save or discard your existing changes before removing a contributor.</span>
