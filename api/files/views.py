@@ -120,25 +120,27 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     folders use the same representation, but some attributes may be null for one kind but not the other. `size` will be
     null for folders.  A list of storage provider keys can be found [here](/v2/#storage-providers).
 
-        name          type               description
-        ===================================================================================================
-        name              string             name of the file or folder; used for display
-        kind              string             "file" or "folder"
-        path              string             same as for corresponding WaterButler entity
-        materialized_path string             the unix-style path to the file relative to the provider root
-        size              integer            size of file in bytes, null for folders
-        provider          string             storage provider for this file. "osfstorage" if stored on the
-                                             OSF.  other examples include "s3" for Amazon S3, "googledrive"
-                                             for Google Drive, "box" for Box.com.
-        last_touched      iso8601 timestamp  last time the metadata for the file was retrieved. only
-                                             applies to non-OSF storage providers.
-        date_modified     iso8601 timestamp  timestamp of when this file was last updated*
-        date_created      iso8601 timestamp  timestamp of when this file was created*
-        extra             object             may contain additional data beyond what's described here,
-                                             depending on the provider
-          hashes          object
-            md5           string             md5 hash of file, null for folders
-            sha256        string             SHA-256 hash of file, null for folders
+        name                        type               description
+        ================================================================================================================
+        name                        string             name of the file or folder; used for display
+        kind                        string             "file" or "folder"
+        path                        string             same as for corresponding WaterButler entity
+        materialized_path           string             the unix-style path to the file relative to the provider root
+        size                        integer            size of file in bytes, null for folders
+        provider                    string             storage provider for this file. "osfstorage" if stored on the
+                                                         OSF.  other examples include "s3" for Amazon S3, "googledrive"
+                                                        for Google Drive, "box" for Box.com.
+        current_user_can_comment    boolean            Whether the current user is allowed to post comments
+
+        last_touched                iso8601 timestamp  last time the metadata for the file was retrieved. only
+                                                        applies to non-OSF storage providers.
+        date_modified               iso8601 timestamp  timestamp of when this file was last updated*
+        date_created                iso8601 timestamp  timestamp of when this file was created*
+        extra                       object             may contain additional data beyond what's described here,
+                                                        depending on the provider
+        hashes                      object
+        md5                         string             md5 hash of file, null for folders
+        sha256                      string             SHA-256 hash of file, null for folders
 
     * A note on timestamps: for files stored in osfstorage, `date_created` refers to the time the file was
     first uploaded to osfstorage, and `date_modified` is the time the file was last updated while in osfstorage.
@@ -148,6 +150,10 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     provider.  To force a metadata update, access the parent folder via its Node Files List endpoint.
 
     ##Relationships
+
+    ###Node
+
+    The `node` endpoint describes the project or registration that this file belongs to.
 
     ###Files (*folders*)
 
