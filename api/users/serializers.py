@@ -115,22 +115,25 @@ class UserSerializer(JSONAPISerializer):
 
 
 class UserCreateSerializer(UserSerializer):
-    username = ser.EmailField(required=True)
+    username = ser.EmailField(required=False)
 
     def create(self, validated_data):
-        username = validated_data.get('username').lower()
+        username = validated_data.get('username', '').lower() or None
         full_name = validated_data.get('fullname')
-        if not username and full_name:
-            raise JSONAPIException('Both a `username` and `full_name` are required to create a user.')
+        if not full_name:
+            raise JSONAPIException('A `full_name` is required to create a user.')
+
         user = User.create_unregistered(full_name, email=username)
         user.registered_by = self.context['request'].user
-        user.add_unconfirmed_email(user.username)
+        if username:
+            user.add_unconfirmed_email(user.username)
+
         try:
             user.save()
         except ValidationValueError:
             raise Conflict('User with specified username already exists.')
 
-        if self.context['request'].GET.get('send_email', False):
+        if self.context['request'].GET.get('send_email', False) and username:
             send_confirm_email(user, user.username)
 
         return user
