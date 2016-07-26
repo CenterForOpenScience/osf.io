@@ -113,6 +113,15 @@ class TestTokenList(ApiTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'User requested invalid scope')
 
+    def test_cannot_create_usercreate_token(self):
+        self.sample_data['data']['attributes']['scopes'] = 'osf.users.create'
+        res = self.app.post_json_api(self.user1_list_url,
+            self.sample_data,
+            auth=self.user1.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'User requested invalid scope')
 
     def tearDown(self):
         super(TestTokenList, self).tearDown()
