@@ -3,11 +3,13 @@ from nose import tools as nt
 
 from website.models import StoredFileNode
 from framework.auth.core import Auth
+from website.addons.github.tests.factories import GitHubAccountFactory, GitHubNodeSettingsFactory
 
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils
+from api_tests.nodes.views.test_node_addons import NodeOAuthAddonTestSuiteMixin
 
-from tests.base import ApiTestCase
+from tests.base import ApiTestCase, ApiAddonTestCase
 from tests.factories import (
     ProjectFactory,
     AuthUserFactory,
@@ -230,19 +232,33 @@ class TestFileLists(ApiTestCase):
         nt.assert_equal(self.checked_in_two.checkout, None)
 
 
+class TestFileListWithAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
+    short_name = 'github'
+    AccountFactory = GitHubAccountFactory
+    NodeSettingsFactory = GitHubNodeSettingsFactory
+
+    def _settings_kwargs(self, node, user_settings):
+        return {
+            'user_settings': self.user_settings,
+            'repo': 'mock',
+            'user': 'abc',
+            'owner': self.node
+        }
+
     def test_bulk_checkout_non_osfstorage(self):
         """Right now, only osfstorage should  be allowed for the API bulk file checkout endpoint.
         An error should be returned if the API is attempted for a file outside of osfstorage
         """
-        github_file = api_utils.create_test_file(self.node, self.user, create_guid=False, filename="test one")
+        github_file = api_utils.create_test_file(self.node, self.user, create_guid=False, filename="panda")
         github_file.provider = 'github'
         github_file.save()
 
-        github_file_two = api_utils.create_test_file(self.node, self.user, create_guid=False, filename="test two")
+        github_file_two = api_utils.create_test_file(self.node, self.user, create_guid=False, filename="panda panda panda")
         github_file_two.provider = 'github'
         github_file_two.save()
 
         nt.assert_equal(github_file.checkout, None)
+        nt.assert_equal(github_file_two.checkout, None)
 
         bulk_file_payload = {
             'data': [
@@ -264,12 +280,16 @@ class TestFileLists(ApiTestCase):
         }
 
         res = self.app.put_json_api(
-            '/{}files/{}/list/osfstorage/'.format(
+            '/{}files/{}/list/github/'.format(
                 API_BASE, self.node.pk
             ),
             bulk_file_payload,
             auth=self.user.auth,
-            bulk=True
+            bulk=True,
+            expect_errors=True
         )
 
-        nt.assert_equal(res.status_code, 409)
+        nt.assert_equal(res.status_code, 403)
+
+        nt.assert_equal(github_file.checkout, None)
+        nt.assert_equal(github_file_two.checkout, None)
