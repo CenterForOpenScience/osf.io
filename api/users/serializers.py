@@ -32,7 +32,7 @@ class UserSerializer(JSONAPISerializer):
     active = HideIfDisabled(ser.BooleanField(read_only=True, source='is_active'))
 
     # Social Fields are broken out to get around DRF complex object bug and to make API updating more user friendly.
-    gitHub = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.github',
+    github = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.github',
                                                           allow_blank=True, help_text='GitHub Handle'), required=False, source='social.github')))
     scholar = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.scholar',
                                                            allow_blank=True, help_text='Google Scholar Account'), required=False, source='social.scholar')))
@@ -40,21 +40,21 @@ class UserSerializer(JSONAPISerializer):
                                                                    allow_blank=True, help_text='Personal Website'), required=False, source='social.personal')))
     twitter = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.twitter',
                                                            allow_blank=True, help_text='Twitter Handle'), required=False, source='social.twitter')))
-    linkedIn = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.linkedIn',
+    linkedin = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.linkedIn',
                                                             allow_blank=True, help_text='LinkedIn Account'), required=False, source='social.linkedIn')))
-    impactStory = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.impactStory',
+    impactstory = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.impactStory',
                                                                allow_blank=True, help_text='ImpactStory Account'), required=False, source='social.impactStory')))
     orcid = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.orcid',
                                                          allow_blank=True, help_text='ORCID'), required=False, source='social.orcid')))
-    researcherId = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.researcherId',
+    researcherid = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.researcherId',
                                                       allow_blank=True, help_text='ResearcherId Account'), required=False, source='social.researcherId')))
-    researchGate = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.researchGate',
+    researchgate = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.researchGate',
                                                       allow_blank=True, help_text='ResearchGate Account'), required=False, source='social.researchGate')))
-    academiaInstitution = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.academiaInstitution',
+    academia_institution = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.academiaInstitution',
                                                       allow_blank=True, help_text='AcademiaInstitution Field'), required=False, source='social.academiaInstitution')))
-    academiaProfileID = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.academiaProfileID',
+    academia_profile_id = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.academiaProfileID',
                                                       allow_blank=True, help_text='AcademiaProfileID Field'), required=False, source='social.academiaProfileID')))
-    baiduScholar = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.baiduScholar',
+    baiduscholar = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.baiduScholar',
                                                            allow_blank=True, help_text='Baidu Scholar Account'), required=False, source='social.baiduScholar')))
     timezone = HideIfDisabled(ser.CharField(required=False, help_text="User's timezone, e.g. 'Etc/UTC"))
     locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))
@@ -112,6 +112,43 @@ class UserSerializer(JSONAPISerializer):
             raise InvalidModelValueError(detail=e.message)
         return instance
 
+
+class UserAddonSettingsSerializer(JSONAPISerializer):
+    """
+    Overrides UserSerializer to make id required.
+    """
+    id = ser.CharField(source='config.short_name', read_only=True)
+    user_has_auth = ser.BooleanField(source='has_auth', read_only=True)
+
+    links = LinksField({
+        'self': 'get_absolute_url',
+        'accounts': 'account_links'
+    })
+
+    class Meta:
+        type_ = 'user_addons'
+
+    def get_absolute_url(self, obj):
+        user_id = self.context['request'].parser_context['kwargs']['user_id']
+        return absolute_reverse(
+            'users:user-addon-detail',
+            kwargs={
+                'user_id': user_id,
+                'provider': obj.config.short_name
+            }
+        )
+
+    def account_links(self, obj):
+        # TODO: [OSF-4933] remove this after refactoring Figshare
+        if hasattr(obj, 'external_accounts'):
+            return {
+                account._id: {
+                    'account': absolute_reverse('users:user-external_account-detail', kwargs={'user_id': obj.owner._id, 'provider': obj.config.short_name, 'account_id': account._id}),
+                    'nodes_connected': [n.absolute_api_v2_url for n in obj.get_attached_nodes(account)]
+                }
+                for account in obj.external_accounts
+            }
+        return {}
 
 class UserDetailSerializer(UserSerializer):
     """

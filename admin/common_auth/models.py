@@ -5,8 +5,6 @@ from django.contrib.auth.models import (
 )
 from django.db import models
 
-from website.models import User as OsfUserModel
-
 
 class MyUserManager(BaseUserManager):
     def create_user(self, email, password=None):
@@ -69,6 +67,9 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
 
     @property
     def osf_user(self):
+        # import on call to avoid interference w/ django's manage.py commands like collectstatic
+        from website.models import User as OsfUserModel
+
         if not self.osf_id:
             raise RuntimeError('This user does not have an associated Osf User')
         return OsfUserModel.load(self.osf_id)

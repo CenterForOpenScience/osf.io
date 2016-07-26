@@ -29,6 +29,14 @@ class ForwardNodeSettings(AddonNodeSettingsBase):
         self.url = None
         self.label = None
 
+    def after_register(self, node, registration, user, save=True):
+        clone = self.clone()
+        clone.owner = registration
+        clone.on_add()
+        clone.save()
+
+        return clone, None
+
 
 @ForwardNodeSettings.subscribe('before_save')
 def validate_circular_reference(schema, instance):

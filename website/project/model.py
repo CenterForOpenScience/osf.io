@@ -51,7 +51,7 @@ from website.exceptions import (
 from website.institutions.model import Institution, AffiliatedInstitutionsList
 from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
-from website.util.permissions import expand_permissions
+from website.util.permissions import expand_permissions, reduce_permissions
 from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
 from website.project.commentable import Commentable
 from website.project.metadata.schemas import OSF_META_SCHEMAS
@@ -179,6 +179,32 @@ class MetaData(GuidStoredObject):
     date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
 
 
+def validate_contributor(guid, contributors):
+    user = User.find(
+        Q('_id', 'eq', guid) &
+        Q('is_claimed', 'eq', True)
+    )
+    if user.count() != 1:
+        raise ValidationValueError('User does not exist or is not active.')
+    elif guid not in contributors:
+        raise ValidationValueError('Mentioned user is not a contributor.')
+    return True
+
+def get_valid_mentioned_users_guids(comment, contributors):
+    """ Get a list of valid users that are mentioned in the comment content.
+
+    :param Node comment: Node that has content and ever_mentioned
+    :param list contributors: List of contributors on the node
+    :return list new_mentions: List of valid users mentioned in the comment content
+    """
+    new_mentions = set(re.findall(r"\[[@|\+].*?\]\(htt[ps]{1,2}:\/\/[a-z\d:.]+?\/([a-z\d]{5})\/\)", comment.content))
+    new_mentions = [
+        m for m in new_mentions if
+        m not in comment.ever_mentioned and
+        validate_contributor(m, contributors)
+    ]
+    return new_mentions
+
 class Comment(GuidStoredObject, SpamMixin, Commentable):
 
     __guid_min_length__ = 12
@@ -204,7 +230,9 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
     # The type of root_target: node/files
     page = fields.StringField()
     content = fields.StringField(required=True,
-                                 validate=[MaxLengthValidator(settings.COMMENT_MAXLENGTH), validators.string_required])
+                                 validate=[validators.comment_maxlength(settings.COMMENT_MAXLENGTH), validators.string_required])
+    # The mentioned users
+    ever_mentioned = fields.ListField(fields.StringField())
 
     # For Django compatibility
     @property
@@ -312,6 +340,12 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
 
         log_dict.update(comment.root_target.referent.get_extra_log_params(comment))
 
+        if comment.content:
+            new_mentions = get_valid_mentioned_users_guids(comment, comment.node.contributors)
+            if new_mentions:
+                project_signals.mention_added.send(comment, new_mentions=new_mentions, auth=auth)
+                comment.ever_mentioned.extend(new_mentions)
+
         comment.save()
 
         comment.node.add_log(
@@ -339,7 +373,12 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
         self.content = content
         self.modified = True
         self.date_modified = datetime.datetime.utcnow()
+        new_mentions = get_valid_mentioned_users_guids(self, self.node.contributors)
+
         if save:
+            if new_mentions:
+                project_signals.mention_added.send(self, new_mentions=new_mentions, auth=auth)
+                self.ever_mentioned.extend(new_mentions)
             self.save()
             self.node.add_log(
                 NodeLog.COMMENT_UPDATED,
@@ -1229,7 +1268,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if save:
             self.save()
 
-    def set_permissions(self, user, permissions, save=False):
+    def set_permissions(self, user, permissions, validate=True, save=False):
+        # Ensure that user's permissions cannot be lowered if they are the only admin
+        if validate and reduce_permissions(self.permissions[user._id]) == ADMIN and reduce_permissions(permissions) != ADMIN:
+            reduced_permissions = [
+                reduce_permissions(perms) for user_id, perms in self.permissions.iteritems()
+                if user_id != user._id
+            ]
+            if ADMIN not in reduced_permissions:
+                raise NodeStateError('Must have at least one registered admin contributor')
         self.permissions[user._id] = permissions
         if save:
             self.save()
@@ -1264,6 +1311,34 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 return True
 
         return False
+
+    def find_readable_antecedent(self, auth):
+        """ Returns first antecendant node readable by <user>.
+        """
+
+        next_parent = self.parent_node
+        while next_parent:
+            if next_parent.can_view(auth):
+                return next_parent
+            next_parent = next_parent.parent_node
+
+    def find_readable_descendants(self, auth):
+        """ Returns a generator of first descendant node(s) readable by <user>
+        in each descendant branch.
+        """
+        new_branches = []
+        for node in self.nodes:
+            if not node.primary or node.is_deleted:
+                continue
+
+            if node.can_view(auth):
+                yield node
+            else:
+                new_branches.append(node)
+
+        for bnode in new_branches:
+            for node in bnode.find_readable_descendants(auth):
+                yield node
 
     def has_addon_on_children(self, addon):
         """Checks if a given node has a specific addon on child nodes
@@ -1416,6 +1491,34 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         if save:
             self.save()
+
+    def subscribe_user_to_notifications(self, user):
+        """ Update the notification settings for the creator or contributors
+
+        :param user: User to subscribe to notifications
+        """
+        from website.notifications.utils import to_subscription_key
+        from website.notifications.utils import get_global_notification_type
+        from website.notifications.model import NotificationSubscription
+
+        events = ['file_updated', 'comments', 'mentions']
+        notification_type = 'email_transactional'
+        target_id = self._id
+
+        for event in events:
+            event_id = to_subscription_key(target_id, event)
+            global_event_id = to_subscription_key(user._id, 'global_' + event)
+            global_subscription = NotificationSubscription.load(global_event_id)
+
+            subscription = NotificationSubscription.load(event_id)
+            if not subscription:
+                subscription = NotificationSubscription(_id=event_id, owner=self, event_name=event)
+            if global_subscription:
+                global_notification_type = get_global_notification_type(global_subscription, user)
+                subscription.add_user_to_subscription(user, global_notification_type)
+            else:
+                subscription.add_user_to_subscription(user, notification_type)
+            subscription.save()
 
     def update(self, fields, auth=None, save=True):
         """Update the node with the given fields.
@@ -2019,11 +2122,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             log_exception()
 
     @classmethod
-    def bulk_update_search(cls, nodes):
+    def bulk_update_search(cls, nodes, index=None):
         from website import search
         try:
-            serialize = functools.partial(search.search.update_node, bulk=True, async=False)
-            search.search.bulk_update_nodes(serialize, nodes)
+            serialize = functools.partial(search.search.update_node, index=index, bulk=True, async=False)
+            search.search.bulk_update_nodes(serialize, nodes, index=index)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
@@ -2190,6 +2293,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         # Need this save in order to access _primary_key
         forked.save()
 
+        # Need to call this after save for the notifications to be created with the _primary_key
         project_signals.contributor_added.send(forked, contributor=user, auth=auth)
 
         forked.add_log(
@@ -2890,7 +2994,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                     )
                 permissions = expand_permissions(user_dict['permission'])
                 if set(permissions) != set(self.get_permissions(user)):
-                    self.set_permissions(user, permissions, save=False)
+                    # Validate later
+                    self.set_permissions(user, permissions, validate=False, save=False)
                     permissions_changed[user._id] = permissions
                 # visible must be added before removed to ensure they are validated properly
                 if user_dict['visible']:
@@ -2915,7 +3020,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
             admins = list(self.get_admin_contributors(users))
             if users is None or not admins:
-                raise ValueError(
+                raise NodeStateError(
                     'Must have at least one registered admin contributor'
                 )
 
@@ -3322,6 +3427,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         page = self.get_wiki_page(key)
 
         del self.wiki_pages_current[key]
+        if key != 'home':
+            del self.wiki_pages_versions[key]
 
         self.add_log(
             action=NodeLog.WIKI_DELETED,
@@ -3454,7 +3561,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if not self._is_embargo_date_valid(end_date):
             if (end_date - datetime.datetime.utcnow()) >= settings.EMBARGO_END_DATE_MIN:
                 raise ValidationValueError('Registrations can only be embargoed for up to four years.')
-            raise ValidationValueError('Embargo end date must be more than one day in the future')
+            raise ValidationValueError('Embargo end date must be at least three days in the future.')
 
         embargo = self._initiate_embargo(user, end_date, for_existing_registration=for_existing_registration, notify_initiator_on_complete=notify_initiator_on_complete)
 
@@ -3605,6 +3712,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     institution_id = fields.StringField(unique=True, index=True)
     institution_domains = fields.StringField(list=True)
     institution_auth_url = fields.StringField(validate=URLValidator())
+    institution_logout_url = fields.StringField(validate=URLValidator())
     institution_logo_name = fields.StringField()
     institution_email_domains = fields.StringField(list=True)
     institution_banner_name = fields.StringField()

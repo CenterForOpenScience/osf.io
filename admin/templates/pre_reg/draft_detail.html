@@ -7,7 +7,6 @@
 <title>OSF Admin | {{ draft.title }}</title>
 {% endblock %}
 
-
 {% block content %}
 {% render_bundle 'vendor' %}
 <link href="{% static 'css/registrations.css' %}" rel="stylesheet" type="text/css" />
@@ -37,7 +36,7 @@
         }
         return cookieValue;
     }
-    var csrftoken = getCookie('csrftoken');
+    var csrftoken = getCookie('admin-csrf');
     function csrfSafeMethod(method) {
     // these HTTP methods do not require CSRF protection
     return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));

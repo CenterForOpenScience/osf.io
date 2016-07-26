@@ -1,23 +1,26 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Populate development database with Institution fixtures."""
-import sys
+
 import logging
+import sys
 import urllib
 
 from modularodm import Q
 
+
+from framework.transactions.context import TokuTransaction
 from website import settings
 from website.app import init_app
 from website.models import Institution, Node
 from website.search.search import update_institution, update_node
-from framework.transactions.context import TokuTransaction
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 ENVS = ['prod', 'stage', 'stage2', 'test']
-SHIBBOLETH_SP = '{}/Shibboleth.sso/Login?entityID={{}}'.format(settings.CAS_SERVER_URL)
+SHIBBOLETH_SP_LOGIN = '{}/Shibboleth.sso/Login?entityID={{}}'.format(settings.CAS_SERVER_URL)
+SHIBBOLETH_SP_LOGOUT = '{}/Shibboleth.sso/Logout?return={{}}'.format(settings.CAS_SERVER_URL)
 
 
 def encode_uri_component(val):
@@ -57,6 +60,7 @@ def main(env):
                 'banner_name': 'busara-banner.png',
                 'logo_name': 'busara-shield.png',
                 'auth_url': None,
+                'logout_url': None,
                 'domains': [],
                 'email_domains': ['busaracenter.org'],
             },
@@ -67,6 +71,7 @@ def main(env):
                 'banner_name': 'cos-banner.png',
                 'logo_name': 'cos-shield.png',
                 'auth_url': None,
+                'logout_url': None,
                 'domains': ['osf.cos.io'],
                 'email_domains': ['cos.io'],
             },
@@ -77,8 +82,20 @@ def main(env):
                 'banner_name': 'esip-banner.png',
                 'logo_name': 'esip-shield.png',
                 'auth_url': None,
+                'logout_url': None,
                 'domains': [],
                 'email_domains': ['esipfed.org'],
+            },
+            {
+                '_id': 'ljaf',
+                'name': 'Laura and John Arnold Foundation',
+                'description': 'Projects listed below are for grants awarded by the Foundation. Please see the <a href="http://www.arnoldfoundation.org/wp-content/uploads/Guidelines-for-Investments-in-Research.pdf">LJAF Guidelines for Investments in Research</a> for more information and requirements.',
+                'banner_name': 'ljaf-banner.png',
+                'logo_name': 'ljaf-shield.png',
+                'auth_url': None,
+                'logout_url': None,
+                'domains': [],
+                'email_domains': ['arnoldfoundation.org'],
             },
             {
                 '_id': 'nd',
@@ -86,8 +103,20 @@ def main(env):
                 'description': 'In <a href="https://research.nd.edu/news/64035-notre-dame-center-for-open-science-partner-to-advance-open-science-initiatives/">partnership</a> with the <a href="https://crc.nd.edu">Center for Research Computing</a>, <a href="http://esc.nd.edu">Engineering &amp; Science Computing</a>, and the <a href="https://library.nd.edu">Hesburgh Libraries</a>',
                 'banner_name': 'nd-banner.png',
                 'logo_name': 'nd-shield.png',
-                'auth_url': SHIBBOLETH_SP.format(encode_uri_component('https://login.nd.edu/idp/shibboleth')),
+                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://login.nd.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.nd.edu'],
+                'email_domains': [],
+            },
+            {
+                '_id': 'nyu',
+                'name': 'New York University',
+                'description': '...',
+                'banner_name': 'nyu-banner.png',
+                'logo_name': 'nyu-shield.png',
+                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:nyu.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://shibboleth.nyu.edu/idp/profile/Logout')),
+                'domains': ['osf.nyu.edu'],
                 'email_domains': [],
             },
             {
@@ -96,40 +125,55 @@ def main(env):
                 'description': 'Policy prohibits storing PII or HIPAA data on this site, please see C&amp;C\'s <a href="http://cnc.ucr.edu/security/researchers.html">security site</a> for more information.',
                 'banner_name': 'ucr-banner.png',
                 'logo_name': 'ucr-shield.png',
-                'auth_url': SHIBBOLETH_SP.format(encode_uri_component('urn:mace:incommon:ucr.edu')),
+                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:ucr.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.ucr.edu'],
                 'email_domains': [],
             },
-            # {
-            #     '_id': 'ugent',
-            #     'name': 'Universiteit Gent [Test]',
-            #     'description': None,
-            #     'banner_name': 'ugent-banner.png',
-            #     'logo_name': 'ugent-shield.png',
-            #     'auth_url': SHIBBOLETH_SP.format(encode_uri_component('https://identity.ugent.be/simplesaml/saml2/idp/metadata.php')),
-            #     'domains': ['osf.ugent.be'],
-            #     'email_domains': [],
-            # },
+            {
+                '_id': 'ugent',
+                'name': 'Universiteit Gent',
+                'description': None,
+                'banner_name': 'ugent-banner.png',
+                'logo_name': 'ugent-shield.png',
+                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://identity.ugent.be/simplesaml/saml2/idp/metadata.php')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': ['osf.ugent.be'],
+                'email_domains': [],
+            },
             {
                 '_id': 'usc',
                 'name': 'University of Southern California',
                 'description': 'Projects must abide by <a href="http://policy.usc.edu/info-security/">USC\'s Information Security Policy</a>. Data stored for human subject research repositories must abide by <a href="http://policy.usc.edu/biorepositories/">USC\'s Biorepository Policy</a>. The OSF may not be used for storage of Personal Health Information that is subject to <a href="http://policy.usc.edu/hipaa/">HIPPA regulations</a>.',
                 'banner_name': 'usc-banner.png',
                 'logo_name': 'usc-shield.png',
-                'auth_url': SHIBBOLETH_SP.format(encode_uri_component('urn:mace:incommon:usc.edu')),
+                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:usc.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.usc.edu'],
                 'email_domains': [],
             },
-            # {
-            #     '_id': 'uva',
-            #     'name': 'University of Virginia',
-            #     'description': 'Projects must abide by the University <a href="http://www.virginia.edu/informationpolicy/security.html">Security and Data Protection Policies</a>',
-            #     'banner_name': 'uva-banner.png',
-            #     'logo_name': 'uva-shield.png',
-            #     'auth_url': SHIBBOLETH_SP.format(encode_uri_component('urn:mace:incommon:virginia.edu')),
-            #     'domains': ['osf.virginia.edu'],
-            #     'email_domains': [],
-            # },
+            {
+                '_id': 'uva',
+                'name': 'University of Virginia',
+                'description': 'Projects must abide by the University <a href="http://www.virginia.edu/informationpolicy/security.html">Security and Data Protection Policies</a>',
+                'banner_name': 'uva-banner.png',
+                'logo_name': 'uva-shield.png',
+                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:virginia.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': ['osf.virginia.edu'],
+                'email_domains': [],
+            },
+            {
+                '_id': 'vt',
+                'name': 'Virginia Tech',
+                'description': None,
+                'banner_name': 'vt-banner.png',
+                'logo_name': 'vt-shield.png',
+                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:vt.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': ['osf.vt.edu'],
+                'email_domains': [],
+            },
         ]
     if env == 'stage':
         INSTITUTIONS = [
@@ -140,6 +184,7 @@ def main(env):
                 'banner_name': 'cos-banner.png',
                 'logo_name': 'cos-shield.png',
                 'auth_url': None,
+                'logout_url': None,
                 'domains': ['staging-osf.cos.io'],
                 'email_domains': ['cos.io'],
             },
@@ -149,7 +194,8 @@ def main(env):
                 'description': 'University of Notre Dame [Stage]',
                 'banner_name': 'nd-banner.png',
                 'logo_name': 'nd-shield.png',
-                'auth_url': SHIBBOLETH_SP.format(encode_uri_component('https://login-test.cc.nd.edu/idp/shibboleth')),
+                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://login-test.cc.nd.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://staging.osf.io/goodbye')),
                 'domains': ['staging-osf-nd.cos.io'],
                 'email_domains': [],
             },
@@ -160,6 +206,7 @@ def main(env):
                 'banner_name': 'google-banner.png',
                 'logo_name': 'google-shield.png',
                 'auth_url': None,
+                'logout_url': None,
                 'domains': [],
                 'email_domains': ['gmail.com'],
             },
@@ -183,6 +230,7 @@ def main(env):
                 'banner_name': 'cos-banner.png',
                 'logo_name': 'cos-shield.png',
                 'auth_url': None,
+                'logout_url': None,
                 'domains': ['staging2-osf.cos.io'],
                 'email_domains': ['cos.io'],
             },
@@ -196,6 +244,7 @@ def main(env):
                 'banner_name': 'busara-banner.png',
                 'logo_name': 'busara-shield.png',
                 'auth_url': None,
+                'logout_url': None,
                 'domains': [],
                 'email_domains': ['busaracenter.org'],
             },
@@ -206,6 +255,7 @@ def main(env):
                 'banner_name': 'cos-banner.png',
                 'logo_name': 'cos-shield.png',
                 'auth_url': None,
+                'logout_url': None,
                 'domains': ['test-osf.cos.io'],
                 'email_domains': ['cos.io'],
             },
@@ -216,8 +266,20 @@ def main(env):
                 'banner_name': 'esip-banner.png',
                 'logo_name': 'esip-shield.png',
                 'auth_url': None,
+                'logout_url': None,
                 'domains': [],
                 'email_domains': ['esipfed.org'],
+            },
+            {
+                '_id': 'ljaf',
+                'name': 'Laura and John Arnold Foundation [Test]',
+                'description': 'Projects listed below are for grants awarded by the Foundation. Please see the <a href="http://www.arnoldfoundation.org/wp-content/uploads/Guidelines-for-Investments-in-Research.pdf">LJAF Guidelines for Investments in Research</a> for more information and requirements.',
+                'banner_name': 'ljaf-banner.png',
+                'logo_name': 'ljaf-shield.png',
+                'auth_url': None,
+                'logout_url': None,
+                'domains': [],
+                'email_domains': ['arnoldfoundation.org'],
             },
             {
                 '_id': 'nd',
@@ -225,8 +287,20 @@ def main(env):
                 'description': 'In <a href="https://research.nd.edu/news/64035-notre-dame-center-for-open-science-partner-to-advance-open-science-initiatives/">partnership</a> with the <a href="https://crc.nd.edu">Center for Research Computing</a>, <a href="http://esc.nd.edu">Engineering &amp; Science Computing</a>, and the <a href="https://library.nd.edu">Hesburgh Libraries</a>',
                 'banner_name': 'nd-banner.png',
                 'logo_name': 'nd-shield.png',
-                'auth_url': SHIBBOLETH_SP.format(encode_uri_component('https://login-test.cc.nd.edu/idp/shibboleth')),
+                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://login-test.cc.nd.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-nd.cos.io'],
+                'email_domains': [],
+            },
+            {
+                '_id': 'nyu',
+                'name': 'New York University [Test]',
+                'description': 'New York University [Test]',
+                'banner_name': 'nyu-banner.png',
+                'logo_name': 'nyu-shield.png',
+                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shibbolethqa.es.its.nyu.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://shibbolethqa.es.its.nyu.edu/idp/profile/Logout')),
+                'domains': ['test-osf-nyu.cos.io'],
                 'email_domains': [],
             },
             {
@@ -235,7 +309,8 @@ def main(env):
                 'description': 'Policy prohibits storing PII or HIPAA data on this site, please see C&amp;C\'s <a href="http://cnc.ucr.edu/security/researchers.html">security site</a> for more information.',
                 'banner_name': 'ucr-banner.png',
                 'logo_name': 'ucr-shield.png',
-                'auth_url': SHIBBOLETH_SP.format(encode_uri_component('urn:mace:incommon:ucr.edu')),
+                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:ucr.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-ucr.cos.io'],
                 'email_domains': [],
             },
@@ -245,7 +320,8 @@ def main(env):
                 'description': 'Universiteit Gent [Test]',
                 'banner_name': 'ugent-banner.png',
                 'logo_name': 'ugent-shield.png',
-                'auth_url': SHIBBOLETH_SP.format(encode_uri_component('https://identity.ugent.be/simplesaml/saml2/idp/metadata.php')),
+                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://identity.ugent.be/simplesaml/saml2/idp/metadata.php')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-ugent.cos.io'],
                 'email_domains': [],
             },
@@ -255,7 +331,8 @@ def main(env):
                 'description': 'Projects must abide by <a href="http://policy.usc.edu/info-security/">USC\'s Information Security Policy</a>. Data stored for human subject research repositories must abide by <a href="http://policy.usc.edu/biorepositories/">USC\'s Biorepository Policy</a>. The OSF may not be used for storage of Personal Health Information that is subject to <a href="http://policy.usc.edu/hipaa/">HIPPA regulations</a>.',
                 'banner_name': 'usc-banner.png',
                 'logo_name': 'usc-shield.png',
-                'auth_url': SHIBBOLETH_SP.format(encode_uri_component('urn:mace:incommon:usc.edu')),
+                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:usc.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-usc.cos.io'],
                 'email_domains': [],
             },
@@ -265,8 +342,20 @@ def main(env):
                 'description': 'Projects must abide by the University <a href="http://www.virginia.edu/informationpolicy/security.html">Security and Data Protection Policies</a>',
                 'banner_name': 'uva-banner.png',
                 'logo_name': 'uva-shield.png',
-                'auth_url': SHIBBOLETH_SP.format(encode_uri_component('https://shibidp-test.its.virginia.edu/idp/shibboleth')),
+                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shibidp-test.its.virginia.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-virginia.cos.io'],
+                'email_domains': [],
+            },
+            {
+                '_id': 'vt',
+                'name': 'Virginia Tech [Test]',
+                'description': None,
+                'banner_name': 'vt-banner.png',
+                'logo_name': 'vt-shield.png',
+                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shib-pprd.middleware.vt.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['osf.vt.edu'],
                 'email_domains': [],
             },
         ]

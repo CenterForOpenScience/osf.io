@@ -21,7 +21,7 @@
 
         % if 'write' in user['permissions']:
 
-            <div class="panel panel-default osf-affix" data-spy="affix" data-offset-top="60" data-offset-bottom="263"><!-- Begin sidebar -->
+            <div class="panel panel-default osf-affix" data-spy="affix" data-offset-top="0" data-offset-bottom="263"><!-- Begin sidebar -->
                 <ul class="nav nav-stacked nav-pills">
 
                     % if not node['is_registration']:
@@ -78,6 +78,7 @@
                         <div class="form-group">
                             <label>Category:</label>
                             <select data-bind="options: categoryOptions, optionsValue: 'value', optionsText: 'label', value: selectedCategory"></select>
+                            <i>(For descriptive purposes)</i>
                         </div>
                         <div class="form-group">
                             <label for="title">Title:</label>

@@ -84,16 +84,19 @@ function ViewWidget(visible, version, viewText, rendered, contentURL, allowMathj
 
                 request.done(function (resp) {
                     if(self.visible()) {
+                        var $markdownElement = $('#wikiViewRender');
                         var rawContent = resp.wiki_content || '*No wiki content*';
                         if (resp.wiki_rendered) {
                             // Use pre-rendered python, if provided. Don't mathjaxify
                             self.allowMathjaxification(false);
                             self.rendered(resp.wiki_rendered);
+                            $markdownElement.css('display', 'inherit');
 
                         } else {
                             // Render raw markdown
                             self.allowMathjaxification(true);
                             self.rendered(self.renderMarkdown(rawContent));
+                            $markdownElement.css('display', 'inherit');
                         }
                         self.displaySource(rawContent);
                     }

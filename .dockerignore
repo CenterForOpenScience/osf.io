@@ -6,4 +6,3 @@ node_modules
 **/bower_components
 *.pyc
 **/*.pyc
-website/static/built

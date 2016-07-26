@@ -1,30 +1,33 @@
+from django.core.urlresolvers import resolve, reverse
 import furl
+from rest_framework import serializers as ser
 import pytz
+
 from modularodm import Q
 
-from rest_framework import serializers as ser
-from django.core.urlresolvers import resolve, reverse
-
+from framework.auth.core import Auth, User
 from website import settings
-from framework.auth.core import User
+
 from website.files.models import FileNode
 from website.project.model import Comment
-from api.base.utils import absolute_reverse
+from website.util import api_v2_url
+
 from api.base.serializers import (
-    NodeFileHyperLinkField,
-    WaterbutlerLink,
-    format_relationship_links,
     FileCommentRelationshipField,
-    JSONAPIListField,
-    Link,
-    JSONAPISerializer,
-    LinksField,
+    format_relationship_links,
     IDField,
+    JSONAPIListField,
+    JSONAPISerializer,
+    Link,
+    LinksField,
+    NodeFileHyperLinkField,
+    RelationshipField,
     TypeField,
+    WaterbutlerLink,
 )
 from api.base.exceptions import Conflict
+from api.base.utils import absolute_reverse
 from api.base.utils import get_user_auth
-from website.util import api_v2_url
 
 
 class CheckoutField(ser.HyperlinkedRelatedField):
@@ -115,6 +118,9 @@ class FileSerializer(JSONAPISerializer):
     ])
     id = IDField(source='_id', read_only=True)
     type = TypeField()
+    guid = ser.SerializerMethodField(read_only=True,
+                                     method_name='get_file_guid',
+                                     help_text='OSF GUID for this file (if one has been assigned)')
     checkout = CheckoutField()
     name = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
     kind = ser.CharField(read_only=True, help_text='Either folder or file')
@@ -128,6 +134,7 @@ class FileSerializer(JSONAPISerializer):
     date_created = ser.SerializerMethodField(read_only=True, help_text='Timestamp when the file was created')
     extra = ser.SerializerMethodField(read_only=True, help_text='Additional metadata about this file')
     tags = JSONAPIListField(child=FileTagField(), required=False)
+    current_user_can_comment = ser.SerializerMethodField(help_text='Whether the current user is allowed to post comments')
 
     files = NodeFileHyperLinkField(
         related_view='nodes:node-files',
@@ -142,7 +149,12 @@ class FileSerializer(JSONAPISerializer):
     comments = FileCommentRelationshipField(related_view='nodes:node-comments',
                                             related_view_kwargs={'node_id': '<node._id>'},
                                             related_meta={'unread': 'get_unread_comments_count'},
-                                            filter={'target': 'get_file_guid'})
+                                            filter={'target': 'get_file_guid'}
+                                            )
+    node = RelationshipField(related_view='nodes:node-detail',
+                             related_view_kwargs={'node_id': '<node._id>'},
+                             help_text='The project that this file belongs to'
+                             )
     links = LinksField({
         'info': Link('files:file-detail', kwargs={'file_id': '<_id>'}),
         'move': WaterbutlerLink(),
@@ -197,6 +209,11 @@ class FileSerializer(JSONAPISerializer):
             'sha256': metadata.get('sha256', None),
         }
         return extras
+
+    def get_current_user_can_comment(self, obj):
+        user = self.context['request'].user
+        auth = Auth(user if not user.is_anonymous() else None)
+        return obj.node.can_comment(auth)
 
     def get_unread_comments_count(self, obj):
         user = self.context['request'].user

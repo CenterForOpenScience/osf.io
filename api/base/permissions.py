@@ -3,6 +3,8 @@ import operator
 from django.core.exceptions import ImproperlyConfigured
 from rest_framework import exceptions, permissions
 
+from api.base.utils import has_admin_scope
+
 from framework.auth import oauth_scopes
 from framework.auth.cas import CasResponse
 
@@ -74,6 +76,18 @@ class TokenHasScope(permissions.BasePermission):
                 raise ImproperlyConfigured('TokenHasScope requires the view to define the '
                                            'required_write_scopes attribute using CoreScopes rather than ComposedScopes')
             return write_scopes
+
+
+class RequestHasAdminScope(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if has_admin_scope(request):
+            return True
+        raise exceptions.NotFound()
+
+    def has_permission(self, request, view):
+        if has_admin_scope(request):
+            return True
+        raise exceptions.NotFound()
 
 
 class OwnerOnly(permissions.BasePermission):
