@@ -36,15 +36,15 @@ class Command(BaseCommand):
         print 'Initializing Flask App...'
         init_app()
         start = datetime.now()
-        #
-        # load_guids()
-        # print 'Loaded Guids in {} seconds...'.format((datetime.now() - start
-        #                                               ).total_seconds())
-        # snap = datetime.now()
-        # load_blacklist_guids()
-        # print 'Loaded Blacklist in {} seconds...'.format((datetime.now() - snap
-        #                                                   ).total_seconds())
-        # save_bare_nodes()
+
+        load_guids()
+        print 'Loaded Guids in {} seconds...'.format((datetime.now() - start
+                                                      ).total_seconds())
+        snap = datetime.now()
+        load_blacklist_guids()
+        print 'Loaded Blacklist in {} seconds...'.format((datetime.now() - snap
+                                                          ).total_seconds())
+        save_bare_nodes()
         merge_duplicate_users()
         save_bare_users()
         save_bare_tags()
