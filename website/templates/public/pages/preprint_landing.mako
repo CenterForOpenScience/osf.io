@@ -119,7 +119,7 @@
     <div id="engrxiv" class="space-top engrxiv">
       <div class="container">
         <div class="row">
-          <div class="col-md-9 text-center">
+          <div class="col-md-7 text-center">
             <h2>The eprint server for engineering.</h2>
             <h4>Under development. Get updates on <a href="https://twitter.com/engrxiv">@engrxiv</a>
               <a href="https://www.facebook.com/engrxiv" aria-label="Facebook"><i class="fa fa-facebook fa-lg fa-2x"></i></a>
@@ -132,8 +132,8 @@
               arXiv is a trademark of Cornell University, used under license.
             </div>
           </div>
-          <div class="col-md-3">
-            <a href="https://osf.io/view/engrxiv/"><img src="/static/img/engrxiv.png" width="95%" style="margin-top: 20px;"></a>
+          <div class="col-md-5">
+            <a href="https://osf.io/view/engrxiv/"><img src="/static/img/engrxiv.png" width="95%" style="margin-top: 38px;"></a>
           </div>
         </div>
       </div>
