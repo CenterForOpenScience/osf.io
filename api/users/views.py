@@ -103,6 +103,7 @@ class UserList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.RequiresScopedRequestOrReadOnly,
         base_permissions.TokenHasScope,
     )
 
