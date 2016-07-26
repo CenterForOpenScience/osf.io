@@ -477,22 +477,22 @@ var FileViewPage = {
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
             // Special case whether or not to show the delete button for published Dataverse files
             (ctrl.canEdit() && (ctrl.file.provider !== 'osfstorage' || !ctrl.file.checkoutUser) && ctrl.requestDone && $(document).context.URL.indexOf('version=latest-published') < 0 ) ? m('.btn-group.m-l-xs.m-t-xs', [
-                m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
+                ctrl.editor ? m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete') : null
             ]) : '',
             ctrl.context.currentUser.canEdit && (!ctrl.canEdit()) && ctrl.requestDone && (ctrl.context.currentUser.isAdmin) ? m('.btn-group.m-l-xs.m-t-xs', [
-                m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_checkin')}, 'Force check in')
+                ctrl.editor ? m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_checkin')}, 'Force check in') : null
             ]) : '',
             ctrl.canEdit() && (!ctrl.file.checkoutUser) && ctrl.requestDone && (ctrl.file.provider === 'osfstorage') ? m('.btn-group.m-l-xs.m-t-xs', [
-                m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkout')}, 'Check out')
+                ctrl.editor ? m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkout')}, 'Check out') : null
             ]) : '',
             (ctrl.canEdit() && (ctrl.file.checkoutUser === ctrl.context.currentUser.id) && ctrl.requestDone) ? m('.btn-group.m-l-xs.m-t-xs', [
-                m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkin')}, 'Check in')
+                ctrl.editor ? m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkin')}, 'Check in') : null
             ]) : '',
             window.contextVars.node.isPublic? m('.btn-group.m-t-xs', [
                 m.component(SharePopover, {link: link, height: height})
             ]) : '',
             m('.btn-group.m-t-xs', [
-                m('button.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
+                ctrl.editor ? m('button.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download') : null
             ]),
             m('.btn-group.btn-group-sm.m-t-xs', [
                ctrl.editor ? m( '.btn.btn-default.disabled', 'Toggle view: ') : null
