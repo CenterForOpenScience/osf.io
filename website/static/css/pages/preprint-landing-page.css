@@ -600,6 +600,17 @@ footer {
     margin-bottom: 40px;
 }
 
+.engrxiv {
+    background: grey;
+    margin-top: -20px;
+    color: #FFF;
+    padding: 50px 0;
+}
+
+.engrxiv a {
+    color: #FFF;
+}
+
 .network-bg {
     background: url("/static/img/front-page/bg-web.png") repeat;
     background-size: contain;
