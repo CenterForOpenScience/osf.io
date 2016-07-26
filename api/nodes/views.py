@@ -40,7 +40,8 @@ from api.nodes.serializers import (
     NodeContributorDetailSerializer,
     NodeInstitutionsRelationshipSerializer,
     NodeAlternativeCitationSerializer,
-    NodeContributorsCreateSerializer
+    NodeContributorsCreateSerializer,
+    NodeViewOnlyLinkSerializer
 )
 from api.nodes.utils import get_file_object
 
@@ -2935,3 +2936,63 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
         res = super(LinkedNodesList, self).get_parser_context(http_request)
         res['is_relationship'] = True
         return res
+
+
+class NodeViewOnlyLinksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
+    '''
+    Document pls.
+    '''
+
+    permission_classes = (
+        IsAdmin,
+        base_permissions.TokenHasScope,
+        drf_permissions.IsAuthenticatedOrReadOnly
+    )
+
+    # Maybe?
+    required_read_scopes = [CoreScopes.NODE_BASE_READ]
+    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+
+    serializer_class = NodeViewOnlyLinkSerializer
+
+    view_category = 'nodes'
+    view_name = 'node-view-only-links'
+
+    def get_queryset(self):
+        return [
+            link for link in
+            self.get_node().private_links
+            if not link.is_deleted
+        ]
+
+
+class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin):
+    '''
+    Document pls.
+    '''
+
+    permission_classes = (
+        IsAdmin,
+        base_permissions.TokenHasScope,
+        drf_permissions.IsAuthenticatedOrReadOnly
+    )
+
+    # Maybe?
+    required_read_scopes = [CoreScopes.NODE_BASE_READ]
+    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+
+    serializer_class = NodeViewOnlyLinkSerializer
+
+    view_category = 'nodes'
+    view_name = 'node-view-only-link-detail'
+
+    def get_object(self):
+        for link in self.get_node().private_links:
+            if link._id == self.kwargs['link_id']:
+                return link
+        raise NotFound
+
+
+        # def perform_destroy(self, instance):
+        #     pass
+

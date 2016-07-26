@@ -15,6 +15,7 @@ from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.models import Node, User, Comment, Institution, MetaSchema, DraftRegistration
 from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
+from website.project import new_private_link
 from website.project.model import NodeUpdateError
 
 from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse, is_truthy
@@ -935,3 +936,45 @@ class DraftRegistrationDetailSerializer(DraftRegistrationSerializer):
             draft.update_metadata(metadata)
             draft.save()
         return draft
+
+
+class NodeViewOnlyLinkSerializer(JSONAPISerializer):
+    '''
+    Document pls.
+    '''
+
+    key = ser.CharField()
+    id = IDField(source='_id')
+    date_created = ser.DateTimeField()
+    nodes = JSONAPIListField(child=NodeSerializer(), required=True)
+    anonymous = ser.BooleanField(default=False)
+    name = ser.CharField(default='Shared project link')
+
+    creator = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<creator._id>'},
+    )
+
+    def create(self, validated_data):
+        # name = validated_data.pop('name')
+        # user = get_user_auth(self.context['request'])
+        # nodes = validated_data.pop('nodes')
+        # anonymous = validated_data.pop('anonymous')
+        #
+        # try:
+        #     private_link = new_private_link(
+        #         name=name,
+        #         user=user,
+        #         nodes=nodes,
+        #         anonymous=anonymous
+        #     )
+        # except ValidationValueError:
+        #     raise exceptions.ValidationError('Invalid link name.')
+        # return private_link
+        pass
+
+    def update(self, instance, validated_data):
+        pass
+
+    class Meta:
+        type_ = 'view_only_links'
