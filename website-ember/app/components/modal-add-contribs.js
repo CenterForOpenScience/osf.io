@@ -62,7 +62,6 @@ export default Ember.Component.extend({
         //////////////////////////////////
         searchPeople() {
             // TODO: implement
-            console.log('Performed a search');
             let text = this.get('_searchText');
             if (!text) {
                 return;
@@ -117,6 +116,14 @@ export default Ember.Component.extend({
         },
         addOneContributor() {
             // TODO: Implement. Was $root.add
+        },
+        removeAllContributors() {
+            // TODO: Implement. Deselects contributors. Was removeAll in contribAdder.js
+            console.log('Will no longer add the selected results as contributors.');
+        },
+        removeOneContributor() {
+            // TODO: Implement.  Was $root.remove.
+
         },
         submitContributors() {
             console.log('Submitted contributors');
