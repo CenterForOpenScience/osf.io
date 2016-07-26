@@ -422,7 +422,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
     # If this user was created through the API,
     # keep track of who added them.
-    registered_by = fields.ForeignField('user', index=True)
+    registered_by = fields.ForeignField('user', default=None, index=True)
 
     _meta = {'optimistic': True}
 
