@@ -102,7 +102,9 @@ def save_bare_nodes(page_size=20000):
     print 'Starting {}...'.format(sys._getframe().f_code.co_name)
     count = 0
     start = datetime.now()
-    total = MODMNode.find(allow_institution=True).count()
+    total = MODMNode.find(allow_institution=False,
+                          is_collection=False,
+                          is_registration=False).count()
     guid_lookup_table = {x['guid']: x['pk']
                       for x in Guid.objects.all().values('guid', 'pk')}
     while count < total:

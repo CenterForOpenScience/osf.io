@@ -9,7 +9,7 @@ from psycopg2.extras import Json
 from django.core import exceptions
 from django.contrib.postgres import lookups
 
-class DatetimeAwareJSONField(JSONField):
+class DateTimeAwareJSONField(JSONField):
     def get_prep_value(self, value):
         if value is not None:
             return Json(value, dumps=partial(json.dumps, cls=DjangoJSONEncoder))

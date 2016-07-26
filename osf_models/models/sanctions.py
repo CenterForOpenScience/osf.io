@@ -7,7 +7,7 @@ from osf_models.models import MetaSchema
 from osf_models.models.base import BaseModel
 from osf_models.utils.base import get_object_id
 from django.db import models
-from osf_models.utils.datetime_aware_jsonfield import DatetimeAwareJSONField
+from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from website import (tokens, mails)
 from website.exceptions import InvalidSanctionRejectionToken, InvalidSanctionApprovalToken
 from django.conf import settings
@@ -66,7 +66,7 @@ class Sanction(BaseModel):
     #     'approval_token': 'Pew7wj1Puf7DENUPFPnXSwa1rf3xPN',
     #     'rejection_token': 'TwozClTFOic2PYxHDStby94bCQMwJy'}
     # }
-    approval_state = DatetimeAwareJSONField(default={})
+    approval_state = DateTimeAwareJSONField(default={})
 
     # Expiration date-- Sanctions in the UNAPPROVED state that are older than their end_date
     # are automatically made ACTIVE by a daily cron job
@@ -273,7 +273,7 @@ class EmailApprovableSanction(TokenApprovableSanction):
     #     'reject': [REJECT_URL],
     #   }
     # }
-    stashed_urls = DatetimeAwareJSONField(default={})
+    stashed_urls = DateTimeAwareJSONField(default={})
 
     @staticmethod
     def _format_or_empty(template, context):
@@ -833,7 +833,7 @@ class DraftRegistrationApproval(Sanction):
 
     # Since draft registrations that require approval are not immediately registered,
     # meta stores registration_choice and embargo_end_date (when applicable)
-    meta = DatetimeAwareJSONField(default={})
+    meta = DateTimeAwareJSONField(default={})
 
     def _send_rejection_email(self, user, draft):
         schema = draft.registration_schema

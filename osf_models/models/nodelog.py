@@ -2,7 +2,7 @@ from django.db import models
 
 from osf_models.models.base import BaseModel
 from osf_models.utils.base import get_object_id
-from osf_models.utils.datetime_aware_jsonfield import DatetimeAwareJSONField
+from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 
 class NodeLog(BaseModel):
@@ -73,7 +73,7 @@ class NodeLog(BaseModel):
 
     date = models.DateTimeField(db_index=True, null=True)#, auto_now_add=True)
     action = models.CharField(max_length=255, db_index=True, choices=ACTIONS)
-    params = DatetimeAwareJSONField(default={})
+    params = DateTimeAwareJSONField(default={})
     should_hide = models.BooleanField(default=False)
     user = models.ForeignKey('OSFUser', related_name='logs', db_index=True, null=True)
     foreign_user = models.CharField(max_length=255, blank=True)

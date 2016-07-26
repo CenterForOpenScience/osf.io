@@ -12,7 +12,9 @@ from osf_models.models.sanctions import Embargo, RegistrationApproval, Retractio
 from osf_models.models.tag import Tag
 from osf_models.models.user import OSFUser
 from osf_models.models.validators import validate_title
-from osf_models.utils.datetime_aware_jsonfield import DatetimeAwareJSONField
+from osf_models.utils.auth import Auth
+from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from website.exceptions import UserNotAffiliatedError
 from .base import BaseModel, GuidMixin
 
 from osf_models.utils.base import api_v2_url
@@ -39,10 +41,10 @@ class AbstractNode(TypedModel, Loggable, GuidMixin, BaseModel):
         '': 'Uncategorized',
     }
 
-    _affiliated_institutions = models.ManyToManyField('self')
-    _primary_institution = models.ForeignKey(
-        'self',
-        related_name='primary_institution',
+    affiliated_institutions = models.ManyToManyField('Institution', related_name='nodes')
+    primary_institution = models.ForeignKey(
+        'Institution',
+        related_name='primary_nodes',
         null=True)
     # alternative_citations = models.ManyToManyField(AlternativeCitation)
     category = models.CharField(max_length=255,
@@ -51,10 +53,10 @@ class AbstractNode(TypedModel, Loggable, GuidMixin, BaseModel):
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
     # TODO: Can this be a reference instead of data?
-    child_node_subscriptions = DatetimeAwareJSONField(default={})
+    child_node_subscriptions = DateTimeAwareJSONField(default={})
     contributors = models.ManyToManyField(OSFUser,
                                           through=Contributor,
-                                          related_name='contributed_to')
+                                          related_name='nodes')
     creator = models.ForeignKey(OSFUser,
                                 db_index=True,
                                 related_name='created',
@@ -62,10 +64,10 @@ class AbstractNode(TypedModel, Loggable, GuidMixin, BaseModel):
                                 null=True)
     # TODO: Uncomment auto_* attributes after migration is complete
     date_created = models.DateTimeField()  # auto_now_add=True)
-    date_modified = models.DateTimeField(db_index=True)  # auto_now=True)
+    date_modified = models.DateTimeField(db_index=True, null=True)  # auto_now=True)
     deleted_date = models.DateTimeField(null=True)
     description = models.TextField()
-    file_guid_to_share_uuids = DatetimeAwareJSONField(default={})
+    file_guid_to_share_uuids = DateTimeAwareJSONField(default={})
     forked_date = models.DateTimeField(db_index=True, null=True)
     forked_from = models.ForeignKey('self',
                                     related_name='forks',
@@ -102,11 +104,11 @@ class AbstractNode(TypedModel, Loggable, GuidMixin, BaseModel):
     )  # this should be a charfield but data from mongo didn't fit in 255
     # TODO why is this here if it's empty
     users_watching_node = models.ManyToManyField(OSFUser, related_name='watching')
-    wiki_pages_current = DatetimeAwareJSONField(default={})
-    wiki_pages_versions = DatetimeAwareJSONField(default={})
+    wiki_pages_current = DateTimeAwareJSONField(default={})
+    wiki_pages_versions = DateTimeAwareJSONField(default={})
     # Dictionary field mapping node wiki page to sharejs private uuid.
     # {<page_name>: <sharejs_id>}
-    wiki_private_uuids = DatetimeAwareJSONField(default={})
+    wiki_private_uuids = DateTimeAwareJSONField(default={})
 
     def __unicode__(self):
         return u'{} : ({})'.format(self.title, self._id)
@@ -127,6 +129,26 @@ class AbstractNode(TypedModel, Loggable, GuidMixin, BaseModel):
         if not self.url:
             return None
         return urlparse.urljoin(app_config.domain, self.url)
+
+    def add_affiliated_intitution(self, inst, user, save=False, log=True):
+        if not user.is_affiliated_with_institution(inst):
+            raise UserNotAffiliatedError('User is not affiliated with {}'.format(inst.name))
+        if inst not in self.affiliated_institutions:
+            self.affiliated_institutions.add(inst)
+        if log:
+            from website.project.model import NodeLog
+
+            self.add_log(
+                action=NodeLog.AFFLILIATED_INSTITUTION_ADDED,
+                params={
+                    'node': self._primary_key,
+                    'institution': {
+                        'id': inst._id,
+                        'name': inst.name
+                    }
+                },
+                auth=Auth(user)
+            )
 
     def can_view(self, auth):
         if auth and getattr(auth.private_link, 'anonymous', False):
@@ -211,7 +233,7 @@ class Registration(AbstractNode):
 
     registered_schema = models.ManyToManyField(MetaSchema)
 
-    registered_meta = DatetimeAwareJSONField(default={})
+    registered_meta = DateTimeAwareJSONField(default={})
     # TODO Add back in once dependencies are resolved
     registration_approval = models.ForeignKey(RegistrationApproval, null=True)
     retraction = models.ForeignKey(Retraction, null=True)
