@@ -12,6 +12,8 @@ var makeClient = require('js/clipboard');
 var FileRevisionsTable = require('./revisions.js');
 var storageAddons = require('json!storageAddons.json');
 var CommentModel = require('js/comment');
+
+var History = require('exports?History!history');
 var SocialShare = require('js/components/socialshare');
 
 // Sanity
@@ -367,11 +369,54 @@ var FileViewPage = {
         }, 1000);
 
         self.mfrIframeParent = $('#mfrIframeParent');
+        function toggleRevisions(e){
+            if(self.editor){
+                self.editor.selected = false;
+            }
+            var viewable = self.mfrIframeParent.is(':visible');
+            var url = '';
+            if (viewable){
+                self.mfrIframeParent.toggle();
+                self.revisions.selected = true;
+                url = '?show=revision';
+            } else {
+                self.mfrIframeParent.toggle();
+                self.revisions.selected = false;
+                url = '?show=view';
+            }
+            var state = {
+                scrollTop: $(window).scrollTop(),
+            };
+            History.pushState(state, 'OSF | ' + window.contextVars.file.name, url);
+        }
+
+        function changeVersionHeader(){
+            m.render(document.getElementById('versionLink'), m('a', {onclick: toggleRevisions}, document.getElementById('versionLink').innerHTML));
+        }
+
+        var urlParams = $osf.urlParams();
+        // The parser found a query so lets check what we need to do
+        if ('show' in urlParams){
+            if(urlParams.show === 'revision'){
+                self.mfrIframeParent.toggle();
+                self.revisions.selected = true;
+            } else if (urlParams.show === 'view' || urlParams.show === 'edit'){
+               self.revisions.selected = false;
+           }
+        }
+
+        changeVersionHeader();
+
     },
     view: function(ctrl) {
         //This code was abstracted into a panel toggler at one point
         //it was removed and shoved here due to issues with mithrils caching and interacting
         //With other non-mithril components on the page
+        //anchor checking hack that will select if true
+        var state = {
+            scrollTop: $(window).scrollTop(),
+        };
+
         var panelsShown = (
             ((ctrl.editor && ctrl.editor.selected) ? 1 : 0) + // Editor panel is active
             (ctrl.mfrIframeParent.is(':visible') ? 1 : 0)    // View panel is active
@@ -414,6 +459,11 @@ var FileViewPage = {
                         if ((!ctrl.editor.selected || panelsShown > 1)) {
                             ctrl.editor.selected = !ctrl.editor.selected;
                             ctrl.revisions.selected = false;
+                            var url = '?show=view';
+                            state = {
+                                scrollTop: $(window).scrollTop(),
+                            };
+                            History.pushState(state, 'OSF | ' + window.contextVars.file.name, url);
                         }
                     }
                 }, ctrl.editor.title);
@@ -454,9 +504,11 @@ var FileViewPage = {
                         if (!ctrl.mfrIframeParent.is(':visible') || panelsShown > 1) {
                             ctrl.mfrIframeParent.toggle();
                             ctrl.revisions.selected = false;
+                            History.pushState(state, 'OSF | ' + window.contextVars.file.name, '?show=view');
                         } else if (ctrl.mfrIframeParent.is(':visible') && !ctrl.editor){
                             ctrl.mfrIframeParent.toggle();
                             ctrl.revisions.selected = true;
+                            History.pushState(state, 'OSF | ' + window.contextVars.file.name, '?show=revision');
                         }
                     }
                 }, 'View'), editButton())
@@ -473,12 +525,14 @@ var FileViewPage = {
                             ctrl.editor.selected = false;
                         }
                         ctrl.revisions.selected = true;
+                        History.pushState(state, 'OSF | ' + window.contextVars.file.name, '?show=revision');
                     } else {
                         ctrl.mfrIframeParent.toggle();
                         if (ctrl.editor) {
                             ctrl.editor.selected = false;
                         }
                         ctrl.revisions.selected = false;
+                        History.pushState(state, 'OSF | ' + window.contextVars.file.name, '?show=view');
                     }
                 }}, 'Revisions')
             ])
@@ -512,7 +566,8 @@ if ($comments.length) {
         canComment: window.contextVars.currentUser.canComment,
         hasChildren: window.contextVars.node.hasChildren,
         currentUser: window.contextVars.currentUser,
-        pageTitle: window.contextVars.file.name
+        pageTitle: window.contextVars.file.name,
+        inputSelector: '.atwho-input'
     };
     CommentModel.init('#commentsLink', '.comment-pane', options);
 }

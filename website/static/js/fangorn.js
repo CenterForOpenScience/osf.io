@@ -228,18 +228,15 @@ var uploadRowTemplate = function(item) {
  * @returns {Object}  Returns a mithril template with the m() function.
  */
 function resolveIconView(item) {
-    var componentIcons = iconmap.componentIcons;
-    var projectIcons = iconmap.projectIcons;
+    var icons = iconmap.projectComponentIcons;
     function returnView(type, category) {
-        var iconType = projectIcons[type];
-        if (type === 'component' || type === 'registeredComponent') {
-            if (!item.data.permissions.view) {
-                return null;
+        var iconType = icons[type];
+        if(type === 'project' || type === 'component' || type === 'registeredProject' || type === 'registeredComponent') {
+            if (item.data.permissions.view) {
+                iconType = icons[category];
             } else {
-                iconType = componentIcons[category];
+                return null;
             }
-        } else if (type === 'project' || type === 'registeredProject') {
-            iconType = projectIcons[category];
         }
         if (type === 'registeredComponent' || type === 'registeredProject') {
             iconType += ' po-icon-registered';
@@ -919,6 +916,7 @@ function _downloadZipEvent (event, item, col) {
 
 function _createFolder(event, dismissCallback, helpText) {
     var tb = this;
+    helpText('');
     var val = $.trim(tb.select('#createFolderInput').val());
     var parent = tb.multiselected()[0];
     if (!parent.open) {
@@ -956,6 +954,7 @@ function _createFolder(event, dismissCallback, helpText) {
     }, function(data) {
         if (data && data.code === 409) {
             helpText(data.message);
+            m.redraw();
         } else {
             helpText('Folder creation failed.');
         }
@@ -1221,11 +1220,13 @@ function _fangornUploadMethod(item) {
     return configOption || 'PUT';
 }
 
-function gotoFileEvent (item) {
+function gotoFileEvent (item, toUrl) {
+    if(toUrl === undefined)
+        toUrl = '/';
     var tb = this;
     var redir = new URI(item.data.nodeUrl);
     redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
-    var fileurl  = redir.toString() + '/';
+    var fileurl  = redir.toString() + toUrl;
     if(COMMAND_KEYS.indexOf(tb.pressedKey) !== -1) {
         window.open(fileurl, '_blank');
     } else {
@@ -1241,8 +1242,7 @@ function gotoFileEvent (item) {
  * @returns {Array} Returns an array of mithril template objects using m()
  * @private
  */
-function _fangornTitleColumn(item, col) {
-    var tb = this;
+function _fangornTitleColumnHelper(tb,item,col,nameTitle,toUrl,classNameOption){
     if (typeof tb.options.links === 'undefined') {
         tb.options.links = true;
     }
@@ -1253,24 +1253,37 @@ function _fangornTitleColumn(item, col) {
         var attrs = {};
         if (tb.options.links) {
             attrs =  {
-                className: 'fg-file-links',
+                className: classNameOption,
                 onclick: function(event) {
-                    event.stopImmediatePropagation();
-                    gotoFileEvent.call(tb, item);
-                }
+                event.stopImmediatePropagation();
+                gotoFileEvent.call(tb, item, toUrl);
+            }
             };
         }
         return m(
             'span',
             attrs,
-            item.data.name
+            nameTitle
         );
     }
     if ((item.data.nodeType === 'project' || item.data.nodeType ==='component') && item.data.permissions.view) {
-        return m('a.fg-file-links',{ href: '/' + item.data.nodeID.toString() + '/'},
-                item.data.name);
+      return m('a.' + classNameOption,{ href: '/' + item.data.nodeID.toString() + toUrl},
+              nameTitle);
     }
-    return m('span', item.data.name);
+    return m('span', nameTitle);
+}
+
+function _fangornTitleColumn(item, col) {
+    var tb = this;
+    return _fangornTitleColumnHelper(tb,item,col,item.data.name,'/','fg-file-links');
+}
+
+function _fangornVersionColumn(item,col) {
+    var tb = this;
+    if (item.kind !== 'folder'){
+        return _fangornTitleColumnHelper(tb,item,col,String(item.data.extra.version),'/?show=revision','fg-version-links');
+    }
+    return;
 }
 
 /**
@@ -1364,14 +1377,18 @@ function _fangornResolveRows(item) {
             item.data.accept = item.data.accept || item.parent().data.accept;
         }
     }
-    defaultColumns.push(
-    {
+    defaultColumns.push({
         data : 'name',  // Data field name
         folderIcons : true,
         filter : true,
         custom : _fangornTitleColumn
     });
-
+    defaultColumns.push({
+        data: 'version',
+        filter: true,
+        sortInclude : false,
+        custom: _fangornVersionColumn
+    });
     defaultColumns.push({
         data : 'size',  // Data field name
         sortInclude : false,
@@ -1393,8 +1410,7 @@ function _fangornResolveRows(item) {
             custom : function() { return m(''); }
         });
     }
-    defaultColumns.push(
-    {
+    defaultColumns.push({
         data : 'modified',  // Data field name
         filter : false,
         custom : _fangornModifiedColumn
@@ -1414,10 +1430,14 @@ function _fangornColumnTitles () {
     columns.push(
     {
         title: 'Name',
-        width : '64%',
+        width : '54%',
         sort : true,
         sortType : 'text'
     }, {
+        title: 'Version',
+        width : '10%',
+        sort : false
+    },{
         title : 'Size',
         width : '8%',
         sort : false
@@ -1679,7 +1699,7 @@ var FGItemButtons = {
                     rowButtons.push(
                         m.component(FGButton, {
                             onclick: function (event) {
-                                gotoFileEvent.call(tb, item);
+                                gotoFileEvent.call(tb, item, '/');
                             },
                             icon: 'fa fa-file-o',
                             className: 'text-info'
@@ -1766,13 +1786,14 @@ var FGItemButtons = {
     }
 };
 
-var dismissToolbar = function(){
+var dismissToolbar = function(helpText){
     var tb = this;
     if (tb.toolbarMode() === toolbarModes.FILTER){
         tb.resetFilter();
     }
     tb.toolbarMode(toolbarModes.DEFAULT);
     tb.filterText('');
+    helpText('');
     m.redraw();
 };
 
@@ -1786,9 +1807,9 @@ var FGToolbar = {
         self.mode = self.tb.toolbarMode;
         self.isUploading = args.treebeard.isUploading;
         self.helpText = m.prop('');
-        self.dismissToolbar = dismissToolbar.bind(self.tb);
+        self.dismissToolbar = dismissToolbar.bind(self.tb, self.helpText);
         self.createFolder = function(event){
-            _createFolder.call(self.tb, event, self.dismissToolbar, self.helpText );
+            _createFolder.call(self.tb, event, self.dismissToolbar, self.helpText);
         };
     },
     view : function(ctrl) {
@@ -2542,11 +2563,12 @@ Fangorn.ButtonEvents = {
     _uploadEvent: _uploadEvent,
     _removeEvent: _removeEvent,
     createFolder: _createFolder,
-    _gotoFileEvent : gotoFileEvent
+    _gotoFileEvent : gotoFileEvent,
 };
 
 Fangorn.DefaultColumns = {
     _fangornTitleColumn: _fangornTitleColumn,
+    _fangornVersionColumn: _fangornVersionColumn,
     _fangornModifiedColumn: _fangornModifiedColumn
 };
 

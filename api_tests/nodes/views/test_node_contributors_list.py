@@ -180,6 +180,33 @@ class TestNodeContributorList(NodeCRUDTestCase):
         assert_equal(res.json['data'][1]['embeds']['users']['data']['attributes']['full_name'], 'Robert Jackson')
         assert_equal(res.json['data'][1]['attributes'].get('unregistered_contributor'), 'Bob Jackson')
 
+    def test_contributors_order_is_the_same_over_multiple_requests(self):
+        self.public_project.add_unregistered_contributor(
+            'Robert Jackson',
+            'robert@gmail.com',
+            auth=Auth(self.user),
+            save=True
+        )
+
+        for i in range(0,10):
+            new_user = AuthUserFactory()
+            if i%2 == 0:
+                visible = True
+            else:
+                visible = False
+            self.public_project.add_contributor(
+                new_user,
+                visible=visible,
+                auth=Auth(self.public_project.creator),
+                save=True
+            )
+        req_one = self.app.get("{}?page=2".format(self.public_url), auth=Auth(self.public_project.creator))
+        req_two = self.app.get("{}?page=2".format(self.public_url), auth=Auth(self.public_project.creator))
+        id_one = [item['id'] for item in req_one.json['data']]
+        id_two = [item['id'] for item in req_two.json['data']]
+        for a, b in zip(id_one, id_two):
+            assert_equal(a, b)
+
 
 class TestNodeContributorFiltering(ApiTestCase):
 

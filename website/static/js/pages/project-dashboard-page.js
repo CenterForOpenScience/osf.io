@@ -60,7 +60,8 @@ if ($comments.length) {
         canComment: window.contextVars.currentUser.canComment,
         hasChildren: window.contextVars.node.hasChildren,
         currentUser: window.contextVars.currentUser,
-        pageTitle: window.contextVars.node.title
+        pageTitle: window.contextVars.node.title,
+        inputSelector: '.atwho-input'
     };
     Comment.init('#commentsLink', '.comment-pane', options);
 }
@@ -140,6 +141,7 @@ $(document).ready(function () {
             var fangornOpts = {
                 divID: 'treeGrid',
                 filesData: data.data,
+                allowMove: !node.isRegistration,
                 uploads : true,
                 showFilter : true,
                 placement: 'dashboard',
@@ -268,7 +270,10 @@ $(document).ready(function () {
                 var truncatedText = $.truncate(renderedText, {length: 400});
                 markdownElement.html(truncatedText);
                 mathrender.mathjaxify(markdownElement);
+                markdownElement.show();
             });
+        } else {
+            markdownElement.css('display', 'inherit');
         }
     }
 

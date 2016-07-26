@@ -195,7 +195,6 @@ ko.validation.rules.mustEqual = {
     message: 'The field does not match the required input.'
 };
 
-
 // Add custom effects
 
 // fadeVisible : http://knockoutjs.com/examples/animatedTransitions.html
@@ -459,6 +458,39 @@ ko.bindingHandlers.datePicker = {
 };
 
  /**
+ * Bind content of contenteditable to observable. Looks for maxlength attr
+ * and underMaxLength binding to limit input.
+ * Example:
+ * <div contenteditable="true" data-bind="editableHTML: {observable: <observable_name>, onUpdate: handleUpdate" maxlength="500"></div>
+ */
+ko.bindingHandlers.editableHTML = {
+    init: function(element, valueAccessor, allBindings, bindingContext) {
+        var $element = $(element);
+        var options = valueAccessor();
+        var initialValue = options.observable();
+        $element.html(initialValue);
+        $element.on('change input paste keyup blur', function() {
+            options.observable($element.html());
+        });
+    },
+    update: function(element, valueAccessor, allBindings, viewModel) {
+        var $element = $(element);
+        var options = valueAccessor();
+        var initialValue = options.observable();
+        // NOTE: Maybe we should leave this up to onUpdate? Rethink.
+        var charLimit = $element.attr('maxlength');
+        var inputTextLength = $element[0].innerText.length || 0;
+        // + 1 to account for the <br> that is added to the end of the contenteditable content
+        // <br> is necessary for the return key to function properly
+        var underOrEqualMaxLength = inputTextLength <= parseInt(charLimit) + 1 || charLimit == undefined;  // jshint ignore: line
+        options.onUpdate.call(viewModel, element, underOrEqualMaxLength, charLimit);
+        if (initialValue === '') {
+            $(element).html(initialValue);
+        }
+    }
+};
+
+ /**
  * Adds class returned from iconmap to the element. The value accessor should be the
  * category of the node.
  * Example:
@@ -466,14 +498,8 @@ ko.bindingHandlers.datePicker = {
  */
 ko.bindingHandlers.getIcon = {
     init: function(elem, valueAccessor) {
-        var icon;
         var category = valueAccessor();
-        if (Object.keys(iconmap.componentIcons).indexOf(category) >=0 ){
-            icon = iconmap.componentIcons[category];
-        }
-        else {
-            icon = iconmap.projectIcons[category];
-        }
+        var icon =  iconmap.projectComponentIcons[category];
         $(elem).addClass(icon);
     }
 };
