@@ -91,8 +91,6 @@ var ChangePasswordViewModel = oop.extend(BaseViewModel, {
     constructor: function () {
         var self = this;
 
-        self.oldPassword = ko.observable('').extend({required: true});
-
         // Call constructor at the beginning so that self.password exists
         self.super.constructor.call(this);
 
@@ -101,6 +99,8 @@ var ChangePasswordViewModel = oop.extend(BaseViewModel, {
             required: true,
             email: true
         });
+
+        self.oldPassword = ko.observable('').extend({required: true});
 
         self.password.extend({
             validation: {
@@ -142,9 +142,6 @@ var ChangePasswordViewModel = oop.extend(BaseViewModel, {
                 params: self.password
             }
         });
-
-        // Collect validated fields because new ones not defined in base constructor
-        self.validatedFields = ko.validatedObservable(self.getValidatedFields());
 
     },
     getValidatedFields: function() {
