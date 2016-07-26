@@ -160,7 +160,7 @@
                                 >
                                 <p class="help-block" data-bind="validationMessage: passwordConfirmation" style="display: none;"></p>
                             </div>
-                            ## TODO: change so that password strength submit validation happens in knockout on the form, not with this disable
+                            ## TODO: [#OSF-6764] change so that password strength submit validation happens in knockout on the form, not with this disable
                             <button type="submit" class="btn btn-primary" data-bind="disable: !password.isValid()">Update password</button>
                         </form>
                     </div>
