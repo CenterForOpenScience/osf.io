@@ -91,6 +91,8 @@ var ChangePasswordViewModel = oop.extend(BaseViewModel, {
     constructor: function () {
         var self = this;
 
+        self.oldPassword = ko.observable('').extend({required: true});
+
         // Call constructor at the beginning so that self.password exists
         self.super.constructor.call(this);
 
@@ -115,6 +117,21 @@ var ChangePasswordViewModel = oop.extend(BaseViewModel, {
             }
         });
 
+        self.password.extend({
+            validation: {
+                validator: function(val, other) {
+                    if (String(val).toLowerCase() === String(other).toLowerCase()) {
+                        self.typedPassword(' ');
+                        return false;
+                    } else {
+                        return true;
+                    }
+                },
+                'message': 'Your new password cannot be the same as your old password.',
+                params: self.oldPassword
+            }
+        });
+
         self.passwordConfirmation = ko.observable('').extend({
             required: true,
             validation: {
@@ -125,7 +142,9 @@ var ChangePasswordViewModel = oop.extend(BaseViewModel, {
                 params: self.password
             }
         });
-        self.oldPassword = ko.observable('').extend({required: true});
+
+        // Collect validated fields because new ones not defined in base constructor
+        self.validatedFields = ko.validatedObservable(self.getValidatedFields());
 
     },
     getValidatedFields: function() {
@@ -243,6 +262,7 @@ var SignUpViewModel = oop.extend(BaseViewModel, {
     submitError: function(xhr) {
         var self = this;
         if (xhr.status === 400) {
+            // TODO - this is too broad and triggers when signing up with an account that exists
             self.changeMessage(
                 'Your username cannot be the same as your password.',
                 'text-danger p-xs',
