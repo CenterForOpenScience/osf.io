@@ -71,6 +71,20 @@ class TestNodeSerializer(DbTestCase):
             '/{}nodes/{}/'.format(API_BASE, node._id)
         )
 
+    def test_template_serialization(self):
+        node = NodeFactory(creator=self.user)
+        fork = node.use_as_template(auth=Auth(user=node.creator))
+        result = NodeSerializer(fork, context={'request': make_drf_request()}).data
+        data = result['data']
+
+        # Relationships
+        relationships = data['relationships']
+        templated_from = relationships['templated_from']['links']['related']['href']
+        assert_equal(
+            urlparse(templated_from).path,
+            '/{}nodes/{}/'.format(API_BASE, node._id)
+        )
+
 class TestNodeRegistrationSerializer(DbTestCase):
 
     def test_serialization(self):
