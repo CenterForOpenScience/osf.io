@@ -4226,7 +4226,7 @@ class TestUnconfirmedUserViews(OsfTestCase):
         user = UnconfirmedUserFactory()
         url = web_url_for('profile_view_id', uid=user._id)
         res = self.app.get(url)
-        assert_equal(res.status_code, 200)
+        assert_equal(res.status_code, 400)
 
 
 class TestProfileNodeList(OsfTestCase):
