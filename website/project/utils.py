@@ -6,6 +6,7 @@ from website.project.model import Node
 from website.project import signals
 from framework.postcommit_tasks.handlers import run_postcommit
 from framework.celery_tasks import app
+from framework.mongo import database
 from datetime import datetime
 # Alias the project serializer
 from website.project.views.node import _view_project
@@ -60,6 +61,21 @@ def update_date_modified_for_users(node):
 def update_date_modified_task(node_id):
     node = Node.load(node_id)
     now = datetime.utcnow()
+    contributors_id = []
     for contrib in node.contributors:
-        contrib.date_modified = now
-        contrib.save()
+        contributors_id.append(contrib._id)
+    database['user'].update(
+        {
+            '_id': {
+                '$in': contributors_id
+            }
+        },
+
+        {
+            '$set': {
+                'date_modified': now
+            }
+        },
+        upsert=False,
+        multi=True
+    )
