@@ -15,7 +15,7 @@ export default Ember.Route.extend({
 
         // Fetch all contributors
         let dest = Ember.A();
-        let contribs = loadAll(model, 'contributors', dest).then(() =>
+        loadAll(model, 'contributors', dest).then(() =>
             // Ember doesn't like when two widgets both fetch data from the same endpoint (even with different query params)-
             // this results in one request being canceled
             controller.set('contributors', dest));

@@ -104,7 +104,7 @@ export default Ember.Component.extend({
                 }
             }).catch(() => console.log('Query failed with error'));  // TODO: Show errors to user
 
-            this.set('searchResults', DS.PromiseObject.create({ promise:resp }));
+            this.set('searchResults', DS.PromiseObject.create({ promise: resp }));
         },
         importContribsFromParent() {
             //TODO: Import contributors from parent
