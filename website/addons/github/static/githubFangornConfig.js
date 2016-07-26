@@ -85,7 +85,7 @@ function _removeEvent (event, items) {
         // If all items can be deleted
         if(canDelete){
             mithrilContentMultiple = m('div', [
-                    m('p', 'This action is irreversible.'),
+                    m('p.text-danger', 'This folder and ALL its contents will be deleted. This action is irreversible.'),
                     deleteList.map(function(item){
                         return m('.fangorn-canDelete.text-success', item.data.name);
                     })
@@ -297,15 +297,15 @@ function _fangornGithubTitle(item, col)  {
     if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
         return Fangorn.Utils.connectCheckTemplate.call(this, item);
     }
-    
+
     if (item.data.addonFullname) {
         var urlParams = $osf.urlParams();
-        
+
         if (!item.data.branch && urlParams.branch) {
             item.data.branch = urlParams.branch;
         }
         var branch = item.data.branch || item.data.defaultBranch;
-        
+
         return m('span',[
             m('github-name', item.data.name + ' (' + branch + ')')
         ]);

@@ -255,7 +255,6 @@ $(document).ready(function() {
       }
     });
 
-
     // Portlet feature for the dashboard, to be implemented in later versions.
     // $( ".osf-dash-col" ).sortable({
     //   connectWith: ".osf-dash-col",
