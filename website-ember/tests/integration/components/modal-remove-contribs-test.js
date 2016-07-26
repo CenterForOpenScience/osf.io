@@ -1,0 +1,24 @@
+import { moduleForComponent, test } from 'ember-qunit';
+import hbs from 'htmlbars-inline-precompile';
+
+moduleForComponent('modal-remove-contribs', 'Integration | Component | modal remove contribs', {
+  integration: true
+});
+
+test('it renders', function(assert) {
+  // Set any properties with this.set('myProperty', 'value');
+  // Handle any actions with this.on('myAction', function(val) { ... });
+
+  this.render(hbs`{{modal-remove-contribs}}`);
+
+  assert.equal(this.$().text().trim(), '');
+
+  // Template block usage:
+  this.render(hbs`
+    {{#modal-remove-contribs}}
+      template block text
+    {{/modal-remove-contribs}}
+  `);
+
+  assert.equal(this.$().text().trim(), 'template block text');
+});
