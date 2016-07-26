@@ -39,10 +39,10 @@ export default Ember.Component.extend({
         cancel() {
             var _this = this;
             var contributors = _this.get('contributors');
-            contributors.content.canonicalState.slice(0).forEach(function(contrib, index) {
-                $('tr#' + contrib.id + ' td.permissions select').val(contrib._data.permission);
+            contributors.forEach(function(contrib, index) {
+                $('tr#' + contrib.id + ' td.permissions select').val(contrib.get('permission'));
                 $('tr#' + contrib.id + ' td.permissions select').attr('style', 'font-weight:bold');
-                $('tr#' + contrib.id + ' td.bibliographic input')[0].checked = contrib._data.bibliographic;
+                $('tr#' + contrib.id + ' td.bibliographic input')[0].checked = contrib.get('bibliographic');
             });
             this.set('hasMinAdmins', true);
             this.set('hasMinBibliographic', true);
@@ -63,9 +63,9 @@ export default Ember.Component.extend({
         var numAdmins = 0;
         var numBibliographic = 0;
 
-        contributors.content.canonicalState.slice(0).forEach(function(contrib, index) {
+        contributors.forEach(function(contrib, index) {
             var changedPermission = _this.get('permissionChanges')[contrib.id];
-            var originalPermission = contrib._data.permission;
+            var originalPermission = contrib.get('permission');
             if (changedPermission && (originalPermission !== changedPermission)) {
                 changed = true;
                 if (changedPermission === 'admin') {
@@ -78,7 +78,7 @@ export default Ember.Component.extend({
             }
 
             var changedBibliographic = _this.get('bibliographicChanges')[contrib.id];
-            var originalBibliographic = contrib._data.bibliographic;
+            var originalBibliographic = contrib.get('bibliographic');
             if ((changedBibliographic !== undefined) && (originalBibliographic !== changedBibliographic)) {
                 changed = true;
                 if (changedBibliographic === true) {
