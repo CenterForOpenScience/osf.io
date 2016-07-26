@@ -160,7 +160,7 @@
                                 >
                                 <p class="help-block" data-bind="validationMessage: passwordConfirmation" style="display: none;"></p>
                             </div>
-                            <button type="submit" class="btn btn-primary">Update password</button>
+                            <button type="submit" class="btn btn-primary" data-bind="disable: !password.isValid()">Update password</button>
                         </form>
                     </div>
                 </div>
