@@ -78,6 +78,7 @@
                         <div class="form-group">
                             <label>Category:</label>
                             <select data-bind="options: categoryOptions, optionsValue: 'value', optionsText: 'label', value: selectedCategory"></select>
+                            <i>(For descriptive purposes)</i>
                         </div>
                         <div class="form-group">
                             <label for="title">Title:</label>

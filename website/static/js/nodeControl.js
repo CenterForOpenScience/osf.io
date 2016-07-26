@@ -74,11 +74,7 @@ var ProjectViewModel = function(data, options) {
     // Add icon to title
     self.icon = ko.pureComputed(function() {
         var category = self.categoryValue();
-        if (Object.keys(iconmap.componentIcons).indexOf(category) >=0 ){
-            return iconmap.componentIcons[category];
-        } else {
-            return iconmap.projectIcons[category];
-        }
+        return iconmap.projectComponentIcons[category];
     });
 
     // Editable Title and Description

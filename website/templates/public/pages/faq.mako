@@ -123,6 +123,14 @@
                             <div class="support-body">To apply a license to your OSF project, visit the project's overview page and select one from the "License picker," below the project's description. You can select from a variety of commonly used licenses or upload your own.</div>
                         </div>
                         <div class="support-item">
+                            <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> Does the OSF have a public API?</h5>
+                            <div class="support-body">Yes! Read more on the <a href="https://api.osf.io/v2/docs/">API docs</a></div>
+                        </div>
+                        <div class="support-item">
+                            <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> I'm a developer. Is the OSF open source? Can I contribute to the OSF?</h5>
+                            <div class="support-body">Yes! Find our code and docs on <a href="https://github.com/CenterForOpenScience/osf.io">our Github page</a>.</div>
+                        </div>
+                        <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How does the OSF store and backup files that I upload to the site?</h5>
                             <div class="support-body">
                                 <p> The OSF stores files with <a href="http://www.rackspace.com/">Rackspace</a>

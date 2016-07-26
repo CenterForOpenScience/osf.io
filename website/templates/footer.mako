@@ -6,9 +6,9 @@
                 <ul>
                     <li><a href="${domain}explore/activity/">Explore</a></li>
                     <li><script type="text/javascript">document.write("<n uers=\"znvygb:pbagnpg@bfs.vb\" ery=\"absbyybj\">Pbagnpg</n>".replace(/[a-zA-Z]/g,function(e){return String.fromCharCode((e<="Z"?90:122)>=(e=e.charCodeAt(0)+13)?e:e-26)}));</script><noscript>Contact OSF: <span class="obfuscated-email-noscript"><strong><u>cont<span style="display:none;">null</span>act@<span style="display:none;">null</span>osf.<span style="display:none;">null</span>io</u></strong></span></noscript></li>
-                    <li><a href="${domain}support">Help/Support</a></li>
-                    <li><a href="http://help.osf.io" target="_blank" rel="noreferrer">Guides</li>
-                    <li><a href="${domain}faq">FAQ</a></li>
+                    <li><a href="${domain}support">FAQ/Guides</a></li>
+                    <li><a href="https://api.osf.io/v2/docs/">API</a></li>
+                    <li><a href="https://github.com/CenterForOpenScience/osf.io">Source Code</a></li>
                 </ul>
             </div>
             <div class="col-sm-5 col-md-4">

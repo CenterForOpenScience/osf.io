@@ -85,6 +85,7 @@ def get_globals():
         'allow_login': settings.ALLOW_LOGIN,
         'cookie_name': settings.COOKIE_NAME,
         'status': status.pop_status_messages(),
+        'prev_status': status.pop_previous_status_messages(),
         'domain': settings.DOMAIN,
         'api_domain': settings.API_DOMAIN,
         'disk_saving_mode': settings.DISK_SAVING_MODE,
@@ -438,7 +439,6 @@ def make_url_map(app):
     process_rules(app, [
         Rule('/forms/signin/', 'get', website_views.signin_form, json_renderer),
         Rule('/forms/forgot_password/', 'get', website_views.forgot_password_form, json_renderer),
-        Rule('/forms/reset_password/', 'get', website_views.reset_password_form, json_renderer),
     ], prefix='/api/v1')
 
     ### Discovery ###
@@ -1090,6 +1090,15 @@ def make_url_map(app):
         ),
         Rule(
             [
+                '/api/v1/project/<pid>/files/<provider>/<path:path>/',
+                '/api/v1/project/<pid>/node/<nid>/files/<provider>/<path:path>/',
+            ],
+            'get',
+            addon_views.addon_view_or_download_file,
+            json_renderer
+        ),
+        Rule(
+            [
                 '/project/<pid>/files/deleted/<trashed_id>/',
                 '/project/<pid>/node/<nid>/files/deleted/<trashed_id>/',
             ],
@@ -1594,7 +1603,12 @@ def make_url_map(app):
             notification_views.configure_subscription,
             json_renderer,
         ),
-
+        Rule(
+            '/resetpassword/<verification_key>/',
+            'post',
+            auth_views.reset_password_post,
+            json_renderer,
+        ),
         Rule(
             [
                 '/project/<pid>/settings/addons/',

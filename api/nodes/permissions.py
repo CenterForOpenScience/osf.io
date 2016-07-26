@@ -108,6 +108,7 @@ class ContributorOrPublicForPointers(permissions.BasePermission):
             has_auth = parent_node.can_edit(auth)
             return has_auth
 
+
 class ContributorOrPublicForRelationshipPointers(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
@@ -136,6 +137,27 @@ class ContributorOrPublicForRelationshipPointers(permissions.BasePermission):
                     break
             return has_pointer_auth
 
+
+class RegistrationAndPermissionCheckForPointers(permissions.BasePermission):
+
+    def has_object_permission(self, request, view, obj):
+        node_link = Pointer.load(request.parser_context['kwargs']['node_link_id'])
+        node = Node.load(request.parser_context['kwargs'][view.node_lookup_url_kwarg])
+        auth = get_user_auth(request)
+        if request.method == 'DELETE'and node.is_registration:
+            raise exceptions.MethodNotAllowed(method=request.method)
+        if node.is_collection or node.is_registration:
+            raise exceptions.NotFound
+        if node_link.node.is_registration:
+            if request.method not in permissions.SAFE_METHODS:
+                raise exceptions.MethodNotAllowed
+        if node not in node_link.parent:
+            raise exceptions.NotFound
+        if request.method == 'DELETE' and not node.can_edit(auth):
+            return False
+        return True
+
+
 class AdminOrPublicForRelationshipInstitutions(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         assert isinstance(obj, dict)
@@ -146,6 +168,7 @@ class AdminOrPublicForRelationshipInstitutions(permissions.BasePermission):
             return node.is_public or node.can_view(auth)
         else:
             return node.has_permission(auth.user, osf_permissions.ADMIN)
+
 
 class ReadOnlyIfRegistration(permissions.BasePermission):
     """Makes PUT and POST forbidden for registrations."""

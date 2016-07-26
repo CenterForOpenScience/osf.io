@@ -29,6 +29,7 @@ from website.util import sanitize
 from website.util import web_url_for, is_json_request
 from website.util.permissions import expand_permissions, ADMIN
 from website.util.time import get_timestamp, throttle_period_expired
+from website.exceptions import NodeStateError
 
 
 @collect_auth
@@ -226,7 +227,11 @@ def project_contributors_post(auth, node, **kwargs):
     except ValidationError as e:
         return {'status': 400, 'message': e.message}, 400
 
-    node.add_contributors(contributors=contribs, auth=auth)
+    try:
+        node.add_contributors(contributors=contribs, auth=auth)
+    except NodeStateError as e:
+        return {'status': 400, 'message': e.args[0]}, 400
+
     node.save()
 
     # Disconnect listener to avoid multiple invite emails
@@ -276,8 +281,8 @@ def project_manage_contributors(auth, node, **kwargs):
     # Update permissions and order
     try:
         node.manage_contributors(contributors, auth=auth, save=True)
-    except ValueError as error:
-        raise HTTPError(http.BAD_REQUEST, data={'message_long': error.message})
+    except (ValueError, NodeStateError) as error:
+        raise HTTPError(http.BAD_REQUEST, data={'message_long': error.args[0]})
 
     # If user has removed herself from project, alert; redirect to
     # node summary if node is public, else to user's dashboard page
@@ -625,7 +630,6 @@ def claim_user_form(auth, **kwargs):
     # The email can be the original referrer email if no claimer email has been specified.
     claimer_email = unclaimed_record.get('claimer_email') or unclaimed_record.get('email')
     form = SetEmailAndPasswordForm(request.form, token=token)
-
     if request.method == 'POST':
         if form.validate():
             username, password = claimer_email, form.password.data
