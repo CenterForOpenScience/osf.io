@@ -2,15 +2,16 @@ from rest_framework import serializers as ser
 
 from modularodm.exceptions import ValidationValueError
 
-from api.base.exceptions import InvalidModelValueError
+from api.base.exceptions import InvalidModelValueError, JSONAPIException, Conflict
 from api.base.serializers import AllowMissing, JSONAPIRelationshipSerializer, HideIfDisabled
 from website.models import User
 
 from api.base.serializers import (
     JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField
 )
-from api.base.utils import absolute_reverse
+from api.base.utils import absolute_reverse, has_admin_scope
 
+from framework.auth.views import send_confirm_email
 
 class UserSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
@@ -112,6 +113,27 @@ class UserSerializer(JSONAPISerializer):
             raise InvalidModelValueError(detail=e.message)
         return instance
 
+
+class UserCreateSerializer(UserSerializer):
+    username = ser.EmailField(required=True)
+
+    def create(self, validated_data):
+        username = validated_data.get('username')
+        full_name = validated_data.get('fullname')
+        if not username and full_name:
+            raise JSONAPIException('Both a `username` and `full_name` are required to create a user.')
+        user = User.create_unregistered(full_name, email=username)
+        user.registered_by = self.context['request'].user
+        user.add_unconfirmed_email(user.username)
+        try:
+            user.save()
+        except ValidationValueError:
+            raise Conflict('User with specified username already exists.')
+
+        if self.context['request'].GET.get('send_email', False) and has_admin_scope(self.context['request']):
+            send_confirm_email(user, user.username)
+
+        return user
 
 class UserAddonSettingsSerializer(JSONAPISerializer):
     """
