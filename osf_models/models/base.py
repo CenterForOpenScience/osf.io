@@ -1,7 +1,10 @@
 import random
 
 import modularodm.exceptions
+from modularodm.query import QueryGroup
+
 from django.db import models
+from osf_models.modm_compat import to_django_query
 
 ALPHABET = '23456789abcdefghjkmnpqrstuvwxyz'
 
@@ -103,7 +106,7 @@ class BaseModel(models.Model):
     @classmethod
     def find_one(cls, query):
         try:
-            return cls.objects.get(query.to_django_query())
+            return cls.objects.get(to_django_query(query))
         except cls.DoesNotExist:
             raise modularodm.exceptions.NoResultsFound()
         except cls.MultipleObjectsReturned as e:
@@ -111,7 +114,7 @@ class BaseModel(models.Model):
 
     @classmethod
     def find(cls, query):
-        return cls.objects.filter(query.to_django_query())
+        return cls.objects.filter(to_django_query(query))
 
     @property
     def _primary_name(self):

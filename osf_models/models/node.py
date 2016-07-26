@@ -2,9 +2,9 @@ import urlparse
 
 from django.core.exceptions import ValidationError
 from django.db import models
-from modularodm import Q
 from typedmodels.models import TypedModel
 
+from osf_models.modm_compat import Q
 from osf_models.models import MetaSchema
 from osf_models.models.contributor import Contributor
 from osf_models.models.mixins import Loggable
