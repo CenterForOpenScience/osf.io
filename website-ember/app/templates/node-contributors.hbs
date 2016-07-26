@@ -59,8 +59,11 @@
             {{/if}}
         </h3>
 
+        {{#if canEdit}}
+            <p class="m-b-xs">Drag and drop contributors to change listing order.</p>
+        {{/if}}
         {{!-- % if 'admin' in user['permissions'] and not node['is_registration']: --}}
-        <p class="m-b-xs">Drag and drop contributors to change listing order.</p>
+
         {{!-- % endif --}}
 
     {{!-- <div data-bind="filters: {
@@ -91,7 +94,7 @@
             }
         }"> --}}
         <div>
-            {{contributor-manager contributors=contributors}}
+            {{contributor-manager contributors=contributors node=model isAdmin=isAdmin canEdit=canEdit editContributors=(action 'updateContributors')}}
         </div>
         {{!--<div data-bind="visible: $root.empty" class="no-items text-danger m-b-md">
             No contributors found
