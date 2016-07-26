@@ -543,6 +543,11 @@ def register_user(**kwargs):
     # Verify email address match
     json_data = request.get_json()
 
+    if request.json['email1'].lower() != request.json['email2'].lower():
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data=dict(message_long='Email addresses must match.')
+        )
     try:
         full_name = request.json['fullName']
         full_name = strip_html(full_name)
