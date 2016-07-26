@@ -1,0 +1,263 @@
+{{#bs-modal open=isOpen body=false header=false footer=false}}
+    {{#bs-modal-header}}
+        <h3 class="modal-title">{{model.title}}</h3>
+    {{/bs-modal-header}}
+
+    {{#bs-modal-body}}
+        {{!-- TODO: break widget pages into separate components, but first, just translate over the OSF code --}}
+        {{!-- Whom to add --}}
+        {{#if (eq page 'whom')}}
+            {{!-- Find contributors --}}
+            <form class='form' {{action 'searchPeople' on='submit'}}>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="input-group m-b-sm">
+                            {{input value=_searchText class='form-control' placeholder='Search by name' autofocus=true}}
+                            <span class="input-group-btn">
+                                <input type="submit" value="Search" class="btn btn-default">
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div class="row search-contributor-links">
+                    <div class="col-md-12">
+                        <div>
+                            {{#if canViewParent}}
+                                <button {{action 'importContribsFromParent'}} class="f-w-lg btn-link">Import contributors from {{model.parent.title}}</button>
+                            {{/if}}
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+
+            {{!-- Choose which to add --}}
+            <div class="row">
+
+                <div class="col-md-6">
+                    <div>
+                        <span class="modal-subheader">Results</span>
+                        {{#if showAddAll}}
+                            <button {{action 'addAllContributors'}} class="btn-link">Add all</button>
+                        {{/if}}
+                    </div>
+                    {{!-- Note: Removed "notifications" block because it seemed to be no longer used in staticjs code. TODO: Verify this is correct --}}
+
+                    {{!-- Intent: Only show search results if done loading and results were found --}}
+                    {{#if (and searchResults searchResults.isFulfilled)}}
+                        <table class="table-condensed">
+                            <tbody>
+                            {{!-- TODO: better name, not yet selected? --}}
+                                {{#each contribsNotYetAdded as |person|}}
+                                    {{!-- TODO: Identify mechanism for detecting whether this is selected/ binned --}}
+                                    <tr>
+                                        <td class="p-r-sm osf-icon-td" >
+
+
+                                            <button class="btn btn-success contrib-button btn-mini"
+                                                    data-bind="visible: !contributor.added,
+                                                               click:$root.add.bind($root)"
+                                                    title="Add contributor">
+                                                <i class="fa fa-plus"></i>
+                                            </button>
+                                            <div data-bind="visible: contributor.added,
+                                                            tooltip: {title: 'Already added'}">
+                                                <div class="btn btn-default contrib-button btn-mini disabled">
+                                                    <i class="fa fa-check"></i>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {{!-- height and width are explicitly specified for faster rendering --}}
+                                            <img data-bind="attr: {src: contributor.gravatar_url}" height=35 width=35>
+                                        </td>
+                                        <td width="75%">
+                                            <a data-bind="attr: {href: contributor.profile_url}" target="_blank">
+                                                <span data-bind="text:contributor.fullname"></span>
+                                            </a>
+                                            <br>
+
+                                            <span data-bind="if: contributor.employment">
+                                                <span class='small'
+                                                    data-bind="text: contributor.employment">
+                                                </span><br>
+                                            </span>
+
+                                            <span data-bind="if: contributor.education">
+                                                <span
+                                                    class='small'
+                                                    data-bind="text: contributor.education">
+                                                </span><br>
+                                            </span>
+                                            <span class='small'
+                                                  data-bind="text: contributor.displayProjectsInCommon">
+                                            </span>
+                                            <span class='text-muted' data-bind="visible: !contributor.registered">(unregistered)</span>
+                                        </td>
+                                    </tr>
+                                {{/each}}
+                            </tbody>
+                        </table>
+
+                        {{!-- TODO: Support paginated result fetching widget --}}
+                        <ul class="pagination pagination-sm" data-bind="foreach: paginators">
+                            <li data-bind="css: style"><a href="#" data-bind="click: handler, text: text"></a></li>
+                        </ul>
+                        <p>
+                            <a href="#" data-bind="click:gotoInvite">Add <strong><em>{{_searchText}}</em></strong> as an unregistered contributor</a>.
+                        </p>
+
+                    {{/if}}
+
+                    {{!-- Link to add non-registered contributor --}}
+                    <div class='help-block'>
+                        <div data-bind='if: foundResults'>
+
+                        </div>
+                        {{#if searchResults.isPending}}
+                            <p class="text-muted">Searching contributors...</p>
+                        {{/if}}
+                        <div data-bind="if: noResults">
+                            No results found. Try a more specific search or
+                            <a href="#" data-bind="click:gotoInvite">add <strong><em>{{_searchText}}</em></strong> as an unregistered contributor</a>.
+                        </div>
+                    </div>
+                </div>{{!-- ./col-md --}}
+
+                <div class="col-md-6">
+                    <div>
+                        <span class="modal-subheader">Adding</span>
+                        <a data-bind="visible: removeAllVisible, click:removeAll">Remove all</a>
+                    </div>
+
+                    {{!-- TODO: Duplication here: Put this in a KO template --}}
+                    <table class="table-condensed">
+                        <thead data-bind="visible: selection().length">
+                            <th width="10%"></th>
+                            <th width="15%"></th>
+                            <th>Name</th>
+                            <th>
+                                Permissions
+                                <i class="fa fa-question-circle permission-info"
+                                        data-toggle="popover"
+                                        data-title="Permission Information"
+                                        data-container="#addContributors"
+                                        data-html="true"
+                                    ></i>
+                            </th>
+                        </thead>
+                        <tbody data-bind="foreach:{data:selection, as: 'contributor', afterRender:makeAfterRender()}">
+                            <tr>
+                                <td class="p-r-sm osf-icon-td">
+                                    <a class="btn btn-default contrib-button btn-mini" data-bind="click:$root.remove.bind($root), tooltip: {title: 'Remove contributor'}">
+                                        <i class="fa fa-minus"></i>
+                                    </a>
+                                </td>
+                                <td>
+                                    {{!-- height and width are explicitly specified for faster rendering --}}
+                                    <img data-bind="attr: {src: contributor.gravatar_url || '/static/img/unreg_gravatar.png'}" height=35 width=35>
+                                </td>
+
+                                <td>
+                                    <span   data-bind="text: contributor.fullname"></span>
+                                    <span class='text-muted' data-bind="visible: !contributor.registered">(unregistered)</span>
+                                </td>
+
+                                <td>
+                                    <select class="form-control input-sm" data-bind="
+                                        options: $root.permissionList,
+                                        value: permission,
+                                        optionsText: 'text'">
+                                    </select>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+        {{/if}}
+        {{!-- Component selection page --}}
+
+        {{#if (eq page 'which')}}
+            <div>
+                Adding contributor(s)
+                {{displayContribNamesToAdd}}
+                to {{model.title}}
+            </div>
+
+            <hr>
+
+            <div style="margin-bottom:10px;">
+                You can also add the contributor(s) to any components on which you are an admin.
+            </div>
+
+            <div>
+                Select:&nbsp;
+                <a class="text-bigger" data-bind="click:selectAllNodes">Select all</a>
+                &nbsp;|&nbsp;
+                <a class="text-bigger" data-bind="click:selectNoNodes">Select none</a>
+            </div>
+            <div class="tb-row-titles">
+                <div style="width: 100%" data-tb-th-col="0" class="tb-th">
+                    <span class="m-r-sm"></span>
+                </div>
+            </div>
+            <div class="osf-treebeard">
+                <div id="addContributorsTreebeard">
+                    <div class="spinner-loading-wrapper">
+                        <div class="logo-spin logo-md"></div>
+                        <p class="m-t-sm fg-load-message"> Loading projects and components...  </p>
+                    </div>
+                </div>
+            </div>
+        {{/if}}
+
+        {{!-- Invite user page --}}
+        {{!-- TODO: This creates unregistered contribs, which is blocked pending OSF changes. Implement/ convert later --}}
+        {{#if (eq page 'invite')}}
+            <form class='form'>
+                <div class="form-group">
+                    <label for="inviteUserName">Full Name</label>
+                    <input type="text" class='form-control' id="inviteName"
+                        placeholder="Full name" data-bind='value: inviteName, valueUpdate: "input"'>
+                </div>
+                <div class="form-group">
+                    <label for="inviteUserEmail">Email</label>
+                    <input type="email" class='form-control' id="inviteUserEmail"
+                            placeholder="Email" data-bind='value: inviteEmail' autofocus>
+                </div>
+                <div class="help-block">
+                    <p>We will notify the user that they have been added to your project.</p>
+                    <p class='text-danger' data-bind='text: inviteError'></p>
+                </div>
+            </form>
+        {{/if}}
+    {{/bs-modal-body}}
+
+    {{#bs-modal-footer}}
+        {{!-- FIXME: Cancel button needs appropriate action --}}
+        <button class="btn btn-default" {{action 'close'}}>Cancel</button>
+
+        {{#if (and contribsToAdd (eq page 'whom'))}}
+            {{!-- TODO: children check should not require server call? --}}
+            {{#if model.children}}
+                <button class="btn btn-primary" {{action 'selectPage' 'which'}}>Next</button>
+            {{else}}
+                <button class="btn btn-success" {{action 'submitContributors'}}>Add</button>
+            {{/if}}
+        {{/if}}
+
+        {{#if (eq page 'which')}}
+            <button class="btn btn-primary" {{action 'selectPage' 'whom'}}>Back</button>
+            <button class="btn btn-success" {{action 'submitContributors'}}>Add</button>
+        {{/if}}
+
+        {{#if (eq page 'invite')}}
+            <button class="btn btn-primary" {{action 'selectPage' 'whom'}}>Back</button>
+            <button class="btn btn-success" {{action 'submitInvite'}} type="submit">Add</button>
+        {{/if}}
+    {{/bs-modal-footer}}
+{{/bs-modal}}

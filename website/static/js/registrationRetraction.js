@@ -21,6 +21,8 @@ var RegistrationRetractionViewModel = oop.extend(
         constructor: function(submitUrl, registrationTitle) {
             this.super.constructor.call(this);
 
+            ko.validation.registerExtenders();
+
             var self = this;
 
             self.submitUrl = submitUrl;

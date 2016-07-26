@@ -250,9 +250,10 @@ $(document).ready(function() {
     });
 
     $('body').on('click', '.tagsinput .tag > span', function(e) {
+      if(e){
         window.location = '/search/?q=(tags:"' + $(e.target).text().toString().trim()+ '")';
+      }
     });
-
 
     // Portlet feature for the dashboard, to be implemented in later versions.
     // $( ".osf-dash-col" ).sortable({
@@ -276,7 +277,8 @@ $(document).ready(function() {
 
         // Remove Comments link from project nav bar for pages not bound to the comment view model
         var commentsLinkElm = document.getElementById('commentsLink');
-        if (!ko.dataFor(commentsLinkElm)) {
+        if (commentsLinkElm) {
+          if(!ko.dataFor(commentsLinkElm))
              commentsLinkElm.remove();
         }
     });
