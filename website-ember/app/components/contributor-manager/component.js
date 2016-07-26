@@ -57,7 +57,10 @@ export default Ember.Component.extend({
             this.toggleProperty('showModalRemoveContributors');
             this.set('canRemoveContributor', this.contributorRemovalPrecheck(contributor, this.get('contributors')));
             this.set('contributorToRemove', contributor);
-        }
+        },
+        removeContributor(contrib) {
+            this.sendAction('removeContributor', contrib);
+        },
     },
     updateAttributes: function(contributors) {
         var proposedChanges = this.checkProposedChanges(contributors);

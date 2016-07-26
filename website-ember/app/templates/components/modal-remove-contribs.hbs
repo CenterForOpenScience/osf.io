@@ -33,8 +33,9 @@
             {{#if (and canRemoveNode (not pageChanged))}}
                 <div class="row">
                     <div  class="remove-page-buttons" align="right">
-                        <a href="#" class="btn btn-default">Cancel</a>
-                        <a class="btn btn-danger">Remove</a>
+                        {{!-- TODO get cancel button to close modal - how to use the bs-modal close action --}}
+                        <button class="btn btn-default"> Cancel </button>
+                        <a class="btn btn-danger" {{action (action 'removeContributor' contributorToRemove)}}>Remove</a>
                     </div>
                 </div>
             {{/if}}
@@ -44,7 +45,8 @@
             {{#if (or (not canRemoveNode) pageChanged)}}
                 <div class="row">
                     <div  class="remove-page-buttons" align="right">
-                        <a href="#" class="btn btn-default">Cancel</a>
+                        {{!-- TODO get cancel button to close modal - how to use the bs-modal close action --}}
+                        <button class="btn btn-default"> Cancel </button>
                     </div>
                 </div>
             {{/if}}

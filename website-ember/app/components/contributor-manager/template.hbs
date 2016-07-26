@@ -60,7 +60,7 @@
                             Remove
                         </button>
 
-                        {{modal-remove-contribs isOpen=showModalRemoveContributors node=node contributorToRemove=contributorToRemove currentUser=currentUser canRemoveNode=canRemoveContributor pageChanged=changed contributors=contributors}}
+                        {{modal-remove-contribs isOpen=showModalRemoveContributors node=node contributorToRemove=contributorToRemove currentUser=currentUser canRemoveNode=canRemoveContributor pageChanged=changed contributors=contributors removeContributor=(action 'removeContributor')}}
                     {{/if}}
                 </td>
             </tr>

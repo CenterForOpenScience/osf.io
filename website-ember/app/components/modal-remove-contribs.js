@@ -7,5 +7,10 @@ export default Ember.Component.extend({
         } else {
             return false;
         }
-    })
+    }),
+    actions: {
+        removeContributor(contrib) {
+            this.sendAction('removeContributor', contrib);
+        },
+    }
 });
