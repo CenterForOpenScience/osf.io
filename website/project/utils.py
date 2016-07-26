@@ -65,17 +65,8 @@ def update_date_modified_task(node_id):
     for contrib in node.contributors:
         contributors_id.append(contrib._id)
     database['user'].update(
-        {
-            '_id': {
-                '$in': contributors_id
-            }
-        },
-
-        {
-            '$set': {
-                'date_modified': now
-            }
-        },
+        {'_id': {'$in': contributors_id}},
+        {'$set': {'date_modified': now}},
         upsert=False,
         multi=True
     )
