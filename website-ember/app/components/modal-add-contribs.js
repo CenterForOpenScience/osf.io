@@ -34,10 +34,13 @@ export default Ember.Component.extend({
 
     // People selected to add as contributors
     contribsToAdd: Ember.A(),
-    contribsNotYetAdded: Ember.computed('searchResults', 'contribsToAdd', function() {
+    contribsNotYetAdded: Ember.computed('searchResults', 'contribsToAdd', function(item) {
         // TODO: Implement: searchResults not yet in contribsToAdd.
         // Use this for rendering the row widget.
-
+        // Search results are users; contribsToAdd are users also.
+        let selected = this.get('contribsToAdd');
+        let searchResults = this.get('searchResults');
+        return searchResults.content.filter((item) => !selected.contains(item));
     }),
     displayContribNamesToAdd: Ember.computed('contribsToAdd', function() {
         // TODO: Implement: join all names in list as string.
@@ -92,18 +95,17 @@ export default Ember.Component.extend({
                 contentType: 'application/json',
                 data: JSON.stringify(simplestQuery)
             });
-            resp = deferredPromise(resp);
-            resp.then((res) => {
+            let promiseResp = deferredPromise(resp);
+            promiseResp.then((res) => {
                 let ids = res.results.map((item) => item.id);
                 // As long as # records < # api results pagesize, this will be fine wrt pagination. (TODO: specify parameter to be safe)
-                if (ids) {
+                if (ids.length) {
                     return this.get('store').query('user', { 'filter[id]': ids.join(',') });
                 } else {
-                    return [];  // TODO: Do something with this result
+                    return Ember.A();  // TODO: Do something with this result
                 }
-            }).catch(() => console.log('Query failed with error'));  // TODO: Show errors to user
-
-            this.set('searchResults', DS.PromiseObject.create({ promise: resp }));
+            }).then((res) => {this.set('searchResults', res); console.log('searchResults are resolved to', res)}
+            ).catch(() => console.log('Query failed with error'));  // TODO: Show errors to user
         },
         importContribsFromParent() {
             //TODO: Import contributors from parent
