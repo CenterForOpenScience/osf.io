@@ -250,7 +250,7 @@ var SignUpViewModel = oop.extend(BaseViewModel, {
             );
         } else {
             self.changeMessage(
-                xhr.responseJSON.message_long,
+                'Your username or email contains invalid characters.',
                 'text-danger p-xs',
                 5000
             );
