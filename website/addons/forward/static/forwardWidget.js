@@ -31,7 +31,7 @@ var ViewModel = function(url) {
     self.queueRedirect = function() {
         self.redirecting(true);
         if (!self.isRegistration()) {
-            $.blockUI({message: $('#forwardModal')});
+            $.blockUI({message: $('#forwardModal'), css: {cursor: ''}, overlayCSS: {cursor: ''}});
         }
     };
 

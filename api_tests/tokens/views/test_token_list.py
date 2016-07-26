@@ -103,6 +103,17 @@ class TestTokenList(ApiTestCase):
         res = self.app.get(self.user1_list_url, expect_errors=True)
         assert_equal(res.status_code, 401)
 
+    def test_cannot_create_admin_token(self):
+        self.sample_data['data']['attributes']['scopes'] = 'osf.admin'
+        res = self.app.post_json_api(self.user1_list_url,
+            self.sample_data,
+            auth=self.user1.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'User requested invalid scope')
+
+
     def tearDown(self):
         super(TestTokenList, self).tearDown()
         ApiOAuth2PersonalToken.remove()
