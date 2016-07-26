@@ -80,7 +80,6 @@ def main(force=False):
             if not user_cache.has_key(user_id):
                 user_obj = User.load(user_id)
                 user_cache[user_id] = {
-                    'anon': md5(session_id).hexdigest(),
                     'entry_point': None if user_obj is None else get_entry_point(user_obj),
                     'locale': user_obj.locale if user_obj else '',
                     'timezone': user_obj.timezone if user_obj else '',
@@ -90,7 +89,6 @@ def main(force=False):
                     ] if user_obj else [],
                 }
 
-            anon_id = user_cache[user_id]['anon']
             user_entry_point = user_cache[user_id]['entry_point']
             user_locale = user_cache[user_id]['locale']
             user_timezone = user_cache[user_id]['timezone']
@@ -227,7 +225,7 @@ def main(force=False):
             },
             'geo': {},
             'anon': {
-                'id': anon_id,
+                'id': md5(session_id).hexdigest(),
                 'continent': getattr(location, 'continent', None),
                 'country': getattr(location, 'country', None),
             },
