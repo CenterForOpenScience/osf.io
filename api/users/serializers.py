@@ -9,7 +9,7 @@ from website.models import User
 from api.base.serializers import (
     JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField
 )
-from api.base.utils import absolute_reverse, has_admin_scope
+from api.base.utils import absolute_reverse
 
 from framework.auth.views import send_confirm_email
 
