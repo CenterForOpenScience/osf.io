@@ -1,4 +1,4 @@
-{{eosf-project-nav node=model user=user}}
+{{eosf-project-nav node=model user=user isProjectContributor=isContributor}}
 
 <br>
 <br>
@@ -91,7 +91,7 @@
             }
         }"> --}}
         <div>
-            {{contributor-manager contributors=model.contributors}}
+            {{contributor-manager contributors=contributors}}
         </div>
         {{!--<div data-bind="visible: $root.empty" class="no-items text-danger m-b-md">
             No contributors found
