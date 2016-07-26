@@ -2728,6 +2728,18 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         return None
 
     @property
+    def templated_from(self):
+        if self.template_node:
+            self.template_node
+        return None
+
+    @property
+    def templated_from_id(self):
+        if self.template_node:
+            return self.template_node._id
+        return None
+
+    @property
     def registered_schema_id(self):
         if self.registered_schema:
             return self.registered_schema[0]._id
