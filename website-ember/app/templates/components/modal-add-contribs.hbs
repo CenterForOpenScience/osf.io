@@ -3,6 +3,8 @@
         <h3 class="modal-title">{{model.title}}</h3>
     {{/bs-modal-header}}
 
+
+    {{!-- TODO: Reset modal when it closes via any means, for next time viewed --}}
     {{#bs-modal-body}}
         {{!-- TODO: break widget pages into separate components, but first, just translate over the OSF code --}}
         {{!-- Whom to add --}}
@@ -38,7 +40,7 @@
                 <div class="col-md-6">
                     <div>
                         <span class="modal-subheader">Results</span>
-                        {{#if showAddAll}}
+                        {{#if showAddAll}} {{!-- TODO: implement --}}
                             <button {{action 'addAllContributors'}} class="btn-link">Add all</button>
                         {{/if}}
                     </div>
@@ -56,7 +58,7 @@
                                             <td class="p-r-sm osf-icon-td" >
                                                 {{#unless person.isContributor}}
                                                     {{!-- TODO: Add arguments to actions --}}
-                                                    <button {{action 'addOneContributor'}}
+                                                    <button {{action 'addOneContributor' person}}
                                                             class="btn btn-success contrib-button btn-mini"
                                                             title="Add contributor">
                                                         <i class="fa fa-plus"></i>
@@ -127,7 +129,7 @@
                     <div>
                         <span class="modal-subheader">Adding</span>
                         {{#if contribsToAdd}}
-                            <button class="btn-link" {{action 'removeAll'}}>Remove all</button>
+                            <button class="btn-link" {{action 'removeAllContributors'}}>Remove all</button>
                         {{/if}}
                     </div>
 
@@ -150,25 +152,27 @@
                                 </th>
                             </thead>
                             <tbody>
-                                {{#each contribsToAdd as |contrib|}}
+                                {{#each contribsToAdd as |person|}}
                                     <tr>
                                         <td class="p-r-sm osf-icon-td">
-                                            <button class="btn btn-default contrib-button btn-mini" {{action 'removeOneContributor'}} title="Remove contributor">
+                                            <button class="btn btn-default contrib-button btn-mini" {{action 'removeOneContributor' person}} title="Remove contributor">
                                                 <i class="fa fa-minus"></i>
                                             </button>
                                         </td>
                                         <td>
                                             {{!-- height and width are explicitly specified for faster rendering --}}
                                             {{!-- TODO: Explore contributor record and see what fields are available on this model --}}
-                                            <img data-bind="attr: {src: contributor.gravatar_url || '/static/img/unreg_gravatar.png'}" height=35 width=35>
+                                            {{!-- TODO: Support a placeholder icon for unregistered contributors : /static/img/unreg_gravatar.png --}}
+                                            <img src="{{person.profileImage}}" height=35 width=35>
                                         </td>
 
                                         <td>
-                                            <span data-bind="text: contributor.fullname"></span>
-                                            <span class='text-muted' data-bind="visible: !contributor.registered">(unregistered)</span>
+                                            {{person.fullName}}
+                                            {{!-- <span class='text-muted' data-bind="visible: !contributor.registered">(unregistered)</span> --}}
                                         </td>
 
                                         <td>
+                                            {{!-- TODO: Write permissions selector (with dropdown of options) --}}
                                             <select class="form-control input-sm" data-bind="
                                                 options: $root.permissionList,
                                                 value: permission,
@@ -243,7 +247,7 @@
     {{/bs-modal-body}}
 
     {{#bs-modal-footer}}
-        {{!-- FIXME: Cancel button needs appropriate action --}}
+        {{!-- FIXME: Cancel button needs appropriate action- how to use the bs-modal close action instead of ours? --}}
         <button class="btn btn-default" {{action 'close'}}>Cancel</button>
 
         {{#if (and contribsToAdd (eq page 'whom'))}}

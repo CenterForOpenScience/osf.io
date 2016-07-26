@@ -42,7 +42,7 @@ export default Ember.Component.extend({
 
     // People selected to add as contributors
     contribsToAdd: Ember.A(),
-    contribsNotYetAdded: Ember.computed('searchResults', 'contribsToAdd', function(item) {
+    contribsNotYetAdded: Ember.computed('searchResults', 'contribsToAdd.[]', function(item) {
         // TODO: Implement: searchResults not yet in contribsToAdd.
         // Use this for rendering the row widget.
         // Search results are users; contribsToAdd are users also.
@@ -130,18 +130,24 @@ export default Ember.Component.extend({
 
         addAllContributors() {
             // TODO: Implement, was addAll in contribAdder.js
-            console.log('Added all available results as contributors');
+            // TODO: Filter out users who are already on the project
+            let users = this.get('searchResults');
+            this.get('contribsToAdd').addObjects(users);
         },
-        addOneContributor() {
+        addOneContributor(user) {
+            // Add the specified search result to the list of users who will be added to the project (pending additional options)
             // TODO: Implement. Was $root.add
+            this.get('contribsToAdd').addObject(user);
         },
         removeAllContributors() {
             // TODO: Implement. Deselects contributors. Was removeAll in contribAdder.js
-            console.log('Will no longer add the selected results as contributors.');
+            // TODO: Make sure this doesn't remove users who are already on the project
+            this.get('contribsToAdd').clear();
         },
-        removeOneContributor() {
+        removeOneContributor(user) {
             // TODO: Implement.  Was $root.remove.
-
+            // Remove the specified search result from the list of users who will be added to the project (pending additional options)
+            this.get('contribsToAdd').removeObject(user);
         },
         submitContributors() {
             console.log('Submitted contributors');
