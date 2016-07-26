@@ -172,6 +172,7 @@ class TestUsersCreate(ApiTestCase):
         )
 
         assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['username'], self.unconfirmed_email)
         assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 1)
         assert_equal(mock_mail.call_count, 1)
 
@@ -203,7 +204,42 @@ class TestUsersCreate(ApiTestCase):
         )
 
         assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['username'], self.unconfirmed_email)
         assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 1)
+        assert_equal(mock_mail.call_count, 0)
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
+    @unittest.skipIf(not settings.DEV_MODE, 'DEV_MODE disabled, osf.users.create unavailable')  # TODO: Remove when available outside of DEV_MODE
+    def test_properly_scoped_token_can_create_without_username_but_not_send_email(self, mock_auth, mock_mail):
+        token = ApiOAuth2PersonalToken(
+            owner=self.user,
+            name='Authorized Token',
+            scopes='osf.users.create'
+        )
+
+        mock_cas_resp = CasResponse(
+            authenticated=True,
+            user=self.user._id,
+            attributes={
+                'accessToken': token.token_id,
+                'accessTokenScope': [s for s in token.scopes.split(' ')]
+            }
+        )
+        mock_auth.return_value = self.user, mock_cas_resp
+
+        self.data['data']['attributes'] = {'full_name': 'No Email'}
+
+        assert_equal(User.find(Q('fullname', 'eq', 'No Email')).count(), 0)
+        res = self.app.post_json_api(
+            '{}?send_email=true'.format(self.base_url),
+            self.data,
+            headers={'Authorization': 'Bearer {}'.format(token.token_id)}
+        )
+
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['username'], None)
+        assert_equal(User.find(Q('fullname', 'eq', 'No Email')).count(), 1)
         assert_equal(mock_mail.call_count, 0)
 
     @mock.patch('framework.auth.views.mails.send_mail')
@@ -265,5 +301,6 @@ class TestUsersCreate(ApiTestCase):
         )
 
         assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['username'], self.unconfirmed_email)
         assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 1)
         assert_equal(mock_mail.call_count, 1)
