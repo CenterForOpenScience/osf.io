@@ -432,11 +432,6 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
     If this node is a child node of another node, the parent's canonical endpoint will be available in the
     `/parent/links/related/href` key.  Otherwise, it will be null.
 
-    ###Primary Institution
-
-    Primary institution associated with node. If no primary institution, `/primary_institution/links/related/href`
-    returns Not Found.
-
     ###Registrations
 
     List of registrations of the current node.
