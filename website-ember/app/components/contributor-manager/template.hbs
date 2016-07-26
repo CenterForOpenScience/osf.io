@@ -56,7 +56,11 @@
                 </td>
                 <td>
                     {{#if (or canEdit (canRemoveContributor contributor currentUser isRegistration))}}
-                        <button class="btn btn-danger btn-sm m-l-md">Remove</button>
+                        <button {{action 'toggleRemoveContributorModal' contributor}} class="btn btn-danger btn-sm m-l-md">
+                            Remove
+                        </button>
+
+                        {{modal-remove-contribs isOpen=showModalRemoveContributors node=node canRemoveNode=canRemoveContributor pageChanged=changed contributors=contributors}}
                     {{/if}}
                 </td>
             </tr>

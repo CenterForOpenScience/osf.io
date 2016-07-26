@@ -14,6 +14,8 @@ export default Ember.Component.extend({
     canSubmit: Ember.computed('hasMinAdmins', 'hasMinBibliographic', 'changed', function() {
         return this.get('hasMinAdmins') && this.get('hasMinBibliographic') && this.get('changed');
     }),
+    showModalRemoveContributors: false,
+    canRemoveContributor: false,
     actions: {
         permissionChange(contributor, contributors, permission) {
             this.set(`permissionChanges.${contributor.id}`, permission);
@@ -49,6 +51,10 @@ export default Ember.Component.extend({
             this.set('changed', false);
             this.set('permissionChanges', {});
             this.set('bibliographicChanges', {});
+        },
+        toggleRemoveContributorModal(contributor) {
+            this.toggleProperty('showModalRemoveContributors');
+            this.set('canRemoveContributor', this.contributorRemovalPrecheck(contributor, this.get('contributors')));
         }
     },
     updateAttributes: function(contributors) {
@@ -96,5 +102,24 @@ export default Ember.Component.extend({
             numAdmins: numAdmins,
             numBibliographic: numBibliographic
         };
+    },
+    contributorRemovalPrecheck: function(contributorToRemove, contributors) {
+        var minAdmins = false;
+        var minBibliographic = false;
+        var minRegisteredContrib = false;
+        contributors.forEach(function(contrib) {
+            if (contrib.id !== contributorToRemove.id) {
+                if (contrib.get('permission') === 'admin') {
+                    minAdmins = true;
+                }
+                if (contrib.get('bibliographic') === true) {
+                    minBibliographic = true;
+                }
+                if (contrib.get('unregisteredContributor') === null) {
+                    minRegisteredContrib = true;
+                }
+            }
+        });
+        return minAdmins && minBibliographic && minRegisteredContrib;
     }
 });
