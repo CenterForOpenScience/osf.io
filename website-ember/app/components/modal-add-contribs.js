@@ -1,9 +1,18 @@
 import Ember from 'ember';
+import DS from 'ember-data';
 
 import deferredPromise from '../utils/deferred-promise';
 
 /**
  * Modal that handles adding and removing contributors from a project
+ *
+ * Sample usage:
+ * ```handlebars
+ * {{modal-add-contribs
+ *   isOpen=showModal
+ *   model=model
+ *   contributors=contributors}}
+ * ```
  * @class modal-add-contribs
  */
 export default Ember.Component.extend({
@@ -94,6 +103,8 @@ export default Ember.Component.extend({
                     return [];  // TODO: Do something with this result
                 }
             }).catch(() => console.log('Query failed with error'));  // TODO: Show errors to user
+
+            this.set('searchResults', DS.PromiseObject.create({ promise:resp }));
         },
         importContribsFromParent() {
             //TODO: Import contributors from parent

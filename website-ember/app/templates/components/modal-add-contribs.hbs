@@ -48,10 +48,13 @@
                     {{#if (and searchResults searchResults.isFulfilled)}}
                         <table class="table-condensed">
                             <tbody>
+                            {{!-- TODO: better name, not yet selected? --}}
                                 {{#each contribsNotYetAdded as |person|}}
                                     {{!-- TODO: Identify mechanism for detecting whether this is selected/ binned --}}
                                     <tr>
                                         <td class="p-r-sm osf-icon-td" >
+
+
                                             <button class="btn btn-success contrib-button btn-mini"
                                                     data-bind="visible: !contributor.added,
                                                                click:$root.add.bind($root)"
