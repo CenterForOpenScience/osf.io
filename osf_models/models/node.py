@@ -42,10 +42,6 @@ class AbstractNode(TypedModel, Loggable, GuidMixin, BaseModel):
     }
 
     affiliated_institutions = models.ManyToManyField('Institution', related_name='nodes')
-    primary_institution = models.ForeignKey(
-        'Institution',
-        related_name='primary_nodes',
-        null=True)
     # alternative_citations = models.ManyToManyField(AlternativeCitation)
     category = models.CharField(max_length=255,
                                 choices=CATEGORY_MAP.items(),
@@ -86,6 +82,10 @@ class AbstractNode(TypedModel, Loggable, GuidMixin, BaseModel):
     # permissions = Permissions are now on contributors
     piwik_site_id = models.IntegerField(null=True)
     public_comments = models.BooleanField(default=True)
+    primary_institution = models.ForeignKey(
+        'Institution',
+        related_name='primary_nodes',
+        null=True)
     root = models.ForeignKey('self',
                              related_name='absolute_parent',
                              on_delete=models.SET_NULL,

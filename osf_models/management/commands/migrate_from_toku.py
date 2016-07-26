@@ -22,7 +22,7 @@ from osf_models.scripts.migrate_nodes import (build_pk_caches,
                                               set_user_foreign_keys_on_users,
                                               set_user_many_to_many_on_nodes,
                                               set_user_many_to_many_on_users, set_retraction_foreign_keys_on_nodes,
-                                              set_embargo_foreign_keys_on_nodes)
+                                              set_embargo_foreign_keys_on_nodes, merge_duplicate_users)
 from osf_models.scripts.verify_guids import main as verify_guids
 from osf_models.scripts.verify_nodelogs import main as verify_nodelogs
 from osf_models.scripts.verify_nodes import main as verify_nodes
@@ -36,15 +36,16 @@ class Command(BaseCommand):
         print 'Initializing Flask App...'
         init_app()
         start = datetime.now()
-
-        load_guids()
-        print 'Loaded Guids in {} seconds...'.format((datetime.now() - start
-                                                      ).total_seconds())
-        snap = datetime.now()
-        load_blacklist_guids()
-        print 'Loaded Blacklist in {} seconds...'.format((datetime.now() - snap
-                                                          ).total_seconds())
-        save_bare_nodes()
+        #
+        # load_guids()
+        # print 'Loaded Guids in {} seconds...'.format((datetime.now() - start
+        #                                               ).total_seconds())
+        # snap = datetime.now()
+        # load_blacklist_guids()
+        # print 'Loaded Blacklist in {} seconds...'.format((datetime.now() - snap
+        #                                                   ).total_seconds())
+        # save_bare_nodes()
+        merge_duplicate_users()
         save_bare_users()
         save_bare_tags()
         save_bare_system_tags()

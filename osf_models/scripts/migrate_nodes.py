@@ -155,6 +155,61 @@ def save_bare_nodes(page_size=20000):
         (datetime.now() - start).total_seconds())
 
 
+def merge_duplicate_users():
+    print 'Starting {}...'.format(sys._getframe().f_code.co_name)
+    start = datetime.now()
+
+    from framework.mongo.handlers import database
+
+    duplicates = database.user.aggregate([
+        {
+            "$group": {
+                "_id": "$username",
+                "ids": {"$addToSet": "$_id"},
+                "count": {"$sum": 1}
+            }
+        },
+        {
+            "$match": {
+                "count": {"$gt": 1}
+            }
+        },
+        {
+            "$sort": {
+                "count": -1
+            }
+        }
+    ]).get('result')
+    # [
+    #   {
+    #       'count': 5,
+    #       '_id': 'duplicated@username.com',
+    #       'ids': [
+    #           'listo','fidst','hatma','tchth','euser','name!'
+    #       ]
+    #   }
+    # ]
+    print 'Found {} duplicate usernames.'.format(len(duplicates))
+    for duplicate in duplicates:
+        print 'Found {} copies of {}'.format(len(duplicate.get('ids')), duplicate.get('_id'))
+        if duplicate.get('_id'):
+            # _id is an email address, merge users keeping the one that was logged into last
+            users = list(MODMUser.find(MQ('_id', 'in', duplicate.get('ids'))).sort('-last_login'))
+            best_match = users.pop()
+            for user in users:
+                print 'Merging user {} into user {}'.format(user._id, best_match._id)
+                best_match.merge_user(user)
+        else:
+            # _id is null, set all usernames to their guid
+            users = MODMUser.find(MQ('_id', 'in', duplicate.get('ids')))
+            for user in users:
+                print 'Setting username for {}'.format(user._id)
+                user.username = user._id
+                user.save()
+    print 'Done with {} in {} seconds...'.format(
+        sys._getframe().f_code.co_name,
+        (datetime.now() - start).total_seconds())
+
 def save_bare_users(page_size=20000):
     print 'Starting {}...'.format(sys._getframe().f_code.co_name)
     count = 0

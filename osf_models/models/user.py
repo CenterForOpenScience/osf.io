@@ -140,6 +140,7 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin):
     # confirmed emails
     #   emails should be stripped of whitespace and lower-cased before appending
     # TODO: Add validator to ensure an email address only exists once across
+    # TODO: Change to m2m field per @sloria
     # all User's email lists
     emails = DateTimeAwareJSONField(default={})
 
@@ -264,7 +265,7 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin):
     # whether the user has requested to deactivate their account
     requested_deactivation = models.BooleanField(default=False)
 
-    _affiliated_institutions = models.ManyToManyField('Node')
+    _affiliated_institutions = models.ManyToManyField('Institution')
 
     notifications_configured = DateTimeAwareJSONField(default={})
 
