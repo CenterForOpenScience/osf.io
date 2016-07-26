@@ -1036,6 +1036,16 @@ class TestResetPassword(OsfTestCase):
         form['password2'] = 'newpassword'
         res = form.submit()
 
+    # successfully reset password if osf verification_key(OSF) is valid and form is valid
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_can_reset_password_if_form_success(self, mock_service_validate):
+        # load reset password page and submit email
+        res = self.app.get(self.get_url)
+        form = res.forms['resetPasswordForm']
+        form['password'] = 'newpassword'
+        form['password2'] = 'newpassword'
+        res = form.submit()
+
         # check request URL is /resetpassword with verification_key(OSF)
         request_url_path = res.request.path
         assert_in('resetpassword', request_url_path)
@@ -1067,7 +1077,6 @@ class TestResetPassword(OsfTestCase):
         service_url = 'http://accounts.osf.io/?ticket=' + ticket
         resp = cas.make_response_from_ticket(ticket, service_url)
         assert_not_equal(self.user.verification_key, self.cas_key)
-
     #  logged-in user should be automatically logged out upon before reset password
     def test_reset_password_logs_out_user(self):
         # visit reset password link while another user is logged in

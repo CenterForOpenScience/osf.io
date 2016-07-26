@@ -1,6 +1,6 @@
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
+from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed
 from rest_framework.status import HTTP_204_NO_CONTENT
 from rest_framework.response import Response
 
@@ -52,7 +52,7 @@ from api.nodes.permissions import (
     IsPublic,
     AdminOrPublic,
     ContributorOrPublic,
-    ContributorOrPublicForPointers,
+    RegistrationAndPermissionCheckForPointers,
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
     IsAdminOrReviewer,
@@ -623,16 +623,20 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
     serializer_class = NodeContributorsSerializer
     view_category = 'nodes'
     view_name = 'node-contributors'
+    ordering = ('index',)  # default ordering
 
     def get_default_queryset(self):
         node = self.get_node()
         visible_contributors = set(node.visible_contributor_ids)
         contributors = []
+        index = 0
         for contributor in node.contributors:
+            contributor.index = index
             contributor.bibliographic = contributor._id in visible_contributors
             contributor.permission = node.get_permissions(contributor)[-1]
             contributor.node_id = node._id
             contributors.append(contributor)
+            index += 1
         return contributors
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDeleteJSONAPIView
@@ -871,7 +875,6 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
         IsAdmin,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        ExcludeWithdrawals
     )
 
     required_read_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_READ]
@@ -1292,7 +1295,6 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
-        ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
         ExcludeWithdrawals,
     )
@@ -1315,6 +1317,13 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
         auth = get_user_auth(self.request)
+        node = get_object_or_error(
+            Node,
+            self.kwargs[self.node_lookup_url_kwarg],
+            display_name='node'
+        )
+        if node.is_registration:
+            raise MethodNotAllowed(method=self.request.method)
         node = self.get_node()
         try:
             node.rm_pointer(instance, auth=auth)
@@ -1372,10 +1381,9 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
     #This Request/Response
     """
     permission_classes = (
-        ContributorOrPublicForPointers,
-        drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        ReadOnlyIfRegistration,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        RegistrationAndPermissionCheckForPointers,
         ExcludeWithdrawals
     )
 
@@ -1385,16 +1393,15 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
     serializer_class = NodeLinksSerializer
     view_category = 'nodes'
     view_name = 'node-pointer-detail'
+    node_link_lookup_url_kwarg = 'node_link_id'
 
     # overrides RetrieveAPIView
     def get_object(self):
-        node_link_lookup_url_kwarg = 'node_link_id'
         node_link = get_object_or_error(
             Pointer,
-            self.kwargs[node_link_lookup_url_kwarg],
+            self.kwargs[self.node_link_lookup_url_kwarg],
             'node link'
         )
-        # May raise a permission denied
         self.check_object_permissions(self.request, node_link)
         return node_link
 
@@ -2697,6 +2704,7 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
         user = self.request.user
         current_insts = {inst._id: inst for inst in instance['data']}
         node = instance['self']
+
         for val in data:
             if val['id'] in current_insts:
                 node.remove_affiliated_institution(inst=current_insts[val['id']], user=user)

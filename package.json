@@ -1,6 +1,6 @@
 {
   "name": "OSF",
-  "version": "0.82.0",
+  "version": "0.83.0",
   "description": "Facilitating Open Science",
   "repository": "https://github.com/CenterForOpenScience/osf.io",
   "author": "Center for Open Science",
@@ -45,7 +45,7 @@
     "markdown-it-ins-del": "^0.1.1",
     "markdown-it-sanitizer": "~0.3.0",
     "markdown-it-toc": "~1.1.0",
-    "markdown-it-video": "~0.2.1",
+    "markdown-it-video": "~0.4.0",
     "mime-types": "~2.0.12",
     "mithril": "0.2.0",
     "moment": "^2.14.1",
@@ -64,7 +64,8 @@
     "url-loader": "^0.5.5",
     "uuid": "^2.0.1",
     "webpack": "^1.7.2",
-    "ws": "~0.4.32"
+    "ws": "~0.4.32",
+    "zxcvbn": "^4.2.0"
   },
   "devDependencies": {
     "chai": "^2.1.1",

@@ -844,10 +844,10 @@ class TestBulkDeleteNodeLinks(ApiTestCase):
     def test_cannot_delete_if_registration(self):
         registration = RegistrationFactory(project=self.public_project)
 
-        url = '/{}nodes/{}/node_links/'.format(API_BASE, registration._id)
+        url = '/{}registrations/{}/node_links/'.format(API_BASE, registration._id)
 
         res = self.app.delete_json_api(url, self.public_payload, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 405)
 
     def test_bulk_deletes_public_node_pointers_logged_out(self):
         res = self.app.delete_json_api(self.public_url, self.public_payload, expect_errors=True, bulk=True)
