@@ -4,6 +4,8 @@ import httplib as http
 import math
 from itertools import islice
 
+from bleach import linkify
+
 from flask import request
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException, ValidationValueError
