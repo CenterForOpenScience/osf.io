@@ -1,6 +1,6 @@
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, PermissionDenied
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -374,12 +374,17 @@ class FileList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMixin
     def get_queryset(self):
         queryset = self.get_queryset_from_request()
 
-        # If bulk request, queryset only contains contributors in request
         if is_bulk_request(self.request):
             file_ids = [item['id'] for item in self.request.data]
             queryset = [file for file in queryset if file._id in file_ids]
 
         return queryset
+
+    def bulk_update(self, request, *args, **kwargs):
+        if self.kwargs.get('provider') != 'osfstorage':
+            raise PermissionDenied(detail='Bulk file operations are only allowed on osfstorage')
+
+        return super(FileList, self).bulk_update(request, *args, **kwargs)
 
 
 class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
