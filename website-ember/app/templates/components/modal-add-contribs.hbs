@@ -51,50 +51,51 @@
                                 <tbody>
                                 {{!-- TODO: better name, not yet selected? --}}
                                     {{#each contribsNotYetAdded as |person|}}
-                                        {{!-- TODO: Identify mechanism for detecting whether this is selected/ binned --}}
+                                        {{!-- TODO: Identify mechanism for detecting whether this person is already on the project --}}
                                         <tr>
                                             <td class="p-r-sm osf-icon-td" >
-
-
-                                                <button class="btn btn-success contrib-button btn-mini"
-                                                        data-bind="visible: !contributor.added,
-                                                                   click:$root.add.bind($root)"
-                                                        title="Add contributor">
-                                                    <i class="fa fa-plus"></i>
-                                                </button>
-                                                <div data-bind="visible: contributor.added,
-                                                                tooltip: {title: 'Already added'}">
-                                                    <div class="btn btn-default contrib-button btn-mini disabled">
+                                                {{#unless person.isContributor}}
+                                                    {{!-- TODO: Add arguments to actions --}}
+                                                    <button {{action 'addOneContributor'}}
+                                                            class="btn btn-success contrib-button btn-mini"
+                                                            title="Add contributor">
+                                                        <i class="fa fa-plus"></i>
+                                                    </button>
+                                                {{else}}
+                                                    <div class="btn btn-default contrib-button btn-mini disabled" title="Already added">
                                                         <i class="fa fa-check"></i>
                                                     </div>
-                                                </div>
+                                                {{/unless}}
                                             </td>
                                             <td>
                                                 {{!-- height and width are explicitly specified for faster rendering --}}
-                                                <img data-bind="attr: {src: contributor.gravatar_url}" height=35 width=35>
+                                                <img src="{{person.profileImage}}" height=35 width=35>
                                             </td>
                                             <td width="75%">
-                                                <a data-bind="attr: {href: contributor.profile_url}" target="_blank">
-                                                    <span data-bind="text:contributor.fullname"></span>
+                                                <a href="{{person.profileURL}}" target="_blank">
+                                                    {{person.fullName}}
                                                 </a>
                                                 <br>
 
+                                                {{!-- TODO: Identify datasource for these fields in API response and add to model as appropriate --}}
+                                                {{!--
                                                 <span data-bind="if: contributor.employment">
                                                     <span class='small'
                                                         data-bind="text: contributor.employment">
                                                     </span><br>
                                                 </span>
-
                                                 <span data-bind="if: contributor.education">
                                                     <span
                                                         class='small'
                                                         data-bind="text: contributor.education">
                                                     </span><br>
                                                 </span>
+
                                                 <span class='small'
                                                       data-bind="text: contributor.displayProjectsInCommon">
                                                 </span>
                                                 <span class='text-muted' data-bind="visible: !contributor.registered">(unregistered)</span>
+                                                --}}
                                             </td>
                                         </tr>
                                     {{/each}}

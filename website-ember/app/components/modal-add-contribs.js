@@ -4,6 +4,14 @@ import DS from 'ember-data';
 import deferredPromise from '../utils/deferred-promise';
 
 /**
+ * Wraps user data with additional properties to track whether a given user is a contributor on this project
+ * @class OneContributor
+ */
+let OneContributor = Ember.ObjectProxy.extend({
+    isContributor: false
+});
+
+/**
  * Modal that handles adding and removing contributors from a project
  *
  * Sample usage:
@@ -40,7 +48,7 @@ export default Ember.Component.extend({
         // Search results are users; contribsToAdd are users also.
         let selected = this.get('contribsToAdd');
         let searchResults = this.get('searchResults');
-        return searchResults.content.filter((item) => !selected.contains(item));
+        return searchResults.filter((item) => !selected.contains(item));
     }),
     displayContribNamesToAdd: Ember.computed('contribsToAdd', function() {
         // TODO: Implement: join all names in list as string.
@@ -104,8 +112,16 @@ export default Ember.Component.extend({
                 } else {
                     return Ember.A();  // TODO: Do something with this result
                 }
-            }).then((res) => {this.set('searchResults', res); console.log('searchResults are resolved to', res)}
-            ).catch(() => console.log('Query failed with error'));  // TODO: Show errors to user
+            }).then((res) => {
+                // Annotate each user search result based on whether they are a project contributor
+                let contributorIds = this.get('contributors').map((item) => item.get('userId'));
+                return res.map((item) => OneContributor.create({
+                        content: item,
+                        isContributor: contributorIds.contains(item.id)
+                    }));
+                })
+            .then((res) => this.set('searchResults', res)
+            ).catch((error) => console.log('Query failed with error', error));  // TODO: Show errors to user
         },
         importContribsFromParent() {
             //TODO: Import contributors from parent
