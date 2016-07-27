@@ -8,11 +8,11 @@
 
             {{!-- TODO Get removing contributors from both project and components working (BULK delete does not work on staging 2)
             See modal_remove_contributor.mako for sample template and contribRemover.js for guidance --}}
-                <div class="form-group">
-                    <span>
-                        Remove <b> {{if removeSelf 'yourself' (contributorName contributorToRemove)}} </b> from <span>{{node.title}}</span>?
-                    </span>
-                </div>
+            <div class="form-group">
+                <span>
+                    Remove <b> {{if removeSelf 'yourself' (contributorName contributorToRemove)}} </b> from <span>{{node.title}}</span>?
+                </span>
+            </div>
         {{/if}}
 
         {{#if (and (not canRemoveNode) (not pageChanged))}}
