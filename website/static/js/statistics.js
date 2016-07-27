@@ -4,6 +4,7 @@ require('keen-dataviz/dist/keen-dataviz.min.css');
 
 var oop = require('js/oop');
 var $osf = require('js/osfHelpers');
+var moment = require('moment');
 var keenDataset = require('keen-dataset');
 var keenDataviz = require('keen-dataviz');
 var keenAnalysis = require('keen-analysis');
@@ -84,9 +85,12 @@ var UserFacingChart = oop.defclass({
         var self = this;
 
         var baseQuery = self.baseQuery();
+        // use moment to get local time offset.  Keen will divide daily intervals on midnight local
+        // time, as calculated by the offset.  Passing Zulu time will cause days to always be
+        // segmented on midnight UTC, regardless of user's local TZ.
         baseQuery.params.timeframe = {
-            start: self.startDate.toISOString(),
-            end: self.endDate.toISOString(),
+            start: moment(self.startDate).format(),
+            end: moment(self.endDate).format(),
         };
         return baseQuery;
     },

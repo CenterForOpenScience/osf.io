@@ -7,8 +7,26 @@
 
 % if not node['is_public']:
     <div class="row m-lg">
-        <div class="col-xs-12 text-center">
-            <img src="/static/img/no_analytics.png">
+        <div class="col-xs-12 no-analytics">
+          <p>
+            Analytics are not available for private projects. To view
+            Analytics, make your project public by selecting Make
+            Public from the project overview page. Public projects:
+          </p>
+
+          <ul>
+            <li>are discoverable</li>
+            <li>are citable</li>
+            <li>can be affiliated with OSF for Institutions partners</li>
+            <li>promote open practices among peers</li>
+          </ul>
+
+          <p>
+            Receive data on visitors to your project by enabling
+            Analytics and begin discovering the impact of your work.
+          </p>
+
+          <img src="/static/img/no_analytics.png">
         </div>
     </div>
 % else:
