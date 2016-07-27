@@ -5,6 +5,7 @@ from modularodm.exceptions import ValidationValueError
 
 from website.project.model import Node
 from website.notifications.constants import NOTIFICATION_TYPES, NODE_SUBSCRIPTIONS_AVAILABLE, USER_SUBSCRIPTIONS_AVAILABLE
+import re
 
 
 def validate_subscription_type(value):
@@ -13,7 +14,10 @@ def validate_subscription_type(value):
 
 
 def validate_event_type(value):
-    if value not in (NODE_SUBSCRIPTIONS_AVAILABLE or USER_SUBSCRIPTIONS_AVAILABLE):
+    prefix = re.compile('[[a-zA-Z0-9]*_]?')
+    if prefix.search(value):
+        value = 'file_updated'
+    if value not in NODE_SUBSCRIPTIONS_AVAILABLE and value not in USER_SUBSCRIPTIONS_AVAILABLE:
         raise ValidationValueError
 
 
