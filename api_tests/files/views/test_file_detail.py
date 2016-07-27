@@ -57,6 +57,13 @@ class TestFileView(ApiTestCase):
         assert_is_not_none(guid)
         assert_equal(res.json['data']['attributes']['guid'], guid._id)
 
+    def test_file_guid_created_with_query_param(self):
+        res = self.app.get(self.file_url + '?create_guid=1', auth=self.user.auth)
+        guid = self.file.get_guid(create=True)
+        assert_equal(res.status_code, 200)
+        assert_is_not_none(guid)
+        assert_equal(res.json['data']['attributes']['guid'], guid._id)
+
     def test_get_file(self):
         res = self.app.get(self.file_url, auth=self.user.auth)
         self.file.versions[-1]._clear_caches()

@@ -13,7 +13,7 @@ from website.files.models import (
 
 from api.base.exceptions import Gone
 from api.base.permissions import PermissionWithGetter
-from api.base.utils import get_object_or_error
+from api.base.utils import get_object_or_error, get_user_auth
 from api.base.views import JSONAPIBaseView
 from api.base import permissions as base_permissions
 from api.nodes.permissions import ContributorOrPublic
@@ -300,8 +300,8 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
 
     ##Query Params
 
-    For this endpoint, *none*.  Actions may permit or require certain query parameters.  See the individual action
-    documentation.
+     For this endpoint, *none*.  Actions may permit or require certain query parameters.  See the individual action
+     documentation.
 
     #This Request/Response
 
@@ -326,8 +326,12 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
 
     # overrides RetrieveAPIView
     def get_object(self):
-        return self.get_file()
+        user = get_user_auth(self.request).user
 
+        if self.request.GET.get('create_guid', False) and self.get_node().has_permission(user, 'admin'):
+            self.get_file(check_permissions=True).get_guid(create=True)
+
+        return self.get_file()
 
 class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
     """List of versions for the requested file. *Read-only*.
