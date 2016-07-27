@@ -1,0 +1,15 @@
+{{#bs-modal open=isOpen body=false header=false footer=false}}
+    {{#bs-modal-header}}
+        <h3 class="modal-title">Save changes?</h3>
+    {{/bs-modal-header}}
+    {{#bs-modal-body}}
+        Are you sure you want to save these changes?
+    {{/bs-modal-body}}
+
+    {{#bs-modal-footer}}
+        <div align="right">
+            <button {{action 'close'}} class="btn btn-default"> Cancel </button>
+            <a class="btn btn-success" {{action (action 'updateContributors' contributorToRemove)}}>Save</a>
+        </div>
+    {{/bs-modal-footer}}
+{{/bs-modal}}

@@ -15,6 +15,7 @@ export default Ember.Component.extend({
         return this.get('hasMinAdmins') && this.get('hasMinBibliographic') && this.get('changed');
     }),
     showModalRemoveContributors: false,
+    showModalSaveContributors: false,
     canRemoveContributor: false,
     contributorToRemove: null,
     actions: {
@@ -57,6 +58,9 @@ export default Ember.Component.extend({
             this.toggleProperty('showModalRemoveContributors');
             this.set('canRemoveContributor', this.contributorRemovalPrecheck(contributor, this.get('contributors')));
             this.set('contributorToRemove', contributor);
+        },
+        toggleSaveContributorModal(contributor) {
+            this.toggleProperty('showModalSaveContributors');
         },
         removeContributor(contrib) {
             this.sendAction('removeContributor', contrib);

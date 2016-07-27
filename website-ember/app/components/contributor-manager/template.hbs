@@ -59,7 +59,6 @@
                         <button {{action 'toggleRemoveContributorModal' contributor}} class="btn btn-danger btn-sm m-l-md">
                             Remove
                         </button>
-
                         {{modal-remove-contribs isOpen=showModalRemoveContributors node=node contributorToRemove=contributorToRemove currentUser=currentUser canRemoveNode=canRemoveContributor pageChanged=changed contributors=contributors removeContributor=(action 'removeContributor')}}
                     {{/if}}
                 </td>
@@ -74,7 +73,8 @@
             <a {{action 'cancel'}} class="btn btn-danger contrib-button">Discard Changes</a>
         {{/if}}
         {{#if canSubmit}}
-            <a {{action 'updateContributors'}} class="btn btn-success contrib-button">Save Changes</a>
+            <button {{action 'toggleSaveContributorModal'}} class='btn btn-success contrib-button'> Save Changes </button>
+            {{modal-save-contribs isOpen=showModalSaveContributors refreshView=(action 'cancel') updateContributors=(action 'updateContributors')}}
         {{/if}}
     {{/if}}
 </div>
