@@ -63,14 +63,16 @@ var RegistrationViewModel = function(confirm, prompts, validator) {
         return moment(new Date(self.pikaday()));
     });
 
-    self.embargoIsLongEnough = function (x, y, embargoLocalDateTime) {
-        var min = getMinimumDate(embargoLocalDateTime),
+    self._now = function() { return new Date(); };  // this is a hook for testing
+
+    self.embargoIsLongEnough = function(value, otherValue) {
+        var min = moment(self._now()).add(2, 'days'),
             end = self.embargoEndDate();
         return end.isAfter(min) && end.isSameOrAfter(todayMinimum);
     };
 
-    self.embargoIsShortEnough = function (x, y, embargoLocalDateTime) {
-        var max = getMaximumDate(embargoLocalDateTime),
+    self.embargoIsShortEnough = function(value, otherValue) {
+        var max = moment(self._now()).add(4, 'years').subtract(1, 'days'),
             end = self.embargoEndDate();
         return end.isBefore(max) && end.isSameOrBefore(todayMaximum);
     };
@@ -125,11 +127,3 @@ RegistrationViewModel.prototype.register = function() {
 module.exports = {
     ViewModel: RegistrationViewModel
 };
-
-function getMinimumDate(embargoLocalDateTime) {
-    return moment(embargoLocalDateTime).add(2, 'days');
-}
-
-function getMaximumDate(embargoLocalDateTime) {
-    return moment(embargoLocalDateTime).add(4, 'years').subtract(1, 'days');
-}
