@@ -255,9 +255,8 @@
         {{/if}}
     {{/bs-modal-body}}
 
-    {{#bs-modal-footer}}
-        {{!-- FIXME: Cancel button needs appropriate action- how to use the bs-modal close action instead of ours? --}}
-        <button class="btn btn-default" {{action 'close'}}>Cancel</button>
+    {{#bs-modal-footer as |footer|}}
+        <button class="btn btn-default" {{action 'close' target=footer}}>Cancel</button>
 
         {{#if (and contribsToAdd (eq page 'whom'))}}
             {{!-- {{#if node.children}}

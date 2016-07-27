@@ -140,7 +140,7 @@ export default Ember.Component.extend({
                 // As long as # records < # api results pagesize, this will be fine wrt pagination. (TODO: specify parameter to be safe)
                 return this._getUsersFromIds(userIdList);
             }).then((res) => {
-                // Annotate each user search result based on whether they are a project contributor
+                // Annotate each user search result based on whether they are a known project contributor
                 let contributorIds = this.get('contributors').map((item) => item.get('userId'));
                 return res.map((item) => this._wrapUserAsContributor(item,
                     { isContributor: contributorIds.contains(item.id) }
@@ -155,14 +155,13 @@ export default Ember.Component.extend({
 
         addAllContributors() {
             // Select all available search results, and add them to the list of people who will be added to the project (pending additional options)
-            // TODO: Implement, was addAll in contribAdder.js
-            // TODO: Filter out users who are already on the project
-            let users = this.get('usersFound');
+            // was addAll in contribAdder.js
+            let users = this.get('usersFound').filterBy('isContributor', false);
             this.get('contribsToAdd').addObjects(users);
         },
         addOneContributor(user) {
             // Add the specified search result to the list of users who will be added to the project (pending additional options)
-            // TODO: Implement. Was $root.add
+            // Was $root.add
             this.get('contribsToAdd').addObject(user);
         },
         removeAllContributors() {
@@ -170,21 +169,15 @@ export default Ember.Component.extend({
             this.get('contribsToAdd').clear();
         },
         removeOneContributor(user) {
-            // TODO: Implement.  Was $root.remove.
+            // Was $root.remove.
             // Remove the specified search result from the list of users who will be added to the project (pending additional options)
             this.get('contribsToAdd').removeObject(user);
         },
         submitContributors() {
             // Intended to work with the addContributor action of `NodeActionsMixin`
-            console.log('Submitted contributors');
-            // TODO: Implement. Send contribs list to server.
-            // 1. Send a series of requests (no bulk support, sorry)
-            // 2. Monitor return values for all succeeding
-            // 3. Update the list of contributors manually to reflect new results
-            // 4. Close the modal when done
-            // Optional: warn user if some of the contrib add requests failed?
+            // TODO: This would benefit from bulk support. Error handling mechanism should deal with one/all requests failing
+            // TODO: This should close the modal when done
             let contribsToAdd = this.get('contribsToAdd');
-            // TODO: Handle promise (maybe map, not foreach, and rsvp.allsettled)
             contribsToAdd.forEach((item) => {
                 console.log('Adding:', item.get('fullName'));
                 this.attrs.addContributor(item.get('id'), item.get('selectedPermission'), true)
