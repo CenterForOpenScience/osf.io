@@ -8,7 +8,7 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
-from api.base.exceptions import InvalidModelValueError, JSONAPIException
+from api.base.exceptions import InvalidModelValueError, JSONAPIException, Gone
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.parsers import (
@@ -649,10 +649,16 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView
     def get_queryset(self):
         queryset = self.get_queryset_from_request()
-
         # If bulk request, queryset only contains contributors in request
         if is_bulk_request(self.request):
-            contrib_ids = [item['id'] for item in self.request.data]
+            contrib_ids = []
+            for item in self.request.data:
+                try:
+                    contrib_ids.append(item['id'].split('-')[1])
+                except AttributeError:
+                    raise ValidationError('Contributor identifier not provided.')
+                except IndexError:
+                    raise ValidationError('Contributor identifier incorrectly formatted.')
             queryset[:] = [contrib for contrib in queryset if contrib._id in contrib_ids]
         return queryset
 
@@ -676,6 +682,25 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
         removed = node.remove_contributor(instance, auth)
         if not removed:
             raise ValidationError('Must have at least one registered admin contributor')
+
+    # Overrides BulkDestroyJSONAPIView
+    def get_requested_resources(self, request):
+        requested_ids = []
+        for data in request.data:
+            try:
+                requested_ids.append(data['id'].split('-')[1])
+            except IndexError:
+                raise ValidationError('Contributor identifier incorrectly formatted.')
+
+        resource_object_list = User.find(Q('_id', 'in', requested_ids))
+        for resource in resource_object_list:
+            if getattr(resource, 'is_deleted', None):
+                raise Gone
+
+        if len(resource_object_list) != len(request.data):
+            raise ValidationError({'non_field_errors': 'Could not find all objects to delete.'})
+
+        return resource_object_list
 
 
 class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
