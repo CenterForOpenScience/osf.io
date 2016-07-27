@@ -193,7 +193,7 @@ export default Ember.Component.extend({
             // TODO: This would benefit from bulk support. Error handling mechanism should deal with one/all requests failing
             let contribsToAdd = this.get('contribsToAdd');
             contribsToAdd.forEach((item) => {
-                this.attrs.addContributor(item.get('id'), item.get('selectedPermission'), true)
+                this.attrs.addContributor(item.get('id'), item.get('selectedPermissions'), true)
                     .then(() => {
                         item.set('isContributor', true);
                         this.send('removeOneContributor', item);
