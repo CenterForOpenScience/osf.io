@@ -108,16 +108,21 @@
                             {{!-- <ul class="pagination pagination-sm" data-bind="foreach: paginators">
                                 <li data-bind="css: style"><a href="#" data-bind="click: handler, text: text"></a></li>
                             </ul> --}}
+
+                            {{!-- TODO: Restore this when unregistered contributors are implemented in the API
                             <p>
                                 <button {{action 'selectPage' 'invite'}} class="btn-link">Add <strong><em>{{_searchText}}</em></strong> as an unregistered contributor</button>.
                             </p>
+                            --}}
                         {{else}}
-                            No results found. Try a more specific search or
+                            No results found.
+                        {{!-- TODO: Restore this when implemented in the API
+                            Try a more specific search or
                             <button {{action 'selectPage' 'invite'}} class="btn-link">add <strong><em>{{_searchText}}</em></strong> as an unregistered contributor</button>.
+                            --}}
                         {{/if}}
                     {{/if}}
 
-                    {{!-- Link to add non-registered contributor --}}
                     {{#if usersFound.isPending}}  {{!-- TODO: replace with loading state watcher --}}
                         <div class='help-block'>
                             <p class="text-muted">Searching contributors...</p>
@@ -255,12 +260,12 @@
         <button class="btn btn-default" {{action 'close'}}>Cancel</button>
 
         {{#if (and contribsToAdd (eq page 'whom'))}}
-            {{!-- TODO: children check should not require server call? --}}
-            {{#if node.children}}
+            {{!-- {{#if node.children}}
+                TODO: suppress "select child components" page until treebeard equivalent available. Also, children check should not require server call
                 <button class="btn btn-primary" {{action 'selectPage' 'which'}}>Next</button>
-            {{else}}
-                <button class="btn btn-success" {{action 'submitContributors'}}>Add</button>
-            {{/if}}
+            {{else}}  --}}
+            <button class="btn btn-success" {{action 'submitContributors'}}>Add</button>
+            {{!-- {{/if}} --}}
         {{/if}}
 
         {{#if (eq page 'which')}}
