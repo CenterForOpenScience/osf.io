@@ -5,7 +5,7 @@ from modularodm import Q
 import gc
 from framework.guid.model import Guid as MODMGuid
 
-from osf_models.models import Node, User, Tag, Guid, Contributor
+from osf_models.models import Node, OSFUser, Tag, Guid, Contributor
 
 
 def verify_contributors(node, modm_node):

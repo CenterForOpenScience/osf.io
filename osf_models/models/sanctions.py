@@ -1,20 +1,23 @@
 import functools
 
+from modularodm import Q
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from osf_models.models import MetaSchema
 from osf_models.models.base import BaseModel
 from osf_models.utils.base import get_object_id
 from django.db import models
-from osf_models.utils.datetime_aware_jsonfield import DatetimeAwareJSONField
-from website import (tokens, settings, mails)
+from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from website import (tokens, mails)
 from website.exceptions import InvalidSanctionRejectionToken, InvalidSanctionApprovalToken
+from django.conf import settings
+from website import settings as osf_settings
 
 from dateutil.parser import parse as parse_date
 
 from website.prereg import utils as prereg_utils
 
-VIEW_PROJECT_URL_TEMPLATE = settings.DOMAIN + '{node_id}/'
+VIEW_PROJECT_URL_TEMPLATE = osf_settings.DOMAIN + '{node_id}/'
 
 
 class PreregCallbackMixin(object):
@@ -36,7 +39,7 @@ class Sanction(BaseModel):
     STATE_CHOICES = ((UNAPPROVED, UNAPPROVED.title()),
                      (APPROVED, APPROVED.title()),
                      (REJECTED, REJECTED.title()),
-                     (COMPLETED, COMPLETED.title()), )
+                     (COMPLETED, COMPLETED.title()),)
 
     DISPLAY_NAME = 'Sanction'
     # SHORT_NAME must correspond with the associated foreign field to query against,
@@ -63,7 +66,7 @@ class Sanction(BaseModel):
     #     'approval_token': 'Pew7wj1Puf7DENUPFPnXSwa1rf3xPN',
     #     'rejection_token': 'TwozClTFOic2PYxHDStby94bCQMwJy'}
     # }
-    approval_state = DatetimeAwareJSONField(default={})
+    approval_state = DateTimeAwareJSONField(default={})
 
     # Expiration date-- Sanctions in the UNAPPROVED state that are older than their end_date
     # are automatically made ACTIVE by a daily cron job
@@ -270,7 +273,7 @@ class EmailApprovableSanction(TokenApprovableSanction):
     #     'reject': [REJECT_URL],
     #   }
     # }
-    stashed_urls = DatetimeAwareJSONField(default={})
+    stashed_urls = DateTimeAwareJSONField(default={})
 
     @staticmethod
     def _format_or_empty(template, context):
@@ -370,7 +373,7 @@ class PreregCallbackMixin(object):
         if prereg_schema in registration.registered_schema:
             return {
                 'custom_message':
-                ' as part of the Preregistration Challenge (https://cos.io/prereg)'
+                    ' as part of the Preregistration Challenge (https://cos.io/prereg)'
             }
         else:
             return {}
@@ -386,10 +389,10 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
     NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_EMBARGO_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
-    APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
-    REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
+    APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
+    REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    initiated_by = models.ForeignKey('User', null=True)
+    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True)
     for_existing_registration = models.BooleanField(default=False)
 
     @property
@@ -442,7 +445,7 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
         if approval_token:
             registration = self._get_registration()
             node_id = user_approval_state.get('node_id', registration._id)
-            return {'node_id': node_id, 'token': approval_token, }
+            return {'node_id': node_id, 'token': approval_token,}
 
     def _rejection_url_context(self, user_id):
         user_approval_state = self.approval_state.get(user_id, {})
@@ -472,7 +475,7 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
         if is_authorizer:
             approval_link = urls.get('approve', '')
             disapproval_link = urls.get('reject', '')
-            approval_time_span = settings.EMBARGO_PENDING_TIME.days * 24
+            approval_time_span = osf_settings.EMBARGO_PENDING_TIME.days * 24
 
             registration = self._get_registration()
 
@@ -543,7 +546,6 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
         self.save()
 
 
-
 class Retraction(EmailApprovableSanction):
     """
     Retraction object for public registrations.
@@ -558,14 +560,14 @@ class Retraction(EmailApprovableSanction):
     NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_RETRACTION_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
-    APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
-    REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
+    APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
+    REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    initiated_by = models.ForeignKey('User', null=True)
+    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True)
     justification = models.CharField(max_length=2048, null=True)
 
     # def __repr__(self):
-        # return ('<Retraction(parent_registration={0}, initiated_by={1}) with _id {2}>'.format(self.node_set.get(), self.initiated_by, self._id))
+    # return ('<Retraction(parent_registration={0}, initiated_by={1}) with _id {2}>'.format(self.node_set.get(), self.initiated_by, self._id))
 
     def _view_url_context(self, user_id, node):
         from website.project.model import Node
@@ -610,7 +612,7 @@ class Retraction(EmailApprovableSanction):
 
             approval_link = urls.get('approve', '')
             disapproval_link = urls.get('reject', '')
-            approval_time_span = settings.RETRACTION_PENDING_TIME.days * 24
+            approval_time_span = osf_settings.RETRACTION_PENDING_TIME.days * 24
 
             registration = Node.find_one(Q('retraction', 'eq', self))
 
@@ -693,10 +695,10 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
     NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_REGISTRATION_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
-    APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
-    REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
+    APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
+    REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    initiated_by = models.ForeignKey('User', null=True)
+    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True)
 
     def _get_registration(self):
         from website.project.model import Node
@@ -743,7 +745,7 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
             approval_link = urls.get('approve', '')
             disapproval_link = urls.get('reject', '')
 
-            approval_time_span = settings.REGISTRATION_APPROVAL_TIME.days * 24
+            approval_time_span = osf_settings.REGISTRATION_APPROVAL_TIME.days * 24
 
             registration = self._get_registration()
 
@@ -831,7 +833,7 @@ class DraftRegistrationApproval(Sanction):
 
     # Since draft registrations that require approval are not immediately registered,
     # meta stores registration_choice and embargo_end_date (when applicable)
-    meta = DatetimeAwareJSONField(default={})
+    meta = DateTimeAwareJSONField(default={})
 
     def _send_rejection_email(self, user, draft):
         schema = draft.registration_schema
@@ -850,13 +852,13 @@ class DraftRegistrationApproval(Sanction):
             )
 
     def approve(self, user):
-        if settings.PREREG_ADMIN_TAG not in user.system_tags:
+        if osf_settings.PREREG_ADMIN_TAG not in user.system_tags:
             raise PermissionsError("This user does not have permission to approve this draft.")
         self.state = Sanction.APPROVED
         self._on_complete(user)
 
     def reject(self, user):
-        if settings.PREREG_ADMIN_TAG not in user.system_tags:
+        if osf_settings.PREREG_ADMIN_TAG not in user.system_tags:
             raise PermissionsError("This user does not have permission to approve this draft.")
         self.state = Sanction.REJECTED
         self._on_reject(user)
@@ -907,8 +909,8 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
     NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_EMBARGO_TERMINATION_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
-    APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
-    REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
+    APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
+    REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
 
     embargoed_registration = models.ForeignKey('node')
 
@@ -954,7 +956,7 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
         if is_authorizer:
             approval_link = urls.get('approve', '')
             disapproval_link = urls.get('reject', '')
-            approval_time_span = settings.EMBARGO_TERMINATION_PENDING_TIME.days * 24
+            approval_time_span = osf_settings.EMBARGO_TERMINATION_PENDING_TIME.days * 24
 
             registration = self._get_registration()
 

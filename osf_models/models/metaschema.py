@@ -1,7 +1,7 @@
 from osf_models.utils.base import get_object_id
 from osf_models.models.base import BaseModel
 from django.db import models
-from osf_models.utils.datetime_aware_jsonfield import DatetimeAwareJSONField
+from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 class MetaSchema(BaseModel):
     guid = models.CharField(max_length=255,
@@ -9,7 +9,7 @@ class MetaSchema(BaseModel):
                             db_index=True,
                             default=get_object_id)
     name = models.CharField(max_length=255)
-    schema = DatetimeAwareJSONField(default={})
+    schema = DateTimeAwareJSONField(default={})
     category = models.CharField(max_length=255)
 
     # Version of the schema to use (e.g. if questions, responses change)

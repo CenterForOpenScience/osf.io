@@ -2,7 +2,7 @@ import gc
 
 import pytz
 from django.db import transaction
-from osf_models.models import Node, NodeLog, User
+from osf_models.models import Node, NodeLog, OSFUser
 
 from website.models import Node as MODMNode
 from website.models import NodeLog as MODMNodeLog

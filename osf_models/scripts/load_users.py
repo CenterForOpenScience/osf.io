@@ -1,5 +1,5 @@
 from framework.auth import User as MODMUser
-from osf_models.models import User
+from osf_models.models import OSFUser
 from osf_models.scripts.load_nodes import get_or_create_user
 from website.app import init_app
 

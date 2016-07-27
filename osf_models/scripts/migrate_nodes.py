@@ -10,7 +10,8 @@ import pytz
 from django.db import transaction
 from framework.auth import User as MODMUser
 from modularodm import Q as MQ
-from osf_models.models import Contributor, Guid, Node, Tag, User
+from osf_models.models import Contributor, Guid, Node, Tag, OSFUser
+from osf_models.models.node import AbstractNode
 from osf_models.models.sanctions import Embargo, Retraction
 from website.models import Embargo as MODMEmbargo
 from website.models import Retraction as MODMRetraction
@@ -43,21 +44,35 @@ node_key_blacklist = [
     '__backrefs',
     '_version',
     'expanded',
+    # collections
+    'is_collection',
+    'is_bookmark_collection',
+    # registrations
+    'is_registration',
+    'registered_date',
+    'registered_user',
+    'registered_schema',
+    'registered_meta',
+    'registration_approval',
+    'retraction',
+    'embargo',
+    'registered_from',
     # foreign keys not yet implemented
     'logs',
+    'is_collection',
     'primary_institution',
     #  '_primary_institution',
-    #  'institution_email_domains',
-    #  'institution_domains',
+     'institution_email_domains',
+     'institution_domains',
     'registration_approval',
     'alternative_citations',
     'registered_schema',
     'affiliated_institutions',
     #  '_affiliated_institutions',
-    #  'institution_banner_name',
-    #  'institution_id',
-    #  'institution_auth_url',
-    #  'institution_logo_name',
+     'institution_banner_name',
+     'institution_id',
+     'institution_auth_url',
+     'institution_logo_name',
     'contributors',  # done elsewhere
     # 'retraction',
     # 'embargo',
@@ -76,8 +91,15 @@ user_key_blacklist = [
 
 
 def build_query(fields, model):
-    queries = (MQ(field, 'ne', None)
-               for field in list(set(fields) & set(model._fields.keys())))
+    if model == MODMNode:
+        queries = [
+            (MQ('is_registration', 'eq', False)),
+            (MQ('is_collection', 'eq', False)),
+        ]
+    else:
+        queries = []
+    queries.extend(list(MQ(field, 'ne', None)
+               for field in list(set(fields) & set(model._fields.keys()))))
     if queries == []:
         return None
     return functools.reduce(operator.and_, queries)
@@ -87,15 +109,19 @@ def save_bare_nodes(page_size=20000):
     print 'Starting {}...'.format(sys._getframe().f_code.co_name)
     count = 0
     start = datetime.now()
-    total = MODMNode.find(allow_institution=True).count()
+    total = MODMNode.find(functools.reduce(operator.and_, [
+        MQ('is_registration', 'eq', False),
+        MQ('is_collection', 'eq', False),
+    ]), allow_institution=False).count()
     guid_lookup_table = {x['guid']: x['pk']
                       for x in Guid.objects.all().values('guid', 'pk')}
     while count < total:
         with transaction.atomic():
             nids = []
-            for modm_node in MODMNode.find(
-                    allow_institution=True).sort('-date_modified')[
-                        count:count + page_size]:
+            for modm_node in MODMNode.find(functools.reduce(operator.and_, [
+                    MQ('is_registration', 'eq', False),
+                    MQ('is_collection', 'eq', False),
+                ]), allow_institution=False).sort('-date_modified')[count:count + page_size]:
                 node_fields = dict(_guid_id=guid_lookup_table[modm_node._id], **modm_node.to_storage())
 
                 # remove fields not yet implemented
@@ -113,7 +139,7 @@ def save_bare_nodes(page_size=20000):
                                        for k, v in
                                        cleaned_node_fields.iteritems()
                                        if v is not None}
-                nids.append(Node(**cleaned_node_fields))
+                nids.append(AbstractNode(**cleaned_node_fields))
                 count += 1
                 if count % page_size == 0 or count == total:
                     then = datetime.now()
@@ -135,6 +161,61 @@ def save_bare_nodes(page_size=20000):
         sys._getframe().f_code.co_name,
         (datetime.now() - start).total_seconds())
 
+
+def merge_duplicate_users():
+    print 'Starting {}...'.format(sys._getframe().f_code.co_name)
+    start = datetime.now()
+
+    from framework.mongo.handlers import database
+
+    duplicates = database.user.aggregate([
+        {
+            "$group": {
+                "_id": "$username",
+                "ids": {"$addToSet": "$_id"},
+                "count": {"$sum": 1}
+            }
+        },
+        {
+            "$match": {
+                "count": {"$gt": 1}
+            }
+        },
+        {
+            "$sort": {
+                "count": -1
+            }
+        }
+    ]).get('result')
+    # [
+    #   {
+    #       'count': 5,
+    #       '_id': 'duplicated@username.com',
+    #       'ids': [
+    #           'listo','fidst','hatma','tchth','euser','name!'
+    #       ]
+    #   }
+    # ]
+    print 'Found {} duplicate usernames.'.format(len(duplicates))
+    for duplicate in duplicates:
+        print 'Found {} copies of {}'.format(len(duplicate.get('ids')), duplicate.get('_id'))
+        if duplicate.get('_id'):
+            # _id is an email address, merge users keeping the one that was logged into last
+            users = list(MODMUser.find(MQ('_id', 'in', duplicate.get('ids'))).sort('-last_login'))
+            best_match = users.pop()
+            for user in users:
+                print 'Merging user {} into user {}'.format(user._id, best_match._id)
+                best_match.merge_user(user)
+        else:
+            # _id is null, set all usernames to their guid
+            users = MODMUser.find(MQ('_id', 'in', duplicate.get('ids')))
+            for user in users:
+                print 'Setting username for {}'.format(user._id)
+                user.username = user._id
+                user.save()
+    print 'Done with {} in {} seconds...'.format(
+        sys._getframe().f_code.co_name,
+        (datetime.now() - start).total_seconds())
 
 def save_bare_users(page_size=20000):
     print 'Starting {}...'.format(sys._getframe().f_code.co_name)
@@ -163,13 +244,13 @@ def save_bare_users(page_size=20000):
                                        for k, v in
                                        cleaned_user_fields.iteritems()
                                        if v is not None}
-                users.append(User(**cleaned_user_fields))
+                users.append(OSFUser(**cleaned_user_fields))
                 count += 1
                 if count % page_size == 0 or count == total:
                     then = datetime.now()
                     print 'Saving users {} through {}...'.format(
                         count - page_size, count)
-                    woot = User.objects.bulk_create(users)
+                    woot = OSFUser.objects.bulk_create(users)
                     for wit in woot:
                         modm_to_django[wit._guid.guid] = wit.pk
                     now = datetime.now()
@@ -184,7 +265,7 @@ def save_bare_users(page_size=20000):
                     print 'Took out {} trashes'.format(trash)
 
     print 'Modm Users: {}'.format(total)
-    print 'django Users: {}'.format(User.objects.all().count())
+    print 'django Users: {}'.format(OSFUser.objects.all().count())
     print 'Done with {} in {} seconds...'.format(
         sys._getframe().f_code.co_name,
         (datetime.now() - start).total_seconds())
@@ -373,13 +454,13 @@ def set_node_foreign_keys_on_nodes(page_size=10000):
     start = datetime.now()
     total = MODMNode.find(
         build_query(fk_node_fields, MODMNode),
-        allow_institution=True).count()
+        allow_institution=False).count()
 
     while node_count < total:
         with transaction.atomic():
             for modm_node in MODMNode.find(
                     build_query(fk_node_fields, MODMNode),
-                    allow_institution=True).sort('-date_modified')[
+                    allow_institution=False).sort('-date_modified')[
                         node_count:node_count + page_size]:
                 django_node = Node.objects.get(_guid__guid=modm_node._id)
                 for fk_node_field in fk_node_fields:
@@ -448,11 +529,11 @@ def set_retraction_foreign_keys_on_nodes(page_size=10000):
     cache_hits = 0
     cache_misses = 0
     start = datetime.now()
-    total = MODMNode.find(build_query(fk_retraction_fields, MODMNode), allow_institution=True).count()
+    total = MODMNode.find(build_query(fk_retraction_fields, MODMNode), allow_institution=False).count()
 
     while node_count < total:
         with transaction.atomic():
-            for modm_node in MODMNode.find(build_query(fk_retraction_fields, MODMNode), allow_institution=True).sort('-date_modified')[node_count:node_count+page_size]:
+            for modm_node in MODMNode.find(build_query(fk_retraction_fields, MODMNode), allow_institution=False).sort('-date_modified')[node_count:node_count+page_size]:
                 django_node = Node.objects.get(_guid__guid=modm_node._id)
                 for fk_retraction_field in fk_retraction_fields:
                     value = getattr(modm_node, fk_retraction_field, None)
@@ -502,11 +583,11 @@ def set_embargo_foreign_keys_on_nodes(page_size=10000):
     cache_hits = 0
     cache_misses = 0
     start = datetime.now()
-    total = MODMNode.find(build_query(fk_embargo_fields, MODMNode), allow_institution=True).count()
+    total = MODMNode.find(build_query(fk_embargo_fields, MODMNode), allow_institution=False).count()
 
     while node_count < total:
         with transaction.atomic():
-            for modm_node in MODMNode.find(build_query(fk_embargo_fields, MODMNode), allow_institution=True).sort(
+            for modm_node in MODMNode.find(build_query(fk_embargo_fields, MODMNode), allow_institution=False).sort(
                     '-date_modified')[node_count:node_count + page_size]:
                 django_node = Node.objects.get(_guid__guid=modm_node._id)
                 for fk_embargo_field in fk_embargo_fields:
@@ -559,13 +640,13 @@ def set_user_foreign_keys_on_nodes(page_size=10000):
     start = datetime.now()
     total = MODMNode.find(
         build_query(fk_user_fields, MODMNode),
-        allow_institution=True).count()
+        allow_institution=False).count()
 
     while node_count < total:
         with transaction.atomic():
             for modm_node in MODMNode.find(
                     build_query(fk_user_fields, MODMNode),
-                    allow_institution=True).sort('-date_modified')[
+                    allow_institution=False).sort('-date_modified')[
                         node_count:node_count + page_size]:
                 django_node = Node.objects.get(_guid__guid=modm_node._id)
                 for fk_user_field in fk_user_fields:
@@ -580,7 +661,7 @@ def set_user_foreign_keys_on_nodes(page_size=10000):
                                 cache_hits += 1
                             else:
                                 # it's not in the cache, do the query
-                                user_id = User.objects.get(
+                                user_id = OSFUser.objects.get(
                                     _guid__guid=value).pk
                                 setattr(django_node,
                                         '{}_id'.format(fk_user_field), user_id)
@@ -596,7 +677,7 @@ def set_user_foreign_keys_on_nodes(page_size=10000):
                                 cache_hits += 1
                             else:
                                 # it's not in the cache, do the query
-                                user_id = User.objects.get(
+                                user_id = OSFUser.objects.get(
                                     _guid__guid=value._id).pk
                                 setattr(django_node,
                                         '{}_id'.format(fk_user_field), user_id)
@@ -640,7 +721,7 @@ def set_user_foreign_keys_on_users(page_size=10000):
             for modm_user in MODMUser.find(build_query(
                     fk_user_fields, MODMUser)).sort('-date_registered')[
                         user_count:user_count + page_size]:
-                django_user = User.objects.get(_guid__guid=modm_user._id)
+                django_user = OSFUser.objects.get(_guid__guid=modm_user._id)
                 for fk_user_field in fk_user_fields:
                     value = getattr(modm_user, fk_user_field, None)
                     if value is not None:
@@ -653,7 +734,7 @@ def set_user_foreign_keys_on_users(page_size=10000):
                                 cache_hits += 1
                             else:
                                 # it's not in the cache, do the query
-                                user_id = User.objects.get(
+                                user_id = OSFUser.objects.get(
                                     _guid__guid=value).pk
                                 setattr(django_user,
                                         '{}_id'.format(fk_user_field), user_id)
@@ -669,7 +750,7 @@ def set_user_foreign_keys_on_users(page_size=10000):
                                 cache_hits += 1
                             else:
                                 # it's not in the cache, do the query
-                                user_id = User.objects.get(
+                                user_id = OSFUser.objects.get(
                                     _guid__guid=value._id).pk
                                 setattr(django_user,
                                         '{}_id'.format(fk_user_field), user_id)
@@ -706,13 +787,13 @@ def set_node_many_to_many_on_nodes(page_size=5000):
     start = datetime.now()
     total = MODMNode.find(
         build_query(m2m_node_fields, MODMNode),
-        allow_institution=True).count()
+        allow_institution=False).count()
     print '{} Nodes'.format(total)
     while node_count < total:
         with transaction.atomic():
             for modm_node in MODMNode.find(
                     build_query(m2m_node_fields, MODMNode),
-                    allow_institution=True).sort('-date_modified')[
+                    allow_institution=False).sort('-date_modified')[
                         node_count:page_size + node_count]:
                 try:
                     django_node = Node.objects.get(
@@ -763,13 +844,13 @@ def set_user_many_to_many_on_nodes(page_size=5000):
     start = datetime.now()
     total = MODMNode.find(
         build_query(m2m_user_fields, MODMNode),
-        allow_institution=True).count()
+        allow_institution=False).count()
     print '{} Nodes'.format(total)
     while node_count < total:
         with transaction.atomic():
             for modm_node in MODMNode.find(
                     build_query(m2m_user_fields, MODMNode),
-                    allow_institution=True).sort('-date_modified')[
+                    allow_institution=False).sort('-date_modified')[
                         node_count:page_size + node_count]:
                 django_node = Node.objects.get(
                     pk=modm_to_django[modm_node._id])
@@ -857,7 +938,7 @@ def set_node_many_to_many_on_users(page_size=5000):
             for modm_user in MODMUser.find(build_query(
                     m2m_node_fields, MODMUser)).sort('-date_registered')[
                         user_count:page_size + user_count]:
-                django_user = User.objects.get(
+                django_user = OSFUser.objects.get(
                     pk=modm_to_django[modm_user._id])
                 for m2m_node_field in m2m_node_fields:
                     try:
@@ -915,7 +996,7 @@ def set_user_many_to_many_on_users(page_size=5000):
             for modm_user in MODMUser.find(build_query(
                     m2m_user_fields, MODMUser)).sort('-date_registered')[
                         user_count:page_size + user_count]:
-                django_user = User.objects.get(
+                django_user = OSFUser.objects.get(
                     pk=modm_to_django[modm_user._id])
                 for m2m_user_field in m2m_user_fields:
                     try:
@@ -971,7 +1052,7 @@ def set_system_tag_many_to_many_on_users(page_size=10000):
             for modm_user in MODMUser.find(build_query(
                     m2m_tag_fields, MODMUser)).sort('-date_registered')[
                         user_count:page_size + user_count]:
-                django_user = User.objects.get(
+                django_user = OSFUser.objects.get(
                     pk=modm_to_django[modm_user._id])
                 for m2m_tag_field in m2m_tag_fields:
                     try:
@@ -1025,7 +1106,7 @@ def set_tag_many_to_many_on_nodes(page_size=10000):
     while node_count < total:
         with transaction.atomic():
             for modm_node in MODMNode.find(build_query(
-                    m2m_tag_fields, MODMNode)).sort('-date_modified')[
+                    m2m_tag_fields, MODMNode), allow_institution=False).sort('-date_modified')[
                         node_count:page_size + node_count]:
                 django_node = Node.objects.get(
                     pk=modm_to_django[modm_node._id])
@@ -1081,7 +1162,7 @@ def build_pk_caches():
     modm_to_django = {x['_guid__guid']: x['pk']
                       for x in Node.objects.all().values('_guid__guid', 'pk')}
     modm_to_django.update({x['_guid__guid']: x['pk']
-                           for x in User.objects.all().values('_guid__guid',
+                           for x in OSFUser.objects.all().values('_guid__guid',
                                                               'pk')})
     modm_to_django.update({'{}:system'.format(x['_id']): x['pk']
                            for x in Tag.objects.filter(system=True).values(

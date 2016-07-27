@@ -2,7 +2,6 @@ import random
 
 import modularodm.exceptions
 from django.db import models
-from osf_models.models.mixins import Versioned
 
 ALPHABET = '23456789abcdefghjkmnpqrstuvwxyz'
 

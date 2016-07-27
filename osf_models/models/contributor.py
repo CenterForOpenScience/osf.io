@@ -1,14 +1,24 @@
 from django.db import models
 
 
-class Contributor(models.Model):
+class AbstractBaseContributor(models.Model):
     read = models.BooleanField(default=False)
     write = models.BooleanField(default=False)
     admin = models.BooleanField(default=False)
     visible = models.BooleanField(default=False)
+    user = models.ForeignKey('OSFUser')
 
-    user = models.ForeignKey('User')
-    node = models.ForeignKey('Node')
+    class Meta:
+        abstract = True
+
+class Contributor(AbstractBaseContributor):
+    node = models.ForeignKey('AbstractNode')
 
     class Meta:
         unique_together = ('user', 'node')
+
+class InstitutionalContributor(AbstractBaseContributor):
+    institution = models.ForeignKey('Institution')
+
+    class Meta:
+        unique_together = ('user', 'institution')

@@ -1,16 +1,45 @@
-import datetime
+from datetime import datetime
+
+from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
+from django.contrib.auth.models import PermissionsMixin
+
 from .base import BaseModel, GuidMixin
 from django.db import models
 from .tag import Tag
-from osf_models.utils.datetime_aware_jsonfield import DatetimeAwareJSONField
-from website import settings
+from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 
 def get_default_mailing_lists():
-    return {settings.OSF_HELP_LIST: True}
+    return {'Open Science Framework Help': True}
 
 
-class User(GuidMixin, BaseModel):
+class OSFUserManager(BaseUserManager):
+    def create_user(self, username, password=None):
+        if not username:
+            raise ValueError('Users must have a username')
+
+        user = self.model(
+            username=self.normalize_email(username),
+            is_active=True,
+            date_registered=datetime.today()
+        )
+
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, username, password):
+        user = self.create_user(username, password=password)
+        user.is_superuser = True
+        user.is_staff = True
+        user.is_active = True
+        user.save(using=self._db)
+        return user
+
+
+class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin):
+    USERNAME_FIELD = 'username'
+
     # Node fields that trigger an update to the search engine on save
     SEARCH_UPDATE_FIELDS = {
         'fullname',
@@ -48,10 +77,10 @@ class User(GuidMixin, BaseModel):
     # This value is unique, but multiple "None" records exist for:
     #   * unregistered contributors where an email address was not provided.
     # TODO: Update mailchimp subscription on username change in user.save()
-    username = models.CharField(max_length=255, db_index=True)
+    username = models.CharField(max_length=255, db_index=True, unique=True)
 
     # Hashed. Use `User.set_password` and `User.check_password`
-    password = models.CharField(max_length=255)
+    # password = models.CharField(max_length=255)
 
     fullname = models.CharField(max_length=255, blank=True)
 
@@ -69,7 +98,7 @@ class User(GuidMixin, BaseModel):
 
     # security emails that have been sent
     # TODO: This should be removed and/or merged with system_tags
-    security_messages = DatetimeAwareJSONField(default={})
+    security_messages = DateTimeAwareJSONField(default={})
     # Format: {
     #   <message label>: <datetime>
     #   ...
@@ -80,7 +109,7 @@ class User(GuidMixin, BaseModel):
 
     # Per-project unclaimed user data:
     # TODO: add validation
-    unclaimed_records = DatetimeAwareJSONField(default={})
+    unclaimed_records = DateTimeAwareJSONField(default={})
     # Format: {
     #   <project_id>: {
     #       'name': <name that referrer provided>,
@@ -100,7 +129,7 @@ class User(GuidMixin, BaseModel):
     #   }
     #   ...
     # }
-    contributor_added_email_records = DatetimeAwareJSONField(default={})
+    contributor_added_email_records = DateTimeAwareJSONField(default={})
 
     # The user into which this account was merged
     merged_by = models.ForeignKey('self', null=True)
@@ -111,12 +140,13 @@ class User(GuidMixin, BaseModel):
     # confirmed emails
     #   emails should be stripped of whitespace and lower-cased before appending
     # TODO: Add validator to ensure an email address only exists once across
+    # TODO: Change to m2m field per @sloria
     # all User's email lists
-    emails = DatetimeAwareJSONField(default={})
+    emails = DateTimeAwareJSONField(default={})
 
     # email verification tokens
     #   see also ``unconfirmed_emails``
-    email_verifications = DatetimeAwareJSONField(default={})
+    email_verifications = DateTimeAwareJSONField(default={})
     # Format: {
     #   <token> : {'email': <email address>,
     #              'expiration': <datetime>}
@@ -124,10 +154,10 @@ class User(GuidMixin, BaseModel):
 
     # TODO remove this field once migration (scripts/migration/migrate_mailing_lists_to_mailchimp_fields.py)
     # has been run. This field is deprecated and replaced with mailchimp_mailing_lists
-    mailing_lists = DatetimeAwareJSONField(default={})
+    mailing_lists = DateTimeAwareJSONField(default={})
 
     # email lists to which the user has chosen a subscription setting
-    mailchimp_mailing_lists = DatetimeAwareJSONField(default={})
+    mailchimp_mailing_lists = DateTimeAwareJSONField(default={})
     # Format: {
     #   'list1': True,
     #   'list2: False,
@@ -135,7 +165,7 @@ class User(GuidMixin, BaseModel):
     # }
 
     # email lists to which the user has chosen a subscription setting, being sent from osf, rather than mailchimp
-    osf_mailing_lists = DatetimeAwareJSONField(
+    osf_mailing_lists = DateTimeAwareJSONField(
         default=get_default_mailing_lists)
     # Format: {
     #   'list1': True,
@@ -169,7 +199,7 @@ class User(GuidMixin, BaseModel):
     # Employment history
     # jobs = fields.DictionaryField(list=True, validate=validate_history_item)
     # TODO: Add validation
-    jobs = DatetimeAwareJSONField(default={})
+    jobs = DateTimeAwareJSONField(default={})
     # Format: {
     #     'title': <position or job title>,
     #     'institution': <institution or organization>,
@@ -185,7 +215,7 @@ class User(GuidMixin, BaseModel):
     # Educational history
     # schools = fields.DictionaryField(list=True, validate=validate_history_item)
     # TODO: Add validation
-    schools = DatetimeAwareJSONField(default={})
+    schools = DateTimeAwareJSONField(default={})
     # Format: {
     #     'degree': <position or job title>,
     #     'institution': <institution or organization>,
@@ -201,7 +231,7 @@ class User(GuidMixin, BaseModel):
     # Social links
     # social = fields.DictionaryField(validate=validate_social)
     # TODO: Add validation
-    social = DatetimeAwareJSONField(default={})
+    social = DateTimeAwareJSONField(default={})
     # Format: {
     #     'profileWebsites': <list of profile websites>
     #     'twitter': <twitter id>,
@@ -220,7 +250,7 @@ class User(GuidMixin, BaseModel):
     date_disabled = models.DateTimeField(db_index=True, null=True)
 
     # when comments were last viewed
-    comments_viewed_timestamp = DatetimeAwareJSONField(default={})
+    comments_viewed_timestamp = DateTimeAwareJSONField(default={})
     # Format: {
     #   'Comment.root_target._id': 'timestamp',
     #   ...
@@ -235,9 +265,14 @@ class User(GuidMixin, BaseModel):
     # whether the user has requested to deactivate their account
     requested_deactivation = models.BooleanField(default=False)
 
-    _affiliated_institutions = models.ManyToManyField('Node')
+    _affiliated_institutions = models.ManyToManyField('Institution')
 
-    notifications_configured = DatetimeAwareJSONField(default={})
+    notifications_configured = DateTimeAwareJSONField(default={})
+
+    objects = OSFUserManager()
+
+    is_active = models.BooleanField(default=False)
+    is_staff = models.BooleanField(default=False)
 
     def __unicode__(self):
         return u'{}: {} {}'.format(self.username, self.given_name, self.family_name)
@@ -266,6 +301,10 @@ class User(GuidMixin, BaseModel):
     def is_confirmed(self):
         return bool(self.date_confirmed)
 
+    @property
+    def email(self):
+        return self.username
+
     def is_authenticated(self):  # Needed for django compat
         return True
 
@@ -274,3 +313,16 @@ class User(GuidMixin, BaseModel):
 
     def get_addon_names(self):
         return []
+
+    # django methods
+    def get_full_name(self):
+        return self.fullname
+
+    def get_short_name(self):
+        return self.username
+
+    def __unicode__(self):
+        return self.get_short_name()
+
+    def __str__(self):
+        return self.get_short_name()
