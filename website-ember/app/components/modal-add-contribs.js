@@ -1,14 +1,13 @@
 import Ember from 'ember';
-import DS from 'ember-data';
 
 import deferredPromise from '../utils/deferred-promise';
-import permissions, {permissionSelector} from 'ember-osf/const/permissions';
+import permissions, { permissionSelector } from 'ember-osf/const/permissions';
 
 /**
  * Wraps user data with additional properties to track whether a given user is a contributor on this project
- * @class OneContributor
+ * @class UserContributor
  */
-let OneContributor = Ember.ObjectProxy.extend({
+let UserContributor = Ember.ObjectProxy.extend({
     isContributor: false,
     selectedPermissions: permissions.WRITE
 });
@@ -41,7 +40,24 @@ export default Ember.Component.extend({
         // Wrap a user instance to provide additional fields describing contributor status
         let options = { content: user };
         options = Ember.merge(options, extra);
-        return OneContributor.create(options)
+        return UserContributor.create(options);
+    },
+
+    /**
+     * Given a list of user IDs, fetch the related user objects in a single query
+     * @param {String[]} ids List of user IDs to fetch
+     * @param options Additional options for the query
+     * @private
+     */
+    _getUsersFromIds(ids, options) {
+        let queryParams = { 'filter[id]': ids.join(',') };
+        Ember.merge(queryParams, options);
+        // TODO: Add verification that we aren't requesting more users than fit on a page of results
+        if (ids.length) {
+            return this.get('store').query('user', queryParams);
+        } else {
+            return Ember.A();  // TODO: Does this need to return a promise resolving to value?
+        }
     },
 
     //////////////////////////////////
@@ -50,21 +66,14 @@ export default Ember.Component.extend({
     // The username to search for
     _searchText: null,
     // Store results array from search. TODO: Make this store a promise so we can check fulfilled status
-    searchResults: null,
+    usersFound: null,
 
-    // People selected to add as contributors
+    // Filtering functionality
     contribsToAdd: Ember.A(),
-    contribsNotYetAdded: Ember.computed('searchResults', 'contribsToAdd.[]', function(item) {
-        // TODO: Implement: searchResults not yet in contribsToAdd.
-        // Use this for rendering the row widget.
-        // Search results are users; contribsToAdd are users also.
-        let selected = this.get('contribsToAdd');
-        let searchResults = this.get('searchResults');
-        return searchResults.filter((item) => !selected.contains(item));
-    }),
-    displayContribNamesToAdd: Ember.computed('contribsToAdd', function() {
-        // TODO: Implement: join all names in list as string.
-        // Was: addingSummary
+    contribsNotYetAdded: Ember.computed('usersFound', 'contribsToAdd.[]', function() {
+        let contribsToAdd= this.get('contribsToAdd');
+        let usersFound = this.get('usersFound');
+        return usersFound.filter((item) => !contribsToAdd.contains(item));
     }),
 
     // Some computed properties
@@ -73,6 +82,15 @@ export default Ember.Component.extend({
     // TODO: This link should be hidden if the only search results returned are for people who are already contributors on the node
     // Was: addAllVisible, contribAdder.js
     showAddAll: true, // TODO: Implement
+
+    //////////////////////////////////
+    // OPTIONS FOR THE WHICH PAGE   //
+    //////////////////////////////////
+    displayContribNamesToAdd: Ember.computed('contribsToAdd', function() {
+        // TODO: Implement: join all names in list as string to display who will be added to child projects.
+        // Was: addingSummary
+        return '';
+    }),
 
     actions: {
         selectPage(pageName) {
@@ -117,20 +135,17 @@ export default Ember.Component.extend({
             });
             let promiseResp = deferredPromise(resp);
             promiseResp.then((res) => {
-                let ids = res.results.map((item) => item.id);
+                // Convert search results (JSON) to APIv2 user records with more info
+                let userIdList = res.results.map((item) => item.id);
                 // As long as # records < # api results pagesize, this will be fine wrt pagination. (TODO: specify parameter to be safe)
-                if (ids.length) {
-                    return this.get('store').query('user', { 'filter[id]': ids.join(',') });
-                } else {
-                    return Ember.A();  // TODO: Do something with this result
-                }
+                return this._getUsersFromIds(userIdList);
             }).then((res) => {
                 // Annotate each user search result based on whether they are a project contributor
                 let contributorIds = this.get('contributors').map((item) => item.get('userId'));
                 return res.map((item) => this._wrapUserAsContributor(item,
                     { isContributor: contributorIds.contains(item.id) }
                 ));
-            }).then((res) => this.set('searchResults', res)
+            }).then((res) => this.set('usersFound', res)
             ).catch((error) => console.log('Query failed with error', error));  // TODO: Show errors to user
         },
         importContribsFromParent() {
@@ -141,7 +156,7 @@ export default Ember.Component.extend({
         addAllContributors() {
             // TODO: Implement, was addAll in contribAdder.js
             // TODO: Filter out users who are already on the project
-            let users = this.get('searchResults');
+            let users = this.get('usersFound');
             this.get('contribsToAdd').addObjects(users);
         },
         addOneContributor(user) {

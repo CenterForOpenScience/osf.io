@@ -47,8 +47,8 @@
                     {{!-- Note: Removed "notifications" block because it seemed to be no longer used in staticjs code. TODO: Verify this is correct --}}
 
                     {{!-- Intent: Only show search results if done loading and results were found --}}
-                    {{#if true}}{{!-- searchResults.isFulfilled   TODO: Implement loading/ loaded check on promise --}}
-                        {{#if searchResults.length}}
+                    {{#if true}}{{!-- usersFound.isFulfilled   TODO: Implement loading/ loaded check on promise --}}
+                        {{#if usersFound.length}}
                             <table class="table-condensed">
                                 <tbody>
                                 {{!-- TODO: better name, not yet selected? --}}
@@ -118,7 +118,7 @@
                     {{/if}}
 
                     {{!-- Link to add non-registered contributor --}}
-                    {{#if searchResults.isPending}}  {{!-- TODO: replace with loading state watcher --}}
+                    {{#if usersFound.isPending}}  {{!-- TODO: replace with loading state watcher --}}
                         <div class='help-block'>
                             <p class="text-muted">Searching contributors...</p>
                         </div>
@@ -174,7 +174,6 @@
                                         </td>
 
                                         <td>
-                                            {{!-- TODO: Write permissions selector (with dropdown of options) --}}
                                             <select class="form-control input-sm" onchange={{action (mut person.selectedPermissions) value='target.value'}}>
                                                 {{#each permissionOptions as |option|}}
                                                     <option selected={{eq option.value person.selectedPermissions}} value={{option.value}}>
