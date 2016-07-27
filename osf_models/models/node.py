@@ -21,6 +21,7 @@ from osf_models.utils.base import api_v2_url
 
 from osf_models.app import ModelsConfig as app_config
 
+
 class AbstractNode(TypedModel, Loggable, GuidMixin, BaseModel):
     """
     All things that inherit from AbstractNode will appear in
@@ -198,7 +199,7 @@ class AbstractNode(TypedModel, Loggable, GuidMixin, BaseModel):
 
     @property
     def is_retracted(self):
-        return False  # TODO wat
+        return False  # TODO This property will need to recurse up the node hierarchy to check if any this node's parents are retracted. Same with is_pending_registration, etc. -- @sloria
 
     @property
     def nodes_pointer(self):
@@ -212,6 +213,7 @@ class AbstractNode(TypedModel, Loggable, GuidMixin, BaseModel):
     @property
     def visible_contributor_ids(self):
         return self.contributor_set.filter(visible=True)
+
 
 class Node(AbstractNode):
     """
