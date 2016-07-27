@@ -22,6 +22,10 @@ export default Ember.Controller.extend(NodeActionsMixin, {
     actions: {
         toggleAddContributorModal() {
             this.toggleProperty('showModalAddContributors');
+        },
+        removeContributor(contrib) {
+            this._super(...arguments);
+            this.get('contributors').removeObject(contrib);
         }
     }
 });
