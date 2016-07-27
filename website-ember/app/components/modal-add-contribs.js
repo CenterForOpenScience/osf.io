@@ -20,7 +20,7 @@ let OneContributor = Ember.ObjectProxy.extend({
  * ```handlebars
  * {{modal-add-contribs
  *   isOpen=showModal
- *   model=model
+ *   node=model
  *   contributors=contributors}}
  * ```
  * @class modal-add-contribs
@@ -36,6 +36,13 @@ export default Ember.Component.extend({
 
     // Permissions labels for dropdown (eg in modals)
     permissionOptions: permissionSelector,
+
+    _wrapUserAsContributor(user, extra) {
+        // Wrap a user instance to provide additional fields describing contributor status
+        let options = { content: user };
+        options = Ember.merge(options, extra);
+        return OneContributor.create(options)
+    },
 
     //////////////////////////////////
     //  OPTIONS FOR THE WHOM PAGE   //
@@ -61,7 +68,7 @@ export default Ember.Component.extend({
     }),
 
     // Some computed properties
-    canViewParent: Ember.computed.alias('model.parent'), // TODO : verify first whether user can view parent. May need a new model field.
+    canViewParent: Ember.computed.alias('node.parent'), // TODO : verify first whether user can view parent. May need a new model field.
 
     // TODO: This link should be hidden if the only search results returned are for people who are already contributors on the node
     // Was: addAllVisible, contribAdder.js
@@ -120,12 +127,10 @@ export default Ember.Component.extend({
             }).then((res) => {
                 // Annotate each user search result based on whether they are a project contributor
                 let contributorIds = this.get('contributors').map((item) => item.get('userId'));
-                return res.map((item) => OneContributor.create({
-                        content: item,
-                        isContributor: contributorIds.contains(item.id)
-                    }));
-                })
-            .then((res) => this.set('searchResults', res)
+                return res.map((item) => this._wrapUserAsContributor(item,
+                    { isContributor: contributorIds.contains(item.id) }
+                ));
+            }).then((res) => this.set('searchResults', res)
             ).catch((error) => console.log('Query failed with error', error));  // TODO: Show errors to user
         },
         importContribsFromParent() {

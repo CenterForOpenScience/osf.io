@@ -1,6 +1,6 @@
 {{#bs-modal open=isOpen body=false header=false footer=false}}
     {{#bs-modal-header}}
-        <h3 class="modal-title">{{model.title}}</h3>
+        <h3 class="modal-title">{{node.title}}</h3>
     {{/bs-modal-header}}
 
 
@@ -26,7 +26,7 @@
                     <div class="col-md-12">
                         <div>
                             {{#if canViewParent}}
-                                <button {{action 'importContribsFromParent'}} class="f-w-lg btn-link">Import contributors from {{model.parent.title}}</button>
+                                <button {{action 'importContribsFromParent'}} class="f-w-lg btn-link">Import contributors from {{node.parent.title}}</button>
                             {{/if}}
                         </div>
                     </div>
@@ -105,9 +105,9 @@
                             </table>
 
                             {{!-- TODO: Support paginated result fetching widget. Moved from help-block style to here? --}}
-                            <ul class="pagination pagination-sm" data-bind="foreach: paginators">
+                            {{!-- <ul class="pagination pagination-sm" data-bind="foreach: paginators">
                                 <li data-bind="css: style"><a href="#" data-bind="click: handler, text: text"></a></li>
-                            </ul>
+                            </ul> --}}
                             <p>
                                 <button {{action 'selectPage' 'invite'}} class="btn-link">Add <strong><em>{{_searchText}}</em></strong> as an unregistered contributor</button>.
                             </p>
@@ -199,7 +199,7 @@
             <div>
                 Adding contributor(s)
                 {{displayContribNamesToAdd}}
-                to {{model.title}}
+                to {{node.title}}
             </div>
 
             <hr>
@@ -257,7 +257,7 @@
 
         {{#if (and contribsToAdd (eq page 'whom'))}}
             {{!-- TODO: children check should not require server call? --}}
-            {{#if model.children}}
+            {{#if node.children}}
                 <button class="btn btn-primary" {{action 'selectPage' 'which'}}>Next</button>
             {{else}}
                 <button class="btn btn-success" {{action 'submitContributors'}}>Add</button>
