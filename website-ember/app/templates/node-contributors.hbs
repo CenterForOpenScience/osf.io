@@ -55,7 +55,11 @@
                     <i class="fa fa-plus" aria-hidden="true"></i> Add
                 </button>
 
-                {{modal-add-contribs isOpen=showModalAddContributors model=model contributors=contributors}}
+                {{modal-add-contribs
+                  isOpen=showModalAddContributors
+                  node=model
+                  contributors=contributors
+                  addContributor=(action 'addContributor')}}
             {{/if}}
         </h3>
 

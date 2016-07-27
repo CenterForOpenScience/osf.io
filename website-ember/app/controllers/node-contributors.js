@@ -23,6 +23,18 @@ export default Ember.Controller.extend(NodeActionsMixin, {
         toggleAddContributorModal() {
             this.toggleProperty('showModalAddContributors');
         },
+        addContributor(userId) {
+            // Perform additional cleanup specific to this view to keep manually fetched contributors list in sync
+            return this._super(...arguments).then((res) => {
+                let contributors = this.get('contributors');
+                let record = this.store.peekRecord('contributor', `${this.get('model.id')}-${userId}`);
+                if (record) {
+                    contributors.addObject(record);
+                }
+                // TODO: Is error handling needed (if record not found)?
+                return res;
+            });
+        },
         removeContributor(contrib) {
             this._super(...arguments);
             this.get('contributors').removeObject(contrib);
@@ -33,6 +45,5 @@ export default Ember.Controller.extend(NodeActionsMixin, {
             // May be related to how loading contributors initially.
             window.location.reload();
         }
-
     }
 });

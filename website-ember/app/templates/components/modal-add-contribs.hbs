@@ -1,8 +1,10 @@
 {{#bs-modal open=isOpen body=false header=false footer=false}}
     {{#bs-modal-header}}
-        <h3 class="modal-title">{{model.title}}</h3>
+        <h3 class="modal-title">{{node.title}}</h3>
     {{/bs-modal-header}}
 
+
+    {{!-- TODO: Reset modal when it closes via any means, for next time viewed --}}
     {{#bs-modal-body}}
         {{!-- TODO: break widget pages into separate components, but first, just translate over the OSF code --}}
         {{!-- Whom to add --}}
@@ -24,7 +26,7 @@
                     <div class="col-md-12">
                         <div>
                             {{#if canViewParent}}
-                                <button {{action 'importContribsFromParent'}} class="f-w-lg btn-link">Import contributors from {{model.parent.title}}</button>
+                                <button {{action 'importContribsFromParent'}} class="f-w-lg btn-link">Import contributors from {{node.parent.title}}</button>
                             {{/if}}
                         </div>
                     </div>
@@ -38,154 +40,168 @@
                 <div class="col-md-6">
                     <div>
                         <span class="modal-subheader">Results</span>
-                        {{#if showAddAll}}
+                        {{#if showAddAll}} {{!-- TODO: implement --}}
                             <button {{action 'addAllContributors'}} class="btn-link">Add all</button>
                         {{/if}}
                     </div>
                     {{!-- Note: Removed "notifications" block because it seemed to be no longer used in staticjs code. TODO: Verify this is correct --}}
 
                     {{!-- Intent: Only show search results if done loading and results were found --}}
-                    {{#if (and searchResults searchResults.isFulfilled)}}
-                        <table class="table-condensed">
-                            <tbody>
-                            {{!-- TODO: better name, not yet selected? --}}
-                                {{#each contribsNotYetAdded as |person|}}
-                                    {{!-- TODO: Identify mechanism for detecting whether this is selected/ binned --}}
-                                    <tr>
-                                        <td class="p-r-sm osf-icon-td" >
+                    {{#if (and usersFound (not isLoading))}}
+                        {{#if usersFound.length}}
+                            <table class="table-condensed">
+                                <tbody>
+                                {{!-- TODO: better name, not yet selected? --}}
+                                    {{#each contribsNotYetAdded as |person|}}
+                                        {{!-- TODO: Identify mechanism for detecting whether this person is already on the project --}}
+                                        <tr>
+                                            <td class="p-r-sm osf-icon-td" >
+                                                {{#unless person.isContributor}}
+                                                    {{!-- TODO: Add arguments to actions --}}
+                                                    <button {{action 'addOneContributor' person}}
+                                                            class="btn btn-success contrib-button btn-mini"
+                                                            title="Add contributor">
+                                                        <i class="fa fa-plus"></i>
+                                                    </button>
+                                                {{else}}
+                                                    <div class="btn btn-default contrib-button btn-mini disabled" title="Already added">
+                                                        <i class="fa fa-check"></i>
+                                                    </div>
+                                                {{/unless}}
+                                            </td>
+                                            <td>
+                                                {{!-- height and width are explicitly specified for faster rendering --}}
+                                                <img src="{{person.profileImage}}" height=35 width=35>
+                                            </td>
+                                            <td width="75%">
+                                                <a href="{{person.profileURL}}" target="_blank">
+                                                    {{person.fullName}}
+                                                </a>
+                                                <br>
 
+                                                {{!-- TODO: Identify datasource for these fields in API response and add to model as appropriate --}}
+                                                {{!--
+                                                <span data-bind="if: contributor.employment">
+                                                    <span class='small'
+                                                        data-bind="text: contributor.employment">
+                                                    </span><br>
+                                                </span>
+                                                <span data-bind="if: contributor.education">
+                                                    <span
+                                                        class='small'
+                                                        data-bind="text: contributor.education">
+                                                    </span><br>
+                                                </span>
 
-                                            <button class="btn btn-success contrib-button btn-mini"
-                                                    data-bind="visible: !contributor.added,
-                                                               click:$root.add.bind($root)"
-                                                    title="Add contributor">
-                                                <i class="fa fa-plus"></i>
-                                            </button>
-                                            <div data-bind="visible: contributor.added,
-                                                            tooltip: {title: 'Already added'}">
-                                                <div class="btn btn-default contrib-button btn-mini disabled">
-                                                    <i class="fa fa-check"></i>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            {{!-- height and width are explicitly specified for faster rendering --}}
-                                            <img data-bind="attr: {src: contributor.gravatar_url}" height=35 width=35>
-                                        </td>
-                                        <td width="75%">
-                                            <a data-bind="attr: {href: contributor.profile_url}" target="_blank">
-                                                <span data-bind="text:contributor.fullname"></span>
-                                            </a>
-                                            <br>
-
-                                            <span data-bind="if: contributor.employment">
                                                 <span class='small'
-                                                    data-bind="text: contributor.employment">
-                                                </span><br>
-                                            </span>
+                                                      data-bind="text: contributor.displayProjectsInCommon">
+                                                </span>
+                                                <span class='text-muted' data-bind="visible: !contributor.registered">(unregistered)</span>
+                                                --}}
+                                            </td>
+                                        </tr>
+                                    {{/each}}
+                                </tbody>
+                            </table>
 
-                                            <span data-bind="if: contributor.education">
-                                                <span
-                                                    class='small'
-                                                    data-bind="text: contributor.education">
-                                                </span><br>
-                                            </span>
-                                            <span class='small'
-                                                  data-bind="text: contributor.displayProjectsInCommon">
-                                            </span>
-                                            <span class='text-muted' data-bind="visible: !contributor.registered">(unregistered)</span>
-                                        </td>
-                                    </tr>
-                                {{/each}}
-                            </tbody>
-                        </table>
+                            {{!-- TODO: Support paginated result fetching widget. Moved from help-block style to here? --}}
+                            {{!-- <ul class="pagination pagination-sm" data-bind="foreach: paginators">
+                                <li data-bind="css: style"><a href="#" data-bind="click: handler, text: text"></a></li>
+                            </ul> --}}
 
-                        {{!-- TODO: Support paginated result fetching widget --}}
-                        <ul class="pagination pagination-sm" data-bind="foreach: paginators">
-                            <li data-bind="css: style"><a href="#" data-bind="click: handler, text: text"></a></li>
-                        </ul>
-                        <p>
-                            <a href="#" data-bind="click:gotoInvite">Add <strong><em>{{_searchText}}</em></strong> as an unregistered contributor</a>.
-                        </p>
-
+                            {{!-- TODO: Restore this when unregistered contributors are implemented in the API
+                            <p>
+                                <button {{action 'selectPage' 'invite'}} class="btn-link">Add <strong><em>{{_searchText}}</em></strong> as an unregistered contributor</button>.
+                            </p>
+                            --}}
+                        {{else}}
+                            No results found.
+                        {{!-- TODO: Restore text below when unreg contribs implemented in the API
+                            Try a more specific search or
+                            <button {{action 'selectPage' 'invite'}} class="btn-link">add <strong><em>{{_searchText}}</em></strong> as an unregistered contributor</button>.
+                            --}}
+                        {{/if}}
                     {{/if}}
 
-                    {{!-- Link to add non-registered contributor --}}
-                    <div class='help-block'>
-                        <div data-bind='if: foundResults'>
-
-                        </div>
-                        {{#if searchResults.isPending}}
+                    {{#if isLoading}}
+                        <div class='help-block'>
                             <p class="text-muted">Searching contributors...</p>
-                        {{/if}}
-                        <div data-bind="if: noResults">
-                            No results found. Try a more specific search or
-                            <a href="#" data-bind="click:gotoInvite">add <strong><em>{{_searchText}}</em></strong> as an unregistered contributor</a>.
                         </div>
-                    </div>
+                    {{/if}}
                 </div>{{!-- ./col-md --}}
 
                 <div class="col-md-6">
                     <div>
                         <span class="modal-subheader">Adding</span>
-                        <a data-bind="visible: removeAllVisible, click:removeAll">Remove all</a>
+                        {{#if contribsToAdd}}
+                            <button class="btn-link" {{action 'removeAllContributors'}}>Remove all</button>
+                        {{/if}}
                     </div>
 
-                    {{!-- TODO: Duplication here: Put this in a KO template --}}
-                    <table class="table-condensed">
-                        <thead data-bind="visible: selection().length">
-                            <th width="10%"></th>
-                            <th width="15%"></th>
-                            <th>Name</th>
-                            <th>
-                                Permissions
-                                <i class="fa fa-question-circle permission-info"
-                                        data-toggle="popover"
-                                        data-title="Permission Information"
-                                        data-container="#addContributors"
-                                        data-html="true"
-                                    ></i>
-                            </th>
-                        </thead>
-                        <tbody data-bind="foreach:{data:selection, as: 'contributor', afterRender:makeAfterRender()}">
-                            <tr>
-                                <td class="p-r-sm osf-icon-td">
-                                    <a class="btn btn-default contrib-button btn-mini" data-bind="click:$root.remove.bind($root), tooltip: {title: 'Remove contributor'}">
-                                        <i class="fa fa-minus"></i>
-                                    </a>
-                                </td>
-                                <td>
-                                    {{!-- height and width are explicitly specified for faster rendering --}}
-                                    <img data-bind="attr: {src: contributor.gravatar_url || '/static/img/unreg_gravatar.png'}" height=35 width=35>
-                                </td>
+                    {{!-- TODO: Consolidate markup./ conditionals with above --}}
+                    {{#if contribsToAdd}}
+                        <table class="table-condensed">
+                            <thead>
+                                <tr>
+                                    <th width="10%"></th>
+                                    <th width="15%"></th>
+                                    <th>Name</th>
+                                    <th>
+                                        Permissions
+                                        {{!-- TODO: Language constants; permission info maps to a string added to anything with the style. --}}
+                                        <i class="fa fa-question-circle permission-info"
+                                                data-toggle="popover"
+                                                title="Permission Information"
+                                                data-container="#addContributors"
+                                                data-html="true"></i>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{#each contribsToAdd as |person|}}
+                                    <tr>
+                                        <td class="p-r-sm osf-icon-td">
+                                            <button class="btn btn-default contrib-button btn-mini" {{action 'removeOneContributor' person}} title="Remove contributor">
+                                                <i class="fa fa-minus"></i>
+                                            </button>
+                                        </td>
+                                        <td>
+                                            {{!-- height and width are explicitly specified for faster rendering --}}
+                                            {{!-- TODO: Support a placeholder icon for unregistered contributors : /static/img/unreg_gravatar.png --}}
+                                            <img src="{{person.profileImage}}" height=35 width=35>
+                                        </td>
 
-                                <td>
-                                    <span   data-bind="text: contributor.fullname"></span>
-                                    <span class='text-muted' data-bind="visible: !contributor.registered">(unregistered)</span>
-                                </td>
+                                        <td>
+                                            {{person.fullName}}
+                                            {{!-- <span class='text-muted' data-bind="visible: !contributor.registered">(unregistered)</span> --}}
+                                        </td>
 
-                                <td>
-                                    <select class="form-control input-sm" data-bind="
-                                        options: $root.permissionList,
-                                        value: permission,
-                                        optionsText: 'text'">
-                                    </select>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                                        <td>
+                                            <select class="form-control input-sm" onchange={{action (mut person.selectedPermissions) value='target.value'}}>
+                                                {{#each permissionOptions as |option|}}
+                                                    <option selected={{eq option.value person.selectedPermissions}} value={{option.value}}>
+                                                        {{option.text}}
+                                                    </option>
+                                                {{/each}}
+                                            </select>
+                                        </td>
+                                    </tr>
+                                {{/each}}
+                            </tbody>
+                        </table>
+                    {{/if}}
                 </div>
 
             </div>
-
         {{/if}}
         {{!-- Component selection page --}}
 
         {{#if (eq page 'which')}}
+            {{!-- TODO: At present, this entire page is unimplemented pending a tree display widget --}}
             <div>
                 Adding contributor(s)
                 {{displayContribNamesToAdd}}
-                to {{model.title}}
+                to {{node.title}}
             </div>
 
             <hr>
@@ -216,8 +232,8 @@
         {{/if}}
 
         {{!-- Invite user page --}}
-        {{!-- TODO: This creates unregistered contribs, which is blocked pending OSF changes. Implement/ convert later --}}
         {{#if (eq page 'invite')}}
+            {{!-- TODO: This creates unregistered contribs, which is blocked pending OSF changes. Implement/ convert later --}}
             <form class='form'>
                 <div class="form-group">
                     <label for="inviteUserName">Full Name</label>
@@ -237,17 +253,16 @@
         {{/if}}
     {{/bs-modal-body}}
 
-    {{#bs-modal-footer}}
-        {{!-- FIXME: Cancel button needs appropriate action --}}
-        <button class="btn btn-default" {{action 'close'}}>Cancel</button>
+    {{#bs-modal-footer as |footer|}}
+        <button class="btn btn-default" {{action 'close' target=footer}}>Cancel</button>
 
         {{#if (and contribsToAdd (eq page 'whom'))}}
-            {{!-- TODO: children check should not require server call? --}}
-            {{#if model.children}}
+            {{!-- {{#if node.children}}
+                TODO: suppress "select child components" page until treebeard equivalent available. Also, children check should not require server call
                 <button class="btn btn-primary" {{action 'selectPage' 'which'}}>Next</button>
-            {{else}}
-                <button class="btn btn-success" {{action 'submitContributors'}}>Add</button>
-            {{/if}}
+            {{else}}  --}}
+            <button class="btn btn-success" {{action 'submitContributors'}}>Add</button>
+            {{!-- {{/if}} --}}
         {{/if}}
 
         {{#if (eq page 'which')}}
