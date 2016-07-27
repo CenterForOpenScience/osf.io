@@ -10,14 +10,14 @@
             See modal_remove_contributor.mako for sample template and contribRemover.js for guidance --}}
                 <div class="form-group">
                     <span>
-                        Remove <b> {{if removeSelf 'yourself' contributorToRemove.users.fullName}} </b> from <span>{{node.title}}</span>?
+                        Remove <b> {{if removeSelf 'yourself' (contributorName contributorToRemove)}} </b> from <span>{{node.title}}</span>?
                     </span>
                 </div>
         {{/if}}
 
         {{#if (and (not canRemoveNode) (not pageChanged))}}
             <span>
-                <b> {{if removeSelf 'You' contributorToRemove.users.fullName}} </b> cannot be
+                <b> {{if removeSelf 'You' (contributorName contributorToRemove)}} </b> cannot be
                 removed as a contributor.  You need at least one administrator, bibliographic contributor, and registered user.
             </span>
         {{/if}}
@@ -35,7 +35,6 @@
                     <div  class="remove-page-buttons" align="right">
                         {{!-- TODO  - how to use the bs-modal close action --}}
                         <button {{action 'close'}} class="btn btn-default"> Cancel </button>
-                        {{!-- {{#bs-button (action "close" target=footer) type="default"}} Cancel {{/bs-button}} --}}
                         <a class="btn btn-danger" {{action (action 'removeContributor' contributorToRemove)}}>Remove</a>
                     </div>
                 </div>
