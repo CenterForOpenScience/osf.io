@@ -100,6 +100,8 @@ var ChangePasswordViewModel = oop.extend(BaseViewModel, {
             email: true
         });
 
+        self.oldPassword = ko.observable('').extend({required: true});
+
         self.password.extend({
             validation: {
                 validator: function(val, other) {
@@ -115,6 +117,21 @@ var ChangePasswordViewModel = oop.extend(BaseViewModel, {
             }
         });
 
+        self.password.extend({
+            validation: {
+                validator: function(val, other) {
+                    if (String(val).toLowerCase() === String(other).toLowerCase()) {
+                        self.typedPassword(' ');
+                        return false;
+                    } else {
+                        return true;
+                    }
+                },
+                'message': 'Your new password cannot be the same as your old password.',
+                params: self.oldPassword
+            }
+        });
+
         self.passwordConfirmation = ko.observable('').extend({
             required: true,
             validation: {
@@ -125,7 +142,6 @@ var ChangePasswordViewModel = oop.extend(BaseViewModel, {
                 params: self.password
             }
         });
-        self.oldPassword = ko.observable('').extend({required: true});
 
     },
     getValidatedFields: function() {
@@ -250,7 +266,7 @@ var SignUpViewModel = oop.extend(BaseViewModel, {
             );
         } else {
             self.changeMessage(
-                'Your username or email contains invalid characters.',
+                xhr.responseJSON.message_long,
                 'text-danger p-xs',
                 5000
             );
