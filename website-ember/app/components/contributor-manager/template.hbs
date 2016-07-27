@@ -31,7 +31,7 @@
             <tr id={{contributor.id}}>
                 <td>
                     <span class="fa fa-bars sortable-bars"></span>
-                    <img class="m-l-xs" src={{concat contributor.users.links.profile_image '&s=40'}}>
+                    <img class="m-l-xs" src={{contributor.users.links.profile_image}} height=40 width=40>
                     {{#if contributor.unregisteredContributor}}
                         {{contributor.unregisteredContributor}}
                     {{else}}
@@ -40,19 +40,24 @@
                 </td>
                 <td> </td>
                 <td class="permissions">
-                    {{#if canEdit}}
-                        <select style='font-weight:bold' class='form-control input-sm' onchange={{action (action 'permissionChange' contributor contributors) value='target.value'}}>
-                            <option value='read' selected={{eq contributor.permission 'read'}}> Read</option>
-                            <option value='write' selected={{eq contributor.permission 'write'}}> Read + Write</option>
-                            <option value='admin' selected={{eq contributor.permission 'admin'}}> Administrator</option>
-                        </select>
-                    {{else}}
-                        {{permissionMap contributor.permission}}
-                    {{/if}}
+                    <div class="header"></div>
+                    <div class="td-content">
+                        {{#if canEdit}}
+                            <select style='font-weight:bold' class='form-control input-sm' onchange={{action (action 'permissionChange' contributor contributors) value='target.value'}}>
+                                <option value='read' selected={{eq contributor.permission 'read'}}> Read</option>
+                                <option value='write' selected={{eq contributor.permission 'write'}}> Read + Write</option>
+                                <option value='admin' selected={{eq contributor.permission 'admin'}}> Administrator</option>
+                            </select>
+                        {{else}}
+                            <span> {{permissionMap contributor.permission}} </span>
+                        {{/if}}
+                    </div>
                 </td>
                 <td class="bibliographic">
-                    <input disabled={{if canEdit false true}} onchange={{action (action 'bibliographicChange' contributor contributors) value='target.checked'}} checked={{eq contributor.bibliographic true}} type="checkbox" name="bibliographic">
-
+                    <div class="header"></div>
+                    <div class="td-content">
+                        <input disabled={{if canEdit false true}} onchange={{action (action 'bibliographicChange' contributor contributors) value='target.checked'}} checked={{eq contributor.bibliographic true}} type="checkbox" name="bibliographic">
+                    </div>
                 </td>
                 <td>
                     {{#if (or canEdit (canRemoveContributor contributor currentUser isRegistration))}}
