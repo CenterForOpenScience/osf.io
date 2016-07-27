@@ -10,7 +10,8 @@ from website.addons.base import StorageAddonBase
 
 from website.addons.s3.provider import S3Provider
 from website.addons.s3.serializer import S3Serializer
-from website.addons.s3.settings import ENCRYPT_UPLOADS_DEFAULT
+from website.addons.s3.settings import ENCRYPT_UPLOADS_DEFAULT, BUCKET_LOCATIONS
+from website.addons.s3.utils import bucket_exists, get_bucket_names, get_bucket_location_or_error
 
 
 class S3UserSettings(AddonOAuthUserSettingsBase):
@@ -24,44 +25,79 @@ class S3NodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     oauth_provider = S3Provider
     serializer = S3Serializer
 
-    bucket = fields.StringField()
+    folder_id = fields.StringField()
+    folder_name = fields.StringField()
     encrypt_uploads = fields.BooleanField(default=ENCRYPT_UPLOADS_DEFAULT)
 
     @property
-    def folder_name(self):
-        return self.bucket
-
-    @property
-    def folder_id(self):
-        return self.bucket
-
-    @property
     def folder_path(self):
-        return self.bucket
+        return self.folder_name
 
     def fetch_folder_name(self):
         return self.folder_name
 
     @property
     def display_name(self):
-        return u'{0}: {1}'.format(self.config.full_name, self.bucket)
+        return u'{0}: {1}'.format(self.config.full_name, self.folder_id)
 
     def set_folder(self, folder_id, auth):
-        self.bucket = str(folder_id)
+        if not bucket_exists(self.external_account.oauth_key, self.external_account.oauth_secret, folder_id):
+            error_message = ('We are having trouble connecting to that bucket. '
+                             'Try a different one.')
+            raise exceptions.InvalidFolderError(error_message)
+
+        self.folder_id = str(folder_id)
+
+        bucket_location = get_bucket_location_or_error(
+            self.external_account.oauth_key,
+            self.external_account.oauth_secret,
+            folder_id
+        )
+        try:
+            bucket_location = BUCKET_LOCATIONS[bucket_location]
+        except KeyError:
+            # Unlisted location, S3 may have added it recently.
+            # Default to the key. When hit, add mapping to settings
+            pass
+
+        self.folder_name = '{} ({})'.format(folder_id, bucket_location)
         self.save()
 
         self.nodelogger.log(action='bucket_linked', extra={'bucket': str(folder_id)}, save=True)
 
+    def get_folders(self, **kwargs):
+        # This really gets only buckets, not subfolders,
+        # as that's all we want to be linkable on a node.
+        try:
+            buckets = get_bucket_names(self)
+        except:
+            raise exceptions.InvalidAuthError()
+
+        return [
+            {
+                'addon': 's3',
+                'kind': 'folder',
+                'id': bucket,
+                'name': bucket,
+                'path': bucket,
+                'urls': {
+                    'folders': ''
+                }
+            }
+            for bucket in buckets
+        ]
+
     @property
     def complete(self):
-        return self.has_auth and self.bucket is not None
+        return self.has_auth and self.folder_id is not None
 
     def authorize(self, user_settings, save=False):
         self.user_settings = user_settings
         self.nodelogger.log(action='node_authorized', save=save)
 
     def clear_settings(self):
-        self.bucket = None
+        self.folder_id = None
+        self.folder_name = None
 
     def deauthorize(self, auth=None, log=True):
         """Remove user authorization from this node and log the event."""
@@ -84,10 +120,10 @@ class S3NodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         }
 
     def serialize_waterbutler_settings(self):
-        if not self.bucket:
+        if not self.folder_id:
             raise exceptions.AddonError('Cannot serialize settings for S3 addon')
         return {
-            'bucket': self.bucket,
+            'bucket': self.folder_id,
             'encrypt_uploads': self.encrypt_uploads
         }
 
@@ -101,7 +137,7 @@ class S3NodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
                 'path': metadata['materialized'],
-                'bucket': self.bucket,
+                'bucket': self.folder_id,
                 'urls': {
                     'view': url,
                     'download': url + '?action=download'

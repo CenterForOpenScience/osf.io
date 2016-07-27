@@ -259,7 +259,7 @@ var FolderPickerViewModel = oop.defclass({
             self.afterUpdate();
             ret.resolve();
         };
-        if (typeof data === 'undefined'){
+        if (typeof data === 'undefined' || $.isEmptyObject(data)){
             self.fetchFromServer()
                 .done(applySettings)
                 .fail(ret.reject);
