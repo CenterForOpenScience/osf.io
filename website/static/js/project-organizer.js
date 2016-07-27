@@ -332,9 +332,9 @@ var tbOptions = {
         $('[data-toggle="tooltip"]').tooltip();
     },
     onmultiselect : _poMultiselect,
-    resolveIcon : function _poIconView(item) { // Project Organizer doesn't use icons
-        if (item.data.attributes.registration){
-            return m('i.fa.fa-cube.text-muted-more');
+    resolveIcon : function _poIconView(item) {
+        if (item.data.attributes.fork){
+            return m('i.fa.fa-code-fork');
         }
         return m('i.' + iconmap.projectComponentIcons[item.data.attributes.category]);
     },
