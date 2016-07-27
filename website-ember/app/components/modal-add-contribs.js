@@ -66,23 +66,32 @@ export default Ember.Component.extend({
     //////////////////////////////////
     // The username to search for
     _searchText: null,
-    // Store results array from search. TODO: Make this store a promise so we can check fulfilled status
+    // Store results array from search.
     usersFound: null,
+    isLoading: false, // Track loading state of search
 
     // Filtering functionality
     contribsToAdd: Ember.A(),
     contribsNotYetAdded: Ember.computed('usersFound', 'contribsToAdd.[]', function() {
-        let contribsToAdd= this.get('contribsToAdd');
+        let contribsToAdd = this.get('contribsToAdd');
         let usersFound = this.get('usersFound');
         return usersFound.filter((item) => !contribsToAdd.contains(item));
     }),
 
     // Some computed properties
-    canViewParent: Ember.computed.alias('node.parent'), // TODO : verify first whether user can view parent. May need a new model field.
+    canViewParent: Ember.computed.alias('node.parent'), // TODO : Deal with edge case where node has parent that user can't see
 
     // TODO: This link should be hidden if the only search results returned are for people who are already contributors on the node
     // Was: addAllVisible, contribAdder.js
-    showAddAll: true, // TODO: Implement
+    showAddAll: Ember.computed('usersFound', 'contribsNotYetAdded', function() {
+        let usersFound = this.get('usersFound');
+        if (!usersFound || !usersFound.length) {
+            return false;
+        }
+        // Do not show the add all button if all the search results are already contributors.
+        let filtered = this.get('contribsNotYetAdded').filterBy('isContributor', false);
+        return !!filtered.length;
+    }),
 
     //////////////////////////////////
     // OPTIONS FOR THE WHICH PAGE   //
@@ -127,6 +136,8 @@ export default Ember.Component.extend({
                 size: 10  // TODO: Make configurable for pagination
             };
             // TODO: add payload fields for 'from' and 'size' to control response?
+            this.set('isLoading', true);
+
             let resp = Ember.$.ajax({
                 method: 'POST',
                 url: '/api/v1/search/user/',
@@ -145,14 +156,18 @@ export default Ember.Component.extend({
                 return res.map((item) => this._wrapUserAsContributor(item,
                     { isContributor: contributorIds.contains(item.id) }
                 ));
-            }).then((res) => this.set('usersFound', res)
-            ).catch((error) => console.log('Query failed with error', error));  // TODO: Show errors to user
+            }).then((res) => {
+                this.set('usersFound', res);
+                this.set('isLoading', false);
+            }).catch((error) => {
+                this.set('isLoading', false);
+                console.log('Query failed with error', error);
+            });  // TODO: Show errors to user
         },
         importContribsFromParent() {
             //TODO: Import contributors from parent
             console.log('Imported contributors!');
         },
-
         addAllContributors() {
             // Select all available search results, and add them to the list of people who will be added to the project (pending additional options)
             // was addAll in contribAdder.js
@@ -176,12 +191,17 @@ export default Ember.Component.extend({
         submitContributors() {
             // Intended to work with the addContributor action of `NodeActionsMixin`
             // TODO: This would benefit from bulk support. Error handling mechanism should deal with one/all requests failing
-            // TODO: This should close the modal when done
             let contribsToAdd = this.get('contribsToAdd');
             contribsToAdd.forEach((item) => {
-                console.log('Adding:', item.get('fullName'));
                 this.attrs.addContributor(item.get('id'), item.get('selectedPermission'), true)
-                    .then(() => this.send('removeOneContributor', item));
+                    .then(() => {
+                        item.set('isContributor', true);
+                        this.send('removeOneContributor', item);
+                        // TODO: Hacky way of closing the modal, will bypass any closeAction cleanup specified to bs-modal
+                        // TODO: Investigate submitAction for this use case. Implement that based on UI decision for showing errors.
+                        this.set('isOpen', false);
+
+                    });
             });
         },
         submitInvite() {

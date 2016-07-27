@@ -47,7 +47,7 @@
                     {{!-- Note: Removed "notifications" block because it seemed to be no longer used in staticjs code. TODO: Verify this is correct --}}
 
                     {{!-- Intent: Only show search results if done loading and results were found --}}
-                    {{#if true}}{{!-- usersFound.isFulfilled   TODO: Implement loading/ loaded check on promise --}}
+                    {{#if (and usersFound (not isLoading))}}
                         {{#if usersFound.length}}
                             <table class="table-condensed">
                                 <tbody>
@@ -123,7 +123,7 @@
                         {{/if}}
                     {{/if}}
 
-                    {{#if usersFound.isPending}}  {{!-- TODO: replace with loading state watcher --}}
+                    {{#if isLoading}}
                         <div class='help-block'>
                             <p class="text-muted">Searching contributors...</p>
                         </div>
