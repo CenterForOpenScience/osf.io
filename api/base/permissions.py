@@ -34,6 +34,12 @@ class TokenHasScope(permissions.BasePermission):
             # Assumption: user authenticated via non-oauth means, so don't check token permissions.
             return True
 
+        return self._verify_scopes(request, view, token)
+
+    def _verify_scopes(self, request, view, token):
+        # Anything calling this method should handle the case where
+        # `token is None` before making this call.
+
         required_scopes = self._get_scopes(request, view)
 
         # Scopes are returned as a space-delimited list in the token
@@ -76,6 +82,23 @@ class TokenHasScope(permissions.BasePermission):
                 raise ImproperlyConfigured('TokenHasScope requires the view to define the '
                                            'required_write_scopes attribute using CoreScopes rather than ComposedScopes')
             return write_scopes
+
+
+class RequiresScopedRequestOrReadOnly(TokenHasScope):
+    message = 'Write requests to this view are restricted to properly-scoped tokens.'
+
+    def has_object_permission(self, request, view, obj):
+        # FIXME: Implement request.user validation if necessary
+        return self.has_permission(request, view)
+
+    def has_permission(self, request, view):
+        token = request.auth
+
+        if token is None or not isinstance(token, CasResponse):
+            # Assumption: user authenticated via non-oauth means, and this endpoint has restricted write
+            return request.method in permissions.SAFE_METHODS
+
+        return self._verify_scopes(request, view, token)
 
 
 class RequestHasAdminScope(permissions.BasePermission):
