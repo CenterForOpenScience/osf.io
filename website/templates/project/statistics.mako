@@ -35,7 +35,7 @@
       The use of adblocking software may prevent site analytics from loading properly.
     </div>
 
-    <div class="row m-lg">
+    <div class="row m-b-sm">
       <div class="col-sm-12">
 
         <div id="dateRange" class="pull-right">
@@ -58,7 +58,8 @@
 
       </div>
     </div>
-    <div class="row m-lg">
+
+    <div class="row">
         <div class="col-sm-6">
             <div class="panel panel-default project-analytics">
                 <div class="panel-heading clearfix">
@@ -83,6 +84,9 @@
             </div>
           </div>
         </div>
+    </div>
+
+    <div class="row">
         <div class="col-sm-6">
             <div class="panel panel-default project-analytics">
                 <div class="panel-heading clearfix">
