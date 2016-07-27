@@ -30,6 +30,7 @@ export default Ember.Controller.extend(NodeActionsMixin, {
         updateContributors(contributors, permissionsChanges, bibliographicChanges) {
             this._super(...arguments);
             // TODO how to send multiple save actions in a row without reload?
+            // May be related to how loading contributors initially.
             window.location.reload();
         }
 

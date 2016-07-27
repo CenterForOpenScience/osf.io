@@ -62,104 +62,27 @@
         {{#if canEdit}}
             <p class="m-b-xs">Drag and drop contributors to change listing order.</p>
         {{/if}}
-        {{!-- % if 'admin' in user['permissions'] and not node['is_registration']: --}}
 
-        {{!-- % endif --}}
+        {{!-- TODO get filtering working --}}
 
-    {{!-- <div data-bind="filters: {
-            items: ['.contrib', '.admin'],
-            toggleClass: 'btn-default btn-primary',
-            manualRemove: true,
-            groups: {
-                permissionFilter: {
-                    filter: '.permission-filter',
-                    type: 'text',
-                    buttons: {
-                        admins: 'Administrator',
-                        write: 'Read + Write',
-                        read: 'Read'
-                    }
-                },
-                visibleFilter: {
-                    filter: '.visible-filter',
-                    type: 'checkbox',
-                    buttons: {
-                        visible: true,
-                        notVisible: false
-                    }
-                }
-            },
-            inputs: {
-                nameSearch: '.name-search'
-            }
-        }"> --}}
         <div>
             {{contributor-manager contributors=contributors currentUser=user node=model isAdmin=isAdmin canEdit=canEdit editContributors=(action 'updateContributors') removeContributor=(action 'removeContributor')}}
         </div>
-        {{!--<div data-bind="visible: $root.empty" class="no-items text-danger m-b-md">
-            No contributors found
-        </div>
-        <span id="adminContributorsAnchor" class="project-page anchor"></span>
-        <div id="adminContributors" data-bind="if: adminContributors().length">
-            <h4>
-                Admins on Parent Projects
-                <i class="fa fa-question-circle admin-info"
-                      data-content="These users are not contributors on
-                      this component but can view and register it because they
-                        are administrators on a parent project."
-                      data-toggle="popover"
-                      data-title="Admins on Parent Projects"
-                      data-container="body"
-                      data-placement="right"
-                      data-html="true"
-                ></i>
-            </h4>
-            <table  id="adminContributorsTable"
-                    class="table responsive-table responsive-table-xxs"
-                    data-bind="template: {
-                        name: 'contribTable',
-                        afterRender: afterRender,
-                        options: {
-                            containment: '#manageContributors'
-                        },
-                        data: 'admin'
-                    }">
-            </table>
-            <div id="noAdminContribs" data-bind="visible: $root.adminEmpty" class="text-danger no-items m-b-md">
-                No administrators from parent project found.
-            </div>
-        </div>
-        ${buttonGroup()} --}}
+
+        {{!-- TODO get Admins on Parent Projects working  --}}
+
     </div>
 
-    {{!-- % if 'admin' in user['permissions']: --}}
-    <h3 class="m-t-xl">
-        View-only Links
-        <a href="#addPrivateLink" data-toggle="modal" class="btn btn-success btn-sm m-l-md">
-            <i class="fa fa-plus"></i> Add
-        </a>
-    </h3>
-    <p>Create a link to share this project so those who have the link can view&mdash;but not edit&mdash;the project.</p>
-    {{!-- <div class="scripted" id="linkScope">
-        <table id="privateLinkTable" class="table responsive-table responsive-table-xs"
-                data-bind="visible: visible">
-            <thead>
-                <tr>
-                    <th class="responsive-table-hide">Link Name</th>
-                    <th class="shared-comp">Shared Components</th>
-                    <th>Created Date</th>
-                    <th>Created By</th>
-                    <th class="min-width">Anonymous</th>
-                    <th class="min-width"></th>
-                </tr>
-            </thead>
-            <tbody data-bind="template: {
-                        name: 'linkTbl',
-                        foreach: privateLinks,
-                        afterRender: afterRenderLink
-                    }">
-            </tbody>
-        </table>
-    </div> --}}
-    {{!-- % endif --}}
+    {{#if isAdmin}}
+        <h3 class="m-t-xl">
+            View-only Links
+            <a href="#addPrivateLink" data-toggle="modal" class="btn btn-success btn-sm m-l-md">
+                <i class="fa fa-plus"></i> Add
+            </a>
+        </h3>
+        <p>Create a link to share this project so those who have the link can view&mdash;but not edit&mdash;the project.</p>
+
+        {{!-- TODO get view only links working  --}}
+
+    {{/if}}
 </div>
