@@ -2949,9 +2949,8 @@ class NodeViewOnlyLinksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
         drf_permissions.IsAuthenticatedOrReadOnly
     )
 
-    # Maybe?
-    required_read_scopes = [CoreScopes.NODE_BASE_READ]
-    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+    required_read_scopes = [CoreScopes.NODE_VIEW_ONLY_LINKS_READ]
+    required_write_scopes = [CoreScopes.NODE_VIEW_ONLY_LINKS_WRITE]
 
     serializer_class = NodeViewOnlyLinkSerializer
 
@@ -2977,9 +2976,8 @@ class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIV
         drf_permissions.IsAuthenticatedOrReadOnly
     )
 
-    # Maybe?
-    required_read_scopes = [CoreScopes.NODE_BASE_READ]
-    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+    required_read_scopes = [CoreScopes.NODE_VIEW_ONLY_LINKS_READ]
+    required_write_scopes = [CoreScopes.NODE_VIEW_ONLY_LINKS_WRITE]
 
     serializer_class = NodeViewOnlyLinkSerializer
 
