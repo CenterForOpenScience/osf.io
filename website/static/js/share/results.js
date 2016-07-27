@@ -5,6 +5,7 @@ var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
 var utils = require('./utils');
+var mathrender = require('js/mathrender');
 require('truncate');
 
 var LoadingIcon = {
@@ -17,7 +18,7 @@ var Results = {
     view: function(ctrl, params) {
         var vm = params.vm;
         var resultViews = $.map(vm.results || [], function(result, i) {
-            return m.component(Result, {result: result, vm: vm,});
+            return m.component(Result, {result: result, vm: vm});
         });
 
 
@@ -37,7 +38,11 @@ var Results = {
         };
 
         return m('', [
-            m('.row', m('.col-md-12', maybeResults(resultViews, vm.resultsLoading()))),
+            m('.row', m('.col-md-12', {
+                config: function(el, ini, ctx) {
+                    mathrender.typeset(el); // Adds all results to Mathjax queue at once.
+                }
+            }, maybeResults(resultViews, vm.resultsLoading()))),
             m('.row', m('.col-md-12', m('div', {style: {display: 'block', margin: 'auto', 'text-align': 'center'}},
                 len > 0 && len < vm.count ?
                 m('a.btn.btn-md.btn-default', {
@@ -107,10 +112,11 @@ var Description = {
         };
         if ((result.description || '').length > 350) {
             return m('', [
-                m('p.readable.pointer', {onclick: showOnClick},
-                    ctrl.showAll() ? result.description : $.truncate(result.description, {length: 350})
-                ),
-                m('a.sr-only', {href: '#', onclick: showOnClick}, ctrl.showAll() ? 'See less' : 'See more')]);
+                m('p.readable.pointer', {
+                    onclick: showOnClick,
+                }, ctrl.showAll() ? result.description : $.truncate(result.description, {length: 350})),
+                m('a.sr-only', {href: '#', onclick: showOnClick}, ctrl.showAll() ? 'See less' : 'See more')
+            ]);
         } else {
             return m('p.readable', result.description);
         }
