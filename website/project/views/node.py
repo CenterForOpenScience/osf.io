@@ -682,7 +682,7 @@ def _view_project(node, auth, primary=False):
             'category': node.category_display,
             'category_short': node.category,
             'node_type': node.project_or_component,
-            'description': node.description if 'write' in node.get_permissions(user) else linkify(node.description),
+            'description': node.description if node.has_permission(user, WRITE) else linkify(node.description),
             'license': serialize_node_license_record(node.license),
             'url': node.url,
             'api_url': node.api_url,
