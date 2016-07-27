@@ -7,9 +7,6 @@ export default Ember.Component.extend({
             this.sendAction('updateContributors');
             this.set('isOpen', false);
             this.sendAction('refreshView');
-        },
-        close() {
-            this.set('isOpen', false);
         }
     }
 });

@@ -43,10 +43,10 @@ export default Ember.Component.extend({
         cancel() {
             var _this = this;
             var contributors = _this.get('contributors');
-            contributors.forEach(function(contrib, index) {
-                $('tr#' + contrib.id + ' td.permissions select').val(contrib.get('permission'));
-                $('tr#' + contrib.id + ' td.permissions select').attr('style', 'font-weight:bold');
-                $('tr#' + contrib.id + ' td.bibliographic input')[0].checked = contrib.get('bibliographic');
+            contributors.forEach(function(contrib) {
+                Ember.$('tr#' + contrib.id + ' td.permissions select').val(contrib.get('permission'));
+                Ember.$('tr#' + contrib.id + ' td.permissions select').attr('style', 'font-weight:bold');
+                Ember.$('tr#' + contrib.id + ' td.bibliographic input')[0].checked = contrib.get('bibliographic');
             });
             this.set('hasMinAdmins', true);
             this.set('hasMinBibliographic', true);
@@ -59,7 +59,7 @@ export default Ember.Component.extend({
             this.set('canRemoveContributor', this.contributorRemovalPrecheck(contributor, this.get('contributors')));
             this.set('contributorToRemove', contributor);
         },
-        toggleSaveContributorModal(contributor) {
+        toggleSaveContributorModal() {
             this.toggleProperty('showModalSaveContributors');
         },
         removeContributor(contrib) {
@@ -78,7 +78,7 @@ export default Ember.Component.extend({
         var numAdmins = 0;
         var numBibliographic = 0;
 
-        contributors.forEach(function(contrib, index) {
+        contributors.forEach(function(contrib) {
             var changedPermission = _this.get('permissionChanges')[contrib.id];
             var originalPermission = contrib.get('permission');
             if (changedPermission && (originalPermission !== changedPermission)) {

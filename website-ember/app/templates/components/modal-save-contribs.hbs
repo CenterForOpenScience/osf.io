@@ -6,9 +6,9 @@
         Are you sure you want to save these changes?
     {{/bs-modal-body}}
 
-    {{#bs-modal-footer}}
+    {{#bs-modal-footer as |footer|}}
         <div align="right">
-            <button {{action 'close'}} class="btn btn-default"> Cancel </button>
+            <button {{action 'close' target=footer}} class="btn btn-default"> Cancel </button>
             <a class="btn btn-success" {{action (action 'updateContributors' contributorToRemove)}}>Save</a>
         </div>
     {{/bs-modal-footer}}

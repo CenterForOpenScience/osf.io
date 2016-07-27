@@ -13,9 +13,6 @@ export default Ember.Component.extend({
         removeContributor(contrib) {
             this.set('isOpen', false);
             this.sendAction('removeContributor', contrib);
-        },
-        close() {
-            this.set('isOpen', false);
         }
     }
 });
