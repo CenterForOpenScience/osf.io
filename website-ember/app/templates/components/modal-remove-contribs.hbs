@@ -26,15 +26,14 @@
         {{/if}}
     {{/bs-modal-body}}
 
-    {{#bs-modal-footer}}
+    {{#bs-modal-footer as |footer|}}
         {{!-- TODO Add remaining modal cancel/close/remove combinations for cases where can remove contributors from nested components as well
         See modal_remove_contributor.mako for sample template and contribRemover.js for guidance --}}
         <div align="right">
             {{#if (and canRemoveNode (not pageChanged))}}
                 <div class="row">
                     <div  class="remove-page-buttons" align="right">
-                        {{!-- TODO  - how to use the bs-modal close action --}}
-                        <button {{action 'close'}} class="btn btn-default"> Cancel </button>
+                        <button {{action 'close' target=footer}} class="btn btn-default"> Cancel </button>
                         <a class="btn btn-danger" {{action (action 'removeContributor' contributorToRemove)}}>Remove</a>
                     </div>
                 </div>
@@ -45,8 +44,7 @@
             {{#if (or (not canRemoveNode) pageChanged)}}
                 <div class="row">
                     <div  class="remove-page-buttons" align="right">
-                        {{!-- TODO - how to use the bs-modal close action --}}
-                        <button {{action 'close'}} class="btn btn-default"> Cancel </button>
+                        <button {{action 'close' target=footer}} class="btn btn-default"> Cancel </button>
                     </div>
                 </div>
             {{/if}}
