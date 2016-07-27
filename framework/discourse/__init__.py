@@ -5,6 +5,9 @@ from topics import *
 from users import *
 
 def sync_project(project_node):
+    if in_migration:
+        return
+
     sync_group(project_node)
 
     if project_node.discourse_topic_id:

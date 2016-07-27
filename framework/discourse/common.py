@@ -2,7 +2,11 @@ from website import settings
 import requests
 from simplejson.scanner import JSONDecodeError
 
+# print out all API requests to discourse
 log_requests = False
+
+# Prevent unnecessary syncing to discourse from spurious differences during a migration
+in_migration = False
 
 class DiscourseException(Exception):
     def __init__(self, message, result):

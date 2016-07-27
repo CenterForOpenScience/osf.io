@@ -93,6 +93,9 @@ def _update_topic_metadata(node):
     return request('put', '/t/' + node.guid_id + '/' + str(node.discourse_topic_id), data)
 
 def sync_topic(node):
+    if in_migration:
+        return
+
     if node.discourse_topic_id is None:
         create_topic(node)
         return
