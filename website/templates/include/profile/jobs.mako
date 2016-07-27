@@ -109,6 +109,7 @@
                     >Discard changes</button>
 
                 <button
+                        data-bind="disable: saving(), text: saving() ? 'Saving' : 'Save'"
                         type="submit"
                         class="btn btn-success"
                     >Save</button>
@@ -146,7 +147,7 @@
                                 <span data-bind="attr: {class: expanded() ? 'fa toggle-icon fa-angle-down' : 'fa toggle-icon fa-angle-up'}"></span>
                             </div>
                             <div data-bind="attr: {id: 'jobCard' + $index(), 'aria-labelledby': 'jobHeading' + $index()}" class="panel-collapse collapse">
-                                <div class="panel-body">
+                                <div class="panel-body card-body">
                                     <span data-bind="if: department().length"><h5>Department / Institute:</h5> <span data-bind="text: department"></span></span>
                                     <span data-bind="if: title().length"><h5>Title:</h5> <span data-bind="text: title"></span></span>
                                     <span data-bind="if: startYear()"><h5>Dates:</h5>

@@ -72,9 +72,6 @@ website/gpg/
 webpack-assets.json
 sauce.json
 
-# Built log templates
-website/templates/_log_templates.mako
-
 # Build JS files
 website/static/built/*
 
@@ -109,6 +106,7 @@ scripts/guid_blacklist.txt
 
 # Generated json
 website/static/js/_allLogTexts.json
+website/static/js/_anonymousLogTexts.json
 
 # Admin Specific
 #################

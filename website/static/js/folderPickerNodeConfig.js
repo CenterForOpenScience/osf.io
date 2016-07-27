@@ -324,7 +324,7 @@ var FolderPickerViewModel = oop.defclass({
             .fail(onSubmitError);
     },
     onImportSuccess: function(response) {
-        var self = this;       
+        var self = this;
         var msg = response.message || self.messages.tokenImportSuccess();
         // Update view model based on response
         self.changeMessage(msg, 'text-success', 3000);
@@ -509,7 +509,20 @@ var FolderPickerViewModel = oop.defclass({
                     custom : FolderPicker.selectView
                 }
             ];
-            }
+            },
+            xhrconfig: $osf.setXHRAuthorization,
+            lazyLoadPreprocess: function(data) {
+                // Also handle data from API -- squash `attributes` to what TB expects
+                // TODO: [OSF-6384] DRY this up when PR #5240 goes in
+                if (data.data) {
+                    $.each(data.data, function(i, obj) {
+                        var savedAttributes = obj.attributes;
+                        delete obj.attributes;
+                        $.extend(true, obj, savedAttributes);
+                    });
+                }
+                return data;
+            },
         }, self.treebeardOptions);
         self.currentDisplay(self.PICKER);
         // Only load folders if they haven't already been requested

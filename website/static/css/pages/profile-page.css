@@ -61,6 +61,10 @@ table.table.table-plain th, table.table.table-plain td {
     position: relative;
 }
 
+.card-body h5{
+   font-weight: bold;
+}
+
 .card-heading .subheading {
     display: block;
     font-style: italic;

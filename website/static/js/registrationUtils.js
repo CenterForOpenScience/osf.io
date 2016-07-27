@@ -501,11 +501,15 @@ MetaSchema.prototype.askConsent = function(pre) {
             $osf.unblock();
             bootbox.hideAll();
             ret.resolve();
+            $(document.body).removeClass('background-unscrollable');
+            $('.modal').removeClass('modal-scrollable');
         },
         cancel: function() {
             $osf.unblock();
             bootbox.hideAll();
             ret.reject();
+            $(document.body).removeClass('background-unscrollable');
+            $('.modal').removeClass('modal-scrollable');
         }
     };
 
@@ -513,9 +517,15 @@ MetaSchema.prototype.askConsent = function(pre) {
         size: 'large',
         message: function() {
             ko.renderTemplate('preRegistrationConsent', viewModel, {}, this);
+            $(document.body).addClass('background-unscrollable');
         }
     });
 
+    $('.bootbox-close-button.close').click(function() {
+        $(document.body).removeClass('background-unscrollable');
+        $('.modal').removeClass('modal-scrollable');
+    });
+    $('.modal').addClass('modal-scrollable');
     return ret.promise();
 };
 
@@ -617,7 +627,7 @@ Draft.prototype.preRegisterPrompts = function(response, confirm) {
         };
     }
     var preRegisterPrompts = response.prompts || [];
-
+    
     var registrationModal = new RegistrationModal.ViewModel(
         confirm, preRegisterPrompts, validator
     );
@@ -773,12 +783,12 @@ Draft.prototype.reject = function() {
  **/
 var RegistrationEditor = function(urls, editorId, preview) {
     var self = this;
-
     self.urls = urls;
 
     self.readonly = ko.observable(false);
 
     self.draft = ko.observable();
+    self.pk = null;
 
     self.currentQuestion = ko.observable();
     self.showValidation = ko.observable(false);
@@ -886,7 +896,7 @@ var RegistrationEditor = function(urls, editorId, preview) {
 		$elem.append(
 		    $('<span class="col-md-12">').append(
 			$('<p class="breaklines"><small><em>' + $osf.htmlEscape(question.description) + '</em></small></p>'),
-                            $('<span class="well col-md-12">').append(value)
+                            $('<span class="well col-xs-12">').append(value)
 		));
             }
 	    return $elem;
@@ -910,6 +920,7 @@ RegistrationEditor.prototype.init = function(draft) {
     var self = this;
 
     self.draft(draft);
+    self.pk = draft.pk;
     var metaSchema = draft ? draft.metaSchema: null;
 
     self.saveManager = null;
@@ -982,7 +993,7 @@ RegistrationEditor.prototype.context = function(data, $root, preview) {
     });
 
     if (this.extensions[data.type]) {
-        return new this.extensions[data.type](data, $root, preview);
+        return new this.extensions[data.type](data, $root.pk, preview);
     }
     return data;
 };
@@ -1052,8 +1063,10 @@ RegistrationEditor.prototype.updateData = function(response) {
     var self = this;
 
     var draft = self.draft();
+
     draft.pk = response.pk;
     draft.updated = new Date(response.updated);
+
     self.draft(draft);
 };
 
@@ -1421,6 +1434,8 @@ RegistrationManager.prototype.createDraftModal = function(selected) {
                     var selectedSchema = self.selectedSchema();
                     if (selectedSchema.requiresConsent) {
                         selectedSchema.askConsent(true).then(function() {
+                            $(document.body).removeClass('background-unscrollable');
+                            $('.modal').removeClass('modal-scrollable');
                             $('#newDraftRegistrationForm').submit();
                         });
                     }

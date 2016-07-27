@@ -3,6 +3,7 @@
 var m = require('mithril');
 var URI = require('URIjs');
 var $ = require('jquery');
+var Raven = require('raven-js');
 
 var Fangorn = require('js/fangorn');
 var waterbutler = require('js/waterbutler');
@@ -32,14 +33,16 @@ var _dataverseItemButtons = {
         function dataversePublish(event, item, col) {
             var both = !item.data.dataverseIsPublished;
             var url = item.data.urls.publish;
+            var host = item.data.host;
             var toPublish = both ? 'Dataverse and dataset' : 'dataset';
+            // Set the modal content to reflect the file's external host
             var modalContent = [
-                m('p.m-md', both ? 'This dataset cannot be published until ' + item.data.dataverse + ' Dataverse is published. ' : ''),
-                m('p.m-md', 'By publishing this ' + toPublish + ', all content will be made available through the Harvard Dataverse using their internal privacy settings, regardless of your OSF project settings. '),
+                m('p.m-md', both ? 'This dataset cannot be published until the ' + item.data.dataverse + ' Dataverse is published. ' : ''),
+                m('p.m-md', 'By publishing this ' + toPublish + ', all content will be made available through ' + host + ' using their internal privacy settings, regardless of your OSF project settings. '),
                 m('p.font-thick.m-md', both ? 'Do you want to publish this Dataverse AND this dataset?' : 'Are you sure you want to publish this dataset?')
             ];
-            var modalActions = [
-                m('button.btn.btn-default', {
+            var modalActions =
+                [m('button.btn.btn-default', {
                     'onclick': function () {
                         tb.modal.dismiss();
                     }
@@ -48,8 +51,7 @@ var _dataverseItemButtons = {
                     'onclick': function () {
                         publishDataset();
                     }
-                }, 'Publish')
-            ];
+                }, 'Publish')];
 
             tb.modal.update(modalContent, modalActions, m('h3.break-word.modal-title', 'Publish this ' + toPublish + '?'));
 
@@ -74,6 +76,8 @@ var _dataverseItemButtons = {
                     ];
                     tb.modal.update(modalContent, modalActions, m('h3.break-word.modal-title', 'Successfully published'));
                     item.data.dataverseIsPublished = true;
+                    item.data.datasetIsPublished = true;
+                    item.data.datasetDraftModified = false;
                     item.data.hasPublishedFiles = item.children.length > 0;
                     item.data.version = item.data.hasPublishedFiles ? 'latest-published' : 'latest';
                     for (var i = 0; i < item.children.length; i++) { // Brute force the child files to be set as "latest-published" without page reload
@@ -116,7 +120,7 @@ var _dataverseItemButtons = {
             var options = [
                 m('option', {selected: item.data.version === 'latest', value: 'latest'}, 'Draft')
             ];
-            if (item.data.dataverseIsPublished) {
+            if (item.data.datasetIsPublished) {
                 options.push(m('option', {selected: item.data.version === 'latest-published', value: 'latest-published'}, 'Published'));
             }
             buttons.push(
@@ -141,8 +145,8 @@ var _dataverseItemButtons = {
                         className: 'text-success'
                     }, 'Upload')
                 );
-                // Only allow the Publish button to appear if this is truly an unpublished dataset, vs. a draft version of a published dataset.
-                if(!item.data.dataverseIsPublished) {
+                // Only allow the Publish button to appear if the draft dataset is modified
+                if(item.data.datasetDraftModified) {
                     buttons.push(
                         m.component(Fangorn.Components.button, {
                             onclick: function (event) {
@@ -251,24 +255,35 @@ function _fangornDataverseTitle(item, col) {
 
 function _fangornColumns(item) {
     var tb = this;
-    var selectClass = '';
     var columns = [];
     columns.push({
         data : 'name',
         folderIcons : true,
         filter : true,
-        css: selectClass,
         custom: _fangornDataverseTitle
     });
-
     if (tb.options.placement === 'project-files') {
         columns.push(
-            {
-                data: 'downloads',
-                filter: false,
-                css: ''
-            }
-        );
+        {
+            data  : 'size',
+            sortInclude : false,
+            filter : false,
+            custom : function() {return m('');}
+        });
+        columns.push(
+        {
+            data  : 'downloads',
+            sortInclude : false,
+            filter : false,
+            custom : function() {return m('');}
+        });
+    }
+    if(tb.options.placement !== 'fileview') {
+        columns.push({
+            data : 'modified',
+            filter: false,
+            custom : function() {return m('');}
+        });
     }
     return columns;
 }

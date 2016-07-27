@@ -2,9 +2,13 @@ var $ = require('jquery');
 var ko = require('knockout');
 var $osf = require('js/osfHelpers');
 
-var DevModeModel = function(source_file) {
+var DevModeModel = function(source_file, branch_file) {
     self = this;
     self.source_file = source_file;
+    self.branch = ko.observable('');
+    $.get(branch_file).done(function (data){
+        self.branch(data);
+    });
     self.pullRequests = ko.observableArray([]);
     self.showMetaInfo = ko.observable(false);
     self.showHideMetaInfo = function() {
@@ -33,9 +37,11 @@ var PullRequestItem = function(prItem) {
 
 };
 
-var DevModeControls = function(selector, source_file) {
-    this.viewModel = new DevModeModel(source_file);
-    $osf.applyBindings(this.viewModel, selector);
+var DevModeControls = function(selector, source_file, branch_file) {
+    if ($(selector).length) {
+        this.viewModel = new DevModeModel(source_file, branch_file);
+        $osf.applyBindings(this.viewModel, selector);
+    }
 };
 
 module.exports = DevModeControls;

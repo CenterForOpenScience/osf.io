@@ -179,7 +179,7 @@ def serialize_wiki_settings(user, node_ids):
         if node.admin_public_wiki(user):
             children.append({
                 'select': {
-                    'title': "permission",
+                    'title': 'permission',
                     'permission':
                         'public'
                         if node.get_addon('wiki').is_publicly_editable

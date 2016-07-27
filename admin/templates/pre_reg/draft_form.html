@@ -75,6 +75,18 @@
             {% endif %}
         </div>
     {% endfor %}
+    <div class="row">
+        <strong><h4>Logs</h4></strong>
+    </div>
+    {% for log in draft.logs %}
+        <div class="row">
+            {{ log }}
+        </div>
+    {% empty %}
+        <div class="row">
+            None: draft existed before logs.
+        </div>
+    {% endfor %}
 </div>
 </div>
 <div class="modal-footer">

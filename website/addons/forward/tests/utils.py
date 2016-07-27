@@ -17,6 +17,3 @@ class ForwardAddonTestCase(AddonTestCase):
 
     def set_node_settings(self, settings):
         settings.url = 'http://frozen.pizza.reviews/'
-        settings.redirect_bool = True
-        settings.redirect_secs = 15
-

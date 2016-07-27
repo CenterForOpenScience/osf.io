@@ -34,7 +34,7 @@ class EmailFormView(OSFAdmin, FormView):
     Gets user data and supplies email template. Logs mail sent to user.
     """
     form_class = EmailForm
-    template_name = "spam/email.html"
+    template_name = 'spam/email.html'
 
     def get_context_data(self, **kwargs):
         spam_id = self.kwargs.get('spam_id')
@@ -173,13 +173,16 @@ class SpamDetail(OSFAdmin, FormView):
         item = Comment.load(spam_id)
         try:
             if int(form.cleaned_data.get('confirm')) == Comment.SPAM:
-                item.confirm_spam(save=True)
+                item.confirm_spam()
+                item.is_deleted = True
                 log_message = 'Confirmed SPAM: {}'.format(spam_id)
                 log_action = CONFIRM_SPAM
             else:
-                item.confirm_ham(save=True)
+                item.confirm_ham()
+                item.is_deleted = False
                 log_message = 'Confirmed HAM: {}'.format(spam_id)
                 log_action = CONFIRM_HAM
+            item.save()
         except AttributeError:
             raise Http404('Spam with id "{}" not found.'.format(spam_id))
         update_admin_log(

@@ -55,8 +55,10 @@ class TestNodeLinkDetail(ApiTestCase):
 
     def test_returns_private_node_pointer_detail_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
-        assert_equal(res.status_code, 401)
-        assert_in('detail', res.json['errors'][0])
+        assert_equal(res.status_code, 200)
+        target_node = res.json['data']['embeds']['target_node']
+        assert_in('errors', target_node)
+        assert_equal(target_node['errors'][0]['detail'], 'Authentication credentials were not provided.')
 
     def test_returns_private_node_pointer_detail_logged_in_contributor(self):
         res = self.app.get(self.private_url, auth=self.user.auth)
@@ -68,8 +70,10 @@ class TestNodeLinkDetail(ApiTestCase):
 
     def test_returns_private_node_pointer_detail_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.user_two.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        assert_in('detail', res.json['errors'][0])
+        assert_equal(res.status_code, 200)
+        target_node = res.json['data']['embeds']['target_node']
+        assert_in('errors', target_node)
+        assert_equal(target_node['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
     def test_self_link_points_to_node_link_detail_url(self):
         res = self.app.get(self.public_url, auth=self.user.auth)
@@ -119,13 +123,13 @@ class TestDeleteNodeLink(ApiTestCase):
         assert_equal(res.status_code, 200)
         pointer_id = res.json['data'][0]['id']
 
-        url = '/{}nodes/{}/node_links/{}/'.format(
+        url = '/{}registrations/{}/node_links/{}/'.format(
             API_BASE,
             registration._id,
             pointer_id,
         )
         res = self.app.delete(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 405)
 
     def test_deletes_public_node_pointer_logged_out(self):
         res = self.app.delete(self.public_url, expect_errors=True)
@@ -198,5 +202,5 @@ class TestDeleteNodeLink(ApiTestCase):
         assert_equal(res.status_code, 404)
         errors = res.json['errors']
         assert_equal(len(errors), 1)
-        assert_equal(errors[0]['detail'], 'Node link does not belong to the requested node.')
+        assert_equal(errors[0]['detail'], 'Not found.')
 

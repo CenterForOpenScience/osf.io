@@ -1,13 +1,14 @@
 from __future__ import unicode_literals
 
 import json
+import csv
+from modularodm import Q
 
 from django.views.generic import ListView, DetailView, FormView, UpdateView
 from django.views.defaults import permission_denied, bad_request
 from django.core.urlresolvers import reverse
-from django.http import JsonResponse, Http404
+from django.http import JsonResponse, Http404, HttpResponse
 from django.shortcuts import redirect
-from modularodm import Q
 
 from admin.common_auth.logs import (
     update_admin_log,
@@ -17,31 +18,38 @@ from admin.common_auth.logs import (
 )
 from admin.pre_reg import serializers
 from admin.pre_reg.forms import DraftRegistrationForm
+from admin.pre_reg.utils import sort_drafts, SORT_BY
 from framework.exceptions import PermissionsError
 from website.exceptions import NodeStateError
 from website.files.models import FileNode
-from website.project.model import MetaSchema, DraftRegistration
+from website.project.model import DraftRegistration
+from website.prereg.utils import get_prereg_schema
+from website.files.models import OsfStorageFileNode
+from website.project.metadata.schemas import from_json
 
 from admin.base.utils import PreregAdmin
 
 
 class DraftListView(PreregAdmin, ListView):
     template_name = 'pre_reg/draft_list.html'
-    paginate_by = 10
-    paginate_orphans = 1
-    ordering = '-approval.initiation_date'
+    ordering = '-date'
     context_object_name = 'draft'
 
     def get_queryset(self):
-        prereg_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', 2)
-        )
         query = (
-            Q('registration_schema', 'eq', prereg_schema) &
+            Q('registration_schema', 'eq', get_prereg_schema()) &
             Q('approval', 'ne', None)
         )
-        return DraftRegistration.find(query).sort(self.ordering)
+        ordering = self.get_ordering()
+        if 'initiator' in ordering:
+            return DraftRegistration.find(query).sort(ordering)
+        if ordering == SORT_BY['title']:
+            return DraftRegistration.find(query).sort(
+                'registration_metadata.q1.value')
+        if ordering == SORT_BY['n_title']:
+            return DraftRegistration.find(query).sort(
+                '-registration_metadata.q1.value')
+        return sort_drafts(DraftRegistration.find(query), ordering)
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
@@ -54,7 +62,44 @@ class DraftListView(PreregAdmin, ListView):
                 for d in query_set
             ],
             'page': page,
+            'p': self.get_paginate_by(query_set),
+            'SORT_BY': SORT_BY,
+            'order': self.get_ordering(),
+            'status': self.request.GET.get('status', 'all'),
         }
+
+    def get_paginate_by(self, queryset):
+        return int(self.request.GET.get('p', 10))
+
+    def get_paginate_orphans(self):
+        return int(self.get_paginate_by(None) / 11.0) + 1
+
+    def get_ordering(self):
+        return self.request.GET.get('order_by', self.ordering)
+
+
+class DraftDownloadListView(DraftListView):
+    def get(self, request, *args, **kwargs):
+        try:
+            queryset = map(serializers.serialize_draft_registration,
+                           self.get_queryset())
+        except AttributeError:
+            raise Http404('A draft was malformed.')
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename=prereg.csv;'
+        response['Cache-Control'] = 'no-cache'
+        keys = queryset[0].keys()
+        keys.remove('registration_schema')
+        writer = csv.DictWriter(response, fieldnames=keys)
+        writer.writeheader()
+        for draft in queryset:
+            draft.pop('registration_schema')
+            draft.update({'initiator': draft['initiator']['username']})
+            writer.writerow(
+                {k: v.encode('utf8') if isinstance(v, unicode) else v
+                 for k, v in draft.items()}
+            )
+        return response
 
 
 class DraftDetailView(PreregAdmin, DetailView):
@@ -62,15 +107,21 @@ class DraftDetailView(PreregAdmin, DetailView):
     context_object_name = 'draft'
 
     def get_object(self, queryset=None):
+        draft = DraftRegistration.load(self.kwargs.get('draft_pk'))
+        self.checkout_files(draft)
         try:
-            return serializers.serialize_draft_registration(
-                DraftRegistration.load(self.kwargs.get('draft_pk'))
-            )
+            return serializers.serialize_draft_registration(draft)
         except AttributeError:
             raise Http404('{} with id "{}" not found.'.format(
                 self.context_object_name.title(),
                 self.kwargs.get('draft_pk')
             ))
+
+    def checkout_files(self, draft):
+        prereg_user = self.request.user.osf_user
+        for item in get_metadata_files(draft):
+            item.checkout = prereg_user
+            item.save()
 
 
 class DraftFormView(PreregAdmin, FormView):
@@ -119,6 +170,7 @@ class DraftFormView(PreregAdmin, FormView):
                     self.draft.reject(osf_user)
             except PermissionsError as e:
                 return permission_denied(self.request, e)
+            self.checkin_files(self.draft)
             update_admin_log(self.request.user.id, self.kwargs.get('draft_pk'),
                              'Draft Registration', message, flag)
         admin_settings = form.cleaned_data
@@ -128,6 +180,11 @@ class DraftFormView(PreregAdmin, FormView):
         self.draft.flags = admin_settings
         self.draft.save()
         return super(DraftFormView, self).form_valid(form)
+
+    def checkin_files(self, draft):
+        for item in get_metadata_files(draft):
+            item.checkout = None
+            item.save()
 
     def get_success_url(self):
         return '{}?page={}'.format(reverse('pre_reg:prereg'),
@@ -169,3 +226,42 @@ def view_file(request, node_id, provider, file_id):
     fp = FileNode.load(file_id)
     wb_url = fp.generate_waterbutler_url()
     return redirect(wb_url)
+
+
+def get_metadata_files(draft):
+    for q in get_file_questions('prereg-prize.json'):
+        for file_info in draft.registration_metadata[q]['value']['uploader']['extra']:
+            if file_info['data']['provider'] != 'osfstorage':
+                raise Http404('File does not exist in OSFStorage: {} {}'.format(
+                    q, file_info
+                ))
+            file_guid = file_info['data'].get('fileId')
+            if file_guid is None:
+                raise Http404('File in {} does not have a guid.'.format(q))
+            item = OsfStorageFileNode.load(file_guid)
+            if item is None:
+                raise Http404('File with guid "{}" in {} does not exist'.format(
+                    file_guid, q
+                ))
+            yield item
+
+
+def get_file_questions(json_file):
+    uploader = {
+        'id': 'uploader',
+        'type': 'osf-upload',
+        'format': 'osf-upload-toggle'
+    }
+    questions = []
+    schema = from_json(json_file)
+    for item in schema['pages']:
+        for question in item['questions']:
+            if question['type'] == 'osf-upload':
+                questions.append(question['qid'])
+                continue
+            properties = question.get('properties')
+            if properties is None:
+                continue
+            if uploader in properties:
+                questions.append(question['qid'])
+    return questions

@@ -3,15 +3,15 @@
 '''Basic Authorization tests for the OSF.'''
 
 from __future__ import absolute_import
-import unittest
-import mock
 
 from nose.tools import *  # noqa PEP8 asserts
+from datetime import datetime, timedelta
 
 from website.addons.twofactor.tests import _valid_code
+from website import settings
 
 from tests.base import OsfTestCase
-from tests.factories import ProjectFactory, AuthUserFactory
+from tests.factories import ProjectFactory, AuthUserFactory, SessionFactory
 
 
 class TestAuthBasicAuthentication(OsfTestCase):
@@ -23,7 +23,7 @@ class TestAuthBasicAuthentication(OsfTestCase):
         self.user1 = AuthUserFactory()
         self.user2 = AuthUserFactory()
 
-        # Test projects for which a given user DOES and DOES NOT  have appropriate permissions
+        # Test projects for which a given user DOES and DOES NOT have appropriate permissions
         self.reachable_project = ProjectFactory(title="Private Project User 1", is_public=False, creator=self.user1)
         self.unreachable_project = ProjectFactory(title="Private Project User 2", is_public=False, creator=self.user2)
         self.reachable_url = self.reachable_project.web_url_for('view_project')
@@ -79,3 +79,17 @@ class TestAuthBasicAuthentication(OsfTestCase):
 
         res = self.app.get(self.reachable_url, auth=self.user1.auth, headers={'X-OSF-OTP': _valid_code(self.TOTP_SECRET)})
         assert_equal(res.status_code, 200)
+
+    def test_valid_cookie(self):
+        cookie = self.user1.get_or_create_cookie()
+        self.app.set_cookie(settings.COOKIE_NAME, str(cookie))
+        res = self.app.get(self.reachable_url)
+        assert_equal(res.status_code, 200)
+
+    def test_expired_cookie(self):
+        self.session = SessionFactory(user=self.user1, date_created=(datetime.utcnow() - timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
+        cookie = self.user1.get_or_create_cookie()
+        self.app.set_cookie(settings.COOKIE_NAME, str(cookie))
+        res = self.app.get(self.reachable_url)
+        assert_equal(res.status_code, 302)
+        assert_in('login', res.location)
