@@ -116,7 +116,7 @@
                             --}}
                         {{else}}
                             No results found.
-                        {{!-- TODO: Restore this when implemented in the API
+                        {{!-- TODO: Restore text below when unreg contribs implemented in the API
                             Try a more specific search or
                             <button {{action 'selectPage' 'invite'}} class="btn-link">add <strong><em>{{_searchText}}</em></strong> as an unregistered contributor</button>.
                             --}}
@@ -139,7 +139,6 @@
                     </div>
 
                     {{!-- TODO: Consolidate markup./ conditionals with above --}}
-                    {{!-- TODO: Duplication here: Put this in a KO template --}}
                     {{#if contribsToAdd}}
                         <table class="table-condensed">
                             <thead>
@@ -168,7 +167,6 @@
                                         </td>
                                         <td>
                                             {{!-- height and width are explicitly specified for faster rendering --}}
-                                            {{!-- TODO: Explore contributor record and see what fields are available on this model --}}
                                             {{!-- TODO: Support a placeholder icon for unregistered contributors : /static/img/unreg_gravatar.png --}}
                                             <img src="{{person.profileImage}}" height=35 width=35>
                                         </td>
