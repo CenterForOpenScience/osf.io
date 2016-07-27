@@ -2,10 +2,13 @@ from nose.tools import *  # flake8: noqa
 
 from website.util import permissions
 
+from api.base.settings.defaults import API_BASE
+
 from tests.base import ApiTestCase
 from tests.factories import (
     ProjectFactory,
     AuthUserFactory,
+    PrivateLinkFactory
 )
 
 
@@ -23,23 +26,56 @@ class ViewOnlyLinkTestCase(ApiTestCase):
         self.public_project.add_contributor(self.read_write_user, permissions=[permissions.WRITE])
         self.public_project.save()
 
+        self.view_only_link = PrivateLinkFactory(name='testlink')
+        self.view_only_link.nodes.append(self.public_project)
+        self.view_only_link.save()
+
 
 class TestViewOnlyLinksList(ViewOnlyLinkTestCase):
 
+    def setUp(self):
+        super(TestViewOnlyLinksList, self).setUp()
+        self.url = '/{}nodes/{}/view_only_links/'.format(API_BASE, self.public_project._id)
+
     def test_admin_can_view_vols_list(self):
-        pass
+        res = self.app.get(self.url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        data = res.json['data']
+        assert_equal(len(data), 1)
+        assert_equal(data[0]['attributes']['name'], 'testlink')
 
     def test_read_write_cannot_view_vols_list(self):
-        pass
+        res = self.app.get(self.url, auth=self.read_write_user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
     def test_read_only_cannot_view_vols_list(self):
-        pass
+        res = self.app.get(self.url, auth=self.read_only_user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
     def test_logged_in_user_cannot_view_vols_list(self):
-        pass
+        res = self.app.get(self.url, auth=self.non_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
     def test_unauthenticated_user_cannot_view_vols_list(self):
-        pass
+        res = self.app.get(self.url, expect_errors=True)
+        assert_equal(res.status_code, 401)
 
     def test_deleted_vols_not_returned(self):
-        pass
+        view_only_link = PrivateLinkFactory(name='testlink2')
+        view_only_link.nodes.append(self.public_project)
+        view_only_link.save()
+
+        res = self.app.get(self.url, auth=self.user.auth)
+        data = res.json['data']
+        assert_equal(res.status_code, 200)
+        assert_equal(len(data), 2)
+
+        view_only_link.nodes.remove(self.public_project)
+        view_only_link.save()
+
+        res = self.app.get(self.url, auth=self.user.auth)
+        data = res.json['data']
+        assert_equal(res.status_code, 200)
+        assert_equal(len(data), 1)
+
+
