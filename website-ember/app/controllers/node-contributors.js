@@ -23,7 +23,6 @@ export default Ember.Controller.extend(NodeActionsMixin, {
         toggleAddContributorModal() {
             this.toggleProperty('showModalAddContributors');
         },
-
         addContributor(userId) {
             // Perform additional cleanup specific to this view to keep manually fetched contributors list in sync
             return this._super(...arguments).then((res) => {
@@ -35,7 +34,15 @@ export default Ember.Controller.extend(NodeActionsMixin, {
                 // TODO: Is error handling needed (if record not found)?
                 return res;
             });
-
+        },
+        removeContributor(contrib) {
+            this._super(...arguments);
+            this.get('contributors').removeObject(contrib);
+        },
+        updateContributors(contributors, permissionsChanges, bibliographicChanges) {
+            this._super(...arguments);
+            // TODO how to send multiple save actions in a row without reload?
+            window.location.reload();
         }
     }
 });

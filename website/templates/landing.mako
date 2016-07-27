@@ -65,13 +65,34 @@
                           </div>
                           <div class="form-group" data-bind="css: {'has-error': password() && !password.isValid(), 'has-success': password() && password.isValid()}">
                               <label class="placeholder-replace" style="display:none">Password</label>
-                              <input type="password" class="form-control" placeholder="Password (Must be 6 to 256 characters)" data-bind=" value: password, disable: submitted(), event: {blur: trim.bind($data, password)}">
-                                <p class="help-block osf-box-lt" data-bind="validationMessage: password" style="display: none;"></p>
+                              <input type="password" class="form-control" placeholder="Password (Must be 6 to 256 characters)" data-bind=", textInput: typedPassword, value: password, disable: submitted(), event: {blur: trim.bind($data, password)}">
+
+                              <div class="row" data-bind="visible: typedPassword().length > 0">
+                                  <div class="col-xs-8">
+                                      <div class="progress create-password">
+                                          <div class="progress-bar progress-bar-sm" role="progressbar" data-bind="attr: passwordComplexityInfo().attr"></div>
+                                      </div>
+                                  </div>
+                                  <div class="col-xs-4 f-w-xl text-left pv-darkbg">
+                                      <!-- ko if: passwordFeedback() -->
+                                      <p id="front-password-info" data-bind="text: passwordComplexityInfo().text, attr: passwordComplexityInfo().text_attr"></p>
+                                      <!-- /ko -->
+                                  </div>
+                              </div>
+
+                              <div class="pv-darkbg">
+                                  <!-- ko if: passwordFeedback() -->
+                                  <p class="help-block osf-box-lt p-xs" data-bind="validationMessage: password" style="display: none;"></p>
+                                  <p class="osf-box-lt" data-bind="css : { 'p-xs': passwordFeedback().warning }, visible: typedPassword().length > 0, text: passwordFeedback().warning"></p>
+                                  <!-- /ko -->
+                              </div>
+
+
                           </div>
 
                           <!-- Flashed Messages -->
                           <div class="help-block osf-box-lt" >
-                              <p data-bind="html: flashMessage, attr: {class: flashMessageClass}" class=""></p>
+                              <p data-bind="html: message, attr: {class: messageClass}" class=""></p>
                           </div>
                           <!-- ko ifnot: submitted -->
                           <div>

@@ -1,0 +1,56 @@
+{{#bs-modal open=isOpen body=false header=false footer=false}}
+    {{#bs-modal-header}}
+        <h3 class="modal-title">Remove Contributor</h3>
+    {{/bs-modal-header}}
+    {{#bs-modal-body}}
+
+        {{#if (and canRemoveNode (not pageChanged))}}
+
+            {{!-- TODO Get removing contributors from both project and components working (BULK delete does not work on staging 2)
+            See modal_remove_contributor.mako for sample template and contribRemover.js for guidance --}}
+                <div class="form-group">
+                    <span>
+                        Remove <b> {{if removeSelf 'yourself' contributorToRemove.users.fullName}} </b> from <span>{{node.title}}</span>?
+                    </span>
+                </div>
+        {{/if}}
+
+        {{#if (and (not canRemoveNode) (not pageChanged))}}
+            <span>
+                <b> {{if removeSelf 'You' contributorToRemove.users.fullName}} </b> cannot be
+                removed as a contributor.  You need at least one administrator, bibliographic contributor, and registered user.
+            </span>
+        {{/if}}
+        {{#if pageChanged}}
+            <span>Please save or discard your existing changes before removing a contributor.</span>
+        {{/if}}
+    {{/bs-modal-body}}
+
+    {{#bs-modal-footer}}
+        {{!-- TODO Add remaining modal cancel/close/remove combinations for cases where can remove contributors from nested components as well
+        See modal_remove_contributor.mako for sample template and contribRemover.js for guidance --}}
+        <div align="right">
+            {{#if (and canRemoveNode (not pageChanged))}}
+                <div class="row">
+                    <div  class="remove-page-buttons" align="right">
+                        {{!-- TODO  - how to use the bs-modal close action --}}
+                        <button {{action 'close'}} class="btn btn-default"> Cancel </button>
+                        {{!-- {{#bs-button (action "close" target=footer) type="default"}} Cancel {{/bs-button}} --}}
+                        <a class="btn btn-danger" {{action (action 'removeContributor' contributorToRemove)}}>Remove</a>
+                    </div>
+                </div>
+            {{/if}}
+        </div>
+
+        <div align="right">
+            {{#if (or (not canRemoveNode) pageChanged)}}
+                <div class="row">
+                    <div  class="remove-page-buttons" align="right">
+                        {{!-- TODO - how to use the bs-modal close action --}}
+                        <button {{action 'close'}} class="btn btn-default"> Cancel </button>
+                    </div>
+                </div>
+            {{/if}}
+        </div>
+    {{/bs-modal-footer}}
+{{/bs-modal}}
