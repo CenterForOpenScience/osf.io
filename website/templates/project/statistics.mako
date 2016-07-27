@@ -26,7 +26,7 @@
             Analytics and begin discovering the impact of your work.
           </p>
 
-          <img src="/static/img/no_analytics.png">
+          <img class="img-responsive center-block" src="/static/img/no_analytics.png">
         </div>
     </div>
 % else:
