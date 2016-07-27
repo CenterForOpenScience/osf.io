@@ -2,13 +2,15 @@ import Ember from 'ember';
 import DS from 'ember-data';
 
 import deferredPromise from '../utils/deferred-promise';
+import permissions, {permissionSelector} from 'ember-osf/const/permissions';
 
 /**
  * Wraps user data with additional properties to track whether a given user is a contributor on this project
  * @class OneContributor
  */
 let OneContributor = Ember.ObjectProxy.extend({
-    isContributor: false
+    isContributor: false,
+    selectedPermissions: permissions.WRITE
 });
 
 /**
@@ -31,6 +33,9 @@ export default Ember.Component.extend({
      * @default whom|which|invite
      */
     page: 'whom',  // TODO: Replace this with components; temp feature
+
+    // Permissions labels for dropdown (eg in modals)
+    permissionOptions: permissionSelector,
 
     //////////////////////////////////
     //  OPTIONS FOR THE WHOM PAGE   //

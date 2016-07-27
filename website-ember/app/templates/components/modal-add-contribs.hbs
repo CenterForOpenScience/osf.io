@@ -109,11 +109,11 @@
                                 <li data-bind="css: style"><a href="#" data-bind="click: handler, text: text"></a></li>
                             </ul>
                             <p>
-                                <a href="#" data-bind="click:gotoInvite">Add <strong><em>{{_searchText}}</em></strong> as an unregistered contributor</a>.
+                                <button {{action 'selectPage' 'invite'}} class="btn-link">Add <strong><em>{{_searchText}}</em></strong> as an unregistered contributor</button>.
                             </p>
                         {{else}}
                             No results found. Try a more specific search or
-                            <a href="#" data-bind="click:gotoInvite">add <strong><em>{{_searchText}}</em></strong> as an unregistered contributor</a>.
+                            <button {{action 'selectPage' 'invite'}} class="btn-link">add <strong><em>{{_searchText}}</em></strong> as an unregistered contributor</button>.
                         {{/if}}
                     {{/if}}
 
@@ -138,18 +138,20 @@
                     {{#if contribsToAdd}}
                         <table class="table-condensed">
                             <thead>
-                                <th width="10%"></th>
-                                <th width="15%"></th>
-                                <th>Name</th>
-                                <th>
-                                    Permissions
-                                    {{!-- TODO: Language constants; permission info maps to a string added to anything with the style. --}}
-                                    <i class="fa fa-question-circle permission-info"
-                                            data-toggle="popover"
-                                            title="Permission Information"
-                                            data-container="#addContributors"
-                                            data-html="true"></i>
-                                </th>
+                                <tr>
+                                    <th width="10%"></th>
+                                    <th width="15%"></th>
+                                    <th>Name</th>
+                                    <th>
+                                        Permissions
+                                        {{!-- TODO: Language constants; permission info maps to a string added to anything with the style. --}}
+                                        <i class="fa fa-question-circle permission-info"
+                                                data-toggle="popover"
+                                                title="Permission Information"
+                                                data-container="#addContributors"
+                                                data-html="true"></i>
+                                    </th>
+                                </tr>
                             </thead>
                             <tbody>
                                 {{#each contribsToAdd as |person|}}
@@ -173,10 +175,12 @@
 
                                         <td>
                                             {{!-- TODO: Write permissions selector (with dropdown of options) --}}
-                                            <select class="form-control input-sm" data-bind="
-                                                options: $root.permissionList,
-                                                value: permission,
-                                                optionsText: 'text'">
+                                            <select class="form-control input-sm" onchange={{action (mut person.selectedPermissions) value='target.value'}}>
+                                                {{#each permissionOptions as |option|}}
+                                                    <option selected={{eq option.value person.selectedPermissions}} value={{option.value}}>
+                                                        {{option.text}}
+                                                    </option>
+                                                {{/each}}
                                             </select>
                                         </td>
                                     </tr>
@@ -191,6 +195,7 @@
         {{!-- Component selection page --}}
 
         {{#if (eq page 'which')}}
+            {{!-- TODO: At present, this entire page is unimplemented pending a tree display widget --}}
             <div>
                 Adding contributor(s)
                 {{displayContribNamesToAdd}}
@@ -225,8 +230,8 @@
         {{/if}}
 
         {{!-- Invite user page --}}
-        {{!-- TODO: This creates unregistered contribs, which is blocked pending OSF changes. Implement/ convert later --}}
         {{#if (eq page 'invite')}}
+            {{!-- TODO: This creates unregistered contribs, which is blocked pending OSF changes. Implement/ convert later --}}
             <form class='form'>
                 <div class="form-group">
                     <label for="inviteUserName">Full Name</label>
