@@ -332,10 +332,7 @@ var tbOptions = {
         $('[data-toggle="tooltip"]').tooltip();
     },
     onmultiselect : _poMultiselect,
-    resolveIcon : function _poIconView(item) {
-        if (item.data.attributes.fork){
-            return m('i.fa.fa-code-fork');
-        }
+    resolveIcon : function _poIconView(item) { // Project Organizer doesn't use icons
         return m('i.' + iconmap.projectComponentIcons[item.data.attributes.category]);
     },
     resolveToggle : _poResolveToggle,
