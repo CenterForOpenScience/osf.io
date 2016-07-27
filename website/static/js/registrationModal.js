@@ -28,35 +28,58 @@ var RegistrationViewModel = function(confirm, prompts, validator) {
 
     var self = this;
 
+
+    // Wire up the registration options.
+
     self.registrationOptions = [
         MAKE_PUBLIC,
         MAKE_EMBARGO
     ];
     self.registrationChoice = ko.observable(MAKE_PUBLIC.value);
 
-    self.pikaday = ko.observable(today);
+
+    // Wire up the embargo option.
+
+    self.requestingEmbargo = ko.computed(function() {
+        var choice = self.registrationChoice();
+        return choice === MAKE_EMBARGO.value;
+    });
+    self.requestingEmbargo.subscribe(function(requestingEmbargo) {
+        self.showEmbargoDatePicker(requestingEmbargo);
+    });
+    self.showEmbargoDatePicker = ko.observable(false);
+    self.pikaday = ko.observable(today);  // interacts with a datePicker from koHelpers.js
+
+
+    // Wire up embargo validation.
+    // ---------------------------
+    // All registrations undergo an approval process before they're made public
+    // (though details differ based on the type of registration). We try to
+    // require (for some reason) that the embargo lasts at least as long as the
+    // approval period. On the other hand, we don't want (for some reason)
+    // embargos to be *too* long.
 
     self.embargoEndDate = ko.computed(function() {
         return moment(new Date(self.pikaday()));
     });
 
-    self.minimumTimeValidation = function (x, y, embargoLocalDateTime) {
-        var minEmbargoMoment = getMinimumDate(embargoLocalDateTime),
-            endEmbargoMoment = self.embargoEndDate();
-        return minEmbargoMoment.isBefore(endEmbargoMoment) && endEmbargoMoment.isSameOrAfter(todayMinimum);
+    self.embargoIsLongEnough = function (x, y, embargoLocalDateTime) {
+        var min = getMinimumDate(embargoLocalDateTime),
+            end = self.embargoEndDate();
+        return end.isSameOrAfter(min) && end.isSameOrAfter(todayMinimum);
     };
 
-    self.maximumTimeValidation = function (x, y, embargoLocalDateTime) {
-        var maxEmbargoMoment = getMaximumDate(embargoLocalDateTime),
-            endEmbargoMoment = self.embargoEndDate();
-        return maxEmbargoMoment.isAfter(endEmbargoMoment) && endEmbargoMoment.isSameOrBefore(todayMaximum);
+    self.embargoIsShortEnough = function (x, y, embargoLocalDateTime) {
+        var max = getMaximumDate(embargoLocalDateTime),
+            end = self.embargoEndDate();
+        return end.isSameOrBefore(max) && end.isSameOrBefore(todayMaximum);
     };
 
     var validation = [{
-        validator: self.minimumTimeValidation,
+        validator: self.embargoIsLongEnough,
         message: 'Embargo end date must be at least three days in the future.'
     }, {
-        validator: self.maximumTimeValidation,
+        validator: self.embargoIsShortEnough,
         message: 'Embargo end date must be less than four years in the future.'
     }];
     if(validator) {
@@ -66,14 +89,8 @@ var RegistrationViewModel = function(confirm, prompts, validator) {
         validation: validation
     });
 
-    self.showEmbargoDatePicker = ko.observable(false);
-    self.requestingEmbargo = ko.computed(function() {
-        var choice = self.registrationChoice();
-        return choice === MAKE_EMBARGO.value;
-    });
-    self.requestingEmbargo.subscribe(function(requestingEmbargo) {
-        self.showEmbargoDatePicker(requestingEmbargo);
-    });
+
+    // Wire up the modal actions.
 
     self.canRegister = ko.pureComputed(function() {
         if (self.requestingEmbargo()) {
@@ -100,8 +117,8 @@ RegistrationViewModel.prototype.register = function() {
     this.confirm({
         registrationChoice: this.registrationChoice(),
         embargoEndDate: this.embargoEndDate(),
-        minimumTimeValidation: this.minimumTimeValidation(),
-        maximumTimeValidation: this.maximumTimeValidation()
+        embargoIsLongEnough: this.embargoIsLongEnough(),
+        embargoIsShortEnough: this.embargoIsShortEnough()
     });
 };
 
