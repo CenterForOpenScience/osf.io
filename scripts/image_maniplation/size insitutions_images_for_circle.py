@@ -19,8 +19,8 @@ def alphaToWhite(img):
     pixeldata = list(img.getdata())
     for i,pixel in enumerate(pixeldata):
         if len(pixel) == 4:
-            if pixel[3] == 0:
-                pixeldata[i] = (255,255,255,255)
+            if pixel[3] != 255:
+               pixel[3] = 255
 
     img.putdata(pixeldata)
     return img
@@ -46,5 +46,5 @@ def main():
         img.save(INSTITUTIONS_IMG_PATH + 'shields-rounded-corners/'+ shield[:-4] + '-rounded-corners.png')
 
     generateTestHTML(size=100)
-
+    print("This script removes transparency from images, check the test html to ensure a the quality has been maintained")
 main()
