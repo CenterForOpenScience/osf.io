@@ -20,7 +20,8 @@ let UserContributor = Ember.ObjectProxy.extend({
  * {{modal-add-contribs
  *   isOpen=showModal
  *   node=model
- *   contributors=contributors}}
+ *   contributors=contributors
+ *   addContributor=closureAction}}
  * ```
  * @class modal-add-contribs
  */
@@ -102,13 +103,12 @@ export default Ember.Component.extend({
         //  Actions for the whom page   //
         //////////////////////////////////
         searchPeople() {
-            // TODO: implement
+            // TODO: Move to a separate file and fill in full generic query from search.js
             let text = this.get('_searchText');
             if (!text) {
                 return;
             }
 
-            // TODO: Query from search.js is generic; can we simplify for this page?
             let simplestQuery = {
                 query: {
                     filtered: {
@@ -154,6 +154,7 @@ export default Ember.Component.extend({
         },
 
         addAllContributors() {
+            // Select all available search results, and add them to the list of people who will be added to the project (pending additional options)
             // TODO: Implement, was addAll in contribAdder.js
             // TODO: Filter out users who are already on the project
             let users = this.get('usersFound');
@@ -165,8 +166,7 @@ export default Ember.Component.extend({
             this.get('contribsToAdd').addObject(user);
         },
         removeAllContributors() {
-            // TODO: Implement. Deselects contributors. Was removeAll in contribAdder.js
-            // TODO: Make sure this doesn't remove users who are already on the project
+            // Clears the list of people who would be added to the project
             this.get('contribsToAdd').clear();
         },
         removeOneContributor(user) {
@@ -175,9 +175,21 @@ export default Ember.Component.extend({
             this.get('contribsToAdd').removeObject(user);
         },
         submitContributors() {
+            // Intended to work with the addContributor action of `NodeActionsMixin`
             console.log('Submitted contributors');
             // TODO: Implement. Send contribs list to server.
-
+            // 1. Send a series of requests (no bulk support, sorry)
+            // 2. Monitor return values for all succeeding
+            // 3. Update the list of contributors manually to reflect new results
+            // 4. Close the modal when done
+            // Optional: warn user if some of the contrib add requests failed?
+            let contribsToAdd = this.get('contribsToAdd');
+            // TODO: Handle promise (maybe map, not foreach, and rsvp.allsettled)
+            contribsToAdd.forEach((item) => {
+                console.log('Adding:', item.get('fullName'));
+                this.attrs.addContributor(item.get('id'), item.get('selectedPermission'), true)
+                    .then(() => this.send('removeOneContributor', item));
+            });
         },
         submitInvite() {
             // TODO: Not currently implemented pending required APIv2 capabilities
