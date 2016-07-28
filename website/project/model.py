@@ -70,6 +70,8 @@ from website.project.sanctions import (
     Retraction,
 )
 
+from keen import scoped_keys
+
 logger = logging.getLogger(__name__)
 
 
@@ -924,6 +926,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     template_node = fields.ForeignField('node', index=True)
 
     piwik_site_id = fields.StringField()
+    keenio_read_key = fields.StringField()
 
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
@@ -1491,6 +1494,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         if save:
             self.save()
+
+    def generate_keenio_read_key(self):
+        return scoped_keys.encrypt(settings.KEEN['public']['master_key'], options={
+            'filters': [{
+                'property_name': 'node.id',
+                'operator': 'eq',
+                'property_value': str(self._id)
+            }],
+            'allowed_operations': ['read']
+        })
 
     def subscribe_user_to_notifications(self, user):
         """ Update the notification settings for the creator or contributors
