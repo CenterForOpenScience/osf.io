@@ -41,7 +41,8 @@
 
                     <div class="col-md-6">
                         <div>
-                            <span class="modal-subheader">Results</span>
+                            <span data-bind="if: includePublic" class="modal-subheader">Results: All Projects</span>
+                            <span data-bind="ifnot: includePublic" class="modal-subheader">Results: My Projects</span>
                             <a data-bind="click:addAll">Add all</a>
                         </div>
                         <div class="error" data-bind="text:errorMsg"></div>
@@ -54,7 +55,7 @@
                                                 data-bind="click:$root.add.bind($root)"
                                             ><i class="fa fa-plus"></i></a>
                                     </td>
-                                    <td data-bind="text:title" class="overflow"></td>
+                                    <td data-bind="text:attributes.title" class="overflow"></td>
                                     <td style="width: 25%" data-bind="text:$root.authorText($data)"></td>
                                 </tr>
                             </tbody>
@@ -89,7 +90,7 @@
                                                 data-bind="click:$root.remove.bind($root)"
                                             ><i class="fa fa-minus"></i></a>
                                     </td>
-                                    <td  data-bind="text:title" class="overflow"></td>
+                                    <td  data-bind="text:attributes.title" class="overflow"></td>
                                     <td style="width: 25%" data-bind="text:$root.authorText($data)"></td>
                                 </tr>
                             </tbody>

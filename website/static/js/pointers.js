@@ -31,7 +31,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
         this.selection = ko.observableArray();
         this.errorMsg = ko.observable('');
         this.totalPages = ko.observable(0);
-        this.includePublic = ko.observable(true);
+        this.includePublic = ko.observable(false);
         this.searchWarningMsg = ko.observable('');
         this.submitWarningMsg = ko.observable('');
         this.loadingResults = ko.observable(false);
@@ -65,7 +65,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
             self.results([]); // clears page for spinner
             self.loadingResults(true); // enables spinner
 
-            osfHelpers.postJSON(
+            /*osfHelpers.postJSON(
                 '/api/v1/search/node/', {
                     query: self.query(),
                     nodeId: nodeId,
@@ -95,7 +95,46 @@ var AddPointerViewModel = oop.extend(Paginator, {
                 self.searchAllProjectsSubmitText(SEARCH_ALL_SUBMIT_TEXT);
                 self.searchMyProjectsSubmitText(SEARCH_MY_PROJECTS_SUBMIT_TEXT);
                 self.loadingResults(false);
+            });*/
+
+            // -- ADDED >
+
+            var url = osfHelpers.apiV2Url('nodes/', {query: 'filter[title]='+self.query()});
+            var request = osfHelpers.ajaxJSON(
+                'GET',
+                url,
+                {'isCors': true});
+            request.done(function(response) {
+                var nodes = response.data;
+                if (!nodes.length) {
+                    self.errorMsg('No results found.');
+                }
+                else {
+                    console.log(response.data);
+                    nodes.forEach(function(each) {
+                        if (each.isRegistration) {
+                            each.dateRegistered = new osfHelpers.FormattableDate(each.dateRegistered);
+                        } else {
+                            each.dateCreated = new osfHelpers.FormattableDate(each.dateCreated);
+                            each.dateModified = new osfHelpers.FormattableDate(each.dateModified);
+                        }
+                    });
+                }
+                self.results(nodes);
+                self.currentPage(self.pageToGet());
+                self.numberOfPages(Math.ceil(response.links.meta.total / response.links.meta.per_page));
+                self.addNewPaginators();
+
             });
+            request.fail(function(xhr) {
+                self.searchWarningMsg(xhr.responseJSON && xhr.responseJSON.message_long);
+            });
+            self.searchAllProjectsSubmitText(SEARCH_ALL_SUBMIT_TEXT);
+            self.searchMyProjectsSubmitText(SEARCH_MY_PROJECTS_SUBMIT_TEXT);
+            self.loadingResults(false);
+
+            // -- < ADDED
+
         } else {
             self.results([]);
             self.currentPage(0);
