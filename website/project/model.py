@@ -755,6 +755,11 @@ class NodeUpdateError(Exception):
         self.key = key
         self.reason = reason
 
+#TODO: change subjects to match taxonomy
+def validate_subjects(value):
+    if value not in ["biology", "chemistry", "computer science"]:
+        raise ValidationValueError('Not a valid subject')
+    return True
 
 class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
@@ -830,6 +835,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         'is_retracted',
         'node_license',
         '_affiliated_institutions',
+        'preprint_file',
     }
 
     # Fields that are writable by Node.update
@@ -868,6 +874,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     is_registration = fields.BooleanField(default=False, index=True)
     registered_date = fields.DateTimeField(index=True)
     registered_user = fields.ForeignField('user')
+
+    # Preprint fields
+    preprint_file = fields.ForeignField('StoredFileNode')
+    preprint_created = fields.DateTimeField()
+    preprint_subjects = fields.StringField(list=True, validate=validate_subjects)
 
     # A list of all MetaSchemas for which this Node has registered_meta
     registered_schema = fields.ForeignField('metaschema', list=True, default=list)
