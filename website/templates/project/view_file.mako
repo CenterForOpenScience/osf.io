@@ -209,7 +209,13 @@
         panelsUsed: ['edit', 'view'],
         currentUser: {
           canEdit: ${ int(user['can_edit']) | sjson, n }
-        }
+        },
+        analyticsMeta: {
+            pageMeta: {
+                title: 'File: ' + ${file_name | sjson, n},
+                public: true,
+            },
+        },
       });
       window.contextVars.file.urls.external = window.contextVars.file.extra.webView;
     </script>

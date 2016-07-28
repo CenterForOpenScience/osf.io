@@ -426,7 +426,9 @@ def project_reorder_components(node, **kwargs):
 def project_statistics(auth, node, **kwargs):
     if not (node.can_edit(auth) or node.is_public):
         raise HTTPError(http.FORBIDDEN)
-    return _view_project(node, auth, primary=True)
+    ret = _view_project(node, auth, primary=True)
+    ret['node']['keenio_read_key'] = node.keenio_read_key
+    return ret
 
 
 @must_be_valid_project

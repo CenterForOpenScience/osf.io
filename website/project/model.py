@@ -3235,11 +3235,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                     self.request_embargo_termination(auth=auth)
                     return False
             self.is_public = True
+            self.keenio_read_key = self.generate_keenio_read_key()
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo:
                 raise NodeStateError('Public registrations must be withdrawn, not made private.')
             else:
                 self.is_public = False
+                self.keenio_read_key = ''
         else:
             return False
 

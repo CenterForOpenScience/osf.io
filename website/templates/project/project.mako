@@ -466,7 +466,13 @@ ${parent.javascript_bottom()}
             tags: ${ node['tags'] | sjson, n },
             institutions: ${node['institutions'] | sjson, n},
         },
-        nodeCategories: ${ node_categories | sjson, n }
+        nodeCategories: ${ node_categories | sjson, n },
+        analyticsMeta: {
+            pageMeta: {
+                title: 'Home',
+                public: true,
+            },
+        },
     });
 </script>
 
