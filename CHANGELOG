@@ -2,7 +2,12 @@
 Changelog
 *********
 
-0.83.0 (unreleased)
+0.84.0 (2016-07-28)
+===================
+
+- Migrate Piwik to Keen.
+
+0.83.0 (2016-07-25)
 ===================
 
 - Add @mentions to comments.
