@@ -254,14 +254,14 @@ PIWIK_SITE_ID = None
 
 KEEN = {
     'public': {
-        'project_id': None,
-        'master_key': None,
-        'write_key': None,
+        'project_id': '',
+        'master_key': 'changeme',
+        'write_key': '',
     },
     'private': {
-        'project_id': None,
-        'write_key': None,
-        'read_key': None,
+        'project_id': '',
+        'write_key': '',
+        'read_key': '',
     },
 }
 
