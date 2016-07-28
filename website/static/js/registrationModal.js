@@ -20,9 +20,6 @@ var MAKE_EMBARGO = {
     value: 'embargo',
     message: 'Enter registration into embargo'
 };
-var today = new Date();
-var todayMinimum = moment().add(2, 'days');
-var todayMaximum = moment().add(4, 'years');
 
 var RegistrationViewModel = function(confirm, prompts, validator) {
 
@@ -48,7 +45,7 @@ var RegistrationViewModel = function(confirm, prompts, validator) {
         self.showEmbargoDatePicker(requestingEmbargo);
     });
     self.showEmbargoDatePicker = ko.observable(false);
-    self.pikaday = ko.observable(today);  // interacts with a datePicker from koHelpers.js
+    self.pikaday = ko.observable(new Date());  // interacts with a datePicker from koHelpers.js
 
 
     // Wire up embargo validation.
@@ -67,12 +64,12 @@ var RegistrationViewModel = function(confirm, prompts, validator) {
 
     self.embargoIsLongEnough = function(end) {
         var min = self._now().add(2, 'days');
-        return end.isAfter(min) && end.isSameOrAfter(todayMinimum);
+        return end.isAfter(min);
     };
 
     self.embargoIsShortEnough = function(end) {
         var max = self._now().add(4, 'years').subtract(1, 'days');
-        return end.isBefore(max) && end.isSameOrBefore(todayMaximum);
+        return end.isBefore(max);
     };
 
     var validation = [{
