@@ -146,6 +146,9 @@ def apply_middlewares(flask_app, settings):
 
 
 def patch_models(settings):
+    model_map = {
+        'User': 'OSFUser',
+    }
     if not settings.USE_POSTGRES:
         return
     from osf_models import models
@@ -154,4 +157,7 @@ def patch_models(settings):
             continue
         for model in ('Node', 'User', 'Tag'):
             if hasattr(module, model) and issubclass(getattr(module, model), modularodm.StoredObject):
-                setattr(module, model, getattr(models, model))
+                if model in model_map:
+                    setattr(module, model, getattr(models, model_map[model]))
+                else:
+                    setattr(module, model, getattr(models, model))
