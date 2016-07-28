@@ -12,13 +12,16 @@ logger = logging.getLogger(__name__)
 if __name__ == '__main__':
     init_app(routes=False)
 
-    public_nodes = Node.find(Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False))
+    public_nodes = Node.find(
+        Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False)
+        & Q('keenio_read_key', 'in', ['', None])
+    )
     total = len(public_nodes)
     logger.info('Adding keen.io read keys to {} public nodes'.format(total))
     count = 0
     for public_node in public_nodes:
         count +=1
-        if not count % 2:
+        if not count % 10:
             logger.info(' Updating node {} of {}.'.format(count, total))
         public_node.keenio_read_key = public_node.generate_keenio_read_key()
         public_node.save()
