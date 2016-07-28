@@ -75,6 +75,11 @@ def main(force=False):
         visitor_id = get_or_create_visitor_id(visit['visitor_id'], sqlite_db)
         session_id = get_or_create_session_id(visit['id'], sqlite_db)
 
+        user_entry_point = None
+        user_locale = None
+        user_timezone = None
+        user_institutions = None
+
         user_id = visit['user_id']
         if user_id is not None:
             if not user_cache.has_key(user_id):
