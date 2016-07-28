@@ -27,7 +27,7 @@ def main(dry_run=False):
                 license_id=node_license.id,
                 year='2016',
                 copyright_holders='',
-                auth=Auth(user)
+                auth=Auth(user=user)
         )
         node.save()
         logger.info("License '{}' has been added to project '{}' by user '{}'.".format(
@@ -37,7 +37,7 @@ def main(dry_run=False):
                     license_id=node_license.id,
                     year='2016',
                     copyright_holders='',
-                    auth=Auth(user)
+                    auth=Auth(user=user)
             )
             child.save()
             logger.info("License '{}' has been added to project '{}' by user '{}'.".format(
