@@ -46,8 +46,8 @@ function Meetings(data) {
                     data : 'name',  // Data field name
                     sortInclude : true,
                     filter : true,
-                    custom : function() { return m('a', { href : item.data.url, target : '_blank' }, item.data.name ); }
-
+                    custom : function() { return m('a', { href : item.data.url, target : '_blank' }, item.data.name ); },
+                    show : function() { return (item.data.name !== 'Time-sharing Experiments for the Social Sciences' && item.data.name !== 'Psi Chi'); }
                 },
                 {
                     data: 'count',
