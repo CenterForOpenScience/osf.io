@@ -49,11 +49,27 @@ def main(force=False):
     user_cache = {}
     node_cache = {}
     location_cache = {}
+    lastline = 0
 
+    try:
+        resume_log = open(utils.get_dir_for('transform01') + '/resume.log', 'r')
+        for linenbr in resume_log.readlines():
+            pass
+        lastline = int(linenbr.strip('\n'))
+    except:
+        pass
+
+    print("Lastline is: {}\n".format(lastline))
     linenum = 0
     tally = {'missing_user': 0, 'missing_node': 0}
+    resume_log = open(utils.get_dir_for('transform01') + '/resume.log', 'a')
     for pageview_json in input_file.readlines():
         linenum += 1
+        if linenum <= lastline:
+            if not linenum % 1000:
+                print('Skippins line {} of ***{}***'.format(linenum, lastline))
+            continue
+
         if not linenum % 1000:
             print('Transforming line {}'.format(linenum))
 
@@ -81,6 +97,10 @@ def main(force=False):
         user_institutions = None
 
         user_id = visit['user_id']
+        user_entry_point = None
+        user_locale = None
+        user_timezone = None
+        user_institutions = None
         if user_id is not None:
             if not user_cache.has_key(user_id):
                 user_obj = User.load(user_id)
@@ -277,6 +297,8 @@ def main(force=False):
             tally['missing_user'] += 1
 
         output_file.write(json.dumps(pageview) + '\n')
+        resume_log.write('\n{}'.format(str(linenum)))
+
 
     history_file.write('Finished extraction at: {}Z\n'.format(datetime.utcnow()))
     history_file.write('Final count was: {}\n'.format(linenum))
