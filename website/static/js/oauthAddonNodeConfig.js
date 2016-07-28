@@ -39,8 +39,6 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             return 'Successfully linked "' + $osf.htmlEscape(self.options.decodeFolder(self.folder().name)) + '". Go to the <a href="' +
                 self.urls().files + '">Files page</a> to view your content.';
         });
-        self.accessKey = ko.observable('');
-        self.secretKey = ko.observable('');
         var defaults = {
             onPickFolder: function(evt, item) {
                 evt.preventDefault();

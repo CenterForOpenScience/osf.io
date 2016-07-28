@@ -51,10 +51,10 @@
                     </span>
                 </p>
                 <!-- Folder buttons -->
-                <div class="btn-group" data-bind="visible: userIsOwner() && validCredentials()">
+                <div class="form-group" data-bind="visible: userIsOwner() && validCredentials()">
                     <button data-bind="click: togglePicker,
-                                       css: {active: currentDisplay() === PICKER}" class="btn btn-primary">Change</button>
-                   <button data-bind="visible: userIsOwner() && validCredentials(), click: options.openCreateBucket" class="btn btn-success" id="newBucket">Create bucket</button>
+                                   css: {active: currentDisplay() === PICKER}" class="btn btn-primary">Change</button>
+                    <button data-bind="visible: userIsOwner() && validCredentials(), click: openCreateBucket" class="btn btn-success" id="newBucket">Create bucket</button>
                 </div>
                 <!-- Folder picker -->
                 <div class="m-t-sm addon-folderpicker-widget ${addon_short_name}-widget">
