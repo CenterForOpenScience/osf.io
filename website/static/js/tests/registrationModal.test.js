@@ -36,11 +36,12 @@ describe('registrationModal', () => {
 
     describe('#constructor', () => {
         it('takes a confirm method as a callback for bootbox success', () => {
+            var end = vm.embargoEndDate();
             var args = {
                 registrationChoice: vm.registrationChoice(),
-                embargoEndDate: vm.embargoEndDate(),
-                embargoIsLongEnough: vm.embargoIsLongEnough(),
-                embargoIsShortEnough: vm.embargoIsShortEnough()
+                embargoEndDate: end,
+                embargoIsLongEnough: vm.embargoIsLongEnough(end),
+                embargoIsShortEnough: vm.embargoIsShortEnough(end)
             };
             vm.register();
             assert.isTrue(confirm.calledWith(args));
@@ -58,7 +59,7 @@ describe('registrationModal', () => {
             var d = new Date();
             d.setDate(d.getDate() + 3);
             instance.pikaday(d);
-            instance.pikaday.isValid();
+            instance.embargoEndDate.isValid();
             assert.isTrue(validate.called);
         });
     });
@@ -77,24 +78,24 @@ describe('registrationModal', () => {
             assert.isFalse(vm.requestingEmbargo());
         });
     });
-    describe('#pikaday.isValid', () => {
+    describe('#embargoEndDate.isValid', () => {
         it('returns true for date more than 2 days but less than 4 years in the future', () => {
             var validDate = new Date();
             validDate.setDate(validDate.getDate() + 3);
             vm.pikaday(validDate);
-            assert.isTrue(vm.pikaday.isValid());
+            assert.isTrue(vm.embargoEndDate.isValid());
         });
         it('returns false for date less than 2 days in the future', () => {
             var invalidPastDate = new Date();
             invalidPastDate.setDate(invalidPastDate.getDate() - 2);
             vm.pikaday(invalidPastDate);
-            assert.isFalse(vm.pikaday.isValid());
+            assert.isFalse(vm.embargoEndDate.isValid());
         });
         it('returns false for date more than 4 years in the future', () => {
             var invalidFutureDate = new Date();
             invalidFutureDate.setDate(invalidFutureDate.getDate() + 1462);
             vm.pikaday(invalidFutureDate);
-            assert.isFalse(vm.pikaday.isValid());
+            assert.isFalse(vm.embargoEndDate.isValid());
         });
     });
     describe('#requestingEmbargo', () => {
@@ -112,25 +113,25 @@ describe('registrationModal', () => {
             var validDateTwoDays = new Date();
             vm.pikaday(new Date (validDateTwoDays.getTime() + 259200000)); //+3 Days
             vm._now = function() { return validDateTwoDays; };
-            assert.isTrue(vm.embargoIsLongEnough());
+            assert.isTrue(vm.embargoIsLongEnough(vm.embargoEndDate()));
         });
         it('returns true for date less than 4 years in the future', () => {
             var validDateFourYears = new Date();
             vm.pikaday(new Date (validDateFourYears.getTime() + 126057600000)); //+1459 Days
             vm._now = function() { return validDateFourYears; };
-            assert.isTrue(vm.embargoIsShortEnough());
+            assert.isTrue(vm.embargoIsShortEnough(vm.embargoEndDate()));
         });
         it('returns false for date less than 2 days in the future', () => {
             var invalidDateTwoDays = new Date();
             vm.pikaday(new Date (invalidDateTwoDays.getTime() + 86400000)); //+1 Day
             vm._now = function() { return invalidDateTwoDays; };
-            assert.isFalse(vm.embargoIsLongEnough());
+            assert.isFalse(vm.embargoIsLongEnough(vm.embargoEndDate()));
         });
         it('returns false for date at least 4 years in the future', () => {
             var invalidDateFourYears = new Date();
             vm.pikaday(new Date (invalidDateFourYears.getTime() + 126144000000)); //+1460 Days
             vm._now = function() { return invalidDateFourYears; };
-            assert.isFalse(vm.embargoIsShortEnough());
+            assert.isFalse(vm.embargoIsShortEnough(vm.embargoEndDate()));
         });
         it('returns true for date more than 2 days in the future, in a western timezone', () => {
             var validDateTwoDaysTZWest = moment().utcOffset(-4).toDate();
@@ -139,7 +140,7 @@ describe('registrationModal', () => {
             validDateTZFutureWest.setDate(validDateTwoDaysTZWest.getDate() + 3);
             vm.pikaday(validDateTZFutureWest);
             vm._now = function() { return validDateTwoDaysTZWest; };
-            assert.isTrue(vm.embargoIsLongEnough());
+            assert.isTrue(vm.embargoIsLongEnough(vm.embargoEndDate()));
         });
         it('returns true for date more than 2 days in the future, in an eastern timezone', () => {
             var validDateTwoDaysTZEast = moment().utcOffset(4).toDate();
@@ -148,7 +149,7 @@ describe('registrationModal', () => {
             validDateTZFutureEast.setDate(validDateTwoDaysTZEast.getDate() + 3);
             vm.pikaday(validDateTZFutureEast);
             vm._now = function() { return validDateTwoDaysTZEast; };
-            assert.isTrue(vm.embargoIsLongEnough());
+            assert.isTrue(vm.embargoIsLongEnough(vm.embargoEndDate()));
         });
         it('returns true for date less than 4 years in the future, in a western timezone', () => {
             var validDateFourYearsTZWest = moment().utcOffset(-4).toDate();
@@ -157,7 +158,7 @@ describe('registrationModal', () => {
             validDateTZFutureWest.setDate(validDateFourYearsTZWest.getDate() + 1459);
             vm.pikaday(validDateTZFutureWest);
             vm._now = function() { return validDateFourYearsTZWest; };
-            assert.isTrue(vm.embargoIsShortEnough());
+            assert.isTrue(vm.embargoIsShortEnough(vm.embargoEndDate()));
         });
         it('returns true for date less than 4 years in the future, in an eastern timezone', () => {
             var validDateFourYearsTZEast = moment().utcOffset(4).toDate();
@@ -166,7 +167,7 @@ describe('registrationModal', () => {
             validDateTZFutureEastFY.setDate(validDateFourYearsTZEast.getDate() + 1459);
             vm.pikaday(validDateTZFutureEastFY);
             vm._now = function() { return validDateFourYearsTZEast; };
-            assert.isTrue(vm.embargoIsShortEnough());
+            assert.isTrue(vm.embargoIsShortEnough(vm.embargoEndDate()));
         });
     });
 });

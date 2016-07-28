@@ -65,15 +65,13 @@ var RegistrationViewModel = function(confirm, prompts, validator) {
 
     self._now = function() { return new Date(); };  // this is a hook for testing
 
-    self.embargoIsLongEnough = function(value, otherValue) {
-        var min = moment(self._now()).add(2, 'days'),
-            end = self.embargoEndDate();
+    self.embargoIsLongEnough = function(end) {
+        var min = moment(self._now()).add(2, 'days');
         return end.isAfter(min) && end.isSameOrAfter(todayMinimum);
     };
 
-    self.embargoIsShortEnough = function(value, otherValue) {
-        var max = moment(self._now()).add(4, 'years').subtract(1, 'days'),
-            end = self.embargoEndDate();
+    self.embargoIsShortEnough = function(end) {
+        var max = moment(self._now()).add(4, 'years').subtract(1, 'days');
         return end.isBefore(max) && end.isSameOrBefore(todayMaximum);
     };
 
@@ -87,7 +85,7 @@ var RegistrationViewModel = function(confirm, prompts, validator) {
     if(validator) {
         validation.unshift(validator);
     }
-    self.pikaday.extend({
+    self.embargoEndDate.extend({
         validation: validation
     });
 
@@ -96,7 +94,7 @@ var RegistrationViewModel = function(confirm, prompts, validator) {
 
     self.canRegister = ko.pureComputed(function() {
         if (self.requestingEmbargo()) {
-            return self.pikaday.isValid();
+            return self.embargoEndDate.isValid();
         }
         return true;
     });
@@ -116,11 +114,12 @@ RegistrationViewModel.prototype.show = function() {
     });
 };
 RegistrationViewModel.prototype.register = function() {
+    var end = this.embargoEndDate();
     this.confirm({
         registrationChoice: this.registrationChoice(),
-        embargoEndDate: this.embargoEndDate(),
-        embargoIsLongEnough: this.embargoIsLongEnough(),
-        embargoIsShortEnough: this.embargoIsShortEnough()
+        embargoEndDate: end,
+        embargoIsLongEnough: this.embargoIsLongEnough(end),
+        embargoIsShortEnough: this.embargoIsShortEnough(end)
     });
 };
 
