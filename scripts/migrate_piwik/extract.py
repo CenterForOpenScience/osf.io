@@ -81,7 +81,7 @@ def main():
                     'tz_offset': visit['tz_offset'],
                     'ua': {
                         'os': visit['config_os'],
-                        'os_version': visit['config_os_version'],
+                        'os_version': None,
                         'browser': {
                             'version': visit['config_browser_version'],
                             'name': visit['config_browser_name'],
@@ -89,7 +89,7 @@ def main():
                             'locale': visit['location_browser_lang'],
                         },
                         'screen': visit['config_resolution'],
-                        'device': visit['config_device_model'],
+                        'device': None,
                     },
                 },
                 'action': {
@@ -174,6 +174,10 @@ def get_visits(mysql_db):
       log_visit.visit_exit_idaction_name, visit_exit_idaction_url
         track where user goes when exiting site.  Not currently being tracked.
 
+    Not on production:
+      log_visit.config_os_version,
+      log_visit.config_device_model,
+
     """
 
     query = '''
@@ -183,10 +187,8 @@ SELECT
   log_visit.location_ip,
   log_visit.location_browser_lang,
   log_visit.config_os,
-  log_visit.config_os_version,
   log_visit.config_browser_version,
   log_visit.config_browser_name,
-  log_visit.config_device_model,
   log_visit.config_resolution,
   log_visit.config_cookie,
   log_visit.referer_url,
