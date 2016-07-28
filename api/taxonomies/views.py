@@ -7,9 +7,8 @@ from api.base.views import JSONAPIBaseView
 
 import json
 
+
 class PlosTaxonomyMixin(JSONAPIBaseView, generics.RetrieveAPIView):
-    permission_classes = (
-    )
     serializer_class = TaxonomySerializer
     view_category = 'plos-taxonomies'
 
@@ -43,6 +42,10 @@ class PlosTaxonomyFlat(PlosTaxonomyMixin):
 
     Only the top three levels of the PLOS taxonomy are included.
     '''
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly
+    )
+
     view_name = 'plos-taxonomy-flat'
 
     @property
@@ -72,5 +75,9 @@ class PlosTaxonomyTreeview(PlosTaxonomyMixin):
     array that contains the subject itself as a string. `nodes` is an array of child objects each with their own
     `text` and `nodes` fields, with the exception that leaf nodes do not contain a `nodes` field.
     '''
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly
+    )
+
     view_name = 'plos-taxonomy-treeview'
     data_file = 'api/static/json/top_3_levels_treeview.json'
