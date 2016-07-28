@@ -483,6 +483,13 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, metric
                 pip_install(req_file, constraints_file=CONSTRAINTS_PATH),
                 echo=True
             )
+
+            # TODO: remove when osf-models test are moved to osf-models repo
+            osf_models_req_file = os.path.join(HERE, 'osf_models_tests', 'requirements.txt')
+            ctx.run(
+                pip_install(osf_models_req_file, constraints_file=CONSTRAINTS_PATH),
+                echo=True
+            )
         if metrics:  # then dev requirements
             req_file = os.path.join(HERE, 'requirements', 'metrics.txt')
             ctx.run(
@@ -566,6 +573,12 @@ def test(ctx, all=False, syntax=False):
         test_addons(ctx)
         karma(ctx, single=True, browsers='PhantomJS')
 
+# TODO: Remove me when osf_models_tests are moved to osf-models repo
+@task
+def test_osf_models(ctx):
+    import pytest
+    retcode = pytest.main(['osf_models_tests'])
+    sys.exit(retcode)
 
 @task
 def test_js(ctx):
@@ -582,7 +595,7 @@ def test_travis_osf(ctx):
     jshint(ctx)
     test_osf(ctx)
     test_addons(ctx)
-
+    test_osf_models(ctx)
 
 @task
 def test_travis_else(ctx):
