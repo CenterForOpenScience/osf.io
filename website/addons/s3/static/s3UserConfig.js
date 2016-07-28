@@ -62,7 +62,7 @@ function ViewModel(url) {
                     secret_key: self.secretKey,
                 })
             ).done(function() {
-                self.options.clearModal();
+                self.clearModal();
                 $modal.modal('hide');
                 self.updateAccounts();
 
