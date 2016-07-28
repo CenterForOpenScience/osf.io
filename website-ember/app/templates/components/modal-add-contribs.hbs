@@ -47,7 +47,7 @@
                     {{!-- Note: Removed "notifications" block because it seemed to be no longer used in staticjs code. TODO: Verify this is correct --}}
 
                     {{!-- Intent: Only show search results if done loading and results were found --}}
-                    {{#if (and usersFound (not isLoading))}}
+                    {{#if (and (not-eq usersFound null) (not isLoading))}}
                         {{#if usersFound.length}}
                             <table class="table-condensed">
                                 <tbody>
