@@ -879,6 +879,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     preprint_file = fields.ForeignField('StoredFileNode')
     preprint_created = fields.DateTimeField()
     preprint_subjects = fields.StringField(list=True, validate=validate_subjects)
+    _is_preprint_orphan = fields.BooleanField(default=False)
 
     # A list of all MetaSchemas for which this Node has registered_meta
     registered_schema = fields.ForeignField('metaschema', list=True, default=list)
@@ -1161,6 +1162,21 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             return False
         else:
             return True
+
+    @property
+    def is_preprint(self):
+        if self.preprint_file.node == self:
+            return True
+        else:
+            self.preprint_file = None
+            self._is_preprint_orphan = True
+            return False
+
+    @property
+    def is_preprint_orphan(self):
+        if not self.is_preprint() & self._is_preprint_orphan:
+            return True
+        return False
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
