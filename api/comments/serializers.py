@@ -2,6 +2,7 @@ import bleach
 
 from rest_framework import serializers as ser
 from modularodm import Q
+from modularodm.exceptions import ValidationValueError
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 from framework.guid.model import Guid
@@ -37,7 +38,7 @@ class CommentSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    content = AuthorizedCharField(source='get_content', required=True, max_length=osf_settings.COMMENT_MAXLENGTH)
+    content = AuthorizedCharField(source='get_content', required=True)
     page = ser.CharField(read_only=True)
 
     target = TargetField(link_type='related', meta={'type': 'get_target_type'})
@@ -94,18 +95,26 @@ class CommentSerializer(JSONAPISerializer):
     def update(self, comment, validated_data):
         assert isinstance(comment, Comment), 'comment must be a Comment'
         auth = Auth(self.context['request'].user)
+
         if validated_data:
             if validated_data.get('is_deleted', None) is False and comment.is_deleted:
                 try:
                     comment.undelete(auth, save=True)
                 except PermissionsError:
                     raise PermissionDenied('Not authorized to undelete this comment.')
+            elif validated_data.get('is_deleted', None) is True and not comment.is_deleted:
+                try:
+                    comment.delete(auth, save=True)
+                except PermissionsError:
+                    raise PermissionDenied('Not authorized to delete this comment.')
             elif 'get_content' in validated_data:
                 content = validated_data.pop('get_content')
                 try:
                     comment.edit(content, auth=auth, save=True)
                 except PermissionsError:
                     raise PermissionDenied('Not authorized to edit this comment.')
+                except ValidationValueError as err:
+                    raise ValidationError(err.args[0])
         return comment
 
     def get_target_type(self, obj):
@@ -133,7 +142,7 @@ class CommentCreateSerializer(CommentSerializer):
         target_type = self.context['request'].data.get('target_type')
         expected_target_type = self.get_target_type(target)
         if target_type != expected_target_type:
-            raise Conflict('Invalid target type. Expected "{0}", got "{1}."'.format(expected_target_type, target_type))
+            raise Conflict(detail=('The target resource has a type of "{}", but you set the json body\'s type field to "{}".  You probably need to change the type field to match the target resource\'s type.'.format(expected_target_type, target_type)))
         return target_type
 
     def get_target(self, node_id, target_id):
@@ -165,6 +174,8 @@ class CommentCreateSerializer(CommentSerializer):
             comment = Comment.create(auth=auth, **validated_data)
         except PermissionsError:
             raise PermissionDenied('Not authorized to comment on this project.')
+        except ValidationValueError as err:
+            raise ValidationError(err.args[0])
         return comment
 
 

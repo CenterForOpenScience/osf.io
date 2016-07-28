@@ -7,6 +7,7 @@ require('css/add-project-plugin.css');
 var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
+var mHelpers = require('js/mithrilHelpers');
 var institutionComponents = require('js/components/institution');
 var SelectableInstitution = institutionComponents.SelectableInstitution;
 
@@ -22,10 +23,13 @@ var AddProject = {
         self.defaults = {
             buttonTemplate : m('.btn.btn-primary[data-toggle="modal"][data-target="#addProjectModal"]', 'Create new project'),
             parentID : null,
-            title: 'Create new project',
+            parentTitle : '',
+            title : 'Create new project',
             modalID : 'addProjectModal',
             stayCallback :null, // Function to call when user decides to stay after project creation
-            categoryList : []
+            categoryList : [],
+            contributors : [],
+            currentUserCanEdit : false
         };
         self.viewState = m.prop('form'); // 'processing', 'success', 'error';
         self.options = $.extend({}, self.defaults, options);
@@ -36,6 +40,7 @@ var AddProject = {
         self.newProjectDesc = m.prop('');
         self.newProjectCategory = m.prop(self.defaultCat);
         self.newProjectTemplate = m.prop('');
+        self.newProjectInheritContribs = m.prop(false);
         self.institutions = options.institutions || window.contextVars.currentUser.institutions || [];
         self.checkedInstitutions = {};
         self.institutions.map(
@@ -55,6 +60,8 @@ var AddProject = {
         // Validation
         self.isValid = m.prop(false);
 
+        self.isAdding = m.prop(false);
+
         self.mapTemplates = function() {
             self.userProjects([]);
             options.templatesFetcher._flat.map(function(node){
@@ -72,11 +79,15 @@ var AddProject = {
 
 
         self.add = function _add () {
+            if (self.isAdding()) {
+                return;
+            }
+            self.isAdding(true);
             var url;
             var data;
             self.viewState('processing');
             if(self.options.parentID) {
-                url = $osf.apiV2Url('nodes/' + self.options.parentID + '/children/', { query : {}});
+                url = $osf.apiV2Url('nodes/' + self.options.parentID + '/children/', { query : {'inherit_contributors' : self.newProjectInheritContribs()}});
             } else {
                 url = $osf.apiV2Url('nodes/', { query : {}});
             }
@@ -86,7 +97,7 @@ var AddProject = {
                         'attributes': {
                             'title': self.newProjectName(),
                             'category': self.newProjectCategory(),
-                            'description' : self.newProjectDesc()
+                            'description': self.newProjectDesc()
                         }
                     }
                 };
@@ -99,9 +110,11 @@ var AddProject = {
                 self.viewState('success');
                 self.goToProjectLink(result.data.links.html);
                 self.saveResult(result);
+                self.isAdding(false);
             };
             var error = function _error (result) {
                 self.viewState('error');
+                self.isAdding(false);
             };
             var request = m.request({method : 'POST', url : url, data : data, config : xhrconfig});
             if (self.institutions.length > 0) {
@@ -140,6 +153,7 @@ var AddProject = {
             self.viewState('form');
             self.newProjectDesc('');
             self.newProjectCategory(self.defaultCat);
+            self.newProjectInheritContribs(false);
             $('.modal').modal('hide');
             self.isValid(false);
         };
@@ -206,6 +220,19 @@ var AddProject = {
                                 }
                             ))),
                         ]): '',
+                        ctrl.options.parentID !== null && options.contributors.length && options.currentUserCanEdit ? m('.form-group.m-v-sm', [
+                            m('label.f-w-md',
+
+                                m('input', {
+                                    type: 'checkbox',
+                                    name: 'inherit_contributors',
+                                    value: true,
+                                    onchange : function() {
+                                        ctrl.newProjectInheritContribs(this.checked);
+                                    }
+                                }), ' Add contributors from ', m('b', options.parentTitle)
+                            )
+                        ]) : '',
                         m('.text-muted.pointer', { onclick : function(){
                             ctrl.showMore(!ctrl.showMore());
                             $osf.trackClick(options.trackingCategory, options.trackingAction, 'show-more-or-less');
@@ -228,22 +255,24 @@ var AddProject = {
                                 })
                             ]),
                             ctrl.options.parentID !== null ? [
-                                m('.f-w-lg.text-bigger','Category'),
-                                m('.category-radio.p-h-md', [
-                                    ctrl.options.categoryList.map(function(cat){
-                                        return m('.radio', m('label', [  m('input', {
-                                            type: 'radio',
-                                            name: 'projectCategory',
-                                            value: cat.value,
-                                            checked: ctrl.newProjectCategory() === cat.value,
-                                            onchange : function(event) {
-                                                ctrl.newProjectCategory(cat.value);
-                                                $osf.trackClick(options.trackingCategory, options.trackingAction, 'select-project-category');
-                                            }
-                                        }), cat.display_name|| m('i.text-muted', '(Empty category)') ]));
+                                m('label.f-w-lg.text-bigger','Category'),
+                                m('i', ' (for descriptive purposes)'),
+                                m('select.form-control', {
+                                    onchange : function(event) {
+                                        ctrl.newProjectCategory(this.value);
+                                        $osf.trackClick(options.trackingCategory, options.trackingAction, 'select-project-category');
+                                    }},
+                                    [
+                                        mHelpers.unwrap(ctrl.options.categoryList).map(function(cat){
+                                            return m('option', {
+                                                type: 'option',
+                                                name: 'projectCategory',
+                                                value: cat.value,
+                                                selected: ctrl.newProjectCategory() === cat.value
+                                            }, cat.display_name|| m('i.text-muted', '(Empty category)'));
 
-                                    })
-                                ])
+                                        })
+                                    ])
                             ] : '',
                              ctrl.options.parentID === null ? m('.form-group.m-v-md', [
                                 m('label[for="projectTemplate].f-w-lg.text-bigger', 'Template (optional)'),

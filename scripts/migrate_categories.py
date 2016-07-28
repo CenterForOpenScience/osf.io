@@ -7,6 +7,7 @@ from tests.factories import NodeFactory
 
 from website.app import init_app
 from website.project.model import Node
+from website import settings
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,7 @@ def migrate_category(node):
     """Migrate legacy, invalid category to new, valid category. Return whether
     the node was changed.
     """
-    if node.category not in Node.CATEGORY_MAP.keys():  # invalid category
+    if node.category not in settings.NODE_CATEGORY_MAP.keys():  # invalid category
         node.category = MIGRATE_MAP.get(node.category, 'other')
         return True
     return False

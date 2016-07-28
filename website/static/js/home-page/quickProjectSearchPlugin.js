@@ -47,7 +47,7 @@ var QuickSearchProject = {
         self.templateNodes.start();
 
         // Load up to first ten nodes
-        var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': ['contributors','root']}});
+        var url = $osf.apiV2Url('users/me/nodes/', { query : { 'embed': ['contributors','root', 'parent']}});
         var promise = m.request({method: 'GET', url : url, config : xhrconfig, background: true});
         promise.then(function(result) {
             self.countDisplayed(result.data.length);
@@ -546,6 +546,38 @@ var QuickSearchProject = {
     }
 };
 
+function getAncestorDescriptor(node, nodeID, ancestor, ancestorID) {
+    var ancestorDescriptor;
+    var ancestorTitleRequest = lodashGet(node, 'embeds.' + ancestor + '.data.attributes.title', '');
+    var errorRequest = lodashGet(node, 'embeds.' + ancestor + '.errors[0].detail', '');
+    switch(errorRequest) {
+        case '':
+            if (ancestorID === nodeID || ancestorID === '') {
+                ancestorDescriptor = '';
+            }
+            else {
+//            Remove trailing period
+                if (ancestorTitleRequest[ancestorTitleRequest.length-1] === '.') {
+                    ancestorTitleRequest = ancestorTitleRequest.slice(0,-1);
+                }
+                ancestorDescriptor = ancestorTitleRequest + ' / ';
+            }
+            break;
+
+        case 'You do not have permission to perform this action.':
+            if (ancestor === 'root') {
+                ancestorDescriptor = m('em', 'Private Project / ');
+            }
+            if (ancestor === 'parent') {
+                ancestorDescriptor = m('em', 'Private / ');
+            }
+            break;
+
+        default:
+            ancestorDescriptor = 'Name Unavailable / ';
+    }
+    return ancestorDescriptor;
+}
 
 var QuickSearchNodeDisplay = {
     view: function(ctrl, args) {
@@ -560,33 +592,34 @@ var QuickSearchNodeDisplay = {
             return m('.', args.eligibleNodes().slice(0, args.countDisplayed()).map(function(n){
                 var project = args.nodes()[n];
                 var numContributors = project.embeds.contributors.links.meta.total;
+                var nodeID = project.id;
                 var title = project.attributes.title;
-                var rootRequest = lodashGet(project, 'embeds.root.data.attributes.title', '');
-                var error = lodashGet(project, 'embeds.root.errors[0].detail', '');
 
-                switch(error) {
-                    case '':
-                        if (title === rootRequest) {
-                            root = '';
-                        }
-                        else {
-                            root = rootRequest.replace('.', '') + ' / ';
-                        }
-                        break;
+                var rootID = lodashGet(project, 'embeds.root.data.id', '');
+                var rootURL = lodashGet(project, 'embeds.root.data.links.self');
+                var root = getAncestorDescriptor(project, nodeID, 'root', rootID);
 
-                    case 'You do not have permission to perform this action.':
-                        root = m('em', 'Private Project / ');
-                        break;
+                var parentID = lodashGet(project, 'embeds.parent.data.id', '');
+                var parent = getAncestorDescriptor(project, nodeID, 'parent', parentID);
 
-                    default:
-                        root = m('em', 'Project Name Unavailable / ');
+                // API doesn't provide grandparent GUID, so we have to use API URL.
+                var grandParentURL = lodashGet(project, 'embeds.parent.data.relationships.parent.links.related.href', '');
+
+                // Parent and root ID are the same, and they aren't both private (would cause both to have empty ID)
+                if (parentID === rootID && parentID !== '') {
+                    parent = '';
+                }
+
+                // There are projects in between root and parent and they aren't both private
+                if (grandParentURL !== rootURL && grandParentURL !== '' && rootID !== '') {
+                    root += '... / ';
                 }
 
                 return m('a', {href: '/' + project.id, onclick: function() {
                     $osf.trackClick('quickSearch', 'navigate', 'navigate-to-specific-project');
                 }}, m('.m-v-sm.node-styling',  m('.row', m('div',
                     [
-                        m('.col-sm-3.col-md-6.p-v-xs', m('.quick-search-col', root, m('strong', title))),
+                        m('.col-sm-3.col-md-6.p-v-xs', m('.quick-search-col', root, parent, m('strong', title))),
                         m('.col-sm-3.col-md-3.p-v-xs', m('.quick-search-col', $osf.contribNameFormat(project, numContributors, args.getFamilyName))),
                         m('.col-sm-3.col-md-3.p-v-xs', m('.quick-search-col', args.formatDate(project)))
                     ]

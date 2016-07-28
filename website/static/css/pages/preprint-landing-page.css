@@ -115,9 +115,6 @@
     color: #ffffff;
 }
 
-.preprint-mailing-list-container h2 {
-    font-size: 48px;
-}
 
 /* Adapted from front-page.css */
 
@@ -585,6 +582,42 @@ h6 {
 footer {
     margin-top: -20px;
 }
+
+.socarxiv {
+    background: #6C8989; 
+    margin-top: -20px;
+    color: #FFF;
+    padding: 50px 0;
+}
+.socarxiv a {
+    color: white;
+}
+.socarxiv h2 {
+    margin-top: 20px;
+    font-size: 40px;
+}
+.socarxiv h4 {
+    margin-bottom: 40px;
+}
+
+.engrxiv {
+    background: grey;
+    margin-top: -20px;
+    color: #FFF;
+    padding: 50px 0;
+}
+
+.engrxiv a {
+    color: #FFF;
+}
+.engrxiv h2 {
+    margin-top: 20px;
+    font-size: 40px;
+}
+.engrxiv h4 {
+    margin-bottom: 40px;
+}
+
 
 .network-bg {
     background: url("/static/img/front-page/bg-web.png") repeat;

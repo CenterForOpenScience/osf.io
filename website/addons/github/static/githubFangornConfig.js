@@ -85,7 +85,7 @@ function _removeEvent (event, items) {
         // If all items can be deleted
         if(canDelete){
             mithrilContentMultiple = m('div', [
-                    m('p', 'This action is irreversible.'),
+                    m('p.text-danger', 'This folder and ALL its contents will be deleted. This action is irreversible.'),
                     deleteList.map(function(item){
                         return m('.fangorn-canDelete.text-success', item.data.name);
                     })
@@ -247,7 +247,7 @@ var _githubItemButtons = {
                         tb.toolbarMode(Fangorn.Components.toolbarModes.RENAME);
                     },
                     tooltip: 'Change the name of the item',
-                    icon: 'fa fa-font',
+                    icon: 'fa fa-pencil',
                     className : 'text-info'
                 }, 'Rename')
             );
@@ -297,17 +297,15 @@ function _fangornGithubTitle(item, col)  {
     if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
         return Fangorn.Utils.connectCheckTemplate.call(this, item);
     }
-    
+
     if (item.data.addonFullname) {
         var urlParams = $osf.urlParams();
-        
-        if (!item.data.branch) {
-            if (urlParams.branch && urlParams.branch != item.data.branch) {
-                item.data.branch = urlParams.branch;
-            }
+
+        if (!item.data.branch && urlParams.branch) {
+            item.data.branch = urlParams.branch;
         }
         var branch = item.data.branch || item.data.defaultBranch;
-        
+
         return m('span',[
             m('github-name', item.data.name + ' (' + branch + ')')
         ]);
@@ -327,7 +325,6 @@ function _fangornGithubTitle(item, col)  {
 
 function _fangornColumns (item) {
     var tb = this;
-    var selectClass = '';
     var node = item.parent().parent();
     var columns = [];
     columns.push({
@@ -340,9 +337,24 @@ function _fangornColumns (item) {
     if(tb.options.placement === 'project-files') {
         columns.push(
         {
-            data  : 'downloads',
+            data  : 'size',
+            sortInclude : false,
             filter : false,
-            css : ''
+            custom : function() {return item.data.size ? $osf.humanFileSize(item.data.size, true) : '';}
+        });
+        columns.push(
+        {
+            data  : 'downloads',
+            sortInclude : false,
+            filter : false,
+            custom : function() {return m('');}
+        });
+    }
+    if(tb.options.placement !== 'fileview') {
+        columns.push({
+            data : 'modified',
+            filter: false,
+            custom : function() {return m('');}
         });
     }
     return columns;

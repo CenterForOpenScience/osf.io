@@ -34,16 +34,12 @@ def celery_teardown_request(error=None):
     if error is not None:
         _local.queue = []
         return
-    try:
-        if queue():
-            if settings.USE_CELERY:
-                group(queue()).apply_async()
-            else:
-                for task in queue():
-                    task.apply()
-    except AttributeError:
-        if not settings.DEBUG_MODE:
-            logger.error('Task queue not initialized')
+    if queue():
+        if settings.USE_CELERY:
+            group(queue()).apply_async()
+        else:
+            for task in queue():
+                task.apply()
 
 
 def enqueue_task(signature):

@@ -3,7 +3,7 @@ from website.models import Node, User
 from framework import Q
 from framework.analytics import piwik
 
-app = init_app("website.settings", set_backends=True)
+app = init_app('website.settings', set_backends=True)
 
 # NOTE: This is a naive implementation for migration, requiring a POST request
 # for every user and every node. It is possible to bundle these together in a
@@ -21,4 +21,4 @@ for node in Node.find(Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False))
     if node.piwik_site_id:
         continue
 
-    piwik._provision_node(node)
+    piwik._provision_node(node._id)

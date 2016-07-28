@@ -20,11 +20,10 @@ var NodesPrivacy = require('js/nodesPrivacy').NodesPrivacy;
  * The ProjectViewModel, scoped to the project header.
  * @param {Object} data The parsed project data returned from the project's API url.
  * @param {Object} options A set of configuration options for viewModel
- * @param {Object} options.categories The CATEGORY_MAP of allowed category/ display values for nodes
+ * @param {Object} options.categories The NODE_CATEGORY_MAP of allowed category/ display values for nodes
  */
 var ProjectViewModel = function(data, options) {
     var self = this;
-    self.categories = (options && options.categories) || {};
     
     self._id = data.node.id;
     self.apiUrl = data.node.api_url;
@@ -75,11 +74,7 @@ var ProjectViewModel = function(data, options) {
     // Add icon to title
     self.icon = ko.pureComputed(function() {
         var category = self.categoryValue();
-        if (Object.keys(iconmap.componentIcons).indexOf(category) >=0 ){
-            return iconmap.componentIcons[category];
-        } else {
-            return iconmap.projectIcons[category];
-        }
+        return iconmap.projectComponentIcons[category];
     });
 
     // Editable Title and Description
@@ -133,8 +128,9 @@ var ProjectViewModel = function(data, options) {
             }
         }));
 
-        var categoryOptions = $.map(self.categories, function(display, value) {
-            return {value: value, text: display};
+        var categories = (options && options.categories) || {};
+        var categoryOptions = $.map(categories, function(item) {
+            return {value: item.value, text: item.display_name};
         });
         $('#nodeCategoryEditable').editable($.extend({}, editableOptions, {
             type: 'select',

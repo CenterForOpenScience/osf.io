@@ -3,6 +3,8 @@ import operator
 from django.core.exceptions import ImproperlyConfigured
 from rest_framework import exceptions, permissions
 
+from api.base.utils import has_admin_scope
+
 from framework.auth import oauth_scopes
 from framework.auth.cas import CasResponse
 
@@ -31,6 +33,12 @@ class TokenHasScope(permissions.BasePermission):
         if token is None or not isinstance(token, CasResponse):
             # Assumption: user authenticated via non-oauth means, so don't check token permissions.
             return True
+
+        return self._verify_scopes(request, view, token)
+
+    def _verify_scopes(self, request, view, token):
+        # Anything calling this method should handle the case where
+        # `token is None` before making this call.
 
         required_scopes = self._get_scopes(request, view)
 
@@ -76,13 +84,42 @@ class TokenHasScope(permissions.BasePermission):
             return write_scopes
 
 
+class RequiresScopedRequestOrReadOnly(TokenHasScope):
+    message = 'Write requests to this view are restricted to properly-scoped tokens.'
+
+    def has_object_permission(self, request, view, obj):
+        # FIXME: Implement request.user validation if necessary
+        return self.has_permission(request, view)
+
+    def has_permission(self, request, view):
+        token = request.auth
+
+        if token is None or not isinstance(token, CasResponse):
+            # Assumption: user authenticated via non-oauth means, and this endpoint has restricted write
+            return request.method in permissions.SAFE_METHODS
+
+        return self._verify_scopes(request, view, token)
+
+
+class RequestHasAdminScope(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if has_admin_scope(request):
+            return True
+        raise exceptions.NotFound()
+
+    def has_permission(self, request, view):
+        if has_admin_scope(request):
+            return True
+        raise exceptions.NotFound()
+
+
 class OwnerOnly(permissions.BasePermission):
     """User must be logged in and be the owner of the instance"""
 
     # TODO: Write tests for basic, session, and oauth-based authentication
     def has_object_permission(self, request, view, obj):
         """Not applied to all members of a queryset"""
-        assert isinstance(obj, (ApiOAuth2Application, ApiOAuth2PersonalToken)), "obj must be an ApiOAuth2Application or ApiOAuth2PersonalToken, got {}".format(obj)
+        assert isinstance(obj, (ApiOAuth2Application, ApiOAuth2PersonalToken)), 'obj must be an ApiOAuth2Application or ApiOAuth2PersonalToken, got {}'.format(obj)
         return (obj.owner._id == request.user._id)
 
 

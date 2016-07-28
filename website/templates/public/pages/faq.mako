@@ -81,7 +81,7 @@
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> What is the cap on data per user?</h5>
-                            <div class="support-body">There is a limit on the size of individual files uploaded to the OSF. This limit is 5 GB. If you have larger files to upload, you might consider utilizing add-ons. When archiving files during the registration process, there is a 1 GB total limit across all storage add-ons being archived.</div>
+                            <div class="support-body">There is a limit on the size of individual files uploaded to the OSF. This limit is 5 GB. If you have larger files to upload, you might consider utilizing add-ons. When archiving files during the registration process, there is a 5 GB total limit per registration across all storage being archived (OSF Storage plus Add-ons).</div>
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How do I get a DOI or ARK for my project?</h5>
@@ -121,6 +121,14 @@
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How can I license my data/code/etc.?</h5>
                             <div class="support-body">To apply a license to your OSF project, visit the project's overview page and select one from the "License picker," below the project's description. You can select from a variety of commonly used licenses or upload your own.</div>
+                        </div>
+                        <div class="support-item">
+                            <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> Does the OSF have a public API?</h5>
+                            <div class="support-body">Yes! Read more on the <a href="https://api.osf.io/v2/docs/">API docs</a></div>
+                        </div>
+                        <div class="support-item">
+                            <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> I'm a developer. Is the OSF open source? Can I contribute to the OSF?</h5>
+                            <div class="support-body">Yes! Find our code and docs on <a href="https://github.com/CenterForOpenScience/osf.io">our Github page</a>.</div>
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How does the OSF store and backup files that I upload to the site?</h5>

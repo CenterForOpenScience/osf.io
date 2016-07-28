@@ -38,7 +38,7 @@ def main(dry=True):
 
 
 if __name__ == '__main__':
-    dry = 'dry' in sys.argv
+    dry = '--dry' in sys.argv
     if not dry:
         # If we're not running in dry mode log everything to a file
         script_utils.add_file_logger(logger, __file__)

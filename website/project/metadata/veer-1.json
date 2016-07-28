@@ -156,6 +156,7 @@
             "type": "object",
             "title": "Recommended elements",
             "properties": [{
+                "id": "procedure",
                 "description": "Procedure",
                 "type": "object",
                 "properties": [{
