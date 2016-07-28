@@ -1,6 +1,5 @@
 'use strict';
 
-var m = require('mithril');
 var s3NodeConfig = require('./s3NodeConfig.js').s3NodeConfig;
 
 var url = window.contextVars.node.urls.api + 's3/settings/';
