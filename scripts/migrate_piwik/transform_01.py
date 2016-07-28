@@ -40,7 +40,7 @@ def main(force=False):
 
     input_file = open(utils.get_dir_for('extract') + '/' + settings.EXTRACT_FILE, 'r')
     transform_dir = utils.get_dir_for('transform01')
-    output_file = open(transform_dir + '/' + settings.TRANSFORM01_FILE, 'w')
+    output_file = open(transform_dir + '/' + settings.TRANSFORM01_FILE, 'a')
 
     history_file = utils.get_history_for('transform01', 'w')
     history_file.write('Run ID: {}\n'.format(complaints_run_id))
