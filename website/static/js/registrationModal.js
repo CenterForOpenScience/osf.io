@@ -63,15 +63,15 @@ var RegistrationViewModel = function(confirm, prompts, validator) {
         return moment(new Date(self.pikaday()));
     });
 
-    self._now = function() { return new Date(); };  // this is a hook for testing
+    self._now = function() { return moment(); };  // this is a hook for testing
 
     self.embargoIsLongEnough = function(end) {
-        var min = moment(self._now()).add(2, 'days');
+        var min = self._now().add(2, 'days');
         return end.isAfter(min) && end.isSameOrAfter(todayMinimum);
     };
 
     self.embargoIsShortEnough = function(end) {
-        var max = moment(self._now()).add(4, 'years').subtract(1, 'days');
+        var max = self._now().add(4, 'years').subtract(1, 'days');
         return end.isBefore(max) && end.isSameOrBefore(todayMaximum);
     };
 
