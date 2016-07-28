@@ -56,6 +56,12 @@ class TestRegistrationEmbeds(ApiTestCase):
         for contrib in embeds['contributors']['data']:
             assert_in(contrib['id'], ids)
 
+    def test_embed_identifiers(self):
+        url = '/{0}registrations/{1}/?embed=identifiers'.format(API_BASE, self.registration._id)
+
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
     def test_embed_attributes_not_relationships(self):
         url = '/{}registrations/{}/?embed=title'.format(API_BASE, self.registration._id)
 

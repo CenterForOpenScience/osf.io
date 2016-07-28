@@ -1091,18 +1091,23 @@ def _serialize_node_search(node):
     :return: Dictionary of node data
 
     """
-    title = node.title
+    data = {
+        'id': node._id,
+        'title': node.title,
+        'etal': len(node.visible_contributors) > 1,
+        'isRegistration': node.is_registration
+    }
     if node.is_registration:
-        title += ' (registration)'
+        data['title'] += ' (registration)'
+        data['dateRegistered'] = node.registered_date.isoformat()
+    else:
+        data['dateCreated'] = node.date_created.isoformat()
+        data['dateModified'] = node.date_modified.isoformat()
 
     first_author = node.visible_contributors[0]
+    data['firstAuthor'] = first_author.family_name or first_author.given_name or first_author.full_name
 
-    return {
-        'id': node._id,
-        'title': title,
-        'firstAuthor': first_author.family_name or first_author.given_name or first_author.full_name,
-        'etal': len(node.visible_contributors) > 1,
-    }
+    return data
 
 
 @must_be_logged_in

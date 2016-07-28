@@ -9,6 +9,7 @@ from framework.exceptions import PermissionsError
 
 from django.conf import settings
 
+from website.addons.base.exceptions import InvalidFolderError, InvalidAuthError
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.models import Node, User, Comment, Institution, MetaSchema, DraftRegistration
@@ -20,7 +21,7 @@ from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse,
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField,
                                   HideIfRegistration, RestrictedDictSerializer,
-                                  JSONAPIRelationshipSerializer, relationship_diff)
+                                  JSONAPIRelationshipSerializer, relationship_diff, )
 from api.base.exceptions import (InvalidModelValueError, RelationshipPostMakesNoChanges, Conflict,
                                  EndpointNotImplementedError)
 from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
@@ -108,6 +109,8 @@ class NodeSerializer(JSONAPISerializer):
                                             'level project by submitting the appropriate fields in the request body, '
                                             'and some information will not change. By default, the description will '
                                             'be cleared and the project will be made private.')
+
+    current_user_can_comment = ser.SerializerMethodField(help_text='Whether the current user is allowed to post comments')
     current_user_permissions = ser.SerializerMethodField(help_text='List of strings representing the permissions '
                                                                    'for the current user on this node.')
 
@@ -224,6 +227,11 @@ class NodeSerializer(JSONAPISerializer):
         if not permissions:
             permissions = ['read']
         return permissions
+
+    def get_current_user_can_comment(self, obj):
+        user = self.context['request'].user
+        auth = Auth(user if not user.is_anonymous() else None)
+        return obj.can_comment(auth)
 
     class Meta:
         type_ = 'nodes'
@@ -382,13 +390,18 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
             folder_info = None
             set_folder = False
 
-        if folder_info and addon_name == 'googledrive':
+        if addon_name == 'googledrive':
+            folder_id = folder_info
             try:
                 folder_path = data['folder_path']
             except KeyError:
                 folder_path = None
+
+            if (folder_id or folder_path) and not (folder_id and folder_path):
+                raise exceptions.ValidationError(detail='Must specify both folder_id and folder_path for {}'.format(addon_name))
+
             folder_info = {
-                'id': folder_info,
+                'id': folder_id,
                 'path': folder_path
             }
         return set_folder, folder_info
@@ -406,7 +419,7 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
     def should_call_set_folder(self, folder_info, instance, auth, node_settings):
         if (folder_info and not (   # If we have folder information to set
                 instance and getattr(instance, 'folder_id', False) and (  # and the settings aren't already configured with this folder
-                    instance.folder_id == folder_info or instance.folder_id == folder_info.get('id', False)
+                    instance.folder_id == folder_info or (hasattr(folder_info, 'get') and instance.folder_id == folder_info.get('id', False))
                 ))):
             if auth.user._id != node_settings.user_settings.owner._id:  # And the user is allowed to do this
                 raise exceptions.PermissionDenied('Requested action requires addon ownership.')
@@ -434,6 +447,7 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
         if instance and instance.has_auth and set_account and not external_account_id:
             # Settings authorized, User requesting deauthorization
             instance.deauthorize(auth=auth)  # clear_auth performs save
+            return instance
         elif external_account_id:
             # Settings may or may not be authorized, user requesting to set instance.external_account
             account = self.get_account_or_error(addon_name, external_account_id, auth)
@@ -444,7 +458,13 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
 
         if set_folder and self.should_call_set_folder(folder_info, instance, auth, instance):
             # Enabled, user requesting to set folder
-            instance.set_folder(folder_info, auth)
+            try:
+                instance.set_folder(folder_info, auth)
+                instance.save()
+            except InvalidFolderError:
+                raise exceptions.NotFound('Unable to find requested folder.')
+            except InvalidAuthError:
+                raise exceptions.PermissionDenied('Addon credentials are invalid.')
 
         return instance
 
@@ -517,10 +537,11 @@ class NodeContributorsSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'id',
         'bibliographic',
-        'permission'
+        'permission',
+        'index'
     ])
 
-    id = ContributorIDField(read_only=True)
+    id = ContributorIDField(read_only=True, source='_id')
     type = TypeField()
 
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not.',
@@ -585,7 +606,7 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
     """
     Overrides node contributor serializer to add additional methods
     """
-    id = ContributorIDField(required=True)
+    id = ContributorIDField(required=True, source='_id')
 
     def update(self, instance, validated_data):
         contributor = instance
