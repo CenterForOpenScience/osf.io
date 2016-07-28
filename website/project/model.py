@@ -1689,7 +1689,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if 'node_license' in saved_fields:
             children = [c for c in self.get_descendants_recursive(
                 include=lambda n: n.node_license is None
-            )]
+            ) if c.is_public and not c.is_deleted]
             # this returns generator, that would get unspooled anyways
             if children:
                 Node.bulk_update_search(children)
