@@ -18,6 +18,20 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
 
+DATABASES = {
+    'default': {
+        'CONN_MAX_AGE': 0,
+        'ENGINE': 'osf_models.db.backends.postgresql',
+        'HOST': '',
+        'NAME': 'osf',
+        'PASSWORD': '',
+        'PORT': '',
+        'USER': '',
+    }
+}
+
+AUTH_USER_MODEL = 'osf_models.OSFUser'
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = osf_settings.SECRET_KEY
 
