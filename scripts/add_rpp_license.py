@@ -32,6 +32,16 @@ def main(dry_run=False):
         node.save()
         logger.info("License '{}' has been added to project '{}' by user '{}'.".format(
                 node_license.name, node._id, user._id))
+        for child in node.nodes:
+            child.set_node_license(
+                    license_id=node_license.id,
+                    year='2016',
+                    copyright_holders='',
+                    auth=Auth(user)
+            )
+            child.save()
+            logger.info("License '{}' has been added to project '{}' by user '{}'.".format(
+                node_license.name, child._id, user._id))
 
 
 if __name__ == '__main__':
