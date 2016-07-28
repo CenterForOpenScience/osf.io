@@ -1,5 +1,7 @@
 from rest_framework import generics
 
+from website.project.taxonomies import Subject
+
 from api.taxonomies.serializers import TaxonomySerializer
 from api.base.views import JSONAPIBaseView
 
