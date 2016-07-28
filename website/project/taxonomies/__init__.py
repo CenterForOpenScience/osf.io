@@ -17,9 +17,10 @@ from framework.mongo import (
 class Subject(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 
+    id = fields.StringField(required=True, unique=True, editable=False)
     type = fields.StringField(required=True)
     text = fields.StringField(required=True)
-    parent = fields.ForeignField('subject', index=True)
+    parent = fields.ForeignField('subject', required=True)
 
 
 def ensure_taxonomies():
@@ -30,14 +31,22 @@ def ensure_taxonomies():
         )
     ) as fp:
         taxonomy = json.load(fp)
-        # For now, only PLOS taxonomies are loaded, other types possibly considered in the future
+        # For now, only PLOS taxonomy is loaded, other types possibly considered in the future
         type = 'plos'
         for subject_path in taxonomy.get('data'):
             subjects = subject_path.split('_')
             text = subjects[-1]
-            parent = None
+            _parent = None
             if len(subjects) > 1:
-                parent = subjects[-2]
+                try:
+                    _parent = Subject.find_one(
+                        Q('text', 'eq', subjects[-2]) &
+                        Q('type', 'eq', type)
+                    )
+                except:
+                    _parent = None
+
+            parent = _parent
 
             try:
                 subject = Subject.find_one(
@@ -48,7 +57,7 @@ def ensure_taxonomies():
                 subject = Subject(
                     type = type,
                     text = text,
-                    parent = parent
+                    parent_id = parent
                 )
             else:
                 subject.type = type

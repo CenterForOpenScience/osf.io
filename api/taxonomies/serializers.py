@@ -1,4 +1,9 @@
 from rest_framework import serializers as ser
 
-class TaxonomySerializer(ser.Serializer):
-    data = ser.JSONField()
+from api.base.serializers import JSONAPISerializer
+
+class TaxonomySerializer(JSONAPISerializer):
+    type = ser.CharField(max_length = 200)
+    text = ser.CharField(max_length = 200)
+    id = ser.CharField(max_length = 200)
+    parent_id = ser.CharField(max_length = 200)
