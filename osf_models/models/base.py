@@ -113,8 +113,11 @@ class BaseModel(models.Model):
             raise modularodm.exceptions.MultipleResultsFound(*e.args)
 
     @classmethod
-    def find(cls, query):
-        return cls.objects.filter(to_django_query(query))
+    def find(cls, query=None):
+        if not query:
+            return cls.objects.all()
+        else:
+            return cls.objects.filter(to_django_query(query))
 
     @property
     def _primary_name(self):
