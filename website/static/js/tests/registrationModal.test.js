@@ -94,7 +94,7 @@ describe('registrationModal', () => {
         });
         it('returns false for date more than 4 years in the future', () => {
             var invalidFutureDate = new Date();
-            invalidFutureDate.setDate(invalidFutureDate.getDate() + 1460);
+            invalidFutureDate.setDate(invalidFutureDate.getDate() + 1462);
             vm.pikaday(invalidFutureDate);
             assert.isFalse(vm.pikaday.isValid());
         });
