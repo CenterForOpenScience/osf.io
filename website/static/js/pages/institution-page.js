@@ -26,8 +26,8 @@ $(document).ready(function() {
     m.mount(document.getElementById('fileBrowser'), m.component(Projects, {
         wrapperSelector : '#fileBrowser',
         systemCollections:[
-            new LinkObject('collection', { link : instNodes, query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors', 'filter[parent]' : 'null'}, systemCollection : 'nodes'}, 'All Projects'),
-            new LinkObject('collection', { link : instRegs, query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors', 'filter[parent]' : 'null'}, systemCollection : 'registrations'}, 'All Registrations'),
+            new LinkObject('collection', { link : instNodes, query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors', 'filter[parent]' : 'null'}, nodeType : 'nodes'}, 'All Projects'),
+            new LinkObject('collection', { link : instRegs, query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors', 'filter[parent]' : 'null'}, nodeType : 'registrations'}, 'All Registrations'),
         ],
         viewOnly: true,
         projectOrganizerOptions: {
