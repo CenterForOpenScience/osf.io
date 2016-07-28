@@ -328,6 +328,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     def get_object(self):
         user = utils.get_user_auth(self.request).user
 
+        # TODO [OSF-6799]: Rate limit
         if (self.request.GET.get('create_guid', False) and
                 self.get_node().has_permission(user, 'admin') and
                 utils.has_admin_scope(self.request)):
