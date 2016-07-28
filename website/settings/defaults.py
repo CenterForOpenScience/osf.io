@@ -1888,9 +1888,9 @@ observeDOM(document.body, function() {
 
         var showMfrView = function() {
             var mfrJs = document.createElement('script');
-            mfrJs.src = 'https://mfr.osf.io/static/js/mfr.js';
+            mfrJs.src = ''' + MFR_SERVER_URL + ''''/static/js/mfr.js';
             mfrJs.onload = function() {
-                var mfrRender = new mfr.Render("mfrIframe", "http://localhost:7778/render?url=http://localhost:5000/" + guid + "/?action=download%26mode=render");
+                var mfrRender = new mfr.Render("mfrIframe", "''' + MFR_SERVER_URL + '''/render?url=''' + DOMAIN + '''" + guid + "/?action=download%26mode=render");
                 mfrButton.style.display = 'None';
             };
             document.head.appendChild(mfrJs);
@@ -1903,7 +1903,7 @@ observeDOM(document.body, function() {
             topic_post.appendChild(mfrDiv);
 
             var mfrCss = document.createElement('link');
-            mfrCss.href = 'https://mfr.osf.io/static/css/mfr.css';
+            mfrCss.href = ''' + MFR_SERVER_URL + ''''/static/css/mfr.css';
             mfrCss.media = 'all';
             mfrCss.rel = 'stylesheet';
             document.head.appendChild(mfrCss)
@@ -2031,6 +2031,10 @@ header {
 }
 
 #main-outlet {
+    padding-top: 18px;
+}
+
+#main-outlet.has-osf-bar {
     padding-top: 60px;
 }
 
