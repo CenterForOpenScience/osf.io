@@ -44,6 +44,7 @@
       The use of adblocking software may prevent site analytics from loading properly.
     </div>
 
+    % if keen['public']['project_id']:
     <div class="row m-b-sm">
       <div class="col-sm-12">
 
@@ -121,7 +122,11 @@
             </div>
         </div>
     </div>
-
+    % else:
+    <div class="alert alert-danger" role="alert">
+      Analytics unavailable. Please contact <a href="mailto:support@osfio">support@osf.io</a> if the problem persists.
+    </div>
+    % endif
 %endif
 
 <%def name="stylesheets()">
