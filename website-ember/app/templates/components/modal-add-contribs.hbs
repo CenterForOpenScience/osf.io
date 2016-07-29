@@ -47,7 +47,7 @@
                     {{!-- Note: Removed "notifications" block because it seemed to be no longer used in staticjs code. TODO: Verify this is correct --}}
 
                     {{!-- Intent: Only show search results if done loading and results were found --}}
-                    {{#if (and usersFound (not isLoading))}}
+                    {{#if (and (not-eq usersFound null) (not isLoading))}}
                         {{#if usersFound.length}}
                             <table class="table-condensed">
                                 <tbody>
@@ -79,47 +79,56 @@
                                                 </a>
                                                 <br>
 
-                                                {{!-- TODO: Identify datasource for these fields in API response and add to model as appropriate --}}
-                                                {{!--
-                                                <span data-bind="if: contributor.employment">
-                                                    <span class='small'
-                                                        data-bind="text: contributor.employment">
-                                                    </span><br>
-                                                </span>
-                                                <span data-bind="if: contributor.education">
-                                                    <span
-                                                        class='small'
-                                                        data-bind="text: contributor.education">
-                                                    </span><br>
-                                                </span>
-
-                                                <span class='small'
-                                                      data-bind="text: contributor.displayProjectsInCommon">
-                                                </span>
-                                                <span class='text-muted' data-bind="visible: !contributor.registered">(unregistered)</span>
-                                                --}}
+                                                {{#if showEducationSchoolsUI}}
+                                                    {{!-- TODO: Identify datasource for these fields in API response and add to model as appropriate . Remove lingering knockout. --}}
+                                                    <span class="feature-flag">
+                                                        <span data-bind="if: contributor.employment">
+                                                            <span class='small'>Day Job {{person.employment}}</span><br>
+                                                        </span>
+                                                        <span data-bind="if: contributor.education">
+                                                            <span class='small'>Virginia Tech {{person.education}}</span><br>
+                                                        </span>
+                                                    </span>
+                                                {{/if}}
+                                                {{#if showProjectsInCommon}}
+                                                    <span class="feature-flag">
+                                                        <span class='small'>
+                                                            Probably a collaborator? {{person.projectsInCommon}}
+                                                        </span>
+                                                    </span>
+                                                {{/if}}
+                                                {{#if showUnregisteredContributorsUI}}
+                                                    <span class="feature-flag">
+                                                        {{#if person.unregisteredContributor}}(unregistered){{/if}}
+                                                    </span>
+                                                {{/if}}
                                             </td>
                                         </tr>
                                     {{/each}}
                                 </tbody>
                             </table>
 
-                            {{!-- TODO: Support paginated result fetching widget. Moved from help-block style to here? --}}
-                            {{!-- <ul class="pagination pagination-sm" data-bind="foreach: paginators">
-                                <li data-bind="css: style"><a href="#" data-bind="click: handler, text: text"></a></li>
-                            </ul> --}}
+                            {{#if showPaginationWidget}}
+                                {{!-- TODO: Support paginated result fetching widget. Moved from help-block style to here? --}}
+                                <ul class="pagination pagination-sm feature-flag" data-bind="foreach: paginators">
+                                    <li data-bind="css: style"><a href="#" data-bind="click: handler, text: text"></a></li>
+                                </ul>
+                            {{/if}}
 
-                            {{!-- TODO: Restore this when unregistered contributors are implemented in the API
-                            <p>
-                                <button {{action 'selectPage' 'invite'}} class="btn-link">Add <strong><em>{{_searchText}}</em></strong> as an unregistered contributor</button>.
-                            </p>
-                            --}}
+                            {{#if showUnregisteredContributorsUI}}
+                                {{!-- TODO: Restore this when unregistered contributors are implemented in the API --}}
+                                <p class="feature-flag">
+                                    <a {{action 'selectPage' 'invite'}}>Add <strong><em>{{_searchText}}</em></strong> as an unregistered contributor</a>.
+                                </p>
+                            {{/if}}
                         {{else}}
                             No results found.
-                        {{!-- TODO: Restore text below when unreg contribs implemented in the API
-                            Try a more specific search or
-                            <button {{action 'selectPage' 'invite'}} class="btn-link">add <strong><em>{{_searchText}}</em></strong> as an unregistered contributor</button>.
-                            --}}
+                            {{#if showUnregisteredContributorsUI}}
+                                <span class="feature-flag">
+                                    Try a more specific search or
+                                    <a {{action 'selectPage' 'invite'}} class="btn-link">add <strong><em>{{_searchText}}</em></strong> as an unregistered contributor</a>.
+                                </span>
+                            {{/if}}
                         {{/if}}
                     {{/if}}
 
@@ -257,12 +266,12 @@
         <button class="btn btn-default" {{action 'close' target=footer}}>Cancel</button>
 
         {{#if (and contribsToAdd (eq page 'whom'))}}
-            {{!-- {{#if node.children}}
-                TODO: suppress "select child components" page until treebeard equivalent available. Also, children check should not require server call
+            {{#if (and node.children showTreeWidget) }}
+                {{!-- TODO: suppress "select child components" page until treebeard equivalent available. Also, children check should not require server call --}}
                 <button class="btn btn-primary" {{action 'selectPage' 'which'}}>Next</button>
-            {{else}}  --}}
-            <button class="btn btn-success" {{action 'submitContributors'}}>Add</button>
-            {{!-- {{/if}} --}}
+            {{else}}
+                <button class="btn btn-success" {{action 'submitContributors'}}>Add</button>
+            {{/if}}
         {{/if}}
 
         {{#if (eq page 'which')}}

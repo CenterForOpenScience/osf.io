@@ -69,8 +69,8 @@ export default Ember.Component.extend({
     updateAttributes: function(contributors) {
         var proposedChanges = this.checkProposedChanges(contributors);
         this.set('changed', proposedChanges.changed);
-        proposedChanges.numAdmins > 0 ? this.set('hasMinAdmins', true) : this.set('hasMinAdmins', false);
-        proposedChanges.numBibliographic > 0 ? this.set('hasMinBibliographic', true) : this.set('hasMinBibliographic', false);
+        this.set('hasMinAdmins', (proposedChanges.numAdmins > 0));
+        this.set('hasMinBibliographic', (proposedChanges.numBibliographic > 0));
     },
     checkProposedChanges: function(contributors) {
         var _this = this;

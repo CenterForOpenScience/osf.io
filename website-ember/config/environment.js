@@ -27,6 +27,15 @@ module.exports = function(environment) {
         APP: {
             // Here you can pass flags/options to your application instance
             // when it is created
+            featureFlags: {
+                // Feature flags: things not ready to release, or parts of UI that depend on unreleased APIv2 functionality
+                unregisteredContributors: true, // Blocked by OSF-6761. Must work with cookies.
+                educationSchools: true, // Blocked by OSF-6769, serializer must provide data
+                collaborationCount: true, // # projects in common to display in search results: No specific ticket or commitment to implement
+                paginationWidget: false, // Blocked by EOSF-135, Widget to paginate multiple existing or new results
+                viewOnlyLinks: false, // Blocked by EOSF-112
+                treeWidgetAvailable: true, // Blocked by EOSF-134. Depends on hierarchical treebeard-like widget; no ticket available
+            }
         }
     };
 

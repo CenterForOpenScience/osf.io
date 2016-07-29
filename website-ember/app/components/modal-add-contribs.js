@@ -1,5 +1,7 @@
 import Ember from 'ember';
 
+import config from '../config/environment';
+
 import deferredPromise from '../utils/deferred-promise';
 import permissions, { permissionSelector } from 'ember-osf/const/permissions';
 
@@ -27,6 +29,13 @@ let UserContributor = Ember.ObjectProxy.extend({
  */
 export default Ember.Component.extend({
     store: Ember.inject.service('store'),
+
+    // FIXME: Feature flags consumed by template- remove dependence when tickets are resolved!
+    showUnregisteredContributorsUI: config.APP.featureFlags.unregisteredContributors,
+    showEducationSchoolsUI: config.APP.featureFlags.educationSchools,
+    showProjectsInCommon: config.APP.featureFlags.collaborationCount,
+    showPaginationWidget: config.APP.featureFlags.paginationWidget,
+    showTreeWidget: config.APP.featureFlags.treeWidgetAvailable,
 
     /**
      * @property {String} page Which page of the modal to display
