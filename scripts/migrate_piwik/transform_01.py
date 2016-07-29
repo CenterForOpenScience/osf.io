@@ -36,6 +36,7 @@ def main(force=False):
             sys.exit()
 
     sqlite_db = sqlite3.connect(settings.SQLITE_PATH)
+    sqlite_db.row_factory = sqlite3.Row
     sqlite_setup(sqlite_db)
 
     input_file = open(utils.get_dir_for('extract') + '/' + settings.EXTRACT_FILE, 'r')
@@ -46,11 +47,7 @@ def main(force=False):
     history_file.write('Run ID: {}\n'.format(complaints_run_id))
     history_file.write('Beginning extraction at: {}Z\n'.format(datetime.utcnow()))
 
-    user_cache = {}
-    node_cache = {}
-    location_cache = {}
     lastline = 0
-
     try:
         resume_log = open(utils.get_dir_for('transform01') + '/resume.log', 'r')
         for linenbr in resume_log.readlines():
@@ -79,70 +76,19 @@ def main(force=False):
 
         # lookup location by ip address. piwik strips last 16 bits, so may not be completely
         # accurate, but should be close enough.
-        location = None
         ip_addr = visit['ip_addr']
-        if ip_addr is not None:
-            if not location_cache.has_key(ip_addr):
-                location_cache[ip_addr] = geolite2.lookup(ip_addr)
-            location = location_cache[ip_addr]
+        location = get_location_for_ip_addr(ip_addr, sqlite_db)
 
         # user has many visitor ids, visitor id has many session ids.
         # in keen, visitor id will refresh 1/per year, session 1/per 30min.
         visitor_id = get_or_create_visitor_id(visit['visitor_id'], sqlite_db)
         session_id = get_or_create_session_id(visit['id'], sqlite_db)
 
-        user_entry_point = None
-        user_locale = None
-        user_timezone = None
-        user_institutions = None
-
         user_id = visit['user_id']
-        user_entry_point = None
-        user_locale = None
-        user_timezone = None
-        user_institutions = None
-        if user_id is not None:
-            if not user_cache.has_key(user_id):
-                user_obj = User.load(user_id)
-                user_cache[user_id] = {
-                    'entry_point': None if user_obj is None else get_entry_point(user_obj),
-                    'locale': user_obj.locale if user_obj else '',
-                    'timezone': user_obj.timezone if user_obj else '',
-                    'institutions': [
-                        {'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path}
-                        for inst in user_obj.affiliated_institutions
-                    ] if user_obj else [],
-                }
+        user = get_or_create_user(user_id, sqlite_db)
 
-            user_entry_point = user_cache[user_id]['entry_point']
-            user_locale = user_cache[user_id]['locale']
-            user_timezone = user_cache[user_id]['timezone']
-            user_institutions = user_cache[user_id]['institutions']
-
-
-        node = None
         node_id = action['node_id']
-        if node_id is not None:
-            if not node_cache.has_key(node_id):
-                node_cache[node_id] = Node.load(node_id)
-            node = node_cache[node_id]
-
-
-        node_public_date = None
-        if node is not None:
-            privacy_actions = NodeLog.find(
-                Q('node', 'eq', node_id)
-                & Q('action', 'in', [NodeLog.MADE_PUBLIC, NodeLog.MADE_PRIVATE])
-            ).sort('-date')
-
-            try:
-                privacy_action = privacy_actions[0]
-            except IndexError as e:
-                pass
-            else:
-                if privacy_action.action == NodeLog.MADE_PUBLIC:
-                    node_public_date = privacy_action.date.isoformat()
-                    node_public_date = node_public_date[:-3] + 'Z'
+        node = get_or_create_node(node_id, sqlite_db)
 
         browser_version = [None, None]
         if visit['ua']['browser']['version']:
@@ -236,23 +182,23 @@ def main(force=False):
             },
             'user': {
                 'id': user_id,
-                'entry_point': user_entry_point or '',  # empty string if no user
-                'locale': user_locale or '',  # empty string if no user
-                'timezone': user_timezone or '',  # empty string if no user
-                'institutions': user_institutions,  # null if no user, else []
+                'entry_point': '' if user is None else user['entry_point'],  # empty string if no user
+                'locale': '' if user is None else user['locale'],  # empty string if no user
+                'timezone': '' if user is None else user['timezone'],  # empty string if no user
+                'institutions': None if user is None else user['institutions'],  # null if no user, else []
             },
             'node': {
                 'id': node_id,
-                'title': getattr(node, 'title', None),
-                'type': getattr(node, 'category', None),
+                'title': None if node is None else node['title'],
+                'type': None if node is None else node['category'],
                 'tags': node_tags,
-                'made_public_date': node_public_date,
+                'made_public_date': None if node is None else node['made_public_date'],
             },
             'geo': {},
             'anon': {
                 'id': md5(session_id).hexdigest(),
-                'continent': getattr(location, 'continent', None),
-                'country': getattr(location, 'country', None),
+                'continent': None if location is None else location['continent'],
+                'country':   None if location is None else location['country'],
             },
             'keen': {
                 'timestamp': utc_ts_formatted,
@@ -326,6 +272,24 @@ def sqlite_setup(sqlite_db):
         cursor.execute('CREATE TABLE session_ids (visit_id TEXT, session_id TEXT)')
         sqlite_db.commit()
 
+    try:
+        cursor.execute('SELECT COUNT(*) FROM nodes')
+    except sqlite3.OperationalError:
+        cursor.execute('CREATE TABLE nodes (id TEXT, title TEXT, category TEXT, made_public_date TEXT)')
+        sqlite_db.commit()
+
+    try:
+        cursor.execute('SELECT COUNT(*) FROM users')
+    except sqlite3.OperationalError:
+        cursor.execute('CREATE TABLE users (id TEXT, entry_point TEXT, locale TEXT, timezone TEXT, institutions TEXT)')
+        sqlite_db.commit()
+
+    try:
+        cursor.execute('SELECT COUNT(*) FROM locations')
+    except sqlite3.OperationalError:
+        cursor.execute('CREATE TABLE locations (ip_addr TEXT, continent TEXT, country TEXT)')
+        sqlite_db.commit()
+
 
 def get_or_create_visitor_id(piwik_id, sqlite_db):
     """Gets or creates a new Keen visitor UUID given a Piwik visitor ID.
@@ -358,7 +322,7 @@ def get_or_create_visitor_id(piwik_id, sqlite_db):
 def get_or_create_session_id(visit_id, sqlite_db):
     """Gets or creates a new session UUID given a Piwik visit ID.
 
-    :param user_id: Piwik visit ID from current row in database
+    :param visit_id: Piwik visit ID from current row in database
     :param sqlite_db: SQLite3 database handle
     :return: session UUID as str
     """
@@ -381,6 +345,133 @@ def get_or_create_session_id(visit_id, sqlite_db):
     cursor.execute(query)
     sqlite_db.commit()
     return session_uuid
+
+def get_location_for_ip_addr(ip_addr, sqlite_db):
+    if ip_addr is None:
+        return None
+
+    cursor = sqlite_db.cursor()
+    query = "SELECT * FROM locations WHERE ip_addr='{}'".format(ip_addr)
+    cursor.execute(query)
+
+    locations = cursor.fetchall()
+
+    if len(locations) > 1:
+        raise Exception("Multiple locations found for single ip address")
+
+    if locations:
+        return locations[0]
+
+    location = geolite2.lookup(ip_addr)
+
+    query = "INSERT INTO locations (ip_addr, continent, country) VALUES ('{ip_addr}', '{continent}', '{country}');".format(
+        ip_addr=ip_addr,
+        continent=getattr(location, 'continent', None),
+        country=getattr(location, 'country', None),
+    )
+    cursor.execute(query)
+    sqlite_db.commit()
+    return get_location_for_ip_addr(ip_addr, sqlite_db)
+
+
+def get_or_create_user(user_id, sqlite_db):
+    """Gets an OSF user from the sqlite cache.  If not found, pulls the user info from mongo and
+    saves it.
+
+    :param user_id: OSF user id (e.g. 'mst3k')
+    :param sqlite_db: SQLite3 database handle
+    :return: user dict
+    """
+
+    if user_id is None:
+        return None
+
+    cursor = sqlite_db.cursor()
+    query = "SELECT * FROM users WHERE id='{}'".format(user_id)
+    cursor.execute(query)
+
+    users = cursor.fetchall()
+
+    if len(users) > 1:
+        raise Exception("Multiple users found for single node ID")
+
+    if users:
+        user_obj = {}
+        for key in users[0].keys():
+            user_obj[key] = users[0][key]
+        user_obj['institutions'] = json.loads(user_obj['institutions'])
+        return user_obj
+
+    user = User.load(user_id)
+    if user is None:
+        return None
+
+    institutions = [
+        {'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path}
+        for inst in user.affiliated_institutions
+    ] if user else []
+
+    query = "INSERT INTO users (id, entry_point, locale, timezone, institutions) VALUES ('{id}', '{entry_point}', '{locale}', '{timezone}', '{institutions}');".format(
+        id=user_id,
+        entry_point=None if user is None else get_entry_point(user),
+        locale=getattr(user, 'locale', ''),
+        timezone=getattr(user, 'timezone', ''),
+        institutions=json.dumps(institutions),
+    )
+    cursor.execute(query)
+    sqlite_db.commit()
+    return get_or_create_user(user_id, sqlite_db)
+
+
+def get_or_create_node(node_id, sqlite_db):
+    """Gets an OSF node from the sqlite cache.  If not found, pulls the node info from mongo and
+    saves it.
+
+    :param node_id: OSF node id (e.g. 'mst3k')
+    :param sqlite_db: SQLite3 database handle
+    :return: node dict
+    """
+
+    if node_id is None:
+        return None
+
+    cursor = sqlite_db.cursor()
+    query = "SELECT * FROM nodes WHERE id='{}'".format(node_id)
+    cursor.execute(query)
+
+    nodes = cursor.fetchall()
+
+    if len(nodes) > 1:
+        raise Exception("Multiple nodes found for single node ID")
+
+    if nodes:
+        return nodes[0]
+
+    node = Node.load(node_id)
+    if node is None:
+        return None
+
+    node_public_date = None
+    privacy_actions = NodeLog.find(
+        Q('node', 'eq', node_id)
+        & Q('action', 'in', [NodeLog.MADE_PUBLIC, NodeLog.MADE_PRIVATE])
+    ).sort('-date')
+
+    try:
+        privacy_action = privacy_actions[0]
+    except IndexError as e:
+        pass
+    else:
+        if privacy_action.action == NodeLog.MADE_PUBLIC:
+            node_public_date = privacy_action.date.isoformat()
+            node_public_date = node_public_date[:-3] + 'Z'
+
+    cursor.execute(
+        u'INSERT INTO nodes (id, title, category, made_public_date) VALUES (?, ?, ?, ?)',
+        (node_id, getattr(node, 'title'), getattr(node, 'category'), node_public_date)
+    )
+    sqlite_db.commit()
+    return get_or_create_node(node_id, sqlite_db)
 
 
 def parse_os_family(os_key):
