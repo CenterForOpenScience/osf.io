@@ -17,10 +17,9 @@ from framework.mongo import (
 class Subject(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 
-    id = fields.StringField(required=True, unique=True, editable=False)
     type = fields.StringField(required=True)
     text = fields.StringField(required=True)
-    parent = fields.ForeignField('subject', required=True)
+    parent_id = fields.StringField()
 
 
 def ensure_taxonomies():
@@ -46,7 +45,9 @@ def ensure_taxonomies():
                 except:
                     _parent = None
 
-            parent = _parent
+            parent_id = None
+            if _parent:
+                parent_id = _parent._id
 
             try:
                 subject = Subject.find_one(
@@ -57,10 +58,11 @@ def ensure_taxonomies():
                 subject = Subject(
                     type = type,
                     text = text,
-                    parent_id = parent
+                    parent_id = parent_id
                 )
             else:
                 subject.type = type
                 subject.text = text
-                subject.parent = parent
+                subject.parent_id = parent_id
+
             subject.save()
