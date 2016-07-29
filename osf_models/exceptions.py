@@ -1,3 +1,6 @@
+from django.core.exceptions import ValidationError as DjangoValidationError
+from modularodm.exceptions import ValidationError as MODMValidationError
+
 class TokenError(Exception):
     pass
 
@@ -68,3 +71,8 @@ class UserNotAffiliatedError(OSFError):
     """
     message_short = 'User not affiliated'
     message_long = 'This user is not affiliated with this institution.'
+
+
+class ValidationError(MODMValidationError, DjangoValidationError):
+    """Raised on database validation failure. This exists for compatibility with both modular-odm and Django."""
+    pass

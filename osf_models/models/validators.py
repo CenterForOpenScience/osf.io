@@ -1,4 +1,4 @@
-from django.core.exceptions import ValidationError
+from osf_models.exceptions import ValidationError
 
 from osf_models.utils.base import strip_html
 

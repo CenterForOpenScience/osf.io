@@ -1,13 +1,12 @@
+import json
 from functools import partial
 
-from django.core.serializers.json import DjangoJSONEncoder
-
-import json
-
-from django.contrib.postgres.fields.jsonb import JSONField
-from psycopg2.extras import Json
-from django.core import exceptions
 from django.contrib.postgres import lookups
+from django.contrib.postgres.fields.jsonb import JSONField
+from django.core.serializers.json import DjangoJSONEncoder
+from psycopg2.extras import Json
+
+from osf_models.exceptions import ValidationError
 
 class DateTimeAwareJSONField(JSONField):
     def get_prep_value(self, value):
@@ -28,7 +27,7 @@ class DateTimeAwareJSONField(JSONField):
         try:
             json.dumps(value, cls=DjangoJSONEncoder)
         except TypeError:
-            raise exceptions.ValidationError(
+            raise ValidationError(
                 self.error_messages['invalid'],
                 code='invalid',
                 params={'value': value},
