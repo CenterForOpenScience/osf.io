@@ -35,9 +35,9 @@ class CompoundQ(BaseQ, query.QueryGroup):
         )
 
     @classmethod
-    def from_modm_query(cls, query):
+    def from_modm_query(cls, query, model_cls=None):
         op_function = and_ if query.operator == 'and' else or_
-        return reduce(op_function, (Q.from_modm_query(node) for node in query.nodes))
+        return reduce(op_function, (Q.from_modm_query(node, model_cls) for node in query.nodes))
 
 class AndQ(CompoundQ):
 
@@ -63,11 +63,16 @@ class Q(BaseQ, query.RawQuery):
     QUERY_MAP = {'eq': 'exact'}
 
     @classmethod
-    def from_modm_query(cls, query):
+    def from_modm_query(cls, query, model_cls=None):
         if isinstance(query, QueryGroup):
             compound_cls = AndQ if query.operator == 'and' else OrQ
-            return compound_cls.from_modm_query(query)
+            return compound_cls.from_modm_query(query, model_cls=model_cls)
         elif isinstance(query, MODMQ):
+            if model_cls:
+                field = _get_field(model_cls, query.attribute)
+                # Mongo compatibility fix: an 'eq' query on array fields behaves like 'contains' for postgres ArrayFields
+                if field.get_internal_type() == 'ArrayField' and query.operator == 'eq':
+                    return cls(query.attribute, 'contains', [query.argument])
             return cls(query.attribute, query.operator, query.argument)
         elif isinstance(query, cls):
             return query
@@ -120,8 +125,10 @@ class Q(BaseQ, query.RawQuery):
     def __repr__(self):
         return '<Q({}, {}, {})>'.format(self.key, self.op, self.val)
 
+def _get_field(model_cls, field_name):
+    return model_cls._meta.get_field(field_name)
 
-def to_django_query(query):
+def to_django_query(query, model_cls=None):
     """Translate a modular-odm Q or QueryGroup to a Django query.
     """
-    return Q.from_modm_query(query).to_django_query()
+    return Q.from_modm_query(query, model_cls=model_cls).to_django_query()

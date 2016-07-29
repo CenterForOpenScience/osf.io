@@ -89,6 +89,10 @@ class MODMCompatibilityQuerySet(models.QuerySet):
         return self[:n]
 
 class BaseModel(models.Model):
+    """Base model that acts makes subclasses mostly compatible with the
+    modular-odm ``StoredObject`` interface.
+    ."""
+
     objects = MODMCompatibilityQuerySet.as_manager()
 
     class Meta:
@@ -106,7 +110,7 @@ class BaseModel(models.Model):
     @classmethod
     def find_one(cls, query):
         try:
-            return cls.objects.get(to_django_query(query))
+            return cls.objects.get(to_django_query(query, model_cls=cls))
         except cls.DoesNotExist:
             raise modularodm.exceptions.NoResultsFound()
         except cls.MultipleObjectsReturned as e:
@@ -117,7 +121,7 @@ class BaseModel(models.Model):
         if not query:
             return cls.objects.all()
         else:
-            return cls.objects.filter(to_django_query(query))
+            return cls.objects.filter(to_django_query(query, model_cls=cls))
 
     @property
     def _primary_name(self):
