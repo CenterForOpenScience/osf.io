@@ -38,12 +38,6 @@ export default Ember.Controller.extend(NodeActionsMixin, {
         removeContributor(contrib) {
             this._super(...arguments);
             this.get('contributors').removeObject(contrib);
-        },
-        updateContributors(contributors, permissionsChanges, bibliographicChanges) { // jshint ignore:line
-            this._super(...arguments);
-            // TODO how to send multiple save actions in a row without reload?
-            // May be related to how loading contributors initially.
-            window.location.reload();
         }
     }
 });
