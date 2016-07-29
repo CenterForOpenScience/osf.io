@@ -212,6 +212,10 @@ class NodeFactory(AbstractNodeFactory):
     parent = SubFactory(ProjectFactory)
 
 
+class PreprintFactory(ProjectFactory):
+    category = 'project'
+
+
 class RegistrationFactory(AbstractNodeFactory):
 
     creator = None
