@@ -178,14 +178,20 @@
                     <div class="col-md-8 col-sm-12" style="padding-left: 25px">
                         <a href="${login_url}" >Already have an account?</a>
                     </div>
-                    %if redirect_url:
+                    %if register:
                         <div class="col-md-8 col-sm-12" style="padding-left: 25px">
-                            <a href="${domain}login/?campaign=institution&redirect_url=${redirect_url}">Login through your institution  <i class="fa fa-arrow-right"></i></a>
-                        </div>
+                                <a href="${institution_login}">Login through your institution  <i class="fa fa-arrow-right"></i></a>
+                            </div>
                     %else:
-                        <div class="col-md-8 col-sm-12" style="padding-left: 25px">
-                            <a href="${domain}login/?campaign=institution">Login through your institution  <i class="fa fa-arrow-right"></i></a>
-                        </div>
+                        %if redirect_url:
+                            <div class="col-md-8 col-sm-12" style="padding-left: 25px">
+                                <a href="${domain}login/?campaign=institution&redirect_url=${redirect_url}">Login through your institution  <i class="fa fa-arrow-right"></i></a>
+                            </div>
+                        %else:
+                            <div class="col-md-8 col-sm-12" style="padding-left: 25px">
+                                <a href="${domain}login/?campaign=institution">Login through your institution  <i class="fa fa-arrow-right"></i></a>
+                            </div>
+                        %endif
                     %endif
                     <div class="col-md-4 col-sm-12">
                         <button type="submit" class="btn pull-right btn-success" data-bind="disable: submitted()">Create account</button>

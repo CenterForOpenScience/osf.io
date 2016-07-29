@@ -523,7 +523,10 @@ def auth_register(auth, **kwargs):
     if auth.logged_in:
         return redirect(web_url_for('dashboard'))
 
-    return {}, http.OK
+    data = {}
+    data['register'] = 'true'
+    data['institution_login'] = cas.get_login_url(web_url_for('dashboard', _absolute=True), campaign='institution')
+    return data, http.OK
 
 
 def register_user(**kwargs):
