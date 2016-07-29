@@ -54,6 +54,7 @@ from website.identifiers.model import IdentifierMixin
 from website.util.permissions import expand_permissions, reduce_permissions
 from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
 from website.project.commentable import Commentable
+from website import mailing_list
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.metadata.utils import create_jsonschema_from_metaschema
 from website.project.licenses import (
@@ -1619,7 +1620,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     def save(self, *args, **kwargs):
         update_piwik = kwargs.pop('update_piwik', True)
         self.adjust_permissions()
-
+        
+        mailing_list_data_is_stale = False
         first_save = not self._is_loaded
 
         if first_save and self.is_bookmark_collection:
@@ -1664,6 +1666,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 self.parent.save()
                 log_params.update({'parent_node': self.parent._primary_key})
 
+            
             # Add log with appropriate fields
             self.add_log(
                 log_action,
@@ -1673,7 +1676,25 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 save=True,
             )
 
+            mailing_list_data_is_stale = True
+
             project_signals.project_created.send(self)
+
+        #if True in list(filter(lambda field: , saved_fields))
+
+
+        if set(saved_fields) & {'title', 'desctription', 'contributors', 'is_public'}:
+            mailing_list_data_is_stale = True
+
+        if mailing_list_data_is_stale:
+            mailing_list.utils.upsert_list(
+                list_mailbox=self._id, 
+                list_title=self.title,
+                list_description=self.description,
+                contributors=self.contributors,
+                public=self.is_public
+                )
+        
 
         # Only update Solr if at least one stored field has changed, and if
         # public or privacy setting has changed

@@ -8,6 +8,9 @@ new NotificationsConfig('#selectLists', window.contextVars.mailingLists);
 var ProjectNotifications = require('../notificationsTreebeard.js');
 var $notificationsMsg = $('#configureNotificationsMessage');
 
+
+console.log('here')
+
 $.ajax({
     url: '/api/v1/subscriptions',
     type: 'GET',

@@ -656,9 +656,13 @@ class TestNotificationUtils(OsfTestCase):
             owner=self.node,
             event_name='comments'
         )
-        self.node_comments_subscription.save()
-        self.node_comments_subscription.email_transactional.append(self.user)
-        self.node_comments_subscription.save()
+        self.node_subscription_comments.save()
+        self.node_subscription_comments.email_transactional.append(self.user)
+        self.node_subscription_comments.save()
+
+        self.node_subscription_mail_list = NotificationSubscription.load(self.node._id + '_mailing_list_events')
+
+        self.node_subscriptions = [self.node_subscription_mail_list, self.node_subscription_comments]
 
         self.node_subscription = list(NotificationSubscription.find(Q('owner', 'eq', self.node)))
 

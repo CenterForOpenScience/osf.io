@@ -324,6 +324,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     }
     ret.update(_view_project(node, auth, primary=True))
     ret['user']['can_edit_wiki_body'] = can_edit
+
     return ret
 
 

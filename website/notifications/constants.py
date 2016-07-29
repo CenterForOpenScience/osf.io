@@ -1,6 +1,7 @@
 NODE_SUBSCRIPTIONS_AVAILABLE = {
     'comments': 'Comments added',
-    'file_updated': 'Files updated'
+    'file_updated': 'Files updated',
+    'mailing_list_events': 'Mailing list emails',
 }
 
 # Note: if the subscription starts with 'global_', it will be treated like a default
@@ -15,6 +16,7 @@ USER_SUBSCRIPTIONS_AVAILABLE = {
 
 # Note: the python value None mean inherit from parent
 NOTIFICATION_TYPES = {
+    'mailing_list_subscribed': 'Subscribed to mailing list',
     'email_transactional': 'Email when a change occurs',
     'email_digest': 'Daily email digest of all changes to this project',
     'none': 'None'

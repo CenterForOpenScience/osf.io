@@ -245,7 +245,7 @@ def auth_login(auth, **kwargs):
         if not (next_url[0] == '/'
                 or next_url.startswith(settings.DOMAIN)
                 or next_url.startswith(settings.CAS_SERVER_URL)
-                or next_url.startswith(settings.MFR_SERVER_URL)):
+                or next_url.startswith(settings.MFR_SERVER_URL)
             raise HTTPError(http.InvalidURL)
 
     if auth.logged_in:
@@ -264,7 +264,7 @@ def auth_login(auth, **kwargs):
 
     if next_url and must_login_warning:
         status.push_status_message(language.MUST_LOGIN, trust=False)
-
+    #next_url = 'http://discourse.mechanysm.com/session/sso?return_path='+next_url
     # set login_url to form action, upon successful authentication specifically w/o logout=True,
     # allows for next to be followed or a redirect to the dashboard.
     redirect_url = web_url_for('auth_login', next=next_url, _absolute=True)
@@ -292,6 +292,7 @@ def auth_logout(redirect_url=None, **kwargs):
     :param redirect_url: url to redirect user after CAS logout, default is 'goodbye'
     :return:
     """
+
 
     # OSF tells CAS where it wants to be redirected back after successful logout. However, CAS logout flow
     # may not respect this url if user is authenticated through remote IdP such as institution login
