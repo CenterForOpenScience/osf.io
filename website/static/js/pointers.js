@@ -19,8 +19,8 @@ var SEARCH_MY_PROJECTS_SUBMIT_TEXT = 'Search my projects';
 
 var AddPointerViewModel = oop.extend(Paginator, {
     constructor: function(nodeTitle) {
-        this.super.constructor.call(this);
         var self = this;
+        this.super.constructor.call(this);
         this.nodeTitle = nodeTitle;
         this.submitEnabled = ko.observable(true);
         this.searchAllProjectsSubmitText = ko.observable(SEARCH_ALL_SUBMIT_TEXT);
@@ -64,42 +64,8 @@ var AddPointerViewModel = oop.extend(Paginator, {
         if (self.query()) {
             self.results([]); // clears page for spinner
             self.loadingResults(true); // enables spinner
-
-            /*osfHelpers.postJSON(
-                '/api/v1/search/node/', {
-                    query: self.query(),
-                    nodeId: nodeId,
-                    includePublic: self.includePublic(),
-                    page: self.pageToGet()
-                }
-            ).done(function(result) {
-                if (!result.nodes.length) {
-                    self.errorMsg('No results found.');
-                } else {
-                    result.nodes.forEach(function(each) {
-                        if (each.isRegistration) {
-                            each.dateRegistered = new osfHelpers.FormattableDate(each.dateRegistered);
-                        } else {
-                            each.dateCreated = new osfHelpers.FormattableDate(each.dateCreated);
-                            each.dateModified = new osfHelpers.FormattableDate(each.dateModified);
-                        }
-                    });
-                }
-                self.results(result.nodes);
-                self.currentPage(result.page);
-                self.numberOfPages(result.pages);
-                self.addNewPaginators();
-            }).fail(function(xhr) {
-                self.searchWarningMsg(xhr.responseJSON && xhr.responseJSON.message_long);
-            }).always( function (){
-                self.searchAllProjectsSubmitText(SEARCH_ALL_SUBMIT_TEXT);
-                self.searchMyProjectsSubmitText(SEARCH_MY_PROJECTS_SUBMIT_TEXT);
-                self.loadingResults(false);
-            });*/
-
-            // -- ADDED >
-
-            var url = osfHelpers.apiV2Url('nodes/', {query: 'filter[title]='+self.query()});
+            var pageNum = self.pageToGet()+1;
+            var url = osfHelpers.apiV2Url('nodes/', {query: 'filter[title]='+self.query()+'&page='+pageNum+'&embed=contributors'});
             var request = osfHelpers.ajaxJSON(
                 'GET',
                 url,
@@ -110,7 +76,6 @@ var AddPointerViewModel = oop.extend(Paginator, {
                     self.errorMsg('No results found.');
                 }
                 else {
-                    console.log(response.data);
                     nodes.forEach(function(each) {
                         if (each.isRegistration) {
                             each.dateRegistered = new osfHelpers.FormattableDate(each.dateRegistered);
@@ -124,7 +89,6 @@ var AddPointerViewModel = oop.extend(Paginator, {
                 self.currentPage(self.pageToGet());
                 self.numberOfPages(Math.ceil(response.links.meta.total / response.links.meta.per_page));
                 self.addNewPaginators();
-
             });
             request.fail(function(xhr) {
                 self.searchWarningMsg(xhr.responseJSON && xhr.responseJSON.message_long);
@@ -132,9 +96,6 @@ var AddPointerViewModel = oop.extend(Paginator, {
             self.searchAllProjectsSubmitText(SEARCH_ALL_SUBMIT_TEXT);
             self.searchMyProjectsSubmitText(SEARCH_MY_PROJECTS_SUBMIT_TEXT);
             self.loadingResults(false);
-
-            // -- < ADDED
-
         } else {
             self.results([]);
             self.currentPage(0);
@@ -220,11 +181,12 @@ var AddPointerViewModel = oop.extend(Paginator, {
         this.submitWarningMsg('');
     },
     authorText: function(node) {
-        var rv = node.firstAuthor;
-        if (node.etal) {
-            rv += ' et al.';
+        var contributors = node.embeds.contributors.data;
+        var author = contributors[0].embeds.users.data.attributes.family_name;
+        if (contributors.length > 1) {
+            author += ' et al.';
         }
-        return rv;
+        return author;
     }
 });
 
