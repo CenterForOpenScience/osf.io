@@ -1691,11 +1691,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 include=lambda n: n.node_license is None
             ) if c.is_public and not c.is_deleted]
             # this returns generator, that would get unspooled anyways
-            if children:
-                while len(children):
-                    batch = children[:99]
-                    Node.bulk_update_search(batch)
-                    children = children[99:]
+            while len(children):
+                batch = children[:99]
+                Node.bulk_update_search(batch)
+                children = children[99:]
 
         # This method checks what has changed.
         if settings.PIWIK_HOST and update_piwik:
