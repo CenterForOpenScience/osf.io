@@ -46,11 +46,12 @@ class AbstractNode(TypedModel, Loggable, GuidMixin, BaseModel):
     # alternative_citations = models.ManyToManyField(AlternativeCitation)
     category = models.CharField(max_length=255,
                                 choices=CATEGORY_MAP.items(),
-                                default=CATEGORY_MAP[''])
+                                blank=True,
+                                default='')
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
     # TODO: Can this be a reference instead of data?
-    child_node_subscriptions = DateTimeAwareJSONField(default={})
+    child_node_subscriptions = DateTimeAwareJSONField(default={}, blank=True)
     contributors = models.ManyToManyField(OSFUser,
                                           through=Contributor,
                                           related_name='nodes')
@@ -58,18 +59,18 @@ class AbstractNode(TypedModel, Loggable, GuidMixin, BaseModel):
                                 db_index=True,
                                 related_name='created',
                                 on_delete=models.SET_NULL,
-                                null=True)
+                                null=True, blank=True)
     # TODO: Uncomment auto_* attributes after migration is complete
     date_created = models.DateTimeField()  # auto_now_add=True)
-    date_modified = models.DateTimeField(db_index=True, null=True)  # auto_now=True)
-    deleted_date = models.DateTimeField(null=True)
+    date_modified = models.DateTimeField(db_index=True, null=True, blank=True)  # auto_now=True)
+    deleted_date = models.DateTimeField(null=True, blank=True)
     description = models.TextField()
-    file_guid_to_share_uuids = DateTimeAwareJSONField(default={})
-    forked_date = models.DateTimeField(db_index=True, null=True)
+    file_guid_to_share_uuids = DateTimeAwareJSONField(default={}, blank=True)
+    forked_date = models.DateTimeField(db_index=True, null=True, blank=True)
     forked_from = models.ForeignKey('self',
                                     related_name='forks',
                                     on_delete=models.SET_NULL,
-                                    null=True)
+                                    null=True, blank=True)
     is_fork = models.BooleanField(default=False, db_index=True)
     is_public = models.BooleanField(default=False, db_index=True)
     is_deleted = models.BooleanField(default=False, db_index=True)
@@ -79,18 +80,18 @@ class AbstractNode(TypedModel, Loggable, GuidMixin, BaseModel):
     parent_node = models.ForeignKey('self',
                                     related_name='parent',
                                     on_delete=models.SET_NULL,
-                                    null=True)
+                                    null=True, blank=True)
     # permissions = Permissions are now on contributors
-    piwik_site_id = models.IntegerField(null=True)
+    piwik_site_id = models.IntegerField(null=True, blank=True)
     public_comments = models.BooleanField(default=True)
     primary_institution = models.ForeignKey(
         'Institution',
         related_name='primary_nodes',
-        null=True)
+        null=True, blank=True)
     root = models.ForeignKey('self',
                              related_name='absolute_parent',
                              on_delete=models.SET_NULL,
-                             null=True)
+                             null=True, blank=True)
     suspended = models.BooleanField(default=False, db_index=True)
     # Tags for internal use
     system_tags = models.ManyToManyField(Tag, related_name='tagged_by_system')
@@ -99,17 +100,17 @@ class AbstractNode(TypedModel, Loggable, GuidMixin, BaseModel):
     template_node = models.ForeignKey('self',
                                       related_name='templated_from',
                                       on_delete=models.SET_NULL,
-                                      null=True)
+                                      null=True, blank=True)
     title = models.TextField(
         validators=[validate_title]
     )  # this should be a charfield but data from mongo didn't fit in 255
     # TODO why is this here if it's empty
     users_watching_node = models.ManyToManyField(OSFUser, related_name='watching')
-    wiki_pages_current = DateTimeAwareJSONField(default={})
-    wiki_pages_versions = DateTimeAwareJSONField(default={})
+    wiki_pages_current = DateTimeAwareJSONField(default={}, blank=True)
+    wiki_pages_versions = DateTimeAwareJSONField(default={}, blank=True)
     # Dictionary field mapping node wiki page to sharejs private uuid.
     # {<page_name>: <sharejs_id>}
-    wiki_private_uuids = DateTimeAwareJSONField(default={})
+    wiki_private_uuids = DateTimeAwareJSONField(default={}, blank=True)
 
     def __unicode__(self):
         return u'{} : ({})'.format(self.title, self._id)
@@ -227,30 +228,30 @@ class Node(AbstractNode):
 
 class Registration(AbstractNode):
     is_registration = models.NullBooleanField(default=False, db_index=True)  # TODO SEPARATE CLASS
-    registered_date = models.DateTimeField(db_index=True, null=True)
+    registered_date = models.DateTimeField(db_index=True, null=True, blank=True)
     registered_user = models.ForeignKey(OSFUser,
                                         related_name='related_to',
                                         on_delete=models.SET_NULL,
-                                        null=True)
+                                        null=True, blank=True)
 
     registered_schema = models.ManyToManyField(MetaSchema)
 
     registered_meta = DateTimeAwareJSONField(default={})
     # TODO Add back in once dependencies are resolved
-    registration_approval = models.ForeignKey(RegistrationApproval, null=True)
-    retraction = models.ForeignKey(Retraction, null=True)
-    embargo = models.ForeignKey(Embargo, null=True)
+    registration_approval = models.ForeignKey(RegistrationApproval, null=True, blank=True)
+    retraction = models.ForeignKey(Retraction, null=True, blank=True)
+    embargo = models.ForeignKey(Embargo, null=True, blank=True)
 
     registered_from = models.ForeignKey('self',
                                         related_name='registrations',
                                         on_delete=models.SET_NULL,
-                                        null=True)
+                                        null=True, blank=True)
 
 
 class Collection(GuidMixin, BaseModel):
     # TODO: Uncomment auto_* attributes after migration is complete
     date_created = models.DateTimeField(null=False)  # auto_now_add=True)
-    date_modified = models.DateTimeField(null=True,
+    date_modified = models.DateTimeField(null=True, blank=True,
                                          db_index=True)  # auto_now=True)
     is_bookmark_collection = models.BooleanField(default=False, db_index=True)
     nodes = models.ManyToManyField('Node', related_name='children')

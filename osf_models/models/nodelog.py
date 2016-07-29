@@ -71,13 +71,13 @@ class NodeLog(BaseModel):
 
     guid = models.CharField(max_length=255, unique=True, db_index=True, default=get_object_id)
 
-    date = models.DateTimeField(db_index=True, null=True)#, auto_now_add=True)
+    date = models.DateTimeField(db_index=True, null=True, blank=True)#, auto_now_add=True)
     action = models.CharField(max_length=255, db_index=True, choices=ACTIONS)
     params = DateTimeAwareJSONField(default={})
     should_hide = models.BooleanField(default=False)
-    user = models.ForeignKey('OSFUser', related_name='logs', db_index=True, null=True)
+    user = models.ForeignKey('OSFUser', related_name='logs', db_index=True, null=True, blank=True)
     foreign_user = models.CharField(max_length=255, blank=True)
-    node = models.ForeignKey('Node', related_name='logs', db_index=True, null=True)
+    node = models.ForeignKey('Node', related_name='logs', db_index=True, null=True, blank=True)
 
     def __unicode__(self):
         return u'{} on {} by {} at {}'.format(self.action, self.node._id, self.user._id, self.date)

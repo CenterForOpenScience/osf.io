@@ -1,10 +1,12 @@
 import random
 
-import modularodm.exceptions
-from modularodm.query import QueryGroup
-
 from django.db import models
+from django.core.exceptions import ValidationError as DjangoValidationError
+from modularodm.query import QueryGroup
+import modularodm.exceptions
+
 from osf_models.modm_compat import to_django_query
+from osf_models.exceptions import ValidationError
 
 ALPHABET = '23456789abcdefghjkmnpqrstuvwxyz'
 
@@ -126,3 +128,12 @@ class BaseModel(models.Model):
     @property
     def _primary_name(self):
         return '_id'
+
+    def save(self, *args, **kwargs):
+        # Make Django validate on save (like modm)
+        if not kwargs.get('force_insert') and not kwargs.get('force_update'):
+            try:
+                self.full_clean()
+            except DjangoValidationError as err:
+                raise ValidationError(*err.args)
+        return super(BaseModel, self).save(*args, **kwargs)
