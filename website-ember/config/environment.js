@@ -32,9 +32,9 @@ module.exports = function(environment) {
                 unregisteredContributors: true, // Blocked by OSF-6761. Must work with cookies.
                 educationSchools: true, // Blocked by OSF-6769, serializer must provide data
                 collaborationCount: true, // # projects in common to display in search results: No specific ticket or commitment to implement
-                paginationWidget: false, // Widget to paginate multiple existing or new results; no ticket available
-                viewOnlyLinks: false,
-                treeWidgetAvailable: true, // Depends on hierarchical treebeard-like widget; no ticket available
+                paginationWidget: false, // Blocked by EOSF-135, Widget to paginate multiple existing or new results
+                viewOnlyLinks: false, // Blocked by EOSF-112
+                treeWidgetAvailable: true, // Blocked by EOSF-134. Depends on hierarchical treebeard-like widget; no ticket available
             }
         }
     };
