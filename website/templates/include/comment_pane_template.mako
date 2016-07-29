@@ -14,7 +14,7 @@
             <button type="button" class="close text-smaller" data-bind="click: togglePane">
                 <i class="fa fa-times"></i>
             </button>
-            <h4 style="margin-bottom: 20px">
+            <h4>
                 <span data-bind="if: page() == 'files'">Files | <span data-bind="text: pageTitle"></span> Discussion</span>
                 <span data-bind="if: page() == 'wiki'">Wiki | <span data-bind="text: pageTitle"></span> Discussion</span>
                 <span data-bind="if: page() == 'node'"><span data-bind="text: pageTitle"></span> | Discussion</span>

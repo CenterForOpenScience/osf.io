@@ -234,30 +234,19 @@ def format_data(user, node_ids):
     items = []
 
     for node_id in node_ids:
-        #import ipdb; ipdb.set_trace()
         node = Node.load(node_id)
         assert node, '{} is not a valid Node.'.format(node_id)
-
         can_read = node.has_permission(user, 'read')
         can_read_children = node.has_permission_on_children(user, 'read')
-
         if not can_read and not can_read_children:
             continue
 
         children = []
+        
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node
-
         if can_read:
             node_sub_available = list(constants.NODE_SUBSCRIPTIONS_AVAILABLE.keys())
-
-            #try:
-            #    # Prevent "Mailing List Events" from being displayed if the UI is disabled
-            #    #if not PROJECT_MAILING_ENABLED:
-            #    #node_sub_available.pop(node_sub_available.index('mailing_list_events'))
-            #except ValueError:
-            #    pass
-
             subscriptions = [subscription for subscription in get_all_node_subscriptions(user, node)
                              if getattr(subscription, 'event_name') in node_sub_available]
             for subscription in subscriptions:
@@ -267,7 +256,6 @@ def format_data(user, node_ids):
                 children.append(serialize_event(user, subscription=subscription,
                                                 node=node, event_description=node_sub_available.pop(index)))
             for node_sub in node_sub_available:
-                #if not (node_sub == 'mailing_list_events'):
                 children.append(serialize_event(user, node=node, event_description=node_sub))
             children.sort(key=lambda s: s['event']['title'])
 

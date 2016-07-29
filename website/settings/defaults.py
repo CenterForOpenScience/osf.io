@@ -166,13 +166,6 @@ CANONICAL_DOMAIN = 'openscienceframework.org'
 COOKIE_DOMAIN = '.openscienceframework.org'  # Beaker
 SHORT_DOMAIN = 'osf.io'
 
-# Mailgun
-
-# TODO: Override in local.py
-PROJECT_MAILING_ENABLED = False
-MAILGUN_API_KEY = None
-MAILGUN_LIST_ADDRESS_DOMAIN = urlparse(DOMAIN).hostname
-MAILGUN_API_URL = 'https://api.mailgun.net/v3'
 
 # TODO: Combine Python and JavaScript config
 COMMENT_MAXLENGTH = 500

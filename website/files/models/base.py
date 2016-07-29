@@ -501,7 +501,6 @@ class FileNode(object):
             'path': self.path,
             'name': self.name,
             'kind': self.kind,
-            'discourse_topic_id': self.discourse_topic_id,
         }
 
     def generate_waterbutler_url(self, **kwargs):

@@ -36,7 +36,6 @@ class NotificationSubscription(StoredObject):
         if notification_type != 'none' and isinstance(self.owner, Node) and self.owner.parent_node:
             user_subs = self.owner.parent_node.child_node_subscriptions
             if self.owner._id not in user_subs.setdefault(user._id, []):
-                import ipdb; ipdb.set_trace()
                 user_subs[user._id].append(self.owner._id)
                 self.owner.parent_node.save()
 
@@ -59,7 +58,6 @@ class NotificationSubscription(StoredObject):
 
         if save:
             self.save()
-
 
 class NotificationDigest(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))

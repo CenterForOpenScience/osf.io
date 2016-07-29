@@ -40,7 +40,6 @@
                                 Files
                             </a>
                         </li>
-                        <li><a href="${discourse_url}projects/${node['id']}">Forum</a></li>
 
                         <!-- Add-on tabs -->
                         % for addon in addons_enabled:
