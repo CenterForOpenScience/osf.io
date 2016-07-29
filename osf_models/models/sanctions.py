@@ -71,9 +71,9 @@ class Sanction(BaseModel):
     # Expiration date-- Sanctions in the UNAPPROVED state that are older than their end_date
     # are automatically made ACTIVE by a daily cron job
     # Use end_date=None for a non-expiring Sanction
-    end_date = models.DateTimeField(null=True, default=None)
+    end_date = models.DateTimeField(null=True, blank=True, default=None)
     guid = models.CharField(max_length=255, default=get_object_id)
-    initiation_date = models.DateTimeField(null=True)  # auto_now=True)
+    initiation_date = models.DateTimeField(null=True, blank=True)  # auto_now=True)
 
     state = models.CharField(choices=STATE_CHOICES,
                              default=UNAPPROVED,
@@ -392,7 +392,7 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True)
+    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
     for_existing_registration = models.BooleanField(default=False)
 
     @property
@@ -563,8 +563,8 @@ class Retraction(EmailApprovableSanction):
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True)
-    justification = models.CharField(max_length=2048, null=True)
+    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
+    justification = models.CharField(max_length=2048, null=True, blank=True)
 
     # def __repr__(self):
     # return ('<Retraction(parent_registration={0}, initiated_by={1}) with _id {2}>'.format(self.node_set.get(), self.initiated_by, self._id))
@@ -698,7 +698,7 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True)
+    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
 
     def _get_registration(self):
         from website.project.model import Node

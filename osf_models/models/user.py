@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from django.contrib.postgres import fields
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
 
@@ -98,7 +99,7 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin):
 
     # security emails that have been sent
     # TODO: This should be removed and/or merged with system_tags
-    security_messages = DateTimeAwareJSONField(default={})
+    security_messages = DateTimeAwareJSONField(default={}, blank=True)
     # Format: {
     #   <message label>: <datetime>
     #   ...
@@ -109,7 +110,7 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin):
 
     # Per-project unclaimed user data:
     # TODO: add validation
-    unclaimed_records = DateTimeAwareJSONField(default={})
+    unclaimed_records = DateTimeAwareJSONField(default={}, blank=True)
     # Format: {
     #   <project_id>: {
     #       'name': <name that referrer provided>,
@@ -129,24 +130,24 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin):
     #   }
     #   ...
     # }
-    contributor_added_email_records = DateTimeAwareJSONField(default={})
+    contributor_added_email_records = DateTimeAwareJSONField(default={}, blank=True)
 
     # The user into which this account was merged
-    merged_by = models.ForeignKey('self', null=True)
+    merged_by = models.ForeignKey('self', null=True, blank=True)
 
     # verification key used for resetting password
-    verification_key = models.CharField(max_length=255, blank=True, null=True)
+    verification_key = models.CharField(max_length=255, null=True, blank=True)
 
     # confirmed emails
     #   emails should be stripped of whitespace and lower-cased before appending
     # TODO: Add validator to ensure an email address only exists once across
     # TODO: Change to m2m field per @sloria
     # all User's email lists
-    emails = DateTimeAwareJSONField(default={})
+    emails = fields.ArrayField(models.CharField(max_length=255), default=list)
 
     # email verification tokens
     #   see also ``unconfirmed_emails``
-    email_verifications = DateTimeAwareJSONField(default={})
+    email_verifications = DateTimeAwareJSONField(default={}, blank=True)
     # Format: {
     #   <token> : {'email': <email address>,
     #              'expiration': <datetime>}
@@ -154,10 +155,10 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin):
 
     # TODO remove this field once migration (scripts/migration/migrate_mailing_lists_to_mailchimp_fields.py)
     # has been run. This field is deprecated and replaced with mailchimp_mailing_lists
-    mailing_lists = DateTimeAwareJSONField(default={})
+    mailing_lists = DateTimeAwareJSONField(default={}, blank=True)
 
     # email lists to which the user has chosen a subscription setting
-    mailchimp_mailing_lists = DateTimeAwareJSONField(default={})
+    mailchimp_mailing_lists = DateTimeAwareJSONField(default={}, blank=True)
     # Format: {
     #   'list1': True,
     #   'list2: False,
@@ -199,7 +200,7 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin):
     # Employment history
     # jobs = fields.DictionaryField(list=True, validate=validate_history_item)
     # TODO: Add validation
-    jobs = DateTimeAwareJSONField(default={})
+    jobs = DateTimeAwareJSONField(default={}, blank=True)
     # Format: {
     #     'title': <position or job title>,
     #     'institution': <institution or organization>,
@@ -215,7 +216,7 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin):
     # Educational history
     # schools = fields.DictionaryField(list=True, validate=validate_history_item)
     # TODO: Add validation
-    schools = DateTimeAwareJSONField(default={})
+    schools = DateTimeAwareJSONField(default={}, blank=True)
     # Format: {
     #     'degree': <position or job title>,
     #     'institution': <institution or organization>,
@@ -231,7 +232,7 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin):
     # Social links
     # social = fields.DictionaryField(validate=validate_social)
     # TODO: Add validation
-    social = DateTimeAwareJSONField(default={})
+    social = DateTimeAwareJSONField(default={}, blank=True)
     # Format: {
     #     'profileWebsites': <list of profile websites>
     #     'twitter': <twitter id>,
@@ -241,16 +242,16 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin):
     piwik_token = models.CharField(max_length=255, blank=True)
 
     # date the user last sent a request
-    date_last_login = models.DateTimeField(null=True)
+    date_last_login = models.DateTimeField(null=True, blank=True)
 
     # date the user first successfully confirmed an email address
-    date_confirmed = models.DateTimeField(db_index=True, null=True)
+    date_confirmed = models.DateTimeField(db_index=True, null=True, blank=True)
 
     # When the user was disabled.
-    date_disabled = models.DateTimeField(db_index=True, null=True)
+    date_disabled = models.DateTimeField(db_index=True, null=True, blank=True)
 
     # when comments were last viewed
-    comments_viewed_timestamp = DateTimeAwareJSONField(default={})
+    comments_viewed_timestamp = DateTimeAwareJSONField(default={}, blank=True)
     # Format: {
     #   'Comment.root_target._id': 'timestamp',
     #   ...
@@ -267,7 +268,7 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin):
 
     _affiliated_institutions = models.ManyToManyField('Institution')
 
-    notifications_configured = DateTimeAwareJSONField(default={})
+    notifications_configured = DateTimeAwareJSONField(default={}, blank=True)
 
     objects = OSFUserManager()
 
