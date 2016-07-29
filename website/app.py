@@ -26,6 +26,7 @@ from website.project.licenses import ensure_licenses
 from website.project.model import ensure_schemas
 from website.routes import make_url_map
 from website import maintenance
+from website.institutions.model import Institution
 
 # This import is necessary to set up the archiver signal listeners
 from website.archiver import listeners  # noqa
@@ -145,6 +146,7 @@ def apply_middlewares(flask_app, settings):
     return flask_app
 
 
+# TODO: This won't work for modules that do e.g. `from website import models`. Rethink.
 def patch_models(settings):
     model_map = {
         'User': 'OSFUser',
@@ -161,3 +163,7 @@ def patch_models(settings):
                     setattr(module, model, getattr(models, model_map[model]))
                 else:
                     setattr(module, model, getattr(models, model))
+            # Institution is a special case because it isn't a StoredObject
+            if hasattr(module, 'Institution') and getattr(module, 'Institution') is not models.Institution:
+                print('Patching instution in {}'.format(module))
+                setattr(module, 'Institution', models.Institution)
