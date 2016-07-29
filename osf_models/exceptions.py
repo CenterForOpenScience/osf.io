@@ -1,3 +1,5 @@
+import contextlib
+
 from django.core.exceptions import ValidationError as DjangoValidationError
 from modularodm.exceptions import ValidationError as MODMValidationError
 
@@ -76,3 +78,12 @@ class UserNotAffiliatedError(OSFError):
 class ValidationError(MODMValidationError, DjangoValidationError):
     """Raised on database validation failure. This exists for compatibility with both modular-odm and Django."""
     pass
+
+
+@contextlib.contextmanager
+def reraise_django_validation_error():
+    try:
+        yield
+    except DjangoValidationError as err:
+        raise ValidationError(*err.args)
+
