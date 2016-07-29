@@ -1,4 +1,5 @@
 <%inherit file="project/project_base.mako"/>
+
 <div id="alertBar"></div>
 
 ## Use full page width
@@ -15,6 +16,7 @@
     <h2 class="break-word">
       ## Split file name into two parts: with and without extension
       ${file_name_title | h}<span id="file-ext">${file_name_ext | h}</span>
+      <a id='versionLink'>(Version: ${ version_id | h})</a>
       % if file_revision:
         <small>&nbsp;${file_revision | h}</small>
       % endif
@@ -209,12 +211,18 @@
         panelsUsed: ['edit', 'view'],
         currentUser: {
           canEdit: ${ int(user['can_edit']) | sjson, n }
-        }
+        },
+        analyticsMeta: {
+            pageMeta: {
+                title: 'File: ' + ${file_name | sjson, n},
+                public: true,
+            },
+        },
       });
       window.contextVars.file.urls.external = window.contextVars.file.extra.webView;
     </script>
 
-    <link href="/static/css/pages/file-view-page.css" rel="stylesheet">
+    <link href="/static/css/pages/file-view-page.css" rel="stylesheet" />
     <link href="${urls['mfr']}/static/css/mfr.css" media="all" rel="stylesheet" />
     <script src="${urls['mfr']}/static/js/mfr.js"></script>
 

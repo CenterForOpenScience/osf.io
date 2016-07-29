@@ -22,6 +22,18 @@ SECRET_KEY = osf_settings.SECRET_KEY
 DEBUG = osf_settings.DEBUG_MODE
 DEBUG_PROPAGATE_EXCEPTIONS = True
 
+
+# session:
+SESSION_COOKIE_NAME = 'admin'
+SESSION_COOKIE_SECURE = osf_settings.SECURE_MODE
+SESSION_COOKIE_HTTPONLY = osf_settings.SESSION_COOKIE_HTTPONLY
+
+# csrf:
+CSRF_COOKIE_NAME = 'admin-csrf'
+CSRF_COOKIE_SECURE = osf_settings.SECURE_MODE
+# set to False: prereg uses a SPA and ajax and grab the token to use it in the requests
+CSRF_COOKIE_HTTPONLY = False
+
 ALLOWED_HOSTS = [
     '.osf.io'
 ]
@@ -77,6 +89,10 @@ INSTALLED_APPS = (
     'ckeditor',
     'password_reset',
 )
+
+# local development using https
+if osf_settings.SECURE_MODE and osf_settings.DEBUG_MODE:
+    INSTALLED_APPS += ('sslserver',)
 
 # Custom user model (extends AbstractBaseUser)
 AUTH_USER_MODEL = 'common_auth.MyUser'
@@ -201,9 +217,9 @@ CKEDITOR_CONFIGS = {
 }
 
 # Keen.io settings in local.py
-KEEN_PROJECT_ID = osf_settings.KEEN_PROJECT_ID
-KEEN_READ_KEY = osf_settings.KEEN_READ_KEY
-KEEN_WRITE_KEY = osf_settings.KEEN_WRITE_KEY
+KEEN_PROJECT_ID = osf_settings.KEEN['private']['project_id']
+KEEN_READ_KEY = osf_settings.KEEN['private']['read_key']
+KEEN_WRITE_KEY = osf_settings.KEEN['private']['write_key']
 
 KEEN_CREDENTIALS = {
     'keen_ready': False

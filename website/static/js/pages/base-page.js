@@ -12,7 +12,7 @@ require('../../css/search-bar.css');
 require('font-awesome-webpack');
 
 var $ = require('jquery');
-require('jquery.cookie');
+var Cookie = require('js-cookie');
 
 require('js/crossOrigin.js');
 var $osf = require('js/osfHelpers');
@@ -51,7 +51,7 @@ var SlideInViewModel = function (){
         dismissed = dismissed || window.localStorage.getItem('slide') === '0';
     } catch (e) {}
 
-    dismissed = dismissed || $.cookie('slide') === '0';
+    dismissed = dismissed || Cookie.get('slide') === '0';
 
     if (this.elem.length > 0 && !dismissed) {
         setTimeout(function () {
@@ -63,7 +63,7 @@ var SlideInViewModel = function (){
         try {
             window.localStorage.setItem('slide', '0');
         } catch (e) {
-            $.cookie('slide', '0', { expires: 1, path: '/'});
+            Cookie.set('slide', '0', { expires: 1, path: '/'});
         }
         self.trackClick('Dismiss');
     };
@@ -208,14 +208,10 @@ $(function() {
     }
     new NavbarControl('.osf-nav-wrapper');
     new DevModeControls('#devModeControls', '/static/built/git_logs.json', '/static/built/git_branch.txt');
-    if(window.contextVars.keenProjectId){
-        var params = {};
-        params.currentUser = window.contextVars.currentUser;
-        params.node = window.contextVars.node;
-
+    if (window.contextVars.keen){
         //Don't track PhantomJS visits with KeenIO
-        if(!(/PhantomJS/.test(navigator.userAgent))){
-            new KeenTracker(window.contextVars.keenProjectId, window.contextVars.keenWriteKey, params);
+        if (!(/PhantomJS/.test(navigator.userAgent))){
+            KeenTracker.getInstance().trackPageView();
         }
     }
 
@@ -225,9 +221,9 @@ $(function() {
     if (window.contextVars.maintenance) {
         var maintenancePersistKey = 'maintenance';
         var $maintenance = $('#maintenance').on('closed.bs.alert', function() {
-            $.cookie(maintenancePersistKey, '0', { expires: 1, path: '/'});
+            Cookie.set(maintenancePersistKey, '0', { expires: 1, path: '/'});
         });
-        var dismissed = $.cookie(maintenancePersistKey) === '0';
+        var dismissed = Cookie.get(maintenancePersistKey) === '0';
         if (!dismissed) {
             $maintenance.show();
         }

@@ -6,8 +6,8 @@ var Raven = require('raven-js');
 var moment = require('moment');
 var URI = require('URIjs');
 var bootbox = require('bootbox');
-var iconmap = require('js/iconmap');
 var lodashGet = require('lodash.get');
+var KeenTracker = require('js/keen');
 
 
 // TODO: For some reason, this require is necessary for custom ko validators to work
@@ -270,6 +270,7 @@ var mapByProperty = function(list, attr) {
 };
 
 
+
 /**
   * Return whether or not a value is an email address.
   * Adapted from Knockout-Validation.
@@ -381,29 +382,6 @@ var debounce = function(func, wait, immediate) {
 
     return result;
   };
-};
-
-///////////
-// Piwik //
-///////////
-
-var trackPiwik = function(host, siteId, cvars, useCookies) {
-    cvars = Array.isArray(cvars) ? cvars : [];
-    useCookies = typeof(useCookies) !== 'undefined' ? useCookies : false;
-    try {
-        var piwikTracker = window.Piwik.getTracker(host + 'piwik.php', siteId);
-        piwikTracker.enableLinkTracking(true);
-        for(var i=0; i<cvars.length;i++)
-        {
-            piwikTracker.setCustomVariable.apply(null, cvars[i]);
-        }
-        if (!useCookies) {
-            piwikTracker.disableCookies();
-        }
-        piwikTracker.trackPageView();
-
-    } catch(err) { return false; }
-    return true;
 };
 
 /**
@@ -767,9 +745,9 @@ var any = function(listOfBools, check) {
     return false;
 };
 
-/** 
+/**
  * A helper for creating a style-guide conformant bootbox modal. Returns a promise.
- * @param {String} title: 
+ * @param {String} title:
  * @param {String} message:
  * @param {String} actionButtonLabel:
  * @param {Object} options: optional options
@@ -879,6 +857,17 @@ var extractContributorNamesFromAPIData = function(contributor){
 // Google analytics event tracking on the dashboard/my projects pages
 var trackClick = function(category, action, label){
     window.ga('send', 'event', category, action, label);
+
+    KeenTracker.getInstance().trackPrivateEvent(
+        'front-end-events', {
+            interaction: {
+                category: category,
+                action: action,
+                label: label,
+            },
+        }
+    );
+
     //in order to make the href redirect work under knockout onclick binding
     return true;
 };
@@ -893,6 +882,22 @@ function onScrollToBottom(element, callback) {
             callback();
         }
     });
+}
+
+/**
+ * Return the current domain as a string, e.g. 'http://localhost:5000'
+ */
+function getDomain(location) {
+    var ret = '';
+    var loc = location || window.location;
+    var hostname = loc.hostname;
+    var protocol = hostname === 'localhost' ? 'http://' : 'https://';
+    var port = loc.port;
+    ret = protocol + hostname;
+    if (port) {
+        ret += ':' + port;
+    }
+    return ret;
 }
 
 // Also export these to the global namespace so that these can be used in inline
@@ -913,7 +918,6 @@ module.exports = window.$.osf = {
     mapByProperty: mapByProperty,
     isEmail: isEmail,
     urlParams: urlParams,
-    trackPiwik: trackPiwik,
     applyBindings: applyBindings,
     FormattableDate: FormattableDate,
     throttle: throttle,
@@ -935,5 +939,6 @@ module.exports = window.$.osf = {
     trackClick: trackClick,
     findContribName: findContribName,
     extractContributorNamesFromAPIData: extractContributorNamesFromAPIData,
-    onScrollToBottom: onScrollToBottom
+    onScrollToBottom: onScrollToBottom,
+    getDomain: getDomain
 };

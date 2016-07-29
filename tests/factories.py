@@ -13,24 +13,25 @@ Example usage: ::
 Factory boy docs: http://factoryboy.readthedocs.org/
 
 """
-import mock
 import datetime
 import functools
-from factory import base, Sequence, SubFactory, post_generation, LazyAttribute
-from random import randint
 
+from factory import base, Sequence, SubFactory, post_generation, LazyAttribute
+import mock
 from mock import patch, Mock
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
-from framework.mongo import StoredObject
 from framework.auth import User, Auth
+from framework.auth.core import generate_verification_key
 from framework.auth.utils import impute_names_model, impute_names
 from framework.guid.model import Guid
+from framework.mongo import StoredObject
 from framework.sessions.model import Session
-from website import security
+from tests.base import fake
+from tests.base import get_default_metaschema
 from website.addons import base as addons_base
-from website.files.models import StoredFileNode
+from website.addons.wiki.model import NodeWikiPage
 from website.oauth.models import (
     ApiOAuth2Application,
     ApiOAuth2PersonalToken,
@@ -44,7 +45,6 @@ from website.project.model import (
 )
 from website.project.sanctions import (
     Embargo,
-    EmbargoTerminationApproval,
     RegistrationApproval,
     Retraction,
     Sanction,
@@ -54,13 +54,10 @@ from website.archiver.model import ArchiveTarget, ArchiveJob
 from website.identifiers.model import Identifier
 from website.archiver import ARCHIVER_SUCCESS
 from website.project.licenses import NodeLicense, NodeLicenseRecord, ensure_licenses
-ensure_licenses = functools.partial(ensure_licenses, warn=False)
-
-from website.addons.wiki.model import NodeWikiPage
 from website.util import permissions
 
-from tests.base import fake
-from tests.base import get_default_metaschema
+ensure_licenses = functools.partial(ensure_licenses, warn=False)
+
 
 # TODO: This is a hack. Check whether FactoryBoy can do this better
 def save_kwargs(**kwargs):
@@ -107,11 +104,11 @@ class UserFactory(ModularOdmFactory):
         model = User
         abstract = False
 
-    username = Sequence(lambda n: "fred{0}@example.com".format(n))
+    username = Sequence(lambda n: 'fred{0}@example.com'.format(n))
     # Don't use post generation call to set_password because
     # It slows down the tests dramatically
-    password = "password"
-    fullname = Sequence(lambda n: "Freddie Mercury{0}".format(n))
+    password = 'password'
+    fullname = Sequence(lambda n: 'Freddie Mercury{0}'.format(n))
     is_registered = True
     is_claimed = True
     date_confirmed = datetime.datetime(2014, 2, 21)
@@ -153,7 +150,7 @@ class TagFactory(ModularOdmFactory):
     class Meta:
         model = Tag
 
-    _id = Sequence(lambda n: "scientastic-{}".format(n))
+    _id = Sequence(lambda n: 'scientastic-{}'.format(n))
 
 
 class ApiOAuth2ApplicationFactory(ModularOdmFactory):
@@ -223,7 +220,7 @@ class RegistrationFactory(AbstractNodeFactory):
 
     @classmethod
     def _build(cls, target_class, *args, **kwargs):
-        raise Exception("Cannot build registration without saving.")
+        raise Exception('Cannot build registration without saving.')
 
     @classmethod
     def _create(cls, target_class, project=None, is_public=False,
@@ -674,6 +671,7 @@ class MockOAuth2Provider(ExternalProvider):
     callback_url = "https://mock2.com/callback"
     auto_refresh_url = "https://mock2.com/callback"
     refresh_time = 300
+    expiry_time = 9001
 
     def handle_callback(self, response):
         return {
@@ -704,7 +702,6 @@ class MockOAuthAddonNodeSettings(addons_base.AddonOAuthNodeSettingsBase):
     folder_id = 'foo'
     folder_name = 'Foo'
     folder_path = '/Foo'
-
 
 
 class ArchiveTargetFactory(ModularOdmFactory):
@@ -827,7 +824,7 @@ def create_fake_user():
         fullname=name,
         is_registered=True,
         is_claimed=True,
-        verification_key=security.random_string(15),
+        verification_key=generate_verification_key(),
         date_registered=fake.date_time(),
         emails=[email],
         **parsed

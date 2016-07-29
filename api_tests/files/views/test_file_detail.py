@@ -32,7 +32,7 @@ class TestFileView(ApiTestCase):
     def setUp(self):
         super(TestFileView, self).setUp()
         self.user = AuthUserFactory()
-        self.node = ProjectFactory(creator=self.user)
+        self.node = ProjectFactory(creator=self.user, comment_level='public')
         self.file = api_utils.create_test_file(self.node, self.user, create_guid=False)
         self.file_url = '/{}files/{}/'.format(API_BASE, self.file._id)
 
@@ -77,6 +77,14 @@ class TestFileView(ApiTestCase):
         assert_equal(attributes['extra']['hashes']['sha256'], None)
         assert_equal(attributes['tags'], [])
 
+    def test_file_has_rel_link_to_owning_project(self):
+        res = self.app.get(self.file_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_in('node', res.json['data']['relationships'].keys())
+        expected_url = self.node.api_v2_url
+        actual_url = res.json['data']['relationships']['node']['links']['related']['href']
+        assert_in(expected_url, actual_url)
+
     def test_file_has_comments_link(self):
         guid = self.file.get_guid(create=True)
         res = self.app.get(self.file_url, auth=self.user.auth)
@@ -94,6 +102,39 @@ class TestFileView(ApiTestCase):
         assert_equal(res.status_code, 200)
         unread_comments = res.json['data']['relationships']['comments']['links']['related']['meta']['unread']
         assert_equal(unread_comments, 1)
+
+    def test_only_project_contrib_can_comment_on_closed_project(self):
+        self.node.comment_level = 'private'
+        self.node.is_public = True
+        self.node.save()
+
+        res = self.app.get(self.file_url, auth=self.user.auth)
+        can_comment = res.json['data']['attributes']['current_user_can_comment']
+        assert_equal(res.status_code, 200)
+        assert_equal(can_comment, True)
+
+        non_contributor = AuthUserFactory()
+        res = self.app.get(self.file_url, auth=non_contributor.auth)
+        can_comment = res.json['data']['attributes']['current_user_can_comment']
+        assert_equal(res.status_code, 200)
+        assert_equal(can_comment, False)
+
+    def test_any_loggedin_user_can_comment_on_open_project(self):
+        self.node.is_public = True
+        self.node.save()
+        non_contributor = AuthUserFactory()
+        res = self.app.get(self.file_url, auth=non_contributor.auth)
+        can_comment = res.json['data']['attributes']['current_user_can_comment']
+        assert_equal(res.status_code, 200)
+        assert_equal(can_comment, True)
+
+    def test_non_logged_in_user_cant_comment(self):
+        self.node.is_public = True
+        self.node.save()
+        res = self.app.get(self.file_url)
+        can_comment = res.json['data']['attributes']['current_user_can_comment']
+        assert_equal(res.status_code, 200)
+        assert_equal(can_comment, False)
 
     def test_checkout(self):
         assert_equal(self.file.checkout, None)
@@ -337,6 +378,24 @@ class TestFileView(ApiTestCase):
             expect_errors=True,
         )
         assert_equal(res.status_code, 403)
+
+    def test_get_file_resolves_guids(self):
+        guid = self.file.get_guid(create=True)
+        url = '/{}files/{}/'.format(API_BASE, guid._id)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json.keys(), ['data'])
+        assert_equal(res.json['data']['attributes']['path'], self.file.path)
+
+    def test_get_file_invalid_guid_gives_404(self):
+        url = '/{}files/{}/'.format(API_BASE, 'asdasasd')
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_get_file_non_file_guid_gives_404(self):
+        url = '/{}files/{}/'.format(API_BASE, self.node._id)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
 
 
 class TestFileVersionView(ApiTestCase):

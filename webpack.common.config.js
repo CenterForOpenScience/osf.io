@@ -55,6 +55,8 @@ var entry = {
     'profile-settings-addons-page': staticPath('js/pages/profile-settings-addons-page.js'),
     'twofactor-page': staticPath('js/pages/twofactor-page.js'),
     'forgotpassword-page': staticPath('js/pages/forgotpassword-page.js'),
+    'resetpassword-page': staticPath('js/pages/resetpassword-page.js'),
+    'claimaccount-page': staticPath('js/pages/claimaccount-page.js'),
     'login-page': staticPath('js/pages/login-page.js'),
     'notifications-config-page': staticPath('js/pages/notifications-config-page.js'),
     'faq-page' : staticPath('js/pages/faq-page.js'),
@@ -76,7 +78,7 @@ var entry = {
         'loaders.css',
         'treebeard',
         'lodash.get',
-        'jquery.cookie',
+        'js-cookie',
         'URIjs',
         // Common internal modules
         'js/fangorn',
@@ -91,7 +93,9 @@ var entry = {
 
 // Collect log text from addons
 var mainLogs = require(staticPath('js/logActionsList.json'));
+var anonymousLogs = require(staticPath('js/anonymousLogActionsList.json'));
 var addonLog;
+var anonymousAddonLog;
 
 // Collect addons endpoints. If an addon's static folder has
 // any of the following files, it will be added as an entry point
@@ -113,9 +117,16 @@ addons.addons.forEach(function(addonName) {
         addonLog = require(logTextPath);
         for (var attrname in addonLog) { mainLogs[attrname] = addonLog[attrname]; }
     }
+    var anonymousLogTextPath = path.join(__dirname, 'website', 'addons',
+        addonName, 'static', addonName + 'AnonymousLogActionList.json');
+    if(fs.existsSync(anonymousLogTextPath)) {
+        anonymousAddonLog = require(anonymousLogTextPath);
+        for (var log in anonymousAddonLog) { anonymousLogs[log] = anonymousAddonLog[log]; }
+    }
 });
 
 fs.writeFileSync(staticPath('js/_allLogTexts.json'), JSON.stringify(mainLogs));
+fs.writeFileSync(staticPath('js/_anonymousLogTexts.json'), JSON.stringify(anonymousLogs));
 
 var resolve = {
     extensions: ['', '.es6.js', '.js', '.min.js'],
@@ -150,6 +161,7 @@ var resolve = {
         // GASP Items not defined as main in its package.json
         'TweenLite' : nodePath('gsap/src/minified/TweenLite.min.js'),
         'EasePack' : nodePath('gsap/src/minified/easing/EasePack.min.js'),
+        'keen-dataset' : nodePath('keen-dataviz/lib/dataset/'),
     }
 };
 

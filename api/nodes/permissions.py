@@ -2,6 +2,7 @@
 from rest_framework import permissions
 from rest_framework import exceptions
 
+from website.addons.base import AddonSettingsBase
 from website.models import Node, Pointer, User, Institution, DraftRegistration
 from website.project.metadata.utils import is_prereg_admin
 from website.util import permissions as osf_permissions
@@ -12,7 +13,9 @@ from api.base.utils import get_user_auth
 class ContributorOrPublic(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (Node, Pointer)), 'obj must be a Node or Pointer, got {}'.format(obj)
+        if isinstance(obj, AddonSettingsBase):
+            obj = obj.owner
+        assert isinstance(obj, (Node, Pointer)), 'obj must be a Node, Pointer, or AddonSettings; got {}'.format(obj)
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
             return obj.is_public or obj.can_view(auth)
@@ -52,7 +55,7 @@ class IsAdminOrReviewer(permissions.BasePermission):
 class AdminOrPublic(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (Node, User, Institution, DraftRegistration)), 'obj must be a Node, User, Institution, or Draft Registration, got {}'.format(obj)
+        assert isinstance(obj, (Node, User, Institution, AddonSettingsBase, DraftRegistration)), 'obj must be a Node, User, Institution, Draft Registration, or AddonSettings; got {}'.format(obj)
         auth = get_user_auth(request)
         node = Node.load(request.parser_context['kwargs'][view.node_lookup_url_kwarg])
         if request.method in permissions.SAFE_METHODS:
@@ -105,6 +108,7 @@ class ContributorOrPublicForPointers(permissions.BasePermission):
             has_auth = parent_node.can_edit(auth)
             return has_auth
 
+
 class ContributorOrPublicForRelationshipPointers(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
@@ -133,6 +137,27 @@ class ContributorOrPublicForRelationshipPointers(permissions.BasePermission):
                     break
             return has_pointer_auth
 
+
+class RegistrationAndPermissionCheckForPointers(permissions.BasePermission):
+
+    def has_object_permission(self, request, view, obj):
+        node_link = Pointer.load(request.parser_context['kwargs']['node_link_id'])
+        node = Node.load(request.parser_context['kwargs'][view.node_lookup_url_kwarg])
+        auth = get_user_auth(request)
+        if request.method == 'DELETE'and node.is_registration:
+            raise exceptions.MethodNotAllowed(method=request.method)
+        if node.is_collection or node.is_registration:
+            raise exceptions.NotFound
+        if node_link.node.is_registration:
+            if request.method not in permissions.SAFE_METHODS:
+                raise exceptions.MethodNotAllowed
+        if node not in node_link.parent:
+            raise exceptions.NotFound
+        if request.method == 'DELETE' and not node.can_edit(auth):
+            return False
+        return True
+
+
 class AdminOrPublicForRelationshipInstitutions(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         assert isinstance(obj, dict)
@@ -143,6 +168,7 @@ class AdminOrPublicForRelationshipInstitutions(permissions.BasePermission):
             return node.is_public or node.can_view(auth)
         else:
             return node.has_permission(auth.user, osf_permissions.ADMIN)
+
 
 class ReadOnlyIfRegistration(permissions.BasePermission):
     """Makes PUT and POST forbidden for registrations."""

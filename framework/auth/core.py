@@ -11,13 +11,12 @@ import pytz
 import itsdangerous
 
 from modularodm import fields, Q
-from modularodm.exceptions import NoResultsFound
-from modularodm.exceptions import ValidationError, ValidationValueError, QueryException
+from modularodm.exceptions import NoResultsFound, ValidationError, ValidationValueError, QueryException
 from modularodm.validators import URLValidator
 
 import framework
-from framework.addons import AddonModelMixin
 from framework import analytics
+from framework.addons import AddonModelMixin
 from framework.auth import signals, utils
 from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError, InvalidTokenError,
                                        MergeConfirmedRequiredError, MergeConflictError)
@@ -29,7 +28,6 @@ from framework.sentry import log_exception
 from framework.sessions import session
 from framework.sessions.model import Session
 from framework.sessions.utils import remove_sessions_for_user
-
 from website import mails, settings, filters, security
 
 name_formatters = {
@@ -43,12 +41,17 @@ name_formatters = {
 
 logger = logging.getLogger(__name__)
 
+
 # Hide implementation of token generation
 def generate_confirm_token():
     return security.random_string(30)
 
 
 def generate_claim_token():
+    return security.random_string(30)
+
+
+def generate_verification_key():
     return security.random_string(30)
 
 
@@ -79,7 +82,6 @@ def validate_year(item):
         else:
             if len(item) != 4:
                 raise ValidationValueError('Please enter a valid year.')
-
 
 validate_url = URLValidator()
 
@@ -418,6 +420,10 @@ class User(GuidStoredObject, AddonModelMixin):
     #   ...
     # }
 
+    # If this user was created through the API,
+    # keep track of who added them.
+    registered_by = fields.ForeignField('user', default=None, index=True)
+
     _meta = {'optimistic': True}
 
     def __repr__(self):
@@ -671,6 +677,8 @@ class User(GuidStoredObject, AddonModelMixin):
         """
         had_existing_password = bool(self.password)
         self.password = generate_password_hash(raw_password)
+        if self.username == raw_password:
+            raise ChangePasswordError(['Password cannot be the same as your email address'])
         if had_existing_password and notify:
             mails.send_mail(
                 to_addr=self.username,
@@ -712,12 +720,14 @@ class User(GuidStoredObject, AddonModelMixin):
         raw_new_password = (raw_new_password or '').strip()
         raw_confirm_password = (raw_confirm_password or '').strip()
 
+        # TODO: Move validation to set_password
         issues = []
         if not self.check_password(raw_old_password):
             issues.append('Old password is invalid')
         elif raw_old_password == raw_new_password:
             issues.append('Password cannot be the same')
-
+        elif raw_new_password == self.username:
+            issues.append('Password cannot be the same as your email address')
         if not raw_old_password or not raw_new_password or not raw_confirm_password:
             issues.append('Passwords cannot be blank')
         elif len(raw_new_password) < 6:
