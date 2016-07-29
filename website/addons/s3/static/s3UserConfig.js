@@ -30,52 +30,51 @@ function ViewModel(url) {
     self.accounts = ko.observableArray();
 
     ChangeMessageMixin.call(self);
-    self.options = {
-        /** Reset all fields from S3 credentials input modal */
-        clearModal: function() {
-            self.message('');
-            self.messageClass('text-info');
-            self.accessKey(null);
-            self.secretKey(null);
-        },
-        /** Send POST request to authorize S3 */
-        connectAccount: function() {
-            // Selection should not be empty
-            if( !self.accessKey() && !self.secretKey() ){
-                self.changeMessage('Please enter both an API access key and secret key.', 'text-danger');
-                return;
-            }
 
-            if (!self.accessKey() ){
-                self.changeMessage('Please enter an API access key.', 'text-danger');
-                return;
-            }
-
-            if (!self.secretKey() ){
-                self.changeMessage('Please enter an API secret key.', 'text-danger');
-                return;
-            }
-            return osfHelpers.postJSON(
-                self.account_url,
-                ko.toJS({
-                    access_key: self.accessKey,
-                    secret_key: self.secretKey,
-                })
-            ).done(function() {
-                self.clearModal();
-                $modal.modal('hide');
-                self.updateAccounts();
-
-            }).fail(function(xhr, textStatus, error) {
-                var errorMessage = (xhr.status === 400 && xhr.responseJSON.message !== undefined) ? xhr.responseJSON.message : language.authError;
-                self.changeMessage(errorMessage, 'text-danger');
-                Raven.captureMessage('Could not authenticate with S3', {
-                    url: self.account_url,
-                    textStatus: textStatus,
-                    error: error
-                });
-            });
+    /** Reset all fields from S3 credentials input modal */
+    self.clearModal = function() {
+        self.message('');
+        self.messageClass('text-info');
+        self.accessKey(null);
+        self.secretKey(null);
+    };
+    /** Send POST request to authorize S3 */
+    self.connectAccount = function() {
+        // Selection should not be empty
+        if( !self.accessKey() && !self.secretKey() ){
+            self.changeMessage('Please enter both an API access key and secret key.', 'text-danger');
+            return;
         }
+
+        if (!self.accessKey() ){
+            self.changeMessage('Please enter an API access key.', 'text-danger');
+            return;
+        }
+
+        if (!self.secretKey() ){
+            self.changeMessage('Please enter an API secret key.', 'text-danger');
+            return;
+        }
+        return osfHelpers.postJSON(
+            self.account_url,
+            ko.toJS({
+                access_key: self.accessKey,
+                secret_key: self.secretKey,
+            })
+        ).done(function() {
+            self.clearModal();
+            $modal.modal('hide');
+            self.updateAccounts();
+
+        }).fail(function(xhr, textStatus, error) {
+            var errorMessage = (xhr.status === 400 && xhr.responseJSON.message !== undefined) ? xhr.responseJSON.message : language.authError;
+            self.changeMessage(errorMessage, 'text-danger');
+            Raven.captureMessage('Could not authenticate with S3', {
+                url: self.account_url,
+                textStatus: textStatus,
+                error: error
+            });
+        });
     };
 
     self.updateAccounts = function() {
