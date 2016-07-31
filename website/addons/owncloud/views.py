@@ -155,7 +155,6 @@ def owncloud_folder_list(node_addon,user_addon, **kwargs):
 
     ret = []
     for item in c.list(path):
-        print item
         if item.file_type is 'dir':
             ret.append({
                 'path': item.path,

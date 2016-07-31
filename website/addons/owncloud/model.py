@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import urllib
+import logging
 from modularodm import fields
 from framework.auth import Auth
 from website.addons.base import exceptions
@@ -13,6 +14,8 @@ from website.addons.owncloud.serializer import OwnCloudSerializer
 from website.addons.owncloud.utils import (
     ExternalAccountConverter,OwnCloudNodeLogger
 )
+
+logger = logging.getLogger(__name__)
 
 class OwnCloudProvider(object):
     """An alternative to `ExternalProvider` not tied to OAuth"""
@@ -55,7 +58,6 @@ class AddonOwnCloudNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     @property
     def nodelogger(self):
-        # TODO: Use this for all log actions
         auth = None
         if self.user_settings:
             auth = Auth(self.user_settings.owner)
@@ -71,7 +73,7 @@ class AddonOwnCloudNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.save()
         if auth:
             self.owner.add_log(
-                action='owncloud_folder_linked',
+                action='owncloud_folder_selected',
                 params={
                     'project': self.owner.parent_id,
                     'node': self.owner._id,
