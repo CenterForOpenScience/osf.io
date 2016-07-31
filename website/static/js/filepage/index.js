@@ -391,6 +391,7 @@ var FileViewPage = {
         }
 
         function changeVersionHeader(){
+            document.getElementById('versionLink').style.display = 'inline';
             m.render(document.getElementById('versionLink'), m('a', {onclick: toggleRevisions}, document.getElementById('versionLink').innerHTML));
         }
 
@@ -405,7 +406,9 @@ var FileViewPage = {
            }
         }
 
-        changeVersionHeader();
+        if(self.file.provider === 'osfstorage'){
+            changeVersionHeader();
+        }
 
     },
     view: function(ctrl) {
