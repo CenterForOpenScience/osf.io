@@ -22,12 +22,19 @@ var ShareButtons = {
         var facebookHref = 'https://www.facebook.com/sharer/sharer.php?u=' + url;
         var linkedinHref = 'https://www.linkedin.com/cws/share?url=' + url + '&title=' + title;
         var emailHref = 'mailto:?subject=' + title + '&body=' + url;
-        return m('div.share-buttons', {}, [
+        return m('div.share-buttons ', {
+                config: function(el, isInitialized) {
+                    $('div.share-buttons [data-toggle="tooltip"]').tooltip();
+                }
+            }, [
             m('a', {href: twitterHref, target: '_blank', onclick: this.openLinkInPopup.bind(this, twitterHref)},
                 m('i.fa.fa-twitter[aria-hidden=true]')),
             m('a', {href: facebookHref, target: '_blank', onclick: this.openLinkInPopup.bind(this, facebookHref)},
                 m('i.fa.fa-facebook[aria-hidden=true]')),
-            m('a', {href: linkedinHref, target: '_blank', onclick: this.openLinkInPopup.bind(this, linkedinHref)},
+            m('a', {href: linkedinHref, target: '_blank',
+                    'data-toggle': 'tooltip', 'data-placement': 'bottom',
+                    'data-original-title': 'Disable adblock for full sharing functionality',
+                    onclick: this.openLinkInPopup.bind(this, linkedinHref)},
                 m('i.fa.fa-linkedin[aria-hidden=true]')),
             m('a', {href: emailHref, target: '_blank', onclick: this.openLinkInPopup.bind(this, emailHref)},
                 m('i.fa.fa-envelope[aria-hidden=true]')),

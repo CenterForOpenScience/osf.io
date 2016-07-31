@@ -252,9 +252,18 @@ PIWIK_HOST = None
 PIWIK_ADMIN_TOKEN = None
 PIWIK_SITE_ID = None
 
-KEEN_PROJECT_ID = None
-KEEN_WRITE_KEY = None
-KEEN_READ_KEY = None
+KEEN = {
+    'public': {
+        'project_id': None,
+        'master_key': 'changeme',
+        'write_key': '',
+    },
+    'private': {
+        'project_id': '',
+        'write_key': '',
+        'read_key': '',
+    },
+}
 
 SENTRY_DSN = None
 SENTRY_DSN_JS = None
