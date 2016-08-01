@@ -1,212 +1,97 @@
 # -*- coding: utf-8 -*-
-"""Views tests for the OwnCloud addon."""
-import httplib as http
-
-import unittest
-from nose.tools import *  # noqa (PEP8 asserts)
+from nose.tools import *  # noqa
 import mock
 
-from framework.auth import Auth
-from owncloud.rest import ErrorResponse
-
-from urllib3.exceptions import MaxRetryError
-
+import httplib as http
 from tests.factories import AuthUserFactory
 
-from website.addons.base.testing import views as views_testing
-from website.addons.owncloud.tests.utils import (
-    OwnCloudAddonTestCase,
-    mock_responses,
-    MockOwnCloud,
-    patch_client
-)
+from framework.auth.decorators import Auth
+
+from website.util import api_url_for
+from website.addons.base.testing import views
+from website.addons.owncloud.model import OwnCloudProvider
 from website.addons.owncloud.serializer import OwnCloudSerializer
-from website.addons.owncloud.views import owncloud_root_folder
+from website.addons.owncloud.tests.utils import (
+    create_mock_owncloud, OwnCloudAddonTestCase,create_external_account
+)
 
-mock_client = MockOwnCloud()
+class TestAuthViews(OwnCloudAddonTestCase):
 
-class TestAuthViews(OwnCloudAddonTestCase, views_testing.OAuthAddonAuthViewsTestCaseMixin):
+    def test_deauthorize(self):
+        url = api_url_for('owncloud_deauthorize_node',
+                          pid=self.project._primary_key)
+        self.app.delete(url, auth=self.user.auth)
 
-    @mock.patch(
-        'website.addons.owncloud.model.OwnCloudProvider.auth_url',
-        mock.PropertyMock(return_value='http://api.foo.com')
-    )
-    def test_oauth_start(self):
-        super(TestAuthViews, self).test_oauth_start()
+        self.node_settings.reload()
+        assert_false(self.node_settings.folder_name)
+        assert_false(self.node_settings.user_settings)
 
-    @mock.patch(
-        'website.addons.owncloud.model.OwnCloudUserSettings.revoke_remote_oauth_access',
-        mock.PropertyMock()
-    )
-    def test_delete_external_account(self):
-        super(TestAuthViews, self).test_delete_external_account()
+        # Log states that node was deauthorized
+        self.project.reload()
+        last_log = self.project.logs[-1]
+        assert_equal(last_log.action, 'owncloud_node_deauthorized')
+        log_params = last_log.params
+        assert_equal(log_params['node'], self.project._primary_key)
+        assert_equal(log_params['project'], None)
 
-class TestConfigViews(OwnCloudAddonTestCase, views_testing.OAuthAddonConfigViewsTestCaseMixin):
+    def test_user_config_get(self):
+        url = api_url_for('owncloud_user_config_get')
+        new_user = AuthUserFactory.build()
+        res = self.app.get(url, auth=new_user.auth)
 
-    folder = {
-        'path': '/Foo',
-        'id': '12234'
-    }
+        result = res.json.get('result')
+        assert_false(result['userHasAuth'])
+        assert_in('hosts', result)
+        assert_in('create', result['urls'])
+
+        # userHasAuth is true with external accounts
+        new_user.external_accounts.append(create_external_account())
+        new_user.save()
+        res = self.app.get(url, auth=self.user.auth)
+
+        result = res.json.get('result')
+        assert_true(result['userHasAuth'])
+
+class TestConfigViews(OwnCloudAddonTestCase, views.OAuthAddonConfigViewsTestCaseMixin):
+    connection = create_mock_owncloud()
     Serializer = OwnCloudSerializer
-    client = mock_client
+    client = OwnCloudProvider
 
-    @mock.patch('website.addons.owncloud.model.OwnCloudClient', return_value=mock_client)
-    def test_folder_list(self, *args):
-        super(TestConfigViews, self).test_folder_list()
-
-
-class TestFilebrowserViews(OwnCloudAddonTestCase):
+    @property
+    def folder(self):
+        return {'name':'/Documents/','path':'/Documents'}
 
     def setUp(self):
-        super(TestFilebrowserViews, self).setUp()
-        self.user.add_addon('owncloud')
-        self.node_settings.external_account = self.user_settings.external_accounts[0]
-        self.node_settings.save()
+        super(TestConfigViews, self).setUp()
+        self.mock_ser_api = mock.patch('website.addons.owncloud.views.OwnCloudClient')
+        self.mock_ser_api.return_value = create_mock_owncloud()
+        self.mock_ser_api.start()
+        self.set_node_settings(self.node_settings)
 
-    def test_owncloud_folder_list(self):
-        with patch_client('website.addons.owncloud.model.OwnCloudClient'):
-            url = self.project.api_url_for(
-                'owncloud_folder_list',
-                folder_id='/',
-            )
-            res = self.app.get(url, auth=self.user.auth)
-            contents = [x for x in mock_client.metadata('', list=True)['contents'] if x['is_dir']]
-            assert_equal(len(res.json), len(contents))
-            first = res.json[0]
-            assert_in('kind', first)
-            assert_equal(first['path'], contents[0]['path'])
+    def tearDown(self):
+        self.mock_ser_api.stop()
+        super(TestConfigViews, self).tearDown()
 
-    def test_owncloud_folder_list_if_folder_is_none_and_folders_only(self):
-        with patch_client('website.addons.owncloud.model.OwnCloudClient'):
-            self.node_settings.folder = None
-            self.node_settings.save()
-            url = self.project.api_url_for('owncloud_folder_list')
-            res = self.app.get(url, auth=self.user.auth)
-            contents = mock_client.metadata('', list=True)['contents']
-            expected = [each for each in contents if each['is_dir']]
-            assert_equal(len(res.json), len(expected))
+    @mock.patch('website.addons.owncloud.views.OwnCloudClient')
+    def test_folder_list(self, mock_connection):
+        #test_get_datasets
+        mock_connection.return_value = self.connection
 
-    def test_owncloud_folder_list_folders_only(self):
-        with patch_client('website.addons.owncloud.model.OwnCloudClient'):
-            url = self.project.api_url_for('owncloud_folder_list')
-            res = self.app.get(url, auth=self.user.auth)
-            contents = mock_client.metadata('', list=True)['contents']
-            expected = [each for each in contents if each['is_dir']]
-            assert_equal(len(res.json), len(expected))
-
-    @mock.patch('website.addons.owncloud.model.OwnCloudClient.metadata')
-    def test_owncloud_folder_list_include_root(self, mock_metadata):
-        with patch_client('website.addons.owncloud.model.OwnCloudClient'):
-            url = self.project.api_url_for('owncloud_folder_list')
-
-            res = self.app.get(url, auth=self.user.auth)
-            contents = mock_client.metadata('', list=True)['contents']
-            assert_equal(len(res.json), 1)
-            assert_not_equal(len(res.json), len(contents))
-            first_elem = res.json[0]
-            assert_equal(first_elem['path'], '/')
-
-    @unittest.skip('finish this')
-    def test_owncloud_root_folder(self):
-        assert 0, 'finish me'
-
-    def test_owncloud_root_folder_if_folder_is_none(self):
-        # Something is returned on normal circumstances
-        with mock.patch.object(type(self.node_settings), 'has_auth', True):
-            root = owncloud_root_folder(
-                node_settings=self.node_settings, auth=self.user.auth
-            )
-        assert_true(root)
-
-        # Nothing is returned when there is no folder linked
-        self.node_settings.folder = None
-        self.node_settings.save()
-        with mock.patch.object(type(self.node_settings), 'has_auth', True):
-            root = owncloud_root_folder(
-                node_settings=self.node_settings, auth=self.user.auth
-            )
-        assert_is_none(root)
-
-    @mock.patch('website.addons.owncloud.model.OwnCloudClient.metadata')
-    def test_owncloud_folder_list_deleted(self, mock_metadata):
-        # Example metadata for a deleted folder
-        mock_metadata.return_value = {
-            u'bytes': 0,
-            u'contents': [],
-            u'hash': u'e3c62eb85bc50dfa1107b4ca8047812b',
-            u'icon': u'folder_gray',
-            u'is_deleted': True,
-            u'is_dir': True,
-            u'modified': u'Sat, 29 Mar 2014 20:11:49 +0000',
-            u'path': u'/tests',
-            u'rev': u'3fed844002c12fc',
-            u'revision': 67033156,
-            u'root': u'owncloud',
-            u'size': u'0 bytes',
-            u'thumb_exists': False
-        }
-        url = self.project.api_url_for('owncloud_folder_list', folder_id='/tests')
-        with mock.patch.object(type(self.node_settings), 'has_auth', True):
-            res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-
-        assert_equal(res.status_code, http.NOT_FOUND)
-
-    @mock.patch('website.addons.owncloud.model.OwnCloudClient.metadata')
-    def test_owncloud_folder_list_returns_error_if_invalid_path(self, mock_metadata):
-        mock_response = mock.Mock()
-        mock_metadata.side_effect = ErrorResponse(mock_response, body='File not found')
-        url = self.project.api_url_for('owncloud_folder_list', folder_id='/fake_path')
-        with mock.patch.object(type(self.node_settings), 'has_auth', True):
-            res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, http.NOT_FOUND)
-
-    @mock.patch('website.addons.owncloud.model.OwnCloudClient.metadata')
-    def test_owncloud_folder_list_handles_max_retry_error(self, mock_metadata):
-        mock_response = mock.Mock()
-        url = self.project.api_url_for('owncloud_folder_list', folder_id='/')
-        mock_metadata.side_effect = MaxRetryError(mock_response, url)
-        with mock.patch.object(type(self.node_settings), 'has_auth', True):
-            res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, http.REQUEST_TIMEOUT)
+        url = api_url_for('owncloud_folder_list', pid=self.project._primary_key)
+        params = {'path':'/'}
+        res = self.app.get(url, params, auth=self.user.auth)
+        assert_equal(len(res.json), 2)
+        first = res.json[0]
+        assert_equal(first['path'], '/Documents')
 
 
-class TestRestrictions(OwnCloudAddonTestCase):
-
-    def setUp(self):
-        super(OwnCloudAddonTestCase, self).setUp()
-
-        # Nasty contributor who will try to access folders that he shouldn't have
-        # access to
-        self.contrib = AuthUserFactory()
-        self.project.add_contributor(self.contrib, auth=Auth(self.user))
-        self.project.save()
-
-        # Set shared folder
-        self.node_settings.folder = 'foo bar/bar'
-        self.node_settings.save()
-
-    @mock.patch('website.addons.owncloud.model.OwnCloudClient.metadata')
-    def test_restricted_folder_list(self, mock_metadata):
-        mock_metadata.return_value = mock_responses['metadata_list']
-
-        # tries to access a parent folder
-        url = self.project.api_url_for('owncloud_folder_list',
-            path='foo bar')
-        res = self.app.get(url, auth=self.contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, http.FORBIDDEN)
-
-    def test_restricted_config_contrib_no_addon(self):
-        url = self.project.api_url_for('owncloud_set_config')
-        res = self.app.put_json(url, {'selected': {'path': 'foo'}},
-            auth=self.contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, http.BAD_REQUEST)
-
-    def test_restricted_config_contrib_not_owner(self):
-        # Contributor has owncloud auth, but is not the node authorizer
-        self.contrib.add_addon('owncloud')
-        self.contrib.save()
-
-        url = self.project.api_url_for('owncloud_set_config')
-        res = self.app.put_json(url, {'selected': {'path': 'foo'}},
-            auth=self.contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, http.FORBIDDEN)
+    def test_get_config(self):
+        url = self.project.api_url_for('{0}_get_config'.format(self.ADDON_SHORT_NAME))
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, http.OK)
+        assert_in('result', res.json)
+        serialized = self.Serializer().serialize_settings(
+            self.node_settings,
+            self.user,
+        )
+        assert_equal(serialized, res.json['result'])

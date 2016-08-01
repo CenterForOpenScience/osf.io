@@ -1,15 +1,12 @@
 """Views for the node settings page."""
 # -*- coding: utf-8 -*-
-import datetime
 import httplib as http
-from requests.exceptions import SSLError
 
 from flask import request
 from modularodm import Q
 from modularodm.storage.base import KeyExistsException
 
 from framework.auth.decorators import must_be_logged_in
-from framework.exceptions import HTTPError
 
 from website.addons.base import generic_views
 from owncloud import Client as OwnCloudClient
@@ -18,12 +15,8 @@ from website.addons.owncloud.settings import DEFAULT_HOSTS
 from website.addons.owncloud.serializer import OwnCloudSerializer
 from website.oauth.models import ExternalAccount
 from website.project.decorators import (
-    must_have_addon, must_be_addon_authorizer,
-    must_have_permission, must_not_be_registration,
-    must_be_contributor_or_public
-)
+    must_have_addon)
 from website.util import rubeus, api_url_for
-from website.util.sanitize import assert_clean
 
 from website.addons.owncloud.utils import ExternalAccountConverter
 
@@ -103,7 +96,7 @@ def owncloud_add_user_account(auth, **kwargs):
     oc.login(username, password)
     oc.logout()
     try:
-        provider.account = ExternalAccountConverter(host=host,username=username,password=password).account
+        provider.account = ExternalAccountConverter(host=host, username=username, password=password).account
         provider.account.save()
     except KeyExistsException:
         # ... or get the old one
@@ -128,7 +121,7 @@ def owncloud_add_user_account(auth, **kwargs):
 
 @must_have_addon(SHORT_NAME, 'user')
 @must_have_addon(SHORT_NAME, 'node')
-def owncloud_folder_list(node_addon,user_addon, **kwargs):
+def owncloud_folder_list(node_addon, user_addon, **kwargs):
     """ Returns all the subsequent folders under the folder id passed.
         Not easily generalizable due to `path` kwarg.
     """
@@ -141,14 +134,14 @@ def owncloud_folder_list(node_addon,user_addon, **kwargs):
             'kind': 'folder',
             'id': '/',
             'name': '/',
-            'urls':{
-                'folders': node.api_url_for('owncloud_folder_list', path ='/')
+            'urls': {
+                'folders': node.api_url_for('owncloud_folder_list', path='/')
             }
         }]
 
     path = request.args.get('path', '/')
 
-    converted_account = ExternalAccountConverter(account = node_addon.external_account)
+    converted_account = ExternalAccountConverter(account=node_addon.external_account)
 
     c = OwnCloudClient(converted_account.host, verify_certs=False)
     c.login(converted_account.username, converted_account.password)
@@ -161,8 +154,8 @@ def owncloud_folder_list(node_addon,user_addon, **kwargs):
                 'kind': 'folder',
                 'id': item.path,
                 'name': item.path.strip('/').split('/')[-1],
-                'urls':{
-                    'folders': node.api_url_for('owncloud_folder_list', path = item.path)
+                'urls': {
+                    'folders': node.api_url_for('owncloud_folder_list', path=item.path)
                 }
             })
 

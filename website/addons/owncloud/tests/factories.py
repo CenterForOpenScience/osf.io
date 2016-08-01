@@ -4,17 +4,17 @@ from factory import SubFactory, Sequence
 from tests.factories import ModularOdmFactory, UserFactory, ProjectFactory, ExternalAccountFactory
 
 from website.addons.owncloud.model import (
-    OwnCloudUserSettings,
-    OwnCloudNodeSettings
+    AddonOwnCloudUserSettings,
+    AddonOwnCloudNodeSettings
 )
 
 class OwnCloudAccountFactory(ExternalAccountFactory):
     provider = 'owncloud'
-    provider_name='OwnCloud'
 
-    host="https://localhost/owncloud"
-    username="johnsmith"
-    password="friend"
+    provider_id  = Sequence(lambda n: 'https://localhost/{0}/owncloud'.format(n))
+    oauth_key = Sequence(lambda n: 'https://localhost/{0}/owncloud'.format(n))
+    display_name='catname'
+    oauth_secret='meoword'
 
 
 class OwnCloudUserSettingsFactory(ModularOdmFactory):

@@ -34,7 +34,6 @@ api_routes = {
             views.owncloud_get_config,
             json_renderer
         ),
-
         Rule(
             ['/project/<pid>/owncloud/settings/',
              '/project/<pid>/node/<nid>/owncloud/settings/'],

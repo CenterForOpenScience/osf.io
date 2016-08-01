@@ -1,5 +1,4 @@
 from website.addons.base.serializer import OAuthAddonSerializer
-from owncloud import Client as OwnCloudClient
 from website.addons.owncloud.settings import DEFAULT_HOSTS
 from website.util import api_url_for, web_url_for
 from website.addons.owncloud.utils import ExternalAccountConverter
@@ -13,7 +12,7 @@ class OwnCloudSerializer(OAuthAddonSerializer):
     # Include host information with more informative labels / formatting
     def serialize_account(self, external_account):
         ret = super(OwnCloudSerializer, self).serialize_account(external_account)
-        converted =ExternalAccountConverter(external_account)
+        converted = ExternalAccountConverter(external_account)
         ret.update({
             'host': converted.host,
             'host_url': 'https://{0}'.format(converted.host),
@@ -55,9 +54,6 @@ class OwnCloudSerializer(OAuthAddonSerializer):
     @property
     def addon_serialized_urls(self):
         node = self.node_settings.owner
-        external_account = self.node_settings.external_account
-        converted = ExternalAccountConverter(external_account)
-        host = external_account.oauth_key if external_account else ''
 
         return {
             'create': api_url_for('owncloud_add_user_account'),
@@ -74,10 +70,7 @@ class OwnCloudSerializer(OAuthAddonSerializer):
 
         # Update with Dataverse specific fields
         if self.node_settings.has_auth:
-            external_account = self.node_settings.external_account
-            converted = ExternalAccountConverter(external_account)
-            result.update({'folder':self.node_settings.folder_name} )
-
+            result.update({'folder': self.node_settings.folder_name})
         return result
 
     def serialize_settings(self, node_settings, user):

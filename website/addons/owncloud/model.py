@@ -1,18 +1,16 @@
 # -*- coding: utf-8 -*-
-import os
-import urllib
+from urllib2 import HTTPError
 import logging
 from modularodm import fields
 from framework.auth import Auth
 from website.addons.base import exceptions
 from website.addons.base import StorageAddonBase
-from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
 from website.addons.base import (
-    AddonOAuthNodeSettingsBase, AddonOAuthUserSettingsBase, exceptions,
+    AddonOAuthNodeSettingsBase, AddonOAuthUserSettingsBase,
 )
 from website.addons.owncloud.serializer import OwnCloudSerializer
 from website.addons.owncloud.utils import (
-    ExternalAccountConverter,OwnCloudNodeLogger
+    ExternalAccountConverter, OwnCloudNodeLogger
 )
 
 logger = logging.getLogger(__name__)
@@ -66,7 +64,7 @@ class AddonOwnCloudNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             auth=auth
         )
 
-    def set_folder(self, folder,auth=None):
+    def set_folder(self, folder, auth=None):
         if folder == '/ (Full ownCloud)':
             folder = '/'
         self.folder_name = folder
@@ -84,20 +82,12 @@ class AddonOwnCloudNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     def _get_fileobj_child_metadata(self, filenode, user, cookie=None, version=None):
         try:
-            return super(AddonDataverseNodeSettings, self)._get_fileobj_child_metadata(filenode, user, cookie=cookie, version=version)
-        except HTTPError as e:
-            # The Dataverse API returns a 404 if the dataset has no published files
-            if e.code == http.NOT_FOUND and version == 'latest-published':
-                return []
-            raise
+            return super(AddonOwnCloudNodeSettings, self)._get_fileobj_child_metadata(filenode, user, cookie=cookie, version=version)
+        except HTTPError:
+            return []
 
     def clear_settings(self):
-        """Clear selected Dataverse and dataset"""
-        self.dataverse_alias = None
-        self.dataverse = None
-        self.dataset_doi = None
-        self._dataset_id = None
-        self.dataset = None
+        self.folder_name = None
 
     def deauthorize(self, auth=None, add_log=True):
         """Remove user authorization from this node and log the event."""
@@ -108,7 +98,7 @@ class AddonOwnCloudNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         if add_log and auth:
             node = self.owner
             self.owner.add_log(
-                action='dataverse_node_deauthorized',
+                action='owncloud_node_deauthorized',
                 params={
                     'project': node.parent_id,
                     'node': node._id,
@@ -119,10 +109,10 @@ class AddonOwnCloudNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
             raise exceptions.AddonError('Addon is not authorized')
-        converted = ExternalAccountConverter(account = self.external_account)
+        converted = ExternalAccountConverter(account=self.external_account)
         return {'host': converted.host,
                 'username': converted.username,
-                'password':converted.password
+                'password': converted.password
                 }
 
     def serialize_waterbutler_settings(self):

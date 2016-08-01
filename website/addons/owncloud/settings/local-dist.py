@@ -1,1 +1,1 @@
-DEFAULT_HOSTS=['https://localhost/owncloud']
+DEFAULT_HOSTS = ['https://localhost/owncloud']
