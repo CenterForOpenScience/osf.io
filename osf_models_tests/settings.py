@@ -1,8 +1,13 @@
 DEBUG_PROPAGATE_EXCEPTIONS = True
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': ':memory:'
+        'CONN_MAX_AGE': 0,
+        'ENGINE': 'osf_models.db.backends.postgresql',
+        'HOST': '',
+        'NAME': 'osf-models-test',
+        'PASSWORD': '',
+        'PORT': '',
+        'USER': '',
     }
 }
 SITE_ID = 1
