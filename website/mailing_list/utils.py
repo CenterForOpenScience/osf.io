@@ -6,11 +6,11 @@ from framework.auth import User
 #from framework.auth.core import get_user
 #from framework.auth.signals import user_confirmed
 from framework.celery_tasks import app
-#from framework.celery_tasks.handlers import queued_task
+from framework.celery_tasks.handlers import queued_task
 #from framework.exceptions import HTTPError
 
 from website import settings
-from website.project.signals import contributor_added, contributor_removed#, node_deleted
+from website.project.signals import contributor_added, contributor_removed
 from website.notifications.utils import to_subscription_key
 
 #from website.mailing_list.model import MailingListEventLog
@@ -29,7 +29,10 @@ mc = None
 mail_domain = None
 mailing_list_server_is_reachable = False
 
-def init_mailman_client():
+def _init_mailman_client():
+    global mc
+    global mail_domain
+    global mailing_list_server_is_reachable
     try:
         mc = Client(
             mailman_api_url,
@@ -39,14 +42,14 @@ def init_mailman_client():
         mailing_list_server_is_reachable = True
         # Ensure the domain that the mailing lists we will be creating should be on exists.
         # If it does not, the create it.
-        if settings.OSF_MAILING_LIST_DOMAIN in map(lambda x: x.mail_host, mc.domains) :
+        if settings.OSF_MAILING_LIST_DOMAIN in map(lambda x: x.mail_host, mc.domains):
             mail_domain = mc.get_domain(settings.OSF_MAILING_LIST_DOMAIN)
         else:
             mail_domain = mc.create_domain(settings.OSF_MAILING_LIST_DOMAIN)
     except:
         mailing_list_server_is_reachable = False
 
-init_mailman_client()
+_init_mailman_client()
 
 ###############################################################################
 # Define some tools to manipulate the mailman client
@@ -71,7 +74,7 @@ def with_list_proxy(fn):
 
     def _fn(*args, **kwargs):
         if not (mc and mail_domain and mailing_list_server_is_reachable):
-            init_mailman_client()
+            _init_mailman_client()
             if not mailing_list_server_is_reachable:
                 pass
         if kwargs.get('contributors'):
@@ -223,10 +226,10 @@ def update_single_user_in_list(
 #def celery_update_title(*args, **kwargs):
 #    update_title(*args, **kwargs)
 
-#@queued_task
-#@app.task(max_retries=3, default_retry_delay=3 * 60)  # Retry after 3 minutes
-#def celery_update_single_user_in_list(*args, **kwargs):
-#    update_single_user_in_list(*args, **kwargs)
+@queued_task
+@app.task(max_retries=3, default_retry_delay=3 * 60)  # Retry after 3 minutes
+def celery_update_single_user_in_list(*args, **kwargs):
+    update_single_user_in_list(*args, **kwargs)
 
 #@queued_task
 #@app.task(max_retries=3, default_retry_delay=3 * 60)  # Retry after 3 minutes
