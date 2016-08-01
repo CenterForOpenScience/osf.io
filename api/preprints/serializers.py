@@ -4,20 +4,29 @@ from api.base.serializers import (
 )
 from api.nodes.serializers import NodeTagField
 
+
 class PreprintSerializer(JSONAPISerializer):
+
     filterable_fields = frozenset([
-        'title',
-        'subjects',
-        'date_created',
-        'authors',
-        'abstract',
         'id',
+        'title',
+        'description',
+        'public',
         'tags',
-        'primary_file',
+        'date_created',
+        'date_modified',
+        'preprint_created',
+        'root',
+        'parent',
+        'contributors',
+        'primary_file'
     ])
+
     title = ser.CharField(required=True)
     subjects = ser.CharField(source='preprint_subjects')
-    date_created = ser.DateTimeField(read_only=True, source='preprint_created')
+    date_created = ser.DateTimeField(read_only=True)
+    preprint_created = ser.DateTimeField(read_only=True)
+    date_modified = ser.DateTimeField(read_only=True)
     id = IDField(source='_id', required=False)
     abstract = ser.CharField(source='description', required=False)
     tags = JSONAPIListField(child=NodeTagField(), required=False)
@@ -34,8 +43,14 @@ class PreprintSerializer(JSONAPISerializer):
         related_meta={'count': 'get_contrib_count'},
     )
 
+    parent = RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<parent_node._id>'},
+        filter_key='parent_node'
+    )
+
     root = RelationshipField(
-        related_view='preprints:preprint-detail',
+        related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<root._id>'}
     )
     class Meta:
