@@ -1,0 +1,4 @@
+{
+    "owncloud_folder_selected" : "${user} selected ownCloud folder ${folder} in ${node}",
+    "owncloud_node_authorized" : "${user} authorized ownCloud in ${node}"
+}
