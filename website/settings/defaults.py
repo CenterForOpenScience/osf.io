@@ -25,6 +25,8 @@ ADDON_PATH = os.path.join(BASE_PATH, 'addons')
 STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = '/static'
 EMBER_FOLDER = os.path.join(STATIC_FOLDER, 'public', 'ember')
+PREPRINTS_FOLDER = os.path.join(STATIC_FOLDER, 'public', 'ember-preprints')
+
 ASSET_HASH_PATH = os.path.join(APP_PATH, 'webpack-assets.json')
 ROOT = os.path.join(BASE_PATH, '..')
 BCRYPT_LOG_ROUNDS = 12
@@ -53,9 +55,12 @@ PROXY_ADDRS = []
 
 # May set these to True in local.py for development
 DEV_MODE = False
-USE_EMBER = False
 DEBUG_MODE = False
 SECURE_MODE = not DEBUG_MODE  # Set secure cookie
+
+# Feature flags for ember applications. If True, flask will recognize ember-specific OSF routes.
+USE_EMBER = False
+USE_PREPRINTS = False
 
 PROTOCOL = 'https://' if SECURE_MODE else 'http://'
 DOMAIN = PROTOCOL + 'localhost:5000/'

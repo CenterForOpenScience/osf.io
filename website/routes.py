@@ -172,11 +172,20 @@ def robots():
     )
 
 def ember_app():
-    """Serve the contents of the ember application"""
-    # Be sure to build the ember app first, and adjust asset paths in index.html:
-    #  ember build --output-path <STATIC_FOLER>/ember --watch
+    """
+    Serve the contents of the ember application
+    Be sure to build the ember app first, and ensure that `USE_EMBER` setting is set to True
+        ember build --output-path <STATIC_FOLDER>/ember --watch
+    """
     return send_from_directory(settings.EMBER_FOLDER, 'index.html')
 
+def preprints_app(*args, **kwargs):
+    """
+    Serve the contents of the ember-preprints application
+    Be sure to build the ember app first, running the following command from the `ember-preprints` folder
+      ember build --output-path <../PATH_TO_OSF_STATIC_FOLDER>/ember-preprints --watch
+    """
+    return send_from_directory(settings.PREPRINTS_FOLDER, 'index.html')
 
 def goodbye():
     # Redirect to dashboard if logged in
@@ -248,6 +257,21 @@ def make_url_map(app):
                 ],
                 'get',
                 ember_app,
+                json_renderer
+            )
+        ])
+
+    if settings.USE_PREPRINTS:
+        # Routes that serve up the Ember-preprints application. Hide behind feature flag.
+        process_rules(app, [
+            Rule(
+                [
+                    '/preprint/',
+                    '/preprints/',
+                    '/preprints/<path:_>',
+                ],
+                'get',
+                preprints_app,
                 json_renderer
             )
         ])
@@ -355,19 +379,19 @@ def make_url_map(app):
             OsfWebRenderer('prereg_landing_page.mako', trust=False)
         ),
 
-        Rule(
-            '/preprints/',
-            'get',
-            preprint_views.preprint_landing_page,
-            OsfWebRenderer('public/pages/preprint_landing.mako', trust=False),
-        ),
+        # Rule(
+        #     '/preprints/',
+        #     'get',
+        #     preprint_views.preprint_landing_page,
+        #     OsfWebRenderer('public/pages/preprint_landing.mako', trust=False),
+        # ),
 
-        Rule(
-            '/preprint/',
-            'get',
-            preprint_views.preprint_redirect,
-            notemplate,
-        ),
+        # Rule(
+        #     '/preprint/',
+        #     'get',
+        #     preprint_views.preprint_redirect,
+        #     notemplate,
+        # ),
 
         Rule(
             '/api/v1/prereg/draft_registrations/',
