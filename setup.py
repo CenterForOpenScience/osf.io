@@ -1,16 +1,17 @@
 from setuptools import setup
 
-setup(name='osf_models',
-      version='0.0.2.dev0',
-      description='Django models for the OSF',
-      url='https://github.com/CenterForOpenScience/osf-models',
-      author='Center for Open Science',
-      author_email='pypipackages@cos.io',
-      license='MIT',
-      packages=['osf_models'],
-      package_dir={'osf_models':'osf_models'},
-      include_package_data=True,
-      install_requires=[
+setup(
+    name='osf_models',
+    version='0.0.2.dev0',
+    description='Django models for the OSF',
+    url='https://github.com/CenterForOpenScience/osf-models',
+    author='Center for Open Science',
+    author_email='pypipackages@cos.io',
+    license='MIT',
+    packages=['osf_models'],
+    package_dir={'osf_models':'osf_models'},
+    include_package_data=True,
+    install_requires=[
         'django>=1.9',
         'psycopg2',
         'django-extensions==1.6.1',
@@ -18,5 +19,9 @@ setup(name='osf_models',
         'modular-odm>=0.3.0',
         'django-typed-models>=0.5.0',
         'nameparser>=0.3.3',
-      ],
-      zip_safe=False)
+        'furl>=0.5.1',
+        'bleach>=1.4.1',
+        'pytz>=2014.9',
+    ],
+    zip_safe=False
+)
