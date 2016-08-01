@@ -91,6 +91,7 @@ function findByTempID(parent, tmpID) {
     return item;
 }
 
+
 /**
  * Cancel a pending upload
  * @this Treebeard.controller
@@ -1830,6 +1831,9 @@ var FGToolbar = {
                     m('.fangorn-toolbar.pull-right', [dismissIcon])
                 )
             ];
+        $('.tb-row').click(function(){
+            ctrl.helpText('');
+        });
         if (ctrl.tb.options.placement !== 'fileview') {
             templates[toolbarModes.ADDFOLDER] = [
                 m('.col-xs-9', [
@@ -2396,7 +2400,7 @@ tbOptions = {
         _loadTopLevelChildren.call(tb);
         tb.uploadStates = [];
         tb.pendingFileOps = [];
-        tb.select('#tb-tbody').on('click', function(event){
+        tb.select('#tb-tbody, .tb-tbody-inner').on('click', function(event){
             if(event.target !== this) {
                 var item = tb.multiselected()[0];
                 if (item) {
@@ -2407,9 +2411,9 @@ tbOptions = {
                 }
             }
             tb.clearMultiselect();
+            m.redraw();
             dismissToolbar.call(tb);
         });
-
         $(window).on('beforeunload', function() {
             if(tb.dropzone && tb.dropzone.getUploadingFiles().length) {
                 return 'You have pending uploads, if you leave this page they may not complete.';
