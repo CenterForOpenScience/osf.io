@@ -17,239 +17,241 @@ from website.util.metrics import get_entry_point
 from scripts.migrate_piwik import utils
 from scripts.migrate_piwik import settings
 from scripts.migrate_piwik import lookup_data
+from scripts import utils as scripts_utils
 
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+def get_line_count(fp):
+    ret = sum(1 for _ in fp)
+    fp.seek(0)
+    return ret
 
 def main(force=False):
-
     history_run_id = utils.get_history_run_id_for('extract')
     complaints_run_id = utils.get_complaints_run_id_for('extract')
     if history_run_id != complaints_run_id:
-        print("You need to validate your exported data! Bailing...")
+        print('You need to validate your exported data! Bailing...')
         sys.exit()
 
     extract_complaints = utils.get_complaints_for('extract', 'r')
     extract_complaints.readline()  # toss header
     if extract_complaints.readline():
-        print("You have unaddressed complaints!")
+        print('You have unaddressed complaints!')
         if not force:
-            print("  ...pass --force to ignore")
+            print('  ...pass --force to ignore')
             sys.exit()
+    extract_complaints.close()
 
     sqlite_db = sqlite3.connect(settings.SQLITE_PATH)
     sqlite_db.row_factory = sqlite3.Row
     sqlite_setup(sqlite_db)
 
-    input_file = open(utils.get_dir_for('extract') + '/' + settings.EXTRACT_FILE, 'r')
     transform_dir = utils.get_dir_for('transform01')
-    output_file = open(transform_dir + '/' + settings.TRANSFORM01_FILE, 'a')
 
-    history_file = utils.get_history_for('transform01', 'w')
-    history_file.write('Run ID: {}\n'.format(complaints_run_id))
-    history_file.write('Beginning extraction at: {}Z\n'.format(datetime.utcnow()))
-
+    logger.info('Run ID: {}\n'.format(complaints_run_id))
+    logger.info('Beginning extraction at: {}Z\n'.format(datetime.utcnow()))
+    tally = {'missing_user': 0, 'missing_node': 0}
     lastline = 0
     try:
-        resume_log = open(utils.get_dir_for('transform01') + '/resume.log', 'r')
-        for linenbr in resume_log.readlines():
-            pass
-        lastline = int(linenbr.strip('\n'))
-    except:
+        with open(transform_dir + '/' + settings.TRANSFORM01_FILE, 'r') as output_file:
+            lastline = get_line_count(output_file)
+    except IOError:
         pass
 
-    print("Lastline is: {}\n".format(lastline))
-    linenum = 0
-    tally = {'missing_user': 0, 'missing_node': 0}
-    resume_log = open(utils.get_dir_for('transform01') + '/resume.log', 'a')
-    for pageview_json in input_file.readlines():
-        linenum += 1
-        if linenum <= lastline:
-            if not linenum % 1000:
-                print('Skippins line {} of ***{}***'.format(linenum, lastline))
-            continue
+    with open(transform_dir + '/' + settings.TRANSFORM01_FILE, 'a') as output_file:
+        with open(utils.get_dir_for('extract') + '/' + settings.EXTRACT_FILE, 'r') as input_file:
+            print('Lastline is: {}\n'.format(lastline))
+            for i, pageview_json in enumerate(input_file):
+                linenum = i + 1
+                if linenum <= lastline:
+                    if not linenum % 1000:
+                        print('Skipping line {} of ***{}***'.format(linenum, lastline))
+                    continue
 
-        if not linenum % 1000:
-            print('Transforming line {}'.format(linenum))
+                if not linenum % 1000:
+                    print('Transforming line {}'.format(linenum))
 
-        raw_pageview = json.loads(pageview_json)
-        visit = raw_pageview['visit']
-        action = raw_pageview['action']
+                raw_pageview = json.loads(pageview_json)
+                visit = raw_pageview['visit']
+                action = raw_pageview['action']
 
-        # lookup location by ip address. piwik strips last 16 bits, so may not be completely
-        # accurate, but should be close enough.
-        ip_addr = visit['ip_addr']
-        location = get_location_for_ip_addr(ip_addr, sqlite_db)
+                # lookup location by ip address. piwik strips last 16 bits, so may not be completely
+                # accurate, but should be close enough.
+                ip_addr = visit['ip_addr']
+                location = get_location_for_ip_addr(ip_addr, sqlite_db)
 
-        # user has many visitor ids, visitor id has many session ids.
-        # in keen, visitor id will refresh 1/per year, session 1/per 30min.
-        visitor_id = get_or_create_visitor_id(visit['visitor_id'], sqlite_db)
-        session_id = get_or_create_session_id(visit['id'], sqlite_db)
+                # user has many visitor ids, visitor id has many session ids.
+                # in keen, visitor id will refresh 1/per year, session 1/per 30min.
+                visitor_id = get_or_create_visitor_id(visit['visitor_id'], sqlite_db)
+                session_id = get_or_create_session_id(visit['id'], sqlite_db)
 
-        user_id = visit['user_id']
-        user = get_or_create_user(user_id, sqlite_db)
+                user_id = visit['user_id']
+                user = get_or_create_user(user_id, sqlite_db)
 
-        node_id = action['node_id']
-        node = get_or_create_node(node_id, sqlite_db)
+                node_id = action['node_id']
+                node = get_or_create_node(node_id, sqlite_db)
 
-        browser_version = [None, None]
-        if visit['ua']['browser']['version']:
-            browser_version = visit['ua']['browser']['version'].split('.')
+                browser_version = [None, None]
+                if visit['ua']['browser']['version']:
+                    browser_version = visit['ua']['browser']['version'].split('.')
 
-        os_version = [None, None]
-        if visit['ua']['os_version']:
-            os_version = visit['ua']['os_version'].split('.')
-            if len(os_version) == 1:
-                os_version.append(None)
+                os_version = [None, None]
+                if visit['ua']['os_version']:
+                    os_version = visit['ua']['os_version'].split('.')
+                    if len(os_version) == 1:
+                        os_version.append(None)
 
-        os_family = parse_os_family(visit['ua']['os']);
-        if visit['ua']['os'] == 'WIN' and visit['ua']['os_version']:
-            os_family = os_family.replace('<Unknown Version>', visit['ua']['os_version'])
+                os_family = parse_os_family(visit['ua']['os']);
+                if visit['ua']['os'] == 'WIN' and visit['ua']['os_version']:
+                    os_family = os_family.replace('<Unknown Version>', visit['ua']['os_version'])
 
-        browser_info = {
-            'device': {
-                'family': visit['ua']['device'],
-            },
-            'os': {
-                'major': os_version[0],
-                'patch_minor': None,
-                'minor': os_version[1],
-                'family': os_family,
-                'patch': None,
-            },
-            'browser': {
-                'major': browser_version[0],
-                'minor': browser_version[1],
-                'family': parse_browser_family(visit['ua']['browser']['name']),
-                'patch': None,
-            },
-        }
-
-        if '-' in visit['ua']['browser']['locale']:
-            browser_locale = visit['ua']['browser']['locale'].split('-')
-            browser_language = '-'.join([browser_locale[0], browser_locale[1].upper()])
-
-        node_tags = None if action['node_tags'] is None else [
-            tag for tag in action['node_tags'].split(',')
-        ]
-
-        # piwik stores resolution as 1900x600 mostly, but sometimes as a float?
-        # For the sake of my sanity and yours, let's ignore floats.
-        screen_resolution = (None, None)
-        if re.search('x', visit['ua']['screen']):
-            screen_resolution = visit['ua']['screen'].split('x')
-
-        # piwik fmt: '2016-05-11 20:30:00', keen fmt: '2016-06-30T17:12:50.070Z'
-        # piwik is always utc
-        utc_timestamp = datetime.strptime(action['timestamp'], '%Y-%m-%d %H:%M:%S')
-        utc_ts_formatted = utc_timestamp.isoformat() + '.000Z'  # naive, but correct
-
-        local_timedelta = timedelta(minutes=visit['tz_offset'])
-        local_timestamp = utc_timestamp + local_timedelta
-
-        pageview = {
-            'meta': {
-                'epoch': 0,  # migrated from piwik
-            },
-            'page': {
-                'title': action['page']['title'],
-                'url': action['page']['url_prefix'] + action['page']['url'] if action['page']['url'] is not None else None,
-                'info': {}  # (add-on)
-            },
-            'referrer': {
-                'url': action['referrer'] or None,
-                'info': {}, # (add-on)
-            },
-            'tech': {
-                'browser': {  # JS-side will be filled in by Keen.helpers.getBrowserProfile()
-                    'cookies': True if visit['ua']['browser']['cookies'] else False,
-                    'language': browser_language,
-                    'screen': {
-                        'height': screen_resolution[1],
-                        'width': screen_resolution[0],
+                browser_info = {
+                    'device': {
+                        'family': visit['ua']['device'],
                     },
-                },
-                'ip': ip_addr,  # private
-                'ua': None,
-                'info': browser_info,
-            },
-            'time': {
-                'utc': timestamp_components(utc_timestamp),
-                'local':  timestamp_components(local_timestamp),
-            },
-            'visitor': {
-                'id': visitor_id,
-                'session': session_id,
-                'returning': True if visit['visitor_returning'] else False,  # visit
-            },
-            'user': {
-                'id': user_id,
-                'entry_point': '' if user is None else user['entry_point'],  # empty string if no user
-                'locale': '' if user is None else user['locale'],  # empty string if no user
-                'timezone': '' if user is None else user['timezone'],  # empty string if no user
-                'institutions': None if user is None else user['institutions'],  # null if no user, else []
-            },
-            'node': {
-                'id': node_id,
-                'title': None if node is None else node['title'],
-                'type': None if node is None else node['category'],
-                'tags': node_tags,
-                'made_public_date': None if node is None else node['made_public_date'],
-            },
-            'geo': {},
-            'anon': {
-                'id': md5(session_id).hexdigest(),
-                'continent': None if location is None else location['continent'],
-                'country':   None if location is None else location['country'],
-            },
-            'keen': {
-                'timestamp': utc_ts_formatted,
-                'addons': [
-                    {
-                        'name': 'keen:referrer_parser',
-                        'input': {
-                            'referrer_url': 'referrer.url',
-                            'page_url': 'page.url'
-                        },
-                        'output': 'referrer.info'
+                    'os': {
+                        'major': os_version[0],
+                        'patch_minor': None,
+                        'minor': os_version[1],
+                        'family': os_family,
+                        'patch': None,
                     },
-                    {
-                        'name': 'keen:url_parser',
-                        'input': {
-                            'url': 'page.url'
-                        },
-                        'output': 'page.info'
+                    'browser': {
+                        'major': browser_version[0],
+                        'minor': browser_version[1],
+                        'family': parse_browser_family(visit['ua']['browser']['name']),
+                        'patch': None,
                     },
-                    {
-                        'name': 'keen:url_parser',
-                        'input': {
-                            'url': 'referrer.url'
-                        },
-                        'output': 'referrer.info'
+                }
+
+                if '-' in visit['ua']['browser']['locale']:
+                    browser_locale = visit['ua']['browser']['locale'].split('-')
+                    browser_language = '-'.join([browser_locale[0], browser_locale[1].upper()])
+
+                node_tags = None if action['node_tags'] is None else [
+                    tag for tag in action['node_tags'].split(',')
+                ]
+
+                # piwik stores resolution as 1900x600 mostly, but sometimes as a float?
+                # For the sake of my sanity and yours, let's ignore floats.
+                screen_resolution = (None, None)
+                if re.search('x', visit['ua']['screen']):
+                    screen_resolution = visit['ua']['screen'].split('x')
+
+                # piwik fmt: '2016-05-11 20:30:00', keen fmt: '2016-06-30T17:12:50.070Z'
+                # piwik is always utc
+                utc_timestamp = datetime.strptime(action['timestamp'], '%Y-%m-%d %H:%M:%S')
+                utc_ts_formatted = utc_timestamp.isoformat() + '.000Z'  # naive, but correct
+
+                local_timedelta = timedelta(minutes=visit['tz_offset'])
+                local_timestamp = utc_timestamp + local_timedelta
+
+                pageview = {
+                    'meta': {
+                        'epoch': 0,  # migrated from piwik
                     },
-                    {  # private
-                        'name': 'keen:ip_to_geo',
-                        'input': {
-                            'ip': 'tech.ip'
+                    'page': {
+                        'title': action['page']['title'],
+                        'url': action['page']['url_prefix'] + action['page']['url'] if action['page']['url'] is not None else None,
+                        'info': {}  # (add-on)
+                    },
+                    'referrer': {
+                        'url': action['referrer'] or None,
+                        'info': {},  # (add-on)
+                    },
+                    'tech': {
+                        'browser': {  # JS-side will be filled in by Keen.helpers.getBrowserProfile()
+                            'cookies': True if visit['ua']['browser']['cookies'] else False,
+                            'language': browser_language,
+                            'screen': {
+                                'height': screen_resolution[1],
+                                'width': screen_resolution[0],
+                            },
                         },
-                        'output': 'geo',
+                        'ip': ip_addr,  # private
+                        'ua': None,
+                        'info': browser_info,
+                    },
+                    'time': {
+                        'utc': timestamp_components(utc_timestamp),
+                        'local': timestamp_components(local_timestamp),
+                    },
+                    'visitor': {
+                        'id': visitor_id,
+                        'session': session_id,
+                        'returning': True if visit['visitor_returning'] else False,  # visit
+                    },
+                    'user': {
+                        'id': user_id,
+                        'entry_point': '' if user is None else user['entry_point'],  # empty string if no user
+                        'locale': '' if user is None else user['locale'],  # empty string if no user
+                        'timezone': '' if user is None else user['timezone'],  # empty string if no user
+                        'institutions': None if user is None else user['institutions'],  # null if no user, else []
+                    },
+                    'node': {
+                        'id': node_id,
+                        'title': None if node is None else node['title'],
+                        'type': None if node is None else node['category'],
+                        'tags': node_tags,
+                        'made_public_date': None if node is None else node['made_public_date'],
+                    },
+                    'geo': {},
+                    'anon': {
+                        'id': md5(session_id).hexdigest(),
+                        'continent': None if location is None else location['continent'],
+                        'country': None if location is None else location['country'],
+                    },
+                    'keen': {
+                        'timestamp': utc_ts_formatted,
+                        'addons': [
+                            {
+                                'name': 'keen:referrer_parser',
+                                'input': {
+                                    'referrer_url': 'referrer.url',
+                                    'page_url': 'page.url'
+                                },
+                                'output': 'referrer.info'
+                            },
+                            {
+                                'name': 'keen:url_parser',
+                                'input': {
+                                    'url': 'page.url'
+                                },
+                                'output': 'page.info'
+                            },
+                            {
+                                'name': 'keen:url_parser',
+                                'input': {
+                                    'url': 'referrer.url'
+                                },
+                                'output': 'referrer.info'
+                            },
+                            {  # private
+                                'name': 'keen:ip_to_geo',
+                                'input': {
+                                    'ip': 'tech.ip'
+                                },
+                                'output': 'geo',
+                            }
+                        ],
                     }
-                ],
-            }
-        }
+                }
 
-        if node_id is None:
-            tally['missing_node'] += 1
+                if node_id is None:
+                    tally['missing_node'] += 1
 
-        if user_id is None:
-            tally['missing_user'] += 1
+                if user_id is None:
+                    tally['missing_user'] += 1
 
-        output_file.write(json.dumps(pageview) + '\n')
-        resume_log.write('\n{}'.format(str(linenum)))
+                output_file.write(json.dumps(pageview) + '\n')
 
-
-    history_file.write('Finished extraction at: {}Z\n'.format(datetime.utcnow()))
-    history_file.write('Final count was: {}\n'.format(linenum))
-    history_file.write('{} pageviews lacked a user id.\n'.format(tally['missing_user']))
-    history_file.write('{} pageviews lacked a node id.\n'.format(tally['missing_node']))
+    logger.info('Finished extraction at: {}Z\n'.format(datetime.utcnow()))
+    logger.info('Final count was: {}\n'.format(linenum))
+    logger.info('{} pageviews lacked a user id.\n'.format(tally['missing_user']))
+    logger.info('{} pageviews lacked a node id.\n'.format(tally['missing_node']))
     sqlite_db.close()
 
 
@@ -505,7 +507,8 @@ def timestamp_components(timestamp):
         'year': timestamp.year,
     }
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     init_app(set_backends=True, routes=False)
+    scripts_utils.add_file_logger(logger, __file__)
     force = '--force' in sys.argv
     main(force=force)
