@@ -55,6 +55,8 @@ from website.identifiers.model import Identifier
 from website.archiver import ARCHIVER_SUCCESS
 from website.project.licenses import NodeLicense, NodeLicenseRecord, ensure_licenses
 from website.util import permissions
+from website.files.models.osfstorage import OsfStorageFile
+
 
 ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
@@ -212,8 +214,42 @@ class NodeFactory(AbstractNodeFactory):
     parent = SubFactory(ProjectFactory)
 
 
-class PreprintFactory(ProjectFactory):
+class PreprintFactory(AbstractNodeFactory):
+    creator = None
     category = 'project'
+
+    @classmethod
+    def _create(cls, target_class, project=None, is_public=True, filename='preprint_file.txt', *args, **kwargs):
+        save_kwargs(**kwargs)
+        user = None
+        if project:
+            user = project.creator
+        user = kwargs.get('user') or kwargs.get('creator') or user or UserFactory()
+        kwargs['creator'] = user
+        # Original project to be registered
+        project = project or target_class(*args, **kwargs)
+        if user._id not in project.permissions:
+            project.add_contributor(
+                contributor=user,
+                permissions=permissions.CREATOR_PERMISSIONS,
+                log=False,
+                save=False
+            )
+        project.save()
+        project.reload()
+
+        file = OsfStorageFile.create(
+            is_file=True,
+            node=project,
+            path='/{}'.format(filename),
+            name=filename,
+            materialized_path='/{}'.format(filename))
+        file.save()
+
+        project.set_preprint_file(file._id, auth=Auth(project.creator))
+        project.save()
+
+        return project
 
 
 class RegistrationFactory(AbstractNodeFactory):
