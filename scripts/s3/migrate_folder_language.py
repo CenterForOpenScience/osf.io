@@ -28,11 +28,10 @@ def migrate(dry_run=False):
         sns_collection.find_and_modify(
             {'_id': document['_id']},
             {
-                '$set': {'folder_id': document['bucket']}, 
+                '$set': {'folder_id': document['bucket'], 'folder_name': document['bucket']},
                 '$unset': {'bucket': ''}
             }
         )
-
 
     allowance = 2
     last_call = time.time()
@@ -48,7 +47,7 @@ def migrate(dry_run=False):
             node_settings.folder_name = node_settings.folder_id
 
             if allowance < 1:
-                try: 
+                try:
                     time.sleep(1 - (time.time() - last_call))
                 except (ValueError, IOError):
                     pass  # ValueError/IOError indicates a negative sleep time
@@ -57,12 +56,13 @@ def migrate(dry_run=False):
             allowance -= 1
             last_call = time.time()
 
+            bucket_location = None
             try:
                 bucket_location = get_bucket_location_or_error(
-                node_settings.external_account.oauth_key,
-                node_settings.external_account.oauth_secret,
-                node_settings.folder_id
-            )
+                    node_settings.external_account.oauth_key,
+                    node_settings.external_account.oauth_secret,
+                    node_settings.folder_id
+                )
             except InvalidAuthError:
                 logger.info('Found S3NodeSettings {} with invalid credentials.'.format(node_settings._id))
             except InvalidFolderError:
@@ -81,6 +81,9 @@ def migrate(dry_run=False):
                 node_settings.folder_name = '{} ({})'.format(node_settings.folder_id, bucket_location)
                 bucket_name_location_map[node_settings.folder_id] = bucket_location
 
+            if not bucket_location:
+                node_settings.folder_name = node_settings.folder_id
+
         node_settings.save()
 
     if dry_run:
@@ -96,5 +99,5 @@ def main():
     with TokuTransaction():
         migrate(dry_run=dry_run)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
