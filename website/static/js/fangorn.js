@@ -390,22 +390,15 @@ function _fangornResolveToggle(item) {
         checkedByOther = m('i.fa.fa-sign-out[style="color: #d9534f; font-size: 120%; cursor: default; padding-top: 10px; padding-bottom: 10px; padding-right: 4px;"]', '');
     // check if folder has children whether it's lazyloaded or not.
     if (item.kind === 'folder' && item.depth > 1) {
-      var self = this;
-      if (!item.open) {
-          self.updateFolder(null, item);
-      }
-      if(item.children.length !== 0){
         if(!item.data.permissions.view){
             return '';
         }
-        if (item.open) {
-            return toggleMinus;
+       if (item.children.length != 0) {
+          if(item.open) {
+              return toggleMinus;
+          }
+        return togglePlus;  // check if children
         }
-        return togglePlus;
-      }
-    }
-    if(item.children.length === 0){
-        item.open = false;
     }
     if (item.data.provider === 'osfstorage' && item.kind === 'file') {
         if (item.data.extra && item.data.extra.checkout) {
@@ -1190,11 +1183,21 @@ function reapplyTooltips () {
 function _fangornLazyLoadOnLoad (tree, event) {
     tree.children.forEach(function(item) {
         inheritFromParent(item, tree);
+        // if this is a folder
+        if (item.kind === 'folder' && item.depth > 1) {
+          for (i = 0; i < data.length; i++) {
+            child = self.buildTree(data[i], parent);
+            parent.add(child);
+          }
+        // get folder children, update folder children array -- lazy load URL --  make own call -- AJAX call -- build tree
+// if UI changed
+// m.redraw();
+      }
     });
     resolveconfigOption.call(this, tree, 'lazyLoadOnLoad', [tree, event]);
     reapplyTooltips();
 
-    if (tree.depth > 1) {
+    if (this && tree.depth > 1) {
         orderFolder.call(this, tree);
     }
 }
