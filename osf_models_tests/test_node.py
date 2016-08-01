@@ -1,4 +1,6 @@
 from modularodm import Q
+from modularodm.exceptions import ValidationError as MODMValidationError
+from django.core.exceptions import ValidationError as DjangoValidationError
 import pytest
 
 from osf_models.models import Node
@@ -23,3 +25,17 @@ class TestNodeMODMCompat:
 
         assert node in Node.find(Q('is_public', 'eq', True) & Q('title', 'eq', 'foo'))
         assert node not in Node.find(Q('is_public', 'eq', False) & Q('title', 'eq', 'foo'))
+
+    def test_title_validation(self):
+        node = NodeFactory.build(title='')
+        with pytest.raises(MODMValidationError):
+            node.save()
+        with pytest.raises(DjangoValidationError) as excinfo:
+            node.save()
+        assert excinfo.value.message_dict == {'title': ['This field cannot be blank.']}
+
+        too_long = 'a' * 201
+        node = NodeFactory.build(title=too_long)
+        with pytest.raises(DjangoValidationError) as excinfo:
+            node.save()
+        assert excinfo.value.message_dict == {'title': ['Title cannot exceed 200 characters.']}
