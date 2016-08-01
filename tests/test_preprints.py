@@ -23,9 +23,26 @@ from website.project.model import (
 from tests.base import OsfTestCase
 from tests.factories import (
     AuthUserFactory,
+    ProjectFactory,
     PreprintFactory
 )
 from tests.utils import assert_logs, assert_not_logs
+
+
+class TestPreprintFactory(OsfTestCase):
+    def setUp(self):
+        super(TestPreprintFactory, self).setUp()
+
+        self.user = AuthUserFactory()
+        self.auth = Auth(user=self.user)
+        self.preprint = PreprintFactory(creator=self.user)
+        self.preprint.save()
+
+    def test_is_preprint(self):
+        assert_true(self.preprint.is_preprint)
+
+    def test_preprint_is_public(self):
+        assert_true(self.preprint.is_public)
 
 
 class TestSetPreprintFile(OsfTestCase):
@@ -34,73 +51,68 @@ class TestSetPreprintFile(OsfTestCase):
         super(TestSetPreprintFile, self).setUp()
 
         self.user = AuthUserFactory()
+        self.auth = Auth(user=self.user)
         self.read_write_user = AuthUserFactory()
         self.read_write_user_auth = Auth(user=self.read_write_user)
-        self.auth = Auth(user=self.user)
-        self.preprint = PreprintFactory(creator=self.user)
 
-        self.preprint.add_contributor(self.read_write_user, permissions=[permissions.WRITE])
-
+        self.project = ProjectFactory(creator=self.user)
         self.file = OsfStorageFile.create(
             is_file=True,
-            node=self.preprint,
+            node=self.project,
             path='/panda.txt',
             name='panda.txt',
             materialized_path='/panda.txt')
-        self.guid = self.file.get_guid(create=True)
         self.file.save()
 
         self.file_two = OsfStorageFile.create(
             is_file=True,
-            node=self.preprint,
+            node=self.project,
             path='/pandapanda.txt',
             name='pandapanda.txt',
             materialized_path='/pandapanda.txt')
-        self.guid = self.file.get_guid(create=True)
         self.file_two.save()
 
         # TODO - call ensure_taxonomies here?
 
-        self.preprint.save()
+        self.project.add_contributor(self.read_write_user, permissions=[permissions.WRITE])
+        self.project.save()
 
-    def test_is_preprint_property(self):
-        self.preprint.set_preprint_file(self.file._id, auth=self.auth, save=True)
-        self.preprint.reload()
-        assert_true(self.preprint.is_preprint)
+    def test_is_preprint_property_new_file(self):
+        self.project.set_preprint_file(self.file._id, auth=self.auth, save=True)
+        assert_true(self.project.is_preprint)
 
     def test_project_made_public(self):
-        assert_false(self.preprint.is_public)
-        self.preprint.set_preprint_file(self.file._id, auth=self.auth, save=True)
-        self.preprint.reload()
-        assert_true(self.preprint.is_public)
+        assert_false(self.project.is_public)
+        self.project.set_preprint_file(self.file._id, auth=self.auth, save=True)
+        assert_true(self.project.is_public)
 
     def test_add_primary_file(self):
-        self.preprint.set_preprint_file(self.file._id, auth=self.auth, save=True)
-        assert_equal(self.preprint.preprint_file._id, self.file._id)
+        self.project.set_preprint_file(self.file._id, auth=self.auth, save=True)
+        assert_equal(self.project.preprint_file._id, self.file._id)
 
-    @assert_logs(NodeLog.PREPRINT_UPDATED, 'preprint')
+    @assert_logs(NodeLog.PREPRINT_UPDATED, 'project')
     def test_change_primary_file(self):
-        self.preprint.set_preprint_file(self.file._id, auth=self.auth, save=True)
-        assert_equal(self.preprint.preprint_file._id, self.file._id)
+        self.project.set_preprint_file(self.file._id, auth=self.auth, save=True)
+        assert_equal(self.project.preprint_file._id, self.file._id)
 
-        self.preprint.set_preprint_file(self.file_two._id, auth=self.auth, save=True)
-        assert_equal(self.preprint.preprint_file._id, self.file_two._id)
+        self.project.set_preprint_file(self.file_two._id, auth=self.auth, save=True)
+        assert_equal(self.project.preprint_file._id, self.file_two._id)
 
     def test_add_invalid_file(self):
         with assert_raises(NodeStateError):
-            self.preprint.set_preprint_file('inatlanta', auth=self.auth, save=True)
+            self.project.set_preprint_file('inatlanta', auth=self.auth, save=True)
 
     def test_preprint_created_date(self):
-        self.preprint.set_preprint_file(self.file._id, auth=self.auth, save=True)
-        assert_equal(self.preprint.preprint_file._id, self.file._id)
+        self.project.set_preprint_file(self.file._id, auth=self.auth, save=True)
+        assert_equal(self.project.preprint_file._id, self.file._id)
 
-        assert(self.preprint.preprint_created)
-        assert_not_equal(self.preprint.date_created, self.preprint.preprint_created)
+        assert(self.project.preprint_created)
+        assert_not_equal(self.project.date_created, self.project.preprint_created)
 
     def test_non_admin_update_file(self):
-        self.preprint.set_preprint_file(self.file._id, auth=self.auth, save=True)
-        assert_equal(self.preprint.preprint_file._id, self.file._id)
+        self.project.set_preprint_file(self.file._id, auth=self.auth, save=True)
+        assert_equal(self.project.preprint_file._id, self.file._id)
 
         with assert_raises(PermissionsError):
-            self.preprint.set_preprint_file(self.file_two._id, auth=self.read_write_user_auth, save=True)
-        assert_equal(self.preprint.preprint_file._id, self.file._id)
+            self.project.set_preprint_file(self.file_two._id, auth=self.read_write_user_auth, save=True)
+        assert_equal(self.project.preprint_file._id, self.file._id)
