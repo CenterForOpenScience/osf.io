@@ -34,10 +34,8 @@ function _removeEvent (event, items) {
         }).done(function (data) {
                 // delete view
                 tb.deleteNode(item.parentID, item.id);
-                Fangorn.Utils.dismissToolbar.call(tb);
                 tb.modal.dismiss();
                 tb.clearMultiselect();
-
         }).fail(function (data) {
                 tb.modal.dismiss();
                 Fangorn.Utils.dismissToolbar.call(tb);
