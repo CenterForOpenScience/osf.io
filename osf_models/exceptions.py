@@ -81,7 +81,10 @@ class ValidationError(MODMValidationError, DjangoValidationError):
 
 
 @contextlib.contextmanager
-def reraise_django_validation_error():
+def reraise_django_validation_errors():
+    """Context manager to reraise DjangoValidationErrors as `osf_models.exceptions.ValidationErrors` (for
+    MODM compat).
+    """
     try:
         yield
     except DjangoValidationError as err:
