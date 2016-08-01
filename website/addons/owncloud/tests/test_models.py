@@ -66,7 +66,7 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, utils.OwnClo
         credentials = self.node_settings.serialize_waterbutler_credentials()
 
         assert_is_not_none(self.node_settings.external_account.oauth_secret)
-        expected = {'host': 'https://localhost/43/owncloud',
+        expected = {'host': self.node_settings.external_account.oauth_key,
                 'password': 'meoword',
                 'username': 'catname'}
 
