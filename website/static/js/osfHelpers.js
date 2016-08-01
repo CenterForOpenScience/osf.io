@@ -94,6 +94,20 @@ var ajaxJSON = function(method, url, options) {
     return $.ajax(ajaxFields);
 };
 
+ /**
+  * Squashes APIv2 data.attributes to top level JSON for treebeard
+  *
+  * @param {Object} data JSON data
+  * @return {Object data}
+  */
+  var squashAPIAttributes = function(data) {
+    $.each(data.data, function(i, obj) {
+        var savedAttributes = obj.attributes;
+        delete obj.attributes;
+        $.extend(true, obj, savedAttributes);
+    });
+    return data;
+};
 
 /**
 * Posts JSON data.
@@ -907,6 +921,7 @@ module.exports = window.$.osf = {
     postJSON: postJSON,
     putJSON: putJSON,
     ajaxJSON: ajaxJSON,
+    squashAPIAttributes: squashAPIAttributes,
     setXHRAuthorization: setXHRAuthorization,
     handleAddonApiHTTPError: handleAddonApiHTTPError,
     handleJSONError: handleJSONError,
