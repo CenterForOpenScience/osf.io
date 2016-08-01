@@ -1,19 +1,30 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
+import logging
 import functools
 from datetime import datetime
 
 from dateutil import parser
+from pymongo.errors import ConnectionFailure
 
 from framework.mongo import database
 from framework.postcommit_tasks.handlers import run_postcommit
 from framework.sessions import session
 from framework.celery_tasks import app
+from website import settings
 
 from flask import request
 
-collection = database['pagecounters']
+logger = logging.getLogger(__name__)
+
+try:
+    collection = database['pagecounters']
+except ConnectionFailure:
+    if settings.DEBUG_MODE:
+        logger.warn('Cannot connect to database. Analytics will be unavailable')
+    else:
+        raise
 
 @run_postcommit(once_per_request=False, celery=True)
 @app.task(max_retries=5, default_retry_delay=60)

@@ -165,5 +165,4 @@ def patch_models(settings):
                     setattr(module, model, getattr(models, model))
             # Institution is a special case because it isn't a StoredObject
             if hasattr(module, 'Institution') and getattr(module, 'Institution') is not models.Institution:
-                print('Patching instution in {}'.format(module))
                 setattr(module, 'Institution', models.Institution)
