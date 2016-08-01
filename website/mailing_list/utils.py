@@ -25,11 +25,15 @@ mailman_api_url = 'http://{}:{}/{}'.format(
     settings.MAILMAN_API_VERSION
 )
 
-mc = Client(
-    mailman_api_url,
-    settings.MAILMAN_API_USERNAME,
-    settings.MAILMAN_API_PASSWORD
-)
+try:
+    mc = Client(
+        mailman_api_url,
+        settings.MAILMAN_API_USERNAME,
+        settings.MAILMAN_API_PASSWORD
+    )
+    mailing_list_server_is_reachable = True
+except:
+    mailing_list_server_is_reachable = False
 
 # Ensure the domain that the mailing lists we will be creating should be on exists.
 # If it does not, the create it.
@@ -70,7 +74,12 @@ def with_list_proxy(fn):
         if kwargs.get('list_proxy'):
             fn(*args, **kwargs)
         else:
-            get_proxy.apply_async(args=args, kwargs=kwargs)
+            get_proxy.apply_async(args=args, kwargs=kwargs, retry=True, retry_policy={
+                'max_retries': 0,
+                'interval_start': 0,
+                'interval_step': 10.0,
+                'interval_max': 60.0
+            })
     return _fn
 
 # If we call this, we need a mailing list. If it doesn't exist yet, we should 
