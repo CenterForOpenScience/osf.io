@@ -1552,6 +1552,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                     auth=auth,
                     save=False,
                 )
+        if not self.is_public:
+            self.set_privacy(
+                Node.PUBLIC,
+                auth=None,
+                log=True
+            )
         if save:
             self.save()
 
