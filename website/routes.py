@@ -5,6 +5,8 @@ import httplib as http
 from flask import request
 from flask import send_from_directory
 
+from geoip import geolite2
+
 from framework import status
 from framework import sentry
 from framework.auth import cas
@@ -54,6 +56,7 @@ def get_globals():
     user = _get_current_user()
     user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path} for inst in user.affiliated_institutions] if user else []
     all_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path} for inst in Institution.find().sort('name')]
+    location = geolite2.lookup(request.remote_addr) if request.remote_addr else None
     if request.host_url != settings.DOMAIN:
         try:
             inst_id = (Institution.find_one(Q('domains', 'eq', request.host.lower())))._id
@@ -77,14 +80,17 @@ def get_globals():
         'user_institutions': user_institutions if user else None,
         'all_institutions': all_institutions,
         'display_name': get_display_name(user.fullname) if user else '',
+        'anon': {
+            'continent': getattr(location, 'continent', None),
+            'country': getattr(location, 'country', None),
+        },
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
-        'piwik_host': settings.PIWIK_HOST,
-        'piwik_site_id': settings.PIWIK_SITE_ID,
         'sentry_dsn_js': settings.SENTRY_DSN_JS if sentry.enabled else None,
         'dev_mode': settings.DEV_MODE,
         'allow_login': settings.ALLOW_LOGIN,
         'cookie_name': settings.COOKIE_NAME,
         'status': status.pop_status_messages(),
+        'prev_status': status.pop_previous_status_messages(),
         'domain': settings.DOMAIN,
         'api_domain': settings.API_DOMAIN,
         'disk_saving_mode': settings.DISK_SAVING_MODE,
@@ -103,8 +109,16 @@ def get_globals():
         'reauth_url': util.web_url_for('auth_logout', redirect_url=request.url, reauth=True),
         'profile_url': cas.get_profile_url(),
         'enable_institutions': settings.ENABLE_INSTITUTIONS,
-        'keen_project_id': settings.KEEN_PROJECT_ID,
-        'keen_write_key': settings.KEEN_WRITE_KEY,
+        'keen': {
+            'public': {
+                'project_id': settings.KEEN['public']['project_id'],
+                'write_key': settings.KEEN['public']['write_key'],
+            },
+            'private': {
+                'project_id': settings.KEEN['private']['project_id'],
+                'write_key': settings.KEEN['private']['write_key'],
+            },
+        },
         'maintenance': maintenance.get_maintenance(),
     }
 
@@ -158,11 +172,20 @@ def robots():
     )
 
 def ember_app():
-    """Serve the contents of the ember application"""
-    # Be sure to build the ember app first, and adjust asset paths in index.html:
-    #  ember build --output-path <STATIC_FOLER>/ember --watch
+    """
+    Serve the contents of the ember application
+    Be sure to build the ember app first, and ensure that `USE_EMBER` setting is set to True
+        ember build --output-path <STATIC_FOLDER>/ember --watch
+    """
     return send_from_directory(settings.EMBER_FOLDER, 'index.html')
 
+def preprints_app(*args, **kwargs):
+    """
+    Serve the contents of the ember-preprints application
+    Be sure to build the ember app first, running the following command from the `ember-preprints` folder
+      ember build --output-path <../PATH_TO_OSF_STATIC_FOLDER>/ember-preprints --watch
+    """
+    return send_from_directory(settings.PREPRINTS_FOLDER, 'index.html')
 
 def goodbye():
     # Redirect to dashboard if logged in
@@ -234,6 +257,20 @@ def make_url_map(app):
                 ],
                 'get',
                 ember_app,
+                json_renderer
+            )
+        ])
+
+    if settings.USE_PREPRINTS:
+        # Routes that serve up the Ember-preprints application. Hide behind feature flag.
+        process_rules(app, [
+            Rule(
+                [
+                    '/preprints/',
+                    '/preprints/<path:_>',
+                ],
+                'get',
+                preprints_app,
                 json_renderer
             )
         ])
@@ -342,13 +379,6 @@ def make_url_map(app):
         ),
 
         Rule(
-            '/preprints/',
-            'get',
-            preprint_views.preprint_landing_page,
-            OsfWebRenderer('public/pages/preprint_landing.mako', trust=False),
-        ),
-
-        Rule(
             '/preprint/',
             'get',
             preprint_views.preprint_redirect,
@@ -362,6 +392,16 @@ def make_url_map(app):
             json_renderer,
         ),
     ])
+
+    if not settings.USE_PREPRINTS:
+        process_rules(app, [
+            Rule(
+                '/preprints/',
+                'get',
+                preprint_views.preprint_landing_page,
+                OsfWebRenderer('public/pages/preprint_landing.mako', trust=False),
+            )
+        ])
 
     # Site-wide API routes
 
@@ -457,7 +497,6 @@ def make_url_map(app):
     process_rules(app, [
         Rule('/forms/signin/', 'get', website_views.signin_form, json_renderer),
         Rule('/forms/forgot_password/', 'get', website_views.forgot_password_form, json_renderer),
-        Rule('/forms/reset_password/', 'get', website_views.reset_password_form, json_renderer),
     ], prefix='/api/v1')
 
     ### Discovery ###
@@ -1109,6 +1148,15 @@ def make_url_map(app):
         ),
         Rule(
             [
+                '/api/v1/project/<pid>/files/<provider>/<path:path>/',
+                '/api/v1/project/<pid>/node/<nid>/files/<provider>/<path:path>/',
+            ],
+            'get',
+            addon_views.addon_view_or_download_file,
+            json_renderer
+        ),
+        Rule(
+            [
                 '/project/<pid>/files/deleted/<trashed_id>/',
                 '/project/<pid>/node/<nid>/files/deleted/<trashed_id>/',
             ],
@@ -1613,7 +1661,12 @@ def make_url_map(app):
             notification_views.configure_subscription,
             json_renderer,
         ),
-
+        Rule(
+            '/resetpassword/<verification_key>/',
+            'post',
+            auth_views.reset_password_post,
+            json_renderer,
+        ),
         Rule(
             [
                 '/project/<pid>/settings/addons/',

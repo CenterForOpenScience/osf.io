@@ -8,7 +8,11 @@ import furl
 from website import util as website_util  # noqa
 from website import settings as website_settings
 from framework.auth import Auth, User
+from api.base.authentication.drf import get_session_from_cookie
 from api.base.exceptions import Gone
+
+from framework.auth.oauth_scopes import ComposedScopes, normalize_scopes
+from framework.auth.cas import CasResponse
 
 # These values are copied from rest_framework.fields.BooleanField
 # BooleanField cannot be imported here without raising an
@@ -137,3 +141,19 @@ def default_node_permission_query(user):
 
 def extend_querystring_params(url, params):
     return furl.furl(url).add(args=params).url
+
+def has_admin_scope(request):
+    """ Helper function to determine if a request should be treated
+        as though it has the `osf.admin` scope. This includes both
+        tokened requests that do, and requests that are made via the
+        OSF (i.e. have an osf cookie)
+    """
+    cookie = request.COOKIES.get(website_settings.COOKIE_NAME)
+    if cookie:
+        return bool(get_session_from_cookie(cookie))
+
+    token = request.auth
+    if token is None or not isinstance(token, CasResponse):
+        return False
+
+    return set(ComposedScopes.ADMIN_LEVEL).issubset(normalize_scopes(token.attributes['accessTokenScope']))

@@ -39,7 +39,8 @@ class GuidDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     @staticmethod
     def should_resolve(request):
-        resolve = request.query_params.get('resolve')
+        query_params = getattr(request, 'query_params', request.GET)
+        resolve = query_params.get('resolve')
         return resolve is None or is_truthy(resolve)
 
     def get_serializer_class(self):
@@ -60,7 +61,8 @@ class GuidDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
         url = self.get_redirect_url(**kwargs)
         if url:
-            if self.request.query_params:
+            query_params = getattr(request, 'query_params', request.GET)
+            if query_params:
                 url = furl.furl(url).add(query_params=self.request.query_params).url
             return http.HttpResponseRedirect(url)
         raise NotFound

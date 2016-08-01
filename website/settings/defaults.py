@@ -25,6 +25,8 @@ ADDON_PATH = os.path.join(BASE_PATH, 'addons')
 STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = '/static'
 EMBER_FOLDER = os.path.join(STATIC_FOLDER, 'public', 'ember')
+PREPRINTS_FOLDER = os.path.join(STATIC_FOLDER, 'public', 'ember-preprints')
+
 ASSET_HASH_PATH = os.path.join(APP_PATH, 'webpack-assets.json')
 ROOT = os.path.join(BASE_PATH, '..')
 BCRYPT_LOG_ROUNDS = 12
@@ -53,9 +55,12 @@ PROXY_ADDRS = []
 
 # May set these to True in local.py for development
 DEV_MODE = False
-USE_EMBER = False
 DEBUG_MODE = False
 SECURE_MODE = not DEBUG_MODE  # Set secure cookie
+
+# Feature flags for ember applications. If True, flask will recognize ember-specific OSF routes.
+USE_EMBER = False
+USE_PREPRINTS = False
 
 PROTOCOL = 'https://' if SECURE_MODE else 'http://'
 DOMAIN = PROTOCOL + 'localhost:5000/'
@@ -254,9 +259,18 @@ PIWIK_HOST = None
 PIWIK_ADMIN_TOKEN = None
 PIWIK_SITE_ID = None
 
-KEEN_PROJECT_ID = None
-KEEN_WRITE_KEY = None
-KEEN_READ_KEY = None
+KEEN = {
+    'public': {
+        'project_id': None,
+        'master_key': 'changeme',
+        'write_key': '',
+    },
+    'private': {
+        'project_id': '',
+        'write_key': '',
+        'read_key': '',
+    },
+}
 
 SENTRY_DSN = None
 SENTRY_DSN_JS = None

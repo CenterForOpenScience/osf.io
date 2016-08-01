@@ -50,8 +50,14 @@ describe('registrationRetraction', () => {
                 server.restore();
             });
 
+            var onSubmitSuccessStub;
             beforeEach(() => {
                 vm = new registrationRetraction.ViewModel(submitUrl, registrationTitle);
+                onSubmitSuccessStub = sinon.stub(vm, 'onSubmitSuccess');
+            });
+
+            afterEach(() => {
+                onSubmitSuccessStub.restore();
             });
 
             it('non-matching registration title is invalid', () => {
@@ -97,18 +103,12 @@ describe('registrationRetraction', () => {
                     assert.notCalled(postSpy);
                 });
                 it('submits successfully with valid confirmation text', (done) => {
-                    var onSubmitSuccessStub;
-                    if (!vm.onSubmitSuccess.restore) {
-                        onSubmitSuccessStub = sinon.stub(vm, 'onSubmitSuccess');
-                    }
-
                     vm.confirmationText(truncatedTitle);
                     vm.submit().always(() => {
                         assert.equal(response.redirectUrl, redirectUrl);
                         assert.called(onSubmitSuccessStub);
                         assert.called(postSpy);
                         assert.notCalled(changeMessageSpy);
-                        onSubmitSuccessStub.restore();
                         done();
                     });
                 });

@@ -426,7 +426,9 @@ def project_reorder_components(node, **kwargs):
 def project_statistics(auth, node, **kwargs):
     if not (node.can_edit(auth) or node.is_public):
         raise HTTPError(http.FORBIDDEN)
-    return _view_project(node, auth, primary=True)
+    ret = _view_project(node, auth, primary=True)
+    ret['node']['keenio_read_key'] = node.keenio_read_key
+    return ret
 
 
 @must_be_valid_project
@@ -1089,18 +1091,23 @@ def _serialize_node_search(node):
     :return: Dictionary of node data
 
     """
-    title = node.title
+    data = {
+        'id': node._id,
+        'title': node.title,
+        'etal': len(node.visible_contributors) > 1,
+        'isRegistration': node.is_registration
+    }
     if node.is_registration:
-        title += ' (registration)'
+        data['title'] += ' (registration)'
+        data['dateRegistered'] = node.registered_date.isoformat()
+    else:
+        data['dateCreated'] = node.date_created.isoformat()
+        data['dateModified'] = node.date_modified.isoformat()
 
     first_author = node.visible_contributors[0]
+    data['firstAuthor'] = first_author.family_name or first_author.given_name or first_author.full_name
 
-    return {
-        'id': node._id,
-        'title': title,
-        'firstAuthor': first_author.family_name or first_author.given_name or first_author.full_name,
-        'etal': len(node.visible_contributors) > 1,
-    }
+    return data
 
 
 @must_be_logged_in

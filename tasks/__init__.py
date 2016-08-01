@@ -80,9 +80,9 @@ def server(ctx, host=None, port=5000, debug=True, live=False, gitlogs=False):
 
 
 @task
-def git_logs(ctx):
+def git_logs(ctx, branch=None):
     from scripts.meta import gatherer
-    gatherer.main()
+    gatherer.main(branch=branch)
 
 
 @task
@@ -594,7 +594,7 @@ def test_travis_varnish(ctx):
 
 @task
 def karma(ctx, single=False, sauce=False, browsers=None):
-    """Run JS tests with Karma. Requires Chrome to be installed."""
+    """Run JS tests with Karma. Requires PhantomJS to be installed."""
     karma_bin = os.path.join(
         HERE, 'node_modules', 'karma', 'bin', 'karma'
     )

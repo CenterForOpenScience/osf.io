@@ -49,6 +49,7 @@
                         <button class="btn btn-default disabled">Public</button>
                     % endif
                     </div>
+
                     <!-- ko if: canBeOrganized -->
                     <div class="btn-group" style="display: none;" data-bind="visible: true">
 
@@ -92,6 +93,9 @@
                                 <i class="fa fa-plus"></i> Award
                             </button>
                         </div>
+                    % endif
+                    % if node["is_public"]:
+                    <div class="btn-group" id="shareButtonsPopover"></div>
                     % endif
                 </div>
             </div>
@@ -466,7 +470,13 @@ ${parent.javascript_bottom()}
             tags: ${ node['tags'] | sjson, n },
             institutions: ${node['institutions'] | sjson, n},
         },
-        nodeCategories: ${ node_categories | sjson, n }
+        nodeCategories: ${ node_categories | sjson, n },
+        analyticsMeta: {
+            pageMeta: {
+                title: 'Home',
+                public: true,
+            },
+        },
     });
 </script>
 
