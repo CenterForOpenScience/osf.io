@@ -43,9 +43,7 @@ var ProjectMailingList = require('../mailingListTreebeard.js');
 var mailingListSettingsURL = ctx.node.urls.api + 'mailing_list/';  // TODO [OSF-6400]: Update to V2
 var $mailingListMsg = $('#configureMailingListMessage');
 
-console.log('here')
 if ($('#mailingListGrid').length) {
-    console.log('here')
     $.ajax({
         url: mailingListSettingsURL,
         type: 'GET',

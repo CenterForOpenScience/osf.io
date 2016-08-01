@@ -63,7 +63,6 @@ function ProjectNotifications(data) {
         },
         resolveRows: function notificationResolveRows(item){
             var options = [];
-            console.log(item)
             if (item.data.event !== undefined) {
                 options = [
                     m('option', {value: 'none', selected : item.data.event.notificationType === 'none' ? 'selected': ''}, 'Never'),
