@@ -21,7 +21,7 @@ from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse,
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField,
                                   HideIfRegistration, RestrictedDictSerializer,
-                                  JSONAPIRelationshipSerializer, relationship_diff, Link)
+                                  JSONAPIRelationshipSerializer, relationship_diff, )
 from api.base.exceptions import (InvalidModelValueError, RelationshipPostMakesNoChanges, Conflict,
                                  EndpointNotImplementedError)
 from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
@@ -60,8 +60,7 @@ class NodeSerializer(JSONAPISerializer):
         'date_modified',
         'root',
         'parent',
-        'contributors',
-        'preprint_file'
+        'contributors'
     ])
 
     non_anonymized_fields = [
@@ -84,8 +83,7 @@ class NodeSerializer(JSONAPISerializer):
         'parent',
         'root',
         'logs',
-        'wikis',
-        'preprint_file',
+        'wikis'
     ]
 
     id = IDField(source='_id', read_only=True)
@@ -126,13 +124,6 @@ class NodeSerializer(JSONAPISerializer):
 
     links = LinksField({'html': 'get_absolute_html_url'})
     # TODO: When we have osf_permissions.ADMIN permissions, make this writable for admins
-
-    preprint_file = LinksField({
-        'info': Link('files:file-detail', kwargs={'file_id': '<_id>'}),
-    })
-    preprint_subjects = ser.CharField(required=False)
-    preprint_created = ser.DateTimeField(read_only=True)
-
 
     license = RelationshipField(
         related_view='licenses:license-detail',
