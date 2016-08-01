@@ -761,7 +761,7 @@ class NodeUpdateError(Exception):
 
 #TODO: change subjects to match taxonomy
 def validate_subjects(value):
-    if value not in ["biology", "chemistry", "computer science"]:
+    if value not in ['biology', 'chemistry', 'computer science']:
         raise ValidationValueError('Not a valid subject')
     return True
 
