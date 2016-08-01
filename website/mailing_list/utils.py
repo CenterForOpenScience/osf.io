@@ -59,8 +59,17 @@ class MailingListError():
     pass
 
 def with_list_proxy(fn):
-    @queued_tast
-    @app.task(name=fn.__name__)
+    @queued_task
+    @app.task(
+        name=fn.__name__,
+        retry=True,
+        retry_policy={
+            'max_retries': 0,
+            'interval_start': 0,
+            'interval_step': 10.0,
+            'interval_max': 60.0
+        }
+    )
     def get_proxy(self, *args, **kwargs):
         try:
             kwargs['list_proxy'] = mc.get_list(
@@ -89,17 +98,7 @@ def with_list_proxy(fn):
         if kwargs.get('list_proxy'):
             fn(*args, **kwargs)
         else:
-            get_proxy.apply_async(
-                args=args,
-                kwargs=kwargs,
-                retry=True,
-                retry_policy={
-                    'max_retries': 0,
-                    'interval_start': 0,
-                    'interval_step': 10.0,
-                    'interval_max': 60.0
-                }
-            )
+            get_proxy(*args, **kwargs)
     return _fn
 
 # If we call this, we need a mailing list. If it doesn't exist yet, we should
