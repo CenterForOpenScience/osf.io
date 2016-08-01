@@ -69,6 +69,7 @@ from website.project.sanctions import (
     RegistrationApproval,
     Retraction,
 )
+from website.files.models import StoredFileNode
 
 from keen import scoped_keys
 
@@ -557,7 +558,10 @@ class NodeLog(StoredObject):
     AFFILIATED_INSTITUTION_ADDED = 'affiliated_institution_added'
     AFFILIATED_INSTITUTION_REMOVED = 'affiliated_institution_removed'
 
-    actions = [CHECKED_IN, CHECKED_OUT, FILE_TAG_REMOVED, FILE_TAG_ADDED, CREATED_FROM, PROJECT_CREATED, PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED, POINTER_CREATED, POINTER_FORKED, POINTER_REMOVED, WIKI_UPDATED, WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC, MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED, PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED, ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, MADE_CONTRIBUTOR_VISIBLE, MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED, RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED, PREREG_REGISTRATION_INITIATED, CITATION_ADDED, CITATION_EDITED, CITATION_REMOVED, AFFILIATED_INSTITUTION_ADDED, AFFILIATED_INSTITUTION_REMOVED]
+    PREPRINT_INITIATED = 'preprint_initiated'
+    PREPRINT_UPDATED = 'preprint_file_updated'
+
+    actions = [CHECKED_IN, CHECKED_OUT, FILE_TAG_REMOVED, FILE_TAG_ADDED, CREATED_FROM, PROJECT_CREATED, PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED, POINTER_CREATED, POINTER_FORKED, POINTER_REMOVED, WIKI_UPDATED, WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC, MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED, PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED, ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, MADE_CONTRIBUTOR_VISIBLE, MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED, RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED, PREREG_REGISTRATION_INITIATED, CITATION_ADDED, CITATION_EDITED, CITATION_REMOVED, AFFILIATED_INSTITUTION_ADDED, AFFILIATED_INSTITUTION_REMOVED, PREPRINT_INITIATED, PREPRINT_UPDATED]
 
     def __repr__(self):
         return ('<NodeLog({self.action!r}, params={self.params!r}) '
@@ -755,6 +759,11 @@ class NodeUpdateError(Exception):
         self.key = key
         self.reason = reason
 
+#TODO: change subjects to match taxonomy
+def validate_subjects(value):
+    if value not in ['biology', 'chemistry', 'computer science']:
+        raise ValidationValueError('Not a valid subject')
+    return True
 
 class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
@@ -830,6 +839,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         'is_retracted',
         'node_license',
         '_affiliated_institutions',
+        'preprint_file',
     }
 
     # Fields that are writable by Node.update
@@ -868,6 +878,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     is_registration = fields.BooleanField(default=False, index=True)
     registered_date = fields.DateTimeField(index=True)
     registered_user = fields.ForeignField('user')
+
+    # Preprint fields
+    preprint_file = fields.ForeignField('StoredFileNode')
+    preprint_created = fields.DateTimeField()
+    preprint_subjects = fields.StringField(list=True, validate=validate_subjects)
+    _is_preprint_orphan = fields.BooleanField(default=False)
 
     # A list of all MetaSchemas for which this Node has registered_meta
     registered_schema = fields.ForeignField('metaschema', list=True, default=list)
@@ -1150,6 +1166,21 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             return False
         else:
             return True
+
+    @property
+    def is_preprint(self):
+        if self.preprint_file.node == self:
+            return True
+        else:
+            self.preprint_file = None
+            self._is_preprint_orphan = True
+            return False
+
+    @property
+    def is_preprint_orphan(self):
+        if not self.is_preprint() & self._is_preprint_orphan:
+            return True
+        return False
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
@@ -1495,6 +1526,41 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if save:
             self.save()
 
+    def set_preprint_file(self, file_id, auth, save=False):
+        if not self.has_permission(auth.user, ADMIN):
+            raise PermissionsError('Only admins can change a preprint\'s primary file.')
+        try:
+            new_preprint_file = StoredFileNode.find_one(
+                Q('_id', 'eq', file_id)
+            )
+        except NoResultsFound:
+            raise NodeStateError('Trying to set a preprint primary file that does not exist.')
+
+        # there is no preprint file yet! This is the first time!
+        if not self.preprint_file:
+            self.preprint_file = new_preprint_file
+            self.preprint_created = datetime.datetime.utcnow()
+
+            self.add_log(action=NodeLog.PREPRINT_INITIATED, params={}, auth=auth, save=False)
+        else:
+            # if there was one, check if it's a new file
+            if new_preprint_file != self.preprint_file:
+                self.preprint_file = new_preprint_file
+                self.add_log(
+                    action=NodeLog.PREPRINT_UPDATED,
+                    params={},
+                    auth=auth,
+                    save=False,
+                )
+        if not self.is_public:
+            self.set_privacy(
+                Node.PUBLIC,
+                auth=None,
+                log=True
+            )
+        if save:
+            self.save()
+
     def generate_keenio_read_key(self):
         return scoped_keys.encrypt(settings.KEEN['public']['master_key'], options={
             'filters': [{
@@ -1568,6 +1634,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                     value.get('id'),
                     value.get('year'),
                     value.get('copyright_holders'),
+                    auth,
+                    save=save
+                )
+            elif key == 'update_preprint':
+                self.set_preprint_file(
+                    value.get('id'),
                     auth,
                     save=save
                 )
