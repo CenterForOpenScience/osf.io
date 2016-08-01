@@ -29,6 +29,7 @@ class CoreScopes(object):
 
     USERS_READ = 'users_read'
     USERS_WRITE = 'users_write'
+    USERS_CREATE = 'users_create'
 
     USER_ADDON_READ = 'users.addon_read'
 
@@ -110,6 +111,7 @@ class ComposedScopes(object):
     # Users collection
     USERS_READ = (CoreScopes.USERS_READ, CoreScopes.ALWAYS_PUBLIC, )
     USERS_WRITE = USERS_READ + (CoreScopes.USERS_WRITE,)
+    USERS_CREATE = USERS_READ + (CoreScopes.USERS_CREATE, )
 
     # Applications collection
     APPLICATIONS_READ = (CoreScopes.APPLICATIONS_READ, CoreScopes.ALWAYS_PUBLIC, )
@@ -169,7 +171,7 @@ class ComposedScopes(object):
     FULL_WRITE = FULL_READ + NODE_ALL_WRITE + USERS_WRITE + ORGANIZER_WRITE + DRAFT_WRITE
 
     # Admin permissions- includes functionality not intended for third-party use
-    ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE + TOKENS_WRITE + COMMENT_REPORTS_WRITE + \
+    ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE + TOKENS_WRITE + COMMENT_REPORTS_WRITE + USERS_CREATE +\
                     (CoreScopes.USER_ADDON_READ, CoreScopes.NODE_ADDON_READ, CoreScopes.NODE_ADDON_WRITE, )
 
 # List of all publicly documented scopes, mapped to composed scopes defined above.
@@ -184,14 +186,14 @@ public_scopes = {
                             description='View and edit all information associated with this account, including for '
                                         'private projects.',
                             is_public=True),
+    'osf.users.profile_read': scope(parts_=frozenset(ComposedScopes.USERS_READ),
+                                description='Read your profile data',
+                                is_public=True),
 }
 
 if settings.DEV_MODE:
     public_scopes.update({
-        'osf.users.all_read': scope(parts_=frozenset(ComposedScopes.USERS_READ),
-                                    description='Read your profile data',
-                                    is_public=True),
-        'osf.users.all_write': scope(parts_=frozenset(ComposedScopes.USERS_WRITE),
+        'osf.users.profile_write': scope(parts_=frozenset(ComposedScopes.USERS_WRITE),
                                      description='Read and edit your profile data',
                                      is_public=True),
 
@@ -225,16 +227,21 @@ if settings.DEV_MODE:
                                                     'registrations.',
                                         is_public=True),  # TODO: Language: Does registrations endpoint allow creation of registrations? Is that planned?
 
-        'osf.nodes.all_read': scope(parts_=frozenset(ComposedScopes.NODE_ALL_READ),
+        'osf.nodes.full_read': scope(parts_=frozenset(ComposedScopes.NODE_ALL_READ),
                                     description='View all metadata, files, and access rights associated with all public '
                                                 'and private projects accessible to this account.',
                                     is_public=True),
-        'osf.nodes.all_write': scope(parts_=frozenset(ComposedScopes.NODE_ALL_WRITE),
+        'osf.nodes.full_write': scope(parts_=frozenset(ComposedScopes.NODE_ALL_WRITE),
                                      description='View and edit all metadata, files, and access rights associated with '
                                                  'all public and private projects accessible to this account.',
                                      is_public=True),
 
         # Undocumented scopes that can not be requested by third parties (per CAS restriction)
+        'osf.users.create': scope(parts_=frozenset(ComposedScopes.USERS_CREATE),
+                           description='This permission should only be granted to OSF collaborators. Allows a site to '
+                                       'programmatically create new users with this account.',
+                           is_public=False),
+
         'osf.admin': scope(parts_=frozenset(ComposedScopes.ADMIN_LEVEL),
                            description='This permission should only be granted to OSF administrators. Allows a site to '
                                        'create, read, edit, and delete all information associated with this account.',

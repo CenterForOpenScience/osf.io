@@ -23,8 +23,9 @@ from api.registrations.serializers import RegistrationSerializer
 from api.base.utils import default_node_list_query, default_node_permission_query
 from api.addons.views import AddonSettingsMixin
 
-from .serializers import UserSerializer, UserAddonSettingsSerializer, UserDetailSerializer, UserInstitutionsRelationshipSerializer
-from .permissions import ReadOnlyOrCurrentUser, ReadOnlyOrCurrentUserRelationship, CurrentUser
+from api.users.serializers import (UserSerializer, UserCreateSerializer,
+    UserAddonSettingsSerializer, UserDetailSerializer, UserInstitutionsRelationshipSerializer)
+from api.users.permissions import ReadOnlyOrCurrentUser, ReadOnlyOrCurrentUserRelationship, CurrentUser
 
 
 class UserMixin(object):
@@ -52,8 +53,8 @@ class UserMixin(object):
         return obj
 
 
-class UserList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
-    """List of users registered on the OSF. *Read-only*.
+class UserList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
+    """List of users registered on the OSF.
 
     Paginated list of users ordered by the date they registered.  Each resource contains the full representation of the
     user, meaning additional requests to an individual user's detail view are not necessary.
@@ -102,11 +103,12 @@ class UserList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.RequiresScopedRequestOrReadOnly,
         base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.USERS_READ]
-    required_write_scopes = [CoreScopes.USERS_WRITE]
+    required_write_scopes = [CoreScopes.USERS_CREATE]
 
     serializer_class = UserSerializer
 
@@ -122,11 +124,18 @@ class UserList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
             Q('date_disabled', 'eq', None)
         )
 
-    # overrides ListAPIView
+    # overrides ListCreateAPIView
     def get_queryset(self):
         # TODO: sort
         query = self.get_query_from_request()
         return User.find(query)
+
+    # overrides ListCreateAPIView
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return UserCreateSerializer
+        else:
+            return UserSerializer
 
 
 class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
@@ -437,6 +446,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
         date_created                    iso8601 timestamp  timestamp that the node was created
         date_modified                   iso8601 timestamp  timestamp when the node was last updated
         tags                            array of strings   list of tags that describe the node
+        current_user_can_comment        boolean            Whether the current user is allowed to post comments
         current_user_permissions        array of strings   list of strings representing the permissions for the current user on this node
         registration                    boolean            is this a registration? (always false - may be deprecated in future versions)
         fork                            boolean            is this node a fork of another node?
@@ -544,6 +554,7 @@ class UserRegistrations(UserNodes):
         date_created                    iso8601 timestamp  timestamp that the node was created
         date_modified                   iso8601 timestamp  timestamp when the node was last updated
         tags                            array of strings   list of tags that describe the registered node
+        current_user_can_comment        boolean            Whether the current user is allowed to post comments
         current_user_permissions        array of strings   list of strings representing the permissions for the current user on this node
         fork                            boolean            is this project a fork?
         registration                    boolean            has this project been registered? (always true - may be deprecated in future versions)

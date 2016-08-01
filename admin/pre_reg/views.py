@@ -24,6 +24,8 @@ from website.exceptions import NodeStateError
 from website.files.models import FileNode
 from website.project.model import DraftRegistration
 from website.prereg.utils import get_prereg_schema
+from website.files.models import OsfStorageFileNode
+from website.project.metadata.schemas import from_json
 
 from admin.base.utils import PreregAdmin
 
@@ -93,7 +95,10 @@ class DraftDownloadListView(DraftListView):
         for draft in queryset:
             draft.pop('registration_schema')
             draft.update({'initiator': draft['initiator']['username']})
-            writer.writerow(draft)
+            writer.writerow(
+                {k: v.encode('utf8') if isinstance(v, unicode) else v
+                 for k, v in draft.items()}
+            )
         return response
 
 
@@ -102,15 +107,21 @@ class DraftDetailView(PreregAdmin, DetailView):
     context_object_name = 'draft'
 
     def get_object(self, queryset=None):
+        draft = DraftRegistration.load(self.kwargs.get('draft_pk'))
+        self.checkout_files(draft)
         try:
-            return serializers.serialize_draft_registration(
-                DraftRegistration.load(self.kwargs.get('draft_pk'))
-            )
+            return serializers.serialize_draft_registration(draft)
         except AttributeError:
             raise Http404('{} with id "{}" not found.'.format(
                 self.context_object_name.title(),
                 self.kwargs.get('draft_pk')
             ))
+
+    def checkout_files(self, draft):
+        prereg_user = self.request.user.osf_user
+        for item in get_metadata_files(draft):
+            item.checkout = prereg_user
+            item.save()
 
 
 class DraftFormView(PreregAdmin, FormView):
@@ -159,6 +170,7 @@ class DraftFormView(PreregAdmin, FormView):
                     self.draft.reject(osf_user)
             except PermissionsError as e:
                 return permission_denied(self.request, e)
+            self.checkin_files(self.draft)
             update_admin_log(self.request.user.id, self.kwargs.get('draft_pk'),
                              'Draft Registration', message, flag)
         admin_settings = form.cleaned_data
@@ -168,6 +180,11 @@ class DraftFormView(PreregAdmin, FormView):
         self.draft.flags = admin_settings
         self.draft.save()
         return super(DraftFormView, self).form_valid(form)
+
+    def checkin_files(self, draft):
+        for item in get_metadata_files(draft):
+            item.checkout = None
+            item.save()
 
     def get_success_url(self):
         return '{}?page={}'.format(reverse('pre_reg:prereg'),
@@ -209,3 +226,42 @@ def view_file(request, node_id, provider, file_id):
     fp = FileNode.load(file_id)
     wb_url = fp.generate_waterbutler_url()
     return redirect(wb_url)
+
+
+def get_metadata_files(draft):
+    for q in get_file_questions('prereg-prize.json'):
+        for file_info in draft.registration_metadata[q]['value']['uploader']['extra']:
+            if file_info['data']['provider'] != 'osfstorage':
+                raise Http404('File does not exist in OSFStorage: {} {}'.format(
+                    q, file_info
+                ))
+            file_guid = file_info['data'].get('fileId')
+            if file_guid is None:
+                raise Http404('File in {} does not have a guid.'.format(q))
+            item = OsfStorageFileNode.load(file_guid)
+            if item is None:
+                raise Http404('File with guid "{}" in {} does not exist'.format(
+                    file_guid, q
+                ))
+            yield item
+
+
+def get_file_questions(json_file):
+    uploader = {
+        'id': 'uploader',
+        'type': 'osf-upload',
+        'format': 'osf-upload-toggle'
+    }
+    questions = []
+    schema = from_json(json_file)
+    for item in schema['pages']:
+        for question in item['questions']:
+            if question['type'] == 'osf-upload':
+                questions.append(question['qid'])
+                continue
+            properties = question.get('properties')
+            if properties is None:
+                continue
+            if uploader in properties:
+                questions.append(question['qid'])
+    return questions

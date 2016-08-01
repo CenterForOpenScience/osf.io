@@ -59,8 +59,8 @@ def main(delta, Provider, rate_limit, dry_run):
             if allowance < 1:
                 try: 
                     time.sleep(rate_limit[1] - (time.time() - last_call))
-                except ValueError:
-                    pass  # ValueError indicates a negative sleep time
+                except (ValueError, IOError):
+                    pass  # Value/IOError indicates negative sleep time in Py 3.5/2.7, respectively
                 allowance = rate_limit[0]
 
             allowance -= 1

@@ -2,6 +2,7 @@ import blinker
 
 signals = blinker.Namespace()
 comment_added = signals.signal('comment-added')
+mention_added = signals.signal('mention-added')
 contributor_added = signals.signal('contributor-added')
 project_created = signals.signal('project-created')
 contributor_removed = signals.signal('contributor-removed')

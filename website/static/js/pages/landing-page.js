@@ -1,8 +1,13 @@
-var SignUp = require('js/signUp');
-new SignUp('#signUpScope', window.contextVars.registerUrl);
+var $ = require('jquery');
 var TweenLite = require('TweenLite');
 require('EasePack');
 require('vendor/youtube');
+
+var passwordForms = require('js/passwordForms');
+
+$(document).ready(function() {
+    new passwordForms.SignUp('#signUpScope');
+});
 
 // ANIMATION FOR FRONT PAGE
 $( document ).ready(function() {

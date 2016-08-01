@@ -48,7 +48,7 @@
         </div>
     %endif
     %if campaign != "institution" or not enable_institutions:
-        <div id="signUpScope" class="col-sm-6 col-sm-offset-3 signup-form p-b-md m-b-m bg-color-light">
+        <div id="signUpScope" class="col-sm-8 col-sm-offset-2 col-md-6 col-md-offset-3 signup-form p-b-md m-b-m bg-color-light">
             <form data-bind="submit: submit" class="form-horizontal">
                 <h3 class="m-b-lg"> Create a free account </h3>
                 <div
@@ -142,19 +142,37 @@
                                 id="inputPassword3"
                                 placeholder="Password"
                                 data-bind="
+                            textInput: typedPassword,
                             value: password,
                             disable: submitted(),
                             event: {
                                 blur: trim.bind($data, password)
                             }"
                         >
-                        <p class="help-block" data-bind="validationMessage: password" style="display: none;"></p>
+                        <div class="row" data-bind="visible: typedPassword().length > 0">
+                            <div class="col-xs-8">
+                                <div class="progress create-password">
+                                    <div class="progress-bar progress-bar-sm" role="progressbar" data-bind="attr: passwordComplexityInfo().attr"></div>
+                                </div>
+                            </div>
+                            <div class="col-xs-4 f-w-xl">
+                                <!-- ko if: passwordFeedback() -->
+                                <p id="front-password-info" data-bind="text: passwordComplexityInfo().text, attr: passwordComplexityInfo().text_attr"></p>
+                                <!-- /ko -->
+                            </div>
+                        </div>
+
+                        <div>
+                            <!-- ko if: passwordFeedback() -->
+                            <p class="help-block osf-box-lt p-xs" data-bind="validationMessage: password" style="display: none;"></p>
+                            <p class="help-block osf-box-lt " data-bind="css : { 'p-xs': passwordFeedback().warning }, visible: typedPassword().length > 0, text: passwordFeedback().warning"></p>
+                            <!-- /ko -->
+                        </div>
                     </div>
-                </div>
-                <!-- Flashed Messages -->
-                <div class="help-block" >
-                    <p class="m-l-md" data-bind="html: flashMessage, attr: {class: flashMessageClass}"></p>
-                </div>
+                    <!-- Flashed Messages -->
+                    <div class="help-block osf-box-lt" >
+                        <p data-bind="html: message, attr: {class: messageClass}" class=""></p>
+                    </div>
                 </br>
                 <div class="form-group">
                     <div class="col-md-8 col-sm-12" style="padding-left: 25px">

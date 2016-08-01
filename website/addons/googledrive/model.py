@@ -104,8 +104,9 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def get_folders(self, **kwargs):
         node = self.owner
 
-        path = kwargs.get('path', '')
-        folder_id = kwargs.get('folder_id', 'root')
+        #  Defaults exist when called by the API, but are `None`
+        path = kwargs.get('path') or ''
+        folder_id = kwargs.get('folder_id') or 'root'
 
         try:
             access_token = self.fetch_access_token()
@@ -113,7 +114,6 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             raise HTTPError(403)
 
         client = GoogleDriveClient(access_token)
-
         if folder_id == 'root':
             about = client.about()
 
