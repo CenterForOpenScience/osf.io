@@ -10,7 +10,7 @@ from website.notifications import model
 from website.notifications.exceptions import InvalidSubscriptionError
 from website.notifications.model import NotificationSubscription
 from website.project import signals
-from website.settings import PROJECT_MAILING_ENABLED
+#from website.settings import PROJECT_MAILING_ENABLED
 
 from framework.celery_tasks import app
 
@@ -242,7 +242,6 @@ def format_data(user, node_ids):
             continue
 
         children = []
-        
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node
         if can_read:

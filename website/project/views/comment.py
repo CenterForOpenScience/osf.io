@@ -44,7 +44,6 @@ def update_file_guid_referent(self, node, event_type, payload, user=None):
             if source_node != destination_node and Comment.find(Q('root_target', 'eq', guid)).count() != 0:
                 update_comment_node(guid, source_node, destination_node)
 
-
             if source['provider'] != destination['provider'] or source['provider'] != 'osfstorage':
                 old_file = FileNode.load(obj.referent._id)
                 obj.referent = create_new_file(obj, source, destination, destination_node)

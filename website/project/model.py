@@ -1620,10 +1620,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     def save(self, *args, **kwargs):
         update_piwik = kwargs.pop('update_piwik', True)
         self.adjust_permissions()
-        
         mailing_list_data_is_stale = False
         first_save = not self._is_loaded
-
         if first_save and self.is_bookmark_collection:
             existing_bookmark_collections = Node.find(
                 Q('is_bookmark_collection', 'eq', True) & Q('contributors', 'eq', self.creator._id)
@@ -1666,7 +1664,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 self.parent.save()
                 log_params.update({'parent_node': self.parent._primary_key})
 
-            
             # Add log with appropriate fields
             self.add_log(
                 log_action,
@@ -1680,9 +1677,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
             project_signals.project_created.send(self)
 
-        #if True in list(filter(lambda field: , saved_fields))
-
-
         if set(saved_fields) & {'title', 'desctription', 'contributors', 'is_public'}:
             mailing_list_data_is_stale = True
 
@@ -1693,8 +1687,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 list_description=self.description,
                 contributors=self.contributors,
                 public=self.is_public
-                )
-        
+            )
 
         # Only update Solr if at least one stored field has changed, and if
         # public or privacy setting has changed

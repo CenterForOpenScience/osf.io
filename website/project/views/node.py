@@ -40,7 +40,7 @@ from website import settings
 from website.views import _render_nodes, find_bookmark_collection, validate_page_num
 from website.profile import utils
 from website.project.licenses import serialize_node_license_record
-from website.mailing_list.utils import get_unsubscribes
+#from website.mailing_list.utils import get_unsubscribes
 from website.util.sanitize import strip_html
 from website.util import rapply
 
