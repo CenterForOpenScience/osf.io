@@ -9,7 +9,7 @@ from website.util import web_url_for
 CAMPAIGNS = ImmutableDict({
     'prereg': {
         'system_tag': 'prereg_challenge_campaign',
-        'redirect_url': lambda: web_url_for('prereg_landing_page'),
+        'redirect_url': lambda: web_url_for('prereg_landing_page', _absolute=True),
         'confirmation_email_template': mails.CONFIRM_EMAIL_PREREG,
     },
     'institution': {

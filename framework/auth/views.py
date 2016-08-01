@@ -199,87 +199,101 @@ def forgot_password_post(auth, **kwargs):
 
 
 @collect_auth
+def auth_register(auth, **kwargs):
+    """
+    View for sign-up page.
+    HTTP Method: GET
+
+    :param kwargs: campaign
+    :param kwargs: next
+    :param kwargs: logout
+    """
+
+    data = {}
+    campaign = request.args.get('campaign')
+    service_url = request.args.get('next')
+    log_out = request.args.get('logout')
+    must_login_warning = False
+
+    # If user is already logged in, redirect to dashboard page.
+    if not service_url:
+        service_url = web_url_for('dashboard', _absolute=True)
+
+    # Only allow redirects which are relative root or full domain, disallows external redirects.
+    if not (service_url[0] == '/' or
+            service_url.startswith(settings.DOMAIN) or
+            service_url.startswith(settings.CAS_SERVER_URL) or
+            service_url.startswith(settings.MFR_SERVER_URL)):
+        raise HTTPError(http.InvalidURL)
+
+    # Campaign
+    if campaign and campaign in campaigns.CAMPAIGNS:
+        # `GET /register?campaign=prereg`,
+        if campaign != 'institution':
+            service_url = campaigns.campaign_url_for(campaign)
+            data['campaign'] = campaign
+            must_login_warning = True
+        # `GET /register?campaign=institution`, redirect to CAS institution login with `dashboard` as target service
+        else:
+            return redirect(cas.get_login_url(service_url, campaign='institution'))
+
+    # Handle different auth situations for website.project.views.claim_user_register()
+    if auth.logged_in:
+        if log_out:
+            return auth_logout(redirect_url=request.url)
+        return redirect(service_url)
+    if log_out:
+        must_login_warning = True
+
+    if must_login_warning:
+        status.push_status_message(language.MUST_LOGIN, trust=False)
+
+    data['non_institution_login_url'] = cas.get_login_url(service_url)
+    data['institution_login_url'] = cas.get_login_url(service_url, campaign='institution')
+
+    return data, http.OK
+
+
+@collect_auth
 def auth_login(auth, **kwargs):
     """
     This view serves as the entry point for OSF login and campaign login.
     HTTP Method: GET
 
-        GET '/login/' without any query parameter:
-            redirect to CAS login page with dashboard as target service
+    There are four possible (url, parameter) options:
 
-        GET '/login/?logout=true
-            log user out and redirect to CAS login page with redirect_url or next_url as target service
+        `GET /login` without any query parameter:
+            redirect to CAS login page with `dashboard` as target service
 
-        GET '/login/?campaign=instituion:
-            if user is logged in, redirect to 'dashboard'
-            show institution login
+        `GET /login?campaign=prereg`:
+            if user is logged in, redirect to `/prereg`
+            else, redirect to `/register?campaign=prereg`
 
-        GET '/login/?campaign=prereg:
-            if user is logged in, redirect to prereg home page
-            else show sign up page and notify user to sign in, set next to prereg home page
-
-        GET '/login/?next=next_url:
-            if user is logged in, redirect to next_url
-            else redirect to CAS login page with next_url as target service
+        `GET /login?campaign=institution`:
+            redirect to CAS institution login with `dashboard` as target service
     """
 
     campaign = request.args.get('campaign')
     next_url = request.args.get('next')
     log_out = request.args.get('logout')
-    must_login_warning = True
 
+    # `GET /login` without campaign and target service
     if not campaign and not next_url and not log_out:
-        if auth.logged_in:
-            return redirect(web_url_for('dashboard'))
-        return redirect(cas.get_login_url(web_url_for('dashboard', _absolute=True)))
+        return redirect(web_url_for('dashboard'))
 
-    if campaign:
-        next_url = campaigns.campaign_url_for(campaign)
-
-    if not next_url:
-        next_url = request.args.get('redirect_url')
-        must_login_warning = False
-
-    if next_url:
-        # Only allow redirects which are relative root or full domain, disallows external redirects.
-        if not (next_url[0] == '/'
-                or next_url.startswith(settings.DOMAIN)
-                or next_url.startswith(settings.CAS_SERVER_URL)
-                or next_url.startswith(settings.MFR_SERVER_URL)):
-            raise HTTPError(http.InvalidURL)
-
-    if auth.logged_in:
-        if not log_out:
-            if next_url:
-                return redirect(next_url)
-            return redirect('dashboard')
-        # redirect user to CAS for logout, return here w/o authentication
-        return auth_logout(redirect_url=request.url)
-
-    status_message = request.args.get('status', '')
-    if status_message == 'expired':
-        status.push_status_message('The private link you used is expired.', trust=False)
-        status.push_status_message('The private link you used is expired.  Please <a href="/settings/account/">'
-                                   'resend email.</a>', trust=False)
-
-    if next_url and must_login_warning:
-        status.push_status_message(language.MUST_LOGIN, trust=False)
-
-    # set login_url to form action, upon successful authentication specifically w/o logout=True,
-    # allows for next to be followed or a redirect to the dashboard.
-    redirect_url = web_url_for('auth_login', next=next_url, _absolute=True)
-
-    data = {}
     if campaign and campaign in campaigns.CAMPAIGNS:
-        if (campaign == 'institution' and settings.ENABLE_INSTITUTIONS) or campaign != 'institution':
-            data['campaign'] = campaign
-    data['login_url'] = cas.get_login_url(redirect_url)
-    data['institution_redirect'] = cas.get_institution_target(redirect_url)
-    data['redirect_url'] = next_url
-    data['sign_up'] = request.args.get('sign_up', False)
-    data['existing_user'] = request.args.get('existing_user', None)
+        # `Get /login?campaign=institution`, go to CAS institution login with `dashboard` as service url
+        if campaign == 'institution':
+            return redirect(cas.get_login_url(web_url_for('dashboard', _absolute=True), campaign='institution'))
+        # `Get /login?campaign=prereg`,
+        if campaign == 'prereg':
+            # if logged in, go to `/prereg` page
+            if auth.logged_in:
+                return redirect(campaigns.campaign_url_for(campaign))
+            # if not logged in, go to `/register?campaign=prereg`
+            return redirect(web_url_for('auth_register', campaign='prereg'))
 
-    return data, http.OK
+    return {}, http.OK
 
 
 def auth_logout(redirect_url=None, **kwargs):
@@ -510,23 +524,6 @@ def send_confirm_email(user, email):
         email=email,
         merge_target=merge_target,
     )
-
-
-@collect_auth
-def auth_register(auth, **kwargs):
-    """
-    View for sign-up page.
-    HTTP Method: GET
-    """
-
-    # If user is already logged in, redirect to dashboard page.
-    if auth.logged_in:
-        return redirect(web_url_for('dashboard'))
-
-    data = {}
-    data['register'] = 'true'
-    data['institution_login'] = cas.get_login_url(web_url_for('dashboard', _absolute=True), campaign='institution')
-    return data, http.OK
 
 
 def register_user(**kwargs):
