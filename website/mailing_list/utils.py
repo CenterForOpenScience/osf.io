@@ -60,7 +60,7 @@ class MailingListError():
 
 def with_list_proxy(fn):
     @app.task(name=fn.__name__)
-    def get_proxy(*args, **kwargs):
+    def get_proxy(self, *args, **kwargs):
         try:
             kwargs['list_proxy'] = mc.get_list(
                 '{}@{}'.format(
@@ -69,7 +69,10 @@ def with_list_proxy(fn):
                 )
             )
         except:
-            kwargs['list_proxy'] = mail_domain.create_list(kwargs['list_mailbox'])
+            try:
+                kwargs['list_proxy'] = mail_domain.create_list(kwargs['list_mailbox'])
+            except:
+                raise self.retry()
         fn(*args, **kwargs)
 
     def _fn(*args, **kwargs):
@@ -85,15 +88,20 @@ def with_list_proxy(fn):
         if kwargs.get('list_proxy'):
             fn(*args, **kwargs)
         else:
-            get_proxy.apply_async(args=args, kwargs=kwargs, retry=True, retry_policy={
-                'max_retries': 0,
-                'interval_start': 0,
-                'interval_step': 10.0,
-                'interval_max': 60.0
-            })
+            get_proxy.apply_async(
+                args=args,
+                kwargs=kwargs,
+                retry=True,
+                retry_policy={
+                    'max_retries': 0,
+                    'interval_start': 0,
+                    'interval_step': 10.0,
+                    'interval_max': 60.0
+                }
+            )
     return _fn
 
-# If we call this, we need a mailing list. If it doesn't exist yet, we should 
+# If we call this, we need a mailing list. If it doesn't exist yet, we should
 # create it. If it does exist, we should ensure it is up to date.
 # This calls out to another server, so we should not be block.
 @with_list_proxy
@@ -129,7 +137,7 @@ def ensure_user_as_id(contributor):
 
 # Adds all of the emails associated with a user to a given mailing list.
 # This calls out to another server, so we should not block.
-# TODO: accept both user objects and guids as args.
+# @with_list_proxy does not block. 
 @with_list_proxy
 def add_contributor(list_mailbox=None, list_proxy=None, contributor=None):
     def not_subbed(email):
