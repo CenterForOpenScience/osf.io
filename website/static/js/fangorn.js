@@ -1280,7 +1280,7 @@ function _fangornTitleColumn(item, col) {
 
 function _fangornVersionColumn(item,col) {
     var tb = this;
-    if (item.kind !== 'folder'){
+    if (item.kind !== 'folder' && item.data.provider === 'osfstorage'){
         return _fangornTitleColumnHelper(tb,item,col,String(item.data.extra.version),'/?show=revision','fg-version-links');
     }
     return;
@@ -1384,16 +1384,16 @@ function _fangornResolveRows(item) {
         custom : _fangornTitleColumn
     });
     defaultColumns.push({
-        data: 'version',
-        filter: true,
-        sortInclude : false,
-        custom: _fangornVersionColumn
-    });
-    defaultColumns.push({
         data : 'size',  // Data field name
         sortInclude : false,
         filter : false,
         custom : function() {return item.data.size ? $osf.humanFileSize(item.data.size, true) : '';}
+    });
+    defaultColumns.push({
+        data: 'version',
+        filter: true,
+        sortInclude : false,
+        custom: _fangornVersionColumn
     });
     if (item.data.provider === 'osfstorage') {
         defaultColumns.push({
@@ -1434,14 +1434,14 @@ function _fangornColumnTitles () {
         sort : true,
         sortType : 'text'
     }, {
-        title: 'Version',
-        width : '10%',
-        sort : false
-    },{
         title : 'Size',
         width : '8%',
         sort : false
     }, {
+        title: 'Version',
+        width : '10%',
+        sort : false
+    },{
         title : 'Downloads',
         width : '8%',
         sort : false
