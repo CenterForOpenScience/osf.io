@@ -19,11 +19,11 @@ class PreprintSerializer(JSONAPISerializer):
         'root',
         'parent',
         'contributors',
-        'primary_file'
+        'preprint_subjects'
     ])
 
     title = ser.CharField(required=True)
-    subjects = ser.CharField(source='preprint_subjects')
+    preprint_subjects = JSONAPIListField()
     date_created = ser.DateTimeField(read_only=True)
     preprint_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
