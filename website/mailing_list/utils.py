@@ -1,16 +1,16 @@
-import re
+#import re
 
 from mailmanclient import Client
 
 from framework.auth import User
-from framework.auth.core import get_user
-from framework.auth.signals import user_confirmed
+#from framework.auth.core import get_user
+#from framework.auth.signals import user_confirmed
 from framework.celery_tasks import app
-from framework.celery_tasks.handlers import queued_task
-from framework.exceptions import HTTPError
+#from framework.celery_tasks.handlers import queued_task
+#from framework.exceptions import HTTPError
 
 from website import settings
-from website.project.signals import contributor_added, contributor_removed, node_deleted
+from website.project.signals import contributor_added, contributor_removed#, node_deleted
 from website.notifications.utils import to_subscription_key
 
 #from website.mailing_list.model import MailingListEventLog
@@ -25,23 +25,28 @@ mailman_api_url = 'http://{}:{}/{}'.format(
     settings.MAILMAN_API_VERSION
 )
 
-try:
-    mc = Client(
-        mailman_api_url,
-        settings.MAILMAN_API_USERNAME,
-        settings.MAILMAN_API_PASSWORD
-    )
-    mailing_list_server_is_reachable = True
-except:
-    mailing_list_server_is_reachable = False
+mc = None
+mail_domain = None
+mailing_list_server_is_reachable = False
 
-# Ensure the domain that the mailing lists we will be creating should be on exists.
-# If it does not, the create it.
-if settings.OSF_MAILING_LIST_DOMAIN in map(lambda x: x.mail_host, mc.domains):
-    mail_domain = mc.get_domain(settings.OSF_MAILING_LIST_DOMAIN)
-else:
-    mail_domain = mc.create_domain(settings.OSF_MAILING_LIST_DOMAIN)
+def init_mailman_client():
+    try:
+        mc = Client(
+            mailman_api_url,
+            settings.MAILMAN_API_USERNAME,
+            settings.MAILMAN_API_PASSWORD
+        )
+        mailing_list_server_is_reachable = True
+        # Ensure the domain that the mailing lists we will be creating should be on exists.
+        # If it does not, the create it.
+        if settings.OSF_MAILING_LIST_DOMAIN in map(lambda x: x.mail_host, mc.domains) :
+            mail_domain = mc.get_domain(settings.OSF_MAILING_LIST_DOMAIN)
+        else:
+            mail_domain = mc.create_domain(settings.OSF_MAILING_LIST_DOMAIN)
+    except:
+        mailing_list_server_is_reachable = False
 
+init_mailman_client()
 
 ###############################################################################
 # Define some tools to manipulate the mailman client
@@ -51,7 +56,6 @@ class MailingListError():
     pass
 
 def with_list_proxy(fn):
-
     @app.task(name=fn.__name__)
     def get_proxy(*args, **kwargs):
         try:
@@ -66,6 +70,10 @@ def with_list_proxy(fn):
         fn(*args, **kwargs)
 
     def _fn(*args, **kwargs):
+        if not (mc and mail_domain and mailing_list_server_is_reachable):
+            init_mailman_client()
+            if not mailing_list_server_is_reachable:
+                pass
         if kwargs.get('contributors'):
             kwargs['contributors'] = list(map(
                 lambda contributor: ensure_user_as_id(contributor),
@@ -85,7 +93,7 @@ def with_list_proxy(fn):
 # If we call this, we need a mailing list. If it doesn't exist yet, we should 
 # create it. If it does exist, we should ensure it is up to date.
 # This calls out to another server, so we should not be block.
-@with_list_proxy 
+@with_list_proxy
 def upsert_list(
     list_title=None,
     list_description=None,
@@ -149,7 +157,7 @@ def add_contributors(list_mailbox=None, contributors=None):
         lambda contributor: add_contributor(
             list_mailbox=list_mailbox,
             contributor=contributor
-        ), 
+        ),
         contributors
     )
 
@@ -175,7 +183,7 @@ def remove_contributors(list_proxy, contributors):
         lambda contributor: remove_contributor(
             list_proxy=list_proxy,
             contributor=contributor
-        ), 
+        ),
         contributors
     )
 

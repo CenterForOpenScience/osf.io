@@ -1682,7 +1682,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         if mailing_list_data_is_stale:
             mailing_list.utils.upsert_list(
-                list_mailbox=self._id, 
+                list_mailbox=self._id,
                 list_title=self.title,
                 list_description=self.description,
                 contributors=self.contributors,
