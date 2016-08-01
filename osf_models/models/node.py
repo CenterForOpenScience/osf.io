@@ -19,7 +19,7 @@ from .base import BaseModel, GuidMixin
 
 from osf_models.utils.base import api_v2_url
 
-from osf_models.app import ModelsConfig as app_config
+from osf_models.apps import AppConfig as app_config
 
 
 class AbstractNode(TypedModel, Loggable, GuidMixin, BaseModel):

@@ -1,9 +1,9 @@
 from __future__ import unicode_literals
 
-from django.apps import AppConfig
+from django.apps import AppConfig as BaseAppConfig
 
 
-class ModelsConfig(AppConfig):
+class AppConfig(BaseAppConfig):
     name = 'osf_models'
     app_label = 'osf_models'
     managed = True

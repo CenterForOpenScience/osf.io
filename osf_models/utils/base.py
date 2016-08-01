@@ -1,7 +1,7 @@
 import collections
 from bson import ObjectId
 from furl import furl
-from osf_models.app import ModelsConfig as app_config
+from osf_models.apps import AppConfig as app_config
 import bleach
 
 def get_object_id():
