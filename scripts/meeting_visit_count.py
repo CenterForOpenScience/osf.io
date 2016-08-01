@@ -37,8 +37,8 @@ def main(dry_run=True):
                           '?api_key={}&event_collection=pageviews&timezone=UTC&timeframe=this_14_days' \
                           '&filters=%5B%7B%22property_name%22%3A%22page.info.path%22%2C%22' \
                           'operator%22%3A%22eq%22%2C%22property_value%22%3A%22{}%22%7D%5D'.format(
-                            settings.KEEN_PROJECT_ID,
-                            settings.KEEN_READ_KEY,
+                            settings.KEEN['public']['project_id'],
+                            settings.KEEN['public']['read_key'],
                             record._id)
 
                     resp = requests.get(url)
