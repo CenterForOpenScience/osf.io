@@ -1185,9 +1185,13 @@ function _fangornLazyLoadOnLoad (tree, event) {
         inheritFromParent(item, tree);
         // if this is a folder
         if (item.kind === 'folder' && item.depth > 1) {
-          for (i = 0; i < data.length; i++) {
-            child = self.buildTree(data[i], parent);
-            parent.add(child);
+          var i, child;
+          console.log(item.data);
+          for (i = 0; i < item.data.children; i++) {
+            child = self.buildTree(data[i], item.parent());
+            console.log(child);
+            item.parent().add(child);
+            // console.log(item.parent());
           }
         // get folder children, update folder children array -- lazy load URL --  make own call -- AJAX call -- build tree
 // if UI changed
