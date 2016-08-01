@@ -66,10 +66,14 @@ class TestSetPreprintFile(OsfTestCase):
     def test_is_preprint_property(self):
         self.preprint.set_preprint_file(self.file._id, auth=self.auth, save=True)
         self.preprint.reload()
-        assert_equal(self.preprint.is_preprint, True)
+        assert_true(self.preprint.is_preprint)
 
+    def test_project_made_public(self):
+        assert_false(self.preprint.is_public)
+        self.preprint.set_preprint_file(self.file._id, auth=self.auth, save=True)
+        self.preprint.reload()
+        assert_true(self.preprint.is_public)
 
-    @assert_logs(NodeLog.PREPRINT_INITIATED, 'preprint')
     def test_add_primary_file(self):
         self.preprint.set_preprint_file(self.file._id, auth=self.auth, save=True)
         assert_equal(self.preprint.preprint_file._id, self.file._id)
