@@ -14,7 +14,8 @@ class InstitutionSerializer(JSONAPISerializer):
 
     filterable_fields = frozenset([
         'id',
-        'name'
+        'name',
+        'auth_url',
     ])
 
     name = ser.CharField(read_only=True)
