@@ -16,6 +16,7 @@ setup(name='osf_models',
         'django-extensions==1.6.1',
         'pymongo==2.5.1',
         'modular-odm>=0.3.0',
-        'django-typed-models>=0.5.0'
+        'django-typed-models>=0.5.0',
+        'nameparser>=0.3.3',
       ],
       zip_safe=False)

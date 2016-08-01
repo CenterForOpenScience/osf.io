@@ -1,13 +1,24 @@
-from datetime import datetime
+import datetime as dt
 
+from django.apps import apps
 from django.contrib.postgres import fields
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
-
-from .base import BaseModel, GuidMixin
+from django.core.validators import validate_email
+from django.conf import settings
 from django.db import models
-from .tag import Tag
+
+from osf_models.models.base import BaseModel, GuidMixin
+from osf_models.models.tag import Tag
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf_models.utils.names import impute_names
+from osf_models.utils import security
+from osf_models.exceptions import reraise_django_validation_errors
+
+
+# Hide implementation of token generation
+def generate_confirm_token():
+    return security.random_string(30)
 
 
 def get_default_mailing_lists():
@@ -22,7 +33,7 @@ class OSFUserManager(BaseUserManager):
         user = self.model(
             username=self.normalize_email(username),
             is_active=True,
-            date_registered=datetime.today()
+            date_registered=dt.datetime.today()
         )
 
         user.set_password(password)
@@ -143,7 +154,7 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin):
     # TODO: Add validator to ensure an email address only exists once across
     # TODO: Change to m2m field per @sloria
     # all User's email lists
-    emails = fields.ArrayField(models.CharField(max_length=255), default=list)
+    emails = fields.ArrayField(models.CharField(max_length=255), default=list, blank=True)
 
     # email verification tokens
     #   see also ``unconfirmed_emails``
@@ -175,7 +186,6 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin):
     # }
 
     # the date this user was registered
-    # TODO: consider removal - this can be derived from date_registered
     date_registered = models.DateTimeField(db_index=True
                                            )  #, auto_now_add=True)
 
@@ -303,6 +313,16 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin):
         return bool(self.date_confirmed)
 
     @property
+    def unconfirmed_emails(self):
+        # Handle when email_verifications field is None
+        email_verifications = self.email_verifications or {}
+        return [
+            each['email']
+            for each
+            in email_verifications.values()
+        ]
+
+    @property
     def email(self):
         return self.username
 
@@ -327,3 +347,85 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.get_short_name()
+
+    # Legacy methods
+
+    @classmethod
+    def create(cls, username, password, fullname):
+        user = cls(
+            username=username,
+            fullname=fullname,
+        )
+        user.update_guessed_names()
+        user.set_password(password)
+        return user
+
+    @classmethod
+    def create_unconfirmed(cls, username, password, fullname, do_confirm=True,
+                           campaign=None):
+        """Create a new user who has begun registration but needs to verify
+        their primary email address (username).
+        """
+        user = cls.create(username, password, fullname)
+        user.add_unconfirmed_email(username)
+        user.is_registered = False
+        if campaign:
+            # needed to prevent cirular import
+            from framework.auth.campaigns import system_tag_for_campaign  # skipci
+            user.system_tags.append(system_tag_for_campaign(campaign))
+        return user
+
+    def update_guessed_names(self):
+        """Updates the CSL name fields inferred from the the full name.
+        """
+        parsed = impute_names(self.fullname)
+        self.given_name = parsed['given']
+        self.middle_names = parsed['middle']
+        self.family_name = parsed['family']
+        self.suffix = parsed['suffix']
+
+
+    def add_unconfirmed_email(self, email, expiration=None):
+        """Add an email verification token for a given email."""
+
+        # TODO: This is technically not compliant with RFC 822, which requires
+        #       that case be preserved in the "local-part" of an address. From
+        #       a practical standpoint, the vast majority of email servers do
+        #       not preserve case.
+        #       ref: https://tools.ietf.org/html/rfc822#section-6
+        email = email.lower().strip()
+
+        if email in self.emails:
+            raise ValueError('Email already confirmed to this user.')
+
+        with reraise_django_validation_errors():
+            validate_email(email)
+
+        # If the unconfirmed email is already present, refresh the token
+        if email in self.unconfirmed_emails:
+            self.remove_unconfirmed_email(email)
+
+        token = generate_confirm_token()
+
+        # handle when email_verifications is None
+        if not self.email_verifications:
+            self.email_verifications = {}
+
+        # confirmed used to check if link has been clicked
+        self.email_verifications[token] = {'email': email,
+                                           'confirmed': False}
+        self._set_email_token_expiration(token, expiration=expiration)
+        return token
+
+    def _set_email_token_expiration(self, token, expiration=None):
+        """Set the expiration date for given email token.
+
+        :param str token: The email token to set the expiration for.
+        :param datetime expiration: Datetime at which to expire the token. If ``None``, the
+            token will expire after ``settings.EMAIL_TOKEN_EXPIRATION`` hours. This is only
+            used for testing purposes.
+        """
+        settings = apps.get_app_config('osf_models')
+        expiration = expiration or (dt.datetime.utcnow() + dt.timedelta(hours=settings.email_token_expiration))
+        self.email_verifications[token]['expiration'] = expiration
+        return expiration
