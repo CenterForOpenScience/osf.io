@@ -69,8 +69,8 @@ class PreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
 
 class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, PreprintMixin, WaterButlerMixin):
     permission_classes = (
-       drf_permissions.IsAuthenticatedOrReadOnly,
-       base_permissions.TokenHasScope,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
