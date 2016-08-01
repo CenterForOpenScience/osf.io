@@ -59,6 +59,7 @@ class MailingListError():
     pass
 
 def with_list_proxy(fn):
+    @queued_tast
     @app.task(name=fn.__name__)
     def get_proxy(self, *args, **kwargs):
         try:
@@ -137,7 +138,7 @@ def ensure_user_as_id(contributor):
 
 # Adds all of the emails associated with a user to a given mailing list.
 # This calls out to another server, so we should not block.
-# @with_list_proxy does not block. 
+# @with_list_proxy does not block.
 @with_list_proxy
 def add_contributor(list_mailbox=None, list_proxy=None, contributor=None):
     def not_subbed(email):
