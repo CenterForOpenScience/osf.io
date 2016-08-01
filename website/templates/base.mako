@@ -12,7 +12,9 @@
     <meta name="description" content="${self.description()}">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="fragment" content="!">
-
+    <!-- replaceme1 -->
+    <!-- replaceme2 -->
+    <!-- replaceme3 -->
     % if sentry_dsn_js:
     <script src="/static/vendor/bower_components/raven-js/dist/raven.min.js"></script>
     <script>
