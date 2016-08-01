@@ -266,7 +266,6 @@ def make_url_map(app):
         process_rules(app, [
             Rule(
                 [
-                    '/preprint/',
                     '/preprints/',
                     '/preprints/<path:_>',
                 ],
@@ -379,19 +378,12 @@ def make_url_map(app):
             OsfWebRenderer('prereg_landing_page.mako', trust=False)
         ),
 
-        # Rule(
-        #     '/preprints/',
-        #     'get',
-        #     preprint_views.preprint_landing_page,
-        #     OsfWebRenderer('public/pages/preprint_landing.mako', trust=False),
-        # ),
-
-        # Rule(
-        #     '/preprint/',
-        #     'get',
-        #     preprint_views.preprint_redirect,
-        #     notemplate,
-        # ),
+        Rule(
+            '/preprint/',
+            'get',
+            preprint_views.preprint_redirect,
+            notemplate,
+        ),
 
         Rule(
             '/api/v1/prereg/draft_registrations/',
@@ -400,6 +392,16 @@ def make_url_map(app):
             json_renderer,
         ),
     ])
+
+    if not settings.USE_PREPRINTS:
+        process_rules(app, [
+            Rule(
+                '/preprints/',
+                'get',
+                preprint_views.preprint_landing_page,
+                OsfWebRenderer('public/pages/preprint_landing.mako', trust=False),
+            )
+        ])
 
     # Site-wide API routes
 
