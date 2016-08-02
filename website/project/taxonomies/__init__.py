@@ -20,6 +20,9 @@ class Subject(StoredObject):
     text = fields.StringField(required=True)
     parent_ids = fields.ListField(fields.StringField())
 
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
 def ensure_taxonomies():
     # Flat taxonomy is stored locally, read in here
     with open(
