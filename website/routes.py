@@ -177,19 +177,20 @@ def external_ember_app(path=None):
     """
     Serve the contents of an ember application running on a separate server
     """
-    if (request.path == '/ember-cli-live-reload.js'):
-        path = 'ember-cli-live-reload.js' # FIXME: This is top-level regardless of baseURL setting
+    path_list = []
+    if ('ember-cli-live-reload.js' in request.path):
+        # This file appears at the top-level regardless of baseURL setting
+        base_prefix = settings.EXTERNAL_EMBER_BASEURL.replace('/', '')
+        path = '{}ember-cli-live-reload.js'.format(base_prefix)
+    else:
+        # The ember dev server will respect the `baseURL` setting it is given, and hence we need to add the base URL to the
+        #  URL we request from the standalone ember server. (all top level routes will appear to be under
+        #   http://localhost:4200/
+        path_list.append(settings.EXTERNAL_EMBER_BASEURL.replace('/', ''))
 
-        # TODO: Add additional special-case rules for how ember server works with livereload. (it name-prefixes the livereload script)
-
-    # The ember dev server will respect the `baseURL` setting it is given, and hence we need to add the base URL to the
-    #  URL we request from the standalone ember server. (all top level routes will appear to be under
-    #   http://localhost:4200/
     #  We also need to respect all query parameters, etc etc
-    # TODO: Write tests
-    path_list = [settings.EXTERNAL_EMBER_BASEURL.replace('/', '')]
     if path:
-        # This can be any level of hierarchy, eg /preprints/assets/vendor.js . Need to avoid encoding these middle slashes.
+        # This can be any level of hierarchy, eg /preprints/assets/vendor.js . Avoid encoding these middle slashes.
         print '+++++++++ Provided path:', path
         segments = furl.furl(path).path.segments
         path_list.extend(segments)
@@ -197,7 +198,6 @@ def external_ember_app(path=None):
     if not path or '.' not in path:
         # Base route needs a trailing slash for request to succeed. Static asset files should not have one.
         path_list.append('')
-
 
     # Construct URL, and make sure ember respects any provided query params.
     url = furl.furl(settings.EXTERNAL_EMBER_URL).add(path=path_list, args=request.args)
@@ -277,7 +277,10 @@ def make_url_map(app):
         process_rules(app, [
             Rule(
                 [
-                    '/ember-cli-live-reload.js', # TODO: In certain cases may name-prefix the file
+                    # When using baseURL in ember, the livereload file has a special name
+                    '/ember-cli-live-reload.js',
+                    '/{}ember-cli-live-reload.js'.format(settings.EXTERNAL_EMBER_BASEURL.replace('/', '')),
+                    # Delegate any file or asset  requests to the ember app. May require
                     settings.EXTERNAL_EMBER_BASEURL,
                     settings.EXTERNAL_EMBER_BASEURL + '<path:path>',
                 ],
