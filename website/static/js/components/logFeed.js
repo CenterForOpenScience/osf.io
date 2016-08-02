@@ -140,12 +140,12 @@ var LogFeed = {
                 });
             }
             // one ellipse at the beginning
-            else if (ctrl.currentPage() > ctrl.totalPages() - MAX_PAGES_ON_PAGINATOR_SIDE) {
+            else if (ctrl.currentPage() > ctrl.totalPages() - MAX_PAGES_ON_PAGINATOR_SIDE + 2) {
                 ctrl.paginators().push({
                     text: '...',
                     url: function() { }
                 });
-                for (i = ctrl.totalPages() - MAX_PAGES_ON_PAGINATOR_SIDE; i < ctrl.totalPages() - 1; i++) {
+                for (i = ctrl.totalPages() - MAX_PAGES_ON_PAGINATOR_SIDE + 2; i <= ctrl.totalPages() - 1; i++) {
                     ctrl.paginators().push({
                         text: i,
                         url: function() {

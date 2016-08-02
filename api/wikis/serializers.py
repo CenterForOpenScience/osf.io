@@ -1,9 +1,11 @@
 import sys
+
 from rest_framework import serializers as ser
 
 from api.base.serializers import JSONAPISerializer, IDField, TypeField, Link, LinksField, RelationshipField
 from api.base.utils import absolute_reverse
 
+from framework.auth.core import Auth
 
 class WikiSerializer(JSONAPISerializer):
 
@@ -21,6 +23,7 @@ class WikiSerializer(JSONAPISerializer):
     materialized_path = ser.SerializerMethodField(method_name='get_path')
     date_modified = ser.DateTimeField(source='date')
     content_type = ser.SerializerMethodField()
+    current_user_can_comment = ser.SerializerMethodField(help_text='Whether the current user is allowed to post comments')
     extra = ser.SerializerMethodField(help_text='Additional metadata about this wiki')
 
     user = RelationshipField(
@@ -58,6 +61,11 @@ class WikiSerializer(JSONAPISerializer):
 
     def get_size(self, obj):
         return sys.getsizeof(obj.content)
+
+    def get_current_user_can_comment(self, obj):
+        user = self.context['request'].user
+        auth = Auth(user if not user.is_anonymous() else None)
+        return obj.node.can_comment(auth)
 
     def get_content_type(self, obj):
         return 'text/markdown'

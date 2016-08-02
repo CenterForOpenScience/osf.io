@@ -78,6 +78,7 @@
                         <div class="form-group">
                             <label>Category:</label>
                             <select data-bind="options: categoryOptions, optionsValue: 'value', optionsText: 'label', value: selectedCategory"></select>
+                            <i>(For descriptive purposes)</i>
                         </div>
                         <div class="form-group">
                             <label for="title">Title:</label>
@@ -477,6 +478,12 @@
       window.contextVars.wiki.isEnabled = ${wiki.short_name in addons_enabled | sjson, n };
       window.contextVars.currentUser = window.contextVars.currentUser || {};
       window.contextVars.currentUser.institutions = ${ user['institutions'] | sjson, n };
+      window.contextVars.analyticsMeta = $.extend(true, {}, window.contextVars.analyticsMeta, {
+          pageMeta: {
+              title: 'Settings',
+              pubic: false,
+          },
+      });
     </script>
 
     <script type="text/javascript" src=${"/static/public/js/project-settings-page.js" | webpack_asset}></script>
