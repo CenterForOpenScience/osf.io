@@ -109,7 +109,7 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
 
         Handles some validation and enforces bulk limit.
         """
-        if hasattr(request,'query_params') and 'id' in request.query_params:
+        if hasattr(request, 'query_params') and 'id' in request.query_params:
             if hasattr(request, 'data') and len(request.data) > 0:
                 raise Conflict('A bulk DELETE can only have a body or query parameters, not both.')
 
@@ -119,7 +119,7 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
                 request_type = request.query_params['type']
                 data = []
                 for id in ids:
-                    data.append({'type':request_type, 'id': id})
+                    data.append({'type': request_type, 'id': id})
             else:
                 raise ValidationError('Type query parameter is also required for a bulk DELETE using query parameters.')
         elif not request.data:
