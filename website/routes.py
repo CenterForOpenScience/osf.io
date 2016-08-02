@@ -176,31 +176,25 @@ def robots():
 def external_ember_app(path=None):
     """
     Serve the contents of an ember application running on a separate server
+
+    There are 3 behaviors to consider:
+    1. We want an asset. Proxy directly to the asset path. (including special cases like live-reload)
+    2. We want a route. The dev server doesn't respond to requests at other than the application root (respecting baseURL),
+        so just send every request to the baseURL, and let the index.html router sort things out.
+    3. We want a special endpoint defined in a mock library like ember-mirage. These may look like routes, but need to be proxied individually.
+
+    We will handle the first two cases. If the third one comes up we can iterate.
     """
     path_list = []
-    if ('ember-cli-live-reload.js' in request.path):
-        # This file appears at the top-level regardless of baseURL setting
-        base_prefix = settings.EXTERNAL_EMBER_BASEURL.replace('/', '')
-        path = '{}ember-cli-live-reload.js'.format(base_prefix)
-    else:
-        # The ember dev server will respect the `baseURL` setting it is given, and hence we need to add the base URL to the
-        #  URL we request from the standalone ember server. (all top level routes will appear to be under
-        #   http://localhost:4200/
-        path_list.append(settings.EXTERNAL_EMBER_BASEURL.replace('/', ''))
-
-    #  We also need to respect all query parameters, etc etc
-    if path:
-        # This can be any level of hierarchy, eg /preprints/assets/vendor.js . Avoid encoding these middle slashes.
-        print '+++++++++ Provided path:', path
-        segments = furl.furl(path).path.segments
-        path_list.extend(segments)
-
     if not path or '.' not in path:
         # Base route needs a trailing slash for request to succeed. Static asset files should not have one.
         path_list.append('')
 
     # Construct URL, and make sure ember respects any provided query params.
-    url = furl.furl(settings.EXTERNAL_EMBER_URL).add(path=path_list, args=request.args)
+    print '<><><>', request.path
+    url = furl.furl(request.path.lstrip('/')).add(path=path_list, args=request.args)
+    url = url.set(host=settings.EXTERNAL_EMBER_URL)
+    url.path.segments.extend(path_list)
 
     print '-------- Requesting url: ', url
 
