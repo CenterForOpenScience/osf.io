@@ -20,7 +20,7 @@ def alphaToWhite(img):
     for i,pixel in enumerate(pixeldata):
         if len(pixel) == 4:
             if pixel[3] != 255:
-               pixel[3] = 255
+                pixeldata[i] = (255,255,255,255)
 
     img.putdata(pixeldata)
     return img
