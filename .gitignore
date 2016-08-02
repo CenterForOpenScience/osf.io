@@ -179,4 +179,7 @@ target/
 #Ipython Notebook
 .ipynb_checkpoints
 
+# Built readme file
 README.html
+# Ignore cloned osf (used only for tests)
+osf.io

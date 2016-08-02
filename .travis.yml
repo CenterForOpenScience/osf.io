@@ -7,15 +7,7 @@ sudo: false
 install:
     - travis_retry pip install --upgrade pip
     - travis_retry pip install .
-    # Clone postgres-compatible branc
-    - git clone --branch=feature/postgres https://github.com/sloria/osf.io.git
-    - cd osf.io
-    # Copy necessary settings files
-    - cp website/settings/local-travis.py website/settings/local.py
-    - cp api/base/settings/local-dist.py api/base/settings/local.py
-    # Install OSF requirements
-    - pip install -r requirements.txt
-    # Install osf_models_tests requirements
-    - pip install -r osf_models_tests/requirements.txt
+    - travis_retry pip install invoke==0.13.0
+    - inv setup_tests
 script:
-    - py.test osf_models_tests
+    - inv test
