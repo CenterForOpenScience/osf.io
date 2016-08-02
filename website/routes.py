@@ -179,7 +179,7 @@ def external_ember_app(path=None):
     """
     if not path or '.' in path:
         # If this is a file, proxy the URL given directly as-is to the ember server
-        url = furl.furl(request.path.lstrip('/')).set(host=settings.EXTERNAL_EMBER_URL)
+        url = furl(settings.EXTERNAL_EMBER_URL).add(path=request.path)
     else:
         # Ember server 404s when asked for a child route- it seems to be relying on index.html to figure that stuff out.
         # So if something looks like a child route, just send the request to the base URL, and ensure a trailing slash.
@@ -269,7 +269,7 @@ def make_url_map(app):
                     '/{}ember-cli-live-reload.js'.format(settings.EXTERNAL_EMBER_BASEURL.replace('/', '')),
                     # Delegate any file or asset  requests to the ember app. May require
                     settings.EXTERNAL_EMBER_BASEURL,
-                    settings.EXTERNAL_EMBER_BASEURL + '<path:path>',
+                    settings.EXTERNAL_EMBER_BASEURL + '<path:_>',
                 ],
                 'get',
                 external_ember_app,
