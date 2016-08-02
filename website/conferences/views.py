@@ -231,7 +231,7 @@ def conference_submissions(**kwargs):
     submissions = []
     #  TODO: Revisit this loop, there has to be a way to optimize it
     for conf in Conference.find():
-        if (hasattr(conf, 'is_meeting') and (conf.is_meeting == False)) or (conf.name == 'Psi Chi') or (conf.name == 'Time-sharing Experiments for the Social Sciences'):
+        if (hasattr(conf, 'is_meeting') and (conf.is_meeting is False)) or (conf.name == 'Psi Chi') or (conf.name == 'Time-sharing Experiments for the Social Sciences'):
             break
         # For efficiency, we filter by tag first, then node
         # instead of doing a single Node query
@@ -261,7 +261,7 @@ def conference_view(**kwargs):
     for conf in Conference.find():
         if conf.num_submissions < settings.CONFERENCE_MIN_COUNT:
             continue
-        if (hasattr(conf, 'is_meeting') and (conf.is_meeting == False)) or (conf.name == 'Psi Chi') or (conf.name == 'Time-sharing Experiments for the Social Sciences'):
+        if (hasattr(conf, 'is_meeting') and (conf.is_meeting is False)) or (conf.name == 'Psi Chi') or (conf.name == 'Time-sharing Experiments for the Social Sciences'):
             continue
         meetings.append({
             'name': conf.name,
