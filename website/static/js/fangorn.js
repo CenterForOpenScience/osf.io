@@ -394,7 +394,7 @@ function _fangornResolveToggle(item) {
         if(!item.data.permissions.view){
             return '';
         }
-       if (item.children.length != 0) {
+       if (item.children.length !== 0) {
           if(item.open) {
               return toggleMinus;
           }
