@@ -39,3 +39,16 @@ class TestNodeMODMCompat:
         with pytest.raises(DjangoValidationError) as excinfo:
             node.save()
         assert excinfo.value.message_dict == {'title': ['Title cannot exceed 200 characters.']}
+
+    def test_remove_one(self):
+        node = NodeFactory()
+        node2 = NodeFactory()
+        assert len(Node.find()) == 2  # sanity check
+        Node.remove_one(node)
+        assert len(Node.find()) == 1
+        assert node2 in Node.find()
+
+    def test_querying_on_guid_id(self):
+        node = NodeFactory()
+        assert len(node._id) == 5
+        assert node in Node.find(Q('_id', 'eq', node._id))
