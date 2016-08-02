@@ -91,6 +91,7 @@ function findByTempID(parent, tmpID) {
     return item;
 }
 
+
 /**
  * Cancel a pending upload
  * @this Treebeard.controller
@@ -1296,7 +1297,7 @@ function _fangornTitleColumn(item, col) {
 
 function _fangornVersionColumn(item,col) {
     var tb = this;
-    if (item.kind !== 'folder'){
+    if (item.kind !== 'folder' && item.data.provider === 'osfstorage'){
         return _fangornTitleColumnHelper(tb,item,col,String(item.data.extra.version),'/?show=revision','fg-version-links');
     }
     return;
@@ -1400,16 +1401,16 @@ function _fangornResolveRows(item) {
         custom : _fangornTitleColumn
     });
     defaultColumns.push({
-        data: 'version',
-        filter: true,
-        sortInclude : false,
-        custom: _fangornVersionColumn
-    });
-    defaultColumns.push({
         data : 'size',  // Data field name
         sortInclude : false,
         filter : false,
         custom : function() {return item.data.size ? $osf.humanFileSize(item.data.size, true) : '';}
+    });
+    defaultColumns.push({
+        data: 'version',
+        filter: true,
+        sortInclude : false,
+        custom: _fangornVersionColumn
     });
     if (item.data.provider === 'osfstorage') {
         defaultColumns.push({
@@ -1450,14 +1451,14 @@ function _fangornColumnTitles () {
         sort : true,
         sortType : 'text'
     }, {
-        title: 'Version',
-        width : '10%',
-        sort : false
-    },{
         title : 'Size',
         width : '8%',
         sort : false
     }, {
+        title: 'Version',
+        width : '10%',
+        sort : false
+    },{
         title : 'Downloads',
         width : '8%',
         sort : false
@@ -1846,6 +1847,9 @@ var FGToolbar = {
                     m('.fangorn-toolbar.pull-right', [dismissIcon])
                 )
             ];
+        $('.tb-row').click(function(){
+            ctrl.helpText('');
+        });
         if (ctrl.tb.options.placement !== 'fileview') {
             templates[toolbarModes.ADDFOLDER] = [
                 m('.col-xs-9', [
@@ -2412,7 +2416,7 @@ tbOptions = {
         _loadTopLevelChildren.call(tb);
         tb.uploadStates = [];
         tb.pendingFileOps = [];
-        tb.select('#tb-tbody').on('click', function(event){
+        tb.select('#tb-tbody, .tb-tbody-inner').on('click', function(event){
             if(event.target !== this) {
                 var item = tb.multiselected()[0];
                 if (item) {
@@ -2423,9 +2427,9 @@ tbOptions = {
                 }
             }
             tb.clearMultiselect();
+            m.redraw();
             dismissToolbar.call(tb);
         });
-
         $(window).on('beforeunload', function() {
             if(tb.dropzone && tb.dropzone.getUploadingFiles().length) {
                 return 'You have pending uploads, if you leave this page they may not complete.';

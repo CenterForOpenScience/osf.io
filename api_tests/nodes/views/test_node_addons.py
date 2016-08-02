@@ -459,7 +459,7 @@ class NodeAddonFolderMixin(object):
         )
 
     def test_folder_list_GET_expected_behavior(self):
-        wrong_type = self.short_name not in ('googledrive', 'box', 'dropbox', )
+        wrong_type = self.should_expect_errors(success_types=('CONFIGURABLE', ))
         res = self.app.get(
             self.folder_url,
             auth=self.user.auth,
@@ -468,9 +468,9 @@ class NodeAddonFolderMixin(object):
         if not wrong_type:
             addon_data = res.json['data'][0]['attributes']
             assert_equal(addon_data['kind'], 'folder')
-            assert '/ (Full ' in addon_data['name']
-            assert_equal(addon_data['path'], '/')
-            assert addon_data['folder_id'] in VALID_ROOT_FOLDER_IDS
+            assert_equal(addon_data['name'], self._mock_folder_result['name'])
+            assert_equal(addon_data['path'], self._mock_folder_result['path'])
+            assert_equal(addon_data['folder_id'], self._mock_folder_result['id'])
         if wrong_type:
             assert_in(res.status_code, [404, 501])
 
@@ -667,6 +667,14 @@ class TestNodeBoxAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
     AccountFactory = BoxAccountFactory
     NodeSettingsFactory = BoxNodeSettingsFactory
 
+    @property
+    def _mock_folder_result(self):
+        return {
+            'name': '/ (Full Box)',
+            'path': '/',
+            'id': '0'
+        }
+
     @mock.patch('website.addons.box.model.BoxClient.get_folder')
     def test_settings_detail_PUT_all_sets_settings(self, mock_get):
         mock_get.return_value = {
@@ -690,6 +698,14 @@ class TestNodeDropboxAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase
             'owner': self.node
         }
 
+    @property
+    def _mock_folder_result(self):
+        return {
+            'name': '/ (Full Dropbox)',
+            'path': '/',
+            'id': '/'
+        }
+
 
 class TestNodeS3Addon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 's3'
@@ -701,6 +717,26 @@ class TestNodeS3Addon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
             'user_settings': self.user_settings,
             'owner': self.node
         }
+
+    @property
+    def _mock_folder_result(self):
+        return {
+            'name': 'a.bucket',
+            'path': 'a.bucket',
+            'id': 'a.bucket'
+        }
+
+    @mock.patch('website.addons.s3.model.get_bucket_names')
+    def test_folder_list_GET_expected_behavior(self, mock_names):
+        mock_names.return_value = ['a.bucket']
+        super(TestNodeS3Addon, self).test_folder_list_GET_expected_behavior()
+
+    @mock.patch('website.addons.s3.model.bucket_exists')
+    @mock.patch('website.addons.s3.model.get_bucket_location_or_error')
+    def test_settings_detail_PUT_all_sets_settings(self, mock_location, mock_exists):
+        mock_exists.return_value = True
+        mock_location.return_value = ''
+        super(TestNodeS3Addon, self).test_settings_detail_PUT_all_sets_settings()
 
 
 class TestNodeGoogleDriveAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
@@ -720,6 +756,15 @@ class TestNodeGoogleDriveAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTest
             'folder_id': '0987654321',
             'folder_path': '/'
         }
+
+    @property
+    def _mock_folder_result(self):
+        return {
+            'name': '/ (Full Google Drive)',
+            'path': '/',
+            'id': 'FAKEROOTID'
+        }
+    
 
     @mock.patch('website.addons.googledrive.client.GoogleDriveClient.about')
     def test_folder_list_GET_expected_behavior(self, mock_about):

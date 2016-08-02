@@ -10,5 +10,5 @@ bleach==1.4.1
 requests==2.5.3
 urllib3==1.10.4
 requests-oauthlib==0.5.0
-oauthlib>=1.0  # Mendeley pins to a much lower version but OSF overrides
-git+https://github.com/jmcarp/HTTPretty@matcher-priority
+oauthlib==1.1.2  # Mendeley pins to a much lower version but OSF overrides
+HTTPretty==0.8.14

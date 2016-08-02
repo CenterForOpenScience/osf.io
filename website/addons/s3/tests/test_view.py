@@ -61,19 +61,6 @@ class TestS3Views(S3AddonTestCase, testing.views.OAuthAddonConfigViewsTestCaseMi
         assert_equals(rv.status_int, http.BAD_REQUEST)
         assert_in('All the fields above are required.', rv.body)
 
-    @mock.patch('website.addons.s3.views.utils.bucket_exists')
-    def test_s3_set_no_bucket(self, _):
-        self.node_settings.external_account = self.ExternalAccountFactory()
-        self.node_settings.bucket = 'abucket'
-        self.node_settings.save()
-        assert_equal(self.node_settings.bucket, 'abucket')
-        rv = self.app.put_json(
-            self.project.api_url_for('s3_set_config'),
-            {}, auth=self.user.auth
-        )
-        self.node_settings.reload()
-        assert_equal(self.node_settings.bucket, '')
-
     def test_s3_set_bucket_no_settings(self):
         user = AuthUserFactory()
         self.project.add_contributor(user, save=True)
@@ -123,7 +110,6 @@ class TestS3Views(S3AddonTestCase, testing.views.OAuthAddonConfigViewsTestCaseMi
         url = self.node_settings.owner.api_url_for('s3_deauthorize_node')
         ret = self.app.delete(url, auth=self.user.auth)
         result = self.Serializer().serialize_settings(node_settings=self.node_settings, current_user=self.user)
-        assert_equal(result['hasBucket'], False)
         assert_equal(result['nodeHasAuth'], False)
 
     def test_s3_remove_node_settings_unauthorized(self):
@@ -134,7 +120,7 @@ class TestS3Views(S3AddonTestCase, testing.views.OAuthAddonConfigViewsTestCaseMi
 
     def test_s3_get_node_settings_owner(self):
         self.node_settings.set_auth(self.external_account, self.user)
-        self.node_settings.bucket = 'bucket'
+        self.node_settings.folder_id = 'bucket'
         self.node_settings.save()
         url = self.node_settings.owner.api_url_for('s3_get_config')
         res = self.app.get(url, auth=self.user.auth)
@@ -142,7 +128,7 @@ class TestS3Views(S3AddonTestCase, testing.views.OAuthAddonConfigViewsTestCaseMi
         result = res.json['result']
         assert_equal(result['nodeHasAuth'], True)
         assert_equal(result['userIsOwner'], True)
-        assert_equal(result['bucket'], self.node_settings.bucket)
+        assert_equal(result['folder']['path'], self.node_settings.folder_id)
 
     def test_s3_get_node_settings_unauthorized(self):
         url = self.node_settings.owner.api_url_for('s3_get_config')
@@ -153,25 +139,29 @@ class TestS3Views(S3AddonTestCase, testing.views.OAuthAddonConfigViewsTestCaseMi
 
     ## Overrides ##
 
-    @mock.patch('website.addons.s3.views.utils.get_bucket_names')
+    @mock.patch('website.addons.s3.model.get_bucket_names')
     def test_folder_list(self, mock_names):
         mock_names.return_value = ['bucket1', 'bucket2']
         super(TestS3Views, self).test_folder_list()
 
-    def test_set_config(self):
-        self.node_settings.external_account = self.ExternalAccountFactory()
-        self.node_settings.save()
+    @mock.patch('website.addons.s3.model.bucket_exists')
+    @mock.patch('website.addons.s3.model.get_bucket_location_or_error')
+    def test_set_config(self, mock_location, mock_exists):
+        mock_exists.return_value = True
+        mock_location.return_value = ''
+        self.node_settings.set_auth(self.external_account, self.user)
         url = self.project.api_url_for('{0}_set_config'.format(self.ADDON_SHORT_NAME))
         res = self.app.put_json(url, {
-            's3_bucket': self.folder
+            'selected': self.folder
         }, auth=self.user.auth)
         assert_equal(res.status_code, http.OK)
         self.project.reload()
+        self.node_settings.reload()
         assert_equal(
             self.project.logs[-1].action,
             '{0}_bucket_linked'.format(self.ADDON_SHORT_NAME)
         )
-        assert_equal(res.json['bucket'], self.folder)
+        assert_equal(res.json['result']['folder']['name'], self.node_settings.folder_name)
         
 
 class TestCreateBucket(S3AddonTestCase):
@@ -270,8 +260,8 @@ class TestCreateBucket(S3AddonTestCase):
             auth=self.user.auth
         )
 
-        assert_equals(ret.status_int, http.OK)
-        assert_in('doesntevenmatter', ret.json['buckets'])
+        assert_equal(ret.status_int, http.OK)
+        assert_equal(ret.json, {})
 
     @mock.patch('website.addons.s3.views.utils.create_bucket')
     def test_create_bucket_fail(self, mock_make):
