@@ -174,11 +174,9 @@ def robots():
     )
 
 
-def external_ember_app(path=None):
+def external_ember_app(_=None):
     """Serve the contents of the ember application"""
-    if (request.path == '/ember-cli-live-reload.js'):
-        path = 'ember-cli-live-reload.js'
-    url = furl(settings.EXTERNAL_EMBER_URL).add(path=path)
+    url = furl(settings.EXTERNAL_EMBER_URL).add(path=request.path)
     resp = requests.get(url)
     excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
     headers = [(name, value) for (name, value) in resp.raw.headers.items() if name.lower() not in excluded_headers]
@@ -253,7 +251,7 @@ def make_url_map(app):
                 [
                     '/ember-cli-live-reload.js',
                     settings.EXTERNAL_EMBER_BASEURL,
-                    settings.EXTERNAL_EMBER_BASEURL + '<path:path>',
+                    settings.EXTERNAL_EMBER_BASEURL + '<path:_>',
                 ],
                 'get',
                 external_ember_app,
