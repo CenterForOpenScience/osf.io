@@ -231,6 +231,8 @@ def conference_submissions(**kwargs):
     submissions = []
     #  TODO: Revisit this loop, there has to be a way to optimize it
     for conf in Conference.find():
+        if (hasattr(conf, 'is_meeting') and (not conf.is_meeting)) or (conf.name == 'Psi Chi') or (conf.name == 'Time-sharing Experiments for the Social Sciences'):
+            break
         # For efficiency, we filter by tag first, then node
         # instead of doing a single Node query
         projects = set()

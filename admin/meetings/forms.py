@@ -61,6 +61,11 @@ class MeetingForm(forms.Form):
         required=False,
         widget=forms.TextInput(attrs={'size': '60'}),
     )
+    is_meeting = forms.BooleanField(
+        label='This is a meeting',
+        initial=True,
+        required=False,
+    )
     active = forms.BooleanField(
         label='Conference is active',
         required=False,
