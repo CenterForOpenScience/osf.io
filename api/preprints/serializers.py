@@ -1,7 +1,8 @@
 from rest_framework import serializers as ser
 from api.base.serializers import (
-    JSONAPISerializer, RelationshipField, IDField, JSONAPIListField, LinksField, Link
+    JSONAPISerializer, RelationshipField, IDField, JSONAPIListField, LinksField
 )
+from api.base.utils import absolute_reverse
 from api.nodes.serializers import NodeTagField
 
 
@@ -31,11 +32,12 @@ class PreprintSerializer(JSONAPISerializer):
     abstract = ser.CharField(source='description', required=False)
     tags = JSONAPIListField(child=NodeTagField(), required=False)
 
-    primary_file = LinksField({
-        'info': Link('files:file-detail', kwargs={'file_id': '<_id>'}),
-    })
+    primary_file = RelationshipField(
+        related_view='files:file-detail',
+        related_view_kwargs={'file_id': '<_id>'},
+    )
 
-    links = LinksField({'html': 'get_absolute_html_url'})
+    links = LinksField({'self': 'get_preprint_url', 'html': 'get_absolute_html_url'})
 
     authors = RelationshipField(
         related_view='preprints:preprint-authors',
@@ -53,8 +55,15 @@ class PreprintSerializer(JSONAPISerializer):
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<root._id>'}
     )
+
     class Meta:
         type_ = 'preprints'
+
+    def get_preprint_url(self, obj):
+        return absolute_reverse('preprints:preprint-detail', kwargs={'node_id': obj._id})
+
+    def get_absolute_url(self, obj):
+        return self.get_preprint_url(obj)
 
 
 class PreprintDetailSerializer(PreprintSerializer):
