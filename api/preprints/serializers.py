@@ -3,7 +3,7 @@ from api.base.serializers import (
     JSONAPISerializer, RelationshipField, IDField, JSONAPIListField, LinksField
 )
 from api.base.utils import absolute_reverse
-from api.nodes.serializers import NodeTagField
+from api.nodes.serializers import NodeTagField, NodeContributorsSerializer
 
 
 class PreprintSerializer(JSONAPISerializer):
@@ -56,3 +56,8 @@ class PreprintSerializer(JSONAPISerializer):
 
 class PreprintDetailSerializer(PreprintSerializer):
     id = IDField(source='_id', required=True)
+
+
+class PreprintAuthorSerializer(NodeContributorsSerializer):
+    class Meta:
+        type_ = 'authors'

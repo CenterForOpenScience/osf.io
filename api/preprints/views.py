@@ -10,13 +10,10 @@ from website.models import Node
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 from api.base.filters import ODMFilterMixin
-from api.preprints.serializers import PreprintSerializer, PreprintDetailSerializer
+from api.preprints.serializers import PreprintSerializer, PreprintDetailSerializer, PreprintAuthorSerializer
 from api.nodes.views import NodeMixin, WaterButlerMixin, NodeContributorsList
 from api.base.utils import get_object_or_error
 from rest_framework.exceptions import NotFound
-from api.nodes.serializers import (
-    NodeContributorsSerializer
-)
 
 
 class PreprintMixin(NodeMixin):
@@ -90,4 +87,4 @@ class PreprintAuthorsList(NodeContributorsList, PreprintMixin):
     view_name = 'preprint-authors'
 
     def get_serializer_class(self):
-        return NodeContributorsSerializer
+        return PreprintAuthorSerializer
