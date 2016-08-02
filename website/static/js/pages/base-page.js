@@ -208,14 +208,10 @@ $(function() {
     }
     new NavbarControl('.osf-nav-wrapper');
     new DevModeControls('#devModeControls', '/static/built/git_logs.json', '/static/built/git_branch.txt');
-    if(window.contextVars.keenProjectId){
-        var params = {};
-        params.currentUser = window.contextVars.currentUser;
-        params.node = window.contextVars.node;
-
+    if (window.contextVars.keen){
         //Don't track PhantomJS visits with KeenIO
-        if(!(/PhantomJS/.test(navigator.userAgent))){
-            new KeenTracker(window.contextVars.keenProjectId, window.contextVars.keenWriteKey, params);
+        if (!(/PhantomJS/.test(navigator.userAgent))){
+            KeenTracker.getInstance().trackPageView();
         }
     }
 

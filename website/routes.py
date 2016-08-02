@@ -5,6 +5,8 @@ import httplib as http
 from flask import request
 from flask import send_from_directory
 
+from geoip import geolite2
+
 from framework import status
 from framework import sentry
 from framework.auth import cas
@@ -54,6 +56,7 @@ def get_globals():
     user = _get_current_user()
     user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path} for inst in user.affiliated_institutions] if user else []
     all_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path} for inst in Institution.find().sort('name')]
+    location = geolite2.lookup(request.remote_addr) if request.remote_addr else None
     if request.host_url != settings.DOMAIN:
         try:
             inst_id = (Institution.find_one(Q('domains', 'eq', request.host.lower())))._id
@@ -77,9 +80,11 @@ def get_globals():
         'user_institutions': user_institutions if user else None,
         'all_institutions': all_institutions,
         'display_name': get_display_name(user.fullname) if user else '',
+        'anon': {
+            'continent': getattr(location, 'continent', None),
+            'country': getattr(location, 'country', None),
+        },
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
-        'piwik_host': settings.PIWIK_HOST,
-        'piwik_site_id': settings.PIWIK_SITE_ID,
         'sentry_dsn_js': settings.SENTRY_DSN_JS if sentry.enabled else None,
         'dev_mode': settings.DEV_MODE,
         'allow_login': settings.ALLOW_LOGIN,
@@ -104,8 +109,16 @@ def get_globals():
         'reauth_url': util.web_url_for('auth_logout', redirect_url=request.url, reauth=True),
         'profile_url': cas.get_profile_url(),
         'enable_institutions': settings.ENABLE_INSTITUTIONS,
-        'keen_project_id': settings.KEEN_PROJECT_ID,
-        'keen_write_key': settings.KEEN_WRITE_KEY,
+        'keen': {
+            'public': {
+                'project_id': settings.KEEN['public']['project_id'],
+                'write_key': settings.KEEN['public']['write_key'],
+            },
+            'private': {
+                'project_id': settings.KEEN['private']['project_id'],
+                'write_key': settings.KEEN['private']['write_key'],
+            },
+        },
         'maintenance': maintenance.get_maintenance(),
     }
 
