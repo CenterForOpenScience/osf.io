@@ -64,7 +64,7 @@ class PreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
         return [node for node in nodes if node.is_preprint]
 
 
-class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin, WaterButlerMixin):
+class PreprintDetail(JSONAPIBaseView, generics.CreateAPIView, generics.RetrieveUpdateAPIView, PreprintMixin, WaterButlerMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -79,6 +79,9 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMi
 
     def get_object(self):
         return self.get_node()
+
+    def perform_create(self, serializer):
+        return serializer.save(node=self.get_node())
 
 
 class PreprintAuthorsList(NodeContributorsList, PreprintMixin):
