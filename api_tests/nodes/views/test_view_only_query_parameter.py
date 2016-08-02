@@ -67,7 +67,16 @@ class TestNodeDetailViewOnlyLinks(ViewOnlyTestCase):
         res_linked = self.app.get(self.private_node_one_url, {'view_only': self.private_node_one_private_link.key})
         assert_equal(res_linked.status_code, 200)
         assert_items_equal(res_linked.json['data']['attributes']['current_user_permissions'], ['read'])
-        assert_equal(res_linked.json, res_normal.json)
+
+        # Remove any keys that will be different for view-only responses
+        res_normal_json = res_normal.json
+        res_linked_json = res_linked.json
+        user_can_comment = res_normal_json['data']['attributes'].pop('current_user_can_comment')
+        view_only_can_comment = res_linked_json['data']['attributes'].pop('current_user_can_comment')
+
+        assert_true(user_can_comment)
+        assert_false(view_only_can_comment)
+        assert_equal(res_linked_json, res_normal_json)
 
     def test_private_node_with_link_unauthorized_when_not_using_link(self):
         res = self.app.get(self.private_node_one_url, expect_errors=True)

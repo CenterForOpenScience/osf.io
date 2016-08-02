@@ -1,6 +1,6 @@
 <%inherit file="project/addon/widget.mako"/>
 
-<div id="markdownRender" class="break-word">
+<div id="markdownRender" class="break-word scripted">
     % if wiki_content:
         ${wiki_content}
     % else:

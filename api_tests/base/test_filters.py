@@ -26,8 +26,9 @@ from api.base.exceptions import (
 
 class FakeSerializer(ser.Serializer):
 
-    filterable_fields = ('string_field', 'list_field', 'date_field', 'int_field', 'bool_field')
+    filterable_fields = ('id', 'string_field', 'list_field', 'date_field', 'int_field', 'bool_field')
 
+    id = ser.CharField()
     string_field = ser.CharField()
     list_field = ser.ListField()
     date_field = ser.DateField()
@@ -42,21 +43,22 @@ class FakeRecord(object):
             self,
             _id=None,
             string_field='foo',
-            list_field=[1, 2, 3],
+            list_field=None,
             date_field=datetime.datetime.now(),
             datetime_field=datetime.datetime.now(),
             int_field=42,
             float_field=41.99999,
-            bool_field=True
+            foobar=True
     ):
         self._id = _id
         self.string_field = string_field
-        self.list_field = list_field
+        self.list_field = list_field or [1, 2, 3]
         self.date_field = date_field
         self.datetime_field = datetime_field
         self.int_field = int_field
         self.float_field = float_field
-        self.bool_field = bool_field
+        # bool_field in serializer corresponds to foobar in model
+        self.foobar = foobar
 
 class FakeView(ODMFilterMixin):
 
@@ -91,8 +93,8 @@ class TestFilterMixin(ApiTestCase):
         assert_in('int_field', fields)
         assert_equal(fields['int_field'][0]['op'], 'eq')
 
-        assert_in('foobar', fields)
-        assert_equal(fields['foobar'][0]['op'], 'eq')
+        assert_in('bool_field', fields)
+        assert_equal(fields['bool_field'][0]['op'], 'eq')
 
     def test_parse_query_params_casts_values(self):
         query_params = {
@@ -112,8 +114,8 @@ class TestFilterMixin(ApiTestCase):
         assert_in('int_field', fields)
         assert_equal(fields['int_field'][0]['value'], 42)
 
-        assert_in('foobar', fields)
-        assert_equal(fields['foobar'][0]['value'], False)
+        assert_in('bool_field', fields)
+        assert_equal(fields['bool_field'][0]['value'], False)
 
     def test_parse_query_params_uses_field_source_attribute(self):
         query_params = {
@@ -121,9 +123,10 @@ class TestFilterMixin(ApiTestCase):
         }
 
         fields = self.view.parse_query_params(query_params)
-        assert_in('foobar', fields)
-        assert_equal(fields['foobar'][0]['value'], False)
-        assert_equal(fields['foobar'][0]['op'], 'eq')
+        parsed_field = fields['bool_field'][0]
+        assert_equal(parsed_field['source_field_name'], 'foobar')
+        assert_equal(parsed_field ['value'], False)
+        assert_equal(parsed_field ['op'], 'eq')
 
     def test_parse_query_params_generalizes_dates(self):
         query_params = {
@@ -223,7 +226,7 @@ class TestFilterMixin(ApiTestCase):
             'filter[string_field]': 'foo',
             'filter[string_field]': 'bar',
         }
-
+        # FIXME: This test may only be checking one field
         fields = self.view.parse_query_params(query_params)
         assert_in('string_field', fields)
         for match in fields['string_field']:
@@ -265,7 +268,8 @@ class TestListFilterMixin(ApiTestCase):
     def test_get_filtered_queryset_for_list_field_converts_to_lowercase(self):
         field_name = 'list_field'
         params = {
-            'value': 'FOO'
+            'value': 'FOO',
+            'source_field_name': field_name
         }
         default_queryset = [
             FakeRecord(_id=1, list_field=['fOO', 'Foo', 'Bar', 'baR']),
@@ -277,6 +281,53 @@ class TestListFilterMixin(ApiTestCase):
             assert_not_equal(record._id, 3)
         for id in (1, 2):
             assert_in(id, [f._id for f in filtered])
+
+    def test_get_filtered_queryset_for_list_respects_special_case_of_ids_being_list(self):
+        field_name = 'bool_field'
+        params = {
+            'value': True,
+            'op': 'eq',
+            'source_field_name': 'foobar'
+        }
+        default_queryset = [
+            FakeRecord(_id=1, foobar=True),
+            FakeRecord(_id=2, foobar=True),
+            FakeRecord(_id=3, foobar=False)
+        ]
+        filtered = self.view.get_filtered_queryset(field_name, params, default_queryset)
+        for record in filtered:
+            assert_not_equal(record._id, 3)
+        for id in (1, 2):
+            assert_in(id, [f._id for f in filtered])
+
+    def test_get_filtered_queryset_for_list_respects_id_always_being_list(self):
+        field_name = 'id'
+        params = {
+            'value': '2',
+            'op': 'in',
+            'source_field_name': '_id'
+        }
+        default_queryset = [
+            FakeRecord(_id='1', foobar=True),
+            FakeRecord(_id='2', foobar=True),
+            FakeRecord(_id='3', foobar=False)
+        ]
+        filtered = self.view.get_filtered_queryset(field_name, params, default_queryset)
+        for record in filtered:
+            assert_equal(record._id, '2')
+        for id in ('1', '3'):
+            assert_not_in(id, [f._id for f in filtered])
+
+    def test_parse_query_params_uses_field_source_attribute(self):
+        query_params = {
+            'filter[bool_field]': 'false',
+        }
+
+        fields = self.view.parse_query_params(query_params)
+        parsed_field = fields['bool_field'][0]
+        assert_equal(parsed_field['source_field_name'], 'foobar')
+        assert_equal(parsed_field ['value'], False)
+        assert_equal(parsed_field ['op'], 'eq')
 
 
 class TestODMOrderingFilter(ApiTestCase):

@@ -623,7 +623,7 @@ var MyProjects = {
                         template = m('.db-non-load-template.m-md.p-md.osf-box',
                             'You have not made any registrations yet. Go to ',
                             m('a', {href: 'http://help.osf.io/m/registrations'}, 'Getting Started'), ' to learn how registrations work.' );
-                    } else if (lastcrumb.data.node.attributes && lastcrumb.data.node.attributes.bookmarks) {
+                    } else if (lodashGet(lastcrumb, 'data.node.attributes.bookmarks')) {
                         template = m('.db-non-load-template.m-md.p-md.osf-box', 'You have no bookmarks. You can add projects or registrations by dragging them into your bookmarks or by clicking the Add to Bookmark button on the project or registration.');
                     } else {
                         var helpText = 'This collection is empty.';
@@ -662,6 +662,7 @@ var MyProjects = {
                 if (contributors) {
                     for(var i = 0; i < contributors.length; i++) {
                         var u = contributors[i];
+                        u.id = (u.id.indexOf('-') > -1) ? u.id.split('-')[1] : u.id;
                         if ((u.id === window.contextVars.currentUser.id) && !(self.institutionId)) {
                           continue;
                         }
