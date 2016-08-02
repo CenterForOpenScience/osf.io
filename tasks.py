@@ -13,7 +13,8 @@ def setup_tests(ctx, update=False, requirements=True):
     first_run = False
     if not os.path.exists('osf.io'):
         first_run = True
-        ctx.run('git clone --branch={} {}'.format(POSTGRES_BRANCH, OSF_GIT_URL), echo=True)
+        # '--depth 1' excludes the history (for faster cloning)
+        ctx.run('git clone --branch={} {} --depth 1'.format(POSTGRES_BRANCH, OSF_GIT_URL), echo=True)
 
     os.chdir('osf.io')
     if update and not first_run:
