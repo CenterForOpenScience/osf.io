@@ -55,7 +55,7 @@ class PreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     def get_default_odm_query(self):
         return (
             Q('is_deleted', 'ne', True) &
-            Q('preprint_file', 'neq', None) &
+            Q('preprint_file', 'ne', None) &
             Q('_is_preprint_orphan', 'eq', False) &
             Q('is_public', 'eq', True)
         )
