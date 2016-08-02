@@ -20,13 +20,15 @@ def view_public_files_id(uid, **kwargs):
     return serialize_public_files_node(publicFilesNode)
 
 def serialize_public_files_node(node):
-
-    return {
-        'node':
-            {
-                'node_id': node._id,
-                'api_url': node.api_url,
-                'owner_name': node.creator.fullname,
-                'is_public_files_node': node.is_public_files_node,
-            }
-    }
+    if node:
+        return {
+            'node':
+                {
+                    'node_id': node._id,
+                    'api_url': node.api_url,
+                    'owner_name': node.creator.fullname,
+                    'is_public_files_node': node.is_public_files_node,
+                }
+        }
+    else:
+        raise HTTPError(http.NOT_FOUND)
