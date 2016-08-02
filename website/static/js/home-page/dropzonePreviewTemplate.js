@@ -1,6 +1,8 @@
 'use strict';
 
 var m = require('mithril');
+var $osf = require('js/osfHelpers');
+var cb = require('js/clipboard');
 
 function dropzonePreviewTemplate() {
     return [
@@ -14,7 +16,6 @@ function dropzonePreviewTemplate() {
                     m('div[data-dz-size].p-xs')
                 ),
                 m('div.col-sm-7.p-xs.text-center',
-                    m('span.generating-share-link', 'Generating Share Link...'),
                     m('div.dz-progress',
                         m('span[data-dz-uploadprogress].dz-upload')
                     )
@@ -32,6 +33,36 @@ function dropzonePreviewTemplate() {
     ];
 }
 
+function generateGUIDButton(file,container) {
+
+    return m('button.btn', {onclick : function(){
+        $(this).hide();
+        var loadingLabel = document.createElement('span');
+        loadingLabel.innerHTML = 'Generating Share Link';
+        $(container).append(loadingLabel);
+        $(loadingLabel).effect('pulsate', { times:100 }, 300000);
+
+        $osf.ajaxJSON(
+            'GET',
+            $osf.apiV2Url('files' + JSON.parse(file.xhr.response).path + '/',{ query : {'create_guid': 1 }}),
+            {
+                isCors: true
+            }
+        ).done(function(response) {
+            var guid = response.data.attributes.guid;
+            var link = location.protocol+ '//' + location.host + '/' + guid;
+            m.render(container, cb.generateClipboard(link));
+            $(file.previewElement).find('.dz-filename').attr('href', guid);
+            $(loadingLabel).remove();
+
+        });
+        }
+        }, 'Generate Share Link');
+
+
+}
+
 module.exports = {
     dropzonePreviewTemplate: dropzonePreviewTemplate,
+    generateGUIDButton:generateGUIDButton,
 };

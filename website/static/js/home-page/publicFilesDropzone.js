@@ -62,21 +62,7 @@ var PublicFilesDropzone = {
                 $(file.previewElement).find('.col-sm-7.p-xs').append(buttonContainer);
                 file.previewElement.classList.add('dz-success');
                 file.previewElement.classList.add('dz-preview-background-success');
-                $(file.previewElement).find('.generating-share-link').effect('pulsate', { times:100 }, 300000);
-
-                $osf.ajaxJSON(
-                    'GET',
-                    $osf.apiV2Url('files' + JSON.parse(file.xhr.response).path + '/',{ query : {'giveGuid': 1 }}),
-                    {
-                        isCors: true
-                    }
-                ).done(function(response) {
-                    var guid = response.data.attributes.guid;
-                    var link = location.protocol+ '//' + location.host + '/' + guid;
-                    m.render(buttonContainer, cb.generateClipboard(link));
-                    $(file.previewElement).find('.dz-filename').attr('href', guid);
-                    $('.generating-share-link').remove();
-                });
+                m.render(buttonContainer, dzPreviewTemplate.generateGUIDButton(file, buttonContainer));
 
                 this.files.pop();
                 this.processQueue();
