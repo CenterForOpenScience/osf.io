@@ -1,8 +1,8 @@
 language: python
-services:
-    - postgresql
 python:
     - "2.7"
+addons:
+    postgresql: "9.4"
 sudo: false
 install:
     - travis_retry pip install --upgrade pip
