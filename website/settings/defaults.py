@@ -59,10 +59,10 @@ PROTOCOL = 'https://' if SECURE_MODE else 'http://'
 DOMAIN = PROTOCOL + 'localhost:5000/'
 API_DOMAIN = PROTOCOL + 'localhost:8000/'
 
-# Ember App Local Development
-USE_EMBER = False
-EMBER_APP_BASEURL = '/ember-app/'
-EMBER_APP_URL = 'http://localhost:4200/'
+# External Ember App Local Development
+USE_EXTERNAL_EMBER = False
+EXTERNAL_EMBER_BASEURL = '/ember-app/'
+EXTERNAL_EMBER_URL = 'http://localhost:4200/'
 
 LOG_PATH = os.path.join(APP_PATH, 'logs')
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')

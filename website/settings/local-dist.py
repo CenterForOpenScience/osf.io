@@ -15,9 +15,9 @@ PROTOCOL = 'https://' if SECURE_MODE else 'http://'
 DOMAIN = PROTOCOL + 'localhost:5000/'
 API_DOMAIN = PROTOCOL + 'localhost:8000/'
 
-USE_EMBER = True
-EMBER_APP_BASEURL = '/ember-app/'
-EMBER_APP_URL = 'http://localhost:4200/'
+USE_EXTERNAL_EMBER = True
+EXTERNAL_EMBER_BASEURL = '/ember-app/'
+EXTERNAL_EMBER_URL = 'http://localhost:4200/'
 
 SEARCH_ENGINE = 'elastic'
 ELASTIC_TIMEOUT = 10
