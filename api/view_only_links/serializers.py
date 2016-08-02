@@ -7,9 +7,6 @@ from api.nodes.serializers import NodeVOL
 
 
 class ViewOnlyLinkDetailSerializer(JSONAPISerializer):
-    """
-    Document pls.
-    """
     key = ser.CharField(read_only=True)
     id = IDField(source='_id', read_only=True)
     date_created = ser.DateTimeField(read_only=True)

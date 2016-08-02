@@ -2940,9 +2940,51 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
 
 
 class NodeViewOnlyLinksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
-    '''
-    Document pls.
-    '''
+    """
+    List of view only links on a node. *Writeable*.
+
+    ###Permissions
+
+    View only links on a node, public or private, are only readable and writeable by users that are
+    administrators on the node.
+
+    ##Attributes
+
+    OSF comment entities have the "comments" `type`.
+
+        name            type                    description
+        =================================================================================
+        name            string                  name of the view only link
+        anonymous       boolean                 whether the view only link has anonymized contributors
+        date_created    iso8601 timestamp       timestamp when the view only link was created
+        key             string                  the view only key
+        nodes           array of node GUIDs     list of nodes which this view only link gives read-only access to
+
+
+    ##Relationships
+
+    ###Creator
+
+    The user who created the view only link.
+
+    ##Actions
+
+    ###Create
+
+        Method:        POST
+        Body (JSON):   {
+                         "data": {
+                           "attributes": {
+                             "name": {string},              #optional
+                             "anonymous": {boolean},        #optional
+                             "nodes": {array of node GUIDs} #required
+                           },
+                         }
+                       }
+        Success:       201 CREATED
+
+    #This Request/Response
+    """
 
     permission_classes = (
         IsAdmin,
@@ -2973,8 +3015,57 @@ class NodeViewOnlyLinksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
 
 class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     """
-    Document pls.
+    Detail of a specific view only link on a node. *Writeable*.
+
+    ###Permissions
+
+    View only links on a node, public or private, are only readable and writeable by users that are
+    administrators on the node.
+
+    ##Attributes
+
+    OSF comment entities have the "comments" `type`.
+
+        name            type                    description
+        =================================================================================
+        name            string                  name of the view only link
+        anonymous       boolean                 whether the view only link has anonymized contributors
+        date_created    iso8601 timestamp       timestamp when the view only link was created
+        key             string                  the view only key
+        nodes           array of node GUIDs     list of nodes which this view only link gives read-only access to
+
+
+    ##Relationships
+
+    ###Creator
+
+    The user who created the view only link.
+
+    ##Actions
+
+    ###Update
+
+        Method:        PUT
+        Body (JSON):   {
+                         "data": {
+                           "attributes": {
+                             "name": {string},              #optional
+                             "anonymous": {boolean},        #optional
+                             "nodes": {array of node GUIDs} #optional
+                           },
+                         }
+                       }
+        Success:       200 OK
+
+    ###Delete
+
+        Method:        DELETE
+        Body (JSON):   <none>
+        Success:       204 NO CONTENT
+
+    #This Request/Response
     """
+
 
     permission_classes = (
         IsAdmin,

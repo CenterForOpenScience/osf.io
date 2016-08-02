@@ -11,8 +11,38 @@ from website.models import PrivateLink
 
 
 class ViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
-    """
-    Document pls.
+    """Details about a specific view only link. *Read-only*.
+
+    ###Permissions
+
+    View only links are visible only to users that are administrators on all of the nodes which a view only link
+    pertains to.
+
+    ##Attributes
+
+    OSF view only links entities have the "view-only-links" `type`.
+
+        name                        type                    description
+        ======================================================================================================
+        name                        string                  name of the view only link
+        anonymous                   boolean                 whether the view only link has anonymized contributors
+        date_created                iso8601 timestamp       timestamp when the view only link was created
+        key                         string                  the view only key
+        nodes                       array of node GUIDs     list of nodes which this view only link gives read-only access to
+
+
+    ##Relationships
+
+    ###Creator
+
+    The user who created the view only link.
+
+    ##Query Params
+
+    *None*.
+
+    #This Request/Response
+
     """
     permission_classes = (
         base_permissions.TokenHasScope,

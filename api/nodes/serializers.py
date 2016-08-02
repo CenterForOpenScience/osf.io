@@ -950,9 +950,6 @@ class NodeVOL(ser.Field):
 
 
 class NodeViewOnlyLinkSerializer(JSONAPISerializer):
-    """
-    Document pls.
-    """
     key = ser.CharField(read_only=True)
     id = IDField(source='_id', read_only=True)
     date_created = ser.DateTimeField(read_only=True)
