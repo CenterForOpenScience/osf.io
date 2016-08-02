@@ -468,6 +468,7 @@ class NodeAddonFolderMixin(object):
         if not wrong_type:
             addon_data = res.json['data'][0]['attributes']
             assert_equal(addon_data['kind'], 'folder')
+            assert_equal(res.json['links']['meta']['per_page'], 1000)
             assert '/ (Full ' in addon_data['name']
             assert_equal(addon_data['path'], '/')
             assert addon_data['folder_id'] in VALID_ROOT_FOLDER_IDS

@@ -41,9 +41,10 @@ var SharePopover =  {
     view: function(ctrl, params) {
         var copyButtonHeight = '34px';
         var popoverWidth = '450px';
-        var link = params.link;
+        var renderLink = params.link;
+        var fileLink = window.location.href;
 
-        var url = link.substring(0, link.indexOf('render'));
+        var mfrHost = renderLink.substring(0, renderLink.indexOf('render'));
         return m('button#sharebutton.disabled.btn.btn-sm.btn-primary.file-share', {onclick: function popOverShow() {
                 var pop = document.getElementById('popOver');
                 //This is bad, should only happen for Firefox, thanks @chrisseto
@@ -58,25 +59,25 @@ var SharePopover =  {
                     m('.tab-content', [
                         m('.tab-pane.active#share', [
                             m('.input-group', [
-                                CopyButton.view(ctrl, {link: link, height: copyButtonHeight}), //workaround to allow button to show up on first click
-                                m('input.form-control[readonly][type="text"][value="'+ link +'"]')
+                                CopyButton.view(ctrl, {link: renderLink, height: copyButtonHeight}), //workaround to allow button to show up on first click
+                                m('input.form-control[readonly][type="text"][value="'+ renderLink +'"]')
                             ]),
-                            SocialShare.ShareButtons.view(ctrl, {title: window.contextVars.file.name, url: link})
+                            SocialShare.ShareButtons.view(ctrl, {title: window.contextVars.file.name, url: fileLink})
                         ]),
                         m('.tab-pane#embed', [
                             m('p', 'Dynamically render iframe with JavaScript'),
                             m('textarea.form-control[readonly][type="text"][value="' +
                                 '<script>window.jQuery || document.write(\'<script src="//code.jquery.com/jquery-1.11.2.min.js">\\x3C/script>\') </script>'+
-                                '<link href="' + url + 'static/css/mfr.css" media="all" rel="stylesheet">' +
+                                '<link href="' + mfrHost + 'static/css/mfr.css" media="all" rel="stylesheet">' +
                                 '<div id="mfrIframe" class="mfr mfr-file"></div>' +
-                                '<script src="' + url + 'static/js/mfr.js">' +
+                                '<script src="' + mfrHost + 'static/js/mfr.js">' +
                                 '</script> <script>' +
-                                    'var mfrRender = new mfr.Render("mfrIframe", "' + link + '");' +
+                                    'var mfrRender = new mfr.Render("mfrIframe", "' + renderLink + '");' +
                                 '</script>' + '"]'
                             ), m('br'),
                             m('p', 'Direct iframe with fixed height and width'),
                             m('textarea.form-control[readonly][value="' +
-                                '<iframe src="' + link + '" width="100%" scrolling="yes" height="' + params.height + '" marginheight="0" frameborder="0" allowfullscreen webkitallowfullscreen>"]'
+                                '<iframe src="' + renderLink + '" width="100%" scrolling="yes" height="' + params.height + '" marginheight="0" frameborder="0" allowfullscreen webkitallowfullscreen>"]'
                             )
                         ])
                     ])
@@ -90,7 +91,11 @@ var SharePopover =  {
                         button.data()['bs.popover'].$tip.css('text-align', 'center').css('max-width', popoverWidth).css('width', popoverWidth);
                     });
                 }
-            }, 'data-toggle': 'popover', 'data-placement': 'bottom', 'data-content': '<div id="popOver"></div>', 'title': 'Share', 'data-container': 'body', 'data-html': 'true'}, 'Share');
+            },
+            'data-toggle': 'popover', 'data-placement': 'bottom',
+            'data-content': '<div id="popOver"></div>', 'title': 'Share',
+            'data-container': 'body', 'data-html': 'true'
+        }, 'Share');
     }
 };
 
@@ -391,6 +396,7 @@ var FileViewPage = {
         }
 
         function changeVersionHeader(){
+            document.getElementById('versionLink').style.display = 'inline';
             m.render(document.getElementById('versionLink'), m('a', {onclick: toggleRevisions}, document.getElementById('versionLink').innerHTML));
         }
 
@@ -405,7 +411,9 @@ var FileViewPage = {
            }
         }
 
-        changeVersionHeader();
+        if(self.file.provider === 'osfstorage'){
+            changeVersionHeader();
+        }
 
     },
     view: function(ctrl) {
