@@ -23,3 +23,39 @@ Run the tests: ::
 To update the osf.io repo used for testing: ::
 
     inv setup_tests --update
+
+
+Running Migrations
+==================
+
+To create/reset your database: ::
+
+	python manage.py reset_db --noinput
+	
+To migrate the defined schema to your database: ::
+
+	python manage.py migrate
+
+To migrate all models leaving their relationships empty: ::
+
+	python manage.py migrate_bare_objects
+	
+To create foreign keys: ::
+	
+	python manage.py migrate_foreign_keys
+	
+To create many to many relationships: ::
+
+	python manage.py migrate_m2m
+	
+To verify nodes and users: ::
+
+	python manage.py verify_nodes_users
+
+To create nodelogs: ::
+
+	python manage.py migrate_nodelogs
+	
+To verify nodelogs: ::
+
+	python manage.py verify_nodelogs

@@ -1,19 +1,17 @@
 import datetime as dt
 
 from django.apps import apps
-from django.contrib.postgres import fields
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
+from django.contrib.postgres import fields
 from django.core.validators import validate_email
-from django.conf import settings
 from django.db import models
-
+from osf_models.exceptions import reraise_django_validation_errors
 from osf_models.models.base import BaseModel, GuidMixin
 from osf_models.models.tag import Tag
+from osf_models.utils import security
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf_models.utils.names import impute_names
-from osf_models.utils import security
-from osf_models.exceptions import reraise_django_validation_errors
 
 
 # Hide implementation of token generation
@@ -304,7 +302,7 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin):
     def is_disabled(self, val):
         """Set whether or not this account has been disabled."""
         if val and not self.date_disabled:
-            self.date_disabled = datetime.datetime.utcnow()
+            self.date_disabled = dt.datetime.utcnow()
         elif val is False:
             self.date_disabled = None
 
@@ -347,6 +345,18 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.get_short_name()
+
+    @classmethod
+    def migrate_from_modm(cls, modm_obj):
+        django_obj = super(OSFUser, cls).migrate_from_modm(modm_obj)
+        if django_obj.password == '' or django_obj.password is None:
+            # password is blank=False, null=False
+            # make them have a password
+            django_obj.set_unusable_password()
+        else:
+            # django thinks bcrypt should start with bcrypt...
+            django_obj.password = 'bcrypt${}'.format(django_obj.password)
+        return django_obj
 
     # Legacy methods
 

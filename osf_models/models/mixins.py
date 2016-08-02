@@ -80,3 +80,4 @@ class Loggable(models.Model):
     class Meta:
         abstract = True
 
+

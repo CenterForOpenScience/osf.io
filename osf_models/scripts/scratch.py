@@ -1,3 +1,4 @@
+from __future__ import print_function
 from __future__ import unicode_literals
 
 import inspect
@@ -24,11 +25,11 @@ def get_model_topology():
 
     while relationship_map:
         for model, relationships in tuple(relationship_map.iteritems()):
-            print model, relationships
+            print(model, relationships)
             relationships.discard(model)
             relationship_map[model] = relationships - set(topology)
             if len(relationships) < 1:
-                print 'deleted {}'.format(model)
+                print('deleted {}'.format(model))
                 topology.append(model)
                 del relationship_map[model]
 

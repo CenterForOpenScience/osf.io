@@ -1,15 +1,19 @@
+import logging
 import random
+from datetime import datetime
 
-from django.db import models
-from django.core.exceptions import ValidationError as DjangoValidationError
-from modularodm.query import QueryGroup
 import modularodm.exceptions
-
-from osf_models.modm_compat import to_django_query
+import modularodm.exceptions
+import pytz
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import models
 from osf_models.exceptions import ValidationError
+from osf_models.modm_compat import to_django_query
+from osf_models.utils.base import get_object_id
 
 ALPHABET = '23456789abcdefghjkmnpqrstuvwxyz'
 
+logger = logging.getLogger(__name__)
 
 def generate_guid(length=5):
     while True:
@@ -55,23 +59,6 @@ class PKIDStr(str):
         return self.__pk
 
 
-class GuidMixin(models.Model):
-    _guid = models.OneToOneField(Guid,
-                                 default=generate_guid_instance,
-                                 unique=True,
-                                 related_name='referent_%(class)s')
-
-    @property
-    def guid(self):
-        return self._guid.guid
-
-    @property
-    def _id(self):
-        return PKIDStr(self._guid.guid, self.pk)
-
-    class Meta:
-        abstract = True
-
 class MODMCompatibilityQuerySet(models.QuerySet):
     def sort(self, *fields):
         # Fields are passed in as e.g. [('title', 1), ('date_created', -1)]
@@ -89,6 +76,7 @@ class MODMCompatibilityQuerySet(models.QuerySet):
 
     def limit(self, n):
         return self[:n]
+
 
 class BaseModel(models.Model):
     """Base model that acts makes subclasses mostly compatible with the
@@ -137,3 +125,68 @@ class BaseModel(models.Model):
             except DjangoValidationError as err:
                 raise ValidationError(*err.args)
         return super(BaseModel, self).save(*args, **kwargs)
+
+
+class ObjectIDMixin(models.Model):
+    _object_id = models.CharField(max_length=255,
+                                  unique=True,
+                                  db_index=True,
+                                  default=get_object_id)
+    @property
+    def guid(self):
+        return self._object_id
+
+    @property
+    def _id(self):
+        return PKIDStr(self._object_id, self.pk)
+
+    @classmethod
+    def migrate_from_modm(cls, modm_obj):
+        raise NotImplementedError('You must implement migrate_from_modm on the child model or volunteer to do it on ObjectIDMixin')
+
+
+class GuidMixin(models.Model):
+    _guid = models.OneToOneField('Guid',
+                                 default=generate_guid_instance,
+                                 unique=True,
+                                 related_name='referent_%(class)s')
+
+    @property
+    def guid(self):
+        return self._guid.guid
+
+    @property
+    def _id(self):
+        return PKIDStr(self._guid.guid, self.pk)
+
+    @classmethod
+    def migrate_from_modm(cls, modm_obj):
+        """
+        Given a modm object, make a django object with the same local fields.
+        This is a base method that may work for simple things. It should be customized for complex ones.
+        :param modm_obj:
+        :return:
+        """
+        guid, created = Guid.objects.get_or_create(guid=modm_obj._id)
+        if created:
+            logger.debug('Created a new Guid for {}'.format(modm_obj))
+        django_obj = cls()
+        django_obj._guid = guid
+
+        local_django_fields = set([x.name for x in django_obj._meta.get_fields() if not x.is_relation])
+
+        intersecting_fields = set(modm_obj.to_storage().keys()).intersection(
+            set(local_django_fields))
+
+        for field in intersecting_fields:
+            modm_value = getattr(modm_obj, field)
+            if modm_value is None:
+                continue
+            if isinstance(modm_value, datetime):
+                modm_value = pytz.utc.localize(modm_value)
+            setattr(django_obj, field, modm_value)
+
+        return django_obj
+
+    class Meta:
+        abstract = True

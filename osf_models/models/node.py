@@ -2,9 +2,7 @@ import urlparse
 
 from django.core.exceptions import ValidationError
 from django.db import models
-from typedmodels.models import TypedModel
-
-from osf_models.modm_compat import Q
+from osf_models.apps import AppConfig as app_config
 from osf_models.models import MetaSchema
 from osf_models.models.contributor import Contributor
 from osf_models.models.mixins import Loggable
@@ -13,14 +11,12 @@ from osf_models.models.tag import Tag
 from osf_models.models.user import OSFUser
 from osf_models.models.validators import validate_title
 from osf_models.utils.auth import Auth
+from osf_models.utils.base import api_v2_url
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from typedmodels.models import TypedModel
+
 from website.exceptions import UserNotAffiliatedError
 from .base import BaseModel, GuidMixin
-
-from osf_models.utils.base import api_v2_url
-
-from osf_models.apps import AppConfig as app_config
-
 
 class AbstractNode(TypedModel, Loggable, GuidMixin, BaseModel):
     """

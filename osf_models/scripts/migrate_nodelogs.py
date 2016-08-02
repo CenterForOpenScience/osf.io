@@ -1,3 +1,4 @@
+from __future__ import print_function
 import gc
 from collections import deque
 from datetime import datetime
@@ -10,7 +11,7 @@ from website.models import NodeLog as MODMNodeLog
 
 global modm_to_django
 modm_to_django = build_pk_caches()
-print 'Cached {} MODM to django mappings...'.format(len(modm_to_django.keys()))
+print('Cached {} MODM to django mappings...'.format(len(modm_to_django.keys())))
 
 
 def main():
@@ -25,8 +26,8 @@ def main():
 
     while count < total:
         garbage = gc.collect()
-        print 'Collected {} whole garbages!'.format(garbage)
-        print 'Migrating {} through {}'.format(count, count + page_size)
+        print('Collected {} whole garbages!'.format(garbage))
+        print('Migrating {} through {}'.format(count, count + page_size))
 
         django_nodelogs = deque()
         nodelog_guids = deque()
@@ -34,8 +35,8 @@ def main():
         for modm_nodelog in MODMNodeLog.find().sort('-date')[count:count +
                                                              page_size]:
             if modm_nodelog._id in nodelog_guids:
-                print 'Nodelog with guid of {} and data of {} exists in batch'.format(
-                    modm_nodelog._id, modm_nodelog.to_storage())
+                print('Nodelog with guid of {} and data of {} exists in batch'.format(
+                    modm_nodelog._id, modm_nodelog.to_storage()))
                 continue
             else:
                 nodelog_guids.append(modm_nodelog._id)
@@ -51,7 +52,7 @@ def main():
                                                  None)._id]
             except (KeyError, AttributeError) as ex:
                 blank_nodes += 1
-                print 'Found blank node on {}'.format(modm_nodelog._id)
+                print('Found blank node on {}'.format(modm_nodelog._id))
                 node_pk = None
 
             if modm_nodelog.date is None:
@@ -70,34 +71,33 @@ def main():
 
             count += 1
             if count % 1000 == 0:
-                print 'Through {} in {}'.format(count, (
-                    datetime.now() - split).total_seconds())
+                print('Through {} in {}'.format(count, (
+                    datetime.now() - split).total_seconds()))
                 split = datetime.now()
             if count % page_size == 0:
-                print '{} blank users; {} blank nodes'.format(blank_users,
-                                                              blank_nodes)
-                print 'Starting to migrate {} through {} which is {}'.format(
-                    count - page_size, count, len(django_nodelogs))
+                print('{} blank users; {} blank nodes'.format(blank_users,
+                                                               blank_nodes))
+                print('Starting to migrate {} through {} which is {}'.format(
+                    count - page_size, count, len(django_nodelogs)))
                 splat = datetime.now()
 
                 if len(django_nodelogs) > 0:
                     with transaction.atomic():
                         NodeLog.objects.bulk_create(django_nodelogs)
 
-                print 'Finished migrating {} through {} in {} which is {}'.format(
+                print('Finished migrating {} through {} in {} which is {}'.format(
                     count - page_size, count,
                     (datetime.now() - splat).total_seconds(),
-                    len(django_nodelogs))
+                    len(django_nodelogs)))
 
                 django_nodelogs = deque()
                 nodelog_guids = deque()
 
                 garbage = gc.collect()
-                print 'Collected {} whole garbages!'.format(garbage)
+                print('Collected {} whole garbages!'.format(garbage))
 
-    print '\a\a\a\a\a'
-    print 'Finished migration in {}. MODM: {}, DJANGO: {}'.format(
+    print('Finished migration in {}. MODM: {}, DJANGO: {}'.format(
         (datetime.now() - start).total_seconds(), total,
-        NodeLog.objects.count())
-    print 'There were {} blank users and {} blank nodes'.format(blank_users,
-                                                                blank_nodes)
+        NodeLog.objects.count()))
+    print('There were {} blank users and {} blank nodes'.format(blank_users,
+                                                                 blank_nodes))
