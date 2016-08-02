@@ -12,9 +12,8 @@ from api.base.views import JSONAPIBaseView
 from api.base.filters import ODMFilterMixin
 from api.preprints.serializers import PreprintSerializer, PreprintDetailSerializer
 from api.nodes.views import NodeMixin, WaterButlerMixin, NodeContributorsList
-from api.base.utils import get_user_auth, get_object_or_error
-from website.exceptions import NodeStateError
-from rest_framework.exceptions import ValidationError, NotFound
+from api.base.utils import get_object_or_error
+from rest_framework.exceptions import NotFound
 from api.nodes.serializers import (
     NodeContributorsSerializer
 )
