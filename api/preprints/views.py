@@ -10,7 +10,7 @@ from website.models import Node
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 from api.base.filters import ODMFilterMixin
-from .serializers import PreprintSerializer, PreprintDetailSerializer
+from api.preprints.serializers import PreprintSerializer, PreprintDetailSerializer
 from api.nodes.views import NodeMixin, WaterButlerMixin, NodeContributorsList
 from api.base.utils import get_user_auth, get_object_or_error
 from website.exceptions import NodeStateError
@@ -54,7 +54,8 @@ class PreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         return (
-            Q('preprint_file', 'neq', None) &
+            Q('is_deleted', 'ne', True) &
+            Q('preprint_file', 'ne', None) &
             Q('_is_preprint_orphan', 'eq', False) &
             Q('is_public', 'eq', True)
         )
