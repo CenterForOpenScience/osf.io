@@ -176,27 +176,20 @@ def robots():
 def external_ember_app(path=None):
     """
     Serve the contents of an ember application running on a separate server
-
-    There are 3 behaviors to consider:
-    1. We want an asset. Proxy directly to the asset path. (including special cases like live-reload)
-    2. We want a route. The dev server doesn't respond to requests at other than the application root (respecting baseURL),
-        so just send every request to the baseURL, and let the index.html router sort things out.
-    3. We want a special endpoint defined in a mock library like ember-mirage. These may look like routes, but need to be proxied individually.
-
-    We will handle the first two cases. If the third one comes up we can iterate.
     """
-    path_list = []
-    if not path or '.' not in path:
-        # Base route needs a trailing slash for request to succeed. Static asset files should not have one.
-        path_list.append('')
+    if not path or '.' in path:
+        # If this is a file, proxy the URL given directly as-is to the ember server
+        url = furl.furl(request.path.lstrip('/')).set(host=settings.EXTERNAL_EMBER_URL)
+    else:
+        # Ember server 404s when asked for a child route- it seems to be relying on index.html to figure that stuff out.
+        # So if something looks like a child route, just send the request to the base URL, and ensure a trailing slash.
+        # TODO: This may break if there are other things (like mocks or non-ember endpoints)
+        #   running on the ember dev server, eg routes that need to be handled separately from the parent
+        url = furl.furl(settings.EXTERNAL_EMBER_URL)
+        url.path.segments.extend([settings.EXTERNAL_EMBER_BASEURL.replace('/', ''), ''])
 
-    # Construct URL, and make sure ember respects any provided query params.
-    print '<><><>', request.path
-    url = furl.furl(request.path.lstrip('/')).add(path=path_list, args=request.args)
-    url = url.set(host=settings.EXTERNAL_EMBER_URL)
-    url.path.segments.extend(path_list)
-
-    print '-------- Requesting url: ', url
+    # Make sure URL respects any provided query params
+    url.add(args=request.args)
 
     resp = requests.get(url)
 
