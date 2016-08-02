@@ -1,12 +1,8 @@
 # -*- coding: utf-8 -*-
-import sys
 from operator import and_, or_
 
 from django.db.models import Q as DjangoQ
-# from website import settings
 
-
-import modularodm
 from modularodm import Q as MODMQ
 from modularodm.query import query, QueryGroup
 
@@ -126,6 +122,12 @@ class Q(BaseQ, query.RawQuery):
         return '<Q({}, {}, {})>'.format(self.key, self.op, self.val)
 
 def _get_field(model_cls, field_name):
+    # Prevent circular import
+    from osf_models.models.base import ObjectIDMixin, GuidMixin
+    if issubclass(model_cls, ObjectIDMixin) and field_name == '_id':
+        field_name = '_object_id'
+    elif issubclass(model_cls, GuidMixin) and field_name == '_id':
+        field_name = '_guid'
     return model_cls._meta.get_field(field_name)
 
 def to_django_query(query, model_cls=None):

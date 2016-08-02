@@ -30,8 +30,8 @@ class ArchiveTarget(ObjectIDMixin, BaseModel):
     #     'num_files': <int>,
     #     'disk_usage': <float>,
     # }
-    stat_result = DateTimeAwareJSONField()
-    errors = ArrayField(models.CharField(max_length=2048))
+    stat_result = DateTimeAwareJSONField(blank=True)
+    errors = ArrayField(models.CharField(max_length=2048), default=list, blank=True)
 
     def __repr__(self):
         return '<{0}(_id={1}, name={2}, status={3})>'.format(

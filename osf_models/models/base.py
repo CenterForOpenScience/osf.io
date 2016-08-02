@@ -113,6 +113,10 @@ class BaseModel(models.Model):
         else:
             return cls.objects.filter(to_django_query(query, model_cls=cls))
 
+    @classmethod
+    def remove_one(cls, obj):
+        return obj.delete()
+
     @property
     def _primary_name(self):
         return '_id'
