@@ -223,6 +223,22 @@ class TestPreregFiles(AdminTestCase):
         for q, f in self.d_of_qs.iteritems():
             f.get_guid(create=True)
             f.save()
+            if q == 'q26':
+                data[q] = {
+                    'comments': [],
+                    'value': '26',
+                    'extra': [
+                        {
+                            'data': {
+                                'provider': 'osfstorage',
+                                'path': f.path,
+                            },
+                            'fileId': f._id,
+                            'nodeId': self.node._id,
+                        }
+                    ]
+                }
+                continue
             data[q] = {
                 'value': {
                     'uploader': {
@@ -231,8 +247,9 @@ class TestPreregFiles(AdminTestCase):
                                 'data': {
                                     'provider': 'osfstorage',
                                     'path': f.path,
-                                    'fileId': f._id
-                                }
+                                },
+                                'fileId': f._id,
+                                'nodeId': self.node._id,
                             }
                         ]
                     }
@@ -280,3 +297,33 @@ class TestPreregFiles(AdminTestCase):
             ['q7', 'q11', 'q12', 'q13', 'q16', 'q19', 'q26'],
             questions
         )
+
+    def test_file_id_missing(self):
+        data = self.draft.registration_metadata
+        data['q7']['value']['uploader']['extra'][0].pop('fileId')
+        self.draft.update_metadata(data)
+        for item in get_metadata_files(self.draft):
+            nt.assert_is_instance(item, OsfStorageFileNode)
+
+    def test_file_id_missing_odd(self):
+        data = self.draft.registration_metadata
+        data['q26']['extra'][0].pop('fileId')
+        self.draft.update_metadata(data)
+        for item in get_metadata_files(self.draft):
+            nt.assert_is_instance(item, OsfStorageFileNode)
+
+    def test_wrong_provider(self):
+        data = self.draft.registration_metadata
+        data['q7']['value']['uploader']['extra'][0]['data']['provider'] = 'box'
+        self.draft.update_metadata(data)
+        with nt.assert_raises(Http404):
+            for item in get_metadata_files(self.draft):
+                pass
+
+    def test_wrong_provider_odd(self):
+        data = self.draft.registration_metadata
+        data['q26']['extra'][0]['data']['provider'] = 'box'
+        self.draft.update_metadata(data)
+        with nt.assert_raises(Http404):
+            for item in get_metadata_files(self.draft):
+                pass

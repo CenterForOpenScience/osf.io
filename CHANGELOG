@@ -2,6 +2,27 @@
 Changelog
 *********
 
+0.85.0 (2016-08-01)
+===================
+
+- APIv2: Add S3 addon management.
+
+0.84.0 (2016-07-28)
+===================
+
+- Migrate Piwik to Keen.
+
+0.83.0 (2016-07-25)
+===================
+
+- Add @mentions to comments.
+- Add password strength verification to password inputs.
+
+Migrations
+----------
+
+- python -m scripts.add_global_subscriptions
+
 0.82.0 (2016-07-19)
 ===================
 

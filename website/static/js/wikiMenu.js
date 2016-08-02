@@ -19,10 +19,8 @@ function resolveToggle(item) {
 }
 
 function resolveIcon(item) {
-    var componentIcons = iconmap.componentIcons;
-    var projectIcons = iconmap.projectIcons;
+    var icons = iconmap.projectComponentIcons;
     function returnView(category) {
-        var icons = componentIcons[category] ? componentIcons : projectIcons;
         return m('span', { 'class' : icons[category]});
     }
     if (item.data.kind === 'component' && item.parent().data.title === 'Component Wiki Pages') {

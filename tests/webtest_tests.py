@@ -20,7 +20,6 @@ from tests.base import fake
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory, WatchConfigFactory, NodeFactory,
                              NodeWikiFactory, RegistrationFactory,  UnregUserFactory, UnconfirmedUserFactory,
                              PrivateLinkFactory)
-from tests.test_features import requires_piwik
 from website import settings, language
 from website.util import web_url_for, api_url_for
 
@@ -548,62 +547,6 @@ class TestShortUrls(OsfTestCase):
         )
 
 
-@requires_piwik
-class TestPiwik(OsfTestCase):
-
-    def setUp(self):
-        super(TestPiwik, self).setUp()
-        self.users = [
-            AuthUserFactory()
-            for _ in range(3)
-        ]
-        self.consolidate_auth = Auth(user=self.users[0])
-        self.project = ProjectFactory(creator=self.users[0], is_public=True)
-        self.project.add_contributor(contributor=self.users[1])
-        self.project.save()
-
-    def test_contains_iframe_and_src(self):
-        res = self.app.get(
-            '/{0}/statistics/'.format(self.project._primary_key),
-            auth=self.users[0].auth
-        ).maybe_follow()
-        assert_in('iframe', res)
-        assert_in('src', res)
-        assert_in(settings.PIWIK_HOST, res)
-
-    def test_anonymous_no_token(self):
-        res = self.app.get(
-            '/{0}/statistics/'.format(self.project._primary_key),
-            auth=self.users[2].auth
-        ).maybe_follow()
-        assert_in('token_auth=anonymous', res)
-
-    def test_contributor_token(self):
-        res = self.app.get(
-            '/{0}/statistics/'.format(self.project._primary_key),
-            auth=self.users[1].auth
-        ).maybe_follow()
-        assert_in(self.users[1].piwik_token, res)
-
-    def test_no_user_token(self):
-        res = self.app.get(
-            '/{0}/statistics/'.format(self.project._primary_key)
-        ).maybe_follow()
-        assert_in('token_auth=anonymous', res)
-
-    def test_private_alert(self):
-        self.project.set_privacy('private', auth=self.consolidate_auth)
-        self.project.save()
-        res = self.app.get(
-            '/{0}/statistics/'.format(self.project._primary_key),
-            auth=self.users[0].auth
-        ).maybe_follow().normal_body
-        assert_in(
-            'Usage statistics are collected only for public resources.',
-            res
-        )
-
-
 class TestClaiming(OsfTestCase):
 
     def setUp(self):
@@ -1036,6 +979,16 @@ class TestResetPassword(OsfTestCase):
         form['password2'] = 'newpassword'
         res = form.submit()
 
+    # successfully reset password if osf verification_key(OSF) is valid and form is valid
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_can_reset_password_if_form_success(self, mock_service_validate):
+        # load reset password page and submit email
+        res = self.app.get(self.get_url)
+        form = res.forms['resetPasswordForm']
+        form['password'] = 'newpassword'
+        form['password2'] = 'newpassword'
+        res = form.submit()
+
         # check request URL is /resetpassword with verification_key(OSF)
         request_url_path = res.request.path
         assert_in('resetpassword', request_url_path)
@@ -1067,7 +1020,6 @@ class TestResetPassword(OsfTestCase):
         service_url = 'http://accounts.osf.io/?ticket=' + ticket
         resp = cas.make_response_from_ticket(ticket, service_url)
         assert_not_equal(self.user.verification_key, self.cas_key)
-
     #  logged-in user should be automatically logged out upon before reset password
     def test_reset_password_logs_out_user(self):
         # visit reset password link while another user is logged in
