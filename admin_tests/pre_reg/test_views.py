@@ -294,7 +294,15 @@ class TestPreregFiles(AdminTestCase):
         questions = get_file_questions('prereg-prize.json')
         nt.assert_equal(7, len(questions))
         nt.assert_list_equal(
-            ['q7', 'q11', 'q12', 'q13', 'q16', 'q19', 'q26'],
+            [
+                (u'q7', u'Data collection procedures'),
+                (u'q11', u'Manipulated variables'),
+                (u'q12', u'Measured variables'),
+                (u'q13', u'Indices'),
+                (u'q16', u'Study design'),
+                (u'q19', u'Statistical models'),
+                (u'q26', u'Upload an analysis script with clear comments')
+            ],
             questions
         )
 
