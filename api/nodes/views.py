@@ -684,9 +684,9 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
             raise ValidationError('Must have at least one registered admin contributor')
 
     # Overrides BulkDestroyJSONAPIView
-    def get_requested_resources(self, request):
+    def get_requested_resources(self, request, request_data):
         requested_ids = []
-        for data in request.data:
+        for data in request_data:
             try:
                 requested_ids.append(data['id'].split('-')[1])
             except IndexError:
@@ -697,7 +697,7 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
             if getattr(resource, 'is_deleted', None):
                 raise Gone
 
-        if len(resource_object_list) != len(request.data):
+        if len(resource_object_list) != len(request_data):
             raise ValidationError({'non_field_errors': 'Could not find all objects to delete.'})
 
         return resource_object_list
