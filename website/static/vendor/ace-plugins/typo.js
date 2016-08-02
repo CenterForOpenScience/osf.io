@@ -83,6 +83,7 @@ Typo = function (dictionary, affData, wordsData, settings) {
 				path = settings.dictionaryPath;
 			}
 			else {
+				// path to described dictionaries changed from original
 				path = '/static/dictionaries';
 			}
 
@@ -215,6 +216,7 @@ Typo.prototype = {
 	_readFile : function (path, charset, async) {
 		charset = charset || 'utf8';
 
+		// OSF change: Only using async so removed use of node js implementation
 		if (typeof XMLHttpRequest !== 'undefined') {
 			var promise;
 			var req = new XMLHttpRequest();
