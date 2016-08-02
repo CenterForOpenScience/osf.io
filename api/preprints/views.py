@@ -36,14 +36,14 @@ class PreprintMixin(NodeMixin):
         return node
 
 
-class PreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
+class PreprintList(JSONAPIBaseView, generics.CreateAPIView, generics.ListAPIView, ODMFilterMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.USERS_READ]
-    required_write_scopes = [CoreScopes.USERS_WRITE]
+    required_read_scopes = [CoreScopes.NODE_BASE_READ]
+    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
 
     serializer_class = PreprintSerializer
 
@@ -54,8 +54,7 @@ class PreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         return (
-            Q('preprint_file', 'neq', None) &
-            Q('_is_preprint_orphan', 'eq', False) &
+            Q('preprint_file', 'ne', None) &
             Q('is_public', 'eq', True)
         )
 
@@ -64,10 +63,10 @@ class PreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
         query = self.get_query_from_request()
         nodes = Node.find(query)
 
-        return nodes
+        return [node for node in nodes if node.is_preprint]
 
 
-class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, PreprintMixin, WaterButlerMixin):
+class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin, WaterButlerMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -80,19 +79,8 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
     view_category = 'preprints'
     view_name = 'preprint-detail'
 
-    # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
         return self.get_node()
-
-    # overrides RetrieveUpdateDestroyAPIView
-    def perform_destroy(self, instance):
-        auth = get_user_auth(self.request)
-        node = self.get_object()
-        try:
-            node.remove_node(auth=auth)
-        except NodeStateError as err:
-            raise ValidationError(err.message)
-        node.save()
 
 
 class PreprintAuthorsList(NodeContributorsList, PreprintMixin):
