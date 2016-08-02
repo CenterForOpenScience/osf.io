@@ -144,6 +144,9 @@ class ObjectIDMixin(models.Model):
     def migrate_from_modm(cls, modm_obj):
         raise NotImplementedError('You must implement migrate_from_modm on the child model or volunteer to do it on ObjectIDMixin')
 
+    class Meta:
+        abstract = True
+
 
 class GuidMixin(models.Model):
     _guid = models.OneToOneField('Guid',
