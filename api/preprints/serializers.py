@@ -1,7 +1,10 @@
 from rest_framework import serializers as ser
+from modularodm import Q
+from modularodm.exceptions import NoResultsFound, MultipleResultsFound
 from api.base.serializers import (
     JSONAPISerializer, RelationshipField, IDField, JSONAPIListField, LinksField
 )
+from website.models import Node
 from api.base.utils import absolute_reverse
 from api.nodes.serializers import NodeTagField, NodeContributorsSerializer
 
@@ -18,8 +21,8 @@ class PreprintSerializer(JSONAPISerializer):
         'preprint_subjects'
     ])
 
-    title = ser.CharField(required=True)
-    preprint_subjects = JSONAPIListField()
+    title = ser.CharField(required=False)
+    subjects = JSONAPIListField(required=False, source='preprint_subjects')
     date_created = ser.DateTimeField(read_only=True, source='preprint_created')
     date_modified = ser.DateTimeField(read_only=True)
     id = IDField(source='_id', required=False)
@@ -28,7 +31,7 @@ class PreprintSerializer(JSONAPISerializer):
 
     primary_file = RelationshipField(
         related_view='files:file-detail',
-        related_view_kwargs={'file_id': '<_id>'},
+        related_view_kwargs={'file_id': '<preprint_file._id>'},
     )
 
     files = RelationshipField(
@@ -52,6 +55,11 @@ class PreprintSerializer(JSONAPISerializer):
 
     def get_absolute_url(self, obj):
         return self.get_preprint_url(obj)
+
+    def create(self, validated_data):
+        node = validated_data.get('node')
+        # TODO - get correct fields from validated_data
+        pass
 
 
 class PreprintDetailSerializer(PreprintSerializer):
