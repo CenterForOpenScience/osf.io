@@ -44,42 +44,9 @@ class TestViewOnlyLinksDetail(ViewOnlyLinkTestCase):
         assert_equal(res.status_code, 404)
 
 
-class TestViewOnlyLinksCreate(ViewOnlyLinkTestCase):
-
-    def test_id_reqired_in_payload(self):
-        pass
-
-    def test_invalid_vol_id(self):
-        pass
-
-    def test_invalid_vol_name(self):
-        pass
-
-    def test_nodes_required_in_payload(self):
-        pass
-
-    def test_invalid_nodes_in_payload(self):
-        pass
-
-    def test_admin_can_create_vol(self):
-        pass
-
-    def test_read_write_cannot_create_vol(self):
-        pass
-
-    def test_read_only_cannot_create_vol(self):
-        pass
-
-    def test_logged_in_user_cannot_create_vol(self):
-        pass
-
-    def test_unauthenticated_user_cannot_create_vol(self):
-        pass
-
-
 class TestViewOnlyLinksUpdate(ViewOnlyLinkTestCase):
 
-    def test_id_reqired_in_payload(self):
+    def test_id_required_in_payload(self):
         pass
 
     def test_invalid_vol_id(self):
@@ -112,7 +79,7 @@ class TestViewOnlyLinksUpdate(ViewOnlyLinkTestCase):
 
 class TestViewOnlyLinksDelete(ViewOnlyLinkTestCase):
 
-    def test_id_reqired_in_payload(self):
+    def test_id_required_in_payload(self):
         pass
 
     def test_invalid_vol_id(self):

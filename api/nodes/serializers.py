@@ -938,17 +938,27 @@ class DraftRegistrationDetailSerializer(DraftRegistrationSerializer):
         return draft
 
 
+class NodeVOL(ser.Field):
+    def to_representation(self, obj):
+        if obj is not None:
+            return obj._id
+        return None
+
+    def to_internal_value(self, data):
+        return data
+
+
 class NodeViewOnlyLinkSerializer(JSONAPISerializer):
     '''
     Document pls.
     '''
 
-    key = ser.CharField()
-    id = IDField(source='_id')
-    date_created = ser.DateTimeField()
-    nodes = JSONAPIListField(child=NodeSerializer(), required=True)
-    anonymous = ser.BooleanField(default=False)
-    name = ser.CharField(default='Shared project link')
+    key = ser.CharField(read_only=True)
+    id = IDField(source='_id', read_only=True)
+    date_created = ser.DateTimeField(read_only=True)
+    nodes = JSONAPIListField(child=NodeVOL(), required=True)
+    anonymous = ser.BooleanField(default=False, required=False)
+    name = ser.CharField(default='Shared project link', required=False)
 
     creator = RelationshipField(
         related_view='users:user-detail',
@@ -956,22 +966,31 @@ class NodeViewOnlyLinkSerializer(JSONAPISerializer):
     )
 
     def create(self, validated_data):
-        # name = validated_data.pop('name')
-        # user = get_user_auth(self.context['request'])
-        # nodes = validated_data.pop('nodes')
-        # anonymous = validated_data.pop('anonymous')
-        #
-        # try:
-        #     private_link = new_private_link(
-        #         name=name,
-        #         user=user,
-        #         nodes=nodes,
-        #         anonymous=anonymous
-        #     )
-        # except ValidationValueError:
-        #     raise exceptions.ValidationError('Invalid link name.')
-        # return private_link
-        pass
+        name = validated_data.pop('name')
+        user = get_user_auth(self.context['request']).user
+        nodes = validated_data.pop('nodes')
+        anonymous = validated_data.pop('anonymous')
+
+        private_link_nodes = []
+        for node in nodes:
+            tmp = Node.load(node)
+            if not tmp:
+                raise exceptions.NotFound(detail='Node with id "{}" was not found'.format(node))
+            private_link_nodes.append(node)
+
+            if not tmp.has_permission(user, 'admin'):
+                raise exceptions.PermissionDenied(detail='User with id "{}" does not have permission to create a VOL for node "{}"'.format(user._id, node))
+
+        try:
+            private_link = new_private_link(
+                name=name,
+                user=user,
+                nodes=private_link_nodes,
+                anonymous=anonymous
+            )
+        except ValidationValueError:
+            raise exceptions.ValidationError('Invalid link name.')
+        return private_link
 
     def update(self, instance, validated_data):
         pass

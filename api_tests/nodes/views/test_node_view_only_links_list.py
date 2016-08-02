@@ -79,3 +79,106 @@ class TestViewOnlyLinksList(ViewOnlyLinkTestCase):
         assert_equal(len(data), 1)
 
 
+class TestViewOnlyLinksCreate(ViewOnlyLinkTestCase):
+
+    def setUp(self):
+        super(TestViewOnlyLinksCreate, self).setUp()
+        self.url = '/{}nodes/{}/view_only_links/'.format(API_BASE, self.public_project._id)
+
+    def test_invalid_vol_name(self):
+        payload = {
+            'attributes': {
+                'name': '<div>  </div>',
+                'nodes': [self.public_project._id]
+            }
+        }
+        res = self.app.post_json_api(self.url, {'data': payload}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Invalid link name.')
+
+    def test_nodes_required_in_payload(self):
+        payload = {
+            'attributes': {
+                'name': 'testlink',
+                'anonymous': True,
+            }
+        }
+        res = self.app.post_json_api(self.url, {'data': payload}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes/nodes')
+        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
+
+    def test_invalid_nodes_in_payload(self):
+        payload = {
+            'attributes': {
+                'name': 'testlink',
+                'anonymous': True,
+                'nodes': ['abcde'],
+            }
+        }
+        res = self.app.post_json_api(self.url, {'data': payload}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+        assert_equal(res.json['errors'][0]['detail'], 'Node with id "abcde" was not found')
+
+    def test_admin_can_create_vol(self):
+        url = '/{}nodes/{}/view_only_links/?embed=creator'.format(API_BASE, self.public_project._id)
+        payload = {
+            'attributes': {
+                'name': 'testlink',
+                'anonymous': True,
+                'nodes': [self.public_project._id],
+            }
+        }
+        res = self.app.post_json_api(url, {'data': payload}, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        data = res.json['data']
+        assert_equal(data['attributes']['name'], 'testlink')
+        assert_equal(data['attributes']['anonymous'], True)
+        assert_equal(data['embeds']['creator']['data']['id'], self.user._id)
+
+    def test_read_write_cannot_create_vol(self):
+        payload = {
+            'attributes': {
+                'name': 'testlink',
+                'anonymous': True,
+                'nodes': [self.public_project._id],
+            }
+        }
+        res = self.app.post_json_api(self.url, {'data': payload}, auth=self.read_write_user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'User with id "{}" does not have permission to create a VOL for node "{}"'.format(self.read_write_user._id, self.public_project._id))
+
+    def test_read_only_cannot_create_vol(self):
+        payload = {
+            'attributes': {
+                'name': 'testlink',
+                'anonymous': True,
+                'nodes': [self.public_project._id],
+            }
+        }
+        res = self.app.post_json_api(self.url, {'data': payload}, auth=self.read_only_user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'User with id "{}" does not have permission to create a VOL for node "{}"'.format(self.read_only_user._id, self.public_project._id))
+
+    def test_logged_in_user_cannot_create_vol(self):
+        payload = {
+            'attributes': {
+                'name': 'testlink',
+                'anonymous': True,
+                'nodes': [self.public_project._id],
+            }
+        }
+        res = self.app.post_json_api(self.url, {'data': payload}, auth=self.non_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'User with id "{}" does not have permission to create a VOL for node "{}"'.format(self.non_contributor._id, self.public_project._id))
+
+    def test_unauthenticated_user_cannot_create_vol(self):
+        payload = {
+            'attributes': {
+                'name': 'testlink',
+                'anonymous': True,
+                'nodes': [self.public_project._id],
+            }
+        }
+        res = self.app.post_json_api(self.url, {'data': payload}, expect_errors=True)
+        assert_equal(res.status_code, 401)
