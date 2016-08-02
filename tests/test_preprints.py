@@ -92,7 +92,7 @@ class TestSetPreprintFile(OsfTestCase):
         self.project.set_preprint_file(self.file._id, auth=self.auth, save=True)
         assert_equal(self.project.preprint_file._id, self.file._id)
 
-    @assert_logs(NodeLog.PREPRINT_UPDATED, 'project')
+    @assert_logs(NodeLog.PREPRINT_FILE_UPDATED, 'project')
     def test_change_primary_file(self):
         self.project.set_preprint_file(self.file._id, auth=self.auth, save=True)
         assert_equal(self.project.preprint_file._id, self.file._id)
