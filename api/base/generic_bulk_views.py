@@ -142,7 +142,7 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
         for item in data:
             item_type = item[u'type']
             if item_type != object_type:
-                raise Conflict("Type needs to match type expected at this endpoint.")
+                raise Conflict('Type needs to match type expected at this endpoint.')
 
         if not self.allow_bulk_destroy_resources(user, resource_object_list):
             raise PermissionDenied
