@@ -508,7 +508,6 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
 
 class UserPreprints(UserNodes):
     required_read_scopes = [CoreScopes.USERS_READ]
-    required_write_scopes = [CoreScopes.USERS_WRITE]
 
     serializer_class = PreprintSerializer
     view_category = 'users'
@@ -522,11 +521,14 @@ class UserPreprints(UserNodes):
             Q('is_deleted', 'ne', True) &
             Q('contributors', 'eq', user._id) &
             Q('preprint_file', 'ne', None) &
-            Q('_is_preprint_orphan', 'eq', False) &
             Q('is_public', 'eq', True)
         )
 
         return query
+
+    def get_queryset(self):
+        nodes = Node.find(self.get_query_from_request())
+        return [node for node in nodes if node.is_preprint]
 
 
 class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
