@@ -61,7 +61,7 @@ class CasClient(object):
 
     def get_login_url(self, service_url, campaign=None, username=None, verification_key=None):
         """
-        Get CAS login url with `service_url` as redirect location. There are three types:
+        Get CAS login url with `service_url` as redirect location. There are three options:
         1. no additional parameters provided -> go to CAS login page
         2. `campaign=institution` -> go to CAS institution login page
         3. `(username, verification_key)` -> CAS will verify this request automatically in background
