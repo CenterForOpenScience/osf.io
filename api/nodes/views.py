@@ -41,7 +41,8 @@ from api.nodes.serializers import (
     NodeInstitutionsRelationshipSerializer,
     NodeAlternativeCitationSerializer,
     NodeContributorsCreateSerializer,
-    NodeViewOnlyLinkSerializer
+    NodeViewOnlyLinkSerializer,
+    NodeViewOnlyLinkCreateSerializer,
 )
 from api.nodes.utils import get_file_object
 
@@ -2964,11 +2965,16 @@ class NodeViewOnlyLinksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
             if not link.is_deleted
         ]
 
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return NodeViewOnlyLinkCreateSerializer
+        return NodeViewOnlyLinkSerializer
+
 
 class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin):
-    '''
+    """
     Document pls.
-    '''
+    """
 
     permission_classes = (
         IsAdmin,
@@ -2990,7 +2996,6 @@ class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIV
                 return link
         raise NotFound
 
-
-        # def perform_destroy(self, instance):
-        #     pass
+    # def perform_destroy(self, instance):
+    #     pass
 

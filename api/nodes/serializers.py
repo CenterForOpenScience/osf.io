@@ -12,9 +12,10 @@ from django.conf import settings
 from website.addons.base.exceptions import InvalidFolderError, InvalidAuthError
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
-from website.models import Node, User, Comment, Institution, MetaSchema, DraftRegistration
+from website.models import Node, User, Comment, Institution, MetaSchema, DraftRegistration, PrivateLink
 from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
+from website.util.sanitize import strip_html
 from website.project import new_private_link
 from website.project.model import NodeUpdateError
 
@@ -949,21 +950,67 @@ class NodeVOL(ser.Field):
 
 
 class NodeViewOnlyLinkSerializer(JSONAPISerializer):
-    '''
+    """
     Document pls.
-    '''
-
+    """
     key = ser.CharField(read_only=True)
     id = IDField(source='_id', read_only=True)
     date_created = ser.DateTimeField(read_only=True)
-    nodes = JSONAPIListField(child=NodeVOL(), required=True)
-    anonymous = ser.BooleanField(default=False, required=False)
-    name = ser.CharField(default='Shared project link', required=False)
+    nodes = JSONAPIListField(child=NodeVOL(), required=False)
+    anonymous = ser.BooleanField(required=False)
+    name = ser.CharField(required=False)
 
     creator = RelationshipField(
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<creator._id>'},
     )
+
+    def update(self, link, validated_data):
+        assert isinstance(link, PrivateLink), 'link must be a PrivateLink'
+        return self.update_view_only_link(
+            view_only_link=link,
+            user=get_user_auth(self.context['request']).user,
+            name=validated_data.get('name'),
+            anonymous=validated_data.get('anonymous'),
+            nodes=validated_data.get('nodes')
+        )
+
+    def update_view_only_link(self, view_only_link, user, name=None, anonymous=None, nodes=None):
+        if name:
+            name = strip_html(name)
+            if name is None or not name.strip():
+                raise exceptions.ValidationError('Invalid link name.')
+            view_only_link.name = name
+
+        if anonymous:
+            view_only_link.anonymous = anonymous
+
+        if nodes:
+            view_only_link_nodes = []
+            for node in nodes:
+                tmp = Node.load(node)
+                if not tmp:
+                    raise exceptions.NotFound(detail='Node with id "{}" was not found'.format(node))
+                view_only_link_nodes.append(node)
+
+                if not tmp.has_permission(user, 'admin'):
+                    raise exceptions.PermissionDenied(detail='User with id "{}" does not have permission to update VOL with id "{}" for node "{}"'.format(user._id, view_only_link._id, node))
+            view_only_link.nodes = nodes
+
+        view_only_link.save()
+        return view_only_link
+
+    class Meta:
+        type_ = 'view_only_links'
+
+
+class NodeViewOnlyLinkCreateSerializer(NodeViewOnlyLinkSerializer):
+    """
+    Overrides NodeViewOnlyLinkSerializer to make nodes required and to set default values for anonymous and name.
+    """
+    nodes = JSONAPIListField(child=NodeVOL(), required=True)
+    anonymous = ser.BooleanField(default=False, required=False)
+    name = ser.CharField(default='Shared project link', required=False)
 
     def create(self, validated_data):
         name = validated_data.pop('name')
@@ -971,29 +1018,23 @@ class NodeViewOnlyLinkSerializer(JSONAPISerializer):
         nodes = validated_data.pop('nodes')
         anonymous = validated_data.pop('anonymous')
 
-        private_link_nodes = []
+        view_only_link_nodes = []
         for node in nodes:
             tmp = Node.load(node)
             if not tmp:
                 raise exceptions.NotFound(detail='Node with id "{}" was not found'.format(node))
-            private_link_nodes.append(node)
+            view_only_link_nodes.append(node)
 
             if not tmp.has_permission(user, 'admin'):
                 raise exceptions.PermissionDenied(detail='User with id "{}" does not have permission to create a VOL for node "{}"'.format(user._id, node))
 
         try:
-            private_link = new_private_link(
+            view_only_link = new_private_link(
                 name=name,
                 user=user,
-                nodes=private_link_nodes,
+                nodes=view_only_link_nodes,
                 anonymous=anonymous
             )
         except ValidationValueError:
             raise exceptions.ValidationError('Invalid link name.')
-        return private_link
-
-    def update(self, instance, validated_data):
-        pass
-
-    class Meta:
-        type_ = 'view_only_links'
+        return view_only_link

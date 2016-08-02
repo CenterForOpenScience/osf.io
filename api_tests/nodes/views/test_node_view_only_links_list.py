@@ -120,6 +120,36 @@ class TestViewOnlyLinksCreate(ViewOnlyLinkTestCase):
         assert_equal(res.status_code, 404)
         assert_equal(res.json['errors'][0]['detail'], 'Node with id "abcde" was not found')
 
+    def test_default_anonymous_not_in_payload(self):
+        url = '/{}nodes/{}/view_only_links/?embed=creator'.format(API_BASE, self.public_project._id)
+        payload = {
+            'attributes': {
+                'name': 'testlink',
+                'nodes': [self.public_project._id],
+            }
+        }
+        res = self.app.post_json_api(url, {'data': payload}, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        data = res.json['data']
+        assert_equal(data['attributes']['name'], 'testlink')
+        assert_equal(data['attributes']['anonymous'], False)
+        assert_equal(data['embeds']['creator']['data']['id'], self.user._id)
+
+    def test_default_name_not_in_payload(self):
+        url = '/{}nodes/{}/view_only_links/?embed=creator'.format(API_BASE, self.public_project._id)
+        payload = {
+            'attributes': {
+                'anonymous': False,
+                'nodes': [self.public_project._id],
+            }
+        }
+        res = self.app.post_json_api(url, {'data': payload}, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        data = res.json['data']
+        assert_equal(data['attributes']['name'], 'Shared project link')
+        assert_equal(data['attributes']['anonymous'], False)
+        assert_equal(data['embeds']['creator']['data']['id'], self.user._id)
+
     def test_admin_can_create_vol(self):
         url = '/{}nodes/{}/view_only_links/?embed=creator'.format(API_BASE, self.public_project._id)
         payload = {
