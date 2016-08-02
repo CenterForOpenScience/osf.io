@@ -2,10 +2,12 @@
 import os
 import httplib as http
 
-from flask import request
+from flask import request, Response
 from flask import send_from_directory
 
+import requests
 from geoip import geolite2
+from furl import furl
 
 from framework import status
 from framework import sentry
@@ -172,6 +174,17 @@ def robots():
     )
 
 
+def ember_app(path=None):
+    """Serve the contents of the ember application"""
+    if (request.path == '/ember-cli-live-reload.js'):
+        path = 'ember-cli-live-reload.js'
+    url = furl(settings.EMBER_APP_URL).add(path=path)
+    resp = requests.get(url)
+    excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
+    headers = [(name, value) for (name, value) in resp.raw.headers.items() if name.lower() not in excluded_headers]
+    return Response(resp.content, resp.status_code, headers)
+
+
 def goodbye():
     # Redirect to dashboard if logged in
     if _get_current_user():
@@ -232,6 +245,21 @@ def make_url_map(app):
         Rule('/favicon.ico', 'get', favicon, json_renderer),
         Rule('/robots.txt', 'get', robots, json_renderer),
     ])
+
+    if settings.USE_EMBER:
+        # Routes that serve up the Ember application. Hide behind feature flag.
+        process_rules(app, [
+            Rule(
+                [
+                    '/ember-cli-live-reload.js',
+                    settings.EMBER_APP_BASEURL,
+                    settings.EMBER_APP_BASEURL + '<path:path>',
+                ],
+                'get',
+                ember_app,
+                json_renderer
+            ),
+        ])
 
     ### Base ###
 
