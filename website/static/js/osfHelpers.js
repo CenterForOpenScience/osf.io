@@ -986,6 +986,5 @@ module.exports = window.$.osf = {
     onScrollToBottom: onScrollToBottom,
     mithrilToStr:mithrilToStr,
     extractContributorNamesFromAPIData: extractContributorNamesFromAPIData,
-    onScrollToBottom: onScrollToBottom,
     getDomain: getDomain
 };

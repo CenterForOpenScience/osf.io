@@ -2,6 +2,8 @@
 
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
+var $ = require('jquery');
+
 var cb = require('js/clipboard');
 
 function dropzonePreviewTemplate() {
@@ -64,5 +66,5 @@ function generateGUIDButton(file,container) {
 
 module.exports = {
     dropzonePreviewTemplate: dropzonePreviewTemplate,
-    generateGUIDButton:generateGUIDButton,
+    generateGUIDButton: generateGUIDButton,
 };
