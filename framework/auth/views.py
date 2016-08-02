@@ -201,12 +201,13 @@ def forgot_password_post(auth, **kwargs):
 @collect_auth
 def auth_register(auth, **kwargs):
     """
-    View for sign-up page.
+    View for the sign-up page. It also serves as the landing page for such services as "prereg" and "claim contributor"
+    where users may not have an OSF account. OSF and institution login options are provided on this page as well.
     HTTP Method: GET
 
-    :param kwargs: campaign
-    :param kwargs: next
-    :param kwargs: logout
+    :param kwargs: campaign, currently `institution` and `prereg`
+    :param kwargs: next, provided as default CAS service url
+    :param kwargs: logout, for `claim_user_registered` when users don't an account or choose to use another account
     """
 
     data = {}
@@ -215,7 +216,7 @@ def auth_register(auth, **kwargs):
     log_out = request.args.get('logout')
     must_login_warning = False
 
-    # If user is already logged in, redirect to dashboard page.
+    # If `?next=[service_url]` is not provided, redirect to `/dashboard`
     if not service_url:
         service_url = web_url_for('dashboard', _absolute=True)
 
@@ -227,23 +228,32 @@ def auth_register(auth, **kwargs):
         raise HTTPError(http.InvalidURL)
 
     # Campaign
-    if campaign and campaign in campaigns.CAMPAIGNS:
-        # `GET /register?campaign=prereg`,
-        if campaign != 'institution':
-            service_url = campaigns.campaign_url_for(campaign)
-            data['campaign'] = campaign
-            must_login_warning = True
-        # `GET /register?campaign=institution`, redirect to CAS institution login with `dashboard` as target service
+    if campaign:
+        if campaign in campaigns.CAMPAIGNS:
+            # `GET /register?campaign=prereg`,
+            # Overwrite CAS service url with dedicated campaign url and set `must_login_warn` notification
+            if campaign != 'institution':
+                service_url = campaigns.campaign_url_for(campaign)
+                data['campaign'] = campaign
+                must_login_warning = True
+            # `GET /register?campaign=institution`,
+            # Redirect to CAS institution login with service url as target service
+            else:
+                return redirect(cas.get_login_url(service_url, campaign='institution'))
+        # raise `http.NOT_FOUND` if campaign is invalid
         else:
-            return redirect(cas.get_login_url(service_url, campaign='institution'))
+            return HTTPError(http.NOT_FOUND)
 
-    # Handle different auth situations for website.project.views.claim_user_register()
-    if auth.logged_in:
-        if log_out:
-            return auth_logout(redirect_url=request.url)
+    # If user is already logged in, redirect to service url
+    if not log_out and auth.logged_in:
         return redirect(service_url)
+
+    # Handle different auth situations for `website.project.views.claim_user_register()`
     if log_out:
-        must_login_warning = True
+        if auth.logged_in:
+            return auth_logout(redirect_url=request.url)
+        else:
+            must_login_warning = True
 
     if must_login_warning:
         status.push_status_message(language.MUST_LOGIN, trust=False)
@@ -260,40 +270,38 @@ def auth_login(auth, **kwargs):
     This view serves as the entry point for OSF login and campaign login.
     HTTP Method: GET
 
-    There are four possible (url, parameter) options:
+    :param kwargs: campaign, currently `institution` and `prereg`
+    :param kwargs: next, provided as default CAS service url
 
-        `GET /login` without any query parameter:
-            redirect to CAS login page with `dashboard` as target service
-
-        `GET /login?campaign=prereg`:
+    1. `GET /login` without campaign parameter
+            redirect to `/dashboard`, CAS will handle whether user is logged in or not
+    2. `GET /login?campaign=prereg`:
             if user is logged in, redirect to `/prereg`
-            else, redirect to `/register?campaign=prereg`
-
-        `GET /login?campaign=institution`:
-            redirect to CAS institution login with `dashboard` as target service
+            else, redirect to `/register?campaign=prereg` for user to create account or log in
+    3. `GET /login?campaign=institution`:
+            redirect to CAS institution login with `/dashboard` as target service
     """
 
     campaign = request.args.get('campaign')
-    next_url = request.args.get('next')
-    log_out = request.args.get('logout')
 
-    # `GET /login` without campaign and target service
-    if not campaign and not next_url and not log_out:
+    # `GET /login` without campaign, ignore other request parameters
+    if not campaign:
         return redirect(web_url_for('dashboard'))
 
-    if campaign and campaign in campaigns.CAMPAIGNS:
-        # `Get /login?campaign=institution`, go to CAS institution login with `dashboard` as service url
-        if campaign == 'institution':
-            return redirect(cas.get_login_url(web_url_for('dashboard', _absolute=True), campaign='institution'))
-        # `Get /login?campaign=prereg`,
-        if campaign == 'prereg':
+    if campaign in campaigns.CAMPAIGNS:
+        # `Get /login?campaign=prereg`
+        if campaign != 'institution':
             # if logged in, go to `/prereg` page
             if auth.logged_in:
                 return redirect(campaigns.campaign_url_for(campaign))
-            # if not logged in, go to `/register?campaign=prereg`
-            return redirect(web_url_for('auth_register', campaign='prereg'))
+            # if not, go to `/register?campaign=prereg`
+            return redirect(web_url_for('auth_register', campaign=campaign))
+        # `Get /login?campaign=institution`, go to CAS institution login with `/dashboard` as service url
+        else:
+            return redirect(cas.get_login_url(web_url_for('dashboard', _absolute=True), campaign='institution'))
 
-    return {}, http.OK
+    # raise `http.NOT_FOUND` if campaign is invalid
+    return HTTPError(http.NOT_FOUND)
 
 
 def auth_logout(redirect_url=None, **kwargs):
