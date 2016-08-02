@@ -55,7 +55,7 @@ def ensure_taxonomies():
                     Q('text', 'eq', text) &
                     Q('type', 'eq', type)
                 )
-            except NoResultsFound:
+            except (NoResultsFound, MultipleResultsFound):
                 # If subject does not yet exist, create it
                 if parent_id:
                     subject = Subject(
@@ -73,7 +73,7 @@ def ensure_taxonomies():
                 # If subject does exist, append parent_id if not already added
                 subject.text = text
                 subject.type = type
-                if not parent_id in subject.parent_ids:
+                if parent_id not in subject.parent_ids:
                     subject.parent_ids.append(parent_id)
 
             subject.save()
