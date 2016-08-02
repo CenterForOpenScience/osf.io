@@ -30,6 +30,7 @@ urlpatterns = [
                 url(r'^licenses/', include('api.licenses.urls', namespace='licenses')),
                 url(r'^wikis/', include('api.wikis.urls', namespace='wikis')),
                 url(r'^identifiers/', include('api.identifiers.urls', namespace='identifiers')),
+                url(r'^taxonomies/', include('api.taxonomies.urls', namespace='taxonomies')),
             ],
         )
         ),
