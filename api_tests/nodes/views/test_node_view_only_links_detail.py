@@ -210,26 +210,28 @@ class TestViewOnlyLinksUpdate(ViewOnlyLinkTestCase):
 
 class TestViewOnlyLinksDelete(ViewOnlyLinkTestCase):
 
-    def test_id_required_in_payload(self):
-        pass
-
-    def test_invalid_vol_id(self):
-        pass
-
-    def test_invalid_nodes_in_payload(self):
-        pass
+    def setUp(self):
+        super(TestViewOnlyLinksDelete, self).setUp()
+        self.url = '/{}nodes/{}/view_only_links/{}/'.format(API_BASE, self.public_project._id, self.view_only_link._id)
 
     def test_admin_can_delete_vol(self):
-        pass
+        res = self.app.delete(self.url, auth=self.user.auth)
+        self.view_only_link.reload()
+        assert_equal(res.status_code, 204)
+        assert_equal(self.view_only_link.is_deleted, True)
 
     def test_read_write_cannot_delete_vol(self):
-        pass
+        res = self.app.delete(self.url, auth=self.read_write_user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
     def test_read_only_cannot_delete_vol(self):
-        pass
+        res = self.app.delete(self.url, auth=self.read_only_user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
     def test_logged_in_user_cannot_delete_vol(self):
-        pass
+        res = self.app.delete(self.url, auth=self.non_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
     def test_unauthenticated_user_cannot_delete_vol(self):
-        pass
+        res = self.app.delete(self.url, expect_errors=True)
+        assert_equal(res.status_code, 401)

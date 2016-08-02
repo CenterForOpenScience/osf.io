@@ -66,7 +66,7 @@ from api.logs.serializers import NodeLogSerializer
 from website.addons.wiki.model import NodeWikiPage
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
-from website.models import Node, Pointer, Comment, NodeLog, Institution, DraftRegistration
+from website.models import Node, Pointer, Comment, NodeLog, Institution, DraftRegistration, PrivateLink
 from website.files.models import FileNode
 from framework.auth.core import User
 from api.base.utils import default_node_list_query, default_node_permission_query
@@ -2996,6 +2996,7 @@ class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIV
                 return link
         raise NotFound
 
-    # def perform_destroy(self, instance):
-    #     pass
-
+    def perform_destroy(self, link):
+        assert isinstance(link, PrivateLink), 'link must be a PrivateLink'
+        link.is_deleted = True
+        link.save()

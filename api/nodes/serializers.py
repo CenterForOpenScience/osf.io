@@ -986,6 +986,7 @@ class NodeViewOnlyLinkSerializer(JSONAPISerializer):
             view_only_link.anonymous = anonymous
 
         if nodes:
+            # TODO: @caseyrollins -- DRY
             view_only_link_nodes = []
             for node in nodes:
                 tmp = Node.load(node)
