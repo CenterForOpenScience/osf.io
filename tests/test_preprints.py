@@ -77,6 +77,8 @@ class TestSetPreprintFile(OsfTestCase):
         self.project.add_contributor(self.read_write_user, permissions=[permissions.WRITE])
         self.project.save()
 
+    @assert_logs(NodeLog.MADE_PUBLIC, 'project')
+    @assert_logs(NodeLog.PREPRINT_INITIATED, 'project', -2)
     def test_is_preprint_property_new_file(self):
         self.project.set_preprint_file(self.file._id, auth=self.auth, save=True)
         assert_true(self.project.is_preprint)

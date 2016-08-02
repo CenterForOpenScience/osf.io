@@ -882,6 +882,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     # Preprint fields
     preprint_file = fields.ForeignField('StoredFileNode')
     preprint_created = fields.DateTimeField()
+    #TODO make this a foreign field pointing to subjects
     preprint_subjects = fields.StringField(list=True, validate=validate_subjects)
     _is_preprint_orphan = fields.BooleanField(default=False)
 
@@ -1169,6 +1170,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     @property
     def is_preprint(self):
+        if not self.preprint_file:
+            return False
         if self.preprint_file.node == self:
             return True
         else:
@@ -1178,7 +1181,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     @property
     def is_preprint_orphan(self):
-        if not self.is_preprint() & self._is_preprint_orphan:
+        if not self.is_preprint & self._is_preprint_orphan:
             return True
         return False
 
@@ -1634,12 +1637,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                     value.get('id'),
                     value.get('year'),
                     value.get('copyright_holders'),
-                    auth,
-                    save=save
-                )
-            elif key == 'update_preprint':
-                self.set_preprint_file(
-                    value.get('id'),
                     auth,
                     save=save
                 )
