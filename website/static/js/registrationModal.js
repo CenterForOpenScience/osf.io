@@ -66,13 +66,13 @@ var RegistrationViewModel = function(confirm, prompts, validator) {
     self.embargoIsLongEnough = function (x, y, embargoLocalDateTime) {
         var min = getMinimumDate(embargoLocalDateTime),
             end = self.embargoEndDate();
-        return end.isSameOrAfter(min) && end.isSameOrAfter(todayMinimum);
+        return end.isAfter(min) && end.isSameOrAfter(todayMinimum);
     };
 
     self.embargoIsShortEnough = function (x, y, embargoLocalDateTime) {
         var max = getMaximumDate(embargoLocalDateTime),
             end = self.embargoEndDate();
-        return end.isSameOrBefore(max) && end.isSameOrBefore(todayMaximum);
+        return end.isBefore(max) && end.isSameOrBefore(todayMaximum);
     };
 
     var validation = [{
