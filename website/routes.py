@@ -177,7 +177,7 @@ def external_ember_app(path=None):
     """
     Serve the contents of an ember application running on a separate server
     """
-    if not path or '.' in path:
+    if path and '.' in path:
         # If this is a file, proxy the URL given directly as-is to the ember server
         url = furl.furl(settings.EXTERNAL_EMBER_URL).add(path=request.path)
     else:
@@ -186,7 +186,7 @@ def external_ember_app(path=None):
         # TODO: This may break if there are other things (like mocks or non-ember endpoints)
         #   running on the ember dev server, eg routes that need to be handled separately from the parent
         url = furl.furl(settings.EXTERNAL_EMBER_URL)
-        url.path.segments.extend([settings.EXTERNAL_EMBER_BASEURL.replace('/', '')])
+        url.path.segments.extend([settings.EXTERNAL_EMBER_BASEURL.replace('/', ''), ''])  # Ensure trailing slash
 
     # Make sure URL respects any provided query params
     url.add(args=request.args)
