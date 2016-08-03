@@ -258,11 +258,19 @@ var SignUpViewModel = oop.extend(BaseViewModel, {
 
     submitError: function(xhr) {
         var self = this;
-        self.changeMessage(
-            xhr.responseJSON.message_long,
-            'text-danger p-xs',
-            5000
-        );
+        if(xhr.responseText.indexOf('UnicodeEncodeError') !== -1){
+            self.changeMessage(
+                'Email address or password contains invalid characters',
+                'text-danger p-xs',
+                5000
+            );
+        }else{
+            self.changeMessage(
+                'An error has occured',
+                'text-danger p-xs',
+                5000
+            );
+        }
     },
     submit: function() {
         var self = this;
