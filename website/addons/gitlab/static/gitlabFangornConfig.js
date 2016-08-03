@@ -124,7 +124,8 @@ var _gitlabItemButtons = {
         var buttons = [];
         function _downloadEvent(event, item, col) {
             event.stopPropagation();
-            window.location = waterbutler.buildTreeBeardDownload(item, {fileSha: item.data.extra.fileSha});
+            var branch = item.data.branch || $osf.urlParams().branch;
+            window.location = waterbutler.buildTreeBeardDownload(item, {branch: item.data.branch});
         }
         // Download Zip File
         if (item.kind === 'folder') {
