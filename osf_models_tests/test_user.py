@@ -57,6 +57,57 @@ class TestOSFUser:
 
 
 @pytest.mark.django_db
+class TestIsActive:
+
+    @pytest.fixture()
+    def make_user(self):
+        def func(**attrs):
+            # By default, return an active user
+            user = UserFactory.build(
+                is_registered=True,
+                merged_by=None,
+                is_disabled=False,
+                date_confirmed=dt.datetime.utcnow(),
+            )
+            user.set_password('secret')
+            for attr, value in attrs.items():
+                setattr(user, attr, value)
+            return user
+        return func
+
+    def test_is_active_is_set_to_true_under_correct_conditions(self, make_user):
+        user = make_user()
+        user.save()
+        assert user.is_active is True
+
+    def test_is_active_is_false_if_not_registered(self, make_user):
+        user = make_user(is_registered=False)
+        user.save()
+        assert user.is_active is False
+
+    def test_is_active_is_false_if_not_confirmed(self, make_user):
+        user = make_user(date_confirmed=None)
+        user.save()
+        assert user.is_active is False
+
+    def test_is_active_is_false_if_password_unset(self, make_user):
+        user = make_user()
+        user.set_unusable_password()
+        user.save()
+        assert user.is_active is False
+
+    def test_is_active_is_false_if_merged(self, make_user):
+        merger = UserFactory()
+        user = make_user(merged_by=merger)
+        user.save()
+        assert user.is_active is False
+
+    def test_is_active_is_false_if_disabled(self, make_user):
+        user = make_user(date_disabled=dt.datetime.utcnow())
+        assert user.is_active is False
+
+
+@pytest.mark.django_db
 class TestAddUnconfirmedEmail:
 
     @mock.patch('osf_models.utils.security.random_string')
