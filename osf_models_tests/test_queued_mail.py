@@ -5,15 +5,9 @@ import pytest
 import mock
 
 from .factories import UserFactory, NodeFactory
-from website import settings
-from website.app import patch_models
 
 from osf_models.models.queued_mail import queue_mail
 from website import mails
-
-@pytest.fixture(autouse=True)
-def patched_models():
-    patch_models(settings)
 
 @pytest.fixture()
 def user():

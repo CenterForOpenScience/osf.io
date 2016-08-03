@@ -1,5 +1,10 @@
 import logging
 
+import pytest
+
+from website import settings
+from website.app import patch_models
+
 # Silence some 3rd-party logging and some "loud" internal loggers
 SILENT_LOGGERS = [
     'factory.generate',
@@ -13,3 +18,8 @@ SILENT_LOGGERS = [
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
+
+
+@pytest.fixture(autouse=True)
+def patched_models():
+    patch_models(settings)
