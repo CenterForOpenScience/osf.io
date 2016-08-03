@@ -34,7 +34,8 @@ class InstitutionFactory(DjangoModelFactory):
 
 class UserFactory(DjangoModelFactory):
     username = factory.Faker('email')
-    password = 'password'
+    password = factory.PostGenerationMethodCall('set_password',
+                                                'queenfan86')
     is_registered = True
     is_claimed = True
     date_confirmed = factory.Faker('date_time')
