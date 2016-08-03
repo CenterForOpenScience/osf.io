@@ -11,7 +11,11 @@ from tests.factories import (
     DraftRegistration,
     ProjectFactory,
 )
-from website.files.models import OsfStorageFileNode
+from website.files.models import (
+    OsfStorageFile,
+    OsfStorageFileNode,
+    StoredFileNode,
+)
 from website.project.model import ensure_schemas
 from website.prereg.utils import get_prereg_schema
 
@@ -221,7 +225,7 @@ class TestPreregFiles(AdminTestCase):
         }
         data = {}
         for q, f in self.d_of_qs.iteritems():
-            f.get_guid(create=True)
+            guid = f.get_guid(create=True)._id
             f.save()
             if q == 'q26':
                 data[q] = {
@@ -233,7 +237,7 @@ class TestPreregFiles(AdminTestCase):
                                 'provider': 'osfstorage',
                                 'path': f.path,
                             },
-                            'fileId': f._id,
+                            'fileId': guid,
                             'nodeId': self.node._id,
                         }
                     ]
@@ -248,7 +252,7 @@ class TestPreregFiles(AdminTestCase):
                                     'provider': 'osfstorage',
                                     'path': f.path,
                                 },
-                                'fileId': f._id,
+                                'fileId': guid,
                                 'nodeId': self.node._id,
                             }
                         ]
@@ -288,7 +292,7 @@ class TestPreregFiles(AdminTestCase):
 
     def test_get_meta_data_files(self):
         for item in get_metadata_files(self.draft):
-            nt.assert_is_instance(item, OsfStorageFileNode)
+            nt.assert_in(type(item), [OsfStorageFile, StoredFileNode])
 
     def test_get_file_questions(self):
         questions = get_file_questions('prereg-prize.json')
@@ -311,14 +315,14 @@ class TestPreregFiles(AdminTestCase):
         data['q7']['value']['uploader']['extra'][0].pop('fileId')
         self.draft.update_metadata(data)
         for item in get_metadata_files(self.draft):
-            nt.assert_is_instance(item, OsfStorageFileNode)
+            nt.assert_in(type(item), [OsfStorageFile, StoredFileNode])
 
     def test_file_id_missing_odd(self):
         data = self.draft.registration_metadata
         data['q26']['extra'][0].pop('fileId')
         self.draft.update_metadata(data)
         for item in get_metadata_files(self.draft):
-            nt.assert_is_instance(item, OsfStorageFileNode)
+            nt.assert_in(type(item), [OsfStorageFile, StoredFileNode])
 
     def test_wrong_provider(self):
         data = self.draft.registration_metadata
