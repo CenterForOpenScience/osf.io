@@ -182,11 +182,11 @@ def external_ember_app(path=None):
         url = furl.furl(settings.EXTERNAL_EMBER_URL).add(path=request.path)
     else:
         # Ember server 404s when asked for a child route- it seems to be relying on index.html to figure that stuff out.
-        # So if something looks like a child route, just send the request to the base URL, and ensure a trailing slash.
+        # So if something looks like a child route, just send the request to the base URL.
         # TODO: This may break if there are other things (like mocks or non-ember endpoints)
         #   running on the ember dev server, eg routes that need to be handled separately from the parent
         url = furl.furl(settings.EXTERNAL_EMBER_URL)
-        url.path.segments.extend([settings.EXTERNAL_EMBER_BASEURL.replace('/', ''), ''])
+        url.path.segments.extend([settings.EXTERNAL_EMBER_BASEURL.replace('/', '')])
 
     # Make sure URL respects any provided query params
     url.add(args=request.args)
@@ -378,13 +378,6 @@ def make_url_map(app):
             OsfWebRenderer('prereg_landing_page.mako', trust=False)
         ),
 
-        # Rule(
-        #     '/preprints/',
-        #     'get',
-        #     preprint_views.preprint_landing_page,
-        #     OsfWebRenderer('public/pages/preprint_landing.mako', trust=False),
-        # ),
-
         Rule(
             '/preprint/',
             'get',
@@ -399,6 +392,17 @@ def make_url_map(app):
             json_renderer,
         ),
     ])
+
+    if not settings.USE_EXTERNAL_EMBER:
+        # If not delegating preprints to an external ember app, just use the OSF route.
+        process_rules(app, [
+            Rule(
+                '/preprints/',
+                'get',
+                preprint_views.preprint_landing_page,
+                OsfWebRenderer('public/pages/preprint_landing.mako', trust=False),
+            )
+        ])
 
     # Site-wide API routes
 
