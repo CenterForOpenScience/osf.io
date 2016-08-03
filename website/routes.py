@@ -258,7 +258,6 @@ def make_url_map(app):
         # Routes that serve up the Ember application. Hide behind feature flag.
         rules = []
         for prefix in settings.EXTERNAL_EMBER_APPS.keys():
-            print('prefix: ' + prefix)
             rules += [
                 prefix,
                 '{}<path:_>'.format(prefix),
