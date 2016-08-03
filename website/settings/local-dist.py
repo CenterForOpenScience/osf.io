@@ -16,8 +16,10 @@ DOMAIN = PROTOCOL + 'localhost:5000/'
 API_DOMAIN = PROTOCOL + 'localhost:8000/'
 
 USE_EXTERNAL_EMBER = True
-EXTERNAL_EMBER_BASEURL = '/ember-app/'
-EXTERNAL_EMBER_URL = 'http://localhost:4200/'
+EXTERNAL_EMBER_APPS = {
+    # '/preprints/': 'http://localhost:4200',
+    # '/meetings/': 'http://localhost:4201',
+}
 
 SEARCH_ENGINE = 'elastic'
 ELASTIC_TIMEOUT = 10
