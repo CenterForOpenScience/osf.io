@@ -26,9 +26,10 @@ function _removeEvent (event, items) {
     function runDelete (item) {
         // delete from server, if successful delete from view
         tb.select('.modal-footer .btn-danger').html('<i> Deleting...</i>').removeClass('btn-danger').addClass('btn-default disabled');
+        var branch = item.data.branch || $osf.urlParams().branch;
 
         $.ajax({
-            url: waterbutler.buildTreeBeardDelete(item, {branch: item.data.branch, sha: item.data.extra.fileSha}),
+            url: waterbutler.buildTreeBeardDelete(item, {branch: branch}),
             type : 'DELETE',
             beforeSend: $osf.setXHRAuthorization
         }).done(function (data) {
