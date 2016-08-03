@@ -9,6 +9,7 @@ from osf_models.models.tag import Tag  # noqa
 from osf_models.models.comment import Comment  # noqa
 from osf_models.models.citation import AlternativeCitation, CitationStyle  # noqa
 from osf_models.models.archive import ArchiveJob, ArchiveTarget  # noqa
+from osf_models.models.queued_mail import QueuedMail  # noqa
 
 # removing these because they rely on osf.io
 from osf_models.models.sanctions import Embargo  # noqa
