@@ -311,6 +311,12 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin):
         return bool(self.date_confirmed)
 
     @property
+    def is_merged(self):
+        """Whether or not this account has been merged into another account.
+        """
+        return self.merged_by is not None
+
+    @property
     def unconfirmed_emails(self):
         # Handle when email_verifications field is None
         email_verifications = self.email_verifications or {}
@@ -357,6 +363,23 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin):
             # django thinks bcrypt should start with bcrypt...
             django_obj.password = 'bcrypt${}'.format(django_obj.password)
         return django_obj
+
+    def update_is_active(self):
+        """Update ``is_active`` to be consistent with the fields that
+        it depends on.
+        """
+        self.is_active = (
+            self.is_registered and
+            self.is_confirmed and
+            self.has_usable_password() and
+            not self.is_merged and
+            not self.is_disabled
+        )
+
+    # Overrides BaseModel
+    def save(self, *args, **kwargs):
+        self.update_is_active()
+        return super(OSFUser, self).save(*args, **kwargs)
 
     # Legacy methods
 
