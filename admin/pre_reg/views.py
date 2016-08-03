@@ -20,6 +20,7 @@ from admin.pre_reg import serializers
 from admin.pre_reg.forms import DraftRegistrationForm
 from admin.pre_reg.utils import sort_drafts, SORT_BY
 from framework.exceptions import PermissionsError
+from framework.guid.model import Guid
 from website.exceptions import NodeStateError
 from website.files.models import FileNode
 from website.project.model import DraftRegistration, Node
@@ -229,14 +230,15 @@ def view_file(request, node_id, provider, file_id):
 
 def get_metadata_files(draft):
     data = draft.registration_metadata
-    for q in get_file_questions('prereg-prize.json'):
+    for q, question in get_file_questions('prereg-prize.json'):
         if not isinstance(data[q]['value'], dict):
             for i, file_info in enumerate(data[q]['extra']):
                 provider = file_info['data']['provider']
                 if provider != 'osfstorage':
-                    raise Http404('File does not exist in OSFStorage: {} {}'.format(
-                        q, file_info
-                    ))
+                    raise Http404(
+                        'File does not exist in OSFStorage ({}: {})'.format(
+                            q, question
+                        ))
                 file_guid = file_info.get('fileId')
                 if file_guid is None:
                     node = Node.load(file_info.get('nodeId'))
@@ -248,21 +250,24 @@ def get_metadata_files(draft):
                     file_guid = item.get_guid(create=True)._id
                     data[q]['extra'][i]['fileId'] = file_guid
                     draft.update_metadata(data)
+                    draft.save()
                 else:
-                    item = FileNode.load(file_guid)
+                    guid = Guid.load(file_guid)
+                    item = guid.referent
                 if item is None:
                     raise Http404(
-                        'File with guid "{}" in {} does not exist'.format(
-                            file_guid, q
+                        'File with guid "{}" in "{}" does not exist'.format(
+                            file_guid, question
                         ))
                 yield item
             continue
         for i, file_info in enumerate(data[q]['value']['uploader']['extra']):
             provider = file_info['data']['provider']
             if provider != 'osfstorage':
-                raise Http404('File does not exist in OSFStorage: {} {}'.format(
-                    q, file_info
-                ))
+                raise Http404(
+                    'File does not exist in OSFStorage ({}: {})'.format(
+                        q, question
+                    ))
             file_guid = file_info.get('fileId')
             if file_guid is None:
                 node = Node.load(file_info.get('nodeId'))
@@ -274,12 +279,15 @@ def get_metadata_files(draft):
                 file_guid = item.get_guid(create=True)._id
                 data[q]['value']['uploader']['extra'][i]['fileId'] = file_guid
                 draft.update_metadata(data)
+                draft.save()
             else:
-                item = FileNode.load(file_guid)
+                guid = Guid.load(file_guid)
+                item = guid.referent
             if item is None:
-                raise Http404('File with guid "{}" in {} does not exist'.format(
-                    file_guid, q
-                ))
+                raise Http404(
+                    'File with guid "{}" in "{}" does not exist'.format(
+                        file_guid, question
+                    ))
             yield item
 
 
@@ -294,11 +302,11 @@ def get_file_questions(json_file):
     for item in schema['pages']:
         for question in item['questions']:
             if question['type'] == 'osf-upload':
-                questions.append(question['qid'])
+                questions.append((question['qid'], question['title']))
                 continue
             properties = question.get('properties')
             if properties is None:
                 continue
             if uploader in properties:
-                questions.append(question['qid'])
+                questions.append((question['qid'], question['title']))
     return questions
