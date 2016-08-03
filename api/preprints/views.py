@@ -10,6 +10,7 @@ from website.models import Node
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 from api.base.filters import ODMFilterMixin
+from api.preprints.parsers import PreprintsJSONAPIParser, PreprintsJSONAPIParserForRegularJSON
 from api.preprints.serializers import PreprintSerializer, PreprintDetailSerializer, PreprintAuthorSerializer
 from api.nodes.views import NodeMixin, WaterButlerMixin, NodeContributorsList
 from api.base.utils import get_object_or_error
@@ -26,7 +27,7 @@ class PreprintMixin(NodeMixin):
             self.kwargs[self.node_lookup_url_kwarg],
             display_name='preprint'
         )
-        if not node.is_preprint:
+        if not node.is_preprint and self.request.method != 'POST':
             raise NotFound
 
         return node
@@ -43,7 +44,7 @@ class PreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
 
     serializer_class = PreprintSerializer
 
-    ordering = ('-preprint_created')
+    ordering = ('-date_created')
     view_category = 'preprints'
     view_name = 'preprint-list'
 
@@ -72,6 +73,8 @@ class PreprintDetail(JSONAPIBaseView, generics.CreateAPIView, generics.RetrieveU
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+
+    parser_classes = (PreprintsJSONAPIParser, PreprintsJSONAPIParserForRegularJSON,)
 
     serializer_class = PreprintDetailSerializer
     view_category = 'preprints'
