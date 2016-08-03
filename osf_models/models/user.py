@@ -1,11 +1,17 @@
 import datetime as dt
+import logging
 
+from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
 from django.contrib.postgres import fields
 from django.core.validators import validate_email
 from django.db import models
+
+# OSF imports
+from framework.sentry import log_exception
+
 from osf_models.exceptions import reraise_django_validation_errors
 from osf_models.models.base import BaseModel, GuidMixin
 from osf_models.models.mixins import AddonModelMixin
@@ -14,6 +20,7 @@ from osf_models.utils import security
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf_models.utils.names import impute_names
 
+logger = logging.getLogger(__name__)
 
 # Hide implementation of token generation
 def generate_confirm_token():
@@ -48,7 +55,9 @@ class OSFUserManager(BaseUserManager):
         return user
 
 
-class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonModelMixin):
+class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonModelMixin):
+    ENABLE_M2M_CHECK = False  # Disable m2m field checking in django-dirtyfields
+
     USERNAME_FIELD = 'username'
 
     # Node fields that trigger an update to the search engine on save
@@ -143,7 +152,7 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonMod
     contributor_added_email_records = DateTimeAwareJSONField(default={}, blank=True)
 
     # The user into which this account was merged
-    merged_by = models.ForeignKey('self', null=True, blank=True)
+    merged_by = models.ForeignKey('self', null=True, blank=True, related_name='merger')
 
     # verification key used for resetting password
     verification_key = models.CharField(max_length=255, null=True, blank=True)
@@ -194,7 +203,7 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonMod
 
     # list of collaborators that this user recently added to nodes as a contributor
     # recently_added = fields.ForeignField("user", list=True)
-    recently_added = models.ManyToManyField('self')
+    recently_added = models.ManyToManyField('self', symmetrical=False)
 
     # Attached external accounts (OAuth)
     # external_accounts = fields.ForeignField("externalaccount", list=True)
@@ -380,6 +389,12 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonMod
     # Overrides BaseModel
     def save(self, *args, **kwargs):
         self.update_is_active()
+
+        dirty_fields = set(self.get_dirty_fields())
+        if self.SEARCH_UPDATE_FIELDS.intersection(dirty_fields) and self.is_confirmed:
+            self.update_search()
+            # TODO
+            # self.update_search_nodes_contributors()
         return super(OSFUser, self).save(*args, **kwargs)
 
     # Legacy methods
@@ -407,6 +422,20 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonMod
             # needed to prevent cirular import
             from framework.auth.campaigns import system_tag_for_campaign  # skipci
             user.system_tags.append(system_tag_for_campaign(campaign))
+        return user
+
+    @classmethod
+    def create_unregistered(cls, fullname, email=None):
+        """Create a new unregistered user.
+        """
+        user = cls(
+            username=email,
+            fullname=fullname,
+            is_invited=True,
+            is_registered=False,
+        )
+        user.set_unusable_password()
+        user.update_guessed_names()
         return user
 
     def update_guessed_names(self):
@@ -463,3 +492,12 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonMod
         expiration = expiration or (dt.datetime.utcnow() + dt.timedelta(hours=settings.email_token_expiration))
         self.email_verifications[token]['expiration'] = expiration
         return expiration
+
+    def update_search(self):
+        from website.search.search import update_user
+        from website.search.exceptions import SearchUnavailableError
+        try:
+            update_user(self)
+        except SearchUnavailableError as e:
+            logger.exception(e)
+            log_exception()
