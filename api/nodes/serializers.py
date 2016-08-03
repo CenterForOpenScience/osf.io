@@ -953,13 +953,17 @@ class NodeViewOnlyLinkSerializer(JSONAPISerializer):
     key = ser.CharField(read_only=True)
     id = IDField(source='_id', read_only=True)
     date_created = ser.DateTimeField(read_only=True)
-    nodes = JSONAPIListField(child=NodeVOL(), required=False)
     anonymous = ser.BooleanField(required=False)
     name = ser.CharField(required=False)
 
     creator = RelationshipField(
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<creator._id>'},
+    )
+
+    nodes = RelationshipField(
+        related_view='view_only_links:view-only-link-nodes',
+        related_view_kwargs={'link_id': '<_id>'}
     )
 
     def get_absolute_url(self, obj):
@@ -969,6 +973,16 @@ class NodeViewOnlyLinkSerializer(JSONAPISerializer):
                 'key': obj.key
             }
         )
+
+    class Meta:
+        type_ = 'view_only_links'
+
+
+class NodeViewOnlyLinkUpdateSerializer(NodeViewOnlyLinkSerializer):
+    """
+    Overrides NodeViewOnlyLinkSerializer to make nodes a list field.
+    """
+    nodes = JSONAPIListField(child=NodeVOL(), required=False)
 
     def update(self, link, validated_data):
         assert isinstance(link, PrivateLink), 'link must be a PrivateLink'
@@ -991,7 +1005,6 @@ class NodeViewOnlyLinkSerializer(JSONAPISerializer):
             view_only_link.anonymous = anonymous
 
         if nodes:
-            # TODO: @caseyrollins -- DRY
             view_only_link_nodes = []
             for node in nodes:
                 tmp = Node.load(node)
@@ -1006,13 +1019,10 @@ class NodeViewOnlyLinkSerializer(JSONAPISerializer):
         view_only_link.save()
         return view_only_link
 
-    class Meta:
-        type_ = 'view_only_links'
-
 
 class NodeViewOnlyLinkCreateSerializer(NodeViewOnlyLinkSerializer):
     """
-    Overrides NodeViewOnlyLinkSerializer to make nodes required and to set default values for anonymous and name.
+    Overrides NodeViewOnlyLinkSerializer to make nodes a required list field, and to set default values for anonymous and name.
     """
     nodes = JSONAPIListField(child=NodeVOL(), required=True)
     anonymous = ser.BooleanField(default=False, required=False)

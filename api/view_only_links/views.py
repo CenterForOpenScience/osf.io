@@ -5,12 +5,13 @@ from framework.auth.oauth_scopes import CoreScopes
 from api.base import permissions as base_permissions
 from api.base.utils import get_user_auth
 from api.base.views import JSONAPIBaseView
+from api.nodes.serializers import NodeSerializer
 from api.view_only_links.serializers import ViewOnlyLinkDetailSerializer
 
-from website.models import PrivateLink
+from website.models import Node, PrivateLink
 
 
-class ViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
+class ViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     """Details about a specific view only link. *Read-only*.
 
     ###Permissions
@@ -70,3 +71,56 @@ class ViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView)
             raise NotFound
 
         return view_only_link
+
+
+class ViewOnlyLinkNodes(JSONAPIBaseView, generics.ListAPIView):
+    """
+    Details about the nodes which this view only link key gives read-only access to. *Read-only*.
+
+    ##Node Attributes
+
+        <!--- Copied Attributes from NodeDetail -->
+
+        OSF Node entities have the "nodes" `type`.
+
+            name                            type               description
+            =================================================================================
+            title                           string             title of project or component
+            description                     string             description of the node
+            category                        string             node category, must be one of the allowed values
+            date_created                    iso8601 timestamp  timestamp that the node was created
+            date_modified                   iso8601 timestamp  timestamp when the node was last updated
+            tags                            array of strings   list of tags that describe the node
+            current_user_can_comment        boolean            Whether the current user is allowed to post comments
+            current_user_permissions        array of strings   list of strings representing the permissions for the current user on this node
+            registration                    boolean            is this a registration? (always false - may be deprecated in future versions)
+            fork                            boolean            is this node a fork of another node?
+            public                          boolean            has this node been made publicly-visible?
+            collection                      boolean            is this a collection? (always false - may be deprecated in future versions)
+            node_license                    object             details of the license applied to the node
+                year                        string             date range of the license
+                copyright_holders           array of strings   holders of the applied license
+
+    """
+
+    permission_classes = (
+        base_permissions.TokenHasScope,
+        drf_permissions.IsAuthenticatedOrReadOnly
+    )
+
+    required_read_scopes = [CoreScopes.NODE_VIEW_ONLY_LINKS_READ]
+    required_write_scopes = [CoreScopes.NODE_VIEW_ONLY_LINKS_WRITE]
+
+    serializer_class = NodeSerializer
+
+    view_category = 'view-only-links'
+    view_name = 'view-only-link-nodes'
+
+    def get_queryset(self):
+        link_id = self.kwargs['link_id']
+        view_only_link = PrivateLink.load(link_id)
+
+        return [
+            Node.load(node) for node in
+            view_only_link.nodes
+        ]

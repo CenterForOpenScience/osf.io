@@ -43,6 +43,7 @@ from api.nodes.serializers import (
     NodeContributorsCreateSerializer,
     NodeViewOnlyLinkSerializer,
     NodeViewOnlyLinkCreateSerializer,
+    NodeViewOnlyLinkUpdateSerializer,
 )
 from api.nodes.utils import get_file_object
 
@@ -3079,6 +3080,11 @@ class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIV
 
     view_category = 'nodes'
     view_name = 'node-view-only-link-detail'
+
+    def get_serializer_class(self):
+        if self.request.method == 'PUT':
+            return NodeViewOnlyLinkUpdateSerializer
+        return NodeViewOnlyLinkSerializer
 
     def get_object(self):
         for link in self.get_node().private_links:
