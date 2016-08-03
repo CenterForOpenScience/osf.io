@@ -4,10 +4,9 @@ import httplib as http
 
 from flask import request, Response
 from flask import send_from_directory
-
-import requests
+import furl
 from geoip import geolite2
-from furl import furl
+import requests
 
 from framework import status
 from framework import sentry
@@ -174,10 +173,26 @@ def robots():
     )
 
 
-def external_ember_app(_=None):
-    """Serve the contents of the ember application"""
-    url = furl(settings.EXTERNAL_EMBER_URL).add(path=request.path)
+def external_ember_app(path=None):
+    """
+    Serve the contents of an ember application running on a separate server
+    """
+    if path and '.' in path:
+        # If this is a file, proxy the URL given directly as-is to the ember server
+        url = furl.furl(settings.EXTERNAL_EMBER_URL).add(path=request.path)
+    else:
+        # Ember server 404s when asked for a child route- it seems to be relying on index.html to figure that stuff out.
+        # So if something looks like a child route, just send the request to the base URL.
+        # TODO: This may break if there are other things (like mocks or non-ember endpoints)
+        #   running on the ember dev server, eg routes that need to be handled separately from the parent
+        url = furl.furl(settings.EXTERNAL_EMBER_URL)
+        url.path.segments.extend([settings.EXTERNAL_EMBER_BASEURL.replace('/', ''), ''])  # Ensure trailing slash
+
+    # Make sure URL respects any provided query params
+    url.add(args=request.args)
+
     resp = requests.get(url)
+
     excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
     headers = [(name, value) for (name, value) in resp.raw.headers.items() if name.lower() not in excluded_headers]
     return Response(resp.content, resp.status_code, headers)
@@ -250,8 +265,9 @@ def make_url_map(app):
             Rule(
                 [
                     '/ember-cli-live-reload.js',
+                    # Delegate any file or asset  requests to the ember app.
                     settings.EXTERNAL_EMBER_BASEURL,
-                    settings.EXTERNAL_EMBER_BASEURL + '<path:_>',
+                    settings.EXTERNAL_EMBER_BASEURL + '<path:path>',
                 ],
                 'get',
                 external_ember_app,
@@ -363,13 +379,6 @@ def make_url_map(app):
         ),
 
         Rule(
-            '/preprints/',
-            'get',
-            preprint_views.preprint_landing_page,
-            OsfWebRenderer('public/pages/preprint_landing.mako', trust=False),
-        ),
-
-        Rule(
             '/preprint/',
             'get',
             preprint_views.preprint_redirect,
@@ -383,6 +392,17 @@ def make_url_map(app):
             json_renderer,
         ),
     ])
+
+    if not settings.USE_EXTERNAL_EMBER:
+        # If not delegating preprints to an external ember app, just use the OSF route.
+        process_rules(app, [
+            Rule(
+                '/preprints/',
+                'get',
+                preprint_views.preprint_landing_page,
+                OsfWebRenderer('public/pages/preprint_landing.mako', trust=False),
+            )
+        ])
 
     # Site-wide API routes
 
