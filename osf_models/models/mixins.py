@@ -81,3 +81,11 @@ class Loggable(models.Model):
         abstract = True
 
 
+# TODO: Implement me
+class AddonModelMixin(models.Model):
+
+    def get_addons(self):
+        return []
+
+    class Meta:
+        abstract = True

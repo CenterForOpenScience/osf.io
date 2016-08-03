@@ -8,6 +8,7 @@ from django.core.validators import validate_email
 from django.db import models
 from osf_models.exceptions import reraise_django_validation_errors
 from osf_models.models.base import BaseModel, GuidMixin
+from osf_models.models.mixins import AddonModelMixin
 from osf_models.models.tag import Tag
 from osf_models.utils import security
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
@@ -47,7 +48,7 @@ class OSFUserManager(BaseUserManager):
         return user
 
 
-class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin):
+class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonModelMixin):
     USERNAME_FIELD = 'username'
 
     # Node fields that trigger an update to the search engine on save
