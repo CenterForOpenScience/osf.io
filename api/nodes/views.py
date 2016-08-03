@@ -21,7 +21,7 @@ from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, 
 from api.base.settings import ADDONS_OAUTH, API_BASE
 from api.addons.views import AddonSettingsMixin
 from api.files.serializers import FileSerializer
-from api.comments.serializers import CommentSerializer, CommentCreateSerializer
+from api.comments.serializers import NodeCommentSerializer, CommentCreateSerializer
 from api.comments.permissions import CanCommentOrPublic
 from api.users.views import UserMixin
 from api.wikis.serializers import WikiSerializer
@@ -2560,7 +2560,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
     required_write_scopes = [CoreScopes.NODE_COMMENTS_WRITE]
 
     pagination_class = CommentPagination
-    serializer_class = CommentSerializer
+    serializer_class = NodeCommentSerializer
     view_category = 'nodes'
     view_name = 'node-comments'
 
@@ -2585,7 +2585,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
         if self.request.method == 'POST':
             return CommentCreateSerializer
         else:
-            return CommentSerializer
+            return NodeCommentSerializer
 
     # overrides ListCreateAPIView
     def get_parser_context(self, http_request):
