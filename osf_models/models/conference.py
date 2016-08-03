@@ -3,6 +3,7 @@
 import bson
 from django.db import models
 from django.db.models.manager import BaseManager
+from osf_models.models import Node
 from osf_models.models.base import BaseModel, ObjectIDMixin
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
@@ -21,7 +22,7 @@ DEFAULT_FIELD_NAMES = {
     'homepage_link_text': 'Conference homepage',
 }
 
-class ConferenceManager(BaseManager):
+class ConferenceManager(models.Manager):
     def get_by_endpoint(self, endpoint, active=True):
         try:
             if active:
@@ -43,8 +44,8 @@ class Conference(BaseModel):
     info_url = models.URLField(blank=True)
     logo_url = models.URLField(blank=True)
     location = models.CharField(max_length=2048, blank=True)
-    start_date = models.DateTimeField(blank=True)
-    end_date = models.DateTimeField(blank=True)
+    start_date = models.DateTimeField(blank=True, null=True)
+    end_date = models.DateTimeField(blank=True, null=True)
     active = models.BooleanField()
     admins = models.ManyToManyField('OSFUser')
     #: Whether to make submitted projects public
@@ -53,7 +54,7 @@ class Conference(BaseModel):
     talk = models.BooleanField(default=True)
     # field_names are used to customize the text on the conference page, the categories
     # of submissions, and the email adress to send material to.
-    field_names = DateTimeAwareJSONField(default=lambda: DEFAULT_FIELD_NAMES)
+    field_names = DateTimeAwareJSONField(default=DEFAULT_FIELD_NAMES)
 
     # Cached number of submissions
     num_submissions = models.IntegerField(default=0)
@@ -72,4 +73,5 @@ class Conference(BaseModel):
 
 class MailRecord(ObjectIDMixin, BaseModel):
     data = DateTimeAwareJSONField()
-    records = models.AbstractForeignField(list=True)
+    nodes_created = models.ManyToManyField('Node')
+    users_created = models.ManyToManyField('OSFUser')

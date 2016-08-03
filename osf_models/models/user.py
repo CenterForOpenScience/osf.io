@@ -196,8 +196,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # }
 
     # email lists to which the user has chosen a subscription setting, being sent from osf, rather than mailchimp
-    osf_mailing_lists = DateTimeAwareJSONField(
-        default=get_default_mailing_lists)
+    osf_mailing_lists = DateTimeAwareJSONField(default=get_default_mailing_lists, blank=True)
     # Format: {
     #   'list1': True,
     #   'list2: False,
@@ -404,6 +403,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     @classmethod
     def migrate_from_modm(cls, modm_obj):
         django_obj = super(OSFUser, cls).migrate_from_modm(modm_obj)
+
+        # filter out None values
+        django_obj.emails = [x for x in django_obj.emails if x is not None]
+
         if django_obj.password == '' or django_obj.password is None:
             # password is blank=False, null=False
             # make them have a password

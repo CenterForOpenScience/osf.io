@@ -4,7 +4,7 @@ from modularodm import Q
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from osf_models.models import MetaSchema
-from osf_models.models.base import BaseModel
+from osf_models.models.base import BaseModel, ObjectIDMixin
 from osf_models.utils.base import get_object_id
 from django.db import models
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
@@ -24,7 +24,7 @@ class PreregCallbackMixin(object):
     pass
 
 
-class Sanction(BaseModel):
+class Sanction(ObjectIDMixin, BaseModel):
     """Sanction class is a generic way to track approval states"""
 
     # Neither approved not cancelled
@@ -72,7 +72,6 @@ class Sanction(BaseModel):
     # are automatically made ACTIVE by a daily cron job
     # Use end_date=None for a non-expiring Sanction
     end_date = models.DateTimeField(null=True, blank=True, default=None)
-    guid = models.CharField(max_length=255, default=get_object_id)
     initiation_date = models.DateTimeField(null=True, blank=True)  # auto_now=True)
 
     state = models.CharField(choices=STATE_CHOICES,

@@ -137,26 +137,77 @@ class BaseModel(models.Model):
                 raise ValidationError(*err.args)
         return super(BaseModel, self).save(*args, **kwargs)
 
+    @classmethod
+    def migrate_from_modm(cls, modm_obj):
+        """
+        Given a modm object, make a django object with the same local fields.
+
+        This is a base method that may work for simple objects. It should be customized in the child class if it
+        doesn't work.
+        :param modm_obj:
+        :return:
+        """
+        django_obj = cls()
+
+        local_django_fields = set([x.name for x in django_obj._meta.get_fields() if not x.is_relation])
+
+        intersecting_fields = set(modm_obj.to_storage().keys()).intersection(
+            set(local_django_fields))
+
+        for field in intersecting_fields:
+            modm_value = getattr(modm_obj, field)
+            if modm_value is None:
+                continue
+            if isinstance(modm_value, datetime):
+                modm_value = pytz.utc.localize(modm_value)
+            setattr(django_obj, field, modm_value)
+
+        return django_obj
+
 
 class ObjectIDMixin(models.Model):
-    _object_id = models.CharField(max_length=255,
+    guid = models.CharField(max_length=255,
                                   unique=True,
                                   db_index=True,
                                   default=get_object_id)
     @property
-    def guid(self):
-        return self._object_id
+    def _object_id(self):
+        return self.guid
 
 
     @property
     def _id(self):
-        return PKIDStr(self._object_id, self.pk)
+        return PKIDStr(self.guid, self.pk)
 
     _primary_key = _id
 
     @classmethod
     def migrate_from_modm(cls, modm_obj):
-        raise NotImplementedError('You must implement migrate_from_modm on the child model or volunteer to do it on ObjectIDMixin')
+        """
+        Given a modm object, make a django object with the same local fields.
+
+        This is a base method that may work for simple objects. It should be customized in the child class if it
+        doesn't work.
+        :param modm_obj:
+        :return:
+        """
+        django_obj = cls()
+
+        local_django_fields = set([x.name for x in django_obj._meta.get_fields() if not x.is_relation])
+
+        intersecting_fields = set(modm_obj.to_storage().keys()).intersection(
+            set(local_django_fields))
+
+        for field in intersecting_fields:
+            modm_value = getattr(modm_obj, field)
+            if modm_value is None:
+                continue
+            if isinstance(modm_value, datetime):
+                modm_value = pytz.utc.localize(modm_value)
+            setattr(django_obj, field, modm_value)
+
+        return django_obj
+
 
     class Meta:
         abstract = True

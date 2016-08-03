@@ -52,7 +52,7 @@ class ArchiveJob(ObjectIDMixin, BaseModel):
 
     dst_node = models.ForeignKey('Node', related_name='active', verbose_name='destination node')
     src_node = models.ForeignKey('Node', verbose_name='source node')
-    initiator = models.ForeignKey('OSFUser')
+    initiator = models.ForeignKey('OSFUser', null=True)
 
     target_addons = models.ManyToManyField('ArchiveTarget')
 

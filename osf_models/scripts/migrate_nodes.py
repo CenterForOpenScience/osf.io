@@ -10,8 +10,10 @@ from datetime import datetime
 import pytz
 from django.db import transaction
 from osf_models.models import Collection
+from osf_models.models import Conference
 from osf_models.models import Institution
 from osf_models.models import Registration
+from osf_models.models.base import ObjectIDMixin, GuidMixin
 
 from framework.auth import User as MODMUser
 from modularodm import Q as MQ
@@ -215,6 +217,41 @@ def save_bare_collections(page_size=20000):
         (datetime.now() - start).total_seconds()))
 
 
+def save_bare(modm_model, django_model, page_size=20000):
+    print('Starting {}...'.format(sys._getframe().f_code.co_name))
+    count = 0
+    start = datetime.now()
+    total = modm_model.find().count()
+
+    while count < total:
+        with transaction.atomic():
+            django_objs = []
+            page_of_modm_objects = modm_model.find()[count:count+page_size]
+            for modm_obj in page_of_modm_objects:
+                django_objs.append(django_model.migrate_from_modm(modm_obj))
+                count += 1
+                if count % page_size == 0 or count == total:
+                    then = datetime.now()
+                    print('Saving {} {} through {}...'.format(type(django_model), count - page_size, count))
+                    saved_django_objs = django_model.objects.bulk_create(django_objs)
+                    for django_instance in saved_django_objs:
+                        if isinstance(django_instance, ObjectIDMixin):
+                            modm_to_django[django_instance.guid] = django_instance.pk
+                        elif isinstance(django_instance, GuidMixin):
+                            modm_to_django[django_instance._guid.guid] = django_instance.pk
+                        elif isinstance(django_instance, Conference):
+                            pass
+                        else:
+                            print('What is this? It hasn\'t got a guid or a _guid.')
+                            import ipdb
+                            ipdb.set_trace()
+                    now = datetime.now()
+                    print('Done with {} {} in {} seconds...'.format(len(saved_django_objs), type(django_model), (now - then).total_seconds()))
+                    saved_django_objs = []
+                    page_of_modm_objects = []
+                    print('Took out {} trashes'.format(gc.collect()))
+
+
 def save_bare_nodes(page_size=20000):
     print('Starting {}...'.format(sys._getframe().f_code.co_name))
     count = 0
@@ -327,19 +364,24 @@ def save_bare_users(page_size=20000):
                     then = datetime.now()
                     print('Saving users {} through {}...'.format(
                         count - page_size, count))
-                    woot = OSFUser.objects.bulk_create(users)
-                    for wit in woot:
-                        modm_to_django[wit._guid.guid] = wit.pk
-                    now = datetime.now()
-                    print('Done with {} users in {} seconds...'.format(
-                        len(woot), (now - then).total_seconds()))
-                    users = None
-                    woot = None
-                    guid = None
-                    user_fields = None
-                    cleaned_user_fields = None
-                    trash = gc.collect()
-                    print('Took out {} trashes'.format(trash))
+                    try:
+                        woot = OSFUser.objects.bulk_create(users)
+                    except Exception as ex:
+                        import ipdb
+                        ipdb.set_trace()
+                    else:
+                        for wit in woot:
+                            modm_to_django[wit._guid.guid] = wit.pk
+                        now = datetime.now()
+                        print('Done with {} users in {} seconds...'.format(
+                            len(woot), (now - then).total_seconds()))
+                        users = None
+                        woot = None
+                        guid = None
+                        user_fields = None
+                        cleaned_user_fields = None
+                        trash = gc.collect()
+                        print('Took out {} trashes'.format(trash))
 
     print('Modm Users: {}'.format(total))
     print('django Users: {}'.format(OSFUser.objects.all().count()))
@@ -416,63 +458,43 @@ def save_bare_system_tags(page_size=10000):
         (datetime.now() - start).total_seconds()))
 
 
-def save_bare_embargos(page_size=10000):
-    print('Starting {}...'.format(sys._getframe().f_code.co_name))
-    embargo_key_blacklist = ['__backrefs', '_version', ]
-
-    start = datetime.now()
-    count = 0
-    total = MODMEmbargo.find().count()
-
-    while count < total:
-        with transaction.atomic():
-            embargos = []
-            for modm_embargo in MODMEmbargo.find().sort('-_id')[count:count +
-                                                                page_size]:
-                embargo_fields = modm_embargo.to_storage()
-                cleaned_embargo_fields = {key: embargo_fields[key]
-                                          for key in embargo_fields
-                                          if key not in (embargo_key_blacklist)
-                                          }
-                for k, v in cleaned_embargo_fields.iteritems():
-                    if isinstance(v, datetime):
-                        cleaned_embargo_fields[k] = pytz.utc.localize(v)
-                cleaned_embargo_fields['guid'] = cleaned_embargo_fields['_id']
-                del cleaned_embargo_fields['_id']
-
-                try:
-                    initiated_by_id = modm_to_django[cleaned_embargo_fields[
-                        'initiated_by']]
-                except KeyError:
-                    print('Couldn\'t find user with guid {}'.format(cleaned_embargo_fields['initiated_by']))
-                else:
-                    cleaned_embargo_fields['initiated_by_id'] = initiated_by_id
-                    del cleaned_embargo_fields['initiated_by']
-
-                embargos.append(Embargo(**cleaned_embargo_fields))
-                count += 1
-                if count % page_size == 0 or count == total:
-                    then = datetime.now()
-                    print('Saving embargos {} through {}...'.format(
-                        count - page_size, count))
-                    woot = Embargo.objects.bulk_create(embargos)
-                    for wit in woot:
-                        modm_to_django[wit.guid] = wit.pk
-                    now = datetime.now()
-                    print('Done with {} embargos in {} seconds...'.format(
-                        len(woot), (now - then).total_seconds()))
-                    embargos = None
-                    woot = None
-                    guid = None
-                    embargo_fields = None
-                    cleaned_embargo_fields = None
-                    trash = gc.collect()
-                    print('Took out {} trashes'.format(trash))
-    print('Modm embargos: {}'.format(total))
-    print('django embargos: {}'.format(Embargo.objects.count()))
-    print('Done with {} in {} seconds...'.format(
-        sys._getframe().f_code.co_name,
-        (datetime.now() - start).total_seconds()))
+# def save_bare_embargos(page_size=10000):
+#     print('Starting {}...'.format(sys._getframe().f_code.co_name))
+#     embargo_key_blacklist = ['__backrefs', '_version', ]
+#
+#     start = datetime.now()
+#     count = 0
+#     total = MODMEmbargo.find().count()
+#
+#     while count < total:
+#         with transaction.atomic():
+#             embargos = []
+#             for modm_embargo in MODMEmbargo.find().sort('-_id')[count:count +
+#                                                                 page_size]:
+#                 embargos.append(Embargo.migrate_from_modm(modm_embargo))
+#                 count += 1
+#                 if count % page_size == 0 or count == total:
+#                     then = datetime.now()
+#                     print('Saving embargos {} through {}...'.format(
+#                         count - page_size, count))
+#                     woot = Embargo.objects.bulk_create(embargos)
+#                     for wit in woot:
+#                         modm_to_django[wit.guid] = wit.pk
+#                     now = datetime.now()
+#                     print('Done with {} embargos in {} seconds...'.format(
+#                         len(woot), (now - then).total_seconds()))
+#                     embargos = None
+#                     woot = None
+#                     guid = None
+#                     embargo_fields = None
+#                     cleaned_embargo_fields = None
+#                     trash = gc.collect()
+#                     print('Took out {} trashes'.format(trash))
+#     print('Modm embargos: {}'.format(total))
+#     print('django embargos: {}'.format(Embargo.objects.count()))
+#     print('Done with {} in {} seconds...'.format(
+#         sys._getframe().f_code.co_name,
+#         (datetime.now() - start).total_seconds()))
 
 
 def save_bare_retractions(page_size=10000):
