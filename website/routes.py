@@ -187,7 +187,7 @@ def external_ember_app(_=None):
         raise HTTPError(http.NOT_FOUND)
 
     url = furl(external_app_url).add(path=request.path)
-    resp = requests.get(url)
+    resp = requests.get(url, headers={'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'})
     excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
     headers = [(name, value) for (name, value) in resp.raw.headers.items() if name.lower() not in excluded_headers]
     return Response(resp.content, resp.status_code, headers)
