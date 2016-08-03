@@ -59,6 +59,10 @@ PROTOCOL = 'https://' if SECURE_MODE else 'http://'
 DOMAIN = PROTOCOL + 'localhost:5000/'
 API_DOMAIN = PROTOCOL + 'localhost:8000/'
 
+# External Ember App Local Development
+USE_EXTERNAL_EMBER = False
+EXTERNAL_EMBER_APPS = {}
+
 LOG_PATH = os.path.join(APP_PATH, 'logs')
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
 ANALYTICS_PATH = os.path.join(BASE_PATH, 'analytics')
@@ -252,9 +256,18 @@ PIWIK_HOST = None
 PIWIK_ADMIN_TOKEN = None
 PIWIK_SITE_ID = None
 
-KEEN_PROJECT_ID = None
-KEEN_WRITE_KEY = None
-KEEN_READ_KEY = None
+KEEN = {
+    'public': {
+        'project_id': None,
+        'master_key': 'changeme',
+        'write_key': '',
+    },
+    'private': {
+        'project_id': '',
+        'write_key': '',
+        'read_key': '',
+    },
+}
 
 SENTRY_DSN = None
 SENTRY_DSN_JS = None

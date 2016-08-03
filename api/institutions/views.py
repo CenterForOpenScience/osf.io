@@ -16,6 +16,7 @@ from api.base.filters import ODMFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.serializers import JSONAPISerializer
 from api.base.utils import get_object_or_error, get_user_auth
+from api.base.pagination import MaxSizePagination
 from api.base.parsers import (
     JSONAPIRelationshipParser,
     JSONAPIRelationshipParserForRegularJSON,
@@ -69,6 +70,7 @@ class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     required_write_scopes = [CoreScopes.NULL]
     model_class = Institution
 
+    pagination_class = MaxSizePagination
     serializer_class = InstitutionSerializer
     view_category = 'institutions'
     view_name = 'institution-list'
