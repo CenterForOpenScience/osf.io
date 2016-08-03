@@ -14,6 +14,14 @@ def validate_subscription_type(value):
 
 
 def validate_event_type(value):
+    """
+
+    :param value:
+
+    Checks if the value passed in is in the NODE_SUBSCRIPTIONS_AVAILABLE or USER_SUBSCRIPTIONS_AVAILABLE
+    if it is an event name.  Since the only things from NODE_SUBSCRIPTIONS_AVAILABLE that contains "file_updated"
+    is preceded by a user ID, a regex checker was added for that.
+    """
     prefix = re.compile('[[a-zA-Z0-9]*_]?')
     if prefix.search(value):
         value = 'file_updated'
