@@ -70,7 +70,7 @@ def with_list_proxy(fn):
             'interval_max': 60.0
         }
     )
-    def get_proxy(self, *args, **kwargs):
+    def get_proxy(*args, **kwargs):
         try:
             kwargs['list_proxy'] = mc.get_list(
                 '{}@{}'.format(
@@ -139,13 +139,19 @@ def ensure_user_as_id(contributor):
 # This calls out to another server, so we should not block.
 # @with_list_proxy does not block.
 @with_list_proxy
-def add_contributor(list_mailbox=None, list_proxy=None, contributor=None):
+def add_contributor(list_mailbox=None, list_proxy=None, contributor=None, email=None):
+    email_to_sub = email
     def not_subbed(email):
         try:
             list_proxy.get_member(email)
             return False
         except:
-            return True
+            if not email_to_sub:
+                return True
+            if email_to_sub == email:
+                return True
+            return False
+    remove_contributor(list_mailbox=list_mailbox, contributor=contributor, email=email)
     contributor = User.load(contributor)
     map(
         lambda email: list_proxy.subscribe(
@@ -177,13 +183,14 @@ def contributor_added_handler(node, contributor, auth=None, throttle=None):
     add_contributor(list_mailbox=node._id, contributor=contributor._id)
 
 @with_list_proxy
-def remove_contributor(list_proxy, contributor):
+def remove_contributor(list_mailbox=None, list_proxy=None, contributor=None, email=None):
     def subbed(email):
         try:
             list_proxy.get_member(email)
             return True
         except:
             return False
+    contributor = User.load(contributor)
     map(
         lambda email: list_proxy.unsubscribe(email),
         list(filter(subbed, contributor.emails))
@@ -205,14 +212,15 @@ def contributor_removed_handler(node, contributor, auth=None, throttle=None):
 def update_single_user_in_list(
     node_id,
     user_id,
-    email=None,
+    email_address=None,
     enabled=True,
     old_email=None
 ):
     add_contributor(
         list_mailbox=node_id,
         list_proxy=None,
-        contributor=user_id
+        contributor=user_id,
+        email=email_address
     )
 
 ###############################################################################

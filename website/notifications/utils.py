@@ -282,7 +282,7 @@ def format_data(user, node_ids):
                 'view': can_read,
             },
         }
-
+        #import ipdb; ipdb.set_trace()
         items.append(item)
     return items
 
@@ -340,7 +340,7 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
         for n_type in constants.NOTIFICATION_TYPES:
             if user in getattr(subscription, n_type):
                 notification_type = n_type
-    return {
+    tbd = {
         'event': {
             'title': event_description,
             'description': all_subs[event_type],
@@ -350,6 +350,9 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
         'kind': 'event',
         'children': []
     }
+    if tbd['event']['title'] == 'mailing_list_events':
+        tbd['user_data'] = user.emails
+    return tbd
 
 
 def get_parent_notification_type(node, event, user):
@@ -420,6 +423,8 @@ def subscribe_user_to_notifications(node, user):
 
     :param user: User to subscribe to notifications
     """
+
+    import ipdb; ipdb.set_trace()
 
     if node.institution_id:
         raise InvalidSubscriptionError('Institutions are invalid targets for subscriptions')

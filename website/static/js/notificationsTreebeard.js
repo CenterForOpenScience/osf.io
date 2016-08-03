@@ -133,8 +133,7 @@ function ProjectNotifications(data) {
                 if (item.data.event.title !== 'mailing_list_events') {
                     options.push(m('option', {value: 'email_digest', selected : item.data.event.notificationType === 'email_digest' ? 'selected': ''}, 'Daily'));
                 }
-                columns.push(
-                {
+                columns.push({
                     data : 'project',  // Data field name
                     folderIcons : true,
                     filter : true,
@@ -143,8 +142,7 @@ function ProjectNotifications(data) {
                     custom : function(item, col) {
                         return item.data.event.description;
                     }
-                },
-                {
+                }, {
                     data : 'notificationType',  // Data field name
                     folderIcons : false,
                     filter : false,
@@ -160,17 +158,33 @@ function ProjectNotifications(data) {
                                 m('option', {value: 'email_transactional', selected : type === 'email_transactional' ? 'selected': ''}, 'Instantly'),
                                 m('option', {value: 'email_digest', selected : type === 'email_digest' ? 'selected': ''}, 'Daily')
                             ];
+                            if (item.data.event.title === 'mailing_list_events') {
+                                console.log(item.data);
+                                notificationOptions = item.data.user_data.concat(null).map(function(opt) {
+                                    return m(
+                                        'option',
+                                        {value: opt ? opt : 'none', selected : type === (opt ? opt : 'none') ? 'selected': ''},
+                                        (opt ? opt : 'Do Not Subscribe')
+                                    );
+                                });
+                            }
                         }
-                        return m('div[style="padding-right:10px"]',
-                            [m('select.form-control', {
-                                onchange: function(ev) {
-                                    subscribe(item, ev.target.value);
-                                }},
+                        return m(
+                            'div[style="padding-right:10px"]',
+                            [m(
+                                'select.form-control', 
+                                {
+                                    onchange: function(ev) {
+                                        subscribe(item, ev.target.value);
+                                    }
+                                },
                                 notificationOptions
                             )]
                         );
                     }
                 });
+                console.log('isfolder or isheading&isevent');
+                console.log(columns);
             }
             else {
                 if (item.data.event.title !== 'mailing_list_events') {
@@ -178,6 +192,8 @@ function ProjectNotifications(data) {
                     options.push(m('option', {value: 'adopt_parent', selected: item.data.event.notificationType === 'adopt_parent' ? 'selected' : ''},
                                                  'Adopt setting from parent project ' + displayParentNotificationType(item)));
                 }
+                console.log('else');
+                console.log(columns);
                 columns.push(
                 {
                     data : 'project',  // Data field name
@@ -205,7 +221,6 @@ function ProjectNotifications(data) {
                     }
                 });
             }
-
             return columns;
         }
     });
