@@ -1384,48 +1384,23 @@ function _fangornResolveRows(item) {
         filter : true,
         custom : _fangornTitleColumn
     });
+    if(window.contextVars.isPublicFilesNode && item.data.kind == 'file'){
+        defaultColumns.push({
+            data : 'share',
+            sortInclude : false,
+            filter : false,
+                custom : function() {
+                    var link = location.protocol+ '//' + location.host + '/' + item.data.extra.guid;
+                    return cb.generateClipboard(link); }
+            });
+    };
+
     defaultColumns.push({
         data : 'size',  // Data field name
         sortInclude : false,
         filter : false,
         custom : function() {return item.data.size ? $osf.humanFileSize(item.data.size, true) : '';}
     });
-
-    if(window.contextVars.isPublicFilesNode) {
-        if (item.data.kind === 'file') {
-            defaultColumns.push(
-            {
-                data : 'Share Link',  // Data field name
-                sortInclude : false,
-                filter : false,
-                custom : function() {
-                    var link = location.protocol+ '//' + location.host + '/' + item.data.extra.guid;
-                    return cb.generateClipboard(link); }
-            });
-        }
-    }
-
-   if (item.data.provider === 'osfstorage') {
-       defaultColumns.push({
-           data : 'downloads',
-           sortInclude : false,
-           filter : false,
-           custom: function() { return lodashGet(item, 'data.extra.downloads', '').toString(); }
-       });
-   } else {
-       defaultColumns.push({
-           data : 'downloads',
-           sortInclude : false,
-           filter : false,
-           custom : function() { return m(''); }
-       });
-   }
-   defaultColumns.push(
-   {
-       data : 'modified',  // Data field name
-       filter : false,
-       custom : _fangornModifiedColumn
-   });
     defaultColumns.push({
         data: 'version',
         filter: true,
@@ -1464,24 +1439,25 @@ function _fangornResolveRows(item) {
  */
 function _fangornColumnTitles () {
     var columns = [];
-    if(window.contextVars.isPublicFilesNode) {
+    if(!window.contextVars.isPublicFilesNode){
+
         columns.push(
         {
             title: 'Name',
-            width : '40%',
+            width : '54%',
             sort : true,
             sortType : 'text'
         }, {
             title : 'Size',
+            width : '8%',
+            sort : false
+        }, {
+            title: 'Version',
             width : '10%',
             sort : false
-        }, {
-            title : 'Share Link',
-            width : '20%',
-            sort : false
-        }, {
+        },{
             title : 'Downloads',
-            width : '10%',
+            width : '8%',
             sort : false
         }, {
             title : 'Modified',
@@ -1490,10 +1466,15 @@ function _fangornColumnTitles () {
             sortType : 'text'
         });
     }else{
-     columns.push(
+        columns.push(
         {
             title: 'Name',
-            width : '64%',
+            width : '44%',
+            sort : true,
+            sortType : 'text'
+        }, {
+            title : 'Share',
+            width : '20%',
             sort : true,
             sortType : 'text'
         }, {
@@ -1501,41 +1482,21 @@ function _fangornColumnTitles () {
             width : '8%',
             sort : false
         }, {
+            title: 'Version',
+            width : '10%',
+            sort : false
+        },{
             title : 'Downloads',
             width : '8%',
             sort : false
         }, {
             title : 'Modified',
-            width : '20%',
+            width : '10%',
             sort : true,
             sortType : 'text'
         });
-    }
 
-    columns.push(
-    {
-        title: 'Name',
-        width : '54%',
-        sort : true,
-        sortType : 'text'
-    }, {
-        title : 'Size',
-        width : '8%',
-        sort : false
-    }, {
-        title: 'Version',
-        width : '10%',
-        sort : false
-    },{
-        title : 'Downloads',
-        width : '8%',
-        sort : false
-    }, {
-        title : 'Modified',
-        width : '20%',
-        sort : true,
-        sortType : 'text'
-    });
+    }
     return columns;
 }
 
