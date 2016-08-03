@@ -962,6 +962,14 @@ class NodeViewOnlyLinkSerializer(JSONAPISerializer):
         related_view_kwargs={'user_id': '<creator._id>'},
     )
 
+    def get_absolute_url(self, obj):
+        return absolute_reverse(
+            'nodes:node-view-only-link-detail',
+            kwargs={
+                'key': obj.key
+            }
+        )
+
     def update(self, link, validated_data):
         assert isinstance(link, PrivateLink), 'link must be a PrivateLink'
         return self.update_view_only_link(

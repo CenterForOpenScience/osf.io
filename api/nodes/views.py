@@ -3066,7 +3066,6 @@ class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIV
     #This Request/Response
     """
 
-
     permission_classes = (
         IsAdmin,
         base_permissions.TokenHasScope,
