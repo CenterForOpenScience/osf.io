@@ -20,6 +20,7 @@ from admin.pre_reg import serializers
 from admin.pre_reg.forms import DraftRegistrationForm
 from admin.pre_reg.utils import sort_drafts, SORT_BY
 from framework.exceptions import PermissionsError
+from framework.guid.model import Guid
 from website.exceptions import NodeStateError
 from website.files.models import FileNode
 from website.project.model import DraftRegistration, Node
@@ -249,8 +250,10 @@ def get_metadata_files(draft):
                     file_guid = item.get_guid(create=True)._id
                     data[q]['extra'][i]['fileId'] = file_guid
                     draft.update_metadata(data)
+                    draft.save()
                 else:
-                    item = FileNode.load(file_guid)
+                    guid = Guid.load(file_guid)
+                    item = guid.referent
                 if item is None:
                     raise Http404(
                         'File with guid "{}" in "{}" does not exist'.format(
@@ -276,8 +279,10 @@ def get_metadata_files(draft):
                 file_guid = item.get_guid(create=True)._id
                 data[q]['value']['uploader']['extra'][i]['fileId'] = file_guid
                 draft.update_metadata(data)
+                draft.save()
             else:
-                item = FileNode.load(file_guid)
+                guid = Guid.load(file_guid)
+                item = guid.referent
             if item is None:
                 raise Http404(
                     'File with guid "{}" in "{}" does not exist'.format(
