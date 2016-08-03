@@ -46,8 +46,10 @@ def _init_mailman_client():
             mail_domain = mc.get_domain(settings.OSF_MAILING_LIST_DOMAIN)
         else:
             mail_domain = mc.create_domain(settings.OSF_MAILING_LIST_DOMAIN)
+        return mc
     except:
         mailing_list_server_is_reachable = False
+
 
 _init_mailman_client()
 

@@ -10,7 +10,7 @@ from website.notifications import model
 from website.notifications.exceptions import InvalidSubscriptionError
 from website.notifications.model import NotificationSubscription
 from website.project import signals
-#from website.settings import PROJECT_MAILING_ENABLED
+from website.settings import OSF_MAILING_LIST_DOMAIN
 
 from framework.celery_tasks import app
 
@@ -351,7 +351,32 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
         'children': []
     }
     if tbd['event']['title'] == 'mailing_list_events':
+        from website.mailing_list.utils import _init_mailman_client
+        mc = _init_mailman_client()
+        list_proxy = mc.get_list(
+            '{}@{}'.format(
+                node._id,
+                OSF_MAILING_LIST_DOMAIN
+            )       
+        )
+
+        def subbed(email):
+            try:
+                list_proxy.get_member(email)
+                return True
+            except:
+                return False
+        
+        subbed_emails = list(filter(subbed, user.emails))
+
+        print(subbed_emails)
+
         tbd['user_data'] = user.emails
+        try:
+            tbd['event']['notificationType'] = subbed_emails[0]
+        except:
+            tbd['event']['notificationType'] = 'none'
+
     return tbd
 
 
