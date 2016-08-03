@@ -1,0 +1,78 @@
+{
+  "name": "website-ember",
+  "version": "0.0.0",
+  "description": "Small description for website-ember goes here",
+  "private": true,
+  "directories": {
+    "doc": "doc",
+    "test": "tests"
+  },
+  "scripts": {
+    "build": "ember build",
+    "start": "ember server",
+    "test": "ember test",
+    "check-style": "./node_modules/jscs/bin/jscs ."
+  },
+  "repository": "",
+  "engines": {
+    "node": ">= 0.10.0"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "broccoli-asset-rev": "^2.4.2",
+    "ember-ajax": "0.7.1",
+    "ember-bootstrap": "0.7.2",
+    "ember-cli": "2.4.3",
+    "ember-cli-app-version": "^1.0.0",
+    "ember-cli-babel": "^5.1.6",
+    "ember-collection": "1.0.0-alpha.5",
+    "ember-cli-dependency-checker": "^1.2.0",
+    "ember-cli-htmlbars": "^1.0.3",
+    "ember-cli-htmlbars-inline-precompile": "^0.3.1",
+    "ember-cli-inject-live-reload": "^1.4.0",
+    "ember-cli-qunit": "^1.4.0",
+    "ember-cli-release": "0.2.8",
+    "ember-cli-sass": "5.3.1",
+    "ember-cli-sri": "^2.1.0",
+    "ember-cli-template-lint": "0.4.11",
+    "ember-cli-uglify": "^1.2.0",
+    "ember-data": "^2.4.2",
+    "ember-export-application-global": "^1.0.5",
+    "ember-font-awesome": "2.1.1",
+    "ember-load-initializers": "^0.5.1",
+    "ember-osf": "file:../../ember-osf",
+    "ember-resolver": "^2.0.3",
+    "loader.js": "^4.0.1"
+  },
+  "dependencies": {
+    "jscs": "^3.0.6"
+  },
+  "jscsConfig": {
+    "preset": "airbnb",
+    "excludeFiles": [
+      "package.json",
+      "bower.json",
+      "testem.js",
+      "bower_components",
+      "node_modules",
+      "dist",
+      "docs",
+      "tmp",
+      "vendor",
+      "app/locales",
+      "tests/unit",
+      "tests/integration",
+      "tests/helpers",
+      "tests/dummy/app/mirage"
+    ],
+    "requireSpacesInAnonymousFunctionExpression": false,
+    "requireTrailingComma": false,
+    "disallowTrailingComma": false,
+    "requirePaddingNewLinesAfterBlocks": false,
+    "validateIndentation": 4,
+    "requirePaddingNewLinesBeforeLineComments": false,
+    "maximumLineLength": false,
+    "disallowSpaceBeforeComma": false
+  }
+}

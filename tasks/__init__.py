@@ -945,7 +945,7 @@ def build_js_config_files(ctx):
 
 @task()
 def assets(ctx, dev=False, watch=False, colors=False):
-    """Install and build static assets."""
+    """Install and build static assets for flask application."""
     npm = 'npm install'
     if not dev:
         npm += ' --production'
@@ -955,6 +955,22 @@ def assets(ctx, dev=False, watch=False, colors=False):
     # Always set clean=False to prevent possible mistakes
     # on prod
     webpack(ctx, clean=False, watch=watch, dev=dev, colors=colors)
+
+
+@task
+def spa_assets(ctx, production=False, watch=False):
+    """Build static assets for the OSF Ember SPA"""
+    # TODO: We'd like to run npm, bower, and Ember CLI from the separate directory... but this is *very* ugly.
+    # Revisit and iterate.
+    cmd = 'cd website-ember && '
+    cmd += 'npm install && bower install && '
+    cmd += 'ember build --output-path {}'.format(settings.EMBER_FOLDER)
+    if watch:
+        cmd += ' --watch'
+    if production:
+        # TODO: Make more configurable?
+        cmd += '--environment=production'
+    ctx.run(cmd)
 
 
 @task

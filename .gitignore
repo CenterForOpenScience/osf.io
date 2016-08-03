@@ -55,6 +55,14 @@ node_modules
 # Allow robots.txt to be deployment-specific
 website/static/robots.local.txt
 
+# Ember SPA
+###########
+website-ember/bower_components/
+website-ember/node_modules/
+website-ember/dist/
+website-ember/tmp/
+website-ember/config/*.yml
+
 # OSF-specific
 ##############
 
