@@ -110,12 +110,7 @@ var FileViewPage = {
         self.requestDone = false;
         self.isCheckoutUser = function() {
             $.ajax({
-                headers: {
-                    "Accept": "application/json",
-                    "Content-Type": "application/vnd.api+json"
-                },
                 method: 'get',
-                // contentType: "application/vnd.api+json",
                 url: window.contextVars.apiV2Prefix + 'files' + self.file.path + '/',
                 beforeSend: $osf.setXHRAuthorization
             }).done(function(resp) {
