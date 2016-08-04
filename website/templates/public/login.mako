@@ -163,15 +163,13 @@
                         </div>
 
                         <div>
+                            <!-- Flashed Messages -->
+                            <p class="help-block osf-box-lt p-xs" data-bind="html: message, attr: {class: messageClass}" ></p>
                             <!-- ko if: passwordFeedback() -->
                             <p class="help-block osf-box-lt p-xs" data-bind="validationMessage: password" style="display: none;"></p>
                             <p class="help-block osf-box-lt " data-bind="css : { 'p-xs': passwordFeedback().warning }, visible: typedPassword().length > 0, text: passwordFeedback().warning"></p>
                             <!-- /ko -->
                         </div>
-                    </div>
-                    <!-- Flashed Messages -->
-                    <div class="help-block osf-box-lt" >
-                        <p data-bind="html: message, attr: {class: messageClass}" class=""></p>
                     </div>
                 </br>
                 <div class="form-group">
