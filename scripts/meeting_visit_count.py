@@ -33,7 +33,7 @@ def main(dry_run=True):
                 ).wrapped()
 
                 if not dry_run:
-                    url = 'https://api.keen.io/3.0/projects/{}/events/meeting_view' \
+                    url = 'https://api.keen.io/3.0/projects/{}/queries/count' \
                           '?api_key={}&event_collection=pageviews&timezone=UTC&timeframe=this_14_days' \
                           '&filters=%5B%7B%22property_name%22%3A%22page.info.path%22%2C%22' \
                           'operator%22%3A%22eq%22%2C%22property_value%22%3A%22{}%22%7D%5D'.format(
