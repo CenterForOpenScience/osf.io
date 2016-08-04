@@ -111,8 +111,8 @@ var FileViewPage = {
         self.isCheckoutUser = function() {
             $.ajax({
                 headers: {
-                    "Accept": "application/json",
-                    "Content-Type": "application/vnd.api+json"
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/vnd.api+json'
                 },
                 method: 'get',
                 url: window.contextVars.apiV2Prefix + 'files' + self.file.path + '/',
