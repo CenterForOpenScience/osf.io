@@ -221,6 +221,12 @@ class NodeSerializer(JSONAPISerializer):
         self_meta={'count': 'get_node_links_count'}
     )
 
+    view_only_links = RelationshipField(
+        related_view='nodes:node-view-only-links',
+        related_view_kwargs={'node_id': '<pk>'},
+        related_meta={'count': 'get_view_only_links_count'},
+    )
+
     def get_current_user_permissions(self, obj):
         user = self.context['request'].user
         if user.is_anonymous():
@@ -277,6 +283,10 @@ class NodeSerializer(JSONAPISerializer):
         return {
             'node': node_comments
         }
+
+    def get_view_only_links_count(self, obj):
+        links = [link for link in obj.private_links if not link.is_deleted]
+        return len(links)
 
     def create(self, validated_data):
         request = self.context['request']
@@ -956,21 +966,27 @@ class NodeViewOnlyLinkSerializer(JSONAPISerializer):
     anonymous = ser.BooleanField(required=False)
     name = ser.CharField(required=False)
 
+    links = LinksField({
+        'self': 'get_absolute_url'
+    })
+
     creator = RelationshipField(
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<creator._id>'},
     )
 
     nodes = RelationshipField(
-        related_view='view_only_links:view-only-link-nodes',
-        related_view_kwargs={'link_id': '<_id>'}
+        related_view='view-only-links:view-only-link-nodes',
+        related_view_kwargs={'link_id': '<_id>'},
     )
 
     def get_absolute_url(self, obj):
+        node_id = self.context['request'].parser_context['kwargs']['node_id']
         return absolute_reverse(
             'nodes:node-view-only-link-detail',
             kwargs={
-                'key': obj.key
+                'link_id': obj._id,
+                'node_id': node_id
             }
         )
 

@@ -14,7 +14,7 @@ class ViewOnlyLinkDetailSerializer(JSONAPISerializer):
     name = ser.CharField(required=False)
 
     nodes = RelationshipField(
-        related_view='view_only_links:view-only-link-nodes',
+        related_view='view-only-links:view-only-link-nodes',
         related_view_kwargs={'link_id': '<_id>'}
     )
 
@@ -27,7 +27,7 @@ class ViewOnlyLinkDetailSerializer(JSONAPISerializer):
         return absolute_reverse(
             'nodes:node-view-only-link-detail',
             kwargs={
-                'key': obj.key
+                'link_id': obj._id
             }
         )
 

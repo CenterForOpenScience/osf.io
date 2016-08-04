@@ -2946,12 +2946,10 @@ class NodeViewOnlyLinksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
 
     ###Permissions
 
-    View only links on a node, public or private, are only readable and writeable by users that are
+    View only links on a node, public or private, are readable and writeable only by users that are
     administrators on the node.
 
     ##Attributes
-
-    OSF comment entities have the "comments" `type`.
 
         name            type                    description
         =================================================================================

@@ -113,6 +113,7 @@ class TestViewOnlyLinksUpdate(ViewOnlyLinkTestCase):
     def test_admin_can_update_vol_add_node(self):
         assert_equal(self.view_only_link.name, 'testlink')
         assert_equal(self.view_only_link.anonymous, False)
+        assert_equal(len(self.view_only_link.nodes), 1)
 
         payload = {
             'attributes': {
@@ -120,15 +121,18 @@ class TestViewOnlyLinksUpdate(ViewOnlyLinkTestCase):
             }
         }
         res = self.app.put_json_api(self.url, {'data': payload}, auth=self.user.auth)
+        self.view_only_link.reload()
 
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['attributes']['name'], 'testlink')
         assert_equal(res.json['data']['attributes']['anonymous'], False)
+        assert_equal(len(self.view_only_link.nodes), 2)
 
     def test_admin_can_update_vol_remove_node(self):
         self.view_only_link.nodes.append(self.public_project_component._id)
         assert_equal(self.view_only_link.name, 'testlink')
         assert_equal(self.view_only_link.anonymous, False)
+        assert_equal(len(self.view_only_link.nodes), 2)
 
         payload = {
             'attributes': {
@@ -136,10 +140,12 @@ class TestViewOnlyLinksUpdate(ViewOnlyLinkTestCase):
             }
         }
         res = self.app.put_json_api(self.url, {'data': payload}, auth=self.user.auth)
+        self.view_only_link.reload()
 
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['attributes']['name'], 'testlink')
         assert_equal(res.json['data']['attributes']['anonymous'], False)
+        assert_equal(len(self.view_only_link.nodes), 1)
 
     def test_non_admin_cannot_update_vol_nodes(self):
         self.view_only_link.nodes.append(self.public_project_component._id)

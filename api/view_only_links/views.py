@@ -6,6 +6,7 @@ from api.base import permissions as base_permissions
 from api.base.utils import get_user_auth
 from api.base.views import JSONAPIBaseView
 from api.nodes.serializers import NodeSerializer
+from api.registrations.serializers import RegistrationSerializer
 from api.view_only_links.serializers import ViewOnlyLinkDetailSerializer
 
 from website.models import Node, PrivateLink
@@ -115,6 +116,13 @@ class ViewOnlyLinkNodes(JSONAPIBaseView, generics.ListAPIView):
 
     view_category = 'view-only-links'
     view_name = 'view-only-link-nodes'
+
+    def get_serializer_class(self):
+        view_only_link = PrivateLink.load(self.kwargs['link_id'])
+        node = Node.load(view_only_link.nodes[0])
+        if node.is_registration:
+            return RegistrationSerializer
+        return NodeSerializer
 
     def get_queryset(self):
         link_id = self.kwargs['link_id']
