@@ -237,11 +237,27 @@
     <%include file="include/comment_pane_template.mako"/>
 % endif
 
+% if node['is_preprint'] and not node['is_preprint_orphan']:
 <div class="row">
     <div class="col-xs-12">
-        <div class="preprint-notice m-b-md p-md clearfix">This component is a preprint. Learn more about how to work with preprint files. <button class="btn btn-default btn-sm m-r-xs pull-right">View preprint file</button><button class="btn btn-default btn-sm m-r-xs pull-right">Edit preprint details</button></div>
+        <div class="pp-notice m-b-md p-md clearfix">
+            This component is a preprint. Learn more about how to work with preprint files.
+            <a href="/preprints/${node['id']}/" class="btn btn-default btn-sm m-r-xs pull-right">View preprint file</a>
+            <a href="/preprints/${node['id']}/edit/" class="btn btn-default btn-sm m-r-xs pull-right">Edit preprint details</a>
+        </div>
     </div>
 </div>
+% endif
+
+% if node['is_preprint'] and node['is_preprint_orphan']:
+<div class="row">
+    <div class="col-xs-12">
+        <div class="pp-notice pp-warning m-b-md p-md clearfix">
+            This component is a preprint but we couldn’t find a preprint file. You can Add a preprint file or Remove preprint designation for this component
+        </div> 
+    </div>
+</div>
+% endif
 
 <div class="row">
 
