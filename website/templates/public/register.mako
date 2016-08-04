@@ -13,7 +13,7 @@
             </p>
         </div>
     %endif
-
+    <div class="row m-t-xl">
     %if campaign != "institution" or not enable_institutions:
         <div id="signUpScope" class="col-sm-8 col-sm-offset-2 col-md-6 col-md-offset-3 signup-form p-b-md m-b-m bg-color-light">
             <form data-bind="submit: submit" class="form-horizontal">
@@ -151,9 +151,7 @@
                         <button type="submit" class="btn pull-right btn-success" data-bind="disable: submitted()">Create account</button>
                     </div>
                 </div>
-
             </form>
-
         </div>
         <div class="row">
             <div id="termsAndConditions" class="m-t-md col-sm-6 col-sm-offset-3">
