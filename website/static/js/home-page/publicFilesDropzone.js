@@ -27,6 +27,7 @@ var PublicFilesDropzone = {
             maxFilesize: 500,
             accept: function (file, done) {
                 this.options.url = waterbutler.buildUploadUrl(false, 'osfstorage', window.contextVars.publicFilesId, file, {});
+                $('h2.splash-text').hide();
 
                 if (this.files.length <= this.options.maxFiles) {
                     $('div.h2.text-center.m-t-lg').hide();
@@ -58,7 +59,6 @@ var PublicFilesDropzone = {
                 $('.logo-spin').remove();
                 $('#publicFilesDropzoneUploadBtn').html('Upload another file');
                 var buttonContainer = document.createElement('div');
-                $('h2.splash-text').remove();
 
                 $(file.previewElement).find('.col-sm-7.p-xs').append(buttonContainer);
                 file.previewElement.classList.add('dz-success');
@@ -70,7 +70,7 @@ var PublicFilesDropzone = {
             },
             error: function (file, message) {
                 $osf.softGrowl(message,'danger');
-//                $('.dz-preview').remove();
+                $(file.previewElement).remove();
                 this.files.pop();
             }
         };
@@ -168,6 +168,7 @@ var PublicFilesDropzone = {
                             onclick: function () {
                                 $('#publicFilesDropzone').hide();
                                 $('div.dz-preview').remove();
+                                $('h2.splash-text').show();
                                 $('#glyphchevron').toggleClass('glyphicon glyphicon-menu-up glyphicon glyphicon-menu-down');
                             }
                         }, 'Done')
