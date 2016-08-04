@@ -9,7 +9,7 @@ from datetime import datetime
 
 import pytz
 from django.db import transaction
-from osf_models.models import Collection
+from osf_models.models import Collection, Registration
 from osf_models.models import Conference
 from osf_models.models import Institution
 from osf_models.models import MetaSchema

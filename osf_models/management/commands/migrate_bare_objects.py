@@ -9,12 +9,12 @@ from osf_models.scripts.load_blacklist_guids import \
 from osf_models.scripts.load_guids import main as load_guids
 from osf_models.scripts.migrate_nodes import save_bare_nodes, save_bare_institutions, save_bare_registrations, \
     save_bare_collections, merge_duplicate_users, save_bare_users, save_bare_tags, save_bare_system_tags, \
-    build_pk_caches, save_bare
+    save_bare
 
 from website.app import init_app
 from website.archiver.model import ArchiveTarget, ArchiveJob
 from website.conferences.model import Conference
-from website.project.model import AlternativeCitation, Comment, MetaSchema
+from website.project.model import AlternativeCitation, Comment, MetaSchema, DraftRegistrationLog, DraftRegistration
 from website.project.sanctions import RegistrationApproval, \
     Retraction, Embargo, DraftRegistrationApproval, EmbargoTerminationApproval
 
@@ -55,6 +55,8 @@ class Command(BaseCommand):
         save_bare_nodes()
         save_bare_collections()
         save_bare_registrations()
+        save_bare(DraftRegistrationLog, models.DraftRegistrationLog)
+        save_bare(DraftRegistration, models.DraftRegistration)
         save_bare(Embargo, models.Embargo)
         save_bare(Retraction, models.Retraction)
         save_bare(RegistrationApproval, models.RegistrationApproval)
