@@ -1,10 +1,12 @@
-from website.project.taxonomies import Subject
-
 from rest_framework import generics, permissions as drf_permissions
 
-from api.taxonomies.serializers import TaxonomySerializer
-from api.base.views import JSONAPIBaseView
 from modularodm import Q
+
+from api.base.views import JSONAPIBaseView
+from api.base import permissions as base_permissions
+from api.taxonomies.serializers import TaxonomySerializer
+from website.project.taxonomies import Subject
+from framework.auth.oauth_scopes import CoreScopes
 
 
 class PlosTaxonomy(JSONAPIBaseView, generics.ListAPIView):
@@ -31,8 +33,11 @@ class PlosTaxonomy(JSONAPIBaseView, generics.ListAPIView):
     '''
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope
     )
 
+    required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
+    required_write_scopes = [CoreScopes.NULL]
     serializer_class = TaxonomySerializer
     view_category = 'plos-taxonomies'
     view_name = 'plos-taxonomy'
