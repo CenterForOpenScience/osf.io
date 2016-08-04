@@ -1,11 +1,22 @@
+import urlparse
 import datetime as dt
+import logging
 
+from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
 from django.contrib.postgres import fields
 from django.core.validators import validate_email
+from django.apps import apps
 from django.db import models
+
+# OSF imports
+from framework.sentry import log_exception
+from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError, InvalidTokenError,
+                                       MergeConfirmedRequiredError, MergeConflictError)
+from website import filters
+
 from osf_models.exceptions import reraise_django_validation_errors
 from osf_models.models.base import BaseModel, GuidMixin
 from osf_models.models.mixins import AddonModelMixin
@@ -14,6 +25,7 @@ from osf_models.utils import security
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf_models.utils.names import impute_names
 
+logger = logging.getLogger(__name__)
 
 # Hide implementation of token generation
 def generate_confirm_token():
@@ -23,6 +35,14 @@ def generate_confirm_token():
 def get_default_mailing_lists():
     return {'Open Science Framework Help': True}
 
+name_formatters = {
+    'long': lambda user: user.fullname,
+    'surname': lambda user: user.family_name if user.family_name else user.fullname,
+    'initials': lambda user: u'{surname}, {initial}.'.format(
+        surname=user.family_name,
+        initial=user.given_name_initial,
+    ),
+}
 
 class OSFUserManager(BaseUserManager):
     def create_user(self, username, password=None):
@@ -48,7 +68,9 @@ class OSFUserManager(BaseUserManager):
         return user
 
 
-class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonModelMixin):
+class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonModelMixin):
+    ENABLE_M2M_CHECK = False  # Disable m2m field checking in django-dirtyfields
+
     USERNAME_FIELD = 'username'
 
     # Node fields that trigger an update to the search engine on save
@@ -143,7 +165,7 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonMod
     contributor_added_email_records = DateTimeAwareJSONField(default={}, blank=True)
 
     # The user into which this account was merged
-    merged_by = models.ForeignKey('self', null=True, blank=True)
+    merged_by = models.ForeignKey('self', null=True, blank=True, related_name='merger')
 
     # verification key used for resetting password
     verification_key = models.CharField(max_length=255, null=True, blank=True)
@@ -194,7 +216,7 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonMod
 
     # list of collaborators that this user recently added to nodes as a contributor
     # recently_added = fields.ForeignField("user", list=True)
-    recently_added = models.ManyToManyField('self')
+    recently_added = models.ManyToManyField('self', symmetrical=False)
 
     # Attached external accounts (OAuth)
     # external_accounts = fields.ForeignField("externalaccount", list=True)
@@ -209,8 +231,8 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonMod
     # Employment history
     # jobs = fields.DictionaryField(list=True, validate=validate_history_item)
     # TODO: Add validation
-    jobs = DateTimeAwareJSONField(default={}, blank=True)
-    # Format: {
+    jobs = DateTimeAwareJSONField(default=list, blank=True)
+    # Format: list of {
     #     'title': <position or job title>,
     #     'institution': <institution or organization>,
     #     'department': <department>,
@@ -225,8 +247,8 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonMod
     # Educational history
     # schools = fields.DictionaryField(list=True, validate=validate_history_item)
     # TODO: Add validation
-    schools = DateTimeAwareJSONField(default={}, blank=True)
-    # Format: {
+    schools = DateTimeAwareJSONField(default=list, blank=True)
+    # Format: list of {
     #     'degree': <position or job title>,
     #     'institution': <institution or organization>,
     #     'department': <department>,
@@ -292,8 +314,17 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonMod
         return '/{}/'.format(self._id)
 
     @property
+    def absolute_url(self):
+        config = apps.get_app_config('osf_models')
+        return urlparse.urljoin(config.domain, self.url)
+
+    @property
     def api_url(self):
         return '/api/v1/profile/{}/'.format(self._id)
+
+    @property
+    def profile_url(self):
+        return '/{}/'.format(self._id)
 
     @property
     def is_disabled(self):
@@ -326,6 +357,17 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonMod
             for each
             in email_verifications.values()
         ]
+
+    @property
+    def social_links(self):
+        social_user_fields = {}
+        for key, val in self.social.items():
+            if val and key in self.SOCIAL_FIELDS:
+                if not isinstance(val, basestring):
+                    social_user_fields[key] = val
+                else:
+                    social_user_fields[key] = self.SOCIAL_FIELDS[key].format(val)
+        return social_user_fields
 
     @property
     def email(self):
@@ -380,6 +422,12 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonMod
     # Overrides BaseModel
     def save(self, *args, **kwargs):
         self.update_is_active()
+
+        dirty_fields = set(self.get_dirty_fields())
+        if self.SEARCH_UPDATE_FIELDS.intersection(dirty_fields) and self.is_confirmed:
+            self.update_search()
+            # TODO
+            # self.update_search_nodes_contributors()
         return super(OSFUser, self).save(*args, **kwargs)
 
     # Legacy methods
@@ -407,6 +455,40 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonMod
             # needed to prevent cirular import
             from framework.auth.campaigns import system_tag_for_campaign  # skipci
             user.system_tags.append(system_tag_for_campaign(campaign))
+        return user
+
+    def get_unconfirmed_email_for_token(self, token):
+        """Return email if valid.
+        :rtype: bool
+        :raises: ExpiredTokenError if trying to access a token that is expired.
+        :raises: InvalidTokenError if trying to access a token that is invalid.
+
+        """
+        if token not in self.email_verifications:
+            raise InvalidTokenError
+
+        verification = self.email_verifications[token]
+        # Not all tokens are guaranteed to have expiration dates
+        if (
+            'expiration' in verification and
+            verification['expiration'] < dt.datetime.utcnow()
+        ):
+            raise ExpiredTokenError
+
+        return verification['email']
+
+    @classmethod
+    def create_unregistered(cls, fullname, email=None):
+        """Create a new unregistered user.
+        """
+        user = cls(
+            username=email,
+            fullname=fullname,
+            is_invited=True,
+            is_registered=False,
+        )
+        user.set_unusable_password()
+        user.update_guessed_names()
         return user
 
     def update_guessed_names(self):
@@ -451,6 +533,52 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonMod
         self._set_email_token_expiration(token, expiration=expiration)
         return token
 
+    def remove_unconfirmed_email(self, email):
+        """Remove an unconfirmed email addresses and their tokens."""
+        for token, value in self.email_verifications.iteritems():
+            if value.get('email') == email:
+                del self.email_verifications[token]
+                return True
+
+        return False
+
+    def get_confirmation_token(self, email, force=False):
+        """Return the confirmation token for a given email.
+
+        :param str email: Email to get the token for.
+        :param bool force: If an expired token exists for the given email, generate a new
+            token and return that token.
+
+        :raises: ExpiredTokenError if trying to access a token that is expired and force=False.
+        :raises: KeyError if there no token for the email.
+        """
+        # TODO: Refactor "force" flag into User.get_or_add_confirmation_token
+        for token, info in self.email_verifications.items():
+            if info['email'].lower() == email.lower():
+                # Old records will not have an expiration key. If it's missing,
+                # assume the token is expired
+                expiration = info.get('expiration')
+                if not expiration or (expiration and expiration < dt.datetime.utcnow()):
+                    if not force:
+                        raise ExpiredTokenError('Token for email "{0}" is expired'.format(email))
+                    else:
+                        new_token = self.add_unconfirmed_email(email)
+                        self.save()
+                        return new_token
+                return token
+        raise KeyError('No confirmation token for email "{0}"'.format(email))
+
+    def get_confirmation_url(self, email, external=True, force=False):
+        """Return the confirmation url for a given email.
+
+        :raises: ExpiredTokenError if trying to access a token that is expired.
+        :raises: KeyError if there is no token for the email.
+        """
+        config = apps.get_app_config('osf_models')
+        base = config.domain if external else '/'
+        token = self.get_confirmation_token(email, force=force)
+        return '{0}confirm/{1}/{2}/'.format(base, self._id, token)
+
     def _set_email_token_expiration(self, token, expiration=None):
         """Set the expiration date for given email token.
 
@@ -459,7 +587,82 @@ class OSFUser(GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonMod
             token will expire after ``settings.EMAIL_TOKEN_EXPIRATION`` hours. This is only
             used for testing purposes.
         """
-        settings = apps.get_app_config('osf_models')
-        expiration = expiration or (dt.datetime.utcnow() + dt.timedelta(hours=settings.email_token_expiration))
+        config = apps.get_app_config('osf_models')
+        expiration = expiration or (dt.datetime.utcnow() + dt.timedelta(hours=config.email_token_expiration))
         self.email_verifications[token]['expiration'] = expiration
         return expiration
+
+    def update_search(self):
+        from website.search.search import update_user
+        from website.search.exceptions import SearchUnavailableError
+        try:
+            update_user(self)
+        except SearchUnavailableError as e:
+            logger.exception(e)
+            log_exception()
+
+    def get_summary(self, formatter='long'):
+        return {
+            'user_fullname': self.fullname,
+            'user_profile_url': self.profile_url,
+            'user_display_name': name_formatters[formatter](self),
+            'user_is_claimed': self.is_claimed
+        }
+
+    def change_password(self, raw_old_password, raw_new_password, raw_confirm_password):
+        """Change the password for this user to the hash of ``raw_new_password``."""
+        raw_old_password = (raw_old_password or '').strip()
+        raw_new_password = (raw_new_password or '').strip()
+        raw_confirm_password = (raw_confirm_password or '').strip()
+
+        # TODO: Move validation to set_password
+        issues = []
+        if not self.check_password(raw_old_password):
+            issues.append('Old password is invalid')
+        elif raw_old_password == raw_new_password:
+            issues.append('Password cannot be the same')
+        elif raw_new_password == self.username:
+            issues.append('Password cannot be the same as your email address')
+        if not raw_old_password or not raw_new_password or not raw_confirm_password:
+            issues.append('Passwords cannot be blank')
+        elif len(raw_new_password) < 6:
+            issues.append('Password should be at least six characters')
+        elif len(raw_new_password) > 256:
+            issues.append('Password should not be longer than 256 characters')
+
+        if raw_new_password != raw_confirm_password:
+            issues.append('Password does not match the confirmation')
+
+        if issues:
+            raise ChangePasswordError(issues)
+        self.set_password(raw_new_password)
+
+    def profile_image_url(self, size=None):
+        """A generalized method for getting a user's profile picture urls.
+        We may choose to use some service other than gravatar in the future,
+        and should not commit ourselves to using a specific service (mostly
+        an API concern).
+
+        As long as we use gravatar, this is just a proxy to User.gravatar_url
+        """
+        return self._gravatar_url(size)
+
+    def _gravatar_url(self, size):
+        return filters.gravatar(
+            self,
+            use_ssl=True,
+            size=size
+        )
+
+    def display_full_name(self, node=None):
+        """Return the full name , as it would display in a contributor list for a
+        given node.
+
+        NOTE: Unclaimed users may have a different name for different nodes.
+        """
+        if node:
+            unclaimed_data = self.unclaimed_records.get(node._primary_key, None)
+            if unclaimed_data:
+                return unclaimed_data['name']
+        return self.fullname
+
