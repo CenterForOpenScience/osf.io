@@ -1384,7 +1384,7 @@ function _fangornResolveRows(item) {
         filter : true,
         custom : _fangornTitleColumn
     });
-    if(window.contextVars.isPublicFilesNode && item.data.kind == 'file'){
+    if(window.contextVars.isPublicFilesNode && item.data.kind === 'file'){
         defaultColumns.push({
             data : 'share',
             sortInclude : false,
@@ -1393,7 +1393,7 @@ function _fangornResolveRows(item) {
                     var link = location.protocol+ '//' + location.host + '/' + item.data.extra.guid;
                     return cb.generateClipboard(link); }
             });
-    };
+    }
 
     defaultColumns.push({
         data : 'size',  // Data field name
