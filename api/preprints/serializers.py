@@ -1,11 +1,14 @@
-from rest_framework import serializers as ser
 from modularodm import Q
+from rest_framework import exceptions
+from rest_framework import serializers as ser
 
 from api.base.serializers import (
     JSONAPISerializer, IDField, JSONAPIListField, LinksField, RelationshipField
 )
+from api.base.exceptions import Conflict
 from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import NodeTagField, NodeContributorsSerializer
+from framework.exceptions import PermissionsError
 from website.models import StoredFileNode
 
 
@@ -69,10 +72,15 @@ class PreprintSerializer(JSONAPISerializer):
 
     def create(self, validated_data):
         node = validated_data.pop('node')
+        if node.is_preprint:
+            raise Conflict()
         auth = get_user_auth(self.context['request'])
-        node.set_preprint_file(validated_data.pop('primary_file'), auth)
+        try:
+            node.set_preprint_file(validated_data.pop('primary_file'), auth)
+        except (PermissionsError, ValueError):
+            raise exceptions.NotAuthorized()
         if node._id != validated_data.pop('_id'):
-            raise TypeError
+            raise exceptions.ValidationError()
         for key, value in validated_data.iteritems():
             setattr(node, key, value)
         node.save()

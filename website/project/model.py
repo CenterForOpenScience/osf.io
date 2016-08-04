@@ -1532,7 +1532,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     def set_preprint_file(self, preprint_file, auth, save=False):
         if not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can change a preprint\'s primary file.')
+
         preprint_file = preprint_file.stored_object
+        if preprint_file.node != self:
+            raise ValueError
         # there is no preprint file yet! This is the first time!
         if not self.preprint_file:
             self.preprint_file = preprint_file
