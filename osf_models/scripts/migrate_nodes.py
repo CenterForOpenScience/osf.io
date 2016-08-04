@@ -12,6 +12,7 @@ from django.db import transaction
 from osf_models.models import Collection
 from osf_models.models import Conference
 from osf_models.models import Institution
+from osf_models.models import MetaSchema
 from osf_models.models import Registration
 from osf_models.models.base import ObjectIDMixin, GuidMixin
 
@@ -239,8 +240,11 @@ def save_bare(modm_model, django_model, page_size=20000):
                             modm_to_django[django_instance.guid] = django_instance.pk
                         elif isinstance(django_instance, GuidMixin):
                             modm_to_django[django_instance._guid.guid] = django_instance.pk
+                        # TODO Find a better way to handle oddballs
                         elif isinstance(django_instance, Conference):
-                            pass
+                            modm_to_django[django_instance.endpoint] = django_instance.pk
+                        elif isinstance(django_instance, MetaSchema):
+                            modm_to_django[django_instance.guid] = django_instance.pk
                         else:
                             print('What is this? It hasn\'t got a guid or a _guid.')
                             import ipdb
