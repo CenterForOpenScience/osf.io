@@ -31,6 +31,7 @@ from website.project import signals as project_signals
 from website.project.metadata.schemas import _id_to_name
 from website import util
 from website.project.metadata.utils import serialize_meta_schema
+from website.project.model import has_anonymous_link
 from website.archiver.decorators import fail_archive_on_error
 
 from website.identifiers.client import EzidClient
@@ -141,6 +142,12 @@ def node_register_template_page(auth, node, metaschema_id, **kwargs):
             })
 
         ret = _view_project(node, auth, primary=True)
+        my_meta = serialize_meta_schema(meta_schema)
+        if has_anonymous_link(node, auth):
+            for i, v in enumerate(my_meta['schema']['pages']):
+                for j, w in enumerate(v['questions']):
+                    if w['title'] in settings.ANONYMIZED_TITLES:
+                        del my_meta['schema']['pages'][i]['questions'][j]
         ret['node']['registered_schema'] = serialize_meta_schema(meta_schema)
         return ret
     else:
