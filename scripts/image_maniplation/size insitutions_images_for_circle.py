@@ -40,10 +40,11 @@ def main():
     path = INSTITUTIONS_IMG_PATH + 'shields/'
 
     for shield in os.listdir(path):
-        img = Image.open(path + shield)
-        img = resize(img)
-        img = alphaToWhite(img)
-        img.save(INSTITUTIONS_IMG_PATH + 'shields-rounded-corners/'+ shield[:-4] + '-rounded-corners.png')
+        if shield[:-4] + '-rounded-corners.png' not in os.listdir(INSTITUTIONS_IMG_PATH + 'shields-rounded-corners/'): # shields shouldn't be over written
+            img = Image.open(path + shield)
+            img = resize(img)
+            img = alphaToWhite(img)
+            img.save(INSTITUTIONS_IMG_PATH + 'shields-rounded-corners/'+ shield[:-4] + '-rounded-corners.png')
 
     generateTestHTML(size=100)
     print("This script removes transparency from images, check the test html to ensure a the quality has been maintained")
