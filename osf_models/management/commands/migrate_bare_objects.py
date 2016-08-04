@@ -15,8 +15,12 @@ from website.app import init_app
 from website.archiver.model import ArchiveTarget, ArchiveJob
 from website.conferences.model import Conference
 from website.project.model import AlternativeCitation, Comment, MetaSchema
-from website.project.sanctions import Embargo as MODMEmbargo, Retraction as MODMRetraction, RegistrationApproval, \
+from website.project.sanctions import RegistrationApproval, \
     Retraction, Embargo, DraftRegistrationApproval, EmbargoTerminationApproval
+
+
+# TODO : Make a centralized lookup table of [{model_name : modm_id_field_name}, ]
+# TODO : Use that lookup table to build_pk_caches and make migrate_from_modm less bad.
 
 
 class Command(BaseCommand):
@@ -59,12 +63,9 @@ class Command(BaseCommand):
         save_bare_tags()
         save_bare_system_tags()
         merge_duplicate_users()
+        # this is bad, but merged users have blank usernames and this is the quickest way to fix it.
+        merge_duplicate_users()
         save_bare_users()
-
-        global modm_to_django
-        modm_to_django = build_pk_caches()
-        print('Cached {} MODM to django mappings...'.format(len(
-            modm_to_django.keys())))
 
 
         print('Finished in {} seconds...'.format((datetime.now() - start
