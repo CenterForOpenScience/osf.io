@@ -88,7 +88,10 @@ def with_list_proxy(fn):
         if not (mc and mail_domain and mailing_list_server_is_reachable):
             _init_mailman_client()
             if not mailing_list_server_is_reachable:
-                pass
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warn('No local.py settings file found')
+                return
         if kwargs.get('contributors'):
             kwargs['contributors'] = list(map(
                 lambda contributor: ensure_user_as_id(contributor),
