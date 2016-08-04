@@ -1529,26 +1529,20 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if save:
             self.save()
 
-    def set_preprint_file(self, file_id, auth, save=False):
+    def set_preprint_file(self, preprint_file, auth, save=False):
         if not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can change a preprint\'s primary file.')
-        try:
-            new_preprint_file = StoredFileNode.find_one(
-                Q('_id', 'eq', file_id)
-            )
-        except NoResultsFound:
-            raise NodeStateError('Trying to set a preprint primary file that does not exist.')
-
+        preprint_file = preprint_file.stored_object
         # there is no preprint file yet! This is the first time!
         if not self.preprint_file:
-            self.preprint_file = new_preprint_file
+            self.preprint_file = preprint_file
             self.preprint_created = datetime.datetime.utcnow()
 
             self.add_log(action=NodeLog.PREPRINT_INITIATED, params={}, auth=auth, save=False)
         else:
             # if there was one, check if it's a new file
-            if new_preprint_file != self.preprint_file:
-                self.preprint_file = new_preprint_file
+            if preprint_file != self.preprint_file:
+                self.preprint_file = preprint_file
                 self.add_log(
                     action=NodeLog.PREPRINT_FILE_UPDATED,
                     params={},
