@@ -167,7 +167,8 @@ def resolve_guid(guid, suffix=None):
         # project page.
         if Node.find(Q('_id', 'eq', guid) & Q('is_public_files_node', 'eq', True)):
             if suffix:
-                raise HTTPError(http.NOT_FOUND)
+                if 'files/osfstorage/' not in suffix:
+                    raise HTTPError(http.NOT_FOUND)
             else:
                 return redirect('public_files/' + Node.load(guid).creator._id)
 
