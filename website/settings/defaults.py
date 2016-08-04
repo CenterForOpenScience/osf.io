@@ -558,3 +558,7 @@ ESI_MEDIA_TYPES = {'application/vnd.api+json', 'application/json'}
 
 # Used for gathering meta information about the current build
 GITHUB_API_TOKEN = None
+
+# switch for disabling things that shouldn't happen during
+# the modm to django migration
+RUNNING_MIGRATION = False

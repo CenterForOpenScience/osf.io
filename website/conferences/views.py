@@ -71,7 +71,8 @@ def add_poster_by_email(conference, message):
             fullname=message.sender_display,
         )
 
-    created = []
+    nodes_created = []
+    users_created = []
 
     with TokuTransaction():
         user, user_created = get_or_create_user(
@@ -80,7 +81,7 @@ def add_poster_by_email(conference, message):
             message.is_spam,
         )
         if user_created:
-            created.append(user)
+            users_created.append(user)
             user.system_tags.append('osf4m')
             set_password_url = web_url_for(
                 'reset_password_get',
@@ -94,12 +95,12 @@ def add_poster_by_email(conference, message):
 
         node, node_created = utils.get_or_create_node(message.subject, user)
         if node_created:
-            created.append(node)
+            nodes_created.append(node)
             node.system_tags.append('osf4m')
             node.save()
 
         utils.provision_node(conference, message, node, user)
-        utils.record_message(message, created)
+        utils.record_message(message, nodes_created, users_created)
     # Prevent circular import error
     from framework.auth import signals as auth_signals
     if user_created:

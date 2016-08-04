@@ -1341,14 +1341,14 @@ class User(GuidStoredObject, AddonModelMixin):
         notifications_configured = user.notifications_configured.copy()
         notifications_configured.update(self.notifications_configured)
         self.notifications_configured = notifications_configured
+        if not settings.RUNNING_MIGRATION:
+            for key, value in user.mailchimp_mailing_lists.iteritems():
+               # subscribe to each list if either user was subscribed
+               subscription = value or self.mailchimp_mailing_lists.get(key)
+               signals.user_merged.send(self, list_name=key, subscription=subscription)
 
-        for key, value in user.mailchimp_mailing_lists.iteritems():
-            # subscribe to each list if either user was subscribed
-            subscription = value or self.mailchimp_mailing_lists.get(key)
-            signals.user_merged.send(self, list_name=key, subscription=subscription)
-
-            # clear subscriptions for merged user
-            signals.user_merged.send(user, list_name=key, subscription=False, send_goodbye=False)
+               # clear subscriptions for merged user
+               signals.user_merged.send(user, list_name=key, subscription=False, send_goodbye=False)
 
         for target_id, timestamp in user.comments_viewed_timestamp.iteritems():
             if not self.comments_viewed_timestamp.get(target_id):
