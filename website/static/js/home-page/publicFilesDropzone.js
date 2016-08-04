@@ -50,7 +50,6 @@ var PublicFilesDropzone = {
                 xhr.send = function () {
                     _send.call(xhr, file);
                 };
-                $('h2.splash-text').remove();
                 $(file.previewElement).find('.file-extension').addClass('_' + file.name.split('.').pop().toLowerCase());
                 $('.panel-body').append(file.previewElement);
             },
@@ -59,6 +58,8 @@ var PublicFilesDropzone = {
                 $('.logo-spin').remove();
                 $('#publicFilesDropzoneUploadBtn').html('Upload another file');
                 var buttonContainer = document.createElement('div');
+                $('h2.splash-text').remove();
+
                 $(file.previewElement).find('.col-sm-7.p-xs').append(buttonContainer);
                 file.previewElement.classList.add('dz-success');
                 file.previewElement.classList.add('dz-preview-background-success');
@@ -69,7 +70,7 @@ var PublicFilesDropzone = {
             },
             error: function (file, message) {
                 $osf.softGrowl(message,'danger');
-                $('.dz-preview').remove();
+//                $('.dz-preview').remove();
                 this.files.pop();
             }
         };
