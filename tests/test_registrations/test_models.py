@@ -180,7 +180,7 @@ class TestDraftRegistrationApprovals(RegistrationsTestBase):
 
     def test_approval_requires_only_a_single_authorizer(self):
         with mock.patch.object(self.approval, '_on_complete') as mock_on_complete:
-            self.authorizer1.system_tags.append(PREREG_ADMIN_TAG)
+            self.authorizer1.add_system_tag(PREREG_ADMIN_TAG)
             self.approval.approve(self.authorizer1)
             assert_true(mock_on_complete.called)
             assert_true(self.approval.is_approved)

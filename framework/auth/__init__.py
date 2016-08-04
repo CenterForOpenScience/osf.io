@@ -102,5 +102,5 @@ def get_or_create_user(fullname, address, is_spam=False):
         user = User.create_confirmed(address, password, fullname)
         user.verification_key = generate_verification_key()
         if is_spam:
-            user.system_tags.append('is_spam')
+            user.add_system_tag('is_spam')
         return user, True

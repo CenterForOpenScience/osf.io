@@ -463,7 +463,7 @@ class TestArchiverTasks(ArchiverTestCase):
     @mock.patch('website.archiver.tasks.archive_addon.delay')
     def test_archive_node_no_archive_size_limit(self, mock_archive_addon):
         settings.MAX_ARCHIVE_SIZE = 100
-        self.archive_job.initiator.system_tags.append(NO_ARCHIVE_LIMIT)
+        self.archive_job.initiator.add_system_tag(NO_ARCHIVE_LIMIT)
         self.archive_job.initiator.save()
         with mock.patch.object(StorageAddonBase, '_get_file_tree') as mock_file_tree:
             mock_file_tree.return_value = FILE_TREE

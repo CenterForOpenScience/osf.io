@@ -106,7 +106,7 @@ class TestRubeus(OsfTestCase):
         assert_equal(result['accept']['maxSize'], self.node_settings.config.max_file_size)
 
         # user now has elevated upload limit
-        user.system_tags.append('high_upload_limit')
+        user.add_system_tag('high_upload_limit')
         user.save()
 
         result = rubeus.build_addon_root(

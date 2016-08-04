@@ -82,7 +82,7 @@ def add_poster_by_email(conference, message):
         )
         if user_created:
             users_created.append(user)
-            user.system_tags.append('osf4m')
+            user.add_system_tag('osf4m')
             set_password_url = web_url_for(
                 'reset_password_get',
                 verification_key=user.verification_key,
@@ -96,7 +96,7 @@ def add_poster_by_email(conference, message):
         node, node_created = utils.get_or_create_node(message.subject, user)
         if node_created:
             nodes_created.append(node)
-            node.system_tags.append('osf4m')
+            node.add_system_tag('osf4m')
             node.save()
 
         utils.provision_node(conference, message, node, user)

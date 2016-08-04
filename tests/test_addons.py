@@ -383,7 +383,7 @@ class TestCheckPreregAuth(OsfTestCase):
 
         ensure_schemas()
         self.prereg_challenge_admin_user = AuthUserFactory()
-        self.prereg_challenge_admin_user.system_tags.append(settings.PREREG_ADMIN_TAG)
+        self.prereg_challenge_admin_user.add_system_tag(settings.PREREG_ADMIN_TAG)
         self.prereg_challenge_admin_user.save()
         prereg_schema = MetaSchema.find_one(
                 Q('name', 'eq', 'Prereg Challenge') &

@@ -351,7 +351,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
     def test_reviewer_cannot_create_draft_registration(self):
         user = AuthUserFactory()
-        user.system_tags.append(PREREG_ADMIN_TAG)
+        user.add_system_tag(PREREG_ADMIN_TAG)
         user.save()
 
         assert_in(self.read_only_user._id, self.public_project.contributors)

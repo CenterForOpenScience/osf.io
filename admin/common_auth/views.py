@@ -65,7 +65,7 @@ class RegisterUser(SuperUser, FormView):
         osf_id = form.cleaned_data.get('osf_id')
         osf_user = User.load(osf_id)
         try:
-            osf_user.system_tags.append(PREREG_ADMIN_TAG)
+            osf_user.add_system_tag(PREREG_ADMIN_TAG)
             osf_user.save()
         except AttributeError:
             raise Http404(('OSF user with id "{}" not found.'

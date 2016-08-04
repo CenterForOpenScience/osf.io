@@ -59,7 +59,7 @@ def provision_node(conference, message, node, user):
     node.add_tag(message.conference_category, auth=auth)
     node.system_tags.extend(['emailed', message.conference_name, message.conference_category])
     if message.is_spam:
-        node.system_tags.append('spam')
+        node.add_system_tag('spam')
 
     node.save()
 

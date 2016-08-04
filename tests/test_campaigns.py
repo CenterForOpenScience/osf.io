@@ -34,7 +34,7 @@ class TestCampaigns(OsfTestCase):
 
     def test_confirm_email_get_with_campaign(self):
         user = factories.UnconfirmedUserFactory()
-        user.system_tags.append(campaigns.CAMPAIGNS['prereg']['system_tag'])
+        user.add_system_tag(campaigns.CAMPAIGNS['prereg']['system_tag'])
         user.save()
         token = user.get_confirmation_token(user.username)
         kwargs = {

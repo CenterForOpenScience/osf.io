@@ -492,7 +492,7 @@ class User(GuidStoredObject, AddonModelMixin):
         if campaign:
             # needed to prevent cirular import
             from framework.auth.campaigns import system_tag_for_campaign  # skipci
-            user.system_tags.append(system_tag_for_campaign(campaign))
+            user.add_system_tag(system_tag_for_campaign(campaign))
         return user
 
     @classmethod
@@ -1311,9 +1311,8 @@ class User(GuidStoredObject, AddonModelMixin):
             raise MergeConflictError('Users cannot be merged')
         # Move over the other user's attributes
         # TODO: confirm
-        for system_tag in user.system_tags:
-            if system_tag not in self.system_tags:
-                self.system_tags.append(system_tag)
+        for system_tag in user.system_tags.all():
+            self.add_system_tag(system_tag)
 
         self.is_claimed = self.is_claimed or user.is_claimed
         self.is_invited = self.is_invited or user.is_invited

@@ -12,6 +12,7 @@ from json import dumps
 
 import blinker
 import httpretty
+import pytest
 from webtest_plus import TestApp
 from webtest.utils import NoDefault
 
