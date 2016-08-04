@@ -366,7 +366,7 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
                 return True
             except:
                 return False
-        
+
         subbed_emails = list(filter(subbed, user.emails))
 
         print(subbed_emails)
