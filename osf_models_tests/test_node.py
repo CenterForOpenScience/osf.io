@@ -3,8 +3,9 @@ from modularodm.exceptions import ValidationError as MODMValidationError
 from django.core.exceptions import ValidationError as DjangoValidationError
 import pytest
 
-from osf_models.models import Node
-from .factories import NodeFactory
+from osf_models.models import Node, Tag, NodeLog
+from osf_models.utils.auth import Auth
+from .factories import NodeFactory, UserFactory
 
 @pytest.mark.django_db
 class TestNodeMODMCompat:
@@ -52,3 +53,46 @@ class TestNodeMODMCompat:
         node = NodeFactory()
         assert len(node._id) == 5
         assert node in Node.find(Q('_id', 'eq', node._id))
+
+
+@pytest.mark.django_db
+class TestTagging:
+
+    @pytest.fixture()
+    def user(self):
+        return UserFactory()
+
+    @pytest.fixture()
+    def node(self, user):
+        return NodeFactory(creator=user)
+
+    @pytest.fixture()
+    def auth(self, user):
+        return Auth(user)
+
+    def test_add_tag(self, node, auth):
+        node.add_tag('FoO', auth=auth)
+        node.save()
+
+        tag = Tag.objects.get(name='FoO')
+        assert node.tags.count() == 1
+        assert tag in node.tags.all()
+
+        last_log = node.logs.all().order_by('-date')[0]
+        assert last_log.action == NodeLog.TAG_ADDED
+        assert last_log.params['tag'] == 'FoO'
+        assert last_log.params['node'] == node._id
+
+    def test_add_system_tag(self, node, auth):
+        original_log_count = node.logs.count()
+        node.add_system_tag('FoO')
+        node.save()
+
+        tag = Tag.objects.get(name='FoO')
+        assert node.tags.count() == 1
+        assert tag in node.tags.all()
+
+        assert tag.system is True
+
+        new_log_count = node.logs.count()
+        assert original_log_count == new_log_count

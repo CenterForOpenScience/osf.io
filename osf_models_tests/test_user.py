@@ -12,7 +12,7 @@ from framework.analytics import get_total_activity_count
 from website import settings
 from website import filters
 
-from osf_models.models.user import OSFUser as User
+from osf_models.models import OSFUser as User, Tag
 from osf_models.utils.names import impute_names_model
 from osf_models.exceptions import ValidationError
 
@@ -107,37 +107,37 @@ class TestOSFUser:
         with pytest.raises(ValidationError):
             dupe.save()
 
-    # TODO: Uncomment when Node#add_contributor is implemented
-    # def test_merged_user_with_two_account_on_same_project_with_different_visibility_and_permissions(self):
-    #     user2 = UserFactory.build()
-    #     user2.save()
-    #
-    #     project = ProjectFactory(is_public=True)
-    #     # Both the master and dupe are contributors
-    #     project.add_contributor(user2, log=False)
-    #     project.add_contributor(self.user, log=False)
-    #     project.set_permissions(user=self.user, permissions=['read'])
-    #     project.set_permissions(user=user2, permissions=['read', 'write', 'admin'])
-    #     project.set_visible(user=self.user, visible=False)
-    #     project.set_visible(user=user2, visible=True)
-    #     project.save()
-    #     self.user.merge_user(user2)
-    #     self.user.save()
-    #     project.reload()
-    #     assert_true('admin' in project.permissions[self.user._id])
-    #     assert_true(self.user._id in project.visible_contributor_ids)
-    #     assert_false(project.is_contributor(user2))
-    #
+    @pytest.mark.skip('Node#add_contributor not yet implemented')
+    def test_merged_user_with_two_account_on_same_project_with_different_visibility_and_permissions(self):
+        user2 = UserFactory.build()
+        user2.save()
+
+        project = ProjectFactory(is_public=True)
+        # Both the master and dupe are contributors
+        project.add_contributor(user2, log=False)
+        project.add_contributor(self.user, log=False)
+        project.set_permissions(user=self.user, permissions=['read'])
+        project.set_permissions(user=user2, permissions=['read', 'write', 'admin'])
+        project.set_visible(user=self.user, visible=False)
+        project.set_visible(user=user2, visible=True)
+        project.save()
+        self.user.merge_user(user2)
+        self.user.save()
+        project.reload()
+        assert_true('admin' in project.permissions[self.user._id])
+        assert_true(self.user._id in project.visible_contributor_ids)
+        assert_false(project.is_contributor(user2))
+
     def test_cant_create_user_without_username(self):
         u = User()  # No username given
         with pytest.raises(ValidationError):
             u.save()
 
-    # TODO: Uncomment post-migration (when auto_add_now=True)
-    # def test_date_registered_upon_saving(self):
-    #     u = User(username=fake.email(), fullname='Foo bar')
-    #     u.save()
-    #     assert_true(u.date_registered)
+    @pytest.mark.skip('auto_add_now not enabled until after the migration')
+    def test_date_registered_upon_saving(self):
+        u = User(username=fake.email(), fullname='Foo bar')
+        u.save()
+        assert_true(u.date_registered)
 
     def test_cant_create_user_without_full_name(self):
         u = User(username=fake.email())
@@ -619,3 +619,25 @@ class TestAddUnconfirmedEmail:
         with pytest.raises(ValidationError) as exc_info:
             user.add_unconfirmed_email('')
         assert exc_info.value.message == 'Enter a valid email address.'
+
+# New tests
+
+@pytest.mark.django_db
+class TestTagging:
+    def test_add_system_tag(self, user):
+        tag_name = fake.word()
+        user.add_system_tag(tag_name)
+        user.save()
+
+        assert user.system_tags.count() == 1
+
+        tag = Tag.objects.get(name=tag_name, system=True)
+        assert tag in user.system_tags.all()
+
+    def test_tags_get_lowercased(self, user):
+        tag_name = 'NeOn'
+        user.add_system_tag(tag_name)
+        user.save()
+
+        tag = Tag.objects.get(name=tag_name.lower(), system=True)
+        assert tag in user.system_tags.all()
