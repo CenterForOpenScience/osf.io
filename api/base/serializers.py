@@ -856,6 +856,10 @@ class JSONAPIListSerializer(ser.ListSerializer):
 
     # Overrides ListSerializer which doesn't support multiple update by default
     def update(self, instance, validated_data):
+
+        # avoiding circular import
+        from api.nodes.serializers import ContributorIDField
+
         # if PATCH request, the child serializer's partial attribute needs to be True
         if self.context['request'].method == 'PATCH':
             self.child.partial = True
@@ -866,8 +870,12 @@ class JSONAPIListSerializer(ser.ListSerializer):
                 raise exceptions.ValidationError({'non_field_errors': 'Could not find all objects to update.'})
 
         id_lookup = self.child.fields['id'].source
-        instance_mapping = {getattr(item, id_lookup): item for item in instance}
         data_mapping = {item.get(id_lookup): item for item in validated_data}
+
+        if isinstance(self.child.fields['id'], ContributorIDField):
+            instance_mapping = {self.child.fields['id'].get_id(item): item for item in instance}
+        else:
+            instance_mapping = {getattr(item, id_lookup): item for item in instance}
 
         ret = {'data': []}
 

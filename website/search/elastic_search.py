@@ -215,6 +215,8 @@ def format_results(results):
             result['parent_title'] = parent_info.get('title') if parent_info else None
         elif result.get('category') in {'project', 'component', 'registration'}:
             result = format_result(result, result.get('parent_id'))
+        elif not result.get('category'):
+            continue
         ret.append(result)
     return ret
 

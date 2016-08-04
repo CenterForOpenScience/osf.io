@@ -256,6 +256,7 @@ var AddProject = {
                             ]),
                             ctrl.options.parentID !== null ? [
                                 m('label.f-w-lg.text-bigger','Category'),
+                                m('i', ' (for descriptive purposes)'),
                                 m('select.form-control', {
                                     onchange : function(event) {
                                         ctrl.newProjectCategory(this.value);

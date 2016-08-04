@@ -9,8 +9,17 @@ from tests.factories import (
     DraftRegistrationFactory,
     AuthUserFactory,
     DraftRegistration,
+    ProjectFactory,
 )
-from admin_tests.utilities import setup_view, setup_form_view
+from website.files.models import (
+    OsfStorageFile,
+    OsfStorageFileNode,
+    StoredFileNode,
+)
+from website.project.model import ensure_schemas
+from website.prereg.utils import get_prereg_schema
+
+from admin_tests.utilities import setup_view, setup_form_view, setup_user_view
 from admin_tests.factories import UserFactory
 from admin_tests.pre_reg import utils
 
@@ -19,6 +28,8 @@ from admin.pre_reg.views import (
     DraftDetailView,
     DraftFormView,
     CommentUpdateView,
+    get_metadata_files,
+    get_file_questions,
 )
 from admin.pre_reg.forms import DraftRegistrationForm
 from admin.common_auth.logs import OSFLogEntry
@@ -73,7 +84,8 @@ class TestDraftDetailView(AdminTestCase):
         self.view = DraftDetailView()
         self.view = setup_view(self.view, self.request, draft_pk=self.dr1._id)
 
-    def test_get_object(self):
+    @mock.patch('admin.pre_reg.views.DraftDetailView.checkout_files')
+    def test_get_object(self, mock_files):
         res = self.view.get_object()
         nt.assert_is_instance(res, dict)
         nt.assert_equal(res['pk'], self.dr1._id)
@@ -139,8 +151,9 @@ class TestDraftFormView(AdminTestCase):
         self.dr1.reload()
         nt.assert_equal(self.dr1.notes, self.form_data['notes'])
 
+    @mock.patch('admin.pre_reg.views.DraftFormView.checkin_files')
     @mock.patch('admin.pre_reg.views.DraftRegistration.approve')
-    def test_form_valid_approve(self, mock_approve):
+    def test_form_valid_approve(self, mock_approve, mock_files):
         self.form_data.update(approve_reject='approve')
         form = DraftRegistrationForm(data=self.form_data)
         nt.assert_true(form.is_valid())
@@ -153,8 +166,9 @@ class TestDraftFormView(AdminTestCase):
         nt.assert_true(mock_approve.called)
         nt.assert_equal(count + 1, OSFLogEntry.objects.count())
 
+    @mock.patch('admin.pre_reg.views.DraftFormView.checkin_files')
     @mock.patch('admin.pre_reg.views.DraftRegistration.reject')
-    def test_form_valid_reject(self, mock_reject):
+    def test_form_valid_reject(self, mock_reject, mock_files):
         self.form_data.update(approve_reject='reject')
         form = DraftRegistrationForm(data=self.form_data)
         nt.assert_true(form.is_valid())
@@ -189,3 +203,139 @@ class TestCommentUpdateView(AdminTestCase):
         count = OSFLogEntry.objects.count()
         self.view.post(self.request)
         nt.assert_equal(OSFLogEntry.objects.count(), count + 1)
+
+
+class TestPreregFiles(AdminTestCase):
+    def setUp(self):
+        super(TestPreregFiles, self).setUp()
+        self.prereg_user = AuthUserFactory()
+        self.user = AuthUserFactory()
+        self.node = ProjectFactory(creator=self.user)
+
+        ensure_schemas()
+        prereg_schema = get_prereg_schema()
+        self.d_of_qs = {
+            'q7': OsfStorageFileNode(node=self.node, name='7'),
+            'q11': OsfStorageFileNode(node=self.node, name='11'),
+            'q16': OsfStorageFileNode(node=self.node, name='16'),
+            'q12': OsfStorageFileNode(node=self.node, name='12'),
+            'q13': OsfStorageFileNode(node=self.node, name='13'),
+            'q19': OsfStorageFileNode(node=self.node, name='19'),
+            'q26': OsfStorageFileNode(node=self.node, name='26')
+        }
+        data = {}
+        for q, f in self.d_of_qs.iteritems():
+            guid = f.get_guid(create=True)._id
+            f.save()
+            if q == 'q26':
+                data[q] = {
+                    'comments': [],
+                    'value': '26',
+                    'extra': [
+                        {
+                            'data': {
+                                'provider': 'osfstorage',
+                                'path': f.path,
+                            },
+                            'fileId': guid,
+                            'nodeId': self.node._id,
+                        }
+                    ]
+                }
+                continue
+            data[q] = {
+                'value': {
+                    'uploader': {
+                        'extra': [
+                            {
+                                'data': {
+                                    'provider': 'osfstorage',
+                                    'path': f.path,
+                                },
+                                'fileId': guid,
+                                'nodeId': self.node._id,
+                            }
+                        ]
+                    }
+                }
+            }
+        self.draft = DraftRegistrationFactory(
+            initiator=self.user,
+            registration_schema=prereg_schema,
+            registration_metadata=data
+        )
+        self.prereg_user.save()
+        self.admin_user = UserFactory(osf_id=self.prereg_user.pk)
+
+    def test_checkout_files(self):
+        self.draft.submit_for_review(self.user, {}, save=True)
+        request = RequestFactory().get('/fake_path')
+        view = DraftDetailView()
+        view = setup_user_view(view, request, self.admin_user,
+                               draft_pk=self.draft._id)
+        view.checkout_files(self.draft)
+        for q, f in self.d_of_qs.iteritems():
+            nt.assert_equal(self.prereg_user, f.checkout)
+
+    def test_checkin_files(self):
+        self.draft.submit_for_review(self.user, {}, save=True)
+        request = RequestFactory().get('/fake_path')
+        view = DraftDetailView()
+        view = setup_user_view(view, request, self.admin_user,
+                               draft_pk=self.draft._id)
+        view.checkout_files(self.draft)
+        view2 = DraftFormView()
+        view2 = setup_view(view2, request, draft_pk=self.draft._id)
+        view2.checkin_files(self.draft)
+        for q, f in self.d_of_qs.iteritems():
+            nt.assert_equal(None, f.checkout)
+
+    def test_get_meta_data_files(self):
+        for item in get_metadata_files(self.draft):
+            nt.assert_in(type(item), [OsfStorageFile, StoredFileNode])
+
+    def test_get_file_questions(self):
+        questions = get_file_questions('prereg-prize.json')
+        nt.assert_equal(7, len(questions))
+        nt.assert_list_equal(
+            [
+                (u'q7', u'Data collection procedures'),
+                (u'q11', u'Manipulated variables'),
+                (u'q12', u'Measured variables'),
+                (u'q13', u'Indices'),
+                (u'q16', u'Study design'),
+                (u'q19', u'Statistical models'),
+                (u'q26', u'Upload an analysis script with clear comments')
+            ],
+            questions
+        )
+
+    def test_file_id_missing(self):
+        data = self.draft.registration_metadata
+        data['q7']['value']['uploader']['extra'][0].pop('fileId')
+        self.draft.update_metadata(data)
+        for item in get_metadata_files(self.draft):
+            nt.assert_in(type(item), [OsfStorageFile, StoredFileNode])
+
+    def test_file_id_missing_odd(self):
+        data = self.draft.registration_metadata
+        data['q26']['extra'][0].pop('fileId')
+        self.draft.update_metadata(data)
+        for item in get_metadata_files(self.draft):
+            nt.assert_in(type(item), [OsfStorageFile, StoredFileNode])
+
+    def test_wrong_provider(self):
+        data = self.draft.registration_metadata
+        data['q7']['value']['uploader']['extra'][0]['data']['provider'] = 'box'
+        self.draft.update_metadata(data)
+        with nt.assert_raises(Http404):
+            for item in get_metadata_files(self.draft):
+                pass
+
+    def test_wrong_provider_odd(self):
+        data = self.draft.registration_metadata
+        data['q26']['extra'][0]['data']['provider'] = 'box'
+        self.draft.update_metadata(data)
+        with nt.assert_raises(Http404):
+            for item in get_metadata_files(self.draft):
+                pass

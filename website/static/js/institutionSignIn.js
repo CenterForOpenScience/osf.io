@@ -11,7 +11,7 @@ var ViewModel = function() {
     self.loading = ko.observable(true);
     self.insts = {};
     self.fetchInstitutions = function() {
-        var url = window.contextVars.apiV2Prefix + 'institutions/';
+        var url = window.contextVars.apiV2Prefix + 'institutions/?filter[auth_url][ne]=null';
         return $osf.ajaxJSON(
             'GET',
             url,
