@@ -79,7 +79,7 @@ class TestNodeSerializer(DbTestCase):
 
         # Relationships
         relationships = data['relationships']
-        templated_from = relationships['templated_from']['links']['related']['href']
+        templated_from = relationships['template_node']['links']['related']['href']
         assert_equal(
             urlparse(templated_from).path,
             '/{}nodes/{}/'.format(API_BASE, node._id)
