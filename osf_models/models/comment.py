@@ -31,30 +31,31 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin):
     FILES = 'files'
     WIKI = 'wiki'
 
-    user = models.ForeignKey('OSFUser')
+    user = models.ForeignKey('OSFUser', null=True)
     # the node that the comment belongs to
-    node = models.ForeignKey('Node')
+    node = models.ForeignKey('Node', null=True)
 
     # The file or project overview page that the comment is for
-    root_target_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='root_comments')
-    root_target_id = models.PositiveIntegerField()
+    root_target_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='root_comments', null=True)
+    root_target_id = models.PositiveIntegerField(null=True)
     root_target = GenericForeignKey('root_target_content_type', 'root_target_id')
 
     # the direct 'parent' of the comment (e.g. the target of a comment reply is another comment)
-    target_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='comments')
-    target_id = models.PositiveIntegerField()
+    target_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='comments', null=True)
+    target_id = models.PositiveIntegerField(null=True)
     target = GenericForeignKey('target_content_type', 'target_id')
 
-    date_created = models.DateTimeField(auto_now_add=datetime.datetime.utcnow)
-    date_modified = models.DateTimeField(auto_now=datetime.datetime.utcnow)
+    date_created = models.DateTimeField()#auto_now_add=datetime.datetime.utcnow)
+    date_modified = models.DateTimeField()#auto_now=datetime.datetime.utcnow)
     modified = models.BooleanField(default=False)
     is_deleted = models.BooleanField(default=False)
     # The type of root_target: node/files
-    page = models.CharField(max_length=255)
-    content = models.TextField(max_length=settings.COMMENT_MAXLENGTH)
+    page = models.CharField(max_length=255, blank=True)
+    content = models.TextField(max_length=settings.COMMENT_MAXLENGTH, blank=True)
 
     # The mentioned users
-    ever_mentioned = ArrayField(models.CharField(max_length=10))
+    # TODO This should be made into an M2M STAT
+    ever_mentioned = ArrayField(models.CharField(max_length=10, blank=True))
 
 
     @property

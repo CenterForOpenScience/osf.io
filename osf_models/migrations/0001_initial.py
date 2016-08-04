@@ -139,7 +139,7 @@ class Migration(migrations.Migration):
                 ('name', models.CharField(max_length=2048)),
                 ('status', models.CharField(default=b'INITIATED', max_length=40)),
                 ('stat_result', osf_models.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True)),
-                ('errors', django.contrib.postgres.fields.ArrayField(base_field=models.CharField(max_length=2048), blank=True, default=list, size=None)),
+                ('errors', django.contrib.postgres.fields.ArrayField(base_field=models.TextField(), blank=True, default=list, size=None)),
             ],
             options={
                 'abstract': False,
@@ -183,15 +183,15 @@ class Migration(migrations.Migration):
             name='Comment',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('root_target_id', models.PositiveIntegerField()),
-                ('target_id', models.PositiveIntegerField()),
-                ('date_created', models.DateTimeField(auto_now_add=True)),
-                ('date_modified', models.DateTimeField(auto_now=True)),
+                ('root_target_id', models.PositiveIntegerField(null=True)),
+                ('target_id', models.PositiveIntegerField(null=True)),
+                ('date_created', models.DateTimeField()),
+                ('date_modified', models.DateTimeField()),
                 ('modified', models.BooleanField(default=False)),
                 ('is_deleted', models.BooleanField(default=False)),
-                ('page', models.CharField(max_length=255)),
-                ('content', models.TextField(max_length=500)),
-                ('ever_mentioned', django.contrib.postgres.fields.ArrayField(base_field=models.CharField(max_length=10), size=None)),
+                ('page', models.CharField(blank=True, max_length=255)),
+                ('content', models.TextField(blank=True, max_length=500)),
+                ('ever_mentioned', django.contrib.postgres.fields.ArrayField(base_field=models.CharField(blank=True, max_length=10), size=None)),
             ],
             options={
                 'abstract': False,
@@ -439,17 +439,17 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='comment',
             name='root_target_content_type',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='root_comments', to='contenttypes.ContentType'),
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='root_comments', to='contenttypes.ContentType'),
         ),
         migrations.AddField(
             model_name='comment',
             name='target_content_type',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='comments', to='contenttypes.ContentType'),
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='comments', to='contenttypes.ContentType'),
         ),
         migrations.AddField(
             model_name='comment',
             name='user',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL),
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL),
         ),
         migrations.AddField(
             model_name='collection',
@@ -626,7 +626,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='embargoterminationapproval',
             name='embargoed_registration',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='osf_models.Node'),
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='osf_models.Node'),
         ),
         migrations.AlterUniqueTogether(
             name='contributor',
@@ -635,7 +635,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='comment',
             name='node',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='osf_models.Node'),
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='osf_models.Node'),
         ),
         migrations.AddField(
             model_name='collection',
@@ -645,11 +645,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='archivejob',
             name='dst_node',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='active', to='osf_models.Node', verbose_name=b'destination node'),
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='active', to='osf_models.Node', verbose_name=b'destination node'),
         ),
         migrations.AddField(
             model_name='archivejob',
             name='src_node',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='osf_models.Node', verbose_name=b'source node'),
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='osf_models.Node', verbose_name=b'source node'),
         ),
     ]

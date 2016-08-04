@@ -31,7 +31,7 @@ class ArchiveTarget(ObjectIDMixin, BaseModel):
     #     'disk_usage': <float>,
     # }
     stat_result = DateTimeAwareJSONField(blank=True)
-    errors = ArrayField(models.CharField(max_length=2048), default=list, blank=True)
+    errors = ArrayField(models.TextField(), default=list, blank=True)
 
     def __repr__(self):
         return '<{0}(_id={1}, name={2}, status={3})>'.format(
@@ -50,8 +50,8 @@ class ArchiveJob(ObjectIDMixin, BaseModel):
     status = models.CharField(max_length=40, default=ARCHIVER_INITIATED)
     datetime_initiated = models.DateTimeField(default=datetime.datetime.utcnow, verbose_name='intiated at')
 
-    dst_node = models.ForeignKey('Node', related_name='active', verbose_name='destination node')
-    src_node = models.ForeignKey('Node', verbose_name='source node')
+    dst_node = models.ForeignKey('Node', related_name='active', verbose_name='destination node', null=True)
+    src_node = models.ForeignKey('Node', verbose_name='source node', null=True)
     initiator = models.ForeignKey('OSFUser', null=True)
 
     target_addons = models.ManyToManyField('ArchiveTarget')
