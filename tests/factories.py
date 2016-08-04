@@ -246,7 +246,7 @@ class PreprintFactory(AbstractNodeFactory):
             materialized_path='/{}'.format(filename))
         file.save()
 
-        project.set_preprint_file(file._id, auth=Auth(project.creator))
+        project.set_preprint_file(file, auth=Auth(project.creator))
         project.save()
 
         return project
