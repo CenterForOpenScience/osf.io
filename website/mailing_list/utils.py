@@ -82,16 +82,19 @@ def with_list_proxy(fn):
                 )
             )
         except:
-            kwargs['list_proxy'] = mail_domain.create_list(kwargs['list_mailbox'])
-            from website.mails.mails import send_mail, TEST
-            send_mail(
-                '{}@{}'.format(
-                    kwargs['list_mailbox'],
-                    settings.OSF_MAILING_LIST_DOMAIN
-                ),
-                TEST,
-                namwqe='test'
-            )
+            try:
+                kwargs['list_proxy'] = mail_domain.create_list(kwargs['list_mailbox'])
+                from website.mails.mails import send_mail, TEST
+                send_mail(
+                    '{}@{}'.format(
+                        kwargs['list_mailbox'],
+                        settings.OSF_MAILING_LIST_DOMAIN
+                    ),
+                    TEST,
+                    name='test'
+                )
+            except:
+                self.retry()
         fn(*args, **kwargs)
 
     def _fn(*args, **kwargs):
@@ -101,7 +104,6 @@ def with_list_proxy(fn):
                 import logging
                 logger = logging.getLogger(__name__)
                 logger.warn('Mailman Server is not accessible.')
-                self.retry()
         if kwargs.get('contributors'):
             kwargs['contributors'] = list(map(
                 lambda contributor: ensure_user_as_id(contributor),

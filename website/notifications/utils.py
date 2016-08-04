@@ -363,7 +363,7 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
         except:
             import logging
             logger = logging.getLogger(__name__)
-            logger.warn("Mailman client unable to connect to Mailman API. The server may not be available.")
+            logger.warn('Mailman client unable to connect to Mailman API. The server may not be available.')
             return
         def subbed(email):
             try:
