@@ -209,7 +209,7 @@ def remove_contributors(list_proxy, contributors):
 
 @contributor_removed.connect
 def contributor_removed_handler(node, user=None, auth=None, throttle=None):
-    if not user
+    if not user:
         import logging
         logger = logging.getLogger(__name__)
         logger.warn('No user to remove.')
