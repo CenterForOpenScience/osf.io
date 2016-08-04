@@ -102,26 +102,28 @@ def validate_social(value):
     validate_profile_websites(value.get('profileWebsites'))
 
 
-def validate_user_with_verification_key(username=None, verification_key=None):
+def get_user_with_verification_key_v2(username=None, token=None):
     """
-    Validate requests with username and one-time verification key.
+    Check if the request with `user_name` and `token` is valid and has not expired.
+    If so, return the user object. Otherwise return None.
+    If user does not have verification_key_v2, return None.
 
     :param username: user's username
-    :param verification_key: one-time verification key
+    :param token: one-time verification token
     :rtype: User or None
     """
 
-    if not username or not verification_key:
+    if not username or not token:
         return None
     user_obj = get_user(username=username)
     if user_obj:
         try:
             if user_obj.verification_key_v2:
-                if user_obj.verification_key_v2['token'] == verification_key:
+                if user_obj.verification_key_v2['token'] == token:
                     if user_obj.verification_key_v2['expires'] > dt.datetime.utcnow():
                         return user_obj
         except AttributeError:
-            # if user does not have verification_key_v2
+            # If user does not have `verification_key_v2`, for example an old link with `verification_key`
             return None
     return None
 
@@ -133,21 +135,22 @@ def _get_current_user():
 
 
 # TODO: This should be a class method of User?
-def get_user(email=None, password=None, verification_key=None, username=None):
+def get_user(username=None, token=None, email=None, password=None):
     """
-    Get an instance of User matching the provided params. Here are all valid usages:
-        1. email and password
-        2. email
-        3. username (for verification key version 2)
-        4. verification key (for verification key version 1)
+    Get an instance of User matching the provided parameters. There are four valid combinations:
+        1. email
+        2. email and password
+        3. username, when using verification_key_v2
+        4. token, when using just the verification_key
 
+    :param username: username
+    :param token: the verification token
     :param email: email
     :param password: password
-    :param verification_key: verification key v1
-    :param username: username
     :return: The instance of User requested
     :rtype: User or None
     """
+
     # tag: database
     if password and not email:
         raise AssertionError('If a password is provided, an email must also be provided.')
@@ -156,6 +159,8 @@ def get_user(email=None, password=None, verification_key=None, username=None):
 
     if username:
         query_list.append(Q('username', 'eq', username))
+    if token:
+        query_list.append(Q('verification_key', 'eq', token))
     if email:
         email = email.strip().lower()
         query_list.append(Q('emails', 'eq', email) | Q('username', 'eq', email))
@@ -172,8 +177,7 @@ def get_user(email=None, password=None, verification_key=None, username=None):
         if user and not user.check_password(password):
             return False
         return user
-    if verification_key:
-        query_list.append(Q('verification_key', 'eq', verification_key))
+
     try:
         query = query_list[0]
         for query_part in query_list[1:]:
@@ -330,10 +334,10 @@ class User(GuidStoredObject, AddonModelMixin):
     # The user into which this account was merged
     merged_by = fields.ForeignField('user', default=None, index=True)
 
-    # verification key v1,
+    # verification key v1: only the token, no expiration time
     verification_key = fields.StringField()
 
-    # verification key v2, with expiration time and one-time only
+    # verification key v2: token, and expiration time
     verification_key_v2 = fields.DictionaryField(default=dict)
     # Format: {
     #   'token': <the verification key string>
@@ -643,8 +647,9 @@ class User(GuidStoredObject, AddonModelMixin):
         :returns: The added record
         """
         if not node.can_edit(user=referrer):
-            raise PermissionsError('Referrer does not have permission to add a contributor '
-                'to project {0}'.format(node._primary_key))
+            raise PermissionsError(
+                'Referrer does not have permission to add a contributor to project {0}'.format(node._primary_key)
+            )
         project_id = node._primary_key
         referrer_id = referrer._primary_key
         if email:
@@ -688,10 +693,12 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def get_unclaimed_record(self, project_id):
         """
-        Get an unclaimed record for a given project_id.
+        Get an unclaimed record for a given project_id. Return the one record if found. Otherwise, raise ValueError.
 
+        :param project_id, the project node id
         :raises: ValueError if there is no record for the given project.
         """
+
         try:
             return self.unclaimed_records[project_id]
         except KeyError:  # re-raise as ValueError
@@ -700,14 +707,13 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def verify_claim_token(self, token, project_id):
         """
-        Verify the claim token for this user for a given node
-        which she/he was added as a unregistered contributor for.
+        Verify the claim token for this user for a given node which she/he was added as a unregistered contributor for.
+        Return `True` if record found, token valid and not expired. Otherwise return False.
 
-        :param token: the verification token
+        :param token: the claim token
         :param project_id: the project node id
-        :rtype boolean
-        :return: whether or not a claim token is valid
         """
+
         try:
             record = self.get_unclaimed_record(project_id)
         except ValueError:  # No unclaimed record for given pid

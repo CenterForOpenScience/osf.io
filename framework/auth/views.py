@@ -17,7 +17,7 @@ from framework.auth import cas, campaigns
 from framework.auth import logout as osf_logout
 from framework.auth import get_user
 from framework.auth.exceptions import DuplicateEmailError, ExpiredTokenError, InvalidTokenError
-from framework.auth.core import generate_verification_key, generate_verification_key_v2, validate_user_with_verification_key
+from framework.auth.core import generate_verification_key, generate_verification_key_v2, get_user_with_verification_key_v2
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import ResendConfirmationForm, ForgotPasswordForm, ResetPasswordForm
 from framework.exceptions import HTTPError
@@ -50,11 +50,11 @@ def reset_password_get(auth, username=None, verification_key=None, **kwargs):
         return auth_logout(redirect_url=request.url)
 
     # Check if request bears a valid verification_key
-    user_obj = validate_user_with_verification_key(username=username, verification_key=verification_key)
+    user_obj = get_user_with_verification_key_v2(username=username, token=verification_key)
     if not user_obj:
         error_data = {
             'message_short': 'Invalid Request.',
-            'message_long': 'The url is invalid or has expired.'
+            'message_long': 'The token in this URL is invalid, has expired or has been used.'
         }
         raise HTTPError(400, data=error_data)
 
@@ -65,6 +65,20 @@ def reset_password_get(auth, username=None, verification_key=None, **kwargs):
         'username': username,
         'verification_key': user_obj.verification_key_v2['token'],
     }
+
+
+@collect_auth
+def forgot_password_get(auth, **kwargs):
+    """
+    View to user to land on forgot password page.
+    HTTP Method: GET
+    """
+
+    # If user is already logged in, redirect to dashboard page.
+    if auth.logged_in:
+        return redirect(web_url_for('dashboard'))
+
+    return {}
 
 
 @collect_auth
@@ -82,11 +96,11 @@ def reset_password_post(auth, username=None, verification_key=None, **kwargs):
     form = ResetPasswordForm(request.form)
 
     # Check if request bears a valid verification_key
-    user_obj = validate_user_with_verification_key(username=username, verification_key=verification_key)
+    user_obj = get_user_with_verification_key_v2(username=username, token=verification_key)
     if not user_obj:
         error_data = {
             'message_short': 'Invalid url.',
-            'message_long': 'The verification key in the URL is invalid or has expired.'
+            'message_long': 'The token in this URL is invalid, has expired or has been used.'
         }
         raise HTTPError(400, data=error_data)
 
@@ -117,21 +131,6 @@ def reset_password_post(auth, username=None, verification_key=None, **kwargs):
         'username': user_obj.username,
         'verification_key': user_obj.verification_key_v2['token']
     }
-
-
-@collect_auth
-def forgot_password_get(auth, **kwargs):
-    """
-    View to user to land on forgot password page.
-    HTTP Method: GET
-    """
-
-    # If user is already logged in, redirect to dashboard page.
-    if auth.logged_in:
-        return redirect(web_url_for('dashboard'))
-
-    return {}
-
 
 
 @collect_auth
