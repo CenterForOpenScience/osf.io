@@ -357,7 +357,7 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
             '{}@{}'.format(
                 node._id,
                 OSF_MAILING_LIST_DOMAIN
-            )       
+            )
         )
 
         def subbed(email):
@@ -448,8 +448,6 @@ def subscribe_user_to_notifications(node, user):
 
     :param user: User to subscribe to notifications
     """
-
-    import ipdb; ipdb.set_trace()
 
     if node.institution_id:
         raise InvalidSubscriptionError('Institutions are invalid targets for subscriptions')
