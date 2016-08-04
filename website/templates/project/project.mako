@@ -238,6 +238,12 @@
 % endif
 
 <div class="row">
+    <div class="col-xs-12">
+        <div class="preprint-notice m-b-md p-md clearfix">This component is a preprint. Learn more about how to work with preprint files. <button class="btn btn-default btn-sm m-r-xs pull-right">View preprint file</button><button class="btn btn-default btn-sm m-r-xs pull-right">Edit preprint details</button></div>
+    </div>
+</div>
+
+<div class="row">
 
     <div class="col-sm-6 osf-dash-col">
 
