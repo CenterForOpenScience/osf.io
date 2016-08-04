@@ -1473,9 +1473,9 @@ function _fangornColumnTitles () {
             sort : true,
             sortType : 'text'
         }, {
-            title : 'Share',
+            title : 'Share Link',
             width : '20%',
-            sort : true,
+            sort : false,
             sortType : 'text'
         }, {
             title : 'Size',
