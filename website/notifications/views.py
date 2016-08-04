@@ -44,8 +44,7 @@ def configure_subscription(auth):
     path = json_data.get('path')
     provider = json_data.get('provider')
 
-    if not event or (notification_type not in NOTIFICATION_TYPES and notification_type != 'adopt_parent'):
-        
+    if not event or (notification_type not in NOTIFICATION_TYPES and notification_type != 'adopt_parent'): 
         if notification_type in user.emails:
             pass
 

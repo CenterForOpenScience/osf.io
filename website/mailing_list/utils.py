@@ -81,10 +81,7 @@ def with_list_proxy(fn):
                 )
             )
         except:
-            try:
-                kwargs['list_proxy'] = mail_domain.create_list(kwargs['list_mailbox'])
-            except:
-                raise self.retry()
+            kwargs['list_proxy'] = mail_domain.create_list(kwargs['list_mailbox'])
         fn(*args, **kwargs)
 
     def _fn(*args, **kwargs):
