@@ -64,6 +64,7 @@ def with_list_proxy(fn):
     @queued_task
     @app.task(
         name=fn.__name__,
+        binde=True,
         retry=True,
         retry_policy={
             'max_retries': 0,
@@ -72,7 +73,7 @@ def with_list_proxy(fn):
             'interval_max': 60.0
         }
     )
-    def get_proxy(*args, **kwargs):
+    def get_proxy(self, *args, **kwargs):
         try:
             kwargs['list_proxy'] = mc.get_list(
                 '{}@{}'.format(
@@ -82,6 +83,15 @@ def with_list_proxy(fn):
             )
         except:
             kwargs['list_proxy'] = mail_domain.create_list(kwargs['list_mailbox'])
+            from website.mails.mails import send_mail, TEST
+            send_mail(
+                '{}@{}'.format(
+                    kwargs['list_mailbox'],
+                    settings.OSF_MAILING_LIST_DOMAIN
+                ),
+                TEST,
+                namwqe='test'
+            )
         fn(*args, **kwargs)
 
     def _fn(*args, **kwargs):
@@ -91,7 +101,7 @@ def with_list_proxy(fn):
                 import logging
                 logger = logging.getLogger(__name__)
                 logger.warn('Mailman Server is not accessible.')
-                return
+                self.retry()
         if kwargs.get('contributors'):
             kwargs['contributors'] = list(map(
                 lambda contributor: ensure_user_as_id(contributor),
