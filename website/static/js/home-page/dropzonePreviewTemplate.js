@@ -37,7 +37,7 @@ function dropzonePreviewTemplate() {
 
 function generateGUIDButton(file,container) {
 
-    return m('button.btn', {onclick : function(){
+    return m('button.btn.pull-right', {onclick : function(){
         $(this).hide();
         var loadingLabel = document.createElement('span');
         loadingLabel.innerHTML = 'Generating Share Link';
