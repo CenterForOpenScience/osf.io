@@ -1,5 +1,6 @@
 import pytz
 from django.db import models
+from django.apps import apps
 
 from framework.analytics import increment_user_activity_counters
 
@@ -78,6 +79,33 @@ class Loggable(models.Model):
             increment_user_activity_counters(user._primary_key, action, log.date.isoformat())
 
         return log
+
+    class Meta:
+        abstract = True
+
+class Taggable(models.Model):
+
+    tags = models.ManyToManyField('Tag', related_name='tagged')
+
+    def add_tag(self, tag, auth, save=True, log=True, system=False):
+        Tag = apps.get_model('osf_models.Tag')
+        NodeLog = apps.get_model('osf_models.NodeLog')
+
+        if not isinstance(tag, Tag):
+            tag_instance, created = Tag.objects.get_or_create(name=tag, system=system)
+        else:
+            tag_instance = tag
+
+        if not self.tags.filter(id=tag_instance.id).exists():
+            self.tags.add(tag_instance)
+            if log:
+                self.add_tag_log(tag_instance, auth)
+            if save:
+                self.save()
+
+    def add_tag_log(self, *args, **kwargs):
+        raise NotImplementedError('Logging requires that add_tag_log method is implemented')
+
 
     class Meta:
         abstract = True

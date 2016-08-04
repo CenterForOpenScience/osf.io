@@ -2,10 +2,12 @@ import urlparse
 
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.apps import apps
+
 from osf_models.apps import AppConfig as app_config
 from osf_models.models import MetaSchema
 from osf_models.models.contributor import Contributor
-from osf_models.models.mixins import Loggable
+from osf_models.models.mixins import Loggable, Taggable
 from osf_models.models.sanctions import Embargo, RegistrationApproval, Retraction
 from osf_models.models.tag import Tag
 from osf_models.models.user import OSFUser
@@ -18,7 +20,7 @@ from typedmodels.models import TypedModel
 from website.exceptions import UserNotAffiliatedError
 from .base import BaseModel, GuidMixin
 
-class AbstractNode(TypedModel, Loggable, GuidMixin, BaseModel):
+class AbstractNode(TypedModel, Taggable, Loggable, GuidMixin, BaseModel):
     """
     All things that inherit from AbstractNode will appear in
     the same table and will be differentiated by the `type` column.
@@ -91,7 +93,7 @@ class AbstractNode(TypedModel, Loggable, GuidMixin, BaseModel):
     suspended = models.BooleanField(default=False, db_index=True)
     # Tags for internal use
     system_tags = models.ManyToManyField(Tag, related_name='tagged_by_system')
-    tags = models.ManyToManyField(Tag, related_name='tagged')
+
     # The node (if any) used as a template for this node's creation
     template_node = models.ForeignKey('self',
                                       related_name='templated_from',
@@ -206,10 +208,30 @@ class AbstractNode(TypedModel, Loggable, GuidMixin, BaseModel):
     def url(self):
         return '/{}/'.format(self._id)
 
+    @property
+    def parent_id(self):
+        if self.parent_node:
+            return self.parent_node._id
+        return None
+
     # visible_contributor_ids was moved to this property
     @property
     def visible_contributor_ids(self):
         return self.contributor_set.filter(visible=True)
+
+    # Override Taggable
+    def add_tag_log(self, tag, auth):
+        NodeLog = apps.get_model('osf_models.NodeLog')
+        self.add_log(
+            action=NodeLog.TAG_ADDED,
+            params={
+                'parent_node': self.parent_id,
+                'node': self._id,
+                'tag': tag.name
+            },
+            auth=auth,
+            save=False
+        )
 
 
 class Node(AbstractNode):
