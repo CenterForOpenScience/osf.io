@@ -144,10 +144,10 @@ def node_register_template_page(auth, node, metaschema_id, **kwargs):
         ret = _view_project(node, auth, primary=True)
         my_meta = serialize_meta_schema(meta_schema)
         if has_anonymous_link(node, auth):
-            for i, v in enumerate(my_meta['schema']['pages']):
-                for j, w in enumerate(v['questions']):
-                    if w['title'] in settings.ANONYMIZED_TITLES:
-                        del my_meta['schema']['pages'][i]['questions'][j]
+            for indx, schema_page in enumerate(my_meta['schema']['pages']):
+                for idx, schema_question in enumerate(schema_page['questions']):
+                    if schema_question['title'] in settings.ANONYMIZED_TITLES:
+                        del my_meta['schema']['pages'][indx]['questions'][idx]
         ret['node']['registered_schema'] = serialize_meta_schema(meta_schema)
         return ret
     else:
