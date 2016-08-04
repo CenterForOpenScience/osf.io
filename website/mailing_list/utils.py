@@ -64,7 +64,7 @@ def with_list_proxy(fn):
     @queued_task
     @app.task(
         name=fn.__name__,
-        binde=True,
+        bind=True,
         retry=True,
         retry_policy={
             'max_retries': 0,
