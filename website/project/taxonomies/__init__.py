@@ -21,7 +21,7 @@ class Subject(StoredObject):
     parent_ids = fields.ListField(fields.StringField())
 
     def get_absolute_url(self):
-        return self.absolute_api_v2_url
+        return '{}taxonomies/{}/'.format(self.absolute_api_v2_url, self.type)
 
 def ensure_taxonomies():
     # Flat taxonomy is stored locally, read in here
