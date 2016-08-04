@@ -90,7 +90,7 @@ def with_list_proxy(fn):
             if not mailing_list_server_is_reachable:
                 import logging
                 logger = logging.getLogger(__name__)
-                logger.warn('No local.py settings file found')
+                logger.warn('Mailman Server is not accessible.')
                 return
         if kwargs.get('contributors'):
             kwargs['contributors'] = list(map(
@@ -208,8 +208,12 @@ def remove_contributors(list_proxy, contributors):
     )
 
 @contributor_removed.connect
-def contributor_removed_handler(node, contributor, auth=None, throttle=None):
-    remove_contributor(node._id, contributor)
+def contributor_removed_handler(node, user=None, auth=None, throttle=None):
+    if not user
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warn('No user to remove.')
+    remove_contributor(list_mailbox=node._id, contributor=user._id)
 
 def update_single_user_in_list(
     node_id,

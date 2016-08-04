@@ -122,6 +122,10 @@ MAILCHIMP_WEBHOOK_SECRET_KEY = 'CHANGEME'  # OSF secret key to ensure webhook is
 ENABLE_EMAIL_SUBSCRIPTIONS = True
 MAILCHIMP_GENERAL_LIST = 'Open Science Framework General'
 
+MAILGUN_API_KEY = None
+MAILGUN_LIST_ADDRESS_DOMAIN = urlparse(DOMAIN).hostname
+MAILGUN_API_URL = 'https://api.mailgun.net/v3'
+
 #Triggered emails
 OSF_HELP_LIST = 'Open Science Framework Help'
 WAIT_BETWEEN_MAILS = timedelta(days=7)
