@@ -48,7 +48,8 @@ class Loggable(models.Model):
     # TODO: This should be in the NodeLog model
 
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True, request=None):
-        from osf_models.models import NodeLog
+        Node = apps.get_model('osf_models.Node')
+        NodeLog = apps.get_model('osf_models.NodeLog')
         user = None
         if auth:
             user = auth.user
@@ -56,16 +57,17 @@ class Loggable(models.Model):
             user = request.user
 
         params['node'] = params.get('node') or params.get('project') or self._id
+        original_node = Node.objects.get_by_guid(params.get('node'))
         log = NodeLog(
             action=action, user=user, foreign_user=foreign_user,
-            params=params, node=self, original_node=params.get('node')
+            params=params, node=self, original_node=original_node
         )
 
         if log_date:
             log.date = log_date
         log.save()
 
-        if len(self.logs) == 1:
+        if self.logs.count() == 1:
             self.date_modified = log.date.replace(tzinfo=pytz.utc)
         else:
             self.date_modified = self.logs[-1].date.replace(tzinfo=pytz.utc)

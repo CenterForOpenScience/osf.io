@@ -1,3 +1,5 @@
+import datetime as dt
+
 from django.db import models
 
 from osf_models.models.base import BaseModel
@@ -7,77 +9,111 @@ from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 class NodeLog(BaseModel):
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
-    ACTIONS = (
-        ('created_from', 'CREATED_FROM'),
-        ('project_created', 'PROJECT_CREATED'),
-        ('project_registered', 'PROJECT_REGISTERED'),
-        ('project_deleted', 'PROJECT_DELETED'),
-        ('node_created', 'NODE_CREATED'),
-        ('node_forked', 'NODE_FORKED'),
-        ('node_removed', 'NODE_REMOVED'),
-        ('pointer_created', 'POINTER_CREATED'),
-        ('pointer_forked', 'POINTER_FORKED'),
-        ('pointer_removed', 'POINTER_REMOVED'),
-        ('wiki_updated', 'WIKI_UPDATED'),
-        ('wiki_deleted', 'WIKI_DELETED'),
-        ('wiki_renamed', 'WIKI_RENAMED'),
-        ('made_wiki_public', 'MADE_WIKI_PUBLIC'),
-        ('made_wiki_private', 'MADE_WIKI_PRIVATE'),
-        ('contributor_added', 'CONTRIB_ADDED'),
-        ('contributor_removed', 'CONTRIB_REMOVED'),
-        ('contributors_reordered', 'CONTRIB_REORDERED'),
-        ('permissions_updated', 'PERMISSIONS_UPDATED'),
-        ('made_private', 'MADE_PRIVATE'),
-        ('made_public', 'MADE_PUBLIC'),
-        ('tag_added', 'TAG_ADDED'),
-        ('tag_removed', 'TAG_REMOVED'),
-        ('edit_title', 'EDITED_TITLE'),
-        ('edit_description', 'EDITED_DESCRIPTION'),
-        ('license_changed', 'CHANGED_LICENSE'),
-        ('updated_fields', 'UPDATED_FIELDS'),
-        ('addon_file_moved', 'FILE_MOVED'),
-        ('addon_file_copied', 'FILE_COPIED'),
-        ('addon_file_renamed', 'FILE_RENAMED'),
-        ('folder_created', 'FOLDER_CREATED'),
-        ('file_added', 'FILE_ADDED'),
-        ('file_updated', 'FILE_UPDATED'),
-        ('file_removed', 'FILE_REMOVED'),
-        ('file_restored', 'FILE_RESTORED'),
-        ('addon_added', 'ADDON_ADDED'),
-        ('addon_removed', 'ADDON_REMOVED'),
-        ('comment_added', 'COMMENT_ADDED'),
-        ('comment_removed', 'COMMENT_REMOVED'),
-        ('comment_updated', 'COMMENT_UPDATED'),
-        ('comment_restored', 'COMMENT_RESTORED'),
-        ('citation_added', 'CITATION_ADDED'),
-        ('citation_edited', 'CITATION_EDITED'),
-        ('citation_removed', 'CITATION_REMOVED'),
-        ('made_contributor_visible', 'MADE_CONTRIBUTOR_VISIBLE'),
-        ('made_contributor_invisible', 'MADE_CONTRIBUTOR_INVISIBLE'),
-        ('external_ids_added', 'EXTERNAL_IDS_ADDED'),
-        ('embargo_approved', 'EMBARGO_APPROVED'),
-        ('embargo_cancelled', 'EMBARGO_CANCELLED'),
-        ('embargo_completed', 'EMBARGO_COMPLETED'),
-        ('embargo_initiated', 'EMBARGO_INITIATED'),
-        ('retraction_approved', 'RETRACTION_APPROVED'),
-        ('retraction_cancelled', 'RETRACTION_CANCELLED'),
-        ('retraction_initiated', 'RETRACTION_INITIATED'),
-        ('registration_cancelled', 'REGISTRATION_APPROVAL_CANCELLED'),
-        ('registration_initiated', 'REGISTRATION_APPROVAL_INITIATED'),
-        ('registration_approved', 'REGISTRATION_APPROVAL_APPROVED'),
-        ('primary_institution_changed', 'PRIMARY_INSTITUTION_CHANGED'),
-        ('primary_institution_removed', 'PRIMARY_INSTITUTION_REMOVED'),
-    )
+
+    # Log action constants -- NOTE: templates stored in log_templates.mako
+    CREATED_FROM = 'created_from'
+
+    PROJECT_CREATED = 'project_created'
+    PROJECT_REGISTERED = 'project_registered'
+    PROJECT_DELETED = 'project_deleted'
+
+    NODE_CREATED = 'node_created'
+    NODE_FORKED = 'node_forked'
+    NODE_REMOVED = 'node_removed'
+
+    POINTER_CREATED = 'pointer_created'
+    POINTER_FORKED = 'pointer_forked'
+    POINTER_REMOVED = 'pointer_removed'
+
+    WIKI_UPDATED = 'wiki_updated'
+    WIKI_DELETED = 'wiki_deleted'
+    WIKI_RENAMED = 'wiki_renamed'
+
+    MADE_WIKI_PUBLIC = 'made_wiki_public'
+    MADE_WIKI_PRIVATE = 'made_wiki_private'
+
+    CONTRIB_ADDED = 'contributor_added'
+    CONTRIB_REMOVED = 'contributor_removed'
+    CONTRIB_REORDERED = 'contributors_reordered'
+
+    CHECKED_IN = 'checked_in'
+    CHECKED_OUT = 'checked_out'
+
+    PERMISSIONS_UPDATED = 'permissions_updated'
+
+    MADE_PRIVATE = 'made_private'
+    MADE_PUBLIC = 'made_public'
+
+    TAG_ADDED = 'tag_added'
+    TAG_REMOVED = 'tag_removed'
+
+    FILE_TAG_ADDED = 'file_tag_added'
+    FILE_TAG_REMOVED = 'file_tag_removed'
+
+    EDITED_TITLE = 'edit_title'
+    EDITED_DESCRIPTION = 'edit_description'
+    CHANGED_LICENSE = 'license_changed'
+
+    UPDATED_FIELDS = 'updated_fields'
+
+    FILE_MOVED = 'addon_file_moved'
+    FILE_COPIED = 'addon_file_copied'
+    FILE_RENAMED = 'addon_file_renamed'
+
+    FOLDER_CREATED = 'folder_created'
+
+    FILE_ADDED = 'file_added'
+    FILE_UPDATED = 'file_updated'
+    FILE_REMOVED = 'file_removed'
+    FILE_RESTORED = 'file_restored'
+
+    ADDON_ADDED = 'addon_added'
+    ADDON_REMOVED = 'addon_removed'
+    COMMENT_ADDED = 'comment_added'
+    COMMENT_REMOVED = 'comment_removed'
+    COMMENT_UPDATED = 'comment_updated'
+    COMMENT_RESTORED = 'comment_restored'
+
+    CITATION_ADDED = 'citation_added'
+    CITATION_EDITED = 'citation_edited'
+    CITATION_REMOVED = 'citation_removed'
+
+    MADE_CONTRIBUTOR_VISIBLE = 'made_contributor_visible'
+    MADE_CONTRIBUTOR_INVISIBLE = 'made_contributor_invisible'
+
+    EXTERNAL_IDS_ADDED = 'external_ids_added'
+
+    EMBARGO_APPROVED = 'embargo_approved'
+    EMBARGO_CANCELLED = 'embargo_cancelled'
+    EMBARGO_COMPLETED = 'embargo_completed'
+    EMBARGO_INITIATED = 'embargo_initiated'
+    EMBARGO_TERMINATED = 'embargo_terminated'
+
+    RETRACTION_APPROVED = 'retraction_approved'
+    RETRACTION_CANCELLED = 'retraction_cancelled'
+    RETRACTION_INITIATED = 'retraction_initiated'
+
+    REGISTRATION_APPROVAL_CANCELLED = 'registration_cancelled'
+    REGISTRATION_APPROVAL_INITIATED = 'registration_initiated'
+    REGISTRATION_APPROVAL_APPROVED = 'registration_approved'
+    PREREG_REGISTRATION_INITIATED = 'prereg_registration_initiated'
+
+    AFFILIATED_INSTITUTION_ADDED = 'affiliated_institution_added'
+    AFFILIATED_INSTITUTION_REMOVED = 'affiliated_institution_removed'
+
+    actions = [CHECKED_IN, CHECKED_OUT, FILE_TAG_REMOVED, FILE_TAG_ADDED, CREATED_FROM, PROJECT_CREATED, PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED, POINTER_CREATED, POINTER_FORKED, POINTER_REMOVED, WIKI_UPDATED, WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC, MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED, PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED, ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, MADE_CONTRIBUTOR_VISIBLE, MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED, RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED, PREREG_REGISTRATION_INITIATED, CITATION_ADDED, CITATION_EDITED, CITATION_REMOVED, AFFILIATED_INSTITUTION_ADDED, AFFILIATED_INSTITUTION_REMOVED]
+    action_choices = [(action, action.upper()) for action in actions]
 
     guid = models.CharField(max_length=255, unique=True, db_index=True, default=get_object_id)
 
-    date = models.DateTimeField(db_index=True, null=True, blank=True)#, auto_now_add=True)
-    action = models.CharField(max_length=255, db_index=True, choices=ACTIONS)
+    date = models.DateTimeField(default=dt.datetime.utcnow, db_index=True, null=True, blank=True)#, auto_now_add=True)
+    action = models.CharField(max_length=255, db_index=True, choices=action_choices)
     params = DateTimeAwareJSONField(default={})
     should_hide = models.BooleanField(default=False)
     user = models.ForeignKey('OSFUser', related_name='logs', db_index=True, null=True, blank=True)
-    foreign_user = models.CharField(max_length=255, blank=True)
+    foreign_user = models.CharField(max_length=255, null=True, blank=True)
     node = models.ForeignKey('Node', related_name='logs', db_index=True, null=True, blank=True)
+    original_node = models.ForeignKey('Node', db_index=True, null=True, blank=True)
 
     def __unicode__(self):
         return u'{} on {} by {} at {}'.format(self.action, self.node._id, self.user._id, self.date)
