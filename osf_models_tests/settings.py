@@ -22,8 +22,6 @@ MIDDLEWARE_CLASSES = (
 INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.sites',
     'django.contrib.staticfiles',
     'osf_models',
 )

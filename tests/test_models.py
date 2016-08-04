@@ -695,52 +695,6 @@ class TestUser(OsfTestCase):
         assert_equal(self.user.get_activity_points(db=self.db),
                     get_total_activity_count(self.user._primary_key))
 
-    def test_serialize_user(self):
-        master = UserFactory()
-        user = UserFactory.build()
-        master.merge_user(user)
-        d = serialize_user(user)
-        assert_equal(d['id'], user._primary_key)
-        assert_equal(d['url'], user.url)
-        assert_equal(d.get('username', None), None)
-        assert_equal(d['fullname'], user.fullname)
-        assert_equal(d['registered'], user.is_registered)
-        assert_equal(d['absolute_url'], user.absolute_url)
-        assert_equal(d['date_registered'], user.date_registered.strftime('%Y-%m-%d'))
-        assert_equal(d['active'], user.is_active)
-
-    def test_serialize_user_full(self):
-        master = UserFactory()
-        user = UserFactory.build()
-        master.merge_user(user)
-        d = serialize_user(user, full=True)
-        gravatar = filters.gravatar(
-            user,
-            use_ssl=True,
-            size=settings.PROFILE_IMAGE_LARGE
-        )
-        assert_equal(d['id'], user._primary_key)
-        assert_equal(d['url'], user.url)
-        assert_equal(d.get('username'), None)
-        assert_equal(d['fullname'], user.fullname)
-        assert_equal(d['registered'], user.is_registered)
-        assert_equal(d['gravatar_url'], gravatar)
-        assert_equal(d['absolute_url'], user.absolute_url)
-        assert_equal(d['date_registered'], user.date_registered.strftime('%Y-%m-%d'))
-        assert_equal(d['is_merged'], user.is_merged)
-        assert_equal(d['merged_by']['url'], user.merged_by.url)
-        assert_equal(d['merged_by']['absolute_url'], user.merged_by.absolute_url)
-        projects = [
-            node
-            for node in user.contributed
-            if node.category == 'project'
-            and not node.is_registration
-            and not node.is_deleted
-        ]
-        public_projects = [p for p in projects if p.is_public]
-        assert_equal(d['number_projects'], len(projects))
-        assert_equal(d['number_public_projects'], len(public_projects))
-
     def test_recently_added(self):
         # Project created
         project = ProjectFactory()
