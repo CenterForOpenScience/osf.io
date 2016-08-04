@@ -9,17 +9,20 @@ OSF_GIT_URL = 'https://github.com/sloria/osf.io.git'
 POSTGRES_BRANCH = 'feature/postgres'
 
 @task
-def setup_tests(ctx, update=False, requirements=True):
+def setup_tests(ctx, update=False, requirements=True, branch=POSTGRES_BRANCH):
+    if update and os.path.exists('osf.io'):
+        ctx.run('rm -rf osf.io/', echo=True)
+        print('Cleaned up.')
     first_run = False
     if not os.path.exists('osf.io'):
         first_run = True
         # '--depth 1' excludes the history (for faster cloning)
-        ctx.run('git clone --branch={} {} --depth 1'.format(POSTGRES_BRANCH, OSF_GIT_URL), echo=True)
+        ctx.run('git clone --branch={} {} --depth 1'.format(branch, OSF_GIT_URL), echo=True)
 
     os.chdir('osf.io')
     if update and not first_run:
-        print('Updating osf.io ({})'.format(POSTGRES_BRANCH))
-        ctx.run('git pull origin {}'.format(POSTGRES_BRANCH), echo=True)
+        print('Updating osf.io ({})'.format(branch))
+        ctx.run('git pull origin {}'.format(branch), echo=True)
     # Copy necessary local.py files
     try:
         copyfile(
@@ -45,10 +48,10 @@ def setup_tests(ctx, update=False, requirements=True):
 
 
 @task
-def test(ctx, setup=False):
+def test(ctx, setup=False, update=False, requirements=True, branch=POSTGRES_BRANCH):
     import pytest
-    if setup:
-        setup_tests(ctx)
+    if setup or update:
+        setup_tests(ctx, update=update, requirements=requirements, branch=branch)
     if not os.path.exists('osf.io'):
         print('Must run "inv setup_tests" before running tests.')
         sys.exit(1)
