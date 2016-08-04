@@ -70,7 +70,7 @@ class PreprintSerializer(JSONAPISerializer):
     def create(self, validated_data):
         node = validated_data.pop('node')
         auth = get_user_auth(self.context['request'])
-        node.set_preprint_file(validated_data.pop('primary_file')._id, auth)
+        node.set_preprint_file(validated_data.pop('primary_file'), auth)
         if node._id != validated_data.pop('_id'):
             raise TypeError
         for key, value in validated_data.iteritems():
