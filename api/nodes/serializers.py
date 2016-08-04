@@ -164,7 +164,7 @@ class NodeSerializer(JSONAPISerializer):
         related_view_kwargs={'node_id': '<forked_from_id>'}
     )
 
-    templated_from = RelationshipField(
+    template_node = RelationshipField(
         related_view=lambda n: 'registrations:registration-detail' if getattr(n, 'is_registration', None) else 'nodes:node-detail',
         related_view_kwargs={'node_id': '<template_node._id>'}
     )
