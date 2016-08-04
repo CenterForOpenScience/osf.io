@@ -158,7 +158,7 @@ class RegistrationAndPermissionCheckForPointers(permissions.BasePermission):
         return True
 
 
-class AdminOrPublicForRelationshipInstitutions(permissions.BasePermission):
+class WriteOrPublicForRelationshipInstitutions(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         assert isinstance(obj, dict)
         auth = get_user_auth(request)
@@ -167,7 +167,7 @@ class AdminOrPublicForRelationshipInstitutions(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return node.is_public or node.can_view(auth)
         else:
-            return node.has_permission(auth.user, osf_permissions.ADMIN)
+            return node.has_permission(auth.user, osf_permissions.WRITE)
 
 
 class ReadOnlyIfRegistration(permissions.BasePermission):

@@ -56,7 +56,7 @@ from api.nodes.permissions import (
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
     IsAdminOrReviewer,
-    AdminOrPublicForRelationshipInstitutions,
+    WriteOrPublicForRelationshipInstitutions,
     ExcludeWithdrawals,
 )
 from api.logs.serializers import NodeLogSerializer
@@ -2701,7 +2701,7 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        AdminOrPublicForRelationshipInstitutions
+        WriteOrPublicForRelationshipInstitutions
     )
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
@@ -2728,6 +2728,8 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
 
         for val in data:
             if val['id'] in current_insts:
+                if current_insts[val['id']] not in user.affiliated_institutions and not node.has_permission(user, 'admin'):
+                    raise PermissionDenied
                 node.remove_affiliated_institution(inst=current_insts[val['id']], user=user)
         node.save()
 

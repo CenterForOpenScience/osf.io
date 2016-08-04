@@ -769,14 +769,16 @@ class NodeInstitutionsRelationshipSerializer(ser.Serializer):
             new_institutions=validated_data['data']
         )
 
+        for inst in remove:
+            if inst not in user.affiliated_institutions and not node.has_permission(user, 'admin'):
+                raise exceptions.PermissionDenied(detail='User needs to be affiliated with {}'.format(inst.name))
+            node.remove_affiliated_institution(inst, user)
+
         for inst in add:
             if inst not in user.affiliated_institutions:
                 raise exceptions.PermissionDenied(detail='User needs to be affiliated with {}'.format(inst.name))
-
-        for inst in remove:
-            node.remove_affiliated_institution(inst, user)
-        for inst in add:
             node.add_affiliated_institution(inst, user)
+
         node.save()
 
         return self.make_instance_obj(node)
