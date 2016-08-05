@@ -629,10 +629,10 @@ class TestTagging:
         user.add_system_tag(tag_name)
         user.save()
 
-        assert user.system_tags.count() == 1
+        assert len(user.system_tags) == 1
 
         tag = Tag.objects.get(name=tag_name, system=True)
-        assert tag in user.system_tags.all()
+        assert tag in user.tags.all()
 
     def test_tags_get_lowercased(self, user):
         tag_name = 'NeOn'
@@ -640,4 +640,10 @@ class TestTagging:
         user.save()
 
         tag = Tag.objects.get(name=tag_name.lower(), system=True)
-        assert tag in user.system_tags.all()
+        assert tag in user.tags.all()
+
+    def test_system_tags_property(self, user):
+        tag_name = fake.word()
+        user.add_system_tag(tag_name)
+
+        assert tag_name in user.system_tags
