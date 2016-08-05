@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import bson
 from django.db import models
-from django.db.models.manager import BaseManager
-from osf_models.models import Node
 from osf_models.models.base import BaseModel, ObjectIDMixin
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 

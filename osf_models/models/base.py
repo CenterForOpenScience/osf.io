@@ -2,12 +2,10 @@ import logging
 import random
 from datetime import datetime
 
-from dirtyfields import DirtyFieldsMixin
-from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db import models
 import modularodm.exceptions
 import pytz
-
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import models
 from osf_models.exceptions import ValidationError
 from osf_models.modm_compat import to_django_query
 from osf_models.utils.base import get_object_id

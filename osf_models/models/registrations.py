@@ -1,8 +1,7 @@
 import urlparse
 
 from django.db import models
-from osf_models.models import DraftRegistrationApproval
-from osf_models.models import OSFUser, MetaSchema, RegistrationApproval, Retraction, Embargo
+from osf_models.models import OSFUser, MetaSchema, RegistrationApproval, Retraction, Embargo, DraftRegistrationApproval
 from osf_models.models.base import BaseModel, ObjectIDMixin
 from osf_models.models.node import AbstractNode
 from osf_models.utils.base import api_v2_url
@@ -63,7 +62,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     datetime_initiated = models.DateTimeField()# auto_now_add=True)
     datetime_updated = models.DateTimeField()# auto_now=True)
     # Original Node a draft registration is associated with
-    branched_from = models.ForeignKey('Node', null=True)
+    branched_from = models.ForeignKey('Node', null=True, related_name='registered_draft')
 
     initiator = models.ForeignKey('OSFUser', null=True)
 
@@ -83,7 +82,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     # }
     registration_metadata = DateTimeAwareJSONField(default={})
     registration_schema = models.ForeignKey('MetaSchema')
-    registered_node = models.ForeignKey('Node', null=True)
+    registered_node = models.ForeignKey('Node', null=True, related_name='draft_registration')
 
     approval = models.ForeignKey('DraftRegistrationApproval', null=True)
 

@@ -1,6 +1,6 @@
-import urlparse
 import datetime as dt
 import logging
+import urlparse
 
 from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
@@ -8,15 +8,7 @@ from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
 from django.contrib.postgres import fields
 from django.core.validators import validate_email
-from django.apps import apps
 from django.db import models
-
-# OSF imports
-from framework.sentry import log_exception
-from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError, InvalidTokenError,
-                                       MergeConfirmedRequiredError, MergeConflictError)
-from website import filters
-
 from osf_models.exceptions import reraise_django_validation_errors
 from osf_models.models.base import BaseModel, GuidMixin
 from osf_models.models.mixins import AddonModelMixin
@@ -24,6 +16,10 @@ from osf_models.models.tag import Tag
 from osf_models.utils import security
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf_models.utils.names import impute_names
+
+from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError, InvalidTokenError)
+from framework.sentry import log_exception
+from website import filters
 
 logger = logging.getLogger(__name__)
 

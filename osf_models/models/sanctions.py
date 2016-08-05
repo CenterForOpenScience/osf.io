@@ -5,7 +5,6 @@ from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from osf_models.models import MetaSchema
 from osf_models.models.base import BaseModel, ObjectIDMixin
-from osf_models.utils.base import get_object_id
 from django.db import models
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from website import (tokens, mails)

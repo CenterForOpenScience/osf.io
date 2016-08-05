@@ -234,6 +234,21 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
+            name='DraftRegistration',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('guid', models.CharField(db_index=True, default=osf_models.utils.base.get_object_id, max_length=255, unique=True)),
+                ('datetime_initiated', models.DateTimeField()),
+                ('datetime_updated', models.DateTimeField()),
+                ('registration_metadata', osf_models.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(default={})),
+                ('_metaschema_flags', osf_models.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(default={})),
+                ('notes', models.TextField()),
+            ],
+            options={
+                'abstract': False,
+            },
+        ),
+        migrations.CreateModel(
             name='DraftRegistrationApproval',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
@@ -243,6 +258,20 @@ class Migration(migrations.Migration):
                 ('initiation_date', models.DateTimeField(blank=True, null=True)),
                 ('state', models.CharField(choices=[(b'unapproved', b'Unapproved'), (b'approved', b'Approved'), (b'rejected', b'Rejected'), (b'completed', b'Completed')], default=b'unapproved', max_length=255)),
                 ('meta', osf_models.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(default={})),
+            ],
+            options={
+                'abstract': False,
+            },
+        ),
+        migrations.CreateModel(
+            name='DraftRegistrationLog',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('guid', models.CharField(db_index=True, default=osf_models.utils.base.get_object_id, max_length=255, unique=True)),
+                ('date', models.DateTimeField()),
+                ('action', models.CharField(max_length=255)),
+                ('draft', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='logs', to='osf_models.DraftRegistration')),
+                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'abstract': False,
@@ -430,6 +459,21 @@ class Migration(migrations.Migration):
             model_name='institution',
             name='contributors',
             field=models.ManyToManyField(related_name='institutions', through='osf_models.InstitutionalContributor', to=settings.AUTH_USER_MODEL),
+        ),
+        migrations.AddField(
+            model_name='draftregistration',
+            name='approval',
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='osf_models.DraftRegistrationApproval'),
+        ),
+        migrations.AddField(
+            model_name='draftregistration',
+            name='initiator',
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL),
+        ),
+        migrations.AddField(
+            model_name='draftregistration',
+            name='registration_schema',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='osf_models.MetaSchema'),
         ),
         migrations.AddField(
             model_name='comment',
@@ -627,6 +671,16 @@ class Migration(migrations.Migration):
             model_name='embargoterminationapproval',
             name='embargoed_registration',
             field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='osf_models.Node'),
+        ),
+        migrations.AddField(
+            model_name='draftregistration',
+            name='branched_from',
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='registered_draft', to='osf_models.Node'),
+        ),
+        migrations.AddField(
+            model_name='draftregistration',
+            name='registered_node',
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='draft_registration', to='osf_models.Node'),
         ),
         migrations.AlterUniqueTogether(
             name='contributor',
