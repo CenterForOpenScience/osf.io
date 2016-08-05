@@ -661,6 +661,7 @@ class Retraction(EmailApprovableSanction):
         from website.project.model import Node, NodeLog
 
         parent_registration = Node.find_one(Q('retraction', 'eq', self))
+        parent_registration.date_modified = datetime.datetime.utcnow()
         parent_registration.registered_from.add_log(
             action=NodeLog.RETRACTION_APPROVED,
             params={
