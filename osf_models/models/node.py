@@ -1,8 +1,15 @@
 import urlparse
+import logging
 
 from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.db import models
+from typedmodels.models import TypedModel
+
+# OSF imports
+from website.exceptions import UserNotAffiliatedError
+from framework.sentry import log_exception
+
 from osf_models.apps import AppConfig as app_config
 from osf_models.models.contributor import Contributor
 from osf_models.models.mixins import Loggable
@@ -12,10 +19,10 @@ from osf_models.models.validators import validate_title
 from osf_models.utils.auth import Auth
 from osf_models.utils.base import api_v2_url
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from typedmodels.models import TypedModel
 
-from website.exceptions import UserNotAffiliatedError
 from .base import BaseModel, GuidMixin
+
+logger = logging.getLogger(__name__)
 
 class AbstractNode(TypedModel, Taggable, Loggable, GuidMixin, BaseModel):
     """
@@ -124,6 +131,14 @@ class AbstractNode(TypedModel, Taggable, Loggable, GuidMixin, BaseModel):
         if not self.url:
             return None
         return urlparse.urljoin(app_config.domain, self.url)
+
+    def update_search(self):
+        from website import search
+        try:
+            search.search.update_node(self, bulk=False, async=True)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+            log_exception()
 
     def add_affiliated_intitution(self, inst, user, save=False, log=True):
         if not user.is_affiliated_with_institution(inst):

@@ -610,7 +610,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.update_search_nodes()
 
         # Emit signal that a user has confirmed
-        signals.user_confirmed.send(self)
+        # TODO: uncomment when NotificationSubscription is implemented
+        # signals.user_confirmed.send(self)
 
         return self
 
@@ -687,6 +688,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         except SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
+
+    def update_search_nodes(self):
+        """Call `update_search` on all nodes on which the user is a
+        contributor. Needed to add self to contributor lists in search upon
+        registration or claiming.
+
+        """
+        for node in self.contributed:
+            node.update_search()
 
     def get_summary(self, formatter='long'):
         return {
