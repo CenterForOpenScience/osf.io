@@ -8,6 +8,7 @@ from framework.mongo import StoredObject
 from website.conferences.exceptions import ConferenceError
 
 DEFAULT_FIELD_NAMES = {
+    'homepage_link_text': 'Conference homepage',
     'submission1': 'poster',
     'submission2': 'talk',
     'submission1_plural': 'posters',
@@ -17,7 +18,6 @@ DEFAULT_FIELD_NAMES = {
     'mail_subject': 'Presentation title',
     'mail_message_body': 'Presentation abstract (if any)',
     'mail_attachment': 'Your presentation file (e.g., PowerPoint, PDF, etc.)',
-    'homepage_link_text': 'Conference homepage',
 }
 
 
@@ -30,6 +30,7 @@ class Conference(StoredObject):
     #: Full name, e.g. "SPSP 2014"
     name = fields.StringField(required=True)
     info_url = fields.StringField(required=False, default=None)
+    homepage_link_text = fields.StringField(required=False, default='Conference homepage')
     logo_url = fields.StringField(required=False, default=None)
     location = fields.StringField(required=False, default=None)
     start_date = fields.DateTimeField(default=None)
