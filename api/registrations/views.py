@@ -5,6 +5,7 @@ from framework.auth.oauth_scopes import CoreScopes
 from website.project.model import Q, Node
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
+from api.base.utils import is_bulk_request
 
 from api.base.filters import ListFilterMixin
 from api.base.serializers import HideIfWithdrawal
@@ -283,15 +284,54 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, Regist
         return registration
 
 
-class RegistrationContributorsList(NodeContributorsList, RegistrationMixin):
+class RegistrationContributorsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, RegistrationMixin):
+    """List of contributors for a registration."""
     view_category = 'registrations'
     view_name = 'registration-contributors'
+    serializer_class = RegistrationContributorsSerializer
 
-    def get_serializer_class(self):
-        return RegistrationContributorsSerializer
+    required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
+    required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
+
+    permission_classes = (
+        ContributorDetailPermissions,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope,
+    )
+
+    def get_default_queryset(self):
+        node = self.get_node(check_object_permissions=False)
+        visible_contributors = set(node.visible_contributor_ids)
+        contributors = []
+        index = 0
+        for contributor in node.contributors:
+            contributor.index = index
+            contributor.bibliographic = contributor._id in visible_contributors
+            contributor.permission = node.get_permissions(contributor)[-1]
+            contributor.node_id = node._id
+            contributors.append(contributor)
+            index += 1
+        return contributors
+
+    def get_queryset(self):
+        queryset = self.get_queryset_from_request()
+        # If bulk request, queryset only contains contributors in request
+        if is_bulk_request(self.request):
+            contrib_ids = []
+            for item in self.request.data:
+                try:
+                    contrib_ids.append(item['id'].split('-')[1])
+                except AttributeError:
+                    raise ValidationError('Contributor identifier not provided.')
+                except IndexError:
+                    raise ValidationError('Contributor identifier incorrectly formatted.')
+            queryset[:] = [contrib for contrib in queryset if contrib._id in contrib_ids]
+        return queryset
 
 
 class RegistrationContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView, RegistrationMixin, UserMixin):
+    """Detail of a contributor for a registration."""
     view_category = 'registrations'
     view_name = 'registration-contributor-detail'
     serializer_class = RegistrationContributorsSerializer
