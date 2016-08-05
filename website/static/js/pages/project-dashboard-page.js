@@ -14,6 +14,7 @@ require('truncate');
 
 var $osf = require('js/osfHelpers');
 var LogFeed = require('js/components/logFeed');
+var ForumFeed = require('js/components/forumfeed');
 var pointers = require('js/pointers');
 var Comment = require('js/comment'); //jshint ignore:line
 var NodeControl = require('js/nodeControl');
@@ -203,6 +204,13 @@ $(document).ready(function () {
             var filebrowser = new Fangorn(fangornOpts);
         });
     }
+
+    m.mount(document.getElementById('forumFeed'), m.component(ForumFeed.ForumFeed, {
+        discourse_url: window.contextVars.discourseUrl,
+        discourse_user_apikey: window.contextVars.discourseUserApikey,
+        node: node,
+        user: window.contextVars.currentUser
+    }));
 
     // Tooltips
     $('[data-toggle="tooltip"]').tooltip({container: 'body'});

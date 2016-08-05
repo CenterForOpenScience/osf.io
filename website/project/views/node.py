@@ -789,6 +789,7 @@ def _view_project(node, auth, primary=False,
             for key, value in settings.NODE_CATEGORY_MAP.iteritems()
         ],
         'discourse_url': settings.DISCOURSE_SERVER_URL,
+        'discourse_apikey': discourse.get_user_apikey()
     }
     if embed_contributors and not anonymous:
         data['node']['contributors'] = utils.serialize_contributors(node.visible_contributors, node=node)

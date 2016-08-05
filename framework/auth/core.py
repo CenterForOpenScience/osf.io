@@ -480,6 +480,8 @@ class User(GuidStoredObject, AddonModelMixin):
     discourse_username = fields.StringField(default=None)
     discourse_user_id = fields.IntegerField(default=0)
     discourse_user_created = fields.BooleanField(default=False)
+    discourse_apikey = fields.StringField(default=None)
+    discourse_apikey_date_created = fields.DateTimeField(default=None)
 
     _meta = {'optimistic': True}
 
