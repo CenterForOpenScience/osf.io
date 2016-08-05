@@ -127,7 +127,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     is_claimed = models.BooleanField(default=False, db_index=True)
 
     # a list of strings - for internal use
-    system_tags = models.ManyToManyField(Tag)
+    tags = models.ManyToManyField('Tag')
 
     # security emails that have been sent
     # TODO: This should be removed and/or merged with system_tags
@@ -372,6 +372,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     @property
     def email(self):
         return self.username
+
+    @property
+    def system_tags(self):
+        """The system tags associated with this user. This currently returns a list of string
+        names for the tags, for compatibility with v1. Eventually, we can just return the
+        QuerySet.
+        """
+        return self.tags.filter(system=True).values_list('name', flat=True)
 
     def is_authenticated(self):  # Needed for django compat
         return True
@@ -672,6 +680,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             tag_instance, created = Tag.objects.get_or_create(name=tag.lower(), system=True)
         else:
             tag_instance = tag
-        if not self.system_tags.filter(id=tag_instance.id).exists():
-            self.system_tags.add(tag_instance)
+        if not self.tags.filter(id=tag_instance.id).exists():
+            self.tags.add(tag_instance)
         return tag_instance
