@@ -30,7 +30,6 @@ class Conference(StoredObject):
     #: Full name, e.g. "SPSP 2014"
     name = fields.StringField(required=True)
     info_url = fields.StringField(required=False, default=None)
-    homepage_link_text = fields.StringField(required=False, default='Conference homepage')
     logo_url = fields.StringField(required=False, default=None)
     location = fields.StringField(required=False, default=None)
     start_date = fields.DateTimeField(default=None)
