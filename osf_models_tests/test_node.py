@@ -1,3 +1,4 @@
+import mock
 from modularodm import Q
 from modularodm.exceptions import ValidationError as MODMValidationError
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -6,6 +7,20 @@ import pytest
 from osf_models.models import Node, Tag, NodeLog
 from osf_models.utils.auth import Auth
 from .factories import NodeFactory, UserFactory
+
+
+@pytest.fixture()
+def user():
+    return UserFactory()
+
+@pytest.fixture()
+def node(user):
+    return NodeFactory(creator=user)
+
+@pytest.fixture()
+def auth(user):
+    return Auth(user)
+
 
 @pytest.mark.django_db
 class TestNodeMODMCompat:
@@ -54,21 +69,8 @@ class TestNodeMODMCompat:
         assert len(node._id) == 5
         assert node in Node.find(Q('_id', 'eq', node._id))
 
-
 @pytest.mark.django_db
 class TestTagging:
-
-    @pytest.fixture()
-    def user(self):
-        return UserFactory()
-
-    @pytest.fixture()
-    def node(self, user):
-        return NodeFactory(creator=user)
-
-    @pytest.fixture()
-    def auth(self, user):
-        return Auth(user)
 
     def test_add_tag(self, node, auth):
         node.add_tag('FoO', auth=auth)
@@ -104,3 +106,11 @@ class TestTagging:
 
         assert 'FoO' in node.system_tags
         assert 'bAr' not in node.system_tags
+
+@pytest.mark.django_db
+class TestSearch:
+
+    @mock.patch('website.search.search.update_node')
+    def test_update_search(self, mock_update_node, node):
+        node.update_search()
+        assert mock_update_node.called

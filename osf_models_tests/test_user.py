@@ -12,7 +12,7 @@ from framework.analytics import get_total_activity_count
 from website import settings
 from website import filters
 
-from osf_models.models import OSFUser as User, Tag
+from osf_models.models import OSFUser as User, Tag, Node, Contributor
 from osf_models.utils.names import impute_names_model
 from osf_models.exceptions import ValidationError
 
@@ -231,7 +231,6 @@ class TestOSFUser:
         expected = '{0}confirm/{1}/{2}/'.format(settings.DOMAIN, u._id, '54321')
         assert url == expected
 
-    @pytest.mark.skip('confirm_email not yet implemented')
     def test_confirm_primary_email(self):
         u = UnconfirmedUserFactory()
         token = u.get_confirmation_token(u.username)
@@ -242,6 +241,27 @@ class TestOSFUser:
         assert u.username in u.emails
         assert bool(u.is_registered) is True
         assert bool(u.is_claimed) is True
+
+    def test_confirm_email(self, user):
+        token = user.add_unconfirmed_email('foo@bar.com')
+        user.confirm_email(token)
+
+        assert 'foo@bar.com' not in user.unconfirmed_emails
+        assert 'foo@bar.com' in user.emails
+
+    def test_confirm_email_comparison_is_case_insensitive(self):
+        u = UnconfirmedUserFactory.build(
+            username='letsgettacos@lgt.com'
+        )
+        u.add_unconfirmed_email('LetsGetTacos@LGT.com')
+        u.save()
+        assert bool(u.is_confirmed) is False  # sanity check
+
+        token = u.get_confirmation_token('LetsGetTacos@LGT.com')
+
+        confirmed = u.confirm_email(token)
+        assert confirmed is True
+        assert u.is_confirmed is True
 
     def test_verify_confirmation_token(self):
         u = UserFactory.build()
@@ -318,6 +338,29 @@ class TestOSFUser:
         assert(
             user.get_activity_points(db=self.db) == get_total_activity_count(self.user._primary_key)
         )
+
+    def test_contributed_property(self):
+        user = UserFactory()
+        node = NodeFactory()
+        # TODO: Use Node.add_contributor when it's implemented
+        Contributor.objects.create(user=user, node=node)
+        projects_contributed_to = Node.objects.filter(contributors=user)
+        assert list(user.contributed) == list(projects_contributed_to)
+
+    # copied from tests/test_views.py
+    def test_clean_email_verifications(self, user):
+        # Do not return bad token and removes it from user.email_verifications
+        email = 'test@example.com'
+        token = 'blahblahblah'
+        user.email_verifications[token] = {'expiration': (dt.datetime.utcnow() + dt.timedelta(days=1)).isoformat(),
+                                                'email': email,
+                                                'confirmed': False }
+        user.save()
+        assert user.email_verifications[token]['email'] == email
+        user.clean_email_verifications(given_token=token)
+        unconfirmed_emails = user.unconfirmed_email_info
+        assert unconfirmed_emails == []
+        assert user.email_verifications == {}
 
 @pytest.mark.skip('Node#add_contributor not yet implemented')
 class TestContributorMethods:
@@ -620,6 +663,99 @@ class TestAddUnconfirmedEmail:
             user.add_unconfirmed_email('')
         assert exc_info.value.message == 'Enter a valid email address.'
 
+# Copied from tests/test_models.TestUnregisteredUser
+
+@pytest.mark.django_db
+class TestUnregisteredUser:
+
+    # def add_unclaimed_record(self):
+    #     given_name = 'Fredd Merkury'
+    #     email = fake.email()
+    #     self.user.add_unclaimed_record(node=self.project,
+    #         given_name=given_name, referrer=self.referrer,
+    #         email=email)
+    #     self.user.save()
+    #     data = self.user.unclaimed_records[self.project._primary_key]
+    #     return email, data
+    #
+    # def test_unregistered_factory(self):
+    #     u1 = UnregUserFactory()
+    #     assert_false(u1.is_registered)
+    #     assert_true(u1.password is None)
+    #     assert_true(u1.fullname)
+    #
+    # def test_unconfirmed_factory(self):
+    #     u = UnconfirmedUserFactory()
+    #     assert_false(u.is_registered)
+    #     assert_true(u.username)
+    #     assert_true(u.fullname)
+    #     assert_true(u.password)
+    #     assert_equal(len(u.email_verifications.keys()), 1)
+    #
+    # def test_add_unclaimed_record(self):
+    #     email, data = self.add_unclaimed_record()
+    #     assert_equal(data['name'], 'Fredd Merkury')
+    #     assert_equal(data['referrer_id'], self.referrer._primary_key)
+    #     assert_in('token', data)
+    #     assert_equal(data['email'], email)
+    #     assert_equal(data, self.user.get_unclaimed_record(self.project._primary_key))
+    #
+    # def test_get_claim_url(self):
+    #     self.add_unclaimed_record()
+    #     uid = self.user._primary_key
+    #     pid = self.project._primary_key
+    #     token = self.user.get_unclaimed_record(pid)['token']
+    #     domain = settings.DOMAIN
+    #     assert_equal(self.user.get_claim_url(pid, external=True),
+    #         '{domain}user/{uid}/{pid}/claim/?token={token}'.format(**locals()))
+    #
+    # def test_get_claim_url_raises_value_error_if_not_valid_pid(self):
+    #     with assert_raises(ValueError):
+    #         self.user.get_claim_url('invalidinput')
+    #
+    # def test_cant_add_unclaimed_record_if_referrer_isnt_contributor(self):
+    #     project = ProjectFactory()  # referrer isn't a contributor to this project
+    #     with assert_raises(PermissionsError):
+    #         self.user.add_unclaimed_record(node=project,
+    #             given_name='fred m', referrer=self.referrer)
+
+    @mock.patch('osf_models.models.OSFUser.update_search_nodes')
+    @mock.patch('osf_models.models.OSFUser.update_search')
+    def test_register(self, mock_search, mock_search_nodes):
+        user = UnregUserFactory()
+        assert user.is_registered is False  # sanity check
+        assert user.is_claimed is False
+        email = fake.email()
+        user.register(username=email, password='killerqueen')
+        user.save()
+        assert user.is_claimed is True
+        assert user.is_registered is True
+        assert user.check_password('killerqueen') is True
+        assert user.username == email
+
+    @mock.patch('osf_models.models.OSFUser.update_search_nodes')
+    @mock.patch('osf_models.models.OSFUser.update_search')
+    def test_registering_with_a_different_email_adds_to_emails_list(self, mock_search, mock_search_nodes):
+        user = UnregUserFactory()
+        assert user.has_usable_password() is False  # sanity check
+        email = fake.email()
+        user.register(username=email, password='killerqueen')
+        assert email in user.emails
+
+    # def test_verify_claim_token(self):
+    #     self.add_unclaimed_record()
+    #     valid = self.user.get_unclaimed_record(self.project._primary_key)['token']
+    #     assert_true(self.user.verify_claim_token(valid, project_id=self.project._primary_key))
+    #     assert_false(self.user.verify_claim_token('invalidtoken', project_id=self.project._primary_key))
+    #
+    # def test_claim_contributor(self):
+    #     self.add_unclaimed_record()
+    #     # sanity cheque
+    #     assert_false(self.user.is_registered)
+    #     assert_true(self.project)
+
+
+
 # New tests
 
 @pytest.mark.django_db
@@ -647,3 +783,4 @@ class TestTagging:
         user.add_system_tag(tag_name)
 
         assert tag_name in user.system_tags
+
