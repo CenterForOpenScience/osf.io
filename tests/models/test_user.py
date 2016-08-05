@@ -420,6 +420,11 @@ class TestUserMerging(base.OsfTestCase):
             ],
         }
 
+        # Fields in which the two users may differ
+        different_fields = [
+            'date_modified'
+        ]
+
         # from the explicit rules above, compile expected field/value pairs
         expected = {}
         expected.update(calculated_fields)
@@ -427,9 +432,10 @@ class TestUserMerging(base.OsfTestCase):
             expected[key] = getattr(self.user, key)
 
         # ensure all fields of the user object have an explicit expectation
+        # except for 'different_fields'
         assert_equal(
             set(expected.keys()),
-            set(self.user._fields),
+            set(self.user._fields).difference(different_fields),
         )
 
         # mock mailchimp
