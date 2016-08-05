@@ -666,3 +666,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 return unclaimed_data['name']
         return self.fullname
 
+    def add_system_tag(self, tag):
+        Tag = apps.get_model('osf_models.Tag')
+        if not isinstance(tag, Tag):
+            tag_instance, created = Tag.objects.get_or_create(name=tag.lower(), system=True)
+        else:
+            tag_instance = tag
+        if not self.system_tags.filter(id=tag_instance.id).exists():
+            self.system_tags.add(tag_instance)
+        return tag_instance

@@ -87,7 +87,9 @@ class Taggable(models.Model):
 
     tags = models.ManyToManyField('Tag', related_name='tagged')
 
-    def add_tag(self, tag, auth, save=True, log=True, system=False):
+    def add_tag(self, tag, auth=None, save=True, log=True, system=False):
+        if not system and not auth:
+            raise ValueError('Must provide auth if adding a non-system tag')
         Tag = apps.get_model('osf_models.Tag')
         NodeLog = apps.get_model('osf_models.NodeLog')
 
@@ -102,6 +104,10 @@ class Taggable(models.Model):
                 self.add_tag_log(tag_instance, auth)
             if save:
                 self.save()
+        return tag_instance
+
+    def add_system_tag(self, tag, save=True):
+        return self.add_tag(tag=tag, auth=None, save=save, log=False, system=True)
 
     def add_tag_log(self, *args, **kwargs):
         raise NotImplementedError('Logging requires that add_tag_log method is implemented')
