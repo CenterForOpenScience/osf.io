@@ -56,7 +56,7 @@ def update_date_modified_for_users(node):
     update_date_modified_task(node._id)
 
 
-@run_postcommit(once_per_request=False, celery=True)
+@run_postcommit(once_per_request=True, celery=True)
 @app.task(max_retries=5, default_retry_delay=60)
 def update_date_modified_task(node_id):
     node = Node.load(node_id)
