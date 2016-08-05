@@ -412,6 +412,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             django_obj.password = 'bcrypt${}'.format(django_obj.password)
         return django_obj
 
+    @property
+    def contributed(self):
+        Node = apps.get_model('osf_models.Node')
+        return Node.objects.filter(contributors=self)
+
     def update_is_active(self):
         """Update ``is_active`` to be consistent with the fields that
         it depends on.
