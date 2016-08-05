@@ -79,6 +79,12 @@ class MODMCompatibilityQuerySet(models.QuerySet):
         return self[:n]
 
 
+class MODMCompatibilityGuidQuerySet(MODMCompatibilityQuerySet):
+
+    def get_by_guid(self, guid):
+        return self.get(_guid__guid=guid)
+
+
 class BaseModel(models.Model):
     """Base model that acts makes subclasses mostly compatible with the
     modular-odm ``StoredObject`` interface.
@@ -141,9 +147,12 @@ class ObjectIDMixin(models.Model):
     def guid(self):
         return self._object_id
 
+
     @property
     def _id(self):
         return PKIDStr(self._object_id, self.pk)
+
+    _primary_key = _id
 
     @classmethod
     def migrate_from_modm(cls, modm_obj):
@@ -159,6 +168,8 @@ class GuidMixin(models.Model):
                                  unique=True,
                                  related_name='referent_%(class)s')
 
+    objects = MODMCompatibilityGuidQuerySet.as_manager()
+
     @property
     def guid(self):
         return self._guid.guid
@@ -166,6 +177,8 @@ class GuidMixin(models.Model):
     @property
     def _id(self):
         return PKIDStr(self._guid.guid, self.pk)
+
+    _primary_key = _id
 
     @classmethod
     def migrate_from_modm(cls, modm_obj):

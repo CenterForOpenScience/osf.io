@@ -1,5 +1,6 @@
 import pytz
 from django.db import models
+from django.apps import apps
 
 from framework.analytics import increment_user_activity_counters
 
@@ -48,7 +49,8 @@ class Loggable(models.Model):
     # TODO: This should be in the NodeLog model
 
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True, request=None):
-        from osf_models.models import NodeLog
+        Node = apps.get_model('osf_models.Node')
+        NodeLog = apps.get_model('osf_models.NodeLog')
         user = None
         if auth:
             user = auth.user
@@ -56,16 +58,17 @@ class Loggable(models.Model):
             user = request.user
 
         params['node'] = params.get('node') or params.get('project') or self._id
+        original_node = Node.objects.get_by_guid(params.get('node'))
         log = NodeLog(
             action=action, user=user, foreign_user=foreign_user,
-            params=params, node=self, original_node=params.get('node')
+            params=params, node=self, original_node=original_node
         )
 
         if log_date:
             log.date = log_date
         log.save()
 
-        if len(self.logs) == 1:
+        if self.logs.count() == 1:
             self.date_modified = log.date.replace(tzinfo=pytz.utc)
         else:
             self.date_modified = self.logs[-1].date.replace(tzinfo=pytz.utc)
@@ -76,6 +79,39 @@ class Loggable(models.Model):
             increment_user_activity_counters(user._primary_key, action, log.date.isoformat())
 
         return log
+
+    class Meta:
+        abstract = True
+
+class Taggable(models.Model):
+
+    tags = models.ManyToManyField('Tag', related_name='tagged')
+
+    def add_tag(self, tag, auth=None, save=True, log=True, system=False):
+        if not system and not auth:
+            raise ValueError('Must provide auth if adding a non-system tag')
+        Tag = apps.get_model('osf_models.Tag')
+        NodeLog = apps.get_model('osf_models.NodeLog')
+
+        if not isinstance(tag, Tag):
+            tag_instance, created = Tag.objects.get_or_create(name=tag, system=system)
+        else:
+            tag_instance = tag
+
+        if not self.tags.filter(id=tag_instance.id).exists():
+            self.tags.add(tag_instance)
+            if log:
+                self.add_tag_log(tag_instance, auth)
+            if save:
+                self.save()
+        return tag_instance
+
+    def add_system_tag(self, tag, save=True):
+        return self.add_tag(tag=tag, auth=None, save=save, log=False, system=True)
+
+    def add_tag_log(self, *args, **kwargs):
+        raise NotImplementedError('Logging requires that add_tag_log method is implemented')
+
 
     class Meta:
         abstract = True
