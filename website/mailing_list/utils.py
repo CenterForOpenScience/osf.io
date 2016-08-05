@@ -64,7 +64,6 @@ def with_list_proxy(fn):
     @queued_task
     @app.task(
         name=fn.__name__,
-        bind=True,
         retry=True,
         retry_policy={
             'max_retries': 0,
@@ -73,7 +72,7 @@ def with_list_proxy(fn):
             'interval_max': 60.0
         }
     )
-    def get_proxy(self, *args, **kwargs):
+    def get_proxy(*args, **kwargs):
         try:
             kwargs['list_proxy'] = mc.get_list(
                 '{}@{}'.format(
@@ -94,7 +93,10 @@ def with_list_proxy(fn):
                     name='test'
                 )
             except:
-                self.retry()
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warn('Unable to connect to Mailman3 API.')
+                return
         fn(*args, **kwargs)
 
     def _fn(*args, **kwargs):
