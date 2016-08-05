@@ -6,13 +6,15 @@ from website.project.model import Q, Node
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 
+from api.base.filters import ListFilterMixin
 from api.base.serializers import HideIfWithdrawal
-from api.nodes.permissions import ReadOnlyIfRegistration
+from api.nodes.permissions import ReadOnlyIfRegistration, ContributorDetailPermissions
 from api.nodes.permissions import ContributorOrPublicForRelationshipPointers
 from api.base.serializers import LinkedNodesRelationshipSerializer
 from api.base.parsers import JSONAPIRelationshipParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
 from api.base.utils import get_user_auth
+from api.users.views import UserMixin
 
 from api.registrations.serializers import (
     RegistrationSerializer,
@@ -289,11 +291,38 @@ class RegistrationContributorsList(NodeContributorsList, RegistrationMixin):
         return RegistrationContributorsSerializer
 
 
-class RegistrationContributorDetail(NodeContributorDetail, RegistrationMixin):
+class RegistrationContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView, RegistrationMixin, UserMixin):
     view_category = 'registrations'
     view_name = 'registration-contributor-detail'
     serializer_class = RegistrationContributorsSerializer
 
+    required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
+    required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
+
+    permission_classes = (
+        ContributorDetailPermissions,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope,
+    )
+
+    # overrides RetrieveAPIView
+    def get_object(self):
+        node = self.get_node()
+        user = self.get_user()
+        # May raise a permission denied
+        self.check_object_permissions(self.request, user)
+        if user not in node.contributors:
+            raise NotFound('{} cannot be found in the list of contributors.'.format(user))
+        user.permission = node.get_permissions(user)[-1]
+        user.bibliographic = node.get_visible(user)
+        user.node_id = node._id
+        return user
+
+
+    def get_queryset(self):
+        node = self.get_node()
+        return [user for user in node.contributors]
 
 class RegistrationChildrenList(NodeChildrenList, RegistrationMixin):
     view_category = 'registrations'
