@@ -36,7 +36,9 @@ from api.nodes.views import (
 from api.registrations.serializers import RegistrationNodeLinksSerializer, RegistrationFileSerializer
 
 from api.nodes.permissions import (
-    AdminOrPublic
+    AdminOrPublic,
+    ExcludeWithdrawals,
+    ContributorOrPublic
 )
 from api.base.utils import get_object_or_error
 
@@ -364,10 +366,22 @@ class RegistrationContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView, R
         node = self.get_node()
         return [user for user in node.contributors]
 
-class RegistrationChildrenList(NodeChildrenList, RegistrationMixin):
+class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin, RegistrationMixin):
+    """Lists the children a registration."""
     view_category = 'registrations'
     view_name = 'registration-children'
     serializer_class = RegistrationSerializer
+
+    permission_classes = (
+        ContributorOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope,
+        ExcludeWithdrawals
+    )
+
+    required_read_scopes = [CoreScopes.NODE_CHILDREN_READ]
+    required_write_scopes = [CoreScopes.NODE_CHILDREN_WRITE]
 
     def get_default_odm_query(self):
         base_query = (
@@ -381,6 +395,18 @@ class RegistrationChildrenList(NodeChildrenList, RegistrationMixin):
 
         query = base_query & permission_query
         return query
+
+    def get_queryset(self):
+        node = self.get_node()
+        req_query = self.get_query_from_request()
+
+        query = (
+            Q('_id', 'in', [e._id for e in node.nodes if e.primary]) &
+            req_query
+        )
+        nodes = Node.find(query)
+        auth = get_user_auth(self.request)
+        return sorted([each for each in nodes if each.can_view(auth)], key=lambda n: n.date_modified, reverse=True)
 
 class RegistrationForksList(NodeForksList, RegistrationMixin):
     view_category = 'registrations'
