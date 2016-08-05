@@ -83,7 +83,7 @@ class TestTagging:
         assert last_log.params['tag'] == 'FoO'
         assert last_log.params['node'] == node._id
 
-    def test_add_system_tag(self, node, auth):
+    def test_add_system_tag(self, node):
         original_log_count = node.logs.count()
         node.add_system_tag('FoO')
         node.save()
@@ -94,5 +94,13 @@ class TestTagging:
 
         assert tag.system is True
 
+        # No log added
         new_log_count = node.logs.count()
         assert original_log_count == new_log_count
+
+    def test_system_tags_property(self, node, auth):
+        node.add_system_tag('FoO')
+        node.add_tag('bAr', auth=auth)
+
+        assert 'FoO' in node.system_tags
+        assert 'bAr' not in node.system_tags
