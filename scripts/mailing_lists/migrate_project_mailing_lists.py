@@ -66,13 +66,13 @@ def migrate(dry_run=True):
             #        node_kind = 'deleted project' 
             #    logger.info('({done}/{total}) Disabling mailing list for {kind} {_id}'.format(done=i, total=ncount, _id=node._id, kind=node_kind)
             #    )
-            #    if not dry_run:
-            #        database['node'].find_and_modify(
-            #            {'_id': node._id},
-            #            {'$set': {'mailing_enabled': False,
-            #                      'mailing_updated': False}
-            #            }
-            #        )
+            if not dry_run:
+                database['node'].find_and_modify(
+                    {'_id': node._id},
+                    {'$set': {
+                        'mailing_enabled': False,
+                    }}
+                )
             #    successful_disables.append(node._id)
             #except Exception as e:
             #    logger.exception('Error while handling node {}'.format(node._id))
