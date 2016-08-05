@@ -91,8 +91,6 @@ class AbstractNode(TypedModel, Taggable, Loggable, GuidMixin, BaseModel):
                              on_delete=models.SET_NULL,
                              null=True, blank=True)
     suspended = models.BooleanField(default=False, db_index=True)
-    # Tags for internal use
-    system_tags = models.ManyToManyField(Tag, related_name='tagged_by_system')
 
     # The node (if any) used as a template for this node's creation
     template_node = models.ForeignKey('self',
@@ -218,6 +216,14 @@ class AbstractNode(TypedModel, Taggable, Loggable, GuidMixin, BaseModel):
     @property
     def visible_contributor_ids(self):
         return self.contributor_set.filter(visible=True)
+
+    @property
+    def system_tags(self):
+        """The system tags associated with this node. This currently returns a list of string
+        names for the tags, for compatibility with v1. Eventually, we can just return the
+        QuerySet.
+        """
+        return self.tags.filter(system=True).values_list('name', flat=True)
 
     # Override Taggable
     def add_tag_log(self, tag, auth):
