@@ -6,7 +6,6 @@ var Raven = require('raven-js');
 var moment = require('moment');
 var URI = require('URIjs');
 var bootbox = require('bootbox');
-var iconmap = require('js/iconmap');
 var lodashGet = require('lodash.get');
 var KeenTracker = require('js/keen');
 
@@ -760,9 +759,9 @@ var any = function(listOfBools, check) {
     return false;
 };
 
-/** 
+/**
  * A helper for creating a style-guide conformant bootbox modal. Returns a promise.
- * @param {String} title: 
+ * @param {String} title:
  * @param {String} message:
  * @param {String} actionButtonLabel:
  * @param {Object} options: optional options

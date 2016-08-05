@@ -704,6 +704,17 @@ div.ball-scale-blue>div {
     background-color: #BED1E2;
 }
 
+/* Make registrations modal scrollable and background hidden
+-------------------------------------------------- */
+
+.background-unscrollable {
+    overflow: hidden;
+}
+
+.modal-scrollable {
+    overflow: scroll;
+}
+
 /* Password strength check component colors for darker backgrounds  */
 .pv-darkbg .text-danger {
     color: #f97773;

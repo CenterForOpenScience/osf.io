@@ -1,4 +1,5 @@
 import weakref
+from django.conf import settings as django_settings
 from django.http import JsonResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -15,17 +16,11 @@ from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.users.serializers import UserSerializer
 from api.base.parsers import JSONAPIRelationshipParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
+from api.base.requests import EmbeddedRequest
 from api.base.serializers import LinkedNodesRelationshipSerializer
+from api.base import utils
 from api.nodes.permissions import ReadOnlyIfRegistration
 from api.nodes.permissions import ContributorOrPublicForRelationshipPointers
-
-from django.conf import settings as django_settings
-from .utils import absolute_reverse
-from .utils import is_truthy
-from .utils import get_user_auth
-
-from .requests import EmbeddedRequest
-
 
 CACHE = weakref.WeakKeyDictionary()
 
@@ -141,7 +136,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
 
         context.update({
             'enable_esi': (
-                is_truthy(self.request.query_params.get('esi', django_settings.ENABLE_ESI)) and
+                utils.is_truthy(self.request.query_params.get('esi', django_settings.ENABLE_ESI)) and
                 self.request.accepted_renderer.media_type in django_settings.ESI_MEDIA_TYPES
             ),
             'embed': embeds_partials,
@@ -228,7 +223,7 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
 
     def get_object(self):
         object = self.get_node(check_object_permissions=False)
-        auth = get_user_auth(self.request)
+        auth = utils.get_user_auth(self.request)
         obj = {'data': [
             pointer for pointer in
             object.nodes_pointer
@@ -240,7 +235,7 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
 
     def perform_destroy(self, instance):
         data = self.request.data['data']
-        auth = get_user_auth(self.request)
+        auth = utils.get_user_auth(self.request)
         current_pointers = {pointer.node._id: pointer for pointer in instance['data']}
         collection = instance['self']
         for val in data:
@@ -557,7 +552,6 @@ def root(request, format=None):
         value        description
         ==========================================
         box          Box.com
-        cloudfiles   Rackspace Cloud Files
         dataverse    Dataverse
         dropbox      Dropbox
         figshare     figshare
@@ -580,15 +574,18 @@ def root(request, format=None):
             'current_user': current_user,
         },
         'links': {
-            'nodes': absolute_reverse('nodes:node-list'),
-            'users': absolute_reverse('users:user-list'),
-            'collections': absolute_reverse('collections:collection-list'),
-            'registrations': absolute_reverse('registrations:registration-list'),
-            'institutions': absolute_reverse('institutions:institution-list'),
-            'licenses': absolute_reverse('licenses:license-list'),
-            'metaschemas': absolute_reverse('metaschemas:metaschema-list'),
+            'nodes': utils.absolute_reverse('nodes:node-list'),
+            'users': utils.absolute_reverse('users:user-list'),
+            'collections': utils.absolute_reverse('collections:collection-list'),
+            'registrations': utils.absolute_reverse('registrations:registration-list'),
+            'institutions': utils.absolute_reverse('institutions:institution-list'),
+            'licenses': utils.absolute_reverse('licenses:license-list'),
+            'metaschemas': utils.absolute_reverse('metaschemas:metaschema-list'),
         }
     }
+
+    if utils.has_admin_scope(request):
+        return_val['meta']['admin'] = True
 
     return Response(return_val)
 
