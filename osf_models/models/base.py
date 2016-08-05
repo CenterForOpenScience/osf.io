@@ -168,18 +168,22 @@ class BaseModel(models.Model):
 
 
 class ObjectIDMixin(models.Model):
-    guid = models.CharField(max_length=255,
+    _object_id = models.CharField(max_length=255,
                                   unique=True,
                                   db_index=True,
                                   default=get_object_id)
 
     @property
-    def _object_id(self):
-        return self.guid
+    def object_id(self):
+        return self._object_id
+
+    @property
+    def guid(self):
+        return self._object_id
 
     @property
     def _id(self):
-        return PKIDStr(self.guid, self.pk)
+        return PKIDStr(self._object_id, self.pk)
 
     _primary_key = _id
 
@@ -207,6 +211,16 @@ class ObjectIDMixin(models.Model):
             if isinstance(modm_value, datetime):
                 modm_value = pytz.utc.localize(modm_value)
             setattr(django_obj, field, modm_value)
+
+        try:
+            setattr(django_obj, '_object_id', modm_obj._id)
+        except AttributeError:
+            pass
+
+        try:
+            setattr(django_obj, '_object_id', modm_obj.guid)
+        except AttributeError:
+            pass
 
         return django_obj
 
