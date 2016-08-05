@@ -1,4 +1,5 @@
 from modularodm import Q
+from modularodm.exceptions import ValidationValueError, NoResultsFound, MultipleResultsFound
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 
@@ -14,7 +15,10 @@ from website.models import StoredFileNode
 
 class PrimaryFileRelationshipField(RelationshipField):
     def get_object(self, file_id):
-        return StoredFileNode.find_one(Q('_id', 'eq', file_id))
+        try:
+            return StoredFileNode.find_one(Q('_id', 'eq', file_id))
+        except (NoResultsFound, MultipleResultsFound):
+            return None
 
     def to_internal_value(self, data):
         file = self.get_object(data)
@@ -75,15 +79,24 @@ class PreprintSerializer(JSONAPISerializer):
         if node.is_preprint:
             raise Conflict()
         auth = get_user_auth(self.context['request'])
-        primary_file = validated_data.pop('primary_file')
-        if not primary_file:
-            raise exceptions.ValidationError()
         try:
-            node.set_preprint_file(validated_data.pop('primary_file'), auth)
-        except (PermissionsError, ValueError):
-            raise exceptions.NotAuthorized()
+            primary_file = validated_data.pop('primary_file')
+        except KeyError:
+            raise exceptions.ValidationError(detail='A primary file is required')
+        if not validated_data.get('preprint_subjects'):
+            raise exceptions.ValidationError(detail='Subjects are required')
+        try:
+            setattr(node, 'preprint_subjects', validated_data.pop('preprint_subjects'))
+        except ValidationValueError:
+            raise exceptions.ValidationError(detail='Not a valid subject')
+        try:
+            node.set_preprint_file(primary_file, auth)
+        except PermissionsError:
+            raise exceptions.PermissionDenied()
+        except (AttributeError, ValueError):
+            raise exceptions.ValidationError(detail='Not valid file')
         if node._id != validated_data.pop('_id'):
-            raise exceptions.ValidationError()
+            raise exceptions.ValidationError('Ids don\'t match')
         for key, value in validated_data.iteritems():
             setattr(node, key, value)
         node.save()
@@ -95,14 +108,18 @@ class PreprintSerializer(JSONAPISerializer):
         auth = get_user_auth(self.context['request'])
         if node._id != validated_data.pop('_id'):
             raise exceptions.ValidationError()
-        primary_file = validated_data.pop('primary_file')
+        primary_file = validated_data.get('primary_file')
         if primary_file:
             try:
                 node.set_preprint_file(primary_file, auth)
+                del validated_data['primary_file']
             except (PermissionsError, ValueError):
-                raise exceptions.NotAuthorized()
+                raise exceptions.PermissionDenied()
         for key, value in validated_data.iteritems():
-            setattr(node, key, value)
+            try:
+                setattr(node, key, value)
+            except ValidationValueError:
+                raise exceptions.ValidationError()
         node.save()
         return node
 

@@ -2,6 +2,7 @@ from nose.tools import *  # flake8: noqa
 
 from framework.auth.core import Auth, Q
 from api.base.settings.defaults import API_BASE
+from website.models import Node
 
 from tests.base import ApiTestCase
 from tests.factories import (

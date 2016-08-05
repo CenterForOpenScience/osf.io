@@ -90,21 +90,21 @@ class TestPreprintUpdate(ApiTestCase):
     def test_non_authorized_user(self):
         public_project_payload = build_preprint_payload(self.public_project._id, self.file_one_public_project._id)
         url = '/{}preprints/{}/'.format(API_BASE, self.public_project._id)
-        res = self.app.post_json_api(url, public_project_payload, auth=self.user_two.auth)
+        res = self.app.post_json_api(url, public_project_payload, auth=self.user_two.auth, expect_errors=True)
 
         assert_equal(res.status_code, 403)
 
     def test_file_is_not_in_node(self):
         wrong_project_payload = build_preprint_payload(self.public_project._id, self.file_one_private_project._id)
         url = '/{}preprints/{}/'.format(API_BASE, self.public_project._id)
-        res = self.app.post_json_api(url, wrong_project_payload, auth=self.user.auth)
+        res = self.app.post_json_api(url, wrong_project_payload, auth=self.user.auth, expect_errors=True)
 
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 400)
 
     def test_already_a_preprint(self):
         already_preprint_payload = build_preprint_payload(self.preprint._id, self.file_one_preprint._id)
         url = '/{}preprints/{}/'.format(API_BASE, self.preprint._id)
-        res = self.app.post_json_api(url, already_preprint_payload, auth=self.user.auth)
+        res = self.app.post_json_api(url, already_preprint_payload, auth=self.user.auth, expect_errors=True)
 
         assert_equal(res.status_code, 409)
 
@@ -113,41 +113,41 @@ class TestPreprintUpdate(ApiTestCase):
         del no_file_payload['data']['relationships']
 
         url = '/{}preprints/{}/'.format(API_BASE, self.public_project._id)
-        res = self.app.post_json_api(url, no_file_payload, auth=self.user.auth)
+        res = self.app.post_json_api(url, no_file_payload, auth=self.user.auth, expect_errors=True)
 
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 400)
 
     def test_invalid_primary_file(self):
         invalid_file_payload = build_preprint_payload(self.public_project._id, 'totallynotanid')
         url = '/{}preprints/{}/'.format(API_BASE, self.public_project._id)
-        res = self.app.post_json_api(url, invalid_file_payload, auth=self.user.auth)
+        res = self.app.post_json_api(url, invalid_file_payload, auth=self.user.auth, expect_errors=True)
 
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 400)
 
     def test_no_subjects_given(self):
         no_subjects_payload = build_preprint_payload(self.public_project._id, self.file_one_public_project._id)
         del no_subjects_payload['data']['attributes']['subjects']
 
         url = '/{}preprints/{}/'.format(API_BASE, self.public_project._id)
-        res = self.app.post_json_api(url, no_subjects_payload, auth=self.user.auth)
+        res = self.app.post_json_api(url, no_subjects_payload, auth=self.user.auth, expect_errors=True)
 
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 400)
 
     def test_invalid_subjects_given(self):
         wrong_subjects_payload = build_preprint_payload(self.public_project._id, self.file_one_public_project._id)
         wrong_subjects_payload['data']['attributes']['subjects'] = ['jobbers']
 
         url = '/{}preprints/{}/'.format(API_BASE, self.public_project._id)
-        res = self.app.post_json_api(url, wrong_subjects_payload, auth=self.user.auth)
+        res = self.app.post_json_api(url, wrong_subjects_payload, auth=self.user.auth, expect_errors=True)
 
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 400)
 
     def test_request_id_does_not_match_request_url_id(self):
         public_project_payload = build_preprint_payload(self.public_project._id, self.file_one_public_project._id)
         url = '/{}preprints/{}/'.format(API_BASE, self.private_project._id)
-        res = self.app.post_json_api(url, public_project_payload, auth=self.user.auth)
+        res = self.app.post_json_api(url, public_project_payload, auth=self.user.auth, expect_errors=True)
 
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 400)
 
     def test_file_not_osfstorage(self):
         github_file = self.file_one_public_project
@@ -155,6 +155,6 @@ class TestPreprintUpdate(ApiTestCase):
         github_file.save()
         public_project_payload = build_preprint_payload(self.public_project._id, github_file._id)
         url = '/{}preprints/{}/'.format(API_BASE, self.public_project._id)
-        res = self.app.post_json_api(url, public_project_payload, auth=self.user.auth)
+        res = self.app.post_json_api(url, public_project_payload, auth=self.user.auth, expect_errors=True)
 
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 400)
