@@ -1535,14 +1535,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         if not isinstance(preprint_file, StoredFileNode):
             preprint_file = preprint_file.stored_object
-            
+
         if preprint_file.node != self:
             raise ValueError
         # there is no preprint file yet! This is the first time!
         if not self.preprint_file:
             self.preprint_file = preprint_file
             self.preprint_created = datetime.datetime.utcnow()
-
             self.add_log(action=NodeLog.PREPRINT_INITIATED, params={}, auth=auth, save=False)
         else:
             # if there was one, check if it's a new file

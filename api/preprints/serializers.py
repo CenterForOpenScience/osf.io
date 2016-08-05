@@ -75,6 +75,9 @@ class PreprintSerializer(JSONAPISerializer):
         if node.is_preprint:
             raise Conflict()
         auth = get_user_auth(self.context['request'])
+        primary_file = validated_data.pop('primary_file')
+        if not primary_file:
+            raise exceptions.ValidationError()
         try:
             node.set_preprint_file(validated_data.pop('primary_file'), auth)
         except (PermissionsError, ValueError):
@@ -86,6 +89,22 @@ class PreprintSerializer(JSONAPISerializer):
         node.save()
         return node
 
+    def update(self, node, validated_data):
+        from website.models import Node
+        assert isinstance(node, Node), 'node must be a Node'
+        auth = get_user_auth(self.context['request'])
+        if node._id != validated_data.pop('_id'):
+            raise exceptions.ValidationError()
+        primary_file = validated_data.pop('primary_file')
+        if primary_file:
+            try:
+                node.set_preprint_file(primary_file, auth)
+            except (PermissionsError, ValueError):
+                raise exceptions.NotAuthorized()
+        for key, value in validated_data.iteritems():
+            setattr(node, key, value)
+        node.save()
+        return node
 
 class PreprintDetailSerializer(PreprintSerializer):
     id = IDField(source='_id', required=True)
