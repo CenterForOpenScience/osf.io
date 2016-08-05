@@ -44,7 +44,7 @@ class MeetingForm(forms.Form):
     )
     homepage_link_text = forms.CharField(
         label='Homepage link text (Default: "Conference homepage")',
-        widget = forms.TextInput(attrs={'size': '60'}),
+        widget=forms.TextInput(attrs={'size': '60'}),
         required=False,
     )
     location = forms.CharField(
