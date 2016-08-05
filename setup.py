@@ -22,8 +22,7 @@ setup(
         'furl>=0.5.1',
         'bleach>=1.4.1',
         'pytz>=2014.9',
-        'django-dirtyfields>=1.1.0.dev0',
+        'django-dirtyfields>=1.1',
     ],
-    dependency_links=['http://github.com/CenterForOpenScience/django-dirtyfields/tarball/add_option_to_deactivate_m2m_checks#egg=django-dirtyfields-1.1.0.dev0'],
     zip_safe=False
 )

@@ -69,8 +69,6 @@ class OSFUserManager(BaseUserManager):
 
 
 class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonModelMixin):
-    ENABLE_M2M_CHECK = False  # Disable m2m field checking in django-dirtyfields
-
     USERNAME_FIELD = 'username'
 
     # Node fields that trigger an update to the search engine on save
