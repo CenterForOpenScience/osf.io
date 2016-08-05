@@ -9,17 +9,26 @@ from django.contrib.auth.models import PermissionsMixin
 from django.contrib.postgres import fields
 from django.core.validators import validate_email
 from django.db import models
+from modularodm.exceptions import NoResultsFound
+
+# OSF imports
+from framework.auth.exceptions import (
+    ChangePasswordError,
+    ExpiredTokenError,
+    InvalidTokenError,
+    MergeConfirmedRequiredError
+)
+from framework.sentry import log_exception
+from framework.auth import signals
+from website import filters
+
 from osf_models.exceptions import reraise_django_validation_errors
 from osf_models.models.base import BaseModel, GuidMixin
 from osf_models.models.mixins import AddonModelMixin
-from osf_models.models.tag import Tag
 from osf_models.utils import security
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf_models.utils.names import impute_names
-
-from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError, InvalidTokenError)
-from framework.sentry import log_exception
-from website import filters
+from osf_models.modm_compat import Q
 
 logger = logging.getLogger(__name__)
 
@@ -298,9 +307,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
-
-    def __unicode__(self):
-        return u'{}: {} {}'.format(self.username, self.given_name, self.family_name)
 
     @property
     def url(self):
@@ -588,6 +594,77 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         base = config.domain if external else '/'
         token = self.get_confirmation_token(email, force=force)
         return '{0}confirm/{1}/{2}/'.format(base, self._id, token)
+
+    def register(self, username, password=None):
+        """Registers the user.
+        """
+        self.username = username
+        if password:
+            self.set_password(password)
+        if username not in self.emails:
+            self.emails.append(username)
+        self.is_registered = True
+        self.is_claimed = True
+        self.date_confirmed = dt.datetime.utcnow()
+        self.update_search()
+        self.update_search_nodes()
+
+        # Emit signal that a user has confirmed
+        signals.user_confirmed.send(self)
+
+        return self
+
+    def confirm_email(self, token, merge=False):
+        """Confirm the email address associated with the token"""
+        email = self.get_unconfirmed_email_for_token(token)
+
+        # If this email is confirmed on another account, abort
+        try:
+            user_to_merge = OSFUser.find_one(Q('emails', 'contains', [email]))
+        except NoResultsFound:
+            user_to_merge = None
+
+        # TODO: Implement merging
+        if user_to_merge and merge:
+            self.merge_user(user_to_merge)
+        elif user_to_merge:
+            raise MergeConfirmedRequiredError(
+                'Merge requires confirmation',
+                user=self,
+                user_to_merge=user_to_merge,
+            )
+
+        # If another user has this email as its username, get it
+        try:
+            unregistered_user = OSFUser.find_one(Q('username', 'eq', email) &
+                                              Q('_id', 'ne', self._id))
+        except NoResultsFound:
+            unregistered_user = None
+
+        if unregistered_user:
+            self.merge_user(unregistered_user)
+            self.save()
+            unregistered_user.username = None
+
+        if email not in self.emails:
+            self.emails.append(email)
+
+        # Complete registration if primary email
+        if email.lower() == self.username.lower():
+            self.register(self.username)
+            self.date_confirmed = dt.datetime.utcnow()
+        # Revoke token
+        del self.email_verifications[token]
+
+        # TODO: We can't assume that all unclaimed records are now claimed.
+        # Clear unclaimed records, so user's name shows up correctly on
+        # all projects
+        self.unclaimed_records = {}
+        self.save()
+
+        self.update_search_nodes()
+
+        return True
 
     def _set_email_token_expiration(self, token, expiration=None):
         """Set the expiration date for given email token.
