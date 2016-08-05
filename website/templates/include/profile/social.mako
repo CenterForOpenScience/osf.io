@@ -1,6 +1,8 @@
 <script id="profileSocial" type="text/html">
 
     <link rel="stylesheet" href='/static/css/pages/profile-page.css'>
+    <link rel="stylesheet" href="/static/vendor/academicons-1.7.0/css/academicons.css"/>
+
 
     <div data-bind="if: mode() === 'edit'">
 
@@ -149,9 +151,10 @@
 
     <div data-bind="if: mode() === 'view'">
 
-        <table class="table" data-bind="if: hasValues()">
+        <table class="table table-links" data-bind="if: hasValues()">
             <tbody>
                 <tr data-bind="if: hasProfileWebsites()">
+                    <td><i class="fa fa-globe fa-2x"></i></td>
                     <td data-bind="visible: profileWebsites().length > 1">Personal websites</td>
                     <td data-bind="visible: profileWebsites().length === 1">Personal website</td>
                     <td data-bind="foreach: profileWebsites"><a data-bind="attr: {href: $data}, text: $data"></a><br></td>
@@ -160,8 +163,9 @@
 
             <tbody data-bind="foreach: values">
                 <tr data-bind="if: value">
-                    <td><span data-bind="text: label"></span></td>
-                    <td><a target="_blank" data-bind="attr: {href: value}, text: text"></a></td>
+                    <td><a target="_blank" data-bind="attr: {href: value}"><span data-bind="html: iconName(label)"></span></a></td>
+                    <td class="link-title"><span data-bind="text: label"></span></td>
+                    <td class="link-title"><a target="_blank" data-bind="attr: {href: value}, text: text"></a></td>
                 </tr>
             </tbody>
         </table>
@@ -175,5 +179,46 @@
         </div>
 
     </div>
+
+</script>
+<script>
+
+iconName = function(name){
+    var icon = "";
+
+    switch(name){
+        case "ORCID":
+            icon += "<i class='ai ai-orcid-square ai-2x' />";
+            break;
+        case "ResearcherID":
+            icon += "<img src='http://tguillerme.github.io/images/logo-RID.png' class='icon-image'>";
+            break;
+        case "Twitter":
+            icon += "<i class='fa fa-twitter-square fa-2x' />";
+            break;
+        case "GitHub":
+            icon += "<i class='fa fa-github-square fa-2x' />";
+            break;
+        case "LinkedIn":
+            icon += "<i class='fa fa-linkedin-square fa-2x' />";
+            break;
+        case "ImpactStory":
+            icon += "<i class='ai ai-impactstory-square ai-2x' />";
+            break;
+        case "Google Scholar":
+            icon += "<i class='ai ai-google-scholar-square ai-2x' />";
+            break;
+        case "ResearchGate":
+            icon += "<i class='ai ai-researchgate-square ai-2x' />";
+            break;
+        case "Academia":
+            icon += "<i class='ai ai-academia-square ai-2x' />";
+            break;
+        case "Baidu Scholar":
+            icon += "<img src='http://www.baidu.com/favicon.ico' class='icon-image'>";
+            break;
+    }
+    return icon;
+}
 
 </script>
