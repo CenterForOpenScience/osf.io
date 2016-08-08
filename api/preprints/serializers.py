@@ -82,16 +82,16 @@ class PreprintSerializer(JSONAPISerializer):
 
         primary_file = validated_data.pop('primary_file', None)
         if not primary_file:
-            raise exceptions.ValidationError(detail='A primary file is required')
+            raise exceptions.ValidationError(detail='A primary file is required to create a preprint.')
 
         preprint_subjects = validated_data.get('preprint_subjects', None)
         if not preprint_subjects:
-            raise exceptions.ValidationError(detail='Subjects are required')
+            raise exceptions.ValidationError(detail='Subjects are required to create a preprint.')
 
         try:
             node.set_preprint_file(primary_file, auth, save=False)
         except PermissionsError:
-            raise exceptions.PermissionDenied()
+            raise exceptions.PermissionDenied('Not authorized to create a preprint from this node.')
         except ValueError as e:
             raise exceptions.ValidationError(detail=e.message)
 
@@ -109,22 +109,22 @@ class PreprintSerializer(JSONAPISerializer):
         from website.models import Node
         assert isinstance(node, Node), 'You must specify a valid node to be updated.'
         auth = get_user_auth(self.context['request'])
-        if node._id != validated_data.pop('_id'):
-            raise exceptions.ValidationError('The node id in the URL does not match the id in the request body.')
-        primary_file = validated_data.get('primary_file')
+        primary_file = validated_data.pop('primary_file', None)
         if primary_file:
             try:
                 node.set_preprint_file(primary_file, auth, save=False)
-                del validated_data['primary_file']
-            except (PermissionsError, ValueError):
-                raise exceptions.PermissionDenied()
+            except PermissionsError:
+                raise exceptions.PermissionDenied('Not authorized to update this preprint.')
+            except ValueError as e:
+                raise exceptions.ValidationError(detail=e.message)
         for key, value in validated_data.iteritems():
-            try:
-                setattr(node, key, value)
-            except ValidationValueError:
-                raise exceptions.ValidationError()
-        node.save()
+            setattr(node, key, value)
+        try:
+            node.save()
+        except ValidationValueError as e:
+            raise exceptions.ValidationError(detail=e.message)
         return node
+
 
 class PreprintDetailSerializer(PreprintSerializer):
     id = IDField(source='_id', required=True)
