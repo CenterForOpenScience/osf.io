@@ -38,7 +38,7 @@ class PreprintSerializer(JSONAPISerializer):
     ])
 
     title = ser.CharField(required=False)
-    subjects = JSONAPIListField(required=False, source='preprint_subjects')
+    subjects = JSONAPIListField(required=False, source='get_preprint_subjects')
     date_created = ser.DateTimeField(read_only=True, source='preprint_created')
     date_modified = ser.DateTimeField(read_only=True)
     id = IDField(source='_id', required=False)
