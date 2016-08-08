@@ -1,5 +1,6 @@
 import urlparse
 import logging
+import datetime as dt
 
 from django.apps import apps
 from django.core.exceptions import ValidationError
@@ -65,10 +66,10 @@ class AbstractNode(TypedModel, Taggable, Loggable, GuidMixin, BaseModel):
                                 on_delete=models.SET_NULL,
                                 null=True, blank=True)
     # TODO: Uncomment auto_* attributes after migration is complete
-    date_created = models.DateTimeField()  # auto_now_add=True)
+    date_created = models.DateTimeField(default=dt.datetime.utcnow)  # auto_now_add=True)
     date_modified = models.DateTimeField(db_index=True, null=True, blank=True)  # auto_now=True)
     deleted_date = models.DateTimeField(null=True, blank=True)
-    description = models.TextField()
+    description = models.TextField(blank=True, default='')
     file_guid_to_share_uuids = DateTimeAwareJSONField(default={}, blank=True)
     forked_date = models.DateTimeField(db_index=True, null=True, blank=True)
     forked_from = models.ForeignKey('self',
