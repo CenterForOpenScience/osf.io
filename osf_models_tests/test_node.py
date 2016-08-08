@@ -6,7 +6,9 @@ import pytest
 
 from osf_models.models import Node, Tag, NodeLog
 from osf_models.utils.auth import Auth
+
 from .factories import NodeFactory, UserFactory
+from .utils import capture_signals
 
 
 @pytest.fixture()
@@ -114,3 +116,29 @@ class TestSearch:
     def test_update_search(self, mock_update_node, node):
         node.update_search()
         assert mock_update_node.called
+
+
+# Copied from tests/test_models.py
+@pytest.mark.django_db
+class TestAddContributor:
+
+    def test_add_contributor(self):
+        # A user is added as a contributor
+        user2 = UserFactory()
+        self.project.add_contributor(contributor=user2, auth=self.auth)
+        self.project.save()
+        assert user2 in self.project.contributors
+        assert self.project.logs[-1].action == 'contributor_added'
+
+    def test_add_contributor_sends_contributor_added_signal(self):
+        user = UserFactory()
+        contributors = [{
+            'user': user,
+            'visible': True,
+            'permissions': ['read', 'write']
+        }]
+        with capture_signals() as mock_signals:
+            self.project.add_contributors(contributors=contributors, auth=self.auth)
+            self.project.save()
+            assert user in self.project.contributors
+            assert mock_signals.signals_sent() in set([contributor_added])
