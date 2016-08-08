@@ -248,7 +248,7 @@ class PreprintFactory(AbstractNodeFactory):
         file.save()
 
         project.set_preprint_file(file, auth=Auth(project.creator))
-        project.preprint_subjects = [str(Subject.find()[0]._id)]
+        project.preprint_subjects = [Subject.find()[0]._id]
         project.save()
 
         return project
