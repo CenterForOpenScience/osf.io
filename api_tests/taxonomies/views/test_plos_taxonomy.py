@@ -4,15 +4,12 @@ import functools
 from modularodm import Q
 from tests.base import ApiTestCase
 from website.project.taxonomies import Subject
-from website.project.taxonomies import ensure_taxonomies
 from api.base.settings.defaults import API_BASE
 
-ensure_taxonomies = functools.partial(ensure_taxonomies)
 
 class TestPlosTaxonomy(ApiTestCase):
     def setUp(self):
         super(TestPlosTaxonomy, self).setUp()
-        ensure_taxonomies()
         self.subjects = Subject.find(
             Q('type', 'eq', 'plos')
         )

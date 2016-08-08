@@ -18,7 +18,6 @@ from website.project.model import (
     NodeStateError
 )
 
-# ensure_taxonomies = functools.partial(ensure_taxonomies, warn=False)
 
 from tests.base import OsfTestCase
 from tests.factories import (
@@ -71,8 +70,6 @@ class TestSetPreprintFile(OsfTestCase):
             name='pandapanda.txt',
             materialized_path='/pandapanda.txt')
         self.file_two.save()
-
-        # TODO - call ensure_taxonomies here?
 
         self.project.add_contributor(self.read_write_user, permissions=[permissions.WRITE])
         self.project.save()
