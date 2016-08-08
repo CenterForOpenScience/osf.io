@@ -86,11 +86,11 @@
 
 @media (min-width: 768px) {
     .osf-project-navbar li>a {
-        padding-left: 7px;
-        padding-right: 7px;
+        padding-left: 5px;
+        padding-right: 5px;
     }
     .osf-project-navbar a.project-title {
-        max-width: 190px;
+        max-width: 170px;
     }
 }
 

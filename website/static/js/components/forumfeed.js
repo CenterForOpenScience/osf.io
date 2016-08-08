@@ -18,6 +18,9 @@ var ForumFeed = {
         self.node = required(options, 'node');
         self.user = required(options, 'user');
         self.discourse_url = required(options, 'discourse_url');
+        if (self.discourse_url.endsWith('/')) {
+            self.discourse_url = self.discourse_url.slice(0, -1);
+        }
         self.user_apikey = required(options, 'discourse_user_apikey');
         var requestUrl = self.discourse_url + '/forum/' + self.node.id + '/latest.json';
         var data = { api_key: self.user_apikey, api_username: self.user.id };
