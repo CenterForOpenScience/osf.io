@@ -6,7 +6,6 @@ import functools
 from datetime import datetime
 
 from dateutil import parser
-from pymongo.errors import ConnectionFailure
 
 from framework.mongo import database
 from framework.postcommit_tasks.handlers import run_postcommit
@@ -18,18 +17,21 @@ from flask import request
 
 logger = logging.getLogger(__name__)
 
-try:
+collection = None
+if database._get_current_object() is not None:
     collection = database['pagecounters']
-except ConnectionFailure:
-    if settings.DEBUG_MODE:
-        logger.warn('Cannot connect to database. Analytics will be unavailable')
-    else:
-        raise
+elif database._get_current_object() is None and settings.DEBUG_MODE:
+    logger.warn('Cannot connect to database. Analytics will be unavailable')
+else:
+    raise RuntimeError('Cannot connect to database')
 
 @run_postcommit(once_per_request=False, celery=True)
 @app.task(max_retries=5, default_retry_delay=60)
 def increment_user_activity_counters(user_id, action, date_string, db=None):
     db = db or database  # default to local proxy
+    if not db and settings.DEBUG_MODE:
+        logger.warn('Cannot connect to database. Analytics will be unavailable')
+        return
     collection = database['useractivitycounters']
     date = parser.parse(date_string).strftime('%Y/%m/%d')
     query = {
@@ -51,6 +53,9 @@ def increment_user_activity_counters(user_id, action, date_string, db=None):
 
 def get_total_activity_count(user_id, db=None):
     db = db or database
+    if not db and settings.DEBUG_MODE:
+        logger.warn('Cannot connect to database. Analytics will be unavailable')
+        return
     collection = database['useractivitycounters']
     result = collection.find_one(
         {'_id': user_id}, {'total': 1}
@@ -93,6 +98,9 @@ def update_counter(page, db=None):
     :param db: MongoDB database or `None`
     """
     db = db or database
+    if not db and settings.DEBUG_MODE:
+        logger.warn('Cannot connect to database. Analytics will be unavailable')
+        return
     collection = db['pagecounters']
 
     date = datetime.utcnow()
@@ -152,6 +160,9 @@ def update_counters(rex, db=None):
 
 def get_basic_counters(page, db=None):
     db = db or database
+    if not db and settings.DEBUG_MODE:
+        logger.warn('Cannot connect to database. Analytics will be unavailable')
+        return
     collection = db['pagecounters']
     unique = 0
     total = 0
