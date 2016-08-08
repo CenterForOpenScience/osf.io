@@ -227,7 +227,7 @@ class AbstractNode(TypedModel, Taggable, Loggable, GuidMixin, BaseModel):
     # visible_contributor_ids was moved to this property
     @property
     def visible_contributor_ids(self):
-        return self.contributor_set.filter(visible=True)
+        return self.contributor_set.filter(visible=True).values_list('user___guid__guid', flat=True)
 
     @property
     def system_tags(self):
