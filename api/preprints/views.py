@@ -11,7 +11,7 @@ from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 from api.base.filters import ODMFilterMixin
 from api.preprints.parsers import PreprintsJSONAPIParser, PreprintsJSONAPIParserForRegularJSON
-from api.preprints.serializers import PreprintSerializer, PreprintDetailSerializer, PreprintAuthorSerializer
+from api.preprints.serializers import PreprintSerializer, PreprintDetailSerializer, PreprintAuthorSerializer, PreprintDetailRetrieveSerializer
 from api.nodes.views import NodeMixin, WaterButlerMixin, NodeContributorsList
 from api.base.utils import get_object_or_error
 from rest_framework.exceptions import NotFound
@@ -79,6 +79,12 @@ class PreprintDetail(JSONAPIBaseView, generics.CreateAPIView, generics.RetrieveU
     serializer_class = PreprintDetailSerializer
     view_category = 'preprints'
     view_name = 'preprint-detail'
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return PreprintDetailRetrieveSerializer
+        else:
+            return PreprintDetailSerializer
 
     def get_object(self):
         return self.get_node()
