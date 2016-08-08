@@ -14,5 +14,8 @@ class TaxonomySerializer(JSONAPISerializer):
     parent_ids = ser.ListField()
     id = ser.CharField(max_length=200)
 
+    def get_absolute_url(self, obj):
+        return obj.get_absolute_url()
+
     class Meta:
         type_ = 'taxonomies'
