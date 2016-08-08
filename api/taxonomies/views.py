@@ -27,6 +27,12 @@ class PlosTaxonomy(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     * `parent_ids` - ids of parent subjects
     * `type` - in this case the string `'plos'`
 
+     ##Query Params
+
+    + `field['id']=<subject_id>` -- Finds one subject with the given id
+    + `field['parent_ids']=<subject_id>` -- Find subjects that have a parent with the id passed
+    + `field['text']=<Str>` -- Find subjects with texts that match the passed string
+
     **Note:** Subjects are unique (e.g. there exists only one object in this list with `text='Biology and life sciences'`),
     but as per the structure of the PLOS taxonomy, subjects can exist in separate paths down the taxonomy and as such
     can have multiple parent subjects.
