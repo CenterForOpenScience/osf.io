@@ -17,8 +17,7 @@ from django.core.validators import URLValidator
 from modularodm import Q
 from modularodm import fields
 from modularodm.validators import MaxLengthValidator
-from modularodm.exceptions import NoResultsFound
-from modularodm.exceptions import ValidationValueError
+from modularodm.exceptions import KeyExistsException, NoResultsFound, ValidationValueError
 
 from framework import status
 from framework.mongo import ObjectId
@@ -142,24 +141,21 @@ class MetaSchema(StoredObject):
             raise ValidationValueError(e.message)
         return
 
+
 def ensure_schema(schema, name, version=1):
-    schema_obj = None
     try:
+        MetaSchema(
+            name=name,
+            schema_version=version,
+            schema=schema
+        ).save()
+    except KeyExistsException:
         schema_obj = MetaSchema.find_one(
             Q('name', 'eq', name) &
             Q('schema_version', 'eq', version)
         )
-    except NoResultsFound:
-        meta_schema = {
-            'name': name,
-            'schema_version': version,
-            'schema': schema,
-        }
-        schema_obj = MetaSchema(**meta_schema)
-    else:
         schema_obj.schema = schema
-    schema_obj.save()
-    return schema_obj
+        schema_obj.save()
 
 
 def ensure_schemas():
