@@ -35,6 +35,7 @@ from website.notifications.model import NotificationDigest
 from website.notifications.model import NotificationSubscription
 from website.archiver.model import ArchiveJob, ArchiveTarget
 from website.project.licenses import NodeLicense, NodeLicenseRecord
+from website.project.taxonomies import Subject
 
 # All models
 MODELS = (
@@ -49,7 +50,8 @@ MODELS = (
     ArchiveJob, ArchiveTarget, BlacklistGuid,
     QueuedMail, AlternativeCitation,
     DraftRegistration, DraftRegistrationApproval, DraftRegistrationLog,
-    NodeLicense, NodeLicenseRecord
+    NodeLicense, NodeLicenseRecord,
+    Subject
 )
 
 GUID_MODELS = (User, Node, Comment, MetaData)
