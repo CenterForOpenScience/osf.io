@@ -763,7 +763,7 @@ class NodeUpdateError(Exception):
 def validate_subjects(value):
     subject = Subject.load(value)
     if not subject:
-        return False
+        raise ValidationValueError('Subject with id <{}> could nor be found.'.format(value))
     return True
 
 

@@ -195,7 +195,7 @@ class TestPreprintUpdate(ApiTestCase):
         assert_equal(res.status_code, 200)
 
         self.preprint.reload()
-        assert_equal(self.preprint.preprint_subjects[0][1], self.subject.text)
+        assert_equal(self.preprint.preprint_subjects[0], self.subject._id)
 
     def test_update_invalid_subjects(self):
         preprint_subjects = self.preprint.preprint_subjects
