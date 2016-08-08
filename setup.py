@@ -23,6 +23,7 @@ setup(
         'bleach>=1.4.1',
         'pytz>=2014.9',
         'django-dirtyfields>=1.1',
+        'ujson>=1.35',
     ],
     zip_safe=False
 )
