@@ -2,14 +2,13 @@
 <%def name="title()">Reset Password</%def>
 <%def name="content()">
 <h1 class="page-header text-center">Reset Password</h1>
-
 <div>
     <div class="row">
         <form class="form col-md-8 col-md-offset-2 m-t-xl"
                 id="resetPasswordForm"
                 name="resetPasswordForm"
                 method="POST"
-                action="/resetpassword/${verification_key}/"
+                action="/resetpassword/${username}/${verification_key}/"
                 >
 
             <div class="help-block" >

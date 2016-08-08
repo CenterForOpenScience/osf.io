@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
+
+from copy import deepcopy
 import datetime as dt
 import itertools
 import logging
 import re
 import urlparse
-from copy import deepcopy
 
 import bson
 import pytz
@@ -42,17 +43,19 @@ name_formatters = {
 logger = logging.getLogger(__name__)
 
 
-# Hide implementation of token generation
-def generate_confirm_token():
-    return security.random_string(30)
-
-
-def generate_claim_token():
-    return security.random_string(30)
-
-
+# verification key v1
 def generate_verification_key():
     return security.random_string(30)
+
+
+# verification key v2, expires in 30 minutes
+def generate_verification_key_v2():
+    token = security.random_string(30)
+    expires = dt.datetime.utcnow() + dt.timedelta(minutes=settings.VERIFICATION_KEY_V2_EXPIRATION)
+    return {
+        'token': token,
+        'expires': expires,
+    }
 
 
 def validate_history_item(item):
@@ -99,6 +102,32 @@ def validate_social(value):
     validate_profile_websites(value.get('profileWebsites'))
 
 
+def get_user_with_verification_key_v2(username=None, token=None):
+    """
+    Check if the request with `user_name` and `token` is valid and has not expired.
+    If so, return the user object. Otherwise return None.
+    If user does not have verification_key_v2, return None.
+
+    :param username: user's username
+    :param token: one-time verification token
+    :rtype: User or None
+    """
+
+    if not username or not token:
+        return None
+    user_obj = get_user(username=username)
+    if user_obj:
+        try:
+            if user_obj.verification_key_v2:
+                if user_obj.verification_key_v2['token'] == token:
+                    if user_obj.verification_key_v2['expires'] > dt.datetime.utcnow():
+                        return user_obj
+        except AttributeError:
+            # If user does not have `verification_key_v2`, for example an old link with `verification_key`
+            return None
+    return None
+
+
 # TODO - rename to _get_current_user_from_session /HRYBACKI
 def _get_current_user():
     uid = session._get_current_object() and session.data.get('auth_user_id')
@@ -106,18 +135,32 @@ def _get_current_user():
 
 
 # TODO: This should be a class method of User?
-def get_user(email=None, password=None, verification_key=None):
-    """Get an instance of User matching the provided params.
+def get_user(username=None, token=None, email=None, password=None):
+    """
+    Get an instance of User matching the provided parameters. There are four valid combinations:
+        1. email
+        2. email and password
+        3. username, when using verification_key_v2
+        4. token, when using just the verification_key
 
+    :param username: username
+    :param token: the verification token
+    :param email: email
+    :param password: password
     :return: The instance of User requested
     :rtype: User or None
     """
+
     # tag: database
     if password and not email:
-        raise AssertionError('If a password is provided, an email must also '
-                             'be provided.')
+        raise AssertionError('If a password is provided, an email must also be provided.')
 
     query_list = []
+
+    if username:
+        query_list.append(Q('username', 'eq', username))
+    if token:
+        query_list.append(Q('verification_key', 'eq', token))
     if email:
         email = email.strip().lower()
         query_list.append(Q('emails', 'eq', email) | Q('username', 'eq', email))
@@ -134,8 +177,7 @@ def get_user(email=None, password=None, verification_key=None):
         if user and not user.check_password(password):
             return False
         return user
-    if verification_key:
-        query_list.append(Q('verification_key', 'eq', verification_key))
+
     try:
         query = query_list[0]
         for query_part in query_list[1:]:
@@ -265,13 +307,14 @@ class User(GuidStoredObject, AddonModelMixin):
     is_invited = fields.BooleanField(default=False, index=True)
 
     # Per-project unclaimed user data:
-    # TODO: add validation
+    # TODO: add a validation function that ensures that all required keys are present in the input values for that field
     unclaimed_records = fields.DictionaryField(required=False)
     # Format: {
     #   <project_id>: {
     #       'name': <name that referrer provided>,
     #       'referrer_id': <user ID of referrer>,
-    #       'token': <token used for verification urls>,
+    #       'token': <verification key v1, used for verification urls>,
+    #       'expires': <expiration time for this record>,
     #       'email': <email the referrer provided or None>,
     #       'claimer_email': <email the claimer entered or None>,
     #       'last_sent': <timestamp of last email sent to referrer or None>
@@ -280,19 +323,26 @@ class User(GuidStoredObject, AddonModelMixin):
     # }
 
     # Time of last sent notification email to newly added contributors
+    contributor_added_email_records = fields.DictionaryField(default=dict)
     # Format : {
     #   <project_id>: {
     #       'last_sent': time.time()
     #   }
     #   ...
     # }
-    contributor_added_email_records = fields.DictionaryField(default=dict)
 
     # The user into which this account was merged
     merged_by = fields.ForeignField('user', default=None, index=True)
 
-    # verification key used for resetting password
+    # verification key v1: only the token, no expiration time
     verification_key = fields.StringField()
+
+    # verification key v2: token, and expiration time
+    verification_key_v2 = fields.DictionaryField(default=dict)
+    # Format: {
+    #   'token': <the verification key string>
+    #   'expires': <the expiration time for the key>
+    # }
 
     email_last_sent = fields.DateTimeField()
 
@@ -306,8 +356,11 @@ class User(GuidStoredObject, AddonModelMixin):
     #   see also ``unconfirmed_emails``
     email_verifications = fields.DictionaryField(default=dict)
     # Format: {
-    #   <token> : {'email': <email address>,
-    #              'expiration': <datetime>}
+    #   <token> : {
+    #       'email': <email address>,
+    #       'expiration': <datetime>,
+    #       'confirmed': whether user is confirmed or not
+    #   }
     # }
 
     # TODO remove this field once migration (scripts/migration/migrate_mailing_lists_to_mailchimp_fields.py)
@@ -594,8 +647,9 @@ class User(GuidStoredObject, AddonModelMixin):
         :returns: The added record
         """
         if not node.can_edit(user=referrer):
-            raise PermissionsError('Referrer does not have permission to add a contributor '
-                'to project {0}'.format(node._primary_key))
+            raise PermissionsError(
+                'Referrer does not have permission to add a contributor to project {0}'.format(node._primary_key)
+            )
         project_id = node._primary_key
         referrer_id = referrer._primary_key
         if email:
@@ -605,7 +659,8 @@ class User(GuidStoredObject, AddonModelMixin):
         record = {
             'name': given_name,
             'referrer_id': referrer_id,
-            'token': generate_confirm_token(),
+            'token': generate_verification_key(),
+            'expires': dt.datetime.utcnow() + dt.timedelta(days=settings.CLAIM_TOKEN_EXPIRATION),
             'email': clean_email
         }
         self.unclaimed_records[project_id] = record
@@ -637,32 +692,51 @@ class User(GuidStoredObject, AddonModelMixin):
                 self.is_confirmed)
 
     def get_unclaimed_record(self, project_id):
-        """Get an unclaimed record for a given project_id.
+        """
+        Get an unclaimed record for a given project_id. Return the one record if found. Otherwise, raise ValueError.
 
+        :param project_id, the project node id
         :raises: ValueError if there is no record for the given project.
         """
+
         try:
             return self.unclaimed_records[project_id]
-        except KeyError:  # reraise as ValueError
+        except KeyError:  # re-raise as ValueError
             raise ValueError('No unclaimed record for user {self._id} on node {project_id}'
-                                .format(**locals()))
+                             .format(**locals()))
+
+    def verify_claim_token(self, token, project_id):
+        """
+        Verify the claim token for this user for a given node which she/he was added as a unregistered contributor for.
+        Return `True` if record found, token valid and not expired. Otherwise return False.
+
+        :param token: the claim token
+        :param project_id: the project node id
+        """
+
+        try:
+            record = self.get_unclaimed_record(project_id)
+        except ValueError:  # No unclaimed record for given pid
+            return False
+        return record['token'] == token and record['expires'] > dt.datetime.utcnow()
 
     def get_claim_url(self, project_id, external=False):
-        """Return the URL that an unclaimed user should use to claim their
-        account. Return ``None`` if there is no unclaimed_record for the given
-        project ID.
-
-        :param project_id: The project ID for the unclaimed record
-        :raises: ValueError if a record doesn't exist for the given project ID
-        :rtype: dict
-        :returns: The unclaimed record for the project
         """
+        Return the URL that an unclaimed user should use to claim their account.
+        Raise `ValueError` if there is no unclaimed_record for the given project ID.
+
+        :param project_id: the project ID for the unclaimed record
+        :param external:
+        :rtype: string
+        :returns: the claim url
+        :raises: ValueError if there is no record for the given project.
+        """
+        unclaimed_record = self.get_unclaimed_record(project_id)
         uid = self._primary_key
         base_url = settings.DOMAIN if external else '/'
-        unclaimed_record = self.get_unclaimed_record(project_id)
         token = unclaimed_record['token']
-        return '{base_url}user/{uid}/{project_id}/claim/?token={token}'\
-                    .format(**locals())
+        return '{base_url}user/{uid}/{project_id}/claim/?token={token}'.\
+            format(**locals())
 
     def set_password(self, raw_password, notify=True):
         """Set the password for this user to the hash of ``raw_password``.
@@ -773,7 +847,7 @@ class User(GuidStoredObject, AddonModelMixin):
         if email in self.unconfirmed_emails:
             self.remove_unconfirmed_email(email)
 
-        token = generate_confirm_token()
+        token = generate_verification_key()
 
         # handle when email_verifications is None
         if not self.email_verifications:
@@ -815,7 +889,7 @@ class User(GuidStoredObject, AddonModelMixin):
                         removed_email=email,
                         security_addr='primary email address ({})'.format(self.username))
 
-    def get_confirmation_token(self, email, force=False):
+    def get_confirmation_token(self, email, force=False, renew=False):
         """Return the confirmation token for a given email.
 
         :param str email: Email to get the token for.
@@ -831,6 +905,10 @@ class User(GuidStoredObject, AddonModelMixin):
                 # Old records will not have an expiration key. If it's missing,
                 # assume the token is expired
                 expiration = info.get('expiration')
+                if renew:
+                    new_token = self.add_unconfirmed_email(email)
+                    self.save()
+                    return new_token
                 if not expiration or (expiration and expiration < dt.datetime.utcnow()):
                     if not force:
                         raise ExpiredTokenError('Token for email "{0}" is expired'.format(email))
@@ -841,14 +919,14 @@ class User(GuidStoredObject, AddonModelMixin):
                 return token
         raise KeyError('No confirmation token for email "{0}"'.format(email))
 
-    def get_confirmation_url(self, email, external=True, force=False):
+    def get_confirmation_url(self, email, external=True, force=False, renew=False):
         """Return the confirmation url for a given email.
 
         :raises: ExpiredTokenError if trying to access a token that is expired.
         :raises: KeyError if there is no token for the email.
         """
         base = settings.DOMAIN if external else '/'
-        token = self.get_confirmation_token(email, force=force)
+        token = self.get_confirmation_token(email, force=force, renew=renew)
         return '{0}confirm/{1}/{2}/'.format(base, self._primary_key, token)
 
     def get_unconfirmed_email_for_token(self, token):
@@ -882,16 +960,6 @@ class User(GuidStoredObject, AddonModelMixin):
             if token == given_token:
                 email_verifications.pop(token)
         self.email_verifications = email_verifications
-
-    def verify_claim_token(self, token, project_id):
-        """Return whether or not a claim token is valid for this user for
-        a given node which they were added as a unregistered contributor for.
-        """
-        try:
-            record = self.get_unclaimed_record(project_id)
-        except ValueError:  # No unclaimed record for given pid
-            return False
-        return record['token'] == token
 
     def confirm_email(self, token, merge=False):
         """Confirm the email address associated with the token"""
