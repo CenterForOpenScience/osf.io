@@ -258,11 +258,19 @@ var SignUpViewModel = oop.extend(BaseViewModel, {
 
     submitError: function(xhr) {
         var self = this;
-        self.changeMessage(
-            xhr.responseJSON.message_long,
-            'text-danger p-xs',
-            5000
-        );
+        if (xhr.status === 400) {
+            self.changeMessage(
+                'Your username cannot be the same as your password.',
+                'text-danger p-xs',
+                5000
+            );
+        } else {
+            self.changeMessage(
+                xhr.responseJSON.message_long,
+                'text-danger p-xs',
+                5000
+            );
+        }
     },
     submit: function() {
         var self = this;
