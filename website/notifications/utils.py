@@ -245,7 +245,6 @@ def format_data(user, node_ids):
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node
         if can_read:
-            try:
 
             node_sub_available = list(constants.NODE_SUBSCRIPTIONS_AVAILABLE.keys())
             subscriptions = [subscription for subscription in get_all_node_subscriptions(user, node)

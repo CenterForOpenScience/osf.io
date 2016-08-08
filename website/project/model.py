@@ -909,7 +909,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     # initial create_list job fails.
     mailing_updated = fields.BooleanField(default=True, index=True)
 
-
     wiki_pages_current = fields.DictionaryField()
     wiki_pages_versions = fields.DictionaryField()
     # Dictionary field mapping node wiki page to sharejs private uuid.
