@@ -44,3 +44,26 @@ class TestPlosTaxonomy(ApiTestCase):
         for index, subject in enumerate(self.subjects):
             if index >= len(self.data): break
             assert_equal(self.data[index]['attributes']['type'], subject.type)
+
+    def test_plos_taxonomy_filter_top_level(self):
+        top_level_url = self.url + '?filter[parent_ids]=null&page[size]=11'
+
+        res = self.app.get(top_level_url)
+        assert_equal(res.status_code, 200)
+
+        data = res.json['data']
+        for subject in data:
+            assert_equal(len(subject['attributes']['parent_ids']), 1)
+            assert_equal(subject['attributes']['parent_ids'][0], None)
+
+    # def test_plos_taxonomy_filter_by_parent(self):
+    #     top_level_subject = Subject.find(Q('parent_ids', 'eq', None))[0]
+    #
+    #     children_url = self.url + '?filter[parent_ids]={}'.format(top_level_subject._id)
+    #
+    #     res = self.app.get(children_url)
+    #     assert_equal(res.status_code, 200)
+    #
+    #     data = res.json['data']
+    #     for subject in data:
+    #         assert_in(top_level_subject._id, subject['attributes']['parent_ids'])
