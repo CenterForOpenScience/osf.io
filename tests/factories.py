@@ -247,6 +247,7 @@ class PreprintFactory(AbstractNodeFactory):
         file.save()
 
         project.set_preprint_file(file, auth=Auth(project.creator))
+        project.preprint_subjects = ['biology']
         project.save()
 
         return project
