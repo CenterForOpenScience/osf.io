@@ -156,25 +156,34 @@ def forgot_password_post(auth, **kwargs):
         if user_obj:
             # check forgot_password rate limit
             if throttle_period_expired(user_obj.email_last_sent, settings.SEND_EMAIL_THROTTLE):
-                # new random verification key, allows OSF to check whether the reset_password request is valid,
-                # this verification key is used twice, one for GET reset_password and one for POST reset_password
-                # and it will be destroyed when POST reset_password succeeds
-                user_obj.verification_key_v2 = generate_verification_key_v2()
-                user_obj.email_last_sent = datetime.datetime.utcnow()
-                user_obj.save()
-                reset_link = furl.urljoin(
-                    settings.DOMAIN,
-                    web_url_for(
-                        'reset_password_get',
-                        username=user_obj.username,
-                        verification_key=user_obj.verification_key_v2['token']
+                    # check if user is an unclaimed contributor, if is, then send a new confirmation email to user
+                    # instead of sending user a reset password link
+                if (user_obj.is_invited and
+                        user_obj.unclaimed_records and
+                        not user_obj.date_last_login and
+                        not user_obj.is_claimed and
+                        not user_obj.is_registered):
+                    send_confirm_email(user=user_obj, email=email, renew=True)
+                else:
+                    # new random verification key, allows OSF to check whether the reset_password request is valid,
+                    # this verification key is used twice, one for GET reset_password and one for POST reset_password
+                    # and it will be destroyed when POST reset_password succeeds
+                    user_obj.verification_key_v2 = generate_verification_key_v2()
+                    user_obj.email_last_sent = datetime.datetime.utcnow()
+                    user_obj.save()
+                    reset_link = furl.urljoin(
+                        settings.DOMAIN,
+                        web_url_for(
+                            'reset_password_get',
+                            username=user_obj.username,
+                            verification_key=user_obj.verification_key_v2['token']
+                        )
                     )
-                )
-                mails.send_mail(
-                    to_addr=email,
-                    mail=mails.FORGOT_PASSWORD,
-                    reset_link=reset_link
-                )
+                    mails.send_mail(
+                        to_addr=email,
+                        mail=mails.FORGOT_PASSWORD,
+                        reset_link=reset_link
+                    )
                 status.push_status_message(status_message, kind='success', trust=False)
             else:
                 status.push_status_message('You have recently requested to change your password. Please wait a '
