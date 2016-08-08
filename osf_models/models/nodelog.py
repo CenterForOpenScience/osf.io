@@ -2,12 +2,12 @@ import datetime as dt
 
 from django.db import models
 
-from osf_models.models.base import BaseModel
+from osf_models.models.base import BaseModel, ObjectIDMixin
 from osf_models.utils.base import get_object_id
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 
-class NodeLog(BaseModel):
+class NodeLog(ObjectIDMixin, BaseModel):
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
 
     # Log action constants -- NOTE: templates stored in log_templates.mako
@@ -103,9 +103,6 @@ class NodeLog(BaseModel):
 
     actions = [CHECKED_IN, CHECKED_OUT, FILE_TAG_REMOVED, FILE_TAG_ADDED, CREATED_FROM, PROJECT_CREATED, PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED, POINTER_CREATED, POINTER_FORKED, POINTER_REMOVED, WIKI_UPDATED, WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC, MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED, PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED, ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, MADE_CONTRIBUTOR_VISIBLE, MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED, RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED, PREREG_REGISTRATION_INITIATED, CITATION_ADDED, CITATION_EDITED, CITATION_REMOVED, AFFILIATED_INSTITUTION_ADDED, AFFILIATED_INSTITUTION_REMOVED]
     action_choices = [(action, action.upper()) for action in actions]
-
-    guid = models.CharField(max_length=255, unique=True, db_index=True, default=get_object_id)
-
     date = models.DateTimeField(default=dt.datetime.utcnow, db_index=True, null=True, blank=True)#, auto_now_add=True)
     action = models.CharField(max_length=255, db_index=True, choices=action_choices)
     params = DateTimeAwareJSONField(default={})
