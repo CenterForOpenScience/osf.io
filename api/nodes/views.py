@@ -79,7 +79,7 @@ class NodeMixin(object):
 
 class WaterButlerMixin(object):
 
-    def __init__(self, args, kwargs):
+    def __init__(self, *args, **kwargs):
         self.path = '/{}'.format(self.kwargs['path'])
         self.provider = self.kwargs['provider']
 
