@@ -4,6 +4,8 @@ import logging
 from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.dispatch import receiver
+from django.db.models.signals import post_save
 from typedmodels.models import TypedModel
 
 # OSF imports
@@ -261,6 +263,17 @@ class Node(AbstractNode):
     """
     pass
 
+@receiver(post_save, sender=Node)
+def add_creator_as_contributor(sender, instance, created, **kwargs):
+    if created:
+        Contributor.objects.create(
+            user=instance.creator,
+            node=instance,
+            visible=True,
+            read=True,
+            write=True,
+            admin=True
+        )
 
 class Collection(GuidMixin, BaseModel):
     # TODO: Uncomment auto_* attributes after migration is complete
