@@ -125,15 +125,6 @@ class TestNodeLicenses(OsfTestCase):
         MIT = NodeLicense.find_one(
             Q('id', 'eq', 'MIT')
         )
-        assert_equal(MIT.text, CHANGED_TEXT)
-        assert_equal(MIT.properties, CHANGED_PROPERTIES)
-
-    def test_ensure_licenses_updates_existing(self):
-        with mock.patch.object(builtins, 'open', mock.mock_open(read_data=LICENSE_TEXT)):
-            ensure_licenses()
-        MIT = NodeLicense.find_one(
-            Q('id', 'eq', 'MIT')
-        )
         assert_equal(MIT.name, CHANGED_NAME)
         assert_equal(MIT.text, CHANGED_TEXT)
         assert_equal(MIT.properties, CHANGED_PROPERTIES)
