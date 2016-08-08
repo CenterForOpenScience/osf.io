@@ -13,7 +13,7 @@ class TaxonomySerializer(JSONAPISerializer):
     type = ser.CharField(max_length=200)
     text = ser.CharField(max_length=200)
     parent_ids = ser.ListField()
-    id = ser.CharField(max_length=200)
+    id = ser.CharField(max_length=200, source='_id')
 
     def get_absolute_url(self, obj):
         return obj.get_absolute_url()

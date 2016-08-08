@@ -28,7 +28,7 @@ class TestPlosTaxonomy(ApiTestCase):
         for index, subject in enumerate(self.subjects):
             if index >= len(self.data): break  # Can only test what is returned in first page
             assert_equal(self.data[index]['type'], 'taxonomies')
-            assert_equal(self.data[index]['id'], subject.id)
+            assert_equal(self.data[index]['id'], subject._id)
 
     def test_plos_taxonomy_text(self):
         for index, subject in enumerate(self.subjects):

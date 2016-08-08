@@ -248,10 +248,18 @@ class PreprintFactory(AbstractNodeFactory):
         file.save()
 
         project.set_preprint_file(file, auth=Auth(project.creator))
-        project.preprint_subjects = [Subject.find()[0]._id]
+        project.preprint_subjects = [SubjectFactory()._id]
         project.save()
 
         return project
+
+
+class SubjectFactory(ModularOdmFactory):
+
+    text = Sequence(lambda n: 'Example Subject #{}'.format(n))
+    type = 'plos'
+    class Meta:
+        model = Subject
 
 
 class RegistrationFactory(AbstractNodeFactory):
