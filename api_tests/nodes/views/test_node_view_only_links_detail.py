@@ -70,16 +70,6 @@ class TestViewOnlyLinksUpdate(ViewOnlyLinkTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Invalid link name.')
 
-    def test_invalid_nodes_in_payload(self):
-        payload = {
-            'attributes': {
-                'nodes': [self.public_project._id, 'abcde'],
-            }
-        }
-        res = self.app.put_json_api(self.url, {'data': payload}, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
-        assert_equal(res.json['errors'][0]['detail'], 'Node with id "abcde" was not found')
-
     def test_admin_can_update_vol_name(self):
         assert_equal(self.view_only_link.name, 'testlink')
         assert_equal(self.view_only_link.anonymous, False)
@@ -110,63 +100,11 @@ class TestViewOnlyLinksUpdate(ViewOnlyLinkTestCase):
         assert_equal(res.json['data']['attributes']['name'], 'testlink')
         assert_equal(res.json['data']['attributes']['anonymous'], True)
 
-    def test_admin_can_update_vol_add_node(self):
-        assert_equal(self.view_only_link.name, 'testlink')
-        assert_equal(self.view_only_link.anonymous, False)
-        assert_equal(len(self.view_only_link.nodes), 1)
-
-        payload = {
-            'attributes': {
-                'nodes': [self.public_project._id, self.public_project_component._id]
-            }
-        }
-        res = self.app.put_json_api(self.url, {'data': payload}, auth=self.user.auth)
-        self.view_only_link.reload()
-
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['attributes']['name'], 'testlink')
-        assert_equal(res.json['data']['attributes']['anonymous'], False)
-        assert_equal(len(self.view_only_link.nodes), 2)
-
-    def test_admin_can_update_vol_remove_node(self):
-        self.view_only_link.nodes.append(self.public_project_component._id)
-        assert_equal(self.view_only_link.name, 'testlink')
-        assert_equal(self.view_only_link.anonymous, False)
-        assert_equal(len(self.view_only_link.nodes), 2)
-
-        payload = {
-            'attributes': {
-                'nodes': [self.public_project_component._id]
-            }
-        }
-        res = self.app.put_json_api(self.url, {'data': payload}, auth=self.user.auth)
-        self.view_only_link.reload()
-
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['attributes']['name'], 'testlink')
-        assert_equal(res.json['data']['attributes']['anonymous'], False)
-        assert_equal(len(self.view_only_link.nodes), 1)
-
-    def test_non_admin_cannot_update_vol_nodes(self):
-        self.view_only_link.nodes.append(self.public_project_component._id)
-        assert_equal(self.view_only_link.nodes, [self.public_project._id, self.public_project_component._id])
-
-        payload = {
-            'attributes': {
-                'nodes': [self.public_project_component._id]
-            }
-        }
-        res = self.app.put_json_api(self.url, {'data': payload}, auth=self.user_two.auth, expect_errors=True)
-
-        assert_equal(res.status_code, 403)
-        assert_equal(res.json['errors'][0]['detail'], 'User with id "{}" does not have permission to update VOL with id "{}" for node "{}"'.format(self.user_two._id, self.view_only_link._id, self.public_project_component._id))
-
     def test_read_write_cannot_update_vol(self):
         payload = {
             'attributes': {
                 'name': 'updated vol name',
                 'anonymous': True,
-                'nodes': [self.public_project._id, self.public_project_component._id]
             }
         }
         res = self.app.put_json_api(self.url, {'data': payload}, auth=self.read_write_user.auth, expect_errors=True)
@@ -177,7 +115,6 @@ class TestViewOnlyLinksUpdate(ViewOnlyLinkTestCase):
             'attributes': {
                 'name': 'updated vol name',
                 'anonymous': True,
-                'nodes': [self.public_project._id, self.public_project_component._id]
             }
         }
         res = self.app.put_json_api(self.url, {'data': payload}, auth=self.read_only_user.auth, expect_errors=True)
@@ -188,7 +125,6 @@ class TestViewOnlyLinksUpdate(ViewOnlyLinkTestCase):
             'attributes': {
                 'name': 'updated vol name',
                 'anonymous': True,
-                'nodes': [self.public_project._id, self.public_project_component._id]
             }
         }
         res = self.app.put_json_api(self.url, {'data': payload}, auth=self.non_contributor.auth, expect_errors=True)
@@ -199,7 +135,6 @@ class TestViewOnlyLinksUpdate(ViewOnlyLinkTestCase):
             'attributes': {
                 'name': 'updated vol name',
                 'anonymous': True,
-                'nodes': [self.public_project._id, self.public_project_component._id]
             }
         }
         res = self.app.put_json_api(self.url, {'data': payload}, expect_errors=True)

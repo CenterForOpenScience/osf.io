@@ -30,7 +30,6 @@ class ViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         anonymous                   boolean                 whether the view only link has anonymized contributors
         date_created                iso8601 timestamp       timestamp when the view only link was created
         key                         string                  the view only key
-        nodes                       array of node GUIDs     list of nodes which this view only link gives read-only access to
 
 
     ##Relationships
@@ -38,6 +37,10 @@ class ViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     ###Creator
 
     The user who created the view only link.
+
+    ###Nodes
+
+    The nodes which this view only link key gives read-only access to.
 
     ##Query Params
 

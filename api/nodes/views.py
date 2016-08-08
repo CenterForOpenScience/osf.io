@@ -42,8 +42,7 @@ from api.nodes.serializers import (
     NodeAlternativeCitationSerializer,
     NodeContributorsCreateSerializer,
     NodeViewOnlyLinkSerializer,
-    NodeViewOnlyLinkCreateSerializer,
-    NodeViewOnlyLinkUpdateSerializer,
+    NodeViewOnlyLinkUpdateSerializer
 )
 from api.nodes.utils import get_file_object
 
@@ -2957,7 +2956,6 @@ class NodeViewOnlyLinksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
         anonymous       boolean                 whether the view only link has anonymized contributors
         date_created    iso8601 timestamp       timestamp when the view only link was created
         key             string                  the view only key
-        nodes           array of node GUIDs     list of nodes which this view only link gives read-only access to
 
 
     ##Relationships
@@ -2966,21 +2964,24 @@ class NodeViewOnlyLinksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
 
     The user who created the view only link.
 
+    ###Nodes
+
+    The nodes which this view only link key gives read-only access to.
+
     ##Actions
 
     ###Create
 
         Method:        POST
-        Body (JSON):   {
-                         "data": {
-                           "attributes": {
-                             "name": {string},              #optional
-                             "anonymous": {boolean},        #optional
-                             "nodes": {array of node GUIDs} #required
-                           },
-                         }
-                       }
-        Success:       201 CREATED
+        Body (JSON): {
+                        "data": {
+                            "attributes": {
+                                "name": {string},              #optional
+                                "anonymous": true|false,        #optional
+                            }
+                        }
+                    }
+        Success:       201 CREATED + VOL representation
 
     #This Request/Response
     """
@@ -3006,11 +3007,6 @@ class NodeViewOnlyLinksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
             if not link.is_deleted
         ]
 
-    def get_serializer_class(self):
-        if self.request.method == 'POST':
-            return NodeViewOnlyLinkCreateSerializer
-        return NodeViewOnlyLinkSerializer
-
 
 class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     """
@@ -3023,15 +3019,12 @@ class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIV
 
     ##Attributes
 
-    OSF comment entities have the "comments" `type`.
-
         name            type                    description
         =================================================================================
         name            string                  name of the view only link
         anonymous       boolean                 whether the view only link has anonymized contributors
         date_created    iso8601 timestamp       timestamp when the view only link was created
         key             string                  the view only key
-        nodes           array of node GUIDs     list of nodes which this view only link gives read-only access to
 
 
     ##Relationships
@@ -3039,6 +3032,10 @@ class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIV
     ###Creator
 
     The user who created the view only link.
+
+    ###Nodes
+
+    The nodes which this view only link key gives read-only access to.
 
     ##Actions
 
@@ -3049,12 +3046,11 @@ class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIV
                          "data": {
                            "attributes": {
                              "name": {string},              #optional
-                             "anonymous": {boolean},        #optional
-                             "nodes": {array of node GUIDs} #optional
+                             "anonymous": true|false,        #optional
                            },
                          }
                        }
-        Success:       200 OK
+        Success:       200 OK + VOL representation
 
     ###Delete
 
