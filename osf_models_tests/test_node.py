@@ -117,6 +117,22 @@ class TestSearch:
         node.update_search()
         assert mock_update_node.called
 
+@pytest.mark.django_db
+class TestNodeCreation:
+
+    def test_creator_is_added_as_contributor(self, fake):
+        user = UserFactory()
+        node = Node(
+            title=fake.bs(),
+            creator=user
+        )
+        node.save()
+        assert node.is_contributor(user) is True
+        contributor = Contributor.objects.get(user=user, node=node)
+        assert contributor.visible is True
+        assert contributor.read is True
+        assert contributor.write is True
+        assert contributor.admin is True
 
 # Copied from tests/test_models.py
 @pytest.mark.django_db
