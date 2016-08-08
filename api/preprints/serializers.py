@@ -39,6 +39,7 @@ class PreprintSerializer(JSONAPISerializer):
 
     title = ser.CharField(required=False)
     subjects = JSONAPIListField(required=False, source='preprint_subjects')
+    provider = ser.CharField(source='preprint_provider', required=False)
     date_created = ser.DateTimeField(read_only=True, source='preprint_created')
     date_modified = ser.DateTimeField(read_only=True)
     id = IDField(source='_id', required=False)
@@ -128,7 +129,10 @@ class PreprintSerializer(JSONAPISerializer):
 
 class PreprintDetailSerializer(PreprintSerializer):
     id = IDField(source='_id', required=True)
+    subjects = JSONAPIListField(required=False, source='preprint_subjects')
 
+class PreprintDetailRetrieveSerializer(PreprintDetailSerializer):
+    subjects = JSONAPIListField(required=False, source='get_preprint_subjects')
 
 class PreprintAuthorSerializer(NodeContributorsSerializer):
     class Meta:

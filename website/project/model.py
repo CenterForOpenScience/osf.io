@@ -60,6 +60,7 @@ from website.project.licenses import (
     NodeLicense,
     NodeLicenseRecord,
 )
+from website.project.taxonomies import Subject
 from website.project import signals as project_signals
 from website.project.spam.model import SpamMixin
 from website.project.sanctions import (
@@ -759,11 +760,12 @@ class NodeUpdateError(Exception):
         self.key = key
         self.reason = reason
 
-#TODO: change subjects to match taxonomy
 def validate_subjects(value):
-    if value not in ['biology', 'chemistry', 'computer science']:
-        raise ValidationValueError('Not a valid subject')
+    subject = Subject.load(value)
+    if not subject:
+        raise ValidationValueError('Subject with id <{}> could nor be found.'.format(value))
     return True
+
 
 class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
@@ -882,7 +884,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     # Preprint fields
     preprint_file = fields.ForeignField('StoredFileNode')
     preprint_created = fields.DateTimeField()
-    #TODO make this a foreign field pointing to subjects
+    preprint_provider = fields.StringField()
     preprint_subjects = fields.StringField(list=True, validate=validate_subjects)
     _is_preprint_orphan = fields.BooleanField(default=False)
 
@@ -1184,6 +1186,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if not self.is_preprint & self._is_preprint_orphan:
             return True
         return False
+
+    def get_preprint_subjects(self):
+        ret = []
+        for subj_id in set(self.preprint_subjects):
+            subj = Subject.load(subj_id)
+            if subj:
+                ret.append((subj_id, subj.text))
+        return ret
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.

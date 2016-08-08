@@ -49,6 +49,7 @@ from website.project.sanctions import (
     Retraction,
     Sanction,
 )
+from website.project.taxonomies import Subject
 from website.notifications.model import NotificationSubscription, NotificationDigest
 from website.archiver.model import ArchiveTarget, ArchiveJob
 from website.identifiers.model import Identifier
@@ -247,10 +248,18 @@ class PreprintFactory(AbstractNodeFactory):
         file.save()
 
         project.set_preprint_file(file, auth=Auth(project.creator))
-        project.preprint_subjects = ['biology']
+        project.preprint_subjects = [SubjectFactory()._id]
         project.save()
 
         return project
+
+
+class SubjectFactory(ModularOdmFactory):
+
+    text = Sequence(lambda n: 'Example Subject #{}'.format(n))
+    type = 'plos'
+    class Meta:
+        model = Subject
 
 
 class RegistrationFactory(AbstractNodeFactory):
