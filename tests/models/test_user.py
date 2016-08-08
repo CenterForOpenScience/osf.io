@@ -418,12 +418,9 @@ class TestUserMerging(base.OsfTestCase):
                 self.user.watched[0]._id,
                 other_user.watched[0]._id,
             ],
+            'date_modified': None
         }
 
-        # Fields in which the two users may differ
-        different_fields = [
-            'date_modified'
-        ]
 
         # from the explicit rules above, compile expected field/value pairs
         expected = {}
@@ -435,7 +432,7 @@ class TestUserMerging(base.OsfTestCase):
         # except for 'different_fields'
         assert_equal(
             set(expected.keys()),
-            set(self.user._fields).difference(different_fields),
+            set(self.user._fields),
         )
 
         # mock mailchimp
@@ -447,6 +444,10 @@ class TestUserMerging(base.OsfTestCase):
         self.user.merge_user(other_user)
         self.user.save()
         handlers.celery_teardown_request()
+
+        # Because date_modified will be updated on every save(),
+        # the expected date_modified should be set after save.
+        expected['date_modified'] = self.user.date_modified
 
         # check each field/value pair
         for k, v in expected.iteritems():
