@@ -1,15 +1,17 @@
 from rest_framework import generics, permissions as drf_permissions
+from rest_framework import serializers as ser
 
 from modularodm import Q
 
 from api.base.views import JSONAPIBaseView
+from api.base.filters import ODMFilterMixin
 from api.base import permissions as base_permissions
 from api.taxonomies.serializers import TaxonomySerializer
 from website.project.taxonomies import Subject
 from framework.auth.oauth_scopes import CoreScopes
 
 
-class PlosTaxonomy(JSONAPIBaseView, generics.ListAPIView):
+class PlosTaxonomy(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     '''[PLOS taxonomy of subjects](http://journals.plos.org/plosone/browse/) in flattened form. *Read-only*
 
     ##Taxonomy Attributes
@@ -36,6 +38,11 @@ class PlosTaxonomy(JSONAPIBaseView, generics.ListAPIView):
         base_permissions.TokenHasScope
     )
 
+    DEFAULT_OPERATOR_OVERRIDES = {
+        ser.CharField: 'icontains',
+        ser.ListField: 'eq',
+    }
+
     required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
     required_write_scopes = [CoreScopes.NULL]
     serializer_class = TaxonomySerializer
@@ -43,7 +50,8 @@ class PlosTaxonomy(JSONAPIBaseView, generics.ListAPIView):
     view_name = 'plos-taxonomy'
 
     # overrides ListAPIView
+    def get_default_odm_query(self):
+        return Q('type', 'eq', 'plos')
+
     def get_queryset(self):
-        return Subject.find(
-            Q('type', 'eq', 'plos')
-        )
+        return Subject.find(self.get_query_from_request())

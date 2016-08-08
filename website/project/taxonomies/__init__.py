@@ -18,7 +18,7 @@ class Subject(StoredObject):
     id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     type = fields.StringField(required=True)
     text = fields.StringField(required=True)
-    parent_ids = fields.ListField(fields.StringField())
+    parent_ids = fields.StringField(list=True)
 
     def get_absolute_url(self):
         return '{}taxonomies/{}/'.format(self.absolute_api_v2_url, self.type)
