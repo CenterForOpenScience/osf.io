@@ -1537,7 +1537,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             preprint_file = preprint_file.stored_object
 
         if preprint_file.node != self or preprint_file.provider != 'osfstorage':
-            raise ValueError
+            raise ValueError('This file is not a valid primary file for this preprint.')
 
         # there is no preprint file yet! This is the first time!
         if not self.preprint_file:
