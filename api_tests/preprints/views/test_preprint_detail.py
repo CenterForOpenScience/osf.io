@@ -27,7 +27,7 @@ class TestPreprintDetail(ApiTestCase):
         assert_equal(self.data['id'], self.preprint._id)
 
 
-def create_preprint_file(node, filename):
+def create_file(node, filename):
     file = OsfStorageFile.create(
         is_file=True,
         node=node,
@@ -38,28 +38,31 @@ def create_preprint_file(node, filename):
     return file
 
 
-def build_preprint_payload(node_id, file_id):
-    return {
+def build_preprint_payload(node_id, file_id=None):
+    payload = {
         "data": {
             "id": node_id,
             "attributes": {
                 "subjects": ["biology"]
-            },
-            "relationships": {
-                "preprint_file": {
-                    "data": {
-                        "type": "primary_file",
-                        "id": file_id
-                    }
-                }
             }
         }
     }
+    if file_id:
+        payload['data']['relationships'] = {
+            "preprint_file": {
+                "data": {
+                    "type": "primary_file",
+                    "id": file_id
+                }
+            }
+        }
+
+    return payload
 
 
-class TestPreprintUpdate(ApiTestCase):
+class TestPreprintCreate(ApiTestCase):
     def setUp(self):
-        super(TestPreprintUpdate, self).setUp()
+        super(TestPreprintCreate, self).setUp()
 
         self.user = AuthUserFactory()
         self.private_project = ProjectFactory(creator=self.user)
@@ -67,11 +70,8 @@ class TestPreprintUpdate(ApiTestCase):
 
         self.user_two = AuthUserFactory()
 
-        self.file_one_public_project = create_preprint_file(self.public_project, 'millionsofdollars.pdf')
-        self.file_one_private_project = create_preprint_file(self.private_project, 'woowoowoo.pdf')
-
-        self.preprint = PreprintFactory(creator=self.user)
-        self.file_one_preprint = create_preprint_file(self.preprint, 'openupthatwindow.pdf')
+        self.file_one_public_project = create_file(self.public_project, 'millionsofdollars.pdf')
+        self.file_one_private_project = create_file(self.private_project, 'woowoowoo.pdf')
 
     def test_create_preprint_from_public_project(self):
         public_project_payload = build_preprint_payload(self.public_project._id, self.file_one_public_project._id)
@@ -102,8 +102,11 @@ class TestPreprintUpdate(ApiTestCase):
         assert_equal(res.status_code, 400)
 
     def test_already_a_preprint(self):
-        already_preprint_payload = build_preprint_payload(self.preprint._id, self.file_one_preprint._id)
-        url = '/{}preprints/{}/'.format(API_BASE, self.preprint._id)
+        preprint = PreprintFactory(creator=self.user)
+        file_one_preprint = create_file(preprint, 'openupthatwindow.pdf')
+
+        already_preprint_payload = build_preprint_payload(preprint._id, file_one_preprint._id)
+        url = '/{}preprints/{}/'.format(API_BASE, preprint._id)
         res = self.app.post_json_api(url, already_preprint_payload, auth=self.user.auth, expect_errors=True)
 
         assert_equal(res.status_code, 409)
@@ -143,8 +146,8 @@ class TestPreprintUpdate(ApiTestCase):
         assert_equal(res.status_code, 400)
 
     def test_request_id_does_not_match_request_url_id(self):
-        public_project_payload = build_preprint_payload(self.public_project._id, self.file_one_public_project._id)
-        url = '/{}preprints/{}/'.format(API_BASE, self.private_project._id)
+        public_project_payload = build_preprint_payload(self.private_project._id, self.file_one_public_project._id)
+        url = '/{}preprints/{}/'.format(API_BASE, self.public_project._id)
         res = self.app.post_json_api(url, public_project_payload, auth=self.user.auth, expect_errors=True)
 
         assert_equal(res.status_code, 400)
@@ -158,3 +161,67 @@ class TestPreprintUpdate(ApiTestCase):
         res = self.app.post_json_api(url, public_project_payload, auth=self.user.auth, expect_errors=True)
 
         assert_equal(res.status_code, 400)
+
+
+class TestPreprintUpdate(ApiTestCase):
+    def setUp(self):
+        super(TestPreprintUpdate, self).setUp()
+        self.user = AuthUserFactory()
+
+        self.preprint = PreprintFactory(creator=self.user)
+        self.url = '/{}preprints/{}/'.format(API_BASE, self.preprint._id)
+
+        self.file_preprint = create_file(self.preprint, 'openupthatwindow.pdf')
+
+    def test_update_preprint_title(self):
+        update_title_payload = build_preprint_payload(self.preprint._id)
+        update_title_payload['data']['attributes'] = {'title': 'A new title'}
+        update_title_payload['data']['attributes']['subjects'] = ['biology']
+
+        res = self.app.patch_json_api(self.url, update_title_payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+        self.preprint.reload()
+        assert_equal(self.preprint.title, 'A new title')
+
+    def test_update_preprint_subjects(self):
+        update_subjects_payload = build_preprint_payload(self.preprint._id)
+        update_subjects_payload['data']['attributes']['subjects'] = ['chemistry']
+
+        res = self.app.patch_json_api(self.url, update_subjects_payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+        self.preprint.reload()
+        assert_equal(self.preprint.preprint_subjects, ['chemistry'])
+
+    def test_update_invalid_subjects(self):
+        update_subjects_payload = build_preprint_payload(self.preprint._id)
+        update_subjects_payload['data']['attributes']['subjects'] = ['wwe']
+
+        res = self.app.patch_json_api(self.url, update_subjects_payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+        self.preprint.reload()
+        assert_equal(self.preprint.preprint_subjects, ['biology'])
+
+    def test_update_primary_file(self):
+        assert_not_equal(self.preprint.preprint_file, self.file_preprint)
+        update_file_payload = build_preprint_payload(self.preprint._id, file_id=self.file_preprint._id)
+
+        res = self.app.patch_json_api(self.url, update_file_payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+        self.preprint.reload()
+        assert_equal(self.preprint.preprint_file, self.file_preprint)
+
+    def test_new_primary_not_in_node(self):
+        project = ProjectFactory()
+        file_for_project = create_file(project, 'letoutthatantidote.pdf')
+
+        update_file_payload = build_preprint_payload(self.preprint._id, file_id=file_for_project._id)
+
+        res = self.app.patch_json_api(self.url, update_file_payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+        self.preprint.reload()
+        assert_not_equal(self.preprint.preprint_file, file_for_project)
