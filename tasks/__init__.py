@@ -946,7 +946,7 @@ def build_js_config_files(ctx):
 @task()
 def assets(ctx, dev=False, watch=False, colors=False):
     """Install and build static assets."""
-    npm = 'sudo npm install'
+    npm = 'npm install'
     if not dev:
         npm += ' --production'
     ctx.run(npm, echo=True)
