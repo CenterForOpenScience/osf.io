@@ -80,7 +80,7 @@ class NodeMixin(object):
 class WaterButlerMixin(object):
 
     def __init__(self, args, kwargs):
-        self.path = "/{}".format(self.kwargs['path'])
+        self.path = '/{}'.format(self.kwargs['path'])
         self.provider = self.kwargs['provider']
 
     def get_file_item(self, item):
