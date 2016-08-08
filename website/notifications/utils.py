@@ -245,6 +245,8 @@ def format_data(user, node_ids):
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node
         if can_read:
+            try:
+
             node_sub_available = list(constants.NODE_SUBSCRIPTIONS_AVAILABLE.keys())
             subscriptions = [subscription for subscription in get_all_node_subscriptions(user, node)
                              if getattr(subscription, 'event_name') in node_sub_available]
@@ -256,7 +258,7 @@ def format_data(user, node_ids):
                                                 node=node, event_description=node_sub_available.pop(index)))
             for node_sub in node_sub_available:
                 children.append(serialize_event(user, node=node, event_description=node_sub))
-            children.sort(key=lambda s: getattr(getattr(s, 'event', None), 'title', None))
+            children.sort(key=lambda s: s['event']['title'])
 
         children.extend(format_data(
             user,

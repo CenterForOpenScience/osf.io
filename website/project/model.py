@@ -901,6 +901,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     # TODO: Add validator
     comment_level = fields.StringField(default='public')
 
+    # Indicates whether or not the mailing list for this node should be enabled
+    mailing_enabled = fields.BooleanField(default=True, index=True)
+
+    # Flag indicating this node should be inspected by a weekly celerybeat job
+    # to synchronize the mailing list on Mailgun. Defaults to True in case the
+    # initial create_list job fails.
+    mailing_updated = fields.BooleanField(default=True, index=True)
+
+
     wiki_pages_current = fields.DictionaryField()
     wiki_pages_versions = fields.DictionaryField()
     # Dictionary field mapping node wiki page to sharejs private uuid.
