@@ -835,9 +835,9 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
     var isChrome = !!window.chrome && !!window.chrome.webstore;
 
     if (isChrome && file.isDirectory) {
-        msgText = 'Cannot upload directories.';
+        msgText = 'Cannot upload folders.';
     } else if(!isChrome && file.treebeardParent.kind === 'folder') {
-        msgText = 'Cannot upload directories.';
+        msgText = 'Cannot upload folders.';
     } else if (xhr && xhr.status === 507) {
         msgText = 'Cannot upload file due to insufficient storage.';
     } else if (xhr && xhr.status === 0) {
