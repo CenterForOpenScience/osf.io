@@ -25,14 +25,14 @@
                     <div class="form-group">
                         <span>
                             <span>Characters Remaining: </span><span data-bind="css: {disabled: submittingReply}, text: remainingLength"></span>
-                            <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input'">
+                           <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input'"></textarea>
                         </span>
                     </div>
                     <div data-bind="if: replyNotEmpty" class="form-group">
                         <div class="clearfix">
-                             <div class="pull-right">
-                                    <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}">Cancel</a>
-                                    <a class="btn btn-success btn-sm" data-bind="click: submitReply, css: {disabled: replyValid}, text: commentButtonText"></a>
+                            <div class="pull-right">
+                                   <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}">Cancel</a>
+                                   <a class="btn btn-success btn-sm" data-bind="click: submitReply, css: {disabled: replyValid}, text: commentButtonText"></a>
                                 <span data-bind="text: replyErrorMessage" class="text-danger"></span>
                             </div>
                         </div>
