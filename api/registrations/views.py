@@ -436,4 +436,3 @@ class RegistrationViewOnlyLinkDetail(NodeViewOnlyLinkDetail, RegistrationMixin):
 
     view_category = 'registrations'
     view_name = 'registration-view-only-link-detail'
-
