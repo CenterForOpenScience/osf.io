@@ -256,7 +256,7 @@ def format_data(user, node_ids):
                                                 node=node, event_description=node_sub_available.pop(index)))
             for node_sub in node_sub_available:
                 children.append(serialize_event(user, node=node, event_description=node_sub))
-            children.sort(key=lambda s: s['event']['title'])
+            children.sort(key=lambda s: getattr(getattr(s, 'event', None), 'title', None))
 
         children.extend(format_data(
             user,

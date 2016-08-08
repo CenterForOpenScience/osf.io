@@ -706,7 +706,7 @@ class TestNotificationUtils(OsfTestCase):
         assert_in(self.node_subscription_comments, user_subscriptions)
         for x in self.user_subscription:
             assert_in(x, user_subscriptions)
-        assert_equal(len(user_subscriptions), 6)
+        assert_equal(len(user_subscriptions), 7)
 
     def test_get_all_node_subscriptions_given_user_subscriptions(self):
         user_subscriptions = utils.get_all_user_subscriptions(self.user)
