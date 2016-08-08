@@ -6,7 +6,8 @@ from api.base.serializers import JSONAPISerializer
 class TaxonomySerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'text',
-        'parent_ids'
+        'parent_ids',
+        'id'
     ])
 
     type = ser.CharField(max_length=200)
