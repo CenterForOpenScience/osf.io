@@ -1,6 +1,7 @@
+from copy import deepcopy
+import urlparse
 import datetime as dt
 import logging
-import urlparse
 
 from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
@@ -492,6 +493,18 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             raise ExpiredTokenError
 
         return verification['email']
+
+    def clean_email_verifications(self, given_token=None):
+        email_verifications = deepcopy(self.email_verifications or {})
+        for token in self.email_verifications or {}:
+            try:
+                self.get_unconfirmed_email_for_token(token)
+            except (KeyError, ExpiredTokenError):
+                email_verifications.pop(token)
+                continue
+            if token == given_token:
+                email_verifications.pop(token)
+        self.email_verifications = email_verifications
 
     @classmethod
     def create_unregistered(cls, fullname, email=None):
