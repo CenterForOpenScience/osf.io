@@ -77,41 +77,44 @@ class PreprintSerializer(JSONAPISerializer):
     def create(self, validated_data):
         node = validated_data.pop('node')
         if node.is_preprint:
-            raise Conflict()
+            raise Conflict('This node already stored as a preprint, use the update method instead.')
         auth = get_user_auth(self.context['request'])
-        try:
-            primary_file = validated_data.pop('primary_file')
-        except KeyError:
+
+        primary_file = validated_data.pop('primary_file', None)
+        if not primary_file:
             raise exceptions.ValidationError(detail='A primary file is required')
-        if not validated_data.get('preprint_subjects'):
+
+        preprint_subjects = validated_data.get('preprint_subjects', None)
+        if not preprint_subjects:
             raise exceptions.ValidationError(detail='Subjects are required')
+
         try:
-            setattr(node, 'preprint_subjects', validated_data.pop('preprint_subjects'))
-        except ValidationValueError:
-            raise exceptions.ValidationError(detail='Not a valid subject')
-        try:
-            node.set_preprint_file(primary_file, auth)
+            node.set_preprint_file(primary_file, auth, save=False)
         except PermissionsError:
             raise exceptions.PermissionDenied()
-        except (AttributeError, ValueError):
-            raise exceptions.ValidationError(detail='Not valid file')
+        except ValueError as e:
+            raise exceptions.ValidationError(detail=e.message)
+
         if node._id != validated_data.pop('_id'):
-            raise exceptions.ValidationError('Ids don\'t match')
+            raise exceptions.ValidationError('The node id in the URL does not match the id in the request body.')
         for key, value in validated_data.iteritems():
             setattr(node, key, value)
-        node.save()
+        try:
+            node.save()
+        except ValidationValueError as e:
+            raise exceptions.ValidationError(detail=e.message)
         return node
 
     def update(self, node, validated_data):
         from website.models import Node
-        assert isinstance(node, Node), 'node must be a Node'
+        assert isinstance(node, Node), 'You must specify a valid node to be updated.'
         auth = get_user_auth(self.context['request'])
         if node._id != validated_data.pop('_id'):
-            raise exceptions.ValidationError()
+            raise exceptions.ValidationError('The node id in the URL does not match the id in the request body.')
         primary_file = validated_data.get('primary_file')
         if primary_file:
             try:
-                node.set_preprint_file(primary_file, auth)
+                node.set_preprint_file(primary_file, auth, save=False)
                 del validated_data['primary_file']
             except (PermissionsError, ValueError):
                 raise exceptions.PermissionDenied()
