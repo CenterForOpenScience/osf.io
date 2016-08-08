@@ -99,10 +99,8 @@ class TestNodeLicenses(OsfTestCase):
         assert_raises(KeyExistsException, NodeLicense(id='foo', name='buz', text='boo').save)
         # modular-odm's uniqueness constraint would raise ValidationValueError instead.
 
-    def test_ensure_licenses_existing_licenses(self):
-        with mock.patch('website.project.licenses.NodeLicense.__init__', autospec=True) as MockNodeLicense:
-            ensure_licenses()
-        assert_false(MockNodeLicense.called)
+    def test_ensure_licenses_updates_existing_licenses(self):
+        assert_equal(ensure_licenses(), (0, 16))
 
     def test_ensure_licenses_no_licenses(self):
         before_count = NodeLicense.find().count()
