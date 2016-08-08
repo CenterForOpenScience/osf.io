@@ -32,12 +32,18 @@ def serialize_node_license_record(node_license_record):
     return ret
 
 
-@mongo_utils.unique_on(['id', '_id'])
+@mongo_utils.unique_on(['id'])
 class NodeLicense(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 
-    id = fields.StringField(required=True, unique=True, editable=False)
+    id = fields.StringField(
+        required=True,
+        unique=False,   # Skip modular-odm's uniqueness implementation, depending on MongoDB's
+                        # instead (the decorator will install the proper index), so that we can
+                        # kludge a non-racey upsert in ensure_licenses.
+        editable=False
+    )
     name = fields.StringField(required=True, unique=True)
     text = fields.StringField(required=True)
     properties = fields.StringField(list=True)
