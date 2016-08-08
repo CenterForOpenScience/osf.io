@@ -61,6 +61,11 @@ class MeetingForm(forms.Form):
         required=False,
         widget=forms.TextInput(attrs={'size': '60'}),
     )
+    is_meeting = forms.BooleanField(
+        label='This is a meeting',
+        initial=True,
+        required=False,
+    )
     active = forms.BooleanField(
         label='Conference is active',
         required=False,
@@ -133,7 +138,7 @@ class MeetingForm(forms.Form):
         endpoint = self.cleaned_data['endpoint']
         edit = self.cleaned_data['edit']
         try:
-            Conference.get_by_endpoint(endpoint)
+            Conference.get_by_endpoint(endpoint, False)
             if not edit:
                 raise forms.ValidationError(
                     'A meeting with this endpoint exists already.'
