@@ -85,7 +85,7 @@ def has_anonymous_link(node, auth):
         return auth.private_link.anonymous
     return False
 
-@unique_on(['name', 'schema_version', '_id'])
+@unique_on(['name', 'schema_version'])
 class MetaSchema(StoredObject):
 
     _id = fields.StringField(default=lambda: str(ObjectId()))
