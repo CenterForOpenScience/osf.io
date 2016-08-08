@@ -51,6 +51,8 @@ REGISTRATION_APPROVAL_TIME = datetime.timedelta(days=2)
 # Date range for embargo periods
 EMBARGO_END_DATE_MIN = datetime.timedelta(days=2)
 EMBARGO_END_DATE_MAX = datetime.timedelta(days=1460)  # Four years
+# Question titles to be reomved for anonymized VOL
+ANONYMIZED_TITLES = ['Authors']
 
 LOAD_BALANCER = False
 PROXY_ADDRS = []

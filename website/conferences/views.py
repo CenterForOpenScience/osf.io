@@ -232,6 +232,8 @@ def conference_submissions(**kwargs):
     submissions = []
     #  TODO: Revisit this loop, there has to be a way to optimize it
     for conf in Conference.find():
+        if (hasattr(conf, 'is_meeting') and (conf.is_meeting is False)):
+            break
         # For efficiency, we filter by tag first, then node
         # instead of doing a single Node query
         projects = set()
@@ -259,6 +261,8 @@ def conference_view(**kwargs):
     meetings = []
     for conf in Conference.find():
         if conf.num_submissions < settings.CONFERENCE_MIN_COUNT:
+            continue
+        if (hasattr(conf, 'is_meeting') and (conf.is_meeting is False)):
             continue
         meetings.append({
             'name': conf.name,
