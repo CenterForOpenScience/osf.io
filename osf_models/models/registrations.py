@@ -42,8 +42,8 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
     """
     date = models.DateTimeField() # auto_add=True)
     action = models.CharField(max_length=255)
-    draft = models.ForeignKey('DraftRegistration', related_name='logs')
-    user = models.ForeignKey('OSFUser')
+    draft = models.ForeignKey('DraftRegistration', related_name='logs', null=True)
+    user = models.ForeignKey('OSFUser', null=True)
 
     SUBMITTED = 'submitted'
     REGISTERED = 'registered'
@@ -81,7 +81,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     #   }
     # }
     registration_metadata = DateTimeAwareJSONField(default={})
-    registration_schema = models.ForeignKey('MetaSchema')
+    registration_schema = models.ForeignKey('MetaSchema', null=True)
     registered_node = models.ForeignKey('Node', null=True, related_name='draft_registration')
 
     approval = models.ForeignKey('DraftRegistrationApproval', null=True)

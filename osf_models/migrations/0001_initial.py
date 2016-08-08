@@ -270,8 +270,8 @@ class Migration(migrations.Migration):
                 ('guid', models.CharField(db_index=True, default=osf_models.utils.base.get_object_id, max_length=255, unique=True)),
                 ('date', models.DateTimeField()),
                 ('action', models.CharField(max_length=255)),
-                ('draft', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='logs', to='osf_models.DraftRegistration')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+                ('draft', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='logs', to='osf_models.DraftRegistration')),
+                ('user', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'abstract': False,
@@ -473,7 +473,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='draftregistration',
             name='registration_schema',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='osf_models.MetaSchema'),
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='osf_models.MetaSchema'),
         ),
         migrations.AddField(
             model_name='comment',
