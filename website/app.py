@@ -23,6 +23,7 @@ from modularodm import storage
 from website.addons.base import init_addon
 from website.project.licenses import ensure_licenses
 from website.project.model import ensure_schemas
+from website.project.taxonomies import ensure_taxonomies
 from website.routes import make_url_map
 from website import maintenance
 
@@ -128,6 +129,7 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
     if set_backends:
         ensure_schemas()
         ensure_licenses()
+        ensure_taxonomies()
     apply_middlewares(app, settings)
 
     return app
