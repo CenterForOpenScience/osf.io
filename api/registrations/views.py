@@ -4,7 +4,7 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from website.project.model import Q, Node
 from api.base import permissions as base_permissions
-from api.base.views import JSONAPIBaseView, BaseContributorDetail, BaseContributorList
+from api.base.views import JSONAPIBaseView, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList
 
 from api.base.serializers import HideIfWithdrawal
 from api.nodes.permissions import ReadOnlyIfRegistration, ContributorDetailPermissions, ContributorOrPublicForRelationshipPointers
@@ -406,7 +406,7 @@ class RegistrationProvidersList(NodeProvidersList, RegistrationMixin):
     view_name = 'registration-providers'
 
 
-class RegistrationNodeLinksList(JSONAPIBaseView, generics.ListAPIView, RegistrationMixin):
+class RegistrationNodeLinksList(BaseNodeLinksList, RegistrationMixin):
     """List of node links for a registration."""
     view_category = 'registrations'
     view_name = 'registration-pointers'
@@ -424,17 +424,8 @@ class RegistrationNodeLinksList(JSONAPIBaseView, generics.ListAPIView, Registrat
 
     model_class = Pointer
 
-    def get_queryset(self):
-        auth = get_user_auth(self.request)
-        return sorted([
-            pointer.node for pointer in
-            self.get_node().nodes_pointer
-            if not pointer.node.is_deleted and not pointer.node.is_collection and
-            pointer.node.can_view(auth) and not pointer.node.is_retracted
-        ], key=lambda n: n.date_modified, reverse=True)
 
-
-class RegistrationNodeLinksDetail(JSONAPIBaseView, generics.RetrieveAPIView, RegistrationMixin):
+class RegistrationNodeLinksDetail(BaseNodeLinksDetail, RegistrationMixin):
     """Detail of a node link for a registration."""
     view_category = 'registrations'
     view_name = 'registration-pointer-detail'
@@ -444,22 +435,11 @@ class RegistrationNodeLinksDetail(JSONAPIBaseView, generics.RetrieveAPIView, Reg
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ExcludeWithdrawals
-
     )
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]
     required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
 
     model_class = Pointer
-
-    def get_queryset(self):
-        auth = get_user_auth(self.request)
-        return sorted([
-            pointer.node for pointer in
-            self.get_node().nodes_pointer
-            if not pointer.node.is_deleted and not pointer.node.is_collection and
-            pointer.node.can_view(auth) and not pointer.node.is_retracted
-        ], key=lambda n: n.date_modified, reverse=True)
-
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -467,6 +447,8 @@ class RegistrationNodeLinksDetail(JSONAPIBaseView, generics.RetrieveAPIView, Reg
         if not registration.is_registration:
             raise ValidationError('This is not a registration.')
         return registration
+
+
 
 class RegistrationRegistrationsList(NodeRegistrationsList, RegistrationMixin):
     """List of registrations of a registration."""
