@@ -78,7 +78,7 @@ class Zotero(CitationsOauthProvider):
         more = True
         offset = 0
         while more and len(citations) <= MAX_CITATION_LOAD:
-            page = self.client.collection_items(list_id, content='csljson', size=100, start=offset)
+            page = self.client.collection_items(list_id, content='csljson', limit=100, start=offset)
             citations = citations + page
             if len(page) == 0 or len(page) < 100:
                 more = False

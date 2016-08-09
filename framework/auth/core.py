@@ -1115,6 +1115,8 @@ class User(GuidStoredObject, AddonModelMixin):
                 pass
             else:
                 raise
+        except mailchimp_utils.mailchimp.EmailNotExistsError:
+            pass
         self.is_disabled = True
 
     @property

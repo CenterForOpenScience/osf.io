@@ -5,15 +5,14 @@ from framework.auth.oauth_scopes import CoreScopes
 from website.project.model import Q, Node
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView, BaseContributorDetail, BaseContributorList
-from api.base.utils import is_bulk_request
 
 from api.base.serializers import HideIfWithdrawal
-from api.nodes.permissions import ReadOnlyIfRegistration, ContributorDetailPermissions
-from api.nodes.permissions import ContributorOrPublicForRelationshipPointers
+from api.nodes.permissions import ReadOnlyIfRegistration, ContributorDetailPermissions, ContributorOrPublicForRelationshipPointers
 from api.base.serializers import LinkedNodesRelationshipSerializer
 from api.base.parsers import JSONAPIRelationshipParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
 from api.base.utils import get_user_auth
+from api.comments.serializers import RegistrationCommentSerializer, CommentCreateSerializer
 from api.users.views import UserMixin
 
 from api.registrations.serializers import (
@@ -380,8 +379,15 @@ class RegistrationForksList(NodeForksList, RegistrationMixin):
     view_name = 'registration-forks'
 
 class RegistrationCommentsList(NodeCommentsList, RegistrationMixin):
+    serializer_class = RegistrationCommentSerializer
     view_category = 'registrations'
     view_name = 'registration-comments'
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return CommentCreateSerializer
+        else:
+            return RegistrationCommentSerializer
 
 
 class RegistrationLogList(NodeLogList, RegistrationMixin):
