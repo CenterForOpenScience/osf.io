@@ -213,7 +213,12 @@ class AbstractNode(TypedModel, Taggable, Loggable, GuidMixin, BaseModel):
         return perm
 
     def has_permission(self, user, permission):
-        return getattr(user.contributor_set.get(node=self), permission, False)
+        try:
+            contrib = user.contributor_set.get(node=self)
+        except Contributor.DoesNotExist:
+            return False
+        else:
+            return getattr(contrib, permission, False)
 
     def add_permission(self, user, permission, save=False):
         contributor = user.contributor_set.get(node=self)
