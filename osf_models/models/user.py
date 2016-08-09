@@ -219,7 +219,16 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     # list of collaborators that this user recently added to nodes as a contributor
     # recently_added = fields.ForeignField("user", list=True)
-    recently_added = models.ManyToManyField('self', symmetrical=False)
+    recently_added = models.ManyToManyField('self',
+                                            through=RecentlyAddedContributor,
+                                            through_fields=('user', 'contributor'),
+                                            symmetrical=False)
+
+    def get_recently_added(self):
+        return (
+            each.contributor
+            for each in self.recentlyaddedcontributor_set.order_by('-date_added')
+        )
 
     # Attached external accounts (OAuth)
     # external_accounts = fields.ForeignField("externalaccount", list=True)
