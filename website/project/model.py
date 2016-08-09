@@ -1767,10 +1767,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if 'node_license' in saved_fields:
             children = [c for c in self.get_descendants_recursive(
                 include=lambda n: n.node_license is None
-            )]
+            ) if c.is_public and not c.is_deleted]
             # this returns generator, that would get unspooled anyways
-            if children:
-                Node.bulk_update_search(children)
+            while len(children):
+                batch = children[:99]
+                Node.bulk_update_search(batch)
+                children = children[99:]
 
         # This method checks what has changed.
         if settings.PIWIK_HOST and update_piwik:
@@ -3022,19 +3024,20 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         """
         if not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can modify contributor permissions')
-        permissions = expand_permissions(permission) or DEFAULT_CONTRIBUTOR_PERMISSIONS
-        admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
-        if not len(admins) > 1:
-            # has only one admin
-            admin = admins[0]
-            if admin == user and ADMIN not in permissions:
-                raise NodeStateError('{} is the only admin.'.format(user.fullname))
-        if user not in self.contributors:
-            raise ValueError(
-                'User {0} not in contributors'.format(user.fullname)
-            )
+
         if permission:
             permissions = expand_permissions(permission)
+            admins = [contrib for contrib in self.contributors if
+                      self.has_permission(contrib, 'admin') and contrib.is_active]
+            if not len(admins) > 1:
+                # has only one admin
+                admin = admins[0]
+                if admin == user and ADMIN not in permissions:
+                    raise NodeStateError('{} is the only admin.'.format(user.fullname))
+            if user not in self.contributors:
+                raise ValueError(
+                    'User {0} not in contributors'.format(user.fullname)
+                )
             if set(permissions) != set(self.get_permissions(user)):
                 self.set_permissions(user, permissions, save=save)
                 permissions_changed = {

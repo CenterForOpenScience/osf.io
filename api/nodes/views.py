@@ -21,7 +21,7 @@ from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, 
 from api.base.settings import ADDONS_OAUTH, API_BASE
 from api.addons.views import AddonSettingsMixin
 from api.files.serializers import FileSerializer
-from api.comments.serializers import CommentSerializer, CommentCreateSerializer
+from api.comments.serializers import NodeCommentSerializer, CommentCreateSerializer
 from api.comments.permissions import CanCommentOrPublic
 from api.users.views import UserMixin
 from api.wikis.serializers import WikiSerializer
@@ -684,9 +684,9 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
             raise ValidationError('Must have at least one registered admin contributor')
 
     # Overrides BulkDestroyJSONAPIView
-    def get_requested_resources(self, request):
+    def get_requested_resources(self, request, request_data):
         requested_ids = []
-        for data in request.data:
+        for data in request_data:
             try:
                 requested_ids.append(data['id'].split('-')[1])
             except IndexError:
@@ -697,7 +697,7 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
             if getattr(resource, 'is_deleted', None):
                 raise Gone
 
-        if len(resource_object_list) != len(request.data):
+        if len(resource_object_list) != len(request_data):
             raise ValidationError({'non_field_errors': 'Could not find all objects to delete.'})
 
         return resource_object_list
@@ -2561,7 +2561,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
     required_write_scopes = [CoreScopes.NODE_COMMENTS_WRITE]
 
     pagination_class = CommentPagination
-    serializer_class = CommentSerializer
+    serializer_class = NodeCommentSerializer
     view_category = 'nodes'
     view_name = 'node-comments'
 
@@ -2586,7 +2586,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
         if self.request.method == 'POST':
             return CommentCreateSerializer
         else:
-            return CommentSerializer
+            return NodeCommentSerializer
 
     # overrides ListCreateAPIView
     def get_parser_context(self, http_request):
