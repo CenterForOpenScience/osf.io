@@ -53,14 +53,15 @@ class TestNodeCreationMailingConfig(OsfTestCase):
         assert_true(new_parent.mailing_enabled)
         assert_true(new_child.mailing_enabled)
 
-    def test_registration_disables_mailing_list(self):
-        reg = RegistrationFactory()
-        assert_false(reg.mailing_enabled)
-
-    def test_collection_disables_mailing_list(self):
-        coll = CollectionFactory()
-        assert_false(coll.mailing_enabled)
-
+    # no longer need to limit mailing list - mailman3 doesnt have a coded limit
+    #def test_registration_disables_mailing_list(self):
+    #    reg = RegistrationFactory()
+    #    assert_false(reg.mailing_enabled)
+    #
+    #def test_collection_disables_mailing_list(self):
+    #    coll = CollectionFactory()
+    #    assert_false(coll.mailing_enabled)
+    #
 
 #class TestMailingListViews(OsfTestCase):
 

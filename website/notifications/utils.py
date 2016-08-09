@@ -377,7 +377,7 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
 
         print(subbed_emails)
 
-        tbd['user_data'] = user.emails
+        tbd['event']['user_data'] = user.emails
         try:
             tbd['event']['notificationType'] = subbed_emails[0]
         except:
