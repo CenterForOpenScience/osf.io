@@ -17,12 +17,14 @@ logger = logging.getLogger(__name__)
 def do_migration(logs):
     # ... perform the migration using a list of logs ...
     for log in logs:
-        registration = Node.load(log.params['registration'])
-
-        registration.date_modified = log.date
-        registration.save()
-
-        logger.info('{} date updated to {}'.format(registration, log.date))
+        registration_id = log.params.get('registration')
+        if registration_id:
+            registration = Node.load(registration_id)
+            registration.date_modified = log.date
+            registration.save()
+            logger.info('{} date updated to {}'.format(registration, log.date))
+        else:
+            logger.warning('No parent registration found for retraction log ' + log._id)
 
 
 def get_targets():
@@ -42,7 +44,7 @@ if __name__ == '__main__':
         init_app(set_backends=True, routes=False)  # Sets the storage backends on all models
         targets = get_targets()
         for target in targets:
-            logger.info('{} {}: {}'.format(target.date, target.params['registration'], target.action))
+            logger.info('{} {}: {}'.format(target.date, target.params.get('registration'), target.action))
         do_migration(targets)
         if dry:
             raise RuntimeError('Dry run, rolling back transaction.')
