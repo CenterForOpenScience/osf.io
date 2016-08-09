@@ -113,7 +113,7 @@ class TestOSFUser:
         with pytest.raises(ValidationError):
             dupe.save()
 
-    @pytest.mark.skip('Node#add_contributor not yet implemented')
+    @pytest.mark.skip('User#merge_user not yet implemented')
     def test_merged_user_with_two_account_on_same_project_with_different_visibility_and_permissions(self):
         user2 = UserFactory.build()
         user2.save()
@@ -348,18 +348,19 @@ class TestOSFUser:
     def test_contributed_property(self):
         user = UserFactory()
         node = NodeFactory()
+        node2 = NodeFactory()
         # TODO: Use Node.add_contributor when it's implemented
         Contributor.objects.create(user=user, node=node)
         projects_contributed_to = Node.objects.filter(contributors=user)
         assert list(user.contributed) == list(projects_contributed_to)
+        assert node2 not in user.contributed
 
     # copied from tests/test_views.py
-    @pytest.mark.skip('Node#clean_email_verifications will not work until DatetimeAwareJSONField is fixed')
     def test_clean_email_verifications(self, user):
         # Do not return bad token and removes it from user.email_verifications
         email = 'test@example.com'
         token = 'blahblahblah'
-        user.email_verifications[token] = {'expiration': (dt.datetime.utcnow() + dt.timedelta(days=1)).isoformat(),
+        user.email_verifications[token] = {'expiration': (dt.datetime.utcnow() + dt.timedelta(days=1)),
                                                 'email': email,
                                                 'confirmed': False }
         user.save()
@@ -369,76 +370,41 @@ class TestOSFUser:
         assert unconfirmed_emails == []
         assert user.email_verifications == {}
 
-@pytest.mark.skip('Node#add_contributor not yet implemented')
-class TestContributorMethods:
+    def test_display_full_name_registered(self):
+        u = UserFactory()
+        assert u.display_full_name() == u.fullname
 
-    def test_recently_added(self):
-        # Project created
+    @pytest.mark.skip('add_unregistered_contributor not yet implemented')
+    def test_display_full_name_unregistered(self):
+        name = fake.name()
+        u = UnregUserFactory()
         project = NodeFactory()
+        project.add_unregistered_contributor(fullname=name, email=u.username,
+            auth=Auth(project.creator))
+        project.save()
+        assert u.display_full_name(node=project) == name
 
-        assert bool(hasattr(self.user, 'recently_added')) is True
 
-        # Two users added as contributors
+@pytest.mark.django_db
+class TestProjectsInCommon:
+
+    @pytest.mark.skip('get_projects_in_common not yet implemented')
+    def test_get_projects_in_common(self, user, auth):
         user2 = UserFactory()
-        user3 = UserFactory()
-        project.add_contributor(contributor=user2, auth=self.auth)
-        project.add_contributor(contributor=user3, auth=self.auth)
-        assert user3 == self.user.recently_added[0]
-        assert user2 == self.user.recently_added[1]
-        assert len(self.user.recently_added) == 2
-
-    def test_recently_added_multi_project(self):
-        # Three users are created
-        user2 = UserFactory()
-        user3 = UserFactory()
-        user4 = UserFactory()
-
-        # 2 projects created
-        project = NodeFactory()
-        project2 = NodeFactory()
-
-        # Users 2 and 3 are added to original project
-        project.add_contributor(contributor=user2, auth=self.auth)
-        project.add_contributor(contributor=user3, auth=self.auth)
-
-        # Users 2 and 3 are added to original project
-        project2.add_contributor(contributor=user2, auth=self.auth)
-        project2.add_contributor(contributor=user4, auth=self.auth)
-
-        assert user4 == self.user.recently_added[0]
-        assert user2 == self.user.recently_added[1]
-        assert user3 == self.user.recently_added[2]
-        assert len(self.user.recently_added) == 3
-
-    def test_recently_added_length(self):
-        # Project created
-        project = NodeFactory()
-
-        assert len(self.user.recently_added) == 0
-        # Add 17 users
-        for _ in range(17):
-            project.add_contributor(
-                contributor=UserFactory(),
-                auth=self.auth
-            )
-
-        assert len(self.user.recently_added) == 15
-
-    def test_get_projects_in_common(self):
-        user2 = UserFactory()
-        project = NodeFactory(creator=self.user)
-        project.add_contributor(contributor=user2, auth=self.auth)
+        project = NodeFactory(creator=user)
+        project.add_contributor(contributor=user2, auth=auth)
         project.save()
 
-        project_keys = set([node._id for node in self.user.contributed])
-        projects = set(self.user.contributed)
+        project_keys = set([node._id for node in user.contributed])
+        projects = set(user.contributed)
         user2_project_keys = set([node._id for node in user2.contributed])
 
-        assert(self.user.get_projects_in_common(user2, primary_keys=True) ==
+        assert(user.get_projects_in_common(user2, primary_keys=True) ==
                      project_keys.intersection(user2_project_keys))
-        assert(self.user.get_projects_in_common(user2, primary_keys=False) ==
+        assert(user.get_projects_in_common(user2, primary_keys=False) ==
                      projects.intersection(user2.contributed))
 
+    @pytest.mark.skip('n_projects_in_common not yet implemented')
     def test_n_projects_in_common(self):
         user2 = UserFactory()
         user3 = UserFactory()
@@ -449,19 +415,6 @@ class TestContributorMethods:
 
         assert self.user.n_projects_in_common(user2) == 1
         assert self.user.n_projects_in_common(user3) == 0
-
-    def test_display_full_name_registered(self):
-        u = UserFactory()
-        assert u.display_full_name() == u.fullname
-
-    def test_display_full_name_unregistered(self):
-        name = fake.name()
-        u = UnregUserFactory()
-        project = ProjectFactory()
-        project.add_unregistered_contributor(fullname=name, email=u.username,
-            auth=Auth(project.creator))
-        project.save()
-        assert u.display_full_name(node=project) == name
 
 
 @pytest.mark.skip('Session model not yet implemented')

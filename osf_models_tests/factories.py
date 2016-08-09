@@ -33,7 +33,6 @@ class UserFactory(DjangoModelFactory):
     date_confirmed = factory.Faker('date_time')
     date_registered = factory.Faker('date_time')
     merged_by = None
-    email_verifications = {}
     verification_key = None
 
     class Meta:
