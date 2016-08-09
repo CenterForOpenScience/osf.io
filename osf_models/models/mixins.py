@@ -71,7 +71,7 @@ class Loggable(models.Model):
         if self.logs.count() == 1:
             self.date_modified = log.date.replace(tzinfo=pytz.utc)
         else:
-            self.date_modified = self.logs.order_by('-date')[0].date.replace(tzinfo=pytz.utc)
+            self.date_modified = self.logs.first().date
 
         if save:
             self.save()
