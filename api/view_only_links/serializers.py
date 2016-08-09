@@ -20,7 +20,9 @@ class ViewOnlyLinkDetailSerializer(JSONAPISerializer):
 
     nodes = RelationshipField(
         related_view='view-only-links:view-only-link-nodes',
-        related_view_kwargs={'link_id': '<_id>'}
+        related_view_kwargs={'link_id': '<_id>'},
+        self_view='view-only-links:view-only-link-nodes-relationships',
+        self_view_kwargs={'link_id': '<_id>'}
     )
 
     creator = RelationshipField(

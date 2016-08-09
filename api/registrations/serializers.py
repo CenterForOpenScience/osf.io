@@ -173,11 +173,11 @@ class BaseRegistrationSerializer(NodeSerializer):
         self_view_kwargs={'node_id': '<pk>'}
     ))
 
-    view_only_links = RelationshipField(
+    view_only_links = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-view-only-links',
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_view_only_links_count'},
-    )
+    ))
 
     links = LinksField({'self': 'get_registration_url', 'html': 'get_absolute_html_url'})
 

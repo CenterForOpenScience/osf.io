@@ -224,7 +224,6 @@ class NodeSerializer(JSONAPISerializer):
     view_only_links = RelationshipField(
         related_view='nodes:node-view-only-links',
         related_view_kwargs={'node_id': '<pk>'},
-        related_meta={'count': 'get_view_only_links_count'},
     )
 
     def get_current_user_permissions(self, obj):
@@ -283,10 +282,6 @@ class NodeSerializer(JSONAPISerializer):
         return {
             'node': node_comments
         }
-
-    def get_view_only_links_count(self, obj):
-        links = [link for link in obj.private_links if not link.is_deleted]
-        return len(links)
 
     def create(self, validated_data):
         request = self.context['request']
@@ -978,6 +973,8 @@ class NodeViewOnlyLinkSerializer(JSONAPISerializer):
     nodes = RelationshipField(
         related_view='view-only-links:view-only-link-nodes',
         related_view_kwargs={'link_id': '<_id>'},
+        self_view='view-only-links:view-only-link-nodes-relationships',
+        self_view_kwargs={'link_id': '<_id>'}
     )
 
     def create(self, validated_data):

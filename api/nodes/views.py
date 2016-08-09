@@ -3045,7 +3045,7 @@ class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIV
         Body (JSON):   {
                          "data": {
                            "attributes": {
-                             "name": {string},              #optional
+                             "name": {string},               #optional
                              "anonymous": true|false,        #optional
                            },
                          }
