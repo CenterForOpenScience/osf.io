@@ -34,6 +34,89 @@ class PreprintMixin(NodeMixin):
 
 
 class PreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
+    """Preprints that represent a special kind of preprint node. *Read Only*.
+
+    Paginated list of preprints ordered by their `date_created`.  Each resource contains a representation of the
+    preprint.
+
+    ##Preprint Attributes
+
+    Many of these preprint attributes are the same as node, with a few special fields added in.
+
+    OSF Preprint entities have the "preprint" `type`.
+
+        name                            type                  description
+        ====================================================================================
+        title                           string                title of preprint, same as its project or component
+        abstract                        string                description of the preprint
+        date_created                    iso8601 timestamp     timestamp that the preprint was created
+        date_modified                   iso8601 timestamp     timestamp when the preprint was last updated
+        tags                            array of strings      list of tags that describe the node
+        subjects                        array of Subject ids  list ids of Subject in the PLOS taxonomy. Tuple, containing the subject text and subject ID
+        provider                        string                original source of the preprint
+
+    ##Relationships
+
+    ###Primary File
+    The file that is designated as the preprint's primary file, or the manuscript of the preprint.
+
+    ###Files
+    Link to list of files associated with this node/preprint
+
+    ###Contributors
+    Link to list of contributors that are affiliated with this institution.
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Actions
+
+    ###Creating New Preprints
+
+    Create a new preprint by posting to the guid of the existing **node**, including the file_id for the
+    file you'd like to make the primary preprint file.
+
+        Method:        POST
+        URL:           /preprints/<node_id>/
+        Query Params:  <none>
+        Body (JSON):   {
+                        "data": {
+                            "id": node_id,
+                            "attributes": {
+                                "subjects":      {subject_id}      # required
+                                "description":   {description},    # optional
+                                "tags":          [{tag1}, {tag2}], # optional
+                                "provider":      {provider}        # optional
+
+                            },
+                            "relationships": {
+                                "preprint_file": {                 # required
+                                    "data": {
+                                        "type": "primary_file",
+                                        "id": file_id
+                                    }
+                                }
+                            }
+                        }
+                    }
+        Success:       201 CREATED + preprint representation
+
+    New preprints are created by issuing a POST request to this endpoint, along with the guid for the node to create a preprint from.
+    Provider defaults to osf.
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
+    Preprints may be filtered by their `id`, `title`, `public`, `tags`, `date_created`, `date_modified`, `provider`, and `subjects`
+    Most are string fields and will be filtered using simple substring matching.
+
+    #This Request/Response
+
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
