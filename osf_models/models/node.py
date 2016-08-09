@@ -181,6 +181,27 @@ class AbstractNode(TypedModel, Taggable, Loggable, GuidMixin, BaseModel):
                 auth.private_key in self.private_link_keys_active or
                 self.is_admin_parent(auth.user))
 
+    def can_edit(self, auth=None, user=None):
+        """Return if a user is authorized to edit this node.
+        Must specify one of (`auth`, `user`).
+
+        :param Auth auth: Auth object to check
+        :param User user: User object to check
+        :returns: Whether user has permission to edit this node.
+        """
+        if not auth and not user:
+            raise ValueError('Must pass either `auth` or `user`')
+        if auth and user:
+            raise ValueError('Cannot pass both `auth` and `user`')
+        user = user or auth.user
+        if auth:
+            is_api_node = auth.api_node == self
+        else:
+            is_api_node = False
+        return (
+            (user and self.has_permission(user, 'write')) or is_api_node
+        )
+
     @property
     def comment_level(self):
         if self.public_comments:
