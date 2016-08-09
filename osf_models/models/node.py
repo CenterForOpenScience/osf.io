@@ -1,15 +1,12 @@
 import urlparse
 
+from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.apps import apps
-
 from osf_models.apps import AppConfig as app_config
-from osf_models.models import MetaSchema
 from osf_models.models.contributor import Contributor
-from osf_models.models.mixins import Loggable, Taggable
-from osf_models.models.sanctions import Embargo, RegistrationApproval, Retraction
-from osf_models.models.tag import Tag
+from osf_models.models.mixins import Loggable
+from osf_models.models.mixins import Taggable
 from osf_models.models.user import OSFUser
 from osf_models.models.validators import validate_title
 from osf_models.utils.auth import Auth
@@ -248,28 +245,6 @@ class Node(AbstractNode):
     FYI: Behaviors common between Registration and Node should be on the parent class.
     """
     pass
-
-
-class Registration(AbstractNode):
-    is_registration = models.NullBooleanField(default=False, db_index=True)  # TODO SEPARATE CLASS
-    registered_date = models.DateTimeField(db_index=True, null=True, blank=True)
-    registered_user = models.ForeignKey(OSFUser,
-                                        related_name='related_to',
-                                        on_delete=models.SET_NULL,
-                                        null=True, blank=True)
-
-    registered_schema = models.ManyToManyField(MetaSchema)
-
-    registered_meta = DateTimeAwareJSONField(default={})
-    # TODO Add back in once dependencies are resolved
-    registration_approval = models.ForeignKey(RegistrationApproval, null=True, blank=True)
-    retraction = models.ForeignKey(Retraction, null=True, blank=True)
-    embargo = models.ForeignKey(Embargo, null=True, blank=True)
-
-    registered_from = models.ForeignKey('self',
-                                        related_name='registrations',
-                                        on_delete=models.SET_NULL,
-                                        null=True, blank=True)
 
 
 class Collection(GuidMixin, BaseModel):
