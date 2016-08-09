@@ -25,7 +25,7 @@ from api.comments.serializers import CommentSerializer, CommentCreateSerializer
 from api.comments.permissions import CanCommentOrPublic
 from api.users.views import UserMixin
 from api.wikis.serializers import WikiSerializer
-from api.base.views import LinkedNodesRelationship
+from api.base.views import LinkedNodesRelationship, BaseContributorDetail, BaseContributorList
 
 from api.nodes.serializers import (
     NodeSerializer,
@@ -520,7 +520,7 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
         node.save()
 
 
-class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ListFilterMixin, NodeMixin):
+class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin):
     """Contributors (users) for a node.
 
     Contributors are users who can make changes to the node or, in the case of private nodes,
@@ -620,19 +620,6 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
     view_name = 'node-contributors'
     ordering = ('index',)  # default ordering
 
-    def get_default_queryset(self):
-        node = self.get_node()
-        visible_contributors = set(node.visible_contributor_ids)
-        contributors = []
-        index = 0
-        for contributor in node.contributors:
-            contributor.index = index
-            contributor.bibliographic = contributor._id in visible_contributors
-            contributor.permission = node.get_permissions(contributor)[-1]
-            contributor.node_id = node._id
-            contributors.append(contributor)
-            index += 1
-        return contributors
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDeleteJSONAPIView
     def get_serializer_class(self):
@@ -703,7 +690,7 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
         return resource_object_list
 
 
-class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
+class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
     """Detail of a contributor for a node. *Writeable*.
 
     Contributors are users who can make changes to the node or, in the case of private nodes,
@@ -796,19 +783,6 @@ class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
     serializer_class = NodeContributorDetailSerializer
     view_category = 'nodes'
     view_name = 'node-contributor-detail'
-
-    # overrides RetrieveAPIView
-    def get_object(self):
-        node = self.get_node()
-        user = self.get_user()
-        # May raise a permission denied
-        self.check_object_permissions(self.request, user)
-        if user not in node.contributors:
-            raise NotFound('{} cannot be found in the list of contributors.'.format(user))
-        user.permission = node.get_permissions(user)[-1]
-        user.bibliographic = node.get_visible(user)
-        user.node_id = node._id
-        return user
 
     # overrides DestroyAPIView
     def perform_destroy(self, instance):

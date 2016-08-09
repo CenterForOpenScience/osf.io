@@ -4,10 +4,9 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from website.project.model import Q, Node
 from api.base import permissions as base_permissions
-from api.base.views import JSONAPIBaseView
+from api.base.views import JSONAPIBaseView, BaseContributorDetail, BaseContributorList
 from api.base.utils import is_bulk_request
 
-from api.base.filters import ListFilterMixin
 from api.base.serializers import HideIfWithdrawal
 from api.nodes.permissions import ReadOnlyIfRegistration, ContributorDetailPermissions
 from api.nodes.permissions import ContributorOrPublicForRelationshipPointers
@@ -287,7 +286,7 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, Regist
         return registration
 
 
-class RegistrationContributorsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, RegistrationMixin):
+class RegistrationContributorsList(BaseContributorList, RegistrationMixin, UserMixin):
     """List of contributors for a registration."""
     view_category = 'registrations'
     view_name = 'registration-contributors'
@@ -317,23 +316,8 @@ class RegistrationContributorsList(JSONAPIBaseView, generics.ListAPIView, ListFi
             index += 1
         return contributors
 
-    def get_queryset(self):
-        queryset = self.get_queryset_from_request()
-        # If bulk request, queryset only contains contributors in request
-        if is_bulk_request(self.request):
-            contrib_ids = []
-            for item in self.request.data:
-                try:
-                    contrib_ids.append(item['id'].split('-')[1])
-                except AttributeError:
-                    raise ValidationError('Contributor identifier not provided.')
-                except IndexError:
-                    raise ValidationError('Contributor identifier incorrectly formatted.')
-            queryset[:] = [contrib for contrib in queryset if contrib._id in contrib_ids]
-        return queryset
 
-
-class RegistrationContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView, RegistrationMixin, UserMixin):
+class RegistrationContributorDetail(BaseContributorDetail, RegistrationMixin, UserMixin):
     """Detail of a contributor for a registration."""
     view_category = 'registrations'
     view_name = 'registration-contributor-detail'
@@ -349,26 +333,8 @@ class RegistrationContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView, R
         base_permissions.TokenHasScope,
     )
 
-    # overrides RetrieveAPIView
-    def get_object(self):
-        node = self.get_node()
-        user = self.get_user()
-        # May raise a permission denied
-        self.check_object_permissions(self.request, user)
-        if user not in node.contributors:
-            raise NotFound('{} cannot be found in the list of contributors.'.format(user))
-        user.permission = node.get_permissions(user)[-1]
-        user.bibliographic = node.get_visible(user)
-        user.node_id = node._id
-        return user
-
-
-    def get_queryset(self):
-        node = self.get_node()
-        return [user for user in node.contributors]
-
 class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin, RegistrationMixin):
-    """Lists the children a registration."""
+    """Lists the children of a registration."""
     view_category = 'registrations'
     view_name = 'registration-children'
     serializer_class = RegistrationSerializer
@@ -431,6 +397,7 @@ class RegistrationProvidersList(NodeProvidersList, RegistrationMixin):
 
 
 class RegistrationNodeLinksList(JSONAPIBaseView, generics.ListAPIView, RegistrationMixin):
+    """List of node links for a registration."""
     view_category = 'registrations'
     view_name = 'registration-pointers'
     serializer_class = RegistrationNodeLinksSerializer
@@ -458,6 +425,7 @@ class RegistrationNodeLinksList(JSONAPIBaseView, generics.ListAPIView, Registrat
 
 
 class RegistrationNodeLinksDetail(JSONAPIBaseView, generics.RetrieveAPIView, RegistrationMixin):
+    """Detail of a node link for a registration."""
     view_category = 'registrations'
     view_name = 'registration-pointer-detail'
     serializer_class = RegistrationNodeLinksSerializer
@@ -491,43 +459,51 @@ class RegistrationNodeLinksDetail(JSONAPIBaseView, generics.RetrieveAPIView, Reg
         return registration
 
 class RegistrationRegistrationsList(NodeRegistrationsList, RegistrationMixin):
+    """List of registrations of a registration."""
     view_category = 'registrations'
     view_name = 'registration-registrations'
 
 
 class RegistrationFilesList(NodeFilesList, RegistrationMixin):
+    """List of files for a registration."""
     view_category = 'registrations'
     view_name = 'registration-files'
     serializer_class = RegistrationFileSerializer
 
 
 class RegistrationFileDetail(NodeFileDetail, RegistrationMixin):
+    """Detail of a file for a registration."""
     view_category = 'registrations'
     view_name = 'registration-file-detail'
     serializer_class = RegistrationFileSerializer
 
 
 class RegistrationAlternativeCitationsList(NodeAlternativeCitationsList, RegistrationMixin):
+    """List of Alternative Citations for a registration."""
     view_category = 'registrations'
     view_name = 'registration-alternative-citations'
 
 
 class RegistrationAlternativeCitationDetail(NodeAlternativeCitationDetail, RegistrationMixin):
+    """Detail of a citations for a registration."""
     view_category = 'registrations'
     view_name = 'registration-alternative-citation-detail'
 
 
 class RegistrationInstitutionsList(NodeInstitutionsList, RegistrationMixin):
+    """List of the Institutions for a registration."""
     view_category = 'registrations'
     view_name = 'registration-institutions'
 
 
 class RegistrationWikiList(NodeWikiList, RegistrationMixin):
+    """List of wikis for a registration."""
     view_category = 'registrations'
     view_name = 'registration-wikis'
 
 
 class RegistrationLinkedNodesList(LinkedNodesList, RegistrationMixin):
+    """List of linked nodes for a registration."""
     view_category = 'registrations'
     view_name = 'linked-nodes'
 
