@@ -2662,8 +2662,8 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
                        }
         Success:       201
 
-    This requires admin permissions on the node and for the user making the request to
-    have the institutions in the payload as affiliated in their account.
+        This requires write permissions on the node and for the user making the request to
+        have the institutions in the payload as affiliated in their account.
 
     ###Update
 
@@ -2678,7 +2678,7 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
                        }
         Success:       200
 
-        This requires admin permissions on the node and for the user making the request to
+        This requires write permissions on the node and for the user making the request to
         have the institutions in the payload as affiliated in their account. This will delete
         all institutions not listed, meaning a data: [] payload does the same as a DELETE with all
         the institutions.
@@ -2696,7 +2696,8 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
                        }
         Success:       204
 
-    This requires admin permissions in the node.
+        This requires write permissions in the node. If the user has admin permissions, the institution in the payload does
+        not need to be affiliated in their account.
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
