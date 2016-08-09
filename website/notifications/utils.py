@@ -361,28 +361,27 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
                     OSF_MAILING_LIST_DOMAIN
                 )
             )
+        
+            def subbed(email):
+                try:
+                    list_proxy.get_member(email)
+                    return True
+                except:
+                    return False
+
+            subbed_emails = list(filter(subbed, user.emails))
+
+            print(subbed_emails)
+
+            tbd['event']['user_data'] = user.emails
+            try:
+                tbd['event']['notificationType'] = subbed_emails[0]
+            except:
+                tbd['event']['notificationType'] = 'none'
         except:
             import logging
             logger = logging.getLogger(__name__)
             logger.warn('Mailman client unable to connect to Mailman API. The server may not be available.')
-            return
-        def subbed(email):
-            try:
-                list_proxy.get_member(email)
-                return True
-            except:
-                return False
-
-        subbed_emails = list(filter(subbed, user.emails))
-
-        print(subbed_emails)
-
-        tbd['event']['user_data'] = user.emails
-        try:
-            tbd['event']['notificationType'] = subbed_emails[0]
-        except:
-            tbd['event']['notificationType'] = 'none'
-
     return tbd
 
 
