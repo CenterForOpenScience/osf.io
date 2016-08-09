@@ -1927,6 +1927,8 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, ge
         folder_id               string              folder id of linked folder, from third-party service
         node_has_auth           boolean             is this node fully authorized to use an ExternalAccount?
         folder_path             boolean             folder path of linked folder, from third-party service
+        url                     string              Specific to the `forward` addon
+        label                   string              Specific to the `forward` addon
 
     ##Links
 
@@ -1946,6 +1948,8 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, ge
                              "external_account_id": {account_id},   # optional
                              "folder_id":           {folder_id},    # optional
                              "folder_path":         {folder_path},  # optional - Google Drive specific
+                             "url":                 {url},          # optional - External Link specific
+                             "label":               {label}         # optional - External Link specific
                            }
                          }
                        }
