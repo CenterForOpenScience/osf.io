@@ -1,7 +1,6 @@
 import datetime as dt
 import json
 from decimal import Decimal
-from pprint import pprint
 
 from django.test import TestCase
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONEncoder, decode_datetime_objects
