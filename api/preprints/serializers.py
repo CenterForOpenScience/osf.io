@@ -60,8 +60,8 @@ class PreprintSerializer(JSONAPISerializer):
 
     links = LinksField({'self': 'get_preprint_url', 'html': 'get_absolute_html_url'})
 
-    authors = RelationshipField(
-        related_view='preprints:preprint-authors',
+    contributors = RelationshipField(
+        related_view='preprints:preprint-contributors',
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_contrib_count'},
     )
@@ -133,7 +133,3 @@ class PreprintDetailSerializer(PreprintSerializer):
 
 class PreprintDetailRetrieveSerializer(PreprintDetailSerializer):
     subjects = JSONAPIListField(required=False, source='get_preprint_subjects')
-
-class PreprintAuthorSerializer(NodeContributorsSerializer):
-    class Meta:
-        type_ = 'authors'

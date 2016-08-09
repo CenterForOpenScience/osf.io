@@ -11,8 +11,8 @@ from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 from api.base.filters import ODMFilterMixin
 from api.preprints.parsers import PreprintsJSONAPIParser, PreprintsJSONAPIParserForRegularJSON
-from api.preprints.serializers import PreprintSerializer, PreprintDetailSerializer, PreprintAuthorSerializer, PreprintDetailRetrieveSerializer
-from api.nodes.views import NodeMixin, WaterButlerMixin, NodeContributorsList
+from api.preprints.serializers import PreprintSerializer, PreprintDetailSerializer, PreprintDetailRetrieveSerializer
+from api.nodes.views import NodeMixin, WaterButlerMixin, NodeContributorsList, NodeContributorsSerializer
 from api.base.utils import get_object_or_error
 from rest_framework.exceptions import NotFound
 
@@ -93,10 +93,9 @@ class PreprintDetail(JSONAPIBaseView, generics.CreateAPIView, generics.RetrieveU
         return serializer.save(node=self.get_node())
 
 
-class PreprintAuthorsList(NodeContributorsList, PreprintMixin):
+class PreprintContributorsList(NodeContributorsList, PreprintMixin):
 
     view_category = 'preprint'
-    view_name = 'preprint-authors'
+    view_name = 'preprint-contributors'
 
-    def get_serializer_class(self):
-        return PreprintAuthorSerializer
+    serializer_class = NodeContributorsSerializer
