@@ -375,10 +375,12 @@ class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ODMFilterM
         return sorted([each for each in nodes if each.can_view(auth)], key=lambda n: n.date_modified, reverse=True)
 
 class RegistrationForksList(NodeForksList, RegistrationMixin):
+    """List of forks for a registration."""
     view_category = 'registrations'
     view_name = 'registration-forks'
 
 class RegistrationCommentsList(NodeCommentsList, RegistrationMixin):
+    """List of comments for a registration."""
     serializer_class = RegistrationCommentSerializer
     view_category = 'registrations'
     view_name = 'registration-comments'
@@ -391,11 +393,13 @@ class RegistrationCommentsList(NodeCommentsList, RegistrationMixin):
 
 
 class RegistrationLogList(NodeLogList, RegistrationMixin):
+    """List of logs for a registration."""
     view_category = 'registrations'
     view_name = 'registration-logs'
 
 
 class RegistrationProvidersList(NodeProvidersList, RegistrationMixin):
+    """List of providers for a registration."""
     serializer_class = RegistrationProviderSerializer
 
     view_category = 'registrations'
