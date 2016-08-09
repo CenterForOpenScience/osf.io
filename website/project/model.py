@@ -1685,7 +1685,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
             project_signals.project_created.send(self)
 
-        if set(saved_fields) & {'title', 'desctription', 'contributors', 'is_public'}:
+        if set(saved_fields) & {'title', 'description', 'contributors', 'is_public'}:
             mailing_list_data_is_stale = True
 
         if mailing_list_data_is_stale:

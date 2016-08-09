@@ -351,6 +351,9 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
         'kind': 'event',
         'children': []
     }
+    import logging
+    logger = logger.getLogger(__name__)
+    logger.warn(tbd)
     if tbd['event']['title'] == 'mailing_list_events':
         from website.mailing_list.utils import _init_mailman_client
         mc = _init_mailman_client()
