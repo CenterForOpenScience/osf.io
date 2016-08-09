@@ -15,7 +15,6 @@ logger = logging.getLogger(__name__)
 
 
 def do_migration(logs):
-
     # ... perform the migration using a list of logs ...
     for log in logs:
         when = log.date
