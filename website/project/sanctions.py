@@ -695,7 +695,6 @@ class Retraction(EmailApprovableSanction):
         parent_registration.date_modified = datetime.datetime.utcnow()
         parent_registration.save()
 
-
     def approve_retraction(self, user, token):
         self.approve(user, token)
 
