@@ -216,7 +216,7 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                                 title: 'Confirmation email sent',
                                 message: '<em>' + safeAddr + '</em>' + ' was added to your account.' +
                                 ' You will receive a confirmation email at ' + '<em>' + safeAddr + '</em>.' +
-                                ' Please log out of this account and check your email to confirm this action.',
+                                ' Please click the link in your email to confirm this action. You will be required to enter your password.',
                                 buttons: {
                                     ok: {
                                         label: 'Close',

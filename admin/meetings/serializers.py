@@ -1,6 +1,9 @@
 
 
 def serialize_meeting(meeting):
+    is_meeting = True
+    if hasattr(meeting, 'is_meeting'):
+        is_meeting = meeting.is_meeting
     return {
         'endpoint': meeting.endpoint,
         'name': meeting.name,
@@ -24,4 +27,5 @@ def serialize_meeting(meeting):
         'mail_subject': meeting.field_names['mail_subject'],
         'mail_message_body': meeting.field_names['mail_message_body'],
         'mail_attachment': meeting.field_names['mail_attachment'],
+        'is_meeting': is_meeting,
     }

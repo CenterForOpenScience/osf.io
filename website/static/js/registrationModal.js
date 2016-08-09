@@ -20,7 +20,6 @@ var MAKE_EMBARGO = {
     value: 'embargo',
     message: 'Enter registration into embargo'
 };
-var utcOffset = moment().utcOffset();
 var today = new Date();
 var todayMinimum = moment().add(2, 'days');
 var todayMaximum = moment().add(4, 'years');
@@ -47,7 +46,7 @@ var RegistrationViewModel = function(confirm, prompts, validator) {
         }
     );
     self.embargoEndDate = ko.computed(function() {
-        return moment(new Date(self.pikaday())).subtract(utcOffset, 'minutes');
+        return moment(new Date(self.pikaday()));
     });
 
     self.minimumTimeValidation = function (x, y, embargoLocalDateTime) {
