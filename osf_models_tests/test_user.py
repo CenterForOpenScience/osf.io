@@ -13,6 +13,7 @@ from website import settings
 from website import filters
 
 from osf_models.models import OSFUser as User, Tag, Node, Contributor
+from osf_models.utils.auth import Auth
 from osf_models.utils.names import impute_names_model
 from osf_models.exceptions import ValidationError
 
@@ -32,6 +33,11 @@ def test_factory():
 @pytest.fixture()
 def user():
     return UserFactory()
+
+
+@pytest.fixture()
+def auth(user):
+    return Auth(user)
 
 # Tests copied from tests/test_models.py
 @pytest.mark.django_db
@@ -755,10 +761,65 @@ class TestUnregisteredUser:
     #     assert_false(self.user.is_registered)
     #     assert_true(self.project)
 
+# Copied from tests/test_models.py
+@pytest.mark.django_db
+class TestRecentlyAdded:
 
+    def test_recently_added(self, user, auth):
+        # Project created
+        project = NodeFactory()
+
+        assert hasattr(user, 'recently_added') is True
+
+        # Two users added as contributors
+        user2 = UserFactory()
+        user3 = UserFactory()
+        project.add_contributor(contributor=user2, auth=auth)
+        project.add_contributor(contributor=user3, auth=auth)
+        recently_added = list(user.get_recently_added())
+        assert user3 == recently_added[0]
+        assert user2 == recently_added[1]
+        assert len(list(recently_added)) == 2
+
+    def test_recently_added_multi_project(self, user, auth):
+        # Three users are created
+        user2 = UserFactory()
+        user3 = UserFactory()
+        user4 = UserFactory()
+
+        # 2 projects created
+        project = NodeFactory()
+        project2 = NodeFactory()
+
+        # Users 2 and 3 are added to original project
+        project.add_contributor(contributor=user2, auth=auth)
+        project.add_contributor(contributor=user3, auth=auth)
+
+        # Users 2 and 3 are added to another project
+        project2.add_contributor(contributor=user2, auth=auth)
+        project2.add_contributor(contributor=user4, auth=auth)
+
+        recently_added = list(user.get_recently_added())
+        assert user4 == recently_added[0]
+        assert user2 == recently_added[1]
+        assert user3 == recently_added[2]
+        assert len(recently_added) == 3
+
+    def test_recently_added_length(self, user, auth):
+        # Project created
+        project = NodeFactory()
+
+        assert len(list(user.get_recently_added())) == 0
+        # Add 17 users
+        for _ in range(17):
+            project.add_contributor(
+                contributor=UserFactory(),
+                auth=auth
+            )
+
+        assert len(list(user.get_recently_added())) == 15
 
 # New tests
-
 @pytest.mark.django_db
 class TestTagging:
     def test_add_system_tag(self, user):
@@ -784,4 +845,3 @@ class TestTagging:
         user.add_system_tag(tag_name)
 
         assert tag_name in user.system_tags
-

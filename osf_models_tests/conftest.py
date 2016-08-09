@@ -1,6 +1,7 @@
 import logging
 
 import pytest
+from faker import Factory
 
 from website import settings
 from website.app import patch_models
@@ -23,3 +24,8 @@ for logger_name in SILENT_LOGGERS:
 @pytest.fixture(autouse=True)
 def patched_models():
     patch_models(settings)
+
+
+@pytest.fixture()
+def fake():
+    return Factory.create()

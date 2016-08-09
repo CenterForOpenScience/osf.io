@@ -15,14 +15,6 @@ def FakeList(provider, n, *args, **kwargs):
     func = getattr(fake, provider)
     return [func(*args, **kwargs) for _ in range(n)]
 
-class NodeFactory(DjangoModelFactory):
-    title = factory.Faker('catch_phrase')
-    description = factory.Faker('sentence')
-    date_created = factory.LazyFunction(dt.datetime.now)
-    class Meta:
-        model = models.Node
-
-
 class InstitutionFactory(DjangoModelFactory):
     name = factory.Faker('company')
     domains = FakeList('domain_name', n=2)
@@ -114,3 +106,13 @@ class UnconfirmedUserFactory(DjangoModelFactory):
 
         instance.save()
         return instance
+
+
+class NodeFactory(DjangoModelFactory):
+    title = factory.Faker('catch_phrase')
+    description = factory.Faker('sentence')
+    date_created = factory.LazyFunction(dt.datetime.now)
+    creator = factory.SubFactory(UserFactory)
+
+    class Meta:
+        model = models.Node

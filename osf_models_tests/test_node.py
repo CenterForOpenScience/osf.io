@@ -4,7 +4,10 @@ from modularodm.exceptions import ValidationError as MODMValidationError
 from django.core.exceptions import ValidationError as DjangoValidationError
 import pytest
 
-from osf_models.models import Node, Tag, NodeLog
+from website.project.signals import contributor_added
+from website.util import permissions
+
+from osf_models.models import Node, Tag, NodeLog, Contributor
 from osf_models.utils.auth import Auth
 
 from .factories import NodeFactory, UserFactory
@@ -136,17 +139,48 @@ class TestNodeCreation:
 
 # Copied from tests/test_models.py
 @pytest.mark.django_db
-class TestAddContributor:
-
-    def test_add_contributor(self):
+class TestContributorMethods:
+    def test_add_contributor(self, node, user, auth):
         # A user is added as a contributor
         user2 = UserFactory()
-        self.project.add_contributor(contributor=user2, auth=self.auth)
-        self.project.save()
-        assert user2 in self.project.contributors
-        assert self.project.logs[-1].action == 'contributor_added'
+        node.add_contributor(contributor=user2, auth=auth)
+        node.save()
+        assert node.is_contributor(user2) is True
+        last_log = node.logs.all().order_by('-date')[0]
+        assert last_log.action == 'contributor_added'
+        assert last_log.params['contributors'] == [user2._id]
 
-    def test_add_contributor_sends_contributor_added_signal(self):
+        assert user2 in user.recently_added.all()
+
+    def test_add_contributors(self, node, auth):
+        user1 = UserFactory()
+        user2 = UserFactory()
+        node.add_contributors(
+            [
+                {'user': user1, 'permissions': ['read', 'write', 'admin'], 'visible': True},
+                {'user': user2, 'permissions': ['read', 'write'], 'visible': False}
+            ],
+            auth=auth
+        )
+        last_log = node.logs.all().order_by('-date')[0]
+        assert (
+            last_log.params['contributors'] ==
+            [user1._id, user2._id]
+        )
+        assert node.is_contributor(user1)
+        assert node.is_contributor(user2)
+        assert user1._id in node.visible_contributor_ids
+        assert user2._id not in node.visible_contributor_ids
+        assert node.get_permissions(user1) == [permissions.READ, permissions.WRITE, permissions.ADMIN]
+        assert node.get_permissions(user2) == [permissions.READ, permissions.WRITE]
+        last_log = node.logs.all().order_by('-date')[0]
+        assert (
+            last_log.params['contributors'] ==
+            [user1._id, user2._id]
+        )
+
+    @pytest.mark.skip('Signal not sent because NotificationSubscription not yet implemented')
+    def test_add_contributors_sends_contributor_added_signal(self, node, auth):
         user = UserFactory()
         contributors = [{
             'user': user,
@@ -154,7 +188,124 @@ class TestAddContributor:
             'permissions': ['read', 'write']
         }]
         with capture_signals() as mock_signals:
-            self.project.add_contributors(contributors=contributors, auth=self.auth)
-            self.project.save()
-            assert user in self.project.contributors
+            node.add_contributors(contributors=contributors, auth=auth)
+            node.save()
+            assert node.is_contributor(user)
             assert mock_signals.signals_sent() in set([contributor_added])
+
+    def test_is_contributor(self, node):
+        contrib, noncontrib = UserFactory(), UserFactory()
+        Contributor.objects.create(user=contrib, node=node)
+
+        assert node.is_contributor(contrib) is True
+        assert node.is_contributor(noncontrib) is False
+
+    def test_visible_contributor_ids(self, node, user):
+        visible_contrib = UserFactory()
+        invisible_contrib = UserFactory()
+        Contributor.objects.create(user=visible_contrib, node=node, visible=True)
+        Contributor.objects.create(user=invisible_contrib, node=node, visible=False)
+        assert visible_contrib._id in node.visible_contributor_ids
+        assert invisible_contrib._id not in node.visible_contributor_ids
+
+    def test_set_visible_false(self, node, auth):
+        contrib = UserFactory()
+        Contributor.objects.create(user=contrib, node=node, visible=True)
+        node.set_visible(contrib, visible=False, auth=auth)
+        node.save()
+        assert Contributor.objects.filter(user=contrib, node=node, visible=False).exists() is True
+
+        last_log = node.logs.all().order_by('-date')[0]
+        assert last_log.user == auth.user
+        assert last_log.action == NodeLog.MADE_CONTRIBUTOR_INVISIBLE
+
+    def test_set_visible_true(self, node, auth):
+        contrib = UserFactory()
+        Contributor.objects.create(user=contrib, node=node, visible=False)
+        node.set_visible(contrib, visible=True, auth=auth)
+        node.save()
+        assert Contributor.objects.filter(user=contrib, node=node, visible=True).exists() is True
+
+        last_log = node.logs.all().order_by('-date')[0]
+        assert last_log.user == auth.user
+        assert last_log.action == NodeLog.MADE_CONTRIBUTOR_VISIBLE
+
+    def test_set_visible_is_noop_if_visibility_is_unchanged(self, node, auth):
+        visible, invisible = UserFactory(), UserFactory()
+        Contributor.objects.create(user=visible, node=node, visible=True)
+        Contributor.objects.create(user=invisible, node=node, visible=False)
+        original_log_count = node.logs.count()
+        node.set_visible(invisible, visible=False, auth=auth)
+        node.set_visible(visible, visible=True, auth=auth)
+        node.save()
+        assert node.logs.count() == original_log_count
+
+    def test_set_visible_contributor_with_only_one_contributor(self, node, user):
+        with pytest.raises(ValueError) as excinfo:
+            node.set_visible(user=user, visible=False, auth=None)
+        assert excinfo.value.message == 'Must have at least one visible contributor'
+
+    def test_set_visible_missing(self, node):
+        with pytest.raises(ValueError):
+            node.set_visible(UserFactory(), True)
+
+
+@pytest.mark.django_db
+class TestPermissionMethods:
+
+    def test_has_permission(self, node):
+        user = UserFactory()
+        contributor = Contributor.objects.create(
+            node=node, user=user,
+            read=True, write=False, admin=False
+        )
+
+        assert node.has_permission(user, permissions.READ) is True
+        assert node.has_permission(user, permissions.WRITE) is False
+        assert node.has_permission(user, permissions.ADMIN) is False
+
+        contributor.write = True
+        contributor.save()
+        assert node.has_permission(user, permissions.WRITE) is True
+
+    def test_get_permissions(self, node):
+        user = UserFactory()
+        contributor = Contributor.objects.create(
+            node=node, user=user,
+            read=True, write=False, admin=False
+        )
+        assert node.get_permissions(user) == [permissions.READ]
+
+        contributor.write = True
+        contributor.save()
+        assert node.get_permissions(user) == [permissions.READ, permissions.WRITE]
+
+    def test_add_permission(self, node):
+        user = UserFactory()
+        Contributor.objects.create(
+            node=node, user=user,
+            read=True, write=False, admin=False
+        )
+        node.add_permission(user, permissions.WRITE)
+        node.save()
+        assert node.has_permission(user, permissions.WRITE) is True
+
+    def test_add_permission_with_admin_also_grants_read_and_write(self, node):
+        user = UserFactory()
+        Contributor.objects.create(
+            node=node, user=user,
+            read=True, write=False, admin=False
+        )
+        node.add_permission(user, permissions.ADMIN)
+        node.save()
+        assert node.has_permission(user, permissions.ADMIN)
+        assert node.has_permission(user, permissions.WRITE)
+
+    def test_add_permission_already_granted(self, node):
+        user = UserFactory()
+        Contributor.objects.create(
+            node=node, user=user,
+            read=True, write=True, admin=True
+        )
+        with pytest.raises(ValueError):
+            node.add_permission(user, permissions.ADMIN)
