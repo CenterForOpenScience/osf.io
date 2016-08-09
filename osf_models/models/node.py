@@ -11,6 +11,8 @@ from typedmodels.models import TypedModel
 
 # OSF imports
 from website.exceptions import UserNotAffiliatedError
+from website.util.permissions import expand_permissions, DEFAULT_CONTRIBUTOR_PERMISSIONS, READ, WRITE, ADMIN
+from website.project import signals as project_signals
 from framework.sentry import log_exception
 
 from osf_models.apps import AppConfig as app_config
@@ -198,13 +200,13 @@ class AbstractNode(TypedModel, Taggable, Loggable, GuidMixin, BaseModel):
     def get_permissions(self, user):
         contrib = user.contributor_set.get(node=self)
         perm = []
-        if contrib.admin:
-            perm.append('admin')
-        if contrib.write:
-            perm.append('write')
         if contrib.read:
-            perm.append('read')
-        return []
+            perm.append(READ)
+        if contrib.write:
+            perm.append(WRITE)
+        if contrib.admin:
+            perm.append(ADMIN)
+        return perm
 
     def has_permission(self, user, permission):
         return getattr(user.contributor_set.get(node=self), permission, False)
