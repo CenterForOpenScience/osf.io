@@ -25,7 +25,7 @@ def do_migration(logs):
                 registration.save()
                 logger.info('{} date updated to {}'.format(registration, log.date))
             else:
-                logger.warning('Date modified is more recent than retraction ' + log._id)
+                logger.info('Date modified is more recent than retraction ' + log._id)
         else:
             logger.warning('No parent registration found for retraction log ' + log._id)
 
