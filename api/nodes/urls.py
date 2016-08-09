@@ -32,6 +32,7 @@ urlpatterns = [
     url(r'^(?P<node_id>\w+)/draft_registrations/(?P<draft_id>\w+)/$', views.NodeDraftRegistrationDetail.as_view(), name=views.NodeDraftRegistrationDetail.view_name),
     url(r'^(?P<node_id>\w+)/relationships/linked_nodes/$', views.NodeLinkedNodesRelationship.as_view(), name=views.NodeLinkedNodesRelationship.view_name),
     url(r'^(?P<node_id>\w+)/linked_nodes/$', views.LinkedNodesList.as_view(), name=views.LinkedNodesList.view_name),
+    url(r'^(?P<node_id>\w+)/external_link/$', views.NodeExternalLink.as_view(), name=views.NodeExternalLink.view_name),
 ]
 
 # Routes only active in local/staging environments

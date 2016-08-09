@@ -224,6 +224,11 @@ class NodeSerializer(JSONAPISerializer):
         self_meta={'count': 'get_node_links_count'}
     )
 
+    external_link = RelationshipField(
+        related_view='nodes:external-link',
+        related_view_kwargs={'node_id': '<pk>'}
+    )
+
     def get_current_user_permissions(self, obj):
         user = self.context['request'].user
         if user.is_anonymous():
@@ -940,3 +945,21 @@ class DraftRegistrationDetailSerializer(DraftRegistrationSerializer):
             draft.update_metadata(metadata)
             draft.save()
         return draft
+
+
+class NodeExternalLinkSerializer(JSONAPISerializer):
+    """
+    Document pls.
+    """
+
+    # url
+    # label
+
+    def get_absolute_url(self, obj):
+        pass
+
+    def create(self, validated_data):
+        pass
+
+    def update(self, instance, validated_data):
+        pass

@@ -40,7 +40,8 @@ from api.nodes.serializers import (
     NodeContributorDetailSerializer,
     NodeInstitutionsRelationshipSerializer,
     NodeAlternativeCitationSerializer,
-    NodeContributorsCreateSerializer
+    NodeContributorsCreateSerializer,
+    NodeExternalLinkSerializer,
 )
 from api.nodes.utils import get_file_object
 
@@ -2961,3 +2962,27 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
         res = super(LinkedNodesList, self).get_parser_context(http_request)
         res['is_relationship'] = True
         return res
+
+
+class NodeExternalLink(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
+    """
+    Document pls.
+    """
+
+    permission_classes = {
+        base_permissions.TokenHasScope,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+    }
+
+    # required_read_scopes
+    # required_write_scopes
+
+    serializer_class = NodeExternalLinkSerializer
+    view_category = 'nodes'
+    view_name = 'external-link'
+
+    def get_object(self):
+        pass
+
+    def perform_destroy(self, instance):
+        pass
