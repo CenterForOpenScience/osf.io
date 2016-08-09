@@ -7,6 +7,7 @@ class TaxonomySerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'text',
         'parent_ids',
+        'type',
         'id'
     ])
 

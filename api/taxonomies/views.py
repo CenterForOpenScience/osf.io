@@ -11,7 +11,7 @@ from website.project.taxonomies import Subject
 from framework.auth.oauth_scopes import CoreScopes
 
 
-class PlosTaxonomy(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
+class Taxonomy(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     '''[PLOS taxonomy of subjects](http://journals.plos.org/plosone/browse/) in flattened form. *Read-only*
 
     ##Taxonomy Attributes
@@ -52,12 +52,12 @@ class PlosTaxonomy(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
     required_write_scopes = [CoreScopes.NULL]
     serializer_class = TaxonomySerializer
-    view_category = 'plos-taxonomies'
-    view_name = 'plos-taxonomy'
+    view_category = 'taxonomies'
+    view_name = 'taxonomy'
 
     # overrides ListAPIView
     def get_default_odm_query(self):
-        return Q('type', 'eq', 'plos')
+        return Q('type', 'ne', None)
 
     def get_queryset(self):
         return Subject.find(self.get_query_from_request())
