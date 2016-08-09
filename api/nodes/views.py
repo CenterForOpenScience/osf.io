@@ -29,6 +29,7 @@ from api.base.views import LinkedNodesRelationship
 
 from api.nodes.serializers import (
     NodeSerializer,
+    ForwardNodeAddonSettingsSerializer,
     NodeAddonSettingsSerializer,
     NodeLinksSerializer,
     NodeForksSerializer,
@@ -2002,6 +2003,15 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, ge
             raise NotFound('Node {} does not have add-on {}'.format(node._id, addon))
 
         node.delete_addon(addon, auth=get_user_auth(self.request))
+
+    def get_serializer_class(self):
+        """
+        Use NodeDetailSerializer which requires 'id'
+        """
+        if self.kwargs['provider'] == 'forward':
+            return ForwardNodeAddonSettingsSerializer
+        else:
+            return NodeAddonSettingsSerializer
 
 
 class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, AddonSettingsMixin):
