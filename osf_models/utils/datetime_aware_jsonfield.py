@@ -27,53 +27,24 @@ class DateTimeAwareJSONEncoder(DjangoJSONEncoder):
 def decode_datetime_objects(nested_value):
 
     if isinstance(nested_value, list):
-        new_list = list()
-        for item in nested_value:
-            new_list.append(decode_datetime_objects(item))
-        return new_list
+        return [decode_datetime_objects(item) for item in nested_value]
     elif isinstance(nested_value, dict):
-        new_value = nested_value
         for key, value in nested_value.iteritems():
             if isinstance(value, dict) and 'type' in value.keys():
                 if value['type'] == 'encoded_datetime':
-                    new_value[key] = parser.parse(value['value'])
+                    nested_value[key] = parser.parse(value['value'])
                 if value['type'] == 'encoded_date':
-                    new_value[key] = parser.parse(value['value']).date()
+                    nested_value[key] = parser.parse(value['value']).date()
                 if value['type'] == 'encoded_time':
-                    new_value[key] = parser.parse(value['value']).time()
+                    nested_value[key] = parser.parse(value['value']).time()
                 if value['type'] == 'encoded_decimal':
-                    new_value[key] = Decimal(value['value'])
+                    nested_value[key] = Decimal(value['value'])
             elif isinstance(value, dict):
-                new_value[key] = decode_datetime_objects(value)
+                nested_value[key] = decode_datetime_objects(value)
             elif isinstance(value, list):
-                new_value[key] = decode_datetime_objects(value)
-        return new_value
+                nested_value[key] = decode_datetime_objects(value)
+        return nested_value
     return nested_value
-
-
-
-# def decode_datetime_objects(nested_value):
-#     if isinstance(nested_value, dict):
-#         new_value = dict()
-#         for key, value in nested_value.iteritems():
-#             if key == 'type' and value == 'encoded_datetime':
-#                 new_value[key] = parser.parse(nested_value['value'])
-#             elif key == 'type' and value == 'encoded_date':
-#                 new_value[key] = parser.parse(nested_value['value'])
-#             elif key == 'type' and value == 'encoded_time':
-#                 new_value[key] = parser.parse(nested_value['value'])
-#             elif isinstance(value, collections.Mapping):
-#                 # recurse
-#                 new_value[key] = decode_datetime_objects(value)
-#         return new_value
-#     elif isinstance(nested_value, list):
-#         new_list = list()
-#         for item in nested_value:
-#             # recurse
-#             new_value = decode_datetime_objects(item)
-#             new_list.append(new_value)
-#         return new_list
-#     return nested_value
 
 
 class DateTimeAwareJSONField(JSONField):
