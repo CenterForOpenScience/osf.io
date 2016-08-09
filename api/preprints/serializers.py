@@ -35,7 +35,7 @@ class PreprintSerializer(JSONAPISerializer):
         'date_modified',
         'contributors',
         'provider',
-        'preprint_subjects'
+        'subjects'
     ])
 
     title = ser.CharField(required=False)
