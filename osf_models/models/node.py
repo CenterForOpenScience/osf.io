@@ -1,6 +1,6 @@
-import urlparse
-import logging
 import datetime as dt
+import logging
+import urlparse
 
 from django.apps import apps
 from django.core.exceptions import ValidationError
@@ -11,14 +11,18 @@ from typedmodels.models import TypedModel
 
 # OSF imports
 from website.exceptions import UserNotAffiliatedError
-from website.util.permissions import expand_permissions, DEFAULT_CONTRIBUTOR_PERMISSIONS, READ, WRITE, ADMIN
-from website.project import signals as project_signals
+from website.util.permissions import (
+    expand_permissions,
+    DEFAULT_CONTRIBUTOR_PERMISSIONS,
+    READ,
+    WRITE,
+    ADMIN
+)
 from framework.sentry import log_exception
 
 from osf_models.apps import AppConfig as app_config
 from osf_models.models.contributor import Contributor
-from osf_models.models.mixins import Loggable
-from osf_models.models.mixins import Taggable
+from osf_models.models.mixins import Loggable, Taggable
 from osf_models.models.user import OSFUser
 from osf_models.models.validators import validate_title
 from osf_models.utils.auth import Auth
@@ -211,9 +215,24 @@ class AbstractNode(TypedModel, Taggable, Loggable, GuidMixin, BaseModel):
     def has_permission(self, user, permission):
         return getattr(user.contributor_set.get(node=self), permission, False)
 
+    def add_permission(self, user, permission, save=False):
+        contributor = user.contributor_set.get(node=self)
+        if not getattr(contributor, permission, False):
+            for perm in expand_permissions(permission):
+                setattr(contributor, perm, True)
+            contributor.save()
+        else:
+            if getattr(contributor, permission, False):
+                raise ValueError('User already has permission {0}'.format(permission))
+        if save:
+            self.save()
+
     @property
     def is_retracted(self):
-        return False  # TODO This property will need to recurse up the node hierarchy to check if any this node's parents are retracted. Same with is_pending_registration, etc. -- @sloria
+        # TODO This property will need to recurse up the node hierarchy to check if any this
+        # node's parents are retracted.
+        # Same with is_pending_registration, etc. -- @sloria
+        return False
 
     @property
     def nodes_pointer(self):
@@ -256,11 +275,158 @@ class AbstractNode(TypedModel, Taggable, Loggable, GuidMixin, BaseModel):
             save=False
         )
 
+    def is_contributor(self, user):
+        """Return whether ``user`` is a contributor on this node."""
+        return user is not None and Contributor.objects.filter(user=user, node=self).exists()
+
+    def set_visible(self, user, visible, log=True, auth=None, save=False):
+        if not self.is_contributor(user):
+            raise ValueError(u'User {0} not in contributors'.format(user))
+        if visible and not Contributor.objects.filter(node=self, user=user, visible=True).exists():
+            Contributor.objects.filter(node=self, user=user, visible=False).update(visible=True)
+        elif not visible and Contributor.objects.filter(node=self, user=user, visible=True).exists():
+            if Contributor.objects.filter(node=self, visible=True).count() == 1:
+                raise ValueError('Must have at least one visible contributor')
+            Contributor.objects.filter(node=self, user=user, visible=True).update(visible=False)
+        else:
+            return
+        NodeLog = apps.get_model('osf_models.NodeLog')
+        message = (
+            NodeLog.MADE_CONTRIBUTOR_VISIBLE
+            if visible
+            else NodeLog.MADE_CONTRIBUTOR_INVISIBLE
+        )
+        if log:
+            self.add_log(
+                message,
+                params={
+                    'parent': self.parent_id,
+                    'node': self._id,
+                    'contributors': [user._id],
+                },
+                auth=auth,
+                save=False,
+            )
+        if save:
+            self.save()
+
+    def add_contributor(self, contributor, permissions=None, visible=True,
+                        auth=None, log=True, save=False):
+        """Add a contributor to the project.
+
+        :param User contributor: The contributor to be added
+        :param list permissions: Permissions to grant to the contributor
+        :param bool visible: Contributor is visible in project dashboard
+        :param Auth auth: All the auth information including user, API key
+        :param bool log: Add log to self
+        :param bool save: Save after adding contributor
+        :returns: Whether contributor was added
+        """
+        MAX_RECENT_LENGTH = 15
+
+        # If user is merged into another account, use master account
+        contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
+        if not self.is_contributor(contrib_to_add):
+
+            contributor_obj, created = Contributor.objects.get_or_create(user=contrib_to_add, node=self)
+            contributor_obj.visible = visible
+
+            # Add default contributor permissions
+            permissions = permissions or DEFAULT_CONTRIBUTOR_PERMISSIONS
+            for perm in permissions:
+                setattr(contributor_obj, perm, True)
+            contributor_obj.save()
+
+            # Add contributor to recently added list for user
+            if auth is not None:
+                RecentlyAddedContributor = apps.get_model('osf_models.RecentlyAddedContributor')
+                user = auth.user
+                recently_added_contributor_obj, created = RecentlyAddedContributor.objects.get_or_create(
+                    user=user,
+                    contributor=contrib_to_add
+                )
+                recently_added_contributor_obj.date_added = dt.datetime.utcnow()
+                recently_added_contributor_obj.save()
+                count = user.recently_added.count()
+                if count > MAX_RECENT_LENGTH:
+                    difference = count - MAX_RECENT_LENGTH
+                    for each in user.recentlyaddedcontributor_set.order_by('date_added')[:difference]:
+                        each.delete()
+                    user.save()
+
+            if log:
+                NodeLog = apps.get_model('osf_models.NodeLog')
+                self.add_log(
+                    action=NodeLog.CONTRIB_ADDED,
+                    params={
+                        'project': self.parent_id,
+                        'node': self._primary_key,
+                        'contributors': [contrib_to_add._primary_key],
+                    },
+                    auth=auth,
+                    save=False,
+                )
+            if save:
+                self.save()
+
+            # TODO: Uncomment when NotificationSubscription is implemented
+            # if self._id:
+            #     project_signals.contributor_added.send(self, contributor=contributor, auth=auth)
+
+            return True
+
+        # Permissions must be overridden if changed when contributor is
+        # added to parent he/she is already on a child of.
+        elif contrib_to_add in self.contributors and permissions is not None:
+            self.set_permissions(contrib_to_add, permissions)
+            if save:
+                self.save()
+
+            return False
+        else:
+            return False
+
+    def add_contributors(self, contributors, auth=None, log=True, save=False):
+        """Add multiple contributors
+
+        :param list contributors: A list of dictionaries of the form:
+            {
+                'user': <User object>,
+                'permissions': <Permissions list, e.g. ['read', 'write']>,
+                'visible': <Boolean indicating whether or not user is a bibliographic contributor>
+            }
+        :param auth: All the auth information including user, API key.
+        :param log: Add log to self
+        :param save: Save after adding contributor
+        """
+        for contrib in contributors:
+            self.add_contributor(
+                contributor=contrib['user'], permissions=contrib['permissions'],
+                visible=contrib['visible'], auth=auth, log=False, save=False,
+            )
+        if log and contributors:
+            NodeLog = apps.get_model('osf_models.NodeLog')
+            self.add_log(
+                action=NodeLog.CONTRIB_ADDED,
+                params={
+                    'project': self.parent_id,
+                    'node': self._primary_key,
+                    'contributors': [
+                        contrib['user']._id
+                        for contrib in contributors
+                    ],
+                },
+                auth=auth,
+                save=False,
+            )
+        if save:
+            self.save()
+
 
 class Node(AbstractNode):
     """
-    Concrete Node class: Instance of AbstractNode(TypedModel). All things that inherit from AbstractNode will appear in
-    the same table and will be differentiated by the `type` column.
+    Concrete Node class: Instance of AbstractNode(TypedModel). All things that inherit
+    from AbstractNode will appear in the same table and will be differentiated by the `type` column.
 
     FYI: Behaviors common between Registration and Node should be on the parent class.
     """

@@ -26,6 +26,7 @@ from website import filters
 from osf_models.exceptions import reraise_django_validation_errors
 from osf_models.models.base import BaseModel, GuidMixin
 from osf_models.models.mixins import AddonModelMixin
+from osf_models.models.contributor import RecentlyAddedContributor
 from osf_models.utils import security
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf_models.utils.names import impute_names
@@ -74,7 +75,8 @@ class OSFUserManager(BaseUserManager):
         return user
 
 
-class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonModelMixin):
+class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
+              AbstractBaseUser, PermissionsMixin, AddonModelMixin):
     USERNAME_FIELD = 'username'
 
     # Node fields that trigger an update to the search engine on save
@@ -211,7 +213,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     # the date this user was registered
     date_registered = models.DateTimeField(db_index=True
-                                           )  #, auto_now_add=True)
+                                           )  # auto_now_add=True)
 
     # watched nodes are stored via a list of WatchConfigs
     # watched = fields.ForeignField("WatchConfig", list=True)
@@ -537,7 +539,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.middle_names = parsed['middle']
         self.family_name = parsed['family']
         self.suffix = parsed['suffix']
-
 
     def add_unconfirmed_email(self, email, expiration=None):
         """Add an email verification token for a given email."""
