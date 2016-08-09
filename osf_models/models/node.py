@@ -25,7 +25,7 @@ from osf_models.models.contributor import Contributor
 from osf_models.models.mixins import Loggable, Taggable
 from osf_models.models.user import OSFUser
 from osf_models.models.validators import validate_title
-from osf_models.utils.auth import Auth
+from osf_models.utils.auth import Auth, get_user
 from osf_models.utils.base import api_v2_url
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
@@ -446,6 +446,39 @@ class AbstractNode(TypedModel, Taggable, Loggable, GuidMixin, BaseModel):
         if save:
             self.save()
 
+    def add_unregistered_contributor(self, fullname, email, auth,
+                                     permissions=None, save=False):
+        """Add a non-registered contributor to the project.
+
+        :param str fullname: The full name of the person.
+        :param str email: The email address of the person.
+        :param Auth auth: Auth object for the user adding the contributor.
+        :returns: The added contributor
+        :raises: DuplicateEmailError if user with given email is already in the database.
+        """
+        # Create a new user record
+        contributor = OSFUser.create_unregistered(fullname=fullname, email=email)
+
+        contributor.add_unclaimed_record(node=self, referrer=auth.user,
+            given_name=fullname, email=email)
+        try:
+            contributor.save()
+        except ValidationError:  # User with same email already exists
+            contributor = get_user(email=email)
+            # Unregistered users may have multiple unclaimed records, so
+            # only raise error if user is registered.
+            if contributor.is_registered or self.is_contributor(contributor):
+                raise
+            contributor.add_unclaimed_record(node=self, referrer=auth.user,
+                given_name=fullname, email=email)
+            contributor.save()
+
+        self.add_contributor(
+            contributor, permissions=permissions, auth=auth,
+            log=True, save=False,
+        )
+        self.save()
+        return contributor
 
 class Node(AbstractNode):
     """

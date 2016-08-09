@@ -1,7 +1,12 @@
+import logging
+
+from django.apps import apps
 from modularodm.exceptions import QueryException
 from modularodm import Q
 
 from framework.sessions import session
+
+logger = logging.getLogger(__name__)
 
 def _get_current_user():
     # avoid cirdep
@@ -9,6 +14,47 @@ def _get_current_user():
     uid = session._get_current_object() and session.data.get('auth_user_id')
     return OSFUser.objects.get(_guid__guid=uid)
 
+# TODO: This should be a class method of User?
+def get_user(email=None, password=None, verification_key=None):
+    """Get an instance of User matching the provided params.
+
+    :return: The instance of User requested
+    :rtype: User or None
+    """
+    User = apps.get_model('osf_models.OSFUser')
+    # tag: database
+    if password and not email:
+        raise AssertionError('If a password is provided, an email must also '
+                             'be provided.')
+
+    query_list = []
+    if email:
+        email = email.strip().lower()
+        query_list.append(Q('emails', 'eq', email) | Q('username', 'eq', email))
+    if password:
+        password = password.strip()
+        try:
+            query = query_list[0]
+            for query_part in query_list[1:]:
+                query = query & query_part
+            user = User.find_one(query)
+        except Exception as err:
+            logger.error(err)
+            user = None
+        if user and not user.check_password(password):
+            return False
+        return user
+    if verification_key:
+        query_list.append(Q('verification_key', 'eq', verification_key))
+    try:
+        query = query_list[0]
+        for query_part in query_list[1:]:
+            query = query & query_part
+        user = User.find_one(query)
+        return user
+    except Exception as err:
+        logger.error(err)
+        return None
 
 class Auth(object):
     def __init__(self, user=None, api_node=None,

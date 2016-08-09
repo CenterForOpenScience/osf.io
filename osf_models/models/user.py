@@ -19,6 +19,7 @@ from framework.auth.exceptions import (
     InvalidTokenError,
     MergeConfirmedRequiredError
 )
+from framework.exceptions import PermissionsError
 from framework.sentry import log_exception
 from website import filters
 
@@ -212,7 +213,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     # }
 
     # the date this user was registered
-    date_registered = models.DateTimeField(db_index=True
+    date_registered = models.DateTimeField(db_index=True, default=dt.datetime.utcnow,
                                            )  # auto_now_add=True)
 
     # watched nodes are stored via a list of WatchConfigs
@@ -532,6 +533,16 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
                 email_verifications.pop(token)
         self.email_verifications = email_verifications
 
+    def verify_claim_token(self, token, project_id):
+        """Return whether or not a claim token is valid for this user for
+        a given node which they were added as a unregistered contributor for.
+        """
+        try:
+            record = self.get_unclaimed_record(project_id)
+        except ValueError:  # No unclaimed record for given pid
+            return False
+        return record['token'] == token
+
     @classmethod
     def create_unregistered(cls, fullname, email=None):
         """Create a new unregistered user.
@@ -832,3 +843,59 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     def n_projects_in_common(self, other_user):
         """Returns number of "shared projects" (projects that both users are contributors for)"""
         return len(self.get_projects_in_common(other_user, primary_keys=True))
+
+    def add_unclaimed_record(self, node, referrer, given_name, email=None):
+        """Add a new project entry in the unclaimed records dictionary.
+
+        :param Node node: Node this unclaimed user was added to.
+        :param User referrer: User who referred this user.
+        :param str given_name: The full name that the referrer gave for this user.
+        :param str email: The given email address.
+        :returns: The added record
+        """
+        if not node.can_edit(user=referrer):
+            raise PermissionsError('Referrer does not have permission to add a contributor '
+                'to project {0}'.format(node._primary_key))
+        project_id = node._primary_key
+        referrer_id = referrer._primary_key
+        if email:
+            clean_email = email.lower().strip()
+        else:
+            clean_email = None
+        record = {
+            'name': given_name,
+            'referrer_id': referrer_id,
+            'token': generate_confirm_token(),
+            'email': clean_email
+        }
+        self.unclaimed_records[project_id] = record
+        return record
+
+    def get_unclaimed_record(self, project_id):
+        """Get an unclaimed record for a given project_id.
+
+        :raises: ValueError if there is no record for the given project.
+        """
+        try:
+            return self.unclaimed_records[project_id]
+        except KeyError:  # reraise as ValueError
+            raise ValueError('No unclaimed record for user {self._id} on node {project_id}'
+                                .format(**locals()))
+
+    def get_claim_url(self, project_id, external=False):
+        """Return the URL that an unclaimed user should use to claim their
+        account. Return ``None`` if there is no unclaimed_record for the given
+        project ID.
+
+        :param project_id: The project ID for the unclaimed record
+        :raises: ValueError if a record doesn't exist for the given project ID
+        :rtype: dict
+        :returns: The unclaimed record for the project
+        """
+        config = apps.get_app_config('osf_models')
+        uid = self._primary_key
+        base_url = config.domain if external else '/'
+        unclaimed_record = self.get_unclaimed_record(project_id)
+        token = unclaimed_record['token']
+        return '{base_url}user/{uid}/{project_id}/claim/?token={token}'\
+                    .format(**locals())
