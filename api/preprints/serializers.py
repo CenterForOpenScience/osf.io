@@ -8,7 +8,7 @@ from api.base.serializers import (
 )
 from api.base.exceptions import Conflict
 from api.base.utils import absolute_reverse, get_user_auth
-from api.nodes.serializers import NodeTagField, NodeContributorsSerializer
+from api.nodes.serializers import NodeTagField
 from framework.exceptions import PermissionsError
 from website.models import StoredFileNode
 
