@@ -388,7 +388,6 @@ class TestOSFUser:
 @pytest.mark.django_db
 class TestProjectsInCommon:
 
-    @pytest.mark.skip('get_projects_in_common not yet implemented')
     def test_get_projects_in_common(self, user, auth):
         user2 = UserFactory()
         project = NodeFactory(creator=user)
@@ -404,17 +403,16 @@ class TestProjectsInCommon:
         assert(user.get_projects_in_common(user2, primary_keys=False) ==
                      projects.intersection(user2.contributed))
 
-    @pytest.mark.skip('n_projects_in_common not yet implemented')
-    def test_n_projects_in_common(self):
+    def test_n_projects_in_common(self, user, auth):
         user2 = UserFactory()
         user3 = UserFactory()
-        project = NodeFactory(creator=self.user)
+        project = NodeFactory(creator=user)
 
-        project.add_contributor(contributor=user2, auth=self.auth)
+        project.add_contributor(contributor=user2, auth=auth)
         project.save()
 
-        assert self.user.n_projects_in_common(user2) == 1
-        assert self.user.n_projects_in_common(user3) == 0
+        assert user.n_projects_in_common(user2) == 1
+        assert user.n_projects_in_common(user3) == 0
 
 
 @pytest.mark.skip('Session model not yet implemented')
