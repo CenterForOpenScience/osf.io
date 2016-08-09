@@ -15,4 +15,4 @@ class Subject(StoredObject):
     parent_ids = fields.StringField(list=True)
 
     def get_absolute_url(self):
-        return '{}taxonomies/{}/?filter[id]={}'.format(self.absolute_api_v2_url, self.type, self._id)
+        return '{}taxonomies/?filter[id]={}'.format(self.absolute_api_v2_url, self._id)

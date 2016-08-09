@@ -13,7 +13,7 @@ class TestPlosTaxonomy(ApiTestCase):
         self.subjects = Subject.find(
             Q('type', 'eq', 'plos')
         )
-        self.url = '/{}taxonomies/plos/'.format(API_BASE)
+        self.url = '/{}taxonomies/'.format(API_BASE)
         self.res = self.app.get(self.url)
         self.data = self.res.json['data']
 

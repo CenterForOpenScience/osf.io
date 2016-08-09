@@ -8,7 +8,7 @@ from api.base.serializers import (
 )
 from api.base.exceptions import Conflict
 from api.base.utils import absolute_reverse, get_user_auth
-from api.nodes.serializers import NodeTagField, NodeContributorsSerializer
+from api.nodes.serializers import NodeTagField
 from framework.exceptions import PermissionsError
 from website.models import StoredFileNode
 
@@ -33,7 +33,8 @@ class PreprintSerializer(JSONAPISerializer):
         'tags',
         'date_created',
         'date_modified',
-        'authors',
+        'contributors',
+        'provider',
         'preprint_subjects'
     ])
 
@@ -60,8 +61,8 @@ class PreprintSerializer(JSONAPISerializer):
 
     links = LinksField({'self': 'get_preprint_url', 'html': 'get_absolute_html_url'})
 
-    authors = RelationshipField(
-        related_view='preprints:preprint-authors',
+    contributors = RelationshipField(
+        related_view='preprints:preprint-contributors',
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_contrib_count'},
     )
@@ -133,7 +134,3 @@ class PreprintDetailSerializer(PreprintSerializer):
 
 class PreprintDetailRetrieveSerializer(PreprintDetailSerializer):
     subjects = JSONAPIListField(required=False, source='get_preprint_subjects')
-
-class PreprintAuthorSerializer(NodeContributorsSerializer):
-    class Meta:
-        type_ = 'authors'

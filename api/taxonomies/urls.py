@@ -4,5 +4,5 @@ from api.taxonomies import views
 
 
 urlpatterns = [
-    url(r'^plos/$', views.PlosTaxonomy.as_view(), name=views.PlosTaxonomy.view_name),
+    url(r'^$', views.Taxonomy.as_view(), name=views.Taxonomy.view_name),
 ]
