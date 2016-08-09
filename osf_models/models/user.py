@@ -20,7 +20,6 @@ from framework.auth.exceptions import (
     MergeConfirmedRequiredError
 )
 from framework.sentry import log_exception
-from framework.auth import signals
 from website import filters
 
 from osf_models.exceptions import reraise_django_validation_errors
@@ -432,8 +431,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
 
     @property
     def contributed(self):
-        Node = apps.get_model('osf_models.Node')
-        return Node.objects.filter(contributors=self)
+        return self.nodes.all()
 
     def update_is_active(self):
         """Update ``is_active`` to be consistent with the fields that

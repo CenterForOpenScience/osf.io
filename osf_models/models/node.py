@@ -352,8 +352,6 @@ class AbstractNode(TypedModel, Taggable, Loggable, GuidMixin, BaseModel):
                     difference = count - MAX_RECENT_LENGTH
                     for each in user.recentlyaddedcontributor_set.order_by('date_added')[:difference]:
                         each.delete()
-                    user.save()
-
             if log:
                 NodeLog = apps.get_model('osf_models.NodeLog')
                 self.add_log(
