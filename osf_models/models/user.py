@@ -184,7 +184,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
 
     # email verification tokens
     #   see also ``unconfirmed_emails``
-    email_verifications = DateTimeAwareJSONField(default={}, blank=True)
+    email_verifications = DateTimeAwareJSONField(default=dict, blank=True)
     # Format: {
     #   <token> : {'email': <email address>,
     #              'expiration': <datetime>}
@@ -502,6 +502,27 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
             raise ExpiredTokenError
 
         return verification['email']
+
+    @property
+    def unconfirmed_email_info(self):
+        """Return a list of dictionaries containing information about each of this
+        user's unconfirmed emails.
+        """
+        unconfirmed_emails = []
+        email_verifications = self.email_verifications or []
+        for token in email_verifications:
+            if self.email_verifications[token].get('confirmed', False):
+                try:
+                    user_merge = User.find_one(Q('emails', 'eq', self.email_verifications[token]['email'].lower()))
+                except NoResultsFound:
+                    user_merge = False
+
+                unconfirmed_emails.append({'address': self.email_verifications[token]['email'],
+                                        'token': token,
+                                        'confirmed': self.email_verifications[token]['confirmed'],
+                                        'user_merge': user_merge.email if user_merge else False})
+        return unconfirmed_emails
+
 
     def clean_email_verifications(self, given_token=None):
         email_verifications = deepcopy(self.email_verifications or {})
