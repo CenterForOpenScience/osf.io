@@ -1763,7 +1763,7 @@ class TestUserAccount(OsfTestCase):
             old_password='password',
             new_password='12345',
             confirm_password='12345',
-            error_message='Password should be at least six characters',
+            error_message='Password should be at least eight characters',
         )
 
     def test_password_change_invalid_blank_password(self, old_password='', new_password='', confirm_password=''):
