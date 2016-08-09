@@ -20,9 +20,12 @@ def do_migration(logs):
         registration_id = log.params.get('registration')
         if registration_id:
             registration = Node.load(registration_id)
-            registration.date_modified = log.date
-            registration.save()
-            logger.info('{} date updated to {}'.format(registration, log.date))
+            if registration.date_modified < log.date:
+                registration.date_modified = log.date
+                registration.save()
+                logger.info('{} date updated to {}'.format(registration, log.date))
+            else:
+                logger.warning('Date modified is more recent than retraction ' + log._id)
         else:
             logger.warning('No parent registration found for retraction log ' + log._id)
 
