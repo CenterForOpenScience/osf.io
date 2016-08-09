@@ -94,10 +94,9 @@ class TestPreprintFiltering(ApiTestCase):
 
     def test_filter_by_provider(self):
         url = '/{}preprints/?filter[provider]={}'.format(API_BASE, 'wwe')
-
         res = self.app.get(url, auth=self.user.auth)
-        res_json = res.json.data['data']
+        data = res.json['data']
 
-        assert_equal(len(res_json), 2)
-        for result in res_json:
-            assert 'wwe' in result['provider']
+        assert_equal(len(data), 2)
+        for result in data:
+            assert 'wwe' in result['attributes']['provider']

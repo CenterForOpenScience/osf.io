@@ -299,7 +299,7 @@ def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, p
     project_title = name if name else fake.science_sentence()
     if is_preprint:
         privacy = 'public'
-        project = PreprintFactory(title=project_title, description=fake.science_paragraph(), creator=creator, preprint_provider=preprint_provider)
+        project = PreprintFactory(title=project_title, description=fake.science_paragraph(), creator=creator, provider=preprint_provider)
     elif is_registration:
         project = RegistrationFactory(title=project_title, description=fake.science_paragraph(), creator=creator)
     else:
