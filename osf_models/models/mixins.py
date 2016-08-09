@@ -38,7 +38,7 @@ class Versioned(models.Model):
             post_save: cls._sig_post_save,
             pre_delete: cls._sig_pre_delete,
             post_delete: cls._sig_post_delete,
-            }[signal]
+        }[signal]
         signal.connect(sig_handler, sender=cls)
 
     class Meta:
@@ -71,7 +71,7 @@ class Loggable(models.Model):
         if self.logs.count() == 1:
             self.date_modified = log.date.replace(tzinfo=pytz.utc)
         else:
-            self.date_modified = self.logs[-1].date.replace(tzinfo=pytz.utc)
+            self.date_modified = self.logs.first().date
 
         if save:
             self.save()
@@ -91,7 +91,6 @@ class Taggable(models.Model):
         if not system and not auth:
             raise ValueError('Must provide auth if adding a non-system tag')
         Tag = apps.get_model('osf_models.Tag')
-        NodeLog = apps.get_model('osf_models.NodeLog')
 
         if not isinstance(tag, Tag):
             tag_instance, created = Tag.objects.get_or_create(name=tag, system=system)
@@ -111,7 +110,6 @@ class Taggable(models.Model):
 
     def add_tag_log(self, *args, **kwargs):
         raise NotImplementedError('Logging requires that add_tag_log method is implemented')
-
 
     class Meta:
         abstract = True

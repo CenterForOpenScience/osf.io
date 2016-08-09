@@ -118,3 +118,6 @@ class NodeLog(ObjectIDMixin, BaseModel):
     @property
     def _id(self):
         return self.guid
+
+    class Meta:
+        ordering = ['-date']

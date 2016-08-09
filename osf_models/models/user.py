@@ -1,6 +1,7 @@
+from copy import deepcopy
+import urlparse
 import datetime as dt
 import logging
-import urlparse
 
 from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
@@ -9,17 +10,26 @@ from django.contrib.auth.models import PermissionsMixin
 from django.contrib.postgres import fields
 from django.core.validators import validate_email
 from django.db import models
+from modularodm.exceptions import NoResultsFound
+
+# OSF imports
+from framework.auth.exceptions import (
+    ChangePasswordError,
+    ExpiredTokenError,
+    InvalidTokenError,
+    MergeConfirmedRequiredError
+)
+from framework.sentry import log_exception
+from website import filters
+
 from osf_models.exceptions import reraise_django_validation_errors
 from osf_models.models.base import BaseModel, GuidMixin
 from osf_models.models.mixins import AddonModelMixin
-from osf_models.models.tag import Tag
+from osf_models.models.contributor import RecentlyAddedContributor
 from osf_models.utils import security
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf_models.utils.names import impute_names
-
-from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError, InvalidTokenError)
-from framework.sentry import log_exception
-from website import filters
+from osf_models.modm_compat import Q
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +74,8 @@ class OSFUserManager(BaseUserManager):
         return user
 
 
-class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, PermissionsMixin, AddonModelMixin):
+class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
+              AbstractBaseUser, PermissionsMixin, AddonModelMixin):
     USERNAME_FIELD = 'username'
 
     # Node fields that trigger an update to the search engine on save
@@ -173,7 +184,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     # email verification tokens
     #   see also ``unconfirmed_emails``
-    email_verifications = DateTimeAwareJSONField(default={}, blank=True)
+    email_verifications = DateTimeAwareJSONField(default=dict, blank=True)
     # Format: {
     #   <token> : {'email': <email address>,
     #              'expiration': <datetime>}
@@ -201,7 +212,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     # the date this user was registered
     date_registered = models.DateTimeField(db_index=True
-                                           )  #, auto_now_add=True)
+                                           )  # auto_now_add=True)
 
     # watched nodes are stored via a list of WatchConfigs
     # watched = fields.ForeignField("WatchConfig", list=True)
@@ -209,7 +220,16 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     # list of collaborators that this user recently added to nodes as a contributor
     # recently_added = fields.ForeignField("user", list=True)
-    recently_added = models.ManyToManyField('self', symmetrical=False)
+    recently_added = models.ManyToManyField('self',
+                                            through=RecentlyAddedContributor,
+                                            through_fields=('user', 'contributor'),
+                                            symmetrical=False)
+
+    def get_recently_added(self):
+        return (
+            each.contributor
+            for each in self.recentlyaddedcontributor_set.order_by('-date_added')
+        )
 
     # Attached external accounts (OAuth)
     # external_accounts = fields.ForeignField("externalaccount", list=True)
@@ -298,9 +318,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
-
-    def __unicode__(self):
-        return u'{}: {} {}'.format(self.username, self.given_name, self.family_name)
 
     @property
     def url(self):
@@ -412,6 +429,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             django_obj.password = 'bcrypt${}'.format(django_obj.password)
         return django_obj
 
+    @property
+    def contributed(self):
+        return self.nodes.all()
+
     def update_is_active(self):
         """Update ``is_active`` to be consistent with the fields that
         it depends on.
@@ -482,6 +503,39 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         return verification['email']
 
+    @property
+    def unconfirmed_email_info(self):
+        """Return a list of dictionaries containing information about each of this
+        user's unconfirmed emails.
+        """
+        unconfirmed_emails = []
+        email_verifications = self.email_verifications or []
+        for token in email_verifications:
+            if self.email_verifications[token].get('confirmed', False):
+                try:
+                    user_merge = User.find_one(Q('emails', 'eq', self.email_verifications[token]['email'].lower()))
+                except NoResultsFound:
+                    user_merge = False
+
+                unconfirmed_emails.append({'address': self.email_verifications[token]['email'],
+                                        'token': token,
+                                        'confirmed': self.email_verifications[token]['confirmed'],
+                                        'user_merge': user_merge.email if user_merge else False})
+        return unconfirmed_emails
+
+
+    def clean_email_verifications(self, given_token=None):
+        email_verifications = deepcopy(self.email_verifications or {})
+        for token in self.email_verifications or {}:
+            try:
+                self.get_unconfirmed_email_for_token(token)
+            except (KeyError, ExpiredTokenError):
+                email_verifications.pop(token)
+                continue
+            if token == given_token:
+                email_verifications.pop(token)
+        self.email_verifications = email_verifications
+
     @classmethod
     def create_unregistered(cls, fullname, email=None):
         """Create a new unregistered user.
@@ -504,7 +558,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.middle_names = parsed['middle']
         self.family_name = parsed['family']
         self.suffix = parsed['suffix']
-
 
     def add_unconfirmed_email(self, email, expiration=None):
         """Add an email verification token for a given email."""
@@ -584,6 +637,78 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         token = self.get_confirmation_token(email, force=force)
         return '{0}confirm/{1}/{2}/'.format(base, self._id, token)
 
+    def register(self, username, password=None):
+        """Registers the user.
+        """
+        self.username = username
+        if password:
+            self.set_password(password)
+        if username not in self.emails:
+            self.emails.append(username)
+        self.is_registered = True
+        self.is_claimed = True
+        self.date_confirmed = dt.datetime.utcnow()
+        self.update_search()
+        self.update_search_nodes()
+
+        # Emit signal that a user has confirmed
+        # TODO: uncomment when NotificationSubscription is implemented
+        # signals.user_confirmed.send(self)
+
+        return self
+
+    def confirm_email(self, token, merge=False):
+        """Confirm the email address associated with the token"""
+        email = self.get_unconfirmed_email_for_token(token)
+
+        # If this email is confirmed on another account, abort
+        try:
+            user_to_merge = OSFUser.find_one(Q('emails', 'contains', [email]))
+        except NoResultsFound:
+            user_to_merge = None
+
+        # TODO: Implement merging
+        if user_to_merge and merge:
+            self.merge_user(user_to_merge)
+        elif user_to_merge:
+            raise MergeConfirmedRequiredError(
+                'Merge requires confirmation',
+                user=self,
+                user_to_merge=user_to_merge,
+            )
+
+        # If another user has this email as its username, get it
+        try:
+            unregistered_user = OSFUser.find_one(Q('username', 'eq', email) &
+                                              Q('_id', 'ne', self._id))
+        except NoResultsFound:
+            unregistered_user = None
+
+        if unregistered_user:
+            self.merge_user(unregistered_user)
+            self.save()
+            unregistered_user.username = None
+
+        if email not in self.emails:
+            self.emails.append(email)
+
+        # Complete registration if primary email
+        if email.lower() == self.username.lower():
+            self.register(self.username)
+            self.date_confirmed = dt.datetime.utcnow()
+        # Revoke token
+        del self.email_verifications[token]
+
+        # TODO: We can't assume that all unclaimed records are now claimed.
+        # Clear unclaimed records, so user's name shows up correctly on
+        # all projects
+        self.unclaimed_records = {}
+        self.save()
+
+        self.update_search_nodes()
+
+        return True
+
     def _set_email_token_expiration(self, token, expiration=None):
         """Set the expiration date for given email token.
 
@@ -605,6 +730,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         except SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
+
+    def update_search_nodes(self):
+        """Call `update_search` on all nodes on which the user is a
+        contributor. Needed to add self to contributor lists in search upon
+        registration or claiming.
+
+        """
+        for node in self.contributed:
+            node.update_search()
 
     def get_summary(self, formatter='long'):
         return {

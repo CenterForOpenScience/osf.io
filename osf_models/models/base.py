@@ -2,10 +2,11 @@ import logging
 import random
 from datetime import datetime
 
-import modularodm.exceptions
-import pytz
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import models
+import modularodm.exceptions
+import pytz
+
 from osf_models.exceptions import ValidationError
 from osf_models.modm_compat import to_django_query
 from osf_models.utils.base import get_object_id
@@ -63,6 +64,7 @@ class MODMCompatibilityQuerySet(models.QuerySet):
         # Fields are passed in as e.g. [('title', 1), ('date_created', -1)]
         if isinstance(fields[0], list):
             fields = fields[0]
+
         def sort_key(item):
             if isinstance(item, basestring):
                 return item
@@ -168,10 +170,10 @@ class ObjectIDMixin(models.Model):
                                   unique=True,
                                   db_index=True,
                                   default=get_object_id)
+
     @property
     def _object_id(self):
         return self.guid
-
 
     @property
     def _id(self):
@@ -205,7 +207,6 @@ class ObjectIDMixin(models.Model):
             setattr(django_obj, field, modm_value)
 
         return django_obj
-
 
     class Meta:
         abstract = True
