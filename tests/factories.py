@@ -220,7 +220,7 @@ class PreprintFactory(AbstractNodeFactory):
     category = 'project'
 
     @classmethod
-    def _create(cls, target_class, project=None, is_public=True, filename='preprint_file.txt', *args, **kwargs):
+    def _create(cls, target_class, project=None, is_public=True, filename='preprint_file.txt', preprint_provider='osf', *args, **kwargs):
         save_kwargs(**kwargs)
         user = None
         if project:
@@ -249,6 +249,7 @@ class PreprintFactory(AbstractNodeFactory):
 
         project.set_preprint_file(file, auth=Auth(project.creator))
         project.preprint_subjects = [SubjectFactory()._id]
+        project.preprint_provider = preprint_provider
         project.save()
 
         return project
