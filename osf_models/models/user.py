@@ -226,12 +226,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
                                             through_fields=('user', 'contributor'),
                                             symmetrical=False)
 
-    def get_recently_added(self):
-        return (
-            each.contributor
-            for each in self.recentlyaddedcontributor_set.order_by('-date_added')
-        )
-
     # Attached external accounts (OAuth)
     # external_accounts = fields.ForeignField("externalaccount", list=True)
     # external_accounts = models.ManyToManyField(ExternalAccount)
@@ -816,3 +810,25 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         if not self.tags.filter(id=tag_instance.id).exists():
             self.tags.add(tag_instance)
         return tag_instance
+
+    def get_recently_added(self):
+        return (
+            each.contributor
+            for each in self.recentlyaddedcontributor_set.order_by('-date_added')
+        )
+
+    def get_projects_in_common(self, other_user, primary_keys=True):
+        """Returns either a collection of "shared projects" (projects that both users are contributors for)
+        or just their primary keys
+        """
+        if primary_keys:
+            projects_contributed_to = set(self.contributed.values_list('_guid__guid', flat=True))
+            other_projects_primary_keys = set(other_user.contributed.values_list('_guid__guid', flat=True))
+            return projects_contributed_to.intersection(other_projects_primary_keys)
+        else:
+            projects_contributed_to = set(self.contributed)
+            return projects_contributed_to.intersection(other_user.contributed)
+
+    def n_projects_in_common(self, other_user):
+        """Returns number of "shared projects" (projects that both users are contributors for)"""
+        return len(self.get_projects_in_common(other_user, primary_keys=True))
