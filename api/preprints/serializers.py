@@ -33,7 +33,8 @@ class PreprintSerializer(JSONAPISerializer):
         'tags',
         'date_created',
         'date_modified',
-        'authors',
+        'contributors',
+        'provider',
         'preprint_subjects'
     ])
 
