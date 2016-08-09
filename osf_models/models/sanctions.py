@@ -65,7 +65,7 @@ class Sanction(ObjectIDMixin, BaseModel):
     #     'approval_token': 'Pew7wj1Puf7DENUPFPnXSwa1rf3xPN',
     #     'rejection_token': 'TwozClTFOic2PYxHDStby94bCQMwJy'}
     # }
-    approval_state = DateTimeAwareJSONField(default={})
+    approval_state = DateTimeAwareJSONField(default=dict)
 
     # Expiration date-- Sanctions in the UNAPPROVED state that are older than their end_date
     # are automatically made ACTIVE by a daily cron job
@@ -271,7 +271,7 @@ class EmailApprovableSanction(TokenApprovableSanction):
     #     'reject': [REJECT_URL],
     #   }
     # }
-    stashed_urls = DateTimeAwareJSONField(default={})
+    stashed_urls = DateTimeAwareJSONField(default=dict)
 
     @staticmethod
     def _format_or_empty(template, context):
@@ -831,7 +831,7 @@ class DraftRegistrationApproval(Sanction):
 
     # Since draft registrations that require approval are not immediately registered,
     # meta stores registration_choice and embargo_end_date (when applicable)
-    meta = DateTimeAwareJSONField(default={})
+    meta = DateTimeAwareJSONField(default=dict)
 
     def _send_rejection_email(self, user, draft):
         schema = draft.registration_schema

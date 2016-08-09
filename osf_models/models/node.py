@@ -63,7 +63,7 @@ class AbstractNode(TypedModel, Taggable, Loggable, GuidMixin, BaseModel):
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
     # TODO: Can this be a reference instead of data?
-    child_node_subscriptions = DateTimeAwareJSONField(default={}, blank=True)
+    child_node_subscriptions = DateTimeAwareJSONField(default=dict, blank=True)
     contributors = models.ManyToManyField(OSFUser,
                                           through=Contributor,
                                           related_name='nodes')
@@ -77,7 +77,7 @@ class AbstractNode(TypedModel, Taggable, Loggable, GuidMixin, BaseModel):
     date_modified = models.DateTimeField(db_index=True, null=True, blank=True)  # auto_now=True)
     deleted_date = models.DateTimeField(null=True, blank=True)
     description = models.TextField(blank=True, default='')
-    file_guid_to_share_uuids = DateTimeAwareJSONField(default={}, blank=True)
+    file_guid_to_share_uuids = DateTimeAwareJSONField(default=dict, blank=True)
     forked_date = models.DateTimeField(db_index=True, null=True, blank=True)
     forked_from = models.ForeignKey('self',
                                     related_name='forks',
@@ -116,11 +116,11 @@ class AbstractNode(TypedModel, Taggable, Loggable, GuidMixin, BaseModel):
     )  # this should be a charfield but data from mongo didn't fit in 255
     # TODO why is this here if it's empty
     users_watching_node = models.ManyToManyField(OSFUser, related_name='watching')
-    wiki_pages_current = DateTimeAwareJSONField(default={}, blank=True)
-    wiki_pages_versions = DateTimeAwareJSONField(default={}, blank=True)
+    wiki_pages_current = DateTimeAwareJSONField(default=dict, blank=True)
+    wiki_pages_versions = DateTimeAwareJSONField(default=dict, blank=True)
     # Dictionary field mapping node wiki page to sharejs private uuid.
     # {<page_name>: <sharejs_id>}
-    wiki_private_uuids = DateTimeAwareJSONField(default={}, blank=True)
+    wiki_private_uuids = DateTimeAwareJSONField(default=dict, blank=True)
 
     def __unicode__(self):
         return u'{} : ({})'.format(self.title, self._id)

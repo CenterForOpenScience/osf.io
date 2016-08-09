@@ -25,7 +25,7 @@ class QueuedMail(ObjectIDMixin, BaseModel):
     #    'nid' : 'ShIpTo',
     #    'fullname': 'Florence Welch',
     #}
-    data = DateTimeAwareJSONField(default={}, blank=True)
+    data = DateTimeAwareJSONField(default=dict, blank=True)
     sent_at = models.DateTimeField(db_index=True, null=True, blank=True)
 
     def __repr__(self):
