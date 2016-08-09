@@ -352,7 +352,7 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
         'children': []
     }
     import logging
-    logger = logger.getLogger(__name__)
+    logger = logging.getLogger(__name__)
     logger.warn(tbd)
     if tbd['event']['title'] == 'mailing_list_events':
         from website.mailing_list.utils import _init_mailman_client
@@ -364,7 +364,6 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
                     OSF_MAILING_LIST_DOMAIN
                 )
             )
-        
             def subbed(email):
                 try:
                     list_proxy.get_member(email)
@@ -382,8 +381,6 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
             except:
                 tbd['event']['notificationType'] = 'none'
         except:
-            import logging
-            logger = logging.getLogger(__name__)
             logger.warn('Mailman client unable to connect to Mailman API. The server may not be available.')
     return tbd
 
