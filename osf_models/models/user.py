@@ -202,7 +202,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     #    ...
     # }
 
-    # email lists to which the user has chosen a subscription setting, being sent from osf, rather than mailchimp
+    # email lists to which the user has chosen a subscription setting,
+    # being sent from osf, rather than mailchimp
     osf_mailing_lists = DateTimeAwareJSONField(default=get_default_mailing_lists, blank=True)
     # Format: {
     #   'list1': True,
@@ -513,7 +514,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         for token in email_verifications:
             if self.email_verifications[token].get('confirmed', False):
                 try:
-                    user_merge = User.find_one(Q('emails', 'eq', self.email_verifications[token]['email'].lower()))
+                    user_merge = OSFUser.find_one(
+                        Q('emails', 'eq', self.email_verifications[token]['email'].lower())
+                    )
                 except NoResultsFound:
                     user_merge = False
 
@@ -522,7 +525,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
                                         'confirmed': self.email_verifications[token]['confirmed'],
                                         'user_merge': user_merge.email if user_merge else False})
         return unconfirmed_emails
-
 
     def clean_email_verifications(self, given_token=None):
         email_verifications = deepcopy(self.email_verifications or {})
