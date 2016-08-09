@@ -9,6 +9,7 @@ import itsdangerous
 
 from framework.auth.exceptions import ExpiredTokenError, InvalidTokenError, ChangePasswordError
 from framework.analytics import get_total_activity_count
+from framework.exceptions import PermissionsError
 from website import settings
 from website import filters
 
@@ -626,56 +627,69 @@ class TestAddUnconfirmedEmail:
 @pytest.mark.django_db
 class TestUnregisteredUser:
 
-    # def add_unclaimed_record(self):
-    #     given_name = 'Fredd Merkury'
-    #     email = fake.email()
-    #     self.user.add_unclaimed_record(node=self.project,
-    #         given_name=given_name, referrer=self.referrer,
-    #         email=email)
-    #     self.user.save()
-    #     data = self.user.unclaimed_records[self.project._primary_key]
-    #     return email, data
-    #
-    # def test_unregistered_factory(self):
-    #     u1 = UnregUserFactory()
-    #     assert_false(u1.is_registered)
-    #     assert_true(u1.password is None)
-    #     assert_true(u1.fullname)
-    #
-    # def test_unconfirmed_factory(self):
-    #     u = UnconfirmedUserFactory()
-    #     assert_false(u.is_registered)
-    #     assert_true(u.username)
-    #     assert_true(u.fullname)
-    #     assert_true(u.password)
-    #     assert_equal(len(u.email_verifications.keys()), 1)
-    #
-    # def test_add_unclaimed_record(self):
-    #     email, data = self.add_unclaimed_record()
-    #     assert_equal(data['name'], 'Fredd Merkury')
-    #     assert_equal(data['referrer_id'], self.referrer._primary_key)
-    #     assert_in('token', data)
-    #     assert_equal(data['email'], email)
-    #     assert_equal(data, self.user.get_unclaimed_record(self.project._primary_key))
-    #
-    # def test_get_claim_url(self):
-    #     self.add_unclaimed_record()
-    #     uid = self.user._primary_key
-    #     pid = self.project._primary_key
-    #     token = self.user.get_unclaimed_record(pid)['token']
-    #     domain = settings.DOMAIN
-    #     assert_equal(self.user.get_claim_url(pid, external=True),
-    #         '{domain}user/{uid}/{pid}/claim/?token={token}'.format(**locals()))
-    #
-    # def test_get_claim_url_raises_value_error_if_not_valid_pid(self):
-    #     with assert_raises(ValueError):
-    #         self.user.get_claim_url('invalidinput')
-    #
-    # def test_cant_add_unclaimed_record_if_referrer_isnt_contributor(self):
-    #     project = ProjectFactory()  # referrer isn't a contributor to this project
-    #     with assert_raises(PermissionsError):
-    #         self.user.add_unclaimed_record(node=project,
-    #             given_name='fred m', referrer=self.referrer)
+    @pytest.fixture()
+    def referrer(self):
+        return UserFactory()
+
+    @pytest.fixture()
+    def email(self):
+        return fake.email()
+
+    @pytest.fixture()
+    def unreg_user(self, referrer, project, email):
+        user = UnregUserFactory()
+        given_name = 'Fredd Merkury'
+        user.add_unclaimed_record(node=project,
+            given_name=given_name, referrer=referrer,
+            email=email)
+        user.save()
+        return user
+
+    @pytest.fixture()
+    def project(self, referrer):
+        return NodeFactory(creator=referrer)
+
+    def test_unregistered_factory(self):
+        u1 = UnregUserFactory()
+        assert bool(u1.is_registered) is False
+        assert u1.has_usable_password() is False
+        assert bool(u1.fullname) is True
+
+    def test_unconfirmed_factory(self):
+        u = UnconfirmedUserFactory()
+        assert bool(u.is_registered) is False
+        assert bool(u.username) is True
+        assert bool(u.fullname) is True
+        assert bool(u.password) is True
+        assert len(u.email_verifications.keys()) == 1
+
+    def test_add_unclaimed_record(self, unreg_user, email, referrer, project):
+        data = unreg_user.unclaimed_records[project._primary_key]
+        assert data['name'] == 'Fredd Merkury'
+        assert data['referrer_id'] == referrer._id
+        assert 'token' in data
+        assert data['email'] == email
+        assert data == unreg_user.get_unclaimed_record(project._primary_key)
+
+    def test_get_claim_url(self, unreg_user, project):
+        uid = unreg_user._primary_key
+        pid = project._primary_key
+        token = unreg_user.get_unclaimed_record(pid)['token']
+        domain = settings.DOMAIN
+        assert (
+            unreg_user.get_claim_url(pid, external=True) ==
+            '{domain}user/{uid}/{pid}/claim/?token={token}'.format(**locals())
+        )
+
+    def test_get_claim_url_raises_value_error_if_not_valid_pid(self, unreg_user):
+        with pytest.raises(ValueError):
+            unreg_user.get_claim_url('invalidinput')
+
+    def test_cant_add_unclaimed_record_if_referrer_isnt_contributor(self, referrer, unreg_user):
+        project = NodeFactory()  # referrer isn't a contributor to this project
+        with pytest.raises(PermissionsError):
+            unreg_user.add_unclaimed_record(node=project,
+                given_name='fred m', referrer=referrer)
 
     @mock.patch('osf_models.models.OSFUser.update_search_nodes')
     @mock.patch('osf_models.models.OSFUser.update_search')
@@ -700,17 +714,10 @@ class TestUnregisteredUser:
         user.register(username=email, password='killerqueen')
         assert email in user.emails
 
-    # def test_verify_claim_token(self):
-    #     self.add_unclaimed_record()
-    #     valid = self.user.get_unclaimed_record(self.project._primary_key)['token']
-    #     assert_true(self.user.verify_claim_token(valid, project_id=self.project._primary_key))
-    #     assert_false(self.user.verify_claim_token('invalidtoken', project_id=self.project._primary_key))
-    #
-    # def test_claim_contributor(self):
-    #     self.add_unclaimed_record()
-    #     # sanity cheque
-    #     assert_false(self.user.is_registered)
-    #     assert_true(self.project)
+    def test_verify_claim_token(self, unreg_user, project):
+        valid = unreg_user.get_unclaimed_record(project._primary_key)['token']
+        assert bool(unreg_user.verify_claim_token(valid, project_id=project._primary_key)) is True
+        assert bool(unreg_user.verify_claim_token('invalidtoken', project_id=project._primary_key)) is False
 
 # Copied from tests/test_models.py
 @pytest.mark.django_db

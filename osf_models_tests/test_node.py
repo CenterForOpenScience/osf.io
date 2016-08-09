@@ -8,9 +8,10 @@ from website.project.signals import contributor_added
 from website.util import permissions
 
 from osf_models.models import Node, Tag, NodeLog, Contributor
+from osf_models.exceptions import ValidationError
 from osf_models.utils.auth import Auth
 
-from .factories import NodeFactory, UserFactory
+from .factories import NodeFactory, UserFactory, UnregUserFactory
 from .utils import capture_signals
 
 
@@ -283,6 +284,10 @@ class TestPermissionMethods:
         contributor.save()
         assert node.has_permission(user, permissions.WRITE) is True
 
+    def test_has_permission_passed_non_contributor_returns_false(self, node):
+        noncontrib = UserFactory()
+        assert node.has_permission(noncontrib, permissions.READ) is False
+
     def test_get_permissions(self, node):
         user = UserFactory()
         contributor = Contributor.objects.create(
@@ -324,3 +329,74 @@ class TestPermissionMethods:
         )
         with pytest.raises(ValueError):
             node.add_permission(user, permissions.ADMIN)
+
+    def test_contributor_can_edit(self, node, auth):
+        contributor = UserFactory()
+        contributor_auth = Auth(user=contributor)
+        other_guy = UserFactory()
+        other_guy_auth = Auth(user=other_guy)
+        node.add_contributor(
+            contributor=contributor, auth=auth)
+        node.save()
+        assert bool(node.can_edit(contributor_auth)) is True
+        assert bool(node.can_edit(other_guy_auth)) is False
+
+    def test_can_edit_can_be_passed_a_user(self, user, node):
+        assert bool(node.can_edit(user=user)) is True
+
+    def test_creator_can_edit(self, auth, node):
+        assert bool(node.can_edit(auth)) is True
+
+    def test_noncontributor_cant_edit_public(self):
+        user1 = UserFactory()
+        user1_auth = Auth(user=user1)
+        node = NodeFactory(is_public=True)
+        # Noncontributor can't edit
+        assert bool(node.can_edit(user1_auth)) is False
+
+# Copied from tests/test_models.py
+@pytest.mark.django_db
+class TestAddUnregisteredContributor:
+
+    def test_add_unregistered_contributor(self, node, user, auth):
+        node.add_unregistered_contributor(
+            email='foo@bar.com',
+            fullname='Weezy F. Baby',
+            auth=auth
+        )
+        node.save()
+        latest_contributor = Contributor.objects.get(node=node, user__username='foo@bar.com').user
+        assert latest_contributor.username == 'foo@bar.com'
+        assert latest_contributor.fullname == 'Weezy F. Baby'
+        assert bool(latest_contributor.is_registered) is False
+
+        # A log event was added
+        assert node.logs.first().action == 'contributor_added'
+        assert node._id in latest_contributor.unclaimed_records, 'unclaimed record was added'
+        unclaimed_data = latest_contributor.get_unclaimed_record(node._primary_key)
+        assert unclaimed_data['referrer_id'] == user._primary_key
+        assert bool(node.is_contributor(latest_contributor)) is True
+        assert unclaimed_data['email'] == 'foo@bar.com'
+
+    def test_add_unregistered_adds_new_unclaimed_record_if_user_already_in_db(self, fake, node, auth):
+        user = UnregUserFactory()
+        given_name = fake.name()
+        new_user = node.add_unregistered_contributor(
+            email=user.username,
+            fullname=given_name,
+            auth=auth
+        )
+        node.save()
+        # new unclaimed record was added
+        assert node._primary_key in new_user.unclaimed_records
+        unclaimed_data = new_user.get_unclaimed_record(node._primary_key)
+        assert unclaimed_data['name'] == given_name
+
+    def test_add_unregistered_raises_error_if_user_is_registered(self, node, auth):
+        user = UserFactory(is_registered=True)  # A registered user
+        with pytest.raises(ValidationError):
+            node.add_unregistered_contributor(
+                email=user.username,
+                fullname=user.fullname,
+                auth=auth
+            )
