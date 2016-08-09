@@ -75,6 +75,21 @@ class TestNodeMODMCompat:
         assert node in Node.find(Q('_id', 'eq', node._id))
 
 @pytest.mark.django_db
+class TestLogging:
+
+    def test_add_log(self, node, auth):
+        node.add_log(NodeLog.PROJECT_CREATED, params={'node': node._id}, auth=auth)
+        node.add_log(NodeLog.EMBARGO_INITIATED, params={'node': node._id}, auth=auth)
+        node.save()
+
+        last_log = node.logs.first()
+        assert last_log.action == NodeLog.EMBARGO_INITIATED
+
+        # updates node.date_modified
+        assert node.date_modified == last_log.date
+
+
+@pytest.mark.django_db
 class TestTagging:
 
     def test_add_tag(self, node, auth):
