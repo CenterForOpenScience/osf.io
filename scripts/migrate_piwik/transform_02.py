@@ -32,54 +32,72 @@ def main(force=False):
     public_template = transform_dir + '/public-{0:04d}.data'
     private_template = transform_dir + '/private-{0:04d}.data'
 
+    lastline = 0
+    try:
+        with open(utils.get_dir_for('transform02') + '/resume.log', 'r') as fp:
+            fp.seek(-32, 2)
+            lastline = int(fp.readlines()[-1].strip('\n'))
+    except IOError:
+        pass
+
+
     linenum = 0
     batchnum = 0
     public_pageviews = []
     private_pageviews = []
-    input_file = open(utils.get_dir_for('transform01') + '/' + settings.TRANSFORM01_FILE, 'r')
-    for pageview_json in input_file.readlines():
-        linenum += 1
-        if not linenum % 1000:
-            print('Batching line {}'.format(linenum))
 
-        pageview = json.loads(pageview_json)
-        made_public_date = pageview['node']['made_public_date']
-        del pageview['node']['made_public_date']
+    with open(transform_dir + '/resume.log', 'a', 0) as resume_file:  # Pass 0 for unbuffered writing
+        with open(utils.get_dir_for('transform01') + '/' + settings.TRANSFORM01_FILE, 'r') as input_file:
+            print('Lastline is: {}\n'.format(lastline))
+            for i, pageview_json in enumerate(input_file):
+                linenum = i + 1
+                if linenum <= lastline:
+                    if not linenum % 1000:
+                        print('Skipping line {} of ***{}***'.format(linenum, lastline))
+                    continue
 
-        private_pageviews.append(pageview)
+                if not linenum % 1000:
+                    print('Batching line {}'.format(linenum))
 
-        # only pageviews logged after the most recent make public date are copied to public
-        # collection
-        if made_public_date is not None and made_public_date < pageview['keen']['timestamp']:
-            public_pageview = copy.deepcopy(pageview)
+                pageview = json.loads(pageview_json)
+                made_public_date = pageview['node']['made_public_date']
+                del pageview['node']['made_public_date']
 
-            for private_property in ('tech', 'user', 'visitor', 'geo' ):
-                del public_pageview[private_property]
+                private_pageviews.append(pageview)
 
-            for addon in public_pageview['keen']['addons']:
-                if addon['name'] in ('keen:ip_to_geo', 'keen:ua_parser'):
-                    public_pageview['keen']['addons'].remove(addon)
+                # only pageviews logged after the most recent make public date are copied to public
+                # collection
+                if made_public_date is not None and made_public_date < pageview['keen']['timestamp']:
+                    public_pageview = copy.deepcopy(pageview)
 
-            public_pageviews.append(public_pageview)
+                    for private_property in ('tech', 'user', 'visitor', 'geo' ):
+                        del public_pageview[private_property]
 
-        if linenum % settings.BATCH_SIZE == 0:
+                    for addon in public_pageview['keen']['addons']:
+                        if addon['name'] in ('keen:ip_to_geo', 'keen:ua_parser'):
+                            public_pageview['keen']['addons'].remove(addon)
+
+                    public_pageviews.append(public_pageview)
+
+                if linenum % settings.BATCH_SIZE == 0:
+                    batchnum += 1
+                    write_batch(batchnum, complaints_run_id, 'public', public_pageviews, transform_dir)
+                    write_batch(batchnum, complaints_run_id, 'private', private_pageviews, transform_dir)
+        
+        if linenum % settings.BATCH_SIZE != 0:
             batchnum += 1
             write_batch(batchnum, complaints_run_id, 'public', public_pageviews, transform_dir)
             write_batch(batchnum, complaints_run_id, 'private', private_pageviews, transform_dir)
-        
-    if linenum % settings.BATCH_SIZE != 0:
-        batchnum += 1
-        write_batch(batchnum, complaints_run_id, 'public', public_pageviews, transform_dir)
-        write_batch(batchnum, complaints_run_id, 'private', private_pageviews, transform_dir)
 
     history_file.write(settings.BATCH_HEADER + '{}\n'.format(batchnum))
 
 
 def write_batch(batchnum, run_id, domain, pageviews, base_dir):
     print("---Writing Batch")
-    batch_file = open(base_dir + '/' + settings.EVENT_DATA_FILE_TEMPLATE.format(domain=domain, batch_id=batchnum), 'w')
-    batch_file.write(settings.RUN_HEADER + '{}\n'.format(run_id))
-    batch_file.write(json.dumps(pageviews))
+    with open(base_dir + '/' + settings.EVENT_DATA_FILE_TEMPLATE.format(domain=domain, batch_id=batchnum), 'w') as batch_file:
+        batch_file.write(settings.RUN_HEADER + '{}\n'.format(run_id))
+        batch_file.write(json.dumps(pageviews))
+
     del pageviews[:]
 
 

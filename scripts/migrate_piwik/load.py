@@ -30,7 +30,7 @@ def main(dry_run=True, batch_count=None, force=False):
             sys.exit()
 
 
-    history_file = utils.get_history_for('load', 'w')
+    history_file = utils.get_history_for('load', 'a')
     history_file.write(script_settings.RUN_HEADER + '{}\n'.format(complaints_run_id))
     history_file.write('Beginning upload at: {}Z\n'.format(datetime.utcnow()))
 
@@ -60,29 +60,28 @@ def main(dry_run=True, batch_count=None, force=False):
     seen = {}
 
     try:
-        resume_log = open(utils.get_dir_for('load') + '/resume.log', 'r')
-        for seen_file in resume_log.readlines():
-            seen[seen_file.strip('\n')] = 1
+        with open(utils.get_dir_for('load') + '/resume.log', 'r') as resume_log:
+            for seen_file in resume_log.readlines():
+                seen[seen_file.strip('\n')] = 1
     except:
         pass
 
-    resume_log = open(utils.get_dir_for('load') + '/resume.log', 'a')
     batch_count = utils.get_batch_count() if batch_count is None else batch_count
     print("Beginning Upload")
-    for batch_id in range(1, batch_count+1):
-        print("  Batch {}".format(batch_id))
-        for domain in ('private', 'public'):
-            print("    Domain: {}".format(domain))
+    with open(utils.get_dir_for('load') + '/resume.log', 'a', 0) as resume_log:
+        for batch_id in range(1, batch_count+1):
+            print("  Batch {}".format(batch_id))
+            for domain in ('private', 'public'):
+                print("    Domain: {}".format(domain))
+                file_id = '{}-{}'.format(domain, batch_id)
+                if file_id in seen.keys():
+                    print("  ...seen, skipping.\n")
+                    continue
 
-            file_id = '{}-{}'.format(domain, batch_id)
-            if file_id in seen.keys():
-                print("  ...seen, skipping.\n")
-                continue
-
-            history_file.write('Uploading for {} project, batch {}'.format(domain, batch_id))
-            load_batch_for(batch_id, domain, tally, dry_run, es_client, keen_clients[domain])
-            resume_log.write('{}\n'.format(file_id))
-            history_file.write('  ...finished\n')
+                history_file.write('Uploading for {} project, batch {}'.format(domain, batch_id))
+                load_batch_for(batch_id, domain, tally, dry_run, es_client, keen_clients[domain])
+                resume_log.write('{}\n'.format(file_id))
+                history_file.write('  ...finished\n')
 
     print("Finished Upload")
     history_file.write('Finished upload at: {}Z\n'.format(datetime.utcnow()))
@@ -96,9 +95,10 @@ def load_batch_for(batch_id, domain, tally, dry_run, es_client, keen_client):
     batch_filename = script_settings.EVENT_DATA_FILE_TEMPLATE.format(
         domain=domain, batch_id=batch_id
     )
-    data_file = open(data_dir + '/' + batch_filename, 'r')
-    run_id = data_file.readline().rstrip()
-    events = json.loads(data_file.readline())
+    events = []
+    with open(data_dir + '/' + batch_filename, 'r') as data_file:
+        run_id = data_file.readline().rstrip()
+        events = json.loads(data_file.readline())
 
     if dry_run:
         actions = [{
