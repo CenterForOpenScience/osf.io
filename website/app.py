@@ -157,7 +157,7 @@ def patch_models(settings):
     for module in sys.modules.values():
         if not module:
             continue
-        for model in ('Node', 'User', 'Tag', 'QueuedMail', 'NodeLog'):
+        for model in ('Node', 'User', 'Tag', 'QueuedMail', 'NodeLog', 'Session'):
             if hasattr(module, model) and issubclass(getattr(module, model), modularodm.StoredObject):
                 if model in model_map:
                     setattr(module, model, getattr(models, model_map[model]))
