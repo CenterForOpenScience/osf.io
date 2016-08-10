@@ -840,13 +840,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         """Returns either a collection of "shared projects" (projects that both users are contributors for)
         or just their primary keys
         """
+        Node = apps.get_model('osf_models.Node')
+        query = (Node.objects
+                 .filter(contributors=self)
+                 .filter(contributors=other_user))
         if primary_keys:
-            projects_contributed_to = set(self.contributed.values_list('_guid__guid', flat=True))
-            other_projects_primary_keys = set(other_user.contributed.values_list('_guid__guid', flat=True))
-            return projects_contributed_to.intersection(other_projects_primary_keys)
+            return set(query.values_list('_guid__guid', flat=True))
         else:
-            projects_contributed_to = set(self.contributed)
-            return projects_contributed_to.intersection(other_user.contributed)
+            return set(query.all())
 
     def n_projects_in_common(self, other_user):
         """Returns number of "shared projects" (projects that both users are contributors for)"""
@@ -921,8 +922,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         try:
             email_domains = [email.split('@')[1].lower() for email in self.emails]
             insts = Institution.find(Q('email_domains', 'overlap', email_domains))
-            for inst in insts:
-                if inst not in self._affiliated_institutions.all():
-                    self._affiliated_institutions.add(inst)
+            affiliated = self._affiliated_institutions.all()
+            self._affiliated_institutions.add(*[each for each in insts
+                                                if each not in affiliated])
         except (IndexError, NoResultsFound):
             pass
