@@ -7,6 +7,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.dispatch import receiver
 from django.db.models.signals import post_save
+from django.utils import timezone
 from typedmodels.models import TypedModel
 
 # OSF imports
@@ -72,7 +73,7 @@ class AbstractNode(TypedModel, Taggable, Loggable, GuidMixin, BaseModel):
                                 on_delete=models.SET_NULL,
                                 null=True, blank=True)
     # TODO: Uncomment auto_* attributes after migration is complete
-    date_created = models.DateTimeField(default=dt.datetime.utcnow)  # auto_now_add=True)
+    date_created = models.DateTimeField(default=timezone.now)  # auto_now_add=True)
     date_modified = models.DateTimeField(db_index=True, null=True, blank=True)  # auto_now=True)
     deleted_date = models.DateTimeField(null=True, blank=True)
     description = models.TextField(blank=True, default='')

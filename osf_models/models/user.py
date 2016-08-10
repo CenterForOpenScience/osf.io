@@ -10,6 +10,7 @@ from django.contrib.auth.models import PermissionsMixin
 from django.contrib.postgres import fields
 from django.core.validators import validate_email
 from django.db import models
+from django.utils import timezone
 from modularodm.exceptions import NoResultsFound
 
 # OSF imports
@@ -59,7 +60,7 @@ class OSFUserManager(BaseUserManager):
         user = self.model(
             username=self.normalize_email(username),
             is_active=True,
-            date_registered=dt.datetime.today()
+            date_registered=timezone.now()
         )
 
         user.set_password(password)
@@ -213,7 +214,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     # }
 
     # the date this user was registered
-    date_registered = models.DateTimeField(db_index=True, default=dt.datetime.utcnow,
+    date_registered = models.DateTimeField(db_index=True, default=timezone.now,
                                            )  # auto_now_add=True)
 
     # watched nodes are stored via a list of WatchConfigs
