@@ -3,6 +3,8 @@
 from django.utils import timezone
 import uuid
 
+from django.utils import timezone
+
 from framework import bcrypt
 from framework.auth import signals
 from framework.auth.core import User, Auth
