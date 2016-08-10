@@ -911,12 +911,18 @@ class TestNodeForwardAddon(NodeUnmanageableAddonTestSuiteMixin, ApiAddonTestCase
         assert_equal(self.node_settings.label, addon_data['label'])
 
     def test_settings_detail_PATCH_to_add_folder_without_auth_conflict(self):
+        # This test doesn't apply forward, as it does not use ExternalAccounts.
+        # Overridden because it's required by the superclass.
         pass
 
     def test_settings_detail_PATCH_to_enable_and_add_external_account_id(self):
+        # This test doesn't apply forward, as it does not use ExternalAccounts.
+        # Overridden because it's required by the superclass.
         pass
 
     def test_settings_detail_PATCH_to_remove_external_account_id(self):
+        # This test doesn't apply forward, as it does not use ExternalAccounts.
+        # Overridden because it's required by the superclass.
         pass
 
     def test_settings_detail_PUT_all_sets_settings(self):
@@ -991,4 +997,6 @@ class TestNodeForwardAddon(NodeUnmanageableAddonTestSuiteMixin, ApiAddonTestCase
         assert_equal(self.node.logs[-1].action, 'forward_url_changed')
 
     def test_settings_detail_PUT_none_and_disabled_deauthorizes(self):
+        # This test doesn't apply forward, as it does not use ExternalAccounts.
+        # Overridden because it's required by the superclass.
         pass
