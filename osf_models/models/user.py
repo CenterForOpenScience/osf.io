@@ -139,7 +139,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
 
     # security emails that have been sent
     # TODO: This should be removed and/or merged with system_tags
-    security_messages = DateTimeAwareJSONField(default={}, blank=True)
+    security_messages = DateTimeAwareJSONField(default=dict, blank=True)
     # Format: {
     #   <message label>: <datetime>
     #   ...
@@ -150,7 +150,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
 
     # Per-project unclaimed user data:
     # TODO: add validation
-    unclaimed_records = DateTimeAwareJSONField(default={}, blank=True)
+    unclaimed_records = DateTimeAwareJSONField(default=dict, blank=True)
     # Format: {
     #   <project_id>: {
     #       'name': <name that referrer provided>,
@@ -170,7 +170,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     #   }
     #   ...
     # }
-    contributor_added_email_records = DateTimeAwareJSONField(default={}, blank=True)
+    contributor_added_email_records = DateTimeAwareJSONField(default=dict, blank=True)
 
     # The user into which this account was merged
     merged_by = models.ForeignKey('self', null=True, blank=True, related_name='merger')
@@ -195,10 +195,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
 
     # TODO remove this field once migration (scripts/migration/migrate_mailing_lists_to_mailchimp_fields.py)
     # has been run. This field is deprecated and replaced with mailchimp_mailing_lists
-    mailing_lists = DateTimeAwareJSONField(default={}, blank=True)
+    mailing_lists = DateTimeAwareJSONField(default=dict, blank=True)
 
     # email lists to which the user has chosen a subscription setting
-    mailchimp_mailing_lists = DateTimeAwareJSONField(default={}, blank=True)
+    mailchimp_mailing_lists = DateTimeAwareJSONField(default=dict, blank=True)
     # Format: {
     #   'list1': True,
     #   'list2: False,
@@ -274,7 +274,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     # Social links
     # social = fields.DictionaryField(validate=validate_social)
     # TODO: Add validation
-    social = DateTimeAwareJSONField(default={}, blank=True)
+    social = DateTimeAwareJSONField(default=dict, blank=True)
     # Format: {
     #     'profileWebsites': <list of profile websites>
     #     'twitter': <twitter id>,
@@ -293,7 +293,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     date_disabled = models.DateTimeField(db_index=True, null=True, blank=True)
 
     # when comments were last viewed
-    comments_viewed_timestamp = DateTimeAwareJSONField(default={}, blank=True)
+    comments_viewed_timestamp = DateTimeAwareJSONField(default=dict, blank=True)
     # Format: {
     #   'Comment.root_target._id': 'timestamp',
     #   ...
@@ -310,7 +310,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
 
     _affiliated_institutions = models.ManyToManyField('Institution')
 
-    notifications_configured = DateTimeAwareJSONField(default={}, blank=True)
+    notifications_configured = DateTimeAwareJSONField(default=dict, blank=True)
 
     objects = OSFUserManager()
 

@@ -20,7 +20,7 @@ class Registration(AbstractNode):
 
     registered_schema = models.ManyToManyField(MetaSchema)
 
-    registered_meta = DateTimeAwareJSONField(default={})
+    registered_meta = DateTimeAwareJSONField(default=dict)
     # TODO Add back in once dependencies are resolved
     registration_approval = models.ForeignKey(RegistrationApproval, null=True, blank=True)
     retraction = models.ForeignKey(Retraction, null=True, blank=True)
@@ -80,7 +80,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     #     'value': <value>
     #   }
     # }
-    registration_metadata = DateTimeAwareJSONField(default={})
+    registration_metadata = DateTimeAwareJSONField(default=dict)
     registration_schema = models.ForeignKey('MetaSchema', null=True)
     registered_node = models.ForeignKey('Node', null=True, related_name='draft_registration')
 
@@ -89,7 +89,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     # Dictionary field mapping extra fields defined in the MetaSchema.schema to their
     # values. Defaults should be provided in the schema (e.g. 'paymentSent': false),
     # and these values are added to the DraftRegistration
-    _metaschema_flags = DateTimeAwareJSONField(default={})
+    _metaschema_flags = DateTimeAwareJSONField(default=dict)
     notes = models.TextField()
 
     def __repr__(self):

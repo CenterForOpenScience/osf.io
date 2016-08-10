@@ -104,7 +104,7 @@ class NodeLog(ObjectIDMixin, BaseModel):
     action_choices = [(action, action.upper()) for action in actions]
     date = models.DateTimeField(default=timezone.now, db_index=True, null=True, blank=True)#, auto_now_add=True)
     action = models.CharField(max_length=255, db_index=True, choices=action_choices)
-    params = DateTimeAwareJSONField(default={})
+    params = DateTimeAwareJSONField(default=dict)
     should_hide = models.BooleanField(default=False)
     user = models.ForeignKey('OSFUser', related_name='logs', db_index=True, null=True, blank=True)
     foreign_user = models.CharField(max_length=255, null=True, blank=True)
