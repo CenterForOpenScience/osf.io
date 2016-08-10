@@ -100,6 +100,8 @@ class BaseModel(models.Model):
         try:
             if issubclass(cls, GuidMixin):
                 return cls.objects.get(_guid__guid=data)
+            elif issubclass(cls, ObjectIDMixin):
+                return cls.objects.get(guid=data)
             return cls.objects.getQ(pk=data)
         except cls.DoesNotExist:
             return None
