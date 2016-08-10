@@ -12,6 +12,7 @@ def activity():
     popular_public_projects = []
     popular_public_registrations = []
     hits = {}
+    max_popular_projects = 20
 
     if settings.KEEN['public']['read_key']:
         client = KeenClient(
@@ -46,9 +47,9 @@ def activity():
             ]
         )
 
-        node_data = [{'node': x['node.id'], 'views': x['result']} for x in node_pageviews]
+        node_data = [{'node': x['node.id'], 'views': x['result']} for x in node_pageviews[0:max_popular_projects]]
 
-        for node_visit in node_visits:
+        for node_visit in node_visits[0:max_popular_projects]:
             for node_result in node_data:
                 if node_visit['node.id'] == node_result['node']:
                     node_result.update({'visits': node_visit['result']})
