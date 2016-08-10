@@ -899,3 +899,22 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         token = unclaimed_record['token']
         return '{base_url}user/{uid}/{project_id}/claim/?token={token}'\
                     .format(**locals())
+
+    def is_affiliated_with(self, institution):
+        """Return if this user is affiliated with ``institution``."""
+        return self._affiliated_institutions.filter(id=institution.id).exists()
+
+    def update_affiliated_institutions_by_email_domain(self):
+        """
+        Append affiliated_institutions by email domain.
+        :return:
+        """
+        Institution = apps.get_model('osf_models.Institution')
+        try:
+            email_domains = [email.split('@')[1].lower() for email in self.emails]
+            insts = Institution.find(Q('email_domains', 'overlap', email_domains))
+            for inst in insts:
+                if inst not in self._affiliated_institutions.all():
+                    self._affiliated_institutions.add(inst)
+        except (IndexError, NoResultsFound):
+            pass
