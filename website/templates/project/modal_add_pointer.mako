@@ -34,7 +34,14 @@
                     </div>
                 </form>
 
-                <hr />
+                <br>
+                <div>
+                  <ul class="nav nav-tabs">
+                    <li id="getLinksNodesTab" class="active"><a data-bind="click: nodeView">Projects</a></li>
+                    <li id="getLinksRegistrationsTab"><a data-bind="click: registrationView">Registrations</a></li>
+                  </ul>
+                </div>
+                <br>
 
                 <!-- Choose which to add -->
                 <div class="row">
@@ -43,17 +50,24 @@
                         <div>
                             <span data-bind="if: includePublic" class="modal-subheader">Results: All Projects</span>
                             <span data-bind="ifnot: includePublic" class="modal-subheader">Results: My Projects</span>
-                            <a data-bind="click:addAll">Add all</a>
                         </div>
                         <div class="error" data-bind="text:errorMsg"></div>
                         <table class="table table-striped">
                             <tbody data-bind="foreach:{data:results, afterRender:addTips}">
-                                <tr class="pointer-row" data-bind="if:!($root.selected($data))">
+                                <tr class="pointer-tow">
                                     <td class="osf-icon-td">
-                                        <a
+                                        <div data-bind="if:!($root.selected($data))">
+                                          <a
                                                 class="btn btn-success contrib-button"
                                                 data-bind="click:$root.add.bind($root)"
                                             ><i class="fa fa-plus"></i></a>
+                                        </div>
+                                        <div data-bind="if:($root.selected($data))">
+                                          <a
+                                            class="btn btn-default contrib-button"
+                                            data-bind="click:$root.remove.bind($root)"
+                                            ><i class="fa fa-minus"></i></a>
+                                        </div>
                                     </td>
                                     <td data-bind="text:attributes.title" class="overflow"></td>
                                     <td style="width: 25%" data-bind="text:$root.authorText($data)"></td>
@@ -75,39 +89,13 @@
                             </div>
                         </div>
                     </div>
-
-                    <div class="col-md-6">
-                        <div>
-                            <span class="modal-subheader">Adding</span>
-                            <a data-bind="click:removeAll">Remove all</a>
-                        </div>
-                        <table class="table table-striped">
-                            <tbody data-bind="foreach:{data:selection, afterRender:addTips}">
-                                <tr class="pointer-row">
-                                    <td class="osf-icon-td">
-                                        <a
-                                                class="btn btn-default contrib-button"
-                                                data-bind="click:$root.remove.bind($root)"
-                                            ><i class="fa fa-minus"></i></a>
-                                    </td>
-                                    <td  data-bind="text:attributes.title" class="overflow"></td>
-                                    <td style="width: 25%" data-bind="text:$root.authorText($data)"></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
                 </div>
 
             </div><!-- end modal-body -->
 
             <div class="modal-footer">
 
-                <a class="btn btn-default" data-dismiss="modal">Cancel</a>
-
-                <span data-bind="if:selection().length">
-                    <a class="btn btn-success" data-bind="click:submit, css: {disabled: !submitEnabled() }">Add</a>
-                </span>
+                <a class="btn btn-default" data-bind='click:done' data-dismiss="modal">Done</a>
                 <div class="help-block">
                     <span class="text-danger" data-bind="html: submitWarningMsg"></span>
                 </div>
