@@ -227,7 +227,7 @@ class PreprintFactory(AbstractNodeFactory):
             user = project.creator
         user = kwargs.get('user') or kwargs.get('creator') or user or UserFactory()
         kwargs['creator'] = user
-        # Original project to be registered
+        # Original project to be converted to a preprint
         project = project or target_class(*args, **kwargs)
         if user._id not in project.permissions:
             project.add_contributor(
@@ -257,9 +257,19 @@ class PreprintFactory(AbstractNodeFactory):
 class SubjectFactory(ModularOdmFactory):
 
     text = Sequence(lambda n: 'Example Subject #{}'.format(n))
-    type = 'plos'
+    type = 'test'
     class Meta:
         model = Subject
+
+    @classmethod
+    def _create(cls, target_class, text=None,
+                parent_ids=[], *args, **kwargs):
+        subject = target_class(*args, **kwargs)
+        subject.text = text
+        subject.parent_ids = parent_ids
+        subject.save()
+
+        return subject
 
 
 class RegistrationFactory(AbstractNodeFactory):
