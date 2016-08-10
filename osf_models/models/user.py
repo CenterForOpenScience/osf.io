@@ -308,7 +308,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     # whether the user has requested to deactivate their account
     requested_deactivation = models.BooleanField(default=False)
 
-    _affiliated_institutions = models.ManyToManyField('Institution')
+    affiliated_institutions = models.ManyToManyField('Institution')
 
     notifications_configured = DateTimeAwareJSONField(default=dict, blank=True)
 
