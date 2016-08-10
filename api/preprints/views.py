@@ -52,7 +52,7 @@ class PreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
         date_created                    iso8601 timestamp     timestamp that the preprint was created
         date_modified                   iso8601 timestamp     timestamp when the preprint was last updated
         tags                            array of strings      list of tags that describe the node
-        subjects                        array of Subject ids  list ids of Subject in the PLOS taxonomy. Tuple, containing the subject text and subject ID
+        subjects                        array of tuples       list ids of Subject in the PLOS taxonomy. Tuple, containing the subject text and subject ID
         provider                        string                original source of the preprint
 
     ##Relationships
