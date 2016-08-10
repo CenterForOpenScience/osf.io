@@ -99,7 +99,7 @@ class TestPreregUtils(OsfTestCase):
     def test_get_prereg_schema_can_return_erpc_metaschema(self):
         schema = get_prereg_schema('erpc')
         assert_is_instance(schema, MetaSchema)
-        assert_equal(schema.name, 'Election Research Preacceptance Challenge')
+        assert_equal(schema.name, 'Election Research Preacceptance Competition')
 
     def test_get_prereg_schema_raises_error_for_invalid_campaign(self):
         with assert_raises(ValueError):
