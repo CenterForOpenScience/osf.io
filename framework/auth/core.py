@@ -1037,8 +1037,7 @@ class User(GuidStoredObject, AddonModelMixin):
             try:
                 return Node.find_one(Q('contributors', 'eq', self._id) & Q('is_public_files_node', 'eq', True))
             except NoResultsFound:
-                None
-        return None
+               return None
 
     @property
     def url(self):
