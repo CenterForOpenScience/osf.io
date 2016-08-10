@@ -1,5 +1,5 @@
-import datetime
 from django.contrib.postgres.fields import ArrayField
+from django.utils import timezone
 from django.db import models
 from website import settings
 from osf_models.models.base import BaseModel, ObjectIDMixin
@@ -48,7 +48,7 @@ class ArchiveJob(ObjectIDMixin, BaseModel):
     # whether or not emails have been sent for this ArchiveJob
     sent = models.BooleanField(default=False, verbose_name='emails sent')
     status = models.CharField(max_length=40, default=ARCHIVER_INITIATED)
-    datetime_initiated = models.DateTimeField(default=datetime.datetime.utcnow, verbose_name='intiated at')
+    datetime_initiated = models.DateTimeField(default=timezone.now, verbose_name='intiated at')
 
     dst_node = models.ForeignKey('Node', related_name='active', verbose_name='destination node', null=True)
     src_node = models.ForeignKey('Node', verbose_name='source node', null=True)
@@ -78,9 +78,9 @@ class ArchiveJob(ObjectIDMixin, BaseModel):
     @property
     def pending(self):
         return any([
-                       target for target in self.target_addons
-                       if target.status not in (ARCHIVER_SUCCESS, ARCHIVER_FAILURE)
-                       ])
+            target for target in self.target_addons
+            if target.status not in (ARCHIVER_SUCCESS, ARCHIVER_FAILURE)
+        ])
 
     def info(self):
         return self.src_node, self.dst_node, self.initiator
@@ -94,15 +94,15 @@ class ArchiveJob(ObjectIDMixin, BaseModel):
                 'errors': target.errors
             }
             for target in self.target_addons
-            ]
+        ]
 
     def archive_tree_finished(self):
         if not self.pending:
             return len(
                 [
                     ret for ret in [
-                    child.archive_tree_finished()
-                    for child in self.children
+                        child.archive_tree_finished()
+                        for child in self.children
                     ] if ret]
             ) if len(self.children) else True
         return False
@@ -123,7 +123,8 @@ class ArchiveJob(ObjectIDMixin, BaseModel):
             return
         if not self.pending:
             self.done = True
-            if any([target.status for target in self.target_addons if target.status in ARCHIVER_FAILURE_STATUSES]):
+            if any([target.status for target in self.target_addons
+                    if target.status in ARCHIVER_FAILURE_STATUSES]):
                 self.status = ARCHIVER_FAILURE
                 self._fail_above()
             else:
@@ -171,4 +172,3 @@ class ArchiveJob(ObjectIDMixin, BaseModel):
         target.stat_result = stat_result
         target.save()
         self._post_update_target()
-

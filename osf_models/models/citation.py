@@ -1,5 +1,5 @@
-import datetime
 from django.db import models
+from django.utils import timezone
 from osf_models.models.base import BaseModel, ObjectIDMixin
 
 
@@ -28,7 +28,7 @@ class CitationStyle(BaseModel):
     title = models.CharField(max_length=255)
 
     # Datetime the file was last parsed
-    date_parsed = models.DateTimeField(default=datetime.datetime.utcnow)
+    date_parsed = models.DateTimeField(default=timezone.now)
 
     short_title = models.CharField(max_length=2048)
     summary = models.CharField(max_length=2048)

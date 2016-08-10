@@ -7,6 +7,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.dispatch import receiver
 from django.db.models.signals import post_save
+from django.utils import timezone
 from typedmodels.models import TypedModel
 
 # OSF imports
@@ -25,7 +26,7 @@ from osf_models.models.contributor import Contributor
 from osf_models.models.mixins import Loggable, Taggable
 from osf_models.models.user import OSFUser
 from osf_models.models.validators import validate_title
-from osf_models.utils.auth import Auth
+from osf_models.utils.auth import Auth, get_user
 from osf_models.utils.base import api_v2_url
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
@@ -72,7 +73,7 @@ class AbstractNode(TypedModel, Taggable, Loggable, GuidMixin, BaseModel):
                                 on_delete=models.SET_NULL,
                                 null=True, blank=True)
     # TODO: Uncomment auto_* attributes after migration is complete
-    date_created = models.DateTimeField(default=dt.datetime.utcnow)  # auto_now_add=True)
+    date_created = models.DateTimeField(default=timezone.now)  # auto_now_add=True)
     date_modified = models.DateTimeField(db_index=True, null=True, blank=True)  # auto_now=True)
     deleted_date = models.DateTimeField(null=True, blank=True)
     description = models.TextField(blank=True, default='')
@@ -181,6 +182,27 @@ class AbstractNode(TypedModel, Taggable, Loggable, GuidMixin, BaseModel):
                 auth.private_key in self.private_link_keys_active or
                 self.is_admin_parent(auth.user))
 
+    def can_edit(self, auth=None, user=None):
+        """Return if a user is authorized to edit this node.
+        Must specify one of (`auth`, `user`).
+
+        :param Auth auth: Auth object to check
+        :param User user: User object to check
+        :returns: Whether user has permission to edit this node.
+        """
+        if not auth and not user:
+            raise ValueError('Must pass either `auth` or `user`')
+        if auth and user:
+            raise ValueError('Cannot pass both `auth` and `user`')
+        user = user or auth.user
+        if auth:
+            is_api_node = auth.api_node == self
+        else:
+            is_api_node = False
+        return (
+            (user and self.has_permission(user, 'write')) or is_api_node
+        )
+
     @property
     def comment_level(self):
         if self.public_comments:
@@ -213,7 +235,12 @@ class AbstractNode(TypedModel, Taggable, Loggable, GuidMixin, BaseModel):
         return perm
 
     def has_permission(self, user, permission):
-        return getattr(user.contributor_set.get(node=self), permission, False)
+        try:
+            contrib = user.contributor_set.get(node=self)
+        except Contributor.DoesNotExist:
+            return False
+        else:
+            return getattr(contrib, permission, False)
 
     def add_permission(self, user, permission, save=False):
         contributor = user.contributor_set.get(node=self)
@@ -420,6 +447,39 @@ class AbstractNode(TypedModel, Taggable, Loggable, GuidMixin, BaseModel):
         if save:
             self.save()
 
+    def add_unregistered_contributor(self, fullname, email, auth,
+                                     permissions=None, save=False):
+        """Add a non-registered contributor to the project.
+
+        :param str fullname: The full name of the person.
+        :param str email: The email address of the person.
+        :param Auth auth: Auth object for the user adding the contributor.
+        :returns: The added contributor
+        :raises: DuplicateEmailError if user with given email is already in the database.
+        """
+        # Create a new user record
+        contributor = OSFUser.create_unregistered(fullname=fullname, email=email)
+
+        contributor.add_unclaimed_record(node=self, referrer=auth.user,
+            given_name=fullname, email=email)
+        try:
+            contributor.save()
+        except ValidationError:  # User with same email already exists
+            contributor = get_user(email=email)
+            # Unregistered users may have multiple unclaimed records, so
+            # only raise error if user is registered.
+            if contributor.is_registered or self.is_contributor(contributor):
+                raise
+            contributor.add_unclaimed_record(node=self, referrer=auth.user,
+                given_name=fullname, email=email)
+            contributor.save()
+
+        self.add_contributor(
+            contributor, permissions=permissions, auth=auth,
+            log=True, save=False,
+        )
+        self.save()
+        return contributor
 
 class Node(AbstractNode):
     """
