@@ -2,6 +2,7 @@ from copy import deepcopy
 import urlparse
 import datetime as dt
 import logging
+import re
 
 from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
@@ -800,6 +801,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
             use_ssl=True,
             size=size
         )
+
+    @property
+    def display_absolute_url(self):
+        url = self.absolute_url
+        if url is not None:
+            return re.sub(r'https?:', '', url).strip('/')
 
     def display_full_name(self, node=None):
         """Return the full name , as it would display in a contributor list for a
