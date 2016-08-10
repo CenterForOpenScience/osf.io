@@ -4,8 +4,9 @@ import datetime as dt
 import urlparse
 
 import mock
-import pytest
 import itsdangerous
+import pytest
+import pytz
 
 from framework.auth.exceptions import ExpiredTokenError, InvalidTokenError, ChangePasswordError
 from framework.analytics import get_total_activity_count
@@ -21,6 +22,7 @@ from osf_models.exceptions import ValidationError
 from .factories import (
     fake,
     NodeFactory,
+    InstitutionFactory,
     UserFactory,
     UnregUserFactory,
     UnconfirmedUserFactory
@@ -140,11 +142,12 @@ class TestOSFUser:
         with pytest.raises(ValidationError):
             u.save()
 
-    @pytest.mark.skip('auto_add_now not enabled until after the migration')
     def test_date_registered_upon_saving(self):
         u = User(username=fake.email(), fullname='Foo bar')
+        u.set_unusable_password()
         u.save()
-        assert_true(u.date_registered)
+        assert bool(u.date_registered) is True
+        assert u.date_registered.tzinfo == pytz.utc
 
     def test_cant_create_user_without_full_name(self):
         u = User(username=fake.email())
@@ -384,6 +387,29 @@ class TestOSFUser:
             auth=Auth(project.creator))
         project.save()
         assert u.display_full_name(node=project) == name
+
+    def test_username_is_automatically_lowercased(self):
+        user = UserFactory(username='nEoNiCon@bet.com')
+        assert user.username == 'neonicon@bet.com'
+
+    def test_update_affiliated_institutions_by_email_domains(self):
+        institution = InstitutionFactory()
+        email_domain = institution.email_domains[0]
+
+        user_email = '{}@{}'.format(fake.domain_word(), email_domain)
+        user = UserFactory(username=user_email)
+        user.update_affiliated_institutions_by_email_domain()
+
+        assert user.is_affiliated_with(institution) is True
+
+    def test_is_affiliated_with(self, user):
+        institution1, institution2 = InstitutionFactory(), InstitutionFactory()
+
+        user._affiliated_institutions.add(institution1)
+        user.save()
+
+        assert user.is_affiliated_with(institution1) is True
+        assert user.is_affiliated_with(institution2) is False
 
 
 @pytest.mark.django_db

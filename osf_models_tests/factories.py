@@ -15,15 +15,6 @@ def FakeList(provider, n, *args, **kwargs):
     func = getattr(fake, provider)
     return [func(*args, **kwargs) for _ in range(n)]
 
-class InstitutionFactory(DjangoModelFactory):
-    name = factory.Faker('company')
-    domains = FakeList('domain_name', n=2)
-    email_domains = FakeList('domain_name', n=2)
-
-    class Meta:
-        model = models.Institution
-
-
 class UserFactory(DjangoModelFactory):
     username = factory.Faker('email')
     password = factory.PostGenerationMethodCall('set_password',
@@ -31,7 +22,6 @@ class UserFactory(DjangoModelFactory):
     is_registered = True
     is_claimed = True
     date_confirmed = factory.Faker('date_time')
-    date_registered = factory.Faker('date_time')
     merged_by = None
     verification_key = None
 
@@ -115,3 +105,14 @@ class NodeFactory(DjangoModelFactory):
 
     class Meta:
         model = models.Node
+
+class InstitutionFactory(DjangoModelFactory):
+    name = factory.Faker('company')
+    auth_url = factory.Faker('url')
+    logout_url = factory.Faker('url')
+    domains = FakeList('url', n=3)
+    email_domains = FakeList('domain_name', n=1)
+    logo_name = factory.Faker('file_name')
+
+    class Meta:
+        model = models.Institution
