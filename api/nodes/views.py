@@ -726,6 +726,7 @@ class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
         bibliographic               boolean  Whether the user will be included in citations for this node. Default is true.
         permission                  string   User permission level. Must be "read", "write", or "admin". Default is "write".
         unregistered_contributor    string   Contributor's assigned name if contributor hasn't yet claimed account
+        index                       integer  The position in the list of contributors reflected in the bibliography. Zero Indexed.
 
     ##Relationships
 
@@ -753,12 +754,14 @@ class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
                            "attributes": {
                              "bibliographic": true|false,             # optional
                              "permission": "read"|"write"|"admin"     # optional
+                             "index": "0"                             # optional
                            }
                          }
                        }
         Success:       200 OK + node representation
 
-    To update a contributor's bibliographic preferences or access permissions for the node, issue a PUT request to the
+    To update a contributor's bibliographic preferences, order in the bibliography,
+    or access permissions for the node, issue a PUT request to the
     `self` link. Since this endpoint has no mandatory attributes, PUT and PATCH are functionally the same.  If the given
     user is not already in the contributor list, a 404 Not Found error will be returned.  A node must always have at
     least one admin, and any attempt to downgrade the permissions of a sole admin will result in a 400 Bad Request
@@ -808,6 +811,8 @@ class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
         user.permission = node.get_permissions(user)[-1]
         user.bibliographic = node.get_visible(user)
         user.node_id = node._id
+        user.index = node.contributors.index(user)
+
         return user
 
     # overrides DestroyAPIView
