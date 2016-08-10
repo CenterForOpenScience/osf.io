@@ -619,7 +619,7 @@ class BaseContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
 class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
-     def get_default_queryset(self):
+    def get_default_queryset(self):
         node = self.get_node()
         visible_contributors = set(node.visible_contributor_ids)
         contributors = []
@@ -633,7 +633,7 @@ class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
             index += 1
         return contributors
 
-     def get_queryset(self):
+    def get_queryset(self):
         queryset = self.get_queryset_from_request()
         # If bulk request, queryset only contains contributors in request
         if is_bulk_request(self.request):
@@ -670,4 +670,3 @@ class BaseNodeLinksList(JSONAPIBaseView, generics.ListAPIView):
             if not pointer.node.is_deleted and not pointer.node.is_collection and
             pointer.node.can_view(auth) and not pointer.node.is_retracted
         ], key=lambda n: n.date_modified, reverse=True)
-

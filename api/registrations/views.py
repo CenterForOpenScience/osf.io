@@ -23,12 +23,10 @@ from api.registrations.serializers import (
 )
 
 from api.nodes.views import (
-    NodeMixin, ODMFilterMixin, NodeContributorsList, NodeRegistrationsList,
-    NodeChildrenList, NodeCommentsList, NodeProvidersList, NodeLinksList,
-    NodeContributorDetail, NodeFilesList, NodeLinksDetail, NodeFileDetail,
+    NodeMixin, ODMFilterMixin, NodeRegistrationsList,
+    NodeCommentsList, NodeProvidersList, NodeFilesList, NodeFileDetail,
     NodeAlternativeCitationsList, NodeAlternativeCitationDetail, NodeLogList,
-    NodeInstitutionsList, WaterButlerMixin, NodeForksList, NodeWikiList,
-    LinkedNodesList
+    NodeInstitutionsList, WaterButlerMixin, NodeForksList, NodeWikiList, LinkedNodesList
 )
 
 from website.models import Pointer
@@ -447,7 +445,6 @@ class RegistrationNodeLinksDetail(BaseNodeLinksDetail, RegistrationMixin):
         if not registration.is_registration:
             raise ValidationError('This is not a registration.')
         return registration
-
 
 
 class RegistrationRegistrationsList(NodeRegistrationsList, RegistrationMixin):
