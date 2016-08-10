@@ -1,3 +1,4 @@
+import datetime as dt
 import functools
 
 import blinker
@@ -55,3 +56,8 @@ class CaptureSignals(object):
 def capture_signals():
     """Factory method that creates a ``CaptureSignals`` with all OSF signals."""
     return CaptureSignals(ALL_SIGNALS)
+
+def assert_datetime_equal(dt1, dt2, allowance=500):
+    """Assert that two datetimes are about equal."""
+
+    assert abs(dt1 - dt2) < dt.timedelta(milliseconds=allowance)

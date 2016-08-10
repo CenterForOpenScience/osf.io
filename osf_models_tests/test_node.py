@@ -12,7 +12,7 @@ from osf_models.exceptions import ValidationError
 from osf_models.utils.auth import Auth
 
 from .factories import NodeFactory, UserFactory, UnregUserFactory
-from .utils import capture_signals
+from .utils import capture_signals, assert_datetime_equal
 
 
 @pytest.fixture()
@@ -85,9 +85,11 @@ class TestLogging:
 
         last_log = node.logs.first()
         assert last_log.action == NodeLog.EMBARGO_INITIATED
+        # date is tzaware
+        assert last_log.date.tzinfo == pytz.utc
 
         # updates node.date_modified
-        assert node.date_modified == last_log.date
+        assert_datetime_equal(node.date_modified, last_log.date)
 
 
 @pytest.mark.django_db

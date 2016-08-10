@@ -12,6 +12,7 @@ DATABASES = {
 }
 SITE_ID = 1
 SECRET_KEY = 'not very secret in tests'
+USE_TZ = True
 STATIC_URL = '/static/'
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
