@@ -19,7 +19,7 @@ def get_wiki_counts():
 
     wikis_total = wiki_collection.find()
 
-    query_legacy = {'date': {'$lt': WIKI_CHANGE_DATE}}
+    query_legacy = {'date': {'$lt': wiki_settings.WIKI_CHANGE_DATE}}
 
     wikis_legacy = wiki_collection.find(query_legacy)
     total_size = 0
