@@ -70,40 +70,7 @@ class PreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
 
     See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
 
-    ##Actions
 
-    ###Creating New Preprints
-
-    Create a new preprint by posting to the guid of the existing **node**, including the file_id for the
-    file you'd like to make the primary preprint file.
-
-        Method:        POST
-        URL:           /preprints/<node_id>/
-        Query Params:  <none>
-        Body (JSON):   {
-                        "data": {
-                            "id": node_id,
-                            "attributes": {
-                                "subjects":      {subject_id}      # required
-                                "description":   {description},    # optional
-                                "tags":          [{tag1}, {tag2}], # optional
-                                "provider":      {provider}        # optional
-
-                            },
-                            "relationships": {
-                                "preprint_file": {                 # required
-                                    "data": {
-                                        "type": "primary_file",
-                                        "id": file_id
-                                    }
-                                }
-                            }
-                        }
-                    }
-        Success:       201 CREATED + preprint representation
-
-    New preprints are created by issuing a POST request to this endpoint, along with the guid for the node to create a preprint from.
-    Provider defaults to osf.
 
     ##Query Params
 
@@ -115,7 +82,6 @@ class PreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     Most are string fields and will be filtered using simple substring matching.
 
     #This Request/Response
-
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -149,6 +115,49 @@ class PreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
 
 
 class PreprintDetail(JSONAPIBaseView, generics.CreateAPIView, generics.RetrieveUpdateAPIView, PreprintMixin, WaterButlerMixin):
+    """Preprint Detail  *Writeable*.
+
+    ##Preprint Attributes
+    See Preprints List
+
+    ##Actions
+
+    ###Creating New Preprints
+
+    Create a new preprint by posting to the guid of the existing **node**, including the file_id for the
+    file you'd like to make the primary preprint file. Note that the **node id** will not be accessible via the
+    preprints detail view until after the preprint has been created.
+
+        Method:        POST
+        URL:           /preprints/<node_id>/
+        Query Params:  <none>
+        Body (JSON):   {
+                        "data": {
+                            "id": node_id,
+                            "attributes": {
+                                "subjects":      {subject_id}      # required
+                                "description":   {description},    # optional
+                                "tags":          [{tag1}, {tag2}], # optional
+                                "provider":      {provider}        # optional
+
+                            },
+                            "relationships": {
+                                "preprint_file": {                 # required
+                                    "data": {
+                                        "type": "primary_file",
+                                        "id": file_id
+                                    }
+                                }
+                            }
+                        }
+                    }
+        Success:       201 CREATED + preprint representation
+
+    New preprints are created by issuing a POST request to this endpoint, along with the guid for the node to create a preprint from.
+    Provider defaults to osf.
+
+    #This Request/Response
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
