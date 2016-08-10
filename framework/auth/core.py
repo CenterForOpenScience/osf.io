@@ -420,6 +420,10 @@ class User(GuidStoredObject, AddonModelMixin):
     #   ...
     # }
 
+    # If this user was created through the API,
+    # keep track of who added them.
+    registered_by = fields.ForeignField('user', default=None, index=True)
+
     _meta = {'optimistic': True}
 
     def __repr__(self):
@@ -1111,6 +1115,8 @@ class User(GuidStoredObject, AddonModelMixin):
                 pass
             else:
                 raise
+        except mailchimp_utils.mailchimp.EmailNotExistsError:
+            pass
         self.is_disabled = True
 
     @property

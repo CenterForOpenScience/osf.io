@@ -459,6 +459,56 @@ class TestNodeContributorUpdate(ApiTestCase):
         assert_true(self.project.get_visible(self.user_two))
 
 
+class TestNodeContributorPartialUpdate(ApiTestCase):
+    def setUp(self):
+        super(TestNodeContributorPartialUpdate, self).setUp()
+        self.user = AuthUserFactory()
+        self.user_two = AuthUserFactory()
+
+        self.project = ProjectFactory(creator=self.user)
+        self.project.add_contributor(self.user_two, permissions=[permissions.READ, permissions.WRITE], visible=True, save=True)
+
+        self.url_creator = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user._id)
+        self.url_contributor = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user_two._id)
+
+    def test_patch_bibliographic_only(self):
+        creator_id = '{}-{}'.format(self.project._id, self.user._id)
+        data = {
+            'data': {
+                'id': creator_id,
+                'type': 'contributors',
+                'attributes': {
+                    'bibliographic': False,
+                }
+            }
+        }
+        res = self.app.patch_json_api(self.url_creator, data, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        self.project.reload()
+        assert_equal(self.project.get_permissions(self.user), [permissions.READ, permissions.WRITE, permissions.ADMIN])
+        assert_false(self.project.get_visible(self.user))
+
+    def test_patch_permission_only(self):
+        user_three = AuthUserFactory()
+        self.project.add_contributor(user_three, permissions=[permissions.READ, permissions.WRITE], visible=False, save=True)
+        url_contributor = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, user_three._id)
+        contributor_id = '{}-{}'.format(self.project._id, user_three._id)
+        data = {
+            'data': {
+                'id': contributor_id,
+                'type': 'contributors',
+                'attributes': {
+                    'permission': permissions.READ,
+                }
+            }
+        }
+        res = self.app.patch_json_api(url_contributor, data, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        self.project.reload()
+        assert_equal(self.project.get_permissions(user_three), [permissions.READ])
+        assert_false(self.project.get_visible(user_three))
+
+
 class TestNodeContributorDelete(ApiTestCase):
     def setUp(self):
         super(TestNodeContributorDelete, self).setUp()

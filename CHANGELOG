@@ -2,7 +2,27 @@
 Changelog
 *********
 
-0.83.0 (unreleased)
+0.86.0 (2016-08-04)
+===================
+
+- APIv2: Add bulk support for contributor endpoints.
+- APIv2: Add endpoint to create unregistered users.
+- Dev: Remove dependencies on personal GitHub forks.
+- Social media sharing bar on project overview and file detail pages.
+- Add version toggle link on file detail pages.
+- Various UI fixes.
+
+0.85.0 (2016-08-01)
+===================
+
+- APIv2: Add S3 addon management.
+
+0.84.0 (2016-07-28)
+===================
+
+- Migrate Piwik to Keen.
+
+0.83.0 (2016-07-25)
 ===================
 
 - Add @mentions to comments.

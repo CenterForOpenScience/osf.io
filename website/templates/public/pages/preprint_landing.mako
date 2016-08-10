@@ -97,7 +97,7 @@
       <div class="container">
         <div class="row">
           <div class="col-md-3">
-            <a href="https://osf.io/view/socarxiv/"><img src="/static/img/SocArXiv.png" width="95%" style="margin-top: 20px;"></a>
+            <a href="https://osf.io/view/socarxiv/"><img src="/static/img/SocArXiv.png" alt="SocArXiv" width="95%" style="margin-top: 20px;"></a>
           </div>
           <div class="col-md-9 text-center">
             <h2>An open archive of the social sciences.</h2>
@@ -114,6 +114,30 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <div id="engrxiv" class="space-top engrxiv">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-7 text-center">
+            <h2>The eprint server for engineering.</h2>
+            <h4>Under development. Get updates on <a href="https://twitter.com/engrxiv">@engrxiv</a>
+              <a href="https://www.facebook.com/engrxiv" aria-label="Facebook"><i class="fa fa-facebook fa-lg fa-2x"></i></a>
+              <a href="http://twitter.com/engrxiv" aria-label="Twitter"><i class="fa fa-twitter fa-lg fa-2x"></i></a>
+              <a href="https://instagram.com/engrxiv" aria-label="Instagram"><i class="fa fa-instagram fa-lg fa-2x"></i></a>
+              <a href="mailto:info@engrxiv.org" aria-label="Email"><i class="fa fa-envelope fa-lg fa-2x"></i></a>
+              <a href="https://osf.io/j49t2" aria-label="OSF"><img src="/static/img/cos-gray.png" style="padding-bottom: 5px;"></a>
+            </h4>
+            <div style="vertical-align: bottom;">
+              arXiv is a trademark of Cornell University, used under license.
+            </div>
+          </div>
+          <div class="col-md-5">
+            <a href="https://osf.io/view/engrxiv/"><img src="/static/img/engrxiv-logo.png" alt="Engrxiv" width="95%" style="margin-top: 38px;"></a>
+          </div>
+        </div>
+      </div>
+    </div>
 </%def>
 
 

@@ -11,6 +11,7 @@ require('ace-noconflict');
 require('ace-mode-markdown');
 require('ace-ext-language_tools');
 require('addons/wiki/static/ace-markdown-snippets.js');
+require('../../vendor/ace-plugins/spellcheck_ace.js');
 
 var $osf = require('js/osfHelpers');
 

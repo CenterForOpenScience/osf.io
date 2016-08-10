@@ -259,7 +259,7 @@ var FolderPickerViewModel = oop.defclass({
             self.afterUpdate();
             ret.resolve();
         };
-        if (typeof data === 'undefined'){
+        if (typeof data === 'undefined' || $.isEmptyObject(data)){
             self.fetchFromServer()
                 .done(applySettings)
                 .fail(ret.reject);
@@ -515,11 +515,7 @@ var FolderPickerViewModel = oop.defclass({
                 // Also handle data from API -- squash `attributes` to what TB expects
                 // TODO: [OSF-6384] DRY this up when PR #5240 goes in
                 if (data.data) {
-                    $.each(data.data, function(i, obj) {
-                        var savedAttributes = obj.attributes;
-                        delete obj.attributes;
-                        $.extend(true, obj, savedAttributes);
-                    });
+                    return $osf.squashAPIAttributes(data);
                 }
                 return data;
             },
