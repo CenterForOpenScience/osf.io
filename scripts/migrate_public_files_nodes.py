@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-"""Migrate Share Windows to existing users
+"""Create a public files node for existing users.
 
 Run dry run: python -m scripts.migrate_public_files_nodes --dry
 Run migration: python -m scripts.migrate_public_files_nodes

@@ -191,7 +191,6 @@
                 allInstitutions: ${ all_institutions | sjson, n},
                 popular: ${ popular_links_node | sjson, n },
                 newAndNoteworthy: ${ noteworthy_links_node | sjson, n },
-                publicFilesId: ${ public_files_id | sjson, n },
                 maintenance: ${ maintenance | sjson, n},
                 analyticsMeta: {}
             });

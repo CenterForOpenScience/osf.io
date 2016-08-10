@@ -58,10 +58,6 @@ def get_globals():
     OSFWebRenderer.
     """
     user = _get_current_user()
-    try:
-        public_files_id = Node.find_one(Q('contributors', 'eq', user._id) & Q('is_public_files_node', 'eq', True))._id
-    except (AttributeError, NoResultsFound):
-        public_files_id = None
     user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path} for inst in user.affiliated_institutions] if user else []
     all_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path} for inst in Institution.find().sort('name')]
     location = geolite2.lookup(request.remote_addr) if request.remote_addr else None
@@ -129,7 +125,6 @@ def get_globals():
             },
         },
         'maintenance': maintenance.get_maintenance(),
-        'public_files_id': public_files_id,
     }
 
 
@@ -295,7 +290,7 @@ def make_url_map(app):
         ),
         Rule(
             [
-                '/public_files/<uid>',
+                '/public_files/<uid>/',
             ],
             'get',
             public_files_views.view_public_files_id,
