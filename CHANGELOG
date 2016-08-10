@@ -2,6 +2,75 @@
 Changelog
 *********
 
+0.86.0 (2016-08-04)
+===================
+
+- APIv2: Add bulk support for contributor endpoints.
+- APIv2: Add endpoint to create unregistered users.
+- Dev: Remove dependencies on personal GitHub forks.
+- Social media sharing bar on project overview and file detail pages.
+- Add version toggle link on file detail pages.
+- Various UI fixes.
+
+0.85.0 (2016-08-01)
+===================
+
+- APIv2: Add S3 addon management.
+
+0.84.0 (2016-07-28)
+===================
+
+- Migrate Piwik to Keen.
+
+0.83.0 (2016-07-25)
+===================
+
+- Add @mentions to comments.
+- Add password strength verification to password inputs.
+
+Migrations
+----------
+
+- python -m scripts.add_global_subscriptions
+
+0.82.0 (2016-07-19)
+===================
+
+- APIv2: Add "current_user_can_comment" field to nodes, registrations, wikis, and files.
+- APIv2: Add "node" relationship to file representations.
+- APIv2: Fix filtering fields whose name does not match source field name.
+- APIv2: Add support for folder listing for Box and Dropbox.
+- Add contextual information to search results in "Add links" modal.
+- Fix bug that generated extra addon deauthorization logs.
+- Fix page numbering on log feeds.
+- Add rate limit for resending confirmation emails.
+- Fix for search UI.
+
+Migrations
+----------
+
+- python -m scripts.box.migrate_folder_language
+
+0.81.0 (2016-07-07)
+===================
+
+- APIv2: By default, GUID endpoint returns the data for the GUID's referent instead of redirecting to the referent's URL. Use the `?resolve=true` parameter to redirect.
+- APIv2: IDs for contributors are of the form <nodeid>-<userid>.
+- APIv2: All keys returned in "user" endpoint response objects are snake_case.
+- On "My projects" page, show permissions information when a project is selected.
+- Use HTTPS URLS on DOI links.
+- Set HttpOnly flag on cookies.
+- Replace jquery.cookie (deprecated) with js-cookie.
+- Improved error messaging for DropBox addon.
+- More help text for Collections and Bookmarks.
+- Upgrade to invoke 0.13.0.
+
+0.80.0 (2016-06-30)
+===================
+
+- Make log feed UI and language consistent across pages.
+- Make "Add component" UI and language consistent across pages.
+
 0.79.0 (2016-06-28)
 ===================
 

@@ -21,6 +21,7 @@
         "dataverse": "partial",
         "dropbox": "partial",
         "figshare": "partial",
+        "forward": "full",
         "googledrive": "partial",
         "github": "partial",
         "s3": "partial",

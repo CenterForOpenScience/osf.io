@@ -18,6 +18,13 @@ from website.addons.mendeley.tests.factories import MendeleyAccountFactory, Mend
 from website.addons.s3.tests.factories import S3AccountFactory, S3NodeSettingsFactory
 from website.addons.zotero.tests.factories import ZoteroAccountFactory, ZoteroNodeSettingsFactory
 
+# Varies between addons. Some need to make a call to get the root,
+# 'FAKEROOTID' should be the result of a mocked call in that case.
+VALID_ROOT_FOLDER_IDS = (
+    '/',
+    '0',
+    'FAKEROOTID',
+)
 
 class NodeAddonListMixin(object):
     def set_setting_list_url(self):
@@ -298,15 +305,17 @@ class NodeAddonDetailMixin(object):
         except (ValueError, AttributeError):
             # If addon was mandatory or non-configurable -- OSFStorage, Wiki
             pass
-        res = self.app.patch_json_api(self.setting_detail_url, 
-            {'data': { 
-                'id': self.short_name,
-                'type': 'node_addons',
-                'attributes': {
-                    'folder_id': 'asdfghjkl',
-                    }
+
+        data = {'data': { 
+            'id': self.short_name,
+            'type': 'node_addons',
+            'attributes': {
                 }
-            }, auth=self.user.auth,
+            }
+        }
+        data['data']['attributes'].update(self._mock_folder_info)
+        res = self.app.patch_json_api(self.setting_detail_url, 
+            data, auth=self.user.auth,
             expect_errors=True)
         if not wrong_type:
             assert_equal(res.status_code, 409)
@@ -450,7 +459,7 @@ class NodeAddonFolderMixin(object):
         )
 
     def test_folder_list_GET_expected_behavior(self):
-        wrong_type = self.short_name != 'googledrive'
+        wrong_type = self.should_expect_errors(success_types=('CONFIGURABLE', ))
         res = self.app.get(
             self.folder_url,
             auth=self.user.auth,
@@ -458,10 +467,10 @@ class NodeAddonFolderMixin(object):
 
         if not wrong_type:
             addon_data = res.json['data'][0]['attributes']
-            assert_equal(addon_data['path'], '/')
             assert_equal(addon_data['kind'], 'folder')
-            assert_equal(addon_data['name'], '/ (Full Google Drive)')
-            assert_equal(addon_data['folder_id'], 'FAKEROOTID')
+            assert_equal(addon_data['name'], self._mock_folder_result['name'])
+            assert_equal(addon_data['path'], self._mock_folder_result['path'])
+            assert_equal(addon_data['folder_id'], self._mock_folder_result['id'])
         if wrong_type:
             assert_in(res.status_code, [404, 501])
 
@@ -658,8 +667,22 @@ class TestNodeBoxAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
     AccountFactory = BoxAccountFactory
     NodeSettingsFactory = BoxNodeSettingsFactory
 
-    def test_settings_detail_PUT_all_sets_settings(self):
-        with mock.patch.object(self.node_settings.__class__, '_update_folder_data') as mock_update:
+    @property
+    def _mock_folder_result(self):
+        return {
+            'name': '/ (Full Box)',
+            'path': '/',
+            'id': '0'
+        }
+
+    @mock.patch('website.addons.box.model.BoxClient.get_folder')
+    def test_settings_detail_PUT_all_sets_settings(self, mock_get):
+        mock_get.return_value = {
+            'id': self._mock_folder_info['folder_id'],
+            'name': 'FAKEFOLDERNAME',
+            'path_collection': {'entries': {}}
+        }
+        with mock.patch('website.addons.box.model.Box.refresh_oauth_key') as mock_update:
             super(TestNodeBoxAddon, self).test_settings_detail_PUT_all_sets_settings()
 
 
@@ -675,6 +698,14 @@ class TestNodeDropboxAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase
             'owner': self.node
         }
 
+    @property
+    def _mock_folder_result(self):
+        return {
+            'name': '/ (Full Dropbox)',
+            'path': '/',
+            'id': '/'
+        }
+
 
 class TestNodeS3Addon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 's3'
@@ -686,6 +717,26 @@ class TestNodeS3Addon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
             'user_settings': self.user_settings,
             'owner': self.node
         }
+
+    @property
+    def _mock_folder_result(self):
+        return {
+            'name': 'a.bucket',
+            'path': 'a.bucket',
+            'id': 'a.bucket'
+        }
+
+    @mock.patch('website.addons.s3.model.get_bucket_names')
+    def test_folder_list_GET_expected_behavior(self, mock_names):
+        mock_names.return_value = ['a.bucket']
+        super(TestNodeS3Addon, self).test_folder_list_GET_expected_behavior()
+
+    @mock.patch('website.addons.s3.model.bucket_exists')
+    @mock.patch('website.addons.s3.model.get_bucket_location_or_error')
+    def test_settings_detail_PUT_all_sets_settings(self, mock_location, mock_exists):
+        mock_exists.return_value = True
+        mock_location.return_value = ''
+        super(TestNodeS3Addon, self).test_settings_detail_PUT_all_sets_settings()
 
 
 class TestNodeGoogleDriveAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
@@ -706,9 +757,77 @@ class TestNodeGoogleDriveAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTest
             'folder_path': '/'
         }
 
+    @property
+    def _mock_folder_result(self):
+        return {
+            'name': '/ (Full Google Drive)',
+            'path': '/',
+            'id': 'FAKEROOTID'
+        }
+    
+
     @mock.patch('website.addons.googledrive.client.GoogleDriveClient.about')
     def test_folder_list_GET_expected_behavior(self, mock_about):
         mock_about.return_value = {'rootFolderId': 'FAKEROOTID'}
         with mock.patch.object(self.node_settings.__class__, 'fetch_access_token', return_value='asdfghjkl') as mock_fetch:
             super(TestNodeGoogleDriveAddon, self).test_folder_list_GET_expected_behavior()
 
+    def test_settings_detail_PUT_PATCH_only_folder_id_raises_error(self):
+        self.node_settings.clear_settings()
+        self.node_settings.save()
+        data = {'data': { 
+                'id': self.short_name,
+                'type': 'node_addons',
+                'attributes': {
+                    'folder_id': self._mock_folder_info['folder_id']
+                    }
+                }
+            }
+        res_put = self.app.put_json_api(self.setting_detail_url, 
+            data, auth=self.user.auth, expect_errors=True)
+        res_patch = self.app.patch_json_api(self.setting_detail_url,
+            data, auth=self.user.auth, expect_errors=True)
+
+        assert res_put.status_code == res_patch.status_code == 400
+        assert ('Must specify both folder_id and folder_path for {}'.format(self.short_name) ==
+             res_put.json['errors'][0]['detail'] == res_patch.json['errors'][0]['detail'])
+
+    def test_settings_detail_PUT_PATCH_only_folder_path_raises_error(self):
+        self.node_settings.clear_settings()
+        self.node_settings.save()
+        data = {'data': { 
+                'id': self.short_name,
+                'type': 'node_addons',
+                'attributes': {
+                    'folder_path': self._mock_folder_info['folder_path']
+                    }
+                }
+            }
+        res_put = self.app.put_json_api(self.setting_detail_url, 
+            data, auth=self.user.auth, expect_errors=True)
+        res_patch = self.app.patch_json_api(self.setting_detail_url,
+            data, auth=self.user.auth, expect_errors=True)
+
+        assert res_put.status_code == res_patch.status_code == 400
+        assert ('Must specify both folder_id and folder_path for {}'.format(self.short_name) ==
+             res_put.json['errors'][0]['detail'] == res_patch.json['errors'][0]['detail'])
+
+    def test_settings_detail_incomplete_PUT_raises_error(self):
+        self.node_settings.deauthorize(auth=self.auth)
+        self.node_settings.save()
+        data = {'data': { 
+                'id': self.short_name,
+                'type': 'node_addons',
+                'attributes': {
+                    'external_account_id': self.account_id,
+                    'folder_id': self._mock_folder_info['folder_id']
+                    }
+                }
+            }
+        res = self.app.put_json_api(self.setting_detail_url, 
+            data, auth=self.user.auth,
+            expect_errors=True)
+
+        assert_equal(res.status_code, 400)
+        assert_equal('Must specify both folder_id and folder_path for {}'.format(self.short_name),
+             res.json['errors'][0]['detail'])

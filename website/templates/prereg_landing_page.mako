@@ -61,7 +61,7 @@
       </div>
       %if has_draft_registrations:
       <div class="row">
-        <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingPreregXS">Continue working on an existing preregistration</div>
+        <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingPreregXS">Continue working on an existing draft preregistration</div>
         <div class="col-md-12 prereg-button-content-xs">
           ${existingPrereg('XS')}
         </div>
@@ -98,7 +98,7 @@
             </td>
             %if has_draft_registrations:
             <td class="col-sm-${ num_cols } prereg-button-col">
-              <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingPrereg">Continue working on an existing preregistration</div>
+              <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingPrereg">Continue working on an existing draft preregistration</div>
             </td>
             %endif
             %if has_projects:

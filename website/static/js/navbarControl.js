@@ -2,12 +2,11 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox'); // TODO: Why is this import required? Is it? See [#OSF-6100]
-var signIn = require('js/signIn');
 var $osf = require('js/osfHelpers');
 
 /**
     * The NavbarViewModel, for OSF wide navigation.
-    * @param {Object} ... 
+    * @param {Object} ...
     */
 var NavbarViewModel = function() {
     var self = this;
@@ -21,9 +20,6 @@ var NavbarViewModel = function() {
         return window.contextVars.search;
     });
 
-    // signIn viewmodel component
-    self.signIn = new signIn.ViewModel();
-
     self.toggleSearch = function(){
         if(self.showSearch()){
             self.showSearch(false);
@@ -34,7 +30,7 @@ var NavbarViewModel = function() {
             $('#searchPageFullBar').focus();
         }
     };
-    
+
     self.submit = function() {
         $('#searchPageFullBar').blur().focus();
        if(self.query() !== ''){
@@ -95,7 +91,7 @@ NavbarControl.prototype.init = function() {
     if($osf.isIE()){
         searchBarPlaceHolderInit();
     }
-    
+
 };
 
 

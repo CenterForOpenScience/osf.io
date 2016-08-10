@@ -54,6 +54,7 @@ def account_list(addon_short_name, Serializer):
     return _account_list
 
 def folder_list(addon_short_name, addon_full_name, get_folders):
+    # TODO [OSF-6678]: Generalize this for API use after node settings have been refactored
     @must_have_addon(addon_short_name, 'node')
     @must_be_addon_authorizer(addon_short_name)
     def _folder_list(node_addon, **kwargs):
@@ -113,11 +114,11 @@ def set_config(addon_short_name, addon_full_name, Serializer, set_folder):
         folder = request.json.get('selected')
         set_folder(node_addon, folder, auth)
 
-        path = folder['path']
+        path = node_addon.folder_path
         return {
             'result': {
                 'folder': {
-                    'name': path.replace('All Files', '') if path != 'All Files' else '/ (Full {0})'.format(
+                    'name': path.replace('All Files', '') if path != '/' else '/ (Full {0})'.format(
                         addon_full_name
                     ),
                     'path': path,

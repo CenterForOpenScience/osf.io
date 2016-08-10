@@ -1569,7 +1569,42 @@ class TestNodeBulkDelete(ApiTestCase):
         self.private_project_url = "/{}nodes/{}/".format(API_BASE, self.private_project_user_one._id)
 
         self.public_payload = {'data': [{'id': self.project_one._id, 'type': 'nodes'}, {'id': self.project_two._id, 'type': 'nodes'}]}
+        self.public_query_params = 'id={},{}'.format(self.project_one._id, self.project_two._id)
+        self.type_query_param = 'type=nodes'
         self.private_payload = {'data': [{'id': self.private_project_user_one._id, 'type': 'nodes'}]}
+        self.private_query_params = 'id={}'.format(self.private_project_user_one._id)
+
+    def test_bulk_delete_with_query_params(self):
+        url = '{}?{}&{}'.format(self.url, self.type_query_param, self.public_query_params)
+        res = self.app.delete_json_api(url, auth=self.user_one.auth, bulk=True)
+        assert_equal(res.status_code, 204)
+
+    def test_bulk_delete_with_query_params_and_payload(self):
+        url = '{}?{}&{}'.format(self.url, self.type_query_param, self.public_query_params)
+        res = self.app.delete_json_api(url, self.public_payload, auth=self.user_one.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 409)
+        assert_equal(
+            res.json['errors'][0]['detail'],
+            u'A bulk DELETE can only have a body or query parameters, not both.'
+        )
+
+    def test_bulk_delete_with_query_params_no_type(self):
+        url = '{}?{}'.format(self.url, self.public_query_params)
+        res = self.app.delete_json_api(url, auth=self.user_one.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(
+            res.json['errors'][0]['detail'],
+            u'Type query parameter is also required for a bulk DELETE using query parameters.'
+        )
+
+    def test_bulk_delete_with_query_params_wrong_type(self):
+        url = '{}?{}&{}'.format(self.url, self.public_query_params, "type=node_not_nodes")
+        res = self.app.delete_json_api(url, auth=self.user_one.auth, expect_errors=True, bulk=True)
+        assert_equal(res.status_code, 409)
+        assert_equal(
+            res.json['errors'][0]['detail'],
+            u'Type needs to match type expected at this endpoint.'
+        )
 
     def test_bulk_delete_nodes_blank_request(self):
         res = self.app.delete_json_api(self.url, auth=self.user_one.auth, expect_errors=True, bulk=True)
@@ -1837,6 +1872,8 @@ class TestNodeListPagination(ApiTestCase):
 
         uids = [e['id'] for e in res.json['data'][0]['embeds']['contributors']['data']]
         for user in self.users[:9]:
-            assert_in(user._id, uids)
-        assert_not_in(self.users[10]._id, uids)
+            contrib_id = '{}-{}'.format(res.json['data'][0]['id'], user._id)
+            assert_in(contrib_id, uids)
+
+        assert_not_in('{}-{}'.format(res.json['data'][0]['id'], self.users[10]._id), uids)
         assert_equal(res.json['data'][0]['embeds']['contributors']['links']['meta']['per_page'], 10)
