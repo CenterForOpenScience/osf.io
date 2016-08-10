@@ -134,7 +134,7 @@ class FilterMixin(object):
                     detail="Field '{0}' does not support match operators in a filter.".format(field_name)
                 )
 
-    def _parse_date_param(self, field, field_name, op, value):
+    def _parse_date_param(self, field, source_field_name, op, value):
         """
         Allow for ambiguous date filters. This supports operations like finding Nodes created on a given day
         even though Node.date_created is a specific datetime.
@@ -145,17 +145,20 @@ class FilterMixin(object):
         if op != 'eq' or time_match:
             return [{
                 'op': op,
-                'value': self.convert_value(value, field)
+                'value': self.convert_value(value, field),
+                'source_field_name': source_field_name
             }]
         else:  # TODO: let times be as generic as possible (i.e. whole month, whole year)
             start = self.convert_value(value, field)
             stop = start + datetime.timedelta(days=1)
             return [{
                 'op': 'gte',
-                'value': start
+                'value': start,
+                'source_field_name': source_field_name
             }, {
                 'op': 'lt',
-                'value': stop
+                'value': stop,
+                'source_field_name': source_field_name
             }]
 
     def bulk_get_values(self, value, field):
@@ -171,12 +174,13 @@ class FilterMixin(object):
         return values
 
     def parse_query_params(self, query_params):
-        """Maps query params to a dict useable for filtering
+        """Maps query params to a dict usable for filtering
         :param dict query_params:
         :return dict: of the format {
             <resolved_field_name>: {
                 'op': <comparison_operator>,
-                'value': <resolved_value>
+                'value': <resolved_value>,
+                'source_field_name': <model_field_source_of_serializer_field>
             }
         }
         """
@@ -191,24 +195,27 @@ class FilterMixin(object):
                 op = match_dict.get('op') or self._get_default_operator(field)
                 self._validate_operator(field, field_name, op)
 
+                source_field_name = field_name
                 if not isinstance(field, ser.SerializerMethodField):
-                    field_name = self.convert_key(field_name, field)
+                    source_field_name = self.convert_key(field_name, field)
 
                 if field_name not in query:
                     query[field_name] = []
 
                 # Special case date(time)s to allow for ambiguous date matches
                 if isinstance(field, self.DATE_FIELDS):
-                    query[field_name].extend(self._parse_date_param(field, field_name, op, value))
-                elif not isinstance(value, int) and (field_name == '_id' or field_name == 'root'):
+                    query[field_name].extend(self._parse_date_param(field, source_field_name, op, value))
+                elif not isinstance(value, int) and (source_field_name == '_id' or source_field_name == 'root'):
                     query[field_name].append({
                         'op': 'in',
-                        'value': self.bulk_get_values(value, field)
+                        'value': self.bulk_get_values(value, field),
+                        'source_field_name': source_field_name
                     })
                 else:
                     query[field_name].append({
                         'op': op,
-                        'value': self.convert_value(value, field)
+                        'value': self.convert_value(value, field),
+                        'source_field_name': source_field_name
                     })
         return query
 
@@ -314,7 +321,8 @@ class ODMFilterMixin(FilterMixin):
             query_parts = []
             for field_name, params in filters.iteritems():
                 for group in params:
-                    query = Q(field_name, group['op'], group['value'])
+                    # Query based on the DB field, not the name of the serializer parameter
+                    query = Q(group['source_field_name'], group['op'], group['value'])
                     query_parts.append(query)
             try:
                 query = functools.reduce(operator.and_, query_parts)
@@ -371,7 +379,7 @@ class ListFilterMixin(FilterMixin):
     def get_filtered_queryset(self, field_name, params, default_queryset):
         """filters default queryset based on the serializer field type"""
         field = self.serializer_class._declared_fields[field_name]
-        field_name = self.convert_key(field_name, field)
+        source_field_name = params['source_field_name']
 
         if isinstance(field, ser.SerializerMethodField):
             return_val = [
@@ -379,22 +387,32 @@ class ListFilterMixin(FilterMixin):
                 if self.FILTERS[params['op']](self.get_serializer_method(field_name)(item), params['value'])
             ]
         elif isinstance(field, ser.CharField):
-            return_val = [
-                item for item in default_queryset
-                if params['value'].lower() in getattr(item, field_name, {}).lower()
-            ]
+            if source_field_name in ('_id', 'root'):
+                # Param parser treats certain ID fields as bulk queries: a list of options, instead of just one
+                # Respect special-case behavior, and enforce exact match for these list fields.
+                options = set(item.lower() for item in params['value'])
+                return_val = [
+                    item for item in default_queryset
+                    if getattr(item, source_field_name, '') in options
+                ]
+            else:
+                # TODO: What is {}.lower()? Possible bug
+                return_val = [
+                    item for item in default_queryset
+                    if params['value'].lower() in getattr(item, source_field_name, {}).lower()
+                ]
         elif isinstance(field, ser.ListField):
             return_val = [
                 item for item in default_queryset
                 if params['value'].lower() in [
-                    lowercase(i.lower) for i in getattr(item, field_name, [])
+                    lowercase(i.lower) for i in getattr(item, source_field_name, [])
                 ]
             ]
         else:
             try:
                 return_val = [
                     item for item in default_queryset
-                    if self.FILTERS[params['op']](getattr(item, field_name, None), params['value'])
+                    if self.FILTERS[params['op']](getattr(item, source_field_name, None), params['value'])
                 ]
             except TypeError:
                 raise InvalidFilterValue(detail='Could not apply filter to specified field')

@@ -473,7 +473,7 @@ describe('osfHelpers', () => {
             assert.equal(-1, found);
         });
     });
-    
+
     describe('any', () => {
         it('returns true if any of the values in an array are truthy', () => {
             var TRUTHY = [true, {}, [], 42, 'foo', new Date()];
@@ -491,7 +491,23 @@ describe('osfHelpers', () => {
         it('returns false if the array is empty', () => {
             assert.isFalse(
                 $osf.any([])
-            );            
+            );
+        });
+    });
+
+    describe('getDomain', () => {
+        it('uses http for localhost domains', () => {
+            var location = {hostname: 'localhost', port: '5000'};
+            assert.equal($osf.getDomain(location), 'http://localhost:5000');
+        });
+
+        it('uses https for non-localhost domains', () => {
+            var location = {hostname: 'osf.test', port: '5000'};
+            assert.equal($osf.getDomain(location), 'https://osf.test:5000');
+        });
+
+        it('uses window.location if object not passed', () => {
+            assert.include($osf.getDomain(), 'http');
         });
     });
 });

@@ -17,10 +17,10 @@ var MESSAGES = {
     makeProjectPublicWarning:
     'Please review your projects, components, and add-ons for sensitive or restricted information before making them public.' +
     '<br><br>Once they are made public, you should assume they will always be public. You can ' +
-        'return them to private later, but search engines (including Google’s cache) or others may access files before you do.',
+        'return them to private later, but search engines (including Google’s cache) or others may access files, wiki pages, or analytics before you do.',
     makeProjectPrivateWarning:
     '<ul><li>Public forks and registrations of this project will remain public.</li>' +
-    '<li>Search engines (including Google\'s cache) or others may have accessed files while this project was public.</li></ul>',
+    '<li>Search engines (including Google\'s cache) or others may have accessed files, wiki pages, or analytics while this project was public.</li></ul>',
     makeEmbargoPublicWarning: 'By clicking confirm, an email will be sent to project administrator(s) to approve ending the embargo. If approved, this registration, including any components, will be made public immediately. This action is irreversible.',
     makeEmbargoPublicTitle: 'End embargo early',
     selectNodes: 'Adjust your privacy settings by checking the boxes below. ' +

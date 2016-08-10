@@ -55,6 +55,8 @@ var entry = {
     'profile-settings-addons-page': staticPath('js/pages/profile-settings-addons-page.js'),
     'twofactor-page': staticPath('js/pages/twofactor-page.js'),
     'forgotpassword-page': staticPath('js/pages/forgotpassword-page.js'),
+    'resetpassword-page': staticPath('js/pages/resetpassword-page.js'),
+    'claimaccount-page': staticPath('js/pages/claimaccount-page.js'),
     'login-page': staticPath('js/pages/login-page.js'),
     'notifications-config-page': staticPath('js/pages/notifications-config-page.js'),
     'faq-page' : staticPath('js/pages/faq-page.js'),
@@ -76,7 +78,7 @@ var entry = {
         'loaders.css',
         'treebeard',
         'lodash.get',
-        'jquery.cookie',
+        'js-cookie',
         'URIjs',
         // Common internal modules
         'js/fangorn',
@@ -159,6 +161,7 @@ var resolve = {
         // GASP Items not defined as main in its package.json
         'TweenLite' : nodePath('gsap/src/minified/TweenLite.min.js'),
         'EasePack' : nodePath('gsap/src/minified/easing/EasePack.min.js'),
+        'keen-dataset' : nodePath('keen-dataviz/lib/dataset/'),
     }
 };
 

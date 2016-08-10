@@ -25,7 +25,7 @@ var FolderPickerViewModel = require('js/folderPickerNodeConfig');
  * @param {Object} opts Optional overrides to the class' default treebeardOptions, in particular onPickFolder
  */
 var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
-    constructor: function(addonName, url, selector, folderPicker, opts) {
+    constructor: function(addonName, url, selector, folderPicker, opts, tbOpts) {
         var self = this;
         self.super.constructor.call(self, addonName, url, selector, folderPicker);
         // externalAccounts
@@ -82,6 +82,7 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         };
         // Overrides
         self.options = $.extend({}, defaults, opts);
+
         // Treebeard config
         self.treebeardOptions = $.extend(
             {},
@@ -91,9 +92,13 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                     return this.options.onPickFolder.call(this, evt, item);
                 }.bind(this),
                 resolveLazyloadUrl: function(item) {
+                    if (item.data.links) {
+                        return item.data.links.children;
+                    }
                     return item.data.urls.folders;
                 }
-            }
+            },
+            tbOpts
         );
     },
     afterUpdate: function() {
@@ -203,12 +208,13 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
 });
 
 // Public API
-function OauthAddonNodeConfig(addonName, selector, url, folderPicker, opts) {
+function OauthAddonNodeConfig(addonName, selector, url, folderPicker, opts, tbOpts) {
     var self = this;
     self.url = url;
     self.folderPicker = folderPicker;
     opts = opts || {};
-    self.viewModel = new OauthAddonFolderPickerViewModel(addonName, url, selector, folderPicker, opts);
+    tbOpts = tbOpts || {};
+    self.viewModel = new OauthAddonFolderPickerViewModel(addonName, url, selector, folderPicker, opts, tbOpts);
     self.viewModel.updateFromData();
     $osf.applyBindings(self.viewModel, selector);
 }

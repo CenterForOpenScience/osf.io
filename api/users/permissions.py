@@ -18,9 +18,10 @@ class CurrentUser(permissions.BasePermission):
     """ Check to see if the request is coming from the currently logged user
     """
 
-    def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, User), 'obj must be a User, got {}'.format(obj)
-        return obj == request.user
+    def has_permission(self, request, view):
+        requested_user = view.get_user()
+        assert isinstance(requested_user, User), 'obj must be a User, got {}'.format(requested_user)
+        return requested_user == request.user
 
 class ReadOnlyOrCurrentUserRelationship(permissions.BasePermission):
     """ Check to see if the request is coming from the currently logged in user,

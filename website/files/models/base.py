@@ -798,6 +798,16 @@ class FileVersion(StoredObject):
     about where the file is located, hashes and datetimes
     """
 
+    __indices__ = [{
+        'unique': False,
+        'key_or_list': [
+            ('_id', pymongo.ASCENDING),
+            ('metadata.vault', pymongo.ASCENDING),
+            ('metadata.archive', pymongo.ASCENDING),
+            ('metadata.sha256', pymongo.ASCENDING),
+        ]
+    }]
+
     _id = fields.StringField(primary=True, default=lambda: str(bson.ObjectId()))
 
     creator = fields.ForeignField('user')

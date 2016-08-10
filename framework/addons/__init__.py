@@ -123,7 +123,7 @@ class AddonModelMixin(StoredObject):
         if addon:
             if self._name in addon.config.added_mandatory and not _force:
                 raise ValueError('Cannot delete mandatory add-on.')
-            if hasattr(addon, 'external_account'):
+            if getattr(addon, 'external_account', None):
                 addon.deauthorize(auth=auth)
             addon.delete(save=True)
             return True
@@ -134,7 +134,6 @@ class AddonModelMixin(StoredObject):
 
         :param dict config: Mapping between add-on names and enabled / disabled
             statuses
-
         """
 
         for addon_name, enabled in config.iteritems():
