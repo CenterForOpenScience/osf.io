@@ -909,6 +909,16 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+    'ResearchWorkflowsUVA': {
+        'name': 'Supporting Research Workflows Workshop UVA',
+        'info_url': 'https://docs.google.com/document/d/1RoVxA1QPkiFMSPCIDgQMJfLjjNcDX-cF3AkH-l74NhU/edit?usp=sharing',
+        'logo_url': 'https://s10.postimg.org/t56yx3whl/UVA.png',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
 }
 
 
