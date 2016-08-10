@@ -47,19 +47,19 @@ class TestPreprintFiltering(ApiTestCase):
     def setUp(self):
         super(TestPreprintFiltering, self).setUp()
         self.user = AuthUserFactory()
-        self.preprint = PreprintFactory(creator=self.user)
+        self.preprint = PreprintFactory(creator=self.user, provider='wwe')
         self.url = "/{}registrations/".format(API_BASE)
 
         self.preprint.add_tag('nature boy', Auth(self.user), save=False)
         self.preprint.add_tag('ric flair', Auth(self.user), save=False)
         self.preprint.save()
 
-        self.preprint_two = PreprintFactory(creator=self.user, filename='woo.txt')
+        self.preprint_two = PreprintFactory(creator=self.user, filename='woo.txt', provider='wcw')
         self.preprint_two.add_tag('nature boy', Auth(self.user), save=False)
         self.preprint_two.add_tag('woo', Auth(self.user), save=False)
         self.preprint_two.save()
 
-        self.preprint_three = PreprintFactory(creator=self.user, filename='stonecold.txt')
+        self.preprint_three = PreprintFactory(creator=self.user, filename='stonecold.txt', provider='wwe')
         self.preprint_three.add_tag('stone', Auth(self.user), save=False)
         self.preprint_two.add_tag('cold', Auth(self.user), save=False)
         self.preprint_three.save()
@@ -92,15 +92,11 @@ class TestPreprintFiltering(ApiTestCase):
         assert_not_in(self.preprint_two._id, ids)
         assert_not_in(self.preprint_three._id, ids)
 
+    def test_filter_by_provider(self):
+        url = '/{}preprints/?filter[provider]={}'.format(API_BASE, 'wwe')
+        res = self.app.get(url, auth=self.user.auth)
+        data = res.json['data']
 
-class TestPreprintCreate(ApiTestCase):
-    def setUp(self):
-        super(TestPreprintCreate, self).setUp()
-        self.user = AuthUserFactory()
-        self.preprint = PreprintFactory(creator=self.user)
-        self.url = '{}/preprints/{}'.format(API_BASE, self.preprint._id)
-
-        # TODO - add a real payload
-        self.payload = {
-            "data": {}
-        }
+        assert_equal(len(data), 2)
+        for result in data:
+            assert 'wwe' in result['attributes']['provider']
