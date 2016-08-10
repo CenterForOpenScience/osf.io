@@ -4,8 +4,6 @@ import httplib as http
 import math
 from itertools import islice
 
-from bleach import linkify
-
 from flask import request
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException, ValidationValueError
@@ -682,7 +680,7 @@ def _view_project(node, auth, primary=False):
             'category': node.category_display,
             'category_short': node.category,
             'node_type': node.project_or_component,
-            'description': node.description if node.has_permission(user, WRITE) else linkify(node.description),
+            'description': node.description or '',
             'license': serialize_node_license_record(node.license),
             'url': node.url,
             'api_url': node.api_url,
