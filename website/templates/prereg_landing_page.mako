@@ -12,6 +12,15 @@
     %>
 </%def>
 
+<%def name="challenge_word()">
+    <%
+      if campaign_short == 'erpc':
+         return erpc.challenge_word()
+      elif campaign_short == 'prereg':
+          return prereg.challenge_word()
+    %>
+</%def>
+
 <%def name="kind()">
     <%
       if campaign_short == 'erpc':
@@ -73,7 +82,7 @@
 <div class="prereg-container">
     <h1 class="m-t-xl m-b-lg text-center">Welcome to the ${campaign_long}!</h1>
     <p>${description()}</p>
-    <p class="m-t-lg f-w-lg">Ready for the Challenge?</p>
+    <p class="m-t-lg f-w-lg">Ready for the ${challenge_word()}?</p>
     <p>
         ${steps()}
     </p>

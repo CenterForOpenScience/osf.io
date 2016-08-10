@@ -1342,7 +1342,7 @@ RegistrationManager.prototype.init = function() {
             if (urlParams.campaign === 'prereg'){
                 schemaName = 'Prereg Challenge';
             } else if (urlParams.campaign === 'erpc') {
-                schemaName = 'Election Research Preacceptance Challenge';
+                schemaName = 'Election Research Preacceptance Competition';
             }
             if (schemaName) {
                 $osf.block();

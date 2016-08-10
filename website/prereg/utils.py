@@ -5,7 +5,7 @@ from website.util import permissions
 
 PREREG_CAMPAIGNS = {
     'prereg': 'Prereg Challenge',
-    'erpc': 'Election Research Preacceptance Challenge',
+    'erpc': 'Election Research Preacceptance Competition',
 }
 
 def drafts_for_user(user, campaign):
