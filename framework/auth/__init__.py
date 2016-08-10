@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from datetime import datetime
+from django.utils import timezone
 import uuid
 
 from framework import bcrypt
@@ -43,7 +43,7 @@ def authenticate(user, access_token, response):
         'auth_user_fullname': user.fullname,
         'auth_user_access_token': access_token,
     })
-    user.date_last_login = datetime.utcnow()
+    user.date_last_login = timezone.now()
     user.clean_email_verifications()
     user.update_affiliated_institutions_by_email_domain()
     user.save()
