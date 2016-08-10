@@ -2,6 +2,7 @@ from osf_models.models.metaschema import MetaSchema  # noqa
 from osf_models.models.base import Guid, BlackListGuid  # noqa
 from osf_models.models.user import OSFUser  # noqa
 from osf_models.models.contributor import Contributor, RecentlyAddedContributor  # noqa
+from osf_models.models.session import Session  # noqa
 from osf_models.models.institution import Institution # noqa
 from osf_models.models.node import Node, Collection  # noqa
 from osf_models.models.sanctions import Embargo, Retraction, RegistrationApproval, DraftRegistrationApproval, EmbargoTerminationApproval  # noqa
