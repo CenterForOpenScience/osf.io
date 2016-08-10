@@ -86,14 +86,12 @@ var AddPointerViewModel = oop.extend(Paginator, {
             else {
                 var count = nodes.length;
                 nodes.forEach(function(each) {
-                    console.log(each);
-                    if (each.isRegistration) {
-                        each.attributes.dateRegistered = new osfHelpers.FormattableDate(each.attributes.dateRegistered);
+                    if (each.type === 'registrations') {
+                        each.dateRegistered = new osfHelpers.FormattableDate(each.attributes.date_registered);
                     } else {
-                        each.dateCreated = new osfHelpers.FormattableDate(each.attributes.dateCreated);
-                        each.dateModified = new osfHelpers.FormattableDate(each.attributes.dateModified);
+                        each.dateCreated = new osfHelpers.FormattableDate(each.attributes.date_created);
+                        each.dateModified = new osfHelpers.FormattableDate(each.attributes.date_modified);
                     }
-                    //each.added = false;
                     each.link = '';
                     var url = osfHelpers.apiV2Url('nodes/'+nodeId+'/node_links/', {});
                     var request = osfHelpers.ajaxJSON(
@@ -138,7 +136,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
     addTips: function(elements, data) {
         elements.forEach(function(element) {
             var titleText = '';
-            if (data.isRegistration) {
+            if (data.type === 'registrations') {
                 titleText = 'Registered: ' + data.dateRegistered.local;
             } else {
                 titleText = 'Created: ' + data.dateCreated.local + '\nModified: ' + data.dateModified.local;
