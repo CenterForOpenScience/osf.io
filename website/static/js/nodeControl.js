@@ -125,9 +125,6 @@ var ProjectViewModel = function(data, options) {
                 newValue = response.newValue; // Update display to reflect changes, eg by sanitizer
                 self.description(newValue);
                 return {newValue: newValue};
-            },
-            display: function(value){
-                $('#nodeDescriptionEditable').html($osf.markdownAcceptsLinks(value));
             }
         }));
 
@@ -147,6 +144,8 @@ var ProjectViewModel = function(data, options) {
                 return {newValue: newValue};
             }
         }));
+    }else{
+        $('#nodeDescriptionEditable').html($osf.markdownAcceptsLinks(self.description()));
     }
 
     /**
