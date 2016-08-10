@@ -503,7 +503,7 @@ class FileNode(object):
             'path': self.path,
             'name': self.name,
             'kind': self.kind,
-            'guid': self.get_guid()._id if self.get_guid() is not None else None
+            'guid': self.get_guid()._id if self.get_guid() else None
         }
 
     def generate_waterbutler_url(self, **kwargs):
