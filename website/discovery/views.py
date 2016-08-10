@@ -15,7 +15,7 @@ def activity():
     hits = {}
 
     # get the date for exactly one week ago
-    target_date = datetime.date.today() - datetime.timedelta(weeks=1)
+    target_date = datetime.date.today() - datetime.timedelta(weeks=2)
 
     if settings.PIWIK_HOST:
         client = PiwikClient(
