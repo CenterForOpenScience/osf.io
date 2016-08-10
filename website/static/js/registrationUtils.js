@@ -1349,17 +1349,25 @@ RegistrationManager.prototype.init = function() {
         });
 
         var urlParams = $osf.urlParams();
-        if (urlParams.campaign && urlParams.campaign === 'prereg') {
-            $osf.block();
-            getSchemas.done(function() {
-                var preregSchema = self.schemas().filter(function(schema) {
-                    return schema.name === 'Prereg Challenge';
-                })[0];
-                preregSchema.askConsent(true).then(function() {
-                    self.selectedSchema(preregSchema);
-                    $('#newDraftRegistrationForm').submit();
-                });
-            }).always($osf.unblock);
+        if (urlParams.campaign) {
+            var schemaName;
+            if (urlParams.campaign === 'prereg'){
+                schemaName = 'Prereg Challenge';
+            } else if (urlParams.campaign === 'erpc') {
+                schemaName = 'Election Research Preacceptance Competition';
+            }
+            if (schemaName) {
+                $osf.block();
+                getSchemas.done(function() {
+                    var preregSchema = self.schemas().filter(function(schema) {
+                        return schema.name === schemaName;
+                    })[0];
+                    preregSchema.askConsent(true).then(function() {
+                        self.selectedSchema(preregSchema);
+                        $('#newDraftRegistrationForm').submit();
+                    });
+                }).always($osf.unblock);   
+            }
         }
     }
 };
