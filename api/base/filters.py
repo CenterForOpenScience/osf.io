@@ -254,10 +254,13 @@ class FilterMixin(object):
                     value=value,
                     field_type='date'
                 )
-        elif isinstance(field, (self.LIST_FIELDS, self.RELATIONSHIP_FIELDS, ser.SerializerMethodField)) \
-                or isinstance((getattr(field, 'field', None)), self.LIST_FIELDS):
+        elif isinstance(field, (self.RELATIONSHIP_FIELDS, ser.SerializerMethodField)):
             if value == 'null':
                 value = None
+            return value
+        elif isinstance(field, self.LIST_FIELDS) or isinstance((getattr(field, 'field', None)), self.LIST_FIELDS):
+            if value == 'null':
+                value = []
             return value
         else:
             try:
