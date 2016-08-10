@@ -22,18 +22,18 @@
                                         <input type="submit" value="Search" class="btn btn-default">
                                     </span>
                                 </div>
-                            </div>
-                        </div>
-                    <hr />
-                        <div class="row search-contributor-links">
-                            <div class="col-md-12">
-                                <div>
-                                    <!-- ko if:parentId -->
-                                        <a class="f-w-lg" data-bind="click:importFromParent, text:'Import contributors from ' + parentTitle"></a>
-                                    <!-- /ko -->
+                                <div class="row search-contributor-links">
+                                    <div class="col-md-12">
+                                        <div style='margin-left: 5px'>
+                                            <!-- ko if:parentId -->
+                                                <a class="f-w-lg" data-bind="click: startSearchParent, text:'Import contributors from ' + parentTitle"></a>
+                                            <!-- /ko -->
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                    <hr />
                     </form>
 
 
@@ -118,13 +118,18 @@
                                         <a href="#" data-bind="click:gotoInvite">Add <strong><em data-bind="text: query"></em></strong> as an unregistered contributor</a>.
                                     </p>
                                 </div>
+                                <div data-bind="if: parentPagination">
+                                    <ul class="pagination pagination-sm" data-bind="foreach: paginators">
+                                        <li data-bind="css: style"><a href="#" data-bind="click: handler, text: text"></a></li>
+                                    </ul>
+                                </div>
                                 <div data-bind="if: showLoading">
                                     <p class="text-muted">Searching contributors...</p>
                                 </div>
-                                    <div data-bind="if: noResults">
-                                        No results found. Try a more specific search or
-                                        <a href="#" data-bind="click:gotoInvite">add <strong><em data-bind="text: query"></em></strong> as an unregistered contributor</a>.
-                                    </div>
+                                <div data-bind="if: noResults">
+                                    No results found. Try a more specific search or
+                                    <a href="#" data-bind="click:gotoInvite">add <strong><em data-bind="text: query"></em></strong> as an unregistered contributor</a>.
+                                </div>
                             </div>
                         </div><!-- ./col-md -->
 

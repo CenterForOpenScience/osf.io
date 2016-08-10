@@ -17,7 +17,6 @@ from framework import utils as framework_utils
 from website.project.views.node import _get_summary, _view_project, _serialize_node_search, _get_children
 from website.views import _render_node
 from website.profile import utils
-from website.views import serialize_log
 from website.util import permissions
 
 
@@ -201,27 +200,6 @@ class TestViewProject(OsfTestCase):
 
 
 class TestNodeLogSerializers(OsfTestCase):
-
-    def test_serialize_log(self):
-        node = NodeFactory(category='hypothesis')
-        node.save()
-        log = NodeLogFactory(
-                params={'node': node._id},
-                node=node,
-                original_node=node
-            )
-        d = serialize_log(log)
-        assert_equal(d['action'], log.action)
-        assert_equal(d['node']['node_type'], 'component')
-        assert_equal(d['node']['category'], 'Hypothesis')
-
-        assert_equal(d['node']['url'], log.node.url)
-        assert_equal(d['date'], framework_utils.iso8601format(log.date))
-        assert_in('contributors', d)
-        assert_equal(d['user']['fullname'], log.user.fullname)
-        assert_equal(d['user']['url'], log.user.url)
-        assert_equal(d['params'], log.params)
-        assert_equal(d['node']['title'], log.node.title)
 
     def test_serialize_node_for_logs(self):
         node = NodeFactory()

@@ -21,6 +21,15 @@
     %>
 </%def>
 
+<%def name="challenge_word()">
+    <%
+      if campaign_short == 'erpc':
+         return erpc.challenge_word()
+      elif campaign_short == 'prereg':
+          return prereg.challenge_word()
+    %>
+</%def>
+
 <%def name="steps()"> 
   <%
       if campaign_short == 'erpc':
@@ -73,7 +82,7 @@
 <div class="prereg-container">
     <h1 class="m-t-xl m-b-lg text-center">Welcome to the ${campaign_long}!</h1>
     <p>${description()}</p>
-    <p class="m-t-lg f-w-lg">Ready for the Challenge?</p>
+    <p class="m-t-lg f-w-lg">Ready for the ${challenge_word()}?</p>
     <p>
         ${steps()}
     </p>
@@ -87,7 +96,7 @@
       </div>
       %if has_draft_registrations:
       <div class="row">
-        <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingPreregXS">Continue working on an existing preregistration</div>
+        <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingPreregXS">Continue working on an existing draft preregistration</div>
         <div class="col-md-12 prereg-button-content-xs">
           ${existingPrereg('XS')}
         </div>

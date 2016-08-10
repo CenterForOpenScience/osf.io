@@ -2,8 +2,13 @@
     preregistered analysis plan
 </%def>
 
+<%def name="challenge_word()">
+    Competition
+</%def>
+
 <%def name="description()">
-    <p>The process of creating a <a href='http://www.erpc.org'>${kind()}</a> is beneficial to both the scientific field and to you, the scientist. By writing out detailed analysis plans before examining into the data, you can make important decisions that affect your workflow earlier, without the biases that occur once the data are in front of you.</p>
+    <p>The process of creating a ${kind()} is beneficial to both the scientific field and to you, the scientist. By writing out detailed analysis plans before examining into the data, you can make important decisions that affect your workflow earlier and avoid the biases that can occur once the data are in front of you.</p>
+    <p>For more information, please visit <a href='http://www.erpc2016.com/'> http://www.erpc2016.com/ </a></p>
 </%def>
 
 <%def name="steps()">

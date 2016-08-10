@@ -136,37 +136,6 @@ NodeActions.useAsTemplate = function() {
     });
 };
 
-
-$(function() {
-
-    $('#newComponent form').on('submit', function(e) {
-
-        $('#add-component-submit')
-            .attr('disabled', 'disabled')
-            .text('Adding');
-
-        if ($.trim($('#title').val()) === '') {
-
-            $('#newComponent .modal-alert').text('This field is required.');
-
-            $('#add-component-submit')
-                .removeAttr('disabled', 'disabled')
-                .text('Add');
-
-            e.preventDefault();
-        } else if ($(e.target).find('#title').val().length > 200) {
-            $('#newComponent .modal-alert').text('The new component title cannot be more than 200 characters.'); //This alert never appears...
-
-            $('#add-component-submit')
-                .removeAttr('disabled', 'disabled')
-                .text('Add');
-
-            e.preventDefault();
-
-        }
-    });
-});
-
 /*
 Hide/show recent logs for for a node on the project view page.
 */
@@ -281,9 +250,10 @@ $(document).ready(function() {
     });
 
     $('body').on('click', '.tagsinput .tag > span', function(e) {
+      if(e){
         window.location = '/search/?q=(tags:"' + $(e.target).text().toString().trim()+ '")';
+      }
     });
-
 
     // Portlet feature for the dashboard, to be implemented in later versions.
     // $( ".osf-dash-col" ).sortable({
@@ -307,7 +277,8 @@ $(document).ready(function() {
 
         // Remove Comments link from project nav bar for pages not bound to the comment view model
         var commentsLinkElm = document.getElementById('commentsLink');
-        if (!ko.dataFor(commentsLinkElm)) {
+        if (commentsLinkElm) {
+          if(!ko.dataFor(commentsLinkElm))
              commentsLinkElm.remove();
         }
     });

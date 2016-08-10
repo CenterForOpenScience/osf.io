@@ -20,7 +20,6 @@ from tests.base import fake
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory, WatchConfigFactory, NodeFactory,
                              NodeWikiFactory, RegistrationFactory,  UnregUserFactory, UnconfirmedUserFactory,
                              PrivateLinkFactory)
-from tests.test_features import requires_piwik
 from website import settings, language
 from website.util import web_url_for, api_url_for
 
@@ -297,14 +296,6 @@ class TestComponents(OsfTestCase):
         self.project.save()
         self.project_url = self.project.web_url_for('view_project')
 
-    def test_can_create_component_from_a_project(self):
-        res = self.app.get(self.project.url, auth=self.user.auth).maybe_follow()
-        assert_in('Add Component', res)
-
-    def test_can_create_component_from_a_component(self):
-        res = self.app.get(self.component.url, auth=self.user.auth).maybe_follow()
-        assert_in('Add Component', res)
-
     def test_sees_parent(self):
         res = self.app.get(self.component.url, auth=self.user.auth).maybe_follow()
         parent_title = res.html.find_all('h2', class_='node-parent-title')
@@ -556,62 +547,6 @@ class TestShortUrls(OsfTestCase):
         )
 
 
-@requires_piwik
-class TestPiwik(OsfTestCase):
-
-    def setUp(self):
-        super(TestPiwik, self).setUp()
-        self.users = [
-            AuthUserFactory()
-            for _ in range(3)
-        ]
-        self.consolidate_auth = Auth(user=self.users[0])
-        self.project = ProjectFactory(creator=self.users[0], is_public=True)
-        self.project.add_contributor(contributor=self.users[1])
-        self.project.save()
-
-    def test_contains_iframe_and_src(self):
-        res = self.app.get(
-            '/{0}/statistics/'.format(self.project._primary_key),
-            auth=self.users[0].auth
-        ).maybe_follow()
-        assert_in('iframe', res)
-        assert_in('src', res)
-        assert_in(settings.PIWIK_HOST, res)
-
-    def test_anonymous_no_token(self):
-        res = self.app.get(
-            '/{0}/statistics/'.format(self.project._primary_key),
-            auth=self.users[2].auth
-        ).maybe_follow()
-        assert_in('token_auth=anonymous', res)
-
-    def test_contributor_token(self):
-        res = self.app.get(
-            '/{0}/statistics/'.format(self.project._primary_key),
-            auth=self.users[1].auth
-        ).maybe_follow()
-        assert_in(self.users[1].piwik_token, res)
-
-    def test_no_user_token(self):
-        res = self.app.get(
-            '/{0}/statistics/'.format(self.project._primary_key)
-        ).maybe_follow()
-        assert_in('token_auth=anonymous', res)
-
-    def test_private_alert(self):
-        self.project.set_privacy('private', auth=self.consolidate_auth)
-        self.project.save()
-        res = self.app.get(
-            '/{0}/statistics/'.format(self.project._primary_key),
-            auth=self.users[0].auth
-        ).maybe_follow().normal_body
-        assert_in(
-            'Usage statistics are collected only for public resources.',
-            res
-        )
-
-
 class TestClaiming(OsfTestCase):
 
     def setUp(self):
@@ -848,6 +783,82 @@ class TestExplorePublicActivity(OsfTestCase):
         assert_not_in(str(self.private_project.title), res)
 
 
+class TestResendConfirmation(OsfTestCase):
+
+    def setUp(self):
+        super(TestResendConfirmation, self).setUp()
+        self.unconfirmed_user = UnconfirmedUserFactory()
+        self.confirmed_user = UserFactory()
+        self.get_url = web_url_for('resend_confirmation_get')
+        self.post_url = web_url_for('resend_confirmation_post')
+
+    # test that resend confirmation page is load correctly
+    def test_resend_confirmation_get(self):
+        res = self.app.get(self.get_url)
+        assert_equal(res.status_code, 200)
+        assert_in('Resend Confirmation', res.body)
+        assert_in('resendForm', res.forms)
+
+    # test that unconfirmed user can receive resend confirmation email
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_can_receive_resend_confirmation_email(self, mock_send_mail):
+        # load resend confirmation page and submit email
+        res = self.app.get(self.get_url)
+        form = res.forms['resendForm']
+        form['email'] = self.unconfirmed_user.unconfirmed_emails[0]
+        res = form.submit()
+
+        # check email, request and response
+        assert_true(mock_send_mail.called)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.request.path, self.post_url)
+        assert_in_html('If there is an OSF account', res)
+
+    # test that confirmed user cannot receive resend confirmation email
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_cannot_receive_resend_confirmation_email_1(self, mock_send_mail):
+        # load resend confirmation page and submit email
+        res = self.app.get(self.get_url)
+        form = res.forms['resendForm']
+        form['email'] = self.confirmed_user.emails[0]
+        res = form.submit()
+
+        # check email, request and response
+        assert_false(mock_send_mail.called)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.request.path, self.post_url)
+        assert_in_html('has already been confirmed', res)
+
+    # test that non-existing user cannot receive resend confirmation email
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_cannot_receive_resend_confirmation_email_2(self, mock_send_mail):
+        # load resend confirmation page and submit email
+        res = self.app.get(self.get_url)
+        form = res.forms['resendForm']
+        form['email'] = 'random@random.com'
+        res = form.submit()
+
+        # check email, request and response
+        assert_false(mock_send_mail.called)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.request.path, self.post_url)
+        assert_in_html('If there is an OSF account', res)
+
+    # test that user cannot submit resend confirmation request too quickly
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_cannot_resend_confirmation_twice_quickly(self, mock_send_mail):
+        # load resend confirmation page and submit email
+        res = self.app.get(self.get_url)
+        form = res.forms['resendForm']
+        form['email'] = self.unconfirmed_user.email
+        res = form.submit()
+        res = form.submit()
+
+        # check request and response
+        assert_equal(res.status_code, 200)
+        assert_in_html('Please wait', res)
+
+
 class TestForgotPassword(OsfTestCase):
 
     def setUp(self):
@@ -968,6 +979,16 @@ class TestResetPassword(OsfTestCase):
         form['password2'] = 'newpassword'
         res = form.submit()
 
+    # successfully reset password if osf verification_key(OSF) is valid and form is valid
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_can_reset_password_if_form_success(self, mock_service_validate):
+        # load reset password page and submit email
+        res = self.app.get(self.get_url)
+        form = res.forms['resetPasswordForm']
+        form['password'] = 'newpassword'
+        form['password2'] = 'newpassword'
+        res = form.submit()
+
         # check request URL is /resetpassword with verification_key(OSF)
         request_url_path = res.request.path
         assert_in('resetpassword', request_url_path)
@@ -999,7 +1020,6 @@ class TestResetPassword(OsfTestCase):
         service_url = 'http://accounts.osf.io/?ticket=' + ticket
         resp = cas.make_response_from_ticket(ticket, service_url)
         assert_not_equal(self.user.verification_key, self.cas_key)
-
     #  logged-in user should be automatically logged out upon before reset password
     def test_reset_password_logs_out_user(self):
         # visit reset password link while another user is logged in

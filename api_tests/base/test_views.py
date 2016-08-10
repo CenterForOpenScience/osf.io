@@ -10,6 +10,8 @@ from nose.tools import *  # flake8: noqa
 from tests.base import ApiTestCase
 from tests import factories
 
+from framework.auth.oauth_scopes import CoreScopes
+
 from api.base.settings.defaults import API_BASE
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from api.base.permissions import TokenHasScope
@@ -70,6 +72,8 @@ class TestApiBaseViews(ApiTestCase):
                 assert_true(bool(scopes))
                 for scope in scopes:
                     assert_is_not_none(scope)
+                if key == 'write':
+                    assert_not_in(CoreScopes.ALWAYS_PUBLIC, scopes)
 
     def test_view_classes_support_embeds(self):
         for view in VIEW_CLASSES:

@@ -21,8 +21,9 @@ var _buildLogUrl = function(node, page, limitLogs) {
     var urlPrefix = (node.isRegistration || node.is_registration) ? 'registrations' : 'nodes';
     var size = limitLogs ? LOG_PAGE_SIZE_LIMITED : LOG_PAGE_SIZE;
     var query = { 'page[size]': size, 'page': logPage, 'embed': ['original_node', 'user', 'linked_node', 'template_node'], 'profile_image_size': PROFILE_IMAGE_SIZE};
-    if (node.link) {
-        query.view_only = node.link;
+    var viewOnly = $osf.urlParams().view_only;
+    if (viewOnly) {
+        query.view_only = viewOnly;
     }
     return $osf.apiV2Url(urlPrefix + '/' + node.id + '/logs/', { query: query});
 };
@@ -139,14 +140,14 @@ var LogFeed = {
                 });
             }
             // one ellipse at the beginning
-            else if (ctrl.currentPage() > ctrl.totalPages() - MAX_PAGES_ON_PAGINATOR_SIDE) {
+            else if (ctrl.currentPage() > ctrl.totalPages() - MAX_PAGES_ON_PAGINATOR_SIDE + 2) {
                 ctrl.paginators().push({
                     text: '...',
                     url: function() { }
                 });
-                for (i = ctrl.totalPages() - MAX_PAGES_ON_PAGINATOR_SIDE; i < ctrl.totalPages() - 1; i++) {
+                for (i = ctrl.totalPages() - MAX_PAGES_ON_PAGINATOR_SIDE + 2; i <= ctrl.totalPages() - 1; i++) {
                     ctrl.paginators().push({
-                        text: i + 1,
+                        text: i,
                         url: function() {
                             ctrl.pageToGet(parseInt(this.text));
                             if (ctrl.pageToGet() !== ctrl.currentPage()) {
@@ -165,7 +166,7 @@ var LogFeed = {
                 });
                 for (i = parseInt(ctrl.currentPage()) - 1; i <= parseInt(ctrl.currentPage()) + 1; i++) {
                     ctrl.paginators().push({
-                        text: i + 1,
+                        text: i,
                         url: function() {
                             ctrl.pageToGet(parseInt(this.text));
                             if (ctrl.pageToGet() !== ctrl.currentPage()) {
