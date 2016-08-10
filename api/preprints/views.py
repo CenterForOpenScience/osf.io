@@ -70,8 +70,6 @@ class PreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
 
     See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
 
-
-
     ##Query Params
 
     + `page=<Int>` -- page number of results to view, default 1
