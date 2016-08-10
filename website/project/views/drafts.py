@@ -3,6 +3,8 @@ import httplib as http
 import datetime
 import itertools
 
+from operator import itemgetter
+
 from dateutil.parser import parse as parse_date
 from flask import request, redirect
 
@@ -224,10 +226,13 @@ def get_draft_registrations(auth, node, *args, **kwargs):
     :return: serialized draft registrations
     :rtype: dict
     """
+    #'updated': '2016-08-03T14:24:12Z'
     count = request.args.get('count', 100)
     drafts = itertools.islice(node.draft_registrations_active, 0, count)
+    serialized_drafts = [serialize_draft_registration(d, auth) for d in drafts]
+    sorted_serialized_drafts = sorted(serialized_drafts, key=itemgetter('updated'), reverse=True)
     return {
-        'drafts': [serialize_draft_registration(d, auth) for d in drafts]
+        'drafts': sorted_serialized_drafts
     }, http.OK
 
 @must_have_permission(ADMIN)

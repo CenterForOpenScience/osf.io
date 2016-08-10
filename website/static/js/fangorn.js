@@ -1665,7 +1665,7 @@ var FGInput = {
         return m('span', [
             m('input' + value, {
                 'id' : id,
-                className: 'tb-header-input' + extraCSS,
+                className: 'pull-right form-control' + extraCSS,
                 onkeypress: onkeypress,
                 'data-toggle':  tooltipText ? 'tooltip' : '',
                 'title':  tooltipText,

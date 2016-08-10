@@ -13,6 +13,7 @@ from api.base.serializers import LinkedNodesRelationshipSerializer
 from api.base.parsers import JSONAPIRelationshipParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
 from api.base.utils import get_user_auth
+from api.comments.serializers import RegistrationCommentSerializer, CommentCreateSerializer
 
 from api.registrations.serializers import (
     RegistrationSerializer,
@@ -318,8 +319,15 @@ class RegistrationForksList(NodeForksList, RegistrationMixin):
     view_name = 'registration-forks'
 
 class RegistrationCommentsList(NodeCommentsList, RegistrationMixin):
+    serializer_class = RegistrationCommentSerializer
     view_category = 'registrations'
     view_name = 'registration-comments'
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return CommentCreateSerializer
+        else:
+            return RegistrationCommentSerializer
 
 
 class RegistrationLogList(NodeLogList, RegistrationMixin):

@@ -42,7 +42,7 @@
               <a class="youtube" href="//www.youtube.com/watch?v=2TV21gOzfhw" aria-label="OSF YouTube Video"><i class="icon icon-play"></i></a>
               <img src="/static/img/front-page/screenshot.png" class="img-responsive" id="screenshot" alt="Screenshot of OSF" />
             </div>
-            <div class="col-sm-6">
+            <div class="col-sm-6 sign-up-div">
               <h2>Free and open source. Start now.</h2>
 
              <div id="signUp" class="anchor"></div>
