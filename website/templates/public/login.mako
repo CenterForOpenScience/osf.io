@@ -14,6 +14,16 @@
         </div>
     %endif
 
+    %if campaign == "erpc":
+        <div class="text-center m-t-lg">
+            <h3>Election Research Preacceptance Competition </h3>
+            <hr>
+            <p>
+                Please login to the Open Science Framework or create a free account to continue.
+            </p>
+        </div>
+    %endif
+
     %if campaign == "institution" and enable_institutions:
         <div class="text-center m-t-lg">
             <h3>OSF for Institutions </h3>
