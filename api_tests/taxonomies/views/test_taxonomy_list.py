@@ -32,13 +32,13 @@ class TestTaxonomy(ApiTestCase):
         Subject.remove()
 
     def test_taxonomy_success(self):
-        assert_equal(len(self.subjects), 5)
+        assert_greater(len(self.subjects), 0)  # make sure there are subjects to filter through
         assert_equal(self.res.status_code, 200)
         assert_equal(self.res.content_type, 'application/vnd.api+json')
 
     def test_taxonomy_text(self):
         for index, subject in enumerate(self.subjects):
-            if index >= len(self.data): break
+            if index >= len(self.data): break  # only iterate though first page of results
             assert_equal(self.data[index]['attributes']['text'], subject.text)
 
     def test_taxonomy_parent_ids(self):
@@ -52,24 +52,29 @@ class TestTaxonomy(ApiTestCase):
             assert_equal(self.data[index]['attributes']['type'], subject.type)
 
     def test_taxonomy_filter_top_level(self):
+        top_level_subjects = Subject.find(
+            Q('parent_ids', 'eq', [])
+        )
         top_level_url = self.url + '?filter[parent_ids]=null&page[size]=11'
 
         res = self.app.get(top_level_url)
         assert_equal(res.status_code, 200)
 
         data = res.json['data']
-        assert_equal(len(data), 2)
+        assert_equal(len(top_level_subjects), len(data))
         for subject in data:
-            assert_equal(len(subject['attributes']['parent_ids']), 0)
             assert_equal(subject['attributes']['parent_ids'], [])
 
     def test_taxonomy_filter_by_parent(self):
+        children_subjects = Subject.find(
+            Q('parent_ids', 'ne', [])
+        )
         children_url = self.url + '?filter[parent_ids]={}'.format(self.subject1._id)
 
         res = self.app.get(children_url)
         assert_equal(res.status_code, 200)
 
         data = res.json['data']
-        assert_equal(len(data), 3)
+        assert_equal(len(children_subjects), len(data))
         for subject in data:
             assert_in(self.subject1._id, subject['attributes']['parent_ids'])
