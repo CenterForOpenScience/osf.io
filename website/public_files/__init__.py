@@ -14,7 +14,7 @@ def give_user_public_files_node(user):
     node = Node(
         title='Public Files',
         creator=user,
-        category='project',
+        category='other',
         is_public=True,
         is_public_files_node=True,
     )

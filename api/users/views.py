@@ -10,18 +10,20 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from website.models import User, Node, ExternalAccount
 
+from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
-from api.base.utils import get_object_or_error
 from api.base.exceptions import Conflict
+from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.serializers import AddonAccountSerializer
 from api.base.views import JSONAPIBaseView
-from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
-from api.nodes.serializers import NodeSerializer
+from api.base.utils import default_node_list_query, default_node_permission_query, get_object_or_error
 from api.institutions.serializers import InstitutionSerializer
+from api.nodes.serializers import NodeSerializer
+from api.files.serializers import FileSerializer
+from api.nodes.permissions import IsPublicFiles
+from api.nodes.utils import get_file_object
 from api.registrations.serializers import RegistrationSerializer
-from api.base.utils import default_node_list_query, default_node_permission_query
-from api.addons.views import AddonSettingsMixin
 
 from api.users.serializers import (UserSerializer, UserCreateSerializer,
     UserAddonSettingsSerializer, UserDetailSerializer, UserInstitutionsRelationshipSerializer)
@@ -673,3 +675,37 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
             if val['id'] in current_institutions:
                 user.remove_institution(val['id'])
         user.save()
+
+
+class UserPublicFiles(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, UserMixin):
+    view_name = 'public-files-node'
+    view_category = 'node'
+    serializer_class = FileSerializer
+
+    required_read_scopes = [CoreScopes.NODE_FILE_READ]
+    required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
+
+    permission_classes = (
+        IsPublicFiles,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    def get_default_queryset(self):
+        # Don't bother going to waterbutler for osfstorage
+        user = self.get_user()
+
+        files_list = get_file_object(user.public_files_node, '/', 'osfstorage', False)
+
+        if isinstance(files_list, list):
+            return [self.get_file_item(file) for file in files_list]
+
+        if isinstance(files_list, dict) or getattr(files_list, 'is_file', False):
+            # We should not have gotten a file here
+            raise NotFound
+
+        return list(files_list.children)
+
+    # overrides ListAPIView
+    def get_queryset(self):
+        return self.get_queryset_from_request()
