@@ -218,9 +218,10 @@ class NodeFactory(AbstractNodeFactory):
 class PreprintFactory(AbstractNodeFactory):
     creator = None
     category = 'project'
+    doi = Sequence(lambda n: '10.123/{}'.format(n))
 
     @classmethod
-    def _create(cls, target_class, project=None, is_public=True, filename='preprint_file.txt', provider='osf', *args, **kwargs):
+    def _create(cls, target_class, project=None, is_public=True, filename='preprint_file.txt', provider='osf', doi=None, *args, **kwargs):
         save_kwargs(**kwargs)
         user = None
         if project:
@@ -250,6 +251,7 @@ class PreprintFactory(AbstractNodeFactory):
         project.set_preprint_file(file, auth=Auth(project.creator))
         project.preprint_subjects = [SubjectFactory()._id]
         project.preprint_provider = provider
+        project.preprint_doi = doi
         project.save()
 
         return project
