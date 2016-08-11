@@ -164,6 +164,11 @@ class NodeSerializer(JSONAPISerializer):
         related_view_kwargs={'node_id': '<forked_from_id>'}
     )
 
+    template_node = RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<template_node._id>'}
+    )
+
     forks = RelationshipField(
         related_view='nodes:node-forks',
         related_view_kwargs={'node_id': '<pk>'}

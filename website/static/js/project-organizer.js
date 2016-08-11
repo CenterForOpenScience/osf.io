@@ -16,6 +16,7 @@ var moment = require('moment');
 var $osf = require('js/osfHelpers');
 var lodashGet = require('lodash.get');
 var lodashFind = require('lodash.find');
+var iconmap = require('js/iconmap');
 
 var LinkObject;
 var NodeFetcher;
@@ -332,10 +333,7 @@ var tbOptions = {
     },
     onmultiselect : _poMultiselect,
     resolveIcon : function _poIconView(item) { // Project Organizer doesn't use icons
-        if (item.data.attributes.registration){
-            return m('i.fa.fa-cube.text-muted-more');
-        }
-        return m('i.fa.fa-cube');
+        return m('i.' + iconmap.projectComponentIcons[item.data.attributes.category]);
     },
     resolveToggle : _poResolveToggle,
     resolveLazyloadUrl : function(item) {

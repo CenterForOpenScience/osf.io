@@ -11,7 +11,11 @@ from tests.factories import (
     DraftRegistration,
     ProjectFactory,
 )
-from website.files.models import OsfStorageFileNode
+from website.files.models import (
+    OsfStorageFile,
+    OsfStorageFileNode,
+    StoredFileNode,
+)
 from website.project.model import ensure_schemas
 from website.prereg.utils import get_prereg_schema
 
@@ -221,8 +225,24 @@ class TestPreregFiles(AdminTestCase):
         }
         data = {}
         for q, f in self.d_of_qs.iteritems():
-            f.get_guid(create=True)
+            guid = f.get_guid(create=True)._id
             f.save()
+            if q == 'q26':
+                data[q] = {
+                    'comments': [],
+                    'value': '26',
+                    'extra': [
+                        {
+                            'data': {
+                                'provider': 'osfstorage',
+                                'path': f.path,
+                            },
+                            'fileId': guid,
+                            'nodeId': self.node._id,
+                        }
+                    ]
+                }
+                continue
             data[q] = {
                 'value': {
                     'uploader': {
@@ -231,8 +251,9 @@ class TestPreregFiles(AdminTestCase):
                                 'data': {
                                     'provider': 'osfstorage',
                                     'path': f.path,
-                                    'fileId': f._id
-                                }
+                                },
+                                'fileId': guid,
+                                'nodeId': self.node._id,
                             }
                         ]
                     }
@@ -271,12 +292,50 @@ class TestPreregFiles(AdminTestCase):
 
     def test_get_meta_data_files(self):
         for item in get_metadata_files(self.draft):
-            nt.assert_is_instance(item, OsfStorageFileNode)
+            nt.assert_in(type(item), [OsfStorageFile, StoredFileNode])
 
     def test_get_file_questions(self):
         questions = get_file_questions('prereg-prize.json')
         nt.assert_equal(7, len(questions))
         nt.assert_list_equal(
-            ['q7', 'q11', 'q12', 'q13', 'q16', 'q19', 'q26'],
+            [
+                (u'q7', u'Data collection procedures'),
+                (u'q11', u'Manipulated variables'),
+                (u'q12', u'Measured variables'),
+                (u'q13', u'Indices'),
+                (u'q16', u'Study design'),
+                (u'q19', u'Statistical models'),
+                (u'q26', u'Upload an analysis script with clear comments')
+            ],
             questions
         )
+
+    def test_file_id_missing(self):
+        data = self.draft.registration_metadata
+        data['q7']['value']['uploader']['extra'][0].pop('fileId')
+        self.draft.update_metadata(data)
+        for item in get_metadata_files(self.draft):
+            nt.assert_in(type(item), [OsfStorageFile, StoredFileNode])
+
+    def test_file_id_missing_odd(self):
+        data = self.draft.registration_metadata
+        data['q26']['extra'][0].pop('fileId')
+        self.draft.update_metadata(data)
+        for item in get_metadata_files(self.draft):
+            nt.assert_in(type(item), [OsfStorageFile, StoredFileNode])
+
+    def test_wrong_provider(self):
+        data = self.draft.registration_metadata
+        data['q7']['value']['uploader']['extra'][0]['data']['provider'] = 'box'
+        self.draft.update_metadata(data)
+        with nt.assert_raises(Http404):
+            for item in get_metadata_files(self.draft):
+                pass
+
+    def test_wrong_provider_odd(self):
+        data = self.draft.registration_metadata
+        data['q26']['extra'][0]['data']['provider'] = 'box'
+        self.draft.update_metadata(data)
+        with nt.assert_raises(Http404):
+            for item in get_metadata_files(self.draft):
+                pass

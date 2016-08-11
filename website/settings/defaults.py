@@ -49,6 +49,8 @@ REGISTRATION_APPROVAL_TIME = datetime.timedelta(days=2)
 # Date range for embargo periods
 EMBARGO_END_DATE_MIN = datetime.timedelta(days=2)
 EMBARGO_END_DATE_MAX = datetime.timedelta(days=1460)  # Four years
+# Question titles to be reomved for anonymized VOL
+ANONYMIZED_TITLES = ['Authors']
 
 LOAD_BALANCER = False
 PROXY_ADDRS = []
@@ -61,6 +63,10 @@ SECURE_MODE = not DEBUG_MODE  # Set secure cookie
 PROTOCOL = 'https://' if SECURE_MODE else 'http://'
 DOMAIN = PROTOCOL + 'localhost:5000/'
 API_DOMAIN = PROTOCOL + 'localhost:8000/'
+
+# External Ember App Local Development
+USE_EXTERNAL_EMBER = False
+EXTERNAL_EMBER_APPS = {}
 
 LOG_PATH = os.path.join(APP_PATH, 'logs')
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
@@ -250,18 +256,12 @@ SYSTEM_ADDED_ADDONS = {
     'node': [],
 }
 
-# Piwik
-
-# TODO: Override in local.py in production
-PIWIK_HOST = None
-PIWIK_ADMIN_TOKEN = None
-PIWIK_SITE_ID = None
-
 KEEN = {
     'public': {
         'project_id': None,
         'master_key': 'changeme',
         'write_key': '',
+        'read_key': '',
     },
     'private': {
         'project_id': '',
@@ -408,7 +408,6 @@ CELERY_IMPORTS = (
     'framework.celery_tasks',
     'framework.celery_tasks.signals',
     'framework.email.tasks',
-    'framework.analytics.tasks',
     'website.mailchimp_utils',
     'website.notifications.tasks',
     'website.archiver.tasks',
