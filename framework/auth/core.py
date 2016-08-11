@@ -1184,46 +1184,35 @@ class User(GuidStoredObject, AddonModelMixin):
         from website.mailing_list.utils import celery_update_single_user_in_list, celery_remove_single_user_in_list
         self.username = self.username.lower().strip() if self.username else None
         ret = super(User, self).save(*args, **kwargs)
-        if ret & {'username'}:
+        if set(ret) & {'username'}:
 
             # Change transactional mailing list subscriptions
             mltsubs = NotificationSubscription.find(
                 Q('event_name', 'eq', 'mailing_list_events') &
-                Q('email_transactional', 'eq', self._id)
-            )
+                Q('email_transactional', 'eq', self._id))
             map(lambda node: celery_update_single_user_in_list(
-                    node_id=node.owner._id,
-                    user_id=self._id,
-                    email_address=self.email,
-                    subs_type='transactional'
-                ),
-                mltsubs
-            )
+                node_id=node.owner._id,
+                user_id=self._id,
+                email_address=self.email,
+                subs_type='transactional'), mltsubs)
 
             # Change Digest mailing list subscriptions
             mldsubs = NotificationSubscription.find(
                 Q('event_name', 'eq', 'mailing_list_events') &
-                Q('email_digest', 'eq', self._id)
-            )
+                Q('email_digest', 'eq', self._id))
             map(lambda node: celery_update_single_user_in_list(
-                    node_id=node.owner._id,
-                    user_id=self._id,
-                    email_address=self.email,
-                ),
-                mldsubs
-            )
+                node_id=node.owner._id,
+                user_id=self._id,
+                email_address=self.email
+                subs_type='transactional'), mldsubs)
 
             # Change mailing list unsubscriptions
             mlunsubs = NotificationSubscription.find(
                 Q('event_name', 'eq', 'mailing_list_events') &
-                Q('none', 'eq', self._id)
-                )
+                Q('none', 'eq', self._id))
             map(lambda node: celery_remove_single_user_in_list(
-                    node_id=node.owner._id,
-                    user_id=self._id,
-                ),
-                mlunsubs
-            )
+                node_id=node.owner._id,
+                user_id=self._id), mlunsubs)
 
         if self.SEARCH_UPDATE_FIELDS.intersection(ret) and self.is_confirmed:
             self.update_search()
