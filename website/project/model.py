@@ -1192,7 +1192,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         for subj_id in set(self.preprint_subjects):
             subj = Subject.load(subj_id)
             if subj:
-                ret.append((subj_id, subj.text))
+                ret.append({'id': subj_id, 'text': subj.text})
         return ret
 
     def can_edit(self, auth=None, user=None):
