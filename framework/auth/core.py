@@ -1191,42 +1191,39 @@ class User(GuidStoredObject, AddonModelMixin):
                 Q('event_name', 'eq', 'mailing_list_events') &
                 Q('email_transactional', 'eq', self._id)
             )
-            map(lambda node:
-                celery_update_single_user_in_list(
+            map(lambda node: celery_update_single_user_in_list(
                     node_id=node.owner._id,
                     user_id=self._id,
                     email_address=self.email,
                     subs_type='transactional'
-                    ),
+                ),
                 mltsubs
-                )
+            )
 
             # Change Digest mailing list subscriptions
             mldsubs = NotificationSubscription.find(
                 Q('event_name', 'eq', 'mailing_list_events') &
                 Q('email_digest', 'eq', self._id)
-                )
-            map(lambda node:
-                celery_update_single_user_in_list(
+            )
+            map(lambda node: celery_update_single_user_in_list(
                     node_id=node.owner._id,
                     user_id=self._id,
                     email_address=self.email,
-                    ),
+                ),
                 mldsubs
-                )
+            )
 
             # Change mailing list unsubscriptions
             mlunsubs = NotificationSubscription.find(
                 Q('event_name', 'eq', 'mailing_list_events') &
                 Q('none', 'eq', self._id)
                 )
-            map(lambda node:
-                celery_remove_single_user_in_list(
+            map(lambda node: celery_remove_single_user_in_list(
                     node_id=node.owner._id,
                     user_id=self._id,
-                    ),
+                ),
                 mlunsubs
-                )
+            )
 
         if self.SEARCH_UPDATE_FIELDS.intersection(ret) and self.is_confirmed:
             self.update_search()
