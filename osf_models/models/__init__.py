@@ -14,3 +14,4 @@ from osf_models.models.conference import Conference
 from osf_models.models.citation import AlternativeCitation, CitationStyle  # noqa
 from osf_models.models.archive import ArchiveJob, ArchiveTarget  # noqa
 from osf_models.models.queued_mail import QueuedMail  # noqa
+from osf_models.models.external import ExternalAccount, ExternalProvider  # noqa
