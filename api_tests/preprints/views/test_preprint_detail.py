@@ -255,3 +255,14 @@ class TestPreprintUpdate(ApiTestCase):
 
         self.preprint.reload()
         assert_not_equal(self.preprint.preprint_file, file_for_project)
+
+    def test_update_doi(self):
+        new_doi = '10.123/456/789'
+        assert_not_equal(self.preprint.preprint_doi, new_doi)
+        update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"doi": new_doi})
+
+        res = self.app.patch_json_api(self.url, update_subjects_payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+        self.preprint.reload()
+        assert_equal(self.preprint.preprint_doi, new_doi)
