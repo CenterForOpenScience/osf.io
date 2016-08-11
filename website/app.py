@@ -84,7 +84,7 @@ def do_set_backends(settings):
 
 
 def init_app(settings_module='website.settings', set_backends=True, routes=True,
-             attach_request_handlers=True):
+             attach_request_handlers=True, fixtures=True):
     """Initializes the OSF. A sort of pseudo-app factory that allows you to
     bind settings, set up routing, and set storage backends, but only acts on
     a single app instance (rather than creating multiple instances).
@@ -129,7 +129,7 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
         sentry.init_app(app)
         logger.info("Sentry enabled; Flask's debug mode disabled")
 
-    if set_backends:
+    if set_backends and fixtures:
         ensure_schemas()
         ensure_licenses()
     apply_middlewares(app, settings)
@@ -146,6 +146,17 @@ def apply_middlewares(flask_app, settings):
     return flask_app
 
 
+PATCHED_MODELS = (
+    'Node',
+    'User',
+    'Tag',
+    'QueuedMail',
+    'NodeLog',
+    'Session',
+    'NodeLicense',
+    'NodeLicenseRecord'
+)
+
 # TODO: This won't work for modules that do e.g. `from website import models`. Rethink.
 def patch_models(settings):
     model_map = {
@@ -157,7 +168,7 @@ def patch_models(settings):
     for module in sys.modules.values():
         if not module:
             continue
-        for model in ('Node', 'User', 'Tag', 'QueuedMail', 'NodeLog', 'Session'):
+        for model in PATCHED_MODELS:
             if hasattr(module, model) and issubclass(getattr(module, model), modularodm.StoredObject):
                 if model in model_map:
                     setattr(module, model, getattr(models, model_map[model]))

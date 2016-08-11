@@ -10,6 +10,6 @@ if __name__ == '__main__':
         sys.argv.remove('--no-init-app')
     else:
         from website.app import init_app
-        init_app(set_backends=True, routes=False, attach_request_handlers=False)
+        init_app(set_backends=True, routes=False, attach_request_handlers=False, fixtures=False)
 
     execute_from_command_line(sys.argv)
