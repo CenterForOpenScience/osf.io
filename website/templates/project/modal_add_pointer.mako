@@ -48,29 +48,32 @@
 
                     <div class="col-md-12">
                         <div>
-                            <span data-bind="if: includePublic" class="modal-subheader">Results: All Projects</span>
-                            <span data-bind="ifnot: includePublic" class="modal-subheader">Results: My Projects</span>
+                            <span data-bind="if: (inputType() == 'nodes' && includePublic)" class="modal-subheader">Results: All Projects</span>
+                            <span data-bind="if: (inputType() == 'nodes' && !includePublic())" class="modal-subheader">Results: My Projects</span>
+                            <span data-bind="if: (inputType() != 'nodes' && includePublic)" class="modal-subheader">Results: All Registrations</span>
+                            <span data-bind="if: (inputType() != 'nodes' && !includePublic())" class="modal-subheader">Results: My Registrations</span>
                         </div>
                         <div class="error" data-bind="text:errorMsg"></div>
                         <table class="table table-striped">
-                            <tbody data-bind="foreach:{data:results, afterRender:addTips}">
+                            <tbody data-bind="foreach:{data:results}">
                                 <tr class="pointer-tow">
                                     <td class="osf-icon-td">
                                         <div data-bind="if:!($root.selected($data))">
-                                          <a
-                                                class="btn btn-success contrib-button"
-                                                data-bind="click:$root.add.bind($root)"
-                                            ><i class="fa fa-plus"></i></a>
+                                            <a
+                                                  class="btn btn-success contrib-button"
+                                                  data-bind="click:$root.add.bind($root)"
+                                              ><i class="fa fa-plus"></i></a>
                                         </div>
                                         <div data-bind="if:($root.selected($data))">
-                                          <a
-                                            class="btn btn-default contrib-button"
-                                            data-bind="click:$root.remove.bind($root)"
-                                            ><i class="fa fa-minus"></i></a>
+                                            <a
+                                              class="btn btn-default contrib-button"
+                                              data-bind="click:$root.remove.bind($root)"
+                                              ><i class="fa fa-minus"></i></a>
                                         </div>
                                     </td>
                                     <td data-bind="text:attributes.title" class="overflow"></td>
-                                    <td style="width: 25%" data-bind="text:$root.authorText($data)"></td>
+                                    <td class="node-dates" data-bind="text:$root.getDates($data)"></td>
+                                    <td style="width: 20%" data-bind="text:$root.authorText($data)"></td>
                                 </tr>
                             </tbody>
                         </table>

@@ -133,19 +133,6 @@ var AddPointerViewModel = oop.extend(Paginator, {
         self.searchMyProjectsSubmitText(SEARCH_MY_PROJECTS_SUBMIT_TEXT);
         self.loadingResults(false);
     },
-    addTips: function(elements, data) {
-        elements.forEach(function(element) {
-            var titleText = '';
-            if (data.type === 'registrations') {
-                titleText = 'Registered: ' + data.dateRegistered.local;
-            } else {
-                titleText = 'Created: ' + data.dateCreated.local + '\nModified: ' + data.dateModified.local;
-            }
-            $(element).tooltip({
-                title: titleText
-            });
-        });
-    },
     add: function(data) {
         var self = this;
         if (self.inputType() === 'nodes') {
@@ -259,20 +246,6 @@ var AddPointerViewModel = oop.extend(Paginator, {
         }
 
     },
-    // addAll: function() {
-    //     var self = this;
-    //     $.each(self.results(), function(idx, result) {
-    //         if (self.selection().indexOf(result) === -1) {
-    //             self.add(result);
-    //         }
-    //     });
-    // },
-    // removeAll: function() {
-    //     var self = this;
-    //     $.each(self.selection(), function(idx, selected) {
-    //         self.remove(selected);
-    //     });
-    // },
     selected: function(data) {
         var self = this;
         for (var idx = 0; idx < self.selection().length; idx++) {
@@ -282,31 +255,6 @@ var AddPointerViewModel = oop.extend(Paginator, {
         }
         return false;
     },
-    // submit: function() {
-    //     var self = this;
-    //     self.submitEnabled(false);
-    //     self.submitWarningMsg('');
-    //
-    //     var nodeIds = osfHelpers.mapByProperty(self.selection(), 'id');
-    //
-    //     osfHelpers.postJSON(
-    //         nodeApiUrl + 'pointer/', {
-    //             nodeIds: nodeIds
-    //         }
-    //     ).done(function() {
-    //         window.location.reload();
-    //     }).fail(function(data) {
-    //         self.submitEnabled(true);
-    //         self.submitWarningMsg(data.responseJSON && data.responseJSON.message_long);
-    //     });
-    // },
-    // clear: function() {
-    //     this.query('');
-    //     this.results([]);
-    //     this.selection([]);
-    //     this.searchWarningMsg('');
-    //     this.submitWarningMsg('');
-    // },
     authorText: function(node) {
         var contributors = node.embeds.contributors.data;
         var author = contributors[0].embeds.users.data.attributes.family_name;
@@ -332,6 +280,15 @@ var AddPointerViewModel = oop.extend(Paginator, {
             self.inputType('registrations');
             self.searchMyProjects();
         }
+    },
+    getDates: function(data){
+        var date = '';
+        if (data.type === 'registrations') {
+            date = 'Registered: ' + data.dateRegistered.local;
+        } else {
+            date = 'Created: ' + data.dateCreated.local + '\nModified: ' + data.dateModified.local;
+        }
+        return date;
     },
     done: function() {
         window.location.reload();

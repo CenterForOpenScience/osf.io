@@ -715,6 +715,12 @@ div.ball-scale-blue>div {
     overflow: scroll;
 }
 
+/* Add Links Modal
+----------------------- */
+.node-dates {
+    white-space: pre;
+}
+
 /* Password strength check component colors for darker backgrounds  */
 .pv-darkbg .text-danger {
     color: #f97773;
