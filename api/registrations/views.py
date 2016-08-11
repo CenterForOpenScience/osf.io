@@ -428,11 +428,17 @@ class RegistrationLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveAPIV
 
 class RegistrationViewOnlyLinksList(NodeViewOnlyLinksList, RegistrationMixin):
 
+    required_read_scopes = [CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_READ]
+    required_write_scopes = [CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_WRITE]
+
     view_category = 'registrations'
     view_name = 'registration-view-only-links'
 
 
 class RegistrationViewOnlyLinkDetail(NodeViewOnlyLinkDetail, RegistrationMixin):
+
+    required_read_scopes = [CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_READ]
+    required_write_scopes = [CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_WRITE]
 
     view_category = 'registrations'
     view_name = 'registration-view-only-link-detail'

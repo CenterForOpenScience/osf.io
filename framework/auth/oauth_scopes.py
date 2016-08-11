@@ -56,6 +56,9 @@ class CoreScopes(object):
     NODE_VIEW_ONLY_LINKS_READ = 'node.view_only_links_read'
     NODE_VIEW_ONLY_LINKS_WRITE = 'node.view_only_links_write'
 
+    REGISTRATION_VIEW_ONLY_LINKS_READ = 'registration.view_only_links_read'
+    REGISTRATION_VIEW_ONLY_LINKS_WRITE = 'registration.view_only_links_write'
+
     METASCHEMA_READ = 'metaschemas.read'
 
     NODE_DRAFT_REGISTRATIONS_READ = 'nodes.draft_registrations_read'
@@ -159,9 +162,11 @@ class ComposedScopes(object):
                         (CoreScopes.NODE_FILE_WRITE, )
 
     # Privileges relating to who can access a node (via contributors or registrations)
-    NODE_ACCESS_READ = (CoreScopes.NODE_CONTRIBUTORS_READ, CoreScopes.NODE_REGISTRATIONS_READ, CoreScopes.NODE_VIEW_ONLY_LINKS_READ)
+    NODE_ACCESS_READ = (CoreScopes.NODE_CONTRIBUTORS_READ, CoreScopes.NODE_REGISTRATIONS_READ,
+                        CoreScopes.NODE_VIEW_ONLY_LINKS_READ, CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_READ)
     NODE_ACCESS_WRITE = NODE_ACCESS_READ + \
-                            (CoreScopes.NODE_CONTRIBUTORS_WRITE, CoreScopes.NODE_REGISTRATIONS_WRITE, CoreScopes.NODE_VIEW_ONLY_LINKS_WRITE)
+                            (CoreScopes.NODE_CONTRIBUTORS_WRITE, CoreScopes.NODE_REGISTRATIONS_WRITE,
+                             CoreScopes.NODE_VIEW_ONLY_LINKS_WRITE, CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_WRITE)
 
     # Combine all sets of node permissions into one convenience level
     NODE_ALL_READ = NODE_METADATA_READ + NODE_DATA_READ + NODE_ACCESS_READ
