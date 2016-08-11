@@ -60,7 +60,7 @@ class ODMOrderingFilter(OrderingFilter):
 class FilterMixin(object):
     """ View mixin with helper functions for filtering. """
 
-    QUERY_PATTERN = re.compile(r'^filter\[(?P<field>\w+)\](\[(?P<op>\w+)\])?$')
+    QUERY_PATTERN = re.compile(r'^filter\[(?P<fields>((?:,*\s*\w+)*))\](\[(?P<op>\w+)\])?$')
 
     MATCH_OPERATORS = ('contains', 'icontains')
     MATCHABLE_FIELDS = (ser.CharField, ser.ListField)
@@ -143,23 +143,25 @@ class FilterMixin(object):
         """
         time_match = self.DATETIME_PATTERN.match(value)
         if op != 'eq' or time_match:
-            return [{
+            return {
                 'op': op,
                 'value': self.convert_value(value, field),
                 'source_field_name': source_field_name
-            }]
+            }
         else:  # TODO: let times be as generic as possible (i.e. whole month, whole year)
             start = self.convert_value(value, field)
             stop = start + datetime.timedelta(days=1)
-            return [{
-                'op': 'gte',
-                'value': start,
-                'source_field_name': source_field_name
-            }, {
-                'op': 'lt',
-                'value': stop,
-                'source_field_name': source_field_name
-            }]
+            return [
+                {
+                    'op': 'gte',
+                    'value': start,
+                    'source_field_name': source_field_name
+                }, {
+                    'op': 'lt',
+                    'value': stop,
+                    'source_field_name': source_field_name
+                }
+            ]
 
     def bulk_get_values(self, value, field):
         """
@@ -189,34 +191,42 @@ class FilterMixin(object):
             match = self.QUERY_PATTERN.match(key)
             if match:
                 match_dict = match.groupdict()
-                field_name = match_dict['field'].strip()
-                field = self._get_field_or_error(field_name)
+                fields = match_dict['fields']
+                field_names = re.findall(r'(?:,*\s*(\w+)+)', fields.strip())
+                query.update({key: {}})
 
-                op = match_dict.get('op') or self._get_default_operator(field)
-                self._validate_operator(field, field_name, op)
+                for field_name in field_names:
+                    field = self._get_field_or_error(field_name)
+                    op = match_dict.get('op') or self._get_default_operator(field)
+                    self._validate_operator(field, field_name, op)
 
-                source_field_name = field_name
-                if not isinstance(field, ser.SerializerMethodField):
-                    source_field_name = self.convert_key(field_name, field)
+                    source_field_name = field_name
+                    if not isinstance(field, ser.SerializerMethodField):
+                        source_field_name = self.convert_key(field_name, field)
 
-                if field_name not in query:
-                    query[field_name] = []
+                    # Special case date(time)s to allow for ambiguous date matches
+                    if isinstance(field, self.DATE_FIELDS):
+                        query.get(key).update({
+                            field_name: self._parse_date_param(field, source_field_name, op, value)
+                        })
+                    elif not isinstance(value, int) and (source_field_name == '_id' or source_field_name == 'root'):
+                        query.get(key).update({
+                            field_name: {
+                                'op': 'in',
+                                'value': self.bulk_get_values(value, field),
+                                'source_field_name': source_field_name
+                            }
+                        })
 
-                # Special case date(time)s to allow for ambiguous date matches
-                if isinstance(field, self.DATE_FIELDS):
-                    query[field_name].extend(self._parse_date_param(field, source_field_name, op, value))
-                elif not isinstance(value, int) and (source_field_name == '_id' or source_field_name == 'root'):
-                    query[field_name].append({
-                        'op': 'in',
-                        'value': self.bulk_get_values(value, field),
-                        'source_field_name': source_field_name
-                    })
-                else:
-                    query[field_name].append({
-                        'op': op,
-                        'value': self.convert_value(value, field),
-                        'source_field_name': source_field_name
-                    })
+                    else:
+                        query.get(key).update({
+                            field_name: {
+                                'op': op,
+                                'value': self.convert_value(value, field),
+                                'source_field_name': source_field_name
+                            }
+                        })
+
         return query
 
     def convert_key(self, field_name, field):
@@ -315,21 +325,29 @@ class ODMFilterMixin(FilterMixin):
 
     def query_params_to_odm_query(self, query_params):
         """Convert query params to a modularodm Query object."""
-
         filters = self.parse_query_params(query_params)
         if filters:
             query_parts = []
-            for field_name, params in filters.iteritems():
-                for group in params:
+            for key, field_names in filters.iteritems():
+                sub_query_parts = []
+                for field_name, data in field_names.iteritems():
                     # Query based on the DB field, not the name of the serializer parameter
-                    query = Q(group['source_field_name'], group['op'], group['value'])
-                    query_parts.append(query)
+                    sub_query = Q(data['source_field_name'], data['op'], data['value'])
+                    sub_query_parts.append(sub_query)
+
+                try:
+                    sub_query = functools.reduce(operator.or_, sub_query_parts)
+                    query_parts.append(sub_query)
+                except TypeError:
+                    continue
+
             try:
                 query = functools.reduce(operator.and_, query_parts)
             except TypeError:
                 query = None
         else:
             query = None
+
         return query
 
 
@@ -370,10 +388,12 @@ class ListFilterMixin(FilterMixin):
         """filters default queryset based on query parameters"""
         filters = self.parse_query_params(query_params)
         queryset = set(default_queryset)
+
         if filters:
-            for field_name, params in filters.iteritems():
-                for group in params:
-                    queryset = queryset.intersection(set(self.get_filtered_queryset(field_name, group, default_queryset)))
+            for key, field_names in filters.iteritems():
+                for field_name, data in field_names.iteritems():
+                    queryset = queryset.intersection(set(self.get_filtered_queryset(field_name, data, default_queryset)))
+
         return list(queryset)
 
     def get_filtered_queryset(self, field_name, params, default_queryset):

@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 import datetime
+import functools
+import operator
 import re
+
 from dateutil import parser
 
-import json
+from modularodm import Q
 
 from nose.tools import *  # flake8: noqa
 
@@ -14,7 +17,6 @@ from tests.base import ApiTestCase
 from api.base.filters import (
     ListFilterMixin,
     ODMFilterMixin,
-    ODMOrderingFilter
 )
 import api.base.filters as filters
 from api.base.exceptions import (
@@ -26,10 +28,11 @@ from api.base.exceptions import (
 
 class FakeSerializer(ser.Serializer):
 
-    filterable_fields = ('id', 'string_field', 'list_field', 'date_field', 'int_field', 'bool_field')
+    filterable_fields = ('id', 'string_field', 'second_string_field','list_field', 'date_field', 'int_field', 'bool_field')
 
     id = ser.CharField()
     string_field = ser.CharField()
+    second_string_field = ser.CharField()
     list_field = ser.ListField()
     date_field = ser.DateField()
     datetime_field = ser.DateTimeField()
@@ -43,6 +46,7 @@ class FakeRecord(object):
             self,
             _id=None,
             string_field='foo',
+            second_string_field='bar',
             list_field=None,
             date_field=datetime.datetime.now(),
             datetime_field=datetime.datetime.now(),
@@ -52,6 +56,7 @@ class FakeRecord(object):
     ):
         self._id = _id
         self.string_field = string_field
+        self.second_string_field = second_string_field
         self.list_field = list_field or [1, 2, 3]
         self.date_field = date_field
         self.datetime_field = datetime_field
@@ -84,17 +89,17 @@ class TestFilterMixin(ApiTestCase):
         }
 
         fields = self.view.parse_query_params(query_params)
-        assert_in('string_field', fields)
-        assert_equal(fields['string_field'][0]['op'], 'icontains')
+        assert_in('string_field', fields['filter[string_field]'])
+        assert_equal(fields['filter[string_field]']['string_field']['op'], 'icontains')
 
-        assert_in('list_field', fields)
-        assert_equal(fields['list_field'][0]['op'], 'contains')
+        assert_in('list_field', fields['filter[list_field]'])
+        assert_equal(fields['filter[list_field]']['list_field']['op'], 'contains')
 
-        assert_in('int_field', fields)
-        assert_equal(fields['int_field'][0]['op'], 'eq')
+        assert_in('int_field', fields['filter[int_field]'])
+        assert_equal(fields['filter[int_field]']['int_field']['op'], 'eq')
 
-        assert_in('bool_field', fields)
-        assert_equal(fields['bool_field'][0]['op'], 'eq')
+        assert_in('bool_field', fields['filter[bool_field]'])
+        assert_equal(fields['filter[bool_field]']['bool_field']['op'], 'eq')
 
     def test_parse_query_params_casts_values(self):
         query_params = {
@@ -105,17 +110,17 @@ class TestFilterMixin(ApiTestCase):
         }
 
         fields = self.view.parse_query_params(query_params)
-        assert_in('string_field', fields)
-        assert_equal(fields['string_field'][0]['value'], 'foo')
+        assert_in('string_field', fields['filter[string_field]'])
+        assert_equal(fields['filter[string_field]']['string_field']['value'], 'foo')
 
-        assert_in('list_field', fields)
-        assert_equal(fields['list_field'][0]['value'], 'bar')
+        assert_in('list_field', fields['filter[list_field]'])
+        assert_equal(fields['filter[list_field]']['list_field']['value'], 'bar')
 
-        assert_in('int_field', fields)
-        assert_equal(fields['int_field'][0]['value'], 42)
+        assert_in('int_field', fields['filter[int_field]'])
+        assert_equal(fields['filter[int_field]']['int_field']['value'], 42)
 
-        assert_in('bool_field', fields)
-        assert_equal(fields['bool_field'][0]['value'], False)
+        assert_in('bool_field', fields.get('filter[bool_field]'))
+        assert_equal(fields['filter[bool_field]']['bool_field']['value'], False)
 
     def test_parse_query_params_uses_field_source_attribute(self):
         query_params = {
@@ -123,7 +128,7 @@ class TestFilterMixin(ApiTestCase):
         }
 
         fields = self.view.parse_query_params(query_params)
-        parsed_field = fields['bool_field'][0]
+        parsed_field = fields['filter[bool_field]']['bool_field']
         assert_equal(parsed_field['source_field_name'], 'foobar')
         assert_equal(parsed_field ['value'], False)
         assert_equal(parsed_field ['op'], 'eq')
@@ -136,26 +141,26 @@ class TestFilterMixin(ApiTestCase):
         fields = self.view.parse_query_params(query_params)
         start = parser.parse('2014-12-12')
         stop = start + datetime.timedelta(days=1)
-        for match in fields['date_field']:
-            if match['op'] == 'gte':
-                assert_equal(match['value'], start)
-            elif match['op'] == 'lt':
-                assert_equal(match['value'], stop)
-            else:
-                self.fail()
+        for key, field_name in fields.iteritems():
+            for match in field_name['date_field']:
+                if match['op'] == 'gte':
+                    assert_equal(match['value'], start)
+                elif match['op'] == 'lt':
+                    assert_equal(match['value'], stop)
+                else:
+                    self.fail()
 
     def test_parse_query_params_comparable_field(self):
         query_params = {
             'filter[int_field][gt]': 42,
-            'fitler[int_field][lte]': 9000
+            'filter[int_field][lte]': 9000
         }
-
         fields = self.view.parse_query_params(query_params)
-        for match in fields['int_field']:
-            if match['op'] == 'gt':
-                assert_equal(match['value'], 42)
-            elif match['op'] == 'lte':
-                assert_equal(match['value'], 9000)
+        for key, field_name in fields.iteritems():
+            if field_name['int_field']['op'] == 'gt':
+                assert_equal(field_name['int_field']['value'], 42)
+            elif field_name['int_field']['op'] == 'lte':
+                assert_equal(field_name['int_field']['value'], 9000)
             else:
                 self.fail()
 
@@ -165,11 +170,11 @@ class TestFilterMixin(ApiTestCase):
             'filter[string_field][icontains]': 'bar'
         }
         fields = self.view.parse_query_params(query_params)
-        for match in fields['string_field']:
-            if match['op'] == 'contains':
-                assert_equal(match['value'], 'foo')
-            elif match['op'] == 'icontains':
-                assert_equal(match['value'], 'bar')
+        for key, field_name in fields.iteritems():
+            if field_name['string_field']['op'] == 'contains':
+                assert_equal(field_name['string_field']['value'], 'foo')
+            elif field_name['string_field']['op'] == 'icontains':
+                assert_equal(field_name['string_field']['value'], 'bar')
             else:
                 self.fail()
 
@@ -228,9 +233,9 @@ class TestFilterMixin(ApiTestCase):
         }
         # FIXME: This test may only be checking one field
         fields = self.view.parse_query_params(query_params)
-        assert_in('string_field', fields)
-        for match in fields['string_field']:
-            assert_in(match['value'], ('foo', 'bar'))
+        assert_in('string_field', fields.get('filter[string_field]'))
+        for key, field_name in fields.iteritems():
+            assert_in(field_name['string_field']['value'], ('foo', 'bar'))
 
     def test_convert_value_bool(self):
         value = 'true'
@@ -258,6 +263,127 @@ class TestFilterMixin(ApiTestCase):
         field = FakeSerializer._declared_fields['float_field']
         value = self.view.convert_value(value, field)
         assert_equal(value, 42.0)
+
+    def test_multiple_filter_params(self):
+        query_params = {
+            'filter[string_field, second_string_field]': 'foobar'
+        }
+        fields = self.view.parse_query_params(query_params)
+        assert_equals(
+            fields['filter[string_field, second_string_field]'],
+            {
+                'string_field': {
+                    'source_field_name': 'string_field',
+                    'value': 'foobar',
+                    'op': 'icontains'
+                },
+                'second_string_field' : {
+                    'source_field_name': 'second_string_field',
+                    'value': 'foobar',
+                    'op': 'icontains'
+                }
+            }
+        )
+        query = self.view.query_params_to_odm_query(query_params)
+        assert_equals(
+            repr(query),
+            repr(functools.reduce(operator.or_, [
+                Q('second_string_field', 'icontains', 'foobar'),
+                Q('string_field', 'icontains', 'foobar')
+            ]))
+        )
+
+    def test_multiple_filter_params_with_additional_different_filter(self):
+        query_params = {
+            'filter[string_field, second_string_field]': 'foobar',
+            'filter[bool_field]': False
+        }
+        fields = self.view.parse_query_params(query_params)
+        assert_equals(
+            fields,
+            {
+                'filter[bool_field]': {
+                    'bool_field': {
+                        'source_field_name': 'foobar',
+                        'value': False,
+                        'op': 'eq'
+                    }
+                },
+                'filter[string_field, second_string_field]': {
+                    'second_string_field' : {
+                        'source_field_name': 'second_string_field',
+                        'value': 'foobar',
+                        'op': 'icontains'
+                    },
+                    'string_field': {
+                        'source_field_name': 'string_field',
+                        'value': 'foobar',
+                        'op': 'icontains'
+                    }
+                }
+            }
+        )
+        query = self.view.query_params_to_odm_query(query_params)
+        assert_equals(
+            repr(query),
+            repr(functools.reduce(operator.and_, [
+                Q('foobar', 'eq', False),
+                functools.reduce(operator.or_, [
+                    Q('second_string_field', 'icontains', 'foobar'),
+                    Q('string_field', 'icontains', 'foobar')
+                ])
+            ]))
+        )
+
+    def test_multiple_filter_params_with_additional_same_filter(self):
+        query_params = {
+            'filter[string_field, second_string_field]': 'foobar',
+            'filter[string_field]': 'baz'
+        }
+        fields = self.view.parse_query_params(query_params)
+        assert_equals(
+            fields,
+            {
+                'filter[string_field]': {
+                    'string_field': {
+                        'source_field_name': 'string_field',
+                        'value': 'baz',
+                        'op': 'icontains'
+                    }
+                },
+                'filter[string_field, second_string_field]': {
+                    'second_string_field' : {
+                        'source_field_name': 'second_string_field',
+                        'value': 'foobar',
+                        'op': 'icontains'
+                    },
+                    'string_field': {
+                        'source_field_name': 'string_field',
+                        'value': 'foobar',
+                        'op': 'icontains'
+                    }
+                }
+            }
+        )
+        query = self.view.query_params_to_odm_query(query_params)
+        assert_equals(
+            repr(query),
+            repr(functools.reduce(operator.and_, [
+                functools.reduce(operator.or_, [
+                    Q('second_string_field', 'icontains', 'foobar'),
+                    Q('string_field', 'icontains', 'foobar')
+                ]),
+                Q('string_field', 'icontains', 'baz')
+            ]))
+        )
+
+    def test_multiple_filter_params_bad_filter(self):
+        query_params = {
+            'filter[string_field, not_a_field]': 'test'
+        }
+        with assert_raises(InvalidFilterError):
+            self.view.parse_query_params(query_params)
+
 
 class TestListFilterMixin(ApiTestCase):
 
@@ -324,7 +450,7 @@ class TestListFilterMixin(ApiTestCase):
         }
 
         fields = self.view.parse_query_params(query_params)
-        parsed_field = fields['bool_field'][0]
+        parsed_field = fields['filter[bool_field]']['bool_field']
         assert_equal(parsed_field['source_field_name'], 'foobar')
         assert_equal(parsed_field ['value'], False)
         assert_equal(parsed_field ['op'], 'eq')
