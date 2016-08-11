@@ -289,8 +289,8 @@ class RegistrationContributorsList(BaseContributorList, RegistrationMixin, UserM
     view_name = 'registration-contributors'
     serializer_class = RegistrationContributorsSerializer
 
-    required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
-    required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
+    required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
+    required_write_scopes = [CoreScopes.NODE_REGISTRATIONS_WRITE]
 
     permission_classes = (
         ContributorDetailPermissions,
@@ -320,8 +320,8 @@ class RegistrationContributorDetail(BaseContributorDetail, RegistrationMixin, Us
     view_name = 'registration-contributor-detail'
     serializer_class = RegistrationContributorsSerializer
 
-    required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
-    required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
+    required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
+    required_write_scopes = [CoreScopes.NODE_REGISTRATIONS_WRITE]
 
     permission_classes = (
         ContributorDetailPermissions,
@@ -344,8 +344,8 @@ class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ODMFilterM
         ExcludeWithdrawals
     )
 
-    required_read_scopes = [CoreScopes.NODE_CHILDREN_READ]
-    required_write_scopes = [CoreScopes.NODE_CHILDREN_WRITE]
+    required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
+    required_write_scopes = [CoreScopes.NULL]
 
     def get_default_odm_query(self):
         base_query = (
