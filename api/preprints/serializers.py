@@ -35,7 +35,8 @@ class PreprintSerializer(JSONAPISerializer):
         'date_modified',
         'contributors',
         'provider',
-        'subjects'
+        'subjects',
+        'doi'
     ])
 
     title = ser.CharField(required=False)
@@ -46,6 +47,7 @@ class PreprintSerializer(JSONAPISerializer):
     id = IDField(source='_id', required=False)
     abstract = ser.CharField(source='description', required=False)
     tags = JSONAPIListField(child=NodeTagField(), required=False)
+    doi = ser.CharField(source='preprint_doi', required=False)
 
     primary_file = PrimaryFileRelationshipField(
         related_view='files:file-detail',
@@ -59,7 +61,13 @@ class PreprintSerializer(JSONAPISerializer):
         related_view_kwargs={'node_id': '<pk>'}
     )
 
-    links = LinksField({'self': 'get_preprint_url', 'html': 'get_absolute_html_url'})
+    links = LinksField(
+        {
+            'self': 'get_preprint_url',
+            'html': 'get_absolute_html_url',
+            'doi': 'get_doi_url'
+        }
+    )
 
     contributors = RelationshipField(
         related_view='preprints:preprint-contributors',
@@ -75,6 +83,9 @@ class PreprintSerializer(JSONAPISerializer):
 
     def get_absolute_url(self, obj):
         return self.get_preprint_url(obj)
+
+    def get_doi_url(self, obj):
+        return 'https://dx.doi.org/{}'.format(obj.preprint_doi)
 
     def create(self, validated_data):
         node = validated_data.pop('node')
