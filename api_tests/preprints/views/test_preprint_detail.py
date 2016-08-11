@@ -37,7 +37,18 @@ def create_file(node, filename):
     return file
 
 
-def build_preprint_payload(node_id, subject_id, file_id=None):
+def build_preprint_update_payload(node_id, attributes=None, relationships=None):
+    payload = {
+        "data": {
+            "id": node_id,
+            "attributes": attributes,
+            "relationships": relationships
+        }
+    }
+    return payload
+
+
+def build_preprint_create_payload(node_id, subject_id, file_id=None):
     payload = {
         "data": {
             "id": node_id,
@@ -74,14 +85,14 @@ class TestPreprintCreate(ApiTestCase):
         self.file_one_private_project = create_file(self.private_project, 'woowoowoo.pdf')
 
     def test_create_preprint_from_public_project(self):
-        public_project_payload = build_preprint_payload(self.public_project._id, self.subject._id, self.file_one_public_project._id)
+        public_project_payload = build_preprint_create_payload(self.public_project._id, self.subject._id, self.file_one_public_project._id)
         url = '/{}preprints/{}/'.format(API_BASE, self.public_project._id)
         res = self.app.post_json_api(url, public_project_payload, auth=self.user.auth)
 
         assert_equal(res.status_code, 201)
 
     def test_create_preprint_from_private_project(self):
-        private_project_payload = build_preprint_payload(self.private_project._id, self.subject._id, self.file_one_private_project._id)
+        private_project_payload = build_preprint_create_payload(self.private_project._id, self.subject._id, self.file_one_private_project._id)
         url = '/{}preprints/{}/'.format(API_BASE, self.private_project._id)
         res = self.app.post_json_api(url, private_project_payload, auth=self.user.auth)
 
@@ -90,14 +101,14 @@ class TestPreprintCreate(ApiTestCase):
         assert_true(self.private_project.is_public)
 
     def test_non_authorized_user(self):
-        public_project_payload = build_preprint_payload(self.public_project._id, self.subject._id, self.file_one_public_project._id)
+        public_project_payload = build_preprint_create_payload(self.public_project._id, self.subject._id, self.file_one_public_project._id)
         url = '/{}preprints/{}/'.format(API_BASE, self.public_project._id)
         res = self.app.post_json_api(url, public_project_payload, auth=self.user_two.auth, expect_errors=True)
 
         assert_equal(res.status_code, 403)
 
     def test_file_is_not_in_node(self):
-        wrong_project_payload = build_preprint_payload(self.public_project._id, self.subject._id,  self.file_one_private_project._id)
+        wrong_project_payload = build_preprint_create_payload(self.public_project._id, self.subject._id, self.file_one_private_project._id)
         url = '/{}preprints/{}/'.format(API_BASE, self.public_project._id)
         res = self.app.post_json_api(url, wrong_project_payload, auth=self.user.auth, expect_errors=True)
 
@@ -107,14 +118,14 @@ class TestPreprintCreate(ApiTestCase):
         preprint = PreprintFactory(creator=self.user)
         file_one_preprint = create_file(preprint, 'openupthatwindow.pdf')
 
-        already_preprint_payload = build_preprint_payload(preprint._id,  self.subject._id, file_one_preprint._id)
+        already_preprint_payload = build_preprint_create_payload(preprint._id, self.subject._id, file_one_preprint._id)
         url = '/{}preprints/{}/'.format(API_BASE, preprint._id)
         res = self.app.post_json_api(url, already_preprint_payload, auth=self.user.auth, expect_errors=True)
 
         assert_equal(res.status_code, 409)
 
     def test_no_primary_file_passed(self):
-        no_file_payload = build_preprint_payload(self.public_project._id,  self.subject._id)
+        no_file_payload = build_preprint_create_payload(self.public_project._id, self.subject._id)
 
         url = '/{}preprints/{}/'.format(API_BASE, self.public_project._id)
         res = self.app.post_json_api(url, no_file_payload, auth=self.user.auth, expect_errors=True)
@@ -122,14 +133,14 @@ class TestPreprintCreate(ApiTestCase):
         assert_equal(res.status_code, 400)
 
     def test_invalid_primary_file(self):
-        invalid_file_payload = build_preprint_payload(self.public_project._id,  self.subject._id, 'totallynotanid')
+        invalid_file_payload = build_preprint_create_payload(self.public_project._id, self.subject._id, 'totallynotanid')
         url = '/{}preprints/{}/'.format(API_BASE, self.public_project._id)
         res = self.app.post_json_api(url, invalid_file_payload, auth=self.user.auth, expect_errors=True)
 
         assert_equal(res.status_code, 400)
 
     def test_no_subjects_given(self):
-        no_subjects_payload = build_preprint_payload(self.public_project._id,  self.subject._id, self.file_one_public_project._id)
+        no_subjects_payload = build_preprint_create_payload(self.public_project._id, self.subject._id, self.file_one_public_project._id)
         del no_subjects_payload['data']['attributes']['subjects']
 
         url = '/{}preprints/{}/'.format(API_BASE, self.public_project._id)
@@ -138,7 +149,7 @@ class TestPreprintCreate(ApiTestCase):
         assert_equal(res.status_code, 400)
 
     def test_invalid_subjects_given(self):
-        wrong_subjects_payload = build_preprint_payload(self.public_project._id,  self.subject._id, self.file_one_public_project._id)
+        wrong_subjects_payload = build_preprint_create_payload(self.public_project._id, self.subject._id, self.file_one_public_project._id)
         wrong_subjects_payload['data']['attributes']['subjects'] = ['jobbers']
 
         url = '/{}preprints/{}/'.format(API_BASE, self.public_project._id)
@@ -147,7 +158,7 @@ class TestPreprintCreate(ApiTestCase):
         assert_equal(res.status_code, 400)
 
     def test_request_id_does_not_match_request_url_id(self):
-        public_project_payload = build_preprint_payload(self.private_project._id,  self.subject._id, self.file_one_public_project._id)
+        public_project_payload = build_preprint_create_payload(self.private_project._id, self.subject._id, self.file_one_public_project._id)
         url = '/{}preprints/{}/'.format(API_BASE, self.public_project._id)
         res = self.app.post_json_api(url, public_project_payload, auth=self.user.auth, expect_errors=True)
 
@@ -157,7 +168,7 @@ class TestPreprintCreate(ApiTestCase):
         github_file = self.file_one_public_project
         github_file.provider = 'github'
         github_file.save()
-        public_project_payload = build_preprint_payload(self.public_project._id,  self.subject._id, github_file._id)
+        public_project_payload = build_preprint_create_payload(self.public_project._id, self.subject._id, github_file._id)
         url = '/{}preprints/{}/'.format(API_BASE, self.public_project._id)
         res = self.app.post_json_api(url, public_project_payload, auth=self.user.auth, expect_errors=True)
 
@@ -172,14 +183,12 @@ class TestPreprintUpdate(ApiTestCase):
         self.preprint = PreprintFactory(creator=self.user)
         self.url = '/{}preprints/{}/'.format(API_BASE, self.preprint._id)
 
-        self.file_preprint = create_file(self.preprint, 'openupthatwindow.pdf')
+        # self.file_preprint = create_file(self.preprint, 'openupthatwindow.pdf')
 
         self.subject = SubjectFactory()
 
     def test_update_preprint_title(self):
-        update_title_payload = build_preprint_payload(self.preprint._id,  self.subject._id,)
-        update_title_payload['data']['attributes'] = {'title': 'A new title'}
-        update_title_payload['data']['attributes']['subjects'] = [self.subject._id]
+        update_title_payload = build_preprint_update_payload(self.preprint._id, attributes={'title': 'A new title'})
 
         res = self.app.patch_json_api(self.url, update_title_payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -188,8 +197,8 @@ class TestPreprintUpdate(ApiTestCase):
         assert_equal(self.preprint.title, 'A new title')
 
     def test_update_preprint_subjects(self):
-        update_subjects_payload = build_preprint_payload(self.preprint._id,  self.subject._id,)
-        update_subjects_payload['data']['attributes']['subjects'] = [self.subject._id]
+        assert_not_equal(self.preprint.preprint_subjects[0], self.subject._id)
+        update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"subjects": [self.subject._id]})
 
         res = self.app.patch_json_api(self.url, update_subjects_payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -199,8 +208,7 @@ class TestPreprintUpdate(ApiTestCase):
 
     def test_update_invalid_subjects(self):
         preprint_subjects = self.preprint.preprint_subjects
-        update_subjects_payload = build_preprint_payload(self.preprint._id, self.subject._id)
-        update_subjects_payload['data']['attributes']['subjects'] = ['wwe']
+        update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"subjects": ['wwe']})
 
         res = self.app.patch_json_api(self.url, update_subjects_payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
@@ -209,20 +217,38 @@ class TestPreprintUpdate(ApiTestCase):
         assert_equal(self.preprint.preprint_subjects, preprint_subjects)
 
     def test_update_primary_file(self):
-        assert_not_equal(self.preprint.preprint_file, self.file_preprint)
-        update_file_payload = build_preprint_payload(self.preprint._id, self.subject._id, file_id=self.file_preprint._id)
+        new_file = create_file(self.preprint, 'openupthatwindow.pdf')
+        relationships = {
+            "primary_file": {
+                "data": {
+                    "type": "file",
+                    "id": new_file._id
+                }
+            }
+        }
+        assert_not_equal(self.preprint.preprint_file, new_file)
+        update_file_payload = build_preprint_update_payload(self.preprint._id, relationships=relationships)
 
         res = self.app.patch_json_api(self.url, update_file_payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
         self.preprint.reload()
-        assert_equal(self.preprint.preprint_file, self.file_preprint)
+        assert_equal(self.preprint.preprint_file, new_file)
 
     def test_new_primary_not_in_node(self):
         project = ProjectFactory()
         file_for_project = create_file(project, 'letoutthatantidote.pdf')
 
-        update_file_payload = build_preprint_payload(self.preprint._id, self.subject._id, file_id=file_for_project._id)
+        relationships = {
+            "primary_file": {
+                "data": {
+                    "type": "file",
+                    "id": file_for_project._id
+                }
+            }
+        }
+
+        update_file_payload = build_preprint_update_payload(self.preprint._id, relationships=relationships)
 
         res = self.app.patch_json_api(self.url, update_file_payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
