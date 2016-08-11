@@ -123,6 +123,10 @@ class BaseModel(models.Model):
             return cls.objects.filter(to_django_query(query, model_cls=cls))
 
     @classmethod
+    def remove(cls, query):
+        return cls.find(query).delete()
+
+    @classmethod
     def remove_one(cls, obj):
         if obj.pk:
             return obj.delete()
