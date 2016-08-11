@@ -31,46 +31,6 @@ def generate_guid(length=5):
                 return guid_id
 
 
-class Guid(models.Model):
-    id = models.AutoField(primary_key=True)
-    guid = models.fields.CharField(max_length=255,
-                                   default=generate_guid,
-                                   unique=True,
-                                   db_index=True)
-
-    @property
-    def referent(self):
-        """The model instance that this Guid refers to. May return an instance of
-        any model that inherits from GuidMixin.
-        """
-        for relationship in self._meta.get_all_related_objects():
-            try:
-                return getattr(self, relationship.name)
-            except relationship.related_model.DoesNotExist:
-                continue
-        return None
-
-
-class BlackListGuid(models.Model):
-    id = models.AutoField(primary_key=True)
-    guid = models.fields.CharField(max_length=255, unique=True, db_index=True)
-
-
-def generate_guid_instance():
-    return Guid.objects.create().id
-
-
-class PKIDStr(str):
-    def __new__(self, _id, pk):
-        return str.__new__(self, _id)
-
-    def __init__(self, _id, pk):
-        self.__pk = pk
-
-    def __int__(self):
-        return self.__pk
-
-
 class MODMCompatibilityQuerySet(models.QuerySet):
     def sort(self, *fields):
         # Fields are passed in as e.g. [('title', 1), ('date_created', -1)]
@@ -89,12 +49,6 @@ class MODMCompatibilityQuerySet(models.QuerySet):
 
     def limit(self, n):
         return self[:n]
-
-
-class MODMCompatibilityGuidQuerySet(MODMCompatibilityQuerySet):
-
-    def get_by_guid(self, guid):
-        return self.get(_guid__guid=guid)
 
 
 class BaseModel(models.Model):
@@ -184,6 +138,61 @@ class BaseModel(models.Model):
         return django_obj
 
 
+class Guid(BaseModel):
+    id = models.AutoField(primary_key=True)
+    guid = models.fields.CharField(max_length=255,
+                                   default=generate_guid,
+                                   unique=True,
+                                   db_index=True)
+
+    # Override load in order to load by GUID
+    @classmethod
+    def load(cls, data):
+        try:
+            return cls.objects.get(guid=data)
+        except cls.DoesNotExist:
+            return None
+
+    @property
+    def referent(self):
+        """The model instance that this Guid refers to. May return an instance of
+        any model that inherits from GuidMixin.
+        """
+        for relationship in self._meta.get_all_related_objects():
+            try:
+                return getattr(self, relationship.name)
+            except relationship.related_model.DoesNotExist:
+                continue
+        return None
+
+
+class BlackListGuid(models.Model):
+    id = models.AutoField(primary_key=True)
+    guid = models.fields.CharField(max_length=255, unique=True, db_index=True)
+
+
+def generate_guid_instance():
+    return Guid.objects.create().id
+
+
+class PKIDStr(str):
+    def __new__(self, _id, pk):
+        return str.__new__(self, _id)
+
+    def __init__(self, _id, pk):
+        self.__pk = pk
+
+    def __int__(self):
+        return self.__pk
+
+
+class MODMCompatibilityGuidQuerySet(MODMCompatibilityQuerySet):
+
+    def get_by_guid(self, guid):
+        return self.get(_guid__guid=guid)
+
+
+
 class ObjectIDMixin(models.Model):
     guid = models.CharField(max_length=255,
                                   unique=True,
@@ -246,6 +255,10 @@ class GuidMixin(models.Model):
     @property
     def _id(self):
         return PKIDStr(self._guid.guid, self.pk)
+
+    @property
+    def deep_url(self):
+        return None
 
     _primary_key = _id
 
