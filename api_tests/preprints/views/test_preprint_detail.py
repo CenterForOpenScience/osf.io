@@ -48,9 +48,9 @@ def build_preprint_payload(node_id, subject_id, file_id=None):
     }
     if file_id:
         payload['data']['relationships'] = {
-            "preprint_file": {
+            "primary_file": {
                 "data": {
-                    "type": "primary_file",
+                    "type": "file",
                     "id": file_id
                 }
             }
