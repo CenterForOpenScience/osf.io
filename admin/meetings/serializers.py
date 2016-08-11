@@ -1,6 +1,9 @@
 
 
 def serialize_meeting(meeting):
+    is_meeting = True
+    if hasattr(meeting, 'is_meeting') and meeting.is_meeting is not None:
+        is_meeting = meeting.is_meeting
     return {
         'endpoint': meeting.endpoint,
         'name': meeting.name,
@@ -12,6 +15,9 @@ def serialize_meeting(meeting):
         'poster': meeting.poster,
         'talk': meeting.talk,
         'num_submissions': meeting.num_submissions,
+        'location': meeting.location,
+        'start_date': meeting.start_date,
+        'end_date': meeting.end_date,
         'submission1': meeting.field_names['submission1'],
         'submission2': meeting.field_names['submission2'],
         'submission1_plural': meeting.field_names['submission1_plural'],
@@ -21,4 +27,5 @@ def serialize_meeting(meeting):
         'mail_subject': meeting.field_names['mail_subject'],
         'mail_message_body': meeting.field_names['mail_message_body'],
         'mail_attachment': meeting.field_names['mail_attachment'],
+        'is_meeting': is_meeting,
     }

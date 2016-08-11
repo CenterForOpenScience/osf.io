@@ -23,15 +23,15 @@ class InvalidSanctionRejectionToken(TokenError):
     """Raised if a Sanction subclass disapproval token submitted is invalid
      or associated with another admin authorizer
     """
-    message_short = "Invalid Token"
-    message_long = "This disapproval link is invalid. Are you logged into the correct account?"
+    message_short = 'Invalid Token'
+    message_long = 'This disapproval link is invalid. Are you logged into the correct account?'
 
 class InvalidSanctionApprovalToken(TokenError):
     """Raised if a Sanction subclass approval token submitted is invalid
      or associated with another admin authorizer
     """
-    message_short = "Invalid Token"
-    message_long = "This approval link is invalid. Are you logged into the correct account?"
+    message_short = 'Invalid Token'
+    message_long = 'This approval link is invalid. Are you logged into the correct account?'
 
 class InvalidTagError(OSFError):
     """Raised when attempting to perform an invalid operation on a tag"""
@@ -45,5 +45,5 @@ class UserNotAffiliatedError(OSFError):
     """Raised if a user attempts to add an institution that is not currently
     one of its affiliations.
     """
-    message_short = "User not affiliated"
-    message_long = "This user is not affiliated with this institution."
+    message_short = 'User not affiliated'
+    message_long = 'This user is not affiliated with this institution.'

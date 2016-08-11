@@ -54,7 +54,7 @@ def get_osf_statistics(time=None):
 def get_days_statistics(time, latest=None):
     statistics = OSFWebsiteStatistics(date=time)
     # Basic user count
-    statistics.users = get_all_user_count(time)
+    statistics.users = get_active_user_count(time)
     # Users who are currently unregistered
     statistics.unregistered_users = get_unregistered_users()
     statistics.projects = get_projects(time=time)
@@ -82,8 +82,15 @@ def get_projects(time=None, public=False, registered=False):
     return Node.find(query).count()
 
 
-def get_all_user_count(time):
-    query = Q('date_registered', 'lt', time)
+def get_active_user_count(time):
+    query = (
+        Q('date_registered', 'lt', time) &
+        Q('is_registered', 'eq', True) &
+        Q('password', 'ne', None) &
+        Q('merged_by', 'eq', None) &
+        Q('date_confirmed', 'ne', None) &
+        Q('date_disabled', ' eq', None)
+    )
     return User.find(query).count()
 
 

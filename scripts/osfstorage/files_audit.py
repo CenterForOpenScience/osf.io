@@ -13,7 +13,6 @@ from __future__ import division
 import gc
 import os
 import math
-import thread
 import hashlib
 import logging
 
@@ -139,12 +138,12 @@ def parity_targets():
     )
 
 
-def audit(targets, nworkers, worker_id, dry_run):
-    maxval = math.ceil(targets.count() / nworkers)
+def audit(targets, num_of_workers, worker_id, dry_run):
+    maxval = math.ceil(targets.count() / num_of_workers)
     idx = 0
     last_progress = -1
     for version in targets:
-        if hash(version._id) % nworkers == worker_id:
+        if hash(version._id) % num_of_workers == worker_id:
             if version.size == 0:
                 continue
             ensure_backups(version, dry_run)
@@ -159,36 +158,12 @@ def audit(targets, nworkers, worker_id, dry_run):
                 gc.collect()
 
 
-def main(nworkers, worker_id, dry_run):
-    logger.info('glacier audit start')
-    audit(glacier_targets(), nworkers, worker_id, dry_run)
-    logger.info('glacier audit complete')
-
-    logger.info('parity audit start')
-    audit(parity_targets(), nworkers, worker_id, dry_run)
-    logger.info('parity audit complete')
-
-@celery_app.task(name='scripts.osfstorage.files_audit_0')
-def file_audit_1(num_of_workers=4, dry_run=True):
-    run_main(num_of_workers, 0, dry_run)
-
-
-@celery_app.task(name='scripts.osfstorage.files_audit_1')
-def file_audit_2(num_of_workers=4, dry_run=True):
-    run_main(num_of_workers, 1, dry_run)
-
-
-@celery_app.task(name='scripts.osfstorage.files_audit_2')
-def file_audit_3(num_of_workers=4, dry_run=True):
-    run_main(num_of_workers, 2, dry_run)
-
-
-@celery_app.task(name='scripts.osfstorage.files_audit_3')
-def file_audit_4(num_of_workers=4, dry_run=True):
-    run_main(num_of_workers, 3, dry_run)
-
-
-def run_main(num_of_workers, worker_id, dry_run):
+@celery_app.task(name='scripts.osfstorage.files_audit')
+def main(num_of_workers=0, worker_id=0, glacier=True, parity=True, dry_run=True):
+    global container_primary
+    global container_parity
+    global vault
+    global audit_temp_path
 
     # Set up storage backends
     init_app(set_backends=True, routes=False)
@@ -214,14 +189,35 @@ def run_main(num_of_workers, worker_id, dry_run):
         # Log to file
         if not dry_run:
             scripts_utils.add_file_logger(logger, __file__, suffix=worker_id)
-            audit_temp_path = os.path.join(storage_settings.AUDIT_TEMP_PATH, str(worker_id))
+
+        audit_temp_path = os.path.join(storage_settings.AUDIT_TEMP_PATH, str(worker_id))
+        if not dry_run:
             try:
                 os.makedirs(audit_temp_path)
             except OSError:
                 pass
-        main(num_of_workers, worker_id, dry_run)
+
+        if glacier:
+            logger.info('glacier audit start')
+            audit(glacier_targets(), num_of_workers, worker_id, dry_run)
+            logger.info('glacier audit complete')
+
+        if parity:
+            logger.info('parity audit start')
+            audit(parity_targets(), num_of_workers, worker_id, dry_run)
+            logger.info('parity audit complete')
 
     except Exception as err:
         logger.error('=== Unexpected Error ===')
         logger.exception(err)
         raise err
+
+
+if __name__ == '__main__':
+    import sys
+    arg_num_of_workers = int(sys.argv[1])
+    arg_worker_id = int(sys.argv[2])
+    arg_glacier = 'glacier' in sys.argv
+    arg_parity = 'parity' in sys.argv
+    arg_dry_run = 'dry' in sys.argv
+    main(num_of_workers=arg_num_of_workers, worker_id=arg_worker_id, glacier=arg_glacier, parity=arg_parity, dry_run=arg_dry_run)

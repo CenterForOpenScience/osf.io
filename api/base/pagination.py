@@ -128,6 +128,11 @@ class JSONAPIPagination(pagination.PageNumberPagination):
             return super(JSONAPIPagination, self).paginate_queryset(queryset, request, view=None)
 
 
+class MaxSizePagination(JSONAPIPagination):
+    page_size = 1000
+    max_page_size = None
+    page_size_query_param = None
+
 class CommentPagination(JSONAPIPagination):
 
     def get_paginated_response(self, data):
@@ -144,13 +149,14 @@ class CommentPagination(JSONAPIPagination):
             user = self.request.user
             if target_id and not user.is_anonymous() and node.is_contributor(user):
                 root_target = Guid.load(target_id)
-                page = getattr(root_target.referent, 'root_target_page', None)
-                if page:
-                    if not len(data):
-                        unread = 0
-                    else:
-                        unread = Comment.find_n_unread(user=user, node=node, page=page, root_id=target_id)
-                    response_dict['links']['meta']['unread'] = unread
+                if root_target:
+                    page = getattr(root_target.referent, 'root_target_page', None)
+                    if page:
+                        if not len(data):
+                            unread = 0
+                        else:
+                            unread = Comment.find_n_unread(user=user, node=node, page=page, root_id=target_id)
+                        response_dict['links']['meta']['unread'] = unread
         return Response(response_dict)
 
 

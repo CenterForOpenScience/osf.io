@@ -98,7 +98,7 @@ class OSFCASAuthentication(authentication.BaseAuthentication):
     def authenticate(self, request):
         client = cas.get_client()  # Returns a CAS server client
         try:
-            auth_header_field = request.META["HTTP_AUTHORIZATION"]
+            auth_header_field = request.META['HTTP_AUTHORIZATION']
             auth_token = cas.parse_auth_header(auth_header_field)
         except (cas.CasTokenError, KeyError):
             return None  # If no token in header, then this method is not applicable
@@ -121,4 +121,4 @@ class OSFCASAuthentication(authentication.BaseAuthentication):
         return user, cas_auth_response
 
     def authenticate_header(self, request):
-        return ""
+        return ''

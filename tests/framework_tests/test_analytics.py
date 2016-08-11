@@ -26,7 +26,7 @@ class TestAnalytics(OsfTestCase):
         assert_equal(analytics.get_total_activity_count(user._id), 0)
         assert_equal(analytics.get_total_activity_count(user._id), user.get_activity_points(db=self.db))
 
-        analytics.increment_user_activity_counters(user._id, 'project_created', date, db=self.db)
+        analytics.increment_user_activity_counters(user._id, 'project_created', date.isoformat(), db=self.db)
 
         assert_equal(analytics.get_total_activity_count(user._id, db=self.db), 1)
         assert_equal(analytics.get_total_activity_count(user._id, db=self.db), user.get_activity_points(db=self.db))
@@ -36,7 +36,7 @@ class TestAnalytics(OsfTestCase):
         date = datetime.utcnow()
 
         assert_equal(user.get_activity_points(db=self.db), 0)
-        analytics.increment_user_activity_counters(user._id, 'project_created', date, db=self.db)
+        analytics.increment_user_activity_counters(user._id, 'project_created', date.isoformat(), db=self.db)
         assert_equal(user.get_activity_points(db=self.db), 1)
 
 

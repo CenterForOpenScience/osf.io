@@ -13,15 +13,19 @@ from api.comments.permissions import (
 )
 from api.comments.serializers import (
     CommentSerializer,
-    CommentDetailSerializer,
+    NodeCommentDetailSerializer,
+    RegistrationCommentDetailSerializer,
     CommentReportSerializer,
     CommentReportDetailSerializer,
     CommentReport
 )
 from framework.auth.core import Auth
+from framework.guid.model import Guid
 from framework.auth.oauth_scopes import CoreScopes
 from framework.exceptions import PermissionsError
-from website.project.model import Comment
+from website.project.model import Comment, Node
+from website.addons.wiki.model import NodeWikiPage
+from website.files.models.base import StoredFileNode
 
 
 class CommentMixin(object):
@@ -76,7 +80,9 @@ class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Comm
         date_modified  iso8601 timestamp  timestamp when the comment was last updated
         modified       boolean            has this comment been edited?
         deleted        boolean            is this comment deleted?
-        is_abuse       boolean            has this comment been reported by the current user?
+        is_abuse       boolean            is this flagged or confirmed spam?
+        is_ham         boolean            has admin checked the legitimacy of this comment?
+        has_report     boolean            has the current user reported this as spam?
         has_children   boolean            does this comment have replies?
         can_edit       boolean            can the current user edit this comment?
 
@@ -157,13 +163,24 @@ class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Comm
     required_read_scopes = [CoreScopes.NODE_COMMENTS_READ]
     required_write_scopes = [CoreScopes.NODE_COMMENTS_WRITE]
 
-    serializer_class = CommentDetailSerializer
+    serializer_class = NodeCommentDetailSerializer
     view_category = 'comments'
     view_name = 'comment-detail'
 
     # overrides RetrieveAPIView
     def get_object(self):
-        return self.get_comment()
+        comment = self.get_comment()
+
+        if isinstance(comment.target.referent, Node):
+            comment_node = comment.target.referent
+        elif isinstance(comment.target.referent, (NodeWikiPage,
+                                                  StoredFileNode)):
+            comment_node = Guid.load(comment.target.referent.node).referent
+
+        if comment_node.is_registration:
+            self.serializer_class = RegistrationCommentDetailSerializer
+
+        return comment
 
     def perform_destroy(self, instance):
         auth = Auth(self.request.user)
@@ -334,7 +351,7 @@ class CommentReportDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
         reporter_id = self.kwargs['user_id']
 
         if reporter_id != user_id:
-            raise PermissionDenied("Not authorized to comment on this project.")
+            raise PermissionDenied('Not authorized to comment on this project.')
 
         if reporter_id in reports:
             return CommentReport(user_id, reports[user_id]['category'], reports[user_id]['text'])

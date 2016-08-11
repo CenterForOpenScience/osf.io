@@ -44,6 +44,20 @@ def notify(event, user, node, timestamp, **context):
                 sent_users.extend(subscriptions[notification_type])
     return sent_users
 
+def notify_mentions(event, user, node, timestamp, **context):
+    event_type = utils.find_subscription_type(event)
+    sent_users = []
+    new_mentions = context.get('new_mentions', [])
+    for m in new_mentions:
+        mentioned_user = website_models.User.load(m)
+        subscriptions = get_user_subscriptions(mentioned_user, event_type)
+        for notification_type in subscriptions:
+            if notification_type != 'none' and subscriptions[notification_type] and m in subscriptions[notification_type]:
+                store_emails([m], notification_type, 'mentions', user, node,
+                                 timestamp, **context)
+                sent_users.extend([m])
+    return sent_users
+
 
 def store_emails(recipient_ids, notification_type, event, user, node, timestamp, **context):
     """Store notification emails

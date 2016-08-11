@@ -67,7 +67,16 @@ class TestNodeDetailViewOnlyLinks(ViewOnlyTestCase):
         res_linked = self.app.get(self.private_node_one_url, {'view_only': self.private_node_one_private_link.key})
         assert_equal(res_linked.status_code, 200)
         assert_items_equal(res_linked.json['data']['attributes']['current_user_permissions'], ['read'])
-        assert_equal(res_linked.json, res_normal.json)
+
+        # Remove any keys that will be different for view-only responses
+        res_normal_json = res_normal.json
+        res_linked_json = res_linked.json
+        user_can_comment = res_normal_json['data']['attributes'].pop('current_user_can_comment')
+        view_only_can_comment = res_linked_json['data']['attributes'].pop('current_user_can_comment')
+
+        assert_true(user_can_comment)
+        assert_false(view_only_can_comment)
+        assert_equal(res_linked_json, res_normal_json)
 
     def test_private_node_with_link_unauthorized_when_not_using_link(self):
         res = self.app.get(self.private_node_one_url, expect_errors=True)
@@ -91,7 +100,7 @@ class TestNodeDetailViewOnlyLinks(ViewOnlyTestCase):
         assert_equal(res.status_code, 200)
         contributors = res.json['data']['embeds']['contributors']['data']
         for contributor in contributors:
-            assert_in(contributor['id'], self.valid_contributors)
+            assert_in(contributor['id'].split('-')[1], self.valid_contributors)
 
     def test_private_node_logged_in_with_anonymous_link_does_not_expose_contributor_id(self):
         res = self.app.get(self.private_node_one_url, {
@@ -101,7 +110,7 @@ class TestNodeDetailViewOnlyLinks(ViewOnlyTestCase):
         assert_equal(res.status_code, 200)
         contributors = res.json['data']['embeds']['contributors']['data']
         for contributor in contributors:
-            assert_in(contributor['id'], self.valid_contributors)
+            assert_in(contributor['id'].split('-')[1], self.valid_contributors)
 
     def test_public_node_with_link_anonymous_does_not_expose_user_id(self):
         res = self.app.get(self.public_node_one_url, {
@@ -121,7 +130,7 @@ class TestNodeDetailViewOnlyLinks(ViewOnlyTestCase):
         assert_equal(res.status_code, 200)
         contributors = res.json['data']['embeds']['contributors']['data']
         for contributor in contributors:
-            assert_in(contributor['id'], self.valid_contributors)
+            assert_in(contributor['id'].split('-')[1], self.valid_contributors)
 
     def test_public_node_with_link_unused_does_expose_contributor_id(self):
         res = self.app.get(self.public_node_one_url, {
@@ -130,7 +139,7 @@ class TestNodeDetailViewOnlyLinks(ViewOnlyTestCase):
         assert_equal(res.status_code, 200)
         contributors = res.json['data']['embeds']['contributors']['data']
         for contributor in contributors:
-            assert_in(contributor['id'], self.valid_contributors)
+            assert_in(contributor['id'].split('-')[1], self.valid_contributors)
 
     def test_view_only_link_does_not_grant_write_permission(self):
         payload = {
@@ -228,5 +237,5 @@ class TestNodeListViewOnlyLinks(ViewOnlyTestCase):
             contributors = node['embeds']['contributors']['data']
             for contributor in contributors:
                 assertions += 1
-                assert_in(contributor['id'], self.valid_contributors)
+                assert_in(contributor['id'].split('-')[1], self.valid_contributors)
         assert_not_equal(assertions, 0)

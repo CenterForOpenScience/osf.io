@@ -5,8 +5,6 @@ from django.contrib.auth.models import (
 )
 from django.db import models
 
-from website.models import User as OsfUserModel
-
 
 class MyUserManager(BaseUserManager):
     def create_user(self, email, password=None):
@@ -55,7 +53,7 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = 'email'
 
     def get_full_name(self):
-        return ("{0} {1}".format(self.first_name, self.last_name)).strip() or self.email
+        return ('{0} {1}'.format(self.first_name, self.last_name)).strip() or self.email
 
     def get_short_name(self):
         # The user is identified by their email address
@@ -69,6 +67,9 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
 
     @property
     def osf_user(self):
+        # import on call to avoid interference w/ django's manage.py commands like collectstatic
+        from website.models import User as OsfUserModel
+
         if not self.osf_id:
             raise RuntimeError('This user does not have an associated Osf User')
         return OsfUserModel.load(self.osf_id)

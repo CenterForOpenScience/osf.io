@@ -11,6 +11,7 @@ require('ace-noconflict');
 require('ace-mode-markdown');
 require('ace-ext-language_tools');
 require('addons/wiki/static/ace-markdown-snippets.js');
+require('../../vendor/ace-plugins/spellcheck_ace.js');
 
 var $osf = require('js/osfHelpers');
 
@@ -184,7 +185,8 @@ if ($comments.length && window.contextVars.wiki.wikiID !== null) {
         canComment: window.contextVars.currentUser.canComment,
         hasChildren: window.contextVars.node.hasChildren,
         currentUser: window.contextVars.currentUser,
-        pageTitle: window.contextVars.wiki.wikiName
+        pageTitle: window.contextVars.wiki.wikiName,
+        inputSelector: '.atwho-input'
     };
     Comment.init('#commentsLink', '.comment-pane', options);
 }

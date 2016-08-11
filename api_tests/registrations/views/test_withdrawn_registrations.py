@@ -57,32 +57,11 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
-    def test_cannot_update_a_withdrawn_registration(self):
-        url = '/{}registrations/{}/'.format(API_BASE, self.registration._id)
-        res = self.app.put_json_api(url, {
-            'data': {
-                'id': self.registration._id,
-                'type': 'nodes',
-                'attributes': {
-                    'title': fake.catch_phrase(),
-                    'description': fake.bs(),
-                    'category': 'hypothesis',
-                    'public': True
-                }
-            }
-        }, auth=self.user.auth, expect_errors=True)
-        self.registration.reload()
-        assert_equal(res.status_code, 405)
-        assert_equal(self.registration.title, self.registration.title)
-        assert_equal(self.registration.description, self.registration.description)
-
     def test_cannot_delete_a_withdrawn_registration(self):
         url = '/{}registrations/{}/'.format(API_BASE, self.registration._id)
         res = self.app.delete_json_api(url, auth=self.user.auth, expect_errors=True)
         self.registration.reload()
         assert_equal(res.status_code, 405)
-        assert_equal(self.registration.title, self.registration.title)
-        assert_equal(self.registration.description, self.registration.description)
 
     def test_cannot_access_withdrawn_files_list(self):
         url = '/{}registrations/{}/files/'.format(API_BASE, self.registration._id)
@@ -92,7 +71,7 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
     def test_cannot_access_withdrawn_node_links_detail(self):
         url = '/{}registrations/{}/node_links/{}/'.format(API_BASE, self.registration._id, self.public_pointer._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 404)
 
     def test_cannot_access_withdrawn_node_links_list(self):
         url = '/{}registrations/{}/node_links/'.format(API_BASE, self.registration._id)
@@ -153,7 +132,6 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
         assert_not_in('forked_from', res.json['data']['relationships'])
         assert_not_in('files', res.json['data']['relationships'])
         assert_not_in('logs', res.json['data']['relationships'])
-        assert_not_in('primary_institution', res.json['data']['relationships'])
         assert_not_in('registered_by', res.json['data']['relationships'])
         assert_not_in('registered_from', res.json['data']['relationships'])
         assert_not_in('root', res.json['data']['relationships'])

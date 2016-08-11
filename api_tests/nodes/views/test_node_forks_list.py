@@ -230,6 +230,7 @@ class TestNodeForkCreate(ApiTestCase):
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['embeds']['children']['links']['meta']['total'], 1)
         assert_equal(res.json['data']['embeds']['children']['data'][0]['id'], new_component.forks[0]._id)
+        assert_equal(res.json['data']['embeds']['children']['data'][0]['attributes']['title'], new_component.title)
 
     def test_fork_private_node_links(self):
         private_pointer = ProjectFactory(creator=self.user_two)

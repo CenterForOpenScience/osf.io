@@ -7,7 +7,17 @@
              </div>
 
             <div data-bind="ifnot: loading">
-                <div data-bind="if: isDeleted">
+                <div data-bind="if: isDeletedAbuse">
+                    <div>
+                        <span class="text-muted">
+                            <em>Comment confirmed as spam.</em>
+                        </span>
+                        <span data-bind="if: hasChildren()" class="comment-actions pull-right">
+                            <i data-bind="css: toggleIcon, click: toggle"></i>
+                        </span>
+                    </div>
+                </div>
+                <div data-bind="if: isDeletedNotAbuse">
                     <div>
                         <span class="text-muted">
                             <em>Comment deleted.</em>
@@ -21,14 +31,18 @@
                     </div>
                 </div>
 
-                <div data-bind="if: isAbuse">
+                <div data-bind="if: isAbuseNotDeleted">
                     <div>
-                        <span data-bind="if: hasChildren()">
+                        <span class="text-muted">
+                            <em>Comment reported.</em>
+                        </span>
+                        <span data-bind="if: hasChildren()" class="comment-actions pull-right">
                             <i data-bind="css: toggleIcon, click: toggle"></i>
                         </span>
-                        Comment reported.
                     </div>
-                    <a data-bind="click: submitUnreportAbuse">Not abuse</a>
+                    <div data-bind="if: hasReport">
+                        <a data-bind="click: submitUnreportAbuse">Not abuse</a>
+                    </div>
                 </div>
 
                 <div data-bind="if: isVisible">
@@ -67,14 +81,14 @@
                             Hack: Use template binding with if rather than vanilla if
                             binding to get access to afterRender
                         -->
-                        <div data-bind="template {if: editing, afterRender: autosizeText}">
+                        <div data-bind="template {if: editing, afterRender: autosizeText.bind($data)}">
                             <div class="form-group" style="padding-top: 10px">
-                                <textarea class="form-control" data-bind="value: content, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
+                                <div class="form-control atwho-input" placeholder="Edit comment" data-bind="editableHTML: {observable: content, onUpdate: handleEditableUpdate}, attr: {maxlength: $root.MAXLENGTH}" contenteditable="true"></div>
                             </div>
                             <div class="clearfix">
                                 <div class="form-inline pull-right">
                                     <a class="btn btn-default btn-sm" data-bind="click: cancelEdit">Cancel</a>
-                                    <a class="btn btn-success btn-sm" data-bind="click: submitEdit, visible: editNotEmpty">Save</a>
+                                    <a class="btn btn-success btn-sm" data-bind="click: submitEdit, visible: validateEdit()">Save</a>
                                     <span data-bind="text: editErrorMessage" class="text-danger"></span>
                                 </div>
                             </div>
@@ -90,17 +104,27 @@
                         <!-- Action bar -->
                         <div style="display: inline">
                             <div data-bind="ifnot: editing" class="comment-actions pull-right">
-                                <span data-bind="if: canEdit, click: edit">
-                                    <i class="fa fa-pencil"></i>
+                                <span data-bind="ifnot: isHam">
+                                    <span data-bind="if: canEdit, click: edit">
+                                        <i class="fa fa-pencil"></i>
+                                    </span>
+                                    <span data-bind="if: $root.canComment, click: showReply">
+                                        <i class="fa fa-reply"></i>
+                                    </span>
+                                    <span data-bind="if: canReport, click: reportAbuse">
+                                        <i class="fa fa-warning"></i>
+                                    </span>
+                                    <span data-bind="if: canEdit, click: startDelete">
+                                        <i class="fa fa-trash-o"></i>
+                                    </span>
                                 </span>
-                                <span data-bind="if: $root.canComment, click: showReply">
-                                    <i class="fa fa-reply"></i>
-                                </span>
-                                <span data-bind="if: canReport, click: reportAbuse">
-                                    <i class="fa fa-warning"></i>
-                                </span>
-                                <span data-bind="if: canEdit, click: startDelete">
-                                    <i class="fa fa-trash-o"></i>
+                                <span data-bind="if: isHam">
+                                    <span data-bind="if: $root.canComment, click: showReply">
+                                        <i class="fa fa-reply"></i>
+                                    </span>
+                                    <span>
+                                        <i class="text-success fa fa-check-circle-o"></i>
+                                    </span>
                                 </span>
                             </div>
                         </div>
@@ -135,14 +159,14 @@
 
             <!-- ko if: replying -->
 
-                <div>
+                <div data-bind="template {afterRender: autosizeText.bind($data)}">
                     <div class="form-group" style="padding-top: 10px">
-                        <textarea class="form-control" placeholder="Add a comment" data-bind="value: replyContent, valueUpdate: 'input', attr: {maxlength: $root.MAXLENGTH}"></textarea>
+                        <div class="form-control atwho-input" placeholder="Add a comment" data-bind="editableHTML: {observable: replyContent, onUpdate: handleEditableUpdate}, attr: {maxlength: $root.MAXLENGTH}" contenteditable="true"></div>
                     </div>
                     <div class="clearfix">
                         <div class="pull-right">
                             <a class="btn btn-default btn-sm" data-bind="click: cancelReply, css: {disabled: submittingReply}"> Cancel</a>
-                            <a class="btn btn-success btn-sm" data-bind="click: submitReply, visible: replyNotEmpty, css: {disabled: submittingReply}, text: commentButtonText"></a>
+                            <a class="btn btn-success btn-sm" data-bind="click: submitReply, visible: validateReply(), css: {disabled: submittingReply}, text: commentButtonText"></a>
                             <span data-bind="text: replyErrorMessage" class="text-danger"></span>
                         </div>
                     </div>
