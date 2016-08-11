@@ -146,9 +146,9 @@ class PreprintDetail(JSONAPIBaseView, generics.CreateAPIView, generics.RetrieveU
 
                             },
                             "relationships": {
-                                "preprint_file": {                 # required
+                                "primary_file": {                   # required
                                     "data": {
-                                        "type": "primary_file",
+                                        "type": "primary",
                                         "id": file_id
                                     }
                                 }
