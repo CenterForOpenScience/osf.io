@@ -54,6 +54,8 @@ class PreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
         tags                            array of strings      list of tags that describe the node
         subjects                        array of tuples       list ids of Subject in the PLOS taxonomy. Tuple, containing the subject text and subject ID
         provider                        string                original source of the preprint
+        doi                             string                bare DOI for the manuscript, as entered by the user
+
 
     ##Relationships
 
@@ -67,6 +69,10 @@ class PreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     Link to list of contributors that are affiliated with this institution.
 
     ##Links
+
+    - `self` -- Preprint detail page for the current preprint
+    - `html` -- Project on the OSF corresponding to the current preprint
+    - `doi` -- URL representation of the DOI entered by the user for the preprint manuscript
 
     See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
 
