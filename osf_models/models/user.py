@@ -911,7 +911,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
 
     def is_affiliated_with(self, institution):
         """Return if this user is affiliated with ``institution``."""
-        return self._affiliated_institutions.filter(id=institution.id).exists()
+        return self.affiliated_institutions.filter(id=institution.id).exists()
 
     def update_affiliated_institutions_by_email_domain(self):
         """
@@ -922,8 +922,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         try:
             email_domains = [email.split('@')[1].lower() for email in self.emails]
             insts = Institution.find(Q('email_domains', 'overlap', email_domains))
-            affiliated = self._affiliated_institutions.all()
-            self._affiliated_institutions.add(*[each for each in insts
+            affiliated = self.affiliated_institutions.all()
+            self.affiliated_institutions.add(*[each for each in insts
                                                 if each not in affiliated])
         except (IndexError, NoResultsFound):
             pass
