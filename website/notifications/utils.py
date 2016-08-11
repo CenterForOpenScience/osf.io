@@ -283,7 +283,6 @@ def format_data(user, node_ids):
                 'view': can_read,
             },
         }
-        #import ipdb; ipdb.set_trace()
         items.append(item)
     return items
 
@@ -341,7 +340,7 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
         for n_type in constants.NOTIFICATION_TYPES:
             if user in getattr(subscription, n_type):
                 notification_type = n_type
-    tbd = {
+    return { # tbd = {
         'event': {
             'title': event_description,
             'description': all_subs[event_type],
@@ -351,10 +350,10 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
         'kind': 'event',
         'children': []
     }
-    import logging
-    logger = logging.getLogger(__name__)
-    logger.warn(tbd)
-    if tbd['event']['title'] == 'mailing_list_events':
+    
+    # The following is fully functional at the present, though may not be included as a feature at this time:
+    """if tbd['event']['title'] == 'mailing_list_events':
+
         from website.mailing_list.utils import _init_mailman_client
         mc = _init_mailman_client()
         try:
@@ -379,10 +378,10 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
             try:
                 tbd['event']['notificationType'] = subbed_emails[0]
             except:
-                tbd['event']['notificationType'] = 'none'
+                tbd['event']['notificationType'] = 
         except:
             logger.warn('Mailman client unable to connect to Mailman API. The server may not be available.')
-    return tbd
+    return tbd"""
 
 
 def get_parent_notification_type(node, event, user):

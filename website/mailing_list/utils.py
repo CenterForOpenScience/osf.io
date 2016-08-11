@@ -155,31 +155,34 @@ def ensure_user_as_id(contributor):
 # This calls out to another server, so we should not block.
 # @with_list_proxy does not block.
 @with_list_proxy
-def add_contributor(list_mailbox=None, list_proxy=None, contributor=None, email=None):
-    email_to_sub = email
-    def not_subbed(email):
-        try:
-            list_proxy.get_member(email)
-            return False
-        except:
-            if not email_to_sub:
-                return True
-            if email_to_sub == email:
-                return True
-            return False
-    remove_contributor(list_mailbox=list_mailbox, contributor=contributor, email=email)
-    contributor = User.load(contributor)
-    map(
-        lambda email: list_proxy.subscribe(
-            email,
+def add_contributor(
+    list_mailbox=None,
+    list_proxy=None,
+    contributor=None,
+    email=None,
+    subs_type=None
+):
+    try:
+        ml_user = list_proxy.get_member(email)
+        # We're already subscribed with this email.
+    except:
+        # We unsubscribe all of a user's email adresses...
+        remove_contributor(list_mailbox=list_mailbox, contributor=contributor, email=email)
+        contributor = User.load(contributor)
+    
+        # ...then subscribe the one currently associated with the account.
+        ml_user = list_proxy.subscribe(
+            contributor.email,
             contributor.fullname,
             pre_verified=True,
             pre_confirmed=True
-        ),
-        list(filter(not_subbed, contributor.emails))
-    )
+        )
 
-def add_contributors(list_mailbox=None, contributors=None):
+
+def add_contributors(
+    list_mailbox=None,
+    contributors=None
+):
     contributors = list(
         map(
             lambda contributor: ensure_user_as_id(contributor),
@@ -199,7 +202,12 @@ def contributor_added_handler(node, contributor, auth=None, throttle=None):
     add_contributor(list_mailbox=node._id, contributor=contributor._id)
 
 @with_list_proxy
-def remove_contributor(list_mailbox=None, list_proxy=None, contributor=None, email=None):
+def remove_contributor(
+    list_mailbox=None,
+    list_proxy=None,
+    contributor=None,
+    email=None 
+):
     def subbed(email):
         try:
             list_proxy.get_member(email)
@@ -234,13 +242,30 @@ def update_single_user_in_list(
     user_id,
     email_address=None,
     enabled=True,
-    old_email=None
+    old_email=None,
+    subs_type=None
 ):
     add_contributor(
         list_mailbox=node_id,
         list_proxy=None,
         contributor=user_id,
-        email=email_address
+        email=email_address,
+        subs_type=subs_type
+    )
+
+def remove_single_user_in_list(
+    node_id,
+    user_id,
+    email_address=None,
+    enabled=True,
+    old_email=None,
+    subs_type=None
+):
+    remove_contributor(
+        list_mailbox=node_id,
+        list_proxy=None,
+        contributor=user_id,
+        email=email_address,
     )
 
 ###############################################################################
@@ -261,6 +286,11 @@ def update_single_user_in_list(
 #@app.task(max_retries=3, default_retry_delay=3 * 60)  # Retry after 3 minutes
 #def celery_update_title(*args, **kwargs):
 #    update_title(*args, **kwargs)
+
+@queued_task
+@app.task(max_retries=3, default_retry_delay=3 * 60)  # Retry after 3 minutes
+def celery_remove_single_user_in_list(*args, **kwargs):
+    remove_single_user_in_list(*args, **kwargs)
 
 @queued_task
 @app.task(max_retries=3, default_retry_delay=3 * 60)  # Retry after 3 minutes

@@ -159,14 +159,14 @@ function ProjectNotifications(data) {
                                 m('option', {value: 'email_digest', selected : type === 'email_digest' ? 'selected': ''}, 'Daily')
                             ];
                             if (item.data.event.title === 'mailing_list_events') {
-                                console.log(item.data);
-                                notificationOptions = item.data.event.user_data.concat(null).map(function(opt) {
-                                    return m(
-                                        'option',
-                                        {value: opt ? opt : 'none', selected : type === (opt ? opt : 'none') ? 'selected': ''},
-                                        (opt ? opt : 'Do Not Subscribe')
-                                    );
-                                });
+                                
+                                //notificationOptions = item.data.event.user_data.concat(null).map(function(opt) {
+                                //    return m(
+                                //        'option',
+                                //        {value: opt ? opt : 'none', selected : type === (opt ? opt : 'none') ? 'selected': ''},
+                                //        (opt ? opt : 'Do Not Subscribe')
+                                //    );
+                                //});
                             }
                         }
                         return m(
