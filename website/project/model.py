@@ -2947,7 +2947,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 'node': self._id,
                 'contributors': [
                     user._id
-                    ],
+                ],
             },
             auth=auth,
             save=False,
