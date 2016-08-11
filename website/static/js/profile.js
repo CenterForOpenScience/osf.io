@@ -22,24 +22,15 @@ var socialRules = {
     researchGate: /researchgate\.net\/profile\/(\w+)/i,
     academia: /(\w+)\.academia\.edu\/(\w+)/i,
     baiduScholar: /xueshu\.baidu\.com\/scholarID\/(\w+)/i,
-    url: '^(https?:\\/\\/)?'+ // protocol
-            '(?:\\S+(?::\\S*)?@)?'+
-            '(([a-zA-Z\\d\\u00a1-\\uffff][-a-zA-Z\\d\\u00a1-\\uffff]{0,61}[a-zA-Z\\d\\u00a1-\\uffff])\\.)+[a-z]{2,}|'+ // domain name
-            'localhost|'+
+    url: '^((https?|ftp):\\/\\/)?'+ // protocol
+            '(\\S+(?::\\S*)?@)?'+ // # user:passauthentication
+            '((([a-zA-Z\\d\\u00a1-\\uffff][-a-zA-Z\\d\\u00a1-\\uffff]{0,61}[a-zA-Z\\d\\u00a1-\\uffff]?\\.)+([\\u00a1-\\uffffa-zA-Z0-9]{2,}))|'+ // domain...
+            'localhost|'+ // or localhost...
             '(((25[0-5]|2[0-4][0-9]|[1]?[0-9]?[0-9])\\.){3}(25[0-5]|2[0-4][0-9]|[1]?[0-9]?[0-9]))|'+ // OR ip (v4) address
+            '(\\[?[A-F0-9]*:[A-F0-9:]+\\]?))'+ // or ip (v6) address...
+            '(:\\d{2,5})?'+  // optional port
             '(\\:\\d+)?(\\/[-a-z\\u00a1-\\uffff\\d%_.~+]*)*'+ // port and path
-            '(\\?[;&a-z\\d%_.~+=-]*)?'+ // query string
-            '(\\#[-a-z\\d_]*)?$'
-
-        regex = re.compile(
-        '^((https?|ftp):\\/\\/)' // protocol
-        r'(?:\\S+(?::\\S*)?@)?'  # user:passauthentication
-        '((([\u00a1-\uffffA-Za-z\\d][\u00a1-\uffffA-Z0-9-]{0,61}[\u00a1-\uffffA-Z0-9]?\\)+([\u00a1-\uffffA-Z0-9-]{2,}?))|'  # domain...
-        r'localhost|'  # localhost...
-        r'(((25[0-5]|2[0-4][0-9]|[1]?[0-9]?[0-9])\\.){3}(25[0-5]|2[0-4][0-9]|[1]?[0-9]?[0-9]))|' #...or ipv4
-        r'(?:\\[?[A-F0-9]*:[A-F0-9:]+\\]?))'  # ...or ipv6
-        r'(?::d{2,5})?'  # optional port
-        r'(?:/|/\\S+)*$', re.IGNORECASE)
+            '(\\/|\\/\\S+)*$'
 };
 
 var cleanByRule = function(rule) {
