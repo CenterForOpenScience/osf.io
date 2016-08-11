@@ -7,7 +7,7 @@
 </%def>
 
 <%def name="description()">
-    <p>The process of creating a <a href='http://www.erpc.org'>${kind()}</a> is beneficial to both the scientific field and to you, the scientist. By writing out detailed analysis plans before examining into the data, you can make important decisions that affect your workflow earlier, without the biases that occur once the data are in front of you.</p>
+    <p>The process of creating a <a href='http://www.erpc2016.com'>${kind()}</a> is beneficial to both the scientific field and to you, the scientist. By writing out detailed analysis plans before examining into the data, you can make important decisions that affect your workflow earlier, without the biases that occur once the data are in front of you.</p>
 </%def>
 
 <%def name="steps()">
