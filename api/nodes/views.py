@@ -125,10 +125,6 @@ class DraftMixin(object):
 
 class WaterButlerMixin(object):
 
-    def __init__(self, *args, **kwargs):
-        self.path = '/{}'.format(self.kwargs['path'])
-        self.provider = self.kwargs['provider']
-
     def get_file_item(self, item):
         attrs = item['attributes']
         file_node = FileNode.resolve_class(
@@ -136,16 +132,13 @@ class WaterButlerMixin(object):
             FileNode.FOLDER if attrs['kind'] == 'folder'
             else FileNode.FILE
         ).get_or_create(self.get_node(check_object_permissions=False), attrs['path'])
-
         file_node.update(None, attrs, user=self.request.user)
-
         self.check_object_permissions(self.request, file_node)
-
         return file_node
 
     def fetch_from_waterbutler(self):
         node = self.get_node(check_object_permissions=False)
-        return self.get_file_object(node, self.path, self.provider)
+        return self.get_file_object(node, '/{}'.format(self.kwargs['path']), self.kwargs['provider'])
 
     def get_file_object(self, node, path, provider, check_object_permissions=True):
         obj = get_file_object(node=node, path=path, provider=provider, request=self.request)
@@ -258,9 +251,6 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     view_name = 'node-list'
 
     ordering = ('-date_modified', )  # default ordering
-
-    def __init__(self):
-        WaterButlerMixin.__init__(self)
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
@@ -824,8 +814,6 @@ class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
         removed = node.remove_contributor(instance, auth)
         if not removed:
             raise ValidationError('Must have at least one registered admin contributor')
-<<<<<<< HEAD
-=======
 
 
 class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
@@ -845,7 +833,6 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
 
 
     Draft Registrations have the "draft_registrations" `type`.
->>>>>>> bd1a37f52423243d2d42a63ce8da788beef5dad8
 
         name                       type               description
         ===========================================================================
@@ -1788,10 +1775,6 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     #This Request/Response
 
     """
-
-    def __init__(self):
-        WaterButlerMixin.__init__(self)
-        self.path = '{}/'.format(self.path)
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
