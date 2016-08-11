@@ -9,7 +9,7 @@ from osf_models.scripts.load_blacklist_guids import \
 from osf_models.scripts.load_guids import main as load_guids
 from osf_models.scripts.migrate_nodes import save_bare_nodes, save_bare_institutions, save_bare_registrations, \
     save_bare_collections, merge_duplicate_users, save_bare_users, save_bare_tags, save_bare_system_tags, \
-    save_bare
+    build_pk_caches, save_bare
 
 from website.app import init_app
 from website.archiver.model import ArchiveTarget, ArchiveJob
@@ -21,6 +21,10 @@ from website.project.sanctions import RegistrationApproval, \
 
 # TODO : Make a centralized lookup table of [{model_name : modm_id_field_name}, ]
 # TODO : Use that lookup table to build_pk_caches and make migrate_from_modm less bad.
+
+from website.project.model import AlternativeCitation, Comment, MetaSchema
+from website.project.sanctions import Embargo as MODMEmbargo, Retraction as MODMRetraction, RegistrationApproval, \
+    Retraction, Embargo, DraftRegistrationApproval, EmbargoTerminationApproval
 
 
 class Command(BaseCommand):
@@ -69,6 +73,10 @@ class Command(BaseCommand):
         merge_duplicate_users()
         save_bare_users()
 
+        global modm_to_django
+        modm_to_django = build_pk_caches()
+        print('Cached {} MODM to django mappings...'.format(len(
+            modm_to_django.keys())))
 
         print('Finished in {} seconds...'.format((datetime.now() - start
                                                   ).total_seconds()))

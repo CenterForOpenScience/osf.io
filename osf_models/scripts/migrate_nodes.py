@@ -1195,8 +1195,8 @@ def build_pk_caches():
     modm_to_django.update({x['_guid__guid']: x['pk'] for x in OSFUser.objects.all().values('_guid__guid', 'pk')})
     modm_to_django.update({'{}:system'.format(x['_id']): x['pk'] for x in Tag.objects.filter(system=True).values('_id', 'pk')})
     modm_to_django.update({'{}:not_system'.format(x['_id']): x['pk'] for x in Tag.objects.filter(system=False).values('_id', 'pk')})
-    modm_to_django.update({x['guid']: x['pk'] for x in Embargo.objects.all().values('guid', 'pk')})
-    modm_to_django.update({x['guid']: x['pk'] for x in Retraction.objects.all().values('guid', 'pk')})
+    modm_to_django.update({x['_object_id']: x['pk'] for x in Embargo.objects.all().values('_object_id', 'pk')})
+    modm_to_django.update({x['_object_id']: x['pk'] for x in Retraction.objects.all().values('_object_id', 'pk')})
     return modm_to_django
 
 

@@ -180,7 +180,7 @@ class ObjectIDMixin(models.Model):
 
     @property
     def _id(self):
-        return PKIDStr(self.guid, self.pk)
+        return PKIDStr(self._object_id, self.pk)
 
     _primary_key = _id
 

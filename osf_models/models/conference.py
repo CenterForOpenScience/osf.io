@@ -6,6 +6,7 @@ from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 from website.conferences.exceptions import ConferenceError
 
+# leaving this at module scope for any existing imports.
 DEFAULT_FIELD_NAMES = {
     'submission1': 'poster',
     'submission2': 'talk',
@@ -18,6 +19,10 @@ DEFAULT_FIELD_NAMES = {
     'mail_attachment': 'Your presentation file (e.g., PowerPoint, PDF, etc.)',
     'homepage_link_text': 'Conference homepage',
 }
+
+def get_default_field_names():
+    return DEFAULT_FIELD_NAMES
+
 
 class ConferenceManager(models.Manager):
     def get_by_endpoint(self, endpoint, active=True):
@@ -51,7 +56,7 @@ class Conference(BaseModel):
     talk = models.BooleanField(default=True)
     # field_names are used to customize the text on the conference page, the categories
     # of submissions, and the email adress to send material to.
-    field_names = DateTimeAwareJSONField(default=DEFAULT_FIELD_NAMES)
+    field_names = DateTimeAwareJSONField(default=get_default_field_names)
 
     # Cached number of submissions
     num_submissions = models.IntegerField(default=0)
