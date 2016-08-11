@@ -266,7 +266,7 @@ class TestFilterMixin(ApiTestCase):
 
         fields = self.view.parse_query_params(query_params)
         assert_in('list_field', fields)
-        for match in fields['string_field']:
+        for match in fields['list_field']:
             assert_in(match['value'], [])
 
 class TestListFilterMixin(ApiTestCase):
