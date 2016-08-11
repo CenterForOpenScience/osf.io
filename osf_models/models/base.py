@@ -124,7 +124,8 @@ class BaseModel(models.Model):
 
     @classmethod
     def remove_one(cls, obj):
-        return obj.delete()
+        if obj.pk:
+            return obj.delete()
 
     @property
     def _primary_name(self):
