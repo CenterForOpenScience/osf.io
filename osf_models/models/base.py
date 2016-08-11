@@ -38,6 +38,18 @@ class Guid(models.Model):
                                    unique=True,
                                    db_index=True)
 
+    @property
+    def referent(self):
+        """The model instance that this Guid refers to. May return an instance of
+        any model that inherits from GuidMixin.
+        """
+        for relationship in self._meta.get_all_related_objects():
+            try:
+                return getattr(self, relationship.name)
+            except relationship.related_model.DoesNotExist:
+                continue
+        return None
+
 
 class BlackListGuid(models.Model):
     id = models.AutoField(primary_key=True)
