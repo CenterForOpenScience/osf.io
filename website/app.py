@@ -154,7 +154,8 @@ PATCHED_MODELS = (
     'NodeLog',
     'Session',
     'NodeLicense',
-    'NodeLicenseRecord'
+    'NodeLicenseRecord',
+    'Guid',
 )
 
 # TODO: This won't work for modules that do e.g. `from website import models`. Rethink.
