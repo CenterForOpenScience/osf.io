@@ -2,7 +2,7 @@
 
 def serialize_meeting(meeting):
     is_meeting = True
-    if meeting.is_meeting is not None:
+    if hasattr(meeting, 'is_meeting') and meeting.is_meeting is not None:
         is_meeting = meeting.is_meeting
     return {
         'endpoint': meeting.endpoint,
