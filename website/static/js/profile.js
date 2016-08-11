@@ -23,11 +23,23 @@ var socialRules = {
     academia: /(\w+)\.academia\.edu\/(\w+)/i,
     baiduScholar: /xueshu\.baidu\.com\/scholarID\/(\w+)/i,
     url: '^(https?:\\/\\/)?'+ // protocol
-            '((([a-z\\d\\u00a1-\\uffff]([a-z\\d-\\u00a1-\\uffff]*[a-z\\d\\u00a1-\\uffff])*)\\.)+[a-z]{2,}|'+ // domain name
-            '((\\d{1,3}\\.){3}\\d{1,3}))'+ // OR ip (v4) address
+            '(?:\\S+(?::\\S*)?@)?'+
+            '(([a-zA-Z\\d\\u00a1-\\uffff][-a-zA-Z\\d\\u00a1-\\uffff]{0,61}[a-zA-Z\\d\\u00a1-\\uffff])\\.)+[a-z]{2,}|'+ // domain name
+            'localhost|'+
+            '(((25[0-5]|2[0-4][0-9]|[1]?[0-9]?[0-9])\\.){3}(25[0-5]|2[0-4][0-9]|[1]?[0-9]?[0-9]))|'+ // OR ip (v4) address
             '(\\:\\d+)?(\\/[-a-z\\u00a1-\\uffff\\d%_.~+]*)*'+ // port and path
             '(\\?[;&a-z\\d%_.~+=-]*)?'+ // query string
             '(\\#[-a-z\\d_]*)?$'
+
+        regex = re.compile(
+        '^((https?|ftp):\\/\\/)' // protocol
+        r'(?:\\S+(?::\\S*)?@)?'  # user:passauthentication
+        '((([\u00a1-\uffffA-Za-z\\d][\u00a1-\uffffA-Z0-9-]{0,61}[\u00a1-\uffffA-Z0-9]?\\)+([\u00a1-\uffffA-Z0-9-]{2,}?))|'  # domain...
+        r'localhost|'  # localhost...
+        r'(((25[0-5]|2[0-4][0-9]|[1]?[0-9]?[0-9])\\.){3}(25[0-5]|2[0-4][0-9]|[1]?[0-9]?[0-9]))|' #...or ipv4
+        r'(?:\\[?[A-F0-9]*:[A-F0-9:]+\\]?))'  # ...or ipv6
+        r'(?::d{2,5})?'  # optional port
+        r'(?:/|/\\S+)*$', re.IGNORECASE)
 };
 
 var cleanByRule = function(rule) {
