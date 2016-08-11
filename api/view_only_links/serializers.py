@@ -84,12 +84,11 @@ class ViewOnlyLinkNodesSerializer(ser.Serializer):
 
         return nodes_to_add, diff['remove'].values()
 
-    def get_eligible_nodes(self, nodes, add):
+    def get_eligible_nodes(self, nodes):
         return [
             descendant
-            for node in (nodes + add)
+            for node in nodes
             for descendant in node.get_descendants_recursive()
-            if descendant._parent_node in (nodes + add)
         ]
 
     def create(self, validated_data):
@@ -108,13 +107,13 @@ class ViewOnlyLinkNodesSerializer(ser.Serializer):
         if not len(add):
             raise RelationshipPostMakesNoChanges
 
-        eligible_nodes = self.get_eligible_nodes(nodes, add)
+        eligible_nodes = self.get_eligible_nodes(nodes)
 
         for node in add:
             if not node.has_permission(user, 'admin'):
                 raise PermissionDenied
             if node not in eligible_nodes:
-                raise ValidationError(detail='The node {0} cannot be affiliated with this VOL because it is not a child of the associated VOL nodes.'.format(node._id))
+                raise ValidationError(detail='The node {0} cannot be affiliated with this VOL because it is not a child of the associated VOL node.'.format(node._id))
             view_only_link.nodes.append(node)
 
         view_only_link.save()
@@ -139,13 +138,13 @@ class ViewOnlyLinkNodesSerializer(ser.Serializer):
         view_only_link.save()
 
         nodes = [Node.load(node) for node in view_only_link.nodes]
-        eligible_nodes = self.get_eligible_nodes(nodes, add)
+        eligible_nodes = self.get_eligible_nodes(nodes)
 
         for node in add:
             if not node.has_permission(user, 'admin'):
                 raise PermissionDenied
             if node not in eligible_nodes:
-                raise ValidationError(detail='The node {0} cannot be affiliated with this VOL because it is not a child of the associated VOL nodes.'.format(node._id))
+                raise ValidationError(detail='The node {0} cannot be affiliated with this VOL because it is not a child of the associated VOL node.'.format(node._id))
             view_only_link.nodes.append(node)
         view_only_link.save()
 

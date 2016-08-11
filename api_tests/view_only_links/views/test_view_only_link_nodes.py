@@ -122,13 +122,13 @@ class TestViewOnlyLinkNodesSet(ViewOnlyLinkTestCase):
         }
         res = self.app.post_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'The node {0} cannot be affiliated with this VOL because it is not a child of the associated VOL nodes.'.format(self.project_two._id))
+        assert_equal(res.json['errors'][0]['detail'], 'The node {0} cannot be affiliated with this VOL because it is not a child of the associated VOL node.'.format(self.project_two._id))
 
     def test_set_node_second_level_component_without_first_level_parent(self):
         """
         Parent Project (already associated with VOL)
-            ->  First Level Component (not associated and not included in payload to be associated)
-                -> Second Level Component (not associated and included in payload to be associated -- NOT ALLOWED)
+            ->  First Level Component (NOT included)
+                -> Second Level Component (included -- OK)
         """
         payload = {
             'data': [
@@ -139,14 +139,18 @@ class TestViewOnlyLinkNodesSet(ViewOnlyLinkTestCase):
             ]
         }
         res = self.app.post_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'The node {0} cannot be affiliated with this VOL because it is not a child of the associated VOL nodes.'.format(self.second_level_component._id))
+        self.view_only_link.reload()
+        assert_equal(res.status_code, 201)
+        assert_equal(len(res.json['data']), 2)
+        assert_in(self.public_project._id, self.view_only_link.nodes)
+        assert_in(self.second_level_component._id, self.view_only_link.nodes)
+
 
     def test_set_node_second_level_component_with_first_level_parent(self):
         """
         Parent Project (already associated with VOL)
-            ->  First Level Component (either already associated or included in payload to be associated)
-                -> Second Level Component (not associated and included in payload to be associated -- OK)
+            ->  First Level Component (included)
+                -> Second Level Component (included -- OK)
         """
         payload = {
             'data': [
@@ -340,7 +344,7 @@ class TestViewOnlyLinkNodesUpdate(TestViewOnlyLinkNodesSet):
         }
         res = self.app.put_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'The node {0} cannot be affiliated with this VOL because it is not a child of the associated VOL nodes.'.format(self.component_one._id))
+        assert_equal(res.json['errors'][0]['detail'], 'The node {0} cannot be affiliated with this VOL because it is not a child of the associated VOL node.'.format(self.component_one._id))
 
     def test_update_node_not_component(self):
         payload = {
@@ -351,14 +355,13 @@ class TestViewOnlyLinkNodesUpdate(TestViewOnlyLinkNodesSet):
         }
         res = self.app.put_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'The node {0} cannot be affiliated with this VOL because it is not a child of the associated VOL nodes.'.format(self.project_two._id))
-
+        assert_equal(res.json['errors'][0]['detail'], 'The node {0} cannot be affiliated with this VOL because it is not a child of the associated VOL node.'.format(self.project_two._id))
 
     def test_update_node_second_level_component_without_first_level_parent(self):
         """
         Parent Project (included)
             ->  First Level Component (NOT included)
-                -> Second Level Component (included) -- NOT ALLOWED
+                -> Second Level Component (included) -- OK
         """
         payload = {
             'data': [{
@@ -370,9 +373,11 @@ class TestViewOnlyLinkNodesUpdate(TestViewOnlyLinkNodesSet):
             }]
         }
         res = self.app.put_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'The node {0} cannot be affiliated with this VOL because it is not a child of the associated VOL nodes.'.format(self.second_level_component._id))
-
+        self.view_only_link.reload()
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 2)
+        assert_in(self.public_project._id, self.view_only_link.nodes)
+        assert_in(self.second_level_component._id, self.view_only_link.nodes)
 
     def test_update_node_second_level_component_with_first_level_parent(self):
         """
