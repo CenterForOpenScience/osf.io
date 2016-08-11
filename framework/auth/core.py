@@ -88,7 +88,6 @@ validate_url = URLValidator()
 
 def validate_profile_websites(profile_websites):
     for value in profile_websites or []:
-        print(type(value), value)
         try:
             validate_url(value)
         except ValidationError:
