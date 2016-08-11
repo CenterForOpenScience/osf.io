@@ -592,7 +592,7 @@ var Draft = function(params, metaSchema) {
         }).length > 0;
     });
 
-    self.completion = ko.computed(function() {
+    self.completion = ko.pureComputed(function() {
         var complete = 0;
         var questions = self.metaSchema.flatQuestions()
                 .filter(function(question) {
@@ -604,6 +604,20 @@ var Draft = function(params, metaSchema) {
             }
         });
         return Math.ceil(100 * (complete / questions.length));
+    });
+
+    self.isComplete = ko.pureComputed(function() {
+        var complete = true;
+        var questions = self.metaSchema.flatQuestions()
+                .filter(function(question) {
+                    return question.required;
+                });
+        $.each(questions, function(_, question) {
+            if (!question.isComplete()) {
+                complete = false;
+            }
+        });
+        return complete;
     });
 };
 Draft.prototype.getUnseenComments = function() {
