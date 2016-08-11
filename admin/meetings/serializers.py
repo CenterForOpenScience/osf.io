@@ -10,7 +10,7 @@ def serialize_meeting(meeting):
         'info_url': meeting.info_url,
         'logo_url': meeting.logo_url,
         'active': meeting.active,
-        'admins': ', '.join([u.emails[0] for u in meeting.admins]),
+        'admins': ', '.join([u.emails[0] for u in meeting.admins if u.is_confirmed]),
         'public_projects': meeting.public_projects,
         'poster': meeting.poster,
         'talk': meeting.talk,
