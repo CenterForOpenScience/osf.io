@@ -770,7 +770,7 @@ def validate_subjects(value):
 
 def validate_doi(value):
     # DOI must start with 10 and have a slash in it - avoided getting too complicated
-    if not re.match(r"10\\.\\S*\\/", value):
+    if not re.match('10\\.\\S*\\/', value):
         raise ValidationValueError('')
     return True
 
