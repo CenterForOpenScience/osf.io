@@ -87,8 +87,7 @@ class AbstractNode(TypedModel, Taggable, Loggable, GuidMixin, BaseModel):
     is_fork = models.BooleanField(default=False, db_index=True)
     is_public = models.BooleanField(default=False, db_index=True)
     is_deleted = models.BooleanField(default=False, db_index=True)
-    # logs = Logs have a reverse relation to nodes
-    # node_license = models.ForeignKey(NodeLicenseRecord)
+    node_license = models.ForeignKey('NodeLicenseRecord', related_name='nodes', on_delete=models.SET_NULL, null=True, blank=True)
     nodes = models.ManyToManyField('self', related_name='children')
     parent_node = models.ForeignKey('self',
                                     related_name='parent',
