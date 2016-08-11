@@ -41,7 +41,6 @@ class TestPreprintList(ApiTestCase):
         assert_not_in(self.project._id, ids)
 
 
-
 class TestPreprintFiltering(ApiTestCase):
 
     def setUp(self):
@@ -97,6 +96,16 @@ class TestPreprintFiltering(ApiTestCase):
         res = self.app.get(url, auth=self.user.auth)
         data = res.json['data']
 
-        assert_equal(len(data), 2)
         for result in data:
-            assert 'wwe' in result['attributes']['provider']
+            assert_in('wwe', result['attributes']['provider'])
+            assert_not_in('wcw', result['attributes']['provider'])
+
+    def test_filter_by_doi(self):
+        url = '/{}preprints/?filter[doi]={}'.format(API_BASE, self.preprint.preprint_doi)
+
+        res = self.app.get(url, auth=self.user.auth)
+        data = res.json['data']
+
+        assert_equal(len(data), 1)
+        for result in data:
+            assert_equal(self.preprint._id, result['id'])
