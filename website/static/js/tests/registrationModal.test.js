@@ -5,8 +5,6 @@ var utils = require('tests/utils');
 var faker = require('faker');
 var moment = require('moment');
 
-console.log('UTC offset: ' + moment().utcOffset());
-
 var RegistrationModal = require('js/registrationModal').ViewModel;
 
 // Add sinon asserts to chai.assert, so we can do assert.calledWith instead of sinon.assert.calledWith
@@ -92,9 +90,9 @@ describe('registrationModal', () => {
             vm.pikaday(invalidPastDate);
             assert.isFalse(vm.pikaday.isValid());
         });
-        it.skip('returns false for date more than 4 years in the future', () => {
+        it('returns false for date more than 4 years in the future', () => {
             var invalidFutureDate = new Date();
-            invalidFutureDate.setDate(invalidFutureDate.getDate() + 1460);
+            invalidFutureDate.setDate(invalidFutureDate.getDate() + 1462);
             vm.pikaday(invalidFutureDate);
             assert.isFalse(vm.pikaday.isValid());
         });
