@@ -1,5 +1,8 @@
 <link rel="stylesheet" href="/static/css/mailing-list-modal.css">
+<% from framework.auth.core import User %>
 <% from website.settings import PROJECT_MAILING_ENABLED %>
+<% from website.notifications.model import NotificationSubscription %>
+<% from modularodm import Q %>
 % if PROJECT_MAILING_ENABLED:
     <div class="modal fade" id="mailingListContributorsModal">
         <div class="modal-dialog">
@@ -14,9 +17,9 @@
                         <a href="mailto:${node['id']}@lists.mechanysm.com">${node['id']}@lists.mechanysm.com</a>
                     </div>
                     </h4>
-                    
-                    % if len(node['mailing_list_unsubs']):
-                        <p>${len(node['contributors']) - len(node['mailing_list_unsubs'])} out of ${len(node['contributors'])} contributors will receive any email sent to this address.</p>
+                    <% unsubs = NotificationSubscription.find_one(Q('owner', 'eq', node['id']) & Q('event_name', 'eq', 'mailing_list_events')).none %>
+                    % if len(unsubs):
+                        <p>${len(node['contributors']) - len(unsubs)} out of ${len(node['contributors'])} contributors will receive any email sent to this address.</p>
                         <p>A contributor who is not subscribed to this mailing list will not receive any emails sent to it. To
                         % if user['is_admin']:
                             disable or 
@@ -29,9 +32,10 @@
                                 Show
                             </a>
                             <div id="unsubContribs" class="panel-collapse collapse" role="tabpanel" aria-expanded="false" aria-labelledby="unsubToggle">
-                            % for each in node['mailing_list_unsubs']:
+                            % for each in unsubs:
                                 <div class="padded-list">
-                                   ${each}
+                                    ${each}
+                                   <!-- User.find_one(Q('id', 'eq', each)).username}-->
                                 </div>
                             % endfor
                             </div>

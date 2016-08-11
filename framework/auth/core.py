@@ -1203,8 +1203,8 @@ class User(GuidStoredObject, AddonModelMixin):
             map(lambda node: celery_update_single_user_in_list(
                 node_id=node.owner._id,
                 user_id=self._id,
-                email_address=self.email
-                subs_type='transactional'), mldsubs)
+                email_address=self.email,
+                subs_type='digest'), mldsubs)
 
             # Change mailing list unsubscriptions
             mlunsubs = NotificationSubscription.find(
