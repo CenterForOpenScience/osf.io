@@ -168,18 +168,14 @@ class BaseModel(models.Model):
 
 
 class ObjectIDMixin(models.Model):
-    _object_id = models.CharField(max_length=255,
+    guid = models.CharField(max_length=255,
                                   unique=True,
                                   db_index=True,
                                   default=get_object_id)
 
     @property
-    def object_id(self):
-        return self._object_id
-
-    @property
-    def guid(self):
-        return self._object_id
+    def _object_id(self):
+        return self.guid
 
     @property
     def _id(self):
@@ -211,16 +207,6 @@ class ObjectIDMixin(models.Model):
             if isinstance(modm_value, datetime):
                 modm_value = pytz.utc.localize(modm_value)
             setattr(django_obj, field, modm_value)
-
-        try:
-            setattr(django_obj, '_object_id', modm_obj._id)
-        except AttributeError:
-            pass
-
-        try:
-            setattr(django_obj, '_object_id', modm_obj.guid)
-        except AttributeError:
-            pass
 
         return django_obj
 

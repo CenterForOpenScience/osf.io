@@ -125,7 +125,7 @@ def _get_field(model_cls, field_name):
     # Prevent circular import
     from osf_models.models.base import ObjectIDMixin, GuidMixin
     if issubclass(model_cls, ObjectIDMixin) and field_name == '_id':
-        field_name = '_object_id'
+        field_name = 'guid'
     elif issubclass(model_cls, GuidMixin) and field_name == '_id':
         field_name = '_guid'
     return model_cls._meta.get_field(field_name)
