@@ -259,6 +259,13 @@ class TestFilterMixin(ApiTestCase):
         value = self.view.convert_value(value, field)
         assert_equal(value, 42.0)
 
+    def test_convert_value_null_for_list(self):
+        value = 'null'
+        field = FakeSerializer._declared_fields['list_field']
+        value = self.view.convert_value(value, field)
+        assert_equal(value, [])
+
+
 class TestListFilterMixin(ApiTestCase):
 
     def setUp(self):
