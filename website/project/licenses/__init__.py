@@ -92,7 +92,7 @@ def ensure_licenses(warn=True):
             node_license = None
             try:
                 node_license = NodeLicense.find_one(
-                    Q('id', 'eq', id)
+                    Q('license_id', 'eq', id)
                 )
             except NoResultsFound:
                 if warn:
@@ -103,7 +103,7 @@ def ensure_licenses(warn=True):
                         )
                     )
                 node_license = NodeLicense(
-                    id=id,
+                    license_id=id,
                     name=name,
                     text=text,
                     properties=properties

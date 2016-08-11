@@ -1,14 +1,20 @@
 # -*- coding: utf-8 -*-
+import functools
 import datetime as dt
 
 import factory
 from factory.django import DjangoModelFactory
 from faker import Factory
+from modularodm.exceptions import NoResultsFound
+
+from website.project.licenses import ensure_licenses
 
 from osf_models import models
 from osf_models.utils.names import impute_names_model
+from osf_models.modm_compat import Q
 
 fake = Factory.create()
+ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
 
 def FakeList(provider, n, *args, **kwargs):
@@ -116,3 +122,26 @@ class InstitutionFactory(DjangoModelFactory):
 
     class Meta:
         model = models.Institution
+
+class NodeLicenseRecordFactory(DjangoModelFactory):
+    year = factory.Faker('year')
+    copyright_holders = FakeList('name', n=3)
+
+    class Meta:
+        model = models.NodeLicenseRecord
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        try:
+            models.NodeLicense.find_one(
+                Q('name', 'eq', 'No license')
+            )
+        except NoResultsFound:
+            ensure_licenses()
+        kwargs['node_license'] = kwargs.get(
+            'node_license',
+            models.NodeLicense.find_one(
+                Q('name', 'eq', 'No license')
+            )
+        )
+        return super(NodeLicenseRecordFactory, cls)._create(*args, **kwargs)
