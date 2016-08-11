@@ -266,3 +266,6 @@ class TestPreprintUpdate(ApiTestCase):
 
         self.preprint.reload()
         assert_equal(self.preprint.preprint_doi, new_doi)
+
+        preprint_detail = self.app.get(self.url, auth=self.user.auth).json['data']
+        assert_equal(preprint_detail['links']['doi'], 'https://dx.doi.org/{}'.format(new_doi))
