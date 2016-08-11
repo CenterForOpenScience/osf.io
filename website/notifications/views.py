@@ -46,12 +46,10 @@ def configure_subscription(auth):
 
     if not event or (notification_type not in NOTIFICATION_TYPES and notification_type != 'adopt_parent'):
         #if notification_type in user.emails:
-        #    notification_type == 
+        #    notification_type ==
 
         #else:
-        raise HTTPError(http.BAD_REQUEST, data={
-            message_long: 'Must provide an event and notification type for subscription.'
-        })
+        raise HTTPError(http.BAD_REQUEST)
 
     node = Node.load(target_id)
     if 'file_updated' in event and path is not None and provider is not None:
@@ -113,7 +111,6 @@ def configure_subscription(auth):
     subscription.add_user_to_subscription(user, notification_type)
 
     subscription.save()
-
 
     if 'mailing_list_events' in event:
         celery_update_single_user_in_list(

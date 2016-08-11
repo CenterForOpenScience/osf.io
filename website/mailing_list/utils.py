@@ -169,7 +169,7 @@ def add_contributor(
         # We unsubscribe all of a user's email adresses...
         remove_contributor(list_mailbox=list_mailbox, contributor=contributor, email=email)
         contributor = User.load(contributor)
-    
+
         # ...then subscribe the one currently associated with the account.
         ml_user = list_proxy.subscribe(
             contributor.email,
@@ -177,6 +177,7 @@ def add_contributor(
             pre_verified=True,
             pre_confirmed=True
         )
+    print(ml_user)
 
 
 def add_contributors(
@@ -206,7 +207,7 @@ def remove_contributor(
     list_mailbox=None,
     list_proxy=None,
     contributor=None,
-    email=None 
+    email=None
 ):
     def subbed(email):
         try:

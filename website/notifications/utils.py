@@ -10,7 +10,7 @@ from website.notifications import model
 from website.notifications.exceptions import InvalidSubscriptionError
 from website.notifications.model import NotificationSubscription
 from website.project import signals
-from website.settings import OSF_MAILING_LIST_DOMAIN
+#from website.settings import OSF_MAILING_LIST_DOMAIN
 
 from framework.celery_tasks import app
 
@@ -340,7 +340,7 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
         for n_type in constants.NOTIFICATION_TYPES:
             if user in getattr(subscription, n_type):
                 notification_type = n_type
-    return { # tbd = {
+    return {  # tbd = {
         'event': {
             'title': event_description,
             'description': all_subs[event_type],
@@ -350,7 +350,7 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
         'kind': 'event',
         'children': []
     }
-    
+
     # The following is fully functional at the present, though may not be included as a feature at this time:
     """if tbd['event']['title'] == 'mailing_list_events':
 
@@ -378,7 +378,7 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
             try:
                 tbd['event']['notificationType'] = subbed_emails[0]
             except:
-                tbd['event']['notificationType'] = 
+                tbd['event']['notificationType'] =
         except:
             logger.warn('Mailman client unable to connect to Mailman API. The server may not be available.')
     return tbd"""

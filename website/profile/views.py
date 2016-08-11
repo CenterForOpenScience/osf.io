@@ -27,7 +27,6 @@ from website import mails
 from website import mailchimp_utils
 from website import settings
 from website.project.model import Node
-from website.mailing_list.utils import celery_update_single_user_in_list
 from website.project.utils import PROJECT_QUERY, TOP_LEVEL_PROJECT_QUERY
 from website.models import ApiOAuth2Application, ApiOAuth2PersonalToken, User
 from website.oauth.utils import get_available_scopes
