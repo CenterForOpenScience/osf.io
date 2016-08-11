@@ -403,3 +403,33 @@ class TestAddUnregisteredContributor:
                 fullname=user.fullname,
                 auth=auth
             )
+
+@pytest.mark.django_db
+def test_find_for_user():
+    node1, node2 = NodeFactory(is_public=False), NodeFactory(is_public=True)
+    contrib = UserFactory()
+    noncontrib = UserFactory()
+    Contributor.objects.create(node=node1, user=contrib)
+    Contributor.objects.create(node=node2, user=contrib)
+    assert node1 in Node.find_for_user(contrib)
+    assert node2 in Node.find_for_user(contrib)
+    assert node1 not in Node.find_for_user(noncontrib)
+
+    assert node1 in Node.find_for_user(contrib, Q('is_public', 'eq', False))
+    assert node2 not in Node.find_for_user(contrib, Q('is_public', 'eq', False))
+
+
+@pytest.mark.django_db
+def test_can_comment():
+    contrib = UserFactory()
+    public_node = NodeFactory(is_public=True)
+    Contributor.objects.create(node=public_node, user=contrib)
+    assert public_node.can_comment(Auth(contrib)) is True
+    noncontrib = UserFactory()
+    assert public_node.can_comment(Auth(noncontrib)) is True
+
+    private_node = NodeFactory(is_public=False, public_comments=False)
+    Contributor.objects.create(node=private_node, user=contrib, read=True)
+    assert private_node.can_comment(Auth(contrib)) is True
+    noncontrib = UserFactory()
+    assert private_node.can_comment(Auth(noncontrib)) is False

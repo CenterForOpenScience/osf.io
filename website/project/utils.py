@@ -11,15 +11,10 @@ serialize_node = _view_project  # Not recommended practice
 CONTENT_NODE_QUERY = (
     # Can encompass accessible projects, registrations, or forks
     # Note: is_bookmark collection(s) are implicitly assumed to also be collections; that flag intentionally omitted
-    Q('is_collection', 'ne', True) &
     Q('is_deleted', 'eq', False)
 )
 
-PROJECT_QUERY = (
-    # Excludes registrations
-    CONTENT_NODE_QUERY &
-    Q('is_registration', 'ne', True)
-)
+PROJECT_QUERY = CONTENT_NODE_QUERY
 
 TOP_LEVEL_PROJECT_QUERY = (
     # Top level project is defined based on whether node (of any category) has a parent. Can include forks.
