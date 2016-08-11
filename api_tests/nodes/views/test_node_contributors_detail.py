@@ -148,7 +148,8 @@ class TestNodeContributorOrdering(ApiTestCase):
             found_contributors = True
         assert_true(found_contributors, "Did not compare any contributors.")
 
-    def test_move_top_contributor_down_one(self):
+    @assert_logs(NodeLog.CONTRIB_REORDERED, 'project')
+    def test_move_top_contributor_down_one_and_also_log(self):
         contributor_to_move = self.contributors[0]._id
         contributor_id = '{}-{}'.format(self.project._id, contributor_to_move)
         former_second_contributor = self.contributors[1]

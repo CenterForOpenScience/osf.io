@@ -2940,6 +2940,18 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             raise PermissionsError('Only admins can modify contributor order')
         old_index = self.contributors.index(user)
         self.contributors.insert(index, self.contributors.pop(old_index))
+        self.add_log(
+            action=NodeLog.CONTRIB_REORDERED,
+            params={
+                'project': self.parent_id,
+                'node': self._id,
+                'contributors': [
+                    user._id
+                    ],
+            },
+            auth=auth,
+            save=False,
+        )
         if save:
             self.save()
 
