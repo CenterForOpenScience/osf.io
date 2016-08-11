@@ -17,6 +17,7 @@ from modularodm.exceptions import NoResultsFound
 # OSF imports
 import framework.mongo
 from framework import analytics
+
 from framework.auth.exceptions import (
     ChangePasswordError,
     ExpiredTokenError,
@@ -233,7 +234,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
 
     # Attached external accounts (OAuth)
     # external_accounts = fields.ForeignField("externalaccount", list=True)
-    # external_accounts = models.ManyToManyField(ExternalAccount)
+    external_accounts = models.ManyToManyField('ExternalAccount')
 
     # CSL names
     given_name = models.CharField(max_length=255, blank=True)

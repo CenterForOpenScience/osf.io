@@ -1,9 +1,10 @@
 import abc
-import logging
-import httplib as http
 import datetime as dt
-
 import functools
+import httplib as http
+import logging
+
+from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.utils import timezone
 from flask import request
@@ -11,14 +12,12 @@ from modularodm.exceptions import KeyExistsException
 from oauthlib.oauth2 import MissingTokenError
 from osf_models.models import base
 from osf_models.modm_compat import Q
-from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from requests.exceptions import HTTPError as RequestsHTTPError
 from requests_oauthlib import OAuth1Session
 from requests_oauthlib import OAuth2Session
-from requests.exceptions import HTTPError as RequestsHTTPError
 
 from framework.exceptions import HTTPError, PermissionsError
 from framework.sessions import session
-
 from website.oauth.utils import PROVIDER_LOOKUP
 from website.security import random_string
 from website.util import web_url_for
@@ -56,7 +55,7 @@ class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
     # Used for OAuth2 only
     refresh_token = models.CharField(max_length=255, blank=True, null=True)
     expires_at = models.DateTimeField(blank=True, null=True)
-    scopes = DateTimeAwareJSONField(default=list)
+    scopes = ArrayField(models.CharField(max_length=128), default=list, blank=True)
 
     # The `name` of the service
     # This lets us query for only accounts on a particular provider
@@ -77,6 +76,11 @@ class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
     def __repr__(self):
         return '<ExternalAccount: {}/{}>'.format(self.provider,
                                                  self.provider_id)
+
+    class Meta:
+        unique_together = [
+            ('provider', 'provider_id', )
+        ]
 
 
 class ExternalProviderMeta(abc.ABCMeta):
