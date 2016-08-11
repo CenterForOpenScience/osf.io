@@ -137,7 +137,10 @@ class TrashedFileNode(StoredObject, Commentable):
             for child in TrashedFileNode.find(Q('parent', 'eq', self)):
                 child.restore(recursive=recursive, parent=restored)
 
-        discourse.undelete_topic(restored)
+        try:
+            discourse.undelete_topic(restored)
+        except discourse.DiscourseException, requests.exceptions.ConnectionError:
+            logger.exception('Error undeleting Discourse topic')
 
         TrashedFileNode.remove_one(self)
         return restored
@@ -313,7 +316,10 @@ class StoredFileNode(StoredObject, Commentable):
         value = super(StoredFileNode, self).save()
         # keep discourse up to date. It will be a NOP if everything is synced already.
         if self.discourse_topic_id:
-            discourse.sync_topic(self)
+            try:
+                discourse.sync_topic(self)
+            except discourse.DiscourseException, requests.exceptions.ConnectionError:
+                logger.exception('Error syncing/creating Discourse topic')
         return value
 
 
@@ -562,7 +568,11 @@ class FileNode(object):
         and remove it from StoredFileNode
         :param user User or None: The user that deleted this FileNode
         """
-        discourse.delete_topic(self)
+        try:
+            discourse.delete_topic(self)
+        except discourse.DiscourseException, requests.exceptions.ConnectionError:
+            logger.exception('Error deleting Discourse topic')
+
         trashed = self._create_trashed(user=user, parent=parent)
         self._repoint_guids(trashed)
         self.node.save()

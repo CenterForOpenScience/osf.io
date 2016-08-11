@@ -24,8 +24,6 @@ class SSOView(JSONAPIBaseView):
     # NOTE: directing a user to DISCOURSE/session/sso should trigger the sso process
     # for automatic sso login.
 
-    # send DELETE /session/username/ to log them out
-
     def get(self, request):
         auth = get_user_auth(request)
         user = request.user

@@ -32,5 +32,5 @@ try:
     file_category = _get_or_create_category('Files', settings.DISCOURSE_CATEGORY_COLORS[0])
     wiki_category = _get_or_create_category('Wikis', settings.DISCOURSE_CATEGORY_COLORS[1])
     project_category = _get_or_create_category('Projects', settings.DISCOURSE_CATEGORY_COLORS[2])
-except requests.exceptions.ConnectionError:
-    logger.error("It seems that Discourse is not currently running. For correct Discourse functionality, please configure Discourse and make sure it is running first.")
+except DiscourseException, requests.exceptions.ConnectionError:
+    logger.exception("Discourse is either not running, or is malfunctioning. For correct Discourse functionality, please configure Discourse, make sure it is running, and restart the OSF.")

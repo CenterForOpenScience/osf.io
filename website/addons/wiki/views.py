@@ -2,6 +2,7 @@
 
 import httplib as http
 import logging
+import requests
 
 from bs4 import BeautifulSoup
 from flask import request
@@ -328,7 +329,11 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     ret['user']['can_edit_wiki_body'] = can_edit
 
     ret['discourse_url'] = website.settings.DISCOURSE_SERVER_URL
-    ret['discourse_topic_id'] = discourse.get_or_create_topic_id(wiki_page)
+    try:
+        ret['discourse_topic_id'] = discourse.get_or_create_topic_id(wiki_page)
+    except discourse.DiscourseException, requests.exceptions.ConnectionError:
+        logger.exception('Error creating Discourse topic')
+        ret['discourse_topic_id'] = None
 
     return ret
 

@@ -1808,7 +1808,7 @@ SITEMAP_PREPRINT_FILE_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('chan
 DISCOURSE_SSO_SECRET = 'changeme'
 DISCOURSE_SERVER_URL = 'http://192.168.99.100'
 DISCOURSE_API_KEY = 'changeme'
-DISCOURSE_API_ADMIN_USER = 'changeme'
+DISCOURSE_API_ADMIN_USER = 'system'
 
 DISCOURSE_CATEGORY_COLORS = ['BF1E2E', '3AB54A', '652D90']
 
@@ -1818,8 +1818,8 @@ DISCOURSE_SERVER_SETTINGS = {'title': 'Open Science Framework',
                              'contact_url': '',
                              'notification_email': 'noreply@osf.io',
                              'site_contact_username': 'system',
-                             'logo_url': '',
-                             'logo_small_url': '',
+                             'logo_url': DOMAIN + 'static/img/cos-white2.png',
+                             'logo_small_url': DOMAIN + 'static/img/cos-white2.png',
                              'favicon_url': DOMAIN + 'favicon.ico',
                              'enable_local_logins': 'false',
                              'enable_sso': 'true',
@@ -1846,5 +1846,4 @@ DISCOURSE_SERVER_SETTINGS = {'title': 'Open Science Framework',
                              'display_name_on_posts': 'true',
                              'osf_domain': DOMAIN,
                              'mfr_domain': MFR_SERVER_URL,
-                             'port': '4000',
  }

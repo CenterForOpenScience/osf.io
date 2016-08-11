@@ -123,7 +123,6 @@ def before_request():
         service_url.args.pop('ticket')
         # Attempt to authenticate wih CAS, and return a proper redirect response
         return cas.make_response_from_ticket(ticket=ticket, service_url=service_url.url)
-        #'http://discourse.mechanysm.com/session/sso?return_path='+
 
     if request.authorization:
         user = get_user(

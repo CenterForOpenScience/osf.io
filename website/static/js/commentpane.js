@@ -61,7 +61,6 @@
                 }
                 options.onOpen.call(self);
 
-
                 var discourseEmbedFrame = document.getElementById('discourse-embed-frame');
                 if (discourseEmbedFrame) {
                     // force reload.
