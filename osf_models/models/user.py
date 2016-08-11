@@ -15,6 +15,8 @@ from django.utils import timezone
 from modularodm.exceptions import NoResultsFound
 
 # OSF imports
+import framework.mongo
+from framework import analytics
 from framework.auth.exceptions import (
     ChangePasswordError,
     ExpiredTokenError,
@@ -927,3 +929,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
                                                 if each not in affiliated])
         except (IndexError, NoResultsFound):
             pass
+
+    def get_activity_points(self, db=None):
+        db = db or framework.mongo.database
+        return analytics.get_total_activity_count(self._primary_key, db=db)

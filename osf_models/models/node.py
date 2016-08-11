@@ -29,6 +29,7 @@ from osf_models.models.validators import validate_title
 from osf_models.utils.auth import Auth, get_user
 from osf_models.utils.base import api_v2_url
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf_models.modm_compat import Q
 
 from .base import BaseModel, GuidMixin
 
@@ -481,6 +482,22 @@ class AbstractNode(TypedModel, Taggable, Loggable, GuidMixin, BaseModel):
         self.save()
         return contributor
 
+    @classmethod
+    def find_for_user(cls, user, subquery=None):
+        combined_query = Q('contributors', 'eq', user)
+        if subquery is not None:
+            combined_query = combined_query & subquery
+        return cls.find(combined_query)
+
+    def can_comment(self, auth):
+        if self.comment_level == 'public':
+            return auth.logged_in and (
+                self.is_public or
+                (auth.user and self.has_permission(auth.user, 'read'))
+            )
+        return self.is_contributor(auth.user)
+
+
 class Node(AbstractNode):
     """
     Concrete Node class: Instance of AbstractNode(TypedModel). All things that inherit
@@ -488,7 +505,10 @@ class Node(AbstractNode):
 
     FYI: Behaviors common between Registration and Node should be on the parent class.
     """
-    pass
+    @property
+    def is_collection(self):
+        """Compat with v1."""
+        return False
 
 @receiver(post_save, sender=Node)
 def add_creator_as_contributor(sender, instance, created, **kwargs):
