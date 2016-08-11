@@ -71,7 +71,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
             query += 'filter[title]='+self.query()+'&';
         }
         if (!self.includePublic()){
-            myProjects = 'users/me/'
+            myProjects = 'users/me/';
         }
         var url = osfHelpers.apiV2Url(myProjects+self.inputType()+'/', {query: query+'page='+pageNum+'&embed=contributors&page[size]=5'});
         var request = osfHelpers.ajaxJSON(

@@ -46,7 +46,7 @@
                 <!-- Choose which to add -->
                 <div class="row">
 
-                    <div class="col-md-6">
+                    <div class="col-md-12">
                         <div>
                             <span data-bind="if: includePublic" class="modal-subheader">Results: All Projects</span>
                             <span data-bind="ifnot: includePublic" class="modal-subheader">Results: My Projects</span>
