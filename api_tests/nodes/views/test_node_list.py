@@ -249,6 +249,19 @@ class TestNodeFiltering(ApiTestCase):
         assert_in(self.project_one._id, ids)
         assert_not_in(self.project_two._id, ids)
 
+    def test_filter_no_tags(self):
+        project_no_tag = ProjectFactory(title="Project One", is_public=True)
+
+        url = '/{}nodes/?filter[tags]=null'.format(API_BASE)
+
+        res = self.app.get(url, auth=project_no_tag.creator.auth)
+        node_json = res.json['data']
+
+        ids = [each['id'] for each in node_json]
+        assert_not_in(self.project_one._id, ids)
+        assert_not_in(self.project_two._id, ids)
+        assert_in(project_no_tag._id, ids)
+
     def test_get_all_projects_with_no_filter_logged_in(self):
         res = self.app.get(self.url, auth=self.user_one.auth)
         node_json = res.json['data']
