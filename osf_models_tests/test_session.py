@@ -1,6 +1,7 @@
 import pytest
 
 from osf_models.models import Session
+from osf_models.modm_compat import Q
 
 @pytest.mark.django_db
 class TestSession:
@@ -17,3 +18,12 @@ class TestSession:
         session.save()
 
         assert Session.load(session._id)
+
+    def test_remove(self):
+        session, session2 = Session(data={'auth_user_id': '123ab'}), Session(data={'auth_user_id': 'ab123'})
+        session.save()
+        session2.save()
+
+        assert Session.objects.count() == 2  # sanity check
+        Session.remove(Q('data.auth_user_id', 'eq', '123ab'))
+        assert Session.objects.count() == 1
