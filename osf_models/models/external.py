@@ -47,32 +47,32 @@ class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
     # The OAuth credentials. One or both of these fields should be populated.
     # For OAuth1, this is usually the "oauth_token"
     # For OAuth2, this is usually the "access_token"
-    oauth_key = models.CharField(max_length=255)
+    oauth_key = models.CharField(max_length=255, blank=True, null=True)
 
     # For OAuth1, this is usually the "oauth_token_secret"
     # For OAuth2, this is not used
-    oauth_secret = models.CharField(max_length=255)
+    oauth_secret = models.CharField(max_length=255, blank=True, null=True)
 
     # Used for OAuth2 only
-    refresh_token = models.CharField(max_length=255)
-    expires_at = models.DateTimeField()
+    refresh_token = models.CharField(max_length=255, blank=True, null=True)
+    expires_at = models.DateTimeField(blank=True, null=True)
     scopes = DateTimeAwareJSONField(default=list)
 
     # The `name` of the service
     # This lets us query for only accounts on a particular provider
     # TODO We should make provider an actual FK someday.
-    provider = models.CharField(required=True, max_length=50)
+    provider = models.CharField(max_length=50, blank=False, null=False)
     # The proper 'name' of the service
     # Needed for account serialization
-    provider_name = models.CharField(required=True, max_length=255)
+    provider_name = models.CharField(max_length=255, blank=False, null=False)
 
     # The unique, persistent ID on the remote service.
-    provider_id = models.CharField(max_length=255)
+    provider_id = models.CharField(max_length=255, blank=True, null=True)
 
     # The user's name on the external service
-    display_name = models.CharField(max_length=255)
+    display_name = models.CharField(max_length=255, blank=True, null=True)
     # A link to the user's profile on the external service
-    profile_url = models.URLField()
+    profile_url = models.URLField(blank=True, null=True)
 
     def __repr__(self):
         return '<ExternalAccount: {}/{}>'.format(self.provider,
