@@ -222,9 +222,9 @@ def update_user(auth):
                             new_address=username)
 
             # Remove old primary email from subscribed mailing lists
-            #for list_name, subscription in user.mailchimp_mailing_lists.iteritems():
-            #    if subscription:
-            #        mailchimp_utils.unsubscribe_mailchimp_async(list_name, user._id, username=user.username)
+            for list_name, subscription in user.mailchimp_mailing_lists.iteritems():
+                if subscription:
+                    mailchimp_utils.unsubscribe_mailchimp_async(list_name, user._id, username=user.username)
 
             #for node in user.contributed:
             #    if node.mailing_enabled:
