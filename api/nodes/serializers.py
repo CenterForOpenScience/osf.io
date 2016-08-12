@@ -13,7 +13,7 @@ from website.addons.base.exceptions import InvalidFolderError, InvalidAuthError
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.models import Node, User, Comment, Institution, MetaSchema, DraftRegistration, PrivateLink
-from website.exceptions import NodeStateError
+from website.exceptions import NodeStateError, TooManyRequests
 from website.util import permissions as osf_permissions
 from website.project import new_private_link
 from website.project.model import NodeUpdateError
@@ -695,6 +695,11 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
         except ValueError as e:
             raise exceptions.NotFound(detail=e.message)
 
+        # try:
+        #     node.throttle_add_contributor(contributor=contributor, auth=auth, visible=bibliographic, permissions=permissions, save=True)
+        # except TooManyRequests:
+        #     raise exceptions.Throttled(detail='Too many contributor adds. Please wait a while and try again')
+        
         return contributor
 
 
