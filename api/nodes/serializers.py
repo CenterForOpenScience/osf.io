@@ -12,9 +12,10 @@ from django.conf import settings
 from website.addons.base.exceptions import InvalidFolderError, InvalidAuthError
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
-from website.models import Node, User, Comment, Institution, MetaSchema, DraftRegistration
+from website.models import Node, User, Comment, Institution, MetaSchema, DraftRegistration, PrivateLink
 from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
+from website.project import new_private_link
 from website.project.model import NodeUpdateError
 
 from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse, is_truthy
@@ -222,6 +223,11 @@ class NodeSerializer(JSONAPISerializer):
         self_view='nodes:node-pointer-relationship',
         self_view_kwargs={'node_id': '<pk>'},
         self_meta={'count': 'get_node_links_count'}
+    )
+
+    view_only_links = RelationshipField(
+        related_view='nodes:node-view-only-links',
+        related_view_kwargs={'node_id': '<pk>'},
     )
 
     def get_current_user_permissions(self, obj):
@@ -1000,3 +1006,96 @@ class DraftRegistrationDetailSerializer(DraftRegistrationSerializer):
             draft.update_metadata(metadata)
             draft.save()
         return draft
+
+
+class NodeVOL(ser.Field):
+    def to_representation(self, obj):
+        if obj is not None:
+            return obj._id
+        return None
+
+    def to_internal_value(self, data):
+        return data
+
+
+class NodeViewOnlyLinkSerializer(JSONAPISerializer):
+    filterable_fields = frozenset([
+        'anonymous',
+        'name',
+        'date_created'
+    ])
+
+    key = ser.CharField(read_only=True)
+    id = IDField(source='_id', read_only=True)
+    date_created = ser.DateTimeField(read_only=True)
+    anonymous = ser.BooleanField(required=False, default=False)
+    name = ser.CharField(required=False, default='Shared project link')
+
+    links = LinksField({
+        'self': 'get_absolute_url'
+    })
+
+    creator = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<creator._id>'},
+    )
+
+    nodes = RelationshipField(
+        related_view='view-only-links:view-only-link-nodes',
+        related_view_kwargs={'link_id': '<_id>'},
+        self_view='view-only-links:view-only-link-nodes-relationships',
+        self_view_kwargs={'link_id': '<_id>'}
+    )
+
+    def create(self, validated_data):
+        name = validated_data.pop('name')
+        user = get_user_auth(self.context['request']).user
+        anonymous = validated_data.pop('anonymous')
+        node = self.context['view'].get_node()
+
+        try:
+            view_only_link = new_private_link(
+                name=name,
+                user=user,
+                nodes=[node],
+                anonymous=anonymous
+            )
+        except ValidationValueError:
+            raise exceptions.ValidationError('Invalid link name.')
+
+        return view_only_link
+
+    def get_absolute_url(self, obj):
+        node_id = self.context['request'].parser_context['kwargs']['node_id']
+        return absolute_reverse(
+            'nodes:node-view-only-link-detail',
+            kwargs={
+                'link_id': obj._id,
+                'node_id': node_id
+            }
+        )
+
+    class Meta:
+        type_ = 'view_only_links'
+
+
+class NodeViewOnlyLinkUpdateSerializer(NodeViewOnlyLinkSerializer):
+    """
+    Overrides NodeViewOnlyLinkSerializer to not default name and anonymous on update.
+    """
+    name = ser.CharField(required=False)
+    anonymous = ser.BooleanField(required=False)
+
+    def update(self, link, validated_data):
+        assert isinstance(link, PrivateLink), 'link must be a PrivateLink'
+
+        name = validated_data.get('name')
+        anonymous = validated_data.get('anonymous')
+
+        if name:
+            link.name = name
+        if anonymous:
+            link.anonymous = anonymous
+
+        link.save()
+        return link
