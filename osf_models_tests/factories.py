@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 import functools
-import datetime as dt
 
 import factory
 import pytz
 from factory.django import DjangoModelFactory
+from django.utils import timezone
 from faker import Factory
 from modularodm.exceptions import NoResultsFound
 
@@ -51,8 +51,8 @@ class UserFactory(DjangoModelFactory):
 class UnregUserFactory(DjangoModelFactory):
     email = factory.Faker('email')
     fullname = factory.Faker('name')
-    date_confirmed = factory.Faker('date_time')
-    date_registered = factory.Faker('date_time')
+    date_confirmed = factory.Faker('date_time', tzinfo=pytz.utc)
+    date_registered = factory.Faker('date_time', tzinfo=pytz.utc)
 
     class Meta:
         model = models.OSFUser
@@ -90,7 +90,7 @@ class UnconfirmedUserFactory(DjangoModelFactory):
         instance = target_class.create_unconfirmed(
             username=username, password=password, fullname=fullname
         )
-        instance.date_registered = fake.date_time()
+        instance.date_registered = fake.date_time(tzinfo=pytz.utc)
         return instance
 
     @classmethod
@@ -98,7 +98,7 @@ class UnconfirmedUserFactory(DjangoModelFactory):
         instance = target_class.create_unconfirmed(
             username=username, password=password, fullname=fullname
         )
-        instance.date_registered = fake.date_time()
+        instance.date_registered = fake.date_time(tzinfo=pytz.utc)
 
         instance.save()
         return instance
@@ -107,7 +107,7 @@ class UnconfirmedUserFactory(DjangoModelFactory):
 class NodeFactory(DjangoModelFactory):
     title = factory.Faker('catch_phrase')
     description = factory.Faker('sentence')
-    date_created = factory.LazyFunction(dt.datetime.now)
+    date_created = factory.LazyFunction(timezone.now)
     creator = factory.SubFactory(UserFactory)
 
     class Meta:
