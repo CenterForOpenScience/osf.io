@@ -10,6 +10,7 @@ The following instructions are specific to running Discourse from a Mac environm
 
 ###Get access to our target machine
 Install Docker Toolbox and set up a default virtual machine. The default 1GB of ram should be enough for testing. The docker-machine command line tool should expose all the needed commands to manage the virtual machine.
+Use `docker-machine create --driver virtualbox --virtualbox-disk-size "100000" default` to create a new virtual machine with a maximum storage of 100GB. The default storage allotment will likely not be enough.
 Use `docker-machine ls` to determine the ip address of the virtual machine.
 Use `docker-machine ssh` to ssh into the default machine.
 
@@ -23,7 +24,7 @@ git clone https://github.com/discourse/discourse_docker.git /var/discourse
 cd /var/discourse</pre>
 
 ###Basic Configuration and Running Discourse
-The files in /var/discourse/containers/ describe different Discourse configurations. Copy the app.yml file from this directory into that folder.
+The files in /var/discourse/containers/ describe different Discourse configurations. Copy the app.yml file from the directory of this readme into that folder.
 
 In app.yml use nano (or your favorite command line editor) to set `DISCOURSE_HOSTNAME` to the ip address of the virtual machine and `DISCOURSE_DEVELOPER_EMAILS` to your email address. It only needs to be a real email address if a real SMTP server is used.
 
