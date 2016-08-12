@@ -289,11 +289,11 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('guid', models.CharField(db_index=True, default=osf_models.utils.base.get_object_id, max_length=255, unique=True)),
-                ('datetime_initiated', models.DateTimeField()),
-                ('datetime_updated', models.DateTimeField()),
+                ('datetime_initiated', models.DateTimeField(default=django.utils.timezone.now)),
+                ('datetime_updated', models.DateTimeField(auto_now=True)),
                 ('registration_metadata', osf_models.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(default=dict)),
-                ('_metaschema_flags', osf_models.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(default=dict)),
-                ('notes', models.TextField()),
+                ('_metaschema_flags', osf_models.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict)),
+                ('notes', models.TextField(blank=True)),
             ],
             options={
                 'abstract': False,
@@ -438,7 +438,7 @@ class Migration(migrations.Migration):
                 ('guid', models.CharField(db_index=True, default=osf_models.utils.base.get_object_id, max_length=255, unique=True)),
                 ('name', models.CharField(max_length=255)),
                 ('schema', osf_models.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(default=dict)),
-                ('category', models.CharField(max_length=255)),
+                ('category', models.CharField(blank=True, max_length=255, null=True)),
                 ('schema_version', models.IntegerField()),
             ],
         ),
@@ -604,7 +604,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='draftregistration',
             name='approval',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='osf_models.DraftRegistrationApproval'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='osf_models.DraftRegistrationApproval'),
         ),
         migrations.AddField(
             model_name='draftregistration',
@@ -835,7 +835,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='draftregistration',
             name='registered_node',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='draft_registration', to='osf_models.Node'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='draft_registration', to='osf_models.Node'),
         ),
         migrations.AlterUniqueTogether(
             name='contributor',

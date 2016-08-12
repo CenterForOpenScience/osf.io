@@ -18,7 +18,7 @@ class PrivateLink(ObjectIDMixin, BaseModel):
 
     @property
     def node_ids(self):
-        return self.nodes.values_list('_guid__guid', flat=True)
+        return self.nodes.filter(is_deleted=False).values_list('_guid__guid', flat=True)
 
     def node_scale(self, node):
         # node may be None if previous node's parent is deleted
@@ -37,6 +37,6 @@ class PrivateLink(ObjectIDMixin, BaseModel):
             'creator': {'fullname': self.creator.fullname, 'url': self.creator.profile_url},
             'nodes': [{'title': x.title, 'url': x.url,
                        'scale': str(self.node_scale(x)) + 'px', 'category': x.category}
-                      for x in self.nodes if not x.is_deleted],
+                      for x in self.nodes.filter(is_deleted=False)],
             'anonymous': self.anonymous
         }
