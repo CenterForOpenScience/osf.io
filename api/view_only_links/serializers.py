@@ -1,7 +1,7 @@
 from rest_framework import serializers as ser
-from rest_framework.exceptions import PermissionDenied, NotFound, ValidationError
+from rest_framework.exceptions import PermissionDenied, NotFound
 
-from api.base.exceptions import RelationshipPostMakesNoChanges
+from api.base.exceptions import RelationshipPostMakesNoChanges, NonDescendantNodeError
 from api.base.serializers import (
     JSONAPISerializer, IDField, RelationshipField,
     JSONAPIRelationshipSerializer, LinksField, relationship_diff
@@ -113,7 +113,7 @@ class ViewOnlyLinkNodesSerializer(ser.Serializer):
             if not node.has_permission(user, 'admin'):
                 raise PermissionDenied
             if node not in eligible_nodes:
-                raise ValidationError(detail='The node {0} cannot be affiliated with this VOL because it is not a child of the associated VOL node.'.format(node._id))
+                raise NonDescendantNodeError(node_id=node._id)
             view_only_link.nodes.append(node)
 
         view_only_link.save()
@@ -144,7 +144,7 @@ class ViewOnlyLinkNodesSerializer(ser.Serializer):
             if not node.has_permission(user, 'admin'):
                 raise PermissionDenied
             if node not in eligible_nodes:
-                raise ValidationError(detail='The node {0} cannot be affiliated with this VOL because it is not a child of the associated VOL node.'.format(node._id))
+                raise NonDescendantNodeError(node_id=node._id)
             view_only_link.nodes.append(node)
         view_only_link.save()
 

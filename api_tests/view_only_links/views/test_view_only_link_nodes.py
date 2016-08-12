@@ -122,7 +122,7 @@ class TestViewOnlyLinkNodesSet(ViewOnlyLinkTestCase):
         }
         res = self.app.post_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'The node {0} cannot be affiliated with this VOL because it is not a child of the associated VOL node.'.format(self.project_two._id))
+        assert_equal(res.json['errors'][0]['detail'], 'The node {0} cannot be affiliated with this View Only Link because the node you\'re trying to affiliate is not descended from the node that the View Only Link is attached to.'.format(self.project_two._id))
 
     def test_set_node_second_level_component_without_first_level_parent(self):
         """
@@ -344,7 +344,7 @@ class TestViewOnlyLinkNodesUpdate(TestViewOnlyLinkNodesSet):
         }
         res = self.app.put_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'The node {0} cannot be affiliated with this VOL because it is not a child of the associated VOL node.'.format(self.component_one._id))
+        assert_equal(res.json['errors'][0]['detail'], 'The node {0} cannot be affiliated with this View Only Link because the node you\'re trying to affiliate is not descended from the node that the View Only Link is attached to.'.format(self.component_one._id))
 
     def test_update_node_not_component(self):
         payload = {
@@ -355,7 +355,7 @@ class TestViewOnlyLinkNodesUpdate(TestViewOnlyLinkNodesSet):
         }
         res = self.app.put_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'The node {0} cannot be affiliated with this VOL because it is not a child of the associated VOL node.'.format(self.project_two._id))
+        assert_equal(res.json['errors'][0]['detail'], 'The node {0} cannot be affiliated with this View Only Link because the node you\'re trying to affiliate is not descended from the node that the View Only Link is attached to.'.format(self.project_two._id))
 
     def test_update_node_second_level_component_without_first_level_parent(self):
         """

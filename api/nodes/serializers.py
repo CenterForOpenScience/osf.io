@@ -15,7 +15,6 @@ from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.models import Node, User, Comment, Institution, MetaSchema, DraftRegistration, PrivateLink
 from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
-from website.util.sanitize import strip_html
 from website.project import new_private_link
 from website.project.model import NodeUpdateError
 
