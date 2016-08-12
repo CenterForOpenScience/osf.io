@@ -12,6 +12,8 @@ from nose.tools import *  # flake8: noqa
 
 from rest_framework import serializers as ser
 
+from unittest import TestCase
+
 from tests.base import ApiTestCase
 
 from api.base.filters import (
@@ -507,3 +509,75 @@ class TestODMOrderingFilter(ApiTestCase):
                 self.query_with_num(title='Activity', number=40)]
         actual = [x.number for x in sorted(objs, cmp=filters.sort_multiple(['title', '-number']))]
         assert_equal(actual, [40, 30, 10, 20])
+
+
+class TestQueryPatternRegex(TestCase):
+
+    def setUp(self):
+        super(TestQueryPatternRegex, self).setUp()
+        self.filter_regex = FakeView.QUERY_PATTERN
+        self.filter_fields = FakeView.FILTER_FIELDS
+
+    def test_single_field_filter(self):
+        filter_str = 'filter[name]'
+        match = self.filter_regex.match(filter_str)
+        fields = match.groupdict()['fields']
+        field_names = re.findall(self.filter_fields, fields)
+        assert_equal(fields, 'name')
+        assert_equal(field_names[0], 'name')
+
+    def test_double_field_filter(self):
+        filter_str = 'filter[name,id]'
+        match = self.filter_regex.match(filter_str)
+        fields = match.groupdict()['fields']
+        field_names = re.findall(self.filter_fields, fields)
+        assert_equal(fields, 'name,id')
+        assert_equal(field_names[0], 'name')
+        assert_equal(field_names[1], 'id')
+
+    def test_multiple_field_filter(self):
+        filter_str = 'filter[name,id,another,field,here]'
+        match = self.filter_regex.match(filter_str)
+        fields = match.groupdict()['fields']
+        field_names = re.findall(self.filter_fields, fields)
+        assert_equal(fields, 'name,id,another,field,here')
+        assert_equals(len(field_names), 5)
+
+    def test_single_field_filter_end_comma(self):
+        filter_str = 'filter[name,]'
+        match = self.filter_regex.match(filter_str)
+        assert_false(match)
+
+    def test_multiple_field_filter_end_comma(self):
+        filter_str = 'filter[name,id,]'
+        match = self.filter_regex.match(filter_str)
+        assert_false(match)
+
+    def test_multiple_field_filter_with_spaces(self):
+        filter_str = 'filter[name,  id]'
+        match = self.filter_regex.match(filter_str)
+        fields = match.groupdict()['fields']
+        field_names = re.findall(self.filter_fields, fields)
+        assert_equal(fields, 'name,  id')
+        assert_equal(field_names[0], 'name')
+        assert_equal(field_names[1], 'id')
+
+    def test_multiple_field_filter_with_blank_field(self):
+        filter_str = 'filter[name,  ,  id]'
+        match = self.filter_regex.match(filter_str)
+        assert_false(match)
+
+    def test_multiple_field_filter_non_match(self):
+        filter_str = 'filter[name; id]'
+        match = self.filter_regex.match(filter_str)
+        assert_false(match)
+
+    def test_single_field_filter_non_match(self):
+        filter_str = 'fitler[name]'
+        match = self.filter_regex.match(filter_str)
+        assert_false(match)
+
+    def test_single_field_non_alphanumeric_character(self):
+        filter_str = 'fitler[<name>]'
+        match = self.filter_regex.match(filter_str)
+        assert_false(match)

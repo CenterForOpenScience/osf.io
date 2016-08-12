@@ -61,6 +61,7 @@ class FilterMixin(object):
     """ View mixin with helper functions for filtering. """
 
     QUERY_PATTERN = re.compile(r'^filter\[(?P<fields>((?:,*\s*\w+)*))\](\[(?P<op>\w+)\])?$')
+    FILTER_FIELDS = re.compile(r'(?:,*\s*(\w+)+)')
 
     MATCH_OPERATORS = ('contains', 'icontains')
     MATCHABLE_FIELDS = (ser.CharField, ser.ListField)
@@ -192,7 +193,7 @@ class FilterMixin(object):
             if match:
                 match_dict = match.groupdict()
                 fields = match_dict['fields']
-                field_names = re.findall(r'(?:,*\s*(\w+)+)', fields.strip())
+                field_names = re.findall(self.FILTER_FIELDS, fields.strip())
                 query.update({key: {}})
 
                 for field_name in field_names:
