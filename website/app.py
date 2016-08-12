@@ -156,6 +156,7 @@ PATCHED_MODELS = (
     'NodeLicense',
     'NodeLicenseRecord',
     'Guid',
+    'MetaSchema',
 )
 
 # TODO: This won't work for modules that do e.g. `from website import models`. Rethink.
