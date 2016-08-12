@@ -158,12 +158,19 @@ class Guid(BaseModel):
         """The model instance that this Guid refers to. May return an instance of
         any model that inherits from GuidMixin.
         """
-        for relationship in self._meta.get_all_related_objects():
+        # Because the related_name for '_guid' is dynamic (e.g. 'referent_osfuser'), we need to check each one-to-one field
+        # until we find a match
+        referent_fields = (each for each in self._meta.get_fields() if each.one_to_one and each.name.startswith('referent'))
+        for relationship in referent_fields:
             try:
                 return getattr(self, relationship.name)
             except relationship.related_model.DoesNotExist:
                 continue
         return None
+
+    @referent.setter
+    def referent(self, obj):
+        obj._guid = self
 
 
 class BlackListGuid(models.Model):
@@ -243,6 +250,7 @@ class ObjectIDMixin(models.Model):
 class GuidMixin(models.Model):
     _guid = models.OneToOneField('Guid',
                                  default=generate_guid_instance,
+                                 null=True, blank=True,
                                  unique=True,
                                  related_name='referent_%(class)s')
 
