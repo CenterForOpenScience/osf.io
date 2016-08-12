@@ -14,10 +14,11 @@ from framework.exceptions import PermissionsError
 from website import settings
 from website import filters
 
-from osf_models.models import OSFUser as User, Tag, Node, Contributor
+from osf_models.models import OSFUser as User, Tag, Node, Contributor, Session
 from osf_models.utils.auth import Auth
 from osf_models.utils.names import impute_names_model
 from osf_models.exceptions import ValidationError
+from osf_models.modm_compat import Q
 
 from .factories import (
     fake,
@@ -442,7 +443,6 @@ class TestProjectsInCommon:
         assert user.n_projects_in_common(user3) == 0
 
 
-@pytest.mark.skip('Session model not yet implemented')
 @pytest.mark.django_db
 class TestCookieMethods:
 
@@ -492,18 +492,14 @@ class TestCookieMethods:
         cookie = user.get_or_create_cookie()
         session = Session.find_one(Q('data.auth_user_id', 'eq', user._id))
         del session.data['auth_user_id']
-        assert 'data' in session.save()
-
+        session.save()
         assert User.from_cookie(cookie) is None
 
     def test_get_user_by_cookie_no_session(self):
         user = UserFactory()
         cookie = user.get_or_create_cookie()
-        Session.remove()
-        assert(
-            Session.find(Q('data.auth_user_id', 'eq', user._id)).count() == 0
-        )
-        assert None == User.from_cookie(cookie)
+        Session.objects.all().delete()
+        assert User.from_cookie(cookie) is None
 
 
 @pytest.mark.django_db
