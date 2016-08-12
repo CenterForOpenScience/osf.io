@@ -17,3 +17,4 @@ from osf_models.models.queued_mail import QueuedMail  # noqa
 from osf_models.models.external import ExternalAccount, ExternalProvider  # noqa
 from osf_models.models.oauth import ApiOauth2Application, ApiOAuth2PersonalToken, ApiOAuth2Scope  # noqa
 from osf_models.models.licenses import NodeLicense, NodeLicenseRecord  # noqa
+from osf_models.models.private_link import PrivateLink  # noqa
