@@ -389,7 +389,7 @@ def view_project(auth, node, **kwargs):
 
     try:
         ret['discourse_topic_id'] = discourse.get_or_create_topic_id(node)
-    except discourse.DiscourseException, requests.exceptions.ConnectionError:
+    except (discourse.DiscourseException, requests.exceptions.ConnectionError):
         logger.exception('Error creating Discourse topic')
         ret['discourse_topic_id'] = None
 
@@ -691,7 +691,7 @@ def _view_project(node, auth, primary=False,
     if user:
         try:
             discourse_user_apikey = discourse.get_user_apikey()
-        except discourse.DiscourseException, requests.exceptions.ConnectionError:
+        except (discourse.DiscourseException, requests.exceptions.ConnectionError):
             logger.exception('Error getting Discourse user API key')
 
     data = {

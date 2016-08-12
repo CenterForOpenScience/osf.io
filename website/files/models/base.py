@@ -139,7 +139,7 @@ class TrashedFileNode(StoredObject, Commentable):
 
         try:
             discourse.undelete_topic(restored)
-        except discourse.DiscourseException, requests.exceptions.ConnectionError:
+        except (discourse.DiscourseException, requests.exceptions.ConnectionError):
             logger.exception('Error undeleting Discourse topic')
 
         TrashedFileNode.remove_one(self)
@@ -318,7 +318,7 @@ class StoredFileNode(StoredObject, Commentable):
         if self.discourse_topic_id:
             try:
                 discourse.sync_topic(self)
-            except discourse.DiscourseException, requests.exceptions.ConnectionError:
+            except (discourse.DiscourseException, requests.exceptions.ConnectionError):
                 logger.exception('Error syncing/creating Discourse topic')
         return value
 
@@ -570,7 +570,7 @@ class FileNode(object):
         """
         try:
             discourse.delete_topic(self)
-        except discourse.DiscourseException, requests.exceptions.ConnectionError:
+        except (discourse.DiscourseException, requests.exceptions.ConnectionError):
             logger.exception('Error deleting Discourse topic')
 
         trashed = self._create_trashed(user=user, parent=parent)

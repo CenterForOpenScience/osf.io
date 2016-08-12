@@ -396,7 +396,7 @@ def auth_logout(redirect_url=None):
     """
     try:
         discourse.logout()
-    except discourse.DiscourseException, requests.exceptions.ConnectionError:
+    except (discourse.DiscourseException, requests.exceptions.ConnectionError):
         logger.exception('Error logging user out of Discourse');
 
     # OSF tells CAS where it wants to be redirected back after successful logout.

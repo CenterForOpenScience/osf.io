@@ -739,7 +739,7 @@ def addon_view_file(auth, node, file_node, version):
     ret['discourse_url'] = settings.DISCOURSE_SERVER_URL
     try:
         ret['discourse_topic_id'] = discourse.get_or_create_topic_id(file_node)
-    except discourse.DiscourseException, requests.exceptions.ConnectionError:
+    except (discourse.DiscourseException, requests.exceptions.ConnectionError):
         logger.exception('Error creating Discourse topic')
         ret['discourse_topic_id'] = None
 

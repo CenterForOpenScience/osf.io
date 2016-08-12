@@ -1743,7 +1743,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         # For project public/private and contributors
         try:
             discourse.sync_project(self)
-        except discourse.DiscourseException, requests.exceptions.ConnectionError:
+        except (discourse.DiscourseException, requests.exceptions.ConnectionError):
             logger.exception('Error syncing/creating Discourse project')
 
         # Return expected value for StoredObject::save

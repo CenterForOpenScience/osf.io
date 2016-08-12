@@ -331,7 +331,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     ret['discourse_url'] = website.settings.DISCOURSE_SERVER_URL
     try:
         ret['discourse_topic_id'] = discourse.get_or_create_topic_id(wiki_page)
-    except discourse.DiscourseException, requests.exceptions.ConnectionError:
+    except (discourse.DiscourseException, requests.exceptions.ConnectionError):
         logger.exception('Error creating Discourse topic')
         ret['discourse_topic_id'] = None
 
