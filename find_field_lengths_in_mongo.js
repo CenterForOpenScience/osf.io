@@ -1,23 +1,16 @@
-/*
-  Finds the longest value in the database for the specific field. 
 
-  Change "field_name" to the field name that you want the maximum length for
-  then run =>
-
-  $ mongo osf20130903 < find_field_lengths_in_mongo.js
-*/
 
 function findMax() {
     var max = 0;
 
-    db.externalaccount.find().forEach(function(doc) {
-        var currentLength = doc.field_name.length;
+    db.apioauth2personaltoken.find().forEach(function(doc) {
+        var currentLength = doc.scopes.length;
         if (currentLength > max) {
            max = currentLength;
         }
     });
 
-     print(max);
+    print(max);
 }
 
 use osf20130903
