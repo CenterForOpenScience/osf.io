@@ -6,7 +6,7 @@ from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.dispatch import receiver
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save
 from django.utils import timezone
 from typedmodels.models import TypedModel
 
@@ -88,9 +88,8 @@ class AbstractNode(TypedModel, Taggable, Loggable, GuidMixin, BaseModel):
     is_public = models.BooleanField(default=False, db_index=True)
     is_deleted = models.BooleanField(default=False, db_index=True)
     node_license = models.ForeignKey('NodeLicenseRecord', related_name='nodes', on_delete=models.SET_NULL, null=True, blank=True)
-    nodes = models.ManyToManyField('self', related_name='children')
     parent_node = models.ForeignKey('self',
-                                    related_name='parent',
+                                    related_name='nodes',
                                     on_delete=models.SET_NULL,
                                     null=True, blank=True)
     # permissions = Permissions are now on contributors
@@ -121,6 +120,10 @@ class AbstractNode(TypedModel, Taggable, Loggable, GuidMixin, BaseModel):
     # Dictionary field mapping node wiki page to sharejs private uuid.
     # {<page_name>: <sharejs_id>}
     wiki_private_uuids = DateTimeAwareJSONField(default=dict, blank=True)
+
+    def __init__(self, *args, **kwargs):
+        self._parent = kwargs.pop('parent', None)
+        super(AbstractNode, self).__init__(*args, **kwargs)
 
     def __unicode__(self):
         return u'{} : ({})'.format(self.title, self._id)
@@ -524,6 +527,11 @@ def add_creator_as_contributor(sender, instance, created, **kwargs):
             write=True,
             admin=True
         )
+
+@receiver(pre_save, sender=Node)
+def set_parent(sender, instance, *args, **kwargs):
+    if getattr(instance, '_parent', None):
+        instance.parent_node = instance._parent
 
 class Collection(GuidMixin, BaseModel):
     # TODO: Uncomment auto_* attributes after migration is complete
