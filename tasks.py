@@ -39,6 +39,8 @@ def setup_tests(ctx, update=False, requirements=True, branch=POSTGRES_BRANCH):
     except IOError:
         pass
     if requirements:
+        # Install list-of-licenses package
+        ctx.run('npm install list-of-licenses')
         # Install osf requirements
         ctx.run('pip install -r {}'.format(os.path.join('requirements.txt')), echo=True)
         # Install osf-models test requirements
