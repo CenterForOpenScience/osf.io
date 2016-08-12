@@ -3,6 +3,7 @@ import functools
 import datetime as dt
 
 import factory
+import pytz
 from factory.django import DjangoModelFactory
 from faker import Factory
 from modularodm.exceptions import NoResultsFound
@@ -27,7 +28,7 @@ class UserFactory(DjangoModelFactory):
                                                 'queenfan86')
     is_registered = True
     is_claimed = True
-    date_confirmed = factory.Faker('date_time')
+    date_confirmed = factory.Faker('date_time_this_decade', tzinfo=pytz.utc)
     merged_by = None
     verification_key = None
 
