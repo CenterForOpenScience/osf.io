@@ -18,9 +18,7 @@ class PrivateLink(ObjectIDMixin, BaseModel):
 
     @property
     def node_ids(self):
-        # TODO: do this the django way
-        node_ids = [node._id for node in self.nodes]
-        return node_ids
+        return self.nodes.values_list('_guid__guid', flat=True)
 
     def node_scale(self, node):
         # node may be None if previous node's parent is deleted
