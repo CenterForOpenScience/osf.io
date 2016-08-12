@@ -196,7 +196,11 @@ var BaseComment = function() {
 
     //Calculates the remaining character length
     self.remainingLength = ko.computed(function() {
-        return 500 - self.replyContent().length;
+        if (self.replyContent() == null) {
+            return 500;
+        } else {
+            return 500 - self.replyContent().length;
+        }
     });
 
     //submittingReply ensures that user does not click Comment button twice and submit comment twice
