@@ -155,7 +155,7 @@
                 % endif
                 % if node['is_registration']:
                     <p>
-                    Registration Supplement:
+                    Registration Form:
                     % for meta_schema in node['registered_schemas']:
                     <a href="${node['url']}register/${meta_schema['id']}">${meta_schema['schema_name']}</a>
                       % if len(node['registered_schemas']) > 1:
