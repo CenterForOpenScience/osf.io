@@ -86,8 +86,8 @@ hooks:
         cd: $home/plugins
         cmd:
           - git clone https://github.com/discourse/docker_manager.git
-          - git clone https://github.com/acshi/discourse-osf-plugin.git
-          - git clone https://github.com/acshi/discourse-osf-projects.git
+          - git clone https://github.com/CenterForOpenScience/discourse-osf-plugin.git
+          - git clone https://github.com/CenterForOpenScience/discourse-osf-projects.git
     - exec:
         cd: $home/script/import_scripts
         cmd:

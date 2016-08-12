@@ -28,20 +28,20 @@ The files in /var/discourse/containers/ describe different Discourse configurati
 
 In app.yml use nano (or your favorite command line editor) to set `DISCOURSE_HOSTNAME` to the ip address of the virtual machine and `DISCOURSE_DEVELOPER_EMAILS` to your email address. It only needs to be a real email address if a real SMTP server is used.
 
-The app.yml SMTP settings are intended for debugging with `python -m smtpd -n -c DebuggingServer localhost:387` running on the host machine. They should be changed in production to point to a real SMTP server. They assume the virtual machine sees the host machine at 10.0.2.2. This can be checked by running `route` in the virtual machine and checking the default gateway.
+The app.yml SMTP settings are intended for debugging with `sudo python -m smtpd -n -c DebuggingServer localhost:387` running on the host machine. They should be changed in production to point to a real SMTP server. They assume the virtual machine sees the host machine at 10.0.2.2. This can be checked by running `route` in the virtual machine and checking the default gateway.
 
 From /var/discourse run `./launcher rebuild app` to bootstrap and start the Discourse instance. This can also be used to update Discourse after changes are made in app.yml or the github repositories mentioned in it are changed.
 
 If you get a complaint that port 80 is already in use, determine the PID of the offending process with `netstat -nlp` and kill it. I had this problem with a docker-proxy process. However, there only seemed to be interference on the initial bootstrap and not once actually running Discourse.
 
 ###More Configuration
-Make sure that an SMTP server is setup, even if it is just with `python -m smtpd -n -c DebuggingServer localhost:387`.
+Make sure that an SMTP server is setup, even if it is just with `sudo python -m smtpd -n -c DebuggingServer localhost:387`.
 
 Discourse should be accessible at port 80 of the ip address of the virtual machine. Navigate to the new Discourse instance and proceed to setup a new account using the email address previously specified in `DISCOURSE_DEVELOPER_EMAILS`. The password used doesn't really matter because we will configure Discourse for Single Sign On through the OSF.
 
 Confirm the new account by navigating to the confirmation link which should appear in the python smtpd output. If the email setup doesn't work right away for you, it might be easier to use a script instead. From within the virtual machine run `./launcher enter app`, navigate to /var/www/discourse and then run `rake admin:create`. If it gives you trouble, you might need to prepend that with `RAILS_ENV=production bundle exec`. The script should leave you with a confirmed admin user.
 
-Now logged in, click on the triple bar drop down in the top right corner and navigate to settings. Navigate to API settings and then create an All Users API key.
+Now logged in, click on the triple bar drop down in the top right corner and navigate to settings. Navigate to API settings and then generate the Master API key.
 
 Open up your OSF website/settings/local.py file. Enter the API key we just created as the value for `DISCOURSE_API_KEY`. Also generate a random ~128 bit entropy string, for example with https://www.random.org/bytes/ and use this for `DISCOURSE_SSO_SECRET`. Also make sure that `DISCOURSE_SERVER_URL` points to your Discourse instance. Locally, this will be the ip address of virtual machine. You will also need to set the `contact_email` in the list of Discourse settings. This large list of settings can all be later changed from the admin interface in Discourse.
 
@@ -69,14 +69,14 @@ Most of the steps listed above still apply, but there are some important differe
 
 The basic instructions for setup can be found at https://meta.discourse.org/t/beginners-guide-to-install-discourse-on-ubuntu-for-development/14727 . First follow those instructions to install Discourse with Vagrant. Pull the discourse git repo to someplace convenient for development. In this mode, I was not able to get SideKiq and email to work at all, so don't worry about them.
 
-One of the great things about Vagrant is that it will mount your project directory inside of the virtual machine. This means, we don't have to bother with scp or cp to get files between the host machine and Discourse. To install the OSF integration plugins. Navigate to discourse/plugins and then run `git clone https://github.com/acshi/discourse-osf-plugin.git` and `git clone https://github.com/acshi/discourse-osf-projects.git`. If you plan on modifying these plugins (you probably are if you are bothering with the Development setup), first branch them yourself and then `git clone` your own branches.
+One of the great things about Vagrant is that it will mount your project directory inside of the virtual machine. This means, we don't have to bother with scp or cp to get files between the host machine and Discourse. To install the OSF integration plugins. Navigate to discourse/plugins and then run `git clone https://github.com/CenterForOpenScience/discourse-osf-plugin` and `git clone https://github.com/CenterForOpenScience/discourse-osf-projects`. If you plan on modifying these plugins (you probably are if you are bothering with the Development setup), first branch them yourself and then `git clone` your own branches.
 
 Before trying out/starting up the new server (which will probably be at localhost:4000), you need to make an admin account. Run `vagrant ssh` from the discourse directory to enter your virtual machine. Navigate to /vagrant and then run `rake admin:create` and follow the prompts. You can startup the server from /vagrant by running `rails s -b 0.0.0.0`. If you want to manually test or modify the Discourse database you can run `rails c` to bring up a console with complete access to Discourse, but not the plugins.
 
 You should now be able to log-in, create the admin API Key, and configure Discourse as detailed above. The migration process should be significantly simpler because you won't have to continually copy files between virtual machines and docker containers since your discourse development directory on the host is mounted in the virtual machine at /vagrant.
 
 ##Structure
-There are three basic parts to the OSF/Discourse integration. Changes on the OSF directly, and then two Discourse plugins: discourse-osf-projects at https://github.com/acshi/discourse-osf-projects, and discourse-osf-plugin at https://github.com/acshi/discourse-osf-plugin.
+There are three basic parts to the OSF/Discourse integration. Changes on the OSF directly, and then two Discourse plugins: discourse-osf-projects at https://github.com/CenterForOpenScience/discourse-osf-projects, and discourse-osf-plugin at https://github.com/CenterForOpenScience/discourse-osf-plugin.
 
 ###Changes to the OSF
 The framework.discourse module provides a fairly thin wrapper around queries to the Discourse REST API. The majority of the methods operate on Project/File/Wiki nodes and synchronize information between the OSF and Discourse. It stores information in the OSF objects about the state of Discourse so that no more requests are made than necessary. The more interesting methods includes sync_project, which causes Discourse to make sure a forum for that project is setup with the correct name, contributors, and visibility permissions.
