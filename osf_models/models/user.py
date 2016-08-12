@@ -488,7 +488,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         if campaign:
             # needed to prevent cirular import
             from framework.auth.campaigns import system_tag_for_campaign  # skipci
-            user.system_tags.append(system_tag_for_campaign(campaign))
+            # User needs to be saved before adding system tags (due to m2m relationship)
+            user.save()
+            user.add_system_tag(system_tag_for_campaign(campaign))
         return user
 
     def get_unconfirmed_email_for_token(self, token):
