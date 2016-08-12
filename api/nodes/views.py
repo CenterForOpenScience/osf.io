@@ -56,7 +56,7 @@ from api.nodes.permissions import (
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
     IsAdminOrReviewer,
-    AdminOrPublicForRelationshipInstitutions,
+    WriteOrPublicForRelationshipInstitutions,
     ExcludeWithdrawals,
 )
 from api.logs.serializers import NodeLogSerializer
@@ -2662,8 +2662,8 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
                        }
         Success:       201
 
-    This requires admin permissions on the node and for the user making the request to
-    have the institutions in the payload as affiliated in their account.
+        This requires write permissions on the node and for the user making the request to
+        have the institutions in the payload as affiliated in their account.
 
     ###Update
 
@@ -2678,7 +2678,7 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
                        }
         Success:       200
 
-        This requires admin permissions on the node and for the user making the request to
+        This requires write permissions on the node and for the user making the request to
         have the institutions in the payload as affiliated in their account. This will delete
         all institutions not listed, meaning a data: [] payload does the same as a DELETE with all
         the institutions.
@@ -2696,12 +2696,13 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
                        }
         Success:       204
 
-    This requires admin permissions in the node.
+        This requires write permissions in the node. If the user has admin permissions, the institution in the payload does
+        not need to be affiliated in their account.
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        AdminOrPublicForRelationshipInstitutions
+        WriteOrPublicForRelationshipInstitutions
     )
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
@@ -2728,6 +2729,8 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
 
         for val in data:
             if val['id'] in current_insts:
+                if current_insts[val['id']] not in user.affiliated_institutions and not node.has_permission(user, 'admin'):
+                    raise PermissionDenied
                 node.remove_affiliated_institution(inst=current_insts[val['id']], user=user)
         node.save()
 
