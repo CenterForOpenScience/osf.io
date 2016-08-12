@@ -71,6 +71,14 @@ class TestOSFUser:
         assert len(user.email_verifications.keys()) == 1
         assert len(user.emails) == 0, 'primary email has not been added to emails list'
 
+    def test_create_unconfirmed_with_campaign(self):
+        name, email = fake.name(), fake.email()
+        user = User.create_unconfirmed(
+            username=email, password='foobar', fullname=name,
+            campaign='institution'
+        )
+        assert 'institution_campaign' in user.system_tags
+
     def test_update_guessed_names(self):
         name = fake.name()
         u = User(fullname=name)
