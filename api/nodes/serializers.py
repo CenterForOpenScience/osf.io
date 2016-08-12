@@ -955,6 +955,12 @@ class NodeVOL(ser.Field):
 
 
 class NodeViewOnlyLinkSerializer(JSONAPISerializer):
+    filterable_fields = frozenset([
+        'anonymous',
+        'name',
+        'date_created'
+    ])
+
     key = ser.CharField(read_only=True)
     id = IDField(source='_id', read_only=True)
     date_created = ser.DateTimeField(read_only=True)

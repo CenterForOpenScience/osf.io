@@ -2939,7 +2939,7 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
         return res
 
 
-class NodeViewOnlyLinksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
+class NodeViewOnlyLinksList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, NodeMixin):
     """
     List of view only links on a node. *Writeable*.
 
@@ -2955,7 +2955,7 @@ class NodeViewOnlyLinksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
         name            string                  name of the view only link
         anonymous       boolean                 whether the view only link has anonymized contributors
         date_created    iso8601 timestamp       timestamp when the view only link was created
-        key             string                  the view only key
+        key             string                  the view only link key
 
 
     ##Relationships
@@ -2983,9 +2983,14 @@ class NodeViewOnlyLinksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
                     }
         Success:       201 CREATED + VOL representation
 
+    ##Query Params
+
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
+    View only links may be filtered by their `name`, `anonymous`, and `date_created` attributes.
+
     #This Request/Response
     """
-
     permission_classes = (
         IsAdmin,
         base_permissions.TokenHasScope,
@@ -3000,12 +3005,15 @@ class NodeViewOnlyLinksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
     view_category = 'nodes'
     view_name = 'node-view-only-links'
 
-    def get_queryset(self):
+    def get_default_queryset(self):
         return [
             link for link in
             self.get_node().private_links
             if not link.is_deleted
         ]
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
 
 
 class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin):
