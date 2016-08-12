@@ -1,6 +1,8 @@
 import urlparse
 
+from django.utils import timezone
 from django.db import models
+
 from osf_models.models import OSFUser, MetaSchema, RegistrationApproval, Retraction, Embargo, DraftRegistrationApproval
 from osf_models.models.base import BaseModel, ObjectIDMixin
 from osf_models.models.node import AbstractNode
@@ -59,8 +61,8 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
 class DraftRegistration(ObjectIDMixin, BaseModel):
     URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/drafts/{draft_id}'
 
-    datetime_initiated = models.DateTimeField()# auto_now_add=True)
-    datetime_updated = models.DateTimeField()# auto_now=True)
+    datetime_initiated = models.DateTimeField(default=timezone.now)  # auto_now_add=True)
+    datetime_updated = models.DateTimeField(auto_now=True)
     # Original Node a draft registration is associated with
     branched_from = models.ForeignKey('Node', null=True, related_name='registered_draft')
 
@@ -82,15 +84,15 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     # }
     registration_metadata = DateTimeAwareJSONField(default=dict)
     registration_schema = models.ForeignKey('MetaSchema', null=True)
-    registered_node = models.ForeignKey('Node', null=True, related_name='draft_registration')
+    registered_node = models.ForeignKey('Node', null=True, blank=True, related_name='draft_registration')
 
-    approval = models.ForeignKey('DraftRegistrationApproval', null=True)
+    approval = models.ForeignKey('DraftRegistrationApproval', null=True, blank=True)
 
     # Dictionary field mapping extra fields defined in the MetaSchema.schema to their
     # values. Defaults should be provided in the schema (e.g. 'paymentSent': false),
     # and these values are added to the DraftRegistration
-    _metaschema_flags = DateTimeAwareJSONField(default=dict)
-    notes = models.TextField()
+    _metaschema_flags = DateTimeAwareJSONField(default=dict, blank=True)
+    notes = models.TextField(blank=True)
 
     def __repr__(self):
         return '<DraftRegistration(branched_from={self.branched_from!r}) with id {self._id!r}>'.format(self=self)

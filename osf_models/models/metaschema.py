@@ -10,7 +10,7 @@ class MetaSchema(BaseModel):
                             default=get_object_id)
     name = models.CharField(max_length=255)
     schema = DateTimeAwareJSONField(default=dict)
-    category = models.CharField(max_length=255)
+    category = models.CharField(max_length=255, null=True, blank=True)
 
     # Version of the schema to use (e.g. if questions, responses change)
     schema_version = models.IntegerField()
