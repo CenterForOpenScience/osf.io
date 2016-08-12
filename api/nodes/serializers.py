@@ -612,6 +612,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
     id = ContributorIDField(read_only=True, source='_id')
     type = TypeField()
+    index = ser.IntegerField(required=False, read_only=True)
 
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not.',
                                      default=True)
@@ -648,6 +649,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
         if unclaimed_records:
             return unclaimed_records.get('name', None)
 
+
 class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     """
     Overrides NodeContributorsSerializer to add target_type and required id field
@@ -671,21 +673,33 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
         contributor.node_id = node._id
         return contributor
 
+
 class NodeContributorDetailSerializer(NodeContributorsSerializer):
     """
     Overrides node contributor serializer to add additional methods
     """
     id = ContributorIDField(required=True, source='_id')
+    index = ser.IntegerField(required=False, read_only=False)
+    # index = ser.IntegerField(required=False)
 
     def update(self, instance, validated_data):
+        index = None
+        if 'index' in validated_data:
+            index = validated_data.pop('index')
+
         contributor = instance
         auth = Auth(self.context['request'].user)
         node = self.context['view'].get_node()
 
-        visible = validated_data.get('bibliographic')
-        permission = validated_data.get('permission')
+        if 'bibliographic' in validated_data:
+            bibliographic = validated_data.get('bibliographic')
+        else:
+            bibliographic = node.get_visible(contributor)
+        permission = validated_data.get('permission') or contributor.permission
         try:
-            node.update_contributor(contributor, permission, visible, auth, save=True)
+            if index is not None:
+                node.move_contributor(contributor, auth, index, save=True)
+            node.update_contributor(contributor, permission, bibliographic, auth, save=True)
         except NodeStateError as e:
             raise exceptions.ValidationError(detail=e.message)
         except ValueError as e:
