@@ -321,6 +321,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     is_staff = models.BooleanField(default=False)
 
     @property
+    def deep_url(self):
+        """Used for GUID resolution."""
+        return '/profile/{}/'.format(self._primary_key)
+
+    @property
     def url(self):
         return '/{}/'.format(self._id)
 

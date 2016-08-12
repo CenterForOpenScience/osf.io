@@ -143,6 +143,10 @@ class AbstractNode(TypedModel, Taggable, Loggable, GuidMixin, BaseModel):
             return None
         return urlparse.urljoin(app_config.domain, self.url)
 
+    @property
+    def deep_url(self):
+        return '/project/{}/'.format(self._primary_key)
+
     def update_search(self):
         from website import search
         try:
