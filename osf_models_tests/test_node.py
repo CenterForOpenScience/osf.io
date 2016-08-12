@@ -433,3 +433,11 @@ def test_can_comment():
     assert private_node.can_comment(Auth(contrib)) is True
     noncontrib = UserFactory()
     assert private_node.can_comment(Auth(noncontrib)) is False
+
+
+@pytest.mark.django_db
+def test_parent_kwarg():
+    parent = NodeFactory()
+    child = NodeFactory(parent=parent)
+    assert child.parent_node == parent
+    assert child in parent.nodes.all()

@@ -146,3 +146,12 @@ class NodeLicenseRecordFactory(DjangoModelFactory):
             )
         )
         return super(NodeLicenseRecordFactory, cls)._create(*args, **kwargs)
+
+class PrivateLinkFactory(DjangoModelFactory):
+    class Meta:
+        model = models.PrivateLink
+
+    name = factory.Faker('word')
+    key = factory.Faker('md5')
+    anonymous = False
+    creator = factory.SubFactory(UserFactory)
