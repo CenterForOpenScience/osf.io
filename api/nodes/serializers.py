@@ -16,6 +16,7 @@ from website.models import Node, User, Comment, Institution, MetaSchema, DraftRe
 from website.exceptions import NodeStateError, TooManyRequests
 from website.util import permissions as osf_permissions
 from website.project.model import NodeUpdateError
+from website import settings as web_settings
 
 from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse, is_truthy
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
@@ -591,6 +592,8 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     """
     id = ContributorIDField(required=True)
     target_type = TargetTypeField(target_type='users')
+    email_template = ser.CharField(required=False, allow_null=True,
+                                   default=web_settings.DEFAULT_CONTRIB_ADD_EMAIL_TEMPLATE, help_text='Email template for notifying added contributor')
 
     def create(self, validated_data):
         auth = Auth(self.context['request'].user)
@@ -602,8 +605,14 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
 
         bibliographic = validated_data['bibliographic']
         permissions = osf_permissions.expand_permissions(validated_data.get('permission')) or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
+        email_template = validated_data.get('email_template')
+        if email_template not in web_settings.ALLOWED_CONTRIB_ADD_EMAIL_TEMPLATES:
+            raise exceptions.ValidationError('{} is not a valid contributor email template.'.format(email_template))
         try:
-            node.throttle_add_contributor(contributor=contributor, auth=auth, visible=bibliographic, permissions=permissions, save=True)
+            node.throttle_add_contributor(contributor=contributor, auth=auth,
+                                          visible=bibliographic,
+                                          permissions=permissions, save=True,
+                                          email_template=email_template)
         except TooManyRequests:
             raise exceptions.Throttled(detail='Too many contributor adds. Please wait a while and try again')
         contributor.permission = osf_permissions.reduce_permissions(node.get_permissions(contributor))

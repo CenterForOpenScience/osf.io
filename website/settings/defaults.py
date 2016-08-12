@@ -292,6 +292,8 @@ DISK_SAVING_MODE = False
 
 # Seconds before another notification email can be sent to a contributor when added to a project
 CONTRIBUTOR_ADDED_EMAIL_THROTTLE = 24 * 3600
+ALLOWED_CONTRIB_ADD_EMAIL_TEMPLATES = ['contributor_added']
+DEFAULT_CONTRIB_ADD_EMAIL_TEMPLATE = 'contributor_added'
 
 # Google Analytics
 GOOGLE_ANALYTICS_ID = None

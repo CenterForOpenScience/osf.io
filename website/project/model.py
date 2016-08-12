@@ -3073,13 +3073,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 project_signals.write_permissions_revoked.send(self)
 
     def throttle_add_contributor(self, contributor, permissions=None,
-                                 visible=True, auth=None, log=True, save=False):
+                                 visible=True, auth=None, log=True, save=False,
+                                 email_template=''):
+        print('### email_template is ' + str(email_template))
 
         if not throttle_period_expired(auth.user.email_last_sent,
                                        settings.API_SEND_EMAIL_THROTTLE):
             raise TooManyRequests
         ret = self.add_contributor(contributor, permissions, visible, auth,
-                                   log, save)
+                                   log, save, email_template)
         if ret:
             auth.user.email_last_sent = datetime.datetime.utcnow()
             auth.user.save()
@@ -3087,7 +3089,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         return ret
 
     def add_contributor(self, contributor, permissions=None, visible=True,
-                        auth=None, log=True, save=False):
+                        auth=None, log=True, save=False, email_template=''):
         """Add a contributor to the project.
 
         :param User contributor: The contributor to be added
@@ -3098,6 +3100,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         :param bool save: Save after adding contributor
         :returns: Whether contributor was added
         """
+        print('### email_template is ' + str(email_template))
         MAX_RECENT_LENGTH = 15
 
         # If user is merged into another account, use master account
@@ -3137,7 +3140,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 self.save()
 
             if self._id:
-                project_signals.contributor_added.send(self, contributor=contributor, auth=auth)
+                project_signals.contributor_added.send(self, contributor=contributor, auth=auth, email_template=email_template)
 
             return True
 
