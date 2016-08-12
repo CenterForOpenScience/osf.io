@@ -328,6 +328,9 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         data = {
             'data': {
                 'type': 'contributors',
+                'attributes': {
+                    'bibliographic': True
+                },
                 'relationships': [{'contributor_id': self.user_three._id}]
             }
         }
@@ -355,7 +358,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         }
         res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/relationships')
+        assert_equal(res.json['errors'][0]['detail'], 'A user ID or full name must be provided to add a contributor.')
 
     def test_add_contributor_empty_relationships(self):
         data = {
@@ -368,7 +371,8 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             }
         }
         res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/relationships')
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'A user ID or full name must be provided to add a contributor.')
 
     def test_add_contributor_no_user_key_in_relationships(self):
         data = {
@@ -444,7 +448,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         }
         res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/id')
+        assert_equal(res.json['errors'][0]['detail'], 'A user ID or full name must be provided to add a contributor.')
 
     def test_add_contributor_incorrect_target_id_in_relationships(self):
         data = {
@@ -465,26 +469,6 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         }
         res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
-
-    def test_add_contributor_incorrect_target_type_in_relationships(self):
-        data = {
-            'data': {
-                'type': 'contributors',
-                'attributes': {
-                    'bibliographic': True
-                },
-                'relationships': {
-                    'users': {
-                        'data': {
-                            'type': 'Incorrect!',
-                            'id': self.user_two._id
-                        }
-                    }
-                }
-            }
-        }
-        res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 409)
 
     def test_add_contributor_no_type(self):
         data = {
@@ -811,6 +795,167 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         self.private_project.reload()
         assert_not_in(self.user_two, self.private_project.contributors)
 
+    @assert_logs(NodeLog.CONTRIB_ADDED, 'public_project')
+    def test_add_unregistered_contributor_with_fullname(self):
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'full_name': 'John Doe',
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth)
+        self.public_project.reload()
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['unregistered_contributor'], 'John Doe')
+        assert_equal(res.json['data']['attributes']['email'], None)
+        assert_in(res.json['data']['embeds']['users']['data']['id'], self.public_project.contributors)
+
+    def test_read_write_add_unregistered_contributor(self):
+        self.read_write = AuthUserFactory()
+        self.public_project.add_contributor(self.read_write)
+        self.public_project.save()
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'full_name': 'John Doe',
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, payload, auth=self.read_write.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_read_only_add_unregistered_contributor(self):
+        self.read_only = AuthUserFactory()
+        self.public_project.add_contributor(self.read_only, permissions=[permissions.READ])
+        self.public_project.save()
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'full_name': 'John Doe',
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, payload, auth=self.read_only.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_add_unregistered_contributor_with_email(self):
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'email': 'john@doe.com',
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'A user ID or full name must be provided to add a contributor.')
+
+    @assert_logs(NodeLog.CONTRIB_ADDED, 'public_project')
+    def test_add_contributor_with_fullname_and_email_unregistered_user(self):
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'full_name': 'John Doe',
+                    'email': 'john@doe.com'
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth)
+        self.public_project.reload()
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['unregistered_contributor'], 'John Doe')
+        assert_equal(res.json['data']['attributes']['email'], 'john@doe.com')
+        assert_in(res.json['data']['embeds']['users']['data']['id'], self.public_project.contributors)
+
+    @assert_logs(NodeLog.CONTRIB_ADDED, 'public_project')
+    def test_add_contributor_with_fullname_and_email_registered_user(self):
+        user = UserFactory(fullname='Jane Doe', username='jane@doe.com')
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'full_name': user.fullname,
+                    'email': user.username
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth)
+        self.public_project.reload()
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['unregistered_contributor'], None)
+        assert_equal(res.json['data']['attributes']['email'], 'jane@doe.com')
+        assert_in(res.json['data']['embeds']['users']['data']['id'], self.public_project.contributors)
+
+    def test_add_unregistered_contributor_user_id_with_fullname(self):
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'full_name': 'John Doe'
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'id': self.user_two._id,
+                            'type': 'users'
+                        }
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+        assert_equal(res.json['errors'][0]['detail'], 'Full name and/or email should not be included with a user ID.')
+
+    def test_add_unregistered_contributor_user_id_with_email(self):
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'email': 'john@doe.com'
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'id': self.user_two._id,
+                            'type': 'users'
+                        }
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+        assert_equal(res.json['errors'][0]['detail'], 'Full name and/or email should not be included with a user ID.')
+
+    def test_add_unregistered_contributor_user_id_with_fullname_and_email(self):
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'full_name': 'John Doe',
+                    'email': 'john@doe.com'
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'id': self.user_two._id,
+                            'type': 'users'
+                        }
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+        assert_equal(res.json['errors'][0]['detail'], 'Full name and/or email should not be included with a user ID.')
+
 
 class TestNodeContributorBulkCreate(NodeCRUDTestCase):
 
@@ -930,6 +1075,9 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
     def test_node_contributor_bulk_create_all_or_nothing(self):
         invalid_id_payload = {
             'type': 'contributors',
+            'attributes': {
+                'bibliographic': True
+            },
             'relationships': {
                 'users': {
                     'data': {
@@ -952,41 +1100,6 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
                                      auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 100, got 101.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
-
-    def test_node_contributor_bulk_create_no_type(self):
-        payload = {'data': [{'relationships': {'users': {'data': {'type': 'users', 'id': self.user_two._id}}}}]}
-        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth,
-                                     expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/0/type')
-
-    def test_node_contributor_bulk_create_incorrect_type(self):
-        payload = {
-            'data': [{
-                'type': 'contributors',
-                'relationships': {
-                    'users': {
-                        'data': {
-                            'type': 'Wrong type.',
-                            'id': self.user_two._id
-                        }
-                    }
-                }
-            }]
-        }
-        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 409)
-
-    def test_node_contributor_bulk_create_no_relationships(self):
-        payload = {
-            'data': [{
-                'type': 'contributors',
-                'id': self.user_two._id
-            }]
-        }
-        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/relationships')
 
     def test_node_contributor_ugly_payload(self):
         payload = 'sdf;jlasfd'

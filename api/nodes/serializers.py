@@ -563,7 +563,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
     users = RelationshipField(
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<pk>'},
-        always_embed=True
+        always_embed=True,
     )
 
     class Meta:
@@ -586,26 +586,54 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
 class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     """
-    Overrides NodeContributorsSerializer to add target_type and required id field
+    Overrides NodeContributorsSerializer to add email, full_name, and non-required users field.
     """
-    id = ContributorIDField(required=True)
-    target_type = TargetTypeField(target_type='users')
+    id = ContributorIDField(source='_id', required=False, allow_null=True)
+    full_name = ser.CharField(required=False)
+    email = ser.EmailField(required=False)
+
+    users = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<pk>'},
+        required=False
+    )
 
     def create(self, validated_data):
-        auth = Auth(self.context['request'].user)
+        id = validated_data.get('_id')
+        email = validated_data.get('email')
         node = self.context['view'].get_node()
-        contributor = get_object_or_error(User, validated_data['_id'], display_name='user')
-        # Node object checks for contributor existence but can still change permissions anyway
-        if contributor in node.contributors:
-            raise exceptions.ValidationError('{} is already a contributor'.format(contributor.fullname))
-
-        bibliographic = validated_data['bibliographic']
+        auth = Auth(self.context['request'].user)
+        full_name = validated_data.get('full_name')
+        bibliographic = validated_data.get('bibliographic')
         permissions = osf_permissions.expand_permissions(validated_data.get('permission')) or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
-        node.add_contributor(contributor=contributor, auth=auth, visible=bibliographic, permissions=permissions, save=True)
+
+        if not id and not full_name:
+            raise exceptions.ValidationError(detail='A user ID or full name must be provided to add a contributor.')
+
+        if id:
+            if full_name or email:
+                raise Conflict(detail='Full name and/or email should not be included with a user ID.')
+            else:
+                contributor = get_object_or_error(User, id, display_name='user')
+                if contributor in node.contributors:
+                    raise exceptions.ValidationError('{} is already a contributor'.format(contributor.fullname))
+                node.add_contributor(contributor=contributor, auth=auth, visible=bibliographic, permissions=permissions, save=True)
+        else:
+            if email:
+                try:
+                    contributor = node.add_unregistered_contributor(fullname=full_name, email=email, auth=auth, permissions=permissions, save=True)
+                except ValidationValueError:
+                    user = User.find_by_email(email=email)
+                    contributor = get_object_or_error(User, user[0]._id, display_name='user')
+                    node.add_contributor(contributor=contributor, auth=auth, visible=bibliographic, permissions=permissions, save=True)
+            else:
+                contributor = node.add_unregistered_contributor(fullname=full_name, email=email, auth=auth, permissions=permissions, save=True)
+
         contributor.permission = osf_permissions.reduce_permissions(node.get_permissions(contributor))
         contributor.bibliographic = node.get_visible(contributor)
         contributor.node_id = node._id
         return contributor
+
 
 class NodeContributorDetailSerializer(NodeContributorsSerializer):
     """
