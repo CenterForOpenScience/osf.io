@@ -29,6 +29,7 @@ from api.base.views import LinkedNodesRelationship
 
 from api.nodes.serializers import (
     NodeSerializer,
+    ForwardNodeAddonSettingsSerializer,
     NodeAddonSettingsSerializer,
     NodeLinksSerializer,
     NodeForksSerializer,
@@ -1926,6 +1927,8 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, ge
         folder_id               string              folder id of linked folder, from third-party service
         node_has_auth           boolean             is this node fully authorized to use an ExternalAccount?
         folder_path             boolean             folder path of linked folder, from third-party service
+        url                     string              Specific to the `forward` addon
+        label                   string              Specific to the `forward` addon
 
     ##Links
 
@@ -1945,6 +1948,8 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, ge
                              "external_account_id": {account_id},   # optional
                              "folder_id":           {folder_id},    # optional
                              "folder_path":         {folder_path},  # optional - Google Drive specific
+                             "url":                 {url},          # optional - External Link specific
+                             "label":               {label}         # optional - External Link specific
                            }
                          }
                        }
@@ -2002,6 +2007,15 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, ge
             raise NotFound('Node {} does not have add-on {}'.format(node._id, addon))
 
         node.delete_addon(addon, auth=get_user_auth(self.request))
+
+    def get_serializer_class(self):
+        """
+        Use NodeDetailSerializer which requires 'id'
+        """
+        if self.kwargs['provider'] == 'forward':
+            return ForwardNodeAddonSettingsSerializer
+        else:
+            return NodeAddonSettingsSerializer
 
 
 class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, AddonSettingsMixin):

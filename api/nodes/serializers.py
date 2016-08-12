@@ -349,16 +349,20 @@ class NodeSerializer(JSONAPISerializer):
         return node
 
 
-class NodeAddonSettingsSerializer(JSONAPISerializer):
+class NodeAddonSettingsSerializerBase(JSONAPISerializer):
     class Meta:
         type_ = 'node_addons'
 
     id = ser.CharField(source='config.short_name', read_only=True)
+    node_has_auth = ser.BooleanField(source='has_auth', read_only=True)
+    configured = ser.BooleanField(read_only=True)
     external_account_id = ser.CharField(source='external_account._id', required=False, allow_null=True)
     folder_id = ser.CharField(required=False, allow_null=True)
     folder_path = ser.CharField(required=False, allow_null=True)
-    node_has_auth = ser.BooleanField(source='has_auth', read_only=True)
-    configured = ser.BooleanField(read_only=True)
+
+    # Forward-specific
+    label = ser.CharField(required=False, allow_null=True)
+    url = ser.CharField(required=False, allow_null=True)
 
     links = LinksField({
         'self': 'get_absolute_url',
@@ -373,6 +377,67 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
             'nodes:node-addon-detail',
             kwargs=kwargs
         )
+
+    def create(self, validated_data):
+        auth = Auth(self.context['request'].user)
+        node = self.context['view'].get_node()
+        addon = self.context['request'].parser_context['kwargs']['provider']
+
+        return node.get_or_add_addon(addon, auth=auth)
+
+class ForwardNodeAddonSettingsSerializer(NodeAddonSettingsSerializerBase):
+
+    def update(self, instance, validated_data):
+        auth = Auth(self.context['request'].user)
+        set_url = 'url' in validated_data
+        set_label = 'label' in validated_data
+
+        url_changed = False
+
+        url = validated_data.get('url')
+        label = validated_data.get('label')
+
+        if set_url and not url and label:
+            raise exceptions.ValidationError(detail='Cannot set label without url')
+
+        if not instance:
+            node = self.context['view'].get_node()
+            instance = node.get_or_add_addon('forward', auth)
+
+        if instance and instance.url:
+            # url required, label optional
+            if set_url and not url:
+                instance.reset()
+            elif set_url and url:
+                instance.url = url
+                url_changed = True
+            if set_label:
+                instance.label = label
+        elif instance and not instance.url:
+            instance.url = url
+            instance.label = label
+            url_changed = True
+
+        instance.save()
+
+        if url_changed:
+            # add log here because forward architecture isn't great
+            # TODO [OSF-6678]: clean this up
+            instance.owner.add_log(
+                action='forward_url_changed',
+                params=dict(
+                    node=instance.owner._id,
+                    project=instance.owner.parent_id,
+                    forward_url=instance.url,
+                ),
+                auth=auth,
+                save=True,
+            )
+
+        return instance
+
+
+class NodeAddonSettingsSerializer(NodeAddonSettingsSerializerBase):
 
     def check_for_update_errors(self, node_settings, folder_info, external_account_id):
         if (not node_settings.has_auth and folder_info and not external_account_id):
@@ -472,13 +537,6 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
                 raise exceptions.PermissionDenied('Addon credentials are invalid.')
 
         return instance
-
-    def create(self, validated_data):
-        auth = Auth(self.context['request'].user)
-        node = self.context['view'].get_node()
-        addon = self.context['request'].parser_context['kwargs']['provider']
-
-        return node.get_or_add_addon(addon, auth=auth)
 
 
 class NodeDetailSerializer(NodeSerializer):
