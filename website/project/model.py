@@ -884,8 +884,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     # Preprint fields
     preprint_file = fields.ForeignField('StoredFileNode')
     preprint_created = fields.DateTimeField()
-    preprint_provider = fields.StringField()
     preprint_subjects = fields.ForeignField('Subject', list=True)
+    preprint_provider = fields.ForeignField('PreprintProvider', list=True)
     preprint_doi = fields.StringField(validate=validate_doi)
     _is_preprint_orphan = fields.BooleanField(default=False)
 
