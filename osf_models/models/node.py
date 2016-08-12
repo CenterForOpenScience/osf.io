@@ -1,4 +1,3 @@
-import datetime as dt
 import logging
 import urlparse
 
@@ -379,7 +378,7 @@ class AbstractNode(TypedModel, Taggable, Loggable, GuidMixin, BaseModel):
                     user=user,
                     contributor=contrib_to_add
                 )
-                recently_added_contributor_obj.date_added = dt.datetime.utcnow()
+                recently_added_contributor_obj.date_added = timezone.now()
                 recently_added_contributor_obj.save()
                 count = user.recently_added.count()
                 if count > MAX_RECENT_LENGTH:

@@ -15,6 +15,7 @@ setup(
         'django>=1.9',
         'psycopg2',
         'django-extensions==1.6.1',
+        'itsdangerous',
         'pymongo==2.5.1',
         'modular-odm>=0.3.0',
         'django-typed-models>=0.5.0',

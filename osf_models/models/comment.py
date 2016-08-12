@@ -3,6 +3,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
+from django.utils import timezone
 from django.db.models import Q
 from osf_models.models import Node
 from osf_models.models import NodeLog
@@ -49,8 +50,8 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin):
     target_id = models.PositiveIntegerField(null=True)
     target = GenericForeignKey('target_content_type', 'target_id')
 
-    date_created = models.DateTimeField()#auto_now_add=datetime.datetime.utcnow)
-    date_modified = models.DateTimeField()#auto_now=datetime.datetime.utcnow)
+    date_created = models.DateTimeField(default=timezone.now)  #auto_now_add=True)
+    date_modified = models.DateTimeField(auto_now=True)
     modified = models.BooleanField(default=False)
     is_deleted = models.BooleanField(default=False)
     # The type of root_target: node/files
@@ -194,7 +195,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin):
         log_dict.update(self.root_target.referent.get_extra_log_params(self))
         self.content = content
         self.modified = True
-        self.date_modified = datetime.datetime.utcnow()
+        self.date_modified = timezone.now()
         new_mentions = get_valid_mentioned_users_guids(self, self.node.contributors)
 
         if save:
@@ -221,7 +222,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin):
         }
         self.is_deleted = True
         log_dict.update(self.root_target.referent.get_extra_log_params(self))
-        self.date_modified = datetime.datetime.utcnow()
+        self.date_modified = timezone.now()
         if save:
             self.save()
             self.node.add_log(
@@ -243,7 +244,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin):
             'comment': self._id,
         }
         log_dict.update(self.root_target.referent.get_extra_log_params(self))
-        self.date_modified = datetime.datetime.utcnow()
+        self.date_modified = timezone.now()
         if save:
             self.save()
             self.node.add_log(

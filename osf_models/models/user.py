@@ -6,6 +6,7 @@ import re
 
 from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
+from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
 from django.contrib.postgres import fields
@@ -13,6 +14,7 @@ from django.core.validators import validate_email
 from django.db import models
 from django.utils import timezone
 from modularodm.exceptions import NoResultsFound
+import itsdangerous
 
 # OSF imports
 import framework.mongo
@@ -350,7 +352,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     def is_disabled(self, val):
         """Set whether or not this account has been disabled."""
         if val and not self.date_disabled:
-            self.date_disabled = dt.datetime.utcnow()
+            self.date_disabled = timezone.now()
         elif val is False:
             self.date_disabled = None
 
@@ -664,7 +666,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
             self.emails.append(username)
         self.is_registered = True
         self.is_claimed = True
-        self.date_confirmed = dt.datetime.utcnow()
+        self.date_confirmed = timezone.now()
         self.update_search()
         self.update_search_nodes()
 
@@ -712,7 +714,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         # Complete registration if primary email
         if email.lower() == self.username.lower():
             self.register(self.username)
-            self.date_confirmed = dt.datetime.utcnow()
+            self.date_confirmed = timezone.now()
         # Revoke token
         del self.email_verifications[token]
 
@@ -939,3 +941,54 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     def get_activity_points(self, db=None):
         db = db or framework.mongo.database
         return analytics.get_total_activity_count(self._primary_key, db=db)
+
+    def get_or_create_cookie(self, secret=None):
+        """Find the cookie for the given user
+        Create a new session if no cookie is found
+
+        :param str secret: The key to sign the cookie with
+        :returns: The signed cookie
+        """
+        Session = apps.get_model('osf_models.Session')
+        secret = secret or settings.SECRET_KEY
+        sessions = Session.find(
+            Q('data.auth_user_id', 'eq', self._id)
+        ).sort(
+            '-date_modified'
+        ).limit(1)
+
+        if sessions.count() > 0:
+            user_session = sessions[0]
+        else:
+            user_session = Session(data={
+                'auth_user_id': self._id,
+                'auth_user_username': self.username,
+                'auth_user_fullname': self.fullname,
+            })
+            user_session.save()
+
+        signer = itsdangerous.Signer(secret)
+        return signer.sign(user_session._id)
+
+    @classmethod
+    def from_cookie(cls, cookie, secret=None):
+        """Attempt to load a user from their signed cookie
+        :returns: None if a user cannot be loaded else User
+        """
+        Session = apps.get_model('osf_models.Session')
+        if not cookie:
+            return None
+
+        secret = secret or settings.SECRET_KEY
+
+        try:
+            token = itsdangerous.Signer(secret).unsign(cookie)
+        except itsdangerous.BadSignature:
+            return None
+
+        user_session = Session.load(token)
+
+        if user_session is None:
+            return None
+
+        return cls.load(user_session.data.get('auth_user_id'))

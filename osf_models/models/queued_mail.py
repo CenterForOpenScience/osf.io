@@ -1,6 +1,5 @@
-from datetime import datetime
-
 from django.db import models
+from django.utils import timezone
 
 from website.mails import Mail, send_mail
 from website.mails import presends
@@ -55,7 +54,7 @@ class QueuedMail(ObjectIDMixin, BaseModel):
         self.data['osf_url'] = osf_settings.DOMAIN
         if presend and self.user.is_active and self.user.osf_mailing_lists.get(osf_settings.OSF_HELP_LIST):
             send_mail(self.to_addr or self.user.username, mail, mimetype='html', **(self.data or {}))
-            self.sent_at = datetime.utcnow()
+            self.sent_at = timezone.now()
             self.save()
             return True
         else:
