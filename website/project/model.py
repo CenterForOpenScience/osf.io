@@ -760,10 +760,18 @@ class NodeUpdateError(Exception):
         self.key = key
         self.reason = reason
 
+
 def validate_subjects(value):
     subject = Subject.load(value)
     if not subject:
         raise ValidationValueError('Subject with id <{}> could nor be found.'.format(value))
+    return True
+
+
+def validate_doi(value):
+    # DOI must start with 10 and have a slash in it - avoided getting too complicated
+    if not re.match('10\\.\\S*\\/', value):
+        raise ValidationValueError('')
     return True
 
 
@@ -886,6 +894,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     preprint_created = fields.DateTimeField()
     preprint_provider = fields.StringField()
     preprint_subjects = fields.StringField(list=True, validate=validate_subjects)
+    preprint_doi = fields.StringField(validate=validate_doi)
     _is_preprint_orphan = fields.BooleanField(default=False)
 
     # A list of all MetaSchemas for which this Node has registered_meta

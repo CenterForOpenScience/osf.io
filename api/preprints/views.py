@@ -52,8 +52,10 @@ class PreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
         date_created                    iso8601 timestamp     timestamp that the preprint was created
         date_modified                   iso8601 timestamp     timestamp when the preprint was last updated
         tags                            array of strings      list of tags that describe the node
-        subjects                        array of tuples       list ids of Subject in the PLOS taxonomy. Tuple, containing the subject text and subject ID
+        subjects                        array of dictionaries list ids of Subject in the PLOS taxonomy. Dictrionary, containing the subject text and subject ID
         provider                        string                original source of the preprint
+        doi                             string                bare DOI for the manuscript, as entered by the user
+
 
     ##Relationships
 
@@ -67,6 +69,10 @@ class PreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     Link to list of contributors that are affiliated with this institution.
 
     ##Links
+
+    - `self` -- Preprint detail page for the current preprint
+    - `html` -- Project on the OSF corresponding to the current preprint
+    - `doi` -- URL representation of the DOI entered by the user for the preprint manuscript
 
     See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
 
@@ -140,9 +146,9 @@ class PreprintDetail(JSONAPIBaseView, generics.CreateAPIView, generics.RetrieveU
 
                             },
                             "relationships": {
-                                "preprint_file": {                 # required
+                                "primary_file": {                   # required
                                     "data": {
-                                        "type": "primary_file",
+                                        "type": "primary",
                                         "id": file_id
                                     }
                                 }
