@@ -12,18 +12,20 @@ from django.conf import settings
 from website.addons.base.exceptions import InvalidFolderError, InvalidAuthError
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
-from website.models import Node, Comment, Institution, MetaSchema, DraftRegistration, PrivateLink
+from website.models import Node, User, Comment, Institution, MetaSchema, DraftRegistration
 from website.exceptions import NodeStateError, TooManyRequests
 from website.util import permissions as osf_permissions
 from website.project import new_private_link
 from website.project.model import NodeUpdateError
+from website import settings as web_settings
 
 from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse, is_truthy
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField,
                                   HideIfRegistration, RestrictedDictSerializer,
                                   JSONAPIRelationshipSerializer, relationship_diff, )
-from api.base.exceptions import (InvalidModelValueError, RelationshipPostMakesNoChanges, Conflict,
+from api.base.exceptions import (InvalidModelValueError,
+                                 RelationshipPostMakesNoChanges, Conflict,
                                  EndpointNotImplementedError)
 from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
 
@@ -658,6 +660,9 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     full_name = ser.CharField(required=False)
     email = ser.EmailField(required=False)
 
+    # email_template = ser.CharField(required=False, allow_null=True,
+    #                                default=web_settings.DEFAULT_CON
+
     users = RelationshipField(
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<pk>'},
@@ -678,6 +683,10 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
         full_name = validated_data.get('full_name')
         bibliographic = validated_data.get('bibliographic')
         permissions = osf_permissions.expand_permissions(validated_data.get('permission')) or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
+
+        # email_template = validated_data.get('email_template')
+        # if email_template not in web_settings.ALLOWED_CONTRIB_ADD_EMAIL_TEMPLATES:
+        #     raise exceptions.ValidationError('{} is not a valid contributor email template.'.format(email_template))
 
         self.validate_data(user_id=id, full_name=full_name, email=email)
         try:
