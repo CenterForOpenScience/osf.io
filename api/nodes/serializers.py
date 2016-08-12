@@ -13,7 +13,7 @@ from website.addons.base.exceptions import InvalidFolderError, InvalidAuthError
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.models import Node, User, Comment, Institution, MetaSchema, DraftRegistration
-from website.exceptions import NodeStateError
+from website.exceptions import NodeStateError, TooManyRequests
 from website.util import permissions as osf_permissions
 from website.project.model import NodeUpdateError
 
@@ -22,7 +22,8 @@ from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHy
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField,
                                   HideIfRegistration, RestrictedDictSerializer,
                                   JSONAPIRelationshipSerializer, relationship_diff, )
-from api.base.exceptions import (InvalidModelValueError, RelationshipPostMakesNoChanges, Conflict,
+from api.base.exceptions import (InvalidModelValueError,
+                                 RelationshipPostMakesNoChanges, Conflict,
                                  EndpointNotImplementedError)
 from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
 
@@ -601,7 +602,10 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
 
         bibliographic = validated_data['bibliographic']
         permissions = osf_permissions.expand_permissions(validated_data.get('permission')) or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
-        node.add_contributor(contributor=contributor, auth=auth, visible=bibliographic, permissions=permissions, save=True)
+        try:
+            node.throttle_add_contributor(contributor=contributor, auth=auth, visible=bibliographic, permissions=permissions, save=True)
+        except TooManyRequests:
+            raise exceptions.Throttled(detail='Too many contributor adds. Please wait a while and try again')
         contributor.permission = osf_permissions.reduce_permissions(node.get_permissions(contributor))
         contributor.bibliographic = node.get_visible(contributor)
         contributor.node_id = node._id

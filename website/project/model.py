@@ -42,10 +42,12 @@ from website.util import web_url_for
 from website.util import api_url_for
 from website.util import api_v2_url
 from website.util import sanitize
+from website.util.time import throttle_period_expired
 from website.exceptions import (
     NodeStateError,
     InvalidTagError, TagNotFoundError,
     UserNotAffiliatedError,
+    TooManyRequests
 )
 from website.institutions.model import Institution, AffiliatedInstitutionsList
 from website.citations.utils import datetime_to_csl
@@ -3069,6 +3071,20 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         with TokuTransaction():
             if to_remove or permissions_changed and ['read'] in permissions_changed.values():
                 project_signals.write_permissions_revoked.send(self)
+
+    def throttle_add_contributor(self, contributor, permissions=None,
+                                 visible=True, auth=None, log=True, save=False):
+
+        if not throttle_period_expired(auth.user.email_last_sent,
+                                       settings.API_SEND_EMAIL_THROTTLE):
+            raise TooManyRequests
+        ret = self.add_contributor(contributor, permissions, visible, auth,
+                                   log, save)
+        if ret:
+            auth.user.email_last_sent = datetime.datetime.utcnow()
+            auth.user.save()
+
+        return ret
 
     def add_contributor(self, contributor, permissions=None, visible=True,
                         auth=None, log=True, save=False):
