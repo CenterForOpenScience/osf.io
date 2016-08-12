@@ -60,16 +60,6 @@ class TestViewOnlyLinksUpdate(ViewOnlyLinkTestCase):
         self.public_project_component = NodeFactory(is_public=True, creator=self.user, parent=self.public_project)
         self.public_project_component.save()
 
-    def test_invalid_vol_name(self):
-        payload = {
-            'attributes': {
-                'name': '<div>  </div>',
-            }
-        }
-        res = self.app.put_json_api(self.url, {'data': payload}, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Invalid link name.')
-
     def test_admin_can_update_vol_name(self):
         assert_equal(self.view_only_link.name, 'testlink')
         assert_equal(self.view_only_link.anonymous, False)

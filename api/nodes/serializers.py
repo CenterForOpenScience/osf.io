@@ -1019,21 +1019,17 @@ class NodeViewOnlyLinkUpdateSerializer(NodeViewOnlyLinkSerializer):
     """
     Overrides NodeViewOnlyLinkSerializer to not default name and anonymous on update.
     """
-    anonymous = ser.BooleanField(required=False)
     name = ser.CharField(required=False)
+    anonymous = ser.BooleanField(required=False)
 
     def update(self, link, validated_data):
+        assert isinstance(link, PrivateLink), 'link must be a PrivateLink'
+
         name = validated_data.get('name')
         anonymous = validated_data.get('anonymous')
 
-        assert isinstance(link, PrivateLink), 'link must be a PrivateLink'
-
         if name:
-            name = strip_html(name)
-            if name is None or not name.strip():
-                raise exceptions.ValidationError('Invalid link name.')
             link.name = name
-
         if anonymous:
             link.anonymous = anonymous
 
