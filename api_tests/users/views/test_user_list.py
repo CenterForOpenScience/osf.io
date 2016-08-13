@@ -8,7 +8,7 @@ import urlparse
 from modularodm import Q
 
 from tests.base import ApiTestCase
-from tests.factories import AuthUserFactory
+from tests.factories import AuthUserFactory, UserFactory
 
 from api.base.settings.defaults import API_BASE
 
@@ -89,6 +89,46 @@ class TestUsers(ApiTestCase):
             profile_image_url = user['links']['profile_image']
             query_dict = urlparse.parse_qs(urlparse.urlparse(profile_image_url).query)
             assert_equal(int(query_dict.get('s')[0]), size)
+
+    def test_users_list_filter_multiple_field(self):
+        self.john_doe = UserFactory(full_name='John Doe')
+        self.john_doe.given_name = 'John'
+        self.john_doe.family_name = 'Doe'
+        self.john_doe.save()
+
+        self.doe_jane = UserFactory(full_name='Doe Jane')
+        self.doe_jane.given_name = 'Doe'
+        self.doe_jane.family_name = 'Jane'
+        self.doe_jane.save()
+
+        url = "/{}users/?filter[given_name,family_name]=Doe".format(API_BASE)
+        res = self.app.get(url)
+        data = res.json['data']
+        assert_equal(len(data), 2)
+
+    def test_users_list_filter_multiple_fields_with_additional_filters(self):
+        self.john_doe = UserFactory(full_name='John Doe')
+        self.john_doe.given_name = 'John'
+        self.john_doe.family_name = 'Doe'
+        self.john_doe._id = 'abcde'
+        self.john_doe.save()
+
+        self.doe_jane = UserFactory(full_name='Doe Jane')
+        self.doe_jane.given_name = 'Doe'
+        self.doe_jane.family_name = 'Jane'
+        self.doe_jane._id = 'zyxwv'
+        self.doe_jane.save()
+
+        url = "/{}users/?filter[given_name,family_name]=Doe&filter[id]=abcde".format(API_BASE)
+        res = self.app.get(url)
+        data = res.json['data']
+        assert_equal(len(data), 1)
+
+    def test_users_list_filter_multiple_fields_with_bad_filter(self):
+        url = "/{}users/?filter[given_name,not_a_filter]=Doe".format(API_BASE)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
 
 class TestUsersCreate(ApiTestCase):
 
