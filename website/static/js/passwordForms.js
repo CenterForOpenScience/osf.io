@@ -196,8 +196,9 @@ var SetPasswordViewModel = oop.extend(BaseViewModel, {
 });
 
 var SignUpViewModel = oop.extend(BaseViewModel, {
-    constructor: function (submitUrl) {
+    constructor: function (submitUrl, campaign) {
         var self = this;
+        self.campaign = campaign;
         self.fullName = ko.observable('').extend({
             required: true,
             minLength: 3
@@ -323,8 +324,8 @@ var SetPassword = function(selector) {
     });
 };
 
-var SignUp = function(selector) {
-    var viewModel = new SignUpViewModel();
+var SignUp = function(selector, campaign) {
+    var viewModel = new SignUpViewModel(undefined, campaign);
     $osf.applyBindings(viewModel, selector);
     // Necessary to prevent enter submitting forms with invalid frontend zxcvbn validation
     $(selector).keypress(function(event) {

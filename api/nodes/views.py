@@ -29,6 +29,7 @@ from api.base.views import LinkedNodesRelationship
 
 from api.nodes.serializers import (
     NodeSerializer,
+    ForwardNodeAddonSettingsSerializer,
     NodeAddonSettingsSerializer,
     NodeLinksSerializer,
     NodeForksSerializer,
@@ -40,7 +41,9 @@ from api.nodes.serializers import (
     NodeContributorDetailSerializer,
     NodeInstitutionsRelationshipSerializer,
     NodeAlternativeCitationSerializer,
-    NodeContributorsCreateSerializer
+    NodeContributorsCreateSerializer,
+    NodeViewOnlyLinkSerializer,
+    NodeViewOnlyLinkUpdateSerializer
 )
 from api.nodes.utils import get_file_object
 
@@ -56,7 +59,7 @@ from api.nodes.permissions import (
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
     IsAdminOrReviewer,
-    AdminOrPublicForRelationshipInstitutions,
+    WriteOrPublicForRelationshipInstitutions,
     ExcludeWithdrawals,
 )
 from api.logs.serializers import NodeLogSerializer
@@ -64,7 +67,7 @@ from api.logs.serializers import NodeLogSerializer
 from website.addons.wiki.model import NodeWikiPage
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
-from website.models import Node, Pointer, Comment, NodeLog, Institution, DraftRegistration
+from website.models import Node, Pointer, Comment, NodeLog, Institution, DraftRegistration, PrivateLink
 from website.files.models import FileNode
 from framework.auth.core import User
 from api.base.utils import default_node_list_query, default_node_permission_query
@@ -726,6 +729,7 @@ class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
         bibliographic               boolean  Whether the user will be included in citations for this node. Default is true.
         permission                  string   User permission level. Must be "read", "write", or "admin". Default is "write".
         unregistered_contributor    string   Contributor's assigned name if contributor hasn't yet claimed account
+        index                       integer  The position in the list of contributors reflected in the bibliography. Zero Indexed.
 
     ##Relationships
 
@@ -753,12 +757,14 @@ class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
                            "attributes": {
                              "bibliographic": true|false,             # optional
                              "permission": "read"|"write"|"admin"     # optional
+                             "index": "0"                             # optional
                            }
                          }
                        }
         Success:       200 OK + node representation
 
-    To update a contributor's bibliographic preferences or access permissions for the node, issue a PUT request to the
+    To update a contributor's bibliographic preferences, order in the bibliography,
+    or access permissions for the node, issue a PUT request to the
     `self` link. Since this endpoint has no mandatory attributes, PUT and PATCH are functionally the same.  If the given
     user is not already in the contributor list, a 404 Not Found error will be returned.  A node must always have at
     least one admin, and any attempt to downgrade the permissions of a sole admin will result in a 400 Bad Request
@@ -808,6 +814,8 @@ class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
         user.permission = node.get_permissions(user)[-1]
         user.bibliographic = node.get_visible(user)
         user.node_id = node._id
+        user.index = node.contributors.index(user)
+
         return user
 
     # overrides DestroyAPIView
@@ -1926,6 +1934,8 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, ge
         folder_id               string              folder id of linked folder, from third-party service
         node_has_auth           boolean             is this node fully authorized to use an ExternalAccount?
         folder_path             boolean             folder path of linked folder, from third-party service
+        url                     string              Specific to the `forward` addon
+        label                   string              Specific to the `forward` addon
 
     ##Links
 
@@ -1945,6 +1955,8 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, ge
                              "external_account_id": {account_id},   # optional
                              "folder_id":           {folder_id},    # optional
                              "folder_path":         {folder_path},  # optional - Google Drive specific
+                             "url":                 {url},          # optional - External Link specific
+                             "label":               {label}         # optional - External Link specific
                            }
                          }
                        }
@@ -2002,6 +2014,15 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, ge
             raise NotFound('Node {} does not have add-on {}'.format(node._id, addon))
 
         node.delete_addon(addon, auth=get_user_auth(self.request))
+
+    def get_serializer_class(self):
+        """
+        Use NodeDetailSerializer which requires 'id'
+        """
+        if self.kwargs['provider'] == 'forward':
+            return ForwardNodeAddonSettingsSerializer
+        else:
+            return NodeAddonSettingsSerializer
 
 
 class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, AddonSettingsMixin):
@@ -2662,8 +2683,8 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
                        }
         Success:       201
 
-    This requires admin permissions on the node and for the user making the request to
-    have the institutions in the payload as affiliated in their account.
+        This requires write permissions on the node and for the user making the request to
+        have the institutions in the payload as affiliated in their account.
 
     ###Update
 
@@ -2678,7 +2699,7 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
                        }
         Success:       200
 
-        This requires admin permissions on the node and for the user making the request to
+        This requires write permissions on the node and for the user making the request to
         have the institutions in the payload as affiliated in their account. This will delete
         all institutions not listed, meaning a data: [] payload does the same as a DELETE with all
         the institutions.
@@ -2696,12 +2717,13 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
                        }
         Success:       204
 
-    This requires admin permissions in the node.
+        This requires write permissions in the node. If the user has admin permissions, the institution in the payload does
+        not need to be affiliated in their account.
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        AdminOrPublicForRelationshipInstitutions
+        WriteOrPublicForRelationshipInstitutions
     )
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
@@ -2728,6 +2750,8 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
 
         for val in data:
             if val['id'] in current_insts:
+                if current_insts[val['id']] not in user.affiliated_institutions and not node.has_permission(user, 'admin'):
+                    raise PermissionDenied
                 node.remove_affiliated_institution(inst=current_insts[val['id']], user=user)
         node.save()
 
@@ -2961,3 +2985,164 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
         res = super(LinkedNodesList, self).get_parser_context(http_request)
         res['is_relationship'] = True
         return res
+
+
+class NodeViewOnlyLinksList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, NodeMixin):
+    """
+    List of view only links on a node. *Writeable*.
+
+    ###Permissions
+
+    View only links on a node, public or private, are readable and writeable only by users that are
+    administrators on the node.
+
+    ##Attributes
+
+        name            type                    description
+        =================================================================================
+        name            string                  name of the view only link
+        anonymous       boolean                 whether the view only link has anonymized contributors
+        date_created    iso8601 timestamp       timestamp when the view only link was created
+        key             string                  the view only link key
+
+
+    ##Relationships
+
+    ###Creator
+
+    The user who created the view only link.
+
+    ###Nodes
+
+    The nodes which this view only link key gives read-only access to.
+
+    ##Actions
+
+    ###Create
+
+        Method:        POST
+        Body (JSON): {
+                        "data": {
+                            "attributes": {
+                                "name": {string},              #optional
+                                "anonymous": true|false,        #optional
+                            }
+                        }
+                    }
+        Success:       201 CREATED + VOL representation
+
+    ##Query Params
+
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
+    View only links may be filtered by their `name`, `anonymous`, and `date_created` attributes.
+
+    #This Request/Response
+    """
+    permission_classes = (
+        IsAdmin,
+        base_permissions.TokenHasScope,
+        drf_permissions.IsAuthenticatedOrReadOnly
+    )
+
+    required_read_scopes = [CoreScopes.NODE_VIEW_ONLY_LINKS_READ]
+    required_write_scopes = [CoreScopes.NODE_VIEW_ONLY_LINKS_WRITE]
+
+    serializer_class = NodeViewOnlyLinkSerializer
+
+    view_category = 'nodes'
+    view_name = 'node-view-only-links'
+
+    def get_default_queryset(self):
+        return [
+            link for link in
+            self.get_node().private_links
+            if not link.is_deleted
+        ]
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+
+class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin):
+    """
+    Detail of a specific view only link on a node. *Writeable*.
+
+    ###Permissions
+
+    View only links on a node, public or private, are only readable and writeable by users that are
+    administrators on the node.
+
+    ##Attributes
+
+        name            type                    description
+        =================================================================================
+        name            string                  name of the view only link
+        anonymous       boolean                 whether the view only link has anonymized contributors
+        date_created    iso8601 timestamp       timestamp when the view only link was created
+        key             string                  the view only key
+
+
+    ##Relationships
+
+    ###Creator
+
+    The user who created the view only link.
+
+    ###Nodes
+
+    The nodes which this view only link key gives read-only access to.
+
+    ##Actions
+
+    ###Update
+
+        Method:        PUT
+        Body (JSON):   {
+                         "data": {
+                           "attributes": {
+                             "name": {string},               #optional
+                             "anonymous": true|false,        #optional
+                           },
+                         }
+                       }
+        Success:       200 OK + VOL representation
+
+    ###Delete
+
+        Method:        DELETE
+        Body (JSON):   <none>
+        Success:       204 NO CONTENT
+
+    #This Request/Response
+    """
+
+    permission_classes = (
+        IsAdmin,
+        base_permissions.TokenHasScope,
+        drf_permissions.IsAuthenticatedOrReadOnly
+    )
+
+    required_read_scopes = [CoreScopes.NODE_VIEW_ONLY_LINKS_READ]
+    required_write_scopes = [CoreScopes.NODE_VIEW_ONLY_LINKS_WRITE]
+
+    serializer_class = NodeViewOnlyLinkSerializer
+
+    view_category = 'nodes'
+    view_name = 'node-view-only-link-detail'
+
+    def get_serializer_class(self):
+        if self.request.method == 'PUT':
+            return NodeViewOnlyLinkUpdateSerializer
+        return NodeViewOnlyLinkSerializer
+
+    def get_object(self):
+        for link in self.get_node().private_links:
+            if link._id == self.kwargs['link_id']:
+                return link
+        raise NotFound
+
+    def perform_destroy(self, link):
+        assert isinstance(link, PrivateLink), 'link must be a PrivateLink'
+        link.is_deleted = True
+        link.save()

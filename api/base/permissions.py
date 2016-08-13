@@ -94,9 +94,12 @@ class RequiresScopedRequestOrReadOnly(TokenHasScope):
     def has_permission(self, request, view):
         token = request.auth
 
+        # User either needs properly scoped token or cookie. Otherwise, endpoint has restricted write.
         if token is None or not isinstance(token, CasResponse):
-            # Assumption: user authenticated via non-oauth means, and this endpoint has restricted write
-            return request.method in permissions.SAFE_METHODS
+            if request.COOKIES:
+                return True
+            else:
+                return request.method in permissions.SAFE_METHODS
 
         return self._verify_scopes(request, view, token)
 

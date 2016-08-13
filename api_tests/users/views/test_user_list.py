@@ -8,7 +8,7 @@ import urlparse
 from modularodm import Q
 
 from tests.base import ApiTestCase
-from tests.factories import AuthUserFactory
+from tests.factories import AuthUserFactory, UserFactory
 
 from api.base.settings.defaults import API_BASE
 
@@ -90,6 +90,46 @@ class TestUsers(ApiTestCase):
             query_dict = urlparse.parse_qs(urlparse.urlparse(profile_image_url).query)
             assert_equal(int(query_dict.get('s')[0]), size)
 
+    def test_users_list_filter_multiple_field(self):
+        self.john_doe = UserFactory(full_name='John Doe')
+        self.john_doe.given_name = 'John'
+        self.john_doe.family_name = 'Doe'
+        self.john_doe.save()
+
+        self.doe_jane = UserFactory(full_name='Doe Jane')
+        self.doe_jane.given_name = 'Doe'
+        self.doe_jane.family_name = 'Jane'
+        self.doe_jane.save()
+
+        url = "/{}users/?filter[given_name,family_name]=Doe".format(API_BASE)
+        res = self.app.get(url)
+        data = res.json['data']
+        assert_equal(len(data), 2)
+
+    def test_users_list_filter_multiple_fields_with_additional_filters(self):
+        self.john_doe = UserFactory(full_name='John Doe')
+        self.john_doe.given_name = 'John'
+        self.john_doe.family_name = 'Doe'
+        self.john_doe._id = 'abcde'
+        self.john_doe.save()
+
+        self.doe_jane = UserFactory(full_name='Doe Jane')
+        self.doe_jane.given_name = 'Doe'
+        self.doe_jane.family_name = 'Jane'
+        self.doe_jane._id = 'zyxwv'
+        self.doe_jane.save()
+
+        url = "/{}users/?filter[given_name,family_name]=Doe&filter[id]=abcde".format(API_BASE)
+        res = self.app.get(url)
+        data = res.json['data']
+        assert_equal(len(data), 1)
+
+    def test_users_list_filter_multiple_fields_with_bad_filter(self):
+        url = "/{}users/?filter[given_name,not_a_filter]=Doe".format(API_BASE)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+
 class TestUsersCreate(ApiTestCase):
 
     def setUp(self):
@@ -113,7 +153,7 @@ class TestUsersCreate(ApiTestCase):
         User.remove()
 
     @mock.patch('framework.auth.views.mails.send_mail')
-    def test_user_can_not_create_other_user_or_send_mail(self, mock_mail):
+    def test_logged_in_user_with_basic_auth_cannot_create_other_user_or_send_mail(self, mock_mail):
         assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 0)
         res = self.app.post_json_api(
             '{}?send_email=true'.format(self.base_url),
@@ -127,7 +167,20 @@ class TestUsersCreate(ApiTestCase):
         assert_equal(mock_mail.call_count, 0)
 
     @mock.patch('framework.auth.views.mails.send_mail')
-    def test_cookied_requests_do_not_create_or_email(self, mock_mail):
+    def test_logged_out_user_cannot_create_other_user_or_send_mail(self, mock_mail):
+        assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 0)
+        res = self.app.post_json_api(
+            '{}?send_email=true'.format(self.base_url),
+            self.data,
+            expect_errors=True
+        )
+
+        assert_equal(res.status_code, 401)
+        assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 0)
+        assert_equal(mock_mail.call_count, 0)
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_cookied_requests_can_create_and_email(self, mock_mail):
         session = Session(data={'auth_user_id': self.user._id})
         session.save()
         cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(session._id)
@@ -135,14 +188,12 @@ class TestUsersCreate(ApiTestCase):
 
         assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 0)
         res = self.app.post_json_api(
-            self.base_url,
-            self.data,
-            expect_errors=True
+            '{}?send_email=true'.format(self.base_url),
+            self.data
         )
-
-        assert_equal(res.status_code, 403)
-        assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 0)
-        assert_equal(mock_mail.call_count, 0)
+        assert_equal(res.status_code, 201)
+        assert_equal(User.find(Q('username', 'eq', self.unconfirmed_email)).count(), 1)
+        assert_equal(mock_mail.call_count, 1)
 
     @mock.patch('framework.auth.views.mails.send_mail')
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
