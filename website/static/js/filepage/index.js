@@ -109,6 +109,11 @@ var FileViewPage = {
         self.file.checkoutUser = null;
         self.requestDone = false;
         self.isLatestVersion = false;
+
+        self.selectLatest = function() {
+            self.isLatestVersion = true;
+        };
+
         self.isCheckoutUser = function() {
             $.ajax({
                 headers: {
@@ -302,10 +307,6 @@ var FileViewPage = {
             activeUsers: m.prop([]),
             status: m.prop('connecting'),
             userId: self.context.currentUser.id
-        };
-
-        self.selectLatest = function() {
-            self.isLatestVersion = true;
         };
 
         self.editHeader = function() {
