@@ -2019,7 +2019,7 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, ge
         """
         Use NodeDetailSerializer which requires 'id'
         """
-        if self.kwargs['provider'] == 'forward':
+        if 'provider' in self.kwargs and self.kwargs['provider'] == 'forward':
             return ForwardNodeAddonSettingsSerializer
         else:
             return NodeAddonSettingsSerializer
