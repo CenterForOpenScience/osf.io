@@ -569,7 +569,9 @@ def test(ctx, all=False, syntax=False):
 
 @task
 def test_travis_quick(ctx):
-    flake(ctx)
+    """
+    Run the fast and quirky JS tests in isolation
+    """
     jshint(ctx)
     karma(ctx, single=True, browsers='PhantomJS')
 
@@ -577,8 +579,10 @@ def test_travis_quick(ctx):
 @task
 def test_travis_osf(ctx):
     """
-    Run half of the tests to help travis go faster
+    Run half of the tests to help travis go faster. Lints and Flakes happen everywhere to keep from wasting test time.
     """
+    flake(ctx)
+    jshint(ctx)
     test_osf(ctx)
     test_addons(ctx)
 
@@ -586,8 +590,11 @@ def test_travis_osf(ctx):
 @task
 def test_travis_else(ctx):
     """
-    Run other half of the tests to help travis go faster
+    Run other half of the tests to help travis go faster. Lints and Flakes happen everywhere to keep from
+    wasting test time.
     """
+    flake(ctx)
+    jshint(ctx)
     test_api(ctx)
     test_admin(ctx)
 
