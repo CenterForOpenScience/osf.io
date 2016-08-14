@@ -568,10 +568,7 @@ def test(ctx, all=False, syntax=False):
 
 
 @task
-def test_travis_quick(ctx):
-    """
-    Run the fast and quirky JS tests in isolation
-    """
+def test_js(ctx):
     jshint(ctx)
     karma(ctx, single=True, browsers='PhantomJS')
 
@@ -601,6 +598,10 @@ def test_travis_else(ctx):
 
 @task
 def test_travis_varnish(ctx):
+    """
+    Run the fast and quirky JS tests and varnish tests in isolation
+    """
+    test_js(ctx)
     test_varnish(ctx)
 
 
