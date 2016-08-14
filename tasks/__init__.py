@@ -574,6 +574,7 @@ def test_travis_osf(ctx):
     """
     flake(ctx)
     jshint(ctx)
+    karma(ctx, single=True, browsers='PhantomJS')
     test_osf(ctx)
 
 @task
@@ -584,7 +585,6 @@ def test_travis_else(ctx):
     test_addons(ctx)
     test_api(ctx)
     test_admin(ctx)
-    karma(ctx, single=True, browsers='PhantomJS')
 
 
 @task
