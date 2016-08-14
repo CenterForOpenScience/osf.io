@@ -10,7 +10,7 @@ from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
 from api.base.utils import get_user_auth
 from api.base.views import JSONAPIBaseView
-from api.nodes.serializers import NodeSerializer
+from api.nodes.serializers import NodeSerializer, JSONAPISerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.view_only_links.serializers import ViewOnlyLinkDetailSerializer, ViewOnlyLinkNodesSerializer
 
@@ -98,11 +98,14 @@ class ViewOnlyLinkNodes(JSONAPIBaseView, generics.ListAPIView):
     view_name = 'view-only-link-nodes'
 
     def get_serializer_class(self):
-        view_only_link = PrivateLink.load(self.kwargs['link_id'])
-        node = Node.load(view_only_link.nodes[0])
-        if node.is_registration:
-            return RegistrationSerializer
-        return NodeSerializer
+        if 'link_id' in self.kwargs:
+            view_only_link = PrivateLink.load(self.kwargs['link_id'])
+            node = Node.load(view_only_link.nodes[0])
+            if node.is_registration:
+                return RegistrationSerializer
+            return NodeSerializer
+        else:
+            return JSONAPISerializer
 
     def get_queryset(self):
         link_id = self.kwargs['link_id']
