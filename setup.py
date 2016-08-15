@@ -9,7 +9,7 @@ setup(
     author_email='pypipackages@cos.io',
     license='MIT',
     packages=['osf_models'],
-    package_dir={'osf_models':'osf_models'},
+    package_dir={'osf_models': 'osf_models'},
     include_package_data=True,
     install_requires=[
         'django>=1.9',
@@ -24,6 +24,7 @@ setup(
         'bleach>=1.4.1',
         'pytz>=2014.9',
         'django-dirtyfields>=1.1',
+        'keen>=0.3.21',
     ],
     zip_safe=False
 )

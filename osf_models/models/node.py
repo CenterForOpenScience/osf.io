@@ -7,10 +7,12 @@ from django.db import models
 from django.dispatch import receiver
 from django.db.models.signals import post_save, pre_save
 from django.utils import timezone
+from keen import scoped_keys
 from typedmodels.models import TypedModel
 
 # OSF imports
-from website.exceptions import UserNotAffiliatedError
+from framework import status
+from website.exceptions import UserNotAffiliatedError, NodeStateError
 from website.util.permissions import (
     expand_permissions,
     DEFAULT_CONTRIBUTOR_PERMISSIONS,
@@ -18,11 +20,14 @@ from website.util.permissions import (
     WRITE,
     ADMIN
 )
+from website import settings
 from framework.sentry import log_exception
+from framework.exceptions import PermissionsError
+from website.project import signals as project_signals
 
 from osf_models.apps import AppConfig as app_config
 from osf_models.models.contributor import Contributor
-from osf_models.models.mixins import Loggable, Taggable
+from osf_models.models.mixins import Loggable, Taggable, AddonModelMixin
 from osf_models.models.user import OSFUser
 from osf_models.models.validators import validate_title
 from osf_models.utils.auth import Auth, get_user
@@ -34,7 +39,7 @@ from .base import BaseModel, GuidMixin
 
 logger = logging.getLogger(__name__)
 
-class AbstractNode(TypedModel, Taggable, Loggable, GuidMixin, BaseModel):
+class AbstractNode(TypedModel, AddonModelMixin, Taggable, Loggable, GuidMixin, BaseModel):
     """
     All things that inherit from AbstractNode will appear in
     the same table and will be differentiated by the `type` column.
@@ -86,7 +91,8 @@ class AbstractNode(TypedModel, Taggable, Loggable, GuidMixin, BaseModel):
     is_fork = models.BooleanField(default=False, db_index=True)
     is_public = models.BooleanField(default=False, db_index=True)
     is_deleted = models.BooleanField(default=False, db_index=True)
-    node_license = models.ForeignKey('NodeLicenseRecord', related_name='nodes', on_delete=models.SET_NULL, null=True, blank=True)
+    node_license = models.ForeignKey('NodeLicenseRecord', related_name='nodes',
+                                     on_delete=models.SET_NULL, null=True, blank=True)
     parent_node = models.ForeignKey('self',
                                     related_name='nodes',
                                     on_delete=models.SET_NULL,
@@ -501,6 +507,74 @@ class AbstractNode(TypedModel, Taggable, Loggable, GuidMixin, BaseModel):
                 (auth.user and self.has_permission(auth.user, 'read'))
             )
         return self.is_contributor(auth.user)
+
+    def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False):
+        """Set the permissions for this node. Also, based on meeting_creation, queues
+        an email to user about abilities of public projects.
+
+        :param permissions: A string, either 'public' or 'private'
+        :param auth: All the auth information including user, API key.
+        :param bool log: Whether to add a NodeLog for the privacy change.
+        :param bool meeting_creation: Whether this was created due to a meetings email.
+        """
+        NodeLog = apps.get_model('osf_models.NodeLog')
+        if auth and not self.has_permission(auth.user, ADMIN):
+            raise PermissionsError('Must be an admin to change privacy settings.')
+        if permissions == 'public' and not self.is_public:
+            if self.is_registration:
+                if self.is_pending_embargo:
+                    raise NodeStateError('A registration with an unapproved embargo cannot be made public.')
+                elif self.is_pending_registration:
+                    raise NodeStateError('An unapproved registration cannot be made public.')
+                elif self.is_pending_embargo:
+                    raise NodeStateError('An unapproved embargoed registration cannot be made public.')
+                elif self.is_embargoed:
+                    # Embargoed registrations can be made public early
+                    self.request_embargo_termination(auth=auth)
+                    return False
+            self.is_public = True
+            self.keenio_read_key = self.generate_keenio_read_key()
+        elif permissions == 'private' and self.is_public:
+            if self.is_registration and not self.is_pending_embargo:
+                raise NodeStateError('Public registrations must be withdrawn, not made private.')
+            else:
+                self.is_public = False
+                self.keenio_read_key = ''
+        else:
+            return False
+
+        # After set permissions callback
+        for addon in self.get_addons():
+            message = addon.after_set_privacy(self, permissions)
+            if message:
+                status.push_status_message(message, kind='info', trust=False)
+
+        if log:
+            action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE
+            self.add_log(
+                action=action,
+                params={
+                    'project': self.parent_id,
+                    'node': self._primary_key,
+                },
+                auth=auth,
+                save=False,
+            )
+        if save:
+            self.save()
+        if auth and permissions == 'public':
+            project_signals.privacy_set_public.send(auth.user, node=self, meeting_creation=meeting_creation)
+        return True
+
+    def generate_keenio_read_key(self):
+        return scoped_keys.encrypt(settings.KEEN['public']['master_key'], options={
+            'filters': [{
+                'property_name': 'node.id',
+                'operator': 'eq',
+                'property_value': str(self._id)
+            }],
+            'allowed_operations': ['read']
+        })
 
 
 class Node(AbstractNode):
