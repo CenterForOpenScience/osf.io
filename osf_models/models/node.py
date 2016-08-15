@@ -589,6 +589,15 @@ class AbstractNode(TypedModel, AddonModelMixin, Taggable, Loggable, GuidMixin, B
     def private_link_keys_deleted(self):
         return self.private_links.filter(is_deleted=True).values_list('key', flat=True)
 
+    def find_readable_antecedent(self, auth):
+        """ Returns first antecendant node readable by <user>.
+        """
+        next_parent = self.parent_node
+        while next_parent:
+            if next_parent.can_view(auth):
+                return next_parent
+            next_parent = next_parent.parent_node
+
 
 class Node(AbstractNode):
     """
