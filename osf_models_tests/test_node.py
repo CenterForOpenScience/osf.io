@@ -5,14 +5,16 @@ import mock
 import pytest
 import pytz
 
+from framework.exceptions import PermissionsError
 from website.project.signals import contributor_added
+from website.exceptions import NodeStateError
 from website.util import permissions
 
 from osf_models.models import Node, Tag, NodeLog, Contributor
 from osf_models.exceptions import ValidationError
 from osf_models.utils.auth import Auth
 
-from .factories import NodeFactory, UserFactory, UnregUserFactory
+from .factories import ProjectFactory, NodeFactory, UserFactory, UnregUserFactory
 from .utils import capture_signals, assert_datetime_equal
 
 
@@ -33,8 +35,8 @@ def auth(user):
 class TestNodeMODMCompat:
 
     def test_basic_querying(self):
-        node_1 = NodeFactory(is_public=False)
-        node_2 = NodeFactory(is_public=True)
+        node_1 = ProjectFactory(is_public=False)
+        node_2 = ProjectFactory(is_public=True)
 
         results = Node.find()
         assert len(results) == 2
@@ -64,8 +66,8 @@ class TestNodeMODMCompat:
         assert excinfo.value.message_dict == {'title': ['Title cannot exceed 200 characters.']}
 
     def test_remove_one(self):
-        node = NodeFactory()
-        node2 = NodeFactory()
+        node = ProjectFactory()
+        node2 = ProjectFactory()
         assert len(Node.find()) == 2  # sanity check
         Node.remove_one(node)
         assert len(Node.find()) == 1
@@ -441,3 +443,99 @@ def test_parent_kwarg():
     child = NodeFactory(parent=parent)
     assert child.parent_node == parent
     assert child in parent.nodes.all()
+
+
+@pytest.mark.django_db
+class TestSetPrivacy:
+
+    def test_set_privacy_checks_admin_permissions(self, user):
+        non_contrib = UserFactory()
+        project = ProjectFactory(creator=user, is_public=False)
+        # Non-contrib can't make project public
+        with pytest.raises(PermissionsError):
+            project.set_privacy('public', Auth(non_contrib))
+
+        project.set_privacy('public', Auth(project.creator))
+        project.save()
+
+        # Non-contrib can't make project private
+        with pytest.raises(PermissionsError):
+            project.set_privacy('private', Auth(non_contrib))
+
+    @pytest.mark.skip('Embargoes not yet ported')
+    def test_set_privacy_pending_embargo(self):
+        project = ProjectFactory(creator=self.user, is_public=False)
+        with mock_archive(project, embargo=True, autocomplete=True) as registration:
+            assert bool(registration.embargo.is_pending_approval) is True
+            assert bool(registration.is_pending_embargo) is True
+            with pytest.raises(NodeStateError):
+                registration.set_privacy('public', Auth(project.creator))
+
+    @pytest.mark.skip('Pending registrations not yet ported')
+    def test_set_privacy_pending_registration(self):
+        project = ProjectFactory(creator=self.user, is_public=False)
+        with mock_archive(project, embargo=False, autocomplete=True) as registration:
+            assert bool(registration.registration_approval.is_pending_approval) is True
+            assert bool(registration.is_pending_registration) is True
+            with pytest.raises(NodeStateError):
+                registration.set_privacy('public', Auth(project.creator))
+
+    def test_set_privacy(self, node, auth):
+        node.set_privacy('public', auth=auth)
+        node.save()
+        assert bool(node.is_public) is True
+        assert node.logs.first().action == NodeLog.MADE_PUBLIC
+        assert node.keenio_read_key != ''
+        node.set_privacy('private', auth=auth)
+        node.save()
+        assert bool(node.is_public) is False
+        assert node.logs.first().action == NodeLog.MADE_PRIVATE
+        assert node.keenio_read_key == ''
+
+    @mock.patch('website.mails.queue_mail')
+    def test_set_privacy_sends_mail_default(self, mock_queue, node, auth):
+        node.set_privacy('private', auth=auth)
+        node.set_privacy('public', auth=auth)
+        assert mock_queue.call_count == 1
+
+    @mock.patch('website.mails.queue_mail')
+    def test_set_privacy_sends_mail(self, mock_queue, node, auth):
+        node.set_privacy('private', auth=auth)
+        node.set_privacy('public', auth=auth, meeting_creation=False)
+        assert mock_queue.call_count == 1
+
+    @mock.patch('osf_models.models.queued_mail.queue_mail')
+    def test_set_privacy_skips_mail_if_meeting(self, mock_queue, node, auth):
+        node.set_privacy('private', auth=auth)
+        node.set_privacy('public', auth=auth, meeting_creation=True)
+        assert bool(mock_queue.called) is False
+
+    @pytest.mark.skip('Embargoes not yet ported')
+    def test_set_privacy_can_not_cancel_pending_embargo_for_registration(self):
+        registration = RegistrationFactory(project=self.project)
+        registration.embargo_registration(
+            self.user,
+            datetime.datetime.utcnow() + datetime.timedelta(days=10)
+        )
+        assert bool(registration.is_pending_embargo) is True
+
+        with pytest.raises(NodeStateError):
+            registration.set_privacy('public', auth=self.auth)
+        assert bool(registration.is_public) is False
+
+    @pytest.mark.skip('Embargoes not yet ported')
+    def test_set_privacy_requests_embargo_termination_on_embargoed_registration(self):
+        for i in range(3):
+            c = AuthUserFactory()
+            self.project.add_contributor(c, [ADMIN])
+        registration = RegistrationFactory(project=self.project)
+        registration.embargo_registration(
+            self.user,
+            datetime.datetime.utcnow() + datetime.timedelta(days=10)
+        )
+        assert_equal(len([a for a in registration.get_admin_contributors_recursive(unique_users=True)]), 4)
+        with mock.patch('website.project.model.Node.is_embargoed', mock.PropertyMock(return_value=True)):
+            with mock.patch('website.project.model.Node.is_pending_embargo', mock.PropertyMock(return_value=False)):
+                with mock.patch('website.project.model.Node.request_embargo_termination') as mock_request_embargo_termination:
+                    registration.set_privacy('public', auth=self.auth)
+                    assert_equal(mock_request_embargo_termination.call_count, 1)

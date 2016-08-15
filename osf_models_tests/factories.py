@@ -104,7 +104,7 @@ class UnconfirmedUserFactory(DjangoModelFactory):
         return instance
 
 
-class NodeFactory(DjangoModelFactory):
+class AbstractNodeFactory(DjangoModelFactory):
     title = factory.Faker('catch_phrase')
     description = factory.Faker('sentence')
     date_created = factory.LazyFunction(timezone.now)
@@ -112,6 +112,16 @@ class NodeFactory(DjangoModelFactory):
 
     class Meta:
         model = models.Node
+
+
+class ProjectFactory(AbstractNodeFactory):
+    category = 'project'
+
+
+class NodeFactory(AbstractNodeFactory):
+    category = 'hypothesis'
+    parent = factory.SubFactory(ProjectFactory)
+
 
 class InstitutionFactory(DjangoModelFactory):
     name = factory.Faker('company')
