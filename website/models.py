@@ -12,7 +12,7 @@ from website.project.model import (
     Comment, PrivateLink, MetaData,
     AlternativeCitation,
     DraftRegistration,
-    DraftRegistrationLog,
+    DraftRegistrationLog, PreprintProvider
 )
 from website.project.sanctions import (
     DraftRegistrationApproval,
@@ -25,7 +25,6 @@ from website.oauth.models import ApiOAuth2Application, ExternalAccount, ApiOAuth
 from website.identifiers.model import Identifier
 from website.citations.models import CitationStyle
 from website.institutions.model import Institution  # flake8: noqa
-from website.preprint_providers.model import PreprintProvider  # flake8: noqa
 
 from website.mails import QueuedMail
 from website.files.models.base import FileVersion
@@ -52,7 +51,7 @@ MODELS = (
     QueuedMail, AlternativeCitation,
     DraftRegistration, DraftRegistrationApproval, DraftRegistrationLog,
     NodeLicense, NodeLicenseRecord,
-    Subject
+    Subject, PreprintProvider
 )
 
 GUID_MODELS = (User, Node, Comment, MetaData)

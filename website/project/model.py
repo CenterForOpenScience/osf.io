@@ -47,6 +47,7 @@ from website.exceptions import (
     InvalidTagError, TagNotFoundError,
     UserNotAffiliatedError,
 )
+from website.files.models import StoredFileNode
 from website.institutions.model import Institution, AffiliatedInstitutionsList
 from website.preprint_providers.model import PreprintProvider
 from website.citations.utils import datetime_to_csl
@@ -889,6 +890,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     preprint_providers = fields.ForeignField('PreprintProvider', list=True)
     preprint_doi = fields.StringField(validate=validate_doi)
     _is_preprint_orphan = fields.BooleanField(default=False)
+    _preprint_provider = fields.ForeignField('node')
 
     # A list of all MetaSchemas for which this Node has registered_meta
     registered_schema = fields.ForeignField('metaschema', list=True, default=list)
@@ -1194,6 +1196,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             if subj:
                 ret.append({'id': subj_id, 'text': subj.text})
         return ret
+
+    @property
+    def preprint_provider(self):
+        '''
+        Should behave as if this was a foreign field pointing to PreprintProvider, much like affiliated_institution
+        :return: this node's _preprint_provider wrapped with the PreprintProvider model.
+        '''
+        return PreprintProvider(self._preprint_provider)
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
@@ -4247,3 +4257,14 @@ class DraftRegistration(StoredObject):
         Validates draft's metadata
         """
         return self.registration_schema.validate_metadata(*args, **kwargs)
+
+
+class PreprintProvider(StoredObject):
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    name = fields.StringField(required=True)
+    logo_name = fields.StringField()
+    description = fields.StringField()
+    banner_name = fields.StringField()
+
+    def get_absolute_url(self):
+        return '{}preprint_providers/{}'.format(self.absolute_api_v2_url, self._id)
