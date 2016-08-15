@@ -48,6 +48,7 @@ from website.exceptions import (
     UserNotAffiliatedError,
 )
 from website.institutions.model import Institution, AffiliatedInstitutionsList
+from website.preprint_providers.model import PreprintProvider
 from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
 from website.util.permissions import expand_permissions, reduce_permissions
@@ -885,7 +886,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     preprint_file = fields.ForeignField('StoredFileNode')
     preprint_created = fields.DateTimeField()
     preprint_subjects = fields.ForeignField('Subject', list=True)
-    preprint_provider = fields.ForeignField('PreprintProvider', list=True)
+    preprint_providers = fields.ForeignField('PreprintProvider', list=True)
     preprint_doi = fields.StringField(validate=validate_doi)
     _is_preprint_orphan = fields.BooleanField(default=False)
 
