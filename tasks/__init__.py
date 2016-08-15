@@ -729,6 +729,7 @@ def packages(ctx):
         'install libxml2',
         'install libxslt',
         'install elasticsearch',
+        'install rabbitmq',
         'install gpg',
         'install node',
         'tap tokutek/tokumx',
