@@ -46,12 +46,13 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin):
     root_target = GenericForeignKey('root_target_content_type', 'root_target_id')
 
     # the direct 'parent' of the comment (e.g. the target of a comment reply is another comment)
-    target_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='comments', null=True)
+    target_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE,
+                                            related_name='comments', null=True)
     target_id = models.PositiveIntegerField(null=True)
     target = GenericForeignKey('target_content_type', 'target_id')
 
-    date_created = models.DateTimeField(default=timezone.now)  #auto_now_add=True)
-    date_modified = models.DateTimeField(auto_now=True)
+    date_created = models.DateTimeField(default=timezone.now)  # auto_now_add=True)
+    date_modified = models.DateTimeField(default=timezone.now)  # auto_now=True)
     modified = models.BooleanField(default=False)
     is_deleted = models.BooleanField(default=False)
     # The type of root_target: node/files
