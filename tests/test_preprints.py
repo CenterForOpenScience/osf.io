@@ -123,13 +123,12 @@ class TestSetPreprintFile(OsfTestCase):
 class TestPreprintProviders(OsfTestCase):
     def setUp(self):
         super(TestPreprintProviders, self).setUp()
-        self.preprint = PreprintFactory()
+        self.preprint = PreprintFactory(provider=None)
 
-    def test_change_provider(self):
+    def test_set_provider(self):
         new_provider = PreprintProviderFactory(name='WWEArxiv')
 
-        assert_equal(type(self.preprint.preprint_provider), type(new_provider))
-        assert_not_equal(self.preprint.preprint_provider, new_provider)
+        assert_equal(self.preprint.preprint_provider, None)
 
         self.preprint.preprint_provider = new_provider
         self.preprint.save()

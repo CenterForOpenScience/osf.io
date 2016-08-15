@@ -290,7 +290,7 @@ def parse_args():
     parser.add_argument('--presentation', dest='presentation_name', type=str, default=None)
     parser.add_argument('-r', '--registration', dest='is_registration', type=bool, default=False)
     parser.add_argument('-pre', '--preprint', dest='is_preprint', type=bool, default=False)
-    parser.add_argument('-preprovider', '--preprintprovider', dest='preprint_provider', type=str, default='osf')
+    parser.add_argument('-preprovider', '--preprintprovider', dest='preprint_provider', type=str, default=None)
     return parser.parse_args()
 
 def evaluate_argument(string):
@@ -301,12 +301,13 @@ def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, p
     auth = Auth(user=creator)
     project_title = name if name else fake.science_sentence()
     if is_preprint:
-        try:
-            provider = models.PreprintProvider.find_one(Q('name', 'eq', preprint_provider))
-        except NoResultsFound:
-            provider = PreprintProviderFactory(name=preprint_provider)
+        if preprint_provider:
+            try:
+                preprint_provider = models.PreprintProvider.find_one(Q('name', 'eq', preprint_provider))
+            except NoResultsFound:
+                preprint_provider = PreprintProviderFactory(name=preprint_provider)
         privacy = 'public'
-        project = PreprintFactory(title=project_title, description=fake.science_paragraph(), creator=creator, provider=provider)
+        project = PreprintFactory(title=project_title, description=fake.science_paragraph(), creator=creator, provider=preprint_provider)
     elif is_registration:
         project = RegistrationFactory(title=project_title, description=fake.science_paragraph(), creator=creator)
     else:
