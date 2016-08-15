@@ -66,6 +66,12 @@ class PreprintSerializer(JSONAPISerializer):
         related_view_kwargs={'node_id': '<pk>'}
     )
 
+    provider = RelationshipField(
+        related_view='preprint_providers:preprint_provider-detail',
+        related_view_kwargs={'provider_id': '<preprint_provider._id>'},
+        lookup_url_kwarg='provider_id'
+    )
+
     links = LinksField(
         {
             'self': 'get_preprint_url',
@@ -147,3 +153,11 @@ class PreprintSerializer(JSONAPISerializer):
             raise exceptions.PermissionDenied('Not authorized to update this node.')
         except ValueError as e:
             raise exceptions.ValidationError(detail=e.message)
+
+
+class PreprintDetailSerializer(PreprintSerializer):
+    id = IDField(source='_id', required=True)
+    subjects = JSONAPIListField(required=False, source='preprint_subjects')
+
+class PreprintDetailRetrieveSerializer(PreprintDetailSerializer):
+    subjects = JSONAPIListField(required=False, source='get_preprint_subjects')
