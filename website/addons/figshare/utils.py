@@ -1,5 +1,7 @@
 from website.util import rubeus
 
+# TODO Determine how much of this is necessary
+
 def options_to_hgrid(node, fs_options):
     permissions = {
         'view': True
@@ -95,14 +97,3 @@ def file_to_hgrid(node, article, item):
         'size': item.get('size'),
         'thumbnail': item.get('thumb') or '',
     }
-
-
-# TODO Finish me
-def build_figshare_urls(node, project_id, file_id=None):
-    urls = {
-        'upload': '',
-        'delete': '',
-        'download': '',
-        'view': ''
-    }
-    return urls
