@@ -240,7 +240,7 @@ def get_metadata_files(draft):
                             q, question
                         ))
                 file_guid = file_info.get('fileId')
-                if file_guid is None:
+                if not file_guid:
                     node = Node.load(file_info.get('nodeId'))
                     path = file_info['data'].get('path')
                     item = FileNode.resolve_class(
@@ -269,7 +269,7 @@ def get_metadata_files(draft):
                         q, question
                     ))
             file_guid = file_info.get('fileId')
-            if file_guid is None:
+            if not file_guid:
                 node = Node.load(file_info.get('nodeId'))
                 path = file_info['data'].get('path')
                 item = FileNode.resolve_class(
