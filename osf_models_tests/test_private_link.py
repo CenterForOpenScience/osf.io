@@ -61,3 +61,34 @@ class TestPrivateLink:
         assert schema == draft.registration_schema
         assert data == draft.registration_metadata
         assert proj == draft.branched_from
+
+
+@pytest.mark.django_db
+class TestNodeProperties:
+
+    def test_private_links_active(self):
+        link = PrivateLinkFactory()
+        deleted = PrivateLinkFactory(is_deleted=True)
+        node = NodeFactory()
+        link.nodes.add(node)
+        deleted.nodes.add(node)
+        assert link in node.private_links_active
+        assert deleted not in node.private_links_active
+
+    def test_private_link_keys_active(self):
+        link = PrivateLinkFactory()
+        deleted = PrivateLinkFactory(is_deleted=True)
+        node = NodeFactory()
+        link.nodes.add(node)
+        deleted.nodes.add(node)
+        assert link.key in node.private_link_keys_active
+        assert deleted.key not in node.private_link_keys_active
+
+    def test_private_link_keys_deleted(self):
+        link = PrivateLinkFactory()
+        deleted = PrivateLinkFactory(is_deleted=True)
+        node = NodeFactory()
+        link.nodes.add(node)
+        deleted.nodes.add(node)
+        assert link.key not in node.private_link_keys_deleted
+        assert deleted.key in node.private_link_keys_deleted

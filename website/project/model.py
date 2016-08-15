@@ -1316,7 +1316,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     def find_readable_antecedent(self, auth):
         """ Returns first antecendant node readable by <user>.
         """
-
         next_parent = self.parent_node
         while next_parent:
             if next_parent.can_view(auth):

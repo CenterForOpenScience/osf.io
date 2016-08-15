@@ -32,6 +32,16 @@ def auth(user):
 
 
 @pytest.mark.django_db
+def test_top_level_node_has_parent_node_none():
+    project = ProjectFactory()
+    assert project.parent_node is None
+
+@pytest.mark.django_db
+def test_component_has_parent_node():
+    node = NodeFactory()
+    assert type(node.parent_node) is Node
+
+@pytest.mark.django_db
 class TestNodeMODMCompat:
 
     def test_basic_querying(self):

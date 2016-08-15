@@ -31,7 +31,6 @@ from framework.bcrypt import check_password_hash
 from website import filters, language, settings, mailchimp_utils
 from website.addons.wiki.model import NodeWikiPage
 from website.exceptions import NodeStateError, TagNotFoundError
-from website.profile.utils import serialize_user
 from website.project.signals import contributor_added
 from website.project.model import (
     Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
