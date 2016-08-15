@@ -23,7 +23,8 @@ from tests.base import OsfTestCase
 from tests.factories import (
     AuthUserFactory,
     ProjectFactory,
-    PreprintFactory
+    PreprintFactory,
+    PreprintProviderFactory
 )
 from tests.utils import assert_logs, assert_not_logs
 
@@ -117,3 +118,20 @@ class TestSetPreprintFile(OsfTestCase):
         with assert_raises(PermissionsError):
             self.project.set_preprint_file(self.file_two, auth=self.read_write_user_auth, save=True)
         assert_equal(self.project.preprint_file._id, self.file._id)
+
+
+class TestPreprintProviders(OsfTestCase):
+    def setUp(self):
+        super(TestPreprintProviders, self).setUp()
+        self.preprint = PreprintFactory()
+
+    def test_change_provider(self):
+        new_provider = PreprintProviderFactory(name='WWEArxiv')
+
+        assert_equal(type(self.preprint.preprint_provider), type(new_provider))
+        assert_not_equal(self.preprint.preprint_provider, new_provider)
+
+        self.preprint.preprint_provider = new_provider
+        self.preprint.save()
+
+        assert_equal(self.preprint.preprint_provider, new_provider)
