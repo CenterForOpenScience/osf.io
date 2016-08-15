@@ -27,7 +27,9 @@ Examples:
     python -m scripts.create_fakes -u fred@cos --components '[1, [1, 1]]' --nprojects 1
 ...will create a project with two top level components, and one with a depth of 2 components.
     python -m scripts.create_fakes -u fred@cos --nprojects 3 --preprint True
-...will create 3 preprints
+...will create 3 preprints with the default provider osf
+    python -m scripts.create_fakes -u fred@cos --nprojects 3 --preprint True --preprintprovider test_provider
+...will create 3 preprints with the provider test_provider
 
 """
 from __future__ import print_function, absolute_import
@@ -39,12 +41,13 @@ import logging
 
 from faker import Factory
 from faker.providers import BaseProvider
+from modularodm.exceptions import NoResultsFound
 from modularodm.query.querydialect import DefaultQueryDialect as Q
 
 from framework.auth import Auth
 from framework.auth import utils
 from framework.auth.core import generate_verification_key
-from tests.factories import UserFactory, ProjectFactory, NodeFactory, RegistrationFactory, PreprintFactory
+from tests.factories import UserFactory, ProjectFactory, NodeFactory, RegistrationFactory, PreprintFactory, PreprintProviderFactory
 from website import models
 from website.app import init_app
 
@@ -287,19 +290,23 @@ def parse_args():
     parser.add_argument('--presentation', dest='presentation_name', type=str, default=None)
     parser.add_argument('-r', '--registration', dest='is_registration', type=bool, default=False)
     parser.add_argument('-pre', '--preprint', dest='is_preprint', type=bool, default=False)
-    # parser.add_argument('-preprovider', '--preprintprovider', dest='preprint_provider', type=str, default='osf')
+    parser.add_argument('-preprovider', '--preprintprovider', dest='preprint_provider', type=str, default='osf')
     return parser.parse_args()
 
 def evaluate_argument(string):
     return ast.literal_eval(string)
 
 
-def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, presentation_name, is_registration, is_preprint):
+def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, presentation_name, is_registration, is_preprint, preprint_provider):
     auth = Auth(user=creator)
     project_title = name if name else fake.science_sentence()
     if is_preprint:
+        try:
+            provider = models.PreprintProvider.find_one(Q('name', 'eq', preprint_provider))
+        except NoResultsFound:
+            provider = PreprintProviderFactory(name=preprint_provider)
         privacy = 'public'
-        project = PreprintFactory(title=project_title, description=fake.science_paragraph(), creator=creator)
+        project = PreprintFactory(title=project_title, description=fake.science_paragraph(), creator=creator, provider=provider)
     elif is_registration:
         project = RegistrationFactory(title=project_title, description=fake.science_paragraph(), creator=creator)
     else:
@@ -354,7 +361,7 @@ def main():
     for i in range(args.n_projects):
         name = args.name + str(i) if args.name else ''
         create_fake_project(creator, args.n_users, args.privacy, args.n_components, name, args.n_tags,
-                            args.presentation_name, args.is_registration, args.is_preprint)
+                            args.presentation_name, args.is_registration, args.is_preprint, args.preprint_provider)
     print('Created {n} fake projects.'.format(n=args.n_projects))
     sys.exit(0)
 

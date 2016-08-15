@@ -216,41 +216,20 @@ class NodeFactory(AbstractNodeFactory):
 
 
 class PreprintProviderFactory(ModularOdmFactory):
+    name = 'OSFArxiv'
+    description = 'Preprint service for the OSF'
 
     class Meta:
-        model = Node
-
-    default_preprint_provider_attributes = {
-        '_id': fake.md5,
-        'name': fake.company,
-        'logo_name': fake.file_name,
-        'domains': lambda: [fake.url()],
-    }
-
-    def _build(cls, target_class, *args, **kwargs):
-        inst = ProjectFactory._build(target_class)
-        for inst_attr, node_attr in PreprintProvider.attribute_map.items():
-            default = cls.default_preprint_provider_attributes.get(inst_attr)
-            if callable(default):
-                default = default()
-            setattr(inst, node_attr, kwargs.pop(inst_attr, default))
-        for key, val in kwargs.items():
-            setattr(inst, key, val)
-        return PreprintProvider(inst)
+        model = PreprintProvider
 
     @classmethod
-    def _create(cls, target_class, *args, **kwargs):
-        inst = ProjectFactory._build(target_class)
-        for inst_attr, node_attr in PreprintProvider.attribute_map.items():
-            default = cls.default_preprint_provider_attributes.get(inst_attr)
-            if callable(default):
-                default = default()
-            setattr(inst, node_attr, kwargs.pop(inst_attr, default))
-        for key, val in kwargs.items():
-            setattr(inst, key, val)
+    def _create(cls, target_class, name=None, description=None, *args, **kwargs):
+        provider = target_class(*args, **kwargs)
+        provider.name = name
+        provider.description = description
+        provider.save()
 
-        inst.save()
-        return PreprintProvider(inst)
+        return provider
 
 
 class PreprintFactory(AbstractNodeFactory):
@@ -289,7 +268,7 @@ class PreprintFactory(AbstractNodeFactory):
 
         project.set_preprint_file(file, auth=Auth(project.creator))
         project.preprint_subjects = [SubjectFactory()._id]
-        project._preprint_provider = provider
+        project.preprint_provider = provider
         project.preprint_doi = doi
         project.save()
 
