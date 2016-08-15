@@ -2,9 +2,7 @@
     preregistration
 </%def>
 
-<%def name="challenge_word()">
-    Challenge
-</%def>
+<%def name="challenge_word()">challenge</%def>
 
 <%def name="description()">
     <p>The process of <a href='http://www.cos.io/prereg'>${kind()}</a> your plans is beneficial to both the scientific field and to you, the scientist. By writing out detailed data collection methods, analysis plans, and rules for excluding or missing data, you can make important decisions that affect your workflow earlier, without the biases that occur once the data are in front of you.</p>
