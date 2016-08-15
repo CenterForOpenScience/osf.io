@@ -26,6 +26,7 @@ from framework.exceptions import PermissionsError
 from website.project import signals as project_signals
 
 from osf_models.apps import AppConfig as app_config
+from osf_models.models.private_link import PrivateLink
 from osf_models.models.contributor import Contributor
 from osf_models.models.mixins import Loggable, Taggable, AddonModelMixin
 from osf_models.models.user import OSFUser
@@ -575,6 +576,18 @@ class AbstractNode(TypedModel, AddonModelMixin, Taggable, Loggable, GuidMixin, B
             }],
             'allowed_operations': ['read']
         })
+
+    @property
+    def private_links_active(self):
+        return self.private_links.filter(is_deleted=False)
+
+    @property
+    def private_link_keys_active(self):
+        return self.private_links.filter(is_deleted=False).values_list('key', flat=True)
+
+    @property
+    def private_link_keys_deleted(self):
+        return self.private_links.filter(is_deleted=True).values_list('key', flat=True)
 
 
 class Node(AbstractNode):
