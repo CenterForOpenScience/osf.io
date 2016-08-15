@@ -1,79 +1,63 @@
+# -*- coding: utf-8 -*-
 from framework.routing import Rule, json_renderer
 
-from . import views
-
-settings_routes = {
-    'rules': [
-        # OAuth: Node
-        Rule([
-            '/project/<pid>/figshare/oauth/',
-            '/project/<pid>/node/<nid>/figshare/oauth',
-        ], 'get', views.auth.figshare_oauth_start, json_renderer),
-        Rule([
-            '/project/<pid>/figshare/user_auth/',
-            '/project/<pid>/node/<nid>/figshare/user_auth/',
-        ], 'post', views.auth.figshare_add_user_auth, json_renderer),
-        Rule([
-            '/project/<pid>/figshare/oauth/',
-            '/project/<pid>/node/<nid>/figshare/oauth/',
-        ], 'delete', views.auth.figshare_oauth_delete_node, json_renderer),
-        # OAuth: User
-        Rule(
-            '/settings/figshare/oauth/',
-            'get', views.auth.figshare_oauth_start, json_renderer,
-            endpoint_suffix='__user'
-        ),
-        Rule(
-            '/settings/figshare/oauth/',
-            'delete', views.auth.figshare_oauth_delete_user, json_renderer
-        ),
-        # OAuth: General
-        Rule([
-            '/addons/figshare/callback/<uid>/',
-            '/addons/figshare/callback/<uid>/<nid>/',
-        ], 'get', views.auth.figshare_oauth_callback, json_renderer),
-    ],
-    'prefix': '/api/v1',
-}
+from website.addons.figshare import views
 
 api_routes = {
     'rules': [
-        ##### Node settings #####
         Rule(
-            ['/project/<pid>/figshare/config/',
-            '/project/<pid>/node/<nid>/figshare/config/'],
+            [
+                '/settings/figshare/accounts/',
+            ],
             'get',
-            views.config.figshare_config_get,
-            json_renderer
+            views.figshare_account_list,
+            json_renderer,
         ),
         Rule(
-            ['/project/<pid>/figshare/config/',
-            '/project/<pid>/node/<nid>/figshare/config/'],
-            'put',
-            views.config.figshare_config_put,
-            json_renderer
-        ),
-        Rule(
-            ['/project/<pid>/figshare/hgrid/options/',
-            '/project/<pid>/node/<nid>/figshare/hgrid/options/'],
+            [
+                '/project/<pid>/figshare/settings/',
+                '/project/<pid>/node/<nid>/figshare/settings/'
+            ],
             'get',
-            views.config.figshare_get_options,
-            json_renderer
+            views.figshare_get_config,
+            json_renderer,
         ),
         Rule(
-            ['/project/<pid>/figshare/config/import-auth/',
-            '/project/<pid>/node/<nid>/figshare/config/import-auth/'],
+            [
+                '/project/<pid>/figshare/settings/',
+                '/project/<pid>/node/<nid>/figshare/settings/'
+            ],
             'put',
-            views.config.figshare_import_user_auth,
-            json_renderer
+            views.figshare_set_config,
+            json_renderer,
         ),
         Rule(
-            ['/project/<pid>/figshare/config/',
-            '/project/<pid>/node/<nid>/figshare/config/'],
+            [
+                '/project/<pid>/figshare/user_auth/',
+                '/project/<pid>/node/<nid>/figshare/user_auth/'
+            ],
+            'put',
+            views.figshare_import_auth,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/figshare/user_auth/',
+                '/project/<pid>/node/<nid>/figshare/user_auth/'
+            ],
             'delete',
-            views.config.figshare_deauthorize,
-            json_renderer
+            views.figshare_deauthorize_node,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/figshare/folders/',
+                '/project/<pid>/node/<nid>/figshare/folders/',
+            ],
+            'get',
+            views.figshare_folder_list,
+            json_renderer,
         ),
     ],
-    'prefix': '/api/v1',
+    'prefix': '/api/v1'
 }
