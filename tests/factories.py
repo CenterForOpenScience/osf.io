@@ -41,7 +41,7 @@ from website.oauth.models import (
 from website.project.model import (
     Comment, DraftRegistration, MetaSchema, Node, NodeLog, Pointer,
     PrivateLink, Tag, WatchConfig, AlternativeCitation,
-    ensure_schemas, Institution
+    ensure_schemas, Institution, PreprintProvider
 )
 from website.project.sanctions import (
     Embargo,
@@ -56,7 +56,7 @@ from website.identifiers.model import Identifier
 from website.archiver import ARCHIVER_SUCCESS
 from website.project.licenses import NodeLicense, NodeLicenseRecord, ensure_licenses
 from website.util import permissions
-from website.files.models.osfstorage import OsfStorageFile
+from website.files.models.osfstorage import OsfStorageFile, FileVersion
 
 
 ensure_licenses = functools.partial(ensure_licenses, warn=False)
@@ -215,13 +215,52 @@ class NodeFactory(AbstractNodeFactory):
     parent = SubFactory(ProjectFactory)
 
 
+class PreprintProviderFactory(ModularOdmFactory):
+
+    class Meta:
+        model = Node
+
+    default_preprint_provider_attributes = {
+        '_id': fake.md5,
+        'name': fake.company,
+        'logo_name': fake.file_name,
+        'domains': lambda: [fake.url()],
+    }
+
+    def _build(cls, target_class, *args, **kwargs):
+        inst = ProjectFactory._build(target_class)
+        for inst_attr, node_attr in PreprintProvider.attribute_map.items():
+            default = cls.default_preprint_provider_attributes.get(inst_attr)
+            if callable(default):
+                default = default()
+            setattr(inst, node_attr, kwargs.pop(inst_attr, default))
+        for key, val in kwargs.items():
+            setattr(inst, key, val)
+        return PreprintProvider(inst)
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        inst = ProjectFactory._build(target_class)
+        for inst_attr, node_attr in PreprintProvider.attribute_map.items():
+            default = cls.default_preprint_provider_attributes.get(inst_attr)
+            if callable(default):
+                default = default()
+            setattr(inst, node_attr, kwargs.pop(inst_attr, default))
+        for key, val in kwargs.items():
+            setattr(inst, key, val)
+
+        inst.save()
+        return PreprintProvider(inst)
+
+
 class PreprintFactory(AbstractNodeFactory):
     creator = None
     category = 'project'
     doi = Sequence(lambda n: '10.123/{}'.format(n))
+    provider = SubFactory(PreprintProviderFactory)
 
     @classmethod
-    def _create(cls, target_class, project=None, is_public=True, filename='preprint_file.txt', provider='osf', doi=None, *args, **kwargs):
+    def _create(cls, target_class, project=None, is_public=True, filename='preprint_file.txt', provider=None, doi=None, *args, **kwargs):
         save_kwargs(**kwargs)
         user = None
         if project:
@@ -250,7 +289,7 @@ class PreprintFactory(AbstractNodeFactory):
 
         project.set_preprint_file(file, auth=Auth(project.creator))
         project.preprint_subjects = [SubjectFactory()._id]
-        project.preprint_provider = provider
+        project._preprint_provider = provider
         project.preprint_doi = doi
         project.save()
 
