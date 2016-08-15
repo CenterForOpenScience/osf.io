@@ -630,7 +630,7 @@ def set_parent(sender, instance, *args, **kwargs):
 
 class Collection(GuidMixin, BaseModel):
     # TODO: Uncomment auto_* attributes after migration is complete
-    date_created = models.DateTimeField(null=False)  # auto_now_add=True)
+    date_created = models.DateTimeField(null=False, default=timezone.now)  # auto_now_add=True)
     date_modified = models.DateTimeField(null=True, blank=True,
                                          db_index=True)  # auto_now=True)
     is_bookmark_collection = models.BooleanField(default=False, db_index=True)
@@ -638,6 +638,8 @@ class Collection(GuidMixin, BaseModel):
     title = models.TextField(
         validators=[validate_title]
     )  # this should be a charfield but data from mongo didn't fit in 255
+    user = models.ForeignKey('OSFUser', null=True, blank=True,
+                             on_delete=models.SET_NULL, related_name='collections')
 
     @property
     def nodes_pointer(self):
