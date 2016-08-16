@@ -1,8 +1,11 @@
 from rest_framework import generics
+from rest_framework.response import Response
+from rest_framework.status import HTTP_204_NO_CONTENT, HTTP_403_FORBIDDEN, HTTP_400_BAD_REQUEST
 from rest_framework import permissions as drf_permissions
 
 from modularodm import Q
 
+from framework.exceptions import PermissionsError
 from framework.auth.oauth_scopes import CoreScopes
 
 from website.models import Node
@@ -10,8 +13,10 @@ from website.models import Node
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 from api.base.filters import ODMFilterMixin
+from api.base.exceptions import RelationshipPostMakesNoChanges
+from api.base.parsers import JSONAPIOnetoOneRelationshipParser, JSONAPIOnetoOneRelationshipParserForRegularJSON
 from api.preprints.parsers import PreprintsJSONAPIParser, PreprintsJSONAPIParserForRegularJSON
-from api.preprints.serializers import PreprintSerializer
+from api.preprints.serializers import PreprintSerializer, PreprintDetailSerializer, PreprintDetailRetrieveSerializer, PreprintPreprintProviderRelationshipSerializer
 from api.nodes.views import NodeMixin, WaterButlerMixin, NodeContributorsList, NodeContributorsSerializer
 from api.base.utils import get_object_or_error
 from rest_framework.exceptions import NotFound
@@ -227,3 +232,62 @@ class PreprintContributorsList(NodeContributorsList, PreprintMixin):
     view_name = 'preprint-contributors'
 
     serializer_class = NodeContributorsSerializer
+
+
+class PreprintToPreprintProviderRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin):
+    """ Relationship Endpoint for Preprint -> PreprintProvider
+
+    Used to set preprint_provider of a preprint to a PreprintProvider
+
+    ##Actions
+
+    ###Get
+
+        Method:        GET
+        URL:           /links/self
+        Query Params:  <none>
+        Success:       200
+
+    ###Create
+
+        Method:        PUT
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": {
+                           "type": "preprint_provider",   # required
+                           "id": <provider_id>   # required
+                         }
+                       }
+        Success:       200
+
+    This requires admin permissions in the node.
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+    required_read_scopes = [CoreScopes.NODE_BASE_READ]
+    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+    serializer_class = PreprintPreprintProviderRelationshipSerializer
+    parser_classes = (JSONAPIOnetoOneRelationshipParser, JSONAPIOnetoOneRelationshipParserForRegularJSON, )
+
+    view_category = 'preprints'
+    view_name = 'preprint-relationships-preprint_provider'
+
+    def get_object(self):
+        preprint = self.get_node()
+        obj = {
+            'data': preprint.preprint_provider,
+            'self': preprint
+        }
+        return obj
+
+    def update(self, *args, **kwargs):
+        try:
+            ret = super(PreprintToPreprintProviderRelationship, self).update(*args, **kwargs)
+        except PermissionsError:
+            return Response(status=HTTP_403_FORBIDDEN)
+        except ValueError:
+            return Response(status=HTTP_400_BAD_REQUEST)
+        return ret
