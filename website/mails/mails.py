@@ -140,6 +140,7 @@ PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='Primary email cha
 INVITE = Mail('invite', subject='You have been added as a contributor to an OSF project.')
 
 CONTRIBUTOR_ADDED_DEFAULT = Mail('contributor_added_default', subject='You have been added as a contributor to an OSF project.')
+CONTRIBUTOR_ADDED_PREPRINT = Mail('contributor_added_preprint', subject='You have been added as a contributor to an OSF project.')
 
 FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
 FORWARD_INVITE_REGISTERED = Mail('forward_invite_registered', subject='Please forward to ${fullname}')
