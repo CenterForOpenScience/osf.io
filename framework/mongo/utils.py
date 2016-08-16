@@ -162,7 +162,7 @@ def paginated(model, query=None, increment=200, each=True):
         q = Q('_id', 'gt', last_id)
         if query:
             q &= query
-        page = list(model.find(q).limit(increment))
+        page = list(model.find(q).sort('_id').limit(increment))
         if each:
             for item in page:
                 yield item
