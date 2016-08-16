@@ -2,7 +2,7 @@ from website.util import rubeus
 
 # TODO Determine how much of this is necessary
 
-def options_to_hgrid(node, fs_options):
+def options_to_hgrid(fs_options):
     permissions = {
         'view': True
     }
@@ -10,7 +10,6 @@ def options_to_hgrid(node, fs_options):
         o[rubeus.KIND] = rubeus.FOLDER
         o['permissions'] = permissions
         o['addon'] = 'figshare'
-        o['type'] = o['path']
         # Currently we flatten the FS data structure when rendering in folderPicker.
         # This lets folderPicker know these items have no children to be expanded
         o['hasChildren'] = False

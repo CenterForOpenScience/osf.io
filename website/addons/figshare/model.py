@@ -73,7 +73,7 @@ class FigshareNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         return self.folder_name
 
     def get_folders(self, **kwargs):
-        return options_to_hgrid(self.owner, FigshareClient(self.external_account.oauth_key).get_folders())
+        return options_to_hgrid(FigshareClient(self.external_account.oauth_key).get_folders())
 
     def archive_errors(self):
         items = []
