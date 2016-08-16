@@ -185,7 +185,7 @@ var BaseComment = function() {
 
     self.loadingComments = ko.observable(true);
 
-    self.currentChars = ko.observable(0)
+    self.currentChars = ko.observable(0);
 
     self.underMaxLength = ko.observable(true);
 
