@@ -29,7 +29,6 @@ from framework.auth import get_user, User, Auth
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject, Guid
 from framework.auth.utils import privacy_info_handle
-from framework.analytics import tasks as piwik_tasks
 from framework.mongo.utils import to_mongo_key, unique_on
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters
@@ -925,7 +924,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     # The node (if any) used as a template for this node's creation
     template_node = fields.ForeignField('node', index=True)
 
-    piwik_site_id = fields.StringField()
     keenio_read_key = fields.StringField()
 
     # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
@@ -1617,7 +1615,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         return updated
 
     def save(self, *args, **kwargs):
-        update_piwik = kwargs.pop('update_piwik', True)
         self.adjust_permissions()
 
         first_save = not self._is_loaded
@@ -1689,14 +1686,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if 'node_license' in saved_fields:
             children = [c for c in self.get_descendants_recursive(
                 include=lambda n: n.node_license is None
-            )]
+            ) if c.is_public and not c.is_deleted]
             # this returns generator, that would get unspooled anyways
-            if children:
-                Node.bulk_update_search(children)
-
-        # This method checks what has changed.
-        if settings.PIWIK_HOST and update_piwik:
-            piwik_tasks.update_node(self._id, saved_fields)
+            while len(children):
+                batch = children[:99]
+                Node.bulk_update_search(batch)
+                children = children[99:]
 
         # Return expected value for StoredObject::save
         return saved_fields
@@ -1749,7 +1744,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         new.add_contributor(contributor=auth.user, permissions=CREATOR_PERMISSIONS, log=False, save=False)
         new.is_fork = False
         new.is_registration = False
-        new.piwik_site_id = None
         new.node_license = self.license.copy() if self.license else None
 
         # If that title hasn't been changed, apply the default prefix (once)
@@ -2277,7 +2271,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         forked.forked_date = when
         forked.forked_from = original
         forked.creator = user
-        forked.piwik_site_id = None
         forked.node_license = original.license.copy() if original.license else None
         forked.wiki_private_uuids = {}
 
@@ -2380,7 +2373,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         registered.forked_from = self.forked_from
         registered.creator = self.creator
         registered.tags = self.tags
-        registered.piwik_site_id = None
         registered._affiliated_institutions = self._affiliated_institutions
         registered.alternative_citations = self.alternative_citations
         registered.node_license = original.license.copy() if original.license else None
@@ -2935,6 +2927,26 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         return all(results)
 
+    def move_contributor(self, user, auth, index, save=False):
+        if not self.has_permission(auth.user, ADMIN):
+            raise PermissionsError('Only admins can modify contributor order')
+        old_index = self.contributors.index(user)
+        self.contributors.insert(index, self.contributors.pop(old_index))
+        self.add_log(
+            action=NodeLog.CONTRIB_REORDERED,
+            params={
+                'project': self.parent_id,
+                'node': self._id,
+                'contributors': [
+                    user._id
+                ],
+            },
+            auth=auth,
+            save=False,
+        )
+        if save:
+            self.save()
+
     def update_contributor(self, user, permission, visible, auth, save=False):
         """ TODO: this method should be updated as a replacement for the main loop of
         Node#manage_contributors. Right now there are redundancies, but to avoid major
@@ -2944,19 +2956,20 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         """
         if not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can modify contributor permissions')
-        permissions = expand_permissions(permission) or DEFAULT_CONTRIBUTOR_PERMISSIONS
-        admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
-        if not len(admins) > 1:
-            # has only one admin
-            admin = admins[0]
-            if admin == user and ADMIN not in permissions:
-                raise NodeStateError('{} is the only admin.'.format(user.fullname))
-        if user not in self.contributors:
-            raise ValueError(
-                'User {0} not in contributors'.format(user.fullname)
-            )
+
         if permission:
             permissions = expand_permissions(permission)
+            admins = [contrib for contrib in self.contributors if
+                      self.has_permission(contrib, 'admin') and contrib.is_active]
+            if not len(admins) > 1:
+                # has only one admin
+                admin = admins[0]
+                if admin == user and ADMIN not in permissions:
+                    raise NodeStateError('{} is the only admin.'.format(user.fullname))
+            if user not in self.contributors:
+                raise ValueError(
+                    'User {0} not in contributors'.format(user.fullname)
+                )
             if set(permissions) != set(self.get_permissions(user)):
                 self.set_permissions(user, permissions, save=save)
                 permissions_changed = {

@@ -13,6 +13,7 @@ from api.base.serializers import LinkedNodesRelationshipSerializer
 from api.base.parsers import JSONAPIRelationshipParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
 from api.base.utils import get_user_auth
+from api.comments.serializers import RegistrationCommentSerializer, CommentCreateSerializer
 
 from api.registrations.serializers import (
     RegistrationSerializer,
@@ -27,7 +28,7 @@ from api.nodes.views import (
     NodeContributorDetail, NodeFilesList, NodeLinksDetail, NodeFileDetail,
     NodeAlternativeCitationsList, NodeAlternativeCitationDetail, NodeLogList,
     NodeInstitutionsList, WaterButlerMixin, NodeForksList, NodeWikiList,
-    LinkedNodesList
+    LinkedNodesList, NodeViewOnlyLinksList, NodeViewOnlyLinkDetail
 )
 
 from api.registrations.serializers import RegistrationNodeLinksSerializer, RegistrationFileSerializer
@@ -318,8 +319,15 @@ class RegistrationForksList(NodeForksList, RegistrationMixin):
     view_name = 'registration-forks'
 
 class RegistrationCommentsList(NodeCommentsList, RegistrationMixin):
+    serializer_class = RegistrationCommentSerializer
     view_category = 'registrations'
     view_name = 'registration-comments'
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return CommentCreateSerializer
+        else:
+            return RegistrationCommentSerializer
 
 
 class RegistrationLogList(NodeLogList, RegistrationMixin):
@@ -424,3 +432,21 @@ class RegistrationLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveAPIV
         ], 'self': node}
         self.check_object_permissions(self.request, obj)
         return obj
+
+
+class RegistrationViewOnlyLinksList(NodeViewOnlyLinksList, RegistrationMixin):
+
+    required_read_scopes = [CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_READ]
+    required_write_scopes = [CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_WRITE]
+
+    view_category = 'registrations'
+    view_name = 'registration-view-only-links'
+
+
+class RegistrationViewOnlyLinkDetail(NodeViewOnlyLinkDetail, RegistrationMixin):
+
+    required_read_scopes = [CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_READ]
+    required_write_scopes = [CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_WRITE]
+
+    view_category = 'registrations'
+    view_name = 'registration-view-only-link-detail'

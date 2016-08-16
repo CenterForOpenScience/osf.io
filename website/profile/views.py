@@ -15,6 +15,7 @@ from framework import sentry
 from framework.auth import utils as auth_utils
 from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
+from framework.auth.decorators import must_be_confirmed
 from framework.auth.exceptions import ChangePasswordError
 from framework.auth.views import send_confirm_email
 from framework.auth.signals import user_merged
@@ -297,6 +298,7 @@ def profile_view(auth):
 
 
 @collect_auth
+@must_be_confirmed
 def profile_view_id(uid, auth):
     user = User.load(uid)
     is_profile = auth and auth.user == user
