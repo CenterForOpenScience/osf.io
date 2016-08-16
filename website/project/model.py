@@ -1596,6 +1596,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if save:
             self.save()
 
+    def set_preprint_provider(self, preprint_provider, auth, save=False):
+        if not self.has_permission(auth.user, ADMIN):
+            raise PermissionsError('Only admins can update a preprint provider.')
+        if not preprint_provider:
+            raise ValueError('Must specify a provider to set as the preprint_provider')
+        self.preprint_provider = preprint_provider
+        if save:
+            self.save()
+
     def generate_keenio_read_key(self):
         return scoped_keys.encrypt(settings.KEEN['public']['master_key'], options={
             'filters': [{
