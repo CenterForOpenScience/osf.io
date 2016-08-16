@@ -4661,5 +4661,43 @@ class TestPrivateLink(OsfTestCase):
         assert_equal(proj, draft.branched_from)
 
 
+class TestNodeAddContributorRegisteredOrNot(OsfTestCase):
+
+    def setUp(self):
+        super(TestNodeAddContributorRegisteredOrNot, self).setUp()
+        self.user = AuthUserFactory()
+        self.node = ProjectFactory(creator=self.user)
+
+    def test_add_contributor_user_id(self):
+        self.registered_user = UserFactory()
+        contributor = self.node.add_contributor_registered_or_not(auth=Auth(self.user), user_id=self.registered_user._id, save=True)
+        assert_in(contributor._id, self.node.contributors)
+        assert_equals(contributor.is_registered, True)
+
+    def test_add_contributor_user_id_already_contributor(self):
+        with assert_raises(ValidationValueError):
+            self.node.add_contributor_registered_or_not(auth=Auth(self.user), user_id=self.user._id, save=True)
+
+    def test_add_contributor_invalid_user_id(self):
+        with assert_raises(ValueError):
+            self.node.add_contributor_registered_or_not(auth=Auth(self.user), user_id='abcde', save=True)
+
+    def test_add_contributor_fullname_email(self):
+        contributor = self.node.add_contributor_registered_or_not(auth=Auth(self.user), full_name='Jane Doe', email='jane@doe.com')
+        assert_in(contributor._id, self.node.contributors)
+        assert_equals(contributor.is_registered, False)
+
+    def test_add_contributor_fullname(self):
+        contributor = self.node.add_contributor_registered_or_not(auth=Auth(self.user), full_name='Jane Doe')
+        assert_in(contributor._id, self.node.contributors)
+        assert_equals(contributor.is_registered, False)
+
+    def test_add_contributor_fullname_email_already_exists(self):
+        self.registered_user = UserFactory()
+        contributor = self.node.add_contributor_registered_or_not(auth=Auth(self.user), full_name='F Mercury', email=self.registered_user.username)
+        assert_in(contributor._id, self.node.contributors)
+        assert_equals(contributor.is_registered, True)
+
+
 if __name__ == '__main__':
     unittest.main()

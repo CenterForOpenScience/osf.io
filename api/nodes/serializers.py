@@ -12,7 +12,7 @@ from django.conf import settings
 from website.addons.base.exceptions import InvalidFolderError, InvalidAuthError
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
-from website.models import Node, User, Comment, Institution, MetaSchema, DraftRegistration
+from website.models import Node, Comment, Institution, MetaSchema, DraftRegistration
 from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 from website.project.model import NodeUpdateError
@@ -584,6 +584,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
         if unclaimed_records:
             return unclaimed_records.get('name', None)
 
+
 class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     """
     Overrides NodeContributorsSerializer to add email, full_name, and non-required users field.
@@ -598,6 +599,12 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
         required=False
     )
 
+    def validate_data(self, user_id=None, full_name=None, email=None):
+        if user_id and (full_name or email):
+            raise Conflict(detail='Full name and/or email should not be included with a user ID.')
+        if not user_id and not full_name:
+            raise exceptions.ValidationError(detail='A user ID or full name must be provided to add a contributor.')
+
     def create(self, validated_data):
         id = validated_data.get('_id')
         email = validated_data.get('email')
@@ -607,31 +614,22 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
         bibliographic = validated_data.get('bibliographic')
         permissions = osf_permissions.expand_permissions(validated_data.get('permission')) or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
 
-        if not id and not full_name:
-            raise exceptions.ValidationError(detail='A user ID or full name must be provided to add a contributor.')
+        self.validate_data(user_id=id, full_name=full_name, email=email)
+        try:
+            contributor = node.add_contributor_registered_or_not(
+                auth=auth,
+                user_id=id,
+                full_name=full_name,
+                email=email,
+                bibliographic=bibliographic,
+                permissions=permissions,
+                save=True
+            )
+        except ValidationValueError as e:
+            raise exceptions.ValidationError(detail=e.message)
+        except ValueError as e:
+            raise exceptions.NotFound(detail=e.message)
 
-        if id:
-            if full_name or email:
-                raise Conflict(detail='Full name and/or email should not be included with a user ID.')
-            else:
-                contributor = get_object_or_error(User, id, display_name='user')
-                if contributor in node.contributors:
-                    raise exceptions.ValidationError('{} is already a contributor'.format(contributor.fullname))
-                node.add_contributor(contributor=contributor, auth=auth, visible=bibliographic, permissions=permissions, save=True)
-        else:
-            if email:
-                try:
-                    contributor = node.add_unregistered_contributor(fullname=full_name, email=email, auth=auth, permissions=permissions, save=True)
-                except ValidationValueError:
-                    user = User.find_by_email(email=email)
-                    contributor = get_object_or_error(User, user[0]._id, display_name='user')
-                    node.add_contributor(contributor=contributor, auth=auth, visible=bibliographic, permissions=permissions, save=True)
-            else:
-                contributor = node.add_unregistered_contributor(fullname=full_name, email=email, auth=auth, permissions=permissions, save=True)
-
-        contributor.permission = osf_permissions.reduce_permissions(node.get_permissions(contributor))
-        contributor.bibliographic = node.get_visible(contributor)
-        contributor.node_id = node._id
         return contributor
 
 

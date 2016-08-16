@@ -1,7 +1,13 @@
 # -*- coding: utf-8 -*-
 from nose.tools import *  # flake8: noqa
 
+from rest_framework import exceptions
+
+from unittest import TestCase
+
+from api.base.exceptions import Conflict
 from api.base.settings.defaults import API_BASE
+from api.nodes.serializers import NodeContributorsCreateSerializer
 from website.models import NodeLog
 
 from framework.auth.core import Auth
@@ -812,49 +818,6 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert_equal(res.json['data']['attributes']['email'], None)
         assert_in(res.json['data']['embeds']['users']['data']['id'], self.public_project.contributors)
 
-    def test_read_write_add_unregistered_contributor(self):
-        self.read_write = AuthUserFactory()
-        self.public_project.add_contributor(self.read_write)
-        self.public_project.save()
-        payload = {
-            'data': {
-                'type': 'contributors',
-                'attributes': {
-                    'full_name': 'John Doe',
-                }
-            }
-        }
-        res = self.app.post_json_api(self.public_url, payload, auth=self.read_write.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-
-    def test_read_only_add_unregistered_contributor(self):
-        self.read_only = AuthUserFactory()
-        self.public_project.add_contributor(self.read_only, permissions=[permissions.READ])
-        self.public_project.save()
-        payload = {
-            'data': {
-                'type': 'contributors',
-                'attributes': {
-                    'full_name': 'John Doe',
-                }
-            }
-        }
-        res = self.app.post_json_api(self.public_url, payload, auth=self.read_only.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-
-    def test_add_unregistered_contributor_with_email(self):
-        payload = {
-            'data': {
-                'type': 'contributors',
-                'attributes': {
-                    'email': 'john@doe.com',
-                }
-            }
-        }
-        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'A user ID or full name must be provided to add a contributor.')
-
     @assert_logs(NodeLog.CONTRIB_ADDED, 'public_project')
     def test_add_contributor_with_fullname_and_email_unregistered_user(self):
         payload = {
@@ -892,69 +855,37 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert_equal(res.json['data']['attributes']['email'], 'jane@doe.com')
         assert_in(res.json['data']['embeds']['users']['data']['id'], self.public_project.contributors)
 
-    def test_add_unregistered_contributor_user_id_with_fullname(self):
-        payload = {
-            'data': {
-                'type': 'contributors',
-                'attributes': {
-                    'full_name': 'John Doe'
-                },
-                'relationships': {
-                    'users': {
-                        'data': {
-                            'id': self.user_two._id,
-                            'type': 'users'
-                        }
-                    }
-                }
-            }
-        }
-        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'Full name and/or email should not be included with a user ID.')
 
-    def test_add_unregistered_contributor_user_id_with_email(self):
-        payload = {
-            'data': {
-                'type': 'contributors',
-                'attributes': {
-                    'email': 'john@doe.com'
-                },
-                'relationships': {
-                    'users': {
-                        'data': {
-                            'id': self.user_two._id,
-                            'type': 'users'
-                        }
-                    }
-                }
-            }
-        }
-        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'Full name and/or email should not be included with a user ID.')
+class TestNodeContributorCreateValidation(TestCase):
 
-    def test_add_unregistered_contributor_user_id_with_fullname_and_email(self):
-        payload = {
-            'data': {
-                'type': 'contributors',
-                'attributes': {
-                    'full_name': 'John Doe',
-                    'email': 'john@doe.com'
-                },
-                'relationships': {
-                    'users': {
-                        'data': {
-                            'id': self.user_two._id,
-                            'type': 'users'
-                        }
-                    }
-                }
-            }
-        }
-        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'Full name and/or email should not be included with a user ID.')
+    def setUp(self):
+        super(TestNodeContributorCreateValidation, self).setUp()
+        self.validate_data = NodeContributorsCreateSerializer.validate_data
+
+    def test_add_contributor_validation_user_id(self):
+        self.validate_data(NodeContributorsCreateSerializer(), user_id='abcde')
+
+    def test_add_contributor_validation_user_id_fullname(self):
+        with assert_raises(Conflict):
+            self.validate_data(NodeContributorsCreateSerializer(), user_id='abcde', full_name='Kanye')
+
+    def test_add_contributor_validation_user_id_email(self):
+        with assert_raises(Conflict):
+            self.validate_data(NodeContributorsCreateSerializer(), user_id='abcde', email='kanye@west.com')
+
+    def test_add_contributor_validation_user_id_fullname_email(self):
+        with assert_raises(Conflict):
+            self.validate_data(NodeContributorsCreateSerializer(), user_id='abcde', full_name='Kanye', email='kanye@west.com')
+
+    def test_add_contributor_validation_fullname(self):
+        self.validate_data(NodeContributorsCreateSerializer(), full_name='Kanye')
+
+    def test_add_contributor_validation_email(self):
+        with assert_raises(exceptions.ValidationError):
+            self.validate_data(NodeContributorsCreateSerializer(), email='kanye@west.com')
+
+    def test_add_contributor_validation_fullname_email(self):
+        self.validate_data(NodeContributorsCreateSerializer(), full_name='Kanye', email='kanye@west.com')
 
 
 class TestNodeContributorBulkCreate(NodeCRUDTestCase):

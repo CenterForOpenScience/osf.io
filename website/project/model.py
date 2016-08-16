@@ -3204,6 +3204,35 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         self.save()
         return contributor
 
+    def add_contributor_registered_or_not(self, auth, user_id=None, full_name=None, email=None, permissions=None, bibliographic=True, save=False):
+        # TODO: @caseyrollins -- add model tests, API validation tests, single API view tests, update current API tests
+        if user_id:
+            contributor = User.load(user_id)
+            if contributor in self.contributors:
+                raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
+            if not contributor:
+                raise ValueError('User with id {} was not found.'.format(user_id))
+            self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic, permissions=permissions, save=True)
+        else:
+            if email:
+                try:
+                    contributor = self.add_unregistered_contributor(fullname=full_name, email=email, auth=auth, permissions=permissions, save=True)
+                except ValidationValueError:
+                    user = User.find_by_email(email=email)
+                    contributor = user[0]
+                    self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic, permissions=permissions, save=True)
+            else:
+                contributor = self.add_unregistered_contributor(fullname=full_name, email=email, auth=auth, permissions=permissions, save=True)
+
+        contributor.permission = reduce_permissions(self.get_permissions(contributor))
+        contributor.bibliographic = self.get_visible(contributor)
+        contributor.node_id = self._id
+
+        if save:
+            contributor.save()
+
+        return contributor
+
     def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False):
         """Set the permissions for this node. Also, based on meeting_creation, queues an email to user about abilities of
             public projects.
