@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import uuid
 
+from django.apps import apps
+
 from .model import Node, PrivateLink
 from framework.mongo.utils import from_mongo
 from modularodm import Q
@@ -68,24 +70,22 @@ def new_bookmark_collection(user):
     :return Node: Created node
 
     """
-    existing_bookmark_collection = Node.find(
-        Q('is_bookmark_collection', 'eq', True) & Q('contributors', 'eq', user._id)
+    Collection = apps.get_model('osf_models.Collection')
+    existing_bookmark_collection = Collection.find(
+        Q('is_bookmark_collection', 'eq', True) &
+        Q('user', 'eq', user)
     )
 
     if existing_bookmark_collection.count() > 0:
         raise NodeStateError('Users may only have one bookmark collection')
 
-    node = Node(
+    collection = Collection(
         title='Bookmarks',
-        creator=user,
-        category='project',
-        is_bookmark_collection=True,
-        is_collection=True
+        user=user,
+        is_bookmark_collection=True
     )
-
-    node.save()
-
-    return node
+    collection.save()
+    return collection
 
 
 def new_collection(title, user):

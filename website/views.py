@@ -5,6 +5,7 @@ import logging
 import math
 import urllib
 
+from django.apps import apps
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from flask import request
@@ -19,7 +20,7 @@ from framework.routing import proxy_url
 from website.institutions.views import view_institution
 
 from website.models import Guid
-from website.models import Node, Institution
+from website.models import Institution
 from website.project import new_bookmark_collection
 from website.util import permissions
 
@@ -88,7 +89,8 @@ def index():
 
 
 def find_bookmark_collection(user):
-    bookmark_collection = Node.find(Q('is_bookmark_collection', 'eq', True) & Q('contributors', 'eq', user))
+    Collection = apps.get_model('osf_models.Collection')
+    bookmark_collection = Collection.find(Q('is_bookmark_collection', 'eq', True) & Q('user', 'eq', user))
     if bookmark_collection.count() == 0:
         new_bookmark_collection(user)
     return bookmark_collection[0]
