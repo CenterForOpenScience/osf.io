@@ -1,15 +1,17 @@
-from modularodm.exceptions import ValidationValueError
+from modularodm import Q
+from modularodm.exceptions import ValidationValueError, NoResultsFound, MultipleResultsFound
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 
 from api.base.serializers import (
-    JSONAPISerializer, IDField, JSONAPIListField, LinksField, RelationshipField
+    JSONAPISerializer, IDField, JSONAPIListField, LinksField,
+    RelationshipField, JSONAPIRelationshipSerializer, TypeField
 )
 from api.base.exceptions import Conflict
 from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import NodeTagField
 from framework.exceptions import PermissionsError
-from website.models import Node, StoredFileNode
+from website.models import StoredFileNode, PreprintProvider, Node
 
 
 class PrimaryFileRelationshipField(RelationshipField):
@@ -161,3 +163,36 @@ class PreprintDetailSerializer(PreprintSerializer):
 
 class PreprintDetailRetrieveSerializer(PreprintDetailSerializer):
     subjects = JSONAPIListField(required=False, source='get_preprint_subjects')
+
+
+class PreprintPreprintProviderRelationshipSerializer(ser.Serializer):
+    id = ser.CharField(source='_id', required=False, allow_null=True)
+    type = TypeField(required=False, allow_null=True)
+
+    links = LinksField({'self': 'get_self_url',
+                        'html': 'get_related_url'})
+
+    def get_self_url(self, obj):
+        return obj['self'].absolute_api_v2_url + 'relationships/preprints/'
+
+    def get_related_url(self, obj):
+        return obj['self'].absolute_api_v2_url + '/preprints/'
+
+    class Meta:
+        type_ = 'preprint_providers'
+
+    def make_instance_obj(self, obj):
+        return {
+            'data': obj.preprint_provider,
+            'self': obj
+        }
+
+    def update(self, instance, validated_data):
+        node = instance['self']
+        auth = get_user_auth(self.context['request'])
+
+        preprint_provider = PreprintProvider.load(validated_data['_id'])
+
+        node.set_preprint_provider(preprint_provider, auth, save=True)
+
+        return self.make_instance_obj(node)
