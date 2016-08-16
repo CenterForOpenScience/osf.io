@@ -19,7 +19,7 @@ class TestConfigViews(FigshareAddonTestCase, testing.views.OAuthAddonConfigViews
     @mock.patch.object(FigshareClient, 'get_folders')
     @mock.patch.object(FigshareClient, 'get_linked_folder_info')
     def test_folder_list(self, mock_about, mock_folders):
-        mock_folders.return_value = [{'label': 'Memes', 'value': 'fileset_009001'}]
+        mock_folders.return_value = [{'path': 'fileset', 'name': 'Memes', 'id': '009001'}]
         mock_about.return_value = {'path': 'fileset', 'name': 'Memes', 'id': '009001'}
         super(TestConfigViews, self).test_folder_list()
 
