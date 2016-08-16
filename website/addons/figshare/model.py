@@ -6,14 +6,13 @@ from modularodm import fields
 from framework.auth.decorators import Auth
 from framework.exceptions import HTTPError
 
-from website.models import NodeLog
 from website.addons.base import exceptions
 from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase
 from website.addons.base import StorageAddonBase
 from website.oauth.models import ExternalProvider
 
 from website.addons.figshare import messages
-from website.addons.figshare.api import FigshareClient
+from website.addons.figshare.client import FigshareClient
 from website.addons.figshare import settings
 from website.addons.figshare.utils import options_to_hgrid
 from website.addons.figshare.serializer import FigshareSerializer
@@ -79,19 +78,19 @@ class FigshareNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def archive_errors(self):
         items = []
         if self.folder_path in ('article', 'fileset'):
-            article = FigshareClient(self.external_account.oauth_key).article(self, self.folder_id)
-            items = article['items'] if article else []
+            article = FigshareClient(self.external_account.oauth_key).article(self.folder_id)
+            items = [article]
         else:
-            project = FigshareClient(self.external_account.oauth_key).project(self, self.folder_id)
+            project = FigshareClient(self.external_account.oauth_key).project(self.folder_id)
             items = project['articles'] if project else []
         private = any(
             [item for item in items if item['status'].lower() != 'public']
         )
 
         if private:
-            return 'The figshare {folder_path} <strong>{folder}</strong> contains private content that we cannot copy to the registration. If this content is made public on figshare we should then be able to copy those files. You can view those files <a href="{url}" target="_blank">here.</a>'.format(
+            return 'The figshare {folder_path} <strong>{folder_name}</strong> contains private content that we cannot copy to the registration. If this content is made public on figshare we should then be able to copy those files. You can view those files <a href="{url}" target="_blank">here.</a>'.format(
                 folder_path=markupsafe.escape(self.folder_path),
-                folder=markupsafe.escape(self.folder),
+                folder_name=markupsafe.escape(self.folder_name),
                 url=self.owner.web_url_for('collect_file_trees'))
 
     def clear_settings(self):
@@ -126,35 +125,31 @@ class FigshareNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         }
 
     def create_waterbutler_log(self, auth, action, metadata):
-        if action in [NodeLog.FILE_ADDED, NodeLog.FILE_UPDATED]:
-            name = metadata['name']
-            url = self.owner.web_url_for('addon_view_or_download_file', provider='figshare', path=metadata['path'])
-            urls = {
-                'view': url,
-                'download': url + '?action=download'
-            }
-        elif action == NodeLog.FILE_REMOVED:
-            name = metadata['path']
-            urls = {}
+        url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'], provider='figshare')
         self.owner.add_log(
             'figshare_{0}'.format(action),
             auth=auth,
             params={
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
-                'path': name,
-                'urls': urls,
-                'figshare': {
-                    'id': self.folder_id,
-                    'type': self.folder_path,
+                'path': metadata['materialized'],
+                'filename': metadata['materialized'].strip('/'),
+                'urls': {
+                    'view': url,
+                    'download': url + '?action=download'
                 },
             },
         )
 
-    def set_folder(self, fields, auth):
-        self.folder_id = fields['id']
-        self.folder_name = fields['name']
-        self.folder_path = fields['type']
+    def set_folder(self, folder_id, auth):
+        try:
+            info = FigshareClient(self.external_account.oauth_key).get_linked_folder_info(folder_id)
+        except HTTPError as e:
+            raise exceptions.InvalidFolderError(e.message)
+
+        self.folder_id = info['id']
+        self.folder_name = info['name']
+        self.folder_path = info['path']
 
         self.nodelogger.log(action='content_linked')
         self.save()
