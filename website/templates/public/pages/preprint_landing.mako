@@ -146,7 +146,7 @@
                     <a href="https://osf.io/view/PsyArXiv/"><img src="/static/img/psyarxiv-banner.png" alt="PsyArXiv" width="100%" style="margin-top: 20px;"></a>
                 </div>
                 <div class="col-md-10 text-center">
-                    <h2>The eprint server for engineering.</h2>
+                    <h2>A free preprint service for the psychological sciences</h2>
                     <h4>Under development. Get updates on <a href="https://twitter.com/psyarxiv">@psyarxiv</a>
                       <a href="https://www.facebook.com/psyarxiv" aria-label="Facebook"><i class="fa fa-facebook fa-lg fa-2x"></i></a>
                       <a href="https://twitter.com/psyarxiv" aria-label="Twitter"><i class="fa fa-twitter fa-lg fa-2x"></i></a>
