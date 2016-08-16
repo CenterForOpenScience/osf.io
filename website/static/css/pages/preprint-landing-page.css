@@ -618,6 +618,23 @@ footer {
     margin-bottom: 40px;
 }
 
+.psyarxiv {
+    background: #87cefa;
+    margin-top: -20px;
+    color: #FFF;
+    padding: 50px 0;
+}
+
+.psyarxiv a {
+    color: #FFF;
+}
+.psyarxiv h2 {
+    margin-top: 20px;
+    font-size: 40px;
+}
+.psyarxiv h4 {
+    margin-bottom: 40px;
+}
 
 .network-bg {
     background: url("/static/img/front-page/bg-web.png") repeat;
