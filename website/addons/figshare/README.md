@@ -31,7 +31,7 @@ has instructions for use with ngrok, but there are other methods.
 2. Click the dropdown with your name and select **Applications** and click **Create Personal Token**
 3. `invoke shell`, then run:
 ```
-from website.addons.figshare.api import FigshareClient
+from website.addons.figshare.client import FigshareClient
 from website.oauth.models import ExternalAccount
 
 me = User.find_one(Q('username', 'eq', '<your username>'))

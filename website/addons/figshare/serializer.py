@@ -1,6 +1,6 @@
 from website.addons.base.serializer import StorageAddonSerializer
 
-from website.addons.figshare.api import FigshareClient
+from website.addons.figshare.client import FigshareClient
 from website.util import api_url_for, web_url_for
 
 class FigshareSerializer(StorageAddonSerializer):

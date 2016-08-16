@@ -47,7 +47,8 @@ class FigshareClient(BaseClient):
             return
         project = self._make_request(
             'GET',
-            self._build_url(settings.API_BASE_URL, 'account', 'projects', project_id)
+            self._build_url(settings.API_BASE_URL, 'account', 'projects', project_id),
+            expects=(200,)
         ).json()
         if not project:
             return
@@ -78,7 +79,8 @@ class FigshareClient(BaseClient):
     def article(self, article_id):
         return self._make_request(
             'GET',
-            self._build_url(settings.API_BASE_URL, 'account', 'articles', article_id)
+            self._build_url(settings.API_BASE_URL, 'account', 'articles', article_id),
+            expects=(200, )
         ).json()
 
     # OTHER HELPERS
@@ -89,3 +91,23 @@ class FigshareClient(BaseClient):
                 for project in projects] + \
             [{'label': (article['title'] or 'untitled article'), 'value': 'fileset_{0}'.format(article['id'])}
              for article in articles if article['defined_type'] == settings.FIGSHARE_DEFINED_TYPE_NUM_MAP['fileset']]
+
+    def get_linked_folder_info(self, _id):
+        """ Returns info about a linkable object -- 'project' or 'fileset' """
+        ret = {}
+        try:
+            folder = self._make_request(
+                'GET',
+                self._build_url(settings.API_BASE_URL, 'account', 'projects', _id),
+                expects=(200, ),
+                throws=HTTPError(404)
+            ).json()
+            ret['path'] = 'project'
+        except HTTPError:
+            folder = self.article(_id)
+            if folder.get('defined_type') != settings.FIGSHARE_DEFINED_TYPE_NUM_MAP['fileset']:
+                raise
+            ret['path'] = 'fileset'
+        ret['name'] = folder['title'] or 'untitled article'
+        ret['id'] = str(_id)
+        return ret
