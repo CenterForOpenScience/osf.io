@@ -17,7 +17,6 @@ from website.exceptions import NodeStateError, TooManyRequests
 from website.util import permissions as osf_permissions
 from website.project import new_private_link
 from website.project.model import NodeUpdateError
-from website import settings as web_settings
 
 from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse, is_truthy
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
@@ -654,20 +653,20 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
 class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     """
-    Overrides NodeContributorsSerializer to add email, full_name, and non-required users field.
+    Overrides NodeContributorsSerializer to add email, full_name, send_email, and non-required users field.
     """
+
     id = ContributorIDField(source='_id', required=False, allow_null=True)
     full_name = ser.CharField(required=False)
     email = ser.EmailField(required=False)
-
-    # email_template = ser.CharField(required=False, allow_null=True,
-    #                                default=web_settings.DEFAULT_CON
 
     users = RelationshipField(
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<pk>'},
         required=False
     )
+
+    email_preferences = ['default', 'preprint', 'false']
 
     def validate_data(self, user_id=None, full_name=None, email=None):
         if user_id and (full_name or email):
@@ -681,23 +680,19 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
         node = self.context['view'].get_node()
         auth = Auth(self.context['request'].user)
         full_name = validated_data.get('full_name')
+        send_email = self.context['request'].get('send_email') or 'default'
         bibliographic = validated_data.get('bibliographic')
         permissions = osf_permissions.expand_permissions(validated_data.get('permission')) or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
 
-        # email_template = validated_data.get('email_template')
-        # if email_template not in web_settings.ALLOWED_CONTRIB_ADD_EMAIL_TEMPLATES:
-        #     raise exceptions.ValidationError('{} is not a valid contributor email template.'.format(email_template))
-
         self.validate_data(user_id=id, full_name=full_name, email=email)
+
+        if send_email not in self.email_preferences:
+            raise exceptions.ValidationError(detail='{} is not a valid email preference.'.format(send_email))
+
         try:
             contributor = node.add_contributor_registered_or_not(
-                auth=auth,
-                user_id=id,
-                full_name=full_name,
-                email=email,
-                bibliographic=bibliographic,
-                permissions=permissions,
-                save=True
+                auth=auth, user_id=id, email=email, full_name=full_name,
+                send_email=send_email, permissions=permissions, bibliographic=bibliographic, save=True
             )
         except TooManyRequests:
             raise exceptions.Throttled(detail='Too many contributor adds. Please wait a while and try again')

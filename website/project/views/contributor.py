@@ -464,11 +464,9 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
 
 
 @contributor_added.connect
-def notify_added_contributor(node, contributor, auth=None, throttle=None,
-                             email_template='contributor_added'):
-    print('### email_template is ' + str(email_template))
+def notify_added_contributor(node, contributor, auth=None, throttle=None, email_template='default'):
     throttle = throttle or settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
-    email_template_method = getattr(mails, email_template.upper())
+    email_template = getattr(mails, '_{}'.format(email_template.upper()))
 
     # Exclude forks and templates because the user forking/templating the project gets added
     # via 'add_contributor' but does not need to get notified.
@@ -487,8 +485,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None,
 
         mails.send_mail(
             contributor.username,
-            # mails.CONTRIBUTOR_ADDED,
-            email_template_method,
+            email_template,
             user=contributor,
             node=node,
             referrer_name=auth.user.fullname if auth else '',

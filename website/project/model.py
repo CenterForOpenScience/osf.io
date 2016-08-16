@@ -3092,35 +3092,19 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             if to_remove or permissions_changed and ['read'] in permissions_changed.values():
                 project_signals.write_permissions_revoked.send(self)
 
-    # def throttle_add_contributor(self, contributor, permissions=None,
-    #                              visible=True, auth=None, log=True, save=False,
-    #                              email_template=''):
-    #     print('### email_template is ' + str(email_template))
-    #
-    #     if not throttle_period_expired(auth.user.email_last_sent,
-    #                                    settings.API_SEND_EMAIL_THROTTLE):
-    #         raise TooManyRequests
-    #     ret = self.add_contributor(contributor, permissions, visible, auth,
-    #                                log, save, email_template)
-    #     if ret:
-    #         auth.user.email_last_sent = datetime.datetime.utcnow()
-    #         auth.user.save()
-    #
-    #     return ret
-
     def add_contributor(self, contributor, permissions=None, visible=True,
-                        auth=None, log=True, save=False, email_template=''):
+                        send_email='default', auth=None, log=True, save=False):
         """Add a contributor to the project.
 
         :param User contributor: The contributor to be added
         :param list permissions: Permissions to grant to the contributor
         :param bool visible: Contributor is visible in project dashboard
+        :param str send_email: Email preference for notifying added contributor
         :param Auth auth: All the auth information including user, API key
         :param bool log: Add log to self
         :param bool save: Save after adding contributor
         :returns: Whether contributor was added
         """
-        print('### email_template is ' + str(email_template))
         MAX_RECENT_LENGTH = 15
 
         # If user is merged into another account, use master account
@@ -3159,8 +3143,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             if save:
                 self.save()
 
-            if self._id:
-                project_signals.contributor_added.send(self, contributor=contributor, auth=auth, email_template=email_template)
+            if self._id and send_email != 'false':
+                project_signals.contributor_added.send(self, contributor=contributor, auth=auth, email_template=send_email)
 
             return True
 
@@ -3209,8 +3193,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if save:
             self.save()
 
-    def add_unregistered_contributor(self, fullname, email, auth,
-                                     permissions=None, save=False):
+    def add_unregistered_contributor(self, fullname, email, auth, send_email='default', permissions=None, save=False):
         """Add a non-registered contributor to the project.
 
         :param str fullname: The full name of the person.
@@ -3238,14 +3221,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         self.add_contributor(
             contributor, permissions=permissions, auth=auth,
-            log=True, save=False,
+            send_email=send_email, log=True, save=False
         )
         self.save()
         return contributor
 
-    def add_contributor_registered_or_not(self, auth, user_id=None, full_name=None, email=None, permissions=None, bibliographic=True, save=False):
+    def add_contributor_registered_or_not(self, auth, user_id=None, full_name=None, email=None,
+                                          send_email='default', permissions=None, bibliographic=True, save=False):
 
-        if not throttle_period_expired(auth.user.email_last_sent, settings.API_SEND_EMAIL_THROTTLE):
+        if send_email != 'false' and not throttle_period_expired(auth.user.email_last_sent, settings.API_SEND_EMAIL_THROTTLE):
             raise TooManyRequests
 
         if user_id:
@@ -3254,17 +3238,23 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
             if not contributor:
                 raise ValueError('User with id {} was not found.'.format(user_id))
-            self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic, permissions=permissions, save=True)
+            self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
+                                 permissions=permissions, send_email=send_email, save=True)
         else:
             if email:
                 try:
-                    contributor = self.add_unregistered_contributor(fullname=full_name, email=email, auth=auth, permissions=permissions, save=True)
+                    contributor = self.add_unregistered_contributor(fullname=full_name, email=email,
+                                                                    auth=auth, send_email=send_email,
+                                                                    permissions=permissions, save=True)
                 except ValidationValueError:
                     user = User.find_by_email(email=email)
                     contributor = user[0]
-                    self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic, permissions=permissions, save=True)
+                    self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
+                                         send_email=send_email, permissions=permissions, save=True)
             else:
-                contributor = self.add_unregistered_contributor(fullname=full_name, email=email, auth=auth, permissions=permissions, save=True)
+                contributor = self.add_unregistered_contributor(fullname=full_name, email=email,
+                                                                auth=auth, send_email=send_email,
+                                                                permissions=permissions, save=True)
 
         auth.user.email_last_sent = datetime.datetime.utcnow()
         auth.user.save()
