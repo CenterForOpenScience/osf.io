@@ -143,7 +143,7 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-2">
-                    <a href="https://osf.io/view/PsyArXiv/"><img src="/static/img/psyarxiv-banner.png" alt="PsyArXiv" width="100%" style="margin-top: 20px;"></a>
+                    <a href="https://osf.io/view/PsyArXiv/"><img src="/static/img/PsyArxiv-banner.png" alt="PsyArXiv" width="100%" style="margin-top: 20px;"></a>
                 </div>
                 <div class="col-md-10 text-center">
                     <h2>A free preprint service for the psychological sciences</h2>
