@@ -26,8 +26,8 @@ from framework.exceptions import PermissionsError
 from website.project import signals as project_signals
 
 from osf_models.apps import AppConfig as app_config
-from osf_models.models.private_link import PrivateLink
-from osf_models.models.contributor import Contributor
+from osf_models.models.nodelog import NodeLog
+from osf_models.models.contributor import Contributor, RecentlyAddedContributor
 from osf_models.models.mixins import Loggable, Taggable, AddonModelMixin
 from osf_models.models.user import OSFUser
 from osf_models.models.validators import validate_title
@@ -303,7 +303,6 @@ class AbstractNode(TypedModel, AddonModelMixin, Taggable, Loggable, GuidMixin, B
 
     # Override Taggable
     def add_tag_log(self, tag, auth):
-        NodeLog = apps.get_model('osf_models.NodeLog')
         self.add_log(
             action=NodeLog.TAG_ADDED,
             params={
@@ -330,7 +329,6 @@ class AbstractNode(TypedModel, AddonModelMixin, Taggable, Loggable, GuidMixin, B
             Contributor.objects.filter(node=self, user=user, visible=True).update(visible=False)
         else:
             return
-        NodeLog = apps.get_model('osf_models.NodeLog')
         message = (
             NodeLog.MADE_CONTRIBUTOR_VISIBLE
             if visible
@@ -379,7 +377,6 @@ class AbstractNode(TypedModel, AddonModelMixin, Taggable, Loggable, GuidMixin, B
 
             # Add contributor to recently added list for user
             if auth is not None:
-                RecentlyAddedContributor = apps.get_model('osf_models.RecentlyAddedContributor')
                 user = auth.user
                 recently_added_contributor_obj, created = RecentlyAddedContributor.objects.get_or_create(
                     user=user,
@@ -393,7 +390,6 @@ class AbstractNode(TypedModel, AddonModelMixin, Taggable, Loggable, GuidMixin, B
                     for each in user.recentlyaddedcontributor_set.order_by('date_added')[:difference]:
                         each.delete()
             if log:
-                NodeLog = apps.get_model('osf_models.NodeLog')
                 self.add_log(
                     action=NodeLog.CONTRIB_ADDED,
                     params={
@@ -443,7 +439,6 @@ class AbstractNode(TypedModel, AddonModelMixin, Taggable, Loggable, GuidMixin, B
                 visible=contrib['visible'], auth=auth, log=False, save=False,
             )
         if log and contributors:
-            NodeLog = apps.get_model('osf_models.NodeLog')
             self.add_log(
                 action=NodeLog.CONTRIB_ADDED,
                 params={
@@ -518,7 +513,6 @@ class AbstractNode(TypedModel, AddonModelMixin, Taggable, Loggable, GuidMixin, B
         :param bool log: Whether to add a NodeLog for the privacy change.
         :param bool meeting_creation: Whether this was created due to a meetings email.
         """
-        NodeLog = apps.get_model('osf_models.NodeLog')
         if auth and not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Must be an admin to change privacy settings.')
         if permissions == 'public' and not self.is_public:

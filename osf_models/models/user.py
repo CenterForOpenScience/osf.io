@@ -32,6 +32,9 @@ from website import filters
 
 from osf_models.exceptions import reraise_django_validation_errors
 from osf_models.models.base import BaseModel, GuidMixin
+from osf_models.models.tag import Tag
+from osf_models.models.institution import Institution
+from osf_models.models.session import Session
 from osf_models.models.mixins import AddonModelMixin
 from osf_models.models.contributor import RecentlyAddedContributor
 from osf_models.utils import security
@@ -833,7 +836,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         return self.fullname
 
     def add_system_tag(self, tag):
-        Tag = apps.get_model('osf_models.Tag')
         if not isinstance(tag, Tag):
             tag_instance, created = Tag.objects.get_or_create(name=tag.lower(), system=True)
         else:
@@ -930,7 +932,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         Append affiliated_institutions by email domain.
         :return:
         """
-        Institution = apps.get_model('osf_models.Institution')
         try:
             email_domains = [email.split('@')[1].lower() for email in self.emails]
             insts = Institution.find(Q('email_domains', 'overlap', email_domains))
@@ -951,7 +952,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         :param str secret: The key to sign the cookie with
         :returns: The signed cookie
         """
-        Session = apps.get_model('osf_models.Session')
         secret = secret or settings.SECRET_KEY
         sessions = Session.find(
             Q('data.auth_user_id', 'eq', self._id)
@@ -977,7 +977,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         """Attempt to load a user from their signed cookie
         :returns: None if a user cannot be loaded else User
         """
-        Session = apps.get_model('osf_models.Session')
         if not cookie:
             return None
 

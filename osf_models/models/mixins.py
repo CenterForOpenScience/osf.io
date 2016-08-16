@@ -2,6 +2,9 @@ import pytz
 from django.db import models
 from django.apps import apps
 
+from osf_models.models.tag import Tag
+from osf_models.models.nodelog import NodeLog
+
 from framework.analytics import increment_user_activity_counters
 
 
@@ -50,7 +53,6 @@ class Loggable(models.Model):
 
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True, request=None):
         Node = apps.get_model('osf_models.Node')
-        NodeLog = apps.get_model('osf_models.NodeLog')
         user = None
         if auth:
             user = auth.user
@@ -90,7 +92,6 @@ class Taggable(models.Model):
     def add_tag(self, tag, auth=None, save=True, log=True, system=False):
         if not system and not auth:
             raise ValueError('Must provide auth if adding a non-system tag')
-        Tag = apps.get_model('osf_models.Tag')
 
         if not isinstance(tag, Tag):
             tag_instance, created = Tag.objects.get_or_create(name=tag, system=system)
