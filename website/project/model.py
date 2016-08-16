@@ -3092,20 +3092,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             if to_remove or permissions_changed and ['read'] in permissions_changed.values():
                 project_signals.write_permissions_revoked.send(self)
 
-    def throttle_add_contributor(self, contributor, permissions=None,
-                                 visible=True, auth=None, log=True, save=False):
-
-        if not throttle_period_expired(auth.user.email_last_sent,
-                                       settings.API_SEND_EMAIL_THROTTLE):
-            raise TooManyRequests
-        ret = self.add_contributor(contributor, permissions, visible, auth,
-                                   log, save)
-        if ret:
-            auth.user.email_last_sent = datetime.datetime.utcnow()
-            auth.user.save()
-
-        return ret
-
     def add_contributor(self, contributor, permissions=None, visible=True,
                         auth=None, log=True, save=False):
         """Add a contributor to the project.
@@ -3241,7 +3227,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         return contributor
 
     def add_contributor_registered_or_not(self, auth, user_id=None, full_name=None, email=None, permissions=None, bibliographic=True, save=False):
-        # TODO: @caseyrollins -- add model tests, API validation tests, single API view tests, update current API tests
+
+        if not throttle_period_expired(auth.user.email_last_sent, settings.API_SEND_EMAIL_THROTTLE):
+            raise TooManyRequests
+
         if user_id:
             contributor = User.load(user_id)
             if contributor in self.contributors:
@@ -3259,6 +3248,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                     self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic, permissions=permissions, save=True)
             else:
                 contributor = self.add_unregistered_contributor(fullname=full_name, email=email, auth=auth, permissions=permissions, save=True)
+
+        auth.user.email_last_sent = datetime.datetime.utcnow()
+        auth.user.save()
 
         contributor.permission = reduce_permissions(self.get_permissions(contributor))
         contributor.bibliographic = self.get_visible(contributor)
