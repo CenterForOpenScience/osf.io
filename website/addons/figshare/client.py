@@ -87,9 +87,9 @@ class FigshareClient(BaseClient):
     def get_folders(self):
         projects = self.projects()
         articles = self.articles()  # TODO: Figshare needs to make this filterable by defined_type to limit spurious requests
-        return [{'label': project['title'], 'value': 'project_{0}'.format(project['id'])}
+        return [{'name': project['title'], 'path': 'project', 'id': project['id']}
                 for project in projects] + \
-            [{'label': (article['title'] or 'untitled article'), 'value': 'fileset_{0}'.format(article['id'])}
+            [{'name': (article['title'] or 'untitled article'), 'path': 'fileset', 'id': article['id']}
              for article in articles if article['defined_type'] == settings.FIGSHARE_DEFINED_TYPE_NUM_MAP['fileset']]
 
     def get_linked_folder_info(self, _id):
