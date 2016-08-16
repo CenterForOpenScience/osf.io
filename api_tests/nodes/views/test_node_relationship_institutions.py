@@ -7,16 +7,37 @@ from tests.factories import InstitutionFactory, AuthUserFactory, NodeFactory
 
 from api.base.settings.defaults import API_BASE
 
+from website.util import permissions
+
+
 class TestNodeRelationshipInstitutions(ApiTestCase):
+
     def setUp(self):
         super(TestNodeRelationshipInstitutions, self).setUp()
-        self.user = AuthUserFactory()
-        self.institution1 = InstitutionFactory()
+
         self.institution2 = InstitutionFactory()
+        self.institution1 = InstitutionFactory()
+
+        self.user = AuthUserFactory()
         self.user.affiliated_institutions.append(self.institution1)
         self.user.affiliated_institutions.append(self.institution2)
         self.user.save()
+
+        self.read_write_contributor = AuthUserFactory()
+        self.read_write_contributor_institution = InstitutionFactory()
+        self.read_write_contributor.affiliated_institutions.append(self.read_write_contributor_institution)
+        self.read_write_contributor.save()
+
+        self.read_only_contributor = AuthUserFactory()
+        self.read_only_contributor_institution = InstitutionFactory()
+        self.read_only_contributor.affiliated_institutions.append(self.read_only_contributor_institution)
+        self.read_only_contributor.save()
+
         self.node = NodeFactory(creator=self.user)
+        self.node.add_contributor(self.read_write_contributor, permissions=[permissions.WRITE])
+        self.node.add_contributor(self.read_only_contributor, permissions=[permissions.READ])
+        self.node.save()
+
         self.node_institutions_url = '/{0}nodes/{1}/relationships/institutions/'.format(API_BASE, self.node._id)
 
     def create_payload(self, *institution_ids):
@@ -35,7 +56,6 @@ class TestNodeRelationshipInstitutions(ApiTestCase):
             auth=user.auth,
             expect_errors=True,
         )
-
         assert_equal(res.status_code, 403)
 
     def test_user_with_no_institution(self):
@@ -47,7 +67,6 @@ class TestNodeRelationshipInstitutions(ApiTestCase):
             expect_errors=True,
             auth=user.auth
         )
-
         assert_equal(res.status_code, 403)
 
     def test_get_public_node(self):
@@ -85,48 +104,6 @@ class TestNodeRelationshipInstitutions(ApiTestCase):
         assert_not_in(self.institution1, self.node.affiliated_institutions)
         assert_not_in(self.institution2, self.node.affiliated_institutions)
 
-        res = self.app.put_json_api(
-            self.node_institutions_url,
-            self.create_payload(self.institution1._id, self.institution2._id),
-            auth=self.user.auth
-        )
-
-        assert_equal(res.status_code, 200)
-        data = res.json['data']
-        ret_institutions = [inst['id'] for inst in data]
-
-        assert_in(self.institution1._id, ret_institutions)
-        assert_in(self.institution2._id, ret_institutions)
-
-        self.node.reload()
-        assert_in(self.institution1, self.node.affiliated_institutions)
-        assert_in(self.institution2, self.node.affiliated_institutions)
-
-    def test_user_with_institution_and_permissions_through_patch(self):
-        assert_not_in(self.institution1, self.node.affiliated_institutions)
-        assert_not_in(self.institution2, self.node.affiliated_institutions)
-
-        res = self.app.post_json_api(
-            self.node_institutions_url,
-            self.create_payload(self.institution1._id, self.institution2._id),
-            auth=self.user.auth
-        )
-
-        assert_equal(res.status_code, 200)
-        data = res.json['data']
-        ret_institutions = [inst['id'] for inst in data]
-
-        assert_in(self.institution1._id, ret_institutions)
-        assert_in(self.institution2._id, ret_institutions)
-
-        self.node.reload()
-        assert_in(self.institution1, self.node.affiliated_institutions)
-        assert_in(self.institution2, self.node.affiliated_institutions)
-
-    def test_user_with_institution_and_permissions_through_patch(self):
-        assert_not_in(self.institution1, self.node.affiliated_institutions)
-        assert_not_in(self.institution2, self.node.affiliated_institutions)
-
         res = self.app.post_json_api(
             self.node_institutions_url,
             self.create_payload(self.institution1._id, self.institution2._id),
@@ -144,13 +121,33 @@ class TestNodeRelationshipInstitutions(ApiTestCase):
         assert_in(self.institution1, self.node.affiliated_institutions)
         assert_in(self.institution2, self.node.affiliated_institutions)
 
+    def test_user_with_institution_and_permissions_through_patch(self):
+        assert_not_in(self.institution1, self.node.affiliated_institutions)
+        assert_not_in(self.institution2, self.node.affiliated_institutions)
+
+        res = self.app.put_json_api(
+            self.node_institutions_url,
+            self.create_payload(self.institution1._id, self.institution2._id),
+            auth=self.user.auth
+        )
+
+        assert_equal(res.status_code, 200)
+        data = res.json['data']
+        ret_institutions = [inst['id'] for inst in data]
+
+        assert_in(self.institution1._id, ret_institutions)
+        assert_in(self.institution2._id, ret_institutions)
+
+        self.node.reload()
+        assert_in(self.institution1, self.node.affiliated_institutions)
+        assert_in(self.institution2, self.node.affiliated_institutions)
+
     def test_remove_institutions_with_no_permissions(self):
         res = self.app.put_json_api(
             self.node_institutions_url,
             self.create_payload(),
             expect_errors=True
         )
-
         assert_equal(res.status_code, 401)
 
     def test_remove_institutions_with_affiliated_user(self):
@@ -187,22 +184,21 @@ class TestNodeRelationshipInstitutions(ApiTestCase):
         user = AuthUserFactory()
         user.affiliated_institutions.append(self.institution1)
         user.save()
-        self.node.add_contributor(user, auth=Auth(self.user))
+        self.node.add_contributor(user)
         self.node.save()
 
         res = self.app.put_json_api(
             self.node_institutions_url,
             self.create_payload(self.institution1._id),
-            auth=user.auth,
-            expect_errors=True
+            auth=user.auth
         )
 
-        assert_equal(res.status_code, 403)
-        assert_equal(self.node.affiliated_institutions, [])
+        self.node.reload()
+        assert_equal(res.status_code, 200)
+        assert_in(self.institution1, self.node.affiliated_institutions)
 
     def test_retrieve_private_node_no_auth(self):
         res = self.app.get(self.node_institutions_url, expect_errors=True)
-
         assert_equal(res.status_code, 401)
 
     def test_add_through_patch_one_inst_to_node_with_inst(self):
@@ -262,7 +258,6 @@ class TestNodeRelationshipInstitutions(ApiTestCase):
             self.create_payload(),
             auth=self.user.auth
         )
-
         assert_equal(res.status_code, 204)
 
     def test_delete_existing_inst(self):
@@ -297,10 +292,39 @@ class TestNodeRelationshipInstitutions(ApiTestCase):
         assert_not_in(self.institution1, self.node.affiliated_institutions)
         assert_not_in(self.institution2, self.node.affiliated_institutions)
 
-    def test_delete_user_is_not_admin(self):
+    def test_delete_user_is_admin(self):
+        self.node.affiliated_institutions.append(self.institution1)
+        self.node.save()
+
+        res = self.app.delete_json_api(
+            self.node_institutions_url,
+            self.create_payload(self.institution1._id),
+            auth=self.user.auth
+        )
+
+        assert_equal(res.status_code, 204)
+
+    def test_delete_user_is_read_write(self):
         user = AuthUserFactory()
         user.affiliated_institutions.append(self.institution1)
         user.save()
+        self.node.add_contributor(user)
+        self.node.affiliated_institutions.append(self.institution1)
+        self.node.save()
+
+        res = self.app.delete_json_api(
+            self.node_institutions_url,
+            self.create_payload(self.institution1._id),
+            auth=user.auth
+        )
+
+        assert_equal(res.status_code, 204)
+
+    def test_delete_user_is_read_only(self):
+        user = AuthUserFactory()
+        user.affiliated_institutions.append(self.institution1)
+        user.save()
+        self.node.add_contributor(user, permissions=[permissions.READ])
         self.node.affiliated_institutions.append(self.institution1)
         self.node.save()
 
@@ -329,3 +353,122 @@ class TestNodeRelationshipInstitutions(ApiTestCase):
         assert_equal(res.status_code, 204)
         node.reload()
         assert_not_in(self.institution1, node.affiliated_institutions)
+
+    def test_admin_can_add_affiliated_institution(self):
+        payload = {
+            'data': [{
+                'type': 'institutions',
+                'id': self.institution1._id
+            }]
+        }
+        res = self.app.post_json_api(self.node_institutions_url, payload, auth=self.user.auth)
+        self.node.reload()
+        assert_equal(res.status_code, 201)
+        assert_in(self.institution1, self.node.affiliated_institutions)
+
+    def test_admin_can_remove_admin_affiliated_institution(self):
+        self.node.affiliated_institutions.append(self.institution1)
+        payload = {
+            'data': [{
+                'type': 'institutions',
+                'id': self.institution1._id
+            }]
+        }
+        res = self.app.delete_json_api(self.node_institutions_url, payload, auth=self.user.auth)
+        self.node.reload()
+        assert_equal(res.status_code, 204)
+        assert_not_in(self.institution1, self.node.affiliated_institutions)
+
+    def test_admin_can_remove_read_write_contributor_affiliated_institution(self):
+        self.node.affiliated_institutions.append(self.read_write_contributor_institution)
+        self.node.save()
+        payload = {
+            'data': [{
+                'type': 'institutions',
+                'id': self.read_write_contributor_institution._id
+            }]
+        }
+        res = self.app.delete_json_api(self.node_institutions_url, payload, auth=self.user.auth)
+        self.node.reload()
+        assert_equal(res.status_code, 204)
+        assert_not_in(self.read_write_contributor_institution, self.node.affiliated_institutions)
+
+    def test_read_write_contributor_can_add_affiliated_institution(self):
+        payload = {
+            'data': [{
+                'type': 'institutions',
+                'id': self.read_write_contributor_institution._id
+            }]
+        }
+        res = self.app.post_json_api(self.node_institutions_url, payload, auth=self.read_write_contributor.auth)
+        self.node.reload()
+        assert_equal(res.status_code, 201)
+        assert_in(self.read_write_contributor_institution, self.node.affiliated_institutions)
+
+    def test_read_write_contributor_can_remove_affiliated_institution(self):
+        self.node.affiliated_institutions.append(self.read_write_contributor_institution)
+        self.node.save()
+        payload = {
+            'data': [{
+                'type': 'institutions',
+                'id': self.read_write_contributor_institution._id
+            }]
+        }
+        res = self.app.delete_json_api(self.node_institutions_url, payload, auth=self.read_write_contributor.auth)
+        self.node.reload()
+        assert_equal(res.status_code, 204)
+        assert_not_in(self.read_write_contributor_institution, self.node.affiliated_institutions)
+
+    def test_read_write_contributor_cannot_remove_admin_affiliated_institution(self):
+        self.node.affiliated_institutions.append(self.institution1)
+        self.node.save()
+        payload = {
+            'data': [{
+                'type': 'institutions',
+                'id': self.institution1._id
+            }]
+        }
+        res = self.app.delete_json_api(self.node_institutions_url, payload, auth=self.read_write_contributor.auth, expect_errors=True)
+        self.node.reload()
+        assert_equal(res.status_code, 403)
+        assert_in(self.institution1, self.node.affiliated_institutions)
+
+    def test_read_only_contributor_cannot_remove_admin_affiliated_institution(self):
+        self.node.affiliated_institutions.append(self.institution1)
+        self.node.save()
+        payload = {
+            'data': [{
+                'type': 'institutions',
+                'id': self.institution1._id
+            }]
+        }
+        res = self.app.delete_json_api(self.node_institutions_url, payload, auth=self.read_only_contributor.auth, expect_errors=True)
+        self.node.reload()
+        assert_equal(res.status_code, 403)
+        assert_in(self.institution1, self.node.affiliated_institutions)
+
+    def test_read_only_contributor_cannot_add_affiliated_institution(self):
+        payload = {
+            'data': [{
+                'type': 'institutions',
+                'id': self.read_only_contributor_institution._id
+            }]
+        }
+        res = self.app.post_json_api(self.node_institutions_url, payload, auth=self.read_only_contributor.auth, expect_errors=True)
+        self.node.reload()
+        assert_equal(res.status_code, 403)
+        assert_not_in(self.read_write_contributor_institution, self.node.affiliated_institutions)
+
+    def test_read_only_contributor_cannot_remove_affiliated_institution(self):
+        self.node.affiliated_institutions.append(self.read_only_contributor_institution)
+        self.node.save()
+        payload = {
+            'data': [{
+                'type': 'institutions',
+                'id': self.read_only_contributor_institution._id
+            }]
+        }
+        res = self.app.delete_json_api(self.node_institutions_url, payload, auth=self.read_only_contributor.auth, expect_errors=True)
+        self.node.reload()
+        assert_equal(res.status_code, 403)
+        assert_in(self.read_only_contributor_institution, self.node.affiliated_institutions)

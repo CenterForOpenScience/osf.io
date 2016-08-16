@@ -12,9 +12,10 @@ from django.conf import settings
 from website.addons.base.exceptions import InvalidFolderError, InvalidAuthError
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
-from website.models import Node, Comment, Institution, MetaSchema, DraftRegistration
+from website.models import Node, User, Comment, Institution, MetaSchema, DraftRegistration, PrivateLink
 from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
+from website.project import new_private_link
 from website.project.model import NodeUpdateError
 
 from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse, is_truthy
@@ -224,6 +225,11 @@ class NodeSerializer(JSONAPISerializer):
         self_meta={'count': 'get_node_links_count'}
     )
 
+    view_only_links = RelationshipField(
+        related_view='nodes:node-view-only-links',
+        related_view_kwargs={'node_id': '<pk>'},
+    )
+
     def get_current_user_permissions(self, obj):
         user = self.context['request'].user
         if user.is_anonymous():
@@ -349,16 +355,20 @@ class NodeSerializer(JSONAPISerializer):
         return node
 
 
-class NodeAddonSettingsSerializer(JSONAPISerializer):
+class NodeAddonSettingsSerializerBase(JSONAPISerializer):
     class Meta:
         type_ = 'node_addons'
 
     id = ser.CharField(source='config.short_name', read_only=True)
+    node_has_auth = ser.BooleanField(source='has_auth', read_only=True)
+    configured = ser.BooleanField(read_only=True)
     external_account_id = ser.CharField(source='external_account._id', required=False, allow_null=True)
     folder_id = ser.CharField(required=False, allow_null=True)
     folder_path = ser.CharField(required=False, allow_null=True)
-    node_has_auth = ser.BooleanField(source='has_auth', read_only=True)
-    configured = ser.BooleanField(read_only=True)
+
+    # Forward-specific
+    label = ser.CharField(required=False, allow_null=True)
+    url = ser.CharField(required=False, allow_null=True)
 
     links = LinksField({
         'self': 'get_absolute_url',
@@ -373,6 +383,67 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
             'nodes:node-addon-detail',
             kwargs=kwargs
         )
+
+    def create(self, validated_data):
+        auth = Auth(self.context['request'].user)
+        node = self.context['view'].get_node()
+        addon = self.context['request'].parser_context['kwargs']['provider']
+
+        return node.get_or_add_addon(addon, auth=auth)
+
+class ForwardNodeAddonSettingsSerializer(NodeAddonSettingsSerializerBase):
+
+    def update(self, instance, validated_data):
+        auth = Auth(self.context['request'].user)
+        set_url = 'url' in validated_data
+        set_label = 'label' in validated_data
+
+        url_changed = False
+
+        url = validated_data.get('url')
+        label = validated_data.get('label')
+
+        if set_url and not url and label:
+            raise exceptions.ValidationError(detail='Cannot set label without url')
+
+        if not instance:
+            node = self.context['view'].get_node()
+            instance = node.get_or_add_addon('forward', auth)
+
+        if instance and instance.url:
+            # url required, label optional
+            if set_url and not url:
+                instance.reset()
+            elif set_url and url:
+                instance.url = url
+                url_changed = True
+            if set_label:
+                instance.label = label
+        elif instance and not instance.url:
+            instance.url = url
+            instance.label = label
+            url_changed = True
+
+        instance.save()
+
+        if url_changed:
+            # add log here because forward architecture isn't great
+            # TODO [OSF-6678]: clean this up
+            instance.owner.add_log(
+                action='forward_url_changed',
+                params=dict(
+                    node=instance.owner._id,
+                    project=instance.owner.parent_id,
+                    forward_url=instance.url,
+                ),
+                auth=auth,
+                save=True,
+            )
+
+        return instance
+
+
+class NodeAddonSettingsSerializer(NodeAddonSettingsSerializerBase):
 
     def check_for_update_errors(self, node_settings, folder_info, external_account_id):
         if (not node_settings.has_auth and folder_info and not external_account_id):
@@ -473,13 +544,6 @@ class NodeAddonSettingsSerializer(JSONAPISerializer):
 
         return instance
 
-    def create(self, validated_data):
-        auth = Auth(self.context['request'].user)
-        node = self.context['view'].get_node()
-        addon = self.context['request'].parser_context['kwargs']['provider']
-
-        return node.get_or_add_addon(addon, auth=auth)
-
 
 class NodeDetailSerializer(NodeSerializer):
     """
@@ -548,6 +612,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
     id = ContributorIDField(read_only=True, source='_id')
     type = TypeField()
+    index = ser.IntegerField(required=False, read_only=True)
 
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not.',
                                      default=True)
@@ -563,7 +628,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
     users = RelationshipField(
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<pk>'},
-        always_embed=True,
+        always_embed=True
     )
 
     class Meta:
@@ -638,16 +703,27 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
     Overrides node contributor serializer to add additional methods
     """
     id = ContributorIDField(required=True, source='_id')
+    index = ser.IntegerField(required=False, read_only=False)
+    # index = ser.IntegerField(required=False)
 
     def update(self, instance, validated_data):
+        index = None
+        if 'index' in validated_data:
+            index = validated_data.pop('index')
+
         contributor = instance
         auth = Auth(self.context['request'].user)
         node = self.context['view'].get_node()
 
-        visible = validated_data.get('bibliographic')
-        permission = validated_data.get('permission')
+        if 'bibliographic' in validated_data:
+            bibliographic = validated_data.get('bibliographic')
+        else:
+            bibliographic = node.get_visible(contributor)
+        permission = validated_data.get('permission') or contributor.permission
         try:
-            node.update_contributor(contributor, permission, visible, auth, save=True)
+            if index is not None:
+                node.move_contributor(contributor, auth, index, save=True)
+            node.update_contributor(contributor, permission, bibliographic, auth, save=True)
         except NodeStateError as e:
             raise exceptions.ValidationError(detail=e.message)
         except ValueError as e:
@@ -800,14 +876,16 @@ class NodeInstitutionsRelationshipSerializer(ser.Serializer):
             new_institutions=validated_data['data']
         )
 
+        for inst in remove:
+            if inst not in user.affiliated_institutions and not node.has_permission(user, 'admin'):
+                raise exceptions.PermissionDenied(detail='User needs to be affiliated with {}'.format(inst.name))
+            node.remove_affiliated_institution(inst, user)
+
         for inst in add:
             if inst not in user.affiliated_institutions:
                 raise exceptions.PermissionDenied(detail='User needs to be affiliated with {}'.format(inst.name))
-
-        for inst in remove:
-            node.remove_affiliated_institution(inst, user)
-        for inst in add:
             node.add_affiliated_institution(inst, user)
+
         node.save()
 
         return self.make_instance_obj(node)
@@ -966,3 +1044,96 @@ class DraftRegistrationDetailSerializer(DraftRegistrationSerializer):
             draft.update_metadata(metadata)
             draft.save()
         return draft
+
+
+class NodeVOL(ser.Field):
+    def to_representation(self, obj):
+        if obj is not None:
+            return obj._id
+        return None
+
+    def to_internal_value(self, data):
+        return data
+
+
+class NodeViewOnlyLinkSerializer(JSONAPISerializer):
+    filterable_fields = frozenset([
+        'anonymous',
+        'name',
+        'date_created'
+    ])
+
+    key = ser.CharField(read_only=True)
+    id = IDField(source='_id', read_only=True)
+    date_created = ser.DateTimeField(read_only=True)
+    anonymous = ser.BooleanField(required=False, default=False)
+    name = ser.CharField(required=False, default='Shared project link')
+
+    links = LinksField({
+        'self': 'get_absolute_url'
+    })
+
+    creator = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<creator._id>'},
+    )
+
+    nodes = RelationshipField(
+        related_view='view-only-links:view-only-link-nodes',
+        related_view_kwargs={'link_id': '<_id>'},
+        self_view='view-only-links:view-only-link-nodes-relationships',
+        self_view_kwargs={'link_id': '<_id>'}
+    )
+
+    def create(self, validated_data):
+        name = validated_data.pop('name')
+        user = get_user_auth(self.context['request']).user
+        anonymous = validated_data.pop('anonymous')
+        node = self.context['view'].get_node()
+
+        try:
+            view_only_link = new_private_link(
+                name=name,
+                user=user,
+                nodes=[node],
+                anonymous=anonymous
+            )
+        except ValidationValueError:
+            raise exceptions.ValidationError('Invalid link name.')
+
+        return view_only_link
+
+    def get_absolute_url(self, obj):
+        node_id = self.context['request'].parser_context['kwargs']['node_id']
+        return absolute_reverse(
+            'nodes:node-view-only-link-detail',
+            kwargs={
+                'link_id': obj._id,
+                'node_id': node_id
+            }
+        )
+
+    class Meta:
+        type_ = 'view_only_links'
+
+
+class NodeViewOnlyLinkUpdateSerializer(NodeViewOnlyLinkSerializer):
+    """
+    Overrides NodeViewOnlyLinkSerializer to not default name and anonymous on update.
+    """
+    name = ser.CharField(required=False)
+    anonymous = ser.BooleanField(required=False)
+
+    def update(self, link, validated_data):
+        assert isinstance(link, PrivateLink), 'link must be a PrivateLink'
+
+        name = validated_data.get('name')
+        anonymous = validated_data.get('anonymous')
+
+        if name:
+            link.name = name
+        if anonymous:
+            link.anonymous = anonymous
+
+        link.save()
+        return link

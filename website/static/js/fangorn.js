@@ -832,8 +832,12 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
     // File may either be a webkit Entry or a file object, depending on the browser
     // On Chrome we can check if a directory is being uploaded
     var msgText;
-    if (file.isDirectory) {
-        msgText = 'Cannot upload directories, applications, or packages.';
+    var isChrome = !!window.chrome && !!window.chrome.webstore;
+
+    if (isChrome && file.isDirectory) {
+        msgText = 'Cannot upload folders.';
+    } else if(!isChrome && file.treebeardParent.kind === 'folder') {
+        msgText = 'Cannot upload folders.';
     } else if (xhr && xhr.status === 507) {
         msgText = 'Cannot upload file due to insufficient storage.';
     } else if (xhr && xhr.status === 0) {
@@ -848,18 +852,20 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
             msgText = DEFAULT_ERROR_MESSAGE;
         }
     }
-    var parent = file.treebeardParent || treebeardParent.dropzoneItemCache; // jshint ignore:line
-    // Parent may be undefined, e.g. in Chrome, where file is an entry object
-    var item;
-    var child;
-    var destroyItem = false;
-    for (var i = 0; i < parent.children.length; i++) {
-        child = parent.children[i];
-        if (!child.data.tmpID) {
-            continue;
-        }
-        if (child.data.tmpID === file.tmpID) {
-            child.removeSelf();
+    if (!isChrome) {
+        var parent = file.treebeardParent || treebeardParent.dropzoneItemCache; // jshint ignore:line
+        // Parent may be undefined, e.g. in Chrome, where file is an entry object
+        var item;
+        var child;
+        var destroyItem = false;
+        for (var i = 0; i < parent.children.length; i++) {
+            child = parent.children[i];
+            if (!child.data.tmpID) {
+                continue;
+            }
+            if (child.data.tmpID === file.tmpID) {
+                child.removeSelf();
+            }
         }
     }
     console.error(file);
