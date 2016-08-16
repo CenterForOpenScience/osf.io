@@ -22,7 +22,7 @@ class HTTPError(FrameworkError):
         },
         http.FORBIDDEN: {
             'message_short': 'Forbidden',
-            'message_long': ('User has restricted access to this page. '
+            'message_long': ('You do not have permission to perform this action. '
                 'If this should not have occurred and the issue persists, '
                 'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.'),
         },
