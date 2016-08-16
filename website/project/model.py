@@ -3246,9 +3246,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                     contributor = self.add_unregistered_contributor(fullname=full_name, email=email,
                                                                     auth=auth, send_email=send_email,
                                                                     permissions=permissions, save=True)
-                except ValidationValueError:
-                    user = User.find_by_email(email=email)
-                    contributor = user[0]
+                except Exception:
+                    contributor = get_user(email=email)
+                    if contributor in self.contributors:
+                        raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
                     self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
                                          send_email=send_email, permissions=permissions, save=True)
             else:

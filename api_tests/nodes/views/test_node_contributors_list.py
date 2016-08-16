@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import mock
+
 from nose.tools import *  # flake8: noqa
 
 from rest_framework import exceptions
@@ -12,7 +14,7 @@ from website.models import NodeLog
 
 from framework.auth.core import Auth
 
-from tests.base import ApiTestCase
+from tests.base import ApiTestCase, capture_signals
 from tests.factories import (
     ProjectFactory,
     AuthUserFactory,
@@ -20,6 +22,7 @@ from tests.factories import (
 )
 
 from tests.utils import assert_logs
+from website.project.signals import contributor_added
 from website.util import permissions
 
 class NodeCRUDTestCase(ApiTestCase):
@@ -838,7 +841,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
 
     @assert_logs(NodeLog.CONTRIB_ADDED, 'public_project')
     def test_add_contributor_with_fullname_and_email_registered_user(self):
-        user = UserFactory(fullname='Jane Doe', username='jane@doe.com')
+        user = UserFactory()
         payload = {
             'data': {
                 'type': 'contributors',
@@ -852,8 +855,25 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         self.public_project.reload()
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['attributes']['unregistered_contributor'], None)
-        assert_equal(res.json['data']['attributes']['email'], 'jane@doe.com')
+        assert_equal(res.json['data']['attributes']['email'], user.username)
         assert_in(res.json['data']['embeds']['users']['data']['id'], self.public_project.contributors)
+
+    def test_add_unregistered_contributor_already_contributor(self):
+        user = UserFactory()
+        self.public_project.add_unregistered_contributor(auth=Auth(self.user), fullname=user.fullname, email=user.username)
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'full_name': 'Doesn\'t Matter',
+                    'email': user.username
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True)
+        self.public_project.reload()
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], '{} is already a contributor.'.format(user.fullname))
 
 
 class TestNodeContributorCreateValidation(TestCase):
@@ -888,14 +908,110 @@ class TestNodeContributorCreateValidation(TestCase):
         self.validate_data(NodeContributorsCreateSerializer(), full_name='Kanye', email='kanye@west.com')
 
 
+class TestNodeContributorCreateEmail(NodeCRUDTestCase):
+
+    def setUp(self):
+        super(TestNodeContributorCreateEmail, self).setUp()
+        self.url = '/{}nodes/{}/contributors/'.format(API_BASE, self.public_project._id)
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_add_contributor_no_email_if_false(self, mock_mail):
+        url = '{}?send_email=false'.format(self.url)
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'full_name': 'Kanye West',
+                    'email': 'kanye@west.com'
+                }
+            }
+        }
+        res = self.app.post_json_api(url, payload, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(mock_mail.call_count, 0)
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_adds_contributor_email_if_default(self, mock_mail):
+        url = '{}?send_email=default'.format(self.url)
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'full_name': 'Kanye West',
+                    'email': 'kanye@west.com'
+                }
+            }
+        }
+
+        with capture_signals() as mock_signal:
+            res = self.app.post_json_api(url, payload, auth=self.user.auth)
+        assert_equal(mock_signal.signals_sent(), set([contributor_added]))
+        assert_equal(res.status_code, 201)
+        assert_equal(mock_mail.call_count, 1)
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_add_unregistered_contributor_preprint_invite_email_if_preprint(self, mock_mail):
+        url = '{}?send_email=preprint'.format(self.url)
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'full_name': 'Kanye West',
+                    'email': 'kanye@west.com'
+                }
+            }
+        }
+
+        with capture_signals() as mock_signal:
+            res = self.app.post_json_api(url, payload, auth=self.user.auth)
+        assert_equal(mock_signal.signals_sent(), set([contributor_added]))
+        assert_equal(res.status_code, 201)
+        assert_equal(mock_mail.call_count, 1)
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_add_contributor_invalid_send_email_param(self, mock_mail):
+        url = '{}?send_email=true'.format(self.url)
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'full_name': 'Kanye West',
+                    'email': 'kanye@west.com'
+                }
+            }
+        }
+        res = self.app.post_json_api(url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'true is not a valid email preference.')
+        assert_equal(mock_mail.call_count, 0)
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_add_unregistered_contributor_without_email_no_email(self, mock_mail):
+        url = '{}?send_email=default'.format(self.url)
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'full_name': 'Kanye West',
+                }
+            }
+        }
+
+        with capture_signals() as mock_signal:
+            res = self.app.post_json_api(url, payload, auth=self.user.auth)
+        assert_equal(mock_signal.signals_sent(), set([contributor_added]))
+        assert_equal(res.status_code, 201)
+        assert_equal(mock_mail.call_count, 0)
+
+
 class TestNodeContributorBulkCreate(NodeCRUDTestCase):
 
     def setUp(self):
         super(TestNodeContributorBulkCreate, self).setUp()
         self.user_three = AuthUserFactory()
 
-        self.private_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.private_project._id)
-        self.public_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.public_project._id)
+        self.private_url = '/{}nodes/{}/contributors/?send_email=false'.format(API_BASE, self.private_project._id)
+        self.public_url = '/{}nodes/{}/contributors/?send_email=false'.format(API_BASE, self.public_project._id)
 
         self.payload_one = {
                 'type': 'contributors',

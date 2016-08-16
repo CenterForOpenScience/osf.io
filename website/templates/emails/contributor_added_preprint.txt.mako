@@ -11,7 +11,7 @@ You will ${'not receive ' if all_global_subscriptions_none else 'be automaticall
 If you are erroneously being associated with "${node.title}," then you may visit the project's "Contributors" page and remove yourself as a contributor.
 
 
-Sincerely
+Sincerely,
 
 Open Science Framework Robot
 

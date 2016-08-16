@@ -4675,12 +4675,14 @@ class TestNodeAddContributorRegisteredOrNot(OsfTestCase):
         assert_equals(contributor.is_registered, True)
 
     def test_add_contributor_user_id_already_contributor(self):
-        with assert_raises(ValidationValueError):
+        with assert_raises(ValidationValueError) as e:
             self.node.add_contributor_registered_or_not(auth=Auth(self.user), user_id=self.user._id, save=True)
+        assert_in('is already a contributor', e.exception.message)
 
     def test_add_contributor_invalid_user_id(self):
-        with assert_raises(ValueError):
+        with assert_raises(ValueError) as e:
             self.node.add_contributor_registered_or_not(auth=Auth(self.user), user_id='abcde', save=True)
+        assert_in('was not found', e.exception.message)
 
     def test_add_contributor_fullname_email(self):
         contributor = self.node.add_contributor_registered_or_not(auth=Auth(self.user), full_name='Jane Doe', email='jane@doe.com')

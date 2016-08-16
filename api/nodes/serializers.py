@@ -12,7 +12,7 @@ from django.conf import settings
 from website.addons.base.exceptions import InvalidFolderError, InvalidAuthError
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
-from website.models import Node, User, Comment, Institution, MetaSchema, DraftRegistration
+from website.models import Node, Comment, Institution, MetaSchema, DraftRegistration, PrivateLink
 from website.exceptions import NodeStateError, TooManyRequests
 from website.util import permissions as osf_permissions
 from website.project import new_private_link
@@ -680,7 +680,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
         node = self.context['view'].get_node()
         auth = Auth(self.context['request'].user)
         full_name = validated_data.get('full_name')
-        send_email = self.context['request'].get('send_email') or 'default'
+        send_email = self.context['request'].GET.get('send_email') or 'default'
         bibliographic = validated_data.get('bibliographic')
         permissions = osf_permissions.expand_permissions(validated_data.get('permission')) or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
 

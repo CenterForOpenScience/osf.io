@@ -611,7 +611,7 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
         drf_permissions.IsAuthenticatedOrReadOnly,
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
-        base_permissions.RequiresScopedRequestOrReadOnly
+        # base_permissions.RequiresScopedRequestOrReadOnly
     )
 
     required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
