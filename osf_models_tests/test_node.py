@@ -168,6 +168,20 @@ class TestNodeCreation:
         assert contributor.write is True
         assert contributor.admin is True
 
+    def test_project_created_log_is_added(self, fake):
+        user = UserFactory()
+        node = Node(
+            title=fake.bs(),
+            creator=user
+        )
+        node.save()
+        assert node.logs.count() == 1
+        first_log = node.logs.first()
+        assert first_log.action == NodeLog.PROJECT_CREATED
+        params = first_log.params
+        assert params['node'] == node._id
+        assert_datetime_equal(first_log.date, node.date_created)
+
 # Copied from tests/test_models.py
 @pytest.mark.django_db
 class TestContributorMethods:
