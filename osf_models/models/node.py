@@ -1,7 +1,7 @@
+import itertools
 import logging
 import urlparse
 
-from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.dispatch import receiver
@@ -16,10 +16,11 @@ from framework import status
 from website.exceptions import UserNotAffiliatedError, NodeStateError
 from website.util.permissions import (
     expand_permissions,
+    reduce_permissions,
     DEFAULT_CONTRIBUTOR_PERMISSIONS,
     READ,
     WRITE,
-    ADMIN
+    ADMIN,
 )
 from website import settings
 from framework.sentry import log_exception
@@ -255,6 +256,25 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin, Taggable, Logga
             return False
         else:
             return getattr(contrib, permission, False)
+
+    def set_permissions(self, user, permissions, validate=True, save=False):
+        # Ensure that user's permissions cannot be lowered if they are the only admin
+        if validate and (reduce_permissions(self.get_permissions(user)) == ADMIN and
+                         reduce_permissions(permissions) != ADMIN):
+            admin_contribs = Contributor.objects.filter(node=self, admin=True)
+            if admin_contribs.count() <= 1:
+                raise NodeStateError('Must have at least one registered admin contributor')
+
+        contrib_obj = Contributor.objects.get(node=self, user=user)
+
+        for permission_level in [READ, WRITE, ADMIN]:
+            if permission_level in permissions:
+                setattr(contrib_obj, permission_level, True)
+            else:
+                setattr(contrib_obj, permission_level, False)
+        contrib_obj.save()
+        if save:
+            self.save()
 
     def add_permission(self, user, permission, save=False):
         contributor = user.contributor_set.get(node=self)
