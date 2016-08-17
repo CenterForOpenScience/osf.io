@@ -680,8 +680,8 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
         node = self.context['view'].get_node()
         auth = Auth(self.context['request'].user)
         full_name = validated_data.get('full_name')
-        send_email = self.context['request'].GET.get('send_email') or 'default'
         bibliographic = validated_data.get('bibliographic')
+        send_email = self.context['request'].GET.get('send_email') or 'default'
         permissions = osf_permissions.expand_permissions(validated_data.get('permission')) or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
 
         self.validate_data(user_id=id, full_name=full_name, email=email)

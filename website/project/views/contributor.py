@@ -189,8 +189,6 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
                 given_name=fullname,
                 email=email)
             contributor.save()
-            unreg_contributor_added.send(node, contributor=contributor,
-                auth=auth)
 
         contribs.append({
             'user': contributor,
@@ -496,7 +494,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
         contributor.save()
 
     elif not contributor.is_registered:
-        finalize_invitation(node, contributor, auth, email_template=email_template)
+        unreg_contributor_added.send(node, contributor=contributor, auth=auth, email_template=email_template)
 
 
 def verify_claim_token(user, token, pid):

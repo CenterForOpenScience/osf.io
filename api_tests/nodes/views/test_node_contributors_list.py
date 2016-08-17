@@ -22,7 +22,7 @@ from tests.factories import (
 )
 
 from tests.utils import assert_logs
-from website.project.signals import contributor_added
+from website.project.signals import contributor_added, unreg_contributor_added
 from website.util import permissions
 
 class NodeCRUDTestCase(ApiTestCase):
@@ -930,7 +930,57 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
         assert_equal(mock_mail.call_count, 0)
 
     @mock.patch('framework.auth.views.mails.send_mail')
-    def test_adds_contributor_email_if_default(self, mock_mail):
+    def test_add_contributor_email_if_default(self, mock_mail):
+        url = '{}?send_email=default'.format(self.url)
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'type': 'users',
+                            'id': self.user_two._id
+                        }
+                    }
+                }
+            }
+        }
+
+        with capture_signals() as mock_signal:
+            res = self.app.post_json_api(url, payload, auth=self.user.auth)
+        assert_in(contributor_added, mock_signal.signals_sent())
+        assert_equal(res.status_code, 201)
+        assert_equal(mock_mail.call_count, 1)
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_add_contributor_email_if_preprint(self, mock_mail):
+        url = '{}?send_email=preprint'.format(self.url)
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'type': 'users',
+                            'id': self.user_two._id
+                        }
+                    }
+                }
+            }
+        }
+
+        with capture_signals() as mock_signal:
+            res = self.app.post_json_api(url, payload, auth=self.user.auth)
+        assert_in(contributor_added, mock_signal.signals_sent())
+        assert_equal(res.status_code, 201)
+        assert_equal(mock_mail.call_count, 1)
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_add_unregistered_contributor_email_if_default(self, mock_mail):
         url = '{}?send_email=default'.format(self.url)
         payload = {
             'data': {
@@ -944,12 +994,12 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
 
         with capture_signals() as mock_signal:
             res = self.app.post_json_api(url, payload, auth=self.user.auth)
-        assert_equal(mock_signal.signals_sent(), set([contributor_added]))
+        assert_in(unreg_contributor_added, mock_signal.signals_sent())
         assert_equal(res.status_code, 201)
         assert_equal(mock_mail.call_count, 1)
 
     @mock.patch('framework.auth.views.mails.send_mail')
-    def test_add_unregistered_contributor_preprint_invite_email_if_preprint(self, mock_mail):
+    def test_add_unregistered_contributor_email_if_preprint(self, mock_mail):
         url = '{}?send_email=preprint'.format(self.url)
         payload = {
             'data': {
@@ -963,7 +1013,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
 
         with capture_signals() as mock_signal:
             res = self.app.post_json_api(url, payload, auth=self.user.auth)
-        assert_equal(mock_signal.signals_sent(), set([contributor_added]))
+        assert_in(unreg_contributor_added, mock_signal.signals_sent())
         assert_equal(res.status_code, 201)
         assert_equal(mock_mail.call_count, 1)
 
@@ -998,7 +1048,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
 
         with capture_signals() as mock_signal:
             res = self.app.post_json_api(url, payload, auth=self.user.auth)
-        assert_equal(mock_signal.signals_sent(), set([contributor_added]))
+        assert_in(contributor_added, mock_signal.signals_sent())
         assert_equal(res.status_code, 201)
         assert_equal(mock_mail.call_count, 0)
 
