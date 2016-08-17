@@ -252,17 +252,22 @@ class ObjectIDMixin(BaseIDMixin):
     _primary_key = _id
 
     def clone(self):
-        ret = super(GuidMixin, self).clone()
-        ret._guid = None
+        ret = super(ObjectIDMixin, self).clone()
+        ret.guid = None
         return ret
+
+    def save(self, *args, **kwargs):
+        if not self.guid:
+            self.guid = get_object_id()
+        return super(ObjectIDMixin, self).save(*args, **kwargs)
 
     @classmethod
     def migrate_from_modm(cls, modm_obj):
         """
         Given a modm object, make a django object with the same local fields.
 
-        This is a base method that may work for simple objects. It should be customized in the child class if it
-        doesn't work.
+        This is a base method that may work for simple objects. It should be customized
+        in the child class if it doesn't work.
         :param modm_obj:
         :return:
         """
@@ -317,6 +322,11 @@ class GuidMixin(BaseIDMixin):
             return None
 
     _primary_key = _id
+
+    def save(self, *args, **kwargs):
+        if not self._guid:
+            self._guid = Guid.objects.create()
+        return super(GuidMixin, self).save(*args, **kwargs)
 
     @classmethod
     def migrate_from_modm(cls, modm_obj):
