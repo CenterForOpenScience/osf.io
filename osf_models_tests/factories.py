@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import functools
+from mock import patch, Mock
 
 import factory
 import pytz
@@ -8,15 +9,27 @@ from django.utils import timezone
 from faker import Factory
 from modularodm.exceptions import NoResultsFound
 
+from website.util import permissions
 from website.project.licenses import ensure_licenses
+from website.project.model import ensure_schemas
+from website.archiver import ARCHIVER_SUCCESS
+from framework.auth.core import Auth
 
 from osf_models import models
+from osf_models.models.sanctions import Sanction
 from osf_models.utils.names import impute_names_model
 from osf_models.modm_compat import Q
 
 fake = Factory.create()
 ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
+def get_default_metaschema():
+    """This needs to be a method so it gets called after the test database is set up"""
+    try:
+        return models.MetaSchema.find()[0]
+    except IndexError:
+        ensure_schemas()
+        return models.MetaSchema.find()[0]
 
 def FakeList(provider, n, *args, **kwargs):
     func = getattr(fake, provider)
@@ -165,3 +178,121 @@ class PrivateLinkFactory(DjangoModelFactory):
     key = factory.Faker('md5')
     anonymous = False
     creator = factory.SubFactory(UserFactory)
+
+
+class CollectionFactory(DjangoModelFactory):
+    class Meta:
+        model = models.Collection
+
+    title = factory.Faker('catch_phrase')
+    user = factory.SubFactory(UserFactory)
+
+
+class RegistrationFactory(AbstractNodeFactory):
+
+    creator = None
+    # Default project is created if not provided
+    category = 'project'
+
+    @classmethod
+    def _build(cls, target_class, *args, **kwargs):
+        raise Exception('Cannot build registration without saving.')
+
+    @classmethod
+    def _create(cls, target_class, project=None, is_public=False,
+                schema=None, data=None,
+                archive=False, embargo=None, registration_approval=None, retraction=None,
+                *args, **kwargs):
+        user = None
+        if project:
+            user = project.creator
+        user = kwargs.get('user') or kwargs.get('creator') or user or UserFactory()
+        kwargs['creator'] = user
+        # Original project to be registered
+        project = project or target_class(*args, **kwargs)
+        if project.has_permission(user, 'admin'):
+            project.add_contributor(
+                contributor=user,
+                permissions=permissions.CREATOR_PERMISSIONS,
+                log=False,
+                save=False
+            )
+        project.save()
+
+        # Default registration parameters
+        schema = schema or get_default_metaschema()
+        data = data or {'some': 'data'}
+        auth = Auth(user=user)
+        register = lambda: project.register_node(
+            schema=schema,
+            auth=auth,
+            data=data
+        )
+
+        def add_approval_step(reg):
+            if embargo:
+                reg.embargo = embargo
+            elif registration_approval:
+                reg.registration_approval = registration_approval
+            elif retraction:
+                reg.retraction = retraction
+            else:
+                reg.require_approval(reg.creator)
+            reg.save()
+            reg.sanction.add_authorizer(reg.creator, reg)
+            reg.sanction.save()
+
+        with patch('framework.celery_tasks.handlers.enqueue_task'):
+            reg = register()
+            add_approval_step(reg)
+        if not archive:
+            with patch.object(reg.archive_job, 'archive_tree_finished', Mock(return_value=True)):
+                reg.archive_job.status = ARCHIVER_SUCCESS
+                reg.archive_job.save()
+                reg.sanction.state = Sanction.APPROVED
+                reg.sanction.save()
+        models.ArchiveJob(
+            src_node=project,
+            dst_node=reg,
+            initiator=user,
+        )
+        if is_public:
+            reg.is_public = True
+        reg.save()
+        return reg
+
+
+class SanctionFactory(DjangoModelFactory):
+    class Meta:
+        abstract = True
+
+    @classmethod
+    def _create(cls, target_class, initiated_by=None, approve=False, *args, **kwargs):
+        user = kwargs.get('user') or UserFactory()
+        kwargs['initiated_by'] = initiated_by or user
+        sanction = DjangoModelFactory._create(target_class, *args, **kwargs)
+        reg_kwargs = {
+            'creator': user,
+            'user': user,
+            sanction.SHORT_NAME: sanction
+        }
+        RegistrationFactory(**reg_kwargs)
+        if not approve:
+            sanction.state = Sanction.UNAPPROVED
+            sanction.save()
+        return sanction
+
+class RetractionFactory(SanctionFactory):
+    class Meta:
+        model = models.Retraction
+    user = factory.SubFactory(UserFactory)
+
+class EmbargoFactory(SanctionFactory):
+    class Meta:
+        model = models.Embargo
+    user = factory.SubFactory(UserFactory)
+
+class RegistrationApprovalFactory(SanctionFactory):
+    class Meta:
+        model = models.RegistrationApproval
+    user = factory.SubFactory(UserFactory)
