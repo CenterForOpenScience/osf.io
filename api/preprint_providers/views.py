@@ -46,7 +46,7 @@ class PreprintProviderMixin(object):
 
 class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     """
-    Paginated list of verified PreprintProviders affiliated with COS
+    Paginated list of verified PreprintProviders available
 
     ##PreprintProvider Attributes
 
@@ -54,9 +54,10 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin
 
         name           type               description
         =========================================================================
-        name           string             title of the institution
+        name           string             title of the preprint provider
         id             string             unique identifier in the OSF
-        logo_path      string             a path to the institution's static logo
+        logo_path      string             a path to the preprint provider's static logo
+        banner_path    string             a path to the preprint provider's static banner
 
     #This Request/Response
 
@@ -71,7 +72,7 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin
     model_class = PreprintProvider
 
     pagination_class = MaxSizePagination
-    serializer_class = PreprintProvider
+    serializer_class = PreprintProviderSerializer
     view_category = 'preprint_providers'
     view_name = 'preprint_providers-list'
 
@@ -90,21 +91,14 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, Preprint
 
     ##Attributes
 
-    OSF Institutions have the "preprint_provider" `type`.
+    Preprint Providers have the "preprint_providers" `type`.
 
         name           type               description
         =========================================================================
-        name           string             name of the preprint provider
+        name           string             title of the preprint provider
         id             string             unique identifier in the OSF
         logo_path      string             a path to the preprint provider's static logo
-
-    ##Relationships
-
-    ###Nodes
-    List of preprints that are associated with this preprint provider
-
-    ###Users
-    List of users that are affiliated with this institution.
+        banner_path    string             a path to the preprint provider's static banner
 
     ##Links
 
@@ -136,19 +130,43 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFil
 
     To update preprints with a given preprint_provider, see the `<node_id>/relationships/preprint_provider` endpoint
 
-
-
     ##Preprint Attributes
 
-        name          type               description
-        ===================================================================================================
-        guid              string             OSF GUID for this file (if one has been assigned)
-        name              string             name of the file or folder; used for display
-        kind              string             "file" or "folder"
-        path              string             same as for corresponding WaterButler entity
+    Many of these preprint attributes are the same as node, with a few special fields added in.
 
-    Preprints in this list may be filtered by `id` and `name`.
+    OSF Preprint entities have the "preprint" `type`.
 
+        name                            type                  description
+        ====================================================================================
+        title                           string                title of preprint, same as its project or component
+        abstract                        string                description of the preprint
+        date_created                    iso8601 timestamp     timestamp that the preprint was created
+        date_modified                   iso8601 timestamp     timestamp when the preprint was last updated
+        tags                            array of strings      list of tags that describe the node
+        subjects                        array of dictionaries list ids of Subject in the PLOS taxonomy. Dictrionary, containing the subject text and subject ID
+        doi                             string                bare DOI for the manuscript, as entered by the user
+
+    ##Relationships
+
+    ###Primary File
+    The file that is designated as the preprint's primary file, or the manuscript of the preprint.
+
+    ###Files
+    Link to list of files associated with this node/preprint
+
+    ###Contributors
+    Link to list of contributors that are affiliated with this preprint.
+
+    ###Provider
+    Link to preprint_provider detail for this preprint
+
+    ##Links
+
+    - `self` -- Preprint detail page for the current preprint
+    - `html` -- Project on the OSF corresponding to the current preprint
+    - `doi` -- URL representation of the DOI entered by the user for the preprint manuscript
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
     #This Request/Response
 
     """

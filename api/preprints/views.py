@@ -58,9 +58,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
         date_modified                   iso8601 timestamp     timestamp when the preprint was last updated
         tags                            array of strings      list of tags that describe the node
         subjects                        array of dictionaries list ids of Subject in the PLOS taxonomy. Dictrionary, containing the subject text and subject ID
-        provider                        string                original source of the preprint
         doi                             string                bare DOI for the manuscript, as entered by the user
-
 
     ##Relationships
 
@@ -71,7 +69,10 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
     Link to list of files associated with this node/preprint
 
     ###Contributors
-    Link to list of contributors that are affiliated with this institution.
+    Link to list of contributors that are affiliated with this preprint.
+
+    ###Provider
+    Link to preprint_provider detail for this preprint
 
     ##Links
 
