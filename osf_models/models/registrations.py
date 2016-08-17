@@ -22,7 +22,7 @@ class Registration(AbstractNode):
 
     registered_schema = models.ManyToManyField(MetaSchema)
 
-    registered_meta = DateTimeAwareJSONField(default=dict)
+    registered_meta = DateTimeAwareJSONField(default=dict, blank=True)
     # TODO Add back in once dependencies are resolved
     registration_approval = models.ForeignKey(RegistrationApproval, null=True, blank=True)
     retraction = models.ForeignKey(Retraction, null=True, blank=True)
