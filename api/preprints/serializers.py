@@ -1,5 +1,6 @@
 from modularodm import Q
 from modularodm.exceptions import ValidationValueError, NoResultsFound, MultipleResultsFound
+from rest_framework import status
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 
@@ -191,8 +192,10 @@ class PreprintPreprintProviderRelationshipSerializer(ser.Serializer):
         node = instance['self']
         auth = get_user_auth(self.context['request'])
 
-        preprint_provider = PreprintProvider.load(validated_data['_id'])
+        if node.preprint_provider:
+            raise ValueError('Preprint provider is already assigned to this preprint')
 
+        preprint_provider = PreprintProvider.load(validated_data['_id'])
         node.set_preprint_provider(preprint_provider, auth, save=True)
 
         return self.make_instance_obj(node)
