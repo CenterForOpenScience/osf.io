@@ -16,6 +16,9 @@ class PreprintProviderSerializer(JSONAPISerializer):
     description = ser.CharField(required=False)
     id = ser.CharField(max_length=200, source='_id')
 
+    logo_path = ser.CharField(read_only=True)
+    banner_path = ser.CharField(read_only=True)
+
     links = LinksField({
         'self': 'get_absolute_url',
         'preprints': 'preprint_links'
