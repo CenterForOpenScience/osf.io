@@ -3,7 +3,10 @@ import urlparse
 from django.utils import timezone
 from django.db import models
 
-from osf_models.models import OSFUser, MetaSchema, RegistrationApproval, Retraction, Embargo, DraftRegistrationApproval
+from osf_models.models import (
+    OSFUser, MetaSchema, RegistrationApproval,
+    Retraction, Embargo, DraftRegistrationApproval
+)
 from osf_models.models.base import BaseModel, ObjectIDMixin
 from osf_models.models.node import AbstractNode
 from osf_models.utils.base import api_v2_url
@@ -32,6 +35,38 @@ class Registration(AbstractNode):
                                         related_name='registrations',
                                         on_delete=models.SET_NULL,
                                         null=True, blank=True)
+    # Sanctions
+    registration_approval = models.ForeignKey('RegistrationApproval',
+                                            related_name='registrations',
+                                            null=True, blank=True,
+                                            on_delete=models.SET_NULL)
+    retration = models.ForeignKey('Retraction',
+                                related_name='registrations',
+                                null=True, blank=True,
+                                on_delete=models.SET_NULL)
+    embargo = models.ForeignKey('Embargo',
+                                related_name='registrations',
+                                null=True, blank=True,
+                                on_delete=models.SET_NULL)
+    embargo_termination_approval = models.ForeignKey('EmbargoTerminationApproval',
+                                                    related_name='registrations',
+                                                    null=True, blank=True,
+                                                    on_delete=models.SET_NULL)
+
+    @property
+    def sanction(self):
+        sanction = (
+            self.embargo_termination_approval or
+            self.retraction or
+            self.embargo or
+            self.registration_approval
+        )
+        if sanction:
+            return sanction
+        elif self.parent_node:
+            return self.parent_node.sanction
+        else:
+            return None
 
 
 class DraftRegistrationLog(ObjectIDMixin, BaseModel):
@@ -42,7 +77,7 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
     field - action - simple action to track what happened
     field - user - user who did the action
     """
-    date = models.DateTimeField() # auto_add=True)
+    date = models.DateTimeField()  # auto_add=True)
     action = models.CharField(max_length=255)
     draft = models.ForeignKey('DraftRegistration', related_name='logs', null=True)
     user = models.ForeignKey('OSFUser', null=True)
