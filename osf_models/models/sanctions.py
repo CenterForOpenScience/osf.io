@@ -65,7 +65,7 @@ class Sanction(ObjectIDMixin, BaseModel):
     #     'approval_token': 'Pew7wj1Puf7DENUPFPnXSwa1rf3xPN',
     #     'rejection_token': 'TwozClTFOic2PYxHDStby94bCQMwJy'}
     # }
-    approval_state = DateTimeAwareJSONField(default=dict)
+    approval_state = DateTimeAwareJSONField(default=dict, blank=True)
 
     # Expiration date-- Sanctions in the UNAPPROVED state that are older than their end_date
     # are automatically made ACTIVE by a daily cron job
@@ -271,7 +271,7 @@ class EmailApprovableSanction(TokenApprovableSanction):
     #     'reject': [REJECT_URL],
     #   }
     # }
-    stashed_urls = DateTimeAwareJSONField(default=dict)
+    stashed_urls = DateTimeAwareJSONField(default=dict, blank=True)
 
     @staticmethod
     def _format_or_empty(template, context):
