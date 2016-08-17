@@ -3,7 +3,6 @@ import logging
 from framework.celery_tasks.handlers import enqueue_task
 
 from website import settings
-from website.search import share_search
 
 logger = logging.getLogger(__name__)
 
@@ -97,16 +96,3 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
     result = search_engine.search_contributor(query=query, page=page, size=size,
                                               exclude=exclude, current_user=current_user)
     return result
-
-def search_share(query, raw=False, index='share'):
-    return share_search.search(query, raw=raw, index=index)
-
-def count_share(query, index='share'):
-    return share_search.count(query, index=index)
-
-def share_stats(query=None):
-    query = query or {}
-    return share_search.stats(query=query)
-
-def share_providers():
-    return share_search.providers()

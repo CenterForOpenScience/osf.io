@@ -907,37 +907,16 @@ def make_url_map(app):
             OsfWebRenderer('search.mako', trust=False)
         ),
         Rule(
-            '/share/',
-            'get',
-            {},
-            OsfWebRenderer('share_search.mako', trust=False)
-        ),
-        Rule(
             '/share/registration/',
             'get',
             {'register': settings.SHARE_REGISTRATION_URL},
             OsfWebRenderer('share_registration.mako', trust=False)
         ),
         Rule(
-            '/share/help/',
-            'get',
-            {'help': settings.SHARE_API_DOCS_URL},
-            OsfWebRenderer('share_api_docs.mako', trust=False)
+            '/api/v1/user/search/',
+            'get', search_views.search_contributor,
+            json_renderer
         ),
-        Rule(  # FIXME: Dead route; possible that template never existed; confirm deletion candidate with ErinB
-            '/share_dashboard/',
-            'get',
-            {},
-            OsfWebRenderer('share_dashboard.mako', trust=False)
-        ),
-        Rule(
-            '/share/atom/',
-            'get',
-            search_views.search_share_atom,
-            xml_renderer
-        ),
-        Rule('/api/v1/user/search/', 'get', search_views.search_contributor, json_renderer),
-
         Rule(
             '/api/v1/search/node/',
             'post',
@@ -953,9 +932,6 @@ def make_url_map(app):
 
         Rule(['/search/', '/search/<type>/'], ['get', 'post'], search_views.search_search, json_renderer),
         Rule('/search/projects/', 'get', search_views.search_projects_by_title, json_renderer),
-        Rule('/share/search/', ['get', 'post'], search_views.search_share, json_renderer),
-        Rule('/share/stats/', 'get', search_views.search_share_stats, json_renderer),
-        Rule('/share/providers/', 'get', search_views.search_share_providers, json_renderer),
 
     ], prefix='/api/v1')
 
