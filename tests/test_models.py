@@ -6,7 +6,6 @@ from nose.tools import *  # noqa (PEP8 asserts)
 
 import json
 import pytz
-import os
 import datetime
 import urlparse
 import urllib
@@ -106,7 +105,7 @@ class TestUserValidation(OsfTestCase):
             except ValidationError:
                 failsAtEnd = True
                 print('\"' + shouldPass + '\" failed but should have passed while testing that the validator ' + data['testsPositive'][shouldPass])
-                print(os.getcwd())
+
         for shouldFail in data["testsNegative"]:
             self.user.social = {'profileWebsites': [shouldFail]}
             try:
