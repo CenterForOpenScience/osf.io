@@ -16,19 +16,12 @@ def update_or_create(provider_data):
     provider = PreprintProvider.load(provider_data['_id'])
     if provider:
         for key, val in provider_data.iteritems():
-            setattr(provider.key, val)
+            setattr(provider, key, val)
         changed_fields = provider.save()
         if changed_fields:
             print('Updated {}: {}'.format(provider.name, changed_fields))
         return provider, False
     else:
-        # provider = PreprintProvider()
-        #
-        # for key, value in provider_data.iteritems():
-        #     provider.key = value
-        #
-        #
-        # provider_data = {provider.k: v for k, v in provider_data.iteritems()}
         new_provider = PreprintProvider(**provider_data)
         new_provider.save()
         provider = PreprintProvider.load(new_provider._id)
@@ -55,7 +48,7 @@ def main():
         },
         {
             '_id': 'engrxiv',
-            'name': 'Enginerring Archive',
+            'name': 'Engineering Archive',
             'description': 'Engineering Archive, the eprint server for engineering.',
             'banner_name': 'engarxiv-banner.png',
             'logo_name': 'engarxiv-logo.png',
