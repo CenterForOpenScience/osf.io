@@ -303,7 +303,7 @@ def create_fake_project(creator, n_users, privacy, n_components, name, n_tags, p
     if is_preprint:
         if preprint_provider:
             try:
-                preprint_provider = models.PreprintProvider.find_one(Q('name', 'eq', preprint_provider))
+                preprint_provider = models.PreprintProvider.find_one(Q('_id', 'eq', preprint_provider))
             except NoResultsFound:
                 preprint_provider = PreprintProviderFactory(name=preprint_provider)
         privacy = 'public'
