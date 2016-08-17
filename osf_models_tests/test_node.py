@@ -375,6 +375,32 @@ class TestPermissionMethods:
         node.save()
         assert node.has_permission(user, permissions.WRITE) is True
 
+    def test_set_permissions(self, node):
+        low, high = UserFactory(), UserFactory()
+        Contributor.objects.create(
+            node=node, user=low,
+            read=True, write=False, admin=False
+        )
+        Contributor.objects.create(
+            node=node, user=high,
+            read=True, write=True, admin=True
+        )
+        node.set_permissions(low, [permissions.READ, permissions.WRITE])
+        assert node.has_permission(low, permissions.READ) is True
+        assert node.has_permission(low, permissions.WRITE) is True
+        assert node.has_permission(low, permissions.ADMIN) is False
+
+        node.set_permissions(high, [permissions.READ, permissions.WRITE])
+        assert node.has_permission(high, permissions.READ) is True
+        assert node.has_permission(high, permissions.WRITE) is True
+        assert node.has_permission(high, permissions.ADMIN) is False
+
+    def test_set_permissions_raises_error_if_only_admins_permissions_are_reduced(self, node):
+        # creator is the only admin
+        with pytest.raises(NodeStateError) as excinfo:
+            node.set_permissions(node.creator, permissions=[permissions.READ, permissions.WRITE])
+        assert excinfo.value.args[0] == 'Must have at least one registered admin contributor'
+
     def test_add_permission_with_admin_also_grants_read_and_write(self, node):
         user = UserFactory()
         Contributor.objects.create(
