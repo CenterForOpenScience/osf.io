@@ -664,6 +664,12 @@ class Collection(GuidMixin, BaseModel):
     user = models.ForeignKey('OSFUser', null=True, blank=True,
                              on_delete=models.SET_NULL, related_name='collections')
 
+    def save(self, *args, **kwargs):
+        # Bookmark collections are always named 'Bookmarks'
+        if self.is_bookmark_collection and self.title != 'Bookmarks':
+            self.title = 'Bookmarks'
+        return super(Collection, self).save(*args, **kwargs)
+
     @property
     def nodes_pointer(self):
         return self.nodes.filter(primary=False)
