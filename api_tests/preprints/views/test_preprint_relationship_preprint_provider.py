@@ -35,12 +35,12 @@ class TestPreprintRelationshipPreprintProvider(ApiTestCase):
         assert_equal(self.preprint.preprint_provider, self.preprint_provider)
 
     def test_preprint_with_no_permissions(self):
-        user = AuthUserFactory()
-        user.save()
+        new_user = AuthUserFactory()
+        new_user.save()
         res = self.app.patch_json_api(
             self.preprint_preprint_providers_url,
             self.create_payload([self.preprint_provider._id]),
-            auth=user.auth,
+            auth=new_user.auth,
             expect_errors=True,
         )
 
@@ -66,7 +66,7 @@ class TestPreprintRelationshipPreprintProvider(ApiTestCase):
 
     def test_invalid_relationship_type(self):
         invalid_type_payload = self.create_payload(self.preprint_provider._id)
-        invalid_type_payload['type'] = 'socks'
+        invalid_type_payload['data']['type'] = 'socks'
 
         res = self.app.put_json_api(
             self.preprint_preprint_providers_url,
@@ -75,7 +75,7 @@ class TestPreprintRelationshipPreprintProvider(ApiTestCase):
             expect_errors=True
         )
 
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, 409)
 
     def test_invalid_relationship_id(self):
         res = self.app.put_json_api(
