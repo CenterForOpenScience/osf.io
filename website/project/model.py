@@ -3234,28 +3234,24 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         if user_id:
             contributor = User.load(user_id)
-            if contributor in self.contributors:
-                raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
             if not contributor:
                 raise ValueError('User with id {} was not found.'.format(user_id))
+            if contributor in self.contributors:
+                raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
             self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
                                  permissions=permissions, send_email=send_email, save=True)
         else:
-            if email:
-                try:
-                    contributor = self.add_unregistered_contributor(fullname=full_name, email=email,
-                                                                    auth=auth, send_email=send_email,
-                                                                    permissions=permissions, save=True)
-                except Exception:
-                    contributor = get_user(email=email)
-                    if contributor in self.contributors:
-                        raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
-                    self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
-                                         send_email=send_email, permissions=permissions, save=True)
-            else:
+
+            try:
                 contributor = self.add_unregistered_contributor(fullname=full_name, email=email,
                                                                 auth=auth, send_email=send_email,
                                                                 permissions=permissions, save=True)
+            except ValidationValueError:
+                contributor = get_user(email=email)
+                if contributor in self.contributors:
+                    raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
+                self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
+                                     send_email=send_email, permissions=permissions, save=True)
 
         auth.user.email_last_sent = datetime.datetime.utcnow()
         auth.user.save()

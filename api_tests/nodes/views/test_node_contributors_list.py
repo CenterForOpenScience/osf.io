@@ -859,21 +859,20 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert_in(res.json['data']['embeds']['users']['data']['id'], self.public_project.contributors)
 
     def test_add_unregistered_contributor_already_contributor(self):
-        user = UserFactory()
-        self.public_project.add_unregistered_contributor(auth=Auth(self.user), fullname=user.fullname, email=user.username)
+        self.public_project.add_unregistered_contributor(auth=Auth(self.user), fullname='Alphabet', email='a@b.com')
         payload = {
             'data': {
                 'type': 'contributors',
                 'attributes': {
                     'full_name': 'Doesn\'t Matter',
-                    'email': user.username
+                    'email': 'a@b.com'
                 }
             }
         }
         res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True)
         self.public_project.reload()
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], '{} is already a contributor.'.format(user.fullname))
+        assert_equal(res.json['errors'][0]['detail'], 'Alphabet is already a contributor.')
 
 
 class TestNodeContributorCreateValidation(TestCase):
