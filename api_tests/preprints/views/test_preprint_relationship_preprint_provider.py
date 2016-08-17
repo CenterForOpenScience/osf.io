@@ -12,7 +12,10 @@ class TestPreprintRelationshipPreprintProvider(ApiTestCase):
         self.user = AuthUserFactory()
         self.preprint = PreprintFactory(creator=self.user, provider=None)
         self.preprint_provider = PreprintProviderFactory()
-        self.preprint_preprint_providers_url = '/{0}preprints/{1}/relationships/preprint_provider/'.format(API_BASE, self.preprint._id)
+        self.preprint_preprint_providers_url = self.create_url(self.preprint._id)
+
+    def create_url(self, preprint_id):
+        return '/{0}preprints/{1}/relationships/preprint_provider/'.format(API_BASE, preprint_id)
 
     def create_payload(self, preprint_provider_id):
         return {'data': {'type': 'preprint_providers', 'id': preprint_provider_id}}
@@ -48,13 +51,13 @@ class TestPreprintRelationshipPreprintProvider(ApiTestCase):
         provider = preprint_with_provider.preprint_provider
         assert_not_equal(provider, self.preprint_provider)
         res = self.app.put_json_api(
-            self.preprint_preprint_providers_url,
+            self.create_url(preprint_with_provider._id),
             self.create_payload(self.preprint_provider._id),
-            auth=self.user.auth
+            auth=self.user.auth,
+            expect_errors=True
         )
 
         assert_equal(res.status_code, 400)
-        assert_equal(self.preprint.preprint_provider, provider)
 
     def test_get_relationship_information(self):
         res = self.app.get(self.preprint_preprint_providers_url,auth=self.user.auth)
