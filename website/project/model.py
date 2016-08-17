@@ -4280,3 +4280,17 @@ class PreprintProvider(StoredObject):
     def absolute_api_v2_url(self):
         path = '/preprint_providers/{}/'.format(self._id)
         return api_v2_url(path)
+
+    @property
+    def logo_path(self):
+        if self.logo_name:
+            return '/static/img/preprint_providers/{}'.format(self.logo_name)
+        else:
+            return None
+
+    @property
+    def banner_path(self):
+        if self.logo_name:
+            return '/static/img/preprint_providers/{}'.format(self.logo_name)
+        else:
+            return None
