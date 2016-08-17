@@ -4275,3 +4275,8 @@ class PreprintProvider(StoredObject):
 
     def get_absolute_url(self):
         return '{}preprint_providers/{}'.format(self.absolute_api_v2_url, self._id)
+
+    @property
+    def absolute_api_v2_url(self):
+        path = '/preprint_providers/{}/'.format(self._id)
+        return api_v2_url(path)
