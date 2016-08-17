@@ -14,6 +14,7 @@ from api.base.utils import get_object_or_error
 from api.base.pagination import MaxSizePagination
 
 from api.preprint_providers.serializers import PreprintProviderSerializer
+from api.preprints.serializers import PreprintSerializer
 
 
 class PreprintProviderMixin(object):
@@ -128,3 +129,57 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, Preprint
 
     def get_object(self):
         return PreprintProvider.load(self.kwargs['provider_id'])
+
+
+class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
+    """Preprints from a given preprint_provider. *Read Only*
+
+    To update preprints with a given preprint_provider, see the `<node_id>/relationships/preprint_provider` endpoint
+
+
+
+    ##Preprint Attributes
+
+        name          type               description
+        ===================================================================================================
+        guid              string             OSF GUID for this file (if one has been assigned)
+        name              string             name of the file or folder; used for display
+        kind              string             "file" or "folder"
+        path              string             same as for corresponding WaterButler entity
+
+    Preprints in this list may be filtered by `id` and `name`.
+
+    #This Request/Response
+
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    ordering = ('-date_created')
+
+    serializer_class = PreprintSerializer
+
+    required_read_scopes = [CoreScopes.NODE_FILE_READ]
+
+    view_category = 'preprints'
+    view_name = 'preprints-list'
+
+    # overrides ODMFilterMixin
+    def get_default_odm_query(self):
+        provider = PreprintProvider.find_one(Q('_id', 'eq', self.kwargs['provider_id']))
+        return (
+            Q('preprint_file', 'ne', None) &
+            Q('is_deleted', 'ne', True) &
+            Q('preprint_file', 'ne', None) &
+            Q('is_public', 'eq', True) &
+            Q('preprint_provider', 'eq', provider)
+        )
+
+    # overrides ListAPIView
+    def get_queryset(self):
+        query = self.get_query_from_request()
+        nodes = Node.find(query)
+
+        return [node for node in nodes if node.is_preprint]
