@@ -618,6 +618,34 @@ def add_creator_as_contributor(sender, instance, created, **kwargs):
             admin=True
         )
 
+@receiver(post_save, sender=Node)
+def add_project_created_log(sender, instance, created, **kwargs):
+    if created:
+        # Define log fields for non-component project
+        log_action = NodeLog.PROJECT_CREATED
+        log_params = {
+            'node': instance._id,
+        }
+        if getattr(instance, 'parent_node', None):
+            log_params.update({'parent_node': instance.parent_id._id})
+
+        # Add log with appropriate fields
+        instance.add_log(
+            log_action,
+            params=log_params,
+            auth=Auth(user=instance.creator),
+            log_date=instance.date_created,
+            save=True,
+        )
+
+# TODO: Uncomment when NotificationSubscription is implemented
+# @receiver(post_save, sender=Node)
+# def send_osf_signal(sender, instance, created, **kwargs):
+#     if created:
+#         project_signals.project_created.send(instance)
+
+# TODO: Add addons
+
 @receiver(pre_save, sender=Node)
 def set_parent(sender, instance, *args, **kwargs):
     if getattr(instance, '_parent', None):
