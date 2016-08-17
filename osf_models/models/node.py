@@ -627,7 +627,7 @@ def add_project_created_log(sender, instance, created, **kwargs):
             'node': instance._id,
         }
         if getattr(instance, 'parent_node', None):
-            log_params.update({'parent_node': instance.parent_id._id})
+            log_params.update({'parent_node': instance.parent_node._id})
 
         # Add log with appropriate fields
         instance.add_log(
