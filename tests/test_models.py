@@ -96,25 +96,25 @@ class TestUserValidation(OsfTestCase):
         with open('../website/static/urlValidatorTest.json') as urlTestData:
             data = json.load(urlTestData)
 
-        failsAtEnd = False
-        for shouldPass in data["testsPositive"]:
+        fails_at_end = False
+        for should_pass in data["testsPositive"]:
             try:
-                self.user.social = {'profileWebsites': [shouldPass]}
+                self.user.social = {'profileWebsites': [should_pass]}
                 self.user.save()
-                assert_equal(self.user.social['profileWebsites'], [shouldPass])
+                assert_equal(self.user.social['profileWebsites'], [should_pass])
             except ValidationError:
-                failsAtEnd = True
-                print('\"' + shouldPass + '\" failed but should have passed while testing that the validator ' + data['testsPositive'][shouldPass])
+                fails_at_end = True
+                print('\"' + should_pass + '\" failed but should have passed while testing that the validator ' + data['testsPositive'][should_pass])
 
-        for shouldFail in data["testsNegative"]:
-            self.user.social = {'profileWebsites': [shouldFail]}
+        for should_fail in data["testsNegative"]:
+            self.user.social = {'profileWebsites': [should_fail]}
             try:
                 with assert_raises(ValidationError):
                     self.user.save()
             except AssertionError:
-                failsAtEnd = True
-                print('\"' + shouldFail + '\" passed but should have failed while testing that the validator ' + data['testsNegative'][shouldFail])
-        if failsAtEnd:
+                fails_at_end = True
+                print('\"' + should_fail + '\" passed but should have failed while testing that the validator ' + data['testsNegative'][should_fail])
+        if fails_at_end:
             raise
 
     def test_validate_multiple_profile_websites_valid(self):
