@@ -47,9 +47,7 @@ from website.exceptions import (
     InvalidTagError, TagNotFoundError,
     UserNotAffiliatedError,
 )
-from website.files.models import StoredFileNode
 from website.institutions.model import Institution, AffiliatedInstitutionsList
-from website.preprint_providers.model import PreprintProvider
 from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
 from website.util.permissions import expand_permissions, reduce_permissions
