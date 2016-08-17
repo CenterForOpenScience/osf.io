@@ -101,6 +101,12 @@ class BaseModel(models.Model):
     def _primary_name(self):
         return '_id'
 
+    def clone(self):
+        """Create a new, unsaved copy of this object."""
+        copy = self.__class__.objects.get(pk=self.pk)
+        copy.id = None
+        return copy
+
     def save(self, *args, **kwargs):
         # Make Django validate on save (like modm)
         if not kwargs.get('force_insert') and not kwargs.get('force_update'):
@@ -244,6 +250,11 @@ class ObjectIDMixin(BaseIDMixin):
             return None
 
     _primary_key = _id
+
+    def clone(self):
+        ret = super(GuidMixin, self).clone()
+        ret._guid = None
+        return ret
 
     @classmethod
     def migrate_from_modm(cls, modm_obj):
