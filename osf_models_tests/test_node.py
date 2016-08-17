@@ -280,6 +280,42 @@ class TestContributorMethods:
         with pytest.raises(ValueError):
             node.set_visible(UserFactory(), True)
 
+    def test_copy_contributors_from_adds_contributors(self, node):
+        contrib, contrib2 = UserFactory(), UserFactory()
+        Contributor.objects.create(user=contrib, node=node, visible=True)
+        Contributor.objects.create(user=contrib2, node=node, visible=False)
+
+        node2 = NodeFactory()
+        node2.copy_contributors_from(node)
+
+        assert node2.is_contributor(contrib)
+        assert node2.is_contributor(contrib2)
+
+        assert node.is_contributor(contrib)
+        assert node.is_contributor(contrib2)
+
+    def test_copy_contributors_from_preserves_visibility(self, node):
+        visible, invisible = UserFactory(), UserFactory()
+        Contributor.objects.create(user=visible, node=node, visible=True)
+        Contributor.objects.create(user=invisible, node=node, visible=False)
+
+        node2 = NodeFactory()
+        node2.copy_contributors_from(node)
+
+        assert Contributor.objects.get(node=node, user=visible).visible is True
+        assert Contributor.objects.get(node=node, user=invisible).visible is False
+
+    def test_copy_contributors_from_preserves_permissions(self, node):
+        read, admin = UserFactory(), UserFactory()
+        Contributor.objects.create(user=read, node=node, read=True, write=False, admin=False)
+        Contributor.objects.create(user=admin, node=node, read=True, write=True, admin=True)
+
+        node2 = NodeFactory()
+        node2.copy_contributors_from(node)
+
+        assert node2.has_permission(read, 'read') is True
+        assert node2.has_permission(read, 'write') is False
+        assert node2.has_permission(admin, 'admin') is True
 
 @pytest.mark.django_db
 class TestPermissionMethods:
