@@ -129,7 +129,8 @@ def link_archive_provider(node, user):
     the code for use with archive providers other than OSF Storage)
     """
     addon = node.get_or_add_addon(settings.ARCHIVE_PROVIDER, auth=Auth(user))
-    addon.on_add()
+    if hasattr(addon, 'on_add'):
+        addon.on_add()
     node.save()
 
 def aggregate_file_tree_metadata(addon_short_name, fileobj_metadata, user):
