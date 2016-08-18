@@ -165,6 +165,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFil
     serializer_class = PreprintSerializer
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
+    required_write_scopes = [CoreScopes.NULL]
 
     view_category = 'preprints'
     view_name = 'preprints-list'
