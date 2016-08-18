@@ -3,16 +3,18 @@ import urlparse
 from django.utils import timezone
 from django.db import models
 
+from website.exceptions import NodeStateError
+from website import settings
+
 from osf_models.models import (
     OSFUser, MetaSchema, RegistrationApproval,
-    Retraction, Embargo, DraftRegistrationApproval
+    Retraction, Embargo, DraftRegistrationApproval,
+    EmbargoTerminationApproval,
 )
 from osf_models.models.base import BaseModel, ObjectIDMixin
 from osf_models.models.node import AbstractNode
 from osf_models.utils.base import api_v2_url
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-
-from website import settings
 
 
 class Registration(AbstractNode):
@@ -114,6 +116,27 @@ class Registration(AbstractNode):
             if self.parent_node:
                 return self.parent_node.is_embargoed
         return self.embargo and self.embargo.is_approved and not self.is_public
+
+    def request_embargo_termination(self, auth):
+        """Initiates an EmbargoTerminationApproval to lift this Embargoed Registration's
+        embargo early."""
+        if not self.is_embargoed:
+            raise NodeStateError('This node is not under active embargo')
+        if not self.root == self:
+            raise NodeStateError('Only the root of an embargoed registration can request termination')
+
+        approval = EmbargoTerminationApproval(
+            initiated_by=auth.user,
+            embargoed_registration=self,
+        )
+        admins = [admin for admin in self.root.get_admin_contributors_recursive(unique_users=True)]
+        for (admin, node) in admins:
+            approval.add_authorizer(admin, node=node)
+        approval.save()
+        approval.ask(admins)
+        self.embargo_termination_approval = approval
+        self.save()
+        return approval
 
 class DraftRegistrationLog(ObjectIDMixin, BaseModel):
     """ Simple log to show status changes for DraftRegistrations

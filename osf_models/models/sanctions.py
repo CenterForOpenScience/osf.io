@@ -20,10 +20,6 @@ from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 VIEW_PROJECT_URL_TEMPLATE = osf_settings.DOMAIN + '{node_id}/'
 
 
-class PreregCallbackMixin(object):
-    pass
-
-
 class Sanction(ObjectIDMixin, BaseModel):
     """Sanction class is a generic way to track approval states"""
 
@@ -412,8 +408,8 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
     def pending_registration(self):
         return not self.for_existing_registration and self.is_pending_approval
 
-    def __repr__(self):
-        pass
+    # def __repr__(self):
+    #     pass
         # from osf_models.models import Node
         #
         # parent_registration = None
@@ -430,9 +426,7 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
         # )
 
     def _get_registration(self):
-        from website.project.model import Node
-
-        return Node.find_one(Q('embargo', 'eq', self))
+        return self.registrations.first()
 
     def _view_url_context(self, user_id, node):
         registration = node or self._get_registration()
@@ -450,11 +444,10 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
         user_approval_state = self.approval_state.get(user_id, {})
         rejection_token = user_approval_state.get('rejection_token')
         if rejection_token:
-            from website.project.model import Node
-
+            Registration = apps.get_model('osf_models.Registration')
             root_registration = self._get_registration()
             node_id = user_approval_state.get('node_id', root_registration._id)
-            registration = Node.load(node_id)
+            registration = Registration.load(node_id)
             return {
                 'node_id': registration.registered_from,
                 'token': rejection_token,
@@ -908,7 +901,8 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    embargoed_registration = models.ForeignKey('node', null=True)
+    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
+    embargoed_registration = models.ForeignKey('Registration', null=True)
 
     def _get_registration(self):
         return self.embargoed_registration
