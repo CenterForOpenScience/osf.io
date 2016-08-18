@@ -626,6 +626,13 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin, Taggable, Logga
     def private_link_keys_deleted(self):
         return self.private_links.filter(is_deleted=True).values_list('key', flat=True)
 
+    @property
+    def _root(self):
+        if self.parent_node:
+            return self.parent_node._root
+        else:
+            return self
+
     def find_readable_antecedent(self, auth):
         """ Returns first antecendant node readable by <user>.
         """
@@ -807,6 +814,10 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin, Taggable, Logga
                     else:
                         yield (contrib, node)
 
+    def save(self, *args, **kwargs):
+        if self.pk:
+            self.root = self._root
+        return super(AbstractNode, self).save(*args, **kwargs)
 
 class Node(AbstractNode):
     """
