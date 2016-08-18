@@ -1,6 +1,7 @@
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from osf_models.models import Node
+from osf_models.models import OSFUser
 from osf_models.models.base import BaseModel, ObjectIDMixin
 from osf_models.models.validators import validate_subscription_type
 from website.notifications.constants import NOTIFICATION_TYPES
@@ -27,6 +28,13 @@ class NotificationSubscription(BaseModel):
         # ~8k have owner=Node
         elif self.node is not None:
             return self.node
+
+    @owner.setter
+    def owner(self, value):
+        if isinstance(value, OSFUser):
+            self.user = value
+        elif isinstance(value, Node):
+            self.node = value
 
     def add_user_to_subscription(self, user, notification_type, save=True):
         for nt in NOTIFICATION_TYPES:
