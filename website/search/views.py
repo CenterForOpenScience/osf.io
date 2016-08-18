@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 import functools
 import httplib as http
-import json
 import logging
 import time
-from urllib2 import unquote
 
 import bleach
 from flask import request
@@ -16,15 +14,11 @@ from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 from framework import sentry
 from website import language
-from website import settings
 from website.models import Node, User
 from website.project.views.contributor import get_node_contributors_abbrev
 from website.search import exceptions
-from website.search import util
-from website.search.exceptions import IndexNotFoundError, MalformedQueryError
 import website.search.search as search
 from website.search.util import build_query
-from website.util import api_url_for
 
 logger = logging.getLogger(__name__)
 

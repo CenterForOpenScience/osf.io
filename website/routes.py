@@ -17,7 +17,6 @@ from framework.flask import redirect
 from framework.routing import WebRenderer
 from framework.exceptions import HTTPError
 from framework.auth import get_display_name
-from framework.routing import xml_renderer
 from framework.routing import json_renderer
 from framework.routing import process_rules
 from framework.auth import views as auth_views

@@ -283,7 +283,8 @@ var ViewModel = function(params) {
         self.currentPage(1);
         self.category(alias);
         if (alias.name === 'SHARE') {
-            document.location = '/share/?' + $.param({q: self.query()});
+            var win = window.open(window.contextVars.shareUrl + 'discover?' + $.param({q: self.query()}), '_blank');
+            win.focus();
         } else {
             self.search();
         }
@@ -350,6 +351,14 @@ var ViewModel = function(params) {
             size: self.resultsPerPage()
         };
         var url = self.queryUrl + self.category().url();
+
+        var shareQuery = {
+            query: {
+                query_string: {
+                    query: self.query()
+                }
+            }
+        };
 
         $osf.postJSON(url, jsonData).success(function(data) {
 
@@ -448,7 +457,7 @@ var ViewModel = function(params) {
                 self.pushState();
             }
 
-            $osf.postJSON('/api/v1/share/search/?count&v=1', jsonData).success(function(data) {
+            $osf.postJSON(window.contextVars.shareUrl + 'api/search/abstractcreativework/_count', shareQuery).success(function(data) {
                 self.shareCategory(new Category('SHARE', data.count, 'SHARE'));
             });
 

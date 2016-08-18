@@ -110,35 +110,6 @@
         </div><!--row-->
     </div>
 
-    <script type="text/html" id="SHARE">
-        <!-- ko if: $data.links -->
-            <h4><a data-bind="attr: {href: links[0].url}, text: title"></a></h4>
-        <!-- /ko -->
-
-        <!-- ko ifnot: $data.links -->
-            <h4><a data-bind="attr: {href: id.url}, text: title"></a></h4>
-        <!-- /ko -->
-
-        <h5>Description: <small data-bind="fitText: {text: description || 'No Description', length: 500}"></small></h5>
-
-        <!-- ko if: contributors.length > 0 -->
-        <h5>
-            Contributors: <small data-bind="foreach: contributors">
-                <span data-bind="text: $data.given + ' ' + $data.family"></span>
-            <!-- ko if: ($index()+1) < ($parent.contributors.length) -->&nbsp;- <!-- /ko -->
-            </small>
-        </h5>
-        <!-- /ko -->
-
-        <!-- ko if: $data.source -->
-        <h5>Source: <small data-bind="text: source"></small></h5>
-        <!-- /ko -->
-
-        <!-- ko if: $data.isResource -->
-        <button class="btn btn-primary pull-right" data-bind="click: $parents[1].claim.bind($data, _id)">Curate This</button>
-        <br>
-        <!-- /ko -->
-    </script>
     <script type="text/html" id="file">
         <h4><a data-bind="attr: {href: guid_url || deep_url}, text: name"></a> (<span class="text-danger" data-bind="if: is_retracted">Withdrawn </span><span data-bind="if: is_registration">Registration </span>File)</h4>
         <h5>
@@ -343,9 +314,11 @@
 </%def>
 
 <%def name="javascript_bottom()">
+    <% import website %>
     <script type="text/javascript">
         window.contextVars = $.extend(true, {}, window.contextVars, {
-            search:true
+            search:true,
+            shareUrl: ${ website.settings.SHARE_URL | sjson, n }
         });
     </script>
 
