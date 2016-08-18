@@ -811,6 +811,92 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         self.private_project.reload()
         assert_not_in(self.user_two, self.private_project.contributors)
 
+    def test_add_contributor_index_returned(self):
+        res = self.app.post_json_api(self.public_url, self.data_user_two, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['index'], 1)
+
+        res = self.app.post_json_api(self.public_url, self.data_user_three, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['index'], 2)
+
+    def test_add_contributor_set_index_out_of_range(self):
+        user_one = UserFactory()
+        self.public_project.add_contributor(user_one, save=True)
+        user_two = UserFactory()
+        self.public_project.add_contributor(user_two, save=True)
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'index': 4
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'type': 'users',
+                            'id': self.user_two._id
+                        }
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], '4 is not a valid contributor index for node with id {}'.format(self.public_project._id))
+
+    def test_add_contributor_set_index_first(self):
+        user_one = UserFactory()
+        self.public_project.add_contributor(user_one, save=True)
+        user_two = UserFactory()
+        self.public_project.add_contributor(user_two, save=True)
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'index': 0
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'type': 'users',
+                            'id': self.user_two._id
+                        }
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth)
+        self.public_project.reload()
+        assert_equal(res.status_code, 201)
+        assert_equal(self.public_project.contributors.index(self.user_two), 0)
+
+    def test_add_contributor_set_index_last(self):
+        user_one = UserFactory()
+        self.public_project.add_contributor(user_one, save=True)
+        user_two = UserFactory()
+        self.public_project.add_contributor(user_two, save=True)
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'index': 3
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'type': 'users',
+                            'id': self.user_two._id
+                        }
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth)
+        self.public_project.reload()
+        assert_equal(res.status_code, 201)
+        assert_equal(self.public_project.contributors.index(self.user_two), 3)
+
 
 class TestNodeContributorBulkCreate(NodeCRUDTestCase):
 

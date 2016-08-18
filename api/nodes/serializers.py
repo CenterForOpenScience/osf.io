@@ -656,6 +656,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     """
     id = ContributorIDField(required=True)
     target_type = TargetTypeField(target_type='users')
+    index = ser.IntegerField(required=False)
 
     def create(self, validated_data):
         auth = Auth(self.context['request'].user)
@@ -667,10 +668,18 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
 
         bibliographic = validated_data['bibliographic']
         permissions = osf_permissions.expand_permissions(validated_data.get('permission')) or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
+        index = validated_data.get('index')
         node.add_contributor(contributor=contributor, auth=auth, visible=bibliographic, permissions=permissions, save=True)
+
+        if index is not None:
+            if index not in range(len(node.contributors)):
+                raise exceptions.ValidationError(detail='{} is not a valid contributor index for node with id {}'.format(index, node._id))
+            node.move_contributor(user=contributor, index=index, auth=auth, save=True)
+
         contributor.permission = osf_permissions.reduce_permissions(node.get_permissions(contributor))
         contributor.bibliographic = node.get_visible(contributor)
         contributor.node_id = node._id
+        contributor.index = node.contributors.index(contributor)
         return contributor
 
 
