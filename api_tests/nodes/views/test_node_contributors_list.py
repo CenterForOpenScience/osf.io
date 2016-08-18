@@ -930,7 +930,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
         assert_equal(mock_mail.call_count, 0)
 
     @mock.patch('framework.auth.views.mails.send_mail')
-    def test_add_contributor_email_if_default(self, mock_mail):
+    def test_add_contributor_sends_email(self, mock_mail):
         url = '{}?send_email=default'.format(self.url)
         payload = {
             'data': {
@@ -948,14 +948,35 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
             }
         }
 
-        with capture_signals() as mock_signal:
-            res = self.app.post_json_api(url, payload, auth=self.user.auth)
-        assert_in(contributor_added, mock_signal.signals_sent())
+        res = self.app.post_json_api(url, payload, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(mock_mail.call_count, 1)
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_add_contributor_email_if_preprint(self, mock_mail):
+    @mock.patch('website.project.signals.contributor_added.send')
+    def test_add_contributor_signal_if_default(self, mock_send):
+        url = '{}?send_email=default'.format(self.url)
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'type': 'users',
+                            'id': self.user_two._id
+                        }
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(url, payload, auth=self.user.auth)
+        args, kwargs = mock_send.call_args
+        assert_equal(res.status_code, 201)
+        assert_equal('default', kwargs['email_template'])
+
+    @mock.patch('website.project.signals.contributor_added.send')
+    def test_add_contributor_signal_if_preprint(self, mock_send):
         url = '{}?send_email=preprint'.format(self.url)
         payload = {
             'data': {
@@ -972,15 +993,13 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
                 }
             }
         }
-
-        with capture_signals() as mock_signal:
-            res = self.app.post_json_api(url, payload, auth=self.user.auth)
-        assert_in(contributor_added, mock_signal.signals_sent())
+        res = self.app.post_json_api(url, payload, auth=self.user.auth)
+        args, kwargs = mock_send.call_args
         assert_equal(res.status_code, 201)
-        assert_equal(mock_mail.call_count, 1)
+        assert_equal('preprint', kwargs['email_template'])
 
     @mock.patch('framework.auth.views.mails.send_mail')
-    def test_add_unregistered_contributor_email_if_default(self, mock_mail):
+    def test_add_unregistered_contributor_sends_email(self, mock_mail):
         url = '{}?send_email=default'.format(self.url)
         payload = {
             'data': {
@@ -991,15 +1010,29 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
                 }
             }
         }
-
-        with capture_signals() as mock_signal:
-            res = self.app.post_json_api(url, payload, auth=self.user.auth)
-        assert_in(unreg_contributor_added, mock_signal.signals_sent())
+        res = self.app.post_json_api(url, payload, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(mock_mail.call_count, 1)
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_add_unregistered_contributor_email_if_preprint(self, mock_mail):
+    @mock.patch('website.project.signals.unreg_contributor_added.send')
+    def test_add_unregistered_contributor_signal_if_default(self, mock_send):
+        url = '{}?send_email=default'.format(self.url)
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'full_name': 'Kanye West',
+                    'email': 'kanye@west.com'
+                }
+            }
+        }
+        res = self.app.post_json_api(url, payload, auth=self.user.auth)
+        args, kwargs = mock_send.call_args
+        assert_equal(res.status_code, 201)
+        assert_equal('default', kwargs['email_template'])
+
+    @mock.patch('website.project.signals.unreg_contributor_added.send')
+    def test_add_unregistered_contributor_signal_if_preprint(self, mock_send):
         url = '{}?send_email=preprint'.format(self.url)
         payload = {
             'data': {
@@ -1010,12 +1043,10 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
                 }
             }
         }
-
-        with capture_signals() as mock_signal:
-            res = self.app.post_json_api(url, payload, auth=self.user.auth)
-        assert_in(unreg_contributor_added, mock_signal.signals_sent())
+        res = self.app.post_json_api(url, payload, auth=self.user.auth)
+        args, kwargs = mock_send.call_args
         assert_equal(res.status_code, 201)
-        assert_equal(mock_mail.call_count, 1)
+        assert_equal('preprint', kwargs['email_template'])
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_add_contributor_invalid_send_email_param(self, mock_mail):

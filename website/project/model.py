@@ -3227,7 +3227,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         return contributor
 
     def add_contributor_registered_or_not(self, auth, user_id=None, full_name=None, email=None,
-                                          send_email='default', permissions=None, bibliographic=True, save=False):
+                                          send_email='false', permissions=None, bibliographic=True, save=False):
 
         if send_email != 'false' and not throttle_period_expired(auth.user.email_last_sent, settings.API_SEND_EMAIL_THROTTLE):
             raise TooManyRequests
