@@ -409,16 +409,16 @@ class TestOSFUser:
         user = UserFactory(username=user_email)
         user.update_affiliated_institutions_by_email_domain()
 
-        assert user.is_affiliated_with(institution) is True
+        assert user.is_affiliated_with_institution(institution) is True
 
-    def test_is_affiliated_with(self, user):
+    def test_is_affiliated_with_institution(self, user):
         institution1, institution2 = InstitutionFactory(), InstitutionFactory()
 
         user.affiliated_institutions.add(institution1)
         user.save()
 
-        assert user.is_affiliated_with(institution1) is True
-        assert user.is_affiliated_with(institution2) is False
+        assert user.is_affiliated_with_institution(institution1) is True
+        assert user.is_affiliated_with_institution(institution2) is False
 
 
 @pytest.mark.django_db
