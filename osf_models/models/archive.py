@@ -48,10 +48,11 @@ class ArchiveJob(ObjectIDMixin, BaseModel):
     # whether or not emails have been sent for this ArchiveJob
     sent = models.BooleanField(default=False, verbose_name='emails sent')
     status = models.CharField(max_length=40, default=ARCHIVER_INITIATED)
-    datetime_initiated = models.DateTimeField(default=timezone.now, verbose_name='intiated at')
+    datetime_initiated = models.DateTimeField(default=timezone.now, verbose_name='initiated at')
 
-    dst_node = models.ForeignKey('Node', related_name='active', verbose_name='destination node', null=True)
-    src_node = models.ForeignKey('Node', verbose_name='source node', null=True)
+    dst_node = models.ForeignKey('Registration', related_name='archive_jobs',
+                                 verbose_name='destination node', null=True, blank=True)
+    src_node = models.ForeignKey('Node', verbose_name='source node', null=True, blank=True)
     initiator = models.ForeignKey('OSFUser', null=True)
 
     target_addons = models.ManyToManyField('ArchiveTarget')
