@@ -54,6 +54,10 @@ class Registration(AbstractNode):
                                                     on_delete=models.SET_NULL)
 
     @property
+    def archive_job(self):
+        return self.archive_jobs.first() if self.archive_jobs.count() else None
+
+    @property
     def sanction(self):
         sanction = (
             self.embargo_termination_approval or
@@ -130,7 +134,8 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     notes = models.TextField(blank=True)
 
     def __repr__(self):
-        return '<DraftRegistration(branched_from={self.branched_from!r}) with id {self._id!r}>'.format(self=self)
+        return ('<DraftRegistration(branched_from={self.branched_from!r}) '
+                'with id {self._id!r}>').format(self=self)
 
     # lazily set flags
     @property
@@ -153,7 +158,6 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     @flags.setter
     def flags(self, flags):
         self._metaschema_flags.update(flags)
-
 
     @property
     def url(self):
