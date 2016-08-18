@@ -1,20 +1,21 @@
 import functools
 
-from modularodm import Q
+from dateutil.parser import parse as parse_date
+from django.apps import apps
+from django.conf import settings
+from django.db import models
+from website.prereg import utils as prereg_utils
+
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
+from website import settings as osf_settings
+from website import tokens, mails
+from website.exceptions import InvalidSanctionRejectionToken, InvalidSanctionApprovalToken
+
 from osf_models.models import MetaSchema
 from osf_models.models.base import BaseModel, ObjectIDMixin
-from django.db import models
+from osf_models.modm_compat import Q
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from website import (tokens, mails)
-from website.exceptions import InvalidSanctionRejectionToken, InvalidSanctionApprovalToken
-from django.conf import settings
-from website import settings as osf_settings
-
-from dateutil.parser import parse as parse_date
-
-from website.prereg import utils as prereg_utils
 
 VIEW_PROJECT_URL_TEMPLATE = osf_settings.DOMAIN + '{node_id}/'
 
@@ -699,9 +700,7 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
     initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
 
     def _get_registration(self):
-        from website.project.model import Node
-
-        return Node.find_one(Q('registration_approval', 'eq', self))
+        return self.registrations.first()
 
     def _view_url_context(self, user_id, node):
         user_approval_state = self.approval_state.get(user_id, {})
@@ -725,11 +724,10 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
         user_approval_state = self.approval_state.get(user_id, {})
         rejection_token = self.approval_state.get(user_id, {}).get('rejection_token')
         if rejection_token:
-            from website.project.model import Node
-
+            Registration = apps.get_model('osf_models.Registration')
             root_registration = self._get_registration()
             node_id = user_approval_state.get('node_id', root_registration._id)
-            registration = Node.load(node_id)
+            registration = Registration.load(node_id)
             return {
                 'node_id': registration.registered_from._id,
                 'token': rejection_token,

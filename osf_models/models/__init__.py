@@ -10,7 +10,7 @@ from osf_models.models.registrations import Registration, DraftRegistrationLog, 
 from osf_models.models.nodelog import NodeLog  # noqa
 from osf_models.models.tag import Tag  # noqa
 from osf_models.models.comment import Comment  # noqa
-from osf_models.models.conference import Conference
+from osf_models.models.conference import Conference  # noqa
 from osf_models.models.citation import AlternativeCitation, CitationStyle  # noqa
 from osf_models.models.archive import ArchiveJob, ArchiveTarget  # noqa
 from osf_models.models.queued_mail import QueuedMail  # noqa
