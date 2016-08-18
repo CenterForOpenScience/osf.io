@@ -48,6 +48,9 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin, Taggable, Logga
     the same table and will be differentiated by the `type` column.
     """
 
+    #: Whether this is a pointer or not
+    primary = True
+
     CATEGORY_MAP = {
         'analysis': 'Analysis',
         'communication': 'Communication',
@@ -61,6 +64,9 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin, Taggable, Logga
         'other': 'Other',
         '': 'Uncategorized',
     }
+    # Named constants
+    PRIVATE = 'private'
+    PUBLIC = 'public'
 
     affiliated_institutions = models.ManyToManyField('Institution', related_name='nodes')
     # alternative_citations = models.ManyToManyField(AlternativeCitation)
@@ -432,7 +438,7 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin, Taggable, Logga
 
         # Permissions must be overridden if changed when contributor is
         # added to parent he/she is already on a child of.
-        elif contrib_to_add in self.contributors and permissions is not None:
+        elif self.is_contributor(contrib_to_add) and permissions is not None:
             self.set_permissions(contrib_to_add, permissions)
             if save:
                 self.save()
