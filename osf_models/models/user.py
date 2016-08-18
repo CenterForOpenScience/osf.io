@@ -923,7 +923,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         return '{base_url}user/{uid}/{project_id}/claim/?token={token}'\
                     .format(**locals())
 
-    def is_affiliated_with(self, institution):
+    def is_affiliated_with_institution(self, institution):
         """Return if this user is affiliated with ``institution``."""
         return self.affiliated_institutions.filter(id=institution.id).exists()
 

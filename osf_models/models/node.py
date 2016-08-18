@@ -172,16 +172,19 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin, Taggable, Logga
             logger.exception(e)
             log_exception()
 
+    def is_affiliated_with_institution(self, institution):
+        return self.affiliated_institutions.filter(id=institution.id).exists()
+
     def add_affiliated_intitution(self, inst, user, save=False, log=True):
         if not user.is_affiliated_with_institution(inst):
             raise UserNotAffiliatedError('User is not affiliated with {}'.format(inst.name))
-        if inst not in self.affiliated_institutions:
+        if self.is_affiliated_with_institution(inst):
             self.affiliated_institutions.add(inst)
         if log:
             from website.project.model import NodeLog
 
             self.add_log(
-                action=NodeLog.AFFLILIATED_INSTITUTION_ADDED,
+                action=NodeLog.AFFILIATED_INSTITUTION_ADDED,
                 params={
                     'node': self._primary_key,
                     'institution': {
