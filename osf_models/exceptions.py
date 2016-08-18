@@ -90,3 +90,8 @@ def reraise_django_validation_errors():
     except DjangoValidationError as err:
         raise ValidationError(*err.args)
 
+
+class ValidationValueError(ValidationError, ValueError):
+    """ Raised during validation if the value of the input is unacceptable, but
+     the type is correct """
+    pass

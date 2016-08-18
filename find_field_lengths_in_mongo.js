@@ -3,8 +3,8 @@
 function findMax() {
     var max = 0;
 
-    db.apioauth2personaltoken.find().forEach(function(doc) {
-        var currentLength = doc.scopes.length;
+    db.notificationsubscription.find().forEach(function(doc) {
+        var currentLength = doc.event_name.length;
         if (currentLength > max) {
            max = currentLength;
         }
