@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import mock
 
+import time
+
 from nose.tools import *  # flake8: noqa
 
 from rest_framework import exceptions
@@ -912,6 +914,31 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
     def setUp(self):
         super(TestNodeContributorCreateEmail, self).setUp()
         self.url = '/{}nodes/{}/contributors/'.format(API_BASE, self.public_project._id)
+
+    def test_add_contributor_email_throttle(self):
+        user_one = UserFactory()
+        user_two = UserFactory()
+        payload_one = {'data': {'type': 'contributors',
+                                'attributes':{'full_name': user_one.fullname, 'email': user_one.username}}}
+        payload_two = {'data': {'type': 'contributors',
+                                'attributes': {'full_name': user_two.fullname, 'email': user_two.username}}}
+        res = self.app.post_json_api(self.url, payload_one, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        res = self.app.post_json_api(self.url, payload_two, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 429)
+
+    def test_add_contributor_email_throttle_sleep(self):
+        user_one = UserFactory()
+        user_two = UserFactory()
+        payload_one = {'data': {'type': 'contributors',
+                                'attributes':{'full_name': user_one.fullname, 'email': user_one.username}}}
+        payload_two = {'data': {'type': 'contributors',
+                                'attributes': {'full_name': user_two.fullname, 'email': user_two.username}}}
+        res = self.app.post_json_api(self.url, payload_one, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        time.sleep(0.1)
+        res = self.app.post_json_api(self.url, payload_two, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_add_contributor_no_email_if_false(self, mock_mail):

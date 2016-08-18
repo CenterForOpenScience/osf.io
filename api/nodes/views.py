@@ -614,7 +614,7 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
     )
 
     required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
-    required_write_scopes = [CoreScopes.USERS_CREATE]
+    required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
     model_class = User
 
     pagination_class = NodeContributorPagination
