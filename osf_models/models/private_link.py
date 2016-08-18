@@ -13,7 +13,7 @@ class PrivateLink(ObjectIDMixin, BaseModel):
     is_deleted = models.BooleanField(default=False)
     anonymous = models.BooleanField(default=False)
 
-    nodes = models.ManyToManyField('Node', related_name='private_links')
+    nodes = models.ManyToManyField('AbstractNode', related_name='private_links')
     creator = models.ForeignKey('OSFUser', null=True, blank=True, on_delete=models.SET_NULL)
 
     @property

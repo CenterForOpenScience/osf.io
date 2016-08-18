@@ -2,7 +2,6 @@ from django.db import models
 from django.utils import timezone
 
 from osf_models.models.base import BaseModel, ObjectIDMixin
-from osf_models.utils.base import get_object_id
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 
@@ -100,15 +99,29 @@ class NodeLog(ObjectIDMixin, BaseModel):
     AFFILIATED_INSTITUTION_ADDED = 'affiliated_institution_added'
     AFFILIATED_INSTITUTION_REMOVED = 'affiliated_institution_removed'
 
-    actions = [CHECKED_IN, CHECKED_OUT, FILE_TAG_REMOVED, FILE_TAG_ADDED, CREATED_FROM, PROJECT_CREATED, PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED, POINTER_CREATED, POINTER_FORKED, POINTER_REMOVED, WIKI_UPDATED, WIKI_DELETED, WIKI_RENAMED, MADE_WIKI_PUBLIC, MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED, PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED, ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, MADE_CONTRIBUTOR_VISIBLE, MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED, RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED, PREREG_REGISTRATION_INITIATED, CITATION_ADDED, CITATION_EDITED, CITATION_REMOVED, AFFILIATED_INSTITUTION_ADDED, AFFILIATED_INSTITUTION_REMOVED]
+    actions = [CHECKED_IN, CHECKED_OUT, FILE_TAG_REMOVED, FILE_TAG_ADDED, CREATED_FROM, PROJECT_CREATED,
+               PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED,
+               POINTER_CREATED, POINTER_FORKED, POINTER_REMOVED, WIKI_UPDATED, WIKI_DELETED, WIKI_RENAMED,
+               MADE_WIKI_PUBLIC, MADE_WIKI_PRIVATE, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED,
+               PERMISSIONS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, TAG_ADDED, TAG_REMOVED, EDITED_TITLE,
+               EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED,
+               FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED,
+               ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, MADE_CONTRIBUTOR_VISIBLE,
+               MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED,
+               EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED,
+               RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED,
+               REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED, PREREG_REGISTRATION_INITIATED,
+               CITATION_ADDED, CITATION_EDITED, CITATION_REMOVED,
+               AFFILIATED_INSTITUTION_ADDED, AFFILIATED_INSTITUTION_REMOVED]
     action_choices = [(action, action.upper()) for action in actions]
-    date = models.DateTimeField(default=timezone.now, db_index=True, null=True, blank=True)#, auto_now_add=True)
+    date = models.DateTimeField(default=timezone.now, db_index=True,
+                                null=True, blank=True)  # auto_now_add=True)
     action = models.CharField(max_length=255, db_index=True, choices=action_choices)
     params = DateTimeAwareJSONField(default=dict)
     should_hide = models.BooleanField(default=False)
     user = models.ForeignKey('OSFUser', related_name='logs', db_index=True, null=True, blank=True)
     foreign_user = models.CharField(max_length=255, null=True, blank=True)
-    node = models.ForeignKey('Node', related_name='logs', db_index=True, null=True, blank=True)
+    node = models.ForeignKey('AbstractNode', related_name='logs', db_index=True, null=True, blank=True)
     original_node = models.ForeignKey('Node', db_index=True, null=True, blank=True)
 
     def __unicode__(self):
