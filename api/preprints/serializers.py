@@ -1,12 +1,11 @@
 from modularodm import Q
 from modularodm.exceptions import ValidationValueError, NoResultsFound, MultipleResultsFound
-from rest_framework import status
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 
 from api.base.serializers import (
     JSONAPISerializer, IDField, JSONAPIListField, LinksField,
-    RelationshipField, JSONAPIRelationshipSerializer, TypeField
+    RelationshipField, TypeField
 )
 from api.base.exceptions import Conflict
 from api.base.utils import absolute_reverse, get_user_auth

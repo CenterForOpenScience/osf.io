@@ -5,7 +5,7 @@ from modularodm import Q
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from website.models import Node, User, PreprintProvider
+from website.models import Node, PreprintProvider
 
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin
@@ -15,21 +15,6 @@ from api.base.pagination import MaxSizePagination
 
 from api.preprint_providers.serializers import PreprintProviderSerializer
 from api.preprints.serializers import PreprintSerializer
-
-
-class PreprintProviderMixin(object):
-    """Mixin with convenience method get_institution
-    """
-
-    institution_lookup_url_kwarg = 'institution_id'
-
-    def get_PreprintProvider(self):
-        inst = get_object_or_error(
-            Institution,
-            self.kwargs[self.institution_lookup_url_kwarg],
-            display_name='institution'
-        )
-        return inst
 
 
 class PreprintProviderMixin(object):
