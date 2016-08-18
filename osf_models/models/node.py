@@ -164,6 +164,11 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin, Taggable, Logga
     def deep_url(self):
         return '/project/{}/'.format(self._primary_key)
 
+    @property
+    def sanction(self):
+        """For v1 compat. Registration has the proper implementation of this property."""
+        return None
+
     def update_search(self):
         from website import search
         try:

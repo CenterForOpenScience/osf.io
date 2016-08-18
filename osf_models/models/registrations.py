@@ -72,6 +72,48 @@ class Registration(AbstractNode):
         else:
             return None
 
+    @property
+    def is_pending_embargo(self):
+        if self.embargo is None:
+            if self.parent_node:
+                return self.parent_node.is_pending_embargo
+            return False
+        return self.embargo.is_pending_approval
+
+    @property
+    def is_pending_embargo_for_existing_registration(self):
+        """ Returns True if Node has an Embargo pending approval for an
+        existing registrations. This is used specifically to ensure
+        registrations pre-dating the Embargo feature do not get deleted if
+        their respective Embargo request is rejected.
+        """
+        if self.embargo is None:
+            if self.parent_node:
+                return self.parent_node.is_pending_embargo_for_existing_registration
+            return False
+        return self.embargo.pending_registration
+
+    @property
+    def is_pending_registration(self):
+        if not self.is_registration:
+            return False
+        if self.registration_approval is None:
+            if self.parent_node:
+                return self.parent_node.is_pending_registration
+            return False
+        return self.registration_approval.is_pending_approval
+
+    @property
+    def is_embargoed(self):
+        """A Node is embargoed if:
+        - it has an associated Embargo record
+        - that record has been approved
+        - the node is not public (embargo not yet lifted)
+        """
+        if self.embargo is None:
+            if self.parent_node:
+                return self.parent_node.is_embargoed
+        return self.embargo and self.embargo.is_approved and not self.is_public
 
 class DraftRegistrationLog(ObjectIDMixin, BaseModel):
     """ Simple log to show status changes for DraftRegistrations
