@@ -206,7 +206,7 @@ class RegistrationFactory(AbstractNodeFactory):
         user = None
         if project:
             user = project.creator
-        user = kwargs.get('user') or kwargs.get('creator') or user or UserFactory()
+        user = kwargs.pop('user', None) or kwargs.get('creator') or user or UserFactory()
         kwargs['creator'] = user
         # Original project to be registered
         project = project or target_class(*args, **kwargs)
@@ -268,9 +268,9 @@ class SanctionFactory(DjangoModelFactory):
 
     @classmethod
     def _create(cls, target_class, initiated_by=None, approve=False, *args, **kwargs):
-        user = kwargs.get('user') or UserFactory()
+        user = kwargs.pop('user', None) or UserFactory()
         kwargs['initiated_by'] = initiated_by or user
-        sanction = DjangoModelFactory._create(target_class, *args, **kwargs)
+        sanction = super(SanctionFactory, cls)._create(target_class, *args, **kwargs)
         reg_kwargs = {
             'creator': user,
             'user': user,
