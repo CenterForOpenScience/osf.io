@@ -32,6 +32,7 @@ from osf_models.models.nodelog import NodeLog
 from osf_models.models.contributor import Contributor, RecentlyAddedContributor
 from osf_models.models.mixins import Loggable, Taggable, AddonModelMixin
 from osf_models.models.user import OSFUser
+from osf_models.models.sanctions import RegistrationApproval
 from osf_models.models.validators import validate_title
 from osf_models.utils.auth import Auth, get_user
 from osf_models.utils.base import api_v2_url
@@ -314,6 +315,13 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin, Taggable, Logga
         if self.parent_node:
             return self.parent_node._id
         return None
+
+    @property
+    def license(self):
+        node_license = self.node_license
+        if not node_license and self.parent_node:
+            return self.parent_node.license
+        return node_license
 
     # visible_contributor_ids was moved to this property
     @property
@@ -618,6 +626,178 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin, Taggable, Logga
             if next_parent.can_view(auth):
                 return next_parent
             next_parent = next_parent.parent_node
+
+    def copy_contributors_from(self, node):
+        """Copies the contibutors from node (including permissions and visibility) into this node."""
+        for contrib in Contributor.objects.filter(node=node):
+            # Create a copy of the contributor
+            contrib_copy = Contributor.objects.get(id=contrib.id)
+            contrib_copy.id = None
+            contrib_copy.node = self
+            contrib_copy.save()
+
+    def register_node(self, schema, auth, data, parent=None):
+        """Make a frozen copy of a node.
+
+        :param schema: Schema object
+        :param auth: All the auth information including user, API key.
+        :param template: Template name
+        :param data: Form data
+        :param parent Node: parent registration of registration to be created
+        """
+        # TODO(lyndsysimon): "template" param is not necessary - use schema.name?
+        # NOTE: Admins can register child nodes even if they don't have write access them
+        if not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user):
+            raise PermissionsError(
+                'User {} does not have permission '
+                'to register this node'.format(auth.user._id)
+            )
+        if self.is_collection:
+            raise NodeStateError('Folders may not be registered')
+
+        when = timezone.now()
+
+        original = self.load(self._primary_key)
+
+        # Note: Cloning a node will clone each node wiki page version and add it to
+        # `registered.wiki_pages_current` and `registered.wiki_pages_versions`.
+        if original.is_deleted:
+            raise NodeStateError('Cannot register deleted node.')
+
+        registered = original.clone()
+        registered.recast('osf_models.registration')
+        # Need to save here in order to set many-to-many fields
+        registered.save()
+
+        registered.is_registration = True
+        registered.registered_date = when
+        registered.registered_user = auth.user
+        registered.registered_schema.add(schema)
+        registered.registered_from = original
+        if not registered.registered_meta:
+            registered.registered_meta = {}
+        registered.registered_meta[schema._id] = data
+
+        registered.copy_contributors_from(self)
+        registered.forked_from = self.forked_from
+        registered.creator = self.creator
+        registered.tags.add(*self.tags.all())
+        registered.affiliated_institutions.add(*self.affiliated_institutions.all())
+        # TODO: Uncomment when alternative citations are implemented
+        # registered.alternative_citations = self.alternative_citations
+        registered.node_license = original.license.copy() if original.license else None
+        registered.wiki_private_uuids = {}
+
+        # registered.save()
+
+        # Clone each log from the original node for this registration.
+        logs = original.logs.all()
+        for log in logs:
+            log.clone_node_log(registered._id)
+
+        registered.is_public = False
+        for node in registered.get_descendants_recursive():
+            node.is_public = False
+            node.save()
+
+        if parent:
+            registered.parent_node = parent
+
+        # After register callback
+        for addon in original.get_addons():
+            _, message = addon.after_register(original, registered, auth.user)
+            if message:
+                status.push_status_message(message, kind='info', trust=False)
+
+        for node_contained in original.nodes.all():
+            if not node_contained.is_deleted:
+                child_registration = node_contained.register_node(
+                    schema=schema,
+                    auth=auth,
+                    data=data,
+                    parent=registered,
+                )
+                # TODO: Add links
+                # if child_registration and not child_registration.primary:
+                #     registered.nodes.append(child_registration)
+
+        registered.save()
+
+        if settings.ENABLE_ARCHIVER:
+            registered.refresh_from_db()
+            project_signals.after_create_registration.send(self, dst=registered, user=auth.user)
+
+        return registered
+
+    def _initiate_approval(self, user, notify_initiator_on_complete=False):
+        end_date = timezone.now() + settings.REGISTRATION_APPROVAL_TIME
+        approval = RegistrationApproval(
+            initiated_by=user,
+            end_date=end_date,
+            notify_initiator_on_complete=notify_initiator_on_complete
+        )
+        approval.save()  # Save approval so it has a primary key
+        self.registration_approval = approval
+        self.save()  # Set foreign field reference Node.registration_approval
+        admins = self.get_admin_contributors_recursive(unique_users=True)
+        for (admin, node) in admins:
+            approval.add_authorizer(admin, node=node)
+        approval.save()  # Save approval's approval_state
+        return approval
+
+    def require_approval(self, user, notify_initiator_on_complete=False):
+        if not self.is_registration:
+            raise NodeStateError('Only registrations can require registration approval')
+        if not self.has_permission(user, 'admin'):
+            raise PermissionsError('Only admins can initiate a registration approval')
+
+        approval = self._initiate_approval(user, notify_initiator_on_complete)
+
+        self.registered_from.add_log(
+            action=NodeLog.REGISTRATION_APPROVAL_INITIATED,
+            params={
+                'node': self.registered_from._id,
+                'registration': self._id,
+                'registration_approval_id': approval._id,
+            },
+            auth=Auth(user),
+            save=True,
+        )
+
+    # TODO optimize me
+    def get_descendants_recursive(self, include=lambda n: True):
+        for node in self.nodes.all():
+            if include(node):
+                yield node
+            if node.primary:
+                for descendant in node.get_descendants_recursive(include):
+                    if include(descendant):
+                        yield descendant
+
+    def node_and_primary_descendants(self):
+        """Return an iterator for a node and all of its primary (non-pointer) descendants.
+
+        :param node Node: target Node
+        """
+        return itertools.chain([self], self.get_descendants_recursive(lambda n: n.primary))
+
+    def get_admin_contributors_recursive(self, unique_users=False, *args, **kwargs):
+        """Yield (admin, node) tuples for this node and
+        descendant nodes. Excludes contributors on node links and inactive users.
+
+        :param bool unique_users: If True, a given admin will only be yielded once
+            during iteration.
+        """
+        visited_user_ids = []
+        for node in self.node_and_primary_descendants(*args, **kwargs):
+            for contrib in node.contributors.all():
+                if node.has_permission(contrib, ADMIN) and contrib.is_active:
+                    if unique_users:
+                        if contrib._id not in visited_user_ids:
+                            visited_user_ids.append(contrib._id)
+                            yield (contrib, node)
+                    else:
+                        yield (contrib, node)
 
 
 class Node(AbstractNode):

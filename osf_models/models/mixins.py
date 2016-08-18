@@ -122,5 +122,11 @@ class AddonModelMixin(models.Model):
     def get_addons(self):
         return []
 
+    def get_or_add_addon(self, *args, **kwargs):
+        return None
+
+    def get_addon(self, *args, **kwargs):
+        return None
+
     class Meta:
         abstract = True

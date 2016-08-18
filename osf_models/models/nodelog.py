@@ -1,3 +1,4 @@
+from django.apps import apps
 from django.db import models
 from django.utils import timezone
 
@@ -133,3 +134,21 @@ class NodeLog(ObjectIDMixin, BaseModel):
 
     class Meta:
         ordering = ['-date']
+
+    def clone_node_log(self, node_id):
+        """
+        When a node is forked or registered, all logs on the node need to be
+        cloned for the fork or registration.
+
+        :param node_id:
+        :return: cloned log
+        """
+        AbstractNode = apps.get_model('osf_models.AbstractNode')
+        original_log = self.load(self._id)
+        node = AbstractNode.load(node_id)
+        log_clone = original_log.clone()
+        log_clone.node = node
+        log_clone.original_node = original_log.original_node
+        log_clone.user = original_log.user
+        log_clone.save()
+        return log_clone
