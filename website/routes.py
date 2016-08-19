@@ -547,6 +547,22 @@ def make_url_map(app):
 
         ),
 
+        # oauth user email get
+        Rule(
+            '/oauth-login/email',
+            'get',
+            auth_views.oauth_user_email_get,
+            OsfWebRenderer('get_oauth_email.mako', render_mako_string, trust=False)
+        ),
+
+        # oauth user email post
+        Rule(
+            '/oauth-login/email',
+            'post',
+            auth_views.oauth_user_email_post,
+            OsfWebRenderer('get_oauth_email.mako', render_mako_string, trust=False)
+        ),
+
         # user sign up page
         Rule(
             '/register/',

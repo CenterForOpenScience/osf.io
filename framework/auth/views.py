@@ -22,7 +22,8 @@ from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import ResendConfirmationForm, ForgotPasswordForm, ResetPasswordForm
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
-from framework.sessions.utils import remove_sessions_for_user
+from framework.sessions.utils import remove_sessions_for_user, remove_session
+from framework.sessions import get_session
 from website import settings, mails, language
 
 from website.util.time import throttle_period_expired
@@ -637,3 +638,54 @@ def resend_confirmation_post(auth):
 
     # Don't go anywhere
     return {'form': form}
+
+
+def oauth_user_email_get():
+    """
+    Landing view for first-time oauth-login user to enter their email address.
+    HTTP Method: GET
+    """
+
+    form = ResendConfirmationForm(request.form)
+
+    return {
+        'form': form,
+    }
+
+
+def oauth_user_email_post():
+    """
+    View to handle email submission for first-time oauth-login user.
+    HTTP Method: POST
+    """
+
+    form = ResendConfirmationForm(request.form)
+
+    session = get_session()
+    try:
+        oauth_provider = session.data['oauth_user_provider']
+        oauth_id = session.data['oauth_user_id']
+        oauth_fullname = session.data['oauth_user_fullname']
+    except KeyError:
+        raise HTTPError(http.UNAUTHORIZED)
+
+    if form.validate():
+        clean_email = form.email.data
+        user = get_user(email=clean_email)
+        if user:
+            # TODO: link user's OSF account with ORCID
+            # 1. notify the user that OSF account will be linked with ORCID profile
+            # 2. user can login through both ORCID and OSF
+            # 3. send confirmation email (no need to reply)
+            # 4. redirect to home page
+            pass
+        else:
+            # TODO: create a new account for the user
+            # 1. notify the user of account creation and confirmation email sent
+            # 2. follow the normal account create and verification process + update `oauth` field
+            remove_session(session)
+
+    # Don't go anywhere
+    return {
+        'form': form,
+    }
