@@ -26,7 +26,8 @@ from api.nodes.views import (
     NodeMixin, ODMFilterMixin, NodeRegistrationsList,
     NodeCommentsList, NodeProvidersList, NodeFilesList, NodeFileDetail,
     NodeAlternativeCitationsList, NodeAlternativeCitationDetail, NodeLogList,
-    NodeInstitutionsList, WaterButlerMixin, NodeForksList, NodeWikiList, LinkedNodesList
+    NodeInstitutionsList, WaterButlerMixin, NodeForksList, NodeWikiList, LinkedNodesList,
+    NodeViewOnlyLinksList, NodeViewOnlyLinkDetail
 )
 
 from website.models import Pointer
@@ -857,3 +858,21 @@ class RegistrationLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveAPIV
         ], 'self': node}
         self.check_object_permissions(self.request, obj)
         return obj
+
+
+class RegistrationViewOnlyLinksList(NodeViewOnlyLinksList, RegistrationMixin):
+
+    required_read_scopes = [CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_READ]
+    required_write_scopes = [CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_WRITE]
+
+    view_category = 'registrations'
+    view_name = 'registration-view-only-links'
+
+
+class RegistrationViewOnlyLinkDetail(NodeViewOnlyLinkDetail, RegistrationMixin):
+
+    required_read_scopes = [CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_READ]
+    required_write_scopes = [CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_WRITE]
+
+    view_category = 'registrations'
+    view_name = 'registration-view-only-link-detail'

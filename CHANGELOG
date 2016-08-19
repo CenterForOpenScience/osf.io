@@ -2,6 +2,32 @@
 Changelog
 *********
 
+0.87.1 (2016-08-11)
+===================
+
+- Add ERPC registration schema and landing page.
+
+0.87.0 (2016-08-11)
+===================
+
+- Keep anonymous View Only Links from showing name in prereg schemas.
+- APIv2: Make comments link properly to/from registrations as well as nodes.
+- Fix randomly-failing Karma test.
+- Keep private-projects analytics page from giving Forbidden Error.
+- Make tooltips work on Personal Access Token page.
+- APIv2: Make a version of Bulk DELETE that does not rely on JSON body.
+- Make icons more consistent across the site.
+- Update treebeard version so we can finally select across more than one page.
+- Remove inappropriate buttons from file version detail view.
+- Don't show a profile page for unconfirmed users.
+- Modify language for some dialog boxes.
+- Add spell checking to wiki.
+- APIv2: link to templated_from node.
+- Display all of the password warning on mobile devices and small windows.
+- Border changes on file widget.
+- Side navbar looks better when scrolling.
+- Show draft registrations in reverse chronological order.
+
 0.86.0 (2016-08-04)
 ===================
 
