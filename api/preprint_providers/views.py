@@ -10,23 +10,10 @@ from website.models import Node, PreprintProvider
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin
 from api.base.views import JSONAPIBaseView
-from api.base.utils import get_object_or_error
 from api.base.pagination import MaxSizePagination
 
 from api.preprint_providers.serializers import PreprintProviderSerializer
 from api.preprints.serializers import PreprintSerializer
-
-
-class PreprintProviderMixin(object):
-    institution_lookup_url_kwarg = 'institution_id'
-
-    def get_preprintprovider(self):
-        provider = get_object_or_error(
-            PreprintProvider,
-            self.kwargs[self.institution_lookup_url_kwarg],
-            display_name='institution'
-        )
-        return provider
 
 
 class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
@@ -52,7 +39,7 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.INSTITUTION_READ]
+    required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
     required_write_scopes = [CoreScopes.NULL]
     model_class = PreprintProvider
 
@@ -64,14 +51,14 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin
     ordering = ('name', )
 
     def get_default_odm_query(self):
-        return Q('_id', 'ne', None)
+        return Q('_id', 'ne', None) & Q('is_deleted', 'ne', True)
 
     # overrides ListAPIView
     def get_queryset(self):
         return PreprintProvider.find(self.get_query_from_request())
 
 
-class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, PreprintProviderMixin):
+class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     """ Details about a given preprint provider.
 
     ##Attributes
@@ -98,7 +85,7 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, Preprint
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.NODE_BASE_READ]
+    required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
     required_write_scopes = [CoreScopes.NULL]
     model_class = PreprintProvider
 
@@ -163,8 +150,9 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFil
     ordering = ('-date_created')
 
     serializer_class = PreprintSerializer
+    model_class = Node
 
-    required_read_scopes = [CoreScopes.NODE_FILE_READ]
+    required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
     required_write_scopes = [CoreScopes.NULL]
 
     view_category = 'preprints'
@@ -176,9 +164,8 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFil
         return (
             Q('preprint_file', 'ne', None) &
             Q('is_deleted', 'ne', True) &
-            Q('preprint_file', 'ne', None) &
             Q('is_public', 'eq', True) &
-            Q('preprint_provider', 'eq', provider)
+            Q('preprint_providers', 'eq', provider)
         )
 
     # overrides ListAPIView
