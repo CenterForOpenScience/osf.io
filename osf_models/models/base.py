@@ -54,7 +54,7 @@ class MODMCompatibilityQuerySet(models.QuerySet):
 class BaseModel(models.Model):
     """Base model that acts makes subclasses mostly compatible with the
     modular-odm ``StoredObject`` interface.
-    ."""
+    """
 
     objects = MODMCompatibilityQuerySet.as_manager()
 
