@@ -66,17 +66,6 @@ def test_factory(user, project):
 @pytest.mark.django_db
 class TestRegisterNode:
 
-    # def setUp(self):
-    #     super(TestRegisterNode, self).setUp()
-    #     ensure_schemas()
-    #     self.user = factories.UserFactory()
-    #     self.auth = Auth(user=self.user)
-    #     self.project = ProjectFactory(creator=self.user)
-    #     self.link = PrivateLinkFactory()
-    #     self.link.nodes.append(self.project)
-    #     self.link.save()
-    #     self.registration = RegistrationFactory(project=self.project)
-
     @pytest.fixture()
     def registration(self, project):
         reg = factories.RegistrationFactory(project=project)

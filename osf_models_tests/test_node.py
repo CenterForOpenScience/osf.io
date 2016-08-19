@@ -15,7 +15,7 @@ from osf_models.exceptions import ValidationError
 from osf_models.utils.auth import Auth
 
 from .factories import ProjectFactory, NodeFactory, UserFactory, UnregUserFactory
-from .utils import capture_signals, assert_datetime_equal
+from .utils import capture_signals, assert_datetime_equal, mock_archive
 
 
 @pytest.fixture()
@@ -548,18 +548,16 @@ class TestSetPrivacy:
         with pytest.raises(PermissionsError):
             project.set_privacy('private', Auth(non_contrib))
 
-    @pytest.mark.skip('Embargoes not yet ported')
-    def test_set_privacy_pending_embargo(self):
-        project = ProjectFactory(creator=self.user, is_public=False)
+    def test_set_privacy_pending_embargo(self, user):
+        project = ProjectFactory(creator=user, is_public=False)
         with mock_archive(project, embargo=True, autocomplete=True) as registration:
             assert bool(registration.embargo.is_pending_approval) is True
             assert bool(registration.is_pending_embargo) is True
             with pytest.raises(NodeStateError):
                 registration.set_privacy('public', Auth(project.creator))
 
-    @pytest.mark.skip('Pending registrations not yet ported')
-    def test_set_privacy_pending_registration(self):
-        project = ProjectFactory(creator=self.user, is_public=False)
+    def test_set_privacy_pending_registration(self, user):
+        project = ProjectFactory(creator=user, is_public=False)
         with mock_archive(project, embargo=False, autocomplete=True) as registration:
             assert bool(registration.registration_approval.is_pending_approval) is True
             assert bool(registration.is_pending_registration) is True
