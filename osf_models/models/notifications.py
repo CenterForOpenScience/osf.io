@@ -15,8 +15,8 @@ class NotificationSubscription(BaseIDMixin, BaseModel):
 
     event_name = models.CharField(max_length=50)  # wiki_updated, comment_replies
 
-    user = models.ForeignKey('OSFUser', null=True, related_name='notification_subscriptions')
-    node = models.ForeignKey('Node', null=True)
+    user = models.ForeignKey('OSFUser', null=True, related_name='notification_subscriptions', blank=True)
+    node = models.ForeignKey('Node', null=True, blank=True, related_name='notification_subscriptions')
 
     # Notification types
     none = models.ManyToManyField('OSFUser', related_name='+')  # reverse relationships
