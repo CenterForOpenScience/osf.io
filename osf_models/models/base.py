@@ -323,6 +323,11 @@ class GuidMixin(BaseIDMixin):
 
     _primary_key = _id
 
+    def clone(self):
+        ret = super(GuidMixin, self).clone()
+        ret._guid = None
+        return ret
+
     def save(self, *args, **kwargs):
         if not self._guid:
             self._guid = Guid.objects.create()
