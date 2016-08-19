@@ -106,7 +106,7 @@ def _get_current_user():
 
 
 # TODO: This should be a class method of User?
-def get_user(email=None, password=None, verification_key=None):
+def get_user(email=None, password=None, verification_key=None, oauth_provider=None, oauth_id=None):
     """Get an instance of User matching the provided params.
 
     :return: The instance of User requested
@@ -118,9 +118,14 @@ def get_user(email=None, password=None, verification_key=None):
                              'be provided.')
 
     query_list = []
+    if oauth_provider and oauth_id:
+        query_list.append(Q('oauth_provider', 'eq', oauth_provider))
+        query_list.append(Q('oauth_id', 'eq', oauth_id))
+
     if email:
         email = email.strip().lower()
         query_list.append(Q('emails', 'eq', email) | Q('username', 'eq', email))
+
     if password:
         password = password.strip()
         try:
@@ -134,8 +139,10 @@ def get_user(email=None, password=None, verification_key=None):
         if user and not user.check_password(password):
             return False
         return user
+
     if verification_key:
         query_list.append(Q('verification_key', 'eq', verification_key))
+
     try:
         query = query_list[0]
         for query_part in query_list[1:]:
@@ -349,6 +356,18 @@ class User(GuidStoredObject, AddonModelMixin):
     middle_names = fields.StringField()
     family_name = fields.StringField()
     suffix = fields.StringField()
+
+    # OAuth2 Authorization and Authentication
+    # TODO: what are proper parameters for `DictionaryField()`
+    # TODO: what else can we store for each oauth provider?
+    oauth = fields.DictionaryField()
+    # Format: {
+    #   'oauth_provider' : {
+    #       'oauth_id': <unique oauth id>,
+    #       ...
+    #   },
+    #   ...
+    # }
 
     # Employment history
     jobs = fields.DictionaryField(list=True, validate=validate_history_item)
