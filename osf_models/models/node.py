@@ -2,6 +2,7 @@ import itertools
 import logging
 import urlparse
 
+from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.dispatch import receiver
@@ -264,13 +265,30 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin, Taggable, Logga
             perm.append(ADMIN)
         return perm
 
-    def has_permission(self, user, permission):
+    def has_permission(self, user, permission, check_parent=True):
+        """Check whether user has permission.
+
+        :param User user: User to test
+        :param str permission: Required permission
+        :returns: User has required permission
+        """
         try:
             contrib = user.contributor_set.get(node=self)
         except Contributor.DoesNotExist:
             return False
         else:
-            return getattr(contrib, permission, False)
+            if getattr(contrib, permission, False):
+                return True
+            if permission == 'read' and check_parent:
+                return self.is_admin_parent(user)
+        return False
+
+    def is_admin_parent(self, user):
+        if self.has_permission(user, 'admin', check_parent=False):
+            return True
+        if self.parent_node:
+            return self.parent_node.is_admin_parent(user)
+        return False
 
     def set_permissions(self, user, permissions, validate=True, save=False):
         # Ensure that user's permissions cannot be lowered if they are the only admin
