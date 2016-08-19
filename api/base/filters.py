@@ -332,8 +332,13 @@ class ODMFilterMixin(FilterMixin):
             for key, field_names in filters.iteritems():
                 sub_query_parts = []
                 for field_name, data in field_names.iteritems():
-                    # Query based on the DB field, not the name of the serializer parameter
-                    sub_query = Q(data['source_field_name'], data['op'], data['value'])
+                    field = self.serializer_class._declared_fields[field_name]
+                    if hasattr(field, 'get_odm_query'):
+                        sub_query = field.get_odm_query(data['value'])
+                    else:
+                        # Query based on the DB field, not the name of the serializer parameter
+                        sub_query = Q(data['source_field_name'], data['op'], data['value'])
+
                     sub_query_parts.append(sub_query)
 
                 try:
