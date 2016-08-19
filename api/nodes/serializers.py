@@ -631,6 +631,11 @@ class NodeContributorsSerializer(JSONAPISerializer):
         always_embed=True
     )
 
+    node = RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<node_id>'}
+    )
+
     class Meta:
         type_ = 'contributors'
 
