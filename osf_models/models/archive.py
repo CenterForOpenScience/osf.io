@@ -65,7 +65,7 @@ class ArchiveJob(ObjectIDMixin, BaseModel):
 
     @property
     def children(self):
-        return [node.archive_job for node in self.dst_node.nodes if node.primary]
+        return [node.archive_job for node in self.dst_node.nodes.all() if node.primary]
 
     @property
     def parent(self):
@@ -79,7 +79,7 @@ class ArchiveJob(ObjectIDMixin, BaseModel):
     @property
     def pending(self):
         return any([
-            target for target in self.target_addons
+            target for target in self.target_addons.all()
             if target.status not in (ARCHIVER_SUCCESS, ARCHIVER_FAILURE)
         ])
 

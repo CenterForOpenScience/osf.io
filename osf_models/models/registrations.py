@@ -237,6 +237,52 @@ class Registration(AbstractNode):
         self.save()
         return approval
 
+    def _initiate_retraction(self, user, justification=None):
+        """Initiates the retraction process for a registration
+        :param user: User who initiated the retraction
+        :param justification: Justification, if given, for retraction
+        """
+        retraction = Retraction(
+            initiated_by=user,
+            justification=justification or None,  # make empty strings None
+            state=Retraction.UNAPPROVED
+        )
+        retraction.save()  # Save retraction so it has a primary key
+        self.retraction = retraction
+        self.save()  # Set foreign field reference Node.retraction
+        admins = self.get_admin_contributors_recursive(unique_users=True)
+        for (admin, node) in admins:
+            retraction.add_authorizer(admin, node)
+        retraction.save()  # Save retraction approval state
+        return retraction
+
+    def retract_registration(self, user, justification=None, save=True):
+        """Retract public registration. Instantiate new Retraction object
+        and associate it with the respective registration.
+        """
+
+        if not self.is_public and not (self.embargo_end_date or self.is_pending_embargo):
+            raise NodeStateError('Only public or embargoed registrations may be withdrawn.')
+
+        if self.root is not self:
+            raise NodeStateError('Withdrawal of non-parent registrations is not permitted.')
+
+        retraction = self._initiate_retraction(user, justification)
+        self.registered_from.add_log(
+            action=NodeLog.RETRACTION_INITIATED,
+            params={
+                'node': self.registered_from._id,
+                'registration': self._id,
+                'retraction_id': retraction._id,
+            },
+            auth=Auth(user),
+        )
+        self.retraction = retraction
+        if save:
+            self.save()
+        return retraction
+
+
 class DraftRegistrationLog(ObjectIDMixin, BaseModel):
     """ Simple log to show status changes for DraftRegistrations
 

@@ -79,7 +79,7 @@ class Sanction(ObjectIDMixin, BaseModel):
         return self.guid
 
     def __repr__(self):
-        return '<Sanction(end_date={self.end_date!r}) with _id {self._id!r}>'.format(
+        return '<{self.__class__.__name__}(end_date={self.end_date!r}) with _id {self._id!r}>'.format(
             self=self)
 
     @property
@@ -760,7 +760,7 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
         src.add_log(
             action=NodeLog.PROJECT_REGISTERED,
             params={
-                'parent_node': src.parent_id,
+                'parent_node': src.parent_node._id if src.parent_node else None,
                 'node': src._primary_key,
                 'registration': node._primary_key,
             },
