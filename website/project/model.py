@@ -888,7 +888,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     preprint_providers = fields.ForeignField('PreprintProvider', list=True)
     preprint_doi = fields.StringField(validate=validate_doi)
     _is_preprint_orphan = fields.BooleanField(default=False)
-    _preprint_provider = fields.ForeignField('node')
 
     # A list of all MetaSchemas for which this Node has registered_meta
     registered_schema = fields.ForeignField('metaschema', list=True, default=list)
@@ -1194,14 +1193,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             if subj:
                 ret.append({'id': subj_id, 'text': subj.text})
         return ret
-
-    @property
-    def preprint_provider(self):
-        '''
-        Should behave as if this was a foreign field pointing to PreprintProvider, much like affiliated_institution
-        :return: this node's _preprint_provider wrapped with the PreprintProvider model.
-        '''
-        return PreprintProvider(self._preprint_provider)
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
@@ -1594,14 +1585,22 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if save:
             self.save()
 
-    def set_preprint_provider(self, preprint_provider, auth, save=False):
-        if not self.has_permission(auth.user, ADMIN):
+    def add_preprint_provider(self, preprint_provider, user, save=False):
+        if not self.has_permission(user, ADMIN):
             raise PermissionsError('Only admins can update a preprint provider.')
         if not preprint_provider:
             raise ValueError('Must specify a provider to set as the preprint_provider')
-        self.preprint_provider = preprint_provider
+        self.preprint_providers.append(preprint_provider)
         if save:
             self.save()
+
+    def remove_preprint_provider(self, provider, user, save=False):
+        if provider in self.preprint_providers:
+            self.preprint_providers.remove(provider)
+            if save:
+                self.save()
+            return True
+        return False
 
     def generate_keenio_read_key(self):
         return scoped_keys.encrypt(settings.KEEN['public']['master_key'], options={
