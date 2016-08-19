@@ -1,5 +1,10 @@
+import functools
+
+import operator
+
 from rest_framework import serializers as ser
 
+from modularodm import Q
 from modularodm.exceptions import ValidationValueError
 
 from api.base.exceptions import InvalidModelValueError, JSONAPIException, Conflict
@@ -13,13 +18,36 @@ from api.base.utils import absolute_reverse
 
 from framework.auth.views import send_confirm_email
 
+
+class UserIsActive(ser.BooleanField):
+
+    def __init__(self, **kwargs):
+        super(UserIsActive, self).__init__(**kwargs)
+
+    def get_odm_query(self, value):
+        ne_if_value = 'ne' if value else 'eq'
+        eq_if_value = 'eq' if value else 'ne'
+        odm_operator = operator.and_ if value else operator.or_
+
+        query_parts = [
+            Q('is_registered', 'eq', value),
+            Q('date_confirmed', ne_if_value, None),
+            Q('merged_by', eq_if_value, None),
+            Q('date_disabled', eq_if_value, None),
+            Q('password', ne_if_value, None)
+        ]
+
+        return functools.reduce(odm_operator, query_parts)
+
+
 class UserSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'full_name',
         'given_name',
         'middle_names',
         'family_name',
-        'id'
+        'id',
+        'active'
     ])
     non_anonymized_fields = ['type']
     id = IDField(source='_id', read_only=True)
@@ -30,7 +58,7 @@ class UserSerializer(JSONAPISerializer):
     family_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     suffix = HideIfDisabled(ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations'))
     date_registered = HideIfDisabled(ser.DateTimeField(read_only=True))
-    active = HideIfDisabled(ser.BooleanField(read_only=True, source='is_active'))
+    active = UserIsActive(read_only=True, source='is_active')
 
     # Social Fields are broken out to get around DRF complex object bug and to make API updating more user friendly.
     github = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.github',

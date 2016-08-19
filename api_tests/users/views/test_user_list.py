@@ -129,6 +129,32 @@ class TestUsers(ApiTestCase):
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 400)
 
+    def test_users_list_active_filter_true(self):
+        url = '/{}users/?filter[active]=true'.format(API_BASE)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 2)
+
+    def test_users_list_active_filter_false_is_registered(self):
+        self.user_one.is_registered = False
+        self.user_one.save()
+        url = '/{}users/?filter[active]=false'.format(API_BASE)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 1)
+
+    def test_users_list_active_filter_false_date_confirmed(self):
+        pass
+
+    def test_users_list_active_filter_false_merged_by(self):
+        pass
+
+    def test_users_list_active_filter_false_date_disabled(self):
+        pass
+
+    def test_users_list_active_filter_false_password(self):
+        pass
+
 
 class TestUsersCreate(ApiTestCase):
 
