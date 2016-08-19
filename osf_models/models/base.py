@@ -199,8 +199,29 @@ class MODMCompatibilityGuidQuerySet(MODMCompatibilityQuerySet):
         return self.get(_guid__guid=guid)
 
 
+class BaseIDMixin(models.Model):
 
-class ObjectIDMixin(models.Model):
+    @classmethod
+    def load(cls, q):
+        raise NotImplementedError('You must define a load method.')
+
+    @classmethod
+    def migrate_from_modm(cls, modm_obj):
+        """
+        Given a modm object, make a django object with the same local fields.
+
+        This is a base method that may work for simple objects. It should be customized in the child class if it
+        doesn't work.
+        :param modm_obj:
+        :return:
+        """
+        raise NotImplementedError('You must define a migrate_from_modm method.')
+
+    class Meta:
+        abstract = True
+
+
+class ObjectIDMixin(BaseIDMixin):
     guid = models.CharField(max_length=255,
                                   unique=True,
                                   db_index=True,
@@ -213,6 +234,14 @@ class ObjectIDMixin(models.Model):
     @property
     def _id(self):
         return PKIDStr(self._object_id, self.pk)
+
+    @classmethod
+    def load(cls, q):
+        # modm doesn't throw exceptions when loading things that don't exist
+        try:
+            return cls.objects.get(guid=q)
+        except cls.DoesNotExist:
+            return None
 
     _primary_key = _id
 
@@ -247,7 +276,7 @@ class ObjectIDMixin(models.Model):
         abstract = True
 
 
-class GuidMixin(models.Model):
+class GuidMixin(BaseIDMixin):
     _guid = models.OneToOneField('Guid',
                                  default=generate_guid_instance,
                                  null=True, blank=True,
@@ -267,6 +296,14 @@ class GuidMixin(models.Model):
     @property
     def deep_url(self):
         return None
+
+    @classmethod
+    def load(cls, q):
+        # modm doesn't throw exceptions when loading things that don't exist
+        try:
+            return cls.objects.get(_guid__guid=q)
+        except cls.DoesNotExist:
+            return None
 
     _primary_key = _id
 
