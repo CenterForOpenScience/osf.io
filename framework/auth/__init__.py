@@ -19,6 +19,7 @@ __all__ = [
     'get_user',
     'check_password',
     'authenticate',
+    'oauth_first_time_authenticate',
     'logout',
     'register_unconfirmed',
 ]
@@ -47,6 +48,18 @@ def authenticate(user, access_token, response):
     user.clean_email_verifications()
     user.update_affiliated_institutions_by_email_domain()
     user.save()
+    response = create_session(response, data=data)
+    return response
+
+
+def oauth_first_time_authenticate(oauth_user, response):
+    data = session.data if session._get_current_object() else {}
+    data.update({
+        'oauth_user_fullname': oauth_user['fullname'],
+        'oauth_user_provider': oauth_user['provider'],
+        'oauth_user_id': oauth_user['id'],
+        'oauth_user_access_token': oauth_user['access_token']
+    })
     response = create_session(response, data=data)
     return response
 

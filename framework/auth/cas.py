@@ -9,7 +9,8 @@ from lxml import etree
 import requests
 
 from framework.auth import User
-from framework.auth import authenticate
+from framework.auth import authenticate, oauth_first_time_authenticate
+from framework.auth.core import get_user
 from framework.flask import redirect
 from framework.exceptions import HTTPError
 from website import settings
@@ -99,7 +100,7 @@ class CasClient(object):
         url.args['ticket'] = ticket
         url.args['service'] = service_url
 
-        resp = requests.get(url.url)
+        resp = requests.get(url.url, verify=False)
         if resp.status_code == 200:
             return self._parse_service_validation(resp.content)
         else:
@@ -244,11 +245,58 @@ def make_response_from_ticket(ticket, service_url):
     client = get_client()
     cas_resp = client.service_validate(ticket, service_furl.url)
     if cas_resp.authenticated:
-        user = User.load(cas_resp.user)
-        # if we successfully authenticate and a verification key is present, invalidate it
-        if user.verification_key:
-            user.verification_key = None
-            user.save()
-        return authenticate(user, access_token=cas_resp.attributes['accessToken'], response=redirect(service_furl.url))
-    # Ticket could not be validated, unauthorized.
+        user, action = get_user_from_cas_resp(cas_resp)
+        if user and action == 'authenticate':
+            # if we successfully authenticate and a verification key is present, invalidate it
+            if user.verification_key:
+                user.verification_key = None
+                user.save()
+            return authenticate(
+                user,
+                cas_resp.attributes['accessToken'],
+                redirect(service_furl.url)
+            )
+        if not user and action == 'oauth_first_login':
+            from website.util import web_url_for
+            oauth_user = {
+                'fullname': cas_resp.attributes['name'],
+                'provider': cas_resp.attributes['oauthProvider'],
+                'id': cas_resp.attributes['oauthId'],
+                'access_token': cas_resp.attributes['accessToken']
+            }
+            return oauth_first_time_authenticate(
+                oauth_user,
+                redirect(web_url_for('oauth_user_email_get'))
+            )
+    # Ticket could not be validated, or user does not exisit: unauthorized.
     return redirect(service_furl.url)
+
+
+def get_user_from_cas_resp(cas_resp):
+    """
+    Given a CAS service validation response, attempt to retrieve user information and next action.
+
+    :param cas_resp: the cas service validation response
+    :return: the user and action
+    """
+
+    # cas returns the user id
+    if cas_resp.user:
+        user = User.load(cas_resp.user)
+        # TODO: justify the this redundant user existence check
+        # We have encountered an issue before that service validation passes while the user does not exist.
+        # This happened probably because CAS and OSF are listening to different OSF database when switching servers.
+        if user:
+            return user, 'authenticate'
+
+    # cas returns the oauth credential
+    if cas_resp.attributes['oauthProvider'] and cas_resp.attributes['oauthId']:
+        user = get_user(oauth_provider=cas_resp.attributes['oauthProvider'], oauth_id=cas_resp.attributes['oauthId'])
+        # user found
+        if user:
+            return user, 'authenticate'
+        # user first time login through oauth
+        else:
+            return None, 'oauth_first_login'
+
+    return None, None
