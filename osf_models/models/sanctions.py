@@ -558,13 +558,10 @@ class Retraction(EmailApprovableSanction):
     initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
     justification = models.CharField(max_length=2048, null=True, blank=True)
 
-    # def __repr__(self):
-    # return ('<Retraction(parent_registration={0}, initiated_by={1}) with _id {2}>'.format(self.node_set.get(), self.initiated_by, self._id))
-
     def _view_url_context(self, user_id, node):
-        from website.project.model import Node
+        Registration = apps.get_model('osf_models.Registration')
 
-        registration = Node.find_one(Q('retraction', 'eq', self))
+        registration = Registration.find_one(Q('retraction', 'eq', self))
         return {
             'node_id': registration._id
         }
@@ -573,9 +570,9 @@ class Retraction(EmailApprovableSanction):
         user_approval_state = self.approval_state.get(user_id, {})
         approval_token = user_approval_state.get('approval_token')
         if approval_token:
-            from website.project.model import Node
+            Registration = apps.get_model('osf_models.Registration')
 
-            root_registration = Node.find_one(Q('retraction', 'eq', self))
+            root_registration = Registration.find_one(Q('retraction', 'eq', self))
             node_id = user_approval_state.get('node_id', root_registration._id)
             return {
                 'node_id': node_id,
@@ -586,11 +583,11 @@ class Retraction(EmailApprovableSanction):
         user_approval_state = self.approval_state.get(user_id, {})
         rejection_token = user_approval_state.get('rejection_token')
         if rejection_token:
-            from website.project.model import Node
+            Registration = apps.get_model('osf_models.Registration')
 
-            root_registration = Node.find_one(Q('retraction', 'eq', self))
+            root_registration = Registration.find_one(Q('retraction', 'eq', self))
             node_id = user_approval_state.get('node_id', root_registration._id)
-            registration = Node.load(node_id)
+            registration = Registration.load(node_id)
             return {
                 'node_id': registration.registered_from._id,
                 'token': rejection_token,
@@ -600,13 +597,13 @@ class Retraction(EmailApprovableSanction):
         urls = urls or self.stashed_urls.get(user._id, {})
         registration_link = urls.get('view', self._view_url(user._id, node))
         if is_authorizer:
-            from website.project.model import Node
+            Registration = apps.get_model('osf_models.Registration')
 
             approval_link = urls.get('approve', '')
             disapproval_link = urls.get('reject', '')
             approval_time_span = osf_settings.RETRACTION_PENDING_TIME.days * 24
 
-            registration = Node.find_one(Q('retraction', 'eq', self))
+            registration = Registration.find_one(Q('retraction', 'eq', self))
 
             return {
                 'is_initiator': self.initiated_by == user,
@@ -624,9 +621,10 @@ class Retraction(EmailApprovableSanction):
             }
 
     def _on_reject(self, user):
-        from website.project.model import Node, NodeLog
+        Registration = apps.get_model('osf_models.Registration')
+        NodeLog = apps.get_model('osf_models.NodeLog')
 
-        parent_registration = Node.find_one(Q('retraction', 'eq', self))
+        parent_registration = Registration.find_one(Q('retraction', 'eq', self))
         parent_registration.registered_from.add_log(
             action=NodeLog.RETRACTION_CANCELLED,
             params={
@@ -639,9 +637,10 @@ class Retraction(EmailApprovableSanction):
         )
 
     def _on_complete(self, user):
-        from website.project.model import Node, NodeLog
+        Registration = apps.get_model('osf_models.Registration')
+        NodeLog = apps.get_model('osf_models.NodeLog')
 
-        parent_registration = Node.find_one(Q('retraction', 'eq', self))
+        parent_registration = Registration.find_one(Q('retraction', 'eq', self))
         parent_registration.registered_from.add_log(
             action=NodeLog.RETRACTION_APPROVED,
             params={
