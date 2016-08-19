@@ -322,11 +322,9 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin, Taggable, Logga
             self.save()
 
     @property
-    def is_retracted(self):
-        # TODO This property will need to recurse up the node hierarchy to check if any this
-        # node's parents are retracted.
-        # Same with is_pending_registration, etc. -- @sloria
-        return False
+    def registrations_all(self):
+        Registration = apps.get_model('osf_models.Registration')
+        return Registration.find(Q('registered_from', 'eq', self._id))
 
     @property
     def nodes_pointer(self):
