@@ -26,7 +26,6 @@ from website.project.licenses import ensure_licenses
 from website.project.model import ensure_schemas
 from website.routes import make_url_map
 from website import maintenance
-from website.institutions.model import Institution
 
 # This import is necessary to set up the archiver signal listeners
 from website.archiver import listeners  # noqa
@@ -55,7 +54,8 @@ def init_addons(settings, routes=True):
 def attach_handlers(app, settings):
     """Add callback handlers to ``app`` in the correct order."""
     # Add callback handlers to application
-    add_handlers(app, mongo_handlers.handlers)
+    if not settings.USE_POSTGRES:
+        add_handlers(app, mongo_handlers.handlers)
     add_handlers(app, celery_task_handlers.handlers)
     add_handlers(app, transaction_handlers.handlers)
     add_handlers(app, postcommit_handlers.handlers)
@@ -74,6 +74,9 @@ def attach_handlers(app, settings):
 
 
 def do_set_backends(settings):
+    if settings.USE_POSTGRES:
+        logger.debug('Not setting storage backends because USE_POSTGRES = True')
+        return
     logger.debug('Setting storage backends')
     maintenance.ensure_maintenance_collection()
     set_up_storage(

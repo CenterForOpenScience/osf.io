@@ -87,12 +87,16 @@ handlers = {
 def _get_current_client():
     """Get the current mongodb client from the pool.
     """
+    if settings.USE_POSTGRES:
+        return None
     return CLIENT_POOL.acquire()
 
 
 def _get_current_database():
     """Getter for `database` proxy.
     """
+    if settings.USE_POSTGRES:
+        return None
     try:
         return _get_current_client()[settings.DB_NAME]
     except ConnectionFailure:
