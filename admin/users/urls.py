@@ -13,8 +13,7 @@ urlpatterns = [
     url(r'^(?P<guid>[a-z0-9]+)/disable/$', views.UserDeleteView.as_view(),
         name='disable'),
     url(r'^(?P<guid>[a-z0-9]+)/disable_spam/$', views.SpamUserDeleteView.as_view(),
-        name='spam_disable'
-        ),
+        name='spam_disable'),
     url(r'^(?P<guid>[a-z0-9]+)/reactivate/$', views.UserDeleteView.as_view(),
         name='reactivate'),
     url(r'^(?P<guid>[a-z0-9]+)/two-factor/disable/$',
