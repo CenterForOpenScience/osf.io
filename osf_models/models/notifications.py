@@ -1,13 +1,16 @@
+from datetime import datetime
+
+import pytz
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from osf_models.models import Node
 from osf_models.models import OSFUser
-from osf_models.models.base import BaseModel, ObjectIDMixin
+from osf_models.models.base import BaseModel, ObjectIDMixin, BaseIDMixin
 from osf_models.models.validators import validate_subscription_type
 from website.notifications.constants import NOTIFICATION_TYPES
 
 
-class NotificationSubscription(BaseModel):
+class NotificationSubscription(BaseIDMixin, BaseModel):
     _id = models.CharField(max_length=50, db_index=True)  # pxyz_wiki_updated, uabc_comment_replies
 
     event_name = models.CharField(max_length=50)  # wiki_updated, comment_replies
@@ -19,6 +22,44 @@ class NotificationSubscription(BaseModel):
     none = models.ManyToManyField('OSFUser', related_name='+')  # reverse relationships
     email_digest = models.ManyToManyField('OSFUser', related_name='+')  # for these
     email_transactional = models.ManyToManyField('OSFUser', related_name='+')  # are pointless
+
+    @classmethod
+    def load(cls, q):
+        # modm doesn't throw exceptions when loading things that don't exist
+        try:
+            return cls.objects.get(_id=q)
+        except cls.DoesNotExist:
+            return None
+
+    @classmethod
+    def migrate_from_modm(cls, modm_obj):
+        """
+        Given a modm object, make a django object with the same local fields.
+        This is a base method that may work for simple things. It should be customized for complex ones.
+        :param modm_obj:
+        :return:
+        """
+
+        django_obj = cls()
+        django_obj._id = modm_obj._id
+
+        local_django_fields = set([x.name for x in django_obj._meta.get_fields() if not x.is_relation])
+
+        intersecting_fields = set(modm_obj.to_storage().keys()).intersection(
+            set(local_django_fields))
+
+        for field in intersecting_fields:
+            modm_value = getattr(modm_obj, field)
+            if modm_value is None:
+                continue
+            if isinstance(modm_value, datetime):
+                modm_value = pytz.utc.localize(modm_value)
+            setattr(django_obj, field, modm_value)
+
+        return django_obj
+
+    class Meta:
+        abstract = True
 
     @property
     def owner(self):
