@@ -1,24 +1,24 @@
+from modularodm import Q
 from rest_framework import generics
+from rest_framework import exceptions
 from rest_framework.response import Response
-from rest_framework.status import HTTP_403_FORBIDDEN, HTTP_400_BAD_REQUEST
+from rest_framework.exceptions import NotFound
+from rest_framework.status import HTTP_204_NO_CONTENT
 from rest_framework import permissions as drf_permissions
 
-from modularodm import Q
-
-from framework.exceptions import PermissionsError
+from website.models import Node, PreprintProvider
 from framework.auth.oauth_scopes import CoreScopes
 
-from website.models import Node
-
-from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 from api.base.filters import ODMFilterMixin
-from api.base.parsers import JSONAPIOnetoOneRelationshipParser, JSONAPIOnetoOneRelationshipParserForRegularJSON
-from api.preprints.parsers import PreprintsJSONAPIParser, PreprintsJSONAPIParserForRegularJSON
-from api.preprints.serializers import PreprintSerializer, PreprintDetailSerializer, PreprintDetailRetrieveSerializer, PreprintPreprintProviderRelationshipSerializer
-from api.nodes.views import NodeMixin, WaterButlerMixin, NodeContributorsList, NodeContributorsSerializer
 from api.base.utils import get_object_or_error
-from rest_framework.exceptions import NotFound
+from api.base import permissions as base_permissions
+from api.base.exceptions import RelationshipPostMakesNoChanges
+from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
+from api.preprint_providers.serializers import PreprintProviderSerializer
+from api.preprints.parsers import PreprintsJSONAPIParser, PreprintsJSONAPIParserForRegularJSON
+from api.preprints.serializers import PreprintSerializer, PreprintDetailSerializer, PreprintDetailRetrieveSerializer, PreprintPreprintProvidersRelationshipSerializer
+from api.nodes.views import NodeMixin, WaterButlerMixin, NodeContributorsList, NodeContributorsSerializer
 
 
 class PreprintMixin(NodeMixin):
@@ -234,7 +234,44 @@ class PreprintContributorsList(NodeContributorsList, PreprintMixin):
     serializer_class = NodeContributorsSerializer
 
 
-class PreprintToPreprintProviderRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin):
+class PreprintPreprintProvidersList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin, NodeMixin):
+    """ Detail of the preprint providers a preprint has, if any. Returns [] if the preprint has no
+    preprnt providers.
+
+    ##Attributes
+
+    OSF Institutions have the "institutions" `type`.
+
+        name           type               description
+        =========================================================================
+        name           string             title of the institution
+        id             string             unique identifier in the OSF
+        logo_path      string             a path to the institution's static logo
+
+
+
+    #This Request/Response
+
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
+    required_write_scopes = [CoreScopes.NULL]
+    serializer_class = PreprintProviderSerializer
+
+    model = PreprintProvider
+    view_category = 'preprints'
+    view_name = 'preprint-preprint_providers'
+
+    def get_queryset(self):
+        node = self.get_node()
+        return node.preprint_providers or []
+
+
+class PreprintToPreprintProviderRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, PreprintMixin):
     """ Relationship Endpoint for Preprint -> PreprintProvider
 
     Used to set preprint_provider of a preprint to a PreprintProvider
@@ -250,44 +287,90 @@ class PreprintToPreprintProviderRelationship(JSONAPIBaseView, generics.RetrieveU
 
     ###Create
 
-        Method:        PUT
+        Method:        POST
         URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
-                         "data": {
-                           "type": "preprint_provider",   # required
+                         "data": [
+                             {
+                               "type": "preprint_providers",   # required
+                               "id": <provider_id>   # required
+                             }
+                         ]
+                       }
+        Success:       201
+
+    ###Update
+
+        Method:        PUT || PATCH
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "preprint_providers",   # required
                            "id": <provider_id>   # required
-                         }
+                         }]
                        }
         Success:       200
 
-    This requires admin permissions in the node.
+        This will delete all preprint_providers not listed, meaning a data: [] payload
+        does the same as a DELETE with all the preprint_providers.
+
+    ###Destroy
+
+        Method:        DELETE
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "preprint_providers",   # required
+                           "id": <provider_id>   # required
+                         }]
+                       }
+        Success:       204
+
+    All of these methods require admin permissions in the preprint.
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
-    required_read_scopes = [CoreScopes.NODE_BASE_READ]
+    required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
-    serializer_class = PreprintPreprintProviderRelationshipSerializer
-    parser_classes = (JSONAPIOnetoOneRelationshipParser, JSONAPIOnetoOneRelationshipParserForRegularJSON, )
+
+    serializer_class = PreprintPreprintProvidersRelationshipSerializer
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
 
     view_category = 'preprints'
-    view_name = 'preprint-relationships-preprint_provider'
+    view_name = 'preprint-relationships-preprint_providers'
 
     def get_object(self):
         preprint = self.get_node()
         obj = {
-            'data': preprint.preprint_provider,
+            'data': preprint.preprint_providers,
             'self': preprint
         }
         return obj
 
-    def update(self, *args, **kwargs):
+    def perform_destroy(self, instance):
+        data = self.request.data['data']
+        user = self.request.user
+        current_providers = {provider._id: provider for provider in instance['data']}
+        node = instance['self']
+
+        if not node.has_permission(user, 'admin'):
+            raise exceptions.PermissionDenied(
+                detail='User must be an admin to delete the PreprintProvider relationship.'
+            )
+
+        for val in data:
+            if val['id'] in current_providers:
+                node.remove_preprint_provider(provider=current_providers[val['id']], user=user)
+        node.save()
+
+    def create(self, *args, **kwargs):
         try:
-            ret = super(PreprintToPreprintProviderRelationship, self).update(*args, **kwargs)
-        except PermissionsError:
-            return Response(status=HTTP_403_FORBIDDEN)
-        except ValueError:
-            return Response(status=HTTP_400_BAD_REQUEST)
+            ret = super(PreprintToPreprintProviderRelationship, self).create(*args, **kwargs)
+        except RelationshipPostMakesNoChanges:
+            return Response(status=HTTP_204_NO_CONTENT)
         return ret
