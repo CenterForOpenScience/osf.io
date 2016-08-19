@@ -118,11 +118,7 @@ class UserList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
-        return (
-            Q('is_registered', 'eq', True) &
-            Q('is_merged', 'ne', True) &
-            Q('date_disabled', 'eq', None)
-        )
+        return None
 
     # overrides ListCreateAPIView
     def get_queryset(self):

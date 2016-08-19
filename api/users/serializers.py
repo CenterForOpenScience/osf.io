@@ -33,7 +33,7 @@ class UserIsActive(ser.BooleanField):
             Q('is_registered', 'eq', value),
             Q('date_confirmed', ne_if_value, None),
             Q('merged_by', eq_if_value, None),
-            Q('data_disabled', eq_if_value, None),
+            Q('date_disabled', eq_if_value, None),
             Q('password', ne_if_value, None)
         ]
 
