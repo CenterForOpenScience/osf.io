@@ -1,8 +1,11 @@
+import datetime
 import urlparse
 
 from django.utils import timezone
 from django.db import models
 
+from framework.auth import Auth
+from framework.exceptions import PermissionsError
 from website.exceptions import NodeStateError
 from website import settings
 
@@ -11,8 +14,10 @@ from osf_models.models import (
     Retraction, Embargo, DraftRegistrationApproval,
     EmbargoTerminationApproval,
 )
+from osf_models.exceptions import ValidationValueError
 from osf_models.models.base import BaseModel, ObjectIDMixin
 from osf_models.models.node import AbstractNode
+from osf_models.models.nodelog import NodeLog
 from osf_models.utils.base import api_v2_url
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
@@ -75,6 +80,14 @@ class Registration(AbstractNode):
             return None
 
     @property
+    def is_registration_approved(self):
+        if self.registration_approval is None:
+            if self.parent_node:
+                return self.parent_node.is_registration_approved
+            return False
+        return self.registration_approval.is_approved
+
+    @property
     def is_pending_embargo(self):
         if self.embargo is None:
             if self.parent_node:
@@ -96,6 +109,14 @@ class Registration(AbstractNode):
         return self.embargo.pending_registration
 
     @property
+    def is_retracted(self):
+        if self.retraction is None:
+            if self.parent_node:
+                return self.parent_node.is_retracted
+            return False
+        return self.retraction.is_approved
+
+    @property
     def is_pending_registration(self):
         if not self.is_registration:
             return False
@@ -104,6 +125,14 @@ class Registration(AbstractNode):
                 return self.parent_node.is_pending_registration
             return False
         return self.registration_approval.is_pending_approval
+
+    @property
+    def is_pending_retraction(self):
+        if self.retraction is None:
+            if self.parent_node:
+                return self.parent_node.is_pending_retraction
+            return False
+        return self.retraction.is_pending_approval
 
     @property
     def is_embargoed(self):
@@ -116,6 +145,76 @@ class Registration(AbstractNode):
             if self.parent_node:
                 return self.parent_node.is_embargoed
         return self.embargo and self.embargo.is_approved and not self.is_public
+
+    @property
+    def embargo_end_date(self):
+        if self.embargo is None:
+            if self.parent_node:
+                return self.parent_node.embargo_end_date
+            return False
+        return self.embargo.end_date
+
+    def _is_embargo_date_valid(self, end_date):
+        now = timezone.now()
+        if (end_date - now) >= settings.EMBARGO_END_DATE_MIN:
+            if (end_date - now) <= settings.EMBARGO_END_DATE_MAX:
+                return True
+        return False
+
+    def _initiate_embargo(self, user, end_date, for_existing_registration=False,
+                          notify_initiator_on_complete=False):
+        """Initiates the retraction process for a registration
+        :param user: User who initiated the retraction
+        :param end_date: Date when the registration should be made public
+        """
+        embargo = Embargo(
+            initiated_by=user,
+            end_date=datetime.datetime.combine(end_date, datetime.datetime.min.time()),
+            for_existing_registration=for_existing_registration,
+            notify_initiator_on_complete=notify_initiator_on_complete
+        )
+        embargo.save()  # Save embargo so it has a primary key
+        self.embargo = embargo
+        self.save()  # Set foreign field reference Node.embargo
+        admins = self.get_admin_contributors_recursive(unique_users=True)
+        for (admin, node) in admins:
+            embargo.add_authorizer(admin, node)
+        embargo.save()  # Save embargo's approval_state
+        return embargo
+
+    def embargo_registration(self, user, end_date, for_existing_registration=False,
+                             notify_initiator_on_complete=False):
+        """Enter registration into an embargo period at end of which, it will
+        be made public
+        :param user: User initiating the embargo
+        :param end_date: Date when the registration should be made public
+        :raises: NodeStateError if Node is not a registration
+        :raises: PermissionsError if user is not an admin for the Node
+        :raises: ValidationValueError if end_date is not within time constraints
+        """
+        if not self.has_permission(user, 'admin'):
+            raise PermissionsError('Only admins may embargo a registration')
+        if not self._is_embargo_date_valid(end_date):
+            if (end_date - timezone.now()) >= settings.EMBARGO_END_DATE_MIN:
+                raise ValidationValueError('Registrations can only be embargoed for up to four years.')
+            raise ValidationValueError('Embargo end date must be at least three days in the future.')
+
+        embargo = self._initiate_embargo(user, end_date,
+                                         for_existing_registration=for_existing_registration,
+                                         notify_initiator_on_complete=notify_initiator_on_complete)
+
+        self.registered_from.add_log(
+            action=NodeLog.EMBARGO_INITIATED,
+            params={
+                'node': self.registered_from._id,
+                'registration': self._id,
+                'embargo_id': embargo._id,
+            },
+            auth=Auth(user),
+            save=True,
+        )
+        if self.is_public:
+            self.set_privacy('private', Auth(user))
 
     def request_embargo_termination(self, auth):
         """Initiates an EmbargoTerminationApproval to lift this Embargoed Registration's
@@ -299,11 +398,11 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
                     old_comments = {
                         comment['created']: comment
                         for comment in old_value.get('comments', [])
-                        }
+                    }
                     new_comments = {
                         comment['created']: comment
                         for comment in value.get('comments', [])
-                        }
+                    }
                     old_comments.update(new_comments)
                     metadata[question_id]['comments'] = sorted(
                         old_comments.values(),
