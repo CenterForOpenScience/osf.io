@@ -5,9 +5,9 @@ from rest_framework import serializers as ser
 
 from api.base.serializers import (
     JSONAPISerializer, IDField, JSONAPIListField, LinksField,
-    RelationshipField, TypeField
+    RelationshipField, JSONAPIRelationshipSerializer, relationship_diff
 )
-from api.base.exceptions import Conflict
+from api.base.exceptions import Conflict, RelationshipPostMakesNoChanges
 from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import NodeTagField
 from framework.exceptions import PermissionsError
@@ -33,7 +33,6 @@ class PreprintSubjectField(ser.Field):
         return data
 
 class PreprintSerializer(JSONAPISerializer):
-
     filterable_fields = frozenset([
         'id',
         'title',
@@ -68,10 +67,11 @@ class PreprintSerializer(JSONAPISerializer):
         related_view_kwargs={'node_id': '<pk>'}
     )
 
-    provider = RelationshipField(
-        related_view='preprint_providers:preprint_provider-detail',
-        related_view_kwargs={'provider_id': '<preprint_provider._id>'},
-        lookup_url_kwarg='provider_id'
+    providers = RelationshipField(
+        related_view='preprints:preprint-preprint_providers',
+        related_view_kwargs={'node_id': '<pk>'},
+        self_view='preprints:preprint-relationships-preprint_providers',
+        self_view_kwargs={'node_id': '<pk>'}
     )
 
     links = LinksField(
@@ -165,36 +165,78 @@ class PreprintDetailRetrieveSerializer(PreprintDetailSerializer):
     subjects = JSONAPIListField(required=False, source='get_preprint_subjects')
 
 
-class PreprintPreprintProviderRelationshipSerializer(ser.Serializer):
-    id = ser.CharField(source='_id', required=False, allow_null=True)
-    type = TypeField(required=False, allow_null=True)
+class PreprintProviderRelated(JSONAPIRelationshipSerializer):
+    id = ser.CharField(source='_id', required=True, allow_null=False)
+    class Meta:
+        type_ = 'preprint_providers'
 
-    links = LinksField({'self': 'get_self_url',
-                        'html': 'get_related_url'})
 
-    def get_self_url(self, obj):
-        return obj['self'].absolute_api_v2_url + 'relationships/preprints/'
-
-    def get_related_url(self, obj):
-        return obj['self'].absolute_api_v2_url + '/preprints/'
+class PreprintPreprintProvidersRelationshipSerializer(ser.Serializer):
+    data = ser.ListField(child=PreprintProviderRelated())
 
     class Meta:
         type_ = 'preprint_providers'
 
+    def get_providers_to_add_remove(self, providers, new_providers):
+        diff = relationship_diff(
+            current_items={provider._id: provider for provider in providers},
+            new_items={provider['_id']: provider for provider in new_providers}
+        )
+
+        providers_to_add = []
+        for provider_id in diff['add']:
+            provider = PreprintProvider.load(provider_id)
+            if not provider:
+                raise exceptions.NotFound(detail='PreprintProvider with id "{}" was not found'.format(provider_id))
+            providers_to_add.append(provider)
+
+        return providers_to_add, diff['remove'].values()
+
     def make_instance_obj(self, obj):
         return {
-            'data': obj.preprint_provider,
+            'data': obj.preprint_providers,
             'self': obj
         }
 
     def update(self, instance, validated_data):
         node = instance['self']
-        auth = get_user_auth(self.context['request'])
+        user = self.context['request'].user
 
-        if node.preprint_provider:
-            raise ValueError('Preprint provider is already assigned to this preprint')
+        add, remove = self.get_providers_to_add_remove(
+            providers=instance['data'],
+            new_providers=validated_data['data']
+        )
 
-        preprint_provider = PreprintProvider.load(validated_data['_id'])
-        node.set_preprint_provider(preprint_provider, auth, save=True)
+        if not node.has_permission(user, 'admin'):
+            raise exceptions.PermissionDenied(detail='User must be an admin to update the PreprintProvider relationship.')
+
+        for provider in remove:
+            node.remove_preprint_provider(provider, user)
+        for provider in add:
+            node.add_preprint_provider(provider, user)
+
+        node.save()
+
+        return self.make_instance_obj(node)
+
+    def create(self, validated_data):
+        instance = self.context['view'].get_object()
+        user = self.context['request'].user
+        node = instance['self']
+
+        if not node.has_permission(user, 'admin'):
+            raise exceptions.PermissionDenied(detail='User must be an admin to create a PreprintProvider relationship.')
+
+        add, remove = self.get_providers_to_add_remove(
+            providers=instance['data'],
+            new_providers=validated_data['data']
+        )
+        if not len(add):
+            raise RelationshipPostMakesNoChanges
+
+        for provider in add:
+            node.add_preprint_provider(provider, user)
+
+        node.save()
 
         return self.make_instance_obj(node)
