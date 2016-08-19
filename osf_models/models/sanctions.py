@@ -496,7 +496,7 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
         parent_registration.registered_from.add_log(
             action=NodeLog.EMBARGO_CANCELLED,
             params={
-                'node': parent_registration.registered_from_id,
+                'node': parent_registration.registered_from._id,
                 'registration': parent_registration._id,
                 'embargo_id': self._id,
             },
@@ -522,7 +522,7 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
         parent_registration.registered_from.add_log(
             action=NodeLog.EMBARGO_APPROVED,
             params={
-                'node': parent_registration.registered_from_id,
+                'node': parent_registration.registered_from._id,
                 'registration': parent_registration._id,
                 'embargo_id': self._id,
             },
@@ -628,7 +628,7 @@ class Retraction(EmailApprovableSanction):
         parent_registration.registered_from.add_log(
             action=NodeLog.RETRACTION_CANCELLED,
             params={
-                'node': parent_registration.registered_from_id,
+                'node': parent_registration.registered_from._id,
                 'registration': parent_registration._id,
                 'retraction_id': self._id,
             },
@@ -644,7 +644,7 @@ class Retraction(EmailApprovableSanction):
         parent_registration.registered_from.add_log(
             action=NodeLog.RETRACTION_APPROVED,
             params={
-                'node': parent_registration.registered_from_id,
+                'node': parent_registration.registered_from._id,
                 'retraction_id': self._id,
                 'registration': parent_registration._id
             },
@@ -656,7 +656,7 @@ class Retraction(EmailApprovableSanction):
             parent_registration.registered_from.add_log(
                 action=NodeLog.EMBARGO_CANCELLED,
                 params={
-                    'node': parent_registration.registered_from_id,
+                    'node': parent_registration.registered_from._id,
                     'registration': parent_registration._id,
                     'embargo_id': parent_registration.embargo._id,
                 },

@@ -76,7 +76,9 @@ class UserNotAffiliatedError(OSFError):
 
 
 class ValidationError(MODMValidationError, DjangoValidationError):
-    """Raised on database validation failure. This exists for compatibility with both modular-odm and Django."""
+    """Raised on database validation failure.
+    This exists for compatibility with both modular-odm and Django.
+    """
     pass
 
 
@@ -89,7 +91,6 @@ def reraise_django_validation_errors():
         yield
     except DjangoValidationError as err:
         raise ValidationError(*err.args)
-
 
 class ValidationValueError(ValidationError, ValueError):
     """ Raised during validation if the value of the input is unacceptable, but

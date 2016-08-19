@@ -5,7 +5,7 @@ from osf_models.models.contributor import Contributor, RecentlyAddedContributor 
 from osf_models.models.session import Session  # noqa
 from osf_models.models.institution import Institution # noqa
 from osf_models.models.node import Node, Collection  # noqa
-from osf_models.models.sanctions import Embargo, Retraction, RegistrationApproval, DraftRegistrationApproval, EmbargoTerminationApproval  # noqa
+from osf_models.models.sanctions import Sanction, Embargo, Retraction, RegistrationApproval, DraftRegistrationApproval, EmbargoTerminationApproval  # noqa
 from osf_models.models.registrations import Registration, DraftRegistrationLog, DraftRegistration  # noqa
 from osf_models.models.nodelog import NodeLog  # noqa
 from osf_models.models.tag import Tag  # noqa
