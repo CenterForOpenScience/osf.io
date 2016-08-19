@@ -327,13 +327,15 @@
                                 <tr>
                                     <td><img class="img-circle" width="50px" height="50px" data-bind="attr: {src: item.logo_path}"></td>
                                     <td><span data-bind="text: item.name"></span></td>
-                                    % if 'admin' in user['permissions']:
-                                        <td><button data-bind="disable: $parent.loading(), click: $parent.clearInst" class="pull-right btn btn-danger">Remove</button></td>
-                                    % elif 'write' in user['permissions']:
-                                        <!-- ko if: $parent.userInstitutionsIds.indexOf(item.id) !== -1 -->
-                                           <td><button data-bind="disable: $parent.loading(), click: $parent.clearInst" class="pull-right btn btn-danger">Remove</button></td>
-                                        <!-- /ko -->
-                                    % endif
+                                    <td>
+                                        % if 'admin' in user['permissions']:
+                                            <button data-bind="disable: $parent.loading(), click: $parent.clearInst" class="pull-right btn btn-danger">Remove</button>
+                                        % elif 'write' in user['permissions']:
+                                            <!-- ko if: $parent.userInstitutionsIds.indexOf(item.id) !== -1 -->
+                                               <button data-bind="disable: $parent.loading(), click: $parent.clearInst" class="pull-right btn btn-danger">Remove</button>
+                                            <!-- /ko -->
+                                        % endif
+                                    </td>
                                 </tr>
                                 <!-- /ko -->
                             </tbody>
