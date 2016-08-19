@@ -284,7 +284,7 @@ def archive(job_pk):
                     addon_short_name=target.name,
                     job_pk=job_pk,
                 )
-                for target in job.target_addons
+                for target in job.target_addons.all()
             ),
             archive_node.s(
                 job_pk=job_pk
