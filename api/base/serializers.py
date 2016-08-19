@@ -516,7 +516,11 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                             url = '{}?filter{}'.format(url, formatted_filter)
                         else:
                             url = None
+                    if 'view_only' in request.query_params.keys():
+                        url = '{}?view_only={}'.format(url, request.query_params.get('view_only'))
+
                     urls[view_name] = url
+
         if not urls['self'] and not urls['related']:
             urls = None
         return urls
