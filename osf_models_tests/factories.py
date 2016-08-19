@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import functools
+import mock
 from mock import patch, Mock
 
 import factory
@@ -296,3 +297,23 @@ class RegistrationApprovalFactory(SanctionFactory):
     class Meta:
         model = models.RegistrationApproval
     user = factory.SubFactory(UserFactory)
+
+class EmbargoTerminationApprovalFactory(DjangoModelFactory):
+
+    FACTORY_STRATEGY = factory.base.CREATE_STRATEGY
+
+    @classmethod
+    def create(cls, registration=None, user=None, embargo=None, *args, **kwargs):
+        if registration:
+            if not user:
+                user = registration.creator
+        else:
+            user = user or UserFactory()
+            if not embargo:
+                embargo = EmbargoFactory(initiated_by=user, state=models.Sanction.APPROVED, approve=True)
+                registration = embargo._get_registration()
+            else:
+                registration = RegistrationFactory(creator=user, user=user, embargo=embargo)
+        with mock.patch('website.project.sanctions.TokenApprovableSanction.ask', mock.Mock()):
+            approval = registration.request_embargo_termination(Auth(user))
+            return approval

@@ -1,8 +1,19 @@
+import contextlib
 import datetime as dt
 import functools
+import mock
+
+from framework.auth import Auth
+from django.utils import timezone
 
 import blinker
 from website.signals import ALL_SIGNALS
+from website.archiver import ARCHIVER_SUCCESS
+from website.archiver import listeners as archiver_listeners
+
+from osf_models.models import Sanction
+
+from .factories import get_default_metaschema
 
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py
 class CaptureSignals(object):
@@ -61,3 +72,86 @@ def assert_datetime_equal(dt1, dt2, allowance=500):
     """Assert that two datetimes are about equal."""
 
     assert abs(dt1 - dt2) < dt.timedelta(milliseconds=allowance)
+
+@contextlib.contextmanager
+def mock_archive(project, schema=None, auth=None, data=None, parent=None,
+                 embargo=False, embargo_end_date=None,
+                 retraction=False, justification=None, autoapprove_retraction=False,
+                 autocomplete=True, autoapprove=False):
+    """ A context manager for registrations. When you want to call Node#register_node in
+    a test but do not want to deal with any of this side effects of archiver, this
+    helper allows for creating a registration in a safe fashion.
+
+    :param bool embargo: embargo the registration (rather than RegistrationApproval)
+    :param bool autocomplete: automatically finish archival?
+    :param bool autoapprove: automatically approve registration approval?
+    :param bool retraction: retract the registration?
+    :param str justification: a justification for the retraction
+    :param bool autoapprove_retraction: automatically approve retraction?
+
+    Example use:
+
+    project = ProjectFactory()
+    with mock_archive(project) as registration:
+        assert_true(registration.is_registration)
+        assert_true(registration.archiving)
+        assert_true(registration.is_pending_registration)
+
+    with mock_archive(project, autocomplete=True) as registration:
+        assert_true(registration.is_registration)
+        assert_false(registration.archiving)
+        assert_true(registration.is_pending_registration)
+
+    with mock_archive(project, autocomplete=True, autoapprove=True) as registration:
+        assert_true(registration.is_registration)
+        assert_false(registration.archiving)
+        assert_false(registration.is_pending_registration)
+    """
+    schema = schema or get_default_metaschema()
+    auth = auth or Auth(project.creator)
+    data = data or ''
+
+    with mock.patch('framework.celery_tasks.handlers.enqueue_task'):
+        registration = project.register_node(
+            schema=schema,
+            auth=auth,
+            data=data,
+            parent=parent,
+        )
+    if embargo:
+        embargo_end_date = embargo_end_date or (
+            timezone.now() + dt.timedelta(days=20)
+        )
+        registration.embargo_registration(
+            project.creator,
+            embargo_end_date
+        )
+    else:
+        registration.require_approval(project.creator)
+    if autocomplete:
+        root_job = registration.archive_job
+        root_job.status = ARCHIVER_SUCCESS
+        root_job.sent = False
+        root_job.done = True
+        root_job.save()
+        sanction = registration.sanction
+        with contextlib.nested(
+            mock.patch.object(root_job, 'archive_tree_finished', mock.Mock(return_value=True)),
+            mock.patch('website.archiver.tasks.archive_success.delay', mock.Mock())
+        ):
+            archiver_listeners.archive_callback(registration)
+    if autoapprove:
+        sanction = registration.sanction
+        sanction.state = Sanction.APPROVED
+        sanction._on_complete(project.creator)
+        sanction.save()
+
+    if retraction:
+        justification = justification or 'Because reasons'
+        retraction = registration.retract_registration(project.creator, justification=justification)
+        if autoapprove_retraction:
+            retraction.state = Sanction.APPROVED
+            retraction._on_complete(project.creator)
+        retraction.save()
+        registration.save()
+    yield registration
