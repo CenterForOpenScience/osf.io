@@ -5,6 +5,7 @@ import httplib as http
 
 import markupsafe
 from flask import request
+import uuid
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
@@ -647,6 +648,8 @@ def oauth_user_email_get():
     """
 
     form = ResendConfirmationForm(request.form)
+    if not get_session().is_oauth_first_time_login:
+        raise HTTPError(http.UNAUTHORIZED)
 
     return {
         'form': form,
@@ -660,30 +663,32 @@ def oauth_user_email_post():
     """
 
     form = ResendConfirmationForm(request.form)
-
     session = get_session()
-    try:
-        oauth_provider = session.data['oauth_user_provider']
-        oauth_id = session.data['oauth_user_id']
-        oauth_fullname = session.data['oauth_user_fullname']
-    except KeyError:
+    if not session.is_oauth_first_time_login:
         raise HTTPError(http.UNAUTHORIZED)
+
+    oauth_provider = session.data['oauth_user_provider']
+    oauth_id = session.data['oauth_user_id']
+    oauth_fullname = session.data['oauth_user_fullname']
 
     if form.validate():
         clean_email = form.email.data
         user = get_user(email=clean_email)
+        oauth = {oauth_provider: oauth_id}
         if user:
             # TODO: link user's OSF account with ORCID
-            # 1. notify the user that OSF account will be linked with ORCID profile
-            # 2. user can login through both ORCID and OSF
-            # 3. send confirmation email (no need to reply)
-            # 4. redirect to home page
+            # 1. update user oauth
+            # 2. send confirmation email
+            # 3. notify user
+            # 4. remove session and osf cookie
             pass
         else:
             # TODO: create a new account for the user
-            # 1. notify the user of account creation and confirmation email sent
-            # 2. follow the normal account create and verification process + update `oauth` field
-            remove_session(session)
+            # 1. create unconfirmed user with oauth
+            # 2. send confirmation email
+            # 3. notify user
+            # 4. remove session and osf cookie
+            pass
 
     # Don't go anywhere
     return {
