@@ -1,8 +1,8 @@
 from rest_framework import serializers as ser
 
-from website.settings import API_DOMAIN
-from api.base.settings.defaults import API_BASE
+from api.base.utils import absolute_reverse
 from api.base.serializers import JSONAPISerializer, LinksField
+
 
 class PreprintProviderSerializer(JSONAPISerializer):
 
@@ -21,7 +21,7 @@ class PreprintProviderSerializer(JSONAPISerializer):
 
     links = LinksField({
         'self': 'get_absolute_url',
-        'preprints': 'preprint_links'
+        'preprints': 'get_preprints_url'
     })
 
     class Meta:
@@ -30,5 +30,5 @@ class PreprintProviderSerializer(JSONAPISerializer):
     def get_absolute_url(self, obj):
         return obj.absolute_api_v2_url
 
-    def preprint_links(self, obj):
-        return '{}{}preprint_providers/{}/preprints/'.format(API_DOMAIN, API_BASE, obj._id)
+    def get_preprints_url(self, obj):
+        return absolute_reverse('preprint_providers:preprints-list', kwargs={'provider_id': obj._id})
