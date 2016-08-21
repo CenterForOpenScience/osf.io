@@ -59,10 +59,7 @@ class TaxonomyDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     ##Taxonomy Attributes
 
-        name           type                   description
-        ----------------------------------------------------------------------------
-        text           array of strings       Actual text of the subject
-        parents        array of subjects      Parent subjects, [] indicates a top level subject.
+    See TaxonomyList
 
     **Note:** Subjects are unique (e.g. there exists only one object in this list with `text='Biology and life sciences'`),
     but as per the structure of the PLOS taxonomy, subjects can exist in separate paths down the taxonomy and as such
