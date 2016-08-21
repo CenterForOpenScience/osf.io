@@ -1,5 +1,4 @@
-from modularodm import Q
-from modularodm.exceptions import ValidationValueError, NoResultsFound, MultipleResultsFound
+from modularodm.exceptions import ValidationValueError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 
@@ -10,20 +9,26 @@ from api.base.exceptions import Conflict
 from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import NodeTagField
 from framework.exceptions import PermissionsError
-from website.models import StoredFileNode
+from website.models import Node, StoredFileNode
 
 
 class PrimaryFileRelationshipField(RelationshipField):
     def get_object(self, file_id):
-        try:
-            return StoredFileNode.find_one(Q('_id', 'eq', file_id))
-        except (NoResultsFound, MultipleResultsFound):
-            return None
+        return StoredFileNode.load(file_id)
 
     def to_internal_value(self, data):
         file = self.get_object(data)
         return {'primary_file': file}
 
+
+class PreprintSubjectField(ser.Field):
+    def to_representation(self, obj):
+        if obj is not None:
+            return obj._id
+        return None
+
+    def to_internal_value(self, data):
+        return data
 
 class PreprintSerializer(JSONAPISerializer):
 
@@ -40,7 +45,7 @@ class PreprintSerializer(JSONAPISerializer):
     ])
 
     title = ser.CharField(required=False)
-    subjects = JSONAPIListField(required=False, source='get_preprint_subjects')
+    subjects = JSONAPIListField(child=PreprintSubjectField(), required=False, source='preprint_subjects')
     provider = ser.CharField(source='preprint_provider', required=False)
     date_created = ser.DateTimeField(read_only=True, source='preprint_created')
     date_modified = ser.DateTimeField(read_only=True)
@@ -88,28 +93,26 @@ class PreprintSerializer(JSONAPISerializer):
         return 'https://dx.doi.org/{}'.format(obj.preprint_doi)
 
     def create(self, validated_data):
-        node = validated_data.pop('node')
+        node = Node.load(validated_data.pop('_id', None))
+
+        if not node:
+            raise exceptions.NotFound('Unable to find Node with specified id.')
         if node.is_preprint:
             raise Conflict('This node already stored as a preprint, use the update method instead.')
-        auth = get_user_auth(self.context['request'])
 
+        auth = get_user_auth(self.context['request'])
         primary_file = validated_data.pop('primary_file', None)
         if not primary_file:
-            raise exceptions.ValidationError(detail='A primary file is required to create a preprint.')
+            raise exceptions.ValidationError(detail='You must specify a primary_file to create a preprint.')
 
-        preprint_subjects = validated_data.get('preprint_subjects', None)
-        if not preprint_subjects:
-            raise exceptions.ValidationError(detail='Subjects are required to create a preprint.')
+        self.set_node_field(node.set_preprint_file, primary_file, auth)
 
-        try:
-            node.set_preprint_file(primary_file, auth, save=False)
-        except PermissionsError:
-            raise exceptions.PermissionDenied('Not authorized to create a preprint from this node.')
-        except ValueError as e:
-            raise exceptions.ValidationError(detail=e.message)
+        subjects = validated_data.pop('preprint_subjects', None)
+        if not subjects:
+            raise exceptions.ValidationError(detail='You must specify at least one subject to create a preprint.')
 
-        if node._id != validated_data.pop('_id'):
-            raise exceptions.ValidationError('The node id in the URL does not match the id in the request body.')
+        self.set_node_field(node.set_preprint_subjects, subjects, auth)
+
         for key, value in validated_data.iteritems():
             setattr(node, key, value)
         try:
@@ -124,12 +127,11 @@ class PreprintSerializer(JSONAPISerializer):
         auth = get_user_auth(self.context['request'])
         primary_file = validated_data.pop('primary_file', None)
         if primary_file:
-            try:
-                node.set_preprint_file(primary_file, auth, save=False)
-            except PermissionsError:
-                raise exceptions.PermissionDenied('Not authorized to update this preprint.')
-            except ValueError as e:
-                raise exceptions.ValidationError(detail=e.message)
+            self.set_node_field(node.set_preprint_file, primary_file, auth)
+        subjects = validated_data.pop('preprint_subjects', None)
+        if subjects:
+            self.set_node_field(node.set_preprint_subjects, subjects, auth)
+
         for key, value in validated_data.iteritems():
             setattr(node, key, value)
         try:
@@ -138,10 +140,10 @@ class PreprintSerializer(JSONAPISerializer):
             raise exceptions.ValidationError(detail=e.message)
         return node
 
-
-class PreprintDetailSerializer(PreprintSerializer):
-    id = IDField(source='_id', required=True)
-    subjects = JSONAPIListField(required=False, source='preprint_subjects')
-
-class PreprintDetailRetrieveSerializer(PreprintDetailSerializer):
-    subjects = JSONAPIListField(required=False, source='get_preprint_subjects')
+    def set_node_field(self, func, val, auth):
+        try:
+            func(val, auth, save=False)
+        except PermissionsError:
+            raise exceptions.PermissionDenied('Not authorized to update this node.')
+        except ValueError as e:
+            raise exceptions.ValidationError(detail=e.message)
