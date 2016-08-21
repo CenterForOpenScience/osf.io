@@ -25,7 +25,7 @@ def update_or_create(provider_data):
         new_provider = PreprintProvider(**provider_data)
         new_provider.save()
         provider = PreprintProvider.load(new_provider._id)
-        print('Added new institution: {}'.format(provider._id))
+        print('Added new preprint provider: {}'.format(provider._id))
         return new_provider, True
 
 
