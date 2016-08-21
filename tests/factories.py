@@ -260,16 +260,15 @@ class PreprintFactory(AbstractNodeFactory):
 class SubjectFactory(ModularOdmFactory):
 
     text = Sequence(lambda n: 'Example Subject #{}'.format(n))
-    type = 'test'
     class Meta:
         model = Subject
 
     @classmethod
     def _create(cls, target_class, text=None,
-                parent_ids=[], *args, **kwargs):
+                parents=[], *args, **kwargs):
         subject = target_class(*args, **kwargs)
         subject.text = text
-        subject.parent_ids = parent_ids
+        subject.parents = parents
         subject.save()
 
         return subject
