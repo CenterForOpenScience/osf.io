@@ -2,7 +2,7 @@ from django.conf.urls import url
 
 from api.taxonomies import views
 
-
 urlpatterns = [
-    url(r'^$', views.Taxonomy.as_view(), name=views.Taxonomy.view_name),
+    url(r'^$', views.TaxonomyList.as_view(), name=views.TaxonomyList.view_name),
+    url(r'^(?P<taxonomy_id>\w+)/$', views.TaxonomyDetail.as_view(), name=views.TaxonomyDetail.view_name),
 ]
