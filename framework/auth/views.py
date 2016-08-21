@@ -648,11 +648,15 @@ def oauth_user_email_get():
     """
 
     form = ResendConfirmationForm(request.form)
-    if not get_session().is_oauth_first_time_login:
+    session = get_session()
+    if not session.is_oauth_first_time_login:
         raise HTTPError(http.UNAUTHORIZED)
+
+    oauth_provider = session.data['oauth_user_provider']
 
     return {
         'form': form,
+        'oauth_provider': oauth_provider.upper()
     }
 
 
@@ -685,10 +689,27 @@ def oauth_user_email_post():
         else:
             # TODO: create a new account for the user
             # 1. create unconfirmed user with oauth
-            # 2. send confirmation email
-            # 3. notify user
-            # 4. remove session and osf cookie
-            pass
+            # 2. update social fields if oauth provider in social
+            # 3. send confirmation email
+            # 4. notify user
+            # 5. remove session and osf cookie
+            user = User.create_unconfirmed(
+                username=clean_email,
+                password=str(uuid.uuid4()),
+                fullname=oauth_fullname,
+                oauth=oauth,
+                campaign=None
+            )
+            # TODO: update social fields
+            user.save()
+            framework_auth.signals.user_registered.send(user)
+            send_confirm_email(user, email=user.username)
+            message = language.OAUTH_LOGIN_EMAIL_CREATE_SUCCESS.format(oauth_provider=oauth_provider, email=user.username)
+            # TODO: background logout, OSF and CAS
+            remove_session(session)
+        status.push_status_message(message, kind='success', trust=False)
+    else:
+        forms.push_errors_to_status(form.errors)
 
     # Don't go anywhere
     return {

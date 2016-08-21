@@ -18,6 +18,10 @@ WELCOME_MESSAGE = '''
 
 REGISTRATION_SUCCESS = '''Registration successful. Please check {email} to confirm your email address.'''
 
+OAUTH_LOGIN_EMAIL_CREATE_SUCCESS = '''A new OSF account has been created with your {oauth_provider} profile. Please check {email} to confirm your email address.'''
+
+OAUTH_LOGIN_EMAIL_LINK_SUCCESS = '''Your OSF account has been linked with your {oauth_provider}. Please check {email} to confirm this action.'''
+
 # Shown if registration is turned off in website.settings
 REGISTRATION_UNAVAILABLE = 'Registration currently unavailable.'
 

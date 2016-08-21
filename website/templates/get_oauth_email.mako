@@ -1,7 +1,7 @@
 <%inherit file="base.mako"/>
-<%def name="title()">OSF ORCID Login</%def>
+<%def name="title()">OSF ${oauth_provider} Login</%def>
 <%def name="content()">
-<h1 class="page-header text-center">OSF ORCID Login | Almost Done</h1>
+<h1 class="page-header text-center">OSF ${oauth_provider} Login | Register Email</h1>
 
 <div class="row">
     ## Center the form
@@ -16,7 +16,6 @@
             <div class='form-group'>
                 ${form.email(placeholder='Email address', autofocus=True) | unicode, n }
             </div>
-
             <button type='submit' class='btn btn-primary'>Send</button>
         </form>
     </div>
