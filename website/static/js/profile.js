@@ -580,7 +580,7 @@ var SocialViewModel = function(urls, modes) {
         self, 'baiduScholar', 'http://xueshu.baidu.com/scholarID/'
     );
     self.ssrnId = extendLink(
-        ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.scholar)}),
+        ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.ssrnId)}),
         self, 'ssrnId', 'http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id='
     );
 
