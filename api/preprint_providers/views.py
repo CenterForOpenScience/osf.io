@@ -152,7 +152,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFil
     serializer_class = PreprintSerializer
     model_class = Node
 
-    required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
+    required_read_scopes = [CoreScopes.NODE_PREPRINTS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
     view_category = 'preprints'
@@ -173,4 +173,4 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFil
         query = self.get_query_from_request()
         nodes = Node.find(query)
 
-        return [node for node in nodes if node.is_preprint]
+        return (node for node in nodes if node.is_preprint)
