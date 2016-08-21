@@ -86,10 +86,10 @@ class TestUsers(ApiTestCase):
         url = "/{}users/?filter[full_name]={}".format(API_BASE, 'hello')
         res = self.app.get(url, auth=self.user_two.auth)
         user_json = res.json['data']
-        assert_equal(len(user_json), 1)
-        meta = user_json[0]['relationships']['nodes']['links']['related']['meta']
-        assert_in('projects_in_common', meta)
-        assert_equal(meta['projects_in_common'], 0)
+        for user in user_json:
+            meta = user['relationships']['nodes']['links']['related']['meta']
+            assert_in('projects_in_common', meta)
+            assert_equal(meta['projects_in_common'], 0)
 
     def test_users_no_projects_in_common_without_filter(self):
         self.user_one.fullname = 'hello'
@@ -97,7 +97,6 @@ class TestUsers(ApiTestCase):
         url = "/{}users/".format(API_BASE)
         res = self.app.get(url, auth=self.user_two.auth)
         user_json = res.json['data']
-        assert_equal(len(user_json), 2)
         for user in user_json:
             meta = user['relationships']['nodes']['links']['related']['meta']
             assert_not_in('projects_in_common', meta)
