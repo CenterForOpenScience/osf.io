@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed
@@ -138,7 +139,7 @@ class WaterButlerMixin(object):
 
     def fetch_from_waterbutler(self):
         node = self.get_node(check_object_permissions=False)
-        return self.get_file_object(node, '/{}'.format(self.kwargs['path']), self.kwargs['provider'])
+        return self.get_file_object(node, self.kwargs['path'], self.kwargs['provider'])
 
     def get_file_object(self, node, path, provider, check_object_permissions=True):
         obj = get_file_object(node=node, path=path, provider=provider, request=self.request)
@@ -496,9 +497,6 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
     serializer_class = NodeDetailSerializer
     view_category = 'nodes'
     view_name = 'node-detail'
-
-    def __init__(self):
-        WaterButlerMixin.__init__(self)
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
@@ -1776,6 +1774,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
     """
 
+
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.PermissionWithGetter(ContributorOrPublic, 'node'),
@@ -1813,9 +1812,6 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
 
 class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
-
-    def __init__(self):
-        WaterButlerMixin.__init__(self)
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,

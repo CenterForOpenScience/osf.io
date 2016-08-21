@@ -1,4 +1,5 @@
 
+from __future__ import unicode_literals
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 from rest_framework.exceptions import NotAuthenticated, NotFound
@@ -37,6 +38,7 @@ class UserMixin(object):
     user_lookup_url_kwarg = 'user_id'
 
     def get_user(self, check_permissions=True):
+        #import ipdb; ipdb.set_trace()
         key = self.kwargs[self.user_lookup_url_kwarg]
         current_user = self.request.user
 

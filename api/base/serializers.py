@@ -509,7 +509,11 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 else:
                     if callable(view):
                         view = view(getattr(obj, self.field_name))
-                    url = self.reverse(view, kwargs=kwargs, request=request, format=format)
+                    try:
+                        url = self.reverse(view, kwargs=kwargs, request=request, format=format)
+                    except:
+                        import ipdb; ipdb.set_trace()
+                        url = self.reverse(view, kwargs=kwargs, request=request, format=format)
                     if self.filter:
                         formatted_filter = self.format_filter(obj)
                         if formatted_filter:
@@ -599,7 +603,6 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
         if url is None:
             raise SkipField
-
         related_url = url['related']
         related_meta = self.get_meta_information(self.related_meta, value)
         self_url = url['self']

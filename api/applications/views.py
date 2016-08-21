@@ -1,3 +1,5 @@
+
+from __future__ import unicode_literals
 """
 Views related to OAuth2 platform applications. Intended for OSF internal use only
 """

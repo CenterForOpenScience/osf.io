@@ -15,6 +15,7 @@
         OSF
     </a>
 {% endblock %}
+
 {% block api_selector %}
     <form id="api_selector">
         <div class="input"><input placeholder="http://example.com/api" id="input_baseUrl" name="baseUrl" type="text"/></div>
@@ -24,7 +25,7 @@
 {% endblock %}
 
 {% block swagger_patches %}
-<script>
+<!--<script>
 
 // TODO 
 // Move this patch to an external file somehow.
@@ -58,24 +59,29 @@
             
                 var re = op.path;
 
+                //console.log(re)
+                //console.log(op)
                 // This is a workaround for a bug? maybe... 
                 // one of the paths has a random parenthese in it.. 
                 // Will open a ticket if I cant figure it out
                 // before this PR is submitted.
-                re = re.replace(/\x29/g, ""); // ???
+                //re = re.replace(/\x29/g, ""); // ???
                 
                 // Urls that contain paths have a "virtual" forward-slash in them
                 // Swagger doesn't see if because the route regex captures it.
-                re = re.replace(/{path}/g, ""); // ???
-
+                if (op.nickname == 'Node_Files_List_GET') re = re.replace(/{path}/g, "(/.+[^/])"); // ???
+                if (op.nickname == 'Node_File_Detail_GET') re = re.replace(/{path}/g, "(/.*/?)"); // ???
+                //console.log(re)
                 // Create a pattern from the path that will match valid values.
                 // of variable data.
                 re = re.replace(/{(?:[a-z_])+}/g, "([0-9a-zA-Z]+)");
                 
                 // Turn it into a regular expression.
-                re = re.replace(/\//g, "\\/");
+                re = re.replace(/\/?<!\x28/g, "\\/");
+                console.log(re)
                 op.re = new RegExp(re);
                 
+                //console.log(op);
                 return op;     
             
             });
@@ -133,10 +139,9 @@
                 }).map(function(op) {
 
 
-                    // Lets populate our link There's too much formatting here to make 
-                    // dom methods reasonable; string concatenation is more readable.
+                    // Lets populate our link.
                     var target_op_el = document.getElementById(op.parentId + "_" + op.nickname);
-                    
+                    //console.log(target_op_el) 
                     url_el.innerHTML = "\"<a href=\"#" + target_op_el.id + "\">" + url +" </a>\"";
                     // Create a link to the raw JSON 
                     
@@ -150,10 +155,20 @@
                     // If it's not a get request, we're done.
                     // Some guards to make sure we only attach an event to the get 
                     // request(avoids deleting files and the like)
-                    if (!target_op_el) return; // Sanity
-                    if (op.method !== 'get') return; // Only `GET`s
+                    if (!target_op_el) {
+                        //console.log('no_el?', target_op_el)
+                        return; // Sanity
+                    }
+                    if (op.method !== 'get') {
+                        //console.log(op, 'not a get');   
+                        return; // Only `GET`s
+                    }
                     var this_host = op.resource.basePath;
-                    if (anchor.protocol + "//" + anchor.host !== this_host) return; // Has to be an api request/
+                    if (anchor.protocol + "//" + anchor.host !== this_host) {
+                        //console.log('anchor => ', anchor.protocol+'//'+anchor.host, '&& this_host => ', this_host)
+                        //console.log('not an api request')
+                        return; // Has to be an api request/
+                    }
                     url_el.innerHTML += " <span class='hljs-comment'>/* <a target=\"_blank\" href=\""+url+"?format=json\">raw_json</a> */</span>";
 
 
@@ -169,7 +184,7 @@
                             document.querySelector("#" + target_op_el.id + " .heading a").click(); 
                             window.location.hash = "!/v2/" + op.nickname; // This may break when we update swagger.
                             var op_content = document.querySelector("#" + target_op_el.id + " div.content");
-                            $(op_content).slideDown() // Ew.
+                            $(op_content).slideDown()
                             
                             // Once we're at the operation, scroll to the response section.
                             var to_v_sbox = document.querySelector("#" + target_op_el.id + ' div.content .response-content-type')
@@ -242,6 +257,6 @@
     }
     
 })();
-</script>
+</script>-->
 {% endblock %}
 

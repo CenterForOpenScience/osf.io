@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from django.conf import settings
 from django.conf.urls import include, url
 from django.conf.urls.static import static
@@ -23,7 +24,7 @@ urlpatterns = [
                 url(r'^tokens/', include('api.tokens.urls', namespace='tokens')),
                 url(r'^logs/', include('api.logs.urls', namespace='logs')),
                 url(r'^files/', include('api.files.urls', namespace='files')),
-                url(r'^docs/', include('rest_framework_swagger.urls')),
+                url(r'^docs/', views.schema_view),
                 url(r'^institutions/', include('api.institutions.urls', namespace='institutions')),
                 url(r'^collections/', include('api.collections.urls', namespace='collections')),
                 url(r'^guids/', include('api.guids.urls', namespace='guids')),

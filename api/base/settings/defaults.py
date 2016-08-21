@@ -184,7 +184,7 @@ STATICFILES_DIRS = (
 
 # TODO: Revisit methods for excluding private routes from swagger docs
 SWAGGER_SETTINGS = {
-    'api_path': '/',
+    'api_path': 'v2/',
     'info': {
         'description':
         """
@@ -204,7 +204,7 @@ NODE_CATEGORY_MAP = osf_settings.NODE_CATEGORY_MAP
 DEBUG_TRANSACTIONS = DEBUG
 
 JWT_SECRET = 'osf_api_cas_login_jwt_secret_32b'
-JWE_SECRET = 'osf_api_cas_login_jwe_secret_32b'
+WE_SECRET = 'osf_api_cas_login_jwe_secret_32b'
 
 ENABLE_VARNISH = osf_settings.ENABLE_VARNISH
 ENABLE_ESI = osf_settings.ENABLE_ESI

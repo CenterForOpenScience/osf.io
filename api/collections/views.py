@@ -1,3 +1,5 @@
+
+from __future__ import unicode_literals
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied

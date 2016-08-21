@@ -1,4 +1,5 @@
 
+from __future__ import unicode_literals
 from rest_framework.exceptions import NotFound
 from rest_framework import generics, permissions as drf_permissions
 
