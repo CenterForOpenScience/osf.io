@@ -258,7 +258,7 @@ class PreprintPreprintProvidersList(JSONAPIBaseView, generics.ListAPIView, ODMFi
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
+    required_read_scopes = [CoreScopes.NODE_PREPRINTS_READ]
     required_write_scopes = [CoreScopes.NULL]
     serializer_class = PreprintProviderSerializer
 
