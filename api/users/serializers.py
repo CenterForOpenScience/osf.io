@@ -57,6 +57,8 @@ class UserSerializer(JSONAPISerializer):
                                                       allow_blank=True, help_text='AcademiaProfileID Field'), required=False, source='social.academiaProfileID')))
     baiduscholar = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.baiduScholar',
                                                            allow_blank=True, help_text='Baidu Scholar Account'), required=False, source='social.baiduScholar')))
+    ssrn_id = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.ssrnId',
+                                                           allow_blank=True, help_text='SSRN Account'), required=False, source='social.ssrnId')))
     timezone = HideIfDisabled(ser.CharField(required=False, help_text="User's timezone, e.g. 'Etc/UTC"))
     locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))
 
