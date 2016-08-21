@@ -528,7 +528,10 @@ class UserPreprints(UserNodes):
 
     def get_queryset(self):
         nodes = Node.find(self.get_query_from_request())
-        return [node for node in nodes if node.is_preprint]
+        # TODO: Rearchitect how `.is_preprint` is determined,
+        # so that a query that is guaranteed to return only
+        # preprints can be contructed. Use generator in meantime.
+        return (node for node in nodes if node.is_preprint)
 
 
 class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):

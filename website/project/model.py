@@ -760,17 +760,10 @@ class NodeUpdateError(Exception):
         self.reason = reason
 
 
-def validate_subjects(value):
-    subject = Subject.load(value)
-    if not subject:
-        raise ValidationValueError('Subject with id <{}> could nor be found.'.format(value))
-    return True
-
-
 def validate_doi(value):
     # DOI must start with 10 and have a slash in it - avoided getting too complicated
     if not re.match('10\\.\\S*\\/', value):
-        raise ValidationValueError('')
+        raise ValidationValueError('"{}" is not a valid DOI'.format(value))
     return True
 
 
@@ -892,7 +885,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     preprint_file = fields.ForeignField('StoredFileNode')
     preprint_created = fields.DateTimeField()
     preprint_provider = fields.StringField()
-    preprint_subjects = fields.StringField(list=True, validate=validate_subjects)
+    preprint_subjects = fields.ForeignField('Subject', list=True)
     preprint_doi = fields.StringField(validate=validate_doi)
     _is_preprint_orphan = fields.BooleanField(default=False)
 
@@ -1184,13 +1177,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if self.preprint_file.node == self:
             return True
         else:
-            self.preprint_file = None
             self._is_preprint_orphan = True
             return False
 
     @property
     def is_preprint_orphan(self):
-        if not self.is_preprint & self._is_preprint_orphan:
+        if (not self.is_preprint) and self._is_preprint_orphan:
             return True
         return False
 
@@ -1546,6 +1538,20 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if save:
             self.save()
 
+    def set_preprint_subjects(self, preprint_subjects, auth, save=False):
+        if not self.has_permission(auth.user, ADMIN):
+            raise PermissionsError('Only admins can change a preprint\'s subjects.')
+
+        self.preprint_subjects = []
+        for s in preprint_subjects:
+            subject = Subject.load(s)
+            if not subject:
+                raise ValidationValueError('Subject with id <{}> could not be found.'.format(s))
+            self.preprint_subjects.append(s)
+
+        if save:
+            self.save()
+
     def set_preprint_file(self, preprint_file, auth, save=False):
         if not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can change a preprint\'s primary file.')
@@ -1561,16 +1567,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             self.preprint_file = preprint_file
             self.preprint_created = datetime.datetime.utcnow()
             self.add_log(action=NodeLog.PREPRINT_INITIATED, params={}, auth=auth, save=False)
-        else:
+        elif preprint_file != self.preprint_file:
             # if there was one, check if it's a new file
-            if preprint_file != self.preprint_file:
-                self.preprint_file = preprint_file
-                self.add_log(
-                    action=NodeLog.PREPRINT_FILE_UPDATED,
-                    params={},
-                    auth=auth,
-                    save=False,
-                )
+            self.preprint_file = preprint_file
+            self.add_log(
+                action=NodeLog.PREPRINT_FILE_UPDATED,
+                params={},
+                auth=auth,
+                save=False,
+            )
         if not self.is_public:
             self.set_privacy(
                 Node.PUBLIC,

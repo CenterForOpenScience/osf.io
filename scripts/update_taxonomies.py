@@ -1,15 +1,22 @@
 import os
 import json
-from framework.mongo import set_up_storage
+import logging
+import sys
 
+from modularodm import Q, storage
+from modularodm.exceptions import NoResultsFound
+
+from framework.mongo import set_up_storage
+from framework.transactions.context import TokuTransaction
+from scripts import utils as script_utils
 from website import settings
 from website.project.taxonomies import Subject
 
-from modularodm import Q, storage
-from modularodm.exceptions import NoResultsFound, MultipleResultsFound
 
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
-def update_taxonomies():
+def update_taxonomies(dry_run=True):
     # Flat taxonomy is stored locally, read in here
     with open(
         os.path.join(
@@ -18,56 +25,54 @@ def update_taxonomies():
         )
     ) as fp:
         taxonomy = json.load(fp)
-        # For now, only PLOS taxonomy is loaded, other types possibly considered in the future
-        type = 'plos'
+
         for subject_path in taxonomy.get('data'):
             subjects = subject_path.split('_')
             text = subjects[-1]
 
             # Search for parent subject, get id if it exists
-            _parent = None
+            parent = None
             if len(subjects) > 1:
                 try:
-                    _parent = Subject.find_one(
-                        Q('text', 'eq', subjects[-2]) &
-                        Q('type', 'eq', type)
-                    )
-                except Exception:
-                    _parent = None
-
-            parent_id = None
-            if _parent:
-                parent_id = _parent._id
+                    parent = Subject.find_one(Q('text', 'eq', subjects[-2]))
+                except NoResultsFound:
+                    pass
 
             try:
-                subject = Subject.find_one(
-                    Q('text', 'eq', text) &
-                    Q('type', 'eq', type)
-                )
-            except (NoResultsFound, MultipleResultsFound):
+                subject = Subject.find_one(Q('text', 'eq', text))
+            except (NoResultsFound):    
                 # If subject does not yet exist, create it
-                if parent_id:
-                    subject = Subject(
-                        type=type,
-                        text=text,
-                        parent_ids=[parent_id],
-                    )
-                else:
-                    subject = Subject(
-                        type=type,
-                        text=text,
-                        parent_ids=[],
-                    )
+                subject = Subject(
+                    text=text,
+                    parents=[parent] if parent else [],
+                )
+                logger.info(u'Creating Subject "{}":{}{}'.format(
+                    subject.text,
+                    subject._id,
+                    u' with parent {}:{}'.format(parent.text, parent._id) if parent else ''
+                ))
             else:
                 # If subject does exist, append parent_id if not already added
                 subject.text = text
-                subject.type = type
-                if parent_id not in subject.parent_ids:
-                    subject.parent_ids.append(parent_id)
+                if parent not in subject.parents:
+                    subject.parents.append(parent)
+                    logger.info(u'Adding parent "{}":{} to Subject "{}":{}'.format(
+                        parent.text, parent._id,
+                        subject.text, subject._id
+                    ))
 
             subject.save()
 
+    if dry_run:
+        raise RuntimeError('Dry run, transaction rolled back')
+
+def main():
+    dry_run = '--dry' in sys.argv
+    if not dry_run:
+        script_utils.add_file_logger(logger, __file__)
+    set_up_storage([Subject], storage.MongoStorage)    
+    with TokuTransaction():
+        update_taxonomies(dry_run=dry_run)
 
 if __name__ == '__main__':
-    set_up_storage([Subject], storage.MongoStorage)
-    update_taxonomies()
+    main()
