@@ -17,7 +17,7 @@ from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
 from api.preprint_providers.serializers import PreprintProviderSerializer
 from api.preprints.parsers import PreprintsJSONAPIParser, PreprintsJSONAPIParserForRegularJSON
-from api.preprints.serializers import PreprintSerializer, PreprintDetailSerializer, PreprintDetailRetrieveSerializer, PreprintPreprintProvidersRelationshipSerializer
+from api.preprints.serializers import PreprintSerializer, PreprintPreprintProvidersRelationshipSerializer
 from api.nodes.views import NodeMixin, WaterButlerMixin, NodeContributorsList, NodeContributorsSerializer
 
 
