@@ -454,6 +454,10 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
                 else:
                     continue
+            elif key == 'projects_in_common':
+                if not self.context['request'].query_params:
+                    continue
+                meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
             else:
                 meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
         return meta
