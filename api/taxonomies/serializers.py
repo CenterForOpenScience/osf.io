@@ -1,7 +1,15 @@
 from rest_framework import serializers as ser
 
-from api.base.serializers import JSONAPISerializer, LinksField
+from api.base.serializers import JSONAPISerializer, LinksField, JSONAPIListField
 
+class TaxonomyField(ser.Field):
+    def to_representation(self, obj):
+        if obj is not None:
+            return obj._id
+        return None
+
+    def to_internal_value(self, data):
+        return data
 
 class TaxonomySerializer(JSONAPISerializer):
     filterable_fields = frozenset([
@@ -11,15 +19,12 @@ class TaxonomySerializer(JSONAPISerializer):
     ])
     id = ser.CharField(source='_id', required=True)
     text = ser.CharField(max_length=200)
-    parents = ser.SerializerMethodField(method_name='get_parent_ids')
+    parents = JSONAPIListField(child=TaxonomyField())
 
     links = LinksField({
         'parents': 'get_parent_urls',
         'self': 'get_absolute_url',
     })
-
-    def get_parent_ids(self, obj):
-        return [p._id for p in obj.parents]
 
     def get_parent_urls(self, obj):
         return [p.get_absolute_url() for p in obj.parents]

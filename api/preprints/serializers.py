@@ -8,6 +8,7 @@ from api.base.serializers import (
 from api.base.exceptions import Conflict
 from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import NodeTagField
+from api.taxonomies.serializers import TaxonomyField
 from framework.exceptions import PermissionsError
 from website.models import Node, StoredFileNode
 
@@ -20,15 +21,6 @@ class PrimaryFileRelationshipField(RelationshipField):
         file = self.get_object(data)
         return {'primary_file': file}
 
-
-class PreprintSubjectField(ser.Field):
-    def to_representation(self, obj):
-        if obj is not None:
-            return obj._id
-        return None
-
-    def to_internal_value(self, data):
-        return data
 
 class PreprintSerializer(JSONAPISerializer):
 
@@ -45,7 +37,7 @@ class PreprintSerializer(JSONAPISerializer):
     ])
 
     title = ser.CharField(required=False)
-    subjects = JSONAPIListField(child=PreprintSubjectField(), required=False, source='preprint_subjects')
+    subjects = JSONAPIListField(child=TaxonomyField(), required=False, source='preprint_subjects')
     provider = ser.CharField(source='preprint_provider', required=False)
     date_created = ser.DateTimeField(read_only=True, source='preprint_created')
     date_modified = ser.DateTimeField(read_only=True)
