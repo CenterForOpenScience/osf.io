@@ -67,19 +67,19 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     ##Attributes
 
-    Preprint Providers have the "preprint_providers" `type`.
+    OSF Preprint Providers have the "preprint_providers" `type`.
 
         name           type               description
         =========================================================================
-        name           string             title of the preprint provider
-        id             string             unique identifier in the OSF
+        name           string             name of the preprint provider
         logo_path      string             a path to the preprint provider's static logo
-        banner_path    string             a path to the preprint provider's static banner
+        banner_path    string             a path to the preprint provider's banner
+        description    string             description of the preprint provider
 
     ##Links
 
-        self:  the canonical api endpoint of this institution
-        html:  this institution's page on the OSF website
+        self: the canonical api endpoint of this preprint provider
+        preprints: link to the provider's preprints
 
     #This Request/Response
 
