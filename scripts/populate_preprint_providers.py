@@ -37,6 +37,7 @@ def main():
             'description': 'Open archive of the social sciences',
             'banner_name': 'socarxiv-banner.png',
             'logo_name': 'socarxiv-logo.png',
+            'external_url': 'http://socarxiv.org'
         },
         {
             '_id': 'osf',
@@ -44,7 +45,7 @@ def main():
             'description': 'A scholarly commons to connect the entire research cycle',
             'banner_name': 'cos-banner.png',
             'logo_name': 'cos-logo.png',
-
+            'external_url': 'https://osf.io/preprints/'
         },
         {
             '_id': 'engrxiv',
@@ -52,7 +53,7 @@ def main():
             'description': 'Engineering Archive, the eprint server for engineering.',
             'banner_name': 'engarxiv-banner.png',
             'logo_name': 'engarxiv-logo.png',
-
+            'external_url': 'http://engrxiv.org'
         },
         {
             '_id': 'psyarxiv',
@@ -60,6 +61,7 @@ def main():
             'description': 'A free preprint service for the psychological sciences.',
             'banner_name': 'psyarxiv-banner.png',
             'logo_name': 'psyarxiv-logo.png',
+            'external_url': 'http://psyarxiv.org'
         },
     ]
 
