@@ -78,6 +78,31 @@ class SchemaGenerator(schemas.SchemaGenerator):
             fields.append(field)
         return fields
 
+    def get_category(self, path, method, callback, action):
+        """
+        Return a descriptive category string for the endpoint, eg. 'users'.
+        """
+
+        try:
+            return callback.cls().view_name
+        except:
+            pass
+
+        path_components = [
+            component for component in path_components
+            if '{' not in component
+        ]
+
+        if action in self.known_actions:
+            idx = -1
+        else:
+            idx = -2
+
+        try:
+            return path_components[idx]
+        except IndexError:
+            return None
+
 
 @api_view()
 @renderer_classes([OpenAPIRenderer, SwaggerUIRenderer])

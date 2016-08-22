@@ -26,8 +26,33 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.base.settings')
 #### WARNING: Here be monkeys ###############
 import six
 import sys
+from django.contrib.admindocs import views
 from rest_framework.fields import Field
 from rest_framework.request import Request
+from rest_framework.reverse import Field
+
+
+named_group_matcher = re.compile(r'\(\?P(<\w+>).+?[^/]\)')
+non_named_group_matcher = re.compile(r'\(.*?\)')
+
+
+def simplify_regex(pattern):
+    """
+    Clean up urlpattern regexes into something somewhat readable by Mere Humans:
+    turns something like "^(?P<sport_slug>\w+)/athletes/(?P<athlete_slug>\w+)/$"
+    into "<sport_slug>/athletes/<athlete_slug>/"
+    """
+    # handle named groups first
+    pattern = named_group_matcher.sub(lambda m: m.group(1), pattern)
+
+    # handle non-named groups
+    pattern = non_named_group_matcher.sub("<var>", pattern)
+
+    # clean up any outstanding regex-y characters.
+    pattern = pattern.replace('^', '').replace('$', '').replace('?', '').replace('//', '/').replace('\\', '')
+    if not pattern.startswith('/'):
+        pattern = '/' + pattern
+    return pattern
 
 # Cached properties break internal caching
 # 792005806b50f8aad086a76ff5a742c66a98428e
@@ -44,6 +69,7 @@ def __getattr__(self, attr):
         info = sys.exc_info()
         six.reraise(info[0], info[1], info[2].tb_next)
 
+views.simplify_regex = simplify_regex
 Field.context = context
 Request.__getattr__ = __getattr__
 Request.__getattribute__ = object.__getattribute__
