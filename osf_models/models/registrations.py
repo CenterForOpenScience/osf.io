@@ -47,7 +47,7 @@ class Registration(AbstractNode):
                                             related_name='registrations',
                                             null=True, blank=True,
                                             on_delete=models.SET_NULL)
-    retration = models.ForeignKey('Retraction',
+    retraction = models.ForeignKey('Retraction',
                                 related_name='registrations',
                                 null=True, blank=True,
                                 on_delete=models.SET_NULL)
