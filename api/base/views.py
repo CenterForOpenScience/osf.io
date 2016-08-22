@@ -47,10 +47,10 @@ class SchemaGenerator(schemas.SchemaGenerator):
                 setattr(view, attr, val)
             view.args = ()
             view.kwargs = {
-                'user_id': 'me'        
+                'user_id': 'me'
             }
             view.format_kwarg = None
-            if request in not None:
+            if request is not None:
                 view.request = clone_request(request, method)
                 try:
                     view.check_permissions(view.request)
