@@ -679,9 +679,8 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
             raise Conflict(detail='Full name and/or email should not be included with a user ID.')
         if not user_id and not full_name:
             raise exceptions.ValidationError(detail='A user ID or full name must be provided to add a contributor.')
-        if index is not None:
-            if index not in range(len(node.contributors)):
-                raise exceptions.ValidationError(detail='{} is not a valid contributor index for node with id {}'.format(index, node._id))
+        if index > len(node.contributors):
+            raise exceptions.ValidationError(detail='{} is not a valid contributor index for node with id {}'.format(index, node._id))
 
     def create(self, validated_data):
         id = validated_data.get('_id')
@@ -701,8 +700,8 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
 
         try:
             contributor = node.add_contributor_registered_or_not(
-                auth=auth, user_id=id, email=email, full_name=full_name,
-                send_email=send_email, permissions=permissions, bibliographic=bibliographic, save=True
+                auth=auth, user_id=id, email=email, full_name=full_name, send_email=send_email,
+                permissions=permissions, bibliographic=bibliographic, index=index, save=True
             )
         except TooManyRequests:
             raise exceptions.Throttled(detail='Too many contributor adds. Please wait a while and try again')
@@ -710,10 +709,6 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
             raise exceptions.ValidationError(detail=e.message)
         except ValueError as e:
             raise exceptions.NotFound(detail=e.message)
-
-        if index:
-            node.move_contributor(user=contributor, index=index, auth=auth, save=True)
-        contributor.index = node.contributors.index(contributor)
 
         return contributor
 
