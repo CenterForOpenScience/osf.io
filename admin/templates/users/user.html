@@ -59,6 +59,20 @@
                 </form>
             {% endif %}
             </span>
+            <span class="col-md-2">
+                {% if not user.disabled %}
+                    <a href="{% url 'users:spam_disable' user.id %}"
+                       data-toggle="modal" data-target="#disableModal"
+                       class="btn btn-danger">
+                        Disable Spam account
+                    </a>
+                <div class="modal" id="disableSpamModal">
+                    <div class="modal-dialog">
+                        <div class="modal-content"></div>
+                    </div>
+                </div>
+                {% endif %}
+            </span>
         </div>
         <div class="row">
             <h3>User details</h3>

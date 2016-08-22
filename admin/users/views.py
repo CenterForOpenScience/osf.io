@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 from furl import furl
+from datetime import datetime
 from django.views.generic import FormView, DeleteView
 from django.core.mail import send_mail
 from django.shortcuts import redirect
@@ -10,7 +11,7 @@ from website.settings import SUPPORT_EMAIL, DOMAIN
 from website.security import random_string
 from framework.auth import get_user
 
-from website.project.model import User
+from website.project.model import User, NodeLog
 from website.mailchimp_utils import subscribe_on_confirm
 
 from admin.base.views import GuidFormView, GuidView
@@ -22,6 +23,7 @@ from admin.common_auth.logs import (
     USER_EMAILED,
     USER_REMOVED,
     USER_RESTORED,
+    NODE_MADE_PRIVATE
 )
 
 from admin.users.serializers import serialize_user
@@ -74,6 +76,51 @@ class UserDeleteView(OSFAdmin, DeleteView):
 
     def get_object(self, queryset=None):
         return User.load(self.kwargs.get('guid'))
+
+
+class SpamUserDeleteView(UserDeleteView):
+    """
+    Allow authorized admin user to delete a spam user and mark all their nodes as private
+
+    """
+
+    template_name = 'users/remove_spam_user.html'
+
+    def delete(self, request, *args, **kwargs):
+        user = None
+        try:
+            user = self.get_object()
+        except AttributeError:
+            raise Http404(
+                '{} with id "{}" not found.'.format(
+                    self.context_object_name.title(),
+                    self.kwargs.get('guid')
+                ))
+        if user:
+            for node in user.contributor_to:
+                if node.is_public and not node.is_registration:
+                    node.is_public = False
+                    node.save()
+                    update_admin_log(
+                        user_id=request.user.id,
+                        object_id=node._id,
+                        object_repr='Node',
+                        message='Node {} made private when user {} marked as spam.'.format(node._id, user._id),
+                        action_flag=NODE_MADE_PRIVATE
+                    )
+                    # Log invisibly on the OSF.
+                    osf_log = NodeLog(
+                        action=NodeLog.MADE_PRIVATE,
+                        user=None,
+                        params={
+                            'node': node._id,
+                        },
+                        date=datetime.utcnow(),
+                        should_hide=True,
+                    )
+                    osf_log.save()
+
+        return super(SpamUserDeleteView, self).delete(request, *args, **kwargs)
 
 
 class User2FactorDeleteView(UserDeleteView):
