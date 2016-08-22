@@ -8,6 +8,7 @@ from django.dispatch import receiver
 from django.db.models.signals import post_save, pre_save
 from django.utils import timezone
 from keen import scoped_keys
+from osf_models.models.identifiers import IdentifierMixin
 from typedmodels.models import TypedModel
 
 # OSF imports
@@ -40,7 +41,7 @@ from .base import BaseModel, GuidMixin
 
 logger = logging.getLogger(__name__)
 
-class AbstractNode(TypedModel, AddonModelMixin, Taggable, Loggable, GuidMixin, BaseModel):
+class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin, Taggable, Loggable, GuidMixin, BaseModel):
     """
     All things that inherit from AbstractNode will appear in
     the same table and will be differentiated by the `type` column.
