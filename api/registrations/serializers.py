@@ -71,7 +71,7 @@ class BaseRegistrationSerializer(NodeSerializer):
 
     registered_from = HideIfWithdrawal(RelationshipField(
         related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<registered_from_id>'}
+        related_view_kwargs={'node_id': '<registered_from._id>'}
     ))
 
     children = HideIfWithdrawal(RelationshipField(

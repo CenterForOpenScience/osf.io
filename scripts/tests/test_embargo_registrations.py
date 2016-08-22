@@ -130,7 +130,7 @@ class TestRetractRegistrations(OsfTestCase):
         # Logs: Created, made public, registered, embargo initiated, embargo approved
         embargo_approved_log = self.registration.registered_from.logs[initial_project_logs + 1]
         assert_equal(len(self.registration.registered_from.logs), initial_project_logs + 1)
-        assert_equal(embargo_approved_log.params['node'], self.registration.registered_from_id)
+        assert_equal(embargo_approved_log.params['node'], self.registration.registered_from._id)
 
     def test_embargo_completion_adds_to_parent_projects_log(self):
         initial_project_logs = len(self.registration.registered_from.logs)
@@ -150,4 +150,4 @@ class TestRetractRegistrations(OsfTestCase):
         # Logs: Created, made public, registered, embargo initiated, embargo approved, embargo completed
         embargo_completed_log = self.registration.registered_from.logs[initial_project_logs + 1]
         assert_equal(len(self.registration.registered_from.logs), initial_project_logs + 2)
-        assert_equal(embargo_completed_log.params['node'], self.registration.registered_from_id)
+        assert_equal(embargo_completed_log.params['node'], self.registration.registered_from._id)

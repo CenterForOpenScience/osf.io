@@ -266,7 +266,7 @@ class TestRelationshipField(DbTestCase):
         registered_from = RelationshipField(
             related_view=lambda n: 'registrations:registration-detail' if n and n.is_registration else 'nodes:node-detail',
             related_view_kwargs=lambda n: {
-                'node_id': '<registered_from_id>'
+                'node_id': '<registered_from._id>'
             }
         )
 

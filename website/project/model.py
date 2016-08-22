@@ -3533,7 +3533,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         self.registered_from.add_log(
             action=NodeLog.RETRACTION_INITIATED,
             params={
-                'node': self.registered_from_id,
+                'node': self.registered_from._id,
                 'registration': self._id,
                 'retraction_id': retraction._id,
             },
@@ -3595,7 +3595,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         self.registered_from.add_log(
             action=NodeLog.EMBARGO_INITIATED,
             params={
-                'node': self.registered_from_id,
+                'node': self.registered_from._id,
                 'registration': self._id,
                 'embargo_id': embargo._id,
             },
