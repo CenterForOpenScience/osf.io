@@ -88,6 +88,7 @@ class SchemaGenerator(schemas.SchemaGenerator):
         except:
             pass
 
+        path_components = path.strip('/').split('/')
         path_components = [
             component for component in path_components
             if '{' not in component
