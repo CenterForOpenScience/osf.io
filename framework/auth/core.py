@@ -508,13 +508,13 @@ class User(GuidStoredObject, AddonModelMixin):
         return user
 
     @classmethod
-    def create_unconfirmed(cls, username, password, fullname, external_identity=None, do_confirm=True,
-                           campaign=None):
+    def create_unconfirmed(cls, username, password, fullname, external_identity=None,
+                           external_id_provider=None, do_confirm=True, campaign=None):
         """Create a new user who has begun registration but needs to verify
         their primary email address (username).
         """
         user = cls.create(username, password, fullname)
-        user.add_unconfirmed_email(username)
+        user.add_unconfirmed_email(username, external_id_provider=external_id_provider)
         user.is_registered = False
         if external_identity:
             user.external_identity.update(external_identity)
@@ -780,7 +780,7 @@ class User(GuidStoredObject, AddonModelMixin):
         self.email_verifications[token]['expiration'] = expiration
         return expiration
 
-    def add_unconfirmed_email(self, email, expiration=None):
+    def add_unconfirmed_email(self, email, expiration=None, external_id_provider=None):
         """Add an email verification token for a given email."""
 
         # TODO: This is technically not compliant with RFC 822, which requires
@@ -790,7 +790,7 @@ class User(GuidStoredObject, AddonModelMixin):
         #       ref: https://tools.ietf.org/html/rfc822#section-6
         email = email.lower().strip()
 
-        if email in self.emails:
+        if not external_id_provider and email in self.emails:
             raise ValueError('Email already confirmed to this user.')
 
         utils.validate_email(email)
@@ -806,8 +806,11 @@ class User(GuidStoredObject, AddonModelMixin):
             self.email_verifications = {}
 
         # confirmed used to check if link has been clicked
-        self.email_verifications[token] = {'email': email,
-                                           'confirmed': False}
+        self.email_verifications[token] = {
+            'email': email,
+            'confirmed': False,
+            'external_id_provider': external_id_provider
+        }
         self._set_email_token_expiration(token, expiration=expiration)
         return token
 
@@ -867,7 +870,7 @@ class User(GuidStoredObject, AddonModelMixin):
                 return token
         raise KeyError('No confirmation token for email "{0}"'.format(email))
 
-    def get_confirmation_url(self, email, external=True, force=False):
+    def get_confirmation_url(self, email, external=True, force=False, external_id_provider=None):
         """Return the confirmation url for a given email.
 
         :raises: ExpiredTokenError if trying to access a token that is expired.
@@ -875,7 +878,11 @@ class User(GuidStoredObject, AddonModelMixin):
         """
         base = settings.DOMAIN if external else '/'
         token = self.get_confirmation_token(email, force=force)
-        return '{0}confirm/{1}/{2}/'.format(base, self._primary_key, token)
+
+        if external_id_provider:
+            return '{0}confirm/external/{1}/{2}/'.format(base, self._primary_key, token)
+        else:
+            return '{0}confirm/{1}/{2}/'.format(base, self._primary_key, token)
 
     def get_unconfirmed_email_for_token(self, token):
         """Return email if valid.

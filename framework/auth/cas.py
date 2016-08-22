@@ -260,6 +260,7 @@ def make_response_from_ticket(ticket, service_url):
         # first time login from remote oauth provider, user does not exist or is not linked
         if not user and action == 'external_first_login':
             from website.util import web_url_for
+            # TODO: when cas part is ready, change the attribute names accordingly
             user = {
                 'fullname': cas_resp.attributes['name'],
                 'external_id_provider': cas_resp.attributes['oauthProvider'],

@@ -346,6 +346,75 @@ def auth_email_logout(token, user):
 
 
 @collect_auth
+def external_login_confirm_email_get(auth, uid, token):
+    """
+    View for email confirmation links when user first login through external identity provider.
+    HTTP Method: GET
+
+    :param auth: the auth context
+    :param uid: the user's primary key
+    :param token: the verification token
+    """
+
+    user = User.load(uid)
+    if not user:
+        raise HTTPError(http.BAD_REQUEST)
+
+    if auth and auth.user and auth.user._id == user._id:
+        new = request.args.get('new', None)
+        if new:
+            status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True)
+        else:
+            # TODO: push status message
+            pass
+        return redirect(web_url_for('index'))
+
+    # token is invalid
+    if token not in user.email_verifications:
+        raise HTTPError(http.BAD_REQUEST)
+    verification = user.email_verifications[token]
+    email = verification['email']
+    provider = verification['external_id_provider']
+    # wrong provider
+    if provider not in user.external_identity:
+        raise HTTPError(http.BAD_REQUEST)
+    external_status = user.external_identity[provider]['status']
+    # create a new user
+    if external_status == 'CREATE' and email.lower() == user.username.lower():
+        user.register(user.username)
+        user.date_last_logged_in = datetime.datetime.utcnow()
+        user.external_identity[provider]['status'] = 'VERIFIED'
+        user.save()
+        mails.send_mail(
+            to_addr=user.username,
+            mail=mails.WELCOME,
+            mimetype='html',
+            user=user
+        )
+        service_url = request.url + '?new=true'
+    # link a current user
+    elif external_status == 'LINK':
+        user.date_last_logged_in = datetime.datetime.utcnow()
+        user.external_identity[provider]['status'] = 'VERIFIED'
+        user.save()
+        # TODO: send email to notify user of successful linking external identity
+        pass
+        service_url = request.url
+
+    del user.email_verifications[token]
+    user.save()
+
+    # redirect to CAS and authenticate the user with the verification key
+    user.verification_key = generate_verification_key()
+    user.save()
+    return redirect(cas.get_login_url(
+        service_url,
+        username=user.username,
+        verification_key=user.verification_key
+    ))
+
+
+@collect_auth
 def confirm_email_get(token, auth=None, **kwargs):
     """
     View for email confirmation links. Authenticates and redirects to user settings page if confirmation is successful,
@@ -472,7 +541,7 @@ def unconfirmed_email_add(auth=None):
     }, 200
 
 
-def send_confirm_email(user, email, external_identity=None):
+def send_confirm_email(user, email, external_id_provider=None):
     """
     Sends a confirmation email to `user` to a given email.
 
@@ -483,6 +552,7 @@ def send_confirm_email(user, email, external_identity=None):
         email,
         external=True,
         force=True,
+        external_id_provider=external_id_provider
     )
 
     try:
@@ -492,10 +562,10 @@ def send_confirm_email(user, email, external_identity=None):
     campaign = campaigns.campaign_for_user(user)
 
     # Choose the appropriate email template to use and add existing_user flag if a merge or adding an email.
-    if external_identity:  # first time login through external identity provider
-        if external_identity['status'] == 'CREATE':
+    if external_id_provider:  # first time login through external identity provider
+        if user.external_identity[external_id_provider]['status'] == 'CREATE':
             mail_template = mails.EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE
-        elif external_identity['status'] == 'LINK':
+        elif user.external_identity[external_id_provider]['status'] == 'LINK':
             mail_template = mails.EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK
     elif merge_target:  # merge account
         mail_template = mails.CONFIRM_MERGE
@@ -690,18 +760,15 @@ def external_login_email_post():
             }
         }
         if user:
-            # 0. check if this user is already linked with other profile
-            # 1. update user oauth
-            # 2. send confirmation email
-            # 3. notify user
-            # 4. remove session and osf cookie
             external_status = ''
+            # 0. check if this user is already linked with other profile
             if user.external_identity:
                 if external_id_provider in user.external_identity:
                     if user.external_identity[external_id_provider]:
                         external_status = user.external_identity[external_id_provider]['status']
 
-            # TODO: handle pending status: the current or another user also claimed this account but not confirmed
+            # TODO: [new OSF ticket] handle pending status: the current or another user also claimed this osf account but not confirmed
+
             if external_status == 'VERIFIED':
                 message = language.EXTERNAL_LOGIN_EMAIL_LINK_FAIL.format(
                     external_id_provider=external_id_provider,
@@ -709,44 +776,45 @@ def external_login_email_post():
                 )
                 kind = 'warn'
             else:
-                # TODO: link user's OSF account with ORCID
+                # 1. update user oauth, with pending status
                 external_identity[external_id_provider]['status'] = 'LINK'
                 user.external_identity.update(external_identity)
                 user.save()
-                unverified_external_identity = user.external_identity[external_id_provider]
                 # TODO: do we need a signal here
-                send_confirm_email(user, user.username, external_identity=unverified_external_identity)
+                # 2. add unconfirmed email and send confirmation email
+                user.add_unconfirmed_email(clean_email, external_id_provider=external_id_provider)
+                user.save()
+                send_confirm_email(user, user.username, external_id_provider=external_id_provider)
+                # 3. notify user
                 message = language.EXTERNAL_LOGIN_EMAIL_LINK_SUCCESS.format(
                     external_id_provider=external_id_provider,
                     email=user.username
                 )
                 kind = 'success'
+                # 4. remove session and osf cookie
                 remove_session(session)
         else:
-            # 1. create unconfirmed user with oauth
-            # 2. update social fields if oauth provider in social
-            # 3. send confirmation email
-            # 4. notify user
-            # 5. remove session and osf cookie
+            # 1. create unconfirmed user with pending status
             external_identity[external_id_provider]['status'] = 'CREATE'
             user = User.create_unconfirmed(
                 username=clean_email,
                 password=str(uuid.uuid4()),
                 fullname=fullname,
                 external_identity=external_identity,
+                external_id_provider=external_id_provider,
                 campaign=None
             )
-            # TODO: update social fields
+            # TODO: [new OSF ticket] update social fields
             user.save()
-            unverified_external_identity = user.external_identity[external_id_provider]
-            # TODO: what is the use the the signal
-            framework_auth.signals.user_registered.send(user)
-            send_confirm_email(user, user.username, external_identity=unverified_external_identity)
+            # 3. send confirmation email
+            send_confirm_email(user, user.username, external_id_provider=external_id_provider)
+            # 4. notify user
             message = language.EXTERNAL_LOGIN_EMAIL_CREATE_SUCCESS.format(
                 external_id_provider=external_id_provider,
                 email=user.username
             )
             kind = 'success'
+            # 5. remove session
             remove_session(session)
         status.push_status_message(message, kind=kind, trust=False)
     else:
