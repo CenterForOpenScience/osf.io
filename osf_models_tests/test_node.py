@@ -1,3 +1,6 @@
+import datetime
+
+from django.utils import timezone
 from django.core.exceptions import ValidationError as DjangoValidationError
 from modularodm import Q
 from modularodm.exceptions import ValidationError as MODMValidationError
@@ -6,15 +9,16 @@ import pytest
 import pytz
 
 from framework.exceptions import PermissionsError
+from website.util.permissions import ADMIN
 from website.project.signals import contributor_added
 from website.exceptions import NodeStateError
 from website.util import permissions
 
-from osf_models.models import Node, Tag, NodeLog, Contributor
+from osf_models.models import Node, Tag, NodeLog, Contributor, Embargo, Sanction
 from osf_models.exceptions import ValidationError
 from osf_models.utils.auth import Auth
 
-from .factories import ProjectFactory, NodeFactory, UserFactory, UnregUserFactory
+from .factories import ProjectFactory, NodeFactory, UserFactory, UnregUserFactory, RegistrationFactory
 from .utils import capture_signals, assert_datetime_equal, mock_archive
 
 
@@ -224,20 +228,6 @@ class TestContributorMethods:
             [user1._id, user2._id]
         )
 
-    @pytest.mark.skip('Signal not sent because NotificationSubscription not yet implemented')
-    def test_add_contributors_sends_contributor_added_signal(self, node, auth):
-        user = UserFactory()
-        contributors = [{
-            'user': user,
-            'visible': True,
-            'permissions': ['read', 'write']
-        }]
-        with capture_signals() as mock_signals:
-            node.add_contributors(contributors=contributors, auth=auth)
-            node.save()
-            assert node.is_contributor(user)
-            assert mock_signals.signals_sent() in set([contributor_added])
-
     def test_is_contributor(self, node):
         contrib, noncontrib = UserFactory(), UserFactory()
         Contributor.objects.create(user=contrib, node=node)
@@ -330,6 +320,28 @@ class TestContributorMethods:
         assert node2.has_permission(read, 'read') is True
         assert node2.has_permission(read, 'write') is False
         assert node2.has_permission(admin, 'admin') is True
+
+@pytest.mark.django_db
+class TestContributorAddedSignal:
+
+    # Override disconnected signals from conftest
+    @pytest.fixture(autouse=True)
+    def disconnected_signals(self):
+        return None
+
+    @mock.patch('website.project.views.contributor.mails.send_mail')
+    def test_add_contributors_sends_contributor_added_signal(self, mock_send_mail, node, auth):
+        user = UserFactory()
+        contributors = [{
+            'user': user,
+            'visible': True,
+            'permissions': ['read', 'write']
+        }]
+        with capture_signals() as mock_signals:
+            node.add_contributors(contributors=contributors, auth=auth)
+            node.save()
+            assert node.is_contributor(user)
+            assert mock_signals.signals_sent() == set([contributor_added])
 
 @pytest.mark.django_db
 class TestPermissionMethods:
@@ -594,32 +606,31 @@ class TestSetPrivacy:
         node.set_privacy('public', auth=auth, meeting_creation=True)
         assert bool(mock_queue.called) is False
 
-    @pytest.mark.skip('Embargoes not yet ported')
-    def test_set_privacy_can_not_cancel_pending_embargo_for_registration(self):
-        registration = RegistrationFactory(project=self.project)
+    def test_set_privacy_can_not_cancel_pending_embargo_for_registration(self, node, user, auth):
+        registration = RegistrationFactory(project=node)
         registration.embargo_registration(
-            self.user,
-            datetime.datetime.utcnow() + datetime.timedelta(days=10)
+            user,
+            timezone.now() + datetime.timedelta(days=10)
         )
         assert bool(registration.is_pending_embargo) is True
 
         with pytest.raises(NodeStateError):
-            registration.set_privacy('public', auth=self.auth)
+            registration.set_privacy('public', auth=auth)
         assert bool(registration.is_public) is False
 
-    @pytest.mark.skip('Embargoes not yet ported')
-    def test_set_privacy_requests_embargo_termination_on_embargoed_registration(self):
+    def test_set_privacy_requests_embargo_termination_on_embargoed_registration(self, node, user, auth):
         for i in range(3):
-            c = AuthUserFactory()
-            self.project.add_contributor(c, [ADMIN])
-        registration = RegistrationFactory(project=self.project)
+            c = UserFactory()
+            node.add_contributor(c, [ADMIN])
+        registration = RegistrationFactory(project=node)
         registration.embargo_registration(
-            self.user,
-            datetime.datetime.utcnow() + datetime.timedelta(days=10)
+            user,
+            timezone.now() + datetime.timedelta(days=10)
         )
-        assert_equal(len([a for a in registration.get_admin_contributors_recursive(unique_users=True)]), 4)
-        with mock.patch('website.project.model.Node.is_embargoed', mock.PropertyMock(return_value=True)):
-            with mock.patch('website.project.model.Node.is_pending_embargo', mock.PropertyMock(return_value=False)):
-                with mock.patch('website.project.model.Node.request_embargo_termination') as mock_request_embargo_termination:
-                    registration.set_privacy('public', auth=self.auth)
-                    assert_equal(mock_request_embargo_termination.call_count, 1)
+        assert len([a for a in registration.get_admin_contributors_recursive(unique_users=True)]) == 4
+        embargo = registration.embargo
+        embargo.state = Sanction.APPROVED
+        embargo.save()
+        with mock.patch('osf_models.models.Registration.request_embargo_termination') as mock_request_embargo_termination:
+            registration.set_privacy('public', auth=auth)
+            assert mock_request_embargo_termination.call_count == 1

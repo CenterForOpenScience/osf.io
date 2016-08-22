@@ -5,6 +5,8 @@ from faker import Factory
 
 from website import settings
 from website.app import patch_models
+from website.project.signals import contributor_added
+from website.project.views.contributor import notify_added_contributor
 
 # Silence some 3rd-party logging and some "loud" internal loggers
 SILENT_LOGGERS = [
@@ -25,6 +27,16 @@ for logger_name in SILENT_LOGGERS:
 def patched_models():
     patch_models(settings)
 
+
+DISCONNECTED_SIGNALS = {
+    # disconnect notify_add_contributor so that add_contributor does not send "fake" emails in tests
+    contributor_added: [notify_added_contributor]
+}
+@pytest.fixture(autouse=True)
+def disconnected_signals():
+    for signal in DISCONNECTED_SIGNALS:
+        for receiver in DISCONNECTED_SIGNALS[signal]:
+            signal.disconnect(receiver)
 
 @pytest.fixture()
 def fake():

@@ -445,6 +445,8 @@ def subscribe_user_to_notifications(node, user):
             if not(node and node.parent_node and not subscription and node.creator == user):
                 if not subscription:
                     subscription = NotificationSubscription(_id=event_id, owner=node, event_name=event)
+                    # Need to save here in order to access m2m fields
+                    subscription.save()
                 if global_subscription:
                     global_notification_type = get_global_notification_type(global_subscription, user)
                     subscription.add_user_to_subscription(user, global_notification_type)

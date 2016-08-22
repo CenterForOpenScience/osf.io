@@ -158,6 +158,7 @@ PATCHED_MODELS = (
     'Session',
     'NodeLicense',
     'NodeLicenseRecord',
+    'NotificationSubscription',
     'Guid',
     'MetaSchema',
     'ArchiveJob',
