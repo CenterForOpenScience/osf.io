@@ -42,10 +42,12 @@ from website.util import web_url_for
 from website.util import api_url_for
 from website.util import api_v2_url
 from website.util import sanitize
+from website.util.time import throttle_period_expired
 from website.exceptions import (
     NodeStateError,
     InvalidTagError, TagNotFoundError,
     UserNotAffiliatedError,
+    TooManyRequests
 )
 from website.institutions.model import Institution, AffiliatedInstitutionsList
 from website.citations.utils import datetime_to_csl
@@ -3183,12 +3185,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 project_signals.write_permissions_revoked.send(self)
 
     def add_contributor(self, contributor, permissions=None, visible=True,
-                        auth=None, log=True, save=False):
+                        send_email='default', auth=None, log=True, save=False):
         """Add a contributor to the project.
 
         :param User contributor: The contributor to be added
         :param list permissions: Permissions to grant to the contributor
         :param bool visible: Contributor is visible in project dashboard
+        :param str send_email: Email preference for notifying added contributor
         :param Auth auth: All the auth information including user, API key
         :param bool log: Add log to self
         :param bool save: Save after adding contributor
@@ -3232,8 +3235,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             if save:
                 self.save()
 
-            if self._id:
-                project_signals.contributor_added.send(self, contributor=contributor, auth=auth)
+            if self._id and send_email != 'false':
+                project_signals.contributor_added.send(self, contributor=contributor, auth=auth, email_template=send_email)
 
             return True
 
@@ -3282,8 +3285,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if save:
             self.save()
 
-    def add_unregistered_contributor(self, fullname, email, auth,
-                                     permissions=None, save=False):
+    def add_unregistered_contributor(self, fullname, email, auth, send_email='default', permissions=None, save=False):
         """Add a non-registered contributor to the project.
 
         :param str fullname: The full name of the person.
@@ -3311,9 +3313,48 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         self.add_contributor(
             contributor, permissions=permissions, auth=auth,
-            log=True, save=False,
+            send_email=send_email, log=True, save=False
         )
         self.save()
+        return contributor
+
+    def add_contributor_registered_or_not(self, auth, user_id=None, full_name=None, email=None,
+                                          send_email='false', permissions=None, bibliographic=True, save=False):
+
+        if send_email != 'false' and not throttle_period_expired(auth.user.email_last_sent, settings.API_SEND_EMAIL_THROTTLE):
+            raise TooManyRequests
+
+        if user_id:
+            contributor = User.load(user_id)
+            if not contributor:
+                raise ValueError('User with id {} was not found.'.format(user_id))
+            if contributor in self.contributors:
+                raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
+            self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
+                                 permissions=permissions, send_email=send_email, save=True)
+        else:
+
+            try:
+                contributor = self.add_unregistered_contributor(fullname=full_name, email=email,
+                                                                auth=auth, send_email=send_email,
+                                                                permissions=permissions, save=True)
+            except ValidationValueError:
+                contributor = get_user(email=email)
+                if contributor in self.contributors:
+                    raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
+                self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
+                                     send_email=send_email, permissions=permissions, save=True)
+
+        auth.user.email_last_sent = datetime.datetime.utcnow()
+        auth.user.save()
+
+        contributor.permission = reduce_permissions(self.get_permissions(contributor))
+        contributor.bibliographic = self.get_visible(contributor)
+        contributor.node_id = self._id
+
+        if save:
+            contributor.save()
+
         return contributor
 
     def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False):

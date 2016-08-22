@@ -9,7 +9,7 @@ from website.models import User
 from api.base.serializers import (
     JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField
 )
-from api.base.utils import absolute_reverse
+from api.base.utils import absolute_reverse, get_user_auth
 
 from framework.auth.views import send_confirm_email
 
@@ -70,6 +70,7 @@ class UserSerializer(JSONAPISerializer):
     nodes = HideIfDisabled(RelationshipField(
         related_view='users:user-nodes',
         related_view_kwargs={'user_id': '<pk>'},
+        related_meta={'projects_in_common': 'get_projects_in_common'},
     ))
 
     registrations = DevOnly(HideIfDisabled(RelationshipField(
@@ -86,6 +87,12 @@ class UserSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'users'
+
+    def get_projects_in_common(self, obj):
+        user = get_user_auth(self.context['request']).user
+        if obj == user:
+            return len(user.contributed)
+        return len(obj.get_projects_in_common(user, primary_keys=True))
 
     def absolute_url(self, obj):
         if obj is not None:
