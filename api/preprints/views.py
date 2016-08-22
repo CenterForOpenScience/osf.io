@@ -368,7 +368,7 @@ class PreprintToPreprintProviderRelationship(JSONAPIBaseView, generics.RetrieveU
 
         for val in data:
             if val['id'] in current_providers:
-                node.remove_preprint_provider(provider=current_providers[val['id']], user=user)
+                node.remove_preprint_provider(preprint_provider=current_providers[val['id']], user=user)
         node.save()
 
     def create(self, *args, **kwargs):
