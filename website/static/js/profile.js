@@ -22,7 +22,7 @@ var socialRules = {
     researchGate: /researchgate\.net\/profile\/(\w+)/i,
     academia: /(\w+)\.academia\.edu\/(\w+)/i,
     baiduScholar: /xueshu\.baidu\.com\/scholarID\/(\w+)/i,
-    ssrnId: /papers\.ssrn\.com\/sol3\/cf\_dev\/AbsByAuth\.cfm\?per\_id=(\w+)/i,
+    ssrn: /papers\.ssrn\.com\/sol3\/cf\_dev\/AbsByAuth\.cfm\?per\_id=(\w+)/i,
     url: '^(https?:\\/\\/)?'+ // protocol
             '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // domain name
             '((\\d{1,3}\\.){3}\\d{1,3}))'+ // OR ip (v4) address
@@ -579,9 +579,9 @@ var SocialViewModel = function(urls, modes) {
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.baiduScholar)}),
         self, 'baiduScholar', 'http://xueshu.baidu.com/scholarID/'
     );
-    self.ssrnId = extendLink(
-        ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.ssrnId)}),
-        self, 'ssrnId', 'http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id='
+    self.ssrn = extendLink(
+        ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.ssrn)}),
+        self, 'ssrn', 'http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id='
     );
 
     self.trackedProperties = [
@@ -597,7 +597,7 @@ var SocialViewModel = function(urls, modes) {
         self.academiaInstitution,
         self.academiaProfileID,
         self.baiduScholar,
-        self.ssrnId,
+        self.ssrn,
     ];
 
     var validated = ko.validatedObservable(self);
@@ -618,7 +618,7 @@ var SocialViewModel = function(urls, modes) {
             {label: 'ResearchGate', text: self.researchGate(), value: self.researchGate.url()},
             {label: 'Academia', text: self.academiaInstitution() + '.academia.edu/' + self.academiaProfileID(), value: self.academiaInstitution.url() + self.academiaProfileID.url()},
             {label: 'Baidu Scholar', text: self.baiduScholar(), value: self.baiduScholar.url()},
-            {label: 'SSRN', text: self.ssrnId(), value: self.ssrnId.url()},
+            {label: 'SSRN', text: self.ssrn(), value: self.ssrn.url()},
         ];
     });
 

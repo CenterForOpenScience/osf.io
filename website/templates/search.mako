@@ -220,8 +220,8 @@
                             <img class="social-icons" src="/static/img/baiduscholar.png"data-toggle="tooltip" style="PADDING-BOTTOM: 5px" title="Baidu Scholar">
                         </a>
                     </li>
-                    <li data-bind="visible: social.ssrnId">
-                        <a data-bind="attr: {href: social.ssrnId}">
+                    <li data-bind="visible: social.ssrn">
+                        <a data-bind="attr: {href: social.ssrn}">
                             <img class="social-icons" src="/static/img/SSRN.jpg"data-toggle="tooltip" style="PADDING-BOTTOM: 5px" title="SSRN">
                         </a>
                     </li>

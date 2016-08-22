@@ -126,7 +126,7 @@
                 <label>SSRN</label>
                 <div class="input-group">
                 <span class="input-group-addon">http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id=</span>
-                <input class="form-control" data-bind="value: ssrnId" placeholder="profileID"/>
+                <input class="form-control" data-bind="value: ssrn" placeholder="profileID"/>
                 </div>
             </div>
 
