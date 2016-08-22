@@ -620,9 +620,15 @@ var MyProjects = {
                         template = m('.db-non-load-template.m-md.p-md.osf-box',
                             'You have not created any projects yet.');
                     } else if (lastcrumb.data.nodeType === 'registrations'){
-                        template = m('.db-non-load-template.m-md.p-md.osf-box',
+                        if (self.institutionId) {
+                            template = m('.db-non-load-template.m-md.p-md.osf-box',
+                            'There have been no completed registrations affiliated with this institution. For a list of the most viewed and most recent public registrations on the Open Science Framework, click ',
+                            m('a', {href: 'http://help.osf.io/m/registrations'}, 'here'), '.' );
+                        } else {
+                            template = m('.db-non-load-template.m-md.p-md.osf-box',
                             'You have not made any registrations yet. Go to ',
                             m('a', {href: 'http://help.osf.io/m/registrations'}, 'Getting Started'), ' to learn how registrations work.' );
+                        }
                     } else if (lodashGet(lastcrumb, 'data.node.attributes.bookmarks')) {
                         template = m('.db-non-load-template.m-md.p-md.osf-box', 'You have no bookmarks. You can add projects or registrations by dragging them into your bookmarks or by clicking the Add to Bookmark button on the project or registration.');
                     } else {
