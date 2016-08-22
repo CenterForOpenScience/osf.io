@@ -14,7 +14,7 @@ from website.project.signals import contributor_added
 from website.exceptions import NodeStateError
 from website.util import permissions
 
-from osf_models.models import Node, Tag, NodeLog, Contributor, Embargo, Sanction
+from osf_models.models import Node, Tag, NodeLog, Contributor, Sanction
 from osf_models.exceptions import ValidationError
 from osf_models.utils.auth import Auth
 

@@ -38,6 +38,12 @@ def disconnected_signals():
         for receiver in DISCONNECTED_SIGNALS[signal]:
             signal.disconnect(receiver)
 
+@pytest.fixture(autouse=True)
+def patched_settings():
+    """Patch settings for tests"""
+    settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
+    settings.BCRYPT_LOG_ROUNDS = 1
+
 @pytest.fixture()
 def fake():
     return Factory.create()
