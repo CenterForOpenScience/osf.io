@@ -237,9 +237,10 @@ class PreprintFactory(AbstractNodeFactory):
     category = 'project'
     doi = Sequence(lambda n: '10.123/{}'.format(n))
     providers = [SubFactory(PreprintProviderFactory)]
+    external_url = 'http://hello.org'
 
     @classmethod
-    def _create(cls, target_class, project=None, is_public=True, filename='preprint_file.txt', providers=None, doi=None, *args, **kwargs):
+    def _create(cls, target_class, project=None, is_public=True, filename='preprint_file.txt', providers=None, doi=None, external_url=None, *args, **kwargs):
         save_kwargs(**kwargs)
         user = None
         if project:
@@ -270,6 +271,7 @@ class PreprintFactory(AbstractNodeFactory):
         project.preprint_subjects = [SubjectFactory()._id]
         project.preprint_providers = providers
         project.preprint_doi = doi
+        project.external_url = external_url
         project.save()
 
         return project
