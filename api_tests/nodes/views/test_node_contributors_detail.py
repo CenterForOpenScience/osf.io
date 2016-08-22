@@ -111,6 +111,237 @@ class TestContributorDetail(NodeCRUDTestCase):
         assert_equal(res.json['data']['attributes'].get('unregistered_contributor'), 'Bob Jackson')
 
 
+class TestNodeContributorOrdering(ApiTestCase):
+    def setUp(self):
+        super(TestNodeContributorOrdering, self).setUp()
+        self.contributors = [AuthUserFactory() for number in range(1, 10)]
+        self.user_one = AuthUserFactory()
+
+        self.project = ProjectFactory(creator=self.user_one)
+        for contributor in self.contributors:
+            self.project.add_contributor(
+                contributor,
+                permissions=[permissions.READ, permissions.WRITE],
+                visible=True,
+                save=True
+            )
+
+        self.contributors.insert(0, self.user_one)
+        self.base_contributor_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.project._id)
+        self.url_creator = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user_one._id)
+        self.contributor_urls = ['/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, contributor._id)
+            for contributor in self.contributors]
+        self.last_position = len(self.contributors) - 1
+
+    @staticmethod
+    def _get_contributor_user_id(contributor):
+        return contributor['embeds']['users']['data']['id']
+
+    def test_initial_order(self):
+        res = self.app.get('/{}nodes/{}/contributors/'.format(API_BASE, self.project._id), auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        contributor_list = res.json['data']
+        found_contributors = False
+        for i in range(0, len(self.contributors)):
+            assert_equal(self.contributors[i]._id, self._get_contributor_user_id(contributor_list[i]))
+            assert_equal(i, contributor_list[i]['attributes']['index'])
+            found_contributors = True
+        assert_true(found_contributors, "Did not compare any contributors.")
+
+    @assert_logs(NodeLog.CONTRIB_REORDERED, 'project')
+    def test_move_top_contributor_down_one_and_also_log(self):
+        contributor_to_move = self.contributors[0]._id
+        contributor_id = '{}-{}'.format(self.project._id, contributor_to_move)
+        former_second_contributor = self.contributors[1]
+        url = '{}{}/'.format(self.base_contributor_url, contributor_to_move)
+        data = {
+            'data': {
+                'id': contributor_id,
+                'type': 'contributors',
+                'attributes': {
+                    'index': 1
+                }
+            }
+        }
+        res_patch = self.app.patch_json_api(url, data, auth=self.user_one.auth)
+        assert_equal(res_patch.status_code, 200)
+        self.project.reload()
+        res = self.app.get('/{}nodes/{}/contributors/'.format(API_BASE, self.project._id), auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        contributor_list = res.json['data']
+        assert_equal(self._get_contributor_user_id(contributor_list[1]), contributor_to_move)
+        assert_equal(self._get_contributor_user_id(contributor_list[0]), former_second_contributor._id)
+
+    def test_move_second_contributor_up_one_to_top(self):
+        contributor_to_move = self.contributors[1]._id
+        contributor_id = '{}-{}'.format(self.project._id, contributor_to_move)
+        former_first_contributor = self.contributors[0]
+        url = '{}{}/'.format(self.base_contributor_url, contributor_to_move)
+        data = {
+            'data': {
+                'id': contributor_id,
+                'type': 'contributors',
+                'attributes': {
+                    'index': 0
+                }
+            }
+        }
+        res_patch = self.app.patch_json_api(url, data, auth=self.user_one.auth)
+        assert_equal(res_patch.status_code, 200)
+        self.project.reload()
+        res = self.app.get('/{}nodes/{}/contributors/'.format(API_BASE, self.project._id), auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        contributor_list = res.json['data']
+        assert_equal(self._get_contributor_user_id(contributor_list[0]), contributor_to_move)
+        assert_equal(self._get_contributor_user_id(contributor_list[1]), former_first_contributor._id)
+
+    def test_move_top_contributor_down_to_bottom(self):
+        contributor_to_move = self.contributors[0]._id
+        contributor_id = '{}-{}'.format(self.project._id, contributor_to_move)
+        former_second_contributor = self.contributors[1]
+        url = '{}{}/'.format(self.base_contributor_url, contributor_to_move)
+        data = {
+            'data': {
+                'id': contributor_id,
+                'type': 'contributors',
+                'attributes': {
+                    'index': self.last_position
+                }
+            }
+        }
+        res_patch = self.app.patch_json_api(url, data, auth=self.user_one.auth)
+        assert_equal(res_patch.status_code, 200)
+        self.project.reload()
+        res = self.app.get('/{}nodes/{}/contributors/'.format(API_BASE, self.project._id), auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        contributor_list = res.json['data']
+        assert_equal(self._get_contributor_user_id(contributor_list[self.last_position]), contributor_to_move)
+        assert_equal(self._get_contributor_user_id(contributor_list[0]), former_second_contributor._id)
+
+    def test_move_bottom_contributor_up_to_top(self):
+        contributor_to_move = self.contributors[self.last_position]._id
+        contributor_id = '{}-{}'.format(self.project._id, contributor_to_move)
+        former_second_to_last_contributor = self.contributors[self.last_position - 1]
+
+        url = '{}{}/'.format(self.base_contributor_url, contributor_to_move)
+        data = {
+            'data': {
+                'id': contributor_id,
+                'type': 'contributors',
+                'attributes': {
+                    'index': 0
+                }
+            }
+        }
+        res_patch = self.app.patch_json_api(url, data, auth=self.user_one.auth)
+        assert_equal(res_patch.status_code, 200)
+        self.project.reload()
+        res = self.app.get('/{}nodes/{}/contributors/'.format(API_BASE, self.project._id), auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        contributor_list = res.json['data']
+        assert_equal(self._get_contributor_user_id(contributor_list[0]), contributor_to_move)
+        assert_equal(
+            self._get_contributor_user_id(contributor_list[self.last_position]),
+            former_second_to_last_contributor._id
+        )
+
+    def test_move_second_to_last_contributor_down_past_bottom(self):
+        contributor_to_move = self.contributors[self.last_position - 1]._id
+        contributor_id = '{}-{}'.format(self.project._id, contributor_to_move)
+        former_last_contributor = self.contributors[self.last_position]
+
+        url = '{}{}/'.format(self.base_contributor_url, contributor_to_move)
+        data = {
+            'data': {
+                'id': contributor_id,
+                'type': 'contributors',
+                'attributes': {
+                    'index': self.last_position + 10
+                }
+            }
+        }
+        res_patch = self.app.patch_json_api(url, data, auth=self.user_one.auth)
+        assert_equal(res_patch.status_code, 200)
+        self.project.reload()
+        res = self.app.get('/{}nodes/{}/contributors/'.format(API_BASE, self.project._id), auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        contributor_list = res.json['data']
+        assert_equal(self._get_contributor_user_id(contributor_list[self.last_position]), contributor_to_move)
+        assert_equal(
+            self._get_contributor_user_id(contributor_list[self.last_position - 1]),
+            former_last_contributor._id
+        )
+
+    def test_move_top_contributor_down_to_second_to_last_position_with_negative_numbers(self):
+        contributor_to_move = self.contributors[0]._id
+        contributor_id = '{}-{}'.format(self.project._id, contributor_to_move)
+        former_second_contributor = self.contributors[1]
+        url = '{}{}/'.format(self.base_contributor_url, contributor_to_move)
+        data = {
+            'data': {
+                'id': contributor_id,
+                'type': 'contributors',
+                'attributes': {
+                    'index': -1
+                }
+            }
+        }
+        res_patch = self.app.patch_json_api(url, data, auth=self.user_one.auth)
+        assert_equal(res_patch.status_code, 200)
+        self.project.reload()
+        res = self.app.get('/{}nodes/{}/contributors/'.format(API_BASE, self.project._id), auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        contributor_list = res.json['data']
+        assert_equal(self._get_contributor_user_id(contributor_list[self.last_position - 1]), contributor_to_move)
+        assert_equal(self._get_contributor_user_id(contributor_list[0]), former_second_contributor._id)
+
+    def test_write_contributor_fails_to_move_top_contributor_down_one(self):
+        contributor_to_move = self.contributors[0]._id
+        contributor_id = '{}-{}'.format(self.project._id, contributor_to_move)
+        former_second_contributor = self.contributors[1]
+        url = '{}{}/'.format(self.base_contributor_url, contributor_to_move)
+        data = {
+            'data': {
+                'id': contributor_id,
+                'type': 'contributors',
+                'attributes': {
+                    'index': 1
+                }
+            }
+        }
+        res_patch = self.app.patch_json_api(url, data, auth=former_second_contributor.auth, expect_errors=True)
+        assert_equal(res_patch.status_code, 403)
+        self.project.reload()
+        res = self.app.get('/{}nodes/{}/contributors/'.format(API_BASE, self.project._id), auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        contributor_list = res.json['data']
+        assert_equal(self._get_contributor_user_id(contributor_list[0]), contributor_to_move)
+        assert_equal(self._get_contributor_user_id(contributor_list[1]), former_second_contributor._id)
+
+    def test_non_authenticated_fails_to_move_top_contributor_down_one(self):
+        contributor_to_move = self.contributors[0]._id
+        contributor_id = '{}-{}'.format(self.project._id, contributor_to_move)
+        former_second_contributor = self.contributors[1]
+        url = '{}{}/'.format(self.base_contributor_url, contributor_to_move)
+        data = {
+            'data': {
+                'id': contributor_id,
+                'type': 'contributors',
+                'attributes': {
+                    'index': 1
+                }
+            }
+        }
+        res_patch = self.app.patch_json_api(url, data, expect_errors=True)
+        assert_equal(res_patch.status_code, 401)
+        self.project.reload()
+        res = self.app.get('/{}nodes/{}/contributors/'.format(API_BASE, self.project._id), auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        contributor_list = res.json['data']
+        assert_equal(self._get_contributor_user_id(contributor_list[0]), contributor_to_move)
+        assert_equal(self._get_contributor_user_id(contributor_list[1]), former_second_contributor._id)
+
+
 class TestNodeContributorUpdate(ApiTestCase):
     def setUp(self):
         super(TestNodeContributorUpdate, self).setUp()
