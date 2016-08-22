@@ -4271,6 +4271,7 @@ class PreprintProvider(StoredObject):
     logo_name = fields.StringField()
     description = fields.StringField()
     banner_name = fields.StringField()
+    external_url = fields.StringField()
 
     def get_absolute_url(self):
         return '{}preprint_providers/{}'.format(self.absolute_api_v2_url, self._id)
