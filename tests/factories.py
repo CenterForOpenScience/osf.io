@@ -41,7 +41,7 @@ from website.oauth.models import (
 from website.project.model import (
     Comment, DraftRegistration, MetaSchema, Node, NodeLog, Pointer,
     PrivateLink, Tag, WatchConfig, AlternativeCitation,
-    ensure_schemas, Institution
+    ensure_schemas, Institution, PreprintProvider
 )
 from website.project.sanctions import (
     Embargo,
@@ -56,7 +56,7 @@ from website.identifiers.model import Identifier
 from website.archiver import ARCHIVER_SUCCESS
 from website.project.licenses import NodeLicense, NodeLicenseRecord, ensure_licenses
 from website.util import permissions
-from website.files.models.osfstorage import OsfStorageFile
+from website.files.models.osfstorage import OsfStorageFile, FileVersion
 
 
 ensure_licenses = functools.partial(ensure_licenses, warn=False)
@@ -215,13 +215,32 @@ class NodeFactory(AbstractNodeFactory):
     parent = SubFactory(ProjectFactory)
 
 
+class PreprintProviderFactory(ModularOdmFactory):
+    name = 'OSFArxiv'
+    description = 'Preprint service for the OSF'
+
+    class Meta:
+        model = PreprintProvider
+
+    @classmethod
+    def _create(cls, target_class, name=None, description=None, *args, **kwargs):
+        provider = target_class(*args, **kwargs)
+        provider.name = name
+        provider.description = description
+        provider.save()
+
+        return provider
+
+
 class PreprintFactory(AbstractNodeFactory):
     creator = None
     category = 'project'
     doi = Sequence(lambda n: '10.123/{}'.format(n))
+    providers = [SubFactory(PreprintProviderFactory)]
+    external_url = 'http://hello.org'
 
     @classmethod
-    def _create(cls, target_class, project=None, is_public=True, filename='preprint_file.txt', provider='osf', doi=None, *args, **kwargs):
+    def _create(cls, target_class, project=None, is_public=True, filename='preprint_file.txt', providers=None, doi=None, external_url=None, *args, **kwargs):
         save_kwargs(**kwargs)
         user = None
         if project:
@@ -250,8 +269,9 @@ class PreprintFactory(AbstractNodeFactory):
 
         project.set_preprint_file(file, auth=Auth(project.creator))
         project.preprint_subjects = [SubjectFactory()._id]
-        project.preprint_provider = provider
+        project.preprint_providers = providers
         project.preprint_doi = doi
+        project.external_url = external_url
         project.save()
 
         return project

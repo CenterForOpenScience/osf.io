@@ -886,8 +886,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     # Preprint fields
     preprint_file = fields.ForeignField('StoredFileNode')
     preprint_created = fields.DateTimeField()
-    preprint_provider = fields.StringField()
     preprint_subjects = fields.ForeignField('Subject', list=True)
+    preprint_providers = fields.ForeignField('PreprintProvider', list=True)
     preprint_doi = fields.StringField(validate=validate_doi)
     _is_preprint_orphan = fields.BooleanField(default=False)
 
@@ -1586,6 +1586,27 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             )
         if save:
             self.save()
+
+    def add_preprint_provider(self, preprint_provider, user, save=False):
+        if not self.has_permission(user, ADMIN):
+            raise PermissionsError('Only admins can update a preprint provider.')
+        if not preprint_provider:
+            raise ValueError('Must specify a provider to set as the preprint_provider')
+        self.preprint_providers.append(preprint_provider)
+        if save:
+            self.save()
+
+    def remove_preprint_provider(self, preprint_provider, user, save=False):
+        if not self.has_permission(user, ADMIN):
+            raise PermissionsError('Only admins can remove a preprint provider.')
+        if not preprint_provider:
+            raise ValueError('Must specify a provider to remove from this preprint.')
+        if preprint_provider in self.preprint_providers:
+            self.preprint_providers.remove(preprint_provider)
+            if save:
+                self.save()
+            return True
+        return False
 
     def generate_keenio_read_key(self):
         return scoped_keys.encrypt(settings.KEEN['public']['master_key'], options={
@@ -4291,3 +4312,34 @@ class DraftRegistration(StoredObject):
         Validates draft's metadata
         """
         return self.registration_schema.validate_metadata(*args, **kwargs)
+
+
+class PreprintProvider(StoredObject):
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    name = fields.StringField(required=True)
+    logo_name = fields.StringField()
+    description = fields.StringField()
+    banner_name = fields.StringField()
+    external_url = fields.StringField()
+
+    def get_absolute_url(self):
+        return '{}preprint_providers/{}'.format(self.absolute_api_v2_url, self._id)
+
+    @property
+    def absolute_api_v2_url(self):
+        path = '/preprint_providers/{}/'.format(self._id)
+        return api_v2_url(path)
+
+    @property
+    def logo_path(self):
+        if self.logo_name:
+            return '/static/img/preprint_providers/{}'.format(self.logo_name)
+        else:
+            return None
+
+    @property
+    def banner_path(self):
+        if self.logo_name:
+            return '/static/img/preprint_providers/{}'.format(self.logo_name)
+        else:
+            return None

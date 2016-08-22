@@ -12,7 +12,7 @@ from website.project.model import (
     Comment, PrivateLink, MetaData,
     AlternativeCitation,
     DraftRegistration,
-    DraftRegistrationLog,
+    DraftRegistrationLog, PreprintProvider
 )
 from website.project.sanctions import (
     DraftRegistrationApproval,
@@ -51,7 +51,7 @@ MODELS = (
     QueuedMail, AlternativeCitation,
     DraftRegistration, DraftRegistrationApproval, DraftRegistrationLog,
     NodeLicense, NodeLicenseRecord,
-    Subject
+    Subject, PreprintProvider
 )
 
 GUID_MODELS = (User, Node, Comment, MetaData)
