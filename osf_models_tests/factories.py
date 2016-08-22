@@ -314,6 +314,6 @@ class EmbargoTerminationApprovalFactory(DjangoModelFactory):
                 registration = embargo._get_registration()
             else:
                 registration = RegistrationFactory(creator=user, user=user, embargo=embargo)
-        with mock.patch('website.project.sanctions.TokenApprovableSanction.ask', mock.Mock()):
+        with mock.patch('osf_models.models.sanctions.TokenApprovableSanction.ask', mock.Mock()):
             approval = registration.request_embargo_termination(Auth(user))
             return approval

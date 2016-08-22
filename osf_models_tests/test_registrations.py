@@ -373,7 +373,8 @@ class TestNodeSanctionStates:
         assert retraction.is_pending_approval is True
         assert registration.is_pending_retraction is True
 
-    def test_is_pending_retraction_searches_parents(self):
+    @mock.patch('osf_models.models.node.AbstractNode.update_search')
+    def test_is_pending_retraction_searches_parents(self, mock_update_search):
         user = factories.UserFactory()
         node = factories.ProjectFactory(creator=user)
         child = factories.NodeFactory(creator=user, parent=node)
