@@ -28,9 +28,11 @@ from api.base.exceptions import (
     InvalidFilterMatchType,
 )
 
+from api.base.serializers import RelationshipField
+
 class FakeSerializer(ser.Serializer):
 
-    filterable_fields = ('id', 'string_field', 'second_string_field','list_field', 'date_field', 'int_field', 'bool_field')
+    filterable_fields = ('id', 'string_field', 'second_string_field','list_field', 'date_field', 'int_field', 'bool_field', 'relationship_field')
 
     id = ser.CharField()
     string_field = ser.CharField()
@@ -41,6 +43,7 @@ class FakeSerializer(ser.Serializer):
     int_field = ser.IntegerField()
     float_field = ser.FloatField()
     bool_field = ser.BooleanField(source='foobar')
+    relationship_field = RelationshipField(related_view='fake', related_view_kwargs={})
 
 class FakeRecord(object):
 
@@ -384,6 +387,13 @@ class TestFilterMixin(ApiTestCase):
             'filter[string_field, not_a_field]': 'test'
         }
         with assert_raises(InvalidFilterError):
+            self.view.parse_query_params(query_params)
+
+    def test_bad_filter_operator(self):
+        query_params = {
+            'filter[relationship_field][invalid]': 'false',
+        }
+        with assert_raises(InvalidFilterOperator):
             self.view.parse_query_params(query_params)
 
 
