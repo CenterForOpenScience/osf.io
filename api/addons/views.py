@@ -1,3 +1,4 @@
+import importlib
 
 from rest_framework.exceptions import NotFound
 from rest_framework import generics, permissions as drf_permissions
@@ -19,13 +20,21 @@ class AddonSettingsMixin(object):
 
     def get_addon_settings(self, provider=None, fail_if_absent=True):
         owner = None
+        provider = provider or self.kwargs['provider']
+
         if hasattr(self, 'get_user'):
             owner = self.get_user()
+            owner_type = 'user'
         elif hasattr(self, 'get_node'):
             owner = self.get_node()
+            owner_type = 'node'
 
-        provider = provider or self.kwargs['provider']
-        if not owner or provider not in ADDONS_OAUTH:
+        try:
+            addon_module = importlib.import_module('website.addons.{}'.format(provider))
+        except ImportError:
+            raise NotFound('Requested addon unrecognized')
+
+        if not owner or provider not in ADDONS_OAUTH or owner_type not in addon_module.OWNERS:
             raise NotFound('Requested addon unavailable')
 
         addon_settings = owner.get_addon(provider)
