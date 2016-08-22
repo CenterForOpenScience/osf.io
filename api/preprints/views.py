@@ -271,7 +271,7 @@ class PreprintPreprintProvidersList(JSONAPIBaseView, generics.ListAPIView, ODMFi
 
     def get_queryset(self):
         node = self.get_node()
-        return node.preprint_providers or []
+        return node.preprint_providers
 
 
 class PreprintToPreprintProviderRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, PreprintMixin):
@@ -338,8 +338,8 @@ class PreprintToPreprintProviderRelationship(JSONAPIBaseView, generics.RetrieveU
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
-    required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
-    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+    required_read_scopes = [CoreScopes.NODE_PREPRINTS_READ]
+    required_write_scopes = [CoreScopes.NODE_PREPRINTS_WRITE]
 
     serializer_class = PreprintPreprintProvidersRelationshipSerializer
     parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
