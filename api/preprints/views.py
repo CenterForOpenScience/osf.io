@@ -87,7 +87,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
 
     + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
 
-    Preprints may be filtered by their `id`, `title`, `public`, `tags`, `date_created`, `date_modified`, `provider`, and `subjects`
+    Preprints may be filtered by their `id`, `title`, `public`, `tags`, `date_created`, `date_modified`, and `subjects`
     Most are string fields and will be filtered using simple substring matching.
 
     ###Creating New Preprints

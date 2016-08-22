@@ -9,7 +9,8 @@ from tests.factories import (
     ProjectFactory,
     PreprintFactory,
     AuthUserFactory,
-    SubjectFactory
+    SubjectFactory,
+    PreprintProviderFactory
 )
 
 from api_tests import utils as test_utils
@@ -70,19 +71,20 @@ class TestPreprintFiltering(ApiTestCase):
     def setUp(self):
         super(TestPreprintFiltering, self).setUp()
         self.user = AuthUserFactory()
-        self.preprint = PreprintFactory(creator=self.user, provider='wwe')
-        self.url = "/{}registrations/".format(API_BASE)
+        self.provider = PreprintProviderFactory(name='wwe')
+        self.preprint = PreprintFactory(creator=self.user, providers=[self.provider])
 
         self.preprint.add_tag('nature boy', Auth(self.user), save=False)
         self.preprint.add_tag('ric flair', Auth(self.user), save=False)
         self.preprint.save()
 
-        self.preprint_two = PreprintFactory(creator=self.user, filename='woo.txt', provider='wcw')
+        self.provider_two = PreprintProviderFactory(name='wcw')
+        self.preprint_two = PreprintFactory(creator=self.user, filename='woo.txt', providers=[self.provider_two])
         self.preprint_two.add_tag('nature boy', Auth(self.user), save=False)
         self.preprint_two.add_tag('woo', Auth(self.user), save=False)
         self.preprint_two.save()
 
-        self.preprint_three = PreprintFactory(creator=self.user, filename='stonecold.txt', provider='wwe')
+        self.preprint_three = PreprintFactory(creator=self.user, filename='stonecold.txt', providers=[self.provider])
         self.preprint_three.add_tag('stone', Auth(self.user), save=False)
         self.preprint_two.add_tag('cold', Auth(self.user), save=False)
         self.preprint_three.save()
@@ -114,15 +116,6 @@ class TestPreprintFiltering(ApiTestCase):
         assert_in(self.preprint._id, ids)
         assert_not_in(self.preprint_two._id, ids)
         assert_not_in(self.preprint_three._id, ids)
-
-    def test_filter_by_provider(self):
-        url = '/{}preprints/?filter[provider]={}'.format(API_BASE, 'wwe')
-        res = self.app.get(url, auth=self.user.auth)
-        data = res.json['data']
-
-        for result in data:
-            assert_in('wwe', result['attributes']['provider'])
-            assert_not_in('wcw', result['attributes']['provider'])
 
     def test_filter_by_doi(self):
         url = '/{}preprints/?filter[doi]={}'.format(API_BASE, self.preprint.preprint_doi)
