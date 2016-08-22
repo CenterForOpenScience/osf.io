@@ -187,7 +187,7 @@ class TestEmailApprovableSanction(SanctionsTestCase):
         self.sanction._notify_authorizer(self.user, reg)
         mock_get_email_template_context.assert_called_once_with(
             self.user,
-            reg, 
+            reg,
             is_authorizer=True
         )
         mock_send_approval_email.assert_called_once_with(self.user, 'authorizer', 'context')
