@@ -496,7 +496,7 @@ def send_confirm_email(user, email, external_identity=None):
         if external_identity['status'] == 'CREATE':
             mail_template = mails.EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE
         elif external_identity['status'] == 'LINK':
-            pass
+            mail_template = mails.EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK
     elif merge_target:  # merge account
         mail_template = mails.CONFIRM_MERGE
         confirmation_url = '{}?logout=1'.format(confirmation_url)
@@ -695,7 +695,7 @@ def external_login_email_post():
             # 2. send confirmation email
             # 3. notify user
             # 4. remove session and osf cookie
-            external_status = ""
+            external_status = ''
             if user.external_identity:
                 if external_id_provider in user.external_identity:
                     if user.external_identity[external_id_provider]:
@@ -710,6 +710,12 @@ def external_login_email_post():
                 kind = 'warn'
             else:
                 # TODO: link user's OSF account with ORCID
+                external_identity[external_id_provider]['status'] = 'LINK'
+                user.external_identity.update(external_identity)
+                user.save()
+                unverified_external_identity = user.external_identity[external_id_provider]
+                # TODO: do we need a signal here
+                send_confirm_email(user, user.username, external_identity=unverified_external_identity)
                 message = language.EXTERNAL_LOGIN_EMAIL_LINK_SUCCESS.format(
                     external_id_provider=external_id_provider,
                     email=user.username
