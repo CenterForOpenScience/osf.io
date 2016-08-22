@@ -61,7 +61,7 @@ def main():
             'description': 'A free preprint service for the psychological sciences.',
             'banner_name': 'psyarxiv-banner.png',
             'logo_name': 'psyarxiv-logo.png',
-            'external_url': 'http://psyarxiv.org'se
+            'external_url': 'http://psyarxiv.org'
         },
     ]
 
