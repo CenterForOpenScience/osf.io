@@ -312,7 +312,7 @@ EZID_FORMAT = '{namespace}osf.io/{guid}'
 
 SHARE_REGISTRATION_URL = ''
 # TODO: update for production
-SHARE_URL = 'https://staging-share.osf.io/'
+SHARE_URL = 'https://share.osf.io/'
 
 CAS_SERVER_URL = 'http://localhost:8080'
 MFR_SERVER_URL = 'http://localhost:7778'
