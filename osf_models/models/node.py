@@ -462,9 +462,8 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin, Taggable, Logga
             if save:
                 self.save()
 
-            # TODO: Uncomment when NotificationSubscription is implemented
-            # if self._id:
-            #     project_signals.contributor_added.send(self, contributor=contributor, auth=auth)
+            if self._id:
+                project_signals.contributor_added.send(self, contributor=contributor, auth=auth)
 
             return True
 
@@ -879,11 +878,10 @@ def add_project_created_log(sender, instance, created, **kwargs):
             save=True,
         )
 
-# TODO: Uncomment when NotificationSubscription is implemented
-# @receiver(post_save, sender=Node)
-# def send_osf_signal(sender, instance, created, **kwargs):
-#     if created:
-#         project_signals.project_created.send(instance)
+@receiver(post_save, sender=Node)
+def send_osf_signal(sender, instance, created, **kwargs):
+    if created:
+        project_signals.project_created.send(instance)
 
 # TODO: Add addons
 

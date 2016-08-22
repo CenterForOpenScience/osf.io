@@ -58,9 +58,6 @@ class NotificationSubscription(BaseIDMixin, BaseModel):
 
         return django_obj
 
-    class Meta:
-        abstract = True
-
     @property
     def owner(self):
         # ~100k have owner==user
@@ -79,12 +76,12 @@ class NotificationSubscription(BaseIDMixin, BaseModel):
 
     def add_user_to_subscription(self, user, notification_type, save=True):
         for nt in NOTIFICATION_TYPES:
-            if user in getattr(self, nt):
+            if getattr(self, nt).filter(id=user.id).exists():
                 if nt != notification_type:
                     getattr(self, nt).remove(user)
             else:
                 if nt == notification_type:
-                    getattr(self, nt).append(user)
+                    getattr(self, nt).add(user)
 
         if notification_type != 'none' and isinstance(self.owner, Node) and self.owner.parent_node:
             user_subs = self.owner.parent_node.child_node_subscriptions

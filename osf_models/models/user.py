@@ -19,7 +19,7 @@ import itsdangerous
 # OSF imports
 import framework.mongo
 from framework import analytics
-
+from framework.auth import signals
 from framework.auth.exceptions import (
     ChangePasswordError,
     ExpiredTokenError,
@@ -676,8 +676,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         self.update_search_nodes()
 
         # Emit signal that a user has confirmed
-        # TODO: uncomment when NotificationSubscription is implemented
-        # signals.user_confirmed.send(self)
+        signals.user_confirmed.send(self)
 
         return self
 
