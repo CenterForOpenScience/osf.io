@@ -9,7 +9,7 @@ from rest_framework.compat import coreapi, uritemplate, urlparse
 from rest_framework import generics
 from rest_framework import status
 from rest_framework import permissions as drf_permissions
-from rest_framework import response, schemas
+from rest_framework import schemas
 from rest_framework_swagger.renderers import OpenAPIRenderer, SwaggerUIRenderer
 
 from framework.auth.oauth_scopes import CoreScopes
@@ -66,10 +66,10 @@ class SchemaGenerator(schemas.SchemaGenerator):
             description=description
         )
         return link
-    
+
     def get_path_fields(self, path, method, callback, view):
         """
-        Return a list of `coreapi.Field` instances corresponding to any 
+        Return a list of `coreapi.Field` instances corresponding to any
         templated path variables.
         """
         fields = []
@@ -81,7 +81,7 @@ class SchemaGenerator(schemas.SchemaGenerator):
 
 @api_view()
 @renderer_classes([OpenAPIRenderer, SwaggerUIRenderer])
-def schema_view(request):    
+def schema_view(request):
     generator = SchemaGenerator(title='OSF API')
     res = Response(generator.get_schema(request=request))
     return res

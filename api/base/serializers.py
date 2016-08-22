@@ -512,7 +512,6 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     try:
                         url = self.reverse(view, kwargs=kwargs, request=request, format=format)
                     except:
-                        import ipdb; ipdb.set_trace()
                         url = self.reverse(view, kwargs=kwargs, request=request, format=format)
                     if self.filter:
                         formatted_filter = self.format_filter(obj)
