@@ -2,6 +2,54 @@
 Changelog
 *********
 
+0.88.0 (2016-08-22)
+===================
+
+- Dropzone now correctly identifying and rejecting folders
+- Admin for Prereg should no longer accept two clicks for one registration
+- Add ability for cookie auth API contributors to create users
+- Allow read+write Contributors to affiliate projects with institutions
+- API endpoints for managing External Links
+- API endpoints for managing View Only Links
+- API methods for re-ordering contributors
+- API multi-field filtering
+- API contributors serializer has relationship to node
+
+0.87.8 (2016-08-17)
+===================
+
+- Fix case-sensitive url on preprints page
+
+0.87.7 (2016-08-17)
+===================
+
+- Add PsyArχiv to the preprints page
+
+0.87.6 (2016-08-17)
+===================
+
+- Fix paginated() to fix migrations (esp migrate_search())
+
+0.87.5 (2016-08-16)
+===================
+
+- Modify wording on ERPC langing page
+
+0.87.4 (2016-08-15)
+===================
+
+- Fix generation of prereg file guids
+
+0.87.3 (2106-08-15)
+===================
+
+- Pin Dropzone to a commit
+
+0.87.2 (2106-08-14)
+===================
+
+- Fix buttons not showing on file detail page in some circumstances
+
 0.87.1 (2016-08-11)
 ===================
 
