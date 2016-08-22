@@ -237,6 +237,33 @@ class Registration(AbstractNode):
         self.save()
         return approval
 
+    def terminate_embargo(self, auth):
+        """Handles the actual early termination of an Embargoed registration.
+        Adds a log to the registered_from Node.
+        """
+        if not self.is_embargoed:
+            raise NodeStateError('This node is not under active embargo')
+
+        self.registered_from.add_log(
+            action=NodeLog.EMBARGO_TERMINATED,
+            params={
+                'project': self._id,
+                'node': self.registered_from._id,
+                'registration': self._id,
+            },
+            auth=None,
+            save=True
+        )
+        self.embargo.mark_as_completed()
+        for node in self.node_and_primary_descendants():
+            node.set_privacy(
+                self.PUBLIC,
+                auth=None,
+                log=False,
+                save=True
+            )
+        return True
+
     def _initiate_retraction(self, user, justification=None):
         """Initiates the retraction process for a registration
         :param user: User who initiated the retraction
