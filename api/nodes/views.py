@@ -5,6 +5,7 @@ from rest_framework.status import HTTP_204_NO_CONTENT
 from rest_framework.response import Response
 
 from framework.auth.oauth_scopes import CoreScopes
+from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 
 from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
@@ -19,6 +20,7 @@ from api.base.exceptions import RelationshipPostMakesNoChanges, EndpointNotImple
 from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
 from api.base.settings import ADDONS_OAUTH, API_BASE
+from api.caching.tasks import ban_url
 from api.addons.views import AddonSettingsMixin
 from api.files.serializers import FileSerializer
 from api.comments.serializers import NodeCommentSerializer, CommentCreateSerializer
@@ -664,15 +666,6 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
                     raise ValidationError('Contributor identifier incorrectly formatted.')
             queryset[:] = [contrib for contrib in queryset if contrib._id in contrib_ids]
         return queryset
-
-    # overrides ListCreateAPIView
-    def get_parser_context(self, http_request):
-        """
-        Tells parser that we are creating a relationship
-        """
-        res = super(NodeContributorsList, self).get_parser_context(http_request)
-        res['is_relationship'] = True
-        return res
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
@@ -3146,3 +3139,4 @@ class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIV
         assert isinstance(link, PrivateLink), 'link must be a PrivateLink'
         link.is_deleted = True
         link.save()
+        enqueue_postcommit_task(ban_url, (self.get_node(),), {}, celery=True, once_per_request=True)

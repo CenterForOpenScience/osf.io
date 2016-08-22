@@ -80,6 +80,27 @@ class TestUsers(ApiTestCase):
         assert_not_in(self.user_one._id, ids)
         assert_not_in(self.user_two._id, ids)
 
+    def test_users_projects_in_common(self):
+        self.user_one.fullname = 'hello'
+        self.user_one.save()
+        url = "/{}users/?filter[full_name]={}".format(API_BASE, 'hello')
+        res = self.app.get(url, auth=self.user_two.auth)
+        user_json = res.json['data']
+        for user in user_json:
+            meta = user['relationships']['nodes']['links']['related']['meta']
+            assert_in('projects_in_common', meta)
+            assert_equal(meta['projects_in_common'], 0)
+
+    def test_users_no_projects_in_common_without_filter(self):
+        self.user_one.fullname = 'hello'
+        self.user_one.save()
+        url = "/{}users/".format(API_BASE)
+        res = self.app.get(url, auth=self.user_two.auth)
+        user_json = res.json['data']
+        for user in user_json:
+            meta = user['relationships']['nodes']['links']['related']['meta']
+            assert_not_in('projects_in_common', meta)
+
     def test_users_list_takes_profile_image_size_param(self):
         size = 42
         url = "/{}users/?profile_image_size={}".format(API_BASE, size)
