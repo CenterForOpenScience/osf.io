@@ -17,7 +17,7 @@ from api.base.exceptions import JSONAPIException
 from api.base.exceptions import TargetNotSupportedError
 from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.base.settings import BULK_SETTINGS
-from api.base.utils import absolute_reverse, extend_querystring_params
+from api.base.utils import absolute_reverse, extend_querystring_params, get_user_auth
 from framework.auth import core as auth_core
 from website import settings
 from website import util as website_utils
@@ -454,6 +454,12 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
                 else:
                     continue
+            elif key == 'projects_in_common':
+                if not get_user_auth(self.context['request']).user:
+                    continue
+                if not self.context['request'].query_params:
+                    continue
+                meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
             else:
                 meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
         return meta
