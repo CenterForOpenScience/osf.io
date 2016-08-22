@@ -47,7 +47,7 @@ class TestTaxonomy(ApiTestCase):
 
     def test_taxonomy_filter_top_level(self):
         top_level_subjects = Subject.find(
-            Q('parents', 'eq', None)
+            Q('parents', 'eq', [])
         )
         top_level_url = self.url + '?filter[parents]=null'
 
@@ -56,6 +56,7 @@ class TestTaxonomy(ApiTestCase):
 
         data = res.json['data']
         assert_equal(len(top_level_subjects), len(data))
+        assert len(top_level_subjects) > 0
         for subject in data:
             assert_equal(subject['attributes']['parents'], [])
 
