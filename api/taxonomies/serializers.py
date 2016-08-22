@@ -5,7 +5,8 @@ from api.base.serializers import JSONAPISerializer, LinksField, JSONAPIListField
 class TaxonomyField(ser.Field):
     def to_representation(self, obj):
         if obj is not None:
-            return obj._id
+            return {'id': obj._id,
+                    'text': obj.text}
         return None
 
     def to_internal_value(self, data):

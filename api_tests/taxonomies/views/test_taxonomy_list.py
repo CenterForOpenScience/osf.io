@@ -42,8 +42,11 @@ class TestTaxonomy(ApiTestCase):
     def test_taxonomy_parents(self):
         for index, subject in enumerate(self.subjects):
             if index >= len(self.data): break
+            parents_ids = []
+            for parent in self.data[index]['attributes']['parents']:
+                parents_ids.append(parent['id'])
             for parent in subject.parents:
-                assert parent._id in self.data[index]['attributes']['parents']
+                assert parent._id in parents_ids
 
     def test_taxonomy_filter_top_level(self):
         top_level_subjects = Subject.find(
@@ -71,5 +74,9 @@ class TestTaxonomy(ApiTestCase):
 
         data = res.json['data']
         assert_equal(len(children_subjects), len(data))
+
         for subject in data:
-            assert_in(self.subject1._id, subject['attributes']['parents'])
+            parents_ids = []
+            for parent in subject['attributes']['parents']:
+                parents_ids.append(parent['id'])
+            assert_in(self.subject1._id, parents_ids)
