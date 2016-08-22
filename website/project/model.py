@@ -3318,8 +3318,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         self.save()
         return contributor
 
-    def add_contributor_registered_or_not(self, auth, user_id=None, full_name=None, email=None,
-                                          send_email='false', permissions=None, bibliographic=True, save=False):
+    def add_contributor_registered_or_not(self, auth, user_id=None, full_name=None, email=None, send_email='false',
+                                          permissions=None, bibliographic=True, index=None, save=False):
 
         if send_email != 'false' and not throttle_period_expired(auth.user.email_last_sent, settings.API_SEND_EMAIL_THROTTLE):
             raise TooManyRequests
@@ -3348,9 +3348,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         auth.user.email_last_sent = datetime.datetime.utcnow()
         auth.user.save()
 
+        if index is not None:
+            self.move_contributor(user=contributor, index=index, auth=auth, save=True)
+
         contributor.permission = reduce_permissions(self.get_permissions(contributor))
         contributor.bibliographic = self.get_visible(contributor)
         contributor.node_id = self._id
+        contributor.index = self.contributors.index(contributor)
 
         if save:
             contributor.save()
