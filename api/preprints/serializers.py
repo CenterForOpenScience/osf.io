@@ -156,14 +156,6 @@ class PreprintSerializer(JSONAPISerializer):
             raise exceptions.ValidationError(detail=e.message)
 
 
-class PreprintDetailSerializer(PreprintSerializer):
-    id = IDField(source='_id', required=True)
-    subjects = JSONAPIListField(required=False, source='preprint_subjects')
-
-class PreprintDetailRetrieveSerializer(PreprintDetailSerializer):
-    subjects = JSONAPIListField(required=False, source='get_preprint_subjects')
-
-
 class PreprintProviderRelated(JSONAPIRelationshipSerializer):
     id = ser.CharField(source='_id', required=True, allow_null=False)
     class Meta:
