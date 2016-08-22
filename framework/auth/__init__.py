@@ -19,6 +19,7 @@ __all__ = [
     'get_user',
     'check_password',
     'authenticate',
+    'oauth_first_time_authenticate',
     'logout',
     'register_unconfirmed',
 ]
@@ -47,6 +48,19 @@ def authenticate(user, access_token, response):
     user.clean_email_verifications()
     user.update_affiliated_institutions_by_email_domain()
     user.save()
+    response = create_session(response, data=data)
+    return response
+
+
+def external_first_login_authenticate(user, response):
+    data = session.data if session._get_current_object() else {}
+    data.update({
+        'auth_user_fullname': user['fullname'],
+        'auth_user_external_id_provider': user['external_id_provider'],
+        'auth_user_external_id': user['external_id'],
+        'auth_user_external_first_login': True,
+        'auth_user_access_token': user['access_token']
+    })
     response = create_session(response, data=data)
     return response
 
