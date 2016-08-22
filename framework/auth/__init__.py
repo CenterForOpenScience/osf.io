@@ -52,13 +52,14 @@ def authenticate(user, access_token, response):
     return response
 
 
-def oauth_first_time_authenticate(oauth_user, response):
+def external_first_login_authenticate(user, response):
     data = session.data if session._get_current_object() else {}
     data.update({
-        'oauth_user_fullname': oauth_user['fullname'],
-        'oauth_user_provider': oauth_user['provider'],
-        'oauth_user_id': oauth_user['id'],
-        'oauth_user_access_token': oauth_user['access_token']
+        'auth_user_fullname': user['fullname'],
+        'auth_user_external_id_provider': user['external_id_provider'],
+        'auth_user_external_id': user['external_id'],
+        'auth_user_external_first_login': True,
+        'auth_user_access_token': user['access_token']
     })
     response = create_session(response, data=data)
     return response

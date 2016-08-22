@@ -18,5 +18,5 @@ class Session(StoredObject):
         return 'auth_user_id' in self.data
 
     @property
-    def is_oauth_first_time_login(self):
-        return 'oauth_user_id' in self.data
+    def is_external_first_login(self):
+        return 'auth_user_external_first_login' in self.data

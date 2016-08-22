@@ -9,7 +9,7 @@ from lxml import etree
 import requests
 
 from framework.auth import User
-from framework.auth import authenticate, oauth_first_time_authenticate
+from framework.auth import authenticate, external_first_login_authenticate
 from framework.auth.core import get_user
 from framework.flask import redirect
 from framework.exceptions import HTTPError
@@ -258,17 +258,17 @@ def make_response_from_ticket(ticket, service_url):
                 redirect(service_furl.url)
             )
         # first time login from remote oauth provider, user does not exist or is not linked
-        if not user and action == 'oauth_first_login':
+        if not user and action == 'external_first_login':
             from website.util import web_url_for
-            oauth_user = {
+            user = {
                 'fullname': cas_resp.attributes['name'],
-                'provider': cas_resp.attributes['oauthProvider'],
-                'id': cas_resp.attributes['oauthId'],
+                'external_id_provider': cas_resp.attributes['oauthProvider'],
+                'external_id': cas_resp.attributes['oauthId'],
                 'access_token': cas_resp.attributes['accessToken'],
             }
-            return oauth_first_time_authenticate(
-                oauth_user,
-                redirect(web_url_for('oauth_user_email_get'))
+            return external_first_login_authenticate(
+                user,
+                redirect(web_url_for('external_login_email_get'))
             )
     # Unauthorized: ticket could not be validated, or user does not exist.
     return redirect(service_furl.url)
@@ -282,20 +282,21 @@ def get_user_from_cas_resp(cas_resp):
     :return: the user and the next action
     """
 
-    # cas returns the unique user id
+    # cas returns the OSF user id
     if cas_resp.user:
         user = User.load(cas_resp.user)
         if user:
             return user, 'authenticate'
 
-    # cas returns the oauth credential
+    # cas returns the external credential
     if cas_resp.attributes['oauthProvider'] and cas_resp.attributes['oauthId']:
-        user = get_user(oauth_provider=cas_resp.attributes['oauthProvider'], oauth_id=cas_resp.attributes['oauthId'])
+        user = get_user(external_id_provider=cas_resp.attributes['oauthProvider'], external_id=cas_resp.attributes['oauthId'])
         # user found
         if user:
+            # TODO: check if external identity is verified
             return user, 'authenticate'
         # user first time login through oauth
         else:
-            return None, 'oauth_first_login'
+            return None, 'external_first_login'
 
     return None, None

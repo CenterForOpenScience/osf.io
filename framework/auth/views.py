@@ -641,7 +641,7 @@ def resend_confirmation_post(auth):
     return {'form': form}
 
 
-def oauth_user_email_get():
+def external_login_email_get():
     """
     Landing view for first-time oauth-login user to enter their email address.
     HTTP Method: GET
@@ -649,18 +649,18 @@ def oauth_user_email_get():
 
     form = ResendConfirmationForm(request.form)
     session = get_session()
-    if not session.is_oauth_first_time_login:
+    if not session.is_external_first_login:
         raise HTTPError(http.UNAUTHORIZED)
 
-    oauth_provider = session.data['oauth_user_provider']
+    external_id_provider = session.data['auth_user_external_id_provider']
 
     return {
         'form': form,
-        'oauth_provider': oauth_provider.upper()
+        'external_id_provider': external_id_provider.upper()
     }
 
 
-def oauth_user_email_post():
+def external_login_email_post():
     """
     View to handle email submission for first-time oauth-login user.
     HTTP Method: POST
@@ -668,24 +668,27 @@ def oauth_user_email_post():
 
     form = ResendConfirmationForm(request.form)
     session = get_session()
-    if not session.is_oauth_first_time_login:
+    if not session.is_external_first_login:
         raise HTTPError(http.UNAUTHORIZED)
 
-    oauth_provider = session.data['oauth_user_provider']
-    oauth_id = session.data['oauth_user_id']
-    oauth_fullname = session.data['oauth_user_fullname']
+    external_id_provider = session.data['auth_user_external_id_provider']
+    external_id = session.data['auth_user_external_id']
+    fullname = session.data['auth_user_fullname']
 
     if form.validate():
         clean_email = form.email.data
         user = get_user(email=clean_email)
-        oauth = {oauth_provider: oauth_id}
+        external_identity = {external_id_provider: external_id}
         if user:
             # TODO: link user's OSF account with ORCID
             # 1. update user oauth
             # 2. send confirmation email
             # 3. notify user
             # 4. remove session and osf cookie
-            pass
+            message = language.EXTERNAL_LOGIN_EMAIL_LINK_SUCCESS.format(
+                external_id_provider=external_id_provider,
+                email=user.username
+            )
         else:
             # TODO: create a new account for the user
             # 1. create unconfirmed user with oauth
@@ -696,15 +699,18 @@ def oauth_user_email_post():
             user = User.create_unconfirmed(
                 username=clean_email,
                 password=str(uuid.uuid4()),
-                fullname=oauth_fullname,
-                oauth=oauth,
+                fullname=fullname,
+                external_identity=external_identity,
                 campaign=None
             )
             # TODO: update social fields
             user.save()
             framework_auth.signals.user_registered.send(user)
             send_confirm_email(user, email=user.username)
-            message = language.OAUTH_LOGIN_EMAIL_CREATE_SUCCESS.format(oauth_provider=oauth_provider, email=user.username)
+            message = language.EXTERNAL_LOGIN_EMAIL_CREATE_SUCCESS.format(
+                external_id_provider=external_id_provider,
+                email=user.username
+            )
             # TODO: background logout, OSF and CAS
             remove_session(session)
         status.push_status_message(message, kind='success', trust=False)
@@ -714,4 +720,5 @@ def oauth_user_email_post():
     # Don't go anywhere
     return {
         'form': form,
+        'external_id_provider': external_id_provider.upper()
     }

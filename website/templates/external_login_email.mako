@@ -1,15 +1,15 @@
 <%inherit file="base.mako"/>
-<%def name="title()">OSF ${oauth_provider} Login</%def>
+<%def name="title()">OSF ${external_id_provider} Login</%def>
 <%def name="content()">
-<h1 class="page-header text-center">OSF ${oauth_provider} Login | Register Email</h1>
+<h1 class="page-header text-center">OSF ${external_id_provider} Login | Register Email</h1>
 
 <div class="row">
     ## Center the form
     <div class="col-md-6 col-md-offset-3">
         <p class='help'>
-            Please enter you email to finalize the login.
-            If you already have an OSF account, this will link your ORCID profile with OSF.
-            If not, this will create an new account for you with your ORCID profile.
+            Please enter your email to finalize the login.
+            If you already have an OSF account, this will link your ${external_id_provider} profile with OSF.
+            If not, this will create a new account for you with your ${external_id_provider} profile.
         </p>
 
         <form id='resendForm' method='POST' class='form' role='form'>

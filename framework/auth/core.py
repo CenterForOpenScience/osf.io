@@ -106,7 +106,7 @@ def _get_current_user():
 
 
 # TODO: This should be a class method of User?
-def get_user(email=None, password=None, verification_key=None, oauth_provider=None, oauth_id=None):
+def get_user(email=None, password=None, verification_key=None, external_id_provider=None, external_id=None):
     """
     Get an instance of User matching the provided params.
 
@@ -118,8 +118,8 @@ def get_user(email=None, password=None, verification_key=None, oauth_provider=No
     :param email: user's email
     :param password: user's password
     :param verification_key: the verification key
-    :param oauth_provider: the oauth provider
-    :param oauth_id: the oauth id
+    :param external_id_provider: the oauth provider
+    :param external_id: the oauth id
     :rtype bool
     """
 
@@ -149,8 +149,8 @@ def get_user(email=None, password=None, verification_key=None, oauth_provider=No
     if verification_key:
         query_list.append(Q('verification_key', 'eq', verification_key))
 
-    if oauth_provider and oauth_id:
-        query_list.append(Q('oauth.{}'.format(oauth_provider), 'eq', oauth_id))
+    if external_id_provider and external_id:
+        query_list.append(Q('external_identity.{}'.format(external_id_provider), 'eq', external_id))
 
     try:
         query = query_list[0]
@@ -366,12 +366,10 @@ class User(GuidStoredObject, AddonModelMixin):
     family_name = fields.StringField()
     suffix = fields.StringField()
 
-    # OAuth2 Authorization and Authentication
-    # TODO: what are proper parameters for `DictionaryField()`
-    # TODO: what else can we store for each oauth provider?
-    oauth = fields.DictionaryField()
+    # identity for user logged in through external idp
+    external_identity = fields.DictionaryField()
     # Format: {
-    #   <oauth_provider>: <oauth_id>,
+    #   <external_id_provider>: <external_id>,
     #   ...
     # }
 
@@ -506,7 +504,7 @@ class User(GuidStoredObject, AddonModelMixin):
         return user
 
     @classmethod
-    def create_unconfirmed(cls, username, password, fullname, oauth=None, do_confirm=True,
+    def create_unconfirmed(cls, username, password, fullname, external_identity=None, do_confirm=True,
                            campaign=None):
         """Create a new user who has begun registration but needs to verify
         their primary email address (username).
@@ -514,8 +512,8 @@ class User(GuidStoredObject, AddonModelMixin):
         user = cls.create(username, password, fullname)
         user.add_unconfirmed_email(username)
         user.is_registered = False
-        if oauth:
-            user.oauth.update(oauth)
+        if external_identity:
+            user.external_identity.update(external_identity)
         if campaign:
             # needed to prevent circular import
             from framework.auth.campaigns import system_tag_for_campaign  # skipci

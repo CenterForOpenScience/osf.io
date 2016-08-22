@@ -549,18 +549,18 @@ def make_url_map(app):
 
         # oauth user email get
         Rule(
-            '/oauth-login/email',
+            '/external-login/email',
             'get',
-            auth_views.oauth_user_email_get,
-            OsfWebRenderer('get_oauth_email.mako', render_mako_string, trust=False)
+            auth_views.external_login_email_get,
+            OsfWebRenderer('external_login_email.mako', render_mako_string, trust=False)
         ),
 
         # oauth user email post
         Rule(
-            '/oauth-login/email',
+            '/external-login/email',
             'post',
-            auth_views.oauth_user_email_post,
-            OsfWebRenderer('get_oauth_email.mako', render_mako_string, trust=False)
+            auth_views.external_login_email_post,
+            OsfWebRenderer('external_login_email.mako', render_mako_string, trust=False)
         ),
 
         # user sign up page
