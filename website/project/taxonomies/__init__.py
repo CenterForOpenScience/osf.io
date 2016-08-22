@@ -1,4 +1,3 @@
-import pymongo
 from modularodm import fields
 
 from framework.mongo import (
