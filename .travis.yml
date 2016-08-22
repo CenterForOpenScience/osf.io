@@ -8,6 +8,6 @@ install:
     - travis_retry pip install --upgrade pip
     - travis_retry pip install . --process-dependency-links
     - travis_retry pip install invoke==0.13.0
-    - inv setup_tests
+    - inv setup_tests -b feature/postgres-registrations
 script:
     - inv test
