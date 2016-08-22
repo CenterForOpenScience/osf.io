@@ -26,11 +26,10 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.base.settings')
 #### WARNING: Here be monkeys ###############
 import six
 import sys
+import re
 from django.contrib.admindocs import views
 from rest_framework.fields import Field
 from rest_framework.request import Request
-from rest_framework.reverse import Field
-
 
 named_group_matcher = re.compile(r'\(\?P(<\w+>).+?[^/]\)')
 non_named_group_matcher = re.compile(r'\(.*?\)')
@@ -46,7 +45,7 @@ def simplify_regex(pattern):
     pattern = named_group_matcher.sub(lambda m: m.group(1), pattern)
 
     # handle non-named groups
-    pattern = non_named_group_matcher.sub("<var>", pattern)
+    pattern = non_named_group_matcher.sub('<var>', pattern)
 
     # clean up any outstanding regex-y characters.
     pattern = pattern.replace('^', '').replace('$', '').replace('?', '').replace('//', '/').replace('\\', '')
