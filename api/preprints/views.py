@@ -6,7 +6,7 @@ from rest_framework.exceptions import NotFound
 from rest_framework.status import HTTP_204_NO_CONTENT
 from rest_framework import permissions as drf_permissions
 
-from website.models import Node, PreprintProvider
+from website.models import Node
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.base.views import JSONAPIBaseView
