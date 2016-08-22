@@ -472,7 +472,7 @@ def unconfirmed_email_add(auth=None):
     }, 200
 
 
-def send_confirm_email(user, email):
+def send_confirm_email(user, email, external_identity=None):
     """
     Sends a confirmation email to `user` to a given email.
 
@@ -492,7 +492,12 @@ def send_confirm_email(user, email):
     campaign = campaigns.campaign_for_user(user)
 
     # Choose the appropriate email template to use and add existing_user flag if a merge or adding an email.
-    if merge_target:  # merge account
+    if external_identity:  # first time login through external identity provider
+        if external_identity['status'] == 'CREATE':
+            mail_template = mails.EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE
+        elif external_identity['status'] == 'LINK':
+            pass
+    elif merge_target:  # merge account
         mail_template = mails.CONFIRM_MERGE
         confirmation_url = '{}?logout=1'.format(confirmation_url)
     elif user.is_active:  # add email
@@ -500,7 +505,7 @@ def send_confirm_email(user, email):
         confirmation_url = '{}?logout=1'.format(confirmation_url)
     elif campaign:  # campaign
         mail_template = campaigns.email_template_for_campaign(campaign)
-    else:   # account creation
+    else:  # account creation
         mail_template = mails.INITIAL_CONFIRM_EMAIL
 
     mails.send_mail(
@@ -678,24 +683,46 @@ def external_login_email_post():
     if form.validate():
         clean_email = form.email.data
         user = get_user(email=clean_email)
-        external_identity = {external_id_provider: external_id}
+        external_identity = {
+            external_id_provider: {
+                'id': external_id,
+                'status': None,
+            }
+        }
         if user:
-            # TODO: link user's OSF account with ORCID
+            # 0. check if this user is already linked with other profile
             # 1. update user oauth
             # 2. send confirmation email
             # 3. notify user
             # 4. remove session and osf cookie
-            message = language.EXTERNAL_LOGIN_EMAIL_LINK_SUCCESS.format(
-                external_id_provider=external_id_provider,
-                email=user.username
-            )
+            external_status = ""
+            if user.external_identity:
+                if external_id_provider in user.external_identity:
+                    if user.external_identity[external_id_provider]:
+                        external_status = user.external_identity[external_id_provider]['status']
+
+            # TODO: handle pending status: the current or another user also claimed this account but not confirmed
+            if external_status == 'VERIFIED':
+                message = language.EXTERNAL_LOGIN_EMAIL_LINK_FAIL.format(
+                    external_id_provider=external_id_provider,
+                    email=user.username
+                )
+                kind = 'warn'
+            else:
+                # TODO: link user's OSF account with ORCID
+                message = language.EXTERNAL_LOGIN_EMAIL_LINK_SUCCESS.format(
+                    external_id_provider=external_id_provider,
+                    email=user.username
+                )
+                kind = 'success'
+                remove_session(session)
         else:
-            # TODO: create a new account for the user
             # 1. create unconfirmed user with oauth
             # 2. update social fields if oauth provider in social
             # 3. send confirmation email
             # 4. notify user
             # 5. remove session and osf cookie
+            external_identity[external_id_provider]['status'] = 'CREATE'
             user = User.create_unconfirmed(
                 username=clean_email,
                 password=str(uuid.uuid4()),
@@ -705,15 +732,17 @@ def external_login_email_post():
             )
             # TODO: update social fields
             user.save()
+            unverified_external_identity = user.external_identity[external_id_provider]
+            # TODO: what is the use the the signal
             framework_auth.signals.user_registered.send(user)
-            send_confirm_email(user, email=user.username)
+            send_confirm_email(user, user.username, external_identity=unverified_external_identity)
             message = language.EXTERNAL_LOGIN_EMAIL_CREATE_SUCCESS.format(
                 external_id_provider=external_id_provider,
                 email=user.username
             )
-            # TODO: background logout, OSF and CAS
+            kind = 'success'
             remove_session(session)
-        status.push_status_message(message, kind='success', trust=False)
+        status.push_status_message(message, kind=kind, trust=False)
     else:
         forms.push_errors_to_status(form.errors)
 

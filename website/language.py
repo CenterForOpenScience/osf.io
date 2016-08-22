@@ -22,6 +22,8 @@ EXTERNAL_LOGIN_EMAIL_CREATE_SUCCESS = '''A new OSF account has been created with
 
 EXTERNAL_LOGIN_EMAIL_LINK_SUCCESS = '''Your OSF account has been linked with your {external_id_provider}. Please check {email} to confirm this action.'''
 
+EXTERNAL_LOGIN_EMAIL_LINK_FAIL = '''You can not link {email}. An OSF account associated with this email has already been linked with another {external_id_provider} profile'''
+
 # Shown if registration is turned off in website.settings
 REGISTRATION_UNAVAILABLE = 'Registration currently unavailable.'
 
