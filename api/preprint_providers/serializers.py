@@ -21,7 +21,8 @@ class PreprintProviderSerializer(JSONAPISerializer):
 
     links = LinksField({
         'self': 'get_absolute_url',
-        'preprints': 'get_preprints_url'
+        'preprints': 'get_preprints_url',
+        'external_url': 'get_external_url'
     })
 
     class Meta:
@@ -32,3 +33,6 @@ class PreprintProviderSerializer(JSONAPISerializer):
 
     def get_preprints_url(self, obj):
         return absolute_reverse('preprint_providers:preprints-list', kwargs={'provider_id': obj._id})
+
+    def get_external_url(self, obj):
+        return obj.external_url
