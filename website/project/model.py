@@ -1594,9 +1594,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if save:
             self.save()
 
-    def remove_preprint_provider(self, provider, user, save=False):
-        if provider in self.preprint_providers:
-            self.preprint_providers.remove(provider)
+    def remove_preprint_provider(self, preprint_provider, user, save=False):
+        if not self.has_permission(user, ADMIN):
+            raise PermissionsError('Only admins can remove a preprint provider.')
+        if not preprint_provider:
+            raise ValueError('Must specify a provider to remove from this preprint.')
+        if preprint_provider in self.preprint_providers:
+            self.preprint_providers.remove(preprint_provider)
             if save:
                 self.save()
             return True
