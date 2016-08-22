@@ -18,7 +18,7 @@ from osf_models.models import Node, Tag, NodeLog, Contributor, Sanction
 from osf_models.exceptions import ValidationError
 from osf_models.utils.auth import Auth
 
-from .factories import ProjectFactory, NodeFactory, UserFactory, UnregUserFactory, RegistrationFactory
+from .factories import ProjectFactory, NodeFactory, UserFactory, UnregUserFactory, RegistrationFactory, NodeLicenseRecordFactory
 from .utils import capture_signals, assert_datetime_equal, mock_archive
 
 
@@ -44,6 +44,15 @@ def test_top_level_node_has_parent_node_none():
 def test_component_has_parent_node():
     node = NodeFactory()
     assert type(node.parent_node) is Node
+
+
+@pytest.mark.django_db
+def test_license_searches_parent_nodes():
+    license_record = NodeLicenseRecordFactory()
+    project = ProjectFactory(node_license=license_record)
+    node = NodeFactory(parent=project)
+    assert project.license == license_record
+    assert node.license == license_record
 
 @pytest.mark.django_db
 class TestNodeMODMCompat:
