@@ -7,10 +7,12 @@ from rest_framework.decorators import api_view, renderer_classes
 from rest_framework.response import Response
 from rest_framework.compat import coreapi, uritemplate, urlparse
 from rest_framework import generics
+from rest_framework import exceptions
 from rest_framework import status
 from rest_framework import permissions as drf_permissions
 from rest_framework import schemas
 from rest_framework_swagger.renderers import OpenAPIRenderer, SwaggerUIRenderer
+from rest_framework.request import clone_request
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -43,7 +45,7 @@ class SchemaGenerator(schemas.SchemaGenerator):
         links = []
         for path, method, category, action, callback in self.endpoints:
             view = callback.cls()
-            for attr, val in getattr(callbac, 'initkwargs', {}).items():
+            for attr, val in getattr(callback, 'initkwargs', {}).items():
                 setattr(view, attr, val)
             view.args = ()
             view.kwargs = {
