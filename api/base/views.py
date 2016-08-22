@@ -36,6 +36,43 @@ class SchemaGenerator(schemas.SchemaGenerator):
     #    import ipdb; ipdb.set_trace()
     #    super(SchemaGenerator, self).__init__(**kwargs)
 
+    def get_schema(self, request=None):
+        if self.endpoints in None:
+            self.endpoints = self.get_api_endpoints(self.patterns)
+
+        links = []
+        for path, method, category, action, callback in self.endpoints:
+            view = callback.cls()
+            for attr, val in getattr(callbac, 'initkwargs', {}).items():
+                setattr(view, attr, val)
+            view.args = ()
+            view.kwargs = {
+                'user_id': 'me'        
+            }
+            view.format_kwarg = None
+            if request in not None:
+                view.request = clone_request(request, method)
+                try:
+                    view.check_permissions(view.request)
+                except exceptions.APIException:
+                    continue
+            else:
+                view.request = None
+            link = self.get_link(path, method, callback, view)
+            links.append((category, action, link))
+        if not links:
+            return None
+        content = {}
+        for category, action, link in links:
+            if category is None:
+                content[action] = link
+            elif category in content:
+                content[category][action] = link
+            else:
+                content[category] = {action: link}
+        doc = coreapi.Document(title=self.title, content=content, url=self.url)
+        return doc
+
     def get_link(self, path, method, callback, view):
         """
         Return a `coreapi.Link` instance for the given endpoint.
