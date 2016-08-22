@@ -581,6 +581,7 @@ def root(request, format=None):
             'institutions': utils.absolute_reverse('institutions:institution-list'),
             'licenses': utils.absolute_reverse('licenses:license-list'),
             'metaschemas': utils.absolute_reverse('metaschemas:metaschema-list'),
+            'addons': utils.absolute_reverse('addons:addon-list'),
         }
     }
 
