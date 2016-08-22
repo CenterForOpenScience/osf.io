@@ -42,6 +42,7 @@ def setup_tests(ctx, update=False, requirements=True, branch=POSTGRES_BRANCH):
         # Install list-of-licenses package
         ctx.run('npm install list-of-licenses')
         # Install osf requirements
+        ctx.run('invoke requirements')
         ctx.run('invoke requirements --addons')
         # Install osf-models test requirements
         ctx.run('pip install -r {}'.format(os.path.join('osf_models_tests', 'requirements.txt')), echo=True)
