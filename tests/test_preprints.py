@@ -129,18 +129,15 @@ class TestPreprintProviders(OsfTestCase):
     def test_add_provider(self):
         assert_equal(self.preprint.preprint_providers, [])
 
-        self.preprint.add_preprint_provider(self.provider, user=self.preprint.creator)
-        self.preprint.save()
+        self.preprint.add_preprint_provider(self.provider, user=self.preprint.creator, save=True)
 
         assert_items_equal(self.preprint.preprint_providers, [self.provider])
 
     def test_remove_provider(self):
-        self.preprint.add_preprint_provider(self.provider, user=self.preprint.creator)
-        self.preprint.save()
+        self.preprint.add_preprint_provider(self.provider, user=self.preprint.creator, save=True)
 
         assert_items_equal(self.preprint.preprint_providers, [self.provider])
 
-        self.preprint.remove_preprint_provider(self.provider, user=self.preprint.creator)
-        self.preprint.save()
+        self.preprint.remove_preprint_provider(self.provider, user=self.preprint.creator, save=True)
 
         assert_equal(self.preprint.preprint_providers, [])
