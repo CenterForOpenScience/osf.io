@@ -150,7 +150,8 @@ def get_user(email=None, password=None, verification_key=None, external_id_provi
         query_list.append(Q('verification_key', 'eq', verification_key))
 
     if external_id_provider and external_id:
-        query_list.append(Q('external_identity.{}'.format(external_id_provider), 'eq', external_id))
+        query_list.append(Q('external_identity.{}.id'.format(external_id_provider), 'eq', external_id))
+        query_list.append(Q('external_identity.{}.status'.format(external_id_provider), 'eq', 'VERIFIED'))
 
     try:
         query = query_list[0]
@@ -369,7 +370,10 @@ class User(GuidStoredObject, AddonModelMixin):
     # identity for user logged in through external idp
     external_identity = fields.DictionaryField()
     # Format: {
-    #   <external_id_provider>: <external_id>,
+    #   <external_id_provider>: {
+    #       'id': <external_id>,
+    #       'status': 'VERIFIED, 'CREATE', 'LINK'
+    #   },
     #   ...
     # }
 
