@@ -144,6 +144,11 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin, Taggable, Logga
     def __unicode__(self):
         return u'{} : ({})'.format(self.title, self._id)
 
+    @property
+    def is_registration(self):
+        """For v1 compat."""
+        return False
+
     @property  # TODO Separate out for submodels
     def absolute_api_v2_url(self):
         if self.is_registration:
@@ -685,8 +690,6 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin, Taggable, Logga
         if self.is_collection:
             raise NodeStateError('Folders may not be registered')
 
-        when = timezone.now()
-
         original = self.load(self._primary_key)
 
         # Note: Cloning a node will clone each node wiki page version and add it to
@@ -699,8 +702,7 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin, Taggable, Logga
         # Need to save here in order to set many-to-many fields
         registered.save()
 
-        registered.is_registration = True
-        registered.registered_date = when
+        registered.registered_date = timezone.now()
         registered.registered_user = auth.user
         registered.registered_schema.add(schema)
         registered.registered_from = original

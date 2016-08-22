@@ -31,7 +31,6 @@ class RegistrationManager(models.Manager):
 class Registration(AbstractNode):
     objects = RegistrationManager()
 
-    is_registration = models.NullBooleanField(default=False, db_index=True)  # TODO SEPARATE CLASS
     registered_date = models.DateTimeField(db_index=True, null=True, blank=True)
     registered_user = models.ForeignKey(OSFUser,
                                         related_name='related_to',
@@ -67,6 +66,11 @@ class Registration(AbstractNode):
                                                     related_name='registrations',
                                                     null=True, blank=True,
                                                     on_delete=models.SET_NULL)
+
+    @property
+    def is_registration(self):
+        """For v1 compat."""
+        return True
 
     @property
     def archive_job(self):
