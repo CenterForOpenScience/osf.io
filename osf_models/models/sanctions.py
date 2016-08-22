@@ -559,9 +559,7 @@ class Retraction(EmailApprovableSanction):
     justification = models.CharField(max_length=2048, null=True, blank=True)
 
     def _view_url_context(self, user_id, node):
-        Registration = apps.get_model('osf_models.Registration')
-
-        registration = Registration.find_one(Q('retraction', 'eq', self))
+        registration = self.registrations.first()
         return {
             'node_id': registration._id
         }
@@ -570,9 +568,7 @@ class Retraction(EmailApprovableSanction):
         user_approval_state = self.approval_state.get(user_id, {})
         approval_token = user_approval_state.get('approval_token')
         if approval_token:
-            Registration = apps.get_model('osf_models.Registration')
-
-            root_registration = Registration.find_one(Q('retraction', 'eq', self))
+            root_registration = self.registrations.first()
             node_id = user_approval_state.get('node_id', root_registration._id)
             return {
                 'node_id': node_id,

@@ -323,8 +323,8 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin, Taggable, Logga
 
     @property
     def registrations_all(self):
-        Registration = apps.get_model('osf_models.Registration')
-        return Registration.find(Q('registered_from', 'eq', self._id))
+        """For v1 compat."""
+        return self.registrations.all()
 
     @property
     def nodes_pointer(self):
@@ -659,12 +659,12 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin, Taggable, Logga
 
     def copy_contributors_from(self, node):
         """Copies the contibutors from node (including permissions and visibility) into this node."""
-        for contrib in Contributor.objects.filter(node=node):
-            # Create a copy of the contributor
-            contrib_copy = Contributor.objects.get(id=contrib.id)
-            contrib_copy.id = None
-            contrib_copy.node = self
-            contrib_copy.save()
+        contribs = []
+        for contrib in node.contributor_set.all():
+            contrib.id = None
+            contrib.node = self
+            contribs.append(contrib)
+        Contributor.objects.bulk_create(contribs)
 
     def register_node(self, schema, auth, data, parent=None):
         """Make a frozen copy of a node.
@@ -739,17 +739,16 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin, Taggable, Logga
             if message:
                 status.push_status_message(message, kind='info', trust=False)
 
-        for node_contained in original.nodes.all():
-            if not node_contained.is_deleted:
-                child_registration = node_contained.register_node(
-                    schema=schema,
-                    auth=auth,
-                    data=data,
-                    parent=registered,
-                )
-                # TODO: Add links
-                # if child_registration and not child_registration.primary:
-                #     registered.nodes.append(child_registration)
+        for node_contained in original.nodes.filter(is_deleted=False):
+            child_registration = node_contained.register_node(
+                schema=schema,
+                auth=auth,
+                data=data,
+                parent=registered,
+            )
+            # TODO: Add links
+            # if child_registration and not child_registration.primary:
+            #     registered.nodes.append(child_registration)
 
         registered.save()
 
@@ -761,19 +760,17 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin, Taggable, Logga
 
     def _initiate_approval(self, user, notify_initiator_on_complete=False):
         end_date = timezone.now() + settings.REGISTRATION_APPROVAL_TIME
-        approval = RegistrationApproval(
+        self.registration_approval = RegistrationApproval.objects.create(
             initiated_by=user,
             end_date=end_date,
             notify_initiator_on_complete=notify_initiator_on_complete
         )
-        approval.save()  # Save approval so it has a primary key
-        self.registration_approval = approval
         self.save()  # Set foreign field reference Node.registration_approval
         admins = self.get_admin_contributors_recursive(unique_users=True)
         for (admin, node) in admins:
-            approval.add_authorizer(admin, node=node)
-        approval.save()  # Save approval's approval_state
-        return approval
+            self.registration_approval.add_authorizer(admin, node=node)
+        self.registration_approval.save()  # Save approval's approval_state
+        return self.registration_approval
 
     def require_approval(self, user, notify_initiator_on_complete=False):
         if not self.is_registration:

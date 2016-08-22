@@ -21,8 +21,16 @@ from osf_models.models.nodelog import NodeLog
 from osf_models.utils.base import api_v2_url
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
+class RegistrationManager(models.Manager):
+    """Custom manager for registration that selects parent_node by default because
+    parent_node is used by the sanction-related properties, e.g. sanction, is_pending_embargo.
+    """
+    def get_queryset(self):
+        return super(RegistrationManager, self).get_queryset().select_related('parent_node')
 
 class Registration(AbstractNode):
+    objects = RegistrationManager()
+
     is_registration = models.NullBooleanField(default=False, db_index=True)  # TODO SEPARATE CLASS
     registered_date = models.DateTimeField(db_index=True, null=True, blank=True)
     registered_user = models.ForeignKey(OSFUser,
@@ -167,20 +175,18 @@ class Registration(AbstractNode):
         :param user: User who initiated the retraction
         :param end_date: Date when the registration should be made public
         """
-        embargo = Embargo(
+        self.embargo = Embargo.objects.create(
             initiated_by=user,
             end_date=datetime.datetime.combine(end_date, datetime.datetime.min.time()),
             for_existing_registration=for_existing_registration,
             notify_initiator_on_complete=notify_initiator_on_complete
         )
-        embargo.save()  # Save embargo so it has a primary key
-        self.embargo = embargo
         self.save()  # Set foreign field reference Node.embargo
         admins = self.get_admin_contributors_recursive(unique_users=True)
         for (admin, node) in admins:
-            embargo.add_authorizer(admin, node)
-        embargo.save()  # Save embargo's approval_state
-        return embargo
+            self.embargo.add_authorizer(admin, node)
+        self.embargo.save()  # Save embargo's approval_state
+        return self.embargo
 
     def embargo_registration(self, user, end_date, for_existing_registration=False,
                              notify_initiator_on_complete=False):
@@ -269,19 +275,17 @@ class Registration(AbstractNode):
         :param user: User who initiated the retraction
         :param justification: Justification, if given, for retraction
         """
-        retraction = Retraction(
+        self.retraction = Retraction.objects.create(
             initiated_by=user,
             justification=justification or None,  # make empty strings None
             state=Retraction.UNAPPROVED
         )
-        retraction.save()  # Save retraction so it has a primary key
-        self.retraction = retraction
-        self.save()  # Set foreign field reference Node.retraction
+        self.save()
         admins = self.get_admin_contributors_recursive(unique_users=True)
         for (admin, node) in admins:
-            retraction.add_authorizer(admin, node)
-        retraction.save()  # Save retraction approval state
-        return retraction
+            self.retraction.add_authorizer(admin, node)
+        self.retraction.save()  # Save retraction approval state
+        return self.retraction
 
     def retract_registration(self, user, justification=None, save=True):
         """Retract public registration. Instantiate new Retraction object
