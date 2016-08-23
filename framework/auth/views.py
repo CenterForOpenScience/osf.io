@@ -370,16 +370,17 @@ def external_login_confirm_email_get(auth, uid, token):
         raise HTTPError(http.BAD_REQUEST)
     verification = user.email_verifications[token]
     email = verification['email']
-    provider = verification['external_id_provider']
+    provider = verification['external_identity'].keys()[0]
+    provider_id = verification['external_identity'][provider].keys()[0]
     # wrong provider
     if provider not in user.external_identity:
         raise HTTPError(http.BAD_REQUEST)
-    external_status = user.external_identity[provider]['status']
+    external_status = user.external_identity[provider][provider_id]
     # create a new user
     if external_status == 'CREATE' and email.lower() == user.username.lower():
         user.register(user.username)
         user.date_last_logged_in = datetime.datetime.utcnow()
-        user.external_identity[provider]['status'] = 'VERIFIED'
+        user.external_identity[provider][provider_id] = 'VERIFIED'
         user.save()
         mails.send_mail(
             to_addr=user.username,
@@ -391,7 +392,7 @@ def external_login_confirm_email_get(auth, uid, token):
     # link a current user
     elif external_status == 'LINK':
         user.date_last_logged_in = datetime.datetime.utcnow()
-        user.external_identity[provider]['status'] = 'VERIFIED'
+        user.external_identity[provider][provider_id] = 'VERIFIED'
         user.save()
         mails.send_mail(
             user=user,
@@ -783,7 +784,7 @@ def external_login_email_post():
                 user.save()
                 # TODO: do we need a signal here
                 # 2. add unconfirmed email and send confirmation email
-                user.add_unconfirmed_email(clean_email, external_id_provider=external_id_provider)
+                user.add_unconfirmed_email(clean_email, external_identity=external_identity)
                 user.save()
                 send_confirm_email(user, user.username, external_id_provider=external_id_provider)
                 # 3. notify user
