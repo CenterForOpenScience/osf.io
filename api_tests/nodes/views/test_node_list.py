@@ -509,6 +509,24 @@ class TestNodeFiltering(ApiTestCase):
         assert_in(self.project_two._id, ids)
         assert_in(self.project_three._id, ids)
 
+    def test_preprint_filter_excludes_orphans(self):
+        orphan = PreprintFactory(creator=self.preprint.creator)
+        orphan._is_preprint_orphan = True
+        orphan.save()
+
+        url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        data = res.json['data']
+
+        ids = [each['id'] for each in data]
+
+        assert_in(self.preprint._id, ids)
+        assert_not_in(orphan._id, ids)
+        assert_not_in(self.project_one._id, ids)
+        assert_not_in(self.project_two._id, ids)
+        assert_not_in(self.project_three._id, ids)
+
 
 class TestNodeCreate(ApiTestCase):
 
