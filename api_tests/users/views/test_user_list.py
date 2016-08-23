@@ -8,7 +8,7 @@ import urlparse
 from modularodm import Q
 
 from tests.base import ApiTestCase
-from tests.factories import AuthUserFactory, UserFactory
+from tests.factories import AuthUserFactory, UserFactory, ProjectFactory, Auth
 
 from api.base.settings.defaults import API_BASE
 
@@ -17,6 +17,7 @@ from framework.sessions.model import Session
 from website.models import User
 from website import settings
 from website.oauth.models import ApiOAuth2PersonalToken
+from website.util.permissions import CREATOR_PERMISSIONS
 
 
 class TestUsers(ApiTestCase):
@@ -80,6 +81,30 @@ class TestUsers(ApiTestCase):
         assert_not_in(self.user_one._id, ids)
         assert_not_in(self.user_two._id, ids)
 
+    def test_more_than_one_projects_in_common(self):
+        project1 = ProjectFactory(creator=self.user_one)
+        project1.add_contributor(
+            contributor=self.user_two,
+            permissions=CREATOR_PERMISSIONS,
+            auth=Auth(user=self.user_one)
+        )
+        project1.save()
+        project2 = ProjectFactory(creator=self.user_one)
+        project2.add_contributor(
+            contributor=self.user_two,
+            permissions=CREATOR_PERMISSIONS,
+            auth=Auth(user=self.user_one)
+        )
+        project2.save()
+        url = "/{}users/?show_projects_in_common=true".format(API_BASE)
+        res = self.app.get(url, auth=self.user_two.auth)
+        user_json = res.json['data']
+        for user in user_json:
+            if user['id'] == self.user_one._id or user['id'] == self.user_two._id:
+                meta = user['relationships']['nodes']['links']['related']['meta']
+                assert_in('projects_in_common', meta)
+                assert_equal(meta['projects_in_common'], 2)
+
     def test_users_projects_in_common(self):
         self.user_one.fullname = 'hello'
         self.user_one.save()
@@ -90,6 +115,29 @@ class TestUsers(ApiTestCase):
             meta = user['relationships']['nodes']['links']['related']['meta']
             assert_in('projects_in_common', meta)
             assert_equal(meta['projects_in_common'], 0)
+
+    def test_users_projects_in_common_with_embed_and_right_query(self):
+        project = ProjectFactory(creator=self.user_one)
+        project.add_contributor(contributor=self.user_two, permissions=CREATOR_PERMISSIONS, auth=Auth(user=self.user_one))
+        project.save()
+        url = "/{}users/{}/nodes/?embed=contributors&show_projects_in_common=true".format(API_BASE, self.user_two._id)
+        res = self.app.get(url, auth=self.user_two.auth)
+        user_json = res.json['data'][0]['embeds']['contributors']['data']
+        for user in user_json:
+            meta = user['embeds']['users']['data']['relationships']['nodes']['links']['related']['meta']
+            assert_in('projects_in_common', meta)
+            assert_equal(meta['projects_in_common'], 1)
+
+    def test_users_projects_in_common_with_embed_without_right_query(self):
+        project = ProjectFactory(creator=self.user_one)
+        project.add_contributor(contributor=self.user_two, permissions=CREATOR_PERMISSIONS, auth=Auth(user=self.user_one))
+        project.save()
+        url = "/{}users/{}/nodes/?embed=contributors".format(API_BASE, self.user_two._id)
+        res = self.app.get(url, auth=self.user_two.auth)
+        user_json = res.json['data'][0]['embeds']['contributors']['data']
+        for user in user_json:
+            meta = user['embeds']['users']['data']['relationships']['nodes']['links']['related']['meta']
+            assert_not_in('projects_in_common', meta)
 
     def test_users_no_projects_in_common_with_wrong_query(self):
         self.user_one.fullname = 'hello'
