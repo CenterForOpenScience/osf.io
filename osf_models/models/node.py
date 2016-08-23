@@ -803,12 +803,58 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin, Taggable, Logga
                     if include(descendant):
                         yield descendant
 
+    @property
+    def nodes_primary(self):
+        return [
+            node
+            for node in self.nodes.all()
+            if node.primary
+        ]
+
+    def next_descendants(self, auth, condition=lambda auth, node: True):
+        """
+        Recursively find the first set of descedants under a given node that meet a given condition
+
+        returns a list of [(node, [children]), ...]
+        """
+        ret = []
+        for node in self.nodes.order_by('date_created').all():
+            if condition(auth, node):
+                # base case
+                ret.append((node, []))
+            else:
+                ret.append((node, node.next_descendants(auth, condition)))
+        ret = [item for item in ret if item[1] or condition(auth, item[0])]  # prune empty branches
+        return ret
+
     def node_and_primary_descendants(self):
         """Return an iterator for a node and all of its primary (non-pointer) descendants.
 
         :param node Node: target Node
         """
         return itertools.chain([self], self.get_descendants_recursive(lambda n: n.primary))
+
+    def active_contributors(self, include=lambda n: True):
+        for contrib in self.contributors.filter(is_active=True):
+            if include(contrib):
+                yield contrib
+
+    def get_active_contributors_recursive(self, unique_users=False, *args, **kwargs):
+        """Yield (admin, node) tuples for this node and
+        descendant nodes. Excludes contributors on node links and inactive users.
+
+        :param bool unique_users: If True, a given admin will only be yielded once
+            during iteration.
+        """
+        visited_user_ids = []
+        for node in self.node_and_primary_descendants(*args, **kwargs):
+            for contrib in node.active_contributors(*args, **kwargs):
+                if unique_users:
+                    if contrib._id not in visited_user_ids:
+                        visited_user_ids.append(contrib._id)
+                        yield (contrib, node)
+                else:
+                    yield (contrib, node)
 
     def get_admin_contributors(self, users):
         """Return a set of all admin contributors for this node. Excludes contributors on node links and
