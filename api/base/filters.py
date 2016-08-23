@@ -219,7 +219,8 @@ class FilterMixin(object):
                             }
                         })
                     elif source_field_name == 'is_preprint':
-                        op = 'eq' if value == 'false' else 'ne'
+                        # TODO: Make this also include _is_preprint_orphan when value is false [#PREP-129]
+                        op = 'ne' if utils.is_truthy(value) else 'eq'
                         query.get(key).update({
                             field_name: {
                                 'op': op,
@@ -227,13 +228,14 @@ class FilterMixin(object):
                                 'source_field_name': 'preprint_file'
                             }
                         })
-                        query['_is_preprint_orphan'] = {
-                            field_name: {
-                                'op': 'ne',
-                                'value': True,
-                                'source_field_name': '_is_preprint_orphan'
+                        if utils.is_truthy(value):
+                            query['_is_preprint_orphan'] = {
+                                field_name: {
+                                    'op': 'ne',
+                                    'value': True,
+                                    'source_field_name': '_is_preprint_orphan'
+                                }
                             }
-                        }
                     else:
                         query.get(key).update({
                             field_name: {
