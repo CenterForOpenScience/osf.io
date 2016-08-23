@@ -8,10 +8,18 @@ from tests.test_search import SearchTestCase
 from website.util import api_url_for
 
 
-class TestSearchViews(SearchTestCase):
+class TestSearchPage(SearchTestCase):
+
+    def test_search_projects(self):
+        factories.ProjectFactory(title='Foo Bar')
+        res = self.app.get('/search/', {'q': 'foo'})
+        assert_equal(res.status_code, 200)
+
+
+class TestUserSearchAPI(SearchTestCase):
 
     def setUp(self):
-        super(TestSearchViews, self).setUp()
+        super(TestUserSearchAPI, self).setUp()
         import website.search.search as search
         search.delete_all()
 
@@ -22,7 +30,7 @@ class TestSearchViews(SearchTestCase):
             factories.UserFactory(fullname='Freddie Mercury{}'.format(i))
 
     def tearDown(self):
-        super(TestSearchViews, self).tearDown()
+        super(TestUserSearchAPI, self).tearDown()
         import website.search.search as search
         search.delete_all()
 
@@ -89,13 +97,8 @@ class TestSearchViews(SearchTestCase):
         assert_equal(page, 2)
         assert_equal(pages, 3)
 
-    def test_search_projects(self):
-        url = '/search/'
-        res = self.app.get(url, {'q': self.project.title})
-        assert_equal(res.status_code, 200)
 
-
-class TestODMTitleSearch(SearchTestCase):
+class TestODMTitleSearchAPI(SearchTestCase):
     """ Docs from original method:
     :arg term: The substring of the title.
     :arg category: Category of the node.
@@ -109,7 +112,7 @@ class TestODMTitleSearch(SearchTestCase):
     :return: a list of dictionaries of projects
     """
     def setUp(self):
-        super(TestODMTitleSearch, self).setUp()
+        super(TestODMTitleSearchAPI, self).setUp()
 
         self.user = factories.AuthUserFactory()
         self.user_two = factories.AuthUserFactory()
