@@ -174,7 +174,7 @@ USE_TZ = True
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/vendor')
 
-API_BASE = '/'
+API_BASE = 'v2/'
 STATIC_URL = '/static/'
 
 STATICFILES_DIRS = (

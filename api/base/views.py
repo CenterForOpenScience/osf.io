@@ -39,7 +39,7 @@ class SchemaGenerator(schemas.SchemaGenerator):
     #    super(SchemaGenerator, self).__init__(**kwargs)
 
     def get_schema(self, request=None):
-        if self.endpoints in None:
+        if self.endpoints is None:
             self.endpoints = self.get_api_endpoints(self.patterns)
 
         links = []

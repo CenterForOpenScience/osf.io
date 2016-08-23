@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 from nose.tools import *  # flake8: noqa
 
 from tests.base import ApiTestCase

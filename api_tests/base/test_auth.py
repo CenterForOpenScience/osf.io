@@ -1,3 +1,5 @@
+
+from __future__ import unicode_literals
 """
 Tests related to authenticating API requests
 """
