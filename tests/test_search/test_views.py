@@ -3,14 +3,8 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 from nose.tools import *  # noqa PEP8 asserts
 
+from tests import factories
 from tests.base import OsfTestCase
-from tests.factories import (
-    ApiOAuth2ApplicationFactory, ApiOAuth2PersonalTokenFactory, AuthUserFactory,
-    BookmarkCollectionFactory, CollectionFactory, MockAddonNodeSettings, NodeFactory,
-    NodeLogFactory, PrivateLinkFactory, ProjectWithAddonFactory, ProjectFactory,
-    RegistrationFactory, UnconfirmedUserFactory, UnregUserFactory, UserFactory, WatchConfigFactory,
-    InstitutionFactory,
-)
 from tests.test_features import requires_search
 from website.util import api_url_for
 
@@ -23,10 +17,11 @@ class TestSearchViews(OsfTestCase):
         import website.search.search as search
         search.delete_all()
 
-        self.project = ProjectFactory(creator=UserFactory(fullname='Robbie Williams'))
-        self.contrib = UserFactory(fullname='Brian May')
+        robbie = factories.UserFactory(fullname='Robbie Williams')
+        self.project = factories.ProjectFactory(creator=robbie)
+        self.contrib = factories.UserFactory(fullname='Brian May')
         for i in range(0, 12):
-            UserFactory(fullname='Freddie Mercury{}'.format(i))
+            factories.UserFactory(fullname='Freddie Mercury{}'.format(i))
 
     def tearDown(self):
         super(TestSearchViews, self).tearDown()
@@ -118,14 +113,14 @@ class TestODMTitleSearch(OsfTestCase):
     def setUp(self):
         super(TestODMTitleSearch, self).setUp()
 
-        self.user = AuthUserFactory()
-        self.user_two = AuthUserFactory()
-        self.project = ProjectFactory(creator=self.user, title="foo")
-        self.project_two = ProjectFactory(creator=self.user_two, title="bar")
-        self.public_project = ProjectFactory(creator=self.user_two, is_public=True, title="baz")
-        self.registration_project = RegistrationFactory(creator=self.user, title="qux")
-        self.folder = CollectionFactory(creator=self.user, title="quux")
-        self.dashboard = BookmarkCollectionFactory(creator=self.user, title="Dashboard")
+        self.user = factories.AuthUserFactory()
+        self.user_two = factories.AuthUserFactory()
+        self.project = factories.ProjectFactory(creator=self.user, title="foo")
+        self.project_two = factories.ProjectFactory(creator=self.user_two, title="bar")
+        self.public_project = factories.ProjectFactory(creator=self.user_two, is_public=True, title="baz")
+        self.registration_project = factories.RegistrationFactory(creator=self.user, title="qux")
+        self.folder = factories.CollectionFactory(creator=self.user, title="quux")
+        self.dashboard = factories.BookmarkCollectionFactory(creator=self.user, title="Dashboard")
         self.url = api_url_for('search_projects_by_title')
 
     def test_search_projects_by_title(self):
