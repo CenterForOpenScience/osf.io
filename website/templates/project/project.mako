@@ -237,11 +237,11 @@
     <%include file="include/comment_pane_template.mako"/>
 % endif
 
-% if node['is_preprint'] and not node['is_preprint_orphan']:
+% if node['is_preprint']:
 <div class="row">
     <div class="col-xs-12">
         <div class="pp-notice m-b-md p-md clearfix">
-            This component is a preprint. <a href="http://help.osf.io/s/support">Learn more</a> about how to work with preprint files.
+            This project represents a preprint. <a href="http://help.osf.io/m/preprints">Learn more</a> about how to work with preprint files.
             <a href="/preprints/content/${node['id']}/" class="btn btn-default btn-sm m-r-xs pull-right">View preprint</a>
         </div>
     </div>
