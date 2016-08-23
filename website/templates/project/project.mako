@@ -241,7 +241,7 @@
 <div class="row">
     <div class="col-xs-12">
         <div class="pp-notice m-b-md p-md clearfix">
-            This component is a preprint. <a href="/preprints/help/">Learn more</a> about how to work with preprint files.
+            This component is a preprint. <a href="http://help.osf.io/s/support">Learn more</a> about how to work with preprint files.
             <a href="/preprints/content/${node['id']}/" class="btn btn-default btn-sm m-r-xs pull-right">View preprint</a>
         </div>
     </div>
