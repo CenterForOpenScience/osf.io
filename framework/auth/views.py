@@ -774,7 +774,10 @@ def external_login_email_post():
 
             # 1. update user oauth, with pending status
             external_identity[external_id_provider][external_id] = 'LINK'
-            user.external_identity.update(external_identity)
+            if external_id_provider in external_identity:
+                user.external_identity[external_id_provider].update(external_identity[external_id_provider])
+            else:
+                user.external_identity.update(external_identity)
             user.save()
             # 2. add unconfirmed email and send confirmation email
             user.add_unconfirmed_email(clean_email, external_identity=external_identity)
