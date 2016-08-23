@@ -355,7 +355,6 @@ def external_login_confirm_email_get(auth, uid, token):
     :param uid: the user's primary key
     :param token: the verification token
     """
-
     user = User.load(uid)
     if not user:
         raise HTTPError(http.BAD_REQUEST)
@@ -364,9 +363,6 @@ def external_login_confirm_email_get(auth, uid, token):
         new = request.args.get('new', None)
         if new:
             status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True)
-        else:
-            # TODO: push status message
-            pass
         return redirect(web_url_for('index'))
 
     # token is invalid
@@ -397,8 +393,12 @@ def external_login_confirm_email_get(auth, uid, token):
         user.date_last_logged_in = datetime.datetime.utcnow()
         user.external_identity[provider]['status'] = 'VERIFIED'
         user.save()
-        # TODO: send email to notify user of successful linking external identity
-        pass
+        mails.send_mail(
+            user=user,
+            to_addr=user.username,
+            mail=mails.EXTERNAL_LOGIN_LINK_SUCCESS,
+            external_id_provider=provider,
+        )
         service_url = request.url
 
     del user.email_verifications[token]
@@ -586,6 +586,7 @@ def send_confirm_email(user, email, external_id_provider=None):
         confirmation_url=confirmation_url,
         email=email,
         merge_target=merge_target,
+        external_id_provider=external_id_provider,
     )
 
 
