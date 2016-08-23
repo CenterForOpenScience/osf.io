@@ -736,7 +736,8 @@ def _view_project(node, auth, primary=False):
             'has_draft_registrations': node.has_active_draft_registrations,
             'contributors': [contributor._id for contributor in node.contributors],
             'is_preprint': node.is_preprint,
-            'is_preprint_orphan': node.is_preprint_orphan
+            'is_preprint_orphan': node.is_preprint_orphan,
+            'preprint_file_id': node.preprint_file._id if node.preprint_file else None
         },
         'parent_node': {
             'exists': parent is not None,
