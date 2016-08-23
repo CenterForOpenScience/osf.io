@@ -732,7 +732,7 @@ def external_login_email_get():
 
     return {
         'form': form,
-        'external_id_provider': external_id_provider.upper()
+        'external_id_provider': external_id_provider
     }
 
 
@@ -805,7 +805,7 @@ def external_login_email_post():
                 external_id_provider=external_id_provider,
                 campaign=None
             )
-            # TODO: [new OSF ticket] update social fields
+            # TODO: [new OSF ticket] update social fields, verified social fields cannot be modified
             user.save()
             # 3. send confirmation email
             send_confirm_email(user, user.username, external_id_provider=external_id_provider)
@@ -824,5 +824,5 @@ def external_login_email_post():
     # Don't go anywhere
     return {
         'form': form,
-        'external_id_provider': external_id_provider.upper()
+        'external_id_provider': external_id_provider
     }

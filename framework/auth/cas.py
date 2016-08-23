@@ -260,6 +260,7 @@ def make_response_from_ticket(ticket, service_url):
         # first time login from external identity provider
         if not user and external_credential and action == 'external_first_login':
             from website.util import web_url_for
+            # TODO: [new OSF ticket] verify both names are in attributes, which should be handled in CAS
             user = {
                 'external_id_provider': external_credential['provider'],
                 'external_id': external_credential['id'],
@@ -287,16 +288,16 @@ def get_user_from_cas_resp(cas_resp):
         # cas returns a valid OSF user id
         if user:
             return user, None, 'authenticate'
-        # cas does not returns a valid OSF user id
+        # cas does not return a valid OSF user id
         else:
             external_credential = validate_external_credential(cas_resp.user)
             # invalid cas response
             if not external_credential:
                 return None, None, None
-            # cas returns an valid external credential
+            # cas returns a valid external credential
             user = get_user(external_id_provider=external_credential['provider'],
                             external_id=external_credential['id'])
-            # user found
+            # existing user found
             if user:
                 return user, external_credential, 'authenticate'
             # user first time login through external identity provider
@@ -317,7 +318,7 @@ def validate_external_credential(external_credential):
     if not external_credential or '#' not in external_credential:
         return False
 
-    profile_name, technical_id = external_credential.rsplit('#', 1)
+    profile_name, technical_id = external_credential.split('#', 1)
 
     # invalid external identity provider
     if profile_name not in settings.EXTERNAL_IDENTITY_PROFILE:
