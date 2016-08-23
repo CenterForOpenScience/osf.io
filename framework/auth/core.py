@@ -508,12 +508,12 @@ class User(GuidStoredObject, AddonModelMixin):
 
     @classmethod
     def create_unconfirmed(cls, username, password, fullname, external_identity=None,
-                           external_id_provider=None, do_confirm=True, campaign=None):
+                           do_confirm=True, campaign=None):
         """Create a new user who has begun registration but needs to verify
         their primary email address (username).
         """
         user = cls.create(username, password, fullname)
-        user.add_unconfirmed_email(username, external_id_provider=external_id_provider)
+        user.add_unconfirmed_email(username, external_identity=external_identity)
         user.is_registered = False
         if external_identity:
             user.external_identity.update(external_identity)

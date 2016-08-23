@@ -803,7 +803,6 @@ def external_login_email_post():
                 password=str(uuid.uuid4()),
                 fullname=fullname,
                 external_identity=external_identity,
-                external_id_provider=external_id_provider,
                 campaign=None
             )
             # TODO: [new OSF ticket] update social fields
