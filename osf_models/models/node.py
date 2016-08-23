@@ -810,15 +810,16 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin, Taggable, Logga
         """
         return itertools.chain([self], self.get_descendants_recursive(lambda n: n.primary))
 
-    # TODO: Optimize me
     def get_admin_contributors(self, users):
         """Return a set of all admin contributors for this node. Excludes contributors on node links and
         inactive users.
         """
-        return (
-            user for user in users
-            if self.has_permission(user, 'admin') and
-            user.is_active)
+        query = Contributor.objects.select_related('user').filter(
+            user__id__in=[each.id for each in users],
+            user__is_active=True,
+            admin=True
+        )
+        return (each.user for each in query)
 
     def get_admin_contributors_recursive(self, unique_users=False, *args, **kwargs):
         """Yield (admin, node) tuples for this node and
