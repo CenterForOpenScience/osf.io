@@ -262,7 +262,7 @@ def make_response_from_ticket(ticket, service_url):
             from website.util import web_url_for
             # TODO: when cas part is ready, change the attribute names accordingly
             user = {
-                'fullname': cas_resp.attributes['name'],
+                'fullname': cas_resp.attributes['fullname'],
                 'external_id_provider': cas_resp.attributes['oauthProvider'],
                 'external_id': cas_resp.attributes['oauthId'],
                 'access_token': cas_resp.attributes['accessToken'],
