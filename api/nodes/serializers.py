@@ -62,7 +62,8 @@ class NodeSerializer(JSONAPISerializer):
         'date_modified',
         'root',
         'parent',
-        'contributors'
+        'contributors',
+        'preprint'
     ])
 
     non_anonymized_fields = [
@@ -100,6 +101,7 @@ class NodeSerializer(JSONAPISerializer):
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
     registration = ser.BooleanField(read_only=True, source='is_registration')
+    preprint = ser.BooleanField(read_only=True, source='is_preprint')
     fork = ser.BooleanField(read_only=True, source='is_fork')
     collection = ser.BooleanField(read_only=True, source='is_collection')
     tags = JSONAPIListField(child=NodeTagField(), required=False)

@@ -18,6 +18,7 @@ from tests.factories import (
     RegistrationFactory,
     AuthUserFactory,
     UserFactory,
+    PreprintFactory,
 )
 
 
@@ -141,6 +142,8 @@ class TestNodeFiltering(ApiTestCase):
         self.project_one.save()
 
         self.project_two.add_tag(self.tag1, Auth(self.project_two.creator), save=True)
+
+        self.preprint = PreprintFactory(creator=self.user_one)
 
     def tearDown(self):
         super(TestNodeFiltering, self).tearDown()
@@ -456,7 +459,7 @@ class TestNodeFiltering(ApiTestCase):
         res = self.app.get(url, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
         data = res.json['data']
-        assert_equal(len(data), 3)
+        assert_equal(len(data), 4)
 
         titles = [each['attributes']['title'] for each in data]
 
@@ -470,7 +473,7 @@ class TestNodeFiltering(ApiTestCase):
         res = self.app.get(url, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
         data = res.json['data']
-        assert_equal(len(data), 3)
+        assert_equal(len(data), 4)
 
         descriptions = [each['attributes']['description'] for each in data]
 
@@ -478,6 +481,51 @@ class TestNodeFiltering(ApiTestCase):
         assert_in(self.project_one.description, descriptions)
         assert_in(self.project_three.description, descriptions)
         assert_in(self.private_project_user_one.description, descriptions)
+
+    def test_filtering_on_preprint(self):
+        url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        data = res.json['data']
+        ids = [each['id'] for each in data]
+
+        preprints = Node.find(Q('preprint_file', 'ne', None) & Q('preprint_orphan', 'ne', True))
+        assert_equal(len(data), len(preprints))
+        assert_in(self.preprint._id, ids)
+        assert_not_in(self.project_one._id, ids)
+        assert_not_in(self.project_two._id, ids)
+        assert_not_in(self.project_three._id, ids)
+
+    def test_filtering_out_preprint(self):
+        url = '/{}nodes/?filter[preprint]=false'.format(API_BASE)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        data = res.json['data']
+
+        ids = [each['id'] for each in data]
+
+        assert_not_in(self.preprint._id, ids)
+        assert_in(self.project_one._id, ids)
+        assert_in(self.project_two._id, ids)
+        assert_in(self.project_three._id, ids)
+
+    def test_preprint_filter_excludes_orphans(self):
+        orphan = PreprintFactory(creator=self.preprint.creator)
+        orphan._is_preprint_orphan = True
+        orphan.save()
+
+        url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+        data = res.json['data']
+
+        ids = [each['id'] for each in data]
+
+        assert_in(self.preprint._id, ids)
+        assert_not_in(orphan._id, ids)
+        assert_not_in(self.project_one._id, ids)
+        assert_not_in(self.project_two._id, ids)
+        assert_not_in(self.project_three._id, ids)
 
 
 class TestNodeCreate(ApiTestCase):
