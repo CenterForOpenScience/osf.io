@@ -19,7 +19,7 @@ __all__ = [
     'get_user',
     'check_password',
     'authenticate',
-    'oauth_first_time_authenticate',
+    'external_first_login_authenticate',
     'logout',
     'register_unconfirmed',
 ]
