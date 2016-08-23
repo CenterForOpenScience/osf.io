@@ -1,7 +1,7 @@
 from rest_framework import serializers as ser
 
 from api.base.utils import absolute_reverse
-from api.base.serializers import JSONAPISerializer, LinksField
+from api.base.serializers import JSONAPISerializer, LinksField, RelationshipField
 
 
 class PreprintProviderSerializer(JSONAPISerializer):
@@ -18,6 +18,11 @@ class PreprintProviderSerializer(JSONAPISerializer):
 
     logo_path = ser.CharField(read_only=True)
     banner_path = ser.CharField(read_only=True)
+
+    preprints = RelationshipField(
+        related_view='preprint_providers:preprints-list',
+        related_view_kwargs={'provider_id': '<_id>'}
+    )
 
     links = LinksField({
         'self': 'get_absolute_url',
