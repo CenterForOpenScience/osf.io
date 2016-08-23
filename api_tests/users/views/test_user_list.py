@@ -118,7 +118,11 @@ class TestUsers(ApiTestCase):
 
     def test_users_projects_in_common_with_embed_and_right_query(self):
         project = ProjectFactory(creator=self.user_one)
-        project.add_contributor(contributor=self.user_two, permissions=CREATOR_PERMISSIONS, auth=Auth(user=self.user_one))
+        project.add_contributor(
+            contributor=self.user_two,
+            permissions=CREATOR_PERMISSIONS,
+            auth=Auth(user=self.user_one)
+        )
         project.save()
         url = "/{}users/{}/nodes/?embed=contributors&show_projects_in_common=true".format(API_BASE, self.user_two._id)
         res = self.app.get(url, auth=self.user_two.auth)
@@ -130,7 +134,11 @@ class TestUsers(ApiTestCase):
 
     def test_users_projects_in_common_with_embed_without_right_query(self):
         project = ProjectFactory(creator=self.user_one)
-        project.add_contributor(contributor=self.user_two, permissions=CREATOR_PERMISSIONS, auth=Auth(user=self.user_one))
+        project.add_contributor(
+            contributor=self.user_two,
+            permissions=CREATOR_PERMISSIONS,
+            auth=Auth(user=self.user_one)
+        )
         project.save()
         url = "/{}users/{}/nodes/?embed=contributors".format(API_BASE, self.user_two._id)
         res = self.app.get(url, auth=self.user_two.auth)
