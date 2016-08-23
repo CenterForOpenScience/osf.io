@@ -34,6 +34,8 @@ from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
 )
 
+from tests.test_cas_authentication import make_external_response
+
 
 class TestAuthUtils(OsfTestCase):
 
@@ -111,15 +113,15 @@ class TestAuthUtils(OsfTestCase):
 
     def test_get_user_by_external_info(self):
         user = UserFactory.build()
+        validated_creds = cas.validate_external_credential(make_external_response().user)
         user.external_identity = {
-            'service': {
-                'id': 'service_id',
-                'status': 'VERIFIED'
+            validated_creds['provider']: {
+                validated_creds['id']: 'VERIFIED'
             }
         }
         user.save()
 
-        assert_equal(auth.get_user(external_id_provider='service', external_id='service_id'), user)
+        assert_equal(auth.get_user(external_id_provider=validated_creds['provider'], external_id=validated_creds['id']), user)
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_password_change_sends_email(self, mock_mail):

@@ -150,8 +150,7 @@ def get_user(email=None, password=None, verification_key=None, external_id_provi
         query_list.append(Q('verification_key', 'eq', verification_key))
 
     if external_id_provider and external_id:
-        query_list.append(Q('external_identity.{}.id'.format(external_id_provider), 'eq', external_id))
-        query_list.append(Q('external_identity.{}.status'.format(external_id_provider), 'eq', 'VERIFIED'))
+        query_list.append(Q('external_identity.{}.{}'.format(external_id_provider, external_id), 'eq', 'VERIFIED'))
 
     try:
         query = query_list[0]
@@ -371,8 +370,8 @@ class User(GuidStoredObject, AddonModelMixin):
     external_identity = fields.DictionaryField()
     # Format: {
     #   <external_id_provider>: {
-    #       'id': <external_id>,
-    #       'status': 'VERIFIED, 'CREATE', 'LINK'
+    #       <external_id>: <status from ('VERIFIED, 'CREATE', 'LINK')>,
+    #       ...
     #   },
     #   ...
     # }
@@ -509,12 +508,12 @@ class User(GuidStoredObject, AddonModelMixin):
 
     @classmethod
     def create_unconfirmed(cls, username, password, fullname, external_identity=None,
-                           external_id_provider=None, do_confirm=True, campaign=None):
+                           do_confirm=True, campaign=None):
         """Create a new user who has begun registration but needs to verify
         their primary email address (username).
         """
         user = cls.create(username, password, fullname)
-        user.add_unconfirmed_email(username, external_id_provider=external_id_provider)
+        user.add_unconfirmed_email(username, external_identity=external_identity)
         user.is_registered = False
         if external_identity:
             user.external_identity.update(external_identity)
@@ -780,7 +779,7 @@ class User(GuidStoredObject, AddonModelMixin):
         self.email_verifications[token]['expiration'] = expiration
         return expiration
 
-    def add_unconfirmed_email(self, email, expiration=None, external_id_provider=None):
+    def add_unconfirmed_email(self, email, expiration=None, external_identity=None):
         """Add an email verification token for a given email."""
 
         # TODO: This is technically not compliant with RFC 822, which requires
@@ -790,7 +789,7 @@ class User(GuidStoredObject, AddonModelMixin):
         #       ref: https://tools.ietf.org/html/rfc822#section-6
         email = email.lower().strip()
 
-        if not external_id_provider and email in self.emails:
+        if not external_identity and email in self.emails:
             raise ValueError('Email already confirmed to this user.')
 
         utils.validate_email(email)
@@ -809,7 +808,7 @@ class User(GuidStoredObject, AddonModelMixin):
         self.email_verifications[token] = {
             'email': email,
             'confirmed': False,
-            'external_id_provider': external_id_provider
+            'external_identity': external_identity
         }
         self._set_email_token_expiration(token, expiration=expiration)
         return token
@@ -1404,6 +1403,14 @@ class User(GuidStoredObject, AddonModelMixin):
         for institution in user.affiliated_institutions:
             self.affiliated_institutions.append(institution)
         user._affiliated_institutions = []
+
+        for service in user.external_identity:
+            for service_id in user.external_identity[service].iterkeys():
+                if not (service_id[0] in self.external_identity[service] and self.external_identity[service][service_id[0]] == 'VERIFIED'):
+                    self.external_identity[service].update(
+                        {service_id: user.external_identity[service][service_id]}
+                    )
+        user.external_identity = {}
 
         # FOREIGN FIELDS
         for watched in user.watched:
