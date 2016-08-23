@@ -109,6 +109,18 @@ class TestAuthUtils(OsfTestCase):
             auth.get_user(email=user.username, password='wrong')
         )
 
+    def test_get_user_by_external_info(self):
+        user = UserFactory.build()
+        user.external_identity = {
+            'service': {
+                'id': 'service_id',
+                'status': 'VERIFIED'
+            }
+        }
+        user.save()
+
+        assert_equal(auth.get_user(external_id_provider='service', external_id='service_id'), user)
+
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_password_change_sends_email(self, mock_mail):
         user = UserFactory.build()
