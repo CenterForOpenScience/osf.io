@@ -26,11 +26,11 @@ def make_failure_response():
 def make_external_response():
     return cas.CasResponse(
         authenticated=True,
+        user='OrcidProfile#{}'.format(fake.numerify('####-####-####-####')),
         attributes={
+            'given-names': fake.first_name(),
+            'family-name': fake.last_name(),
             'accessToken': fake.md5(),
-            'oauthProvider': fake.first_name(),
-            'oauthId': fake.ean(),
-            'fullname': fake.name()
         }
     )
 
@@ -212,19 +212,19 @@ class TestCASExternalLogin(OsfTestCase):
 
     def test_get_user_from_cas_resp_already_authorized(self):
         mock_response = make_external_response()
+        validated_creds = cas.validate_external_credential(mock_response.user)
         self.user.external_identity = {
-            mock_response.attributes['oauthProvider']: {
-                'id': mock_response.attributes['oauthId'],
-                'status': 'VERIFIED'
+            validated_creds['provider']: {
+                validated_creds['id']: 'VERIFIED'
             }
         }
         self.user.save()
-        user, action = cas.get_user_from_cas_resp(mock_response)
+        user, _, action = cas.get_user_from_cas_resp(mock_response)
         assert_equal(user._id, self.user._id)
         assert_equal(action, 'authenticate')
 
     def test_get_user_from_cas_resp_not_authorized(self):
-        user, action = cas.get_user_from_cas_resp(make_external_response())
+        user, _, action = cas.get_user_from_cas_resp(make_external_response())
         assert_equal(user, None)
         assert_equal(action, 'external_first_login')
 
@@ -232,10 +232,10 @@ class TestCASExternalLogin(OsfTestCase):
     def test_make_response_from_ticket_with_user(self, mock_service_validate):
         mock_response = make_external_response()
         mock_service_validate.return_value = mock_response
+        validated_creds = cas.validate_external_credential(mock_response.user)
         self.user.external_identity = {
-            mock_response.attributes['oauthProvider']: {
-                'id': mock_response.attributes['oauthId'],
-                'status': 'VERIFIED'
+            validated_creds['provider']: {
+                validated_creds['id']: 'VERIFIED'
             }
         }
         self.user.save()
@@ -263,10 +263,10 @@ class TestCASExternalLogin(OsfTestCase):
         self.user.verification_key = fake.md5()
         self.user.save()
         mock_response = make_external_response()
+        validated_creds = cas.validate_external_credential(mock_response.user)
         self.user.external_identity = {
-            mock_response.attributes['oauthProvider']: {
-                'id': mock_response.attributes['oauthId'],
-                'status': 'VERIFIED'
+            validated_creds['provider']: {
+                validated_creds['id']: 'VERIFIED'
             }
         }
         self.user.save()

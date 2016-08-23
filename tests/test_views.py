@@ -3431,10 +3431,10 @@ class TextExternalAuthViews(OsfTestCase):
     def setUp(self):
         super(TextExternalAuthViews, self).setUp()
         name, email = fake.name(), fake.email()
+        self.provider_id = fake.ean()
         external_identity = {
             'service': {
-                'id': fake.ean(),
-                'status': 'CREATE'
+                self.provider_id: 'CREATE'
             }
         }
         self.user = User.create_unconfirmed(
@@ -3442,7 +3442,6 @@ class TextExternalAuthViews(OsfTestCase):
             password=str(fake.password()),
             fullname=name,
             external_identity=external_identity,
-            external_id_provider='service'
         )
         self.user.save()
         self.auth = Auth(self.user)
@@ -3458,11 +3457,11 @@ class TextExternalAuthViews(OsfTestCase):
         assert_equal(mock_welcome.call_count, 1)
 
         self.user.reload()
-        assert_equal(self.user.external_identity['service']['status'], 'VERIFIED')
+        assert_equal(self.user.external_identity['service'][self.provider_id], 'VERIFIED')
 
     @mock.patch('website.mails.send_mail')
     def test_external_login_confirm_email_get_link(self, mock_link_confirm):
-        self.user.external_identity['service']['status'] = 'LINK'
+        self.user.external_identity['service'][self.provider_id] = 'LINK'
         self.user.save()
         url = self.user.get_confirmation_url(self.user.username, external_id_provider='service')
         res = self.app.get(url, auth=self.auth)
@@ -3473,7 +3472,7 @@ class TextExternalAuthViews(OsfTestCase):
         # assert_equal(mock_link_confirm.call_count, 1)  # TODO
 
         self.user.reload()
-        assert_equal(self.user.external_identity['service']['status'], 'VERIFIED')
+        assert_equal(self.user.external_identity['service'][self.provider_id], 'VERIFIED')
 
 
 # TODO: Use mock add-on
