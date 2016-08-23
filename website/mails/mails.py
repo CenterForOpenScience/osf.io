@@ -128,9 +128,9 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
 
 TEST = Mail('test', subject='A test email to ${name}', categories=['test'])
 
-# TODO: update email with proper content
-EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE = Mail('initial_confirm', subject='Open Science Framework Account Verification')
-EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK = Mail('initial_confirm', subject='Open Science Framework Account Verification')
+EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE = Mail('external_confirm_create', subject='Open Science Framework Account Verification')
+EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK = Mail('external_confirm_link', subject='Open Science Framework Account Verification')
+EXTERNAL_LOGIN_LINK_SUCCESS = Mail('external_confirm_success', subject='Open Science Framework Account Verification Success')
 
 INITIAL_CONFIRM_EMAIL = Mail('initial_confirm', subject='Open Science Framework Account Verification')
 CONFIRM_EMAIL = Mail('confirm', subject='Add a new email to your OSF account')
