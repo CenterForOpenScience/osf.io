@@ -459,7 +459,7 @@ class TestNodeFiltering(ApiTestCase):
         res = self.app.get(url, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
         data = res.json['data']
-        assert_equal(len(data), 3)
+        assert_equal(len(data), 4)
 
         titles = [each['attributes']['title'] for each in data]
 
@@ -473,7 +473,7 @@ class TestNodeFiltering(ApiTestCase):
         res = self.app.get(url, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
         data = res.json['data']
-        assert_equal(len(data), 3)
+        assert_equal(len(data), 4)
 
         descriptions = [each['attributes']['description'] for each in data]
 
