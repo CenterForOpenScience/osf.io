@@ -4,7 +4,7 @@ import urlparse
 
 from django.apps import apps
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
 from django.dispatch import receiver
 from django.db.models.signals import post_save, pre_save
 from django.utils import timezone
@@ -810,6 +810,16 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin, Taggable, Logga
         """
         return itertools.chain([self], self.get_descendants_recursive(lambda n: n.primary))
 
+    # TODO: Optimize me
+    def get_admin_contributors(self, users):
+        """Return a set of all admin contributors for this node. Excludes contributors on node links and
+        inactive users.
+        """
+        return (
+            user for user in users
+            if self.has_permission(user, 'admin') and
+            user.is_active)
+
     def get_admin_contributors_recursive(self, unique_users=False, *args, **kwargs):
         """Yield (admin, node) tuples for this node and
         descendant nodes. Excludes contributors on node links and inactive users.
@@ -827,6 +837,102 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin, Taggable, Logga
                             yield (contrib, node)
                     else:
                         yield (contrib, node)
+
+    def manage_contributors(self, user_dicts, auth, save=False):
+        """Reorder and remove contributors.
+
+        :param list user_dicts: Ordered list of contributors represented as
+            dictionaries of the form:
+            {'id': <id>, 'permission': <One of 'read', 'write', 'admin'>, 'visible': bool}
+        :param Auth auth: Consolidated authentication information
+        :param bool save: Save changes
+        :raises: ValueError if any users in `users` not in contributors or if
+            no admin contributors remaining
+        """
+        with transaction.atomic():
+            users = []
+            user_ids = []
+            permissions_changed = {}
+            visibility_removed = []
+            to_retain = []
+            to_remove = []
+            for user_dict in user_dicts:
+                user = OSFUser.load(user_dict['id'])
+                if user is None:
+                    raise ValueError('User not found')
+                if not self.contributors.filter(id=user.id).exists():
+                    raise ValueError(
+                        'User {0} not in contributors'.format(user.fullname)
+                    )
+                permissions = expand_permissions(user_dict['permission'])
+                if set(permissions) != set(self.get_permissions(user)):
+                    # Validate later
+                    self.set_permissions(user, permissions, validate=False, save=False)
+                    permissions_changed[user._id] = permissions
+                # visible must be added before removed to ensure they are validated properly
+                if user_dict['visible']:
+                    self.set_visible(user,
+                                     visible=True,
+                                     auth=auth)
+                else:
+                    visibility_removed.append(user)
+                users.append(user)
+                user_ids.append(user_dict['id'])
+
+            for user in visibility_removed:
+                self.set_visible(user,
+                                 visible=False,
+                                 auth=auth)
+
+            for user in self.contributors.all():
+                if user._id in user_ids:
+                    to_retain.append(user)
+                else:
+                    to_remove.append(user)
+
+            admins = list(self.get_admin_contributors(users))
+            if users is None or not admins:
+                raise NodeStateError(
+                    'Must have at least one registered admin contributor'
+                )
+
+            if to_retain != users:
+                self.add_log(
+                    action=NodeLog.CONTRIB_REORDERED,
+                    params={
+                        'project': self.parent_id,
+                        'node': self._id,
+                        'contributors': [
+                            user._id
+                            for user in users
+                        ],
+                    },
+                    auth=auth,
+                    save=False,
+                )
+
+            if to_remove:
+                self.remove_contributors(to_remove, auth=auth, save=False)
+
+            # self.contributors = users
+
+            if permissions_changed:
+                self.add_log(
+                    action=NodeLog.PERMISSIONS_UPDATED,
+                    params={
+                        'project': self.parent_id,
+                        'node': self._id,
+                        'contributors': permissions_changed,
+                    },
+                    auth=auth,
+                    save=False,
+                )
+            if save:
+                self.save()
+
+        with transaction.atomic():
+            if to_remove or permissions_changed and ['read'] in permissions_changed.values():
+                project_signals.write_permissions_revoked.send(self)
 
     def save(self, *args, **kwargs):
         if self.pk:

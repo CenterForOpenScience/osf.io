@@ -134,6 +134,7 @@ class NodeLog(ObjectIDMixin, BaseModel):
 
     class Meta:
         ordering = ['-date']
+        get_latest_by = 'date'
 
     def clone_node_log(self, node_id):
         """
