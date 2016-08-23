@@ -387,9 +387,8 @@ class TestUser(OsfTestCase):
     def test_create_unconfirmed_from_external_service(self):
         name, email = fake.name(), fake.email()
         external_identity = {
-            'service': {
-                'id': fake.ean(),
-                'status': 'CREATE'
+            'ORCID': {
+                fake.ean(): 'CREATE'
             }
         }
         user = User.create_unconfirmed(
@@ -397,12 +396,11 @@ class TestUser(OsfTestCase):
             password=str(fake.password()),
             fullname=name,
             external_identity=external_identity,
-            external_id_provider='service'
         )
         user.save()
         assert_false(user.is_registered)
         assert_equal(len(user.email_verifications.keys()), 1)
-        assert_equal(user.email_verifications.popitem()[1]['external_id_provider'], 'service')
+        assert_equal(user.email_verifications.popitem()[1]['external_identity'], external_identity)
         assert_equal(
             len(user.emails),
             0,
