@@ -3446,6 +3446,11 @@ class TextExternalAuthViews(OsfTestCase):
         self.user.save()
         self.auth = Auth(self.user)
 
+    def test_external_login_email_get_with_invalid_session(self):
+        url = web_url_for('external_login_email_get')
+        resp = self.app.get(url, expect_errors=True)
+        assert_equal(resp.status_code, 401)
+
     @mock.patch('website.mails.send_mail')
     def test_external_login_confirm_email_get_create(self, mock_welcome):
         url = self.user.get_confirmation_url(self.user.username, external_id_provider='service')
