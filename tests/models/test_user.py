@@ -348,6 +348,7 @@ class TestUserMerging(base.OsfTestCase):
             'date_last_login',
             'date_registered',
             'email_last_sent',
+            'external_identity',
             'family_name',
             'fullname',
             'given_name',
