@@ -16,6 +16,21 @@ class TestSearchPage(SearchTestCase):
         assert_equal(res.status_code, 200)
 
 
+class TestProjectSearchAPI(SearchTestCase):
+
+    def results(self, query):
+        url = api_url_for('search_search', type='project')
+        return self.app.get(url, {'q': query}).json['results']
+
+
+    def test_empty_results_are_empty(self):
+        assert self.results('foo') == []
+
+    def test_interesting_results_are_interesting(self):
+        factories.ProjectFactory(title='Foo Bar', is_public=True)
+        assert [x['title'] for x in self.results('foo')] == ['Foo Bar']
+
+
 class TestUserSearchAPI(SearchTestCase):
 
     def setUp(self):
