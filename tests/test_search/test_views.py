@@ -4,13 +4,11 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 from nose.tools import *  # noqa PEP8 asserts
 
 from tests import factories
-from tests.base import OsfTestCase
-from tests.test_features import requires_search
+from tests.test_search import SearchTestCase
 from website.util import api_url_for
 
 
-@requires_search
-class TestSearchViews(OsfTestCase):
+class TestSearchViews(SearchTestCase):
 
     def setUp(self):
         super(TestSearchViews, self).setUp()
@@ -97,7 +95,7 @@ class TestSearchViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
 
-class TestODMTitleSearch(OsfTestCase):
+class TestODMTitleSearch(SearchTestCase):
     """ Docs from original method:
     :arg term: The substring of the title.
     :arg category: Category of the node.

@@ -59,7 +59,6 @@ def retry_assertion(interval=0.3, retries=3):
     return test_wrapper
 
 
-@requires_search
 class TestUserUpdate(SearchTestCase):
 
     def setUp(self):
@@ -172,7 +171,6 @@ class TestUserUpdate(SearchTestCase):
         assert_true(all([user._id == doc[0]['id'] for doc in docs]))
 
 
-@requires_search
 class TestProject(SearchTestCase):
 
     def setUp(self):
@@ -195,7 +193,6 @@ class TestProject(SearchTestCase):
         assert_equal(len(docs), 1)
 
 
-@requires_search
 class TestNodeSearch(SearchTestCase):
 
     def setUp(self):
@@ -240,7 +237,7 @@ class TestNodeSearch(SearchTestCase):
         for doc in docs:
             assert_equal(doc['license'].get('id'), new_license.id)
 
-@requires_search
+
 class TestRegistrationRetractions(SearchTestCase):
 
     def setUp(self):
@@ -334,7 +331,6 @@ class TestRegistrationRetractions(SearchTestCase):
         assert_equal(len(docs), 1)
 
 
-@requires_search
 class TestPublicNodes(SearchTestCase):
 
     def setUp(self):
@@ -515,7 +511,6 @@ class TestPublicNodes(SearchTestCase):
             assert doc['key'] in tags
 
 
-@requires_search
 class TestAddContributor(SearchTestCase):
     # Tests of the search.search_contributor method
 
@@ -597,7 +592,7 @@ class TestAddContributor(SearchTestCase):
         contribs = search.search_contributor(self.name4.split(' ')[0][:-1])
         assert_equal(len(contribs['users']), 0)
 
-@requires_search
+
 class TestProjectSearchResults(SearchTestCase):
     def setUp(self):
         super(TestProjectSearchResults, self).setUp()
@@ -745,6 +740,7 @@ class TestSearchExceptions(OsfTestCase):
         if settings.SEARCH_ENGINE == 'elastic':
             search.search_engine.es = cls._es
 
+    @requires_search
     def test_connection_error(self):
         # Ensures that saving projects/users doesn't break as a result of connection errors
         self.user = factories.UserFactory(usename='Doug Bogie')
