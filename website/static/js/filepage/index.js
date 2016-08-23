@@ -493,7 +493,9 @@ var FileViewPage = {
         var height = $('iframe').attr('height') ? $('iframe').attr('height') : '0px';
 
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
-            m('.btn-group.m-l-xs.m-t-xs', m('a.btn.btn-sm.btn-default', {href: '/preprints/add/?file_guid=' + window.contextVars.file.guid }, 'Create Preprint')),
+            (!ctrl.context.node.isPreprint && ctrl.file.provider == 'osfstorage') ? m('.btn-group.m-l-xs.m-t-xs', [
+                m('a.btn.btn-sm.btn-default', {href: '/preprints/submit/?file_guid=' + window.contextVars.file.guid }, 'Create preprint')
+            ]) : '',
             // Special case whether or not to show the delete button for published Dataverse files
             (ctrl.canEdit() && (ctrl.file.provider !== 'osfstorage' || !ctrl.file.checkoutUser) && ctrl.requestDone && $(document).context.URL.indexOf('version=latest-published') < 0 ) ? m('.btn-group.m-l-xs.m-t-xs', [
                 ctrl.isLatestVersion ? m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete') : null
