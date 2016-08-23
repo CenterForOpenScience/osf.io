@@ -20,30 +20,14 @@ from website.models import Retraction, NodeLicense, Tag
 
 from tests import factories
 from tests.base import OsfTestCase
+from tests.test_search import SearchTestCase
 from tests.test_features import requires_search
 from tests.utils import mock_archive
-
-TEST_INDEX = 'test'
-
-@requires_search
-class SearchTestCase(OsfTestCase):
-
-    def tearDown(self):
-        super(SearchTestCase, self).tearDown()
-        search.delete_index(elastic_search.INDEX)
-        search.create_index(elastic_search.INDEX)
-    def setUp(self):
-        super(SearchTestCase, self).setUp()
-        elastic_search.INDEX = TEST_INDEX
-        settings.ELASTIC_INDEX = TEST_INDEX
-        search.delete_index(elastic_search.INDEX)
-        search.create_index(elastic_search.INDEX)
 
 
 def query(term):
     results = search.search(build_query(term), index=elastic_search.INDEX)
     return results
-
 
 def query_user(name):
     term = 'category:user AND "{}"'.format(name)
