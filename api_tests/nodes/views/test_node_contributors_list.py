@@ -12,7 +12,6 @@ from unittest import TestCase
 from api.base.exceptions import Conflict
 from api.base.settings.defaults import API_BASE
 from api.nodes.serializers import NodeContributorsCreateSerializer
-from website.models import NodeLog
 
 from framework.auth.core import Auth
 
@@ -22,8 +21,9 @@ from tests.factories import (
     AuthUserFactory,
     UserFactory
 )
-
 from tests.utils import assert_logs
+
+from website.models import NodeLog
 from website.project.signals import contributor_added, unreg_contributor_added
 from website.util import permissions
 
@@ -298,8 +298,8 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     def setUp(self):
         super(TestNodeContributorAdd, self).setUp()
 
-        self.private_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.private_project._id)
-        self.public_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.public_project._id)
+        self.private_url = '/{}nodes/{}/contributors/?send_email=false'.format(API_BASE, self.private_project._id)
+        self.public_url = '/{}nodes/{}/contributors/?send_email=false'.format(API_BASE, self.public_project._id)
 
         self.user_three = AuthUserFactory()
         self.data_user_two = {
@@ -876,37 +876,124 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Alphabet is already a contributor.')
 
+    def test_add_contributor_index_returned(self):
+        res = self.app.post_json_api(self.public_url, self.data_user_two, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['index'], 1)
 
-class TestNodeContributorCreateValidation(TestCase):
+        res = self.app.post_json_api(self.public_url, self.data_user_three, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['index'], 2)
+
+    def test_add_contributor_set_index_out_of_range(self):
+        user_one = UserFactory()
+        self.public_project.add_contributor(user_one, save=True)
+        user_two = UserFactory()
+        self.public_project.add_contributor(user_two, save=True)
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'index': 4
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'type': 'users',
+                            'id': self.user_two._id
+                        }
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'],
+                     '4 is not a valid contributor index for node with id {}'.format(self.public_project._id))
+
+    def test_add_contributor_set_index_first(self):
+        user_one = UserFactory()
+        self.public_project.add_contributor(user_one, save=True)
+        user_two = UserFactory()
+        self.public_project.add_contributor(user_two, save=True)
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'index': 0
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'type': 'users',
+                            'id': self.user_two._id
+                        }
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth)
+        self.public_project.reload()
+        assert_equal(res.status_code, 201)
+        assert_equal(self.public_project.contributors.index(self.user_two), 0)
+
+    def test_add_contributor_set_index_last(self):
+        user_one = UserFactory()
+        self.public_project.add_contributor(user_one, save=True)
+        user_two = UserFactory()
+        self.public_project.add_contributor(user_two, save=True)
+        payload = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'index': 3
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'type': 'users',
+                            'id': self.user_two._id
+                        }
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth)
+        self.public_project.reload()
+        assert_equal(res.status_code, 201)
+        assert_equal(self.public_project.contributors.index(self.user_two), 3)
+
+
+class TestNodeContributorCreateValidation(NodeCRUDTestCase):
 
     def setUp(self):
         super(TestNodeContributorCreateValidation, self).setUp()
         self.validate_data = NodeContributorsCreateSerializer.validate_data
 
     def test_add_contributor_validation_user_id(self):
-        self.validate_data(NodeContributorsCreateSerializer(), user_id='abcde')
+        self.validate_data(NodeContributorsCreateSerializer(), self.public_project, user_id='abcde')
 
     def test_add_contributor_validation_user_id_fullname(self):
         with assert_raises(Conflict):
-            self.validate_data(NodeContributorsCreateSerializer(), user_id='abcde', full_name='Kanye')
+            self.validate_data(NodeContributorsCreateSerializer(), 'fake', user_id='abcde', full_name='Kanye')
 
     def test_add_contributor_validation_user_id_email(self):
         with assert_raises(Conflict):
-            self.validate_data(NodeContributorsCreateSerializer(), user_id='abcde', email='kanye@west.com')
+            self.validate_data(NodeContributorsCreateSerializer(), 'fake', user_id='abcde', email='kanye@west.com')
 
     def test_add_contributor_validation_user_id_fullname_email(self):
         with assert_raises(Conflict):
-            self.validate_data(NodeContributorsCreateSerializer(), user_id='abcde', full_name='Kanye', email='kanye@west.com')
+            self.validate_data(NodeContributorsCreateSerializer(), 'fake', user_id='abcde', full_name='Kanye', email='kanye@west.com')
 
     def test_add_contributor_validation_fullname(self):
-        self.validate_data(NodeContributorsCreateSerializer(), full_name='Kanye')
+        self.validate_data(NodeContributorsCreateSerializer(), self.public_project, full_name='Kanye')
 
     def test_add_contributor_validation_email(self):
         with assert_raises(exceptions.ValidationError):
-            self.validate_data(NodeContributorsCreateSerializer(), email='kanye@west.com')
+            self.validate_data(NodeContributorsCreateSerializer(), 'fake', email='kanye@west.com')
 
     def test_add_contributor_validation_fullname_email(self):
-        self.validate_data(NodeContributorsCreateSerializer(), full_name='Kanye', email='kanye@west.com')
+        self.validate_data(NodeContributorsCreateSerializer(), self.public_project, full_name='Kanye', email='kanye@west.com')
 
 
 class TestNodeContributorCreateEmail(NodeCRUDTestCase):
@@ -914,18 +1001,6 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
     def setUp(self):
         super(TestNodeContributorCreateEmail, self).setUp()
         self.url = '/{}nodes/{}/contributors/'.format(API_BASE, self.public_project._id)
-
-    def test_add_contributor_email_throttle(self):
-        user_one = UserFactory()
-        user_two = UserFactory()
-        payload_one = {'data': {'type': 'contributors',
-                                'attributes':{'full_name': user_one.fullname, 'email': user_one.username}}}
-        payload_two = {'data': {'type': 'contributors',
-                                'attributes': {'full_name': user_two.fullname, 'email': user_two.username}}}
-        res = self.app.post_json_api(self.url, payload_one, auth=self.user.auth)
-        assert_equal(res.status_code, 201)
-        res = self.app.post_json_api(self.url, payload_two, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 429)
 
     def test_add_contributor_email_throttle_sleep(self):
         user_one = UserFactory()

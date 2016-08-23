@@ -658,12 +658,13 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
 class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     """
-    Overrides NodeContributorsSerializer to add email, full_name, send_email, and non-required users field.
+    Overrides NodeContributorsSerializer to add email, full_name, send_email, and non-required index and users field.
     """
 
     id = ContributorIDField(source='_id', required=False, allow_null=True)
     full_name = ser.CharField(required=False)
     email = ser.EmailField(required=False)
+    index = ser.IntegerField(required=False)
 
     users = RelationshipField(
         related_view='users:user-detail',
@@ -673,15 +674,18 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
 
     email_preferences = ['default', 'preprint', 'false']
 
-    def validate_data(self, user_id=None, full_name=None, email=None):
+    def validate_data(self, node, user_id=None, full_name=None, email=None, index=None):
         if user_id and (full_name or email):
             raise Conflict(detail='Full name and/or email should not be included with a user ID.')
         if not user_id and not full_name:
             raise exceptions.ValidationError(detail='A user ID or full name must be provided to add a contributor.')
+        if index > len(node.contributors):
+            raise exceptions.ValidationError(detail='{} is not a valid contributor index for node with id {}'.format(index, node._id))
 
     def create(self, validated_data):
         id = validated_data.get('_id')
         email = validated_data.get('email')
+        index = validated_data.get('index')
         node = self.context['view'].get_node()
         auth = Auth(self.context['request'].user)
         full_name = validated_data.get('full_name')
@@ -689,15 +693,15 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
         send_email = self.context['request'].GET.get('send_email') or 'default'
         permissions = osf_permissions.expand_permissions(validated_data.get('permission')) or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
 
-        self.validate_data(user_id=id, full_name=full_name, email=email)
+        self.validate_data(node, user_id=id, full_name=full_name, email=email, index=index)
 
         if send_email not in self.email_preferences:
             raise exceptions.ValidationError(detail='{} is not a valid email preference.'.format(send_email))
 
         try:
             contributor = node.add_contributor_registered_or_not(
-                auth=auth, user_id=id, email=email, full_name=full_name,
-                send_email=send_email, permissions=permissions, bibliographic=bibliographic, save=True
+                auth=auth, user_id=id, email=email, full_name=full_name, send_email=send_email,
+                permissions=permissions, bibliographic=bibliographic, index=index, save=True
             )
         except TooManyRequests:
             raise exceptions.Throttled(detail='Too many contributor adds. Please wait a while and try again')
