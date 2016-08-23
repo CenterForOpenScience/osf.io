@@ -542,7 +542,7 @@ def unconfirmed_email_add(auth=None):
     }, 200
 
 
-def send_confirm_email(user, email, external_id_provider=None):
+def send_confirm_email(user, email, external_id_provider=None, external_id=None):
     """
     Sends a confirmation email to `user` to a given email.
 
@@ -563,10 +563,10 @@ def send_confirm_email(user, email, external_id_provider=None):
     campaign = campaigns.campaign_for_user(user)
 
     # Choose the appropriate email template to use and add existing_user flag if a merge or adding an email.
-    if external_id_provider:  # first time login through external identity provider
-        if user.external_identity[external_id_provider]['status'] == 'CREATE':
+    if external_id_provider and external_id:  # first time login through external identity provider
+        if user.external_identity[external_id_provider][external_id] == 'CREATE':
             mail_template = mails.EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE
-        elif user.external_identity[external_id_provider]['status'] == 'LINK':
+        elif user.external_identity[external_id_provider][external_id] == 'LINK':
             mail_template = mails.EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK
     elif merge_target:  # merge account
         mail_template = mails.CONFIRM_MERGE
@@ -757,9 +757,8 @@ def external_login_email_post():
         user = get_user(email=clean_email)
         external_identity = {
             external_id_provider: {
-                'id': external_id,
-                'status': None,
-            }
+                external_id: None,
+            },
         }
         if user:
             external_status = ''
@@ -767,37 +766,31 @@ def external_login_email_post():
             if user.external_identity:
                 if external_id_provider in user.external_identity:
                     if user.external_identity[external_id_provider]:
-                        external_status = user.external_identity[external_id_provider]['status']
-
+                        if external_id in user.external_identity[external_id_provider]:
+                            external_status = user.external_identity[external_id_provider][external_id]
             # TODO: [new OSF ticket] handle pending status: the current or another user also claimed this osf account but not confirmed
+            if external_status == 'CREATE' or external_status == 'LINK':
+                pass
 
-            if external_status == 'VERIFIED':
-                message = language.EXTERNAL_LOGIN_EMAIL_LINK_FAIL.format(
-                    external_id_provider=external_id_provider,
-                    email=user.username
-                )
-                kind = 'warn'
-            else:
-                # 1. update user oauth, with pending status
-                external_identity[external_id_provider]['status'] = 'LINK'
-                user.external_identity.update(external_identity)
-                user.save()
-                # TODO: do we need a signal here
-                # 2. add unconfirmed email and send confirmation email
-                user.add_unconfirmed_email(clean_email, external_identity=external_identity)
-                user.save()
-                send_confirm_email(user, user.username, external_id_provider=external_id_provider)
-                # 3. notify user
-                message = language.EXTERNAL_LOGIN_EMAIL_LINK_SUCCESS.format(
-                    external_id_provider=external_id_provider,
-                    email=user.username
-                )
-                kind = 'success'
-                # 4. remove session and osf cookie
-                remove_session(session)
+            # 1. update user oauth, with pending status
+            external_identity[external_id_provider][external_id] = 'LINK'
+            user.external_identity.update(external_identity)
+            user.save()
+            # 2. add unconfirmed email and send confirmation email
+            user.add_unconfirmed_email(clean_email, external_identity=external_identity)
+            user.save()
+            send_confirm_email(user, user.username, external_id_provider=external_id_provider, external_id=external_id)
+            # 3. notify user
+            message = language.EXTERNAL_LOGIN_EMAIL_LINK_SUCCESS.format(
+                external_id_provider=external_id_provider,
+                email=user.username
+            )
+            kind = 'success'
+            # 4. remove session and osf cookie
+            remove_session(session)
         else:
             # 1. create unconfirmed user with pending status
-            external_identity[external_id_provider]['status'] = 'CREATE'
+            external_identity[external_id_provider][external_id] = 'CREATE'
             user = User.create_unconfirmed(
                 username=clean_email,
                 password=str(uuid.uuid4()),
@@ -808,7 +801,7 @@ def external_login_email_post():
             # TODO: [new OSF ticket] update social fields, verified social fields cannot be modified
             user.save()
             # 3. send confirmation email
-            send_confirm_email(user, user.username, external_id_provider=external_id_provider)
+            send_confirm_email(user, user.username, external_id_provider=external_id_provider, external_id=external_id)
             # 4. notify user
             message = language.EXTERNAL_LOGIN_EMAIL_CREATE_SUCCESS.format(
                 external_id_provider=external_id_provider,
