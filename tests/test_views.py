@@ -3426,6 +3426,56 @@ class TestAuthViews(OsfTestCase):
         assert_true(user.is_registered)
 
 
+class TextExternalAuthViews(OsfTestCase):
+
+    def setUp(self):
+        super(TextExternalAuthViews, self).setUp()
+        name, email = fake.name(), fake.email()
+        external_identity = {
+            'service': {
+                'id': fake.ean(),
+                'status': 'CREATE'
+            }
+        }
+        self.user = User.create_unconfirmed(
+            username=email,
+            password=str(fake.password()),
+            fullname=name,
+            external_identity=external_identity,
+            external_id_provider='service'
+        )
+        self.user.save()
+        self.auth = Auth(self.user)
+
+    @mock.patch('website.mails.send_mail')
+    def test_external_login_confirm_email_get_create(self, mock_welcome):
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service')
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(res.status_code, 302, 'redirects to cas login')
+        assert_in('/login?service=', res.location)
+        assert_in('new=true', res.location)
+
+        assert_equal(mock_welcome.call_count, 1)
+
+        self.user.reload()
+        assert_equal(self.user.external_identity['service']['status'], 'VERIFIED')
+
+    @mock.patch('website.mails.send_mail')
+    def test_external_login_confirm_email_get_link(self, mock_link_confirm):
+        self.user.external_identity['service']['status'] = 'LINK'
+        self.user.save()
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service')
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(res.status_code, 302, 'redirects to cas login')
+        assert_in('/login?service=', res.location)
+        assert_not_in('new=true', res.location)
+
+        # assert_equal(mock_link_confirm.call_count, 1)  # TODO
+
+        self.user.reload()
+        assert_equal(self.user.external_identity['service']['status'], 'VERIFIED')
+
+
 # TODO: Use mock add-on
 class TestAddonUserViews(OsfTestCase):
 
