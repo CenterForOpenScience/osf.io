@@ -94,6 +94,7 @@
             isPublic: ${ node.get('is_public', False) | sjson, n },
             isRegistration: ${ node.get('is_registration', False) | sjson, n },
             isRetracted: ${ node.get('is_retracted', False) | sjson, n },
+            isPreprint: ${ node.get('is_preprint', False) | sjson, n },
             anonymous: ${ node['anonymous'] | sjson, n },
             category: ${node['category_short'] | sjson, n },
             parentTitle: ${ parent_title | sjson, n },
