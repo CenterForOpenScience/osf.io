@@ -8,7 +8,7 @@ import modularodm.exceptions
 import pytz
 
 from osf_models.exceptions import ValidationError
-from osf_models.modm_compat import to_django_query
+from osf_models.modm_compat import to_django_query, Q
 from osf_models.utils.base import get_object_id
 
 ALPHABET = '23456789abcdefghjkmnpqrstuvwxyz'
@@ -176,6 +176,18 @@ class Guid(BaseModel):
             return cls.objects.get(guid=data)
         except cls.DoesNotExist:
             return None
+
+    @classmethod
+    def find(cls, query, *args, **kwargs):
+        # Make referent queryable
+        # NOTE: This won't work with compound queries
+        if hasattr(query, 'attribute') and query.attribute == 'referent':
+            # We rely on the fact that the related_name for BaseIDMixin.guid
+            # is 'referent_<lowercased class name>'
+            class_name = query.argument.__class__.__name__.lower()
+            return super(Guid, cls).find(Q('referent_{}'.format(class_name), query.op, query.argument))
+        else:
+            return super(Guid, cls).find(query, *args, **kwargs)
 
     @property
     def referent(self):
