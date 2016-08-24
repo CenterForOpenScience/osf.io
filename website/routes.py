@@ -514,6 +514,14 @@ def make_url_map(app):
             notemplate
         ),
 
+        # confirm email for login through external identity provider
+        Rule(
+            '/confirm/external/<uid>/<token>/',
+            'get',
+            auth_views.external_login_confirm_email_get,
+            notemplate
+        ),
+
         # reset password get
         Rule(
             '/resetpassword/<verification_key>/',
@@ -545,6 +553,22 @@ def make_url_map(app):
             auth_views.resend_confirmation_post,
             OsfWebRenderer('resend.mako', render_mako_string, trust=False)
 
+        ),
+
+        # oauth user email get
+        Rule(
+            '/external-login/email',
+            'get',
+            auth_views.external_login_email_get,
+            OsfWebRenderer('external_login_email.mako', render_mako_string, trust=False)
+        ),
+
+        # oauth user email post
+        Rule(
+            '/external-login/email',
+            'post',
+            auth_views.external_login_email_post,
+            OsfWebRenderer('external_login_email.mako', render_mako_string, trust=False)
         ),
 
         # user sign up page

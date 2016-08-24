@@ -3410,6 +3410,60 @@ class TestAuthViews(OsfTestCase):
         assert_true(user.is_registered)
 
 
+class TextExternalAuthViews(OsfTestCase):
+
+    def setUp(self):
+        super(TextExternalAuthViews, self).setUp()
+        name, email = fake.name(), fake.email()
+        self.provider_id = fake.ean()
+        external_identity = {
+            'service': {
+                self.provider_id: 'CREATE'
+            }
+        }
+        self.user = User.create_unconfirmed(
+            username=email,
+            password=str(fake.password()),
+            fullname=name,
+            external_identity=external_identity,
+        )
+        self.user.save()
+        self.auth = Auth(self.user)
+
+    def test_external_login_email_get_with_invalid_session(self):
+        url = web_url_for('external_login_email_get')
+        resp = self.app.get(url, expect_errors=True)
+        assert_equal(resp.status_code, 401)
+
+    @mock.patch('website.mails.send_mail')
+    def test_external_login_confirm_email_get_create(self, mock_welcome):
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service')
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(res.status_code, 302, 'redirects to cas login')
+        assert_in('/login?service=', res.location)
+        assert_in('new=true', res.location)
+
+        assert_equal(mock_welcome.call_count, 1)
+
+        self.user.reload()
+        assert_equal(self.user.external_identity['service'][self.provider_id], 'VERIFIED')
+
+    @mock.patch('website.mails.send_mail')
+    def test_external_login_confirm_email_get_link(self, mock_link_confirm):
+        self.user.external_identity['service'][self.provider_id] = 'LINK'
+        self.user.save()
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service')
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(res.status_code, 302, 'redirects to cas login')
+        assert_in('/login?service=', res.location)
+        assert_not_in('new=true', res.location)
+
+        # assert_equal(mock_link_confirm.call_count, 1)  # TODO
+
+        self.user.reload()
+        assert_equal(self.user.external_identity['service'][self.provider_id], 'VERIFIED')
+
+
 # TODO: Use mock add-on
 class TestAddonUserViews(OsfTestCase):
 
