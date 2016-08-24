@@ -17,6 +17,7 @@
                 ${form.email(placeholder='Email address', autofocus=True) | unicode, n }
             </div>
             <button type='submit' class='btn btn-primary'>Send</button>
+            <a href='/logout' class='btn btn-danger'>Cancel</a>
         </form>
     </div>
 </div>
