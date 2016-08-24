@@ -313,16 +313,7 @@ class ObjectIDMixin(BaseIDMixin):
     class Meta:
         abstract = True
 
-# TODO: Implement a manager that does select_related('guid')
-class MODMCompatibilityGuidQuerySet(MODMCompatibilityQuerySet):
-
-    def get_by_guid(self, guid):
-        return self.get(guid__guid=guid)
-
-
 class GuidMixin(BaseIDMixin):
-    objects = MODMCompatibilityGuidQuerySet.as_manager()
-
     primary_identifier_name = 'guid'
 
     @property
