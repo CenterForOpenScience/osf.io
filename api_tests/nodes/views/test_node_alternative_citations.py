@@ -227,7 +227,7 @@ class TestUpdateAlternativeCitations(ApiTestCase):
                                      errors=True)
         assert_equal(res.status_code, 401)
         assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
         citation.reload()
         assert_equal(citation.text, "text")
 
@@ -239,7 +239,7 @@ class TestUpdateAlternativeCitations(ApiTestCase):
                                      errors=True)
         assert_equal(res.status_code, 401)
         assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
         citation.reload()
         assert_equal(citation.text, "text")
 
@@ -416,7 +416,7 @@ class TestUpdateAlternativeCitations(ApiTestCase):
                                      errors=True)
         assert_equal(res.status_code, 401)
         assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided')
         citation.reload()
         assert_equal(citation.name, "name")
 
@@ -429,7 +429,7 @@ class TestUpdateAlternativeCitations(ApiTestCase):
                                      errors=True)
         assert_equal(res.status_code, 401)
         assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
         citation.reload()
         assert_equal(citation.name, "name")
 
@@ -514,7 +514,7 @@ class TestUpdateAlternativeCitations(ApiTestCase):
                                      errors=True)
         assert_equal(res.status_code, 401)
         assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
         citation.reload()
         assert_equal(citation.text, "text")
 
@@ -527,7 +527,7 @@ class TestUpdateAlternativeCitations(ApiTestCase):
                                      errors=True)
         assert_equal(res.status_code, 401)
         assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
         citation.reload()
         assert_equal(citation.text, "text")
 
@@ -622,21 +622,21 @@ class TestUpdateAlternativeCitations(ApiTestCase):
                                      errors=True)
         assert_equal(res.status_code, 401)
         assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provdided.')
         citation.reload()
         assert_equal(citation.text, "text")
         assert_equal(citation.name, "name")
 
     def test_update_citation_repeat_logged_out_private(self):
         res, citation = self.request(name="name2",
-                                     text="text2",
+                                    text="text2",
                                      public=False,
                                      logged_out=True,
                                      citation2=True,
                                      errors=True)
         assert_equal(res.status_code, 401)
         assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
         citation.reload()
         assert_equal(citation.text, "text")
         assert_equal(citation.name, "name")
@@ -903,7 +903,7 @@ class TestUpdateAlternativeCitations(ApiTestCase):
                                      errors=True)
         assert_equal(res.status_code, 401)
         assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
         citation.reload()
         assert_equal(citation.text, "text")
         assert_equal(citation.name, "name")
@@ -916,7 +916,7 @@ class TestUpdateAlternativeCitations(ApiTestCase):
                                      errors=True)
         assert_equal(res.status_code, 401)
         assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
         citation.reload()
         assert_equal(citation.text, "text")
         assert_equal(citation.name, "name")
@@ -1114,7 +1114,7 @@ class TestUpdateAlternativeCitations(ApiTestCase):
                                      errors=True)
         assert_equal(res.status_code, 401)
         assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
         citation.reload()
         assert_equal(citation.text, "text")
         assert_equal(citation.name, "name")
@@ -1128,7 +1128,7 @@ class TestUpdateAlternativeCitations(ApiTestCase):
                                      errors=True)
         assert_equal(res.status_code, 401)
         assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
         citation.reload()
         assert_equal(citation.text, "text")
         assert_equal(citation.name, "name")

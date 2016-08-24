@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import furl
 from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
@@ -60,7 +61,7 @@ class TestWikiDetailView(ApiWikiTestCase):
         self._set_up_private_project_with_wiki_page()
         res = self.app.get(self.private_url, expect_errors=True)
         assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
 
     def test_private_node_logged_in_non_contributor_cannot_view_wiki(self):
         self._set_up_private_project_with_wiki_page()
@@ -126,7 +127,7 @@ class TestWikiDetailView(ApiWikiTestCase):
         self._set_up_private_registration_with_wiki_page()
         res = self.app.get(self.private_registration_url, expect_errors=True)
         assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication details were not provided.')
 
     def test_private_registration_logged_in_non_contributor_cannot_view_wiki(self):
         self._set_up_private_registration_with_wiki_page()

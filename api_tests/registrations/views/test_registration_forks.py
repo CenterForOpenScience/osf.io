@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from nose.tools import *  # flake8: noqa
 
 from framework.auth.core import Auth
@@ -95,7 +96,7 @@ class TestRegistrationForksList(ApiTestCase):
     def test_cannot_access_private_registration_forks_list_unauthenticated(self):
         res = self.app.get(self.private_registration_url, expect_errors=True)
         assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
 
     def test_authenticated_contributor_can_access_private_registration_forks_list(self):
         res = self.app.get(self.private_registration_url + '?embed=children&embed=node_links&embed=logs&embed=contributors&embed=forked_from', auth=self.user.auth)
@@ -206,7 +207,7 @@ class TestRegistrationForkCreate(ApiTestCase):
     def test_cannot_fork_public_registration_logged_out(self):
         res = self.app.post_json_api(self.public_registration_url, self.fork_data, expect_errors=True)
         assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
 
     def test_can_fork_public_registration_logged_in_contributor(self):
         res = self.app.post_json_api(self.public_registration_url, self.fork_data, auth=self.user.auth)
@@ -220,7 +221,7 @@ class TestRegistrationForkCreate(ApiTestCase):
     def test_cannot_fork_private_registration_logged_out(self):
         res = self.app.post_json_api(self.private_registration_url, self.fork_data, expect_errors=True)
         assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
 
     def test_cannot_fork_private_registration_logged_in_non_contributor(self):
         res = self.app.post_json_api(self.private_registration_url, self.fork_data, auth=self.user_two.auth, expect_errors=True)

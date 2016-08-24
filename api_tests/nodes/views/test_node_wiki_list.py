@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
@@ -52,7 +53,7 @@ class TestNodeWikiList(ApiWikiTestCase):
         self._set_up_private_project_with_wiki_page()
         res = self.app.get(self.private_url, expect_errors=True)
         assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
 
     def test_return_private_node_wikis_logged_in_non_contributor(self):
         self._set_up_private_project_with_wiki_page()
@@ -71,7 +72,7 @@ class TestNodeWikiList(ApiWikiTestCase):
         self._set_up_registration_with_wiki_page()
         res = self.app.get(self.registration_url, expect_errors=True)
         assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credential were not provided.')
 
     def test_return_registration_wikis_logged_in_non_contributor(self):
         self._set_up_registration_with_wiki_page()
