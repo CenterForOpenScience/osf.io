@@ -1,11 +1,12 @@
-from comments import *
-from common import *
-from groups import *
-from topics import *
-from users import *
+import common
+from .comments import *
+from .common import *
+from .groups import *
+from .topics import *
+from .users import *
 
 def sync_project(project_node):
-    if in_migration:
+    if common.in_migration:
         return
 
     sync_group(project_node)

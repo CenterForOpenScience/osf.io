@@ -34,3 +34,7 @@ try:
     project_category = _get_or_create_category('Projects', settings.DISCOURSE_CATEGORY_COLORS[2])
 except (DiscourseException, requests.exceptions.ConnectionError):
     logger.exception("Discourse is either not running, or is malfunctioning. For correct Discourse functionality, please configure Discourse, make sure it is running, and restart the OSF.")
+
+    file_category = None
+    wiki_category = None
+    project_category = None

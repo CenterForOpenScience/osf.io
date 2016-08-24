@@ -57,7 +57,10 @@ def main():
 
     in_file = open(sys.argv[1], 'r')
     init_app(set_backends=True, routes=False)
+
+    discourse.common.in_migration = True
     import_discourse_ids(in_file, dry_run)
+    discourse.common.in_migration = False
 
 if __name__ == '__main__':
     main()

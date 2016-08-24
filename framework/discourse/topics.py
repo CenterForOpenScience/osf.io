@@ -1,3 +1,4 @@
+import common
 from .common import *
 from .categories import *
 from .groups import *
@@ -53,6 +54,9 @@ def create_topic(node):
     data = {}
     project_node = _get_project_node(node)
 
+    if wiki_category is None:
+        raise DiscourseException('Cannot create topic. Discourse did not properly load when the OSF was started. Insure Discourse is running and restart the OSF.')
+
     # privacy is completely relegated to the group with the corresponding project_guid
     data['archetype'] = 'regular'
 
@@ -93,7 +97,7 @@ def _update_topic_metadata(node):
     return request('put', '/t/' + node.guid_id + '/' + str(node.discourse_topic_id), data)
 
 def sync_topic(node):
-    if in_migration:
+    if common.in_migration:
         return
 
     if node.discourse_topic_id is None:
