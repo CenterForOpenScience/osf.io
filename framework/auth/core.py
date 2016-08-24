@@ -1467,12 +1467,12 @@ class User(GuidStoredObject, AddonModelMixin):
         or just their primary keys
         """
         if primary_keys:
-            projects_contributed_to = set(self.contributed.get_keys())
-            other_projects_primary_keys = set(other_user.contributed.get_keys())
+            projects_contributed_to = set(self.contributor_to.get_keys())
+            other_projects_primary_keys = set(other_user.contributor_to.get_keys())
             return projects_contributed_to.intersection(other_projects_primary_keys)
         else:
-            projects_contributed_to = set(self.contributed)
-            return projects_contributed_to.intersection(other_user.contributed)
+            projects_contributed_to = set(self.contributor_to)
+            return projects_contributed_to.intersection(other_user.contributor_to)
 
     def n_projects_in_common(self, other_user):
         """Returns number of "shared projects" (projects that both users are contributors for)"""
