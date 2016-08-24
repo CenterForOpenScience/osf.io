@@ -252,7 +252,7 @@
 <div class="row">
     <div class="col-xs-12">
         <div class="pp-notice pp-warning m-b-md p-md clearfix">
-            This project used to represent a preprint, but the primary manuscript has been moved or deleted. <a href="/preprints/submit/" class="btn btn-default btn-sm m-r-xs pull-right">Create a new preprint</a>
+            This project used to represent a preprint, but the primary preprint file has been moved or deleted. <a href="/preprints/submit/" class="btn btn-default btn-sm m-r-xs pull-right">Create a new preprint</a>
         </div> 
     </div>
 </div>

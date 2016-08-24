@@ -176,7 +176,7 @@ var FileViewPage = {
                     self.file.safeName + '</strong>?' + '</p>';
 
             if (self.file.id === self.node.preprintFileId) {
-                title = 'Delete preprint manuscript?';
+                title = 'Delete primary preprint file?';
                 message = '<p class="overflow">' +
                     'Are you sure you want to delete <strong>' +
                     self.file.safeName + '</strong>?' + ' It is currently the primary file ' +
