@@ -1036,7 +1036,7 @@ function _removeEvent (event, items, col) {
             // title = 'Delete the primary preprint file "' + items[0].data.name + '"?';
             detail = [
                 m('p', 'This is the primary file for a preprint.'),
-                m('p', m('strong', 'Deleting this file will remove your preprint from circulation.'))
+                m('p', m('strong', 'Deleting this file will remove this preprint from circulation.'))
             ];
         }
         if(items[0].kind !== 'folder'){
@@ -1080,7 +1080,7 @@ function _removeEvent (event, items, col) {
             if (window.contextVars.node.preprintFileId === item.data.path.replace('/', '')) {
                 deleteMessage.push([
                     m('p', 'One of the files you have selected is the primary file for a preprint.'),
-                    m('p', m('strong', 'Deleting this file will remove your preprint from circulation.'))
+                    m('p', m('strong', 'Deleting this file will remove this preprint from circulation.'))
                 ]);
             }
         });
