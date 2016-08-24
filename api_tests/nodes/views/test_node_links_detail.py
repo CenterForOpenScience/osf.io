@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 from nose.tools import *  # flake8: noqa
 from urlparse import urlparse
 from framework.auth.core import Auth

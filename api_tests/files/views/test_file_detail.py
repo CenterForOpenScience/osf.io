@@ -23,8 +23,7 @@ from website.project.model import NodeLog
 def _dt_to_iso8601(value):
     iso8601 = value.isoformat()
     if iso8601.endswith('+00:00'):
-        iso8601 = iso8601[:-9] + 'Z'  # offset upped to 9 to get rid of 3 ms decimal points
-
+        iso8601 = iso8601[:-6] + 'Z'  # offset upped to 9 to get rid of 3 ms decimal points
     return iso8601
 
 
@@ -71,6 +70,8 @@ class TestFileView(ApiTestCase):
         assert_equal(attributes['last_touched'], None)
         assert_equal(attributes['provider'], self.file.provider)
         assert_equal(attributes['size'], self.file.versions[-1].size)
+        print(attributes['date_modified'])
+        print(self.file.versions[0].date_created.replace(tzinfo=pytz.utc))
         assert_equal(attributes['date_modified'], _dt_to_iso8601(self.file.versions[-1].date_created.replace(tzinfo=pytz.utc)))
         assert_equal(attributes['date_created'], _dt_to_iso8601(self.file.versions[0].date_created.replace(tzinfo=pytz.utc)))
         assert_equal(attributes['extra']['hashes']['md5'], None)
