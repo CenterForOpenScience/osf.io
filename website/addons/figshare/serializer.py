@@ -5,7 +5,7 @@ from website.util import api_url_for, web_url_for
 
 class FigshareSerializer(StorageAddonSerializer):
 
-    addon_short_name = 'box'
+    addon_short_name = 'figshare'
 
     def credentials_are_valid(self, user_settings, client):
         if user_settings:
