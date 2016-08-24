@@ -11,10 +11,17 @@ from osf_models.scripts.migrate_nodes import save_bare_nodes, save_bare_institut
     save_bare_collections, merge_duplicate_users, save_bare_users, save_bare_tags, save_bare_system_tags, \
     build_pk_caches, save_bare
 
+from framework.sessions import Session
 from website.app import init_app
 from website.archiver.model import ArchiveTarget, ArchiveJob
+from website.citations.models import CitationStyle
 from website.conferences.model import Conference
-from website.project.model import AlternativeCitation, Comment, MetaSchema, DraftRegistrationLog, DraftRegistration
+from website.mails import QueuedMail
+from website.notifications.model import NotificationDigest, NotificationSubscription
+from website.oauth.models import ExternalAccount
+from website.project.licenses import NodeLicense, NodeLicenseRecord
+from website.project.model import AlternativeCitation, Comment, MetaSchema, DraftRegistrationLog, DraftRegistration, \
+    PrivateLink
 from website.project.sanctions import RegistrationApproval, \
     Retraction, Embargo, DraftRegistrationApproval, EmbargoTerminationApproval
 
@@ -35,7 +42,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         print('Initializing Flask App...')
-        init_app()
+        init_app(fixtures=False)
         start = datetime.now()
 
         load_guids()
@@ -54,6 +61,14 @@ class Command(BaseCommand):
         save_bare(AlternativeCitation, models.AlternativeCitation)
         save_bare(Comment, models.Comment)
         save_bare(Conference, models.Conference)
+        save_bare(CitationStyle, models.CitationStyle)
+        save_bare(QueuedMail, models.QueuedMail)
+        save_bare(ExternalAccount, models.ExternalAccount)
+        save_bare(NodeLicense, models.NodeLicense)
+        save_bare(NodeLicenseRecord, models.NodeLicenseRecord)
+        save_bare(PrivateLink, models.PrivateLink)
+        save_bare(NotificationDigest, models.NotificationDigest)
+        save_bare(NotificationSubscription, models.NotificationSubscription)
         save_bare_institutions()
         save_bare(MetaSchema, models.MetaSchema)
         save_bare_nodes()
@@ -72,6 +87,8 @@ class Command(BaseCommand):
         # this is bad, but merged users have blank usernames and this is the quickest way to fix it.
         merge_duplicate_users()
         save_bare_users()
+
+        save_bare(Session, models.Session)
 
         global modm_to_django
         modm_to_django = build_pk_caches()

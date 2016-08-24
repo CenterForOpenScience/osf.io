@@ -4,6 +4,7 @@ import functools
 import httplib as http
 import logging
 
+import pytz
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.utils import timezone
@@ -66,7 +67,7 @@ class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
     provider_name = models.CharField(max_length=255, blank=False, null=False)
 
     # The unique, persistent ID on the remote service.
-    provider_id = models.CharField(max_length=255, blank=True, null=True)
+    provider_id = models.CharField(max_length=255, blank=False, null=False)
 
     # The user's name on the external service
     display_name = models.CharField(max_length=255, blank=True, null=True)
@@ -77,9 +78,14 @@ class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
         return '<ExternalAccount: {}/{}>'.format(self.provider,
                                                  self.provider_id)
 
+    def natural_key(self):
+        if self.pk:
+            return self.pk
+        return hash(str(self.provider_id) + str(self.provider))
+
     class Meta:
         unique_together = [
-            ('provider', 'provider_id', )
+            ('provider', 'provider_id',)
         ]
 
 

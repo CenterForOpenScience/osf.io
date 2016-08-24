@@ -101,6 +101,9 @@ class BaseModel(models.Model):
     def _primary_name(self):
         return '_id'
 
+    def natural_key(self):
+        return self.pk
+
     def clone(self):
         """Create a new, unsaved copy of this object."""
         copy = self.__class__.objects.get(pk=self.pk)
