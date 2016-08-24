@@ -72,7 +72,7 @@ class TestBasicAuthenticationValidation(ApiTestCase):
         user1_addon.is_confirmed = True
         user1_addon.save()
 
-        res = self.app.get(self.reachable_url, auth=self.user1.auth, headers={'X-OSF-OTP': 'invalid otp'}, expect_errors=True)
+        res = self.app.get(self.reachable_url, auth=self.user1.auth, headers={'X-OSF-OTP': str('invalid otp')}, expect_errors=True)
         assert_equal(res.status_code, 401)
         assert_true('X-OSF-OTP' not in res.headers)
         assert_equal(res.json.get("errors")[0]['detail'], 'Invalid two-factor authentication OTP code.')
