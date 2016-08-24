@@ -1246,7 +1246,7 @@ class TestCollectionBulkUpdate(ApiTestCase):
     def test_bulk_update_collections_logged_out(self):
         res = self.app.put_json_api(self.url, self.collection_payload, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], "Authentication credentials were not provided.")
+        assert_equal(res.json['errors'][0]['detail'], "You do not have permission to perform this action.")
 
         url = self.detail_url_base.format(API_BASE, self.collection._id)
         url_two = self.detail_url_base.format(API_BASE, self.collection_two._id)
@@ -1399,7 +1399,7 @@ class TestNodeBulkDelete(ApiTestCase):
     def test_bulk_delete_collections_logged_out(self):
         res = self.app.delete_json_api(self.url, self.payload_one, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
         res = self.app.get(self.project_one_url, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 200)

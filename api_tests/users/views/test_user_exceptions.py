@@ -43,7 +43,7 @@ class TestExceptionFormatting(ApiTestCase):
         res = self.app.put_json_api(self.url, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
-        assert_equal(errors[0], {'detail': "Authentication credentials were not provided."})
+        assert_equal(errors[0], {'detail': "You do not have permission to perform this action."})
 
     def test_updates_user_forbidden(self):
         res = self.app.put_json_api(self.url, auth=self.user_two.auth, expect_errors=True)

@@ -90,7 +90,7 @@ class TestNodeForksList(ApiTestCase):
         res = self.app.get(self.private_project_url, expect_errors=True)
 
         assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
     def test_authenticated_contributor_can_access_private_node_forks_list(self):
         res = self.app.get(self.private_project_url + '?embed=children&embed=node_links&embed=logs&embed=contributors&embed=forked_from', auth=self.user.auth)
@@ -183,7 +183,7 @@ class TestNodeForkCreate(ApiTestCase):
     def test_cannot_fork_public_node_logged_out(self):
         res = self.app.post_json_api(self.public_project_url, self.fork_data, expect_errors=True)
         assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
     def test_can_fork_public_node_logged_in_contributor(self):
         res = self.app.post_json_api(self.public_project_url, self.fork_data, auth=self.user.auth)
@@ -194,7 +194,7 @@ class TestNodeForkCreate(ApiTestCase):
     def test_cannot_fork_private_node_logged_out(self):
         res = self.app.post_json_api(self.private_project_url, self.fork_data, expect_errors=True)
         assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
     def test_cannot_fork_private_node_logged_in_non_contributor(self):
         res = self.app.post_json_api(self.private_project_url, self.fork_data, auth=self.user_two.auth, expect_errors=True)

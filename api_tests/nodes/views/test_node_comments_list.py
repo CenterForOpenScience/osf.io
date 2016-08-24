@@ -55,13 +55,13 @@ class NodeCommentsListMixin(object):
         self._set_up_private_project_with_comment()
         res = self.app.get(self.private_url, expect_errors=True)
         assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
     def test_return_private_node_comments_logged_in_non_contributor(self):
         self._set_up_private_project_with_comment()
         res = self.app.get(self.private_url, auth=self.non_contributor, expect_errors=True)
         assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
     def test_return_private_node_comments_logged_in_contributor(self):
         self._set_up_private_project_with_comment()
@@ -220,7 +220,7 @@ class NodeCommentsCreateMixin(object):
         self._set_up_private_project_with_private_comment_level()
         res = self.app.post_json_api(self.private_url, self.private_payload, expect_errors=True)
         assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
     def test_private_node_with_public_comment_level_admin_can_comment(self):
         """ Test admin contributors can still comment on a private project with comment_level == 'public' """
@@ -257,7 +257,7 @@ class NodeCommentsCreateMixin(object):
         res = self.app.post_json_api(self.private_project_public_comments_url,
                                      self.private_project_public_comments_payload, expect_errors=True)
         assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
     def test_public_project_with_public_comment_level_admin_can_comment(self):
         """ Test admin contributor can still comment on a public project when it is
@@ -289,7 +289,7 @@ class NodeCommentsCreateMixin(object):
         self._set_up_public_project_with_public_comment_level()
         res = self.app.post_json_api(self.public_comments_url, self.public_comment_level_payload, expect_errors=True)
         assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
     def test_public_node_private_comment_level_admin_can_comment(self):
         """ Test only contributors can comment on a public project when it is
@@ -315,7 +315,7 @@ class NodeCommentsCreateMixin(object):
         self._set_up_public_project_with_private_comment_level()
         res = self.app.post_json_api(self.public_url, self.public_payload, expect_errors=True)
         assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
 
 class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):

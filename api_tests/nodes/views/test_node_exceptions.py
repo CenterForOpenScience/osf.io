@@ -60,7 +60,7 @@ class TestExceptionFormatting(ApiTestCase):
         res = self.app.get(self.private_url, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
-        assert_equal(errors[0], {'detail': "Authentication credentials were not provided."})
+        assert_equal(errors[0], {'detail': "You do not have permission to perform this action."})
 
     def test_update_project_with_no_title_or_category_formatting(self):
         res = self.app.put_json_api(self.private_url, {'data': {'type': 'nodes', 'id': self.private_project._id, 'attributes': {'description': 'New description'}}}, auth=self.user.auth, expect_errors=True)

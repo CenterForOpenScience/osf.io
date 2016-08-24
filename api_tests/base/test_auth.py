@@ -38,7 +38,7 @@ class TestBasicAuthenticationValidation(ApiTestCase):
     def test_missing_credential_fails(self):
         res = self.app.get(self.unreachable_url, auth=None, expect_errors=True)
         assert_equal(res.status_code, 401)
-        assert_equal(res.json.get("errors")[0]['detail'], 'Authentication credentials were not provided.')
+        assert_equal(res.json.get("errors")[0]['detail'], 'You do not have permission to perform this action.')
 
     def test_invalid_credential_fails(self):
         res = self.app.get(self.unreachable_url, auth=(self.user1.username, 'invalid password'), expect_errors=True)
@@ -105,8 +105,7 @@ class TestOAuthValidation(ApiTestCase):
     def test_missing_token_fails(self):
         res = self.app.get(self.reachable_url, auth=None, auth_type='jwt', expect_errors=True)
         assert_equal(res.status_code, 401)
-        assert_equal(res.json.get("errors")[0]['detail'],
-                     'Authentication credentials were not provided.')
+        assert_equal(res.json.get("errors")[0]['detail'], 'You do not have permission to perform this action.')
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_invalid_token_fails(self, mock_user_info):
