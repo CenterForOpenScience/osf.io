@@ -88,7 +88,7 @@ class PreprintSerializer(JSONAPISerializer):
         return self.get_preprint_url(obj)
 
     def get_doi_url(self, obj):
-        return 'https://dx.doi.org/{}'.format(obj.preprint_doi)
+        return 'https://dx.doi.org/{}'.format(obj.preprint_doi) if obj.preprint_doi else None
 
     def create(self, validated_data):
         node = Node.load(validated_data.pop('_id', None))
