@@ -264,7 +264,7 @@ def make_response_from_ticket(ticket, service_url):
             user = {
                 'external_id_provider': external_credential['provider'],
                 'external_id': external_credential['id'],
-                'fullname': cas_resp.attributes['given-names'] + ' ' + cas_resp.attributes['family-name'],
+                'fullname': '{} {}'.format(cas_resp.attributes.get('given-names'), cas_resp.attributes.get('family-name')),
                 'access_token': cas_resp.attributes['accessToken'],
             }
             return external_first_login_authenticate(
