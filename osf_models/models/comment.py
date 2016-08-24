@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.db.models import Q
 from osf_models.models import Node
 from osf_models.models import NodeLog
-from osf_models.models.base import GuidMixin, Guid
+from osf_models.models.base import GuidMixin, Guid, BaseModel
 from osf_models.utils.base import api_v2_url
 
 from framework.exceptions import PermissionsError
@@ -24,7 +24,7 @@ class CommentableMixin(object):
     pass
 
 
-class Comment(GuidMixin, SpamMixin, CommentableMixin):
+class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
     __guid_min_length__ = 12
 
     OVERVIEW = 'node'
