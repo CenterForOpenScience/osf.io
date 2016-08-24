@@ -461,11 +461,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         self.update_is_active()
         self.username = self.username.lower().strip() if self.username else None
         dirty_fields = set(self.get_dirty_fields())
+        ret = super(OSFUser, self).save(*args, **kwargs)
         if self.SEARCH_UPDATE_FIELDS.intersection(dirty_fields) and self.is_confirmed:
             self.update_search()
             # TODO
             # self.update_search_nodes_contributors()
-        return super(OSFUser, self).save(*args, **kwargs)
+        return ret
 
     # Legacy methods
 
@@ -858,7 +859,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
                  .filter(contributors=self)
                  .filter(contributors=other_user))
         if primary_keys:
-            return set(query.values_list('_guid__guid', flat=True))
+            return set(query.values_list('guid__guid', flat=True))
         else:
             return set(query.all())
 

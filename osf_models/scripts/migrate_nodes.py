@@ -484,7 +484,7 @@ def set_node_foreign_keys_on_nodes(page_size=10000):
                     build_query(fk_node_fields, MODMNode),
                     allow_institution=False).sort('-date_modified')[
                         node_count:node_count + page_size]:
-                django_node = Node.objects.get(_guid__guid=modm_node._id)
+                django_node = Node.objects.get(guid__guid=modm_node._id)
                 for fk_node_field in fk_node_fields:
                     value = getattr(modm_node, fk_node_field, None)
                     if value is not None:
@@ -498,7 +498,7 @@ def set_node_foreign_keys_on_nodes(page_size=10000):
                             else:
                                 # it's not in the cache, do the query
                                 node_id = Node.objects.get(
-                                    _guid__guid=value).pk
+                                    guid__guid=value).pk
                                 setattr(django_node,
                                         '{}_id'.format(fk_node_field), node_id)
                                 # save for later
@@ -514,7 +514,7 @@ def set_node_foreign_keys_on_nodes(page_size=10000):
                             else:
                                 # it's not in the cache, do the query
                                 node_id = Node.objects.get(
-                                    _guid__guid=value._id).pk
+                                    guid__guid=value._id).pk
                                 setattr(django_node,
                                         '{}_id'.format(fk_node_field), node_id)
                                 # save for later
@@ -556,7 +556,7 @@ def set_retraction_foreign_keys_on_nodes(page_size=10000):
     while node_count < total:
         with transaction.atomic():
             for modm_node in MODMNode.find(build_query(fk_retraction_fields, MODMNode), allow_institution=False).sort('-date_modified')[node_count:node_count+page_size]:
-                django_node = Node.objects.get(_guid__guid=modm_node._id)
+                django_node = Node.objects.get(guid__guid=modm_node._id)
                 for fk_retraction_field in fk_retraction_fields:
                     value = getattr(modm_node, fk_retraction_field, None)
                     if value is not None:
@@ -612,7 +612,7 @@ def set_embargo_foreign_keys_on_nodes(page_size=10000):
         with transaction.atomic():
             for modm_node in MODMNode.find(build_query(fk_embargo_fields, MODMNode), allow_institution=False).sort(
                     '-date_modified')[node_count:node_count + page_size]:
-                django_node = Node.objects.get(_guid__guid=modm_node._id)
+                django_node = Node.objects.get(guid__guid=modm_node._id)
                 for fk_embargo_field in fk_embargo_fields:
                     value = getattr(modm_node, fk_embargo_field, None)
                     if value is not None:
@@ -672,7 +672,7 @@ def set_user_foreign_keys_on_nodes(page_size=10000):
                     build_query(fk_user_fields, MODMNode),
                     allow_institution=False).sort('-date_modified')[
                         node_count:node_count + page_size]:
-                django_node = Node.objects.get(_guid__guid=modm_node._id)
+                django_node = Node.objects.get(guid__guid=modm_node._id)
                 for fk_user_field in fk_user_fields:
                     value = getattr(modm_node, fk_user_field, None)
                     if value is not None:
@@ -686,7 +686,7 @@ def set_user_foreign_keys_on_nodes(page_size=10000):
                             else:
                                 # it's not in the cache, do the query
                                 user_id = OSFUser.objects.get(
-                                    _guid__guid=value).pk
+                                    guid__guid=value).pk
                                 setattr(django_node,
                                         '{}_id'.format(fk_user_field), user_id)
                                 # save for later
@@ -702,7 +702,7 @@ def set_user_foreign_keys_on_nodes(page_size=10000):
                             else:
                                 # it's not in the cache, do the query
                                 user_id = OSFUser.objects.get(
-                                    _guid__guid=value._id).pk
+                                    guid__guid=value._id).pk
                                 setattr(django_node,
                                         '{}_id'.format(fk_user_field), user_id)
                                 # save for later
@@ -745,7 +745,7 @@ def set_user_foreign_keys_on_users(page_size=10000):
             for modm_user in MODMUser.find(build_query(
                     fk_user_fields, MODMUser)).sort('-date_registered')[
                         user_count:user_count + page_size]:
-                django_user = OSFUser.objects.get(_guid__guid=modm_user._id)
+                django_user = OSFUser.objects.get(guid__guid=modm_user._id)
                 for fk_user_field in fk_user_fields:
                     value = getattr(modm_user, fk_user_field, None)
                     if value is not None:
@@ -759,7 +759,7 @@ def set_user_foreign_keys_on_users(page_size=10000):
                             else:
                                 # it's not in the cache, do the query
                                 user_id = OSFUser.objects.get(
-                                    _guid__guid=value).pk
+                                    guid__guid=value).pk
                                 setattr(django_user,
                                         '{}_id'.format(fk_user_field), user_id)
                                 # save for later
@@ -775,7 +775,7 @@ def set_user_foreign_keys_on_users(page_size=10000):
                             else:
                                 # it's not in the cache, do the query
                                 user_id = OSFUser.objects.get(
-                                    _guid__guid=value._id).pk
+                                    guid__guid=value._id).pk
                                 setattr(django_user,
                                         '{}_id'.format(fk_user_field), user_id)
                                 # save for later
@@ -1198,13 +1198,13 @@ def build_pk_caches():
     # build a lookup table of all guids to pks
     # TODO this should use the model traversal thingy and find all the models
     # TODO then it should build a mapping using their natural keys
-    modm_to_django = {x['_guid__guid']: x['pk'] for x in Node.objects.all().values('_guid__guid', 'pk')}
-    modm_to_django.update({x['_guid__guid']: x['pk'] for x in Institution.objects.all().values('_guid__guid', 'pk')})
-    modm_to_django.update({x['_guid__guid']: x['pk'] for x in OSFUser.objects.all().values('_guid__guid', 'pk')})
+    modm_to_django = {x['guid__guid']: x['pk'] for x in Node.objects.all().values('_guid__guid', 'pk')}
+    modm_to_django.update({x['guid__guid']: x['pk'] for x in Institution.objects.all().values('_guid__guid', 'pk')})
+    modm_to_django.update({x['guid__guid']: x['pk'] for x in OSFUser.objects.all().values('_guid__guid', 'pk')})
     modm_to_django.update({'{}:system'.format(x['name']): x['pk'] for x in Tag.objects.filter(system=True).values('name', 'pk')})
     modm_to_django.update({'{}:not_system'.format(x['name']): x['pk'] for x in Tag.objects.filter(system=False).values('name', 'pk')})
-    modm_to_django.update({x['_object_id']: x['pk'] for x in Embargo.objects.all().values('guid', 'pk')})
-    modm_to_django.update({x['_object_id']: x['pk'] for x in Retraction.objects.all().values('guid', 'pk')})
+    modm_to_django.update({x['object_id']: x['pk'] for x in Embargo.objects.all().values('guid', 'pk')})
+    modm_to_django.update({x['object_id']: x['pk'] for x in Retraction.objects.all().values('guid', 'pk')})
     return modm_to_django
 
 

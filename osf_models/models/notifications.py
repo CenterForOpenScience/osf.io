@@ -10,7 +10,7 @@ from osf_models.models.validators import validate_subscription_type
 from website.notifications.constants import NOTIFICATION_TYPES
 
 
-class NotificationSubscription(BaseIDMixin, BaseModel):
+class NotificationSubscription(BaseModel):
     _id = models.CharField(max_length=50, db_index=True)  # pxyz_wiki_updated, uabc_comment_replies
 
     event_name = models.CharField(max_length=50)  # wiki_updated, comment_replies

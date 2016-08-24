@@ -1,13 +1,8 @@
-from osf_models.utils.base import get_object_id
-from osf_models.models.base import BaseModel
+from osf_models.models.base import BaseModel, ObjectIDMixin
 from django.db import models
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
-class MetaSchema(BaseModel):
-    guid = models.CharField(max_length=255,
-                            unique=True,
-                            db_index=True,
-                            default=get_object_id)
+class MetaSchema(ObjectIDMixin, BaseModel):
     name = models.CharField(max_length=255)
     schema = DateTimeAwareJSONField(default=dict)
     category = models.CharField(max_length=255, null=True, blank=True)
@@ -17,10 +12,6 @@ class MetaSchema(BaseModel):
 
     class Meta:
         unique_together = ('name', 'schema_version', 'guid')
-
-    @property
-    def _id(self):
-        return self.guid
 
     @property
     def _config(self):

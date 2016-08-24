@@ -74,10 +74,6 @@ class Sanction(ObjectIDMixin, BaseModel):
                              default=UNAPPROVED,
                              max_length=255)
 
-    @property
-    def _id(self):
-        return self.guid
-
     def __repr__(self):
         return '<{self.__class__.__name__}(end_date={self.end_date!r}) with _id {self._id!r}>'.format(
             self=self)
