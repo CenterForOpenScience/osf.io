@@ -1174,7 +1174,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     @property
     def is_preprint(self):
-        if not self.preprint_file:
+        if not self.preprint_file or not self.is_public:
             return False
         if self.preprint_file.node == self:
             return True
