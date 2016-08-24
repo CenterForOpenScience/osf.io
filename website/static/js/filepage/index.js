@@ -180,7 +180,7 @@ var FileViewPage = {
                 message = '<p class="overflow">' +
                     'Are you sure you want to delete <strong>' +
                     self.file.safeName + '</strong>?' + ' It is currently the primary file ' +
-                    'for a preprint.</p> <p><strong>Deleting this file will remove your preprint from circulation.</strong></p>';
+                    'for a preprint.</p> <p><strong>Deleting this file will remove this preprint from circulation.</strong></p>';
             }
             bootbox.confirm({
                 title: title,
