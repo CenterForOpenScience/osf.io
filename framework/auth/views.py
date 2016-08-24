@@ -768,8 +768,9 @@ def external_login_email_post():
                     if user.external_identity[external_id_provider]:
                         if external_id in user.external_identity[external_id_provider]:
                             external_status = user.external_identity[external_id_provider][external_id]
-            # TODO: [new OSF ticket] handle pending status: the current or another user also claimed this osf account but not confirmed
+
             if external_status == 'CREATE' or external_status == 'LINK':
+                # TODO: [#OSF-6933] handle pending status: the current or another user also claimed this osf account but not confirmed
                 pass
 
             # 1. update user oauth, with pending status
@@ -778,7 +779,6 @@ def external_login_email_post():
                 user.external_identity[external_id_provider].update(external_identity[external_id_provider])
             else:
                 user.external_identity.update(external_identity)
-            user.save()
             # 2. add unconfirmed email and send confirmation email
             user.add_unconfirmed_email(clean_email, external_identity=external_identity)
             user.save()
@@ -801,7 +801,7 @@ def external_login_email_post():
                 external_identity=external_identity,
                 campaign=None
             )
-            # TODO: [new OSF ticket] update social fields, verified social fields cannot be modified
+            # TODO: [#OSF-6934] update social fields, verified social fields cannot be modified
             user.save()
             # 3. send confirmation email
             send_confirm_email(user, user.username, external_id_provider=external_id_provider, external_id=external_id)

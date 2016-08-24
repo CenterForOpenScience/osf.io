@@ -260,7 +260,7 @@ def make_response_from_ticket(ticket, service_url):
         # first time login from external identity provider
         if not user and external_credential and action == 'external_first_login':
             from website.util import web_url_for
-            # TODO: [new OSF ticket] verify both names are in attributes, which should be handled in CAS
+            # TODO: [#OSF-6935] verify both names are in attributes, which should be handled in CAS
             user = {
                 'external_id_provider': external_credential['provider'],
                 'external_id': external_credential['id'],
