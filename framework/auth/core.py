@@ -1406,10 +1406,17 @@ class User(GuidStoredObject, AddonModelMixin):
 
         for service in user.external_identity:
             for service_id in user.external_identity[service].iterkeys():
-                if not (service_id[0] in self.external_identity[service] and self.external_identity[service][service_id[0]] == 'VERIFIED'):
-                    self.external_identity[service].update(
-                        {service_id: user.external_identity[service][service_id]}
-                    )
+                if not (service_id in self.external_identity.get(service, '') and self.external_identity[service][service_id] == 'VERIFIED'):
+                    # Prevent 'CREATE', merging user has already been created.
+                    status = 'VERIFIED' if user.external_identity[service][service_id] == 'VERIFIED' else 'LINK'
+                    if self.external_identity.get(service):
+                        self.external_identity[service].update(
+                            {service_id: status}
+                        )
+                    else:
+                        self.external_identity[service] = {
+                            service_id: status
+                        }
         user.external_identity = {}
 
         # FOREIGN FIELDS
