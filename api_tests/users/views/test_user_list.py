@@ -132,6 +132,30 @@ class TestUsers(ApiTestCase):
             assert_in('projects_in_common', meta)
             assert_equal(meta['projects_in_common'], 1)
 
+    def test_users_projects_in_common_exclude_deleted_projects(self):
+        project_list=[]
+        for x in range(1,10):
+            project = ProjectFactory(creator=self.user_one)
+            project.add_contributor(
+                contributor=self.user_two,
+                permissions=CREATOR_PERMISSIONS,
+                auth=Auth(user=self.user_one)
+            )
+            project.save()
+            project_list.append(project)
+        for x in range(1,5):
+            project = project_list[x]
+            project.reload()
+            project.remove_node(auth=Auth(user=self.user_one))
+            project.save()
+        url = "/{}users/{}/nodes/?embed=contributors&show_projects_in_common=true".format(API_BASE, self.user_two._id)
+        res = self.app.get(url, auth=self.user_two.auth)
+        user_json = res.json['data'][0]['embeds']['contributors']['data']
+        for user in user_json:
+            meta = user['embeds']['users']['data']['relationships']['nodes']['links']['related']['meta']
+            assert_in('projects_in_common', meta)
+            assert_equal(meta['projects_in_common'], 5)
+
     def test_users_projects_in_common_with_embed_without_right_query(self):
         project = ProjectFactory(creator=self.user_one)
         project.add_contributor(
