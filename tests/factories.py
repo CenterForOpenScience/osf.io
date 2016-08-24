@@ -284,13 +284,14 @@ class SubjectFactory(ModularOdmFactory):
         model = Subject
 
     @classmethod
-    def _create(cls, target_class, text=None,
-                parents=[], *args, **kwargs):
-        subject = target_class(*args, **kwargs)
-        subject.text = text
-        subject.parents = parents
-        subject.save()
-
+    def _create(cls, target_class, text=None, parents=[], *args, **kwargs):
+        try:
+            subject = Subject.find_one(Q('text', 'eq', text))
+        except NoResultsFound:
+            subject = target_class(*args, **kwargs)
+            subject.text = text
+            subject.parents = parents
+            subject.save()
         return subject
 
 
