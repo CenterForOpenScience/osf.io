@@ -1031,9 +1031,17 @@ function _removeEvent (event, items, col) {
 
     // If there is only one item being deleted, don't complicate the issue:
     if(items.length === 1) {
+        var detail = 'This action is irreversible.';
+        if (window.contextVars.node.preprintFileId === items[0].data.path.replace('/', '')) {
+            // title = 'Delete the primary preprint file "' + items[0].data.name + '"?';
+            detail = [
+                m('p', 'This is the primary file for a preprint.'),
+                m('p', m('strong', 'Deleting this file will remove your preprint from circulation.'))
+            ];
+        }
         if(items[0].kind !== 'folder'){
             var mithrilContentSingle = m('div', [
-                m('p', 'This action is irreversible.')
+                m('p', detail)
             ]);
             var mithrilButtonsSingle = m('div', [
                 m('span.btn.btn-default', { onclick : function() { cancelDelete(); } }, 'Cancel'),
@@ -1068,6 +1076,12 @@ function _removeEvent (event, items, col) {
             }
             if(item.kind === 'folder' && deleteMessage.length === 1) {
                 deleteMessage.push(m('p.text-danger', 'Some of the selected items are folders. This will delete the folder(s) and ALL of their content.'));
+            }
+            if (window.contextVars.node.preprintFileId === item.data.path.replace('/', '')) {
+                deleteMessage.push([
+                    m('p', 'One of the files you have selected is the primary file for a preprint.'),
+                    m('p', m('strong', 'Deleting this file will remove your preprint from circulation.'))
+                ]);
             }
         });
         // If all items can be deleted
