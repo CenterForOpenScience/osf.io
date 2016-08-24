@@ -238,9 +238,6 @@ class BaseIDMixin(models.Model):
                                  unique=True,
                                  related_name='referent_%(class)s')
 
-    def get_primary_identifier(self, guid):
-        raise NotImplementedError('You must define a get_primary_identifier method.')
-
     @property
     def _id(self):
         if self.guid:
@@ -253,7 +250,12 @@ class BaseIDMixin(models.Model):
 
     @classmethod
     def load(cls, q):
-        raise NotImplementedError('You must define a load method.')
+        # modm doesn't throw exceptions when loading things that don't exist
+        kwargs = {'guid__{}'.format(cls.primary_identifier_name): q}
+        try:
+            return cls.objects.get(**kwargs)
+        except cls.DoesNotExist:
+            return None
 
     def clone(self):
         ret = super(BaseIDMixin, self).clone()
@@ -274,43 +276,17 @@ class BaseIDMixin(models.Model):
     def migrate_from_modm(cls, modm_obj):
         """
         Given a modm object, make a django object with the same local fields.
+        This is a base method that may work for simple things. It should be customized for complex ones.
 
-        This is a base method that may work for simple objects.
-        It should be customized in the child class if it
-
-        doesn't work.
         :param modm_obj:
         :return:
         """
-        raise NotImplementedError('You must define a migrate_from_modm method.')
-
-    class Meta:
-        abstract = True
-
-
-class ObjectIDMixin(BaseIDMixin):
-    primary_identifier_name = 'object_id'
-
-    # TODO: Put this on BaseIDMixin?
-    @classmethod
-    def load(cls, q):
-        # modm doesn't throw exceptions when loading things that don't exist
-        try:
-            return cls.objects.get(guid__object_id=q)
-        except cls.DoesNotExist:
-            return None
-
-    @classmethod
-    def migrate_from_modm(cls, modm_obj):
-        """
-        Given a modm object, make a django object with the same local fields.
-
-        This is a base method that may work for simple objects. It should be customized
-        in the child class if it doesn't work.
-        :param modm_obj:
-        :return:
-        """
+        kwargs = {cls.primary_identifier_name: modm_obj._id}
+        guid, created = Guid.objects.get_or_create(**kwargs)
+        if created:
+            logger.debug('Created a new Guid for {}'.format(modm_obj))
         django_obj = cls()
+        django_obj.guid = guid
 
         local_django_fields = set([x.name for x in django_obj._meta.get_fields() if not x.is_relation])
 
@@ -326,6 +302,13 @@ class ObjectIDMixin(BaseIDMixin):
             setattr(django_obj, field, modm_value)
 
         return django_obj
+
+    class Meta:
+        abstract = True
+
+
+class ObjectIDMixin(BaseIDMixin):
+    primary_identifier_name = 'object_id'
 
     class Meta:
         abstract = True
@@ -345,44 +328,6 @@ class GuidMixin(BaseIDMixin):
     @property
     def deep_url(self):
         return None
-
-    # TODO: Move to BaseIDMixin
-    @classmethod
-    def load(cls, q):
-        # modm doesn't throw exceptions when loading things that don't exist
-        try:
-            return cls.objects.get(guid__guid=q)
-        except cls.DoesNotExist:
-            return None
-
-    @classmethod
-    def migrate_from_modm(cls, modm_obj):
-        """
-        Given a modm object, make a django object with the same local fields.
-        This is a base method that may work for simple things. It should be customized for complex ones.
-        :param modm_obj:
-        :return:
-        """
-        guid, created = Guid.objects.get_or_create(guid=modm_obj._id)
-        if created:
-            logger.debug('Created a new Guid for {}'.format(modm_obj))
-        django_obj = cls()
-        django_obj._guid = guid
-
-        local_django_fields = set([x.name for x in django_obj._meta.get_fields() if not x.is_relation])
-
-        intersecting_fields = set(modm_obj.to_storage().keys()).intersection(
-            set(local_django_fields))
-
-        for field in intersecting_fields:
-            modm_value = getattr(modm_obj, field)
-            if modm_value is None:
-                continue
-            if isinstance(modm_value, datetime):
-                modm_value = pytz.utc.localize(modm_value)
-            setattr(django_obj, field, modm_value)
-
-        return django_obj
 
     class Meta:
         abstract = True
