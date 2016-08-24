@@ -30,7 +30,6 @@ import six
 import sys
 import re
 from django.contrib.admindocs import views
-from django.core.handlers.base import BaseHandler
 from rest_framework.fields import Field
 from rest_framework.request import Request
 
