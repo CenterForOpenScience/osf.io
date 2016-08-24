@@ -85,12 +85,27 @@ class FigshareClient(BaseClient):
 
     # OTHER HELPERS
     def get_folders(self):
-        projects = self.projects()
-        articles = self.articles()  # TODO: Figshare needs to make this filterable by defined_type to limit spurious requests
-        return [{'name': project['title'], 'path': 'project', 'id': str(project['id'])}
-                for project in projects] + \
-            [{'name': (article['title'] or 'untitled article'), 'path': 'fileset', 'id': str(article['id'])}
-             for article in articles if article['defined_type'] == settings.FIGSHARE_DEFINED_TYPE_NUM_MAP['fileset']]
+        projects = [{
+            'name': project['title'],
+            'path': 'project',
+            'id': str(project['id']),
+            'kind': 'folder',
+            'permissions': {'view': True},
+            'addon': 'figshare',
+            'hasChildren': False
+        } for project in self.projects()]
+
+        articles = [{  # TODO: Figshare needs to make this filterable by defined_type to limit spurious requests
+            'name': (article['title'] or 'untitled article'),
+            'path': 'fileset',
+            'id': str(article['id']),
+            'kind': 'folder',
+            'permissions': {'view': True},
+            'addon': 'figshare',
+            'hasChildren': False
+        } for article in self.articles() if article['defined_type'] == settings.FIGSHARE_DEFINED_TYPE_NUM_MAP['fileset']]
+
+        return projects + articles
 
     def get_linked_folder_info(self, _id):
         """ Returns info about a linkable object -- 'project' or 'fileset' """

@@ -14,7 +14,6 @@ from website.oauth.models import ExternalProvider
 from website.addons.figshare import messages
 from website.addons.figshare.client import FigshareClient
 from website.addons.figshare import settings
-from website.addons.figshare.utils import options_to_hgrid
 from website.addons.figshare.serializer import FigshareSerializer
 
 class Figshare(ExternalProvider):
@@ -73,7 +72,7 @@ class FigshareNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         return self.folder_name
 
     def get_folders(self, **kwargs):
-        return options_to_hgrid(FigshareClient(self.external_account.oauth_key).get_folders())
+        return FigshareClient(self.external_account.oauth_key).get_folders()
 
     def archive_errors(self):
         items = []

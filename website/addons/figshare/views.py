@@ -2,7 +2,6 @@
 
 from website.addons.base import generic_views
 from website.addons.figshare.serializer import FigshareSerializer
-from website.addons.figshare.utils import options_to_hgrid
 
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
@@ -48,7 +47,6 @@ figshare_root_folder = generic_views.root_folder(
 @must_have_addon(SHORT_NAME, 'node')
 @must_be_addon_authorizer(SHORT_NAME)
 def figshare_folder_list(node_addon, **kwargs):
-    """ Returns all the subsequent folders under the folder id passed.
+    """ Returns all linkable projects / articles at root.
     """
-    folders = node_addon.get_folders()
-    return options_to_hgrid(folders) or []
+    return node_addon.get_folders()
