@@ -27,6 +27,13 @@ class NodeLicense(ObjectIDMixin, BaseModel):
     text = models.TextField(null=False)
     properties = ArrayField(models.CharField(max_length=128), default=list, blank=True)
 
+    @classmethod
+    def migrate_from_modm(cls, modm_obj):
+        django_obj = super(NodeLicense, cls).migrate_from_modm(modm_obj)
+        django_obj.license_id = django_obj.id
+        django_obj.id = None
+        return django_obj
+
     class Meta:
         unique_together = ['guid', 'license_id']
 
