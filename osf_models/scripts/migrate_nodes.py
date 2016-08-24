@@ -231,9 +231,9 @@ def save_bare(modm_model, django_model, page_size=20000):
             page_of_modm_objects = modm_model.find().sort('-_id')[count:count+page_size]
             for modm_obj in page_of_modm_objects:
                 django_instance = django_model.migrate_from_modm(modm_obj)
-                if django_instance.natural_key() is not None and django_instance.natural_key() not in hashes:
+                if django_instance._natural_key() is not None and django_instance._natural_key() not in hashes:
                     django_objs.append(django_instance)
-                    hashes.append(django_instance.natural_key())
+                    hashes.append(django_instance._natural_key())
                 count += 1
                 if count % page_size == 0 or count == total:
                     then = datetime.now()

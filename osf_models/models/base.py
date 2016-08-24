@@ -101,7 +101,7 @@ class BaseModel(models.Model):
     def _primary_name(self):
         return '_id'
 
-    def natural_key(self):
+    def _natural_key(self):
         return self.pk
 
     def clone(self):

@@ -78,7 +78,7 @@ class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
         return '<ExternalAccount: {}/{}>'.format(self.provider,
                                                  self.provider_id)
 
-    def natural_key(self):
+    def _natural_key(self):
         if self.pk:
             return self.pk
         return hash(str(self.provider_id) + str(self.provider))
