@@ -674,7 +674,9 @@ class TestNodeFigshareAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCas
         return {
             'name': 'A Fileset',
             'path': 'fileset',
-            'id': '1234567890'
+            'id': '1234567890',
+            'kind': 'folder',
+            'addon': 'figshare',
         }
 
 
