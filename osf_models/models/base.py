@@ -9,7 +9,7 @@ import pytz
 
 from osf_models.exceptions import ValidationError
 from osf_models.modm_compat import to_django_query, Q
-from osf_models.utils.base import get_object_id
+from osf_models.utils.base import generate_object_id
 
 ALPHABET = '23456789abcdefghjkmnpqrstuvwxyz'
 
@@ -150,6 +150,10 @@ class BaseModel(models.Model):
 
 # TODO: Rename to Identifier?
 class Guid(BaseModel):
+    """Stores either a short guid or long object_id for any model that inherits from BaseIDMixin.
+    Each ID field (e.g. 'guid', 'object_id') MUST have an accompanying method, named with
+    'initialize_<ID type>' (e.g. 'initialize_guid') that generates and sets the field.
+    """
     id = models.AutoField(primary_key=True)
     guid = models.fields.CharField(max_length=255,
                                    unique=True,
@@ -167,7 +171,7 @@ class Guid(BaseModel):
         self.guid = generate_guid()
 
     def initialize_object_id(self):
-        self.object_id = get_object_id()
+        self.object_id = generate_object_id()
 
     # Override load in order to load by GUID
     @classmethod
@@ -266,8 +270,7 @@ class BaseIDMixin(models.Model):
         if not self.guid:
             self.guid = Guid.objects.create()
         if not getattr(self.guid, self.primary_identifier_name, None):
-            # TODO: Reduce magic?
-            initialization_method = getattr(self.guid, 'initialize_' + self.primary_identifier_name)
+            initialization_method = getattr(self.guid, 'initialize_{}'.format(self.primary_identifier_name))
             initialization_method()
             self.guid.save()
         return super(BaseIDMixin, self).save(*args, **kwargs)
