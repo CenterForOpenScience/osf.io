@@ -11,6 +11,7 @@ from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import NodeTagField
 from api.taxonomies.serializers import TaxonomyField
 from framework.exceptions import PermissionsError
+from website.project import signals as project_signals
 from website.models import StoredFileNode, PreprintProvider, Node
 
 
@@ -117,6 +118,12 @@ class PreprintSerializer(JSONAPISerializer):
             node.save()
         except ValidationValueError as e:
             raise exceptions.ValidationError(detail=e.message)
+
+        # Send preprint confirmation email signal to new authors on preprint!
+        for author in node.contributors:
+            if author != auth.user:
+                project_signals.contributor_added.send(node, contributor=author, auth=auth, email_template='preprint')
+
         return node
 
     def update(self, node, validated_data):
