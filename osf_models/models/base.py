@@ -167,10 +167,10 @@ class Guid(BaseModel):
                                  null=True,
                                  blank=True)
 
-    def initialize_guid(self):
-        self.guid = generate_guid()
+    def initialize_guid(self, instance):
+        self.guid = generate_guid(length=instance.__guid_min_length__)
 
-    def initialize_object_id(self):
+    def initialize_object_id(self, instance):
         self.object_id = generate_object_id()
 
     # Override load in order to load by GUID
@@ -236,6 +236,8 @@ class PKIDStr(str):
 
 
 class BaseIDMixin(models.Model):
+    __guid_min_length__ = 5
+
     guid = models.OneToOneField('Guid',
                                  default=generate_guid_instance,
                                  null=True, blank=True,
@@ -271,7 +273,7 @@ class BaseIDMixin(models.Model):
             self.guid = Guid.objects.create()
         if not getattr(self.guid, self.primary_identifier_name, None):
             initialization_method = getattr(self.guid, 'initialize_{}'.format(self.primary_identifier_name))
-            initialization_method()
+            initialization_method(self)
             self.guid.save()
         return super(BaseIDMixin, self).save(*args, **kwargs)
 

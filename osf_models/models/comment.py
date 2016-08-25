@@ -61,7 +61,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
 
     # The mentioned users
     # TODO This should be made into an M2M STAT
-    ever_mentioned = ArrayField(models.CharField(max_length=10, blank=True))
+    ever_mentioned = ArrayField(models.CharField(max_length=10, blank=True), default=list, blank=True)
 
     @property
     def url(self):
