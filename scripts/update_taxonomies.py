@@ -1,5 +1,4 @@
 import os
-import csv
 import json
 import logging
 import sys
@@ -58,13 +57,10 @@ def update_taxonomies(filename, dry_run=True):
                 subject.text = text
                 if parent not in subject.parents:
                     subject.parents.append(parent)
-                    try:
-                        logger.info(u'Adding parent "{}":{} to Subject "{}":{}'.format(
-                            parent.text, parent._id,
-                            subject.text, subject._id
-                        ))
-                    except Exception as e:
-                        import ipdb; ipdb.set_trace()
+                    logger.info(u'Adding parent "{}":{} to Subject "{}":{}'.format(
+                        parent.text, parent._id,
+                        subject.text, subject._id
+                    ))
 
             subject.save()
 
