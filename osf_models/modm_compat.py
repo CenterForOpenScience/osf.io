@@ -66,7 +66,8 @@ class Q(BaseQ, query.RawQuery):
         elif isinstance(query, MODMQ):
             if model_cls:
                 field = _get_field(model_cls, query.attribute)
-                # Mongo compatibility fix: an 'eq' query on array fields behaves like 'contains' for postgres ArrayFields
+                # Mongo compatibility fix: an 'eq' query on array fields
+                # behaves like 'contains' for postgres ArrayFields
                 if field.get_internal_type() == 'ArrayField' and query.operator == 'eq':
                     return cls(query.attribute, 'contains', [query.argument])
             return cls(query.attribute, query.operator, query.argument)
@@ -123,11 +124,9 @@ class Q(BaseQ, query.RawQuery):
 
 def _get_field(model_cls, field_name):
     # Prevent circular import
-    from osf_models.models.base import ObjectIDMixin, GuidMixin
-    if issubclass(model_cls, ObjectIDMixin) and field_name == '_id':
+    from osf_models.models.base import BaseIDMixin
+    if issubclass(model_cls, BaseIDMixin) and field_name == '_id':
         field_name = 'guid'
-    elif issubclass(model_cls, GuidMixin) and field_name == '_id':
-        field_name = '_guid'
     return model_cls._meta.get_field(field_name)
 
 def to_django_query(query, model_cls=None):

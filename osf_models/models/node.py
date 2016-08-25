@@ -44,7 +44,8 @@ from .base import BaseModel, GuidMixin
 
 logger = logging.getLogger(__name__)
 
-class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin, Taggable, Loggable, GuidMixin, BaseModel):
+class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
+                   Taggable, Loggable, GuidMixin, BaseModel):
     """
     All things that inherit from AbstractNode will appear in
     the same table and will be differentiated by the `type` column.
@@ -355,7 +356,7 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin, Taggable, Logga
     # visible_contributor_ids was moved to this property
     @property
     def visible_contributor_ids(self):
-        return self.contributor_set.filter(visible=True).values_list('user___guid__guid', flat=True)
+        return self.contributor_set.filter(visible=True).values_list('user__guid__guid', flat=True)
 
     @property
     def system_tags(self):

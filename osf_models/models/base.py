@@ -8,8 +8,8 @@ import modularodm.exceptions
 import pytz
 
 from osf_models.exceptions import ValidationError
-from osf_models.modm_compat import to_django_query
-from osf_models.utils.base import get_object_id
+from osf_models.modm_compat import to_django_query, Q
+from osf_models.utils.base import generate_object_id
 
 ALPHABET = '23456789abcdefghjkmnpqrstuvwxyz'
 
@@ -65,7 +65,7 @@ class BaseModel(models.Model):
     def load(cls, data):
         try:
             if issubclass(cls, GuidMixin):
-                return cls.objects.get(_guid__guid=data)
+                return cls.objects.get(guid__guid=data)
             elif issubclass(cls, ObjectIDMixin):
                 return cls.objects.get(guid=data)
             return cls.objects.getQ(pk=data)
@@ -124,8 +124,9 @@ class BaseModel(models.Model):
         """
         Given a modm object, make a django object with the same local fields.
 
-        This is a base method that may work for simple objects. It should be customized in the child class if it
-        doesn't work.
+        This is a base method that may work for simple objects.
+        It should be customized in the child class if it doesn't work.
+
         :param modm_obj:
         :return:
         """
@@ -147,12 +148,30 @@ class BaseModel(models.Model):
         return django_obj
 
 
+# TODO: Rename to Identifier?
 class Guid(BaseModel):
+    """Stores either a short guid or long object_id for any model that inherits from BaseIDMixin.
+    Each ID field (e.g. 'guid', 'object_id') MUST have an accompanying method, named with
+    'initialize_<ID type>' (e.g. 'initialize_guid') that generates and sets the field.
+    """
     id = models.AutoField(primary_key=True)
     guid = models.fields.CharField(max_length=255,
-                                   default=generate_guid,
                                    unique=True,
+                                   null=True,
+                                   blank=True,
                                    db_index=True)
+
+    object_id = models.CharField(max_length=255,
+                                 unique=True,
+                                 db_index=True,
+                                 null=True,
+                                 blank=True)
+
+    def initialize_guid(self):
+        self.guid = generate_guid()
+
+    def initialize_object_id(self):
+        self.object_id = generate_object_id()
 
     # Override load in order to load by GUID
     @classmethod
@@ -162,14 +181,28 @@ class Guid(BaseModel):
         except cls.DoesNotExist:
             return None
 
+    @classmethod
+    def find(cls, query, *args, **kwargs):
+        # Make referent queryable
+        # NOTE: This won't work with compound queries
+        if hasattr(query, 'attribute') and query.attribute == 'referent':
+            # We rely on the fact that the related_name for BaseIDMixin.guid
+            # is 'referent_<lowercased class name>'
+            class_name = query.argument.__class__.__name__.lower()
+            return super(Guid, cls).find(Q('referent_{}'.format(class_name), query.op, query.argument))
+        else:
+            return super(Guid, cls).find(query, *args, **kwargs)
+
     @property
     def referent(self):
         """The model instance that this Guid refers to. May return an instance of
         any model that inherits from GuidMixin.
         """
-        # Because the related_name for '_guid' is dynamic (e.g. 'referent_osfuser'), we need to check each one-to-one field
+        # Because the related_name for '_guid' is dynamic (e.g. 'referent_osfuser'),
+        # we need to check each one-to-one field
         # until we find a match
-        referent_fields = (each for each in self._meta.get_fields() if each.one_to_one and each.name.startswith('referent'))
+        referent_fields = (each for each in self._meta.get_fields()
+                           if each.one_to_one and each.name.startswith('referent'))
         for relationship in referent_fields:
             try:
                 return getattr(self, relationship.name)
@@ -179,7 +212,7 @@ class Guid(BaseModel):
 
     @referent.setter
     def referent(self, obj):
-        obj._guid = self
+        obj.guid = self
 
 
 class BlackListGuid(models.Model):
@@ -202,153 +235,61 @@ class PKIDStr(str):
         return self.__pk
 
 
-class MODMCompatibilityGuidQuerySet(MODMCompatibilityQuerySet):
-
-    def get_by_guid(self, guid):
-        return self.get(_guid__guid=guid)
-
-
 class BaseIDMixin(models.Model):
-
-    @classmethod
-    def load(cls, q):
-        raise NotImplementedError('You must define a load method.')
-
-    @classmethod
-    def migrate_from_modm(cls, modm_obj):
-        """
-        Given a modm object, make a django object with the same local fields.
-
-        This is a base method that may work for simple objects. It should be customized in the child class if it
-        doesn't work.
-        :param modm_obj:
-        :return:
-        """
-        raise NotImplementedError('You must define a migrate_from_modm method.')
-
-    class Meta:
-        abstract = True
-
-
-class ObjectIDMixin(BaseIDMixin):
-    guid = models.CharField(max_length=255,
-                                  unique=True,
-                                  db_index=True,
-                                  default=get_object_id)
-
-    @property
-    def _object_id(self):
-        return self.guid
-
-    @property
-    def _id(self):
-        return PKIDStr(self._object_id, self.pk)
-
-    @classmethod
-    def load(cls, q):
-        # modm doesn't throw exceptions when loading things that don't exist
-        try:
-            return cls.objects.get(guid=q)
-        except cls.DoesNotExist:
-            return None
-
-    _primary_key = _id
-
-    def clone(self):
-        ret = super(ObjectIDMixin, self).clone()
-        ret.guid = None
-        return ret
-
-    def save(self, *args, **kwargs):
-        if not self.guid:
-            self.guid = get_object_id()
-        return super(ObjectIDMixin, self).save(*args, **kwargs)
-
-    @classmethod
-    def migrate_from_modm(cls, modm_obj):
-        """
-        Given a modm object, make a django object with the same local fields.
-
-        This is a base method that may work for simple objects. It should be customized
-        in the child class if it doesn't work.
-        :param modm_obj:
-        :return:
-        """
-        django_obj = cls()
-
-        local_django_fields = set([x.name for x in django_obj._meta.get_fields() if not x.is_relation])
-
-        intersecting_fields = set(modm_obj.to_storage().keys()).intersection(
-            set(local_django_fields))
-
-        for field in intersecting_fields:
-            modm_value = getattr(modm_obj, field)
-            if modm_value is None:
-                continue
-            if isinstance(modm_value, datetime):
-                modm_value = pytz.utc.localize(modm_value)
-            setattr(django_obj, field, modm_value)
-
-        return django_obj
-
-    class Meta:
-        abstract = True
-
-
-class GuidMixin(BaseIDMixin):
-    _guid = models.OneToOneField('Guid',
+    guid = models.OneToOneField('Guid',
                                  default=generate_guid_instance,
                                  null=True, blank=True,
                                  unique=True,
                                  related_name='referent_%(class)s')
 
-    objects = MODMCompatibilityGuidQuerySet.as_manager()
-
-    @property
-    def guid(self):
-        return self._guid.guid
-
     @property
     def _id(self):
-        return PKIDStr(self._guid.guid, self.pk)
-
-    @property
-    def deep_url(self):
+        if self.guid:
+            identifier = getattr(self.guid, self.primary_identifier_name)
+            if identifier:
+                return PKIDStr(identifier, self.pk)
         return None
+
+    _primary_key = _id
 
     @classmethod
     def load(cls, q):
         # modm doesn't throw exceptions when loading things that don't exist
+        kwargs = {'guid__{}'.format(cls.primary_identifier_name): q}
         try:
-            return cls.objects.get(_guid__guid=q)
+            return cls.objects.get(**kwargs)
         except cls.DoesNotExist:
             return None
 
-    _primary_key = _id
-
     def clone(self):
-        ret = super(GuidMixin, self).clone()
-        ret._guid = None
+        ret = super(BaseIDMixin, self).clone()
+        ret.guid = None
         return ret
 
     def save(self, *args, **kwargs):
-        if not self._guid:
-            self._guid = Guid.objects.create()
-        return super(GuidMixin, self).save(*args, **kwargs)
+        if not self.guid:
+            self.guid = Guid.objects.create()
+        if not getattr(self.guid, self.primary_identifier_name, None):
+            initialization_method = getattr(self.guid, 'initialize_{}'.format(self.primary_identifier_name))
+            initialization_method()
+            self.guid.save()
+        return super(BaseIDMixin, self).save(*args, **kwargs)
 
     @classmethod
     def migrate_from_modm(cls, modm_obj):
         """
         Given a modm object, make a django object with the same local fields.
         This is a base method that may work for simple things. It should be customized for complex ones.
+
         :param modm_obj:
         :return:
         """
-        guid, created = Guid.objects.get_or_create(guid=modm_obj._id)
+        kwargs = {cls.primary_identifier_name: modm_obj._id}
+        guid, created = Guid.objects.get_or_create(**kwargs)
         if created:
             logger.debug('Created a new Guid for {}'.format(modm_obj))
         django_obj = cls()
-        django_obj._guid = guid
+        django_obj.guid = guid
 
         local_django_fields = set([x.name for x in django_obj._meta.get_fields() if not x.is_relation])
 
@@ -364,6 +305,23 @@ class GuidMixin(BaseIDMixin):
             setattr(django_obj, field, modm_value)
 
         return django_obj
+
+    class Meta:
+        abstract = True
+
+
+class ObjectIDMixin(BaseIDMixin):
+    primary_identifier_name = 'object_id'
+
+    class Meta:
+        abstract = True
+
+class GuidMixin(BaseIDMixin):
+    primary_identifier_name = 'guid'
+
+    @property
+    def deep_url(self):
+        return None
 
     class Meta:
         abstract = True

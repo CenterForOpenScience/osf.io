@@ -4,7 +4,7 @@ import furl
 from osf_models.apps import AppConfig as app_config
 import bleach
 
-def get_object_id():
+def generate_object_id():
     return str(ObjectId())
 
 def api_v2_url(path_str,

@@ -128,10 +128,6 @@ class NodeLog(ObjectIDMixin, BaseModel):
     def __unicode__(self):
         return u'{} on {} by {} at {}'.format(self.action, self.node._id, self.user._id, self.date)
 
-    @property
-    def _id(self):
-        return self.guid
-
     class Meta:
         ordering = ['-date']
 

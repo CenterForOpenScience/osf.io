@@ -12,7 +12,7 @@ def verify_contributors(node, modm_node):
     for modm_contributor in modm_node.contributors:
         try:
             contributor = node.contributor_set.get(
-                user___guid__guid=modm_contributor._id)
+                user__guid__guid=modm_contributor._id)
             assert contributor.user._guid.guid == modm_contributor._id, 'ID mismatch...'
 
             # permissions
