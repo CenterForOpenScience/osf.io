@@ -60,7 +60,6 @@ class NodeCommentsListMixin(object):
 
     def test_return_private_node_comments_logged_in_non_contributor(self):
         self._set_up_private_project_with_comment()
-        import ipdb; ipdb.set_trace()
         res = self.app.get(self.private_url, auth=self.non_contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
