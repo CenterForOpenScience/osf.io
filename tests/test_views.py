@@ -3437,6 +3437,7 @@ class TextExternalAuthViews(OsfTestCase):
 
     @mock.patch('website.mails.send_mail')
     def test_external_login_confirm_email_get_create(self, mock_welcome):
+        assert_false(self.user.is_registered)
         url = self.user.get_confirmation_url(self.user.username, external_id_provider='service')
         res = self.app.get(url, auth=self.auth)
         assert_equal(res.status_code, 302, 'redirects to cas login')
@@ -3447,11 +3448,13 @@ class TextExternalAuthViews(OsfTestCase):
 
         self.user.reload()
         assert_equal(self.user.external_identity['service'][self.provider_id], 'VERIFIED')
+        assert_true(self.user.is_registered)
 
     @mock.patch('website.mails.send_mail')
     def test_external_login_confirm_email_get_link(self, mock_link_confirm):
         self.user.external_identity['service'][self.provider_id] = 'LINK'
         self.user.save()
+        assert_false(self.user.is_registered)
         url = self.user.get_confirmation_url(self.user.username, external_id_provider='service')
         res = self.app.get(url, auth=self.auth)
         assert_equal(res.status_code, 302, 'redirects to cas login')
@@ -3462,6 +3465,7 @@ class TextExternalAuthViews(OsfTestCase):
 
         self.user.reload()
         assert_equal(self.user.external_identity['service'][self.provider_id], 'VERIFIED')
+        assert_true(self.user.is_registered)
 
     @mock.patch('website.mails.send_mail')
     def test_external_login_confirm_email_get_duped_id(self, mock_confirm):

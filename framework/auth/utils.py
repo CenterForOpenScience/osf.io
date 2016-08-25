@@ -90,7 +90,7 @@ def ensure_external_identity_uniqueness(provider, identity, user=None):
                 user.external_identity[provider].pop(identity)
                 if user.external_identity[provider] == {}:
                     user.external_identity.pop(provider)
-                user.save()
+                user.save()  # Note: This won't work in v2 because it rolls back transactions when status >= 400
             raise ValidationError('Another user has already claimed this external identity')
         existing_user.external_identity[provider].pop(identity)
         if existing_user.external_identity[provider] == {}:
