@@ -381,6 +381,7 @@ def external_login_confirm_email_get(auth, uid, token):
         user.register(user.username)
         user.date_last_logged_in = datetime.datetime.utcnow()
         user.external_identity[provider][provider_id] = 'VERIFIED'
+        user.social[provider.lower()] = provider_id
         user.save()
         mails.send_mail(
             to_addr=user.username,
@@ -393,6 +394,7 @@ def external_login_confirm_email_get(auth, uid, token):
     elif external_status == 'LINK':
         user.date_last_logged_in = datetime.datetime.utcnow()
         user.external_identity[provider][provider_id] = 'VERIFIED'
+        user.social[provider.lower()] = provider_id
         user.save()
         mails.send_mail(
             user=user,
