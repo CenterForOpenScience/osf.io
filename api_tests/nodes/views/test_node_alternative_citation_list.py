@@ -1,4 +1,4 @@
-from __future__ impor unicode_literals
+from __future__ import unicode_literals
 from nose.tools import *  # flake8: noqa
 
 from website.util import permissions
