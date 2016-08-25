@@ -9,7 +9,7 @@ import pytest
 import pytz
 
 from framework.exceptions import PermissionsError
-from website.util.permissions import ADMIN
+from website.util.permissions import READ, WRITE, ADMIN, expand_permissions
 from website.project.signals import contributor_added
 from website.exceptions import NodeStateError
 from website.util import permissions
@@ -643,3 +643,328 @@ class TestSetPrivacy:
         with mock.patch('osf_models.models.Registration.request_embargo_termination') as mock_request_embargo_termination:
             registration.set_privacy('public', auth=auth)
             assert mock_request_embargo_termination.call_count == 1
+
+
+# copied from tests/test_models.py
+@pytest.mark.django_db
+class TestManageContributors:
+
+    def test_contributor_manage_visibility(self, node, user, auth):
+        reg_user1 = UserFactory()
+        #This makes sure manage_contributors uses set_visible so visibility for contributors is added before visibility
+        #for other contributors is removed ensuring there is always at least one visible contributor
+        node.add_contributor(contributor=user, permissions=['read', 'write', 'admin'], auth=auth)
+        node.add_contributor(contributor=reg_user1, permissions=['read', 'write', 'admin'], auth=auth)
+
+        node.manage_contributors(
+            user_dicts=[
+                {'id': user._id, 'permission': 'admin', 'visible': True},
+                {'id': reg_user1._id, 'permission': 'admin', 'visible': False},
+            ],
+            auth=auth,
+            save=True
+        )
+        node.manage_contributors(
+            user_dicts=[
+                {'id': user._id, 'permission': 'admin', 'visible': False},
+                {'id': reg_user1._id, 'permission': 'admin', 'visible': True},
+            ],
+            auth=auth,
+            save=True
+        )
+
+        assert len(node.visible_contributor_ids) == 1
+
+    def test_manage_contributors_cannot_remove_last_admin_contributor(self, auth, node):
+        user2 = UserFactory()
+        node.add_contributor(contributor=user2, permissions=[READ, WRITE], auth=auth)
+        node.save()
+        with pytest.raises(NodeStateError) as excinfo:
+            node.manage_contributors(
+                user_dicts=[{'id': user2._id,
+                             'permission': WRITE,
+                             'visible': True}],
+                auth=auth,
+                save=True
+            )
+        assert excinfo.value.args[0] == 'Must have at least one registered admin contributor'
+
+    @pytest.mark.skip('Contributor reordering not yet implemented')
+    def test_manage_contributors_logs_when_users_reorder(self, node, user, auth):
+        user2 = UserFactory()
+        node.add_contributor(contributor=user2, permissions=[READ, WRITE], auth=auth)
+        node.save()
+        node.manage_contributors(
+            user_dicts=[
+                {
+                    'id': user2._id,
+                    'permission': WRITE,
+                    'visible': True,
+                },
+                {
+                    'id': user._id,
+                    'permission': ADMIN,
+                    'visible': True,
+                },
+            ],
+            auth=auth,
+            save=True
+        )
+        latest_log = node.logs.latest()
+        assert latest_log.action == NodeLog.CONTRIB_REORDERED
+        assert latest_log.user == user
+        assert user._id in latest_log.params['contributors']
+        assert user2._id in latest_log.params['contributors']
+
+    def test_manage_contributors_new_contributor(self, node, auth):
+        user = UserFactory()
+        users = [
+            {'id': user._id, 'permission': READ, 'visible': True},
+            {'id': node.creator._id, 'permission': [READ, WRITE, ADMIN], 'visible': True},
+        ]
+        with pytest.raises(ValueError) as excinfo:
+            node.manage_contributors(
+                users, auth=auth, save=True
+            )
+        assert excinfo.value.args[0] == 'User {0} not in contributors'.format(user.fullname)
+
+    def test_manage_contributors_no_contributors(self, node, auth):
+        with pytest.raises(NodeStateError):
+            node.manage_contributors(
+                [], auth=auth, save=True,
+            )
+
+    def test_manage_contributors_no_admins(self, node):
+        user = UserFactory()
+        node.add_contributor(
+            user,
+            permissions=[READ, WRITE, ADMIN],
+            save=True
+        )
+        users = [
+            {'id': node.creator._id, 'permission': 'read', 'visible': True},
+            {'id': user._id, 'permission': 'read', 'visible': True},
+        ]
+        with pytest.raises(NodeStateError):
+            node.manage_contributors(
+                users, auth=auth, save=True,
+            )
+
+    def test_manage_contributors_no_registered_admins(self, node, auth):
+        unregistered = UnregUserFactory()
+        node.add_contributor(
+            unregistered,
+            permissions=['read', 'write', 'admin'],
+            save=True
+        )
+        users = [
+            {'id': node.creator._id, 'permission': READ, 'visible': True},
+            {'id': unregistered._id, 'permission': ADMIN, 'visible': True},
+        ]
+        with pytest.raises(NodeStateError):
+            node.manage_contributors(
+                users, auth=auth, save=True,
+            )
+
+@pytest.mark.django_db
+def test_get_admin_contributors(user, auth):
+    read, write, admin = UserFactory(), UserFactory(), UserFactory()
+    nonactive_admin = UserFactory()
+    noncontrib = UserFactory()
+    project = ProjectFactory(creator=user)
+    project.add_contributor(read, auth=auth, permissions=[READ])
+    project.add_contributor(write, auth=auth, permissions=expand_permissions(WRITE))
+    project.add_contributor(admin, auth=auth, permissions=expand_permissions(ADMIN))
+    project.add_contributor(nonactive_admin, auth=auth, permissions=expand_permissions(ADMIN))
+    project.save()
+
+    nonactive_admin.is_disabled = True
+    nonactive_admin.save()
+
+    result = list(project.get_admin_contributors([
+        read, write, admin, noncontrib, nonactive_admin
+    ]))
+
+    assert admin in result
+    assert read not in result
+    assert write not in result
+    assert noncontrib not in result
+    assert nonactive_admin not in result
+
+# copied from tests/test_models.py
+@pytest.mark.django_db
+class TestNodeTraversals:
+
+    @pytest.fixture()
+    def viewer(self):
+        return UserFactory()
+
+    @pytest.fixture()
+    def root(self, user):
+        return ProjectFactory(creator=user)
+
+    def test_next_descendants(self, root, user, viewer, auth):
+        comp1 = ProjectFactory(creator=user, parent=root)
+        comp1a = ProjectFactory(creator=user, parent=comp1)
+        comp1a.add_contributor(viewer, auth=auth, permissions=['read'])
+        ProjectFactory(creator=user, parent=comp1)
+        comp2 = ProjectFactory(creator=user, parent=root)
+        comp2.add_contributor(viewer, auth=auth, permissions=['read'])
+        comp2a = ProjectFactory(creator=user, parent=comp2)
+        comp2a.add_contributor(viewer, auth=auth, permissions=['read'])
+        ProjectFactory(creator=user, parent=comp2)
+
+        descendants = root.next_descendants(
+            Auth(viewer),
+            condition=lambda auth, node: node.is_contributor(auth.user)
+        )
+        assert len(descendants) == 2  # two immediate children
+        assert len(descendants[0][1]) == 1  # only one visible child of comp1
+        assert len(descendants[1][1]) == 0  # don't auto-include comp2's children
+
+    @mock.patch('osf_models.models.node.AbstractNode.update_search')
+    def test_delete_registration_tree(self, mock_update_search):
+        proj = NodeFactory()
+        NodeFactory(parent=proj)
+        comp2 = NodeFactory(parent=proj)
+        NodeFactory(parent=comp2)
+        reg = RegistrationFactory(project=proj)
+        reg_ids = [reg._id] + [r._id for r in reg.get_descendants_recursive()]
+        reg.delete_registration_tree(save=True)
+        assert Node.find(Q('_id', 'in', reg_ids) & Q('is_deleted', 'eq', False)).count() == 0
+        assert mock_update_search.call_count == len(reg_ids)
+
+    @mock.patch('osf_models.models.node.AbstractNode.update_search')
+    def test_delete_registration_tree_deletes_backrefs(self, mock_update_search):
+        proj = NodeFactory()
+        NodeFactory(parent=proj)
+        comp2 = NodeFactory(parent=proj)
+        NodeFactory(parent=comp2)
+        reg = RegistrationFactory(project=proj)
+        reg.delete_registration_tree(save=True)
+        assert bool(proj.registrations_all) is False
+
+    def test_get_active_contributors_recursive_with_duplicate_users(self, user, viewer, auth):
+        parent = ProjectFactory(creator=user)
+
+        child = ProjectFactory(creator=viewer, parent=parent)
+        child_non_admin = UserFactory()
+        child.add_contributor(child_non_admin,
+                              auth=auth,
+                              permissions=expand_permissions(WRITE))
+        grandchild = ProjectFactory(creator=user, parent=child)
+
+        contributors = list(parent.get_active_contributors_recursive())
+        assert len(contributors) == 4
+        user_ids = [u._id for u, node in contributors]
+
+        assert user._id in user_ids
+        assert viewer._id in user_ids
+        assert child_non_admin._id in user_ids
+
+        node_ids = [node._id for u, node in contributors]
+        assert parent._id in node_ids
+        assert grandchild._id in node_ids
+
+    def test_get_active_contributors_recursive_with_no_duplicate_users(self, user, viewer, auth):
+        parent = ProjectFactory(creator=user)
+
+        child = ProjectFactory(creator=viewer, parent=parent)
+        child_non_admin = UserFactory()
+        child.add_contributor(child_non_admin,
+                              auth=auth,
+                              permissions=expand_permissions(WRITE))
+        grandchild = ProjectFactory(creator=user, parent=child)  # noqa
+
+        contributors = list(parent.get_active_contributors_recursive(unique_users=True))
+        assert len(contributors) == 3
+        user_ids = [u._id for u, node in contributors]
+
+        assert user._id in user_ids
+        assert viewer._id in user_ids
+        assert child_non_admin._id in user_ids
+
+        node_ids = [node._id for u, node in contributors]
+        assert parent._id in node_ids
+
+    def test_get_admin_contributors_recursive_with_duplicate_users(self, viewer, user, auth):
+        parent = ProjectFactory(creator=user)
+
+        child = ProjectFactory(creator=viewer, parent=parent)
+        child_non_admin = UserFactory()
+        child.add_contributor(child_non_admin,
+                              auth=auth,
+                              permissions=expand_permissions(WRITE))
+        child.save()
+
+        grandchild = ProjectFactory(creator=user, parent=child)  # noqa
+
+        admins = list(parent.get_admin_contributors_recursive())
+        assert len(admins) == 3
+        admin_ids = [u._id for u, node in admins]
+        assert user._id in admin_ids
+        assert viewer._id in admin_ids
+
+        node_ids = [node._id for u, node in admins]
+        assert parent._id in node_ids
+
+    def test_get_admin_contributors_recursive_no_duplicates(self, user, viewer, auth):
+        parent = ProjectFactory(creator=user)
+
+        child = ProjectFactory(creator=viewer, parent=parent)
+        child_non_admin = UserFactory()
+        child.add_contributor(child_non_admin,
+                              auth=auth,
+                              permissions=expand_permissions(WRITE))
+        child.save()
+
+        grandchild = ProjectFactory(creator=user, parent=child)  # noqa
+
+        admins = list(parent.get_admin_contributors_recursive(unique_users=True))
+        assert len(admins) == 2
+        admin_ids = [u._id for u, node in admins]
+        assert user._id in admin_ids
+        assert viewer._id in admin_ids
+
+    def test_get_descendants_recursive(self, user, root, auth, viewer):
+        comp1 = ProjectFactory(creator=user, parent=root)
+        comp1a = ProjectFactory(creator=user, parent=comp1)
+        comp1a.add_contributor(viewer, auth=auth, permissions='read')
+        comp1b = ProjectFactory(creator=user, parent=comp1)
+        comp2 = ProjectFactory(creator=user, parent=root)
+        comp2.add_contributor(viewer, auth=auth, permissions='read')
+        comp2a = ProjectFactory(creator=user, parent=comp2)
+        comp2a.add_contributor(viewer, auth=auth, permissions='read')
+        comp2b = ProjectFactory(creator=user, parent=comp2)
+
+        descendants = root.get_descendants_recursive()
+        ids = {d._id for d in descendants}
+        assert bool({node._id for node in [comp1, comp1a, comp1b, comp2, comp2a, comp2b]}.difference(ids)) is False
+
+    def test_get_descendants_recursive_filtered(self, user, root, viewer, auth):
+        comp1 = ProjectFactory(creator=user, parent=root)
+        comp1a = ProjectFactory(creator=user, parent=comp1)
+        comp1a.add_contributor(viewer, auth=auth, permissions='read')
+        ProjectFactory(creator=user, parent=comp1)
+        comp2 = ProjectFactory(creator=user)
+        comp2.add_contributor(viewer, auth=auth, permissions='read')
+        comp2a = ProjectFactory(creator=user, parent=comp2)
+        comp2a.add_contributor(viewer, auth=auth, permissions='read')
+        ProjectFactory(creator=user, parent=comp2)
+
+        descendants = root.get_descendants_recursive(
+            lambda n: n.is_contributor(viewer)
+        )
+        ids = {d._id for d in descendants}
+        nids = {node._id for node in [comp1a, comp2, comp2a]}
+        assert bool(ids.difference(nids)) is False
+
+    @pytest.mark.skip('Pointers not yet implemented')
+    def test_get_descendants_recursive_cyclic(self, user, root, auth):
+        point1 = ProjectFactory(creator=user, parent=root)
+        point2 = ProjectFactory(creator=user, parent=root)
+        point1.add_pointer(point2, auth=auth)
+        point2.add_pointer(point1, auth=auth)
+
+        descendants = list(point1.get_descendants_recursive())
+        assert len(descendants) == 1

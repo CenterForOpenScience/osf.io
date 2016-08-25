@@ -37,6 +37,7 @@ def FakeList(provider, n, *args, **kwargs):
     return [func(*args, **kwargs) for _ in range(n)]
 
 class UserFactory(DjangoModelFactory):
+    fullname = factory.Faker('name')
     username = factory.Faker('email')
     password = factory.PostGenerationMethodCall('set_password',
                                                 'queenfan86')

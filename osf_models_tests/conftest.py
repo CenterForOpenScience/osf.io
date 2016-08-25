@@ -13,6 +13,7 @@ SILENT_LOGGERS = [
     'factory.generate',
     'factory.containers',
     'website.search.elastic_search',
+    'framework.analytics',
     'framework.auth.core',
     'website.mails',
     'website.search_migration.migrate',
