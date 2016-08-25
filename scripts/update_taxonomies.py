@@ -1,4 +1,5 @@
 import os
+import csv
 import json
 import logging
 import sys
@@ -16,12 +17,13 @@ from website.project.taxonomies import Subject
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-def update_taxonomies(dry_run=True):
+
+def update_taxonomies(filename, dry_run=True):
     # Flat taxonomy is stored locally, read in here
     with open(
         os.path.join(
             settings.APP_PATH,
-            'website', 'static', 'plos_taxonomy.json'
+            'website', 'static', filename
         )
     ) as fp:
         taxonomy = json.load(fp)
@@ -56,10 +58,13 @@ def update_taxonomies(dry_run=True):
                 subject.text = text
                 if parent not in subject.parents:
                     subject.parents.append(parent)
-                    logger.info(u'Adding parent "{}":{} to Subject "{}":{}'.format(
-                        parent.text, parent._id,
-                        subject.text, subject._id
-                    ))
+                    try:
+                        logger.info(u'Adding parent "{}":{} to Subject "{}":{}'.format(
+                            parent.text, parent._id,
+                            subject.text, subject._id
+                        ))
+                    except Exception as e:
+                        import ipdb; ipdb.set_trace()
 
             subject.save()
 
@@ -72,7 +77,8 @@ def main():
         script_utils.add_file_logger(logger, __file__)
     set_up_storage([Subject], storage.MongoStorage)    
     with TokuTransaction():
-        update_taxonomies(dry_run=dry_run)
+        update_taxonomies('plos_taxonomy.json', dry_run=dry_run)
+        update_taxonomies('other_taxonomy.json', dry_run=dry_run)
 
 if __name__ == '__main__':
     main()
