@@ -4,6 +4,7 @@ from django.apps import apps
 
 from osf_models.models.tag import Tag
 from osf_models.models.nodelog import NodeLog
+from website.exceptions import NodeStateError
 
 from framework.analytics import increment_user_activity_counters
 
@@ -130,3 +131,173 @@ class AddonModelMixin(models.Model):
 
     class Meta:
         abstract = True
+
+
+class NodeLinkMixin(models.Model):
+    linked_nodes = models.ManyToManyField('AbstractNode')
+
+    class Meta:
+        abstract = True
+
+    def add_node_link(self, node, auth, save=True):
+        """Add a node link to a node.
+
+        :param Node node: Node to add
+        :param Auth auth: Consolidated authorization
+        :param bool save: Save changes
+        :return: Created pointer
+        """
+        # Fail if node already in nodes / pointers. Note: cast node and node
+        # to primary keys to test for conflicts with both nodes and pointers
+        # contained in `self.nodes`.
+        if self.linked_nodes.filter(id=node.id).exists():
+            raise ValueError(
+                'Link to node {0} already exists'.format(node._id)
+            )
+
+        if self.is_registration:
+            raise NodeStateError('Cannot add a pointer to a registration')
+
+        # If a folder, prevent more than one pointer to that folder.
+        # This will prevent infinite loops on the project organizer.
+        if node.is_collection and node.linked_from.count() > 0:
+            raise ValueError(
+                'Node link to folder {0} already exists. '
+                'Only one node link to any given folder allowed'.format(node._id)
+            )
+        if node.is_collection and node.is_bookmark_collection:
+            raise ValueError(
+                'Node link to bookmark collection ({0}) not allowed.'.format(node._id)
+            )
+
+        # Append node link
+        self.linked_nodes.add(node)
+
+        # Add log
+        if hasattr(self, 'add_log'):
+            self.add_log(
+                action=NodeLog.NODE_LINK_CREATED,
+                params={
+                    'parent_node': self.parent_id,
+                    'node': self._id,
+                    'pointer': {
+                        'id': node._id,
+                        'url': node.url,
+                        'title': node.title,
+                        'category': node.category,
+                    },
+                },
+                auth=auth,
+                save=False,
+            )
+
+        # Optionally save changes
+        if save:
+            self.save()
+
+        return node
+
+    add_pointer = add_node_link  # For v1 compat
+
+    def rm_node_link(self, node, auth):
+        """Remove a pointer.
+
+        :param Pointer pointer: Pointer to remove
+        :param Auth auth: Consolidated authorization
+        """
+        if not self.linked_nodes.filter(id=node.id).exists():
+            raise ValueError('Node link does not belong to the requested node.')
+
+        self.linked_nodes.remove(node)
+
+        # Add log
+        if hasattr(self, 'add_log'):
+            self.add_log(
+                action=NodeLog.POINTER_REMOVED,
+                params={
+                    'parent_node': self.parent_id,
+                    'node': self._primary_key,
+                    'pointer': {
+                        'id': node._id,
+                        'url': node.url,
+                        'title': node.title,
+                        'category': node.category,
+                    },
+                },
+                auth=auth,
+                save=False,
+            )
+
+    rm_pointer = rm_node_link  # For v1 compat
+
+    @property
+    def linked_from(self):
+        """Return the nodes that have linked to this node."""
+        Node = apps.get_model('osf_models.Node')
+        return Node.objects.filter(linked_nodes=self)
+
+    @property
+    def linked_from_collections(self):
+        """Return the nodes that have linked to this node."""
+        Collection = apps.get_model('osf_models.Collection')
+        return Collection.objects.filter(linked_nodes=self)
+
+    def get_points(self, folders=False, deleted=False, resolve=True):
+        if deleted:
+            query = self.linked_from.all()
+        else:
+            query = self.linked_from.filter(is_deleted=False).all()
+        ret = list(query)
+        if folders:
+            if deleted:
+                collection_query = self.linked_from_collections.all()
+            else:
+                collection_query = self.linked_from_collections.filter(is_deleted=False).all()
+            ret.extend(list(collection_query))
+        return ret
+
+    def fork_node_link(self, node, auth, save=True):
+        """Replace a linked node with a fork.
+
+        :param Node node:
+        :param Auth auth:
+        :param bool save:
+        :return: Forked node
+        """
+        # Fail if pointer not contained in `nodes`
+        if not self.linked_nodes.filter(id=node.id).exists():
+            raise ValueError('Node link {0} not in list'.format(node._id))
+
+        # Fork into current node and replace pointer with forked component
+        forked = node.fork_node(auth)
+        if forked is None:
+            raise ValueError('Could not fork node')
+
+        self.nodes.add(forked)
+
+        if hasattr(self, 'add_log'):
+            # Add log
+            self.add_log(
+                NodeLog.NODE_LINK_FORKED,
+                params={
+                    'parent_node': self.parent_id,
+                    'node': self._primary_key,
+                    'pointer': {
+                        'id': node._id,
+                        'url': node.url,
+                        'title': node.title,
+                        'category': node.category,
+                    },
+                },
+                auth=auth,
+                save=False,
+            )
+
+        # Optionally save changes
+        if save:
+            self.save()
+
+        # Return forked content
+        return forked
+
+    fork_pointer = fork_node_link  # For v1 compat

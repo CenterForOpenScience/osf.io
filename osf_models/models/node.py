@@ -2,7 +2,6 @@ import itertools
 import logging
 import urlparse
 
-from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.dispatch import receiver
@@ -31,7 +30,7 @@ from website.project import signals as project_signals
 from osf_models.apps import AppConfig as app_config
 from osf_models.models.nodelog import NodeLog
 from osf_models.models.contributor import Contributor, RecentlyAddedContributor
-from osf_models.models.mixins import Loggable, Taggable, AddonModelMixin
+from osf_models.models.mixins import Loggable, Taggable, AddonModelMixin, NodeLinkMixin
 from osf_models.models.user import OSFUser
 from osf_models.models.sanctions import RegistrationApproval
 from osf_models.models.validators import validate_title
@@ -45,6 +44,7 @@ from .base import BaseModel, GuidMixin
 logger = logging.getLogger(__name__)
 
 class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
+                   NodeLinkMixin,
                    Taggable, Loggable, GuidMixin, BaseModel):
     """
     All things that inherit from AbstractNode will appear in
@@ -1044,13 +1044,13 @@ def set_parent(sender, instance, *args, **kwargs):
     if getattr(instance, '_parent', None):
         instance.parent_node = instance._parent
 
-class Collection(GuidMixin, BaseModel):
+class Collection(NodeLinkMixin, GuidMixin, BaseModel):
     # TODO: Uncomment auto_* attributes after migration is complete
     date_created = models.DateTimeField(null=False, default=timezone.now)  # auto_now_add=True)
     date_modified = models.DateTimeField(null=True, blank=True,
                                          db_index=True)  # auto_now=True)
     is_bookmark_collection = models.BooleanField(default=False, db_index=True)
-    nodes = models.ManyToManyField('Node', related_name='children')
+    is_deleted = models.BooleanField(default=False, db_index=True)
     title = models.TextField(
         validators=[validate_title]
     )  # this should be a charfield but data from mongo didn't fit in 255
@@ -1065,12 +1065,17 @@ class Collection(GuidMixin, BaseModel):
 
     @property
     def nodes_pointer(self):
-        return self.nodes.filter(primary=False)
+        """For v1 compat"""
+        return self.node_links
+
+    nodes = nodes_pointer
 
     @property
     def is_collection(self):
-        """
-        Just to keep compatibility with previous code.
-        :return:
-        """
+        """For v1 compat."""
         return True
+
+    @property
+    def is_registration(self):
+        """For v1 compat."""
+        return False
