@@ -9,6 +9,7 @@ import uuid
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
+from modularodm.exceptions import ValidationError
 from modularodm.exceptions import ValidationValueError
 
 from framework import forms, status
@@ -21,6 +22,7 @@ from framework.auth.exceptions import DuplicateEmailError, ExpiredTokenError, In
 from framework.auth.core import generate_verification_key
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import ResendConfirmationForm, ForgotPasswordForm, ResetPasswordForm
+from framework.auth.utils import ensure_external_identity_uniqueness
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions.utils import remove_sessions_for_user, remove_session
@@ -376,6 +378,12 @@ def external_login_confirm_email_get(auth, uid, token):
     if provider not in user.external_identity:
         raise HTTPError(http.BAD_REQUEST)
     external_status = user.external_identity[provider][provider_id]
+
+    try:
+        ensure_external_identity_uniqueness(provider, provider_id, user)
+    except ValidationError as e:
+        raise HTTPError(http.FORBIDDEN, e.message)
+
     # create a new user
     if external_status == 'CREATE' and email.lower() == user.username.lower():
         user.register(user.username)
@@ -762,6 +770,10 @@ def external_login_email_post():
                 external_id: None,
             },
         }
+        try:
+            ensure_external_identity_uniqueness(external_id_provider, external_id, user)
+        except ValidationError as e:
+            raise HTTPError(http.FORBIDDEN, e.message)
         if user:
             external_status = ''
             # 0. check if this user is already linked with other profile
@@ -772,7 +784,7 @@ def external_login_email_post():
                             external_status = user.external_identity[external_id_provider][external_id]
 
             if external_status == 'CREATE' or external_status == 'LINK':
-                # TODO: [#OSF-6933] handle pending status: the current or another user also claimed this osf account but not confirmed
+                # TODO: [#OSF-6933] handle pending status: the current already claimed this osf account but not confirmed
                 pass
 
             # 1. update user oauth, with pending status
@@ -784,7 +796,7 @@ def external_login_email_post():
             # 2. add unconfirmed email and send confirmation email
             user.add_unconfirmed_email(clean_email, external_identity=external_identity)
             user.save()
-            send_confirm_email(user, user.username, external_id_provider=external_id_provider, external_id=external_id)
+            send_confirm_email(user, clean_email, external_id_provider=external_id_provider, external_id=external_id)
             # 3. notify user
             message = language.EXTERNAL_LOGIN_EMAIL_LINK_SUCCESS.format(
                 external_id_provider=external_id_provider,
