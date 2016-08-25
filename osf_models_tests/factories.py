@@ -318,3 +318,50 @@ class EmbargoTerminationApprovalFactory(DjangoModelFactory):
         with mock.patch('osf_models.models.sanctions.TokenApprovableSanction.ask', mock.Mock()):
             approval = registration.request_embargo_termination(Auth(user))
             return approval
+
+
+class CommentFactory(DjangoModelFactory):
+    class Meta:
+        model = models.Comment
+
+    content = factory.Sequence(lambda n: 'Comment {0}'.format(n))
+
+    @classmethod
+    def _build(cls, target_class, *args, **kwargs):
+        node = kwargs.pop('node', None) or NodeFactory()
+        user = kwargs.pop('user', None) or node.creator
+        target = kwargs.pop('target', None) or models.Guid.load(node._id)
+        content = kwargs.pop('content', None) or 'Test comment.'
+        instance = target_class(
+            node=node,
+            user=user,
+            target=target,
+            content=content,
+            *args, **kwargs
+        )
+        if isinstance(target.referent, target_class):
+            instance.root_target = target.referent.root_target
+        else:
+            instance.root_target = target
+        return instance
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        node = kwargs.pop('node', None) or NodeFactory()
+        user = kwargs.pop('user', None) or node.creator
+        target = kwargs.pop('target', None) or models.Guid.load(node._id)
+        content = kwargs.pop('content', None) or 'Test comment.'
+        instance = target_class(
+            node=node,
+            user=user,
+            target=target,
+            content=content,
+            *args, **kwargs
+        )
+        if isinstance(target.referent, target_class):
+            instance.root_target = target.referent.root_target
+        else:
+            instance.root_target = target
+        instance.save()
+        return instance
+
