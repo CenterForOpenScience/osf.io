@@ -750,7 +750,6 @@ def make_url_map(app):
             OsfWebRenderer('profile/personal_tokens_detail.mako', trust=False)
         ),
 
-
         # TODO: Uncomment once outstanding issues with this feature are addressed
         # Rule(
         #     '/@<twitter_handle>/',
@@ -793,6 +792,13 @@ def make_url_map(app):
             'post',
             profile_views.request_deactivation,
             json_renderer,
+        ),
+
+        Rule(
+            '/profile/logins/',
+            'delete',
+            profile_views.delete_external_identity,
+            json_renderer
         ),
 
         Rule(
