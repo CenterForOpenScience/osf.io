@@ -861,7 +861,7 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin, Taggable, Logga
         inactive users.
         """
         query = Contributor.objects.select_related('user').filter(
-            user__id__in=[each.id for each in users],
+            user__in=users,
             user__is_active=True,
             admin=True
         )
@@ -885,6 +885,7 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin, Taggable, Logga
                     else:
                         yield (contrib, node)
 
+    # TODO: Optimize me
     def manage_contributors(self, user_dicts, auth, save=False):
         """Reorder and remove contributors.
 
