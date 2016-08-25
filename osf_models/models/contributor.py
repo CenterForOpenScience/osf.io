@@ -8,6 +8,12 @@ class AbstractBaseContributor(models.Model):
     visible = models.BooleanField(default=False)
     user = models.ForeignKey('OSFUser')
 
+    def __repr__(self):
+        return ('<{self.__class__.__name__}(user={self.user}, '
+                'read={self.read}, write={self.write}, admin={self.admin}, '
+                'visible={self.visible}'
+                ')>').format(self=self)
+
     class Meta:
         abstract = True
 

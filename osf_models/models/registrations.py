@@ -317,6 +317,16 @@ class Registration(AbstractNode):
             self.save()
         return retraction
 
+    def delete_registration_tree(self, save=False):
+        self.is_deleted = True
+        if not getattr(self.embargo, 'for_existing_registration', False):
+            self.registered_from = None
+        if save:
+            self.save()
+        self.update_search()
+        for child in self.nodes_primary:
+            child.delete_registration_tree(save=save)
+
 
 class DraftRegistrationLog(ObjectIDMixin, BaseModel):
     """ Simple log to show status changes for DraftRegistrations
