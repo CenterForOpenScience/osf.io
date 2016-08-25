@@ -35,6 +35,17 @@
             <p> If you do not currently have an OSF account, this will create one. By creating an account you agree to our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms</a> and that you have read our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>, including our information on <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies">Cookie Use</a>.</p>
         </div>
     %endif
+
+    %if campaign == "osf-preprints":
+        <div class="text-center m-t-lg">
+            <h3>OSF Preprint Service</h3>
+            <hr>
+            <p>
+                Please login to the Open Science Framework or create a free account to continue.
+            </p>
+        </div>
+    %endif
+
     <div class="row m-t-xl">
     %if campaign == "institution" and enable_institutions:
         <div class="col-sm-6 col-sm-offset-3">

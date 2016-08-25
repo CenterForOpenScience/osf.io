@@ -21,7 +21,15 @@ CAMPAIGNS = ImmutableDict({
         'system_tag': 'erp_challenge_campaign',
         'redirect_url': lambda: furl.furl(DOMAIN).add(path='erpc/').url,
         'confirmation_email_template': mails.CONFIRM_EMAIL_ERPC,
-    }})
+    },
+    # Various preprint services
+    # Each preprint service will offer their own campaign with appropriate distinct branding
+    'osf-preprints': {
+        'system_tag': 'osf_preprints',
+        'redirect_url': lambda: furl.furl(DOMAIN).add(path='preprints/').url,
+        'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS_OSF
+    }
+})
 
 
 def system_tag_for_campaign(campaign):
