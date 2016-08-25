@@ -97,7 +97,7 @@ class FilterMixin(object):
         elif isinstance(field, self.MATCHABLE_FIELDS):
             return self.MATCH_OPERATORS + self.DEFAULT_OPERATORS
         else:
-            return None
+            return self.DEFAULT_OPERATORS
 
     def _get_field_or_error(self, field_name):
         """
