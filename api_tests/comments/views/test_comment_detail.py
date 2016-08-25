@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
 
@@ -67,7 +68,7 @@ class CommentDetailMixin(object):
         self._set_up_private_project_with_comment()
         res = self.app.get(self.private_url, expect_errors=True)
         assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
 
     def test_private_node_user_with_private_link_can_see_comment(self):
         self._set_up_private_project_with_comment()
@@ -184,7 +185,7 @@ class CommentDetailMixin(object):
         self._set_up_private_project_with_comment()
         res = self.app.put_json_api(self.private_url, self.payload, expect_errors=True)
         assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
 
     def test_public_node_only_contributor_commenter_can_update_comment(self):
         self._set_up_public_project_with_comment()
@@ -208,7 +209,7 @@ class CommentDetailMixin(object):
         self._set_up_public_project_with_comment()
         res = self.app.put_json_api(self.public_url, self.public_comment_payload, expect_errors=True)
         assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
 
     def test_update_comment_cannot_exceed_max_length(self):
         self._set_up_private_project_with_comment()
@@ -315,7 +316,7 @@ class CommentDetailMixin(object):
         self._set_up_public_project_with_comment()
         res = self.app.delete_json_api(self.public_url, expect_errors=True)
         assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
 
     def test_public_node_user_cannot_delete_already_deleted_comment(self):
         self._set_up_public_project_with_comment()
@@ -350,7 +351,7 @@ class CommentDetailMixin(object):
         url = '/{}comments/{}/'.format(API_BASE, self.comment._id)
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
 
     def test_private_node_view_only_link_user_cannot_see_deleted_comment(self):
         self._set_up_private_project_with_comment()

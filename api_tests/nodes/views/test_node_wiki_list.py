@@ -72,7 +72,7 @@ class TestNodeWikiList(ApiWikiTestCase):
         self._set_up_registration_with_wiki_page()
         res = self.app.get(self.registration_url, expect_errors=True)
         assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credential were not provided.')
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
 
     def test_return_registration_wikis_logged_in_non_contributor(self):
         self._set_up_registration_with_wiki_page()

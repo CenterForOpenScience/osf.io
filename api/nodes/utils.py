@@ -14,7 +14,7 @@ def get_file_object(node, path, provider, request):
     if provider == 'osfstorage':
         # Kinda like /me for a user
         # The one odd case where path is not really path
-        if path == '':
+        if path == '/':
             obj = node.get_addon('osfstorage').get_root()
         else:
             obj = get_object_or_error(
@@ -28,7 +28,7 @@ def get_file_object(node, path, provider, request):
     if not node.get_addon(provider) or not node.get_addon(provider).configured:
         raise NotFound('The {} provider is not configured for this project.'.format(provider))
 
-    url = waterbutler_api_url_for(node._id, provider, '/{}'.format(path), meta=True)
+    url = waterbutler_api_url_for(node._id, provider, path, meta=True)
     waterbutler_request = requests.get(
         url,
         cookies=request.COOKIES,

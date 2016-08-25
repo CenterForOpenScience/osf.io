@@ -1,3 +1,4 @@
+from __future__ import unicode_literals 
 from nose.tools import *  # flake8: noqa
 from api.base.settings.defaults import API_BASE
 
