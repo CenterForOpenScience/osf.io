@@ -305,7 +305,7 @@ var ExternalIdentityViewModel = oop.defclass({
         'delete': '/api/v1/profile/logins/'
     },
     _removeIdentity: function(identity) {
-        var request = $osf.ajaxJSON('DELETE', this.urls.delete, {'data': {'identity': identity}});
+        var request = $osf.ajaxJSON('PATCH', this.urls.delete, {'data': {'identity': identity}});
         request.done(function() {
             $osf.growl('Success', 'You have revoked this connected identity.', 'success');
             window.location.reload();
