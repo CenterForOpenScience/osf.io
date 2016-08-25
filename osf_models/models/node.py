@@ -333,10 +333,6 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
         return self.registrations.all()
 
     @property
-    def nodes_pointer(self):
-        return []
-
-    @property
     def url(self):
         return '/{}/'.format(self._id)
 
@@ -1062,13 +1058,6 @@ class Collection(NodeLinkMixin, GuidMixin, BaseModel):
         if self.is_bookmark_collection and self.title != 'Bookmarks':
             self.title = 'Bookmarks'
         return super(Collection, self).save(*args, **kwargs)
-
-    @property
-    def nodes_pointer(self):
-        """For v1 compat"""
-        return self.node_links
-
-    nodes = nodes_pointer
 
     @property
     def is_collection(self):

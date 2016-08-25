@@ -242,6 +242,11 @@ class NodeLinkMixin(models.Model):
         Collection = apps.get_model('osf_models.Collection')
         return Collection.objects.filter(linked_nodes=self)
 
+    @property
+    def nodes_pointer(self):
+        """For v1 compat"""
+        return self.linked_nodes
+
     def get_points(self, folders=False, deleted=False, resolve=True):
         if deleted:
             query = self.linked_from.all()
