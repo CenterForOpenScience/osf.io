@@ -41,7 +41,7 @@
             <h3>OSF Preprint Service</h3>
             <hr>
             <p>
-                Please login to the Open Science Framework or create a free account to continue.
+                Please login to the Open Science Framework or create a free account to contribute to OSF Preprints.
             </p>
         </div>
     %endif
