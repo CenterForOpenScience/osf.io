@@ -796,9 +796,9 @@ def make_url_map(app):
 
         Rule(
             '/profile/logins/',
-            'delete',
+            'patch',
             profile_views.delete_external_identity,
-            json_renderer
+            json_renderer,
         ),
 
         Rule(
