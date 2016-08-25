@@ -1198,13 +1198,13 @@ def build_pk_caches():
     # build a lookup table of all guids to pks
     # TODO this should use the model traversal thingy and find all the models
     # TODO then it should build a mapping using their natural keys
-    modm_to_django = {x['guid__guid']: x['pk'] for x in Node.objects.all().values('_guid__guid', 'pk')}
-    modm_to_django.update({x['guid__guid']: x['pk'] for x in Institution.objects.all().values('_guid__guid', 'pk')})
-    modm_to_django.update({x['guid__guid']: x['pk'] for x in OSFUser.objects.all().values('_guid__guid', 'pk')})
+    modm_to_django = {x['guid__guid']: x['pk'] for x in Node.objects.all().values('guid__guid', 'pk')}
+    modm_to_django.update({x['guid__guid']: x['pk'] for x in Institution.objects.all().values('guid__guid', 'pk')})
+    modm_to_django.update({x['guid__guid']: x['pk'] for x in OSFUser.objects.all().values('guid__guid', 'pk')})
     modm_to_django.update({'{}:system'.format(x['name']): x['pk'] for x in Tag.objects.filter(system=True).values('name', 'pk')})
     modm_to_django.update({'{}:not_system'.format(x['name']): x['pk'] for x in Tag.objects.filter(system=False).values('name', 'pk')})
-    modm_to_django.update({x['object_id']: x['pk'] for x in Embargo.objects.all().values('guid', 'pk')})
-    modm_to_django.update({x['object_id']: x['pk'] for x in Retraction.objects.all().values('guid', 'pk')})
+    modm_to_django.update({x['guid__object_id']: x['pk'] for x in Embargo.objects.all().values('guid__object_id', 'pk')})
+    modm_to_django.update({x['guid__object_id']: x['pk'] for x in Retraction.objects.all().values('guid__object_id', 'pk')})
     return modm_to_django
 
 
