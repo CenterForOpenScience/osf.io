@@ -384,40 +384,38 @@ def external_login_confirm_email_get(auth, uid, token):
     except ValidationError as e:
         raise HTTPError(http.FORBIDDEN, e.message)
 
-    # create a new user
-    if external_status == 'CREATE' and email.lower() == user.username.lower():
-        user.register(user.username)
-        user.date_last_logged_in = datetime.datetime.utcnow()
-        user.external_identity[provider][provider_id] = 'VERIFIED'
-        user.social[provider.lower()] = provider_id
-        user.save()
+    if not user.is_registered:
+        user.register(email)
+
+    if email.lower() not in user.emails:
+        user.emails.append(email.lower())
+
+    user.date_last_logged_in = datetime.datetime.utcnow()
+    user.external_identity[provider][provider_id] = 'VERIFIED'
+    user.social[provider.lower()] = provider_id
+    del user.email_verifications[token]
+    user.verification_key = generate_verification_key()
+    user.save()
+
+    service_url = request.url
+
+    if external_status == 'CREATE':
         mails.send_mail(
             to_addr=user.username,
             mail=mails.WELCOME,
             mimetype='html',
             user=user
         )
-        service_url = request.url + '?new=true'
-    # link a current user
+        service_url = service_url + '?new=true'
     elif external_status == 'LINK':
-        user.date_last_logged_in = datetime.datetime.utcnow()
-        user.external_identity[provider][provider_id] = 'VERIFIED'
-        user.social[provider.lower()] = provider_id
-        user.save()
         mails.send_mail(
             user=user,
             to_addr=user.username,
             mail=mails.EXTERNAL_LOGIN_LINK_SUCCESS,
             external_id_provider=provider,
         )
-        service_url = request.url
-
-    del user.email_verifications[token]
-    user.save()
 
     # redirect to CAS and authenticate the user with the verification key
-    user.verification_key = generate_verification_key()
-    user.save()
     return redirect(cas.get_login_url(
         service_url,
         username=user.username,
@@ -775,18 +773,6 @@ def external_login_email_post():
         except ValidationError as e:
             raise HTTPError(http.FORBIDDEN, e.message)
         if user:
-            external_status = ''
-            # 0. check if this user is already linked with other profile
-            if user.external_identity:
-                if external_id_provider in user.external_identity:
-                    if user.external_identity[external_id_provider]:
-                        if external_id in user.external_identity[external_id_provider]:
-                            external_status = user.external_identity[external_id_provider][external_id]
-
-            if external_status == 'CREATE' or external_status == 'LINK':
-                # TODO: [#OSF-6933] handle pending status: the current already claimed this osf account but not confirmed
-                pass
-
             # 1. update user oauth, with pending status
             external_identity[external_id_provider][external_id] = 'LINK'
             if external_id_provider in user.external_identity:
