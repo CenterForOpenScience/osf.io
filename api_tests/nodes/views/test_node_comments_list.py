@@ -45,7 +45,7 @@ class NodeCommentsListMixin(object):
 
     def test_return_public_node_comments_logged_in_user(self):
         self._set_up_public_project_with_comment()
-        res = self.app.get(self.public_url, auth=self.non_contributor)
+        res = self.app.get(self.public_url, auth=self.non_contributor.auth)
         assert_equal(res.status_code, 200)
         comment_json = res.json['data']
         comment_ids = [comment['id'] for comment in comment_json]
@@ -60,7 +60,8 @@ class NodeCommentsListMixin(object):
 
     def test_return_private_node_comments_logged_in_non_contributor(self):
         self._set_up_private_project_with_comment()
-        res = self.app.get(self.private_url, auth=self.non_contributor, expect_errors=True)
+        import ipdb; ipdb.set_trace()
+        res = self.app.get(self.private_url, auth=self.non_contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
@@ -365,7 +366,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
         self.private_project_with_public_comment_level = ProjectFactory(is_public=False, creator=self.user)
         self.private_project_with_public_comment_level.add_contributor(self.read_only_contributor, permissions=['read'])
         self.private_project_with_public_comment_level.save()
-        self.private_project_public_comments_url = '/{}nodes/{}/comments/'.format(API_BASE, self.private_project_with_public_comment_level)
+        self.private_project_public_comments_url = '/{}nodes/{}/comments/'.format(API_BASE, self.private_project_with_public_comment_level._id)
         self.private_project_public_comments_payload = self._set_up_payload(self.private_project_with_public_comment_level._id)
 
     def test_create_comment_invalid_data(self):
@@ -722,7 +723,7 @@ class TestFileCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
         self.private_project_with_public_comment_level = ProjectFactory(is_public=False, creator=self.user)
         self.private_project_with_public_comment_level.add_contributor(self.read_only_contributor, permissions=['read'])
         self.private_project_with_public_comment_level.save()
-        self.private_project_public_comments_url = '/{}nodes/{}/comments/'.format(API_BASE, self.private_project_with_public_comment_level)
+        self.private_project_public_comments_url = '/{}nodes/{}/comments/'.format(API_BASE, self.private_project_with_public_comment_level._id)
         self.test_file = test_utils.create_test_file(self.private_project_with_public_comment_level, self.user)
         self.private_project_public_comments_payload = self._set_up_payload(self.test_file.get_guid()._id)
 
@@ -806,7 +807,7 @@ class TestWikiCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
         self.private_project_with_public_comment_level = ProjectFactory(is_public=False, creator=self.user)
         self.private_project_with_public_comment_level.add_contributor(self.read_only_contributor, permissions=['read'])
         self.private_project_with_public_comment_level.save()
-        self.private_project_public_comments_url = '/{}nodes/{}/comments/'.format(API_BASE, self.private_project_with_public_comment_level)
+        self.private_project_public_comments_url = '/{}nodes/{}/comments/'.format(API_BASE, self.private_project_with_public_comment_level._id)
         self.wiki = NodeWikiFactory(node=self.private_project_with_public_comment_level, user=self.user)
         self.private_project_public_comments_payload = self._set_up_payload(self.wiki._id)
 
