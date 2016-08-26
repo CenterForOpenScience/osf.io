@@ -9,9 +9,15 @@ from flask import request, make_response
 
 from framework.exceptions import HTTPError
 
+from modularodm import Q
+from modularodm.storage.base import KeyExistsException
+from website.oauth.models import ExternalAccount
+
 from website.addons.base import generic_views
 from website.addons.gitlab.api import GitLabClient, ref_to_params
+from website.addons.gitlab.model import GitLabProvider
 from website.addons.gitlab.exceptions import NotFoundError, GitLabError
+from website.addons.gitlab.settings import DEFAULT_HOSTS
 from website.addons.gitlab.serializer import GitLabSerializer
 from website.addons.gitlab.utils import (
     get_refs, check_permissions,
@@ -27,6 +33,9 @@ from website.project.decorators import (
     must_be_contributor_or_public, must_be_valid_project,
 )
 from website.util import rubeus
+
+from framework.auth.decorators import must_be_logged_in
+from website.util import api_url_for
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +77,72 @@ gitlab_deauthorize_node = generic_views.deauthorize_node(
 gitlab_root_folder = generic_views.root_folder(
     SHORT_NAME
 )
+
+@must_be_logged_in
+def gitlab_user_config_get(auth, **kwargs):
+    """View for getting a JSON representation of the logged-in user's
+    GitLab user settings.
+    """
+
+    user_addon = auth.user.get_addon('gitlab')
+    user_has_auth = False
+    if user_addon:
+        user_has_auth = user_addon.has_auth
+
+    return {
+        'result': {
+            'userHasAuth': user_has_auth,
+            'urls': {
+                'create': api_url_for('gitlab_add_user_account'),
+                'accounts': api_url_for('gitlab_account_list'),
+            },
+            'hosts': DEFAULT_HOSTS,
+        },
+    }, http.OK
+
+@must_be_logged_in
+def gitlab_add_user_account(auth, **kwargs):
+    """Verifies new external account credentials and adds to user's list"""
+    user = auth.user
+
+    host = request.json.get('host').rstrip('/')
+    clientId = request.json.get('clientId')
+    clientSecret = request.json.get('clientSecret')
+
+    provider = GitLabProvider()
+
+
+    # Note: `DataverseSerializer` expects display_name to be a URL
+    try:
+        provider.account = ExternalAccount(
+            provider=provider.short_name,
+            provider_name=provider.name,
+            display_name=host,
+            oauth_key=clientId,
+            oauth_secret=clientSecret,
+            provider_id=clientId,   # Change to username if Dataverse allows
+        )
+        provider.account.save()
+    except KeyExistsException:
+        # ... or get the old one
+        provider.account = ExternalAccount.find_one(
+            Q('provider', 'eq', provider.short_name) &
+            Q('provider_id', 'eq', clientId)
+        )
+
+    if provider.account not in user.external_accounts:
+        user.external_accounts.append(provider.account)
+
+    user_addon = auth.user.get_addon('gitlab')
+    if not user_addon:
+        user.add_addon('gitlab')
+    user.save()
+
+    # Need to ensure that the user has dataverse enabled at this point
+    user.get_or_add_addon('gitlab', auth=auth)
+    user.save()
+
+    return {}
 
 #################
 # Special Cased #

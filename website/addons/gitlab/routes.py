@@ -8,6 +8,18 @@ api_routes = {
     'rules': [
 
         Rule(
+            '/settings/gitlab/',
+            'get',
+            views.gitlab_user_config_get,
+            json_renderer,
+        ),
+        Rule(
+            '/settings/gitlab/accounts/',
+            'post',
+            views.gitlab_add_user_account,
+            json_renderer,
+        ),
+        Rule(
             [
                 '/settings/gitlab/accounts/',
             ],

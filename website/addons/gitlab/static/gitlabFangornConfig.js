@@ -125,8 +125,8 @@ var _gitlabItemButtons = {
         var buttons = [];
         function _downloadEvent(event, item, col) {
             event.stopPropagation();
-            var branch = item.data.branch || $osf.urlParams().branch;
-            window.location = waterbutler.buildTreeBeardDownload(item, {branch: item.data.branch});
+            var branch = item.data.branch || item.data.defaultBranch;
+            window.location = waterbutler.buildTreeBeardDownload(item, {branch: branch});
         }
         // Download Zip File
         if (item.kind === 'folder') {
@@ -183,7 +183,7 @@ var _gitlabItemButtons = {
                     }
                 }
                 if (item.data.addonFullname) {
-                    var branchParamUrl = '?ref=' + item.data.branch;
+                    var branchParamUrl = '?ref=' + (item.data.branch || item.data.defaultBranch);
 
                     buttons.push(
                         m.component(Fangorn.Components.button, {

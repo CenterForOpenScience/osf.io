@@ -30,12 +30,23 @@ class GitLabProvider(ExternalProvider):
     name = 'GitLab'
     short_name = 'gitlab'
 
-    client_id = gitlab_settings.CLIENT_ID
-    client_secret = gitlab_settings.CLIENT_SECRET
 
-    auth_url_base = gitlab_settings.OAUTH_AUTHORIZE_URL
-    callback_url = gitlab_settings.OAUTH_ACCESS_TOKEN_URL
-    default_scopes = gitlab_settings.SCOPE
+    def __init__(self, account=None):
+        super(GitLabProvider, self).__init__()
+        self.account = account
+        self.default_scopes = 'api'
+
+    def auth_url_base(self):
+       self.account.display_name + '/oauth/authorize'
+
+    def callback_url(self):
+       self.account.display_name  + '/oauth/token'
+
+    def client_secret(self):
+       self.account.oauth_secret
+
+    def client_id(self):
+       self.account.oauth_key
 
     def handle_callback(self, response):
         """View called when the OAuth flow is completed. Adds a new GitLabUserSettings
