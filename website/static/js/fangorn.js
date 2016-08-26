@@ -427,19 +427,42 @@ function _fangornToggleCheck(item) {
 }
 
 function checkConflicts(tb, item, folder, cb) {
+    var isConflict = false;
+    var titleArray = [];
+    var buttonArray = [];
+    var message = m('');
+
+    // Check the status of named conflicts
     for(var i = 0; i < folder.children.length; i++) {
         var child = folder.children[i];
         if (child.data.name === item.data.name && child.id !== item.id) {
-            tb.modal.update(m('', [
-                    m('p', 'An item named "' + item.data.name + '" already exists in this location.')
-                ]), m('', [
+            isConflict = true;
+            titleArray.push(m('p', 'An item named "' + item.data.name + '" already exists in this location.'));
+            buttonArray = buttonArray.concat([
                     m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
                     m('span.btn.btn-primary', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
-                    m('span.btn.btn-primary', {onclick: cb.bind(tb, 'replace')},'Replace'),
-                ]), m('h3.break-word.modal-title', 'Replace "' + item.data.name + '"?')
-            );
-            return;
+                    m('span.btn.btn-primary', {onclick: cb.bind(tb, 'replace')},'Replace')
+            ]);
+            message = m('h3.break-word.modal-title', 'Replace "' + item.data.name + '"?');
         }
+    }
+
+    // check the status of Preprint moving conflicts
+    if (window.contextVars.node.preprintFileId === item.data.path.replace('/', '')) {
+        titleArray.push(m('p', 'The file "' + item.data.name + '" is the primary file for a preprint, so it cannot be moved.'));
+        if (!isConflict) {
+            buttonArray = buttonArray.concat([
+                m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
+                m('span.btn.btn-primary', {onclick: cb.bind(tb, 'copy')},'Copy')
+            ]);
+            message = m('h3.break-word.modal-title', 'Copy "' + item.data.name + '"?');
+        }
+        isConflict = true;
+    }
+
+    if (isConflict) {
+        tb.modal.update(m('', titleArray), m('', buttonArray), message);
+        return;
     }
     cb('replace');
 }
@@ -2337,7 +2360,8 @@ function getCopyMode(folder, items) {
             return 'forbidden';
         }
 
-        mustBeIntra = mustBeIntra || item.data.provider === 'github';
+        // Github files and Preprint primary files may only be moved within the current addon or component
+        mustBeIntra = mustBeIntra || item.data.provider === 'github' || (window.contextVars.node.preprintFileId === items[0].data.path.replace('/', ''));
         canMove = (
             canMove &&
             item.data.permissions.edit &&
