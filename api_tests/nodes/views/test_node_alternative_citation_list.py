@@ -221,7 +221,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
                                     errors=True)
         assert_equal(res.status_code, 401)
         assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication details were not provided.')
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
         project.reload()
         assert_equal(len(project.alternative_citations), 1)
 
@@ -233,7 +233,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
                                     errors=True)
         assert_equal(res.status_code, 401)
         assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication details were not provided.')
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
         project.reload()
         assert_equal(len(project.alternative_citations), 1)
 
@@ -323,7 +323,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
                                     errors=True)
         assert_equal(res.status_code, 401)
         assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication details were not provided.')
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
         project.reload()
         assert_equal(len(project.alternative_citations), 1)
 
@@ -417,7 +417,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
                                     errors=True)
         assert_equal(res.status_code, 401)
         assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication details were not provided.')
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
         project.reload()
         assert_equal(len(project.alternative_citations), 1)
 
@@ -581,7 +581,7 @@ class TestCreateAlternativeCitations(ApiTestCase):
                                     errors=True)
         assert_equal(res.status_code, 401)
         assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentias were not provided.')
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
         project.reload()
         assert_equal(len(project.alternative_citations), 0)
 
