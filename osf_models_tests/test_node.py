@@ -18,7 +18,7 @@ from osf_models.models import Node, Tag, NodeLog, Contributor, Sanction
 from osf_models.exceptions import ValidationError
 from osf_models.utils.auth import Auth
 
-from .factories import ProjectFactory, NodeFactory, UserFactory, UnregUserFactory, RegistrationFactory, NodeLicenseRecordFactory
+from .factories import ProjectFactory, NodeFactory, UserFactory, UnregUserFactory, RegistrationFactory, NodeLicenseRecordFactory, PrivateLinkFactory
 from .utils import capture_signals, assert_datetime_equal, mock_archive
 
 
@@ -968,3 +968,239 @@ class TestNodeTraversals:
 
         descendants = list(point1.get_descendants_recursive())
         assert len(descendants) == 1
+
+
+# copied from tests/test_models.py
+@pytest.mark.django_db
+class TestForkNode:
+
+    def _cmp_fork_original(self, fork_user, fork_date, fork, original,
+                           title_prepend='Fork of '):
+        """Compare forked node with original node. Verify copied fields,
+        modified fields, and files; recursively compare child nodes.
+
+        :param fork_user: User who forked the original nodes
+        :param fork_date: Datetime (UTC) at which the original node was forked
+        :param fork: Forked node
+        :param original: Original node
+        :param title_prepend: String prepended to fork title
+
+        """
+        # Test copied fields
+        assert title_prepend + original.title == fork.title
+        assert original.category == fork.category
+        assert original.description == fork.description
+        assert fork.logs.count() == original.logs.count() + 1
+        assert original.logs.latest().action != NodeLog.NODE_FORKED
+        assert fork.logs.latest().action == NodeLog.NODE_FORKED
+        assert list(original.tags.values_list('name', flat=True)) == list(fork.tags.values_list('name', flat=True))
+        assert (original.parent_node is None) == (fork.parent_node is None)
+
+        # Test modified fields
+        assert fork.is_fork is True
+        assert fork.private_links.count() == 0
+        assert fork.forked_from == original
+        assert fork._id in [n._id for n in original.forks.all()]
+        # Note: Must cast ForeignList to list for comparison
+        assert list(fork.contributors.all()) == [fork_user]
+        assert (fork_date - fork.date_created) < datetime.timedelta(seconds=30)
+        assert fork.forked_date != original.date_created
+
+        # Test that pointers were copied correctly
+        assert(
+            [pointer.node for pointer in original.nodes_pointer] ==
+            [pointer.node for pointer in fork.nodes_pointer],
+        )
+
+        # Test that add-ons were copied correctly
+        assert(
+            original.get_addon_names() ==
+            fork.get_addon_names()
+        )
+        assert(
+            [addon.config.short_name for addon in original.get_addons()] ==
+            [addon.config.short_name for addon in fork.get_addons()]
+        )
+
+        fork_user_auth = Auth(user=fork_user)
+        # Recursively compare children
+        for idx, child in enumerate(original.nodes.all()):
+            if child.can_view(fork_user_auth):
+                self._cmp_fork_original(fork_user, fork_date, fork.nodes.all()[idx],
+                                        child, title_prepend='')
+
+    @pytest.mark.skip('pointers/node links not yet implemented')
+    @mock.patch('framework.status.push_status_message')
+    def test_fork_recursion(self, mock_push_status_message, node, user, auth):
+        """Omnibus test for forking.
+        """
+        # Make some children
+        component = NodeFactory(creator=user, parent=node)
+        subproject = ProjectFactory(creator=user, parent=node)
+
+        # Add pointers to test copying
+        pointee = ProjectFactory()
+        node.add_pointer(pointee, auth=auth)
+        component.add_pointer(pointee, auth=auth)
+        subproject.add_pointer(pointee, auth=auth)
+
+        # Add add-on to test copying
+        node.add_addon('github', auth)
+        component.add_addon('github', auth)
+        subproject.add_addon('github', auth)
+
+        # Log time
+        fork_date = timezone.now()
+
+        # Fork node
+        with mock.patch.object(Node, 'bulk_update_search'):
+            fork = node.fork_node(auth=auth)
+
+        # Compare fork to original
+        self._cmp_fork_original(user, fork_date, fork, node)
+
+    def test_fork_private_children(self, node, user, auth):
+        """Tests that only public components are created
+
+        """
+        # Make project public
+        node.set_privacy('public')
+        # Make some children
+        # public component
+        NodeFactory(
+            creator=user,
+            parent=node,
+            title='Forked',
+            is_public=True,
+        )
+        # public subproject
+        ProjectFactory(
+            creator=user,
+            parent=node,
+            title='Forked',
+            is_public=True,
+        )
+        # private component
+        NodeFactory(
+            creator=user,
+            parent=node,
+            title='Not Forked',
+        )
+        # private subproject
+        private_subproject = ProjectFactory(
+            creator=user,
+            parent=node,
+            title='Not Forked',
+        )
+        # private subproject public component
+        NodeFactory(
+            creator=user,
+            parent=private_subproject,
+            title='Not Forked',
+        )
+        # public subproject public component
+        NodeFactory(
+            creator=user,
+            parent=private_subproject,
+            title='Forked',
+        )
+        user2 = UserFactory()
+        user2_auth = Auth(user=user2)
+        fork = None
+        # New user forks the project
+        fork = node.fork_node(user2_auth)
+
+        # fork correct children
+        assert fork.nodes.count() == 2
+        assert 'Not Forked' not in fork.nodes.values_list('title', flat=True)
+
+    def test_fork_not_public(self, node, auth):
+        node.set_privacy('public')
+        fork = node.fork_node(auth)
+        assert fork.is_public is False
+
+    def test_fork_log_has_correct_log(self, node, auth):
+        fork = node.fork_node(auth)
+        last_log = fork.logs.latest()
+        assert last_log.action == NodeLog.NODE_FORKED
+        # Legacy 'registration' param should be the ID of the fork
+        assert last_log.params['registration'] == fork._primary_key
+        # 'node' param is the original node's ID
+        assert last_log.params['node'] == node._id
+
+    def test_not_fork_private_link(self, node, auth):
+        link = PrivateLinkFactory()
+        link.nodes.add(node)
+        link.save()
+        fork = node.fork_node(auth)
+        assert link not in fork.private_links.all()
+
+    def test_cannot_fork_private_node(self, node):
+        user2 = UserFactory()
+        user2_auth = Auth(user=user2)
+        with pytest.raises(PermissionsError):
+            node.fork_node(user2_auth)
+
+    def test_can_fork_public_node(self, node):
+        node.set_privacy('public')
+        user2 = UserFactory()
+        user2_auth = Auth(user=user2)
+        fork = node.fork_node(user2_auth)
+        assert bool(fork) is True
+
+    def test_contributor_can_fork(self, node):
+        user2 = UserFactory()
+        node.add_contributor(user2)
+        user2_auth = Auth(user=user2)
+        fork = node.fork_node(user2_auth)
+        assert bool(fork) is True
+        # Forker has admin permissions
+        assert fork.contributors.count() == 1
+        assert fork.get_permissions(user2) == ['read', 'write', 'admin']
+
+    def test_fork_preserves_license(self, node, auth):
+        license = NodeLicenseRecordFactory()
+        node.node_license = license
+        node.save()
+        fork = node.fork_node(auth)
+        assert fork.node_license.license_id == license.license_id
+
+    def test_fork_registration(self, user, node, auth):
+        registration = RegistrationFactory(project=node)
+        fork = registration.fork_node(auth)
+
+        # fork should not be a registration
+        assert fork.is_registration is False
+
+        # Compare fork to original
+        self._cmp_fork_original(
+            user,
+            timezone.now(),
+            fork,
+            registration,
+        )
+
+    def test_fork_project_with_no_wiki_pages(self, user, auth):
+        project = ProjectFactory(creator=user)
+        fork = project.fork_node(auth)
+        assert fork.wiki_pages_versions == {}
+        assert fork.wiki_pages_current == {}
+        assert fork.wiki_private_uuids == {}
+
+    @pytest.mark.skip('wikis not yet implemented')
+    def test_forking_clones_project_wiki_pages(self, user, auth):
+        project = ProjectFactory(creator=self.user, is_public=True)
+        wiki = NodeWikiFactory(node=project)
+        current_wiki = NodeWikiFactory(node=project, version=2)
+        fork = project.fork_node(self.auth)
+        assert_equal(fork.wiki_private_uuids, {})
+
+        registration_wiki_current = NodeWikiPage.load(fork.wiki_pages_current[current_wiki.page_name])
+        assert_equal(registration_wiki_current.node, fork)
+        assert_not_equal(registration_wiki_current._id, current_wiki._id)
+
+        registration_wiki_version = NodeWikiPage.load(fork.wiki_pages_versions[wiki.page_name][0])
+        assert_equal(registration_wiki_version.node, fork)
+        assert_not_equal(registration_wiki_version._id, wiki._id)
+
+
