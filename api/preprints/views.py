@@ -58,6 +58,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
         tags                            array of strings      list of tags that describe the node
         subjects                        array of dictionaries list ids of Subject in the PLOS taxonomy. Dictrionary, containing the subject text and subject ID
         doi                             string                bare DOI for the manuscript, as entered by the user
+        keenio_read_key                 string                a read key giving access to analytics for public projects
 
     ##Relationships
 
