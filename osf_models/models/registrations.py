@@ -73,6 +73,11 @@ class Registration(AbstractNode):
         return True
 
     @property
+    def is_collection(self):
+        """For v1 compat."""
+        return False
+
+    @property
     def archive_job(self):
         return self.archive_jobs.first() if self.archive_jobs.count() else None
 

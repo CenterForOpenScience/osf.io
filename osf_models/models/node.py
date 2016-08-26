@@ -18,6 +18,7 @@ from website.util.permissions import (
     expand_permissions,
     reduce_permissions,
     DEFAULT_CONTRIBUTOR_PERMISSIONS,
+    CREATOR_PERMISSIONS,
     READ,
     WRITE,
     ADMIN,
@@ -808,6 +809,114 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
             if node.primary
         ]
 
+    def fork_node(self, auth, title=None):
+        """Recursively fork a node.
+
+        :param Auth auth: Consolidated authorization
+        :param str title: Optional text to prepend to forked title
+        :return: Forked node
+        """
+        Registration = apps.get_model('osf_models.Registration')
+        PREFIX = 'Fork of '
+        user = auth.user
+
+        # Non-contributors can't fork private nodes
+        if not (self.is_public or self.has_permission(user, 'read')):
+            raise PermissionsError('{0!r} does not have permission to fork node {1!r}'.format(user, self._id))
+
+        when = timezone.now()
+
+        original = self.load(self._id)
+
+        if original.is_deleted:
+            raise NodeStateError('Cannot fork deleted node.')
+
+        # Note: Cloning a node will clone each node wiki page version and add it to
+        # `registered.wiki_pages_current` and `registered.wiki_pages_versions`.
+        forked = original.clone()
+        if isinstance(forked, Registration):
+            forked.recast('osf_models.node')
+
+        forked.is_fork = True
+        forked.forked_date = when
+        forked.forked_from = original
+        forked.creator = user
+        forked.node_license = original.license.copy() if original.license else None
+        forked.wiki_private_uuids = {}
+
+        # Forks default to private status
+        forked.is_public = False
+
+        # Need to save here in order to access m2m fields
+        forked.save()
+
+        forked.tags.add(*self.tags.all())
+
+        # Recursively fork child nodes
+        for node_contained in original.nodes.filter(is_deleted=False).all():
+            forked_node = None
+            try:  # Catch the potential PermissionsError above
+                forked_node = node_contained.fork_node(auth=auth, title='')
+            except PermissionsError:
+                pass  # If this exception is thrown omit the node from the result set
+            if forked_node is not None:
+                forked.nodes.add(forked_node)
+
+        if title is None:
+            forked.title = PREFIX + original.title
+        elif title == '':
+            forked.title = original.title
+        else:
+            forked.title = title
+
+        # TODO: Uncomment when alternative_citations are implemented
+        # for citation in self.alternative_citations:
+        #     forked.add_citation(
+        #         auth=auth,
+        #         citation=citation.clone(),
+        #         log=False,
+        #         save=False
+        #     )
+
+        forked.add_contributor(
+            contributor=user,
+            permissions=CREATOR_PERMISSIONS,
+            log=False,
+            save=False
+        )
+
+        forked.save()
+
+        # Need to call this after save for the notifications to be created with the _primary_key
+        project_signals.contributor_added.send(forked, contributor=user, auth=auth)
+
+        forked.add_log(
+            action=NodeLog.NODE_FORKED,
+            params={
+                'parent_node': original.parent_id,
+                'node': original._primary_key,
+                'registration': forked._primary_key,  # TODO: Remove this in favor of 'fork'
+                'fork': forked._primary_key,
+            },
+            auth=auth,
+            log_date=when,
+            save=False,
+        )
+
+        # Clone each log from the original node for this fork.
+        for log in original.logs.all():
+            log.clone_node_log(forked._id)
+
+        forked.refresh_from_db()
+
+        # After fork callback
+        for addon in original.get_addons():
+            _, message = addon.after_fork(original, forked, user)
+            if message:
+                status.push_status_message(message, kind='info', trust=True)
+
+        return forked
+
     def next_descendants(self, auth, condition=lambda auth, node: True):
         """
         Recursively find the first set of descedants under a given node that meet a given condition
@@ -999,7 +1108,7 @@ class Node(AbstractNode):
 @receiver(post_save, sender=Node)
 def add_creator_as_contributor(sender, instance, created, **kwargs):
     if created:
-        Contributor.objects.create(
+        Contributor.objects.get_or_create(
             user=instance.creator,
             node=instance,
             visible=True,
@@ -1010,7 +1119,7 @@ def add_creator_as_contributor(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=Node)
 def add_project_created_log(sender, instance, created, **kwargs):
-    if created:
+    if created and not instance.is_fork:
         # Define log fields for non-component project
         log_action = NodeLog.PROJECT_CREATED
         log_params = {
