@@ -1,6 +1,6 @@
 {
   "name": "OSF",
-  "version": "0.87.0",
+  "version": "0.89.0",
   "description": "Facilitating Open Science",
   "repository": "https://github.com/CenterForOpenScience/osf.io",
   "author": "Center for Open Science",
@@ -66,7 +66,7 @@
     "typeahead.js": "^0.10.5",
     "url-loader": "^0.5.5",
     "uuid": "^2.0.1",
-    "webpack": "^1.7.2",
+    "webpack": "1.13.0",
     "ws": "~0.4.32",
     "zxcvbn": "^4.2.0"
   },

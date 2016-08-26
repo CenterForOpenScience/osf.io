@@ -37,6 +37,8 @@ CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_compon
 
 # Minimum seconds between forgot password email attempts
 SEND_EMAIL_THROTTLE = 30
+# Minimum seconds between API actions that generate emails
+API_SEND_EMAIL_THROTTLE = 0.1
 
 # Hours before pending embargo/retraction/registration automatically becomes active
 RETRACTION_PENDING_TIME = datetime.timedelta(days=2)

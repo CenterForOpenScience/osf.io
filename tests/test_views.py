@@ -1881,17 +1881,6 @@ class TestAddingContributorViews(OsfTestCase):
                 auth=Auth(self.creator),
                 validate=True)
 
-    @mock.patch('website.project.views.contributor.mails.send_mail')
-    def test_deserialize_contributors_sends_unreg_contributor_added_signal(self, _):
-        unreg = UnregUserFactory()
-        from website.project.signals import unreg_contributor_added
-        serialized = [serialize_unregistered(fake.name(), unreg.username)]
-        serialized[0]['visible'] = True
-        with capture_signals() as mock_signals:
-            deserialize_contributors(self.project, serialized,
-                                     auth=Auth(self.creator))
-        assert_equal(mock_signals.signals_sent(), set([unreg_contributor_added]))
-
     def test_serialize_unregistered_with_record(self):
         name, email = fake.name(), fake.email()
         user = self.project.add_unregistered_contributor(fullname=name,
@@ -2064,7 +2053,7 @@ class TestAddingContributorViews(OsfTestCase):
         assert_true(send_mail.called)
         send_mail.assert_called_with(
             contributor.username,
-            mails.CONTRIBUTOR_ADDED,
+            mails.CONTRIBUTOR_ADDED_DEFAULT,
             user=contributor,
             node=project,
             referrer_name=self.auth.user.fullname,
@@ -2072,17 +2061,12 @@ class TestAddingContributorViews(OsfTestCase):
         assert_almost_equal(contributor.contributor_added_email_records[project._id]['last_sent'], int(time.time()), delta=1)
 
     @mock.patch('website.mails.send_mail')
-    def test_contributor_added_email_not_sent_to_unreg_user(self, send_mail):
+    def test_contributor_added_email_sent_to_unreg_user(self, send_mail):
         unreg_user = UnregUserFactory()
-        contributors = [{
-            'user': unreg_user,
-            'visible': True,
-            'permissions': ['read', 'write']
-        }]
         project = ProjectFactory()
-        project.add_contributors(contributors, auth=Auth(self.project.creator))
+        project.add_unregistered_contributor(fullname=unreg_user.fullname, email=unreg_user.email, auth=Auth(project.creator))
         project.save()
-        assert_false(send_mail.called)
+        assert_true(send_mail.called)
 
     @mock.patch('website.mails.send_mail')
     def test_forking_project_does_not_send_contributor_added_email(self, send_mail):
@@ -2271,7 +2255,7 @@ class TestUserInviteViews(OsfTestCase):
         assert_true(send_mail.called)
         assert_true(send_mail.called_with(
             to_addr=given_email,
-            mail=mails.INVITE
+            mail=mails.INVITE_DEFAULT
         ))
 
     @mock.patch('website.project.views.contributor.mails.send_mail')

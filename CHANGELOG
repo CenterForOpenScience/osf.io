@@ -2,6 +2,25 @@
 Changelog
 *********
 
+0.89.0 (2016-08-25)
+===================
+
+- API Fail gracefully on unexpected filter modifier
+- API Make adding unregistered contributors work properly
+- API Show in-common users with correct query parameter
+- API Return contributor index when creating contributor
+- Admin easy removal of spam users and projects
+
+0.88.2 (2016-08-25)
+===================
+
+- Remove Keen migration banner
+
+0.88.1 (2016-08-25)
+===================
+
+- Make Github addon logging more tolerant to problems
+
 0.88.0 (2016-08-22)
 ===================
 
