@@ -9,17 +9,20 @@ from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 
 from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
-from api.base.exceptions import InvalidModelValueError, JSONAPIException, Gone
+from api.base.exceptions import (
+    EndpointNotImplementedError, Gone,
+    InvalidModelValueError, JSONAPIException, RelationshipPostMakesNoChanges
+)
 from api.base.filters import ODMFilterMixin, ListFilterMixin
-from api.base.views import JSONAPIBaseView
 from api.base.parsers import (
     JSONAPIRelationshipParser,
     JSONAPIRelationshipParserForRegularJSON,
 )
-from api.base.exceptions import RelationshipPostMakesNoChanges, EndpointNotImplementedError
 from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination
-from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
 from api.base.settings import ADDONS_OAUTH, API_BASE
+from api.base.throttling import AddContributorThrottle
+from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
+from api.base.views import JSONAPIBaseView
 from api.caching.tasks import ban_url
 from api.addons.views import AddonSettingsMixin
 from api.files.serializers import FileSerializer
@@ -618,6 +621,8 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
     required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
     required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
     model_class = User
+
+    throttle_classes = AddContributorThrottle
 
     pagination_class = NodeContributorPagination
     serializer_class = NodeContributorsSerializer
