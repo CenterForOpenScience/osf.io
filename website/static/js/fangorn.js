@@ -2255,6 +2255,20 @@ function _dropLogic(event, items, folder) {
     }
 
     $.each(items, function(index, item) {
+        if (window.contextVars.node.preprintFileId === item.data.path.replace('/', '') && item.data.nodeId === window.contextVars.node.id && folder.data.nodeId != window.contextVars.node.id) {
+            tb.modal.update(m('', [
+                m('p', 'The file "' + item.data.name + '" is the primary file for a preprint and so should not be moved.'),
+                m('strong', 'Moving this file will remove this preprint from circulation.')
+            ]), m('', [
+                m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), // jshint ignore:line
+                m('span.btn.btn-default', {onclick: () => {
+                        checkConflicts(tb, item, folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, folder, item, undefined));
+                }}, 'Move anyway'), // jshint ignore:line
+
+            ]), m('h3.break-word.modal-title', 'Move "' + name + '"?'));
+            return;
+        }
+
         checkConflicts(tb, item, folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, folder, item, undefined));
     });
 }
