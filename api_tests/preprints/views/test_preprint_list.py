@@ -3,8 +3,10 @@ from nose.tools import *  # flake8: noqa
 from framework.auth.core import Auth, Q
 from api.base.settings.defaults import API_BASE
 from website.models import Node
+from website.project import signals as project_signals
 
-from tests.base import ApiTestCase
+
+from tests.base import ApiTestCase, capture_signals
 from tests.factories import (
     ProjectFactory,
     PreprintFactory,
@@ -133,8 +135,11 @@ class TestPreprintCreate(ApiTestCase):
         super(TestPreprintCreate, self).setUp()
 
         self.user = AuthUserFactory()
+        self.other_user = AuthUserFactory()
         self.private_project = ProjectFactory(creator=self.user)
         self.public_project = ProjectFactory(creator=self.user, public=True)
+        self.public_project.add_contributor(self.other_user)
+        self.public_project.save()
         self.subject = SubjectFactory()
 
         self.user_two = AuthUserFactory()
@@ -230,3 +235,19 @@ class TestPreprintCreate(ApiTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'This file is not a valid primary file for this preprint.')
 
+    def test_preprint_contributor_signal_sent_on_creation(self):
+        with capture_signals() as mock_signals:
+            public_project_payload = build_preprint_create_payload(self.public_project._id, self.subject._id,
+                                                                   self.file_one_public_project._id)
+            res = self.app.post_json_api(self.url, public_project_payload, auth=self.user.auth)
+
+            assert_equal(res.status_code, 201)
+            assert_equal(mock_signals.signals_sent(), set([project_signals.contributor_added]))
+
+    def test_preprint_contributor_signal_not_sent_one_contributor(self):
+        with capture_signals() as mock_signals:
+            private_project_payload = build_preprint_create_payload(self.private_project._id, self.subject._id,
+                                                                   self.file_one_private_project._id)
+            res = self.app.post_json_api(self.url, private_project_payload, auth=self.user.auth)
+            assert_equal(res.status_code, 201)
+            assert_not_equal(mock_signals.signals_sent(), set([project_signals.contributor_added]))
