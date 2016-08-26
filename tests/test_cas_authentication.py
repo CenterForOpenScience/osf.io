@@ -23,6 +23,17 @@ def make_failure_response():
         authenticated=False, user=None,
     )
 
+def make_external_response():
+    return cas.CasResponse(
+        authenticated=True,
+        user='OrcidProfile#{}'.format(fake.numerify('####-####-####-####')),
+        attributes={
+            'given-names': fake.first_name(),
+            'family-name': fake.last_name(),
+            'accessToken': fake.md5(),
+        }
+    )
+
 RESPONSE_TEMPLATE = """
 <cas:serviceResponse xmlns:cas='http://www.yale.edu/tp/cas'>
     <cas:authenticationSuccess>
@@ -187,6 +198,78 @@ class TestCASTicketAuthentication(OsfTestCase):
         self.user.verification_key = fake.md5()
         self.user.save()
         mock_response = make_successful_response(self.user)
+        mock_service_validate.return_value = mock_response
+        ticket = fake.md5()
+        service_url = 'http://accounts.osf.io/?ticket=' + ticket
+        resp = cas.make_response_from_ticket(ticket, service_url)
+
+
+class TestCASExternalLogin(OsfTestCase):
+
+    def setUp(self):
+        super(TestCASExternalLogin, self).setUp()
+        self.user = UserFactory()
+
+    def test_get_user_from_cas_resp_already_authorized(self):
+        mock_response = make_external_response()
+        validated_creds = cas.validate_external_credential(mock_response.user)
+        self.user.external_identity = {
+            validated_creds['provider']: {
+                validated_creds['id']: 'VERIFIED'
+            }
+        }
+        self.user.save()
+        user, _, action = cas.get_user_from_cas_resp(mock_response)
+        assert_equal(user._id, self.user._id)
+        assert_equal(action, 'authenticate')
+
+    def test_get_user_from_cas_resp_not_authorized(self):
+        user, _, action = cas.get_user_from_cas_resp(make_external_response())
+        assert_equal(user, None)
+        assert_equal(action, 'external_first_login')
+
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_make_response_from_ticket_with_user(self, mock_service_validate):
+        mock_response = make_external_response()
+        mock_service_validate.return_value = mock_response
+        validated_creds = cas.validate_external_credential(mock_response.user)
+        self.user.external_identity = {
+            validated_creds['provider']: {
+                validated_creds['id']: 'VERIFIED'
+            }
+        }
+        self.user.save()
+        ticket = fake.md5()
+        service_url = 'http://accounts.osf.io/?ticket=' + ticket
+        resp = cas.make_response_from_ticket(ticket, service_url)
+        assert_equal(resp.status_code, 302)
+        assert_equal(mock_service_validate.call_count, 1)
+        first_call_args = mock_service_validate.call_args[0]
+        assert_equal(first_call_args[0], ticket)
+        assert_equal(first_call_args[1], 'http://accounts.osf.io/')
+
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_make_response_from_ticket_no_user(self, mock_service_validate):
+        mock_response = make_external_response()
+        mock_service_validate.return_value = mock_response
+        ticket = fake.md5()
+        service_url = 'http://accounts.osf.io/?ticket=' + ticket
+        resp = cas.make_response_from_ticket(ticket, service_url)
+        assert_equal(resp.status_code, 302)
+        assert_equal(resp.location, '/external-login/email')
+
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_make_response_from_ticket_invalidates_verification_key(self, mock_service_validate):
+        self.user.verification_key = fake.md5()
+        self.user.save()
+        mock_response = make_external_response()
+        validated_creds = cas.validate_external_credential(mock_response.user)
+        self.user.external_identity = {
+            validated_creds['provider']: {
+                validated_creds['id']: 'VERIFIED'
+            }
+        }
+        self.user.save()
         mock_service_validate.return_value = mock_response
         ticket = fake.md5()
         service_url = 'http://accounts.osf.io/?ticket=' + ticket

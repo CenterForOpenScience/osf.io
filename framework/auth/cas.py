@@ -9,7 +9,8 @@ from lxml import etree
 import requests
 
 from framework.auth import User
-from framework.auth import authenticate
+from framework.auth import authenticate, external_first_login_authenticate
+from framework.auth.core import get_user
 from framework.flask import redirect
 from framework.exceptions import HTTPError
 from website import settings
@@ -235,7 +236,7 @@ def make_response_from_ticket(ticket, service_url):
 
     :param str ticket: CAS service ticket
     :param str service_url: Service URL from which the authentication request originates
-    :return:
+    :return: redirect response
     """
 
     service_furl = furl.furl(service_url)
@@ -244,11 +245,92 @@ def make_response_from_ticket(ticket, service_url):
     client = get_client()
     cas_resp = client.service_validate(ticket, service_furl.url)
     if cas_resp.authenticated:
-        user = User.load(cas_resp.user)
-        # if we successfully authenticate and a verification key is present, invalidate it
-        if user.verification_key:
-            user.verification_key = None
-            user.save()
-        return authenticate(user, access_token=cas_resp.attributes['accessToken'], response=redirect(service_furl.url))
-    # Ticket could not be validated, unauthorized.
+        user, external_credential, action = get_user_from_cas_resp(cas_resp)
+        # user found and authenticated
+        if user and action == 'authenticate':
+            # if we successfully authenticate and a verification key is present, invalidate it
+            if user.verification_key:
+                user.verification_key = None
+                user.save()
+            return authenticate(
+                user,
+                cas_resp.attributes['accessToken'],
+                redirect(service_furl.url)
+            )
+        # first time login from external identity provider
+        if not user and external_credential and action == 'external_first_login':
+            from website.util import web_url_for
+            # TODO: [#OSF-6935] verify both names are in attributes, which should be handled in CAS
+            user = {
+                'external_id_provider': external_credential['provider'],
+                'external_id': external_credential['id'],
+                'fullname': '{} {}'.format(cas_resp.attributes.get('given-names', ''), cas_resp.attributes.get('family-name', '')),
+                'access_token': cas_resp.attributes['accessToken'],
+            }
+            return external_first_login_authenticate(
+                user,
+                redirect(web_url_for('external_login_email_get'))
+            )
+    # Unauthorized: ticket could not be validated, or user does not exist.
     return redirect(service_furl.url)
+
+
+def get_user_from_cas_resp(cas_resp):
+    """
+    Given a CAS service validation response, attempt to retrieve user information and next action.
+
+    :param cas_resp: the cas service validation response
+    :return: the user, the external_credential, and the next action
+    """
+
+    if cas_resp.user:
+        user = User.load(cas_resp.user)
+        # cas returns a valid OSF user id
+        if user:
+            return user, None, 'authenticate'
+        # cas does not return a valid OSF user id
+        else:
+            external_credential = validate_external_credential(cas_resp.user)
+            # invalid cas response
+            if not external_credential:
+                return None, None, None
+            # cas returns a valid external credential
+            user = get_user(external_id_provider=external_credential['provider'],
+                            external_id=external_credential['id'])
+            # existing user found
+            if user:
+                return user, external_credential, 'authenticate'
+            # user first time login through external identity provider
+            else:
+                return None, external_credential, 'external_first_login'
+
+
+def validate_external_credential(external_credential):
+    """
+    Validate the external credential, a string which is composed of the profile name and the technical identifier
+    of the external provider, separated by `#`. Return the provider and id on success.
+
+    :param external_credential: the external credential string
+    :return: provider and id
+
+    """
+    # wrong format
+    if not external_credential or '#' not in external_credential:
+        return False
+
+    profile_name, technical_id = external_credential.split('#', 1)
+
+    # invalid external identity provider
+    if profile_name not in settings.EXTERNAL_IDENTITY_PROFILE:
+        return False
+
+    # invalid external id
+    if len(technical_id) <= 0:
+        return False
+
+    provider = settings.EXTERNAL_IDENTITY_PROFILE[profile_name]
+
+    return {
+        'provider': provider,
+        'id': technical_id,
+    }
