@@ -145,6 +145,7 @@ class ResetPasswordForm(Form):
 class SetEmailAndPasswordForm(ResetPasswordForm):
     token = HiddenField()
 
+
 class SignInForm(Form):
     username = email_field
     password = password_field

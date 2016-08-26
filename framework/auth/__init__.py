@@ -19,6 +19,7 @@ __all__ = [
     'get_user',
     'check_password',
     'authenticate',
+    'external_first_login_authenticate',
     'logout',
     'register_unconfirmed',
 ]
@@ -47,6 +48,27 @@ def authenticate(user, access_token, response):
     user.clean_email_verifications()
     user.update_affiliated_institutions_by_email_domain()
     user.save()
+    response = create_session(response, data=data)
+    return response
+
+
+def external_first_login_authenticate(user, response):
+    """
+    Create a special unauthenticated session for user login through external identity provider for the first time.
+
+    :param user: the user with external credential
+    :param response: the response to return
+    :return: the response
+    """
+
+    data = session.data if session._get_current_object() else {}
+    data.update({
+        'auth_user_external_id_provider': user['external_id_provider'],
+        'auth_user_external_id': user['external_id'],
+        'auth_user_fullname': user['fullname'],
+        'auth_user_access_token': user['access_token'],
+        'auth_user_external_first_login': True,
+    })
     response = create_session(response, data=data)
     return response
 
