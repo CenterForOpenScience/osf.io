@@ -32,6 +32,33 @@ import re
 from django.contrib.admindocs import views
 from rest_framework.fields import Field
 from rest_framework.request import Request
+import urlparse
+from coreapi.compat import force_bytes
+from openapi_codec import OpenAPICodec, encode
+import simplejson as json
+
+def generate_swagger_object(document):
+    """
+    Generates root of the Swagger spec.
+    """
+    parsed_url = urlparse.urlparse(document.url)
+
+    return {
+        'swagger': '2.0',
+        'info': encode._get_info_object(document),
+        'tags': _get_tags_object(document),
+        'paths': encode._get_paths_object(document),
+        'host': parsed_url.netloc,
+    }
+
+def _get_tags_object(document):
+    return [{'name': tag, 'description': 'No Description'} for tag in sorted({tag for tag, _object in document.data.items()})]
+
+def dump(self, document, **kwargs):
+    data = generate_swagger_object(document)
+    return force_bytes(json.dumps(data))
+
+OpenAPICodec.dump = dump
 
 named_group_matcher = re.compile(r'\(\?P(<\w+>).+?[^/]\)')
 non_named_group_matcher = re.compile(r'\(.*?\)')

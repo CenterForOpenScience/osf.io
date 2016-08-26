@@ -143,7 +143,6 @@ class SchemaGenerator(schemas.SchemaGenerator):
         except IndexError:
             return None
 
-
 @api_view()
 @renderer_classes([OpenAPIRenderer, SwaggerUIRenderer])
 def schema_view(request):
