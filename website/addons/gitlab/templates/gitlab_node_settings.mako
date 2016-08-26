@@ -46,7 +46,7 @@
                     <option>-----</option>
                         % if is_owner:
                             % for repo in repos:
-                                <option value="${repo['id']}" ${'selected' if repo['id'] == gitlab_repo_id else ''}>${repo['owner']['username']} / ${repo['name']}</option>
+                                <option value="${repo['id']}" ${'selected' if repo['id'] == int(gitlab_repo_id) else ''}>${repo['path_with_namespace']}</option>
                             % endfor
                         % else:
                             <option selected>${gitlab_repo_full_name}</option>
