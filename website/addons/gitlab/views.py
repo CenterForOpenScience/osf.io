@@ -18,6 +18,8 @@ from website.addons.gitlab.utils import (
     verify_hook_signature, MESSAGES
 )
 
+from website.addons.gitlab import settings as gitlab_settings
+
 from website.models import NodeLog
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
@@ -240,7 +242,7 @@ def gitlab_hgrid_data(node_settings, auth, **kwargs):
         'fetch': node_settings.owner.api_url + 'gitlab/hgrid/' + (ref or ''),
         'branch': node_settings.owner.api_url + 'gitlab/hgrid/root/',
         'zip': node_settings.owner.api_url + 'gitlab/zipball/',
-        'repo': 'https://gitlab.com/{0}/{1}/tree/{2}'.format(node_settings.user, node_settings.repo, branch)
+        'repo': '{0}/{1}/tree/{2}'.format(gitlab_settings.GITLAB_BASE_URL, node_settings.repo, branch)
     }
 
     branch_names = [each['name'] for each in branches]

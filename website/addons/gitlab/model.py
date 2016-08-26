@@ -161,11 +161,8 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     @property
     def repo_url(self):
-        #TODO: fix URL
-        if self.user and self.repo:
-            return 'https://gitlab.com/{0}/{1}/'.format(
-                self.user, self.repo
-            )
+        if self.repo:
+            return  '{0}/{1}'.format(gitlab_settings.GITLAB_BASE_URL, self.repo)
 
     @property
     def short_url(self):
@@ -247,7 +244,7 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             sha = None
             urls = {}
         else:
-            sha = metadata['extra']['commit']['sha']
+            sha = metadata['extra']['fileSha']
             urls = {
                 'view': '{0}?ref={1}'.format(url, sha),
                 'download': '{0}?action=download&ref={1}'.format(url, sha)
@@ -322,9 +319,9 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             else:
                 message += (
                     ' The files in this GitLab repo can be viewed on GitLab '
-                    '<u><a href="https://gitlab.com/{user}/{repo}/">here</a></u>.'
+                    '<u><a href="{base_url}/{repo}/">here</a></u>.'
                 ).format(
-                    user=self.user,
+                    base_url=gitlab_settings.GITLAB_BASE_URL,
                     repo=self.repo,
                 )
             messages.append(message)
