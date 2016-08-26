@@ -244,3 +244,10 @@ class TestPreprintCreate(ApiTestCase):
             assert_equal(res.status_code, 201)
             assert_equal(mock_signals.signals_sent(), set([project_signals.contributor_added]))
 
+    def test_preprint_contributor_signal_not_sent_one_contributor(self):
+        with capture_signals() as mock_signals:
+            private_project_payload = build_preprint_create_payload(self.private_project._id, self.subject._id,
+                                                                   self.file_one_private_project._id)
+            res = self.app.post_json_api(self.url, private_project_payload, auth=self.user.auth)
+            assert_equal(res.status_code, 201)
+            assert_not_equal(mock_signals.signals_sent(), set([project_signals.contributor_added]))
