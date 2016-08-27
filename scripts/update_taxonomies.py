@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def update_taxonomies(filename, dry_run=True):
+def update_taxonomies(filename):
     # Flat taxonomy is stored locally, read in here
     with open(
         os.path.join(
@@ -54,7 +54,7 @@ def update_taxonomies(filename, dry_run=True):
                 ))
             else:
                 # If subject does exist, append parent_id if not already added
-                if parent and parent not in subject.parents:
+                if parent not in subject.parents:
                     subject.parents.append(parent)
                     logger.info(u'Adding parent "{}":{} to Subject "{}":{}'.format(
                         parent.text, parent._id,
@@ -63,17 +63,17 @@ def update_taxonomies(filename, dry_run=True):
 
             subject.save()
 
-    if dry_run:
-        raise RuntimeError('Dry run, transaction rolled back')
-
 def main():
     dry_run = '--dry' in sys.argv
     if not dry_run:
         script_utils.add_file_logger(logger, __file__)
     set_up_storage([Subject], storage.MongoStorage)    
     with TokuTransaction():
-        update_taxonomies('plos_taxonomy.json', dry_run=dry_run)
-        update_taxonomies('other_taxonomy.json', dry_run=dry_run)
+        update_taxonomies('plos_taxonomy.json')
+        update_taxonomies('other_taxonomy.json')
+
+        if dry_run:
+            raise RuntimeError('Dry run, transaction rolled back')
 
 if __name__ == '__main__':
     main()
