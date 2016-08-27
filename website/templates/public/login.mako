@@ -185,8 +185,8 @@
 
                         <div>
                             <!-- ko if: passwordFeedback() -->
-                            <p class="help-block osf-box-lt p-xs" data-bind="validationMessage: password" style="display: none;"></p>
-                            <p class="help-block osf-box-lt " data-bind="css : { 'p-xs': passwordFeedback().warning }, visible: typedPassword().length > 0, text: passwordFeedback().warning"></p>
+                                <p class="help-block osf-box-lt p-xs" data-bind="validationMessage: password" style="display: none;"></p>
+                                <p class="help-block osf-box-lt " data-bind="css : { 'p-xs': passwordFeedback().warning }, visible: typedPassword().length > 0, text: passwordFeedback().warning"></p>
                             <!-- /ko -->
                         </div>
                     </div>
@@ -194,25 +194,23 @@
                     <div class="help-block osf-box-lt" >
                         <p data-bind="html: message, attr: {class: messageClass}" class=""></p>
                     </div>
-                </br>
-                <div class="form-group">
-                    <div class="col-md-8 col-sm-12" style="padding-left: 25px">
-                        <a href="${login_url}" >Already have an account?</a>
-                    </div>
-                    %if redirect_url:
+                    <br>
+                    <div class="form-group m-t-md">
                         <div class="col-md-8 col-sm-12" style="padding-left: 25px">
-                            <a href="${domain}login/?campaign=institution&redirect_url=${redirect_url}">Login through your institution  <i class="fa fa-arrow-right"></i></a>
+                            <a href="${login_url}" >Already have an account?</a><br>
+
+                            %if redirect_url:
+                                <a href="${domain}login/?campaign=institution&redirect_url=${redirect_url}">Login through your institution  <i class="fa fa-arrow-right"></i></a>
+                            %else:
+                                <a href="${domain}login/?campaign=institution">Login through your institution  <i class="fa fa-arrow-right"></i></a>
+                            %endif
                         </div>
-                    %else:
-                        <div class="col-md-8 col-sm-12" style="padding-left: 25px">
-                            <a href="${domain}login/?campaign=institution">Login through your institution  <i class="fa fa-arrow-right"></i></a>
+
+                        <div class="col-md-4 col-sm-12">
+                            <span class="pull-right p-r-md"><button type="submit" class="btn btn-success" data-bind="disable: submitted()">Create account</button></span>
                         </div>
-                    %endif
-                    <div class="col-md-4 col-sm-12">
-                        <button type="submit" class="btn pull-right btn-success" data-bind="disable: submitted()">Create account</button>
                     </div>
                 </div>
-
             </form>
 
         </div>
