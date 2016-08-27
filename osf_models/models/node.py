@@ -2,6 +2,7 @@ import itertools
 import logging
 import urlparse
 
+from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.dispatch import receiver
@@ -30,6 +31,7 @@ from website.project import signals as project_signals
 
 from osf_models.apps import AppConfig as app_config
 from osf_models.models.nodelog import NodeLog
+from osf_models.models.citation import AlternativeCitation
 from osf_models.models.contributor import Contributor, RecentlyAddedContributor
 from osf_models.models.mixins import Loggable, Taggable, AddonModelMixin, NodeLinkMixin
 from osf_models.models.user import OSFUser
@@ -73,7 +75,7 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
     PUBLIC = 'public'
 
     affiliated_institutions = models.ManyToManyField('Institution', related_name='nodes')
-    # alternative_citations = models.ManyToManyField(AlternativeCitation)
+    alternative_citations = models.ManyToManyField(AlternativeCitation, related_name='nodes')
     category = models.CharField(max_length=255,
                                 choices=CATEGORY_MAP.items(),
                                 blank=True,
@@ -809,6 +811,26 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
             if node.primary
         ]
 
+    def add_citation(self, auth, save=False, log=True, citation=None, **kwargs):
+        if not citation:
+            citation = AlternativeCitation.objects.create(**kwargs)
+        self.alternative_citations.add(citation)
+        citation_dict = {'name': citation.name, 'text': citation.text}
+        if log:
+            self.add_log(
+                action=NodeLog.CITATION_ADDED,
+                params={
+                    'node': self._id,
+                    'citation': citation_dict
+                },
+                auth=auth,
+                save=False
+            )
+            if save:
+                self.save()
+        return citation
+
+    # TODO: Optimize me (e.g. use bulk create)
     def fork_node(self, auth, title=None):
         """Recursively fork a node.
 
@@ -869,14 +891,14 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
         else:
             forked.title = title
 
-        # TODO: Uncomment when alternative_citations are implemented
-        # for citation in self.alternative_citations:
-        #     forked.add_citation(
-        #         auth=auth,
-        #         citation=citation.clone(),
-        #         log=False,
-        #         save=False
-        #     )
+        # TODO: Optimize me
+        for citation in self.alternative_citations.all():
+            forked.add_citation(
+                auth=auth,
+                citation=citation.clone(),
+                log=False,
+                save=False
+            )
 
         forked.add_contributor(
             contributor=user,
