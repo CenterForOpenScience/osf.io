@@ -14,7 +14,7 @@ from framework.auth import User
 from website.models import Node
 from website.app import init_app
 import website.search.search as search
-from scripts import utils as script_utils
+from scripts import utils as script_utils, populate_institutions
 from website.search.elastic_search import es
 
 
@@ -71,6 +71,7 @@ def migrate(delete, index=None, app=None):
         delete_old(new_index)
 
     ctx.pop()
+    populate_institutions.main('prod')
 
 def set_up_index(idx):
     alias = es.indices.get_aliases(index=idx)
