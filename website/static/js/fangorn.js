@@ -2284,7 +2284,7 @@ function _dropLogic(event, items, folder) {
                         checkConflicts(tb, item, folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, folder, item, undefined));
                 }}, 'Move anyway'), // jshint ignore:line
 
-            ]), m('h3.break-word.modal-title', 'Move "' + name + '"?'));
+            ]), m('h3.break-word.modal-title', 'Move "' + item.data.name + '"?'));
             return;
         }
 
