@@ -91,7 +91,7 @@ class UserSerializer(JSONAPISerializer):
     def get_projects_in_common(self, obj):
         user = get_user_auth(self.context['request']).user
         if obj == user:
-            return len(user.contributed)
+            return len(user.contributor_to)
         return len(obj.get_projects_in_common(user, primary_keys=True))
 
     def absolute_url(self, obj):

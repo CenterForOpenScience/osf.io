@@ -238,15 +238,15 @@ class GitHubNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
         url = self.owner.web_url_for('addon_view_or_download_file', path=path, provider='github')
 
-        if not metadata.get('extra'):
-            sha = None
-            urls = {}
-        else:
+        sha, urls = None, {}
+        try:
             sha = metadata['extra']['commit']['sha']
             urls = {
                 'view': '{0}?ref={1}'.format(url, sha),
                 'download': '{0}?action=download&ref={1}'.format(url, sha)
             }
+        except KeyError:
+            pass
 
         self.owner.add_log(
             'github_{0}'.format(action),
