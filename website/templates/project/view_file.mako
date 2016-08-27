@@ -28,7 +28,7 @@
 </div>
 <hr>
 
-%if file_id == node['preprint_file_id']:
+%if file_id == node['preprint_file_id'] and node['is_public']:
 <div class="row">
     <div class="col-xs-12">
         <div class="preprint-notice m-b-md p-md clearfix">
