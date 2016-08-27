@@ -1008,8 +1008,7 @@ class TestForkNode:
 
         # Test that pointers were copied correctly
         assert(
-            [pointer.node for pointer in original.nodes_pointer] ==
-            [pointer.node for pointer in fork.nodes_pointer],
+            original.nodes_pointer.all() == fork.nodes_pointer.all(),
         )
 
         # Test that add-ons were copied correctly
@@ -1203,4 +1202,17 @@ class TestForkNode:
         assert_equal(registration_wiki_version.node, fork)
         assert_not_equal(registration_wiki_version._id, wiki._id)
 
+@pytest.mark.django_db
+class TestAlternativeCitationMethods:
 
+    def test_add_citation(self, node, auth, fake):
+        name, text = fake.bs(), fake.sentence()
+        node.add_citation(auth=auth, save=True, name=name, text=text)
+        assert node.alternative_citations.count() == 1
+
+        latest_log = node.logs.latest()
+        assert latest_log.action == NodeLog.CITATION_ADDED
+        assert latest_log.params['node'] == node._id
+        assert latest_log.params['citation'] == {
+            'name': name, 'text': text
+        }
