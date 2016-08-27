@@ -174,11 +174,9 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMi
         provider                        string                original source of the preprint
         doi                             string                bare DOI for the manuscript, as entered by the user
 
-    ###Creating New Preprints
+    ###Updating Preprints
 
-    Create a new preprint by posting to the guid of the existing **node**, including the file_id for the
-    file you'd like to make the primary preprint file. Note that the **node id** will not be accessible via the
-    preprints detail view until after the preprint has been created.
+    Update a preprint by sending a patch request to the guid of the existing preprint node that you'd like to update.
 
         Method:        PATCH
         URL:           /preprints/{node_id}/
