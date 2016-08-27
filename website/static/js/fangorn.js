@@ -2274,7 +2274,7 @@ function _dropLogic(event, items, folder) {
     }
 
     $.each(items, function(index, item) {
-        if (window.contextVars.node.preprintFileId === item.data.path.replace('/', '') && item.data.nodeId === window.contextVars.node.id && folder.data.nodeId != window.contextVars.node.id) {
+        if (window.contextVars.node.preprintFileId === item.data.path.replace('/', '') && item.data.nodeId === window.contextVars.node.id && folder.data.nodeId !== window.contextVars.node.id) {
             tb.modal.update(m('', [
                 m('p', 'The file "' + item.data.name + '" is the primary file for a preprint and so should not be moved.'),
                 m('strong', 'Moving this file will remove this preprint from circulation.')
