@@ -402,6 +402,19 @@ class TestFilterMixin(ApiTestCase):
         with assert_raises(InvalidFilterOperator):
             self.view.parse_query_params(query_params)
 
+    def test_simplified_date_filter(self):
+        query_params = {
+            'filter[date_field]': '2016-08-24'
+        }
+        query = self.view.query_params_to_odm_query(query_params)
+        assert_equals(
+            repr(query),
+            repr(functools.reduce(operator.and_, [
+                Q('date_field', 'gte', datetime.datetime(2016, 8, 24)),
+                Q('date_field', 'lt', datetime.datetime(2016, 8, 25)),
+            ]))
+        )
+
 
 class TestListFilterMixin(ApiTestCase):
 
