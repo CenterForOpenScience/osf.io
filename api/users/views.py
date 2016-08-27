@@ -507,7 +507,8 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
 
 
 class UserPreprints(UserNodes):
-    required_read_scopes = [CoreScopes.USERS_READ]
+    required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_PREPRINTS_READ]
+    required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_PREPRINTS_WRITE]
 
     serializer_class = PreprintSerializer
     view_category = 'users'
