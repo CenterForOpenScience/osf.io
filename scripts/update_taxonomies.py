@@ -54,8 +54,7 @@ def update_taxonomies(filename, dry_run=True):
                 ))
             else:
                 # If subject does exist, append parent_id if not already added
-                subject.text = text
-                if parent not in subject.parents:
+                if parent and parent not in subject.parents:
                     subject.parents.append(parent)
                     logger.info(u'Adding parent "{}":{} to Subject "{}":{}'.format(
                         parent.text, parent._id,
