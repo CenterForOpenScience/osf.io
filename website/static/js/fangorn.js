@@ -2280,7 +2280,7 @@ function _dropLogic(event, items, folder) {
                 m('strong', 'Moving this file will remove this preprint from circulation.')
             ]), m('', [
                 m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), // jshint ignore:line
-                m('span.btn.btn-default', {onclick: () => {
+                m('span.btn.btn-default', {onclick: function() {
                         checkConflicts(tb, item, folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, folder, item, undefined));
                 }}, 'Move anyway'), // jshint ignore:line
 
