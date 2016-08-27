@@ -238,6 +238,7 @@ def auth_login(auth, **kwargs):
         return redirect(cas.get_login_url(web_url_for('dashboard', _absolute=True)))
 
     if campaign:
+        must_login_warning = False
         next_url = campaigns.campaign_url_for(campaign)
 
     if not next_url:
