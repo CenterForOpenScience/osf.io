@@ -3105,7 +3105,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                         project_signals.write_permissions_revoked.send(self)
         if visible is not None:
             self.set_visible(user, visible, auth=auth, save=save)
-            self.update_visible_ids()
+            self.update_visible_ids(save=save)
 
     def manage_contributors(self, user_dicts, auth, save=False):
         """Reorder and remove contributors.
