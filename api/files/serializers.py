@@ -208,7 +208,10 @@ class FileSerializer(JSONAPISerializer):
             'md5': metadata.get('md5', None),
             'sha256': metadata.get('sha256', None),
         }
-        extras['downloads'] = obj.get_download_count()
+        if obj.provider == 'osfstorage' and obj.versions:
+            extras['downloads'] = obj.get_download_count(version=obj.versions[-1])
+        if obj.provider == 'osfstorage':
+            extras['downloads'] = obj.get_download_count()
         return extras
 
     def get_current_user_can_comment(self, obj):
