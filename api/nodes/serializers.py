@@ -748,6 +748,8 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
         contributor.permission = osf_permissions.reduce_permissions(node.get_permissions(contributor))
         contributor.bibliographic = node.get_visible(contributor)
         contributor.node_id = node._id
+        if index is not None:
+            contributor.index = index
         return contributor
 
 
