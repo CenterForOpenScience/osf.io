@@ -1583,7 +1583,6 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
         extra                       object            may contain additional data beyond what's described here,
                                                        depending on the provider
         version                     integer           version number of file. will be 1 on initial upload
-        downloads                   integer           count of the number times the file has been downloaded
         hashes                      object
         md5                         string            md5 hash of file
         sha256                      string            SHA-256 hash of file
