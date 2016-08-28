@@ -22,7 +22,7 @@ from modularodm.exceptions import ValidationError
 from framework import auth
 from framework.auth import User, Auth
 from framework.auth.exceptions import InvalidTokenError
-from framework.auth.utils import impute_names_model
+from framework.auth.utils import impute_names_model, ensure_external_identity_uniqueness
 from framework.celery_tasks import handlers
 from framework.exceptions import HTTPError
 from tests.base import (
@@ -1881,17 +1881,6 @@ class TestAddingContributorViews(OsfTestCase):
                 auth=Auth(self.creator),
                 validate=True)
 
-    @mock.patch('website.project.views.contributor.mails.send_mail')
-    def test_deserialize_contributors_sends_unreg_contributor_added_signal(self, _):
-        unreg = UnregUserFactory()
-        from website.project.signals import unreg_contributor_added
-        serialized = [serialize_unregistered(fake.name(), unreg.username)]
-        serialized[0]['visible'] = True
-        with capture_signals() as mock_signals:
-            deserialize_contributors(self.project, serialized,
-                                     auth=Auth(self.creator))
-        assert_equal(mock_signals.signals_sent(), set([unreg_contributor_added]))
-
     def test_serialize_unregistered_with_record(self):
         name, email = fake.name(), fake.email()
         user = self.project.add_unregistered_contributor(fullname=name,
@@ -2064,7 +2053,7 @@ class TestAddingContributorViews(OsfTestCase):
         assert_true(send_mail.called)
         send_mail.assert_called_with(
             contributor.username,
-            mails.CONTRIBUTOR_ADDED,
+            mails.CONTRIBUTOR_ADDED_DEFAULT,
             user=contributor,
             node=project,
             referrer_name=self.auth.user.fullname,
@@ -2072,17 +2061,12 @@ class TestAddingContributorViews(OsfTestCase):
         assert_almost_equal(contributor.contributor_added_email_records[project._id]['last_sent'], int(time.time()), delta=1)
 
     @mock.patch('website.mails.send_mail')
-    def test_contributor_added_email_not_sent_to_unreg_user(self, send_mail):
+    def test_contributor_added_email_sent_to_unreg_user(self, send_mail):
         unreg_user = UnregUserFactory()
-        contributors = [{
-            'user': unreg_user,
-            'visible': True,
-            'permissions': ['read', 'write']
-        }]
         project = ProjectFactory()
-        project.add_contributors(contributors, auth=Auth(self.project.creator))
+        project.add_unregistered_contributor(fullname=unreg_user.fullname, email=unreg_user.email, auth=Auth(project.creator))
         project.save()
-        assert_false(send_mail.called)
+        assert_true(send_mail.called)
 
     @mock.patch('website.mails.send_mail')
     def test_forking_project_does_not_send_contributor_added_email(self, send_mail):
@@ -2271,7 +2255,7 @@ class TestUserInviteViews(OsfTestCase):
         assert_true(send_mail.called)
         assert_true(send_mail.called_with(
             to_addr=given_email,
-            mail=mails.INVITE
+            mail=mails.INVITE_DEFAULT
         ))
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
@@ -3426,6 +3410,135 @@ class TestAuthViews(OsfTestCase):
         assert_true(user.is_registered)
 
 
+class TextExternalAuthViews(OsfTestCase):
+
+    def setUp(self):
+        super(TextExternalAuthViews, self).setUp()
+        name, email = fake.name(), fake.email()
+        self.provider_id = fake.ean()
+        external_identity = {
+            'service': {
+                self.provider_id: 'CREATE'
+            }
+        }
+        self.user = User.create_unconfirmed(
+            username=email,
+            password=str(fake.password()),
+            fullname=name,
+            external_identity=external_identity,
+        )
+        self.user.save()
+        self.auth = Auth(self.user)
+
+    def test_external_login_email_get_with_invalid_session(self):
+        url = web_url_for('external_login_email_get')
+        resp = self.app.get(url, expect_errors=True)
+        assert_equal(resp.status_code, 401)
+
+    @mock.patch('website.mails.send_mail')
+    def test_external_login_confirm_email_get_create(self, mock_welcome):
+        assert_false(self.user.is_registered)
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service')
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(res.status_code, 302, 'redirects to cas login')
+        assert_in('/login?service=', res.location)
+        assert_in('new=true', res.location)
+
+        assert_equal(mock_welcome.call_count, 1)
+
+        self.user.reload()
+        assert_equal(self.user.external_identity['service'][self.provider_id], 'VERIFIED')
+        assert_true(self.user.is_registered)
+
+    @mock.patch('website.mails.send_mail')
+    def test_external_login_confirm_email_get_link(self, mock_link_confirm):
+        self.user.external_identity['service'][self.provider_id] = 'LINK'
+        self.user.save()
+        assert_false(self.user.is_registered)
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service')
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(res.status_code, 302, 'redirects to cas login')
+        assert_in('/login?service=', res.location)
+        assert_not_in('new=true', res.location)
+
+        assert_equal(mock_link_confirm.call_count, 1)
+
+        self.user.reload()
+        assert_equal(self.user.external_identity['service'][self.provider_id], 'VERIFIED')
+        assert_true(self.user.is_registered)
+
+    @mock.patch('website.mails.send_mail')
+    def test_external_login_confirm_email_get_duped_id(self, mock_confirm):
+        dupe_user = UserFactory(external_identity={'service': {self.provider_id: 'CREATE'}})
+        assert_equal(dupe_user.external_identity, self.user.external_identity)
+        
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service')
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(res.status_code, 302, 'redirects to cas login')
+        assert_in('/login?service=', res.location)
+
+        assert_equal(mock_confirm.call_count, 1)
+
+        self.user.reload()
+        dupe_user.reload()
+
+        assert_equal(self.user.external_identity['service'][self.provider_id], 'VERIFIED')
+        assert_equal(dupe_user.external_identity, {})
+
+    @mock.patch('website.mails.send_mail')
+    def test_external_login_confirm_email_get_duping_id(self, mock_confirm):
+        dupe_user = UserFactory(external_identity={'service': {self.provider_id: 'VERIFIED'}})
+        
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service')
+        res = self.app.get(url, auth=self.auth, expect_errors=True)
+        assert_equal(res.status_code, 403, 'only allows one user to link an id')
+
+        assert_equal(mock_confirm.call_count, 0)
+
+        self.user.reload()
+        dupe_user.reload()
+
+        assert_equal(dupe_user.external_identity['service'][self.provider_id], 'VERIFIED')
+        assert_equal(self.user.external_identity, {})
+
+    def test_ensure_external_identity_uniqueness_unverified(self):
+        dupe_user = UserFactory(external_identity={'service': {self.provider_id: 'CREATE'}})
+        assert_equal(dupe_user.external_identity, self.user.external_identity)
+
+        ensure_external_identity_uniqueness('service', self.provider_id, self.user)
+
+        dupe_user.reload()
+        self.user.reload()
+
+        assert_equal(dupe_user.external_identity, {})
+        assert_equal(self.user.external_identity, {'service': {self.provider_id: 'CREATE'}})
+
+    def test_ensure_external_identity_uniqueness_verified(self):
+        dupe_user = UserFactory(external_identity={'service': {self.provider_id: 'VERIFIED'}})
+        assert_equal(dupe_user.external_identity, {'service': {self.provider_id: 'VERIFIED'}})
+        assert_not_equal(dupe_user.external_identity, self.user.external_identity)
+
+        with assert_raises(ValidationError):
+            ensure_external_identity_uniqueness('service', self.provider_id, self.user)
+
+        dupe_user.reload()
+        self.user.reload()
+
+        assert_equal(dupe_user.external_identity, {'service': {self.provider_id: 'VERIFIED'}})
+        assert_equal(self.user.external_identity, {})
+
+    def test_ensure_external_identity_uniqueness_multiple(self):
+        dupe_user = UserFactory(external_identity={'service': {self.provider_id: 'CREATE'}})
+        assert_equal(dupe_user.external_identity, self.user.external_identity)
+
+        ensure_external_identity_uniqueness('service', self.provider_id)
+
+        dupe_user.reload()
+        self.user.reload()
+
+        assert_equal(dupe_user.external_identity, {})
+        assert_equal(self.user.external_identity, {})
+
 # TODO: Use mock add-on
 class TestAddonUserViews(OsfTestCase):
 
@@ -3664,6 +3777,7 @@ class TestFileViews(OsfTestCase):
         self.project.save()
 
     def test_files_get(self):
+
         url = self.project.api_url_for('collect_file_trees')
         res = self.app.get(url, auth=self.user.auth)
         expected = _view_project(self.project, auth=Auth(user=self.user))
@@ -4225,8 +4339,8 @@ class TestUnconfirmedUserViews(OsfTestCase):
     def test_can_view_profile(self):
         user = UnconfirmedUserFactory()
         url = web_url_for('profile_view_id', uid=user._id)
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, http.BAD_REQUEST)
 
 
 class TestProfileNodeList(OsfTestCase):

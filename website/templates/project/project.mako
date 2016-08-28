@@ -49,6 +49,7 @@
                         <button class="btn btn-default disabled">Public</button>
                     % endif
                     </div>
+
                     <!-- ko if: canBeOrganized -->
                     <div class="btn-group" style="display: none;" data-bind="visible: true">
 
@@ -92,6 +93,9 @@
                                 <i class="fa fa-plus"></i> Award
                             </button>
                         </div>
+                    % endif
+                    % if node["is_public"]:
+                    <div class="btn-group" id="shareButtonsPopover"></div>
                     % endif
                 </div>
             </div>
@@ -231,6 +235,27 @@
 
 % if user['can_comment'] or node['has_comments']:
     <%include file="include/comment_pane_template.mako"/>
+% endif
+
+% if node['is_preprint']:
+<div class="row">
+    <div class="col-xs-12">
+        <div class="pp-notice m-b-md p-md clearfix">
+            This project represents a preprint. <a href="http://help.osf.io/m/preprints">Learn more</a> about how to work with preprint files.
+            <a href="/preprints/${node['id']}/" class="btn btn-default btn-sm m-r-xs pull-right">View preprint</a>
+        </div>
+    </div>
+</div>
+% endif
+
+% if node['is_preprint_orphan'] and user['is_admin']:
+<div class="row">
+    <div class="col-xs-12">
+        <div class="pp-notice pp-warning m-b-md p-md clearfix">
+            This project used to represent a preprint, but the primary preprint file has been moved or deleted. <a href="/preprints/submit/" class="btn btn-default btn-sm m-r-xs pull-right">Create a new preprint</a>
+        </div> 
+    </div>
+</div>
 % endif
 
 <div class="row">
@@ -466,7 +491,13 @@ ${parent.javascript_bottom()}
             tags: ${ node['tags'] | sjson, n },
             institutions: ${node['institutions'] | sjson, n},
         },
-        nodeCategories: ${ node_categories | sjson, n }
+        nodeCategories: ${ node_categories | sjson, n },
+        analyticsMeta: {
+            pageMeta: {
+                title: 'Home',
+                public: true,
+            },
+        },
     });
 </script>
 

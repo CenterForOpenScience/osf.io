@@ -13,6 +13,7 @@ from api.base.serializers import LinkedNodesRelationshipSerializer
 from api.base.parsers import JSONAPIRelationshipParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
 from api.base.utils import get_user_auth
+from api.comments.serializers import RegistrationCommentSerializer, CommentCreateSerializer
 
 from api.registrations.serializers import (
     RegistrationSerializer,
@@ -27,7 +28,7 @@ from api.nodes.views import (
     NodeContributorDetail, NodeFilesList, NodeLinksDetail, NodeFileDetail,
     NodeAlternativeCitationsList, NodeAlternativeCitationDetail, NodeLogList,
     NodeInstitutionsList, WaterButlerMixin, NodeForksList, NodeWikiList,
-    LinkedNodesList
+    LinkedNodesList, NodeViewOnlyLinksList, NodeViewOnlyLinkDetail
 )
 
 from api.registrations.serializers import RegistrationNodeLinksSerializer, RegistrationFileSerializer
@@ -85,13 +86,14 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
         date_created                    iso8601 timestamp  timestamp that the node was created
         date_modified                   iso8601 timestamp  timestamp when the node was last updated
         tags                            array of strings   list of tags that describe the registered node
+        current_user_can_comment        boolean            Whether the current user is allowed to post comments
         current_user_permissions        array of strings   list of strings representing the permissions for the current user on this node
         fork                            boolean            is this project a fork?
         registration                    boolean            has this project been registered? (always true - may be deprecated in future versions)
         collection                      boolean            is this registered node a collection? (always false - may be deprecated in future versions)
         node_license                    object             details of the license applied to the node
-            year                        string             date range of the license
-            copyright_holders           array of strings   holders of the applied license
+        year                            string             date range of the license
+        copyright_holders               array of strings   holders of the applied license
         public                          boolean            has this registration been made publicly-visible?
         withdrawn                       boolean            has this registration been withdrawn?
         date_registered                 iso8601 timestamp  timestamp that the registration was created
@@ -196,13 +198,14 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, Regist
         date_created                    iso8601 timestamp  timestamp that the node was created
         date_modified                   iso8601 timestamp  timestamp when the node was last updated
         tags                            array of strings   list of tags that describe the registered node
+        current_user_can_comment        boolean            Whether the current user is allowed to post comments
         current_user_permissions        array of strings   list of strings representing the permissions for the current user on this node
         fork                            boolean            is this project a fork?
         registration                    boolean            has this project been registered? (always true - may be deprecated in future versions)
         collection                      boolean            is this registered node a collection? (always false - may be deprecated in future versions)
         node_license                    object             details of the license applied to the node
-            year                        string             date range of the license
-            copyright_holders           array of strings   holders of the applied license
+        year                            string             date range of the license
+        copyright_holders               array of strings   holders of the applied license
         public                          boolean            has this registration been made publicly-visible?
         withdrawn                       boolean            has this registration been withdrawn?
         date_registered                 iso8601 timestamp  timestamp that the registration was created
@@ -316,8 +319,15 @@ class RegistrationForksList(NodeForksList, RegistrationMixin):
     view_name = 'registration-forks'
 
 class RegistrationCommentsList(NodeCommentsList, RegistrationMixin):
+    serializer_class = RegistrationCommentSerializer
     view_category = 'registrations'
     view_name = 'registration-comments'
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return CommentCreateSerializer
+        else:
+            return RegistrationCommentSerializer
 
 
 class RegistrationLogList(NodeLogList, RegistrationMixin):
@@ -422,3 +432,21 @@ class RegistrationLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveAPIV
         ], 'self': node}
         self.check_object_permissions(self.request, obj)
         return obj
+
+
+class RegistrationViewOnlyLinksList(NodeViewOnlyLinksList, RegistrationMixin):
+
+    required_read_scopes = [CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_READ]
+    required_write_scopes = [CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_WRITE]
+
+    view_category = 'registrations'
+    view_name = 'registration-view-only-links'
+
+
+class RegistrationViewOnlyLinkDetail(NodeViewOnlyLinkDetail, RegistrationMixin):
+
+    required_read_scopes = [CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_READ]
+    required_write_scopes = [CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_WRITE]
+
+    view_category = 'registrations'
+    view_name = 'registration-view-only-link-detail'

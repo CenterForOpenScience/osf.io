@@ -17,7 +17,7 @@ from api.base.exceptions import JSONAPIException
 from api.base.exceptions import TargetNotSupportedError
 from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.base.settings import BULK_SETTINGS
-from api.base.utils import absolute_reverse, extend_querystring_params
+from api.base.utils import absolute_reverse, extend_querystring_params, get_user_auth
 from framework.auth import core as auth_core
 from website import settings
 from website import util as website_utils
@@ -380,8 +380,13 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         else:
             view_name = self_view
             lookup_kwargs = self_kwargs
-
+        if kwargs.get('lookup_url_kwarg', None):
+            lookup_kwargs = kwargs.pop('lookup_url_kwarg')
         super(RelationshipField, self).__init__(view_name, lookup_url_kwarg=lookup_kwargs, **kwargs)
+
+        # Allow a RelationshipField to be modified if explicitly set so
+        if kwargs.get('read_only') is not None:
+            self.read_only = kwargs['read_only']
 
     def resolve(self, resource, field_name):
         """
@@ -454,6 +459,12 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
                 else:
                     continue
+            elif key == 'projects_in_common':
+                if not get_user_auth(self.context['request']).user:
+                    continue
+                if not self.context['request'].query_params.get('show_projects_in_common', False):
+                    continue
+                meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
             else:
                 meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
         return meta
@@ -856,6 +867,10 @@ class JSONAPIListSerializer(ser.ListSerializer):
 
     # Overrides ListSerializer which doesn't support multiple update by default
     def update(self, instance, validated_data):
+
+        # avoiding circular import
+        from api.nodes.serializers import ContributorIDField
+
         # if PATCH request, the child serializer's partial attribute needs to be True
         if self.context['request'].method == 'PATCH':
             self.child.partial = True
@@ -866,8 +881,12 @@ class JSONAPIListSerializer(ser.ListSerializer):
                 raise exceptions.ValidationError({'non_field_errors': 'Could not find all objects to update.'})
 
         id_lookup = self.child.fields['id'].source
-        instance_mapping = {getattr(item, id_lookup): item for item in instance}
         data_mapping = {item.get(id_lookup): item for item in validated_data}
+
+        if isinstance(self.child.fields['id'], ContributorIDField):
+            instance_mapping = {self.child.fields['id'].get_id(item): item for item in instance}
+        else:
+            instance_mapping = {getattr(item, id_lookup): item for item in instance}
 
         ret = {'data': []}
 

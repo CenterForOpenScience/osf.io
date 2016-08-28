@@ -2,6 +2,165 @@
 Changelog
 *********
 
+0.91.0 (2016-08-28)
+===================
+
+- API Endpoints for Preprints (also includs providers and taxonomies)
+- API Download Counts for OSF Storage Files
+
+Migrations
+----------
+
+- python -m scripts.update_taxonomies
+- python -m scripts.populate_preprint_providers
+
+0.90.0 (2016-08-26)
+===================
+
+- Add login with ORCID.
+
+0.89.0 (2016-08-25)
+===================
+
+- API Fail gracefully on unexpected filter modifier
+- API Make adding unregistered contributors work properly
+- API Show in-common users with correct query parameter
+- API Return contributor index when creating contributor
+- Admin easy removal of spam users and projects
+
+0.88.2 (2016-08-25)
+===================
+
+- Remove Keen migration banner
+
+0.88.1 (2016-08-25)
+===================
+
+- Make Github addon logging more tolerant to problems
+
+0.88.0 (2016-08-22)
+===================
+
+- Dropzone now correctly identifying and rejecting folders
+- Admin for Prereg should no longer accept two clicks for one registration
+- Add ability for cookie auth API contributors to create users
+- Allow read+write Contributors to affiliate projects with institutions
+- API endpoints for managing External Links
+- API endpoints for managing View Only Links
+- API methods for re-ordering contributors
+- API multi-field filtering
+- API contributors serializer has relationship to node
+
+0.87.8 (2016-08-17)
+===================
+
+- Fix case-sensitive url on preprints page
+
+0.87.7 (2016-08-17)
+===================
+
+- Add PsyArχiv to the preprints page
+
+0.87.6 (2016-08-17)
+===================
+
+- Fix paginated() to fix migrations (esp migrate_search())
+
+0.87.5 (2016-08-16)
+===================
+
+- Modify wording on ERPC langing page
+
+0.87.4 (2016-08-15)
+===================
+
+- Fix generation of prereg file guids
+
+0.87.3 (2106-08-15)
+===================
+
+- Pin Dropzone to a commit
+
+0.87.2 (2106-08-14)
+===================
+
+- Fix buttons not showing on file detail page in some circumstances
+
+0.87.1 (2016-08-11)
+===================
+
+- Add ERPC registration schema and landing page.
+
+0.87.0 (2016-08-11)
+===================
+
+- Keep anonymous View Only Links from showing name in prereg schemas.
+- APIv2: Make comments link properly to/from registrations as well as nodes.
+- Fix randomly-failing Karma test.
+- Keep private-projects analytics page from giving Forbidden Error.
+- Make tooltips work on Personal Access Token page.
+- APIv2: Make a version of Bulk DELETE that does not rely on JSON body.
+- Make icons more consistent across the site.
+- Update treebeard version so we can finally select across more than one page.
+- Remove inappropriate buttons from file version detail view.
+- Don't show a profile page for unconfirmed users.
+- Modify language for some dialog boxes.
+- Add spell checking to wiki.
+- APIv2: link to templated_from node.
+- Display all of the password warning on mobile devices and small windows.
+- Border changes on file widget.
+- Side navbar looks better when scrolling.
+- Show draft registrations in reverse chronological order.
+
+0.86.0 (2016-08-04)
+===================
+
+- APIv2: Add bulk support for contributor endpoints.
+- APIv2: Add endpoint to create unregistered users.
+- Dev: Remove dependencies on personal GitHub forks.
+- Social media sharing bar on project overview and file detail pages.
+- Add version toggle link on file detail pages.
+- Various UI fixes.
+
+0.85.0 (2016-08-01)
+===================
+
+- APIv2: Add S3 addon management.
+
+0.84.0 (2016-07-28)
+===================
+
+- Migrate Piwik to Keen.
+
+0.83.0 (2016-07-25)
+===================
+
+- Add @mentions to comments.
+- Add password strength verification to password inputs.
+
+Migrations
+----------
+
+- python -m scripts.add_global_subscriptions
+
+0.82.0 (2016-07-19)
+===================
+
+- APIv2: Add "current_user_can_comment" field to nodes, registrations, wikis, and files.
+- APIv2: Add "node" relationship to file representations.
+- APIv2: Fix filtering fields whose name does not match source field name.
+- APIv2: Add support for folder listing for Box and Dropbox.
+- Add contextual information to search results in "Add links" modal.
+- Fix bug that generated extra addon deauthorization logs.
+- Fix page numbering on log feeds.
+- Add rate limit for resending confirmation emails.
+- Fix for search UI.
+
+Migrations
+----------
+
+- python -m scripts.box.migrate_folder_language
+
 0.81.0 (2016-07-07)
 ===================
 

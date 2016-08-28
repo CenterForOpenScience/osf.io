@@ -64,7 +64,6 @@ from tests.factories import (
     AuthUserFactory, BookmarkCollectionFactory, CollectionFactory,
     NodeLicenseRecordFactory, InstitutionFactory, CommentFactory
 )
-from tests.test_features import requires_piwik
 from tests.utils import mock_archive
 
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
@@ -385,6 +384,29 @@ class TestUser(OsfTestCase):
             'primary email has not been added to emails list'
         )
 
+    def test_create_unconfirmed_from_external_service(self):
+        name, email = fake.name(), fake.email()
+        external_identity = {
+            'ORCID': {
+                fake.ean(): 'CREATE'
+            }
+        }
+        user = User.create_unconfirmed(
+            username=email,
+            password=str(fake.password()),
+            fullname=name,
+            external_identity=external_identity,
+        )
+        user.save()
+        assert_false(user.is_registered)
+        assert_equal(len(user.email_verifications.keys()), 1)
+        assert_equal(user.email_verifications.popitem()[1]['external_identity'], external_identity)
+        assert_equal(
+            len(user.emails),
+            0,
+            'primary email has not been added to emails list'
+        )
+
     def test_create_confirmed(self):
         name, email = fake.name(), fake.email()
         user = User.create_confirmed(
@@ -479,6 +501,14 @@ class TestUser(OsfTestCase):
         u.add_unconfirmed_email('foo@bar.com')
         assert_equal(u.get_confirmation_url('foo@bar.com'),
                 '{0}confirm/{1}/{2}/'.format(settings.DOMAIN, u._primary_key, 'abcde'))
+
+    @mock.patch('website.security.random_string')
+    def test_get_confirmation_url_for_external_service(self, random_string):
+        random_string.return_value = 'abcde'
+        u = UnconfirmedUserFactory()
+        assert_equal(u.get_confirmation_url(u.username, external_id_provider='service'),
+                '{0}confirm/external/{1}/{2}/'.format(settings.DOMAIN, u._id, 'abcde'))
+
 
     def test_get_confirmation_url_when_token_is_expired_raises_error(self):
         u = UserFactory()
@@ -1567,6 +1597,20 @@ class TestNode(OsfTestCase):
     def test_validate_categories(self):
         with assert_raises(ValidationError):
             Node(category='invalid').save()  # an invalid category
+
+    def test_validate_bad_doi(self):
+        with assert_raises(ValidationError):
+            Node(preprint_doi='nope').save()
+        with assert_raises(ValidationError):
+            Node(preprint_doi='https://dx.doi.org/10.123.456').save()  # should save the bare DOI, not a URL
+        with assert_raises(ValidationError):
+            Node(preprint_doi='doi:10.10.1038/nwooo1170').save()  # should save without doi: prefix
+
+    def test_validate_good_doi(self):
+        doi = '10.10.1038/nwooo1170'
+        self.node.preprint_doi = doi
+        self.node.save()
+        assert_equal(self.node.preprint_doi, doi)
 
     def test_web_url_for(self):
         result = self.parent.web_url_for('view_project')
@@ -3180,10 +3224,12 @@ class TestProject(OsfTestCase):
         self.project.save()
         assert_true(self.project.is_public)
         assert_equal(self.project.logs[-1].action, 'made_public')
+        assert_not_equal(self.project.keenio_read_key, '')
         self.project.set_privacy('private', auth=self.auth)
         self.project.save()
         assert_false(self.project.is_public)
         assert_equal(self.project.logs[-1].action, NodeLog.MADE_PRIVATE)
+        assert_equals(self.project.keenio_read_key, '')
 
     @mock.patch('website.mails.queue_mail')
     def test_set_privacy_sends_mail_default(self, mock_queue):
@@ -3643,14 +3689,6 @@ class TestTemplateNode(OsfTestCase):
                     old_node.title,
                     new_node.title,
                 )
-
-    @requires_piwik
-    def test_template_piwik_site_id_not_copied(self):
-        new = self.project.use_as_template(
-            auth=self.auth
-        )
-        assert_not_equal(new.piwik_site_id, self.project.piwik_site_id)
-        assert_true(new.piwik_site_id is not None)
 
     def test_template_wiki_pages_not_copied(self):
         self.project.update_node_wiki(
@@ -4666,6 +4704,46 @@ class TestPrivateLink(OsfTestCase):
         assert_equal(schema, draft.registration_schema)
         assert_equal(data, draft.registration_metadata)
         assert_equal(proj, draft.branched_from)
+
+
+class TestNodeAddContributorRegisteredOrNot(OsfTestCase):
+
+    def setUp(self):
+        super(TestNodeAddContributorRegisteredOrNot, self).setUp()
+        self.user = AuthUserFactory()
+        self.node = ProjectFactory(creator=self.user)
+
+    def test_add_contributor_user_id(self):
+        self.registered_user = UserFactory()
+        contributor = self.node.add_contributor_registered_or_not(auth=Auth(self.user), user_id=self.registered_user._id, save=True)
+        assert_in(contributor._id, self.node.contributors)
+        assert_equals(contributor.is_registered, True)
+
+    def test_add_contributor_user_id_already_contributor(self):
+        with assert_raises(ValidationValueError) as e:
+            self.node.add_contributor_registered_or_not(auth=Auth(self.user), user_id=self.user._id, save=True)
+        assert_in('is already a contributor', e.exception.message)
+
+    def test_add_contributor_invalid_user_id(self):
+        with assert_raises(ValueError) as e:
+            self.node.add_contributor_registered_or_not(auth=Auth(self.user), user_id='abcde', save=True)
+        assert_in('was not found', e.exception.message)
+
+    def test_add_contributor_fullname_email(self):
+        contributor = self.node.add_contributor_registered_or_not(auth=Auth(self.user), full_name='Jane Doe', email='jane@doe.com')
+        assert_in(contributor._id, self.node.contributors)
+        assert_equals(contributor.is_registered, False)
+
+    def test_add_contributor_fullname(self):
+        contributor = self.node.add_contributor_registered_or_not(auth=Auth(self.user), full_name='Jane Doe')
+        assert_in(contributor._id, self.node.contributors)
+        assert_equals(contributor.is_registered, False)
+
+    def test_add_contributor_fullname_email_already_exists(self):
+        self.registered_user = UserFactory()
+        contributor = self.node.add_contributor_registered_or_not(auth=Auth(self.user), full_name='F Mercury', email=self.registered_user.username)
+        assert_in(contributor._id, self.node.contributors)
+        assert_equals(contributor.is_registered, True)
 
 
 if __name__ == '__main__':

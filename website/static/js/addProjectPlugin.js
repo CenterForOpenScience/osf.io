@@ -230,7 +230,9 @@ var AddProject = {
                                     onchange : function() {
                                         ctrl.newProjectInheritContribs(this.checked);
                                     }
-                                }), ' Add contributors from ', m('b', options.parentTitle)
+                                }), ' Add contributors from ', m('b', options.parentTitle),
+                                m('br'),
+                                m('i', ' Admins of ', m('b', options.parentTitle), ' will have read access to this component.')
                             )
                         ]) : '',
                         m('.text-muted.pointer', { onclick : function(){
@@ -256,6 +258,7 @@ var AddProject = {
                             ]),
                             ctrl.options.parentID !== null ? [
                                 m('label.f-w-lg.text-bigger','Category'),
+                                m('i', ' (for descriptive purposes)'),
                                 m('select.form-control', {
                                     onchange : function(event) {
                                         ctrl.newProjectCategory(this.value);

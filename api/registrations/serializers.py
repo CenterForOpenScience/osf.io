@@ -108,6 +108,11 @@ class BaseRegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<forked_from_id>'}
     ))
 
+    template_node = HideIfWithdrawal(RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<template_node._id>'}
+    ))
+
     license = HideIfWithdrawal(RelationshipField(
         related_view='licenses:license-detail',
         related_view_kwargs={'license_id': '<node_license.node_license._id>'},
@@ -171,6 +176,12 @@ class BaseRegistrationSerializer(NodeSerializer):
         related_meta={'count': 'get_node_links_count'},
         self_view='registrations:node-pointer-relationship',
         self_view_kwargs={'node_id': '<pk>'}
+    ))
+
+    view_only_links = HideIfWithdrawal(RelationshipField(
+        related_view='registrations:registration-view-only-links',
+        related_view_kwargs={'node_id': '<pk>'},
+        related_meta={'count': 'get_view_only_links_count'},
     ))
 
     links = LinksField({'self': 'get_registration_url', 'html': 'get_absolute_html_url'})
@@ -314,8 +325,13 @@ class RegistrationFileSerializer(FileSerializer):
     comments = FileCommentRelationshipField(related_view='registrations:registration-comments',
                                             related_view_kwargs={'node_id': '<node._id>'},
                                             related_meta={'unread': 'get_unread_comments_count'},
-                                            filter={'target': 'get_file_guid'})
+                                            filter={'target': 'get_file_guid'}
+                                            )
 
+    node = RelationshipField(related_view='registrations:registration-detail',
+                                     related_view_kwargs={'node_id': '<node._id>'},
+                                     help_text='The registration that this file belongs to'
+                             )
 
 class RegistrationProviderSerializer(NodeProviderSerializer):
     """
