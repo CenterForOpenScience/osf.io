@@ -3104,7 +3104,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                     if ['read'] in permissions_changed.values():
                         project_signals.write_permissions_revoked.send(self)
         if visible is not None:
-            self.set_visible(user, visible, auth=auth, save=save)
+            self.set_visible(user, visible, auth=auth)
             self.update_visible_ids(save=save)
 
     def manage_contributors(self, user_dicts, auth, save=False):
