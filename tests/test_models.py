@@ -1598,6 +1598,20 @@ class TestNode(OsfTestCase):
         with assert_raises(ValidationError):
             Node(category='invalid').save()  # an invalid category
 
+    def test_validate_bad_doi(self):
+        with assert_raises(ValidationError):
+            Node(preprint_doi='nope').save()
+        with assert_raises(ValidationError):
+            Node(preprint_doi='https://dx.doi.org/10.123.456').save()  # should save the bare DOI, not a URL
+        with assert_raises(ValidationError):
+            Node(preprint_doi='doi:10.10.1038/nwooo1170').save()  # should save without doi: prefix
+
+    def test_validate_good_doi(self):
+        doi = '10.10.1038/nwooo1170'
+        self.node.preprint_doi = doi
+        self.node.save()
+        assert_equal(self.node.preprint_doi, doi)
+
     def test_web_url_for(self):
         result = self.parent.web_url_for('view_project')
         assert_equal(

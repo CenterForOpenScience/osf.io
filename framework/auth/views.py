@@ -238,6 +238,7 @@ def auth_login(auth, **kwargs):
         return redirect(cas.get_login_url(web_url_for('dashboard', _absolute=True)))
 
     if campaign:
+        must_login_warning = False
         next_url = campaigns.campaign_url_for(campaign)
 
     if not next_url:
@@ -583,6 +584,8 @@ def send_confirm_email(user, email, external_id_provider=None, external_id=None)
         mail_template = mails.CONFIRM_EMAIL
         confirmation_url = '{}?logout=1'.format(confirmation_url)
     elif campaign:  # campaign
+        # TODO: In the future, we may want to make confirmation email configurable as well (send new user to
+        #   appropriate landing page or with redirect after)
         mail_template = campaigns.email_template_for_campaign(campaign)
     else:  # account creation
         mail_template = mails.INITIAL_CONFIRM_EMAIL
