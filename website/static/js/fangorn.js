@@ -427,16 +427,25 @@ function _fangornToggleCheck(item) {
 }
 
 function checkConflicts(tb, item, folder, cb) {
+    var messageArray = [];
     for(var i = 0; i < folder.children.length; i++) {
         var child = folder.children[i];
         if (child.data.name === item.data.name && child.id !== item.id) {
-            tb.modal.update(m('', [
-                    m('p', 'An item named "' + item.data.name + '" already exists in this location.')
-                ]), m('', [
+            messageArray.push(m('p', 'An item named "' + item.data.name + '" already exists in this location.'));
+
+            if (window.contextVars.node.preprintFileId === child.data.path.replace('/', '')) {
+                messageArray = messageArray.concat([
+                    m('p', 'The file "' + item.data.name + '" is the primary file for a preprint, so it should not be replaced.'),
+                    m('strong', 'Replacing this file will remove this preprint from circulation.')
+                ]);
+            }
+            tb.modal.update(
+                m('', messageArray), [
                     m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
                     m('span.btn.btn-primary', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
-                    m('span.btn.btn-primary', {onclick: cb.bind(tb, 'replace')},'Replace'),
-                ]), m('h3.break-word.modal-title', 'Replace "' + item.data.name + '"?')
+                    m('span.btn.btn-primary', {onclick: cb.bind(tb, 'replace')},'Replace')
+                ],
+                m('h3.break-word.modal-title', 'Replace "' + item.data.name + '"?')
             );
             return;
         }
@@ -445,17 +454,27 @@ function checkConflicts(tb, item, folder, cb) {
 }
 
 function checkConflictsRename(tb, item, name, cb) {
+    var messageArray = [];
     var parent = item.parent();
     for(var i = 0; i < parent.children.length; i++) {
         var child = parent.children[i];
         if (child.data.name === name && child.id !== item.id) {
-            tb.modal.update(m('', [
-                m('p', 'An item named "' + name + '" already exists in this location.')
-            ]), m('', [
-                m('span.btn.btn-info', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
-                m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), // jshint ignore:line
-                m('span.btn.btn-primary', {onclick: cb.bind(tb, 'replace')},'Replace'),
-            ]), m('h3.break-word.modal-title', 'Replace "' + name + '"?'));
+            messageArray.push(m('p', 'An item named "' + item.data.name + '" already exists in this location.'));
+
+            if (window.contextVars.node.preprintFileId === child.data.path.replace('/', '')) {
+                messageArray = messageArray.concat([
+                    m('p', 'The file "' + item.data.name + '" is the primary file for a preprint, so it should not be replaced.'),
+                    m('strong', 'Replacing this file will remove this preprint from circulation.')
+                ]);
+            }
+            tb.modal.update(
+                m('', messageArray), [
+                    m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
+                    m('span.btn.btn-primary', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
+                    m('span.btn.btn-primary', {onclick: cb.bind(tb, 'replace')},'Replace')
+                ],
+                m('h3.break-word.modal-title', 'Replace "' + item.data.name + '"?')
+            );
             return;
         }
     }
@@ -1031,9 +1050,17 @@ function _removeEvent (event, items, col) {
 
     // If there is only one item being deleted, don't complicate the issue:
     if(items.length === 1) {
+        var detail = 'This action is irreversible.';
+        if (window.contextVars.node.preprintFileId === items[0].data.path.replace('/', '')) {
+            // title = 'Delete the primary preprint file "' + items[0].data.name + '"?';
+            detail = [
+                m('p', 'This is the primary file for a preprint.'),
+                m('p', m('strong', 'Deleting this file will remove this preprint from circulation.'))
+            ];
+        }
         if(items[0].kind !== 'folder'){
             var mithrilContentSingle = m('div', [
-                m('p', 'This action is irreversible.')
+                m('p', detail)
             ]);
             var mithrilButtonsSingle = m('div', [
                 m('span.btn.btn-default', { onclick : function() { cancelDelete(); } }, 'Cancel'),
@@ -1068,6 +1095,12 @@ function _removeEvent (event, items, col) {
             }
             if(item.kind === 'folder' && deleteMessage.length === 1) {
                 deleteMessage.push(m('p.text-danger', 'Some of the selected items are folders. This will delete the folder(s) and ALL of their content.'));
+            }
+            if (window.contextVars.node.preprintFileId === item.data.path.replace('/', '')) {
+                deleteMessage.push([
+                    m('p', 'One of the files you have selected is the primary file for a preprint.'),
+                    m('p', m('strong', 'Deleting this file will remove this preprint from circulation.'))
+                ]);
             }
         });
         // If all items can be deleted
@@ -2241,6 +2274,27 @@ function _dropLogic(event, items, folder) {
     }
 
     $.each(items, function(index, item) {
+        // Check all the ways that the primary preprint file could be moved out of its current node
+        // TODO: this will break when preprints can be created from existing projects -- it relies on
+        //     the fact that the current node is the preprint, not and node in the component tree. [#PREP-132]
+        if (
+            window.contextVars.node.preprintFileId === item.data.path.replace('/', '') &&
+            item.data.nodeId === window.contextVars.node.id &&
+            (folder.data.nodeId !== window.contextVars.node.id || folder.data.provider !== 'osfstorage')
+        ) {
+            tb.modal.update(m('', [
+                m('p', 'The file "' + item.data.name + '" is the primary file for a preprint and so should not be moved.'),
+                m('strong', 'Moving this file will remove this preprint from circulation.')
+            ]), m('', [
+                m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), // jshint ignore:line
+                m('span.btn.btn-default', {onclick: function() {
+                        checkConflicts(tb, item, folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, folder, item, undefined));
+                }}, 'Move anyway'), // jshint ignore:line
+
+            ]), m('h3.break-word.modal-title', 'Move "' + item.data.name + '"?'));
+            return;
+        }
+
         checkConflicts(tb, item, folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, folder, item, undefined));
     });
 }
