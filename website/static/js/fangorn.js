@@ -2276,7 +2276,7 @@ function _dropLogic(event, items, folder) {
     $.each(items, function(index, item) {
         // Check all the ways that the primary preprint file could be moved out of its current node
         // TODO: this will break when preprints can be created from existing projects -- it relies on
-        //       the fact that the current node is the preprint, not and node in the component tree.
+        //     the fact that the current node is the preprint, not and node in the component tree. [#PREP-132]
         if (
             window.contextVars.node.preprintFileId === item.data.path.replace('/', '') &&
             item.data.nodeId === window.contextVars.node.id &&
