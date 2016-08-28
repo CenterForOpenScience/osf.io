@@ -1630,6 +1630,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
           hashes          object
             md5           string             md5 hash of file, null for folders
             sha256        string             SHA-256 hash of file, null for folders
+          downloads       integer            number of times the file has been downloaded
 
     * A note on timestamps: for files stored in osfstorage, `date_created` refers to the time the file was
     first uploaded to osfstorage, and `date_modified` is the time the file was last updated while in osfstorage.
