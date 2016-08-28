@@ -2,6 +2,18 @@
 Changelog
 *********
 
+0.91.0 (2016-08-28)
+===================
+
+- API Endpoints for Preprints (also includs providers and taxonomies)
+- API Download Counts for OSF Storage Files
+
+Migrations
+----------
+
+- python -m scripts.update_taxonomies
+- python -m scripts.populate_preprint_providers
+
 0.90.0 (2016-08-26)
 ===================
 
