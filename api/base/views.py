@@ -76,7 +76,6 @@ class SchemaGenerator(schemas.SchemaGenerator):
                 content[category] = {action: link}
         doc = coreapi.Document(title=self.title, content=content, url=self.url)
         return doc
-        
 
     def get_link(self, path, method, callback, view):
         """
