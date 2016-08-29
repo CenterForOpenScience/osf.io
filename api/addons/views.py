@@ -6,6 +6,8 @@ from rest_framework import generics, permissions as drf_permissions
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.addons.serializers import AddonSerializer
+from api.base.filters import ListFilterMixin
+from api.base.pagination import MaxSizePagination
 from api.base.permissions import TokenHasScope
 from api.base.settings import ADDONS_OAUTH
 from api.base.views import JSONAPIBaseView
@@ -46,7 +48,7 @@ class AddonSettingsMixin(object):
 
         return addon_settings
 
-class AddonList(JSONAPIBaseView, generics.ListAPIView):
+class AddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     """List of addons configurable with the OSF *Read-only*.
 
     Paginated list of addons associated with third-party services
@@ -77,9 +79,13 @@ class AddonList(JSONAPIBaseView, generics.ListAPIView):
     required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
     required_write_scopes = [CoreScopes.NULL]
 
+    pagination_class = MaxSizePagination
     serializer_class = AddonSerializer
     view_category = 'addons'
     view_name = 'addon-list'
 
-    def get_queryset(self):
+    def get_default_queryset(self):
         return [conf for conf in osf_settings.ADDONS_AVAILABLE_DICT.itervalues() if 'accounts' in conf.configs]
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
