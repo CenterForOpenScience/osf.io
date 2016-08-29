@@ -17,7 +17,7 @@ from api.base.exceptions import JSONAPIException
 from api.base.exceptions import TargetNotSupportedError
 from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.base.settings import BULK_SETTINGS
-from api.base.utils import absolute_reverse, extend_querystring_params
+from api.base.utils import absolute_reverse, extend_querystring_params, get_user_auth, extend_querystring_if_key_exists
 from framework.auth import core as auth_core
 from website import settings
 from website import util as website_utils
@@ -380,8 +380,13 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         else:
             view_name = self_view
             lookup_kwargs = self_kwargs
-
+        if kwargs.get('lookup_url_kwarg', None):
+            lookup_kwargs = kwargs.pop('lookup_url_kwarg')
         super(RelationshipField, self).__init__(view_name, lookup_url_kwarg=lookup_kwargs, **kwargs)
+
+        # Allow a RelationshipField to be modified if explicitly set so
+        if kwargs.get('read_only') is not None:
+            self.read_only = kwargs['read_only']
 
     def resolve(self, resource, field_name):
         """
@@ -454,6 +459,12 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
                 else:
                     continue
+            elif key == 'projects_in_common':
+                if not get_user_auth(self.context['request']).user:
+                    continue
+                if not self.context['request'].query_params.get('show_projects_in_common', False):
+                    continue
+                meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
             else:
                 meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
         return meta
@@ -513,10 +524,13 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     if self.filter:
                         formatted_filter = self.format_filter(obj)
                         if formatted_filter:
-                            url = '{}?filter{}'.format(url, formatted_filter)
+                            url = extend_querystring_params(url, {'filter': formatted_filter})
                         else:
                             url = None
+
+                    url = extend_querystring_if_key_exists(url, self.context['request'], 'view_only')
                     urls[view_name] = url
+
         if not urls['self'] and not urls['related']:
             urls = None
         return urls
@@ -718,6 +732,9 @@ class LinksField(ser.Field):
         # not just the field attribute.
         return obj
 
+    def extend_absolute_url(self, obj):
+        return extend_querystring_if_key_exists(obj.get_absolute_url(), self.context['request'], 'view_only')
+
     def to_representation(self, obj):
         ret = {}
         for name, value in self.links.iteritems():
@@ -728,7 +745,7 @@ class LinksField(ser.Field):
             else:
                 ret[name] = url
         if hasattr(obj, 'get_absolute_url') and 'self' not in self.links:
-            ret['self'] = obj.get_absolute_url()
+            ret['self'] = self.extend_absolute_url(obj)
         return ret
 
 
@@ -1072,7 +1089,7 @@ class JSONAPISerializer(ser.Serializer):
         raise NotImplementedError()
 
     def get_absolute_html_url(self, obj):
-        return obj.absolute_url
+        return extend_querystring_if_key_exists(obj.absolute_url, self.context['request'], 'view_only')
 
     # overrides Serializer: Add HTML-sanitization similar to that used by APIv1 front-end views
     def is_valid(self, clean_html=True, **kwargs):

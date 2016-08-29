@@ -772,7 +772,40 @@ class TestExplorePublicActivity(OsfTestCase):
         self.registration = RegistrationFactory(project=self.project)
         self.private_project = ProjectFactory(title="Test private project")
 
-    def test_newest_public_project_and_registrations_show_in_explore_activity(self):
+        # Add project to new and noteworthy projects
+        self.new_and_noteworthy_links_node = ProjectFactory()
+        self.new_and_noteworthy_links_node._id = settings.NEW_AND_NOTEWORTHY_LINKS_NODE
+        self.new_and_noteworthy_links_node.add_pointer(self.project, auth=Auth(self.new_and_noteworthy_links_node.creator), save=True)
+
+    @mock.patch('website.discovery.views.KeenClient')
+    def test_new_and_noteworthy_and_registrations_show_in_explore_activity(self, mock_client):
+
+        mock_client.count.return_value = {
+            'result': [
+                {
+                    'result': 5,
+                    'node.id': self.project._id
+                },
+                {
+                    'result': 5,
+                    'node.id': self.registration._id
+                }
+            ]
+        }
+
+        mock_client.count_unique.return_value = {
+            'result': [
+                {
+                    'result': 2,
+                    'node.id': self.project._id
+                },
+                {
+                    'result': 2,
+                    'node.id': self.registration._id
+                }
+            ]
+        }
+
         url = self.project.web_url_for('activity')
         res = self.app.get(url)
 

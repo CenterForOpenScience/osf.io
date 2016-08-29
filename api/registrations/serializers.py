@@ -25,8 +25,7 @@ class BaseRegistrationSerializer(NodeSerializer):
     category_choices = NodeSerializer.category_choices
     category_choices_string = NodeSerializer.category_choices_string
     category = HideIfWithdrawal(ser.ChoiceField(read_only=True, choices=category_choices, help_text='Choices: ' + category_choices_string))
-
-    date_modified = HideIfWithdrawal(ser.DateTimeField(read_only=True))
+    date_modified = ser.DateTimeField(read_only=True)
     fork = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_fork'))
     collection = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_collection'))
     node_license = HideIfWithdrawal(NodeLicenseSerializer(read_only=True))
@@ -176,6 +175,12 @@ class BaseRegistrationSerializer(NodeSerializer):
         related_meta={'count': 'get_node_links_count'},
         self_view='registrations:node-pointer-relationship',
         self_view_kwargs={'node_id': '<pk>'}
+    ))
+
+    view_only_links = HideIfWithdrawal(RelationshipField(
+        related_view='registrations:registration-view-only-links',
+        related_view_kwargs={'node_id': '<pk>'},
+        related_meta={'count': 'get_view_only_links_count'},
     ))
 
     links = LinksField({'self': 'get_registration_url', 'html': 'get_absolute_html_url'})
