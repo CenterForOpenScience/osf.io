@@ -21,3 +21,13 @@ class AddContributorThrottle(UserRateThrottle):
 
     def wait(self):
         return 0.1
+
+
+class TestUserThrottle(UserRateThrottle):
+
+    rate = '3/hour'
+
+
+class TestAnonRateThrottle(AnonRateThrottle):
+
+    rate = '2/hour'

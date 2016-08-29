@@ -29,6 +29,7 @@ urlpatterns = [
                 url(r'^metaschemas/', include('api.metaschemas.urls', namespace='metaschemas')),
                 url(r'^nodes/', include('api.nodes.urls', namespace='nodes')),
                 url(r'^registrations/', include('api.registrations.urls', namespace='registrations')),
+                url(r'^test/', include('api.test.urls', namespace='test')),
                 url(r'^tokens/', include('api.tokens.urls', namespace='tokens')),
                 url(r'^users/', include('api.users.urls', namespace='users')),
                 url(r'^view_only_links/', include('api.view_only_links.urls', namespace='view-only-links')),
