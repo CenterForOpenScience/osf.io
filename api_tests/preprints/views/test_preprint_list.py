@@ -2,6 +2,7 @@ from nose.tools import *  # flake8: noqa
 
 from framework.auth.core import Auth, Q
 from api.base.settings.defaults import API_BASE
+from website.util import permissions
 from website.models import Node
 from website.project import signals as project_signals
 
@@ -138,8 +139,7 @@ class TestPreprintCreate(ApiTestCase):
         self.other_user = AuthUserFactory()
         self.private_project = ProjectFactory(creator=self.user)
         self.public_project = ProjectFactory(creator=self.user, public=True)
-        self.public_project.add_contributor(self.other_user)
-        self.public_project.save()
+        self.public_project.add_contributor(self.other_user, permissions=[permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS], save=True)
         self.subject = SubjectFactory()
 
         self.user_two = AuthUserFactory()
@@ -166,6 +166,12 @@ class TestPreprintCreate(ApiTestCase):
     def test_non_authorized_user(self):
         public_project_payload = build_preprint_create_payload(self.public_project._id, self.subject._id, self.file_one_public_project._id)
         res = self.app.post_json_api(self.url, public_project_payload, auth=self.user_two.auth, expect_errors=True)
+
+        assert_equal(res.status_code, 403)
+
+    def test_read_write_user_not_authorized(self):
+        public_project_payload = build_preprint_create_payload(self.public_project._id, self.subject._id, self.file_one_public_project._id)
+        res = self.app.post_json_api(self.url, public_project_payload, auth=self.other_user.auth, expect_errors=True)
 
         assert_equal(res.status_code, 403)
 
