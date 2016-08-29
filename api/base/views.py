@@ -66,6 +66,10 @@ class SchemaGenerator(schemas.SchemaGenerator):
             return None
         content = {}
         for category, action, link in links:
+            try:
+                print(category)
+            except:
+                pass
             if category is None:
                 content[action] = link
             elif category in content:
@@ -123,7 +127,8 @@ class SchemaGenerator(schemas.SchemaGenerator):
         """
 
         try:
-            return callback.cls().view_name
+            vn = callback.cls().view_name
+            return vn
         except:
             pass
 
