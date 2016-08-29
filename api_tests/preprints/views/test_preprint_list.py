@@ -169,7 +169,8 @@ class TestPreprintCreate(ApiTestCase):
 
         assert_equal(res.status_code, 403)
 
-    def test_read_write_user_not_authorized(self):
+    def test_read_write_user_not_admin(self):
+        assert_in(self.other_user, self.public_project.contributors)
         public_project_payload = build_preprint_create_payload(self.public_project._id, self.subject._id, self.file_one_public_project._id)
         res = self.app.post_json_api(self.url, public_project_payload, auth=self.other_user.auth, expect_errors=True)
 
