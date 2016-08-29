@@ -53,6 +53,8 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
     All things that inherit from AbstractNode will appear in
     the same table and will be differentiated by the `type` column.
     """
+    class Meta:
+        order_with_respect_to = 'parent_node'
 
     #: Whether this is a pointer or not
     primary = True
