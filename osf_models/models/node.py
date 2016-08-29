@@ -57,6 +57,10 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
     #: Whether this is a pointer or not
     primary = True
 
+    FIELD_ALIASES = {
+        'contributors': '_contributors',
+    }
+
     CATEGORY_MAP = {
         'analysis': 'Analysis',
         'communication': 'Communication',

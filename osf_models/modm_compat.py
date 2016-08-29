@@ -64,14 +64,21 @@ class Q(BaseQ, query.RawQuery):
             compound_cls = AndQ if query.operator == 'and' else OrQ
             return compound_cls.from_modm_query(query, model_cls=model_cls)
         elif isinstance(query, MODMQ):
+            attribute = query.attribute
             if model_cls:
+                field_aliases = getattr(model_cls, 'FIELD_ALIASES', {})
+                attribute = field_aliases.get(attribute, attribute)
                 field = _get_field(model_cls, query.attribute)
                 # Mongo compatibility fix: an 'eq' query on array fields
                 # behaves like 'contains' for postgres ArrayFields
                 if field.get_internal_type() == 'ArrayField' and query.operator == 'eq':
-                    return cls(query.attribute, 'contains', [query.argument])
-            return cls(query.attribute, query.operator, query.argument)
+                    return cls(attribute, 'contains', [query.argument])
+            return cls(attribute, query.operator, query.argument)
         elif isinstance(query, cls):
+            if model_cls:
+                field_aliases = getattr(model_cls, 'FIELD_ALIASES', {})
+                if query.attribute in field_aliases:
+                    return cls(field_aliases[query.attribute], query.operator, query.argument)
             return query
         else:
             raise ValueError(
