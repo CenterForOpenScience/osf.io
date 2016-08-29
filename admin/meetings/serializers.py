@@ -8,6 +8,7 @@ def serialize_meeting(meeting):
         'endpoint': meeting.endpoint,
         'name': meeting.name,
         'info_url': meeting.info_url,
+        'homepage_link_text': meeting.field_names['homepage_link_text'],
         'logo_url': meeting.logo_url,
         'active': meeting.active,
         'admins': ', '.join([u.username for u in meeting.admins]),
