@@ -292,7 +292,6 @@ def validate_service_url(service_url, **kwargs):
     if not (service_url[0] == '/' or
             service_url.startswith(settings.DOMAIN) or
             service_url.startswith(settings.CAS_SERVER_URL) or
-            # TODO: why mfr domain, how about api and waterbutler
             service_url.startswith(settings.MFR_SERVER_URL)):
         return False
     return True

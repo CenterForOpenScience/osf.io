@@ -44,7 +44,7 @@ class TestCampaignsPrereg(OsfTestCase):
         ensure_schemas()
         resp = self.app.get(self.url_landing_page, auth=self.user.auth)
         assert_equal(resp.status_code, http.OK)
-        assert_in('Welcome to the Preregistration Challenge!', resp)
+        assert_in('Welcome to the Prereg Challenge!', resp)
 
     def test_auth_prereg_landing_page_logged_out(self):
         resp = self.app.get(self.url_landing_page)
