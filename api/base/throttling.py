@@ -37,7 +37,7 @@ class BaseThrottle(SimpleRateThrottle):
 
 class CookieAuthThrottle(AnonRateThrottle, BaseThrottle):
 
-    rate = '100/hour'
+    scope = 'cookie-auth'
 
     def failure(self, request):
         return bool(request.COOKIES)
@@ -48,7 +48,7 @@ class CookieAuthThrottle(AnonRateThrottle, BaseThrottle):
 
 class AddContributorThrottle(UserRateThrottle, BaseThrottle):
 
-    rate = '10/second'
+    scope = 'add-contributor'
 
     def failure(self, request):
         if request.method == 'POST' and request.query_params.get('send_email') != 'false':
@@ -59,11 +59,11 @@ class AddContributorThrottle(UserRateThrottle, BaseThrottle):
         return 0.1
 
 
-class TestUserThrottle(UserRateThrottle):
+class TestUserRateThrottle(UserRateThrottle):
 
-    rate = '2/hour'
+    scope = 'test-user'
 
 
 class TestAnonRateThrottle(AnonRateThrottle):
 
-    rate = '1/hour'
+    scope = 'test-anon'
