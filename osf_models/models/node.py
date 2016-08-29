@@ -1083,6 +1083,9 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
                 )
 
             if to_retain != users:
+                # TODO: Can we prevent n queries?
+                sorted_contribs = [self.contributor_set.get(user=user).pk for user in users]
+                self.set_contributor_order(sorted_contribs)
                 self.add_log(
                     action=NodeLog.CONTRIB_REORDERED,
                     params={
@@ -1099,8 +1102,6 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
 
             if to_remove:
                 self.remove_contributors(to_remove, auth=auth, save=False)
-
-            # self.contributors = users
 
             if permissions_changed:
                 self.add_log(
