@@ -26,7 +26,7 @@ class Subject(StoredObject):
     def set_children(self):
         """
         This gets called in scripts/update_taxonomies.py after all
-        subjects have been added. Done their to avoid API slowness"""
+        subjects have been added."""
         if not self.children:
             self.children = Subject.find(Q('parents', 'eq', self))
 
