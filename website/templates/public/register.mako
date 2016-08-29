@@ -24,20 +24,7 @@
         </div>
     %endif
 
-##     TODO: check with MattF
-##     %if campaign == "institution" and enable_institutions:
-##         <div class="text-center m-t-lg">
-##             <h3>OSF for Institutions </h3>
-##             <hr>
-##             <p>
-##                 If your institution has partnered with the Open Science Framework, please
-##                 select its name below and sign in with your institutional credentials.
-##             </p>
-##             <p> If you do not currently have an OSF account, this will create one. By creating an account you agree to our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms</a> and that you have read our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>, including our information on <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies">Cookie Use</a>.</p>
-##         </div>
-##     %endif
-
-        %if campaign == "osf-preprints":
+    %if campaign == "osf-preprints":
         <div class="text-center m-t-lg">
             <h3>OSF Preprint Service</h3>
             <hr>

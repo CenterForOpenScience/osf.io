@@ -56,7 +56,6 @@ class TestCampaignsPrereg(OsfTestCase):
         user.system_tags.append(campaigns.CAMPAIGNS['prereg']['system_tag'])
         user.save()
         token = user.get_confirmation_token(user.username)
-        print token
         kwargs = {
             'uid': user._id,
         }

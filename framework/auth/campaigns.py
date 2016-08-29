@@ -10,7 +10,6 @@ from website.settings import DOMAIN
 CAMPAIGNS = ImmutableDict({
     'prereg': {
         'system_tag': 'prereg_challenge_campaign',
-        # TODO: check with @MattF: 'redirect_url': lambda: web_url_for('prereg_landing_page', _absolute=True),
         'redirect_url': lambda: furl.furl(DOMAIN).add(path='prereg/').url,
         'confirmation_email_template': mails.CONFIRM_EMAIL_PREREG,
     },
