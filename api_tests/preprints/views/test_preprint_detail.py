@@ -104,7 +104,7 @@ class TestPreprintUpdate(ApiTestCase):
         relationships = {
             "primary_file": {
                 "data": {
-                    "type": "file",
+                    "type": "primary_file",
                     "id": new_file._id
                 }
             }
@@ -125,7 +125,7 @@ class TestPreprintUpdate(ApiTestCase):
         relationships = {
             "primary_file": {
                 "data": {
-                    "type": "file",
+                    "type": "primary_file",
                     "id": file_for_project._id
                 }
             }

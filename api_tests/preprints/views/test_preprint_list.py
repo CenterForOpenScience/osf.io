@@ -33,7 +33,7 @@ def build_preprint_create_payload(node_id, subject_id, file_id=None):
         payload['data']['relationships'] = {
             "primary_file": {
                 "data": {
-                    "type": "file",
+                    "type": "primary_file",
                     "id": file_id
                 }
             }
