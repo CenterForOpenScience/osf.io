@@ -155,6 +155,18 @@ class TestPreprintCreate(ApiTestCase):
 
         assert_equal(res.status_code, 201)
 
+    def test_create_preprint_with_tags(self):
+        public_project_payload = build_preprint_create_payload(self.public_project._id, self.subject._id, self.file_one_public_project._id)
+        public_project_payload['data']['attributes']['tags'] = ['newtag', 'bluetag']
+        res = self.app.post_json_api(self.url, public_project_payload, auth=self.user.auth)
+
+        assert_equal(res.status_code, 201)
+
+        self.public_project.reload()
+        assert_in('newtag', self.public_project.tags)
+        assert_in('bluetag', self.public_project.tags)
+        assert_not_in('tag_added', [l.action for l in self.public_project.logs])
+
     def test_create_preprint_from_private_project(self):
         private_project_payload = build_preprint_create_payload(self.private_project._id, self.subject._id, self.file_one_private_project._id)
         res = self.app.post_json_api(self.url, private_project_payload, auth=self.user.auth)
