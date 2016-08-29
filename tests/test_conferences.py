@@ -48,6 +48,7 @@ class ConferenceFactory(ModularOdmFactory):
     endpoint = Sequence(lambda n: 'conference{0}'.format(n))
     name = FakerAttribute('catch_phrase')
     active = True
+    is_meeting = True
 
     @post_generation
     def admins(self, create, extracted, **kwargs):

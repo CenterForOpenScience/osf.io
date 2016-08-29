@@ -106,21 +106,32 @@ def _get_current_user():
 
 
 # TODO: This should be a class method of User?
-def get_user(email=None, password=None, verification_key=None):
-    """Get an instance of User matching the provided params.
-
-    :return: The instance of User requested
-    :rtype: User or None
+def get_user(email=None, password=None, verification_key=None, external_id_provider=None, external_id=None):
     """
-    # tag: database
+    Get an instance of User matching the provided params.
+
+    1. email
+    2. email and password
+    3. verification_key
+    4. oauth_provider and oauth_id
+
+    :param email: user's email
+    :param password: user's password
+    :param verification_key: the verification key
+    :param external_id_provider: the oauth provider
+    :param external_id: the oauth id
+    :rtype bool
+    """
+
     if password and not email:
-        raise AssertionError('If a password is provided, an email must also '
-                             'be provided.')
+        raise AssertionError('If a password is provided, an email must also be provided.')
 
     query_list = []
+
     if email:
         email = email.strip().lower()
         query_list.append(Q('emails', 'eq', email) | Q('username', 'eq', email))
+
     if password:
         password = password.strip()
         try:
@@ -134,8 +145,13 @@ def get_user(email=None, password=None, verification_key=None):
         if user and not user.check_password(password):
             return False
         return user
+
     if verification_key:
         query_list.append(Q('verification_key', 'eq', verification_key))
+
+    if external_id_provider and external_id:
+        query_list.append(Q('external_identity.{}.{}'.format(external_id_provider, external_id), 'eq', 'VERIFIED'))
+
     try:
         query = query_list[0]
         for query_part in query_list[1:]:
@@ -224,7 +240,8 @@ class User(GuidStoredObject, AddonModelMixin):
         'researchGate': u'https://researchgate.net/profile/{}',
         'academiaInstitution': u'https://{}',
         'academiaProfileID': u'.academia.edu/{}',
-        'baiduScholar': u'http://xueshu.baidu.com/scholarID/{}'
+        'baiduScholar': u'http://xueshu.baidu.com/scholarID/{}',
+        'ssrn': u'http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id={}',
     }
 
     # This is a GuidStoredObject, so this will be a GUID.
@@ -350,6 +367,16 @@ class User(GuidStoredObject, AddonModelMixin):
     family_name = fields.StringField()
     suffix = fields.StringField()
 
+    # identity for user logged in through external idp
+    external_identity = fields.DictionaryField()
+    # Format: {
+    #   <external_id_provider>: {
+    #       <external_id>: <status from ('VERIFIED, 'CREATE', 'LINK')>,
+    #       ...
+    #   },
+    #   ...
+    # }
+
     # Employment history
     jobs = fields.DictionaryField(list=True, validate=validate_history_item)
     # Format: {
@@ -384,9 +411,6 @@ class User(GuidStoredObject, AddonModelMixin):
     #     'profileWebsites': <list of profile websites>
     #     'twitter': <twitter id>,
     # }
-
-    # hashed password used to authenticate to Piwik
-    piwik_token = fields.StringField()
 
     # date the user last sent a request
     date_last_login = fields.DateTimeField()
@@ -484,16 +508,18 @@ class User(GuidStoredObject, AddonModelMixin):
         return user
 
     @classmethod
-    def create_unconfirmed(cls, username, password, fullname, do_confirm=True,
-                           campaign=None):
+    def create_unconfirmed(cls, username, password, fullname, external_identity=None,
+                           do_confirm=True, campaign=None):
         """Create a new user who has begun registration but needs to verify
         their primary email address (username).
         """
         user = cls.create(username, password, fullname)
-        user.add_unconfirmed_email(username)
+        user.add_unconfirmed_email(username, external_identity=external_identity)
         user.is_registered = False
+        if external_identity:
+            user.external_identity.update(external_identity)
         if campaign:
-            # needed to prevent cirular import
+            # needed to prevent circular import
             from framework.auth.campaigns import system_tag_for_campaign  # skipci
             user.system_tags.append(system_tag_for_campaign(campaign))
         return user
@@ -730,8 +756,8 @@ class User(GuidStoredObject, AddonModelMixin):
             issues.append('Password cannot be the same as your email address')
         if not raw_old_password or not raw_new_password or not raw_confirm_password:
             issues.append('Passwords cannot be blank')
-        elif len(raw_new_password) < 6:
-            issues.append('Password should be at least six characters')
+        elif len(raw_new_password) < 8:
+            issues.append('Password should be at least eight characters')
         elif len(raw_new_password) > 256:
             issues.append('Password should not be longer than 256 characters')
 
@@ -754,7 +780,7 @@ class User(GuidStoredObject, AddonModelMixin):
         self.email_verifications[token]['expiration'] = expiration
         return expiration
 
-    def add_unconfirmed_email(self, email, expiration=None):
+    def add_unconfirmed_email(self, email, expiration=None, external_identity=None):
         """Add an email verification token for a given email."""
 
         # TODO: This is technically not compliant with RFC 822, which requires
@@ -764,7 +790,7 @@ class User(GuidStoredObject, AddonModelMixin):
         #       ref: https://tools.ietf.org/html/rfc822#section-6
         email = email.lower().strip()
 
-        if email in self.emails:
+        if not external_identity and email in self.emails:
             raise ValueError('Email already confirmed to this user.')
 
         utils.validate_email(email)
@@ -780,8 +806,11 @@ class User(GuidStoredObject, AddonModelMixin):
             self.email_verifications = {}
 
         # confirmed used to check if link has been clicked
-        self.email_verifications[token] = {'email': email,
-                                           'confirmed': False}
+        self.email_verifications[token] = {
+            'email': email,
+            'confirmed': False,
+            'external_identity': external_identity
+        }
         self._set_email_token_expiration(token, expiration=expiration)
         return token
 
@@ -841,7 +870,7 @@ class User(GuidStoredObject, AddonModelMixin):
                 return token
         raise KeyError('No confirmation token for email "{0}"'.format(email))
 
-    def get_confirmation_url(self, email, external=True, force=False):
+    def get_confirmation_url(self, email, external=True, force=False, external_id_provider=None):
         """Return the confirmation url for a given email.
 
         :raises: ExpiredTokenError if trying to access a token that is expired.
@@ -849,7 +878,11 @@ class User(GuidStoredObject, AddonModelMixin):
         """
         base = settings.DOMAIN if external else '/'
         token = self.get_confirmation_token(email, force=force)
-        return '{0}confirm/{1}/{2}/'.format(base, self._primary_key, token)
+
+        if external_id_provider:
+            return '{0}confirm/external/{1}/{2}/'.format(base, self._primary_key, token)
+        else:
+            return '{0}confirm/{1}/{2}/'.format(base, self._primary_key, token)
 
     def get_unconfirmed_email_for_token(self, token):
         """Return email if valid.
@@ -1115,6 +1148,8 @@ class User(GuidStoredObject, AddonModelMixin):
                 pass
             else:
                 raise
+        except mailchimp_utils.mailchimp.EmailNotExistsError:
+            pass
         self.is_disabled = True
 
     @property
@@ -1180,14 +1215,11 @@ class User(GuidStoredObject, AddonModelMixin):
     def save(self, *args, **kwargs):
         # TODO: Update mailchimp subscription on username change
         # Avoid circular import
-        from framework.analytics import tasks as piwik_tasks
         self.username = self.username.lower().strip() if self.username else None
         ret = super(User, self).save(*args, **kwargs)
         if self.SEARCH_UPDATE_FIELDS.intersection(ret) and self.is_confirmed:
             self.update_search()
             self.update_search_nodes_contributors()
-        if settings.PIWIK_HOST and not self.piwik_token:
-            piwik_tasks.update_user(self._id)
         return ret
 
     def update_search(self):
@@ -1373,6 +1405,21 @@ class User(GuidStoredObject, AddonModelMixin):
             self.affiliated_institutions.append(institution)
         user._affiliated_institutions = []
 
+        for service in user.external_identity:
+            for service_id in user.external_identity[service].iterkeys():
+                if not (service_id in self.external_identity.get(service, '') and self.external_identity[service][service_id] == 'VERIFIED'):
+                    # Prevent 'CREATE', merging user has already been created.
+                    status = 'VERIFIED' if user.external_identity[service][service_id] == 'VERIFIED' else 'LINK'
+                    if self.external_identity.get(service):
+                        self.external_identity[service].update(
+                            {service_id: status}
+                        )
+                    else:
+                        self.external_identity[service] = {
+                            service_id: status
+                        }
+        user.external_identity = {}
+
         # FOREIGN FIELDS
         for watched in user.watched:
             if watched not in self.watched:
@@ -1471,12 +1518,12 @@ class User(GuidStoredObject, AddonModelMixin):
         or just their primary keys
         """
         if primary_keys:
-            projects_contributed_to = set(self.contributed.get_keys())
-            other_projects_primary_keys = set(other_user.contributed.get_keys())
+            projects_contributed_to = set(self.contributor_to.get_keys())
+            other_projects_primary_keys = set(other_user.contributor_to.get_keys())
             return projects_contributed_to.intersection(other_projects_primary_keys)
         else:
-            projects_contributed_to = set(self.contributed)
-            return projects_contributed_to.intersection(other_user.contributed)
+            projects_contributed_to = set(self.contributor_to)
+            return projects_contributed_to.intersection(other_user.contributor_to)
 
     def n_projects_in_common(self, other_user):
         """Returns number of "shared projects" (projects that both users are contributors for)"""

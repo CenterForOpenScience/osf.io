@@ -10,8 +10,8 @@ from framework.auth import cas
 from framework.auth import signing
 from framework.flask import redirect
 from framework.exceptions import HTTPError
-
 from .core import Auth
+from .core import User
 
 
 def collect_auth(func):
@@ -20,6 +20,26 @@ def collect_auth(func):
     def wrapped(*args, **kwargs):
         kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
         return func(*args, **kwargs)
+
+    return wrapped
+
+
+def must_be_confirmed(func):
+
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+
+        user = User.load(kwargs['uid'])
+        if user is not None:
+            if user.is_confirmed:
+                return func(*args, **kwargs)
+            else:
+                raise HTTPError(httplib.BAD_REQUEST, data={
+                    'message_short': 'Account not yet confirmed',
+                    'message_long': 'The profile page could not be displayed as the user has not confirmed the account.'
+                })
+        else:
+            raise HTTPError(httplib.NOT_FOUND)
 
     return wrapped
 

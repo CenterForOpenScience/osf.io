@@ -13,6 +13,40 @@
             </p>
         </div>
     %endif
+
+    %if campaign == "erpc":
+        <div class="text-center m-t-lg">
+            <h3>Election Research Preacceptance Competition </h3>
+            <hr>
+            <p>
+                Please login to the Open Science Framework or create a free account to continue.
+            </p>
+        </div>
+    %endif
+
+##     TODO: check with MattF
+##     %if campaign == "institution" and enable_institutions:
+##         <div class="text-center m-t-lg">
+##             <h3>OSF for Institutions </h3>
+##             <hr>
+##             <p>
+##                 If your institution has partnered with the Open Science Framework, please
+##                 select its name below and sign in with your institutional credentials.
+##             </p>
+##             <p> If you do not currently have an OSF account, this will create one. By creating an account you agree to our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms</a> and that you have read our <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>, including our information on <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies">Cookie Use</a>.</p>
+##         </div>
+##     %endif
+
+        %if campaign == "osf-preprints":
+        <div class="text-center m-t-lg">
+            <h3>OSF Preprint Service</h3>
+            <hr>
+            <p>
+                Please login to the Open Science Framework or create a free account to contribute to OSF Preprints.
+            </p>
+        </div>
+    %endif
+
     <div class="row m-t-xl">
     %if campaign != "institution" or not enable_institutions:
         <div id="signUpScope" class="col-sm-8 col-sm-offset-2 col-md-6 col-md-offset-3 signup-form p-b-md m-b-m bg-color-light">
@@ -129,8 +163,8 @@
 
                         <div>
                             <!-- ko if: passwordFeedback() -->
-                            <p class="help-block osf-box-lt p-xs" data-bind="validationMessage: password" style="display: none;"></p>
-                            <p class="help-block osf-box-lt " data-bind="css : { 'p-xs': passwordFeedback().warning }, visible: typedPassword().length > 0, text: passwordFeedback().warning"></p>
+                                <p class="help-block osf-box-lt p-xs" data-bind="validationMessage: password" style="display: none;"></p>
+                                <p class="help-block osf-box-lt " data-bind="css : { 'p-xs': passwordFeedback().warning }, visible: typedPassword().length > 0, text: passwordFeedback().warning"></p>
                             <!-- /ko -->
                         </div>
                     </div>

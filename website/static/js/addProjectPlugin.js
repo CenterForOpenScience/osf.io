@@ -230,7 +230,9 @@ var AddProject = {
                                     onchange : function() {
                                         ctrl.newProjectInheritContribs(this.checked);
                                     }
-                                }), ' Add contributors from ', m('b', options.parentTitle)
+                                }), ' Add contributors from ', m('b', options.parentTitle),
+                                m('br'),
+                                m('i', ' Admins of ', m('b', options.parentTitle), ' will have read access to this component.')
                             )
                         ]) : '',
                         m('.text-muted.pointer', { onclick : function(){

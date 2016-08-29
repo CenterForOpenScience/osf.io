@@ -25,7 +25,6 @@ from django.test import TestCase as DjangoTestCase
 
 
 from api.base.wsgi import application as api_django_app
-from admin.base.wsgi import application as admin_django_app
 from framework.mongo import set_up_storage
 from framework.auth import User
 from framework.auth.core import Auth
@@ -129,8 +128,6 @@ class DbTestCase(unittest.TestCase):
 
         cls._original_db_name = settings.DB_NAME
         settings.DB_NAME = cls.DB_NAME
-        cls._original_piwik_host = settings.PIWIK_HOST
-        settings.PIWIK_HOST = None
         cls._original_enable_email_subscriptions = settings.ENABLE_EMAIL_SUBSCRIPTIONS
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
 
@@ -156,7 +153,6 @@ class DbTestCase(unittest.TestCase):
 
         teardown_database(database=database_proxy._get_current_object())
         settings.DB_NAME = cls._original_db_name
-        settings.PIWIK_HOST = cls._original_piwik_host
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = cls._original_enable_email_subscriptions
         settings.BCRYPT_LOG_ROUNDS = cls._original_bcrypt_log_rounds
 
