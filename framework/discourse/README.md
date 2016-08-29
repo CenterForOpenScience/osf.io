@@ -21,7 +21,8 @@ Run `tce-load -wi bash`, `tce-load -wi nano` (or make sure an editor you like is
 <pre>sudo -s
 mkdir /var/discourse
 git clone https://github.com/discourse/discourse_docker.git /var/discourse
-cd /var/discourse</pre>
+cd /var/discourse
+</pre>
 
 ###Basic Configuration and Running Discourse
 The files in /var/discourse/containers/ describe different Discourse configurations. Copy the app.yml file from the directory of this readme into that folder.
