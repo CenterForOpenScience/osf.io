@@ -12,6 +12,9 @@ from framework.auth.oauth_scopes import CoreScopes
 class TaxonomyList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     '''[PLOS taxonomy of subjects](http://journals.plos.org/plosone/browse/) in flattened form. *Read-only*
 
+    ##Note
+    **This API endpoint is under active development, and is subject to change in the future**
+
     ##Taxonomy Attributes
 
         name           type                   description
@@ -56,6 +59,9 @@ class TaxonomyList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
 
 class TaxonomyDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     '''[PLOS taxonomy subject](http://journals.plos.org/plosone/browse/) instance. *Read-only*
+
+    ##Note
+    **This API endpoint is under active development, and is subject to change in the future**
 
     ##Taxonomy Attributes
 
