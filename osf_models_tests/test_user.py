@@ -364,7 +364,7 @@ class TestOSFUser:
         node2 = NodeFactory()
         # TODO: Use Node.add_contributor when it's implemented
         Contributor.objects.create(user=user, node=node)
-        projects_contributed_to = Node.objects.filter(contributors=user)
+        projects_contributed_to = Node.objects.filter(_contributors=user)
         assert list(user.contributed) == list(projects_contributed_to)
         assert node2 not in user.contributed
 
