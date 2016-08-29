@@ -2,10 +2,12 @@
 import os
 import httplib as http
 
-from flask import request
+from flask import request, Response
 from flask import send_from_directory
 
+import requests
 from geoip import geolite2
+from furl import furl
 
 from framework import status
 from framework import sentry
@@ -54,8 +56,9 @@ def get_globals():
     OSFWebRenderer.
     """
     user = _get_current_user()
-    user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path} for inst in user.affiliated_institutions] if user else []
-    all_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path} for inst in Institution.find().sort('name')]
+
+    user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in user.affiliated_institutions] if user else []
+    all_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in Institution.find().sort('name')]
     location = geolite2.lookup(request.remote_addr) if request.remote_addr else None
     if request.host_url != settings.DOMAIN:
         try:
@@ -172,6 +175,25 @@ def robots():
     )
 
 
+def external_ember_app(_=None):
+    """Serve the contents of the ember application"""
+    external_app_url = None
+
+    for k in settings.EXTERNAL_EMBER_APPS.keys():
+        if request.path.startswith(k):
+            external_app_url = settings.EXTERNAL_EMBER_APPS[k]
+            break
+
+    if not external_app_url:
+        raise HTTPError(http.NOT_FOUND)
+
+    url = furl(external_app_url).add(path=request.path)
+    resp = requests.get(url, headers={'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'})
+    excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
+    headers = [(name, value) for (name, value) in resp.raw.headers.items() if name.lower() not in excluded_headers]
+    return Response(resp.content, resp.status_code, headers)
+
+
 def goodbye():
     # Redirect to dashboard if logged in
     if _get_current_user():
@@ -232,6 +254,18 @@ def make_url_map(app):
         Rule('/favicon.ico', 'get', favicon, json_renderer),
         Rule('/robots.txt', 'get', robots, json_renderer),
     ])
+
+    if settings.USE_EXTERNAL_EMBER:
+        # Routes that serve up the Ember application. Hide behind feature flag.
+        rules = []
+        for prefix in settings.EXTERNAL_EMBER_APPS.keys():
+            rules += [
+                prefix,
+                '{}<path:_>'.format(prefix),
+            ]
+        process_rules(app, [
+            Rule(rules, 'get', external_ember_app, json_renderer),
+        ])
 
     ### Base ###
 
@@ -330,7 +364,10 @@ def make_url_map(app):
         ),
 
         Rule(
-            '/prereg/',
+            [
+                '/prereg/',
+                '/erpc/',
+            ],
             'get',
             prereg.prereg_landing_page,
             OsfWebRenderer('prereg_landing_page.mako', trust=False)
@@ -351,7 +388,7 @@ def make_url_map(app):
         ),
 
         Rule(
-            '/api/v1/prereg/draft_registrations/',
+            '/api/v1/<campaign>/draft_registrations/',
             'get',
             prereg.prereg_draft_registrations,
             json_renderer,
@@ -478,6 +515,14 @@ def make_url_map(app):
             notemplate
         ),
 
+        # confirm email for login through external identity provider
+        Rule(
+            '/confirm/external/<uid>/<token>/',
+            'get',
+            auth_views.external_login_confirm_email_get,
+            notemplate
+        ),
+
         # reset password get
         Rule(
             '/resetpassword/<verification_key>/',
@@ -509,6 +554,22 @@ def make_url_map(app):
             auth_views.resend_confirmation_post,
             OsfWebRenderer('resend.mako', render_mako_string, trust=False)
 
+        ),
+
+        # oauth user email get
+        Rule(
+            '/external-login/email',
+            'get',
+            auth_views.external_login_email_get,
+            OsfWebRenderer('external_login_email.mako', render_mako_string, trust=False)
+        ),
+
+        # oauth user email post
+        Rule(
+            '/external-login/email',
+            'post',
+            auth_views.external_login_email_post,
+            OsfWebRenderer('external_login_email.mako', render_mako_string, trust=False)
         ),
 
         # user sign up page
@@ -690,7 +751,6 @@ def make_url_map(app):
             OsfWebRenderer('profile/personal_tokens_detail.mako', trust=False)
         ),
 
-
         # TODO: Uncomment once outstanding issues with this feature are addressed
         # Rule(
         #     '/@<twitter_handle>/',
@@ -732,6 +792,13 @@ def make_url_map(app):
             '/profile/deactivate/',
             'post',
             profile_views.request_deactivation,
+            json_renderer,
+        ),
+
+        Rule(
+            '/profile/logins/',
+            'patch',
+            profile_views.delete_external_identity,
             json_renderer,
         ),
 

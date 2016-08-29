@@ -147,7 +147,7 @@ def _render_conference_node(node, idx, conf):
                 Q('is_file', 'eq', True)
             ).limit(1)
         ).wrapped()
-        download_count = record.get_download_count()
+        view_and_download = record.get_download_count() + record.visit
 
         download_url = node.web_url_for(
             'addon_view_or_download_file',
@@ -158,7 +158,7 @@ def _render_conference_node(node, idx, conf):
         )
     except StopIteration:
         download_url = ''
-        download_count = 0
+        view_and_download = 0
 
     author = node.visible_contributors[0]
     tags = [tag._id for tag in node.tags]
@@ -170,7 +170,7 @@ def _render_conference_node(node, idx, conf):
         'author': author.family_name if author.family_name else author.fullname,
         'authorUrl': node.creator.url,
         'category': conf.field_names['submission1'] if conf.field_names['submission1'] in node.system_tags else conf.field_names['submission2'],
-        'download': download_count,
+        'download': view_and_download,
         'downloadUrl': download_url,
         'dateCreated': node.date_created.isoformat(),
         'confName': conf.name,
@@ -231,6 +231,8 @@ def conference_submissions(**kwargs):
     submissions = []
     #  TODO: Revisit this loop, there has to be a way to optimize it
     for conf in Conference.find():
+        if (hasattr(conf, 'is_meeting') and (conf.is_meeting is False)):
+            break
         # For efficiency, we filter by tag first, then node
         # instead of doing a single Node query
         projects = set()
@@ -258,6 +260,8 @@ def conference_view(**kwargs):
     meetings = []
     for conf in Conference.find():
         if conf.num_submissions < settings.CONFERENCE_MIN_COUNT:
+            continue
+        if (hasattr(conf, 'is_meeting') and (conf.is_meeting is False)):
             continue
         meetings.append({
             'name': conf.name,

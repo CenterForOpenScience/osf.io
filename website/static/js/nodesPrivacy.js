@@ -30,7 +30,9 @@ var MESSAGES = {
         nodesPrivate: 'The following projects and components will be made <b>private</b>.',
         nodesNotChangedWarning: 'No privacy settings were changed. Go back to make a change.',
         tooManyNodesWarning: 'You can only change the privacy of 100 projects and components at a time.  Please go back and limit your selection.'
-    }
+    },
+    preprintPrivateWarning: 'The project you are attempting to make private currently represents a preprint.' +
+    '<p><strong>Making this project private will remove this preprint from circulation.</strong></p>'
 };
 
 function _flattenNodeTree(nodeTree) {
@@ -109,6 +111,7 @@ var NodesPrivacyViewModel = function(node, onSetPrivacy) {
     self.parentIsEmbargoed = node.is_embargoed;
     self.parentIsPublic = node.is_public;
     self.parentNodeType = node.node_type;
+    self.isPreprint = node.is_preprint;
     self.treebeardUrl = window.contextVars.node.urls.api  + 'tree/';
     self.nodesOriginal = {};
     self.nodesChanged = ko.observable();
@@ -155,6 +158,10 @@ var NodesPrivacyViewModel = function(node, onSetPrivacy) {
     self.message = ko.computed(function() {
         if (self.page() === self.WARNING &&  self.parentIsEmbargoed) {
             return MESSAGES.makeEmbargoPublicWarning;
+        }
+
+        if (self.page() === self.WARNING &&  self.isPreprint) {
+            return MESSAGES.preprintPrivateWarning + MESSAGES.makeProjectPrivateWarning;
         }
 
         return {

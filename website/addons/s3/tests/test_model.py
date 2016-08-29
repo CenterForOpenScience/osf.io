@@ -61,12 +61,6 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase)
 
     ## Overrides ##
 
-    def _node_settings_class_kwargs(self, node, user_settings):
-        return {
-            'user_settings': self.user_settings,
-            'owner': self.node
-        }
-
     def test_serialize_credentials(self):
         self.user_settings.external_accounts[0].oauth_key = 'key-11'
         self.user_settings.external_accounts[0].oauth_secret = 'secret-15'
@@ -77,7 +71,12 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase)
                     'secret_key': self.node_settings.external_account.oauth_secret}
         assert_equal(credentials, expected)
 
-    def test_set_folder(self):
+
+    @mock.patch('website.addons.s3.model.bucket_exists')
+    @mock.patch('website.addons.s3.model.get_bucket_location_or_error')
+    def test_set_folder(self, mock_location, mock_exists):
+        mock_exists.return_value = True
+        mock_location.return_value = ''
         folder_id = '1234567890'
         self.node_settings.set_folder(folder_id, auth=Auth(self.user))
         self.node_settings.save()

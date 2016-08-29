@@ -6,12 +6,14 @@ from rest_framework.response import Response
 from rest_framework import generics
 from rest_framework import status
 from rest_framework import permissions as drf_permissions
+from rest_framework.exceptions import ValidationError, NotFound
 
 from framework.auth.oauth_scopes import CoreScopes
 
 from rest_framework.mixins import ListModelMixin
 from api.base import permissions as base_permissions
 from api.base.exceptions import RelationshipPostMakesNoChanges
+from api.base.filters import ListFilterMixin
 
 from api.users.serializers import UserSerializer
 from api.base.parsers import JSONAPIRelationshipParser
@@ -21,6 +23,8 @@ from api.base.serializers import LinkedNodesRelationshipSerializer
 from api.base import utils
 from api.nodes.permissions import ReadOnlyIfRegistration
 from api.nodes.permissions import ContributorOrPublicForRelationshipPointers
+from api.base.utils import is_bulk_request, get_user_auth
+
 
 CACHE = weakref.WeakKeyDictionary()
 
@@ -581,6 +585,7 @@ def root(request, format=None):
             'institutions': utils.absolute_reverse('institutions:institution-list'),
             'licenses': utils.absolute_reverse('licenses:license-list'),
             'metaschemas': utils.absolute_reverse('metaschemas:metaschema-list'),
+            'addons': utils.absolute_reverse('addons:addon-list'),
         }
     }
 
@@ -596,3 +601,73 @@ def error_404(request, format=None, *args, **kwargs):
         status=404,
         content_type='application/vnd.api+json; application/json'
     )
+
+
+class BaseContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView):
+
+    # overrides RetrieveAPIView
+    def get_object(self):
+        node = self.get_node()
+        user = self.get_user()
+        # May raise a permission denied
+        self.check_object_permissions(self.request, user)
+        if user not in node.contributors:
+            raise NotFound('{} cannot be found in the list of contributors.'.format(user))
+        user.permission = node.get_permissions(user)[-1]
+        user.bibliographic = node.get_visible(user)
+        user.node_id = node._id
+        return user
+
+class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
+
+    def get_default_queryset(self):
+        node = self.get_node()
+        visible_contributors = set(node.visible_contributor_ids)
+        contributors = []
+        index = 0
+        for contributor in node.contributors:
+            contributor.index = index
+            contributor.bibliographic = contributor._id in visible_contributors
+            contributor.permission = node.get_permissions(contributor)[-1]
+            contributor.node_id = node._id
+            contributors.append(contributor)
+            index += 1
+        return contributors
+
+    def get_queryset(self):
+        queryset = self.get_queryset_from_request()
+        # If bulk request, queryset only contains contributors in request
+        if is_bulk_request(self.request):
+            contrib_ids = []
+            for item in self.request.data:
+                try:
+                    contrib_ids.append(item['id'].split('-')[1])
+                except AttributeError:
+                    raise ValidationError('Contributor identifier not provided.')
+                except IndexError:
+                    raise ValidationError('Contributor identifier incorrectly formatted.')
+            queryset[:] = [contrib for contrib in queryset if contrib._id in contrib_ids]
+        return queryset
+
+class BaseNodeLinksDetail(JSONAPIBaseView, generics.RetrieveAPIView):
+
+    def get_queryset(self):
+        auth = get_user_auth(self.request)
+        return sorted([
+            pointer.node for pointer in
+            self.get_node().nodes_pointer
+            if not pointer.node.is_deleted and not pointer.node.is_collection and
+            pointer.node.can_view(auth) and not pointer.node.is_retracted
+        ], key=lambda n: n.date_modified, reverse=True)
+
+
+class BaseNodeLinksList(JSONAPIBaseView, generics.ListAPIView):
+
+    def get_queryset(self):
+        auth = get_user_auth(self.request)
+        return sorted([
+            pointer.node for pointer in
+            self.get_node().nodes_pointer
+            if not pointer.node.is_deleted and not pointer.node.is_collection and
+            pointer.node.can_view(auth) and not pointer.node.is_retracted
+        ], key=lambda n: n.date_modified, reverse=True)
