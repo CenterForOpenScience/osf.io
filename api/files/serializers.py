@@ -208,7 +208,7 @@ class FileSerializer(JSONAPISerializer):
             'md5': metadata.get('md5', None),
             'sha256': metadata.get('sha256', None),
         }
-        if obj.provider == 'osfstorage':
+        if obj.provider == 'osfstorage' and obj.is_file:
             extras['downloads'] = obj.get_download_count()
         return extras
 
