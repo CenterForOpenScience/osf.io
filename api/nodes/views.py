@@ -622,7 +622,7 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
     required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
     model_class = User
 
-    throttle_classes = AddContributorThrottle
+    throttle_classes = (AddContributorThrottle,)
 
     pagination_class = NodeContributorPagination
     serializer_class = NodeContributorsSerializer

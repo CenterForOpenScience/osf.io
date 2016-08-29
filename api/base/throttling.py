@@ -1,4 +1,4 @@
-from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
+from rest_framework.throttling import UserRateThrottle, AnonRateThrottle, SimpleRateThrottle
 
 
 class CookieAuthThrottle(AnonRateThrottle):
@@ -17,7 +17,9 @@ class AddContributorThrottle(UserRateThrottle):
     rate = '10/second'
 
     def allow_request(self, request, view):
-        return request.method == 'POST' and request.query_params.get('send_email') is not False
+        if request.method == 'POST' and request.query_params.get('send_email') != 'false':
+            return False
+        return True
 
     def wait(self):
         return 0.1
@@ -25,9 +27,9 @@ class AddContributorThrottle(UserRateThrottle):
 
 class TestUserThrottle(UserRateThrottle):
 
-    rate = '3/hour'
+    rate = '2/hour'
 
 
 class TestAnonRateThrottle(AnonRateThrottle):
 
-    rate = '2/hour'
+    rate = '1/hour'
