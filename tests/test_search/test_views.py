@@ -2,6 +2,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 from nose.tools import *  # noqa PEP8 asserts
+from nose_parameterized import parameterized
 
 from tests import factories
 from tests.test_search import SearchTestCase
@@ -16,19 +17,33 @@ class TestSearchPage(SearchTestCase):
         assert_equal(res.status_code, 200)
 
 
-class TestProjectSearchAPI(SearchTestCase):
+PRIVATE, PUBLIC = range(2)
+PROJECT, REGISTRATION = range(2)
+ANON, AUTH, CONTRIB, OWNER = range(4)
+Y, N = True, False
+
+cases = [
+    (PRIVATE, PROJECT, ANON, N),
+    (PUBLIC, PROJECT, ANON, Y),
+]
+
+class TestSearchSearchAPI(SearchTestCase):
+    """Exercises the website.search.views.search_search view.
+    """
 
     def results(self, query):
         url = api_url_for('search_search', type='project')
         return self.app.get(url, {'q': query}).json['results']
 
+    fixture_funcs = {
+        PROJECT: factories.ProjectFactory,
+    }
 
-    def test_empty_results_are_empty(self):
-        assert self.results('foo') == []
-
-    def test_interesting_results_are_interesting(self):
-        factories.ProjectFactory(title='Foo Bar', is_public=True)
-        assert [x['title'] for x in self.results('foo')] == ['Foo Bar']
+    @parameterized.expand(cases)
+    def test(self, status, type_, role, included):
+        self.fixture_funcs[type_](title='Flim Flammity', is_public=status is PUBLIC)
+        expected = ['Flim Flammity'] if included else []
+        assert_equal([x['title'] for x in self.results('flim')], expected)
 
 
 class TestUserSearchAPI(SearchTestCase):
