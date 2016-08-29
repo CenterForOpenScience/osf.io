@@ -402,6 +402,27 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Malformed request.')
 
+    def test_add_contributor_incorrect_key_in_relationships(self):
+        data = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'bibliographic': True
+                },
+                'relationships': {
+                    'incorrect': {
+                        'data': {
+                            'id': self.user_two._id,
+                            'type': 'users'
+                        }
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Request relationships key "incorrect" does not match target_type "users"')
+
     def test_add_contributor_no_data_in_relationships(self):
         data = {
             'data': {

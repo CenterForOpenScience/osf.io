@@ -42,6 +42,11 @@ class MeetingForm(forms.Form):
         required=False,
         widget=forms.TextInput(attrs={'size': '60'}),
     )
+    homepage_link_text = forms.CharField(
+        label='Homepage link text (Default: "Conference homepage")',
+        required=False,
+        widget=forms.TextInput(attrs={'size': '60'}),
+    )
     location = forms.CharField(
         label='Location',
         required=False,
@@ -119,9 +124,6 @@ class MeetingForm(forms.Form):
     mail_attachment = forms.CharField(
         label='Mail attachment message',
         widget=forms.TextInput(attrs={'size': '60'}),
-    )
-    homepage_link_text = forms.CharField(
-        label='Homepage link text (Default: "Conference homepage")'
     )
 
     def clean_start_date(self):

@@ -384,6 +384,29 @@ class TestUser(OsfTestCase):
             'primary email has not been added to emails list'
         )
 
+    def test_create_unconfirmed_from_external_service(self):
+        name, email = fake.name(), fake.email()
+        external_identity = {
+            'ORCID': {
+                fake.ean(): 'CREATE'
+            }
+        }
+        user = User.create_unconfirmed(
+            username=email,
+            password=str(fake.password()),
+            fullname=name,
+            external_identity=external_identity,
+        )
+        user.save()
+        assert_false(user.is_registered)
+        assert_equal(len(user.email_verifications.keys()), 1)
+        assert_equal(user.email_verifications.popitem()[1]['external_identity'], external_identity)
+        assert_equal(
+            len(user.emails),
+            0,
+            'primary email has not been added to emails list'
+        )
+
     def test_create_confirmed(self):
         name, email = fake.name(), fake.email()
         user = User.create_confirmed(
@@ -478,6 +501,14 @@ class TestUser(OsfTestCase):
         u.add_unconfirmed_email('foo@bar.com')
         assert_equal(u.get_confirmation_url('foo@bar.com'),
                 '{0}confirm/{1}/{2}/'.format(settings.DOMAIN, u._primary_key, 'abcde'))
+
+    @mock.patch('website.security.random_string')
+    def test_get_confirmation_url_for_external_service(self, random_string):
+        random_string.return_value = 'abcde'
+        u = UnconfirmedUserFactory()
+        assert_equal(u.get_confirmation_url(u.username, external_id_provider='service'),
+                '{0}confirm/external/{1}/{2}/'.format(settings.DOMAIN, u._id, 'abcde'))
+
 
     def test_get_confirmation_url_when_token_is_expired_raises_error(self):
         u = UserFactory()
@@ -635,7 +666,7 @@ class TestUser(OsfTestCase):
             'password',
             '12345',
             '12345',
-            'Password should be at least six characters',
+            'Password should be at least eight characters',
         )
 
     def test_change_password_invalid_confirm_password(self):
@@ -1566,6 +1597,20 @@ class TestNode(OsfTestCase):
     def test_validate_categories(self):
         with assert_raises(ValidationError):
             Node(category='invalid').save()  # an invalid category
+
+    def test_validate_bad_doi(self):
+        with assert_raises(ValidationError):
+            Node(preprint_doi='nope').save()
+        with assert_raises(ValidationError):
+            Node(preprint_doi='https://dx.doi.org/10.123.456').save()  # should save the bare DOI, not a URL
+        with assert_raises(ValidationError):
+            Node(preprint_doi='doi:10.10.1038/nwooo1170').save()  # should save without doi: prefix
+
+    def test_validate_good_doi(self):
+        doi = '10.10.1038/nwooo1170'
+        self.node.preprint_doi = doi
+        self.node.save()
+        assert_equal(self.node.preprint_doi, doi)
 
     def test_web_url_for(self):
         result = self.parent.web_url_for('view_project')

@@ -328,7 +328,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
                     'content': 'This is a comment'
                 },
                 'relationships': {
-                    'target': {
+                    'nodes': {
                         'data': {
                             'type': 'nodes',
                             'id': target_id
@@ -465,7 +465,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
                     'content': 'This is a comment'
                 },
                 'relationships': {
-                    'target': {
+                    'nodes': {
                         'data': {
                             'type': 'nodes',
                             'id': ''
@@ -495,7 +495,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
                     'content': 'This is a comment'
                 },
                 'relationships': {
-                    'target': {
+                    'Invalid': {
                         'data': {
                             'type': 'Invalid',
                             'id': self.private_project._id
@@ -517,7 +517,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
                     'content': 'This is a comment'
                 },
                 'relationships': {
-                    'target': {
+                    'nodes': {
                         'data': {
                             'id': self.private_project._id
                         }
@@ -538,7 +538,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
                     'content': 'This is a comment'
                 },
                 'relationships': {
-                    'target': {
+                    'nodes': {
                         'data': {
                             'type': 'nodes',
                             'id': self.private_project._id
@@ -561,7 +561,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
                     'content': 'This is a comment'
                 },
                 'relationships': {
-                    'target': {
+                    'nodes': {
                         'data': {
                             'type': 'nodes',
                             'id': self.private_project._id
@@ -583,7 +583,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
                     'content': ''
                 },
                 'relationships': {
-                    'target': {
+                    'nodes': {
                         'data': {
                             'type': 'nodes',
                             'id': self.private_project._id
@@ -606,7 +606,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
                     'content': '   '
                 },
                 'relationships': {
-                    'target': {
+                    'nodes': {
                         'data': {
                             'type': 'nodes',
                             'id': self.private_project._id
@@ -628,7 +628,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
                     'content': '<em>Cool</em> <strong>Comment</strong>'
                 },
                 'relationships': {
-                    'target': {
+                    'nodes': {
                         'data': {
                             'type': 'nodes',
                             'id': self.private_project._id
@@ -650,7 +650,7 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
                     'content': ('c' * (osf_settings.COMMENT_MAXLENGTH + 3))
                 },
                 'relationships': {
-                    'target': {
+                    'nodes': {
                         'data': {
                             'type': 'nodes',
                             'id': self.private_project._id
@@ -682,7 +682,7 @@ class TestFileCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
                     'content': 'This is a comment'
                 },
                 'relationships': {
-                    'target': {
+                    'files': {
                         'data': {
                             'type': 'files',
                             'id': target_id
@@ -742,7 +742,7 @@ class TestFileCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
                     'content': 'This is a comment'
                 },
                 'relationships': {
-                    'target': {
+                    'Invalid': {
                         'data': {
                             'type': 'Invalid',
                             'id': self.test_file.get_guid()._id
@@ -766,7 +766,7 @@ class TestWikiCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
                     'content': 'This is a comment'
                 },
                 'relationships': {
-                    'target': {
+                    'wiki': {
                         'data': {
                             'type': 'wiki',
                             'id': target_id
@@ -826,7 +826,7 @@ class TestWikiCommentCreate(NodeCommentsCreateMixin, ApiTestCase):
                     'content': 'This is a comment'
                 },
                 'relationships': {
-                    'target': {
+                    'Invalid': {
                         'data': {
                             'type': 'Invalid',
                             'id': self.wiki._id
@@ -850,7 +850,7 @@ class TestCommentRepliesCreate(NodeCommentsCreateMixin, ApiTestCase):
                     'content': 'This is a comment'
                 },
                 'relationships': {
-                    'target': {
+                    'comments': {
                         'data': {
                             'type': 'comments',
                             'id': comment_id

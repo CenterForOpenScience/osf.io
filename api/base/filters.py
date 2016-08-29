@@ -218,7 +218,24 @@ class FilterMixin(object):
                                 'source_field_name': source_field_name
                             }
                         })
-
+                    elif source_field_name == 'is_preprint':
+                        # TODO: Make this also include _is_preprint_orphan when value is false [#PREP-129]
+                        op = 'ne' if utils.is_truthy(value) else 'eq'
+                        query.get(key).update({
+                            field_name: {
+                                'op': op,
+                                'value': None,
+                                'source_field_name': 'preprint_file'
+                            }
+                        })
+                        if utils.is_truthy(value):
+                            query['_is_preprint_orphan'] = {
+                                field_name: {
+                                    'op': 'ne',
+                                    'value': True,
+                                    'source_field_name': '_is_preprint_orphan'
+                                }
+                            }
                     else:
                         query.get(key).update({
                             field_name: {
@@ -265,10 +282,13 @@ class FilterMixin(object):
                     value=value,
                     field_type='date'
                 )
-        elif isinstance(field, (self.LIST_FIELDS, self.RELATIONSHIP_FIELDS, ser.SerializerMethodField)) \
-                or isinstance((getattr(field, 'field', None)), self.LIST_FIELDS):
+        elif isinstance(field, (self.RELATIONSHIP_FIELDS, ser.SerializerMethodField)):
             if value == 'null':
                 value = None
+            return value
+        elif isinstance(field, self.LIST_FIELDS) or isinstance((getattr(field, 'field', None)), self.LIST_FIELDS):
+            if value == 'null':
+                value = []
             return value
         else:
             try:
@@ -333,7 +353,14 @@ class ODMFilterMixin(FilterMixin):
                 sub_query_parts = []
                 for field_name, data in field_names.iteritems():
                     # Query based on the DB field, not the name of the serializer parameter
-                    sub_query = Q(data['source_field_name'], data['op'], data['value'])
+                    if isinstance(data, list):
+                        sub_query = functools.reduce(operator.and_, [
+                            Q(item['source_field_name'], item['op'], item['value'])
+                            for item in data
+                        ])
+                    else:
+                        sub_query = Q(data['source_field_name'], data['op'], data['value'])
+
                     sub_query_parts.append(sub_query)
 
                 try:

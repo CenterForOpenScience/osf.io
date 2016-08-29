@@ -56,8 +56,9 @@ def get_globals():
     OSFWebRenderer.
     """
     user = _get_current_user()
-    user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path} for inst in user.affiliated_institutions] if user else []
-    all_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path} for inst in Institution.find().sort('name')]
+
+    user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in user.affiliated_institutions] if user else []
+    all_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in Institution.find().sort('name')]
     location = geolite2.lookup(request.remote_addr) if request.remote_addr else None
     if request.host_url != settings.DOMAIN:
         try:
@@ -514,6 +515,14 @@ def make_url_map(app):
             notemplate
         ),
 
+        # confirm email for login through external identity provider
+        Rule(
+            '/confirm/external/<uid>/<token>/',
+            'get',
+            auth_views.external_login_confirm_email_get,
+            notemplate
+        ),
+
         # reset password get
         Rule(
             '/resetpassword/<verification_key>/',
@@ -545,6 +554,22 @@ def make_url_map(app):
             auth_views.resend_confirmation_post,
             OsfWebRenderer('resend.mako', render_mako_string, trust=False)
 
+        ),
+
+        # oauth user email get
+        Rule(
+            '/external-login/email',
+            'get',
+            auth_views.external_login_email_get,
+            OsfWebRenderer('external_login_email.mako', render_mako_string, trust=False)
+        ),
+
+        # oauth user email post
+        Rule(
+            '/external-login/email',
+            'post',
+            auth_views.external_login_email_post,
+            OsfWebRenderer('external_login_email.mako', render_mako_string, trust=False)
         ),
 
         # user sign up page
@@ -726,7 +751,6 @@ def make_url_map(app):
             OsfWebRenderer('profile/personal_tokens_detail.mako', trust=False)
         ),
 
-
         # TODO: Uncomment once outstanding issues with this feature are addressed
         # Rule(
         #     '/@<twitter_handle>/',
@@ -768,6 +792,13 @@ def make_url_map(app):
             '/profile/deactivate/',
             'post',
             profile_views.request_deactivation,
+            json_renderer,
+        ),
+
+        Rule(
+            '/profile/logins/',
+            'patch',
+            profile_views.delete_external_identity,
             json_renderer,
         ),
 

@@ -30,7 +30,7 @@ from api.comments.serializers import NodeCommentSerializer, CommentCreateSeriali
 from api.comments.permissions import CanCommentOrPublic
 from api.users.views import UserMixin
 from api.wikis.serializers import WikiSerializer
-from api.base.views import LinkedNodesRelationship
+from api.base.views import LinkedNodesRelationship, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList
 
 from api.nodes.serializers import (
     NodeSerializer,
@@ -198,6 +198,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         registration                    boolean            is this a registration? (always false - may be deprecated in future versions)
         fork                            boolean            is this node a fork of another node?
         public                          boolean            has this node been made publicly-visible?
+        preprint                        boolean            is this a preprint?
         collection                      boolean            is this a collection? (always false - may be deprecated in future versions)
         node_license                    object             details of the license applied to the node
             year                        string             date range of the license
@@ -246,8 +247,8 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     users and contributors and missing serializer fields and relationships.
 
     Nodes may be filtered by their `id`, `title`, `category`, `description`, `public`, `tags`, `date_created`, `date_modified`,
-    `root`, `parent`, and `contributors`.  Most are string fields and will be filtered using simple substring matching.  `public`
-    is a boolean, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note that quoting `true`
+    `root`, `parent`, 'preprint', and `contributors`.  Most are string fields and will be filtered using simple substring matching.  `public`
+    and `preprint` are boolean values, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note that quoting `true`
     or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
 
     #This Request/Response
@@ -528,7 +529,7 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
         node.save()
 
 
-class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ListFilterMixin, NodeMixin):
+class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin):
     """Contributors (users) for a node.
 
     Contributors are users who can make changes to the node or, in the case of private nodes,
@@ -630,20 +631,6 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
     view_name = 'node-contributors'
     ordering = ('index',)  # default ordering
 
-    def get_default_queryset(self):
-        node = self.get_node()
-        visible_contributors = set(node.visible_contributor_ids)
-        contributors = []
-        index = 0
-        for contributor in node.contributors:
-            contributor.index = index
-            contributor.bibliographic = contributor._id in visible_contributors
-            contributor.permission = node.get_permissions(contributor)[-1]
-            contributor.node_id = node._id
-            contributors.append(contributor)
-            index += 1
-        return contributors
-
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDeleteJSONAPIView
     def get_serializer_class(self):
         """
@@ -704,7 +691,7 @@ class NodeContributorsList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bu
         return resource_object_list
 
 
-class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
+class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
     """Detail of a contributor for a node. *Writeable*.
 
     Contributors are users who can make changes to the node or, in the case of private nodes,
@@ -800,21 +787,6 @@ class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
     serializer_class = NodeContributorDetailSerializer
     view_category = 'nodes'
     view_name = 'node-contributor-detail'
-
-    # overrides RetrieveAPIView
-    def get_object(self):
-        node = self.get_node()
-        user = self.get_user()
-        # May raise a permission denied
-        self.check_object_permissions(self.request, user)
-        if user not in node.contributors:
-            raise NotFound('{} cannot be found in the list of contributors.'.format(user))
-        user.permission = node.get_permissions(user)[-1]
-        user.bibliographic = node.get_visible(user)
-        user.node_id = node._id
-        user.index = node.contributors.index(user)
-
-        return user
 
     # overrides DestroyAPIView
     def perform_destroy(self, instance):
@@ -1264,7 +1236,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
 # TODO: Make NodeLinks filterable. They currently aren't filterable because we have can't
 # currently query on a Pointer's node's attributes.
 # e.g. Pointer.find(Q('node.title', 'eq', ...)) doesn't work
-class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin):
+class NodeLinksList(BaseNodeLinksList, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin):
     """Node Links to other nodes. *Writeable*.
 
     Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
@@ -1367,7 +1339,7 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
         return res
 
 
-class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixin):
+class NodeLinksDetail(BaseNodeLinksDetail, generics.RetrieveDestroyAPIView, NodeMixin):
     """Node Link details. *Writeable*.
 
     Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
@@ -1587,7 +1559,6 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
         extra                       object            may contain additional data beyond what's described here,
                                                        depending on the provider
         version                     integer           version number of file. will be 1 on initial upload
-        downloads                   integer           count of the number times the file has been downloaded
         hashes                      object
         md5                         string            md5 hash of file
         sha256                      string            SHA-256 hash of file
@@ -1634,6 +1605,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
           hashes          object
             md5           string             md5 hash of file, null for folders
             sha256        string             SHA-256 hash of file, null for folders
+          downloads       integer            number of times the file has been downloaded (for osfstorage files)
 
     * A note on timestamps: for files stored in osfstorage, `date_created` refers to the time the file was
     first uploaded to osfstorage, and `date_modified` is the time the file was last updated while in osfstorage.

@@ -7,11 +7,8 @@ from __future__ import absolute_import
 import datetime as dt
 import httplib as http
 import json
-import math
 import time
 import unittest
-import urllib
-import datetime
 
 import mock
 from nose.tools import *  # noqa PEP8 asserts
@@ -22,7 +19,7 @@ from modularodm.exceptions import ValidationError
 from framework import auth
 from framework.auth import User, Auth
 from framework.auth.exceptions import InvalidTokenError
-from framework.auth.utils import impute_names_model
+from framework.auth.utils import impute_names_model, ensure_external_identity_uniqueness
 from framework.celery_tasks import handlers
 from framework.exceptions import HTTPError
 from tests.base import (
@@ -39,7 +36,6 @@ from tests.factories import (
     RegistrationFactory, UnconfirmedUserFactory, UnregUserFactory, UserFactory, WatchConfigFactory,
     InstitutionFactory,
 )
-from tests.test_features import requires_search
 from website import mailchimp_utils
 from website import mails, settings
 from website.addons.github.tests.factories import GitHubAccountFactory
@@ -1704,10 +1700,11 @@ class TestUserAccount(OsfTestCase):
         self.user.save()
 
     @mock.patch('website.profile.views.push_status_message')
-    def test_password_change_valid(self, mock_push_status_message):
-        old_password = 'password'
-        new_password = 'Pa$$w0rd'
-        confirm_password = new_password
+    def test_password_change_valid(self,
+                                   mock_push_status_message,
+                                   old_password='password',
+                                   new_password='Pa$$w0rd',
+                                   confirm_password='Pa$$w0rd'):
         url = web_url_for('user_account_password')
         post_data = {
             'old_password': old_password,
@@ -1761,9 +1758,16 @@ class TestUserAccount(OsfTestCase):
     def test_password_change_invalid_new_password_length(self):
         self.test_password_change_invalid(
             old_password='password',
-            new_password='12345',
-            confirm_password='12345',
-            error_message='Password should be at least six characters',
+            new_password='1234567',
+            confirm_password='1234567',
+            error_message='Password should be at least eight characters',
+        )
+
+    def test_password_change_valid_new_password_length(self):
+        self.test_password_change_valid(
+            old_password='password',
+            new_password='12345678',
+            confirm_password='12345678',
         )
 
     def test_password_change_invalid_blank_password(self, old_password='', new_password='', confirm_password=''):
@@ -3410,6 +3414,135 @@ class TestAuthViews(OsfTestCase):
         assert_true(user.is_registered)
 
 
+class TextExternalAuthViews(OsfTestCase):
+
+    def setUp(self):
+        super(TextExternalAuthViews, self).setUp()
+        name, email = fake.name(), fake.email()
+        self.provider_id = fake.ean()
+        external_identity = {
+            'service': {
+                self.provider_id: 'CREATE'
+            }
+        }
+        self.user = User.create_unconfirmed(
+            username=email,
+            password=str(fake.password()),
+            fullname=name,
+            external_identity=external_identity,
+        )
+        self.user.save()
+        self.auth = Auth(self.user)
+
+    def test_external_login_email_get_with_invalid_session(self):
+        url = web_url_for('external_login_email_get')
+        resp = self.app.get(url, expect_errors=True)
+        assert_equal(resp.status_code, 401)
+
+    @mock.patch('website.mails.send_mail')
+    def test_external_login_confirm_email_get_create(self, mock_welcome):
+        assert_false(self.user.is_registered)
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service')
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(res.status_code, 302, 'redirects to cas login')
+        assert_in('/login?service=', res.location)
+        assert_in('new=true', res.location)
+
+        assert_equal(mock_welcome.call_count, 1)
+
+        self.user.reload()
+        assert_equal(self.user.external_identity['service'][self.provider_id], 'VERIFIED')
+        assert_true(self.user.is_registered)
+
+    @mock.patch('website.mails.send_mail')
+    def test_external_login_confirm_email_get_link(self, mock_link_confirm):
+        self.user.external_identity['service'][self.provider_id] = 'LINK'
+        self.user.save()
+        assert_false(self.user.is_registered)
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service')
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(res.status_code, 302, 'redirects to cas login')
+        assert_in('/login?service=', res.location)
+        assert_not_in('new=true', res.location)
+
+        assert_equal(mock_link_confirm.call_count, 1)
+
+        self.user.reload()
+        assert_equal(self.user.external_identity['service'][self.provider_id], 'VERIFIED')
+        assert_true(self.user.is_registered)
+
+    @mock.patch('website.mails.send_mail')
+    def test_external_login_confirm_email_get_duped_id(self, mock_confirm):
+        dupe_user = UserFactory(external_identity={'service': {self.provider_id: 'CREATE'}})
+        assert_equal(dupe_user.external_identity, self.user.external_identity)
+        
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service')
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(res.status_code, 302, 'redirects to cas login')
+        assert_in('/login?service=', res.location)
+
+        assert_equal(mock_confirm.call_count, 1)
+
+        self.user.reload()
+        dupe_user.reload()
+
+        assert_equal(self.user.external_identity['service'][self.provider_id], 'VERIFIED')
+        assert_equal(dupe_user.external_identity, {})
+
+    @mock.patch('website.mails.send_mail')
+    def test_external_login_confirm_email_get_duping_id(self, mock_confirm):
+        dupe_user = UserFactory(external_identity={'service': {self.provider_id: 'VERIFIED'}})
+        
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service')
+        res = self.app.get(url, auth=self.auth, expect_errors=True)
+        assert_equal(res.status_code, 403, 'only allows one user to link an id')
+
+        assert_equal(mock_confirm.call_count, 0)
+
+        self.user.reload()
+        dupe_user.reload()
+
+        assert_equal(dupe_user.external_identity['service'][self.provider_id], 'VERIFIED')
+        assert_equal(self.user.external_identity, {})
+
+    def test_ensure_external_identity_uniqueness_unverified(self):
+        dupe_user = UserFactory(external_identity={'service': {self.provider_id: 'CREATE'}})
+        assert_equal(dupe_user.external_identity, self.user.external_identity)
+
+        ensure_external_identity_uniqueness('service', self.provider_id, self.user)
+
+        dupe_user.reload()
+        self.user.reload()
+
+        assert_equal(dupe_user.external_identity, {})
+        assert_equal(self.user.external_identity, {'service': {self.provider_id: 'CREATE'}})
+
+    def test_ensure_external_identity_uniqueness_verified(self):
+        dupe_user = UserFactory(external_identity={'service': {self.provider_id: 'VERIFIED'}})
+        assert_equal(dupe_user.external_identity, {'service': {self.provider_id: 'VERIFIED'}})
+        assert_not_equal(dupe_user.external_identity, self.user.external_identity)
+
+        with assert_raises(ValidationError):
+            ensure_external_identity_uniqueness('service', self.provider_id, self.user)
+
+        dupe_user.reload()
+        self.user.reload()
+
+        assert_equal(dupe_user.external_identity, {'service': {self.provider_id: 'VERIFIED'}})
+        assert_equal(self.user.external_identity, {})
+
+    def test_ensure_external_identity_uniqueness_multiple(self):
+        dupe_user = UserFactory(external_identity={'service': {self.provider_id: 'CREATE'}})
+        assert_equal(dupe_user.external_identity, self.user.external_identity)
+
+        ensure_external_identity_uniqueness('service', self.provider_id)
+
+        dupe_user.reload()
+        self.user.reload()
+
+        assert_equal(dupe_user.external_identity, {})
+        assert_equal(self.user.external_identity, {})
+
 # TODO: Use mock add-on
 class TestAddonUserViews(OsfTestCase):
 
@@ -3679,220 +3812,6 @@ class TestTagViews(OsfTestCase):
         url = web_url_for('project_tag', tag='foo')
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
-
-
-@requires_search
-class TestSearchViews(OsfTestCase):
-
-    def setUp(self):
-        super(TestSearchViews, self).setUp()
-        import website.search.search as search
-        search.delete_all()
-
-        self.project = ProjectFactory(creator=UserFactory(fullname='Robbie Williams'))
-        self.contrib = UserFactory(fullname='Brian May')
-        for i in range(0, 12):
-            UserFactory(fullname='Freddie Mercury{}'.format(i))
-
-    def tearDown(self):
-        super(TestSearchViews, self).tearDown()
-        import website.search.search as search
-        search.delete_all()
-
-    def test_search_contributor(self):
-        url = api_url_for('search_contributor')
-        res = self.app.get(url, {'query': self.contrib.fullname})
-        assert_equal(res.status_code, 200)
-        result = res.json['users']
-        assert_equal(len(result), 1)
-        brian = result[0]
-        assert_equal(brian['fullname'], self.contrib.fullname)
-        assert_in('gravatar_url', brian)
-        assert_equal(brian['registered'], self.contrib.is_registered)
-        assert_equal(brian['active'], self.contrib.is_active)
-
-    def test_search_pagination_default(self):
-        url = api_url_for('search_contributor')
-        res = self.app.get(url, {'query': 'fr'})
-        assert_equal(res.status_code, 200)
-        result = res.json['users']
-        pages = res.json['pages']
-        page = res.json['page']
-        assert_equal(len(result), 5)
-        assert_equal(pages, 3)
-        assert_equal(page, 0)
-
-    def test_search_pagination_default_page_1(self):
-        url = api_url_for('search_contributor')
-        res = self.app.get(url, {'query': 'fr', 'page': 1})
-        assert_equal(res.status_code, 200)
-        result = res.json['users']
-        page = res.json['page']
-        assert_equal(len(result), 5)
-        assert_equal(page, 1)
-
-    def test_search_pagination_default_page_2(self):
-        url = api_url_for('search_contributor')
-        res = self.app.get(url, {'query': 'fr', 'page': 2})
-        assert_equal(res.status_code, 200)
-        result = res.json['users']
-        page = res.json['page']
-        assert_equal(len(result), 2)
-        assert_equal(page, 2)
-
-    def test_search_pagination_smaller_pages(self):
-        url = api_url_for('search_contributor')
-        res = self.app.get(url, {'query': 'fr', 'size': 5})
-        assert_equal(res.status_code, 200)
-        result = res.json['users']
-        pages = res.json['pages']
-        page = res.json['page']
-        assert_equal(len(result), 5)
-        assert_equal(page, 0)
-        assert_equal(pages, 3)
-
-    def test_search_pagination_smaller_pages_page_2(self):
-        url = api_url_for('search_contributor')
-        res = self.app.get(url, {'query': 'fr', 'page': 2, 'size': 5, })
-        assert_equal(res.status_code, 200)
-        result = res.json['users']
-        pages = res.json['pages']
-        page = res.json['page']
-        assert_equal(len(result), 2)
-        assert_equal(page, 2)
-        assert_equal(pages, 3)
-
-    def test_search_projects(self):
-        url = '/search/'
-        res = self.app.get(url, {'q': self.project.title})
-        assert_equal(res.status_code, 200)
-
-
-class TestODMTitleSearch(OsfTestCase):
-    """ Docs from original method:
-    :arg term: The substring of the title.
-    :arg category: Category of the node.
-    :arg isDeleted: yes, no, or either. Either will not add a qualifier for that argument in the search.
-    :arg isFolder: yes, no, or either. Either will not add a qualifier for that argument in the search.
-    :arg isRegistration: yes, no, or either. Either will not add a qualifier for that argument in the search.
-    :arg includePublic: yes or no. Whether the projects listed should include public projects.
-    :arg includeContributed: yes or no. Whether the search should include projects the current user has
-        contributed to.
-    :arg ignoreNode: a list of nodes that should not be included in the search.
-    :return: a list of dictionaries of projects
-    """
-    def setUp(self):
-        super(TestODMTitleSearch, self).setUp()
-
-        self.user = AuthUserFactory()
-        self.user_two = AuthUserFactory()
-        self.project = ProjectFactory(creator=self.user, title="foo")
-        self.project_two = ProjectFactory(creator=self.user_two, title="bar")
-        self.public_project = ProjectFactory(creator=self.user_two, is_public=True, title="baz")
-        self.registration_project = RegistrationFactory(creator=self.user, title="qux")
-        self.folder = CollectionFactory(creator=self.user, title="quux")
-        self.dashboard = BookmarkCollectionFactory(creator=self.user, title="Dashboard")
-        self.url = api_url_for('search_projects_by_title')
-
-    def test_search_projects_by_title(self):
-        res = self.app.get(self.url, {'term': self.project.title}, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 1)
-        res = self.app.get(self.url,
-                           {
-                               'term': self.public_project.title,
-                               'includePublic': 'yes',
-                               'includeContributed': 'no'
-                           }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 1)
-        res = self.app.get(self.url,
-                           {
-                               'term': self.project.title,
-                               'includePublic': 'no',
-                               'includeContributed': 'yes'
-                           }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 1)
-        res = self.app.get(self.url,
-                           {
-                               'term': self.project.title,
-                               'includePublic': 'no',
-                               'includeContributed': 'yes',
-                               'isRegistration': 'no'
-                           }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 1)
-        res = self.app.get(self.url,
-                           {
-                               'term': self.project.title,
-                               'includePublic': 'yes',
-                               'includeContributed': 'yes',
-                               'isRegistration': 'either'
-                           }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 1)
-        res = self.app.get(self.url,
-                           {
-                               'term': self.public_project.title,
-                               'includePublic': 'yes',
-                               'includeContributed': 'yes',
-                               'isRegistration': 'either'
-                           }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 1)
-        res = self.app.get(self.url,
-                           {
-                               'term': self.registration_project.title,
-                               'includePublic': 'yes',
-                               'includeContributed': 'yes',
-                               'isRegistration': 'either'
-                           }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 2)
-        res = self.app.get(self.url,
-                           {
-                               'term': self.registration_project.title,
-                               'includePublic': 'yes',
-                               'includeContributed': 'yes',
-                               'isRegistration': 'no'
-                           }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 1)
-        res = self.app.get(self.url,
-                           {
-                               'term': self.folder.title,
-                               'includePublic': 'yes',
-                               'includeContributed': 'yes',
-                               'isFolder': 'yes'
-                           }, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
-        res = self.app.get(self.url,
-                           {
-                               'term': self.folder.title,
-                               'includePublic': 'yes',
-                               'includeContributed': 'yes',
-                               'isFolder': 'no'
-                           }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 0)
-        res = self.app.get(self.url,
-                           {
-                               'term': self.dashboard.title,
-                               'includePublic': 'yes',
-                               'includeContributed': 'yes',
-                               'isFolder': 'no'
-                           }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 0)
-        res = self.app.get(self.url,
-                           {
-                               'term': self.dashboard.title,
-                               'includePublic': 'yes',
-                               'includeContributed': 'yes',
-                               'isFolder': 'yes'
-                           }, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
 
 
 class TestReorderComponents(OsfTestCase):
