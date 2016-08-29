@@ -75,7 +75,7 @@ def main():
         # the 'children' field for every subject
         logger.info('Setting "children" field for each Subject')
         for subject in Subject.find():
-            subject.set_children()
+            subject.children = Subject.find(Q('parents', 'eq', subject))
             subject.save()
 
         if dry_run:

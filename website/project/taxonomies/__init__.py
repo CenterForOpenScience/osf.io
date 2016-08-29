@@ -1,4 +1,4 @@
-from modularodm import fields, Q
+from modularodm import fields
 
 from framework.mongo import (
     ObjectId,
@@ -22,13 +22,6 @@ class Subject(StoredObject):
     @property
     def child_count(self):
         return len(self.children)
-
-    def set_children(self):
-        """
-        This gets called in scripts/update_taxonomies.py after all
-        subjects have been added."""
-        if not self.children:
-            self.children = Subject.find(Q('parents', 'eq', self))
 
     def get_absolute_url(self):
         return self.absolute_api_v2_url
