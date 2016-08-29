@@ -1704,10 +1704,11 @@ class TestUserAccount(OsfTestCase):
         self.user.save()
 
     @mock.patch('website.profile.views.push_status_message')
-    def test_password_change_valid(self, mock_push_status_message):
-        old_password = 'password'
-        new_password = 'Pa$$w0rd'
-        confirm_password = new_password
+    def test_password_change_valid(self,
+                                   mock_push_status_message,
+                                   old_password='password',
+                                   new_password='Pa$$w0rd',
+                                   confirm_password='Pa$$w0rd'):
         url = web_url_for('user_account_password')
         post_data = {
             'old_password': old_password,
@@ -1761,9 +1762,16 @@ class TestUserAccount(OsfTestCase):
     def test_password_change_invalid_new_password_length(self):
         self.test_password_change_invalid(
             old_password='password',
-            new_password='12345',
-            confirm_password='12345',
-            error_message='Password should be at least six characters',
+            new_password='1234567',
+            confirm_password='1234567',
+            error_message='Password should be at least eight characters',
+        )
+
+    def test_password_change_valid_new_password_length(self):
+        self.test_password_change_valid(
+            old_password='password',
+            new_password='12345678',
+            confirm_password='12345678',
         )
 
     def test_password_change_invalid_blank_password(self, old_password='', new_password='', confirm_password=''):
