@@ -232,21 +232,21 @@ def login_and_register_handler(auth, login=True, campaign=None, service_url=None
 
     if campaign:
         if validate_campaign(campaign):
-            if campaign == 'prereg':
-                # `GET /login?campaign=prereg`
+            # GET `/register` or '/login` with `campaign=institution`
+            # unlike other campaigns, institution login serves as an alternative for authentication
+            if campaign == 'institution':
+                data['status_code'] = http.FOUND
+                data['redirect_url'] = cas.get_login_url(service_url, campaign='institution')
+            # For all non-institution campaigns
+            else:
+                # `GET /login?campaign=...`
                 if login:
-                    service_url = data['redirect_url'] = web_url_for('auth_register', campaign='prereg')
-                # `GET /register?campaign=prereg`
+                    service_url = data['redirect_url'] = web_url_for('auth_register', campaign=campaign)
+                # `GET /register?campaign=...`
                 else:
                     data['campaign'] = campaign
                     data['must_login_warning'] = True
                     service_url = data['service_url'] = campaigns.campaign_url_for(campaign)
-            # GET `/register` or '/login` with `campaign=institution`
-            elif campaign == 'institution':
-                data['status_code'] = http.FOUND
-                data['redirect_url'] = cas.get_login_url(service_url, campaign='institution')
-            else:
-                raise HTTPError(http.BAD_REQUEST)
         else:
             raise HTTPError(http.BAD_REQUEST)
 
