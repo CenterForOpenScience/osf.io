@@ -5,9 +5,11 @@ import httplib as http
 
 import markupsafe
 from flask import request
+import uuid
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
+from modularodm.exceptions import ValidationError
 from modularodm.exceptions import ValidationValueError
 
 from framework import forms, status
@@ -20,9 +22,11 @@ from framework.auth.exceptions import DuplicateEmailError, ExpiredTokenError, In
 from framework.auth.core import generate_verification_key
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import ResendConfirmationForm, ForgotPasswordForm, ResetPasswordForm
+from framework.auth.utils import ensure_external_identity_uniqueness
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
-from framework.sessions.utils import remove_sessions_for_user
+from framework.sessions.utils import remove_sessions_for_user, remove_session
+from framework.sessions import get_session
 from website import settings, mails, language
 
 from website.util.time import throttle_period_expired
@@ -234,6 +238,7 @@ def auth_login(auth, **kwargs):
         return redirect(cas.get_login_url(web_url_for('dashboard', _absolute=True)))
 
     if campaign:
+        must_login_warning = False
         next_url = campaigns.campaign_url_for(campaign)
 
     if not next_url:
@@ -341,6 +346,82 @@ def auth_email_logout(token, user):
     resp = redirect(redirect_url)
     resp.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
     return resp
+
+
+@collect_auth
+def external_login_confirm_email_get(auth, uid, token):
+    """
+    View for email confirmation links when user first login through external identity provider.
+    HTTP Method: GET
+
+    :param auth: the auth context
+    :param uid: the user's primary key
+    :param token: the verification token
+    """
+    user = User.load(uid)
+    if not user:
+        raise HTTPError(http.BAD_REQUEST)
+
+    if auth and auth.user and auth.user._id == user._id:
+        new = request.args.get('new', None)
+        if new:
+            status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True)
+        return redirect(web_url_for('index'))
+
+    # token is invalid
+    if token not in user.email_verifications:
+        raise HTTPError(http.BAD_REQUEST)
+    verification = user.email_verifications[token]
+    email = verification['email']
+    provider = verification['external_identity'].keys()[0]
+    provider_id = verification['external_identity'][provider].keys()[0]
+    # wrong provider
+    if provider not in user.external_identity:
+        raise HTTPError(http.BAD_REQUEST)
+    external_status = user.external_identity[provider][provider_id]
+
+    try:
+        ensure_external_identity_uniqueness(provider, provider_id, user)
+    except ValidationError as e:
+        raise HTTPError(http.FORBIDDEN, e.message)
+
+    if not user.is_registered:
+        user.register(email)
+
+    if email.lower() not in user.emails:
+        user.emails.append(email.lower())
+
+    user.date_last_logged_in = datetime.datetime.utcnow()
+    user.external_identity[provider][provider_id] = 'VERIFIED'
+    user.social[provider.lower()] = provider_id
+    del user.email_verifications[token]
+    user.verification_key = generate_verification_key()
+    user.save()
+
+    service_url = request.url
+
+    if external_status == 'CREATE':
+        mails.send_mail(
+            to_addr=user.username,
+            mail=mails.WELCOME,
+            mimetype='html',
+            user=user
+        )
+        service_url = service_url + '?new=true'
+    elif external_status == 'LINK':
+        mails.send_mail(
+            user=user,
+            to_addr=user.username,
+            mail=mails.EXTERNAL_LOGIN_LINK_SUCCESS,
+            external_id_provider=provider,
+        )
+
+    # redirect to CAS and authenticate the user with the verification key
+    return redirect(cas.get_login_url(
+        service_url,
+        username=user.username,
+        verification_key=user.verification_key
+    ))
 
 
 @collect_auth
@@ -470,7 +551,7 @@ def unconfirmed_email_add(auth=None):
     }, 200
 
 
-def send_confirm_email(user, email):
+def send_confirm_email(user, email, external_id_provider=None, external_id=None):
     """
     Sends a confirmation email to `user` to a given email.
 
@@ -481,6 +562,7 @@ def send_confirm_email(user, email):
         email,
         external=True,
         force=True,
+        external_id_provider=external_id_provider
     )
 
     try:
@@ -490,15 +572,22 @@ def send_confirm_email(user, email):
     campaign = campaigns.campaign_for_user(user)
 
     # Choose the appropriate email template to use and add existing_user flag if a merge or adding an email.
-    if merge_target:  # merge account
+    if external_id_provider and external_id:  # first time login through external identity provider
+        if user.external_identity[external_id_provider][external_id] == 'CREATE':
+            mail_template = mails.EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE
+        elif user.external_identity[external_id_provider][external_id] == 'LINK':
+            mail_template = mails.EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK
+    elif merge_target:  # merge account
         mail_template = mails.CONFIRM_MERGE
         confirmation_url = '{}?logout=1'.format(confirmation_url)
     elif user.is_active:  # add email
         mail_template = mails.CONFIRM_EMAIL
         confirmation_url = '{}?logout=1'.format(confirmation_url)
     elif campaign:  # campaign
+        # TODO: In the future, we may want to make confirmation email configurable as well (send new user to
+        #   appropriate landing page or with redirect after)
         mail_template = campaigns.email_template_for_campaign(campaign)
-    else:   # account creation
+    else:  # account creation
         mail_template = mails.INITIAL_CONFIRM_EMAIL
 
     mails.send_mail(
@@ -509,6 +598,7 @@ def send_confirm_email(user, email):
         confirmation_url=confirmation_url,
         email=email,
         merge_target=merge_target,
+        external_id_provider=external_id_provider,
     )
 
 
@@ -637,3 +727,101 @@ def resend_confirmation_post(auth):
 
     # Don't go anywhere
     return {'form': form}
+
+
+def external_login_email_get():
+    """
+    Landing view for first-time oauth-login user to enter their email address.
+    HTTP Method: GET
+    """
+
+    form = ResendConfirmationForm(request.form)
+    session = get_session()
+    if not session.is_external_first_login:
+        raise HTTPError(http.UNAUTHORIZED)
+
+    external_id_provider = session.data['auth_user_external_id_provider']
+
+    return {
+        'form': form,
+        'external_id_provider': external_id_provider
+    }
+
+
+def external_login_email_post():
+    """
+    View to handle email submission for first-time oauth-login user.
+    HTTP Method: POST
+    """
+
+    form = ResendConfirmationForm(request.form)
+    session = get_session()
+    if not session.is_external_first_login:
+        raise HTTPError(http.UNAUTHORIZED)
+
+    external_id_provider = session.data['auth_user_external_id_provider']
+    external_id = session.data['auth_user_external_id']
+    fullname = session.data['auth_user_fullname']
+
+    if form.validate():
+        clean_email = form.email.data
+        user = get_user(email=clean_email)
+        external_identity = {
+            external_id_provider: {
+                external_id: None,
+            },
+        }
+        try:
+            ensure_external_identity_uniqueness(external_id_provider, external_id, user)
+        except ValidationError as e:
+            raise HTTPError(http.FORBIDDEN, e.message)
+        if user:
+            # 1. update user oauth, with pending status
+            external_identity[external_id_provider][external_id] = 'LINK'
+            if external_id_provider in user.external_identity:
+                user.external_identity[external_id_provider].update(external_identity[external_id_provider])
+            else:
+                user.external_identity.update(external_identity)
+            # 2. add unconfirmed email and send confirmation email
+            user.add_unconfirmed_email(clean_email, external_identity=external_identity)
+            user.save()
+            send_confirm_email(user, clean_email, external_id_provider=external_id_provider, external_id=external_id)
+            # 3. notify user
+            message = language.EXTERNAL_LOGIN_EMAIL_LINK_SUCCESS.format(
+                external_id_provider=external_id_provider,
+                email=user.username
+            )
+            kind = 'success'
+            # 4. remove session and osf cookie
+            remove_session(session)
+        else:
+            # 1. create unconfirmed user with pending status
+            external_identity[external_id_provider][external_id] = 'CREATE'
+            user = User.create_unconfirmed(
+                username=clean_email,
+                password=str(uuid.uuid4()),
+                fullname=fullname,
+                external_identity=external_identity,
+                campaign=None
+            )
+            # TODO: [#OSF-6934] update social fields, verified social fields cannot be modified
+            user.save()
+            # 3. send confirmation email
+            send_confirm_email(user, user.username, external_id_provider=external_id_provider, external_id=external_id)
+            # 4. notify user
+            message = language.EXTERNAL_LOGIN_EMAIL_CREATE_SUCCESS.format(
+                external_id_provider=external_id_provider,
+                email=user.username
+            )
+            kind = 'success'
+            # 5. remove session
+            remove_session(session)
+        status.push_status_message(message, kind=kind, trust=False)
+    else:
+        forms.push_errors_to_status(form.errors)
+
+    # Don't go anywhere
+    return {
+        'form': form,
+        'external_id_provider': external_id_provider
+    }

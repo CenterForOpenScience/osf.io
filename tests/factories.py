@@ -41,7 +41,7 @@ from website.oauth.models import (
 from website.project.model import (
     Comment, DraftRegistration, MetaSchema, Node, NodeLog, Pointer,
     PrivateLink, Tag, WatchConfig, AlternativeCitation,
-    ensure_schemas, Institution
+    ensure_schemas, Institution, PreprintProvider
 )
 from website.project.sanctions import (
     Embargo,
@@ -49,12 +49,15 @@ from website.project.sanctions import (
     Retraction,
     Sanction,
 )
+from website.project.taxonomies import Subject
 from website.notifications.model import NotificationSubscription, NotificationDigest
 from website.archiver.model import ArchiveTarget, ArchiveJob
 from website.identifiers.model import Identifier
 from website.archiver import ARCHIVER_SUCCESS
 from website.project.licenses import NodeLicense, NodeLicenseRecord, ensure_licenses
 from website.util import permissions
+from website.files.models.osfstorage import OsfStorageFile, FileVersion
+
 
 ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
@@ -210,6 +213,86 @@ class BookmarkCollectionFactory(CollectionFactory):
 class NodeFactory(AbstractNodeFactory):
     category = 'hypothesis'
     parent = SubFactory(ProjectFactory)
+
+
+class PreprintProviderFactory(ModularOdmFactory):
+    name = 'OSFArxiv'
+    description = 'Preprint service for the OSF'
+
+    class Meta:
+        model = PreprintProvider
+
+    @classmethod
+    def _create(cls, target_class, name=None, description=None, *args, **kwargs):
+        provider = target_class(*args, **kwargs)
+        provider.name = name
+        provider.description = description
+        provider.save()
+
+        return provider
+
+
+class PreprintFactory(AbstractNodeFactory):
+    creator = None
+    category = 'project'
+    doi = Sequence(lambda n: '10.123/{}'.format(n))
+    providers = [SubFactory(PreprintProviderFactory)]
+    external_url = 'http://hello.org'
+
+    @classmethod
+    def _create(cls, target_class, project=None, is_public=True, filename='preprint_file.txt', providers=None, doi=None, external_url=None, *args, **kwargs):
+        save_kwargs(**kwargs)
+        user = None
+        if project:
+            user = project.creator
+        user = kwargs.get('user') or kwargs.get('creator') or user or UserFactory()
+        kwargs['creator'] = user
+        # Original project to be converted to a preprint
+        project = project or target_class(*args, **kwargs)
+        if user._id not in project.permissions:
+            project.add_contributor(
+                contributor=user,
+                permissions=permissions.CREATOR_PERMISSIONS,
+                log=False,
+                save=False
+            )
+        project.save()
+        project.reload()
+
+        file = OsfStorageFile.create(
+            is_file=True,
+            node=project,
+            path='/{}'.format(filename),
+            name=filename,
+            materialized_path='/{}'.format(filename))
+        file.save()
+
+        project.set_preprint_file(file, auth=Auth(project.creator))
+        project.preprint_subjects = [SubjectFactory()._id]
+        project.preprint_providers = providers
+        project.preprint_doi = doi
+        project.external_url = external_url
+        project.save()
+
+        return project
+
+
+class SubjectFactory(ModularOdmFactory):
+
+    text = Sequence(lambda n: 'Example Subject #{}'.format(n))
+    class Meta:
+        model = Subject
+
+    @classmethod
+    def _create(cls, target_class, text=None, parents=[], *args, **kwargs):
+        try:
+            subject = Subject.find_one(Q('text', 'eq', text))
+        except NoResultsFound:
+            subject = target_class(*args, **kwargs)
+            subject.text = text
+            subject.parents = parents
+            subject.save()
+        return subject
 
 
 class RegistrationFactory(AbstractNodeFactory):

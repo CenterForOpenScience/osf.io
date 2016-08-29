@@ -84,3 +84,8 @@
 	white-space: nowrap;
 	display: inline-block;
 }
+
+.preprint-notice {
+    background: #f5f5f5;
+    line-height: 30px;
+}

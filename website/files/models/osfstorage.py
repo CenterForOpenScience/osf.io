@@ -108,6 +108,9 @@ class OsfStorageFileNode(FileNode):
         return self.checkout is not None
 
     def delete(self, user=None, parent=None):
+        if self.node.preprint_file == self:
+            self.node._is_preprint_orphan = True
+            self.node.save()
         if self.is_checked_out:
             raise exceptions.FileNodeCheckedOutError()
         return super(OsfStorageFileNode, self).delete(user=user, parent=parent)
