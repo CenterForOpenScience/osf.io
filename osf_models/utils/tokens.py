@@ -12,8 +12,10 @@ from website.tokens.exceptions import TokenHandlerNotFound
 
 class TokenHandler(object):
     HANDLERS = {
-        'approve_registration_approval': functools.partial(handlers.sanction_handler, 'registration', 'approve'),
-        'reject_registration_approval': functools.partial(handlers.sanction_handler, 'registration', 'reject'),
+        'approve_registration_approval': functools.partial(handlers.sanction_handler,
+                                                           'registration', 'approve'),
+        'reject_registration_approval': functools.partial(handlers.sanction_handler,
+                                                          'registration', 'reject'),
         'approve_embargo': functools.partial(handlers.sanction_handler, 'embargo', 'approve'),
         'reject_embargo': functools.partial(handlers.sanction_handler, 'embargo', 'reject'),
         'approve_embargo_termination_approval': functools.partial(handlers.sanction_handler,

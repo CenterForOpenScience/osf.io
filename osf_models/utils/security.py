@@ -2,10 +2,8 @@
 """Security utilities."""
 ##### copied from website.security #####
 import string
-import logging
 from random import SystemRandom
 
-from website import settings
 
 random = SystemRandom()
 

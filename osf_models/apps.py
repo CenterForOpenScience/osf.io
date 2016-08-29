@@ -32,4 +32,3 @@ class AppConfig(BaseAppConfig):
         api_base = '/v2/'
     else:
         api_base = api_settings.API_BASE
-

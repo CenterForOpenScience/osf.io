@@ -31,7 +31,8 @@ class ApiOauth2Application(base.ObjectIDMixin, base.BaseModel):
     Any changes made to field names in this model must be echoed in the CAS implementation.
     """
 
-    # Client ID and secret. Use separate ID field so ID format doesn't have to be restricted to database internals.
+    # Client ID and secret. Use separate ID field so ID format doesn't
+    # have to be restricted to database internals.
     client_id = models.UUIDField(default=uuid.uuid4,  # Not *guaranteed* unique, but very unlikely
                                    unique=True,
                                    db_index=True)
@@ -56,7 +57,8 @@ class ApiOauth2Application(base.ObjectIDMixin, base.BaseModel):
         """
         Deactivate an ApiOAuth2Application
 
-        Does not delete the database record, but revokes all tokens and sets a flag that hides this instance from API
+        Does not delete the database record, but revokes all tokens and sets a
+        flag that hides this instance from API
         """
         client = cas.get_client()
         # Will raise a CasHttpError if deletion fails, which will also stop setting of active=False.

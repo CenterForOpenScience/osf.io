@@ -31,7 +31,7 @@ class CitationStyle(BaseModel):
     date_parsed = models.DateTimeField(default=timezone.now)
 
     short_title = models.CharField(max_length=2048)
-    summary = models.CharField(max_length=4200) # longest value was 3,812 8/23/2016
+    summary = models.CharField(max_length=4200)  # longest value was 3,812 8/23/2016
 
     def to_json(self):
         return {
@@ -40,4 +40,3 @@ class CitationStyle(BaseModel):
             'short_title': self.short_title,
             'summary': self.summary,
         }
-

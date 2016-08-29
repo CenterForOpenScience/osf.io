@@ -49,8 +49,12 @@ def setup_tests(ctx, update=False, requirements=True, branch=POSTGRES_BRANCH):
     os.chdir('..')
     print('Finished test setup.')
 
-
 @task
+def flake(ctx):
+    """Run flake8 on codebase."""
+    ctx.run('flake8 .', echo=True)
+
+@task(pre=[flake])
 def test(ctx, setup=False, update=False, requirements=True, branch=POSTGRES_BRANCH):
     import pytest
     if setup or update:
@@ -62,12 +66,6 @@ def test(ctx, setup=False, update=False, requirements=True, branch=POSTGRES_BRAN
     retcode = pytest.main(['osf_models_tests'])
     os.chdir('..')
     sys.exit(retcode)
-
-
-@task
-def flake(ctx):
-    """Run flake8 on codebase."""
-    ctx.run('flake8 .', echo=True)
 
 @task
 def readme(ctx, browse=False):

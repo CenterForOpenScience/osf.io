@@ -2,10 +2,10 @@ import uuid
 
 import psycopg2
 from django.conf import settings
-from django.db.backends import utils
-from django.db.backends.postgresql.base import \
+from django.db.backends.postgresql.base import (
     DatabaseWrapper as PostgresqlDatabaseWrapper
-from django.db.backends.postgresql.base import *
+)
+from django.db.backends.postgresql.base import utc_tzinfo_factory
 
 
 class server_side_cursors(object):

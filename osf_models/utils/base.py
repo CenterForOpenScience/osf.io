@@ -13,13 +13,15 @@ def api_v2_url(path_str,
                base_prefix=app_config.api_base,
                **kwargs):
     """
-    Convenience function for APIv2 usage: Concatenates parts of the absolute API url based on arguments provided
+    Convenience function for APIv2 usage: Concatenates parts of the
+    absolute API url based on arguments provided
 
     For example: given path_str = '/nodes/abcd3/contributors/' and params {'filter[fullname]': 'bob'},
         this function would return the following on the local staging environment:
         'http://localhost:8000/nodes/abcd3/contributors/?filter%5Bfullname%5D=bob'
 
-    This is NOT a full lookup function. It does not verify that a route actually exists to match the path_str given.
+    This is NOT a full lookup function. It does not verify that a route actually
+    exists to match the path_str given.
     """
     params = params or {}  # Optional params dict for special-character param names, eg filter[fullname]
 
