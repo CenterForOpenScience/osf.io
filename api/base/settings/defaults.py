@@ -105,14 +105,10 @@ REST_FRAMEWORK = {
         'api.base.authentication.drf.OSFCASAuthentication'
     ),
     'DEFAULT_THROTTLE_CLASSES': (
-        'rest_framework.throttling.AnonRateThrottle',
         'rest_framework.throttling.UserRateThrottle',
-        'api.base.throttling.AddContributorThrottle'
     ),
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '100/hour',
         'user': '10000/day',
-        'add-contributor': '10/second'
     }
 }
 

@@ -9,7 +9,7 @@ from rest_framework import generics
 from rest_framework import status
 from rest_framework import permissions as drf_permissions
 from rest_framework.mixins import ListModelMixin
-from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
+from rest_framework.throttling import UserRateThrottle
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -19,6 +19,7 @@ from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
 from api.base.requests import EmbeddedRequest
 from api.base.serializers import LinkedNodesRelationshipSerializer
+from api.base.throttling import CookieAuthThrottle
 
 from api.nodes.permissions import ReadOnlyIfRegistration
 from api.nodes.permissions import ContributorOrPublicForRelationshipPointers
@@ -29,7 +30,7 @@ CACHE = weakref.WeakKeyDictionary()
 
 class JSONAPIBaseView(generics.GenericAPIView):
 
-    throttle_classes = (UserRateThrottle, AnonRateThrottle,)
+    throttle_classes = (UserRateThrottle, CookieAuthThrottle,)
 
     def __init__(self, **kwargs):
         assert getattr(self, 'view_name', None), 'Must specify view_name on view.'
