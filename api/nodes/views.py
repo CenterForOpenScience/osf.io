@@ -1784,7 +1784,8 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
 
 class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
-
+    """Node File Detail.
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.PermissionWithGetter(ContributorOrPublic, 'node'),

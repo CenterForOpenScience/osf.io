@@ -60,7 +60,7 @@ def dump(self, document, **kwargs):
 
 OpenAPICodec.dump = dump
 
-named_group_matcher = re.compile(r'\(\?P(<\w+>).+?[^/]\)')
+named_group_matcher = re.compile(r'\(\?P(<\w+>)[^\)]+\)')
 non_named_group_matcher = re.compile(r'\(.*?\)')
 
 def simplify_regex(pattern):

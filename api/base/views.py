@@ -68,10 +68,6 @@ class SchemaGenerator(schemas.SchemaGenerator):
             return None
         content = {}
         for category, action, link in links:
-            try:
-                print(category)
-            except:
-                pass
             if category is None:
                 content[action] = link
             elif category in content:
@@ -80,6 +76,7 @@ class SchemaGenerator(schemas.SchemaGenerator):
                 content[category] = {action: link}
         doc = coreapi.Document(title=self.title, content=content, url=self.url)
         return doc
+        
 
     def get_link(self, path, method, callback, view):
         """
