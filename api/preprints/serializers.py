@@ -11,6 +11,7 @@ from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import NodeTagField
 from api.taxonomies.serializers import TaxonomyField
 from framework.exceptions import PermissionsError
+from website.util import permissions
 from website.project import signals as project_signals
 from website.models import StoredFileNode, PreprintProvider, Node
 
@@ -93,13 +94,16 @@ class PreprintSerializer(JSONAPISerializer):
 
     def create(self, validated_data):
         node = Node.load(validated_data.pop('_id', None))
-
         if not node:
             raise exceptions.NotFound('Unable to find Node with specified id.')
+
+        auth = get_user_auth(self.context['request'])
+        if not node.has_permission(auth.user, permissions.ADMIN):
+            raise exceptions.PermissionDenied
+
         if node.is_preprint:
             raise Conflict('This node already stored as a preprint, use the update method instead.')
 
-        auth = get_user_auth(self.context['request'])
         primary_file = validated_data.pop('primary_file', None)
         if not primary_file:
             raise exceptions.ValidationError(detail='You must specify a primary_file to create a preprint.')
