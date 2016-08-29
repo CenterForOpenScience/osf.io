@@ -56,6 +56,29 @@ class TestPreprintUpdate(ApiTestCase):
         self.preprint.reload()
         assert_equal(self.preprint.title, 'A new title')
 
+    def test_update_preprint_tags(self):
+        update_tags_payload = build_preprint_update_payload(self.preprint._id, attributes={'tags': ['newtag', 'bluetag']})
+
+        res = self.app.patch_json_api(self.url, update_tags_payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+        self.preprint.reload()
+        assert_in('newtag', self.preprint.tags)
+        assert_in('bluetag', self.preprint.tags)
+        assert_in('tag_added', [l.action for l in self.preprint.logs])
+
+    def test_update_preprint_tags_not_list(self):
+        update_tags_payload = build_preprint_update_payload(self.preprint._id, attributes={'tags': 'newtag'})
+
+        res = self.app.patch_json_api(self.url, update_tags_payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_update_preprint_none_tags(self):
+        update_tags_payload = build_preprint_update_payload(self.preprint._id, attributes={'tags': [None]})
+
+        res = self.app.patch_json_api(self.url, update_tags_payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
     def test_update_preprint_subjects(self):
         assert_not_equal(self.preprint.preprint_subjects[0], self.subject._id)
         update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"subjects": [self.subject._id]})

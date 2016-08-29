@@ -112,6 +112,11 @@ class PreprintSerializer(JSONAPISerializer):
 
         self.set_node_field(node.set_preprint_subjects, subjects, auth)
 
+        tags = validated_data.pop('tags', None)
+        if tags:
+            for tag in tags:
+                node.add_tag(tag, auth, save=False, log=False)
+
         for key, value in validated_data.iteritems():
             setattr(node, key, value)
         try:
@@ -136,6 +141,19 @@ class PreprintSerializer(JSONAPISerializer):
         subjects = validated_data.pop('preprint_subjects', None)
         if subjects:
             self.set_node_field(node.set_preprint_subjects, subjects, auth)
+
+        old_tags = set([tag._id for tag in node.tags])
+        if 'tags' in validated_data:
+            current_tags = set(validated_data.pop('tags', []))
+        elif self.partial:
+            current_tags = set(old_tags)
+        else:
+            current_tags = set()
+
+        for new_tag in (current_tags - old_tags):
+            node.add_tag(new_tag, auth=auth)
+        for deleted_tag in (old_tags - current_tags):
+            node.remove_tag(deleted_tag, auth=auth)
 
         for key, value in validated_data.iteritems():
             setattr(node, key, value)
