@@ -20,7 +20,7 @@ Run `tce-load -wi bash`, `tce-load -wi nano` (or make sure an editor you like is
 ###Install Discourse
 <pre>sudo -s
 mkdir /var/discourse
-git clone https://github.com/discourse/discourse_docker.git /var/discourse
+git clone https://github.com/discourse/discourse_docker /var/discourse
 cd /var/discourse
 </pre>
 
