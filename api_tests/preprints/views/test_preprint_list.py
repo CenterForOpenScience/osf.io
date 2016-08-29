@@ -2,6 +2,7 @@ from nose.tools import *  # flake8: noqa
 
 from framework.auth.core import Auth, Q
 from api.base.settings.defaults import API_BASE
+from website.util import permissions
 from website.models import Node
 from website.project import signals as project_signals
 
@@ -138,8 +139,7 @@ class TestPreprintCreate(ApiTestCase):
         self.other_user = AuthUserFactory()
         self.private_project = ProjectFactory(creator=self.user)
         self.public_project = ProjectFactory(creator=self.user, public=True)
-        self.public_project.add_contributor(self.other_user)
-        self.public_project.save()
+        self.public_project.add_contributor(self.other_user, permissions=[permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS], save=True)
         self.subject = SubjectFactory()
 
         self.user_two = AuthUserFactory()
@@ -181,6 +181,13 @@ class TestPreprintCreate(ApiTestCase):
 
         assert_equal(res.status_code, 403)
 
+    def test_read_write_user_not_admin(self):
+        assert_in(self.other_user, self.public_project.contributors)
+        public_project_payload = build_preprint_create_payload(self.public_project._id, self.subject._id, self.file_one_public_project._id)
+        res = self.app.post_json_api(self.url, public_project_payload, auth=self.other_user.auth, expect_errors=True)
+
+        assert_equal(res.status_code, 403)
+
     def test_file_is_not_in_node(self):
         wrong_project_payload = build_preprint_create_payload(self.public_project._id, self.subject._id, self.file_one_private_project._id)
         res = self.app.post_json_api(self.url, wrong_project_payload, auth=self.user.auth, expect_errors=True)
@@ -197,6 +204,18 @@ class TestPreprintCreate(ApiTestCase):
 
         assert_equal(res.status_code, 409)
         assert_equal(res.json['errors'][0]['detail'], 'This node already stored as a preprint, use the update method instead.')
+
+    def test_read_write_user_already_a_preprint(self):
+        assert_in(self.other_user, self.public_project.contributors)
+
+        preprint = PreprintFactory(creator=self.user)
+        preprint.add_contributor(self.other_user, permissions=[permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS], save=True)
+        file_one_preprint = test_utils.create_test_file(preprint, self.user, 'openupthatwindow.pdf')
+
+        already_preprint_payload = build_preprint_create_payload(preprint._id, self.subject._id, file_one_preprint._id)
+        res = self.app.post_json_api(self.url, already_preprint_payload, auth=self.other_user.auth, expect_errors=True)
+
+        assert_equal(res.status_code, 403)
 
     def test_no_primary_file_passed(self):
         no_file_payload = build_preprint_create_payload(self.public_project._id, self.subject._id)
