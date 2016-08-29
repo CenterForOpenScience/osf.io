@@ -40,6 +40,9 @@ class PreprintMixin(NodeMixin):
 class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
     """Preprints that represent a special kind of preprint node. *Writeable*.
 
+    ##Note
+    **This API endpoint is under active development, and is subject to change in the future.**
+
     Paginated list of preprints ordered by their `date_created`.  Each resource contains a representation of the
     preprint.
 
@@ -157,6 +160,9 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
 class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin, WaterButlerMixin):
     """Preprint Detail  *Writeable*.
 
+    ##Note
+    **This API endpoint is under active development, and is subject to change in the future.**
+
     ##Preprint Attributes
 
     Many of these preprint attributes are the same as node, with a few special fields added in.
@@ -236,6 +242,9 @@ class PreprintPreprintProvidersList(JSONAPIBaseView, generics.ListAPIView, ODMFi
     """ Detail of the preprint providers a preprint has, if any. Returns [] if the preprint has no
     preprnt providers.
 
+    ##Note
+    **This API endpoint is under active development, and is subject to change in the future**
+
     ##Attributes
 
     OSF Preprint Providers have the "preprint_providers" `type`.
@@ -275,6 +284,9 @@ class PreprintToPreprintProviderRelationship(JSONAPIBaseView, generics.RetrieveU
     """ Relationship Endpoint for Preprint -> PreprintProvider
 
     Used to set preprint_provider of a preprint to a PreprintProvider
+
+    ##Note
+    **This API endpoint is under active development, and is subject to change in the future.**
 
     ##Actions
 

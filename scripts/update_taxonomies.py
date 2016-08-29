@@ -41,7 +41,7 @@ def update_taxonomies(filename):
 
             try:
                 subject = Subject.find_one(Q('text', 'eq', text))
-            except (NoResultsFound):    
+            except (NoResultsFound):
                 # If subject does not yet exist, create it
                 subject = Subject(
                     text=text,
@@ -67,10 +67,16 @@ def main():
     dry_run = '--dry' in sys.argv
     if not dry_run:
         script_utils.add_file_logger(logger, __file__)
-    set_up_storage([Subject], storage.MongoStorage)    
+    set_up_storage([Subject], storage.MongoStorage)
     with TokuTransaction():
         update_taxonomies('plos_taxonomy.json')
         update_taxonomies('other_taxonomy.json')
+        # Now that all subjects have been added to the db, compute and set
+        # the 'children' field for every subject
+        logger.info('Setting "children" field for each Subject')
+        for subject in Subject.find():
+            subject.children = Subject.find(Q('parents', 'eq', subject))
+            subject.save()
 
         if dry_run:
             raise RuntimeError('Dry run, transaction rolled back')

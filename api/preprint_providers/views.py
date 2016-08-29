@@ -20,6 +20,9 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin
     """
     Paginated list of verified PreprintProviders available
 
+    ##Note
+    **This API endpoint is under active development, and is subject to change in the future.**
+
     ##PreprintProvider Attributes
 
     OSF Preprint Providers have the "preprint_providers" `type`.
@@ -65,6 +68,9 @@ class PreprintProviderList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin
 class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     """ Details about a given preprint provider.
 
+    ##Note
+    **This API endpoint is under active development, and is subject to change in the future.**
+
     ##Attributes
 
     OSF Preprint Providers have the "preprint_providers" `type`.
@@ -103,6 +109,9 @@ class PreprintProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
 class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     """Preprints from a given preprint_provider. *Read Only*
+
+    ##Note
+    **This API endpoint is under active development, and is subject to change in the future.**
 
     To update preprints with a given preprint_provider, see the `<node_id>/relationships/preprint_provider` endpoint
 
