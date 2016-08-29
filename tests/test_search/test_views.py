@@ -25,6 +25,8 @@ Y, N = True, False
 cases = [
     (PRIVATE, PROJECT, ANON, N),
     (PUBLIC, PROJECT, ANON, Y),
+    (PRIVATE, REGISTRATION, ANON, N),
+    (PUBLIC, REGISTRATION, ANON, Y),
 ]
 
 class TestSearchSearchAPI(SearchTestCase):
@@ -35,13 +37,15 @@ class TestSearchSearchAPI(SearchTestCase):
         url = api_url_for('search_search', type='project')
         return self.app.get(url, {'q': query}).json['results']
 
-    fixture_funcs = {
-        PROJECT: factories.ProjectFactory,
-    }
-
     @parameterized.expand(cases)
     def test(self, status, type_, role, included):
-        self.fixture_funcs[type_](title='Flim Flammity', is_public=status is PUBLIC)
+        if type_ == PROJECT:
+            factories.ProjectFactory(title='Flim Flammity', is_public=status is PUBLIC)
+        elif type_ == REGISTRATION:
+            project = factories.ProjectFactory(title='Flim Flammity', is_public=status is PUBLIC)
+            factories.RegistrationFactory(project=project, is_public=status is PUBLIC)
+        else:
+            raise NotImplementedError
         expected = ['Flim Flammity'] if included else []
         assert_equal([x['title'] for x in self.results('flim')], expected)
 
