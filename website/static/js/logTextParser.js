@@ -82,6 +82,10 @@ var returnTextParams = function (param, text, logObject, view_url) {
         if (param === 'path'){
             source = stripBackslash(source);
         }
+        var type = logObject.attributes['action']
+        if (type === 'wiki_updated' && source === 'home') {
+            source = 'Home';
+        }
         return view_url ? m('a', {href: $osf.toRelativeUrl(view_url, window)}, source) : m('span', source);
     }
     return m('span', text);
