@@ -1,0 +1,2 @@
+class UnsubscribeHookException(Exception):
+    pass

@@ -111,7 +111,7 @@ def get_aggregations(query, doc_type):
         }
     }
 
-    res = es.search(index=INDEX, doc_type=doc_type, search_type='count', body=query)
+    res = es.search(index=INDEX, doc_type=doc_type, body=query)
     ret = {
         doc_type: {
             item['key']: item['doc_count']
@@ -133,7 +133,7 @@ def get_counts(count_query, clean=True):
         }
     }
 
-    res = es.search(index=INDEX, doc_type=None, search_type='count', body=count_query)
+    res = es.search(index=INDEX, doc_type=None, body=count_query)
     counts = {x['key']: x['doc_count'] for x in res['aggregations']['counts']['buckets'] if x['key'] in ALIASES.keys()}
 
     counts['total'] = sum([val for val in counts.values()])

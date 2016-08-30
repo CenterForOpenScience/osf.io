@@ -31,6 +31,7 @@ from website.files.models.base import FileVersion
 from website.files.models.base import StoredFileNode
 from website.files.models.base import TrashedFileNode
 from website.conferences.model import Conference, MailRecord
+from website.mailing_list.model import MailingListEventLog
 from website.notifications.model import NotificationDigest
 from website.notifications.model import NotificationSubscription
 from website.archiver.model import ArchiveJob, ArchiveTarget
@@ -50,7 +51,7 @@ MODELS = (
     ArchiveJob, ArchiveTarget, BlacklistGuid,
     QueuedMail, AlternativeCitation,
     DraftRegistration, DraftRegistrationApproval, DraftRegistrationLog,
-    NodeLicense, NodeLicenseRecord,
+    NodeLicense, NodeLicenseRecord, MailingListEventLog
     Subject, PreprintProvider
 )
 
