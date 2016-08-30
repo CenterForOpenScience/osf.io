@@ -3,7 +3,7 @@ import pytest
 
 from django.utils import timezone
 from framework.auth.core import Auth
-from osf_models.models import Node, Registration, Sanction
+from osf_models.models import Node, Registration, Sanction, MetaSchema
 from osf_models.modm_compat import Q
 
 from website import settings
@@ -14,6 +14,7 @@ from . import factories
 from .utils import assert_datetime_equal, mock_archive
 from .factories import get_default_metaschema
 
+pytestmark = pytest.mark.django_db
 
 @pytest.fixture(autouse=True)
 def _ensure_schemas():
@@ -34,7 +35,6 @@ def auth(user):
     return Auth(user)
 
 # copied from tests/test_models.py
-@pytest.mark.django_db
 def test_factory(user, project):
     # Create a registration with kwargs
     registration1 = factories.RegistrationFactory(
@@ -63,7 +63,6 @@ def test_factory(user, project):
     )
 
 # copied from tests/test_models.py
-@pytest.mark.django_db
 class TestRegisterNode:
 
     @pytest.fixture()
@@ -284,7 +283,6 @@ class TestRegisterNode:
 
 
 # copied from tests/test_registrations
-@pytest.mark.django_db
 class TestNodeSanctionStates:
 
     def test_sanction_none(self):
@@ -427,3 +425,48 @@ class TestNodeSanctionStates:
         with mock_archive(node, embargo=True, autoapprove=True) as registration:
             sub_reg = registration.nodes.first().nodes.first()
             assert sub_reg.is_embargoed
+
+
+class TestDraftRegistrations:
+
+    # copied from tests/test_registrations/test_models.py
+    def test_factory(self):
+        draft = factories.DraftRegistrationFactory()
+        assert draft.branched_from is not None
+        assert draft.initiator is not None
+        assert draft.registration_schema is not None
+
+        user = factories.UserFactory()
+        draft = factories.DraftRegistrationFactory(initiator=user)
+        assert draft.initiator == user
+
+        node = factories.ProjectFactory()
+        draft = factories.DraftRegistrationFactory(branched_from=node)
+        assert draft.branched_from == node
+        assert draft.initiator == node.creator
+
+        # Pick an arbitrary v2 schema
+        schema = MetaSchema.find(
+            Q('schema_version', 'eq', 2)
+        )[0]
+        data = {'some': 'data'}
+        draft = factories.DraftRegistrationFactory(registration_schema=schema, registration_metadata=data)
+        assert draft.registration_schema == schema
+        assert draft.registration_metadata == data
+
+    def test_has_active_draft_registrations(self):
+        project, project2 = factories.ProjectFactory(), factories.ProjectFactory()
+        factories.DraftRegistrationFactory(branched_from=project)
+        assert project.has_active_draft_registrations is True
+        assert project2.has_active_draft_registrations is False
+
+    def test_draft_registrations_active(self):
+        project = factories.ProjectFactory()
+        registration = factories.RegistrationFactory(project=project)
+        deleted_registration = factories.RegistrationFactory(project=project, is_deleted=True)
+        draft = factories.DraftRegistrationFactory(branched_from=project)
+        draft2 = factories.DraftRegistrationFactory(branched_from=project, registered_node=deleted_registration)
+        finished_draft = factories.DraftRegistrationFactory(branched_from=project, registered_node=registration)
+        assert draft in project.draft_registrations_active.all()
+        assert draft2 in project.draft_registrations_active.all()
+        assert finished_draft in project.draft_registrations_active.all()

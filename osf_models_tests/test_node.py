@@ -979,4 +979,3 @@ def test_templated_list(node):
     assert templated1 in node.templated_list.all()
     assert templated2 in node.templated_list.all()
     assert deleted not in node.templated_list.all()
-

@@ -320,6 +320,35 @@ class EmbargoTerminationApprovalFactory(DjangoModelFactory):
             return approval
 
 
+class DraftRegistrationFactory(DjangoModelFactory):
+    class Meta:
+        model = models.DraftRegistration
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        branched_from = kwargs.get('branched_from')
+        initiator = kwargs.get('initiator')
+        registration_schema = kwargs.get('registration_schema')
+        registration_metadata = kwargs.get('registration_metadata')
+        if not branched_from:
+            project_params = {}
+            if initiator:
+                project_params['creator'] = initiator
+            branched_from = ProjectFactory(**project_params)
+        initiator = branched_from.creator
+        try:
+            registration_schema = registration_schema or models.MetaSchema.find()[0]
+        except IndexError:
+            ensure_schemas()
+        registration_metadata = registration_metadata or {}
+        draft = models.DraftRegistration.create_from_node(
+            branched_from,
+            user=initiator,
+            schema=registration_schema,
+            data=registration_metadata,
+        )
+        return draft
+
 class CommentFactory(DjangoModelFactory):
     class Meta:
         model = models.Comment
