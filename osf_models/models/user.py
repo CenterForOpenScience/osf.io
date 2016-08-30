@@ -35,6 +35,7 @@ from osf_models.models.base import BaseModel, GuidMixin
 from osf_models.models.tag import Tag
 from osf_models.models.institution import Institution
 from osf_models.models.session import Session
+from osf_models.models.watch_config import WatchConfig
 from osf_models.models.mixins import AddonModelMixin
 from osf_models.models.contributor import RecentlyAddedContributor
 from osf_models.utils import security
@@ -319,6 +320,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     affiliated_institutions = models.ManyToManyField('Institution')
 
     notifications_configured = DateTimeAwareJSONField(default=dict, blank=True)
+
+    watched = models.ManyToManyField('AbstractNode', related_name='watches', through=WatchConfig)
 
     objects = OSFUserManager()
 
@@ -993,3 +996,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
             return None
 
         return cls.load(user_session.data.get('auth_user_id'))
+
+    def is_watching(self, node):
+        return self.watched.filter(id=node.id).exists()
