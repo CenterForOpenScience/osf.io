@@ -199,7 +199,7 @@ def add_contributors(
     )
 
 @contributor_added.connect
-def contributor_added_handler(node, contributor, auth=None, throttle=None):
+def contributor_added_handler(node, contributor, *args, auth=None, throttle=None, **kwargs):
     add_contributor(list_mailbox=node._id, contributor=contributor._id)
 
 @with_list_proxy
