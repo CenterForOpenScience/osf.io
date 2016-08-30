@@ -23,12 +23,13 @@ ANON, AUTH, CONTRIB, OWNER = range(4)
 Y, N = True, False
 
 cases = [
-    (PRIVATE, PROJECT, ANON, N),
-    (PUBLIC, PROJECT, ANON, Y),
-    (PRIVATE, REGISTRATION, ANON, N),
-    (PUBLIC, REGISTRATION, ANON, Y),
-    (PRIVATE, COMPONENT, ANON, N),
-    (PUBLIC, COMPONENT, ANON, Y),
+    ("private project hidden from anon", PRIVATE, PROJECT, ANON, N),
+    ("private registration hidden from anon", PRIVATE, REGISTRATION, ANON, N),
+    ("private component hidden from anon", PRIVATE, COMPONENT, ANON, N),
+
+    ("public project shown to anon", PUBLIC, PROJECT, ANON, Y),
+    ("public registration shown to anon", PUBLIC, REGISTRATION, ANON, Y),
+    ("public component shown to anon", PUBLIC, COMPONENT, ANON, Y),
 ]
 
 class TestSearchSearchAPI(SearchTestCase):
@@ -36,19 +37,23 @@ class TestSearchSearchAPI(SearchTestCase):
     """
 
     def results(self, query):
-        url = api_url_for('search_search', type='project')
+        url = api_url_for('search_search')
         return self.app.get(url, {'q': query}).json['results']
 
     @parameterized.expand(cases)
-    def test(self, status, type_, role, included):
+    def test(self, ignored, status, type_, role, included):
         if type_ == PROJECT:
             factories.ProjectFactory(title='Flim Flammity', is_public=status is PUBLIC)
         elif type_ == REGISTRATION:
             project = factories.ProjectFactory(title='Flim Flammity', is_public=status is PUBLIC)
             factories.RegistrationFactory(project=project, is_public=status is PUBLIC)
         elif type_ == COMPONENT:
-            project = factories.ProjectFactory(title='Flim Flammity', is_public=status is PUBLIC)
-            factories.NodeFactory(parent=project, is_public=status is PUBLIC)
+            project = factories.ProjectFactory(title='Blim Blammity', is_public=status is PUBLIC)
+            factories.NodeFactory(
+                title='Flim Flammity',
+                parent=project,
+                is_public=status is PUBLIC,
+            )
         else:
             raise NotImplementedError
         expected = ['Flim Flammity'] if included else []
