@@ -1509,12 +1509,15 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ODMF
 
 
 class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, ListFilterMixin, NodeMixin):
-    """Files attached to a node for a given provider. *Read-only*.
+    """Information about the contents of files and folders attached to a node for a given provider. *Read-only*.
 
     This gives a list of all of the files and folders that are attached to your project for the given storage provider.
     If the provider is not "osfstorage", the metadata for the files in the storage will be retrieved and cached whenever
     this endpoint is accessed.  To see the cached metadata, GET the endpoint for the file directly (available through
     its `/links/info` attribute).
+
+    If a path is given, and the path is a file entity, the response will contain details about that file entity.
+    If a path is given, and the path is a folder entity, the response will contain the contents of that folder as a list.
 
     When a create/update/delete action is performed against the file or folder, the action is handled by an external
     service called WaterButler.  The WaterButler response format differs slightly from the OSF's.
