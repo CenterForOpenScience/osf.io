@@ -390,6 +390,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     # Dictionary field mapping extra fields defined in the MetaSchema.schema to their
     # values. Defaults should be provided in the schema (e.g. 'paymentSent': false),
     # and these values are added to the DraftRegistration
+    # TODO: Use "FIELD_ALIASES"?
     _metaschema_flags = DateTimeAwareJSONField(default=dict, blank=True)
     notes = models.TextField(blank=True)
 
