@@ -97,6 +97,9 @@ RUN pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/we
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/twofactor/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/zotero/requirements.txt
 
+RUN (pip uninstall uritemplate.py --yes || true) \
+    && pip install --no-cache-dir uritemplate.py==0.3.0
+
 # Bower setup and clean up
 COPY ./.bowerrc /code/
 COPY ./bower.json /code/
