@@ -9,7 +9,7 @@ log_requests = False
 in_migration = False
 
 class DiscourseException(Exception):
-    def __init__(self, message, result):
+    def __init__(self, message, result=None):
         super(DiscourseException, self).__init__(message)
         self.result = result
 
