@@ -45,7 +45,8 @@ from api.nodes.serializers import (
     NodeAlternativeCitationSerializer,
     NodeContributorsCreateSerializer,
     NodeViewOnlyLinkSerializer,
-    NodeViewOnlyLinkUpdateSerializer
+    NodeViewOnlyLinkUpdateSerializer,
+    NodeCitationSerializer
 )
 from api.nodes.utils import get_file_object
 
@@ -1226,6 +1227,24 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
     def perform_create(self, serializer):
         user = self.request.user
         serializer.save(creator=user, parent=self.get_node())
+
+
+class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_BASE_READ]
+    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+
+    serializer_class = NodeCitationSerializer
+    view_category = 'nodes'
+    view_name = 'node-citation'
+
+    def get_object(self):
+        node = self.get_node()
+        return node.csl
 
 
 # TODO: Make NodeLinks filterable. They currently aren't filterable because we have can't

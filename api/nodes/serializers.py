@@ -47,6 +47,20 @@ class NodeLicenseSerializer(RestrictedDictSerializer):
     year = ser.CharField(allow_blank=True, read_only=True)
 
 
+class NodeCitationSerializer(RestrictedDictSerializer):
+    id = IDField(source='_id', read_only=True)
+    title = ser.CharField(allow_blank=True, read_only=True)
+    author = ser.DictField(read_only=True)
+    publisher = ser.CharField(allow_blank=True, read_only=True)
+    type = ser.CharField(allow_blank=True, read_only=True)
+    doi = ser.CharField(allow_blank=True, read_only=True)
+
+    links = LinksField({'self': 'get_absolute_url'})
+
+    def get_absolute_url(self, obj):
+        return obj['URL']
+
+
 class NodeSerializer(JSONAPISerializer):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
     # handle blank choices properly. Currently DRF ChoiceFields ignore blank options, which is incorrect in this
