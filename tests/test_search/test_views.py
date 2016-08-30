@@ -18,7 +18,7 @@ class TestSearchPage(SearchTestCase):
 
 
 PRIVATE, PUBLIC = range(2)
-PROJECT, REGISTRATION = range(2)
+PROJECT, REGISTRATION, COMPONENT = range(3)
 ANON, AUTH, CONTRIB, OWNER = range(4)
 Y, N = True, False
 
@@ -27,6 +27,8 @@ cases = [
     (PUBLIC, PROJECT, ANON, Y),
     (PRIVATE, REGISTRATION, ANON, N),
     (PUBLIC, REGISTRATION, ANON, Y),
+    (PRIVATE, COMPONENT, ANON, N),
+    (PUBLIC, COMPONENT, ANON, Y),
 ]
 
 class TestSearchSearchAPI(SearchTestCase):
@@ -44,6 +46,9 @@ class TestSearchSearchAPI(SearchTestCase):
         elif type_ == REGISTRATION:
             project = factories.ProjectFactory(title='Flim Flammity', is_public=status is PUBLIC)
             factories.RegistrationFactory(project=project, is_public=status is PUBLIC)
+        elif type_ == COMPONENT:
+            project = factories.ProjectFactory(title='Flim Flammity', is_public=status is PUBLIC)
+            factories.NodeFactory(parent=project, is_public=status is PUBLIC)
         else:
             raise NotImplementedError
         expected = ['Flim Flammity'] if included else []
