@@ -52,6 +52,7 @@ git+git://github.com/CenterForOpenScience/kombu.git@v3.0.36
 # MailChimp Ticket: LTK1218902287135X, Domain: https://us9.api.mailchimp.com
 certifi==2015.4.28
 sendgrid==1.5.13
+mailmanclient==1.0.1
 
 # avoid dbus-python requirement from secretstorage dependency
 # https://github.com/jaraco/keyring/blob/9.1/setup.py
@@ -81,6 +82,6 @@ django-ckeditor==5.0.2
 django-password-reset==0.8.2
 sendgrid-django==2.0.0
 
-# Analytics requirements
+# Analytics Requirements
 keen==0.3.21
 python-geoip-geolite2==2015.0303

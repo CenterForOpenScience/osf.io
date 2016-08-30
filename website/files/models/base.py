@@ -273,7 +273,6 @@ class StoredFileNode(StoredObject, Commentable):
                 return None
         return Guid.generate(self)
 
-
 class FileNodeMeta(type):
     """Keeps track of subclasses of the ``FileNode`` object
     Inserts all into the PROVIDER_MAP following the pattern:
@@ -559,7 +558,6 @@ class FileNode(object):
             versions=self.versions,
             last_touched=self.last_touched,
             materialized_path=self.materialized_path,
-
             deleted_by=user
         )
         if save:

@@ -55,6 +55,7 @@ from website.identifiers.model import IdentifierMixin
 from website.util.permissions import expand_permissions, reduce_permissions
 from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
 from website.project.commentable import Commentable
+from website import mailing_list
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.metadata.utils import create_jsonschema_from_metaschema
 from website.project.licenses import (
@@ -922,6 +923,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     # TODO: Add validator
     comment_level = fields.StringField(default='public')
 
+    # Indicates whether or not the mailing list for this node should be enabled
+    mailing_enabled = fields.BooleanField(default=True, index=True)
+
+    # Flag indicating this node should be inspected by a weekly celerybeat job
+    # to synchronize the mailing list on Mailgun. Defaults to True in case the
+    # initial create_list job fails.
+    mailing_updated = fields.BooleanField(default=True, index=True)
+
     wiki_pages_current = fields.DictionaryField()
     wiki_pages_versions = fields.DictionaryField()
     # Dictionary field mapping node wiki page to sharejs private uuid.
@@ -1731,9 +1740,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     def save(self, *args, **kwargs):
         self.adjust_permissions()
-
+        mailing_list_data_is_stale = False
         first_save = not self._is_loaded
-
         if first_save and self.is_bookmark_collection:
             existing_bookmark_collections = Node.find(
                 Q('is_bookmark_collection', 'eq', True) & Q('contributors', 'eq', self.creator._id)
@@ -1785,7 +1793,21 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                 save=True,
             )
 
+            mailing_list_data_is_stale = True
+
             project_signals.project_created.send(self)
+
+        if set(saved_fields) & {'title', 'description', 'contributors', 'is_public'}:
+            mailing_list_data_is_stale = True
+
+        if mailing_list_data_is_stale:
+            mailing_list.utils.upsert_list(
+                list_mailbox=self._id,
+                list_title=self.title,
+                list_description=self.description,
+                contributors=self.contributors,
+                public=self.is_public
+            )
 
         # Only update Solr if at least one stored field has changed, and if
         # public or privacy setting has changed

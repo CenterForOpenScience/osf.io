@@ -225,6 +225,13 @@ def update_user(auth):
             for list_name, subscription in user.mailchimp_mailing_lists.iteritems():
                 if subscription:
                     mailchimp_utils.unsubscribe_mailchimp_async(list_name, user._id, username=user.username)
+
+            #for node in user.contributed:
+            #    if node.mailing_enabled:
+            #        node.mailing_updated = True
+            #        node.save()
+            #        celery_update_single_user_in_list(node._id, user._id, email=username, old_email=user.username)
+
             user.username = username
 
     ###################

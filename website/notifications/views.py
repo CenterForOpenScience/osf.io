@@ -6,6 +6,7 @@ from framework import sentry
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 
+from website.mailing_list.utils import celery_update_single_user_in_list
 from website.notifications import utils
 from website.notifications.constants import NOTIFICATION_TYPES
 from website.notifications.model import NotificationSubscription
@@ -44,9 +45,11 @@ def configure_subscription(auth):
     provider = json_data.get('provider')
 
     if not event or (notification_type not in NOTIFICATION_TYPES and notification_type != 'adopt_parent'):
-        raise HTTPError(http.BAD_REQUEST, data=dict(
-            message_long='Must provide an event and notification type for subscription.')
-        )
+        #if notification_type in user.emails:
+        #    notification_type ==
+
+        #else:
+        raise HTTPError(http.BAD_REQUEST)
 
     node = Node.load(target_id)
     if 'file_updated' in event and path is not None and provider is not None:
@@ -108,5 +111,14 @@ def configure_subscription(auth):
     subscription.add_user_to_subscription(user, notification_type)
 
     subscription.save()
+
+    if 'mailing_list_events' in event:
+        celery_update_single_user_in_list(
+            node_id=target_id,
+            user_id=user._id,
+            #email_address=notification_type,
+            email_address=user.email,
+            enabled=bool(event != 'none')
+        )
 
     return {'message': 'Successfully subscribed to {} list on {}'.format(notification_type, event_id)}

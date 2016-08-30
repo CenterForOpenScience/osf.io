@@ -31,6 +31,7 @@ from website.files.models.base import FileVersion
 from website.files.models.base import StoredFileNode
 from website.files.models.base import TrashedFileNode
 from website.conferences.model import Conference, MailRecord
+from website.mailing_list.model import MailingListEventLog
 from website.notifications.model import NotificationDigest
 from website.notifications.model import NotificationSubscription
 from website.archiver.model import ArchiveJob, ArchiveTarget
@@ -39,19 +40,47 @@ from website.project.taxonomies import Subject
 
 # All models
 MODELS = (
+    AlternativeCitation,
+    ApiOAuth2Application,
+    ApiOAuth2PersonalToken,
+    ArchiveJob,
+    ArchiveTarget,
+    BlacklistGuid,
+    CitationStyle,
+    CitationStyle,
+    Comment,
+    Conference,
+    DraftRegistration,
+    DraftRegistrationApproval,
+    DraftRegistrationLog,
+    Embargo,
+    EmbargoTerminationApproval,
+    ExternalAccount,
+    FileVersion,
+    Guid,
+    Identifier,
+    MailRecord,
+    MetaData,
+    MetaSchema,
+    Node,
+    NodeLicense,
+    NodeLicenseRecord,
+    NodeLog,
+    NotificationDigest,
+    NotificationSubscription,
+    Pointer,
+    PreprintProvider,
+    PrivateLink,
+    QueuedMail,
+    RegistrationApproval,
+    Retraction,
+    Session,
+    StoredFileNode,
+    Subject,
+    Tag,
+    TrashedFileNode,
     User,
-    ApiOAuth2Application, ApiOAuth2PersonalToken, Node,
-    NodeLog, StoredFileNode, TrashedFileNode, FileVersion,
-    Tag, WatchConfig, Session, Guid, MetaSchema, Pointer,
-    MailRecord, Comment, PrivateLink, MetaData, Conference,
-    NotificationSubscription, NotificationDigest, CitationStyle,
-    CitationStyle, ExternalAccount, Identifier,
-    Embargo, Retraction, RegistrationApproval, EmbargoTerminationApproval,
-    ArchiveJob, ArchiveTarget, BlacklistGuid,
-    QueuedMail, AlternativeCitation,
-    DraftRegistration, DraftRegistrationApproval, DraftRegistrationLog,
-    NodeLicense, NodeLicenseRecord,
-    Subject, PreprintProvider
-)
+    WatchConfig
+    )
 
 GUID_MODELS = (User, Node, Comment, MetaData)

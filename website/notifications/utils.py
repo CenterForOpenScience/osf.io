@@ -10,6 +10,7 @@ from website.notifications import model
 from website.notifications.exceptions import InvalidSubscriptionError
 from website.notifications.model import NotificationSubscription
 from website.project import signals
+#from website.settings import OSF_MAILING_LIST_DOMAIN
 
 from framework.celery_tasks import app
 
@@ -235,27 +236,27 @@ def format_data(user, node_ids):
     for node_id in node_ids:
         node = Node.load(node_id)
         assert node, '{} is not a valid Node.'.format(node_id)
-
         can_read = node.has_permission(user, 'read')
         can_read_children = node.has_permission_on_children(user, 'read')
-
         if not can_read and not can_read_children:
             continue
 
         children = []
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node
-
         if can_read:
+
             node_sub_available = list(constants.NODE_SUBSCRIPTIONS_AVAILABLE.keys())
             subscriptions = [subscription for subscription in get_all_node_subscriptions(user, node)
                              if getattr(subscription, 'event_name') in node_sub_available]
             for subscription in subscriptions:
                 index = node_sub_available.index(getattr(subscription, 'event_name'))
+                # If this event is not a mailing_list_event on a node with mailing lists disabled: serialize it
+                #if not (subscription.event_name == 'mailing_list_events'):
                 children.append(serialize_event(user, subscription=subscription,
                                                 node=node, event_description=node_sub_available.pop(index)))
             for node_sub in node_sub_available:
-                    children.append(serialize_event(user, node=node, event_description=node_sub))
+                children.append(serialize_event(user, node=node, event_description=node_sub))
             children.sort(key=lambda s: s['event']['title'])
 
         children.extend(format_data(
@@ -282,9 +283,7 @@ def format_data(user, node_ids):
                 'view': can_read,
             },
         }
-
         items.append(item)
-
     return items
 
 
@@ -341,7 +340,7 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
         for n_type in constants.NOTIFICATION_TYPES:
             if user in getattr(subscription, n_type):
                 notification_type = n_type
-    return {
+    return {  # tbd = {
         'event': {
             'title': event_description,
             'description': all_subs[event_type],
@@ -351,6 +350,38 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
         'kind': 'event',
         'children': []
     }
+
+    # The following is fully functional at the present, though may not be included as a feature at this time:
+    """if tbd['event']['title'] == 'mailing_list_events':
+
+        from website.mailing_list.utils import _init_mailman_client
+        mc = _init_mailman_client()
+        try:
+            list_proxy = mc.get_list(
+                '{}@{}'.format(
+                    node._id,
+                    OSF_MAILING_LIST_DOMAIN
+                )
+            )
+            def subbed(email):
+                try:
+                    list_proxy.get_member(email)
+                    return True
+                except:
+                    return False
+
+            subbed_emails = list(filter(subbed, user.emails))
+
+            print(subbed_emails)
+
+            tbd['event']['user_data'] = user.emails
+            try:
+                tbd['event']['notificationType'] = subbed_emails[0]
+            except:
+                tbd['event']['notificationType'] =
+        except:
+            logger.warn('Mailman client unable to connect to Mailman API. The server may not be available.')
+    return tbd"""
 
 
 def get_parent_notification_type(node, event, user):
