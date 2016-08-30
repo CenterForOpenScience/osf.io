@@ -774,3 +774,4 @@ class UserEmploymentRelationship(JSONAPIBaseView, generics.ListAPIView, ListFilt
     def get_queryset(self):
         user = self.get_user(check_permissions=False)
         return user.jobs
+    

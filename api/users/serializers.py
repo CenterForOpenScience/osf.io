@@ -3,15 +3,16 @@ from rest_framework import serializers as ser
 from modularodm.exceptions import ValidationValueError
 
 from api.base.exceptions import InvalidModelValueError, JSONAPIException, Conflict
-from api.base.serializers import AllowMissing, JSONAPIRelationshipSerializer, HideIfDisabled
+from api.base.serializers import JSONAPIRelationshipSerializer, HideIfDisabled
 from website.models import User
 
 from api.base.serializers import (
-    JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField, JSONAPIListField
+    JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField,
 )
 from api.base.utils import absolute_reverse, get_user_auth
 
 from framework.auth.views import send_confirm_email
+
 
 class UserSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
@@ -340,10 +341,10 @@ class UserEducationSerializer(ser.Serializer):
     institution = ser.CharField(required=False, allow_blank=True)
     department = ser.CharField(required=False, allow_blank=True)
     degree = ser.CharField(required=False, allow_blank=True)
-    start_month = ser.CharField(source='startMonth',required=False, allow_blank=True)
-    start_year = ser.CharField(source='startYear',required=False, allow_blank=True)
-    end_month = ser.CharField(source='endMonth',required=False, allow_blank=True)
-    end_year = ser.CharField(source='endYear',required=False, allow_blank=True)
+    start_month = ser.CharField(source='startMonth', required=False, allow_blank=True)
+    start_year = ser.CharField(source='startYear', required=False, allow_blank=True)
+    end_month = ser.CharField(source='endMonth', required=False, allow_blank=True)
+    end_year = ser.CharField(source='endYear', required=False, allow_blank=True)
     ongoing = ser.BooleanField(required=False)
 
     class Meta:
@@ -374,4 +375,3 @@ class UserEmploymentSerializer(ser.Serializer):
         if obj is not None:
             return obj.absolute_url
         return None
-
