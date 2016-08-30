@@ -26,14 +26,14 @@ class IdentifierMixin(object):
 
     def get_identifier(self, category):
         """Returns None of no identifier matches"""
-        return Identifier.objects.filter(referent=self, category=category).first()
+        return Identifier.objects.filter(nodes=self, category=category).first()
 
     def get_identifier_value(self, category):
         identifier = self.get_identifier(category)
         return identifier.value if identifier else None
 
     def set_identifier_value(self, category, value):
-        identifier, created = Identifier.objects.get_or_create(referent=self,
+        identifier, created = Identifier.objects.get_or_create(nodes=self,
                                                                category=category,
                                                                defaults=dict(value=value))
         if not created:

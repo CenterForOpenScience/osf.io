@@ -4,6 +4,7 @@ import re
 import urlparse
 
 from django.apps import apps
+from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.dispatch import receiver
@@ -37,6 +38,7 @@ from osf_models.models.nodelog import NodeLog
 from osf_models.models.citation import AlternativeCitation
 from osf_models.models.contributor import Contributor, RecentlyAddedContributor
 from osf_models.models.mixins import Loggable, Taggable, AddonModelMixin, NodeLinkMixin
+from osf_models.models.identifiers import Identifier
 from osf_models.models.user import OSFUser
 from osf_models.models.sanctions import RegistrationApproval
 from osf_models.models.validators import validate_title
@@ -155,6 +157,8 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
     # Dictionary field mapping node wiki page to sharejs private uuid.
     # {<page_name>: <sharejs_id>}
     wiki_private_uuids = DateTimeAwareJSONField(default=dict, blank=True)
+
+    identifiers = GenericRelation(Identifier, related_query_name='nodes')
 
     def __init__(self, *args, **kwargs):
         self._parent = kwargs.pop('parent', None)
@@ -426,10 +430,6 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
     def registrations_all(self):
         """For v1 compat."""
         return self.registrations.all()
-
-    @property
-    def url(self):
-        return '/{}/'.format(self._id)
 
     @property
     def parent_id(self):
