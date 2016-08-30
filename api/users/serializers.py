@@ -7,7 +7,7 @@ from api.base.serializers import JSONAPIRelationshipSerializer, HideIfDisabled
 from website.models import User
 
 from api.base.serializers import (
-    JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField,
+    JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField
 )
 from api.base.utils import absolute_reverse, get_user_auth
 
@@ -35,6 +35,7 @@ class UserSerializer(JSONAPISerializer):
 
     timezone = HideIfDisabled(ser.CharField(required=False, help_text="User's timezone, e.g. 'Etc/UTC"))
     locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))
+
     social = HideIfDisabled(LinksField(
         {
             'self': 'get_absolute_url',
@@ -53,6 +54,7 @@ class UserSerializer(JSONAPISerializer):
             'ssrn': 'ssrn_url',
         }
     ))
+
     links = HideIfDisabled(LinksField(
         {
             'html': 'absolute_url',
@@ -94,8 +96,15 @@ class UserSerializer(JSONAPISerializer):
         except KeyError:
             github = None
         if github:
-            return 'http://github.com/{}/'.format(github)
-        return ' '
+            github_base_url = 'http://github.com/{}/'
+            if isinstance(github, list):
+                account_list = []
+                for account in github:
+                    account_list.append(github_base_url.format(account))
+                return account_list
+            else:
+                return [github_base_url.format(github)]
+        return []
 
     def scholar_url(self, obj):
         try:
@@ -103,15 +112,30 @@ class UserSerializer(JSONAPISerializer):
         except KeyError:
             scholar = None
         if scholar:
-            return 'http://scholar.google.com/citations?user={}'.format(scholar)
-        return ' '
+            scholar_base_url = 'http://scholar.google.com/citations?user={}'
+            if isinstance(scholar, list):
+                scholar_list = []
+                for account in scholar:
+                    scholar_list.append(scholar_base_url.format(account))
+                return scholar_list
+            else:
+                return scholar_base_url.format(scholar)
+        return []
 
     def personal_website_url(self, obj):
         try:
             personal_website = obj.social['profileWebsites']
         except KeyError:
             personal_website = None
-        return personal_website if personal_website else ' '
+        if personal_website:
+            if isinstance(personal_website, list):
+                account_list = []
+                for account in personal_website:
+                    account_list.append(account)
+                return account_list
+            else:
+                return [personal_website]
+        return []
 
     def twitter_url(sel, obj):
         try:
@@ -119,8 +143,15 @@ class UserSerializer(JSONAPISerializer):
         except KeyError:
             twitter = None
         if twitter:
-            return 'http://twitter.com/{}'.format(twitter)
-        return ' '
+            twitter_base_url = 'http://twitter.com/{}'
+            if isinstance(twitter, list):
+                twitter_list = []
+                for account in twitter:
+                    twitter_list.append(twitter_base_url.format(account))
+                return twitter_list
+            else:
+                return [twitter_base_url.format(twitter)]
+        return []
 
     def linkedin_url(self, obj):
         try:
@@ -128,8 +159,15 @@ class UserSerializer(JSONAPISerializer):
         except KeyError:
             linkedin = None
         if linkedin:
-            return 'http://twitter.com/{}'.format(linkedin)
-        return ' '
+            linkedin_base_url = 'https://www.linkedin.com/{}'
+            if isinstance(linkedin, list):
+                account_list = []
+                for account in linkedin:
+                    account_list.append(linkedin_base_url.format(account))
+                return account_list
+            else:
+                return [linkedin_base_url.format(linkedin)]
+        return []
 
     def orcid_url(self, obj):
         try:
@@ -137,8 +175,15 @@ class UserSerializer(JSONAPISerializer):
         except KeyError:
             orcid = None
         if orcid:
-            return 'https://www.linkedin.com/{}'.format(orcid)
-        return ' '
+            orcide_base_url = 'http://orcid.org/{}'
+            if isinstance(orcid, list):
+                account_list = []
+                for account in orcid:
+                    account_list.append(orcide_base_url.format(account))
+                return account_list
+            else:
+                return [orcide_base_url.format(orcid)]
+        return []
 
     def impactstory_url(self, obj):
         try:
@@ -146,8 +191,15 @@ class UserSerializer(JSONAPISerializer):
         except KeyError:
             impactstory = None
         if impactstory:
-            return 'https://impactstory.org/{}'.format(impactstory)
-        return ' '
+            impactstory_base_url = 'https://impactstory.org/{}'
+            if isinstance(impactstory, list):
+                account_list = []
+                for account in impactstory:
+                    account_list.append(impactstory_base_url.format(account))
+                return account_list
+            else:
+                return [impactstory_base_url.format(impactstory)]
+        return []
 
     def researcherid_url(self, obj):
         try:
@@ -155,8 +207,15 @@ class UserSerializer(JSONAPISerializer):
         except KeyError:
             researcherid = None
         if researcherid:
-            return 'http://researcherid.com/rid/{}'.format(researcherid)
-        return ' '
+            researcherid_url_base_url = 'http://researcherid.com/rid/{}'
+            if isinstance(researcherid, list):
+                account_list = []
+                for account in researcherid:
+                    account_list.append(researcherid_url_base_url.format(account))
+                return account_list
+            else:
+                return [researcherid_url_base_url.format(researcherid)]
+        return []
 
     def researchgate_url(self, obj):
         try:
@@ -164,8 +223,15 @@ class UserSerializer(JSONAPISerializer):
         except KeyError:
             researchgate = None
         if researchgate:
-            return 'https://researchgate.net/profile/{}'.format(researchgate)
-        return ' '
+            researchgate_base_url = 'https://researchgate.net/profile/{}'
+            if isinstance(researchgate, list):
+                account_list = []
+                for account in researchgate:
+                    account_list.append(researchgate_base_url.format(account))
+                return account_list
+            else:
+                return [researchgate_base_url.format(researchgate)]
+        return []
 
     def academia_institution_url(self, obj):
         try:
@@ -173,8 +239,15 @@ class UserSerializer(JSONAPISerializer):
         except KeyError:
             academia_institution = None
         if academia_institution:
-            return 'https://{}'.format(academia_institution)
-        return ' '
+            academia_institution_base_url = 'https://{}'
+            if isinstance(academia_institution, list):
+                account_list = []
+                for account in academia_institution:
+                    account_list.append(academia_institution_base_url.format(account))
+                return account_list
+            else:
+                return [academia_institution_base_url.format(academia_institution)]
+        return []
 
     def academia_profile_id_url(self, obj):
         try:
@@ -182,8 +255,15 @@ class UserSerializer(JSONAPISerializer):
         except KeyError:
             academia_profile_id = None
         if academia_profile_id:
-            return '.academia.edu/{}'.format(academia_profile_id)
-        return ' '
+            academia_profile_id_based_url = '.academia.edu/{}'
+            if isinstance(academia_profile_id, list):
+                account_list = []
+                for account in academia_profile_id:
+                    account_list.append(academia_profile_id_based_url.format(account))
+                return account_list
+            else:
+                return [academia_profile_id_based_url.format(academia_profile_id)]
+        return []
 
     def baiduscholar_url(self, obj):
         try:
@@ -191,8 +271,15 @@ class UserSerializer(JSONAPISerializer):
         except KeyError:
             baiduscholar = None
         if baiduscholar:
-            return 'http://xueshu.baidu.com/scholarID/{}'.format(baiduscholar)
-        return ' '
+            baiduscholar_base_url = 'http://xueshu.baidu.com/scholarID/{}'
+            if isinstance(baiduscholar, list):
+                account_list = []
+                for account in baiduscholar:
+                    account_list.append[baiduscholar_base_url.format(account)]
+                return account_list
+            else:
+                return [baiduscholar_base_url.format(baiduscholar)]
+        return []
 
     def ssrn_url(self, obj):
         try:
@@ -200,8 +287,15 @@ class UserSerializer(JSONAPISerializer):
         except KeyError:
             ssrn = None
         if ssrn:
-            return 'http://twitter.com/{}'.format(ssrn)
-        return ' '
+            ssrn_base_url = 'http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id={}'
+            if isinstance(ssrn, list):
+                account_list = []
+                for account in ssrn:
+                    account_list.append[ssrn_base_url.format(account)]
+                return account_list
+            else:
+                return [ssrn_base_url.format(ssrn)]
+        return []
 
     class Meta:
         type_ = 'users'
