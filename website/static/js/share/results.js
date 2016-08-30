@@ -7,6 +7,7 @@ var $osf = require('js/osfHelpers');
 var utils = require('./utils');
 require('truncate');
 
+
 var LoadingIcon = {
     view: function(ctrl) {
         return m('img', {src: '/static/img/loading.gif', alt: 'loading spinner'});
@@ -47,7 +48,7 @@ var Results = {
                                 utils.updateVM(vm, data);
                             });
                     }
-                }, 'More') : [])
+                }, 'More'): [])
             ))
         ]);
 
@@ -94,7 +95,6 @@ var TitleBar = {
     }
 };
 
-/* Render the description of a single result. Will highlight the matched text */
 var Description = {
     controller: function(vm) {
         var self = this;
@@ -105,14 +105,14 @@ var Description = {
         var showOnClick = function() {
             ctrl.showAll(!ctrl.showAll());
         };
-        if ((result.description || '').length > 350) {
+        if ((result.description || '').length > 350 && result.description.indexOf('$') === -1) {
             return m('', [
                 m('p.readable.pointer', {onclick: showOnClick},
                     ctrl.showAll() ? result.description : $.truncate(result.description, {length: 350})
                 ),
                 m('a.sr-only', {href: '#', onclick: showOnClick}, ctrl.showAll() ? 'See less' : 'See more')]);
         } else {
-            return m('p.readable', result.description);
+            return m('p.readable', MathJax.Hub.Queue(['Typeset', MathJax.Hub]), result.description); // jshint ignore:line
         }
     }
 };
