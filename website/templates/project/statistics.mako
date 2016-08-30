@@ -1,15 +1,6 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${node['title']} Analytics</%def>
 
-## TEMPORARY maintenance alert
-% if node['is_public']:
-  <div class="alert alert-info" role="alert">
-    <strong>Notice:</strong> We are currently migrating historical project data to our new
-    analytics system. Thank you for your patience.
-  </div>
-% endif
-## TEMPORARY maintenance alert
-
 <div class="page-header visible-xs">
     <h2 class="text-300">Analytics</h2>
 </div>

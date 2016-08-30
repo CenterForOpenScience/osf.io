@@ -27,6 +27,18 @@
   </div>
 </div>
 <hr>
+
+%if file_id == node['preprint_file_id'] and node['is_public']:
+<div class="row">
+    <div class="col-xs-12">
+        <div class="preprint-notice m-b-md p-md clearfix">
+            This is the primary file for a preprint. <a href="http://help.osf.io/m/preprints">Learn more</a> about how to work with preprint files.
+            <a href="/preprints/${node['id']}/" class="btn btn-default btn-sm m-r-xs pull-right">View preprint</a>
+        </div>
+    </div>
+</div>
+% endif
+
 <div class="row">
 
   <div id="file-navigation" class="panel-toggle col-sm-3 file-tree">

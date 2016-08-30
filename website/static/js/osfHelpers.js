@@ -927,6 +927,7 @@ function mithrilToStr(element) {
     var el = m.render(tmp, element);
     return tmp.innerHTML;
 }
+
 /**
  * Return the current domain as a string, e.g. 'http://localhost:5000'
  */
@@ -941,6 +942,25 @@ function getDomain(location) {
         ret += ':' + port;
     }
     return ret;
+}
+
+
+/**
+ * Utility function to convert absolute URLs to relative urls
+ * See:
+ *      http://stackoverflow.com/questions/736513/how-do-i-parse-a-url-into-hostname-and-path-in-javascript
+ * This method have no effect on external urls.
+ * @param url {string} url to be converted
+ * @returns {string} converted relative url
+ */
+function toRelativeUrl(url, window) {
+    var parser = document.createElement('a');
+    parser.href = url;
+    var relative_url = url;
+    if (window.location.hostname === parser.hostname){
+        relative_url = parser.pathname + parser.search + parser.hash;
+    }
+    return relative_url;
 }
 
 // Also export these to the global namespace so that these can be used in inline
@@ -987,4 +1007,6 @@ module.exports = window.$.osf = {
     mithrilToStr:mithrilToStr,
     extractContributorNamesFromAPIData: extractContributorNamesFromAPIData,
     getDomain: getDomain
+    getDomain: getDomain,
+    toRelativeUrl: toRelativeUrl
 };

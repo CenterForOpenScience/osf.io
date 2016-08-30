@@ -6,7 +6,7 @@ import mock
 from tests.base import AdminTestCase
 from website import settings
 from framework.auth import User
-from tests.factories import UserFactory, AuthUserFactory
+from tests.factories import UserFactory, AuthUserFactory, ProjectFactory
 from admin_tests.utilities import setup_view, setup_log_view
 
 from admin.users.views import (
@@ -14,6 +14,7 @@ from admin.users.views import (
     ResetPasswordView,
     User2FactorDeleteView,
     UserDeleteView,
+    SpamUserDeleteView,
 )
 from admin.common_auth.logs import OSFLogEntry
 
@@ -92,6 +93,40 @@ class TestDisableUser(AdminTestCase):
         self.user.reload()
         nt.assert_false(self.user.is_disabled)
         nt.assert_equal(OSFLogEntry.objects.count(), count + 1)
+
+    def test_no_user(self):
+        view = setup_view(UserDeleteView(), self.request, guid='meh')
+        with nt.assert_raises(Http404):
+            view.delete(self.request)
+
+
+class TestDisableSpamUser(AdminTestCase):
+    def setUp(self):
+        self.user = UserFactory()
+        self.public_node = ProjectFactory(creator=self.user, is_public=True)
+        self.public_node = ProjectFactory(creator=self.user, is_public=False)
+        self.request = RequestFactory().post('/fake_path')
+        self.view = SpamUserDeleteView()
+        self.view = setup_log_view(self.view, self.request, guid=self.user._id)
+
+    def test_get_object(self):
+        obj = self.view.get_object()
+        nt.assert_is_instance(obj, User)
+
+    def test_get_context(self):
+        res = self.view.get_context_data(object=self.user)
+        nt.assert_in('guid', res)
+        nt.assert_equal(res.get('guid'), self.user._id)
+
+    def test_disable_spam_user(self):
+        settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
+        count = OSFLogEntry.objects.count()
+        self.view.delete(self.request)
+        self.user.reload()
+        self.public_node.reload()
+        nt.assert_true(self.user.is_disabled)
+        nt.assert_false(self.public_node.is_public)
+        nt.assert_equal(OSFLogEntry.objects.count(), count + 2)
 
     def test_no_user(self):
         view = setup_view(UserDeleteView(), self.request, guid='meh')

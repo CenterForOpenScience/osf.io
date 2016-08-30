@@ -1,6 +1,7 @@
 import re
 from nameparser.parser import HumanName
 from modularodm.exceptions import ValidationError
+from modularodm import Q
 
 # email verification adopted from django. For licence information, see NOTICE
 USER_REGEX = re.compile(
@@ -75,3 +76,24 @@ def privacy_info_handle(info, anonymous, name=False):
     if anonymous:
         return 'A user' if name else ''
     return info
+
+
+def ensure_external_identity_uniqueness(provider, identity, user=None):
+    from framework.auth.core import User  # avoid circular import
+
+    users_with_identity = User.find(Q('external_identity.{}.{}'.format(provider, identity), 'ne', None))
+    for existing_user in users_with_identity:
+        if user and user._id == existing_user._id:
+            continue
+        if existing_user.external_identity[provider][identity] == 'VERIFIED':
+            if user and user.external_identity.get(provider, {}).get(identity, {}):
+                user.external_identity[provider].pop(identity)
+                if user.external_identity[provider] == {}:
+                    user.external_identity.pop(provider)
+                user.save()  # Note: This won't work in v2 because it rolls back transactions when status >= 400
+            raise ValidationError('Another user has already claimed this external identity')
+        existing_user.external_identity[provider].pop(identity)
+        if existing_user.external_identity[provider] == {}:
+            existing_user.external_identity.pop(provider)
+        existing_user.save()
+    return

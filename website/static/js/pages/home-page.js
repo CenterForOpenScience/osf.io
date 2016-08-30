@@ -12,6 +12,7 @@ var PublicFilesDropzone = require('js/home-page/publicFilesDropzone');
 var QuickSearchProject = require('js/home-page/quickProjectSearchPlugin');
 var NewAndNoteworthy = require('js/home-page/newAndNoteworthyPlugin');
 var MeetingsAndConferences = require('js/home-page/meetingsAndConferencesPlugin');
+var Preprints = require('js/home-page/preprintsPlugin');
 var InstitutionsPanel = require('js/home-page/institutionsPanelPlugin');
 var ensureUserTimezone = require('js/ensureUserTimezone');
 
@@ -67,6 +68,14 @@ $(document).ready(function(){
                     [
                         m('.row', [
                             m(columnSizeClass,  m.component(MeetingsAndConferences, {}))
+                        ])
+
+                    ]
+                )),
+                m('.preprints', m('.container',
+                    [
+                        m('.row', [
+                            m(columnSizeClass,  m.component(Preprints, {}))
                         ])
 
                     ]

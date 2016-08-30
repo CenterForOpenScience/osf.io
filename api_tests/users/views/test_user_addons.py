@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import abc
 from nose.tools import *  # flake8: noqa
+import re
 
 from api.base.settings.defaults import API_BASE
 
@@ -129,7 +130,7 @@ class UserAddonDetailMixin(object):
         if not wrong_type:
             assert_in('Requested addon not enabled', res.json['errors'][0]['detail'])
         if wrong_type:
-            assert_in('Requested addon unavailable', res.json['errors'][0]['detail'])
+            assert re.match(r'Requested addon un(available|recognized)', (res.json['errors'][0]['detail']))
 
     def test_settings_detail_raises_error_if_PUT(self):
         res = self.app.put_json_api(self.setting_detail_url, {
@@ -210,7 +211,7 @@ class UserAddonAccountListMixin(object):
         if not wrong_type:
             assert_in('Requested addon not enabled', res.json['errors'][0]['detail'])
         if wrong_type:
-            assert_in('Requested addon unavailable', res.json['errors'][0]['detail'])
+            assert re.match(r'Requested addon un(available|recognized)', (res.json['errors'][0]['detail']))
 
     def test_account_list_raises_error_if_PUT(self):
         res = self.app.put_json_api(self.account_list_url, {
@@ -291,7 +292,7 @@ class UserAddonAccountDetailMixin(object):
         if not wrong_type:
             assert_in('Requested addon not enabled', res.json['errors'][0]['detail'])
         if wrong_type:
-            assert_in('Requested addon unavailable', res.json['errors'][0]['detail'])
+            assert re.match(r'Requested addon un(available|recognized)', (res.json['errors'][0]['detail']))
 
     def test_account_detail_raises_error_if_PUT(self):
         res = self.app.put_json_api(self.account_detail_url, {

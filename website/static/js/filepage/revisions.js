@@ -25,13 +25,14 @@ var model = {
 
 
 var FileRevisionsTable = {
-    controller: function(file, node, enableEditing, canEdit) {
+    controller: function(file, node, enableEditing, canEdit, selectLatest) {
         var self = {};
         self.node = node;
         self.file = file;
         self.canEdit = canEdit;
         self.enableEditing = enableEditing;
         self.baseUrl = (window.location.href).split('?')[0];
+        self.selectLatest = selectLatest;
 
         model.hasDate = self.file.provider !== 'dataverse';
 
@@ -57,6 +58,7 @@ var FileRevisionsTable = {
                 // Can only edit the latest version of a file
                 if (model.selectedRevision === 0) {
                     self.enableEditing();
+                    self.selectLatest();
                 }
                 model.hasUser = model.revisions[0] && model.revisions[0].extra && model.revisions[0].extra.user;
                 model.hasHashes = model.revisions && model.revisions[0] && model.revisions[0].extra.hashes;
