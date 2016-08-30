@@ -23,12 +23,8 @@ var socialRules = {
     academia: /(\w+)\.academia\.edu\/(\w+)/i,
     baiduScholar: /xueshu\.baidu\.com\/scholarID\/(\w+)/i,
     ssrn: /papers\.ssrn\.com\/sol3\/cf\_dev\/AbsByAuth\.cfm\?per\_id=(\w+)/i,
-    //url: '^(https?:\\/\\/)?'+ // protocol
-    //        '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // domain name
-    //        '((\\d{1,3}\\.){3}\\d{1,3}))'+ // OR ip (v4) address
-    //        '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // port and path
     url: '^((https?|ftp):\\/\\/)?'+ // protocol
-            '(\\S+(?::\\S*)?@)?'+ // # user:passauthentication
+            '([^\\/\\s]+(?::[^\\/\\s]*)?@)?'+ // # user:passauthentication
             '((([a-zA-Z\\d\\u00a1-\\uffff][-a-zA-Z\\d\\u00a1-\\uffff]{0,61}[a-zA-Z\\d\\u00a1-\\uffff]?\\.){1,2}([\\u00a1-\\uffffa-zA-Z0-9]{2,}))|'+ // domain...
             'localhost|'+ // or localhost...
             '(((25[0-5]|2[0-4][0-9]|[1]?[0-9]?[0-9])\\.){3}(25[0-5]|2[0-4][0-9]|[1]?[0-9]?[0-9]))|'+ // OR ip (v4) address

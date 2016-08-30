@@ -4,6 +4,7 @@ import mock
 import unittest
 from nose.tools import *  # noqa (PEP8 asserts)
 
+import os.path
 import json
 import pytz
 import datetime
@@ -92,8 +93,10 @@ class TestUserValidation(OsfTestCase):
         assert_equal(self.user.social['profileWebsites'], [])
 
     def test_validate_social_profile_website_many_different(self):
-        with open('../website/static/urlValidatorTest.json') as urlTestData:
-            data = json.load(urlTestData)
+        basepath = os.path.dirname(__file__)
+        url_data_path = os.path.join(basepath, '../website/static/urlValidatorTest.json')
+        with open(url_data_path) as url_test_data:
+            data = json.load(url_test_data)
 
         fails_at_end = False
         for should_pass in data["testsPositive"]:

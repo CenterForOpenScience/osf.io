@@ -63,6 +63,7 @@
     "http://567.100.100.100": "should deny invalid ipv4 website with a number out of range",
     "http://-a.b.co": "should deny invalid website with dash at beginning of sub-domain",
     "http://.www.foo.bar/": "should deny invalid website with dot before sub-domain",
-    "http://www.foo.bar./": "should deny invalid website with dot after top-level-domain"
+    "http://www.foo.bar./": "should deny invalid website with dot after top-level-domain",
+    "httsp://userid@example.com/": "should deny invalid user website"
   }
 }
