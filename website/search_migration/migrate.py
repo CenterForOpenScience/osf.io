@@ -49,7 +49,7 @@ def migrate_users(index):
     logger.info('Users iterated: {0}\nUsers migrated: {1}'.format(n_iter, n_migr))
 
 
-def migrate(delete, index=None, app=None):
+def migrate(delete, env, index=None, app=None, ):
     index = index or settings.ELASTIC_INDEX
     app = app or init_app('website.settings', set_backends=True, routes=True)
 
@@ -71,7 +71,7 @@ def migrate(delete, index=None, app=None):
         delete_old(new_index)
 
     ctx.pop()
-    populate_institutions.main('prod')
+    populate_institutions.main(env)
 
 def set_up_index(idx):
     alias = es.indices.get_aliases(index=idx)
@@ -114,6 +114,12 @@ def delete_old(index):
         logger.info('Deleting {}'.format(old_index))
         es.indices.delete(index=old_index, ignore=404)
 
+def parse_args():
+    import argparse
+    parser = argparse.ArgumentParser(description='Create fake data.')
+    parser.add_argument('-e', '--env', dest='env', required=False)
+    return parser.parse_args()
 
 if __name__ == '__main__':
-    migrate(False)
+    args = parse_args()
+    migrate(False, args.env)
