@@ -87,6 +87,16 @@ class UserSerializer(JSONAPISerializer):
         self_view_kwargs={'user_id': '<pk>'},
     ))
 
+    education = DevOnly(HideIfDisabled(RelationshipField(
+        related_view='users:user-education',
+        related_view_kwargs={'user_id': '<pk>'},
+    )))
+
+    employment = DevOnly(HideIfDisabled(RelationshipField(
+        related_view='users:user-employment',
+        related_view_kwargs={'user_id': '<pk>'},
+    )))
+
     class Meta:
         type_ = 'users'
 
@@ -217,3 +227,47 @@ class UserInstitutionsRelationshipSerializer(ser.Serializer):
 
     class Meta:
         type_ = 'institutions'
+
+
+class UserEducationSerializer(ser.Serializer):
+
+    id = IDField(source='_id', required=False)
+    institution = ser.CharField(required=False, allow_blank=True)
+    department = ser.CharField(required=False, allow_blank=True)
+    degree = ser.CharField(required=False, allow_blank=True)
+    start_month = ser.CharField(source='startYear',required=False, allow_blank=True)
+    start_year = ser.CharField(source='startYear',required=False, allow_blank=True)
+    end_month = ser.CharField(source='endMonth',required=False, allow_blank=True)
+    end_year = ser.CharField(source='endYear',required=False, allow_blank=True)
+    ongoing = ser.BooleanField(required=False, allow_blank=True)
+
+
+    class Meta:
+        type_ = 'education'
+
+    def absolute_url(self, obj):
+        if obj is not None:
+            return obj.absolute_url
+        return None
+
+
+class UserEmploymentSerializer(ser.Serializer):
+
+    id = IDField(source='_id', required=False)
+    institution = ser.CharField(required=False, allow_blank=True)
+    department = ser.CharField(required=False, allow_blank=True)
+    title = ser.CharField(required=False, allow_blank=True)
+    start_month = ser.CharField(source='startYear', required=False, allow_blank=True)
+    start_year = ser.CharField(source='startYear', required=False, allow_blank=True)
+    end_month = ser.CharField(source='endMonth', required=False, allow_blank=True)
+    end_year = ser.CharField(source='endYear', required=False, allow_blank=True)
+    ongoing = ser.BooleanField(required=False, allow_blank=True)
+
+
+    class Meta:
+        type_ = 'employment'
+
+    def absolute_url(self, obj):
+        if obj is not None:
+            return obj.absolute_url
+        return None
