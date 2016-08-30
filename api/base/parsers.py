@@ -42,10 +42,6 @@ class JSONAPIParser(JSONParser):
         if not target_type:
             raise JSONAPIException(source={'pointer': 'data/relationships/{}/data/type'.format(related_resource)}, detail=NO_TYPE_ERROR)
 
-        if target_type != related_resource:
-            raise JSONAPIException(source={'pointer': 'data/relationships/{}'.format(related_resource)},
-                                   detail='Request relationships key "{}" does not match target_type "{}"'.format(related_resource, target_type))
-
         id = data.get('id')
         return {'id': id, 'target_type': target_type}
 
