@@ -410,7 +410,7 @@ def project_reorder_components(node, **kwargs):
         if n.is_deleted
     ]
     if len(valid_nodes) == len(nodes_new) and set(valid_nodes) == set(nodes_new):
-        node.nodes = nodes_new + deleted_nodes
+        node.set_abstractnode_order([each.pk for each in nodes_new + deleted_nodes])
         node.save()
         return {}
 
