@@ -994,6 +994,7 @@ class JSONAPISerializer(ser.Serializer):
             'relationships': {},
             'embeds': {},
             'links': {},
+            'social': {},
         }
 
         embeds = self.context.get('embed', {})
@@ -1066,6 +1067,8 @@ class JSONAPISerializer(ser.Serializer):
                     data['id'] = representation
                 elif field.field_name == 'links':
                     data['links'] = representation
+                elif field.field_name == 'social':
+                    data['social'] = representation
                 else:
                     data['attributes'][field.field_name] = representation
 

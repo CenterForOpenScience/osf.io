@@ -7,7 +7,7 @@ from api.base.serializers import AllowMissing, JSONAPIRelationshipSerializer, Hi
 from website.models import User
 
 from api.base.serializers import (
-    JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField
+    JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField, JSONAPIListField
 )
 from api.base.utils import absolute_reverse, get_user_auth
 
@@ -32,13 +32,7 @@ class UserSerializer(JSONAPISerializer):
     date_registered = HideIfDisabled(ser.DateTimeField(read_only=True))
     active = HideIfDisabled(ser.BooleanField(read_only=True, source='is_active'))
 
-    # Social Fields are broken out to get around DRF complex object bug and to make API updating more user friendly.
-    github = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.github',
-                                                          allow_blank=True, help_text='GitHub Handle'), required=False, source='social.github')))
-    scholar = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.scholar',
-                                                           allow_blank=True, help_text='Google Scholar Account'), required=False, source='social.scholar')))
-    personal_website = DevOnly(HideIfDisabled(AllowMissing(ser.URLField(required=False, source='social.personal',
-                                                                   allow_blank=True, help_text='Personal Website'), required=False, source='social.personal')))
+
     twitter = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.twitter',
                                                            allow_blank=True, help_text='Twitter Handle'), required=False, source='social.twitter')))
     linkedin = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.linkedIn',
@@ -61,7 +55,23 @@ class UserSerializer(JSONAPISerializer):
                                                            allow_blank=True, help_text='SSRN Account'), required=False, source='social.ssrn')))
     timezone = HideIfDisabled(ser.CharField(required=False, help_text="User's timezone, e.g. 'Etc/UTC"))
     locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))
-
+    social = HideIfDisabled(LinksField(
+        {
+            'personal_website': 'personal_website_url',
+            'github': 'github_url',
+            'scholar': 'scholar_url',
+            'twitter': 'twitter_url',
+            'linkedin': 'linkedin_url',
+            'impactStory': 'impactstory_url',
+            'orcid': 'orcid_url',
+            'researcherid': 'researcherid_url',
+            'researchgate': 'researchgate_url',
+            'academia_institution': 'academia_institution_url',
+            'academia_profile_id': 'academia_profile_id_url',
+            'baiduscholar': 'baiduscholar_url',
+            'ssrn': 'ssrn_url',
+        }
+    ))
     links = HideIfDisabled(LinksField(
         {
             'html': 'absolute_url',
@@ -96,6 +106,69 @@ class UserSerializer(JSONAPISerializer):
         related_view='users:user-employment',
         related_view_kwargs={'user_id': '<pk>'},
     )))
+
+    def github_url(self, obj):
+        if obj.social['github']:
+            return 'http://github.com/{}/'.format(obj.social['github'])
+        return ' '
+
+    def scholar_url(self, obj):
+        if obj.social['scholar']:
+            return 'http://scholar.google.com/citations?user={}'.format(obj.social['scholar'])
+        return ' '
+
+    def personal_website_url(self, obj):
+        return obj.social['profileWebsites'] if obj.social['profileWebsites'] else ' '
+
+    def twitter_url(sel, obj):
+        if obj.social['twitter']:
+            return 'http://twitter.com/{}'.format(obj.social['twitter'])
+        return ' '
+
+    def linkedin_url(self, obj):
+        if obj.social['linkedIn']:
+            return 'http://twitter.com/{}'.format(obj.social['linkedIn'])
+        return ' '
+
+    def orcid_url(self, obj):
+        if obj.social['orcid']:
+            return 'https://www.linkedin.com/{}'.format(obj.social['orcid'])
+        return ' '
+
+    def impactstory_url(self, obj):
+        if obj.social['impactStory']:
+            return 'https://impactstory.org/{}'.format(obj.social['impactStory'])
+        return ' '
+
+    def researcherid_url(self, obj):
+        if obj.social['researcherId']:
+            return 'http://researcherid.com/rid/{}'.format(obj.social['researcherId'])
+        return ' '
+
+    def researchgate_url(self, obj):
+        if obj.social['researchGate']:
+            return 'https://researchgate.net/profile/{}'.format(obj.social['researchGate'])
+        return ' '
+
+    def academia_institution_url(self, obj):
+        if obj.social['academiaInstitution']:
+            return 'https://{}'.format(obj.social['academiaInstitution'])
+        return ' '
+
+    def academia_profile_id_url(self, obj):
+        if obj.social['academiaProfileID']:
+            return '.academia.edu/{}'.format(obj.social['academiaProfileID'])
+        return ' '
+
+    def baiduscholar_url(self, obj):
+        if obj.social['baiduScholar']:
+            return 'http://xueshu.baidu.com/scholarID/{}'.format(obj.social['baiduScholar'])
+        return ' '
+
+    def ssrn_url(self, obj):
+        if obj.social['ssrn']:
+            return 'http://twitter.com/{}'.format(obj.social['ssrn'])
+        return ' '
 
     class Meta:
         type_ = 'users'
@@ -241,7 +314,6 @@ class UserEducationSerializer(ser.Serializer):
     end_year = ser.CharField(source='endYear',required=False, allow_blank=True)
     ongoing = ser.BooleanField(required=False)
 
-
     class Meta:
         type_ = 'education'
 
@@ -263,7 +335,6 @@ class UserEmploymentSerializer(ser.Serializer):
     end_year = ser.CharField(source='endYear', required=False, allow_blank=True)
     ongoing = ser.BooleanField(required=False)
 
-
     class Meta:
         type_ = 'employment'
 
@@ -271,3 +342,4 @@ class UserEmploymentSerializer(ser.Serializer):
         if obj is not None:
             return obj.absolute_url
         return None
+
