@@ -35,7 +35,7 @@ class TestUserDetail(ApiTestCase):
         res = self.app.get(url)
         user_json = res.json['data']
         assert_equal(user_json['attributes']['full_name'], self.user_one.fullname)
-        assert_equal(user_json['attributes']['twitter'], 'howtopizza')
+        assert_equal(user_json['social']['twitter'], 'http://twitter.com/{}'.format(self.user_one.social['twitter']))
 
     def test_get_incorrect_pk_user_logged_in(self):
         url = "/{}users/{}/".format(API_BASE, self.user_two._id)
@@ -54,16 +54,16 @@ class TestUserDetail(ApiTestCase):
         url = "/{}users/{}/".format(API_BASE, self.user_two._id)
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
-        user_json = res.json['data']['attributes']
-        assert_equal(user_json['full_name'], self.user_two.fullname)
-        assert_equal(user_json['github'], '')
-        assert_equal(user_json['scholar'], '')
-        assert_equal(user_json['personal_website'], '')
-        assert_equal(user_json['twitter'], '')
-        assert_equal(user_json['linkedin'], '')
-        assert_equal(user_json['impactstory'], '')
-        assert_equal(user_json['orcid'], '')
-        assert_equal(user_json['researcherid'], '')
+        user_json = res.json['data']['social']
+        assert_equal(res.json['data']['attributes']['full_name'], self.user_two.fullname)
+        assert_equal(user_json['github'], ' ')
+        assert_equal(user_json['scholar'], ' ')
+        assert_equal(user_json['personal_website'], ' ')
+        assert_equal(user_json['twitter'], ' ')
+        assert_equal(user_json['linkedin'], ' ')
+        assert_equal(user_json['impactstory'], ' ')
+        assert_equal(user_json['orcid'], ' ')
+        assert_equal(user_json['researcherid'], ' ')
 
     def test_get_incorrect_pk_user_not_logged_in(self):
         url = "/{}users/{}/".format(API_BASE, self.user_two._id)

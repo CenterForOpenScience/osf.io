@@ -32,37 +32,17 @@ class UserSerializer(JSONAPISerializer):
     date_registered = HideIfDisabled(ser.DateTimeField(read_only=True))
     active = HideIfDisabled(ser.BooleanField(read_only=True, source='is_active'))
 
-
-    twitter = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.twitter',
-                                                           allow_blank=True, help_text='Twitter Handle'), required=False, source='social.twitter')))
-    linkedin = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.linkedIn',
-                                                            allow_blank=True, help_text='LinkedIn Account'), required=False, source='social.linkedIn')))
-    impactstory = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.impactStory',
-                                                               allow_blank=True, help_text='ImpactStory Account'), required=False, source='social.impactStory')))
-    orcid = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.orcid',
-                                                         allow_blank=True, help_text='ORCID'), required=False, source='social.orcid')))
-    researcherid = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.researcherId',
-                                                      allow_blank=True, help_text='ResearcherId Account'), required=False, source='social.researcherId')))
-    researchgate = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.researchGate',
-                                                      allow_blank=True, help_text='ResearchGate Account'), required=False, source='social.researchGate')))
-    academia_institution = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.academiaInstitution',
-                                                      allow_blank=True, help_text='AcademiaInstitution Field'), required=False, source='social.academiaInstitution')))
-    academia_profile_id = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.academiaProfileID',
-                                                      allow_blank=True, help_text='AcademiaProfileID Field'), required=False, source='social.academiaProfileID')))
-    baiduscholar = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.baiduScholar',
-                                                           allow_blank=True, help_text='Baidu Scholar Account'), required=False, source='social.baiduScholar')))
-    ssrn = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.ssrn',
-                                                           allow_blank=True, help_text='SSRN Account'), required=False, source='social.ssrn')))
     timezone = HideIfDisabled(ser.CharField(required=False, help_text="User's timezone, e.g. 'Etc/UTC"))
     locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))
     social = HideIfDisabled(LinksField(
         {
+            'self': 'get_absolute_url',
             'personal_website': 'personal_website_url',
             'github': 'github_url',
             'scholar': 'scholar_url',
             'twitter': 'twitter_url',
             'linkedin': 'linkedin_url',
-            'impactStory': 'impactstory_url',
+            'impactstory': 'impactstory_url',
             'orcid': 'orcid_url',
             'researcherid': 'researcherid_url',
             'researchgate': 'researchgate_url',
@@ -108,66 +88,118 @@ class UserSerializer(JSONAPISerializer):
     )))
 
     def github_url(self, obj):
-        if obj.social['github']:
-            return 'http://github.com/{}/'.format(obj.social['github'])
+        try:
+            github = obj.social['github']
+        except KeyError:
+            github = None
+        if github:
+            return 'http://github.com/{}/'.format(github)
         return ' '
 
     def scholar_url(self, obj):
-        if obj.social['scholar']:
-            return 'http://scholar.google.com/citations?user={}'.format(obj.social['scholar'])
+        try:
+            scholar = obj.social['scholar']
+        except KeyError:
+            scholar = None
+        if scholar:
+            return 'http://scholar.google.com/citations?user={}'.format(scholar)
         return ' '
 
     def personal_website_url(self, obj):
-        return obj.social['profileWebsites'] if obj.social['profileWebsites'] else ' '
+        try:
+            personal_website = obj.social['profileWebsites']
+        except KeyError:
+            personal_website = None
+        return personal_website if personal_website else ' '
 
     def twitter_url(sel, obj):
-        if obj.social['twitter']:
-            return 'http://twitter.com/{}'.format(obj.social['twitter'])
+        try:
+            twitter = obj.social['twitter']
+        except KeyError:
+            twitter = None
+        if twitter:
+            return 'http://twitter.com/{}'.format(twitter)
         return ' '
 
     def linkedin_url(self, obj):
-        if obj.social['linkedIn']:
-            return 'http://twitter.com/{}'.format(obj.social['linkedIn'])
+        try:
+            linkedin = obj.social['linkedIn']
+        except KeyError:
+            linkedin = None
+        if linkedin:
+            return 'http://twitter.com/{}'.format(linkedin)
         return ' '
 
     def orcid_url(self, obj):
-        if obj.social['orcid']:
-            return 'https://www.linkedin.com/{}'.format(obj.social['orcid'])
+        try:
+            orcid = obj.social['orcid']
+        except KeyError:
+            orcid = None
+        if orcid:
+            return 'https://www.linkedin.com/{}'.format(orcid)
         return ' '
 
     def impactstory_url(self, obj):
-        if obj.social['impactStory']:
-            return 'https://impactstory.org/{}'.format(obj.social['impactStory'])
+        try:
+            impactstory = obj.social['impactStory']
+        except KeyError:
+            impactstory = None
+        if impactstory:
+            return 'https://impactstory.org/{}'.format(impactstory)
         return ' '
 
     def researcherid_url(self, obj):
-        if obj.social['researcherId']:
-            return 'http://researcherid.com/rid/{}'.format(obj.social['researcherId'])
+        try:
+            researcherid = obj.social['researcherId']
+        except KeyError:
+            researcherid = None
+        if researcherid:
+            return 'http://researcherid.com/rid/{}'.format(researcherid)
         return ' '
 
     def researchgate_url(self, obj):
-        if obj.social['researchGate']:
-            return 'https://researchgate.net/profile/{}'.format(obj.social['researchGate'])
+        try:
+            researchgate = obj.social['researchGate']
+        except KeyError:
+            researchgate = None
+        if researchgate:
+            return 'https://researchgate.net/profile/{}'.format(researchgate)
         return ' '
 
     def academia_institution_url(self, obj):
-        if obj.social['academiaInstitution']:
-            return 'https://{}'.format(obj.social['academiaInstitution'])
+        try:
+            academia_institution = obj.social['academiaInstitution']
+        except KeyError:
+            academia_institution = None
+        if academia_institution:
+            return 'https://{}'.format(academia_institution)
         return ' '
 
     def academia_profile_id_url(self, obj):
-        if obj.social['academiaProfileID']:
-            return '.academia.edu/{}'.format(obj.social['academiaProfileID'])
+        try:
+            academia_profile_id = obj.social['academiaProfileID']
+        except KeyError:
+            academia_profile_id = None
+        if academia_profile_id:
+            return '.academia.edu/{}'.format(academia_profile_id)
         return ' '
 
     def baiduscholar_url(self, obj):
-        if obj.social['baiduScholar']:
-            return 'http://xueshu.baidu.com/scholarID/{}'.format(obj.social['baiduScholar'])
+        try:
+            baiduscholar = obj.social['baiduScholar']
+        except KeyError:
+            baiduscholar = None
+        if baiduscholar:
+            return 'http://xueshu.baidu.com/scholarID/{}'.format(baiduscholar)
         return ' '
 
     def ssrn_url(self, obj):
-        if obj.social['ssrn']:
-            return 'http://twitter.com/{}'.format(obj.social['ssrn'])
+        try:
+            ssrn = obj.social['ssrn']
+        except KeyError:
+            ssrn = None
+        if ssrn:
+            return 'http://twitter.com/{}'.format(ssrn)
         return ' '
 
     class Meta:
