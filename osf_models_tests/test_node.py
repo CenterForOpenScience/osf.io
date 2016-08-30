@@ -968,3 +968,15 @@ class TestNodeTraversals:
 
         descendants = list(point1.get_descendants_recursive())
         assert len(descendants) == 1
+
+
+@pytest.mark.django_db
+def test_templated_list(node):
+    templated1, templated2 = ProjectFactory(template_node=node), NodeFactory(template_node=node)
+    deleted = ProjectFactory(template_node=node, is_deleted=True)
+
+    assert node.templated_list.count() == 2
+    assert templated1 in node.templated_list.all()
+    assert templated2 in node.templated_list.all()
+    assert deleted not in node.templated_list.all()
+

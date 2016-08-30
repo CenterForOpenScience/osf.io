@@ -364,4 +364,3 @@ class CommentFactory(DjangoModelFactory):
             instance.root_target = target
         instance.save()
         return instance
-
