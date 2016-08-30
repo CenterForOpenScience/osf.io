@@ -171,6 +171,11 @@ class Registration(AbstractNode):
             return False
         return self.embargo.end_date
 
+    @property
+    def archiving(self):
+        job = self.archive_job
+        return job and not job.done and not job.archive_tree_finished()
+
     def _is_embargo_date_valid(self, end_date):
         now = timezone.now()
         if (end_date - now) >= settings.EMBARGO_END_DATE_MIN:

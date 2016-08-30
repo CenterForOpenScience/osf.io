@@ -1,5 +1,6 @@
 import itertools
 import logging
+import re
 import urlparse
 
 from django.apps import apps
@@ -24,6 +25,8 @@ from website.util.permissions import (
     WRITE,
     ADMIN,
 )
+from website.util import web_url_for
+from website.util import api_url_for
 from website import settings
 from framework.sentry import log_exception
 from framework.exceptions import PermissionsError
@@ -190,6 +193,83 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
     def sanction(self):
         """For v1 compat. Registration has the proper implementation of this property."""
         return None
+
+    @property
+    def is_retracted(self):
+        """For v1 compat."""
+        return False
+
+    @property
+    def is_pending_registration(self):
+        """For v1 compat."""
+        return False
+
+    @property
+    def is_pending_retraction(self):
+        """For v1 compat."""
+        return False
+
+    @property
+    def is_pending_embargo(self):
+        """For v1 compat."""
+        return False
+
+    @property
+    def is_embargoed(self):
+        """For v1 compat."""
+        return False
+
+    @property
+    def archiving(self):
+        """For v1 compat."""
+        return False
+
+    @property
+    def embargo_end_date(self):
+        """For v1 compat."""
+        return False
+
+    @property
+    def category_display(self):
+        """The human-readable representation of this node's category."""
+        return settings.NODE_CATEGORY_MAP[self.category]
+
+    @property
+    def url(self):
+        return '/{}/'.format(self._primary_key)
+
+    @property
+    def api_url(self):
+        if not self.url:
+            logger.error('Node {0} has a parent that is not a project'.format(self._id))
+            return None
+        return '/api/v1{0}'.format(self.deep_url)
+
+    @property
+    def display_absolute_url(self):
+        url = self.absolute_url
+        if url is not None:
+            return re.sub(r'https?:', '', url).strip('/')
+
+    @property
+    def nodes_active(self):
+        return self.nodes.filter(is_deleted=False).all()
+
+    def web_url_for(self, view_name, _absolute=False, _guid=False, *args, **kwargs):
+        return web_url_for(view_name, pid=self._primary_key,
+                           _absolute=_absolute, _guid=_guid, *args, **kwargs)
+
+    def api_url_for(self, view_name, _absolute=False, *args, **kwargs):
+        return api_url_for(view_name, pid=self._primary_key, _absolute=_absolute, *args, **kwargs)
+
+    @property
+    def project_or_component(self):
+        # The distinction is drawn based on whether something has a parent node, rather than by category
+        return 'project' if not self.parent_node else 'component'
+
+    @property
+    def templated_list(self):
+        return self.templated_from.filter(is_deleted=False)
 
     def update_search(self):
         from website import search
