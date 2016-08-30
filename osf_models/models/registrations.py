@@ -386,7 +386,7 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     #     'value': <value>
     #   }
     # }
-    registration_metadata = DateTimeAwareJSONField(default=dict)
+    registration_metadata = DateTimeAwareJSONField(default=dict, blank=True)
     registration_schema = models.ForeignKey('MetaSchema', null=True)
     registered_node = models.ForeignKey('Node', null=True, blank=True, related_name='draft_registration')
 

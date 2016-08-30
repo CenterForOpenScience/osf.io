@@ -275,6 +275,18 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
     def templated_list(self):
         return self.templated_from.filter(is_deleted=False)
 
+    @property
+    def draft_registrations_active(self):
+        DraftRegistration = apps.get_model('osf_models.DraftRegistration')
+        return DraftRegistration.objects.filter(
+            models.Q(branched_from=self) &
+            (models.Q(registered_node=None) | models.Q(registered_node__is_deleted=True))
+        )
+
+    @property
+    def has_active_draft_registrations(self):
+        return bool(self.draft_registrations_active.count())
+
     def update_search(self):
         from website import search
         try:
