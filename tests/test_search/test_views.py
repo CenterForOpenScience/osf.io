@@ -18,7 +18,7 @@ class TestSearchPage(SearchTestCase):
 
 
 PRIVATE, PUBLIC = range(2)
-PROJECT, REGISTRATION, COMPONENT = range(3)
+PROJECT, REGISTRATION, COMPONENT, FILE = 'project registration component file'.split()
 ANON, AUTH, CONTRIB, OWNER = range(4)
 Y, N = True, False
 
@@ -26,10 +26,12 @@ cases = [
     ("private project hidden from anon", PRIVATE, PROJECT, ANON, N),
     ("private registration hidden from anon", PRIVATE, REGISTRATION, ANON, N),
     ("private component hidden from anon", PRIVATE, COMPONENT, ANON, N),
+    ("private file hidden from anon", PRIVATE, FILE, ANON, N),
 
     ("public project shown to anon", PUBLIC, PROJECT, ANON, Y),
     ("public registration shown to anon", PUBLIC, REGISTRATION, ANON, Y),
     ("public component shown to anon", PUBLIC, COMPONENT, ANON, Y),
+    ("public file shown to anon", PUBLIC, FILE, ANON, Y),
 ]
 
 class TestSearchSearchAPI(SearchTestCase):
@@ -42,6 +44,7 @@ class TestSearchSearchAPI(SearchTestCase):
 
     @parameterized.expand(cases)
     def test(self, ignored, status, type_, role, included):
+        key = 'title'
         if type_ == PROJECT:
             factories.ProjectFactory(title='Flim Flammity', is_public=status is PUBLIC)
         elif type_ == REGISTRATION:
@@ -54,10 +57,15 @@ class TestSearchSearchAPI(SearchTestCase):
                 parent=project,
                 is_public=status is PUBLIC,
             )
+        elif type_ == FILE:
+            project = factories.ProjectFactory(title='Blim Blammity', is_public=status is PUBLIC)
+            project.get_addon('osfstorage').get_root().append_file('Flim Flammity')
+            key = 'name'
         else:
             raise NotImplementedError
-        expected = ['Flim Flammity'] if included else []
-        assert_equal([x['title'] for x in self.results('flim')], expected)
+        expected = [('Flim Flammity', type_)] if included else []
+        results = self.results('flim')
+        assert_equal([(x[key], x['category']) for x in results], expected)
 
 
 class TestUserSearchAPI(SearchTestCase):
