@@ -69,7 +69,7 @@ MODELS = (
     NotificationDigest,
     NotificationSubscription,
     Pointer,
-    PreprintProvider
+    PreprintProvider,
     PrivateLink,
     QueuedMail,
     RegistrationApproval,
