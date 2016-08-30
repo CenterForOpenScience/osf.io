@@ -299,9 +299,9 @@ class TestNodeLinkCreate(ApiTestCase):
             'data': {
                 'type': 'nodes',
                 'relationships': {
-                    'node': {
+                    'nodes': {
                         'data': {
-                            'type': 'node',
+                            'type': 'Incorrect!',
                             'id': self.public_pointer_project._id
                         }
                     }
