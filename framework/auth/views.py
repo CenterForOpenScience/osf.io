@@ -656,6 +656,11 @@ def register_user(**kwargs):
                 )
             )
         )
+    except ValidationError as e:
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data=dict(message_long=e.message)
+        )
 
     if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
         send_confirm_email(user, email=user.username)
