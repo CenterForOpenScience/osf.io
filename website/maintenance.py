@@ -8,6 +8,8 @@ import pytz
 from framework.mongo import database
 
 def ensure_maintenance_collection():
+    if not database:
+        return None
     try:
         database.create_collection('maintenance')
     except CollectionInvalid:
@@ -22,6 +24,8 @@ def set_maintenance(start=None, end=None):
 
     If you give just an end date, start will default to 24 hours before.
     """
+    if not database:
+        return None
     start = parse(start) if start else datetime.utcnow()
     end = parse(end) if end else start + timedelta(1)
 
@@ -43,6 +47,8 @@ def get_maintenance():
     """Get the current start and end times for the maintenance state.
     Return None for start and end if there is no maintenance state
     """
+    if not database:
+        return None
     maintenance_state = database.maintenance.find_one({'maintenance': True})
     if maintenance_state:
         return {
@@ -54,4 +60,6 @@ def get_maintenance():
 
 
 def unset_maintenance():
+    if not database:
+        return None
     database['maintenance'].remove()
