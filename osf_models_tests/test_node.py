@@ -30,6 +30,7 @@ from .factories import (
 )
 from .utils import capture_signals, assert_datetime_equal, mock_archive
 
+pytestmark = pytest.mark.django_db
 
 @pytest.fixture()
 def user():
@@ -1031,7 +1032,6 @@ class TestNodeTraversals:
         descendants = list(point1.get_descendants_recursive())
         assert len(descendants) == 1
 
-@pytest.mark.django_db
 def test_linked_from():
     node = NodeFactory()
     registration_to_link = RegistrationFactory()
@@ -1438,3 +1438,24 @@ class TestContributorOrdering:
         node.set_contributor_order([contrib1.id, contrib2.id, creator_contrib.id])
         assert list(node.get_contributor_order()) == [contrib1.id, contrib2.id, creator_contrib.id]
         assert list(node.contributors.all()) == [user1, user2, node.creator]
+
+class TestNodeOrdering:
+
+    @pytest.fixture()
+    def project(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def children(self, project):
+        child1 = NodeFactory(parent=project)
+        child2 = NodeFactory(parent=project)
+        child3 = NodeFactory(parent=project)
+        return [child1, child2, child3]
+
+    def test_can_get_node_order(self, project, children):
+        assert list(project.get_abstractnode_order()) == [e.pk for e in children]
+        assert list(project.nodes.all())
+
+    def test_can_set_node_order(self, project, children):
+        project.set_abstractnode_order([children[2].pk, children[1].pk, children[0].pk])
+        assert list(project.nodes.all()) == [children[2], children[1], children[0]]
