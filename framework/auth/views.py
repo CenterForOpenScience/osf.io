@@ -202,32 +202,31 @@ def forgot_password_post(auth, **kwargs):
     return {}
 
 
-def login_and_register_handler(auth, login=True, campaign=None, service_url=None, logout=None):
+def login_and_register_handler(auth, login=True, campaign=None, next_url=None, logout=None):
     """
     Non-view helper to handle `login` and `register` requests.
 
     :param auth: the auth context
     :param login: `True` if `GET /login`, `False` if `GET /register`
     :param campaign: a target campaign defined in `auth.campaigns`
-    :param service_url: the service url for CAS login or redirect url for OSF
+    :param next_url: the service url for CAS login or redirect url for OSF
     :param logout: used only for `claim_user_registered`
     :return: data object that contains actions for `auth_register` and `auth_login`
     :raises: http.BAD_REQUEST
     """
 
     # set target page to `dashboard` if no service url is specified
-    if not service_url:
-        service_url = web_url_for('dashboard', _absolute=True)
+    if not next_url:
+        next_url = web_url_for('dashboard', _absolute=True)
 
     # Only allow redirects which are relative root or full domain. Disallows external redirects.
-    if not validate_service_url(service_url):
+    if not validate_service_url(next_url):
         raise HTTPError(http.BAD_REQUEST)
 
     data = {
         'status_code': http.FOUND if login else http.OK,
-        'redirect_url': service_url,
+        'next_url': next_url,
         'campaign': None,
-        'service_url': service_url,
     }
 
     if campaign:
@@ -236,16 +235,16 @@ def login_and_register_handler(auth, login=True, campaign=None, service_url=None
             # unlike other campaigns, institution login serves as an alternative for authentication
             if campaign == 'institution':
                 data['status_code'] = http.FOUND
-                data['redirect_url'] = cas.get_login_url(service_url, campaign='institution')
+                data['next_url'] = cas.get_login_url(next_url, campaign='institution')
             # For all other non-institution campaigns
             else:
                 # `GET /login?campaign=...`
                 if login:
-                    service_url = data['redirect_url'] = web_url_for('auth_register', campaign=campaign)
+                    data['next_url'] = web_url_for('auth_register', campaign=campaign)
                 # `GET /register?campaign=...`
                 else:
                     data['campaign'] = campaign
-                    service_url = data['service_url'] = campaigns.campaign_url_for(campaign)
+                    data['next_url'] = campaigns.campaign_url_for(campaign)
         else:
             # invalid campaign
             raise HTTPError(http.BAD_REQUEST)
@@ -253,12 +252,11 @@ def login_and_register_handler(auth, login=True, campaign=None, service_url=None
     # if user is already logged in, overwrite the actions above and redirect to service url
     if not logout and auth.logged_in:
         data['status_code'] = http.FOUND
-        data['redirect_url'] = service_url
 
     # handle `claim_user_registered`
     if logout and auth.logged_in:
         data['status_code'] = 'auth_logout'
-        data['redirect_url'] = request.url
+        data['next_url'] = request.url
 
     return data
 
@@ -308,24 +306,24 @@ def auth_register(auth):
     # a target campaign in `auth.campaigns`
     campaign = request.args.get('campaign')
     # the service url for CAS login or redirect url for OSF
-    service_url = request.args.get('next')
+    next_url = request.args.get('next')
     # used only for `claim_user_registered`
     logout = request.args.get('logout')
 
-    data = login_and_register_handler(auth, login=False, campaign=campaign, service_url=service_url, logout=logout)
+    data = login_and_register_handler(auth, login=False, campaign=campaign, next_url=next_url, logout=logout)
 
     # land on register page
     if data['status_code'] == http.OK:
-        context['non_institution_login_url'] = cas.get_login_url(data['service_url'])
-        context['institution_login_url'] = cas.get_login_url(data['service_url'], campaign='institution')
+        context['non_institution_login_url'] = cas.get_login_url(data['next_url'])
+        context['institution_login_url'] = cas.get_login_url(data['next_url'], campaign='institution')
         context['campaign'] = data['campaign']
         return context, http.OK
     # redirect to url
     elif data['status_code'] == http.FOUND:
-        return redirect(data['redirect_url'])
+        return redirect(data['next_url'])
     # go to other views
     elif data['status_code'] == 'auth_logout':
-        return auth_logout(redirect_url=data['redirect_url'])
+        return auth_logout(redirect_url=data['next_url'])
 
     raise HTTPError(http.BAD_REQUEST)
 
@@ -343,8 +341,7 @@ def auth_login(auth):
     campaign = request.args.get('campaign')
     data = login_and_register_handler(auth, login=True, campaign=campaign)
     if data['status_code'] == http.FOUND:
-        return redirect(data['redirect_url'])
-    # TODO: is `http.FOUND` guaranteed?
+        return redirect(data['next_url'])
 
 
 def auth_logout(redirect_url=None):
