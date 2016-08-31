@@ -297,7 +297,6 @@ def validate_next_url(next_url):
     return True
 
 
-
 @collect_auth
 def auth_register(auth):
     """
@@ -877,4 +876,3 @@ def external_login_email_post():
         'form': form,
         'external_id_provider': external_id_provider
     }
-

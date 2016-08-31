@@ -28,7 +28,6 @@ class TestCampaignsPrereg(OsfTestCase):
         resp = self.app.get(self.url_register)
         assert_equal(resp.status_code, http.OK)
         assert_in('Preregistration Challenge', resp)
-        assert_in('You must log in to access this resource.', resp)
 
     def test_auth_login_with_prereg_logged_in(self):
         resp = self.app.get(self.url_login, auth=self.user.auth)
