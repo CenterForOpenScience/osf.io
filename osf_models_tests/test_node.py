@@ -1491,3 +1491,82 @@ class TestLogMethods:
         n_new_logs = len(parent.get_aggregate_logs_queryset(Auth(user)))
         # Hidden log is not returned
         assert n_new_logs == n_orig_logs - 1
+
+# copied from tests/test_notifications.py
+class TestHasPermissionOnChildren:
+
+    def test_has_permission_on_children(self):
+        non_admin_user = UserFactory()
+        parent = ProjectFactory()
+        parent.add_contributor(contributor=non_admin_user, permissions=['read'])
+        parent.save()
+
+        node = NodeFactory(parent=parent, category='project')
+        sub_component = NodeFactory(parent=node)
+        sub_component.add_contributor(contributor=non_admin_user)
+        sub_component.save()
+        NodeFactory(parent=node)  # another subcomponent
+
+        assert(
+            node.has_permission_on_children(non_admin_user, 'read')
+        ) is True
+
+    def test_check_user_has_permission_excludes_deleted_components(self):
+        non_admin_user = UserFactory()
+        parent = ProjectFactory()
+        parent.add_contributor(contributor=non_admin_user, permissions=['read'])
+        parent.save()
+
+        node = NodeFactory(parent=parent, category='project')
+        sub_component = NodeFactory(parent=node)
+        sub_component.add_contributor(contributor=non_admin_user)
+        sub_component.is_deleted = True
+        sub_component.save()
+        NodeFactory(parent=node)
+
+        assert(
+            node.has_permission_on_children(non_admin_user, 'read')
+        ) is False
+
+    def test_check_user_does_not_have_permission_on_private_node_child(self):
+        non_admin_user = UserFactory()
+        parent = ProjectFactory()
+        parent.add_contributor(contributor=non_admin_user, permissions=['read'])
+        parent.save()
+        node = NodeFactory(parent=parent, category='project')
+        NodeFactory(parent=node)
+
+        assert (
+            node.has_permission_on_children(non_admin_user, 'read')
+        ) is False
+
+    def test_check_user_child_node_permissions_false_if_no_children(self):
+        non_admin_user = UserFactory()
+        parent = ProjectFactory()
+        parent.add_contributor(contributor=non_admin_user, permissions=['read'])
+        parent.save()
+        node = NodeFactory(parent=parent, category='project')
+
+        assert(
+            node.has_permission_on_children(non_admin_user, 'read')
+        ) is False
+
+    def test_check_admin_has_permissions_on_private_component(self):
+        parent = ProjectFactory()
+        node = NodeFactory(parent=parent, category='project')
+        NodeFactory(parent=node)
+
+        assert (
+            node.has_permission_on_children(parent.creator, 'read')
+        ) is True
+
+    def test_check_user_private_node_child_permissions_excludes_pointers(self):
+        user = UserFactory()
+        parent = ProjectFactory()
+        pointed = ProjectFactory(creator=user)
+        parent.add_pointer(pointed, Auth(parent.creator))
+        parent.save()
+
+        assert (
+            parent.has_permission_on_children(user, 'read')
+        ) is False
