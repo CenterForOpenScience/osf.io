@@ -1,6 +1,5 @@
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-from django.db import IntegrityError
 from django.db import models
 from osf_models.models.base import BaseModel, ObjectIDMixin
 
@@ -15,6 +14,7 @@ class Identifier(ObjectIDMixin, BaseModel):
     category = models.CharField(max_length=10)  # longest was 3, 8/19/2016
     # value: e.g. 'FK424601'
     value = models.CharField(max_length=50)  # longest was 21, 8/19/2016
+
     class Meta:
         unique_together = ('object_id', 'content_type', 'category')
 
@@ -33,7 +33,9 @@ class IdentifierMixin(object):
         return identifier.value if identifier else None
 
     def set_identifier_value(self, category, value):
-        identifier, created = Identifier.objects.get_or_create(referent=self, category=category, defaults=dict(value=value))
+        identifier, created = Identifier.objects.get_or_create(referent=self,
+                                                               category=category,
+                                                               defaults=dict(value=value))
         if not created:
             identifier.value = value
             identifier.save()

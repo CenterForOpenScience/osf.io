@@ -4,7 +4,6 @@ import functools
 import httplib as http
 import logging
 
-import pytz
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.utils import timezone
@@ -41,9 +40,6 @@ class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
     The ``provider`` field is a de facto foreign key to an ``ExternalProvider``
     object, as providers are not stored in the database.
     """
-
-
-
     # The OAuth credentials. One or both of these fields should be populated.
     # For OAuth1, this is usually the "oauth_token"
     # For OAuth2, this is usually the "access_token"
@@ -404,7 +400,8 @@ class ExternalProvider(object):
             return False
 
         resp_expiry_fn = resp_expiry_fn or (
-        lambda x: dt.datetime.utcfromtimestamp(dt.time.time() + float(x['expires_in'])))
+            lambda x: dt.datetime.utcfromtimestamp(dt.time.time() + float(x['expires_in']))
+        )
 
         client = OAuth2Session(
             self.client_id,

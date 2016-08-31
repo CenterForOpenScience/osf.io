@@ -739,7 +739,7 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
                 status.push_status_message(message, kind='info', trust=False)
 
         for node_contained in original.nodes.filter(is_deleted=False):
-            child_registration = node_contained.register_node(
+            child_registration = node_contained.register_node(  # noqa
                 schema=schema,
                 auth=auth,
                 data=data,

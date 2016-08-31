@@ -434,7 +434,7 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
         if approval_token:
             registration = self._get_registration()
             node_id = user_approval_state.get('node_id', registration._id)
-            return {'node_id': node_id, 'token': approval_token,}
+            return {'node_id': node_id, 'token': approval_token}
 
     def _rejection_url_context(self, user_id):
         user_approval_state = self.approval_state.get(user_id, {})

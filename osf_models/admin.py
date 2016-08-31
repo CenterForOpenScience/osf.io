@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django_extensions.admin import ForeignKeyAutocompleteAdmin
 
-from osf_models.models import *
+from osf_models.models import *  # noqa
 from osf_models import models
 import inspect
 
@@ -54,7 +54,7 @@ class NodeAdmin(ForeignKeyAutocompleteAdmin):
         'date_modified', )
 
 
-admin.site.register(Node, NodeAdmin)
+admin.site.register(Node, NodeAdmin)  # noqa
 
 for name, obj in inspect.getmembers(models):
     if inspect.isclass(obj):
