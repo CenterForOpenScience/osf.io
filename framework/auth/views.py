@@ -381,7 +381,7 @@ def external_login_confirm_email_get(auth, uid, token):
         raise HTTPError(http.FORBIDDEN, e.message)
 
     if not user.is_registered:
-        user.register(email)
+        user.register(email, password=uuid.uuid4())
 
     if email.lower() not in user.emails:
         user.emails.append(email.lower())
