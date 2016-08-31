@@ -84,7 +84,7 @@ $(document).ready(function() {
 
     $('#deleteNode').on('click', function() {
         if(ctx.node.childExists){
-            $osf.growl('Error', 'Any child components must be deleted prior to deleting this project.','danger', 30000)
+            $osf.growl('Error', 'Any child components must be deleted prior to deleting this project.','danger', 30000);
         }else{
             ProjectSettings.getConfirmationCode(ctx.node.nodeType);
         }
