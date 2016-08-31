@@ -49,7 +49,7 @@ def migrate_users(index):
     logger.info('Users iterated: {0}\nUsers migrated: {1}'.format(n_iter, n_migr))
 
 
-def migrate(delete, env, index=None, app=None, ):
+def migrate(delete, env=None, index=None, app=None, ):
     index = index or settings.ELASTIC_INDEX
     app = app or init_app('website.settings', set_backends=True, routes=True)
 
