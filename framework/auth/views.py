@@ -227,7 +227,6 @@ def login_and_register_handler(auth, login=True, campaign=None, service_url=None
         'status_code': http.FOUND if login else http.OK,
         'redirect_url': service_url,
         'campaign': None,
-        'must_login_warning': False,
         'service_url': service_url,
     }
 
@@ -246,7 +245,6 @@ def login_and_register_handler(auth, login=True, campaign=None, service_url=None
                 # `GET /register?campaign=...`
                 else:
                     data['campaign'] = campaign
-                    data['must_login_warning'] = True
                     service_url = data['service_url'] = campaigns.campaign_url_for(campaign)
         else:
             # invalid campaign
@@ -256,15 +254,11 @@ def login_and_register_handler(auth, login=True, campaign=None, service_url=None
     if not logout and auth.logged_in:
         data['status_code'] = http.FOUND
         data['redirect_url'] = service_url
-        data['must_login_waring'] = False
 
     # handle `claim_user_registered`
-    if logout:
-        if auth.logged_in:
-            data['status_code'] = 'auth_logout'
-            data['redirect_url'] = request.url
-        else:
-            data['must_login_warning'] = True
+    if logout and auth.logged_in:
+        data['status_code'] = 'auth_logout'
+        data['redirect_url'] = request.url
 
     return data
 
@@ -322,8 +316,6 @@ def auth_register(auth):
 
     # land on register page
     if data['status_code'] == http.OK:
-        if data['must_login_warning']:
-            status.push_status_message(language.MUST_LOGIN, trust=False)
         context['non_institution_login_url'] = cas.get_login_url(data['service_url'])
         context['institution_login_url'] = cas.get_login_url(data['service_url'], campaign='institution')
         context['campaign'] = data['campaign']
