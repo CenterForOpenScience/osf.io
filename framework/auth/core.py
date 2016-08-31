@@ -115,7 +115,7 @@ def get_user_with_verification_key_v2(username=None, token=None):
 
     if not username or not token:
         return None
-    user_obj = get_user(username=username)
+    user_obj = get_user(email=username)
     if user_obj:
         try:
             if user_obj.verification_key_v2:
@@ -135,18 +135,16 @@ def _get_current_user():
 
 
 # TODO: This should be a class method of User?
-def get_user(username=None, token=None, email=None, password=None, external_id_provider=None, external_id=None):
+def get_user(email=None, password=None, token=None, external_id_provider=None, external_id=None):
     """
-    Get an instance of User matching the provided params.
+    Get an instance of `User` matching the provided params.
 
     1. email
     2. email and password
-    3. username
-    4. token
+    3  token
     4. oauth_provider and oauth_id
 
-    :param username: username
-    :param token: the verification token
+    :param token: the token in verification key
     :param email: user's email
     :param password: user's password
     :param external_id_provider: the oauth provider
@@ -158,12 +156,6 @@ def get_user(username=None, token=None, email=None, password=None, external_id_p
         raise AssertionError('If a password is provided, an email must also be provided.')
 
     query_list = []
-
-    if username:
-        query_list.append(Q('username', 'eq', username))
-
-    if token:
-        query_list.append(Q('verification_key', 'eq', token))
 
     if email:
         email = email.strip().lower()
@@ -182,6 +174,9 @@ def get_user(username=None, token=None, email=None, password=None, external_id_p
         if user and not user.check_password(password):
             return False
         return user
+
+    if token:
+        query_list.append(Q('verification_key', 'eq', token))
 
     if external_id_provider and external_id:
         query_list.append(Q('external_identity.{}.{}'.format(external_id_provider, external_id), 'eq', 'VERIFIED'))
