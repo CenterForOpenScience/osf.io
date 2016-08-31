@@ -68,7 +68,7 @@ class Q(BaseQ, query.RawQuery):
             if model_cls:
                 field_aliases = getattr(model_cls, 'FIELD_ALIASES', {})
                 attribute = field_aliases.get(attribute, attribute)
-                field = _get_field(model_cls, query.attribute)
+                field = _get_field(model_cls, attribute)
                 # Mongo compatibility fix: an 'eq' query on array fields
                 # behaves like 'contains' for postgres ArrayFields
                 # NOTE: GenericForeignKey does not implement get_internal_type
