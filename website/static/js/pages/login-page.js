@@ -16,7 +16,8 @@ var activateToggleBox = function () {
 };
 
 $(document).ready(function() {
-    new passwordForms.SignUp('#signUpScope');
+    var campaign = window.contextVars.campaign;
+    new passwordForms.SignUp('#signUpScope', campaign);
 });
 
 $('.toggle-box').on('click', activateToggleBox);
