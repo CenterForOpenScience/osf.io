@@ -498,6 +498,8 @@ class User(GuidStoredObject, AddonModelMixin):
 
     @classmethod
     def create(cls, username, password, fullname):
+        utils.validate_email(username)  # Raises ValidationError if spam address
+
         user = cls(
             username=username,
             fullname=fullname,
