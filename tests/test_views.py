@@ -3119,6 +3119,22 @@ class TestAuthViews(OsfTestCase):
         users = User.find(Q('username', 'eq', email))
         assert_equal(users.count(), 0)
 
+    def test_register_blacklisted_email_domain(self):
+        url = api_url_for('register_user')
+        name, email, password = fake.name(), 'bad@mailinator.com', 'agreatpasswordobviously'
+        res = self.app.post_json(
+            url, {
+                'fullName': name,
+                'email1': email,
+                'email2': email,
+                'password': password
+            },
+            expect_errors=True
+        )
+        assert_equal(res.status_code, http.BAD_REQUEST)
+        users = User.find(Q('username', 'eq', email))
+        assert_equal(users.count(), 0)
+
     def test_register_after_being_invited_as_unreg_contributor(self):
         # Regression test for:
         #    https://github.com/CenterForOpenScience/openscienceframework.org/issues/861
@@ -3184,7 +3200,7 @@ class TestAuthViews(OsfTestCase):
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_resend_confirmation(self, send_mail):
-        email = 'test@example.com'
+        email = 'test@mail.com'
         token = self.user.add_unconfirmed_email(email)
         self.user.save()
         url = api_url_for('resend_confirmation')
@@ -3201,7 +3217,7 @@ class TestAuthViews(OsfTestCase):
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_click_confirmation_email(self, send_mail):
-        email = 'test@example.com'
+        email = 'test@mail.com'
         token = self.user.add_unconfirmed_email(email)
         self.user.save()
         self.user.reload()
@@ -3219,7 +3235,7 @@ class TestAuthViews(OsfTestCase):
         assert_equal(email_verifications, [])
 
     def test_get_unconfirmed_email(self):
-        email = 'test@example.com'
+        email = 'test@mail.com'
         self.user.add_unconfirmed_email(email)
         self.user.save()
         self.user.reload()
@@ -3227,7 +3243,7 @@ class TestAuthViews(OsfTestCase):
         assert_equal(email_verifications, [])
 
     def test_get_email_to_add(self):
-        email = 'test@example.com'
+        email = 'test@mail.com'
         token = self.user.add_unconfirmed_email(email)
         self.user.save()
         self.user.reload()
@@ -3237,10 +3253,10 @@ class TestAuthViews(OsfTestCase):
         self.user.reload()
         assert_equal(self.user.email_verifications[token]['confirmed'], True)
         email_verifications = self.user.unconfirmed_email_info
-        assert_equal(email_verifications[0]['address'], 'test@example.com')
+        assert_equal(email_verifications[0]['address'], 'test@mail.com')
 
     def test_add_email(self):
-        email = 'test@example.com'
+        email = 'test@mail.com'
         token = self.user.add_unconfirmed_email(email)
         self.user.save()
         self.user.reload()
@@ -3253,10 +3269,10 @@ class TestAuthViews(OsfTestCase):
         res = self.app.put_json(put_email_url, email_verifications[0], auth=self.user.auth)
         self.user.reload()
         assert_equal(res.json_body['status'], 'success')
-        assert_equal(self.user.emails[1], 'test@example.com')
+        assert_equal(self.user.emails[1], 'test@mail.com')
 
     def test_remove_email(self):
-        email = 'test@example.com'
+        email = 'test@mail.com'
         token = self.user.add_unconfirmed_email(email)
         self.user.save()
         self.user.reload()
@@ -3272,7 +3288,7 @@ class TestAuthViews(OsfTestCase):
 
     def test_add_expired_email(self):
         # Do not return expired token and removes it from user.email_verifications
-        email = 'test@example.com'
+        email = 'test@mail.com'
         token = self.user.add_unconfirmed_email(email)
         self.user.email_verifications[token]['expiration'] = dt.datetime.utcnow() - dt.timedelta(days=100)
         self.user.save()
@@ -3285,7 +3301,7 @@ class TestAuthViews(OsfTestCase):
 
     def test_clean_email_verifications(self):
         # Do not return bad token and removes it from user.email_verifications
-        email = 'test@example.com'
+        email = 'test@mail.com'
         token = 'blahblahblah'
         self.user.email_verifications[token] = {'expiration': dt.datetime.utcnow() + dt.timedelta(days=1),
                                                 'email': email,
@@ -3310,7 +3326,7 @@ class TestAuthViews(OsfTestCase):
         email = u'\u0000\u0008\u000b\u000c\u000e\u001f\ufffe\uffffHello@yourmom.com'
         # illegal_str = u'\u0000\u0008\u000b\u000c\u000e\u001f\ufffe\uffffHello'
         # illegal_str += unichr(0xd800) + unichr(0xdbff) + ' World'
-        # email = 'test@example.com'
+        # email = 'test@mail.com'
         with assert_raises(ValidationError):
             self.user.add_unconfirmed_email(email)
 
@@ -3336,7 +3352,7 @@ class TestAuthViews(OsfTestCase):
         assert_equal(self.user.emails[1], 'copy@cat.com')
 
     def test_resend_confirmation_without_user_id(self):
-        email = 'test@example.com'
+        email = 'test@mail.com'
         url = api_url_for('resend_confirmation')
         header = {'address': email, 'primary': False, 'confirmed': False}
         res = self.app.put_json(url, {'email': header}, auth=self.user.auth, expect_errors=True)
@@ -3349,7 +3365,7 @@ class TestAuthViews(OsfTestCase):
         assert_equal(res.status_code, 400)
 
     def test_resend_confirmation_not_work_for_primary_email(self):
-        email = 'test@example.com'
+        email = 'test@mail.com'
         url = api_url_for('resend_confirmation')
         header = {'address': email, 'primary': True, 'confirmed': False}
         res = self.app.put_json(url, {'id': self.user._id, 'email': header}, auth=self.user.auth, expect_errors=True)
@@ -3357,7 +3373,7 @@ class TestAuthViews(OsfTestCase):
         assert_equal(res.json['message_long'], 'Cannnot resend confirmation for confirmed emails')
 
     def test_resend_confirmation_not_work_for_confirmed_email(self):
-        email = 'test@example.com'
+        email = 'test@mail.com'
         url = api_url_for('resend_confirmation')
         header = {'address': email, 'primary': False, 'confirmed': True}
         res = self.app.put_json(url, {'id': self.user._id, 'email': header}, auth=self.user.auth, expect_errors=True)
@@ -3366,7 +3382,7 @@ class TestAuthViews(OsfTestCase):
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_resend_confirmation_does_not_send_before_throttle_expires(self, send_mail):
-        email = 'test@example.com'
+        email = 'test@mail.com'
         self.user.save()
         url = api_url_for('resend_confirmation')
         header = {'address': email, 'primary': False, 'confirmed': False}
