@@ -697,7 +697,35 @@ class TestManageContributors:
             )
         assert excinfo.value.args[0] == 'Must have at least one registered admin contributor'
 
-    @pytest.mark.skip('Contributor reordering not yet implemented')
+    def test_manage_contributors_reordering(self, node, user, auth):
+        user2, user3 = UserFactory(), UserFactory()
+        node.add_contributor(contributor=user2, auth=auth)
+        node.add_contributor(contributor=user3, auth=auth)
+        node.save()
+        assert list(node.contributors.all()) == [user, user2, user3]
+        node.manage_contributors(
+            user_dicts=[
+                {
+                    'id': user2._id,
+                    'permission': WRITE,
+                    'visible': True,
+                },
+                {
+                    'id': user3._id,
+                    'permission': WRITE,
+                    'visible': True,
+                },
+                {
+                    'id': user._id,
+                    'permission': ADMIN,
+                    'visible': True,
+                },
+            ],
+            auth=auth,
+            save=True
+        )
+        assert list(node.contributors.all()) == [user2, user3, user]
+
     def test_manage_contributors_logs_when_users_reorder(self, node, user, auth):
         user2 = UserFactory()
         node.add_contributor(contributor=user2, permissions=[READ, WRITE], auth=auth)
@@ -724,7 +752,33 @@ class TestManageContributors:
         assert user._id in latest_log.params['contributors']
         assert user2._id in latest_log.params['contributors']
 
-    def test_manage_contributors_new_contributor(self, node, auth):
+    def test_manage_contributors_logs_when_permissions_change(self, node, user, auth):
+        user2 = UserFactory()
+        node.add_contributor(contributor=user2, permissions=[READ, WRITE], auth=auth)
+        node.save()
+        node.manage_contributors(
+            user_dicts=[
+                {
+                    'id': user._id,
+                    'permission': ADMIN,
+                    'visible': True,
+                },
+                {
+                    'id': user2._id,
+                    'permission': READ,
+                    'visible': True,
+                },
+            ],
+            auth=auth,
+            save=True
+        )
+        latest_log = node.logs.latest()
+        assert latest_log.action == NodeLog.PERMISSIONS_UPDATED
+        assert latest_log.user == user
+        assert user2._id in latest_log.params['contributors']
+        assert user._id not in latest_log.params['contributors']
+
+    def test_manage_contributors_new_contributor(self, node, user, auth):
         user = UserFactory()
         users = [
             {'id': user._id, 'permission': READ, 'visible': True},
@@ -1364,3 +1418,23 @@ class TestAlternativeCitationMethods:
         assert latest_log.params['citation'] == {
             'name': name, 'text': text
         }
+
+@pytest.mark.django_db
+class TestContributorOrdering:
+
+    def test_can_get_contributor_order(self, node):
+        user1, user2 = UserFactory(), UserFactory()
+        contrib1 = Contributor.objects.create(user=user1, node=node)
+        contrib2 = Contributor.objects.create(user=user2, node=node)
+        creator_contrib = Contributor.objects.get(user=node.creator, node=node)
+        assert list(node.get_contributor_order()) == [creator_contrib.id, contrib1.id, contrib2.id]
+        assert list(node.contributors.all()) == [node.creator, user1, user2]
+
+    def test_can_set_contributor_order(self, node):
+        user1, user2 = UserFactory(), UserFactory()
+        contrib1 = Contributor.objects.create(user=user1, node=node)
+        contrib2 = Contributor.objects.create(user=user2, node=node)
+        creator_contrib = Contributor.objects.get(user=node.creator, node=node)
+        node.set_contributor_order([contrib1.id, contrib2.id, creator_contrib.id])
+        assert list(node.get_contributor_order()) == [contrib1.id, contrib2.id, creator_contrib.id]
+        assert list(node.contributors.all()) == [user1, user2, node.creator]
