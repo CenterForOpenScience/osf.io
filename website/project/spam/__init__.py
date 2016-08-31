@@ -8,8 +8,8 @@ from website.util import akismet
 logger = get_task_logger(__name__)
 
 
-@celery_app.task
-def _check_for_spam(node_id, content, author_info, request_headers, flag=True):
+@celery_app.task(ignore_result=True)
+def _check_for_spam(node_id, content, author_info, request_headers):
     client = akismet.AkismetClient(
         apikey=settings.AKISMET_APIKEY,
         website=settings.DOMAIN,
@@ -24,19 +24,16 @@ def _check_for_spam(node_id, content, author_info, request_headers, flag=True):
         comment_author=author_info['name'],
         comment_author_email=author_info['email']
     )
+
     if is_possible_spam:
         from website.project.model import Node
         node = Node.load(node_id)
         logger.info("Node '{}' ({}) smells like spam".format(node.title, node._id))
-        if flag:
-            node.flag_spam(save=True)
-        else:
-            return True
+        node.flag_spam(save=True)
     else:
         logger.info('Node {} smells like ham'.format(node_id))
-        return False
 
-def check_node_for_spam(document, creator, request_headers, flag=True, async=True):
+def check_node_for_spam(document, creator, request_headers):
     content = """
     {}
 
@@ -49,13 +46,7 @@ def check_node_for_spam(document, creator, request_headers, flag=True, async=Tru
         '\n'.join(document['wikis'].values())
     )
 
-    if async:
-        _check_for_spam.delay(document['id'], content, {
-            'email': creator.username,
-            'name': creator.fullname
-        }, request_headers)
-    else:
-        return _check_for_spam(document['id'], content, {
-            'email': creator.username,
-            'name': creator.fullname
-        }, request_headers)
+    _check_for_spam.delay(document['id'], content, {
+        'email': creator.username,
+        'name': creator.fullname
+    }, request_headers)

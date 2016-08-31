@@ -31,6 +31,11 @@ def search(query, index=None, doc_type=None):
 def update_node(node, index=None, bulk=False, async=True):
     request = get_request()
     headers = util.get_headers_from_request(request)
+    headers = {
+        k: v
+        for k, v in headers.items()
+        if isinstance(v, basestring)
+    }
 
     kwargs = {
         'index': index,
