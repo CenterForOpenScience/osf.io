@@ -1468,3 +1468,16 @@ def test_templated_list(node):
     assert templated1 in node.templated_list.all()
     assert templated2 in node.templated_list.all()
     assert deleted not in node.templated_list.all()
+
+
+def test_querying_on_contributors(node, user, auth):
+    deleted = NodeFactory(is_deleted=True)
+    deleted.add_contributor(user, auth=auth)
+    deleted.save()
+    result = list(Node.find(Q('contributors', 'eq', user)).all())
+    assert node in result
+    assert deleted in result
+
+    result2 = list(Node.find(Q('contributors', 'eq', user) & Q('is_deleted', 'eq', False)).all())
+    assert node in result2
+    assert deleted not in result2
