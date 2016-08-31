@@ -498,8 +498,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
     @classmethod
     def create(cls, username, password, fullname):
-        if username.split('@')[1] in settings.BLACKLISTED_DOMAINS:
-            raise ValidationError('Invalid email address.')
+        utils.validate_email(username)  # Raises ValidationError if spam address
 
         user = cls(
             username=username,
