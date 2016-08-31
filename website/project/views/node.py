@@ -650,7 +650,7 @@ def _view_project(node, auth, primary=False):
     if user:
         bookmark_collection = find_bookmark_collection(user)
         bookmark_collection_id = bookmark_collection._id
-        in_bookmark_collection = bookmark_collection.nodes.filter(pk=node.pk).exists()
+        in_bookmark_collection = bookmark_collection.linked_nodes.filter(pk=node.pk).exists()
     else:
         in_bookmark_collection = False
         bookmark_collection_id = ''

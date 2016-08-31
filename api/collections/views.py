@@ -26,6 +26,7 @@ from api.nodes.permissions import (
 
 from website.exceptions import NodeStateError
 from website.models import Node, Pointer
+from osf_models.models import Collection
 from website.util.permissions import ADMIN
 
 
@@ -125,21 +126,17 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
     serializer_class = CollectionSerializer
     view_category = 'collections'
     view_name = 'collection-list'
-    model_class = Node
+    model_class = Collection
 
     ordering = ('-date_modified', )  # default ordering
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         base_query = (
-            Q('is_deleted', 'ne', True) &
-            Q('is_collection', 'eq', True)
+            Q('is_deleted', 'ne', True)
         )
         user = self.request.user
-        permission_query = Q('is_public', 'eq', True)
-        if not user.is_anonymous():
-            permission_query = (Q('is_public', 'eq', True) | Q('contributors', 'eq', user._id))
-
+        permission_query = Q('user', 'eq', user)
         query = base_query & permission_query
         return query
 
@@ -157,7 +154,7 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
             return nodes
         else:
             query = self.get_query_from_request()
-            return Node.find(query)
+            return Collection.find(query)
 
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDestroyJSONAPIView
     def get_serializer_class(self):

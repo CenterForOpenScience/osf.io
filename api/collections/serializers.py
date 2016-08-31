@@ -51,12 +51,10 @@ class CollectionSerializer(JSONAPISerializer):
         return absolute_reverse('collections:collection-detail', kwargs={'collection_id': obj._id})
 
     def get_node_links_count(self, obj):
-        count = 0
         auth = get_user_auth(self.context['request'])
-        for pointer in obj.nodes_pointer:
-            if not pointer.node.is_deleted and not pointer.node.is_collection and pointer.node.can_view(auth):
-                count += 1
-        return count
+        return len(
+            [e for e in obj.linked_nodes.filter(is_deleted=False) if e.can_view(auth)]
+        )
 
     def create(self, validated_data):
         node = Node(**validated_data)
