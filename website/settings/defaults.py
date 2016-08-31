@@ -42,6 +42,8 @@ CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_compon
 
 # Minimum seconds between forgot password email attempts
 SEND_EMAIL_THROTTLE = 30
+# Minimum seconds between API actions that generate emails
+API_SEND_EMAIL_THROTTLE = 0.1
 
 # Hours before pending embargo/retraction/registration automatically becomes active
 RETRACTION_PENDING_TIME = datetime.timedelta(days=2)
@@ -256,18 +258,12 @@ SYSTEM_ADDED_ADDONS = {
     'node': [],
 }
 
-# Piwik
-
-# TODO: Override in local.py in production
-PIWIK_HOST = None
-PIWIK_ADMIN_TOKEN = None
-PIWIK_SITE_ID = None
-
 KEEN = {
     'public': {
         'project_id': None,
         'master_key': 'changeme',
         'write_key': '',
+        'read_key': '',
     },
     'private': {
         'project_id': '',
@@ -360,6 +356,7 @@ LOW_PRI_MODULES = {
     'scripts.osfstorage.files_audit',
     'scripts.osfstorage.glacier_audit',
     'scripts.populate_new_and_noteworthy_projects',
+    'scripts.meeting_visit_count',
     'website.search.elastic_search',
 }
 
@@ -412,7 +409,6 @@ CELERY_IMPORTS = (
     'framework.celery_tasks',
     'framework.celery_tasks.signals',
     'framework.email.tasks',
-    'framework.analytics.tasks',
     'website.mailchimp_utils',
     'website.notifications.tasks',
     'website.archiver.tasks',
@@ -425,6 +421,7 @@ CELERY_IMPORTS = (
     'scripts.approve_embargo_terminations',
     'scripts.triggered_mails',
     'scripts.send_queued_mails',
+    'scripts.meeting_visit_count',
 )
 
 # Modules that need metrics and release requirements
@@ -494,6 +491,11 @@ else:
             'task': 'scripts.populate_new_and_noteworthy_projects',
             'schedule': crontab(minute=0, hour=2, day_of_week=6),  # Saturday 2:00 a.m.
             'kwargs': {'dry_run': False}
+        },
+        'meeting_visit_count': {
+            'task': 'scripts.meeting_visit_count',
+            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
         },
     }
 
@@ -568,3 +570,8 @@ ESI_MEDIA_TYPES = {'application/vnd.api+json', 'application/json'}
 
 # Used for gathering meta information about the current build
 GITHUB_API_TOKEN = None
+
+# External Identity Provider
+EXTERNAL_IDENTITY_PROFILE = {
+    'OrcidProfile': 'ORCID',
+}

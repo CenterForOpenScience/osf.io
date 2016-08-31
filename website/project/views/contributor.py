@@ -190,7 +190,6 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
                 given_name=fullname,
                 email=email)
             contributor.save()
-            unreg_contributor_added.send(node, contributor=contributor, auth=auth)
 
         contribs.append({
             'user': contributor,
@@ -201,10 +200,10 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
 
 
 @unreg_contributor_added.connect
-def finalize_invitation(node, contributor, auth):
+def finalize_invitation(node, contributor, auth, email_template='default'):
     record = contributor.get_unclaimed_record(node._primary_key)
     if record['email']:
-        send_claim_email(record['email'], contributor, node, notify=True)
+        send_claim_email(record['email'], contributor, node, notify=True, email_template=email_template)
 
 
 @must_be_valid_project
@@ -403,7 +402,7 @@ def send_claim_registered_email(claimer, unreg_user, node, throttle=24 * 3600):
     )
 
 
-def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
+def send_claim_email(email, user, node, notify=True, throttle=24 * 3600, email_template='default'):
     """Send an email for claiming a user account. Either sends to the given email
     or the referrer's email, depending on the email address provided.
 
@@ -423,7 +422,7 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
     claim_url = user.get_claim_url(node._primary_key, external=True)
     # If given email is the same provided by user, just send to that email
     if unclaimed_record.get('email') == claimer_email:
-        mail_tpl = mails.INVITE
+        mail_tpl = getattr(mails, 'INVITE_{}'.format(email_template.upper()))
         to_addr = claimer_email
         unclaimed_record['claimer_email'] = claimer_email
         user.save()
@@ -468,7 +467,7 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
 
 
 @contributor_added.connect
-def notify_added_contributor(node, contributor, auth=None, throttle=None):
+def notify_added_contributor(node, contributor, auth=None, throttle=None, email_template='default'):
     throttle = throttle or settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
 
     # Exclude forks and templates because the user forking/templating the project gets added
@@ -477,6 +476,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None):
     if (contributor.is_registered and not node.template_node and not node.is_fork and
             (not node.parent_node or
                 (node.parent_node and not node.parent_node.is_contributor(contributor)))):
+        email_template = getattr(mails, 'CONTRIBUTOR_ADDED_{}'.format(email_template.upper()))
         contributor_record = contributor.contributor_added_email_records.get(node._id, {})
         if contributor_record:
             timestamp = contributor_record.get('last_sent', None)
@@ -488,7 +488,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None):
 
         mails.send_mail(
             contributor.username,
-            mails.CONTRIBUTOR_ADDED,
+            email_template,
             user=contributor,
             node=node,
             referrer_name=auth.user.fullname if auth else '',
@@ -497,6 +497,9 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None):
 
         contributor.contributor_added_email_records[node._id]['last_sent'] = get_timestamp()
         contributor.save()
+
+    elif not contributor.is_registered:
+        unreg_contributor_added.send(node, contributor=contributor, auth=auth, email_template=email_template)
 
 
 def verify_claim_token(user, token, pid):

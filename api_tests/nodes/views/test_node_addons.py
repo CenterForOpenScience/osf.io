@@ -12,6 +12,7 @@ from tests.factories import AuthUserFactory
 from website.addons.box.tests.factories import BoxAccountFactory, BoxNodeSettingsFactory
 from website.addons.dataverse.tests.factories import DataverseAccountFactory, DataverseNodeSettingsFactory
 from website.addons.dropbox.tests.factories import DropboxAccountFactory, DropboxNodeSettingsFactory
+from website.addons.forward.tests.factories import ForwardSettingsFactory
 from website.addons.github.tests.factories import GitHubAccountFactory, GitHubNodeSettingsFactory
 from website.addons.googledrive.tests.factories import GoogleDriveAccountFactory, GoogleDriveNodeSettingsFactory
 from website.addons.mendeley.tests.factories import MendeleyAccountFactory, MendeleyNodeSettingsFactory
@@ -223,6 +224,8 @@ class NodeAddonDetailMixin(object):
             expect_errors=wrong_type)
         if not wrong_type:
             assert_equal(res.status_code, 204)
+            self.node.reload()
+            assert_false(self.node.has_addon(self.short_name))
         if wrong_type:
             assert_in(res.status_code, [404, 405])
 
@@ -597,11 +600,6 @@ class TestNodeInvalidAddon(NodeAddonTestSuiteMixin, ApiAddonTestCase):
 
 # UNMANAGEABLE
 
-
-class TestNodeForwardAddon(NodeUnmanageableAddonTestSuiteMixin, ApiAddonTestCase):
-    short_name = 'forward'
-
-
 class TestNodeOsfStorageAddon(NodeUnmanageableAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'osfstorage'
 
@@ -831,3 +829,174 @@ class TestNodeGoogleDriveAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTest
         assert_equal(res.status_code, 400)
         assert_equal('Must specify both folder_id and folder_path for {}'.format(self.short_name),
              res.json['errors'][0]['detail'])
+
+
+class TestNodeForwardAddon(NodeUnmanageableAddonTestSuiteMixin, ApiAddonTestCase):
+    short_name = 'forward'
+
+    @property
+    def _mock_folder_info(self):
+        return {
+            'url': 'http://google.com',
+            'label': 'Gewgle'
+        }
+
+    def setUp(self):
+        super(TestNodeForwardAddon, self).setUp()
+        self.addon_type = 'OAUTH'
+        self.node_settings = self.node.get_or_add_addon(self.short_name, auth=self.auth)
+        self.node_settings.url = 'http://google.com'
+        self.node_settings.save()
+
+    ## Overrides
+
+    def test_settings_detail_GET_enabled(self):
+        res = self.app.get(
+            self.setting_detail_url,
+            auth=self.user.auth)
+
+        addon_data = res.json['data']['attributes']
+        assert_equal(self.node_settings.url, addon_data['url'])
+        assert_equal(self.node_settings.label, addon_data['label'])
+
+    def test_settings_detail_POST_enables(self):
+        self.node.delete_addon(self.short_name, auth=self.auth)
+        res = self.app.post_json_api(self.setting_detail_url, 
+            {'data': { 
+                'id': self.short_name,
+                'type': 'node_addons',
+                'attributes': {
+                    }
+                }
+            },
+            auth=self.user.auth)
+
+        addon_data = res.json['data']['attributes']
+        assert_equal(addon_data['url'], None)
+        assert_equal(addon_data['label'], None)
+
+        self.node.reload()
+        assert_not_equal(self.node.logs[-1].action, 'forward_url_changed')
+
+    def test_settings_detail_noncontrib_public_can_view(self):
+        self.node.set_privacy('public', auth=self.auth)
+        noncontrib = AuthUserFactory()
+        res = self.app.get(
+            self.setting_detail_url,
+            auth=noncontrib.auth)
+
+        assert_equal(res.status_code, 200)
+        addon_data = res.json['data']['attributes']
+        assert_equal(self.node_settings.url, addon_data['url'])
+        assert_equal(self.node_settings.label, addon_data['label'])
+
+    def test_settings_list_GET_enabled(self):
+        res = self.app.get(
+            self.setting_list_url,
+            auth=self.user.auth)
+
+        addon_data = self.get_response_for_addon(res)
+        assert_equal(self.node_settings.url, addon_data['url'])
+        assert_equal(self.node_settings.label, addon_data['label'])
+
+    def test_settings_list_noncontrib_public_can_view(self):
+        self.node.set_privacy('public', auth=self.auth)
+        noncontrib = AuthUserFactory()
+        res = self.app.get(
+            self.setting_list_url,
+            auth=noncontrib.auth)
+        addon_data = self.get_response_for_addon(res)
+
+        assert_equal(self.node_settings.url, addon_data['url'])
+        assert_equal(self.node_settings.label, addon_data['label'])
+
+    def test_settings_detail_PATCH_to_add_folder_without_auth_conflict(self):
+        # This test doesn't apply forward, as it does not use ExternalAccounts.
+        # Overridden because it's required by the superclass.
+        pass
+
+    def test_settings_detail_PATCH_to_enable_and_add_external_account_id(self):
+        # This test doesn't apply forward, as it does not use ExternalAccounts.
+        # Overridden because it's required by the superclass.
+        pass
+
+    def test_settings_detail_PATCH_to_remove_external_account_id(self):
+        # This test doesn't apply forward, as it does not use ExternalAccounts.
+        # Overridden because it's required by the superclass.
+        pass
+
+    def test_settings_detail_PUT_all_sets_settings(self):
+        self.node_settings.reset()
+        self.node_settings.save()
+        data = {'data': { 
+                'id': self.short_name,
+                'type': 'node_addons',
+                'attributes': {}
+                }
+            }
+        data['data']['attributes'].update(self._mock_folder_info)
+        res = self.app.put_json_api(self.setting_detail_url, 
+            data, auth=self.user.auth)
+        addon_data = res.json['data']['attributes']
+        assert_equal(addon_data['url'], self._mock_folder_info['url'])
+        assert_equal(addon_data['label'], self._mock_folder_info['label'])
+        
+        self.node.reload()
+        assert_equal(self.node.logs[-1].action, 'forward_url_changed')
+
+    def test_settings_detail_PUT_none_and_enabled_clears_settings(self):
+        res = self.app.put_json_api(self.setting_detail_url, 
+            {'data': { 
+                'id': self.short_name,
+                'type': 'node_addons',
+                'attributes': {
+                    'url': None,
+                    'label': None
+                    }
+                }
+            }, auth=self.user.auth)
+        addon_data = res.json['data']['attributes']
+        assert_false(addon_data['url'])
+        assert_false(addon_data['label'])
+
+        assert_not_equal(self.node.logs[-1].action, 'forward_url_changed')
+
+    def test_settings_detail_PUT_only_label_and_enabled_clears_settings(self):
+        res = self.app.put_json_api(self.setting_detail_url, 
+            {'data': { 
+                'id': self.short_name,
+                'type': 'node_addons',
+                'attributes': {
+                    'url': None,
+                    'label': 'A Link'
+                    }
+                }
+            }, auth=self.user.auth,
+            expect_errors=True)
+        
+        assert_equal(res.status_code, 400)
+
+    def test_settings_detail_PUT_only_url_sets_settings(self):
+        self.node_settings.reset()
+        self.node_settings.save()
+        data = {'data': { 
+                'id': self.short_name,
+                'type': 'node_addons',
+                'attributes': {
+                    'url': self._mock_folder_info['url']    
+                }
+            }
+        }
+        res = self.app.put_json_api(self.setting_detail_url, 
+            data, auth=self.user.auth)
+        addon_data = res.json['data']['attributes']
+        assert_equal(addon_data['url'], self._mock_folder_info['url'])
+        assert_false(addon_data['label'])
+        
+        self.node.reload()
+        assert_equal(self.node.logs[-1].action, 'forward_url_changed')
+
+    def test_settings_detail_PUT_none_and_disabled_deauthorizes(self):
+        # This test doesn't apply forward, as it does not use ExternalAccounts.
+        # Overridden because it's required by the superclass.
+        pass
