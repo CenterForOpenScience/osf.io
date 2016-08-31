@@ -54,6 +54,14 @@ class PreprintSerializer(JSONAPISerializer):
         read_only=False
     )
 
+    # Intentionally use the existing node endpoint for preprint comments
+    comments = RelationshipField(
+        related_view='nodes:node-comments',
+        related_view_kwargs={'node_id': '<pk>'},
+        related_meta={'unread': 'get_unread_comments_count'},
+        filter={'target': '<pk>'}
+    )
+
     files = RelationshipField(
         related_view='nodes:node-providers',
         related_view_kwargs={'node_id': '<pk>'}
