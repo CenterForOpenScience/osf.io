@@ -18,7 +18,15 @@ from osf_models.models import Node, Tag, NodeLog, Contributor, Sanction
 from osf_models.exceptions import ValidationError
 from osf_models.utils.auth import Auth
 
-from .factories import ProjectFactory, NodeFactory, UserFactory, UnregUserFactory, RegistrationFactory, NodeLicenseRecordFactory
+from .factories import (
+    ProjectFactory,
+    NodeFactory,
+    UserFactory,
+    UnregUserFactory,
+    RegistrationFactory,
+    NodeLicenseRecordFactory,
+    CollectionFactory,
+)
 from .utils import capture_signals, assert_datetime_equal, mock_archive
 
 
@@ -644,7 +652,6 @@ class TestSetPrivacy:
             registration.set_privacy('public', auth=auth)
             assert mock_request_embargo_termination.call_count == 1
 
-
 # copied from tests/test_models.py
 @pytest.mark.django_db
 class TestManageContributors:
@@ -968,3 +975,144 @@ class TestNodeTraversals:
 
         descendants = list(point1.get_descendants_recursive())
         assert len(descendants) == 1
+
+@pytest.mark.django_db
+def test_linked_from():
+    node = NodeFactory()
+    registration_to_link = RegistrationFactory()
+    node_to_link = NodeFactory()
+
+    node.linked_nodes.add(node_to_link)
+    node.linked_nodes.add(node_to_link)
+    node.linked_nodes.add(registration_to_link)
+    node.save()
+
+    assert node in node_to_link.linked_from.all()
+    assert node in registration_to_link.linked_from.all()
+
+
+# Copied from tests/test_models.py
+@pytest.mark.django_db
+class TestPointerMethods:
+
+    def test_add_pointer(self, node, user, auth):
+        node2 = NodeFactory(creator=user)
+        node.add_pointer(node2, auth=auth)
+        assert node2 in node.linked_nodes.all()
+        assert (
+            node.logs.latest().action == NodeLog.POINTER_CREATED
+        )
+        assert (
+            node.logs.latest().params == {
+                'parent_node': node.parent_id,
+                'node': node._primary_key,
+                'pointer': {
+                    'id': node2._id,
+                    'url': node2.url,
+                    'title': node2.title,
+                    'category': node2.category,
+                },
+            }
+        )
+
+    def test_add_pointer_fails_for_registrations(self, user, auth):
+        node = ProjectFactory()
+        registration = RegistrationFactory(creator=user)
+
+        with pytest.raises(NodeStateError):
+            registration.add_pointer(node, auth=auth)
+
+    def test_get_points_exclude_folders(self):
+        user = UserFactory()
+        pointer_project = ProjectFactory(is_public=True)  # project that points to another project
+        pointed_project = ProjectFactory(creator=user)  # project that other project points to
+        pointer_project.add_pointer(pointed_project, Auth(pointer_project.creator), save=True)
+
+        # Project is in a organizer collection
+        folder = CollectionFactory(user=pointed_project.creator)
+        folder.add_pointer(pointed_project, Auth(pointed_project.creator), save=True)
+
+        assert pointer_project in pointed_project.get_points(folders=False)
+        assert folder not in pointed_project.get_points(folders=False)
+        assert folder in pointed_project.get_points(folders=True)
+
+    def test_get_points_exclude_deleted(self):
+        user = UserFactory()
+        pointer_project = ProjectFactory(is_public=True, is_deleted=True)  # project that points to another project
+        pointed_project = ProjectFactory(creator=user)  # project that other project points to
+        pointer_project.add_pointer(pointed_project, Auth(pointer_project.creator), save=True)
+
+        assert pointer_project not in pointed_project.get_points(deleted=False)
+        assert pointer_project in pointed_project.get_points(deleted=True)
+
+    def test_add_pointer_already_present(self, node, user, auth):
+        node2 = NodeFactory(creator=user)
+        node.add_pointer(node2, auth=auth)
+        with pytest.raises(ValueError):
+            node.add_pointer(node2, auth=auth)
+
+    def test_rm_pointer(self, node, user, auth):
+        node2 = NodeFactory(creator=user)
+        node.add_pointer(node2, auth=auth)
+        node.rm_pointer(node2, auth=auth)
+        # assert Pointer.load(pointer._id) is None
+        # assert len(node.nodes) == 0
+        assert len(node2.get_points()) == 0
+        assert (
+            node.logs.latest().action == NodeLog.POINTER_REMOVED
+        )
+        assert(
+            node.logs.latest().params == {
+                'parent_node': node.parent_id,
+                'node': node._primary_key,
+                'pointer': {
+                    'id': node2._id,
+                    'url': node2.url,
+                    'title': node2.title,
+                    'category': node2.category,
+                },
+            }
+        )
+
+    def test_rm_pointer_not_present(self, user, node, auth):
+        node2 = NodeFactory(creator=user)
+        with pytest.raises(ValueError):
+            node.rm_pointer(node2, auth=auth)
+
+    def test_fork_pointer_not_present(self, node, auth):
+        node2 = NodeFactory()
+        with pytest.raises(ValueError):
+            node.fork_pointer(node2, auth=auth)
+
+    def _fork_pointer(self, node, content, auth):
+        pointer = node.add_pointer(content, auth=auth)
+        forked = node.fork_pointer(pointer, auth=auth)
+        assert forked.is_fork is True
+        assert forked.forked_from == content
+        assert forked.primary is True
+        assert node.linked_nodes.first() == forked
+        assert(
+            node.logs.latest().action == NodeLog.POINTER_FORKED
+        )
+        assert(
+            node.logs.latest().params, {
+                'parent_node': node.parent_id,
+                'node': node._primary_key,
+                'pointer': {
+                    'id': forked._id,
+                    'url': forked.url,
+                    'title': forked.title,
+                    'category': forked.category,
+                },
+            }
+        )
+
+    @pytest.mark.skip('forking not yet implemented')
+    def test_fork_pointer_project(self, node, user, auth):
+        project = ProjectFactory(creator=user)
+        self._fork_pointer(node=node, content=project, auth=auth)
+
+    @pytest.mark.skip('forking not yet implemented')
+    def test_fork_pointer_component(self, node, user, auth):
+        component = NodeFactory(creator=user)
+        self._fork_pointer(node=node, content=component, auth=auth)
