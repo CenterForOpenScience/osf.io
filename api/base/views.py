@@ -21,7 +21,7 @@ from api.base.filters import ListFilterMixin
 from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
 from api.base.requests import EmbeddedRequest
 from api.base.serializers import LinkedNodesRelationshipSerializer
-from api.base.throttling import CookieAuthThrottle
+from api.base.throttling import NonCookieAuthThrottle
 from api.base.utils import is_bulk_request, get_user_auth
 
 from api.nodes.permissions import ReadOnlyIfRegistration
@@ -34,7 +34,7 @@ CACHE = weakref.WeakKeyDictionary()
 
 class JSONAPIBaseView(generics.GenericAPIView):
 
-    throttle_classes = (UserRateThrottle, CookieAuthThrottle,)
+    throttle_classes = (UserRateThrottle, NonCookieAuthThrottle,)
 
     def __init__(self, **kwargs):
         assert getattr(self, 'view_name', None), 'Must specify view_name on view.'

@@ -33,16 +33,12 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_THROTTLE_CLASSES': (
         'rest_framework.throttling.UserRateThrottle',
-        'api.base.throttling.CookieAuthThrottle',
+        'api.base.throttling.NonCookieAuthThrottle',
         'api.base.throttling.AddContributorThrottle',
-        'api.base.throttling.TestUserRateThrottle',
-        'api.base.throttling.TestAnonRateThrottle',
     ),
     'DEFAULT_THROTTLE_RATES': {
         'user': '1000000/hour',
-        'cookie-auth': '1000000/hour',
+        'non-cookie-auth': '1000000/hour',
         'add-contributor': '10/second',
-        'test-user': '2/hour',
-        'test-anon': '1/hour',
     }
 }

@@ -3,19 +3,12 @@ from rest_framework.throttling import UserRateThrottle, AnonRateThrottle, Simple
 
 class BaseThrottle(SimpleRateThrottle):
 
-    def success(self):
-        self.history.insert(0, self.now)
-        self.cache.set(self.key, self.history, self.duration)
-        return True
-
     def failure(self, request):
         return False
 
     def allow_request(self, request, view):
         """
         Implement the check to see if the request should be throttled.
-        On success calls `throttle_success`.
-        On failure calls `throttle_failure`.
         """
         if self.rate is None:
             return True
@@ -30,23 +23,21 @@ class BaseThrottle(SimpleRateThrottle):
         # Drop any requests from the history which have now passed the throttle duration
         while self.history and self.history[-1] <= self.now - self.duration:
             self.history.pop()
+
         if len(self.history) >= self.num_requests:
             return self.failure(request)
-        return self.success()
+        return self.throttle_success()
 
 
-class CookieAuthThrottle(AnonRateThrottle, BaseThrottle):
+class NonCookieAuthThrottle(BaseThrottle, AnonRateThrottle):
 
-    scope = 'cookie-auth'
+    scope = 'non-cookie-auth'
 
     def failure(self, request):
         return bool(request.COOKIES)
 
-    def wait(self):
-        return 3600
 
-
-class AddContributorThrottle(UserRateThrottle, BaseThrottle):
+class AddContributorThrottle(BaseThrottle, UserRateThrottle):
 
     scope = 'add-contributor'
 
@@ -55,15 +46,14 @@ class AddContributorThrottle(UserRateThrottle, BaseThrottle):
             return False
         return True
 
-    def wait(self):
-        return 0.1
-
 
 class TestUserRateThrottle(UserRateThrottle):
 
     scope = 'test-user'
+    rate = '2/hour'
 
 
 class TestAnonRateThrottle(AnonRateThrottle):
 
     scope = 'test-anon'
+    rate = '1/hour'
