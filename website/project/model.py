@@ -3408,6 +3408,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if auth and not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Must be an admin to change privacy settings.')
         if permissions == 'public' and not self.is_public:
+            if self.is_flagged_as_spam or self.is_spam:
+                raise NodeStateError('This project has been marked as spam. Please contact the help desk if you think this is in error.')
             if self.is_registration:
                 if self.is_pending_embargo:
                     raise NodeStateError('A registration with an unapproved embargo cannot be made public.')
