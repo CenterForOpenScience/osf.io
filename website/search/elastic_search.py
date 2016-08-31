@@ -351,11 +351,12 @@ def update_node(node, index=None, bulk=False, async=False, request_headers=None)
             ]:
                 elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
 
+        if bulk:
+            return elastic_document
+
         if async and request_headers:
             check_node_for_spam(elastic_document, node.creator, request_headers)
 
-        if bulk:
-            return elastic_document
         else:
             es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
 
