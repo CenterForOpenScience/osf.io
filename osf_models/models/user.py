@@ -959,7 +959,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
             '-date_modified'
         ).limit(1)
 
-        if sessions.count() > 0:
+        if sessions.exists():
             user_session = sessions[0]
         else:
             user_session = Session(data={

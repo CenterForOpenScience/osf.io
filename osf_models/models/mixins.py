@@ -160,7 +160,7 @@ class NodeLinkMixin(models.Model):
 
         # If a folder, prevent more than one pointer to that folder.
         # This will prevent infinite loops on the project organizer.
-        if node.is_collection and node.linked_from.count() > 0:
+        if node.is_collection and node.linked_from.exists():
             raise ValueError(
                 'Node link to folder {0} already exists. '
                 'Only one node link to any given folder allowed'.format(node._id)
@@ -247,7 +247,7 @@ class NodeLinkMixin(models.Model):
         """For v1 compat"""
         return self.linked_nodes
 
-    def get_points(self, folders=False, deleted=False, resolve=True):
+    def get_points(self, folders=False, deleted=False):
         if deleted:
             query = self.linked_from.all()
         else:
