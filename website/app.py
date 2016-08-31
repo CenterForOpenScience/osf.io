@@ -164,6 +164,7 @@ PATCHED_MODELS = (
     'ArchiveJob',
     'ArchiveTarget',
     'PrivateLink',
+    'Comment',
 )
 
 # TODO: This won't work for modules that do e.g. `from website import models`. Rethink.
@@ -178,7 +179,11 @@ def patch_models(settings):
         if not module:
             continue
         for model in PATCHED_MODELS:
-            if hasattr(module, model) and issubclass(getattr(module, model), modularodm.StoredObject):
+            if (
+                hasattr(module, model) and
+                isinstance(getattr(module, model), type) and
+                issubclass(getattr(module, model), modularodm.StoredObject)
+            ):
                 if model in model_map:
                     setattr(module, model, getattr(models, model_map[model]))
                 else:
