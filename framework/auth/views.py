@@ -872,3 +872,27 @@ def external_login_email_post():
         'form': form,
         'external_id_provider': external_id_provider
     }
+
+
+def validate_next_url(next_url):
+    """
+    Non-view helper function that checks `next_url`.
+    Only allow redirects which are relative root or full domain (CAS, OSF and MFR).
+    Disallows external redirects.
+
+    :param next_url: the next url to check
+    :return: True if valid, False otherwise
+    """
+
+    if next_url:
+        # disable external domain using `//`: the browser allows `//` as a shortcut for non-protocol specific requests
+        # like http:// or https:// depending on the use of SSL on the page already.
+        if next_url.startswith('//'):
+            return False
+        # only OSF, MFR and CAS domains are allowed
+        if not (next_url[0] == '/' or
+                next_url.startswith(settings.DOMAIN) or
+                next_url.startswith(settings.CAS_SERVER_URL) or
+                next_url.startswith(settings.MFR_SERVER_URL)):
+            return False
+    return True
