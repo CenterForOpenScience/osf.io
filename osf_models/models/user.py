@@ -856,8 +856,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         """
         Node = apps.get_model('osf_models.Node')
         query = (Node.objects
-                 .filter(contributors=self)
-                 .filter(contributors=other_user))
+                 .filter(_contributors=self)
+                 .filter(_contributors=other_user))
         if primary_keys:
             return set(query.values_list('guid__guid', flat=True))
         else:

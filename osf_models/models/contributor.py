@@ -22,6 +22,9 @@ class Contributor(AbstractBaseContributor):
 
     class Meta:
         unique_together = ('user', 'node')
+        # Make contributors orderable
+        # NOTE: Adds an _order column
+        order_with_respect_to = 'node'
 
 class InstitutionalContributor(AbstractBaseContributor):
     institution = models.ForeignKey('Institution')

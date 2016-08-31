@@ -44,6 +44,9 @@ def setup_tests(ctx, update=False, requirements=True, branch=POSTGRES_BRANCH):
         # Install osf requirements
         ctx.run('invoke requirements')
         ctx.run('invoke requirements --addons')
+        # Hack to fix package conflict between uritemplate and uritemplate.py (dependency of github3.py)
+        ctx.run('pip uninstall uritemplate.py --yes')
+        ctx.run('pip install uritemplate.py==0.3.0')
         # Install osf-models test requirements
         ctx.run('pip install -r {}'.format(os.path.join('osf_models_tests', 'requirements.txt')), echo=True)
     os.chdir('..')
