@@ -692,8 +692,8 @@ def _view_project(node, auth, primary=False):
             'is_public': node.is_public,
             'is_archiving': node.archiving,
             'date_created': iso8601format(node.date_created),
-            'date_modified': iso8601format(node.logs[-1].date) if node.logs else '',
-            'tags': [tag._primary_key for tag in node.tags],
+            'date_modified': iso8601format(node.logs.latest().date) if node.logs else '',
+            'tags': list(node.tags.values_list('name', flat=True)),
             'children': bool(node.nodes_active),
             'is_registration': node.is_registration,
             'is_pending_registration': node.is_pending_registration,
@@ -711,7 +711,7 @@ def _view_project(node, auth, primary=False):
             'registered_date': iso8601format(node.registered_date) if node.is_registration else '',
             'root_id': node.root._id if node.root else None,
             'registered_meta': node.registered_meta,
-            'registered_schemas': serialize_meta_schemas(node.registered_schema),
+            'registered_schemas': serialize_meta_schemas(list(node.registered_schema.all())),
             'registration_count': node.registrations_all.count(),
             'is_fork': node.is_fork,
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
@@ -734,7 +734,7 @@ def _view_project(node, auth, primary=False):
             'institutions': get_affiliated_institutions(node) if node else [],
             'alternative_citations': [citation.to_json() for citation in node.alternative_citations],
             'has_draft_registrations': node.has_active_draft_registrations,
-            'contributors': [contributor._id for contributor in node.contributors]
+            'contributors': list(node.contributors.values_list('guid__guid', flat=True)),
         },
         'parent_node': {
             'exists': parent is not None,
@@ -782,7 +782,7 @@ def _view_project(node, auth, primary=False):
 
 def get_affiliated_institutions(obj):
     ret = []
-    for institution in obj.affiliated_institutions:
+    for institution in obj.affiliated_institutions.all():
         ret.append({
             'name': institution.name,
             'logo_path': institution.logo_path,

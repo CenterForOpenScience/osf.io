@@ -1459,3 +1459,12 @@ class TestNodeOrdering:
     def test_can_set_node_order(self, project, children):
         project.set_abstractnode_order([children[2].pk, children[1].pk, children[0].pk])
         assert list(project.nodes.all()) == [children[2], children[1], children[0]]
+
+def test_templated_list(node):
+    templated1, templated2 = ProjectFactory(template_node=node), NodeFactory(template_node=node)
+    deleted = ProjectFactory(template_node=node, is_deleted=True)
+
+    assert node.templated_list.count() == 2
+    assert templated1 in node.templated_list.all()
+    assert templated2 in node.templated_list.all()
+    assert deleted not in node.templated_list.all()
