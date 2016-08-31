@@ -3384,6 +3384,18 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         return contributor
 
+    def flag_spam(self, save=False):
+        """ Overrides SpamMixin#save_spam. Make spammy node and its children private
+        """
+        super(Node, self).flag_spam(save=False)
+        for node in self.node_and_primary_descendants():
+            node.set_privacy(
+                Node.PRIVATE,
+                auth=None,
+                log=False,
+                save=True
+            )
+
     def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False):
         """Set the permissions for this node. Also, based on meeting_creation, queues an email to user about abilities of
             public projects.
