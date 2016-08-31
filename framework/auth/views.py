@@ -227,6 +227,7 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
         'status_code': http.FOUND if login else http.OK,
         'next_url': next_url,
         'campaign': None,
+        'must_login_warning': False,
     }
 
     if campaign:
@@ -257,6 +258,7 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
     if logout and auth.logged_in:
         data['status_code'] = 'auth_logout'
         data['next_url'] = request.url
+        data['must_login_warning'] = True
 
     return data
 
@@ -314,6 +316,8 @@ def auth_register(auth):
 
     # land on register page
     if data['status_code'] == http.OK:
+        if data['must_login_warning']:
+            status.push_status_message(language.MUST_LOGIN, trust=False)
         context['non_institution_login_url'] = cas.get_login_url(data['next_url'])
         context['institution_login_url'] = cas.get_login_url(data['next_url'], campaign='institution')
         context['campaign'] = data['campaign']
