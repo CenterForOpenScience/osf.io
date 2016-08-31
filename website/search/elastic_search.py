@@ -28,6 +28,7 @@ from website import settings
 from website.filters import gravatar
 from website.models import User, Node
 from website.project.licenses import serialize_node_license_record
+from website.project.spam import check_node_for_spam
 from website.search import exceptions
 from website.search.util import build_query
 from website.util import sanitize
@@ -282,15 +283,15 @@ def get_doctype_from_node(node):
         return node.category
 
 @celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
-def update_node_async(self, node_id, index=None, bulk=False):
+def update_node_async(self, node_id, index=None, bulk=False, request_headers=None):
     node = Node.load(node_id)
     try:
-        update_node(node=node, index=index, bulk=bulk)
+        update_node(node=node, index=index, bulk=bulk, async=True, request_headers=request_headers)
     except Exception as exc:
         self.retry(exc=exc)
 
 @requires_search
-def update_node(node, index=None, bulk=False):
+def update_node(node, index=None, bulk=False, async=False, request_headers=None):
     index = index or INDEX
     from website.addons.wiki.model import NodeWikiPage
 
@@ -349,6 +350,9 @@ def update_node(node, index=None, bulk=False):
                 for x in node.wiki_pages_current.values()
             ]:
                 elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
+
+        if async and request_headers:
+            check_node_for_spam(elastic_document, node.creator, request_headers)
 
         if bulk:
             return elastic_document

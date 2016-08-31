@@ -1,8 +1,10 @@
 import logging
 
 from framework.celery_tasks.handlers import enqueue_task
+from framework.mongo import get_cache_key as get_request
 
 from website import settings
+from website import util
 from website.search import share_search
 
 logger = logging.getLogger(__name__)
@@ -27,6 +29,15 @@ def search(query, index=None, doc_type=None):
 
 @requires_search
 def update_node(node, index=None, bulk=False, async=True):
+    request = get_request()
+    headers = util.get_headers_from_request(request)
+
+    kwargs = {
+        'index': index,
+        'bulk': bulk,
+        'request_headers': headers
+    }
+
     if async:
         node_id = node._id
         # We need the transaction to be committed before trying to run celery tasks.
@@ -34,12 +45,12 @@ def update_node(node, index=None, bulk=False, async=True):
         # database in order for method that updates the Node's elastic search document
         # to run correctly.
         if settings.USE_CELERY:
-            enqueue_task(search_engine.update_node_async.s(node_id=node_id, index=index, bulk=bulk))
+            enqueue_task(search_engine.update_node_async.s(node_id=node_id, **kwargs))
         else:
-            search_engine.update_node_async(node_id=node_id, index=index, bulk=bulk)
+            search_engine.update_node_async(node_id=node_id, **kwargs)
     else:
         index = index or settings.ELASTIC_INDEX
-        return search_engine.update_node(node, index=index, bulk=bulk)
+        return search_engine.update_node(node, **kwargs)
 
 @requires_search
 def bulk_update_nodes(serialize, nodes, index=None):
