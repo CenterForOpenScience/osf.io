@@ -45,18 +45,15 @@ def auth(user):
     return Auth(user)
 
 
-@pytest.mark.django_db
 def test_top_level_node_has_parent_node_none():
     project = ProjectFactory()
     assert project.parent_node is None
 
-@pytest.mark.django_db
 def test_component_has_parent_node():
     node = NodeFactory()
     assert type(node.parent_node) is Node
 
 
-@pytest.mark.django_db
 def test_license_searches_parent_nodes():
     license_record = NodeLicenseRecordFactory()
     project = ProjectFactory(node_license=license_record)
@@ -64,7 +61,6 @@ def test_license_searches_parent_nodes():
     assert project.license == license_record
     assert node.license == license_record
 
-@pytest.mark.django_db
 class TestNodeMODMCompat:
 
     def test_basic_querying(self):
@@ -111,7 +107,6 @@ class TestNodeMODMCompat:
         assert len(node._id) == 5
         assert node in Node.find(Q('_id', 'eq', node._id))
 
-@pytest.mark.django_db
 class TestLogging:
 
     def test_add_log(self, node, auth):
@@ -128,7 +123,6 @@ class TestLogging:
         assert_datetime_equal(node.date_modified, last_log.date)
 
 
-@pytest.mark.django_db
 class TestTagging:
 
     def test_add_tag(self, node, auth):
@@ -166,7 +160,6 @@ class TestTagging:
         assert 'FoO' in node.system_tags
         assert 'bAr' not in node.system_tags
 
-@pytest.mark.django_db
 class TestSearch:
 
     @mock.patch('website.search.search.update_node')
@@ -174,7 +167,6 @@ class TestSearch:
         node.update_search()
         assert mock_update_node.called
 
-@pytest.mark.django_db
 class TestNodeCreation:
 
     def test_creator_is_added_as_contributor(self, fake):
@@ -206,7 +198,6 @@ class TestNodeCreation:
         assert_datetime_equal(first_log.date, node.date_created)
 
 # Copied from tests/test_models.py
-@pytest.mark.django_db
 class TestContributorMethods:
     def test_add_contributor(self, node, user, auth):
         # A user is added as a contributor
@@ -340,7 +331,6 @@ class TestContributorMethods:
         assert node2.has_permission(read, 'write') is False
         assert node2.has_permission(admin, 'admin') is True
 
-@pytest.mark.django_db
 class TestContributorAddedSignal:
 
     # Override disconnected signals from conftest
@@ -362,7 +352,6 @@ class TestContributorAddedSignal:
             assert node.is_contributor(user)
             assert mock_signals.signals_sent() == set([contributor_added])
 
-@pytest.mark.django_db
 class TestPermissionMethods:
 
     def test_has_permission(self, node):
@@ -477,7 +466,6 @@ class TestPermissionMethods:
         assert bool(node.can_edit(user1_auth)) is False
 
 # Copied from tests/test_models.py
-@pytest.mark.django_db
 class TestAddUnregisteredContributor:
 
     def test_add_unregistered_contributor(self, node, user, auth):
@@ -523,7 +511,6 @@ class TestAddUnregisteredContributor:
                 auth=auth
             )
 
-@pytest.mark.django_db
 def test_find_for_user():
     node1, node2 = NodeFactory(is_public=False), NodeFactory(is_public=True)
     contrib = UserFactory()
@@ -538,7 +525,6 @@ def test_find_for_user():
     assert node2 not in Node.find_for_user(contrib, Q('is_public', 'eq', False))
 
 
-@pytest.mark.django_db
 def test_can_comment():
     contrib = UserFactory()
     public_node = NodeFactory(is_public=True)
@@ -554,7 +540,6 @@ def test_can_comment():
     assert private_node.can_comment(Auth(noncontrib)) is False
 
 
-@pytest.mark.django_db
 def test_parent_kwarg():
     parent = NodeFactory()
     child = NodeFactory(parent=parent)
@@ -562,7 +547,6 @@ def test_parent_kwarg():
     assert child in parent.nodes.all()
 
 
-@pytest.mark.django_db
 class TestSetPrivacy:
 
     def test_set_privacy_checks_admin_permissions(self, user):
@@ -655,7 +639,6 @@ class TestSetPrivacy:
             assert mock_request_embargo_termination.call_count == 1
 
 # copied from tests/test_models.py
-@pytest.mark.django_db
 class TestManageContributors:
 
     def test_contributor_manage_visibility(self, node, user, auth):
@@ -829,7 +812,6 @@ class TestManageContributors:
                 users, auth=auth, save=True,
             )
 
-@pytest.mark.django_db
 def test_get_admin_contributors(user, auth):
     read, write, admin = UserFactory(), UserFactory(), UserFactory()
     nonactive_admin = UserFactory()
@@ -855,7 +837,6 @@ def test_get_admin_contributors(user, auth):
     assert nonactive_admin not in result
 
 # copied from tests/test_models.py
-@pytest.mark.django_db
 class TestNodeTraversals:
 
     @pytest.fixture()
@@ -1047,7 +1028,6 @@ def test_linked_from():
 
 
 # Copied from tests/test_models.py
-@pytest.mark.django_db
 class TestPointerMethods:
 
     def test_add_pointer(self, node, user, auth):
@@ -1173,7 +1153,6 @@ class TestPointerMethods:
         self._fork_pointer(node=node, content=component, auth=auth)
 
 # copied from tests/test_models.py
-@pytest.mark.django_db
 class TestForkNode:
 
     def _cmp_fork_original(self, fork_user, fork_date, fork, original,
@@ -1404,7 +1383,6 @@ class TestForkNode:
         assert_equal(registration_wiki_version.node, fork)
         assert_not_equal(registration_wiki_version._id, wiki._id)
 
-@pytest.mark.django_db
 class TestAlternativeCitationMethods:
 
     def test_add_citation(self, node, auth, fake):
@@ -1419,7 +1397,6 @@ class TestAlternativeCitationMethods:
             'name': name, 'text': text
         }
 
-@pytest.mark.django_db
 class TestContributorOrdering:
 
     def test_can_get_contributor_order(self, node):
@@ -1481,3 +1458,36 @@ def test_querying_on_contributors(node, user, auth):
     result2 = list(Node.find(Q('contributors', 'eq', user) & Q('is_deleted', 'eq', False)).all())
     assert node in result2
     assert deleted not in result2
+
+
+class TestLogMethods:
+
+    @pytest.fixture()
+    def parent(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def node(self, parent):
+        return NodeFactory(parent=parent)
+
+    def test_get_aggregate_logs_queryset_recurses(self, parent, node, auth):
+        grandchild = NodeFactory(parent=node)
+        parent_log = parent.add_log(NodeLog.FILE_ADDED, auth=auth, params={'node': parent._id}, save=True)
+        child_log = node.add_log(NodeLog.FILE_ADDED, auth=auth, params={'node': node._id}, save=True)
+        grandchild_log = grandchild.add_log(NodeLog.FILE_ADDED, auth=auth, params={'node': grandchild._id}, save=True)
+        logs = parent.get_aggregate_logs_queryset(auth)
+        assert parent_log in list(logs)
+        assert child_log in list(logs)
+        assert grandchild_log in list(logs)
+
+    # copied from tests/test_models.py#TestNode
+    def test_get_aggregate_logs_queryset_doesnt_return_hidden_logs(self, parent):
+        n_orig_logs = len(parent.get_aggregate_logs_queryset(Auth(user)))
+
+        log = parent.logs.latest()
+        log.should_hide = True
+        log.save()
+
+        n_new_logs = len(parent.get_aggregate_logs_queryset(Auth(user)))
+        # Hidden log is not returned
+        assert n_new_logs == n_orig_logs - 1
