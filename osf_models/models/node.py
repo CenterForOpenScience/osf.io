@@ -285,7 +285,7 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
 
     @property
     def has_active_draft_registrations(self):
-        return bool(self.draft_registrations_active.count())
+        return self.draft_registrations_active.exists()
 
     def update_search(self):
         from website import search
