@@ -19,3 +19,4 @@ from osf_models.models.oauth import ApiOauth2Application, ApiOAuth2PersonalToken
 from osf_models.models.licenses import NodeLicense, NodeLicenseRecord  # noqa
 from osf_models.models.private_link import PrivateLink  # noqa
 from osf_models.models.notifications import NotificationDigest, NotificationSubscription  # noqa
+from osf_models.models.watch_config import WatchConfig  # noqa
