@@ -376,7 +376,6 @@ def main(env):
 
 if __name__ == '__main__':
     env = str(sys.argv[1]).lower() if len(sys.argv) == 2 else None
-    env = 'test'
     if env not in ENVS:
         print('An environment must be specified : {}', ENVS)
         sys.exit(1)
