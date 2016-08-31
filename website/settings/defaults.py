@@ -571,6 +571,7 @@ EXTERNAL_IDENTITY_PROFILE = {
     'OrcidProfile': 'ORCID',
 }
 
+# Source: https://github.com/maxd/fake_email_validator/blob/master/config/fake_domains.list
 BLACKLISTED_DOMAINS = [
     '0-mail.com',
     '0815.ru',
