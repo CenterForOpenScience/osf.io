@@ -25,7 +25,7 @@ class PreprintMixin(NodeMixin):
     serializer_class = PreprintSerializer
     node_lookup_url_kwarg = 'node_id'
 
-    def get_node(self):
+    def get_node(self, check_object_permissions=True):
         node = get_object_or_error(
             Node,
             self.kwargs[self.node_lookup_url_kwarg],
@@ -33,6 +33,9 @@ class PreprintMixin(NodeMixin):
         )
         if not node.is_preprint and self.request.method != 'POST':
             raise NotFound
+        # May raise a permission denied
+        if check_object_permissions:
+            self.check_object_permissions(self.request, node)
 
         return node
 
