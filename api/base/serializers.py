@@ -17,7 +17,7 @@ from api.base.exceptions import JSONAPIException
 from api.base.exceptions import TargetNotSupportedError
 from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.base.settings import BULK_SETTINGS
-from api.base.utils import absolute_reverse, extend_querystring_params, get_user_auth
+from api.base.utils import absolute_reverse, extend_querystring_params, get_user_auth, extend_querystring_if_key_exists
 from framework.auth import core as auth_core
 from website import settings
 from website import util as website_utils
@@ -524,12 +524,11 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     if self.filter:
                         formatted_filter = self.format_filter(obj)
                         if formatted_filter:
-                            url = '{}?filter{}'.format(url, formatted_filter)
+                            url = extend_querystring_params(url, {'filter': formatted_filter})
                         else:
                             url = None
-                    if 'view_only' in request.query_params.keys():
-                        url = '{}?view_only={}'.format(url, request.query_params.get('view_only'))
 
+                    url = extend_querystring_if_key_exists(url, self.context['request'], 'view_only')
                     urls[view_name] = url
 
         if not urls['self'] and not urls['related']:
@@ -1087,7 +1086,7 @@ class JSONAPISerializer(ser.Serializer):
         raise NotImplementedError()
 
     def get_absolute_html_url(self, obj):
-        return obj.absolute_url
+        return extend_querystring_if_key_exists(obj.absolute_url, self.context['request'], 'view_only')
 
     # overrides Serializer: Add HTML-sanitization similar to that used by APIv1 front-end views
     def is_valid(self, clean_html=True, **kwargs):
