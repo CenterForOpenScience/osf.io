@@ -225,5 +225,5 @@ def get_headers_from_request(req):
             k: v
             for k, v in headers.items()
         }
-        headers['Remote-Addr'] = req.remote_addr
+        headers['Remote-Addr'] = headers.get('Remote-Addr') or req.remote_addr
     return headers
