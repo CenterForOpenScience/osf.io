@@ -1,3 +1,5 @@
+import mock
+
 from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
@@ -26,3 +28,15 @@ class TestThrottling(ApiTestCase):
         assert_equal(res.status_code, 200)
         res = self.app.get(self.url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 429)
+
+    @mock.patch('api.base.throttling.TestUserRateThrottle.allow_request')
+    def test_user_rate_allow_request_called(self, mock_allow):
+        res = self.app.get(self.url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_not_equal(len(mock_allow.mock_calls), 0)
+
+    @mock.patch('api.base.throttling.TestAnonRateThrottle.allow_request')
+    def test_anon_rate_allow_request_called(self, mock_allow):
+        res = self.app.get(self.url)
+        assert_equal(res.status_code, 200)
+        assert_not_equal(len(mock_allow.mock_calls), 0)
