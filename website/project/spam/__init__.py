@@ -34,8 +34,6 @@ def _check_for_spam(node_id, content, author_info, request_headers):
         logger.info('Node {} smells like ham'.format(node_id))
 
 def check_node_for_spam(document, creator, request_headers):
-    if not settings.CHECK_NODES_FOR_SPAM:
-        return
     content = """
     {}
 
