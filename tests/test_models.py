@@ -779,7 +779,7 @@ class TestUser(OsfTestCase):
 
     def test_recently_added(self):
         # Project created
-        project = ProjectFactory()
+        project = ProjectFactory(creator=self.user)
 
         assert_true(hasattr(self.user, 'recently_added'))
 
@@ -799,8 +799,8 @@ class TestUser(OsfTestCase):
         user4 = UserFactory()
 
         # 2 projects created
-        project = ProjectFactory()
-        project2 = ProjectFactory()
+        project = ProjectFactory(creator=self.user)
+        project2 = ProjectFactory(creator=self.user)
 
         # Users 2 and 3 are added to original project
         project.add_contributor(contributor=user2, auth=self.auth)
@@ -817,7 +817,7 @@ class TestUser(OsfTestCase):
 
     def test_recently_added_length(self):
         # Project created
-        project = ProjectFactory()
+        project = ProjectFactory(creator=self.user)
 
         assert_equal(len(self.user.recently_added), 0)
         # Add 17 users
@@ -2266,7 +2266,7 @@ class TestNodeTraversals(OsfTestCase):
         child = ProjectFactory(creator=self.viewer, parent=parent)
         child_non_admin = UserFactory()
         child.add_contributor(child_non_admin,
-                              auth=self.auth,
+                              auth=Auth(self.viewer),
                               permissions=expand_permissions(WRITE))
         grandchild = ProjectFactory(creator=self.user, parent=child)
 
@@ -2288,7 +2288,7 @@ class TestNodeTraversals(OsfTestCase):
         child = ProjectFactory(creator=self.viewer, parent=parent)
         child_non_admin = UserFactory()
         child.add_contributor(child_non_admin,
-                              auth=self.auth,
+                              auth=Auth(self.viewer),
                               permissions=expand_permissions(WRITE))
         grandchild = ProjectFactory(creator=self.user, parent=child)  # noqa
 
@@ -2309,7 +2309,7 @@ class TestNodeTraversals(OsfTestCase):
         child = ProjectFactory(creator=self.viewer, parent=parent)
         child_non_admin = UserFactory()
         child.add_contributor(child_non_admin,
-                              auth=self.auth,
+                              auth=Auth(self.viewer),
                               permissions=expand_permissions(WRITE))
         child.save()
 
@@ -2330,7 +2330,7 @@ class TestNodeTraversals(OsfTestCase):
         child = ProjectFactory(creator=self.viewer, parent=parent)
         child_non_admin = UserFactory()
         child.add_contributor(child_non_admin,
-                              auth=self.auth,
+                              auth=Auth(self.viewer),
                               permissions=expand_permissions(WRITE))
         child.save()
 

@@ -2047,7 +2047,7 @@ class TestAddingContributorViews(OsfTestCase):
             'visible': True,
             'permissions': ['read', 'write']
         }]
-        project = ProjectFactory()
+        project = ProjectFactory(creator=self.auth.user)
         project.add_contributors(contributors, auth=self.auth)
         project.save()
         assert_true(send_mail.called)
