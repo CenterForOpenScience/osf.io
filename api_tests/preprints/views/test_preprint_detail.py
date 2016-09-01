@@ -57,6 +57,17 @@ class TestPreprintUpdate(ApiTestCase):
         self.preprint.reload()
         assert_equal(self.preprint.title, 'A new title')
 
+    def test_update_preprint_permission_denied(self):
+        update_title_payload = build_preprint_update_payload(self.preprint._id, attributes={'title': 'A new title'})
+
+        noncontrib = AuthUserFactory()
+
+        res = self.app.patch_json_api(self.url, update_title_payload, auth=noncontrib.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+        res = self.app.patch_json_api(self.url, update_title_payload, expect_errors=True)
+        assert_equal(res.status_code, 401)
+
     def test_update_preprint_tags(self):
         update_tags_payload = build_preprint_update_payload(self.preprint._id, attributes={'tags': ['newtag', 'bluetag']})
 
@@ -153,30 +164,3 @@ class TestPreprintUpdate(ApiTestCase):
 
         preprint_detail = self.app.get(self.url, auth=self.user.auth).json['data']
         assert_equal(preprint_detail['links']['doi'], 'https://dx.doi.org/{}'.format(new_doi))
-
-
-    def test_only_admin_can_add_contributors(self):
-        url = '/{}preprints/{}/contributors/?send_email=false'.format(API_BASE, self.preprint._id)
-
-        user_two = AuthUserFactory()
-        self.preprint.add_contributor(user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
-        user_three = AuthUserFactory()
-
-        data = {
-            'data': {
-                'type': 'contributors',
-                'attributes': {
-                },
-                'relationships': {
-                    'users': {
-                        'data': {
-                            'id': user_three._id,
-                            'type': 'users'
-                        }
-                    }
-                }
-            }
-        }
-
-        res = self.app.post_json_api(url, data, auth=user_two.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
