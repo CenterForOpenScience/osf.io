@@ -119,7 +119,7 @@ class TestConferenceUtils(OsfTestCase):
         username = 'kanye@mailinator.com'
         with assert_raises(ValidationError) as e:
             get_or_create_user(fullname, username, True)
-        assert_equal(e.exception.message, 'Invalid email address.')
+        assert_equal(e.exception.message, 'Invalid Email')
 
 
 class ContextTestCase(OsfTestCase):
