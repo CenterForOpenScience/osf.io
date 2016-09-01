@@ -7,7 +7,7 @@ from website.project import spam, model
 from website.search.elastic_search import serialize_node, get_doctype_from_node
 
 
-parser = argparse.ArgumentParser(description='Process some integers.')
+parser = argparse.ArgumentParser()
 parser.add_argument('-n', '--number', type=int, default=200,
                     help='Number of nodes to look at. Uses N most recent nodes.')
 
