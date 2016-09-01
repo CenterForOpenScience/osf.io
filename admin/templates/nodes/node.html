@@ -42,6 +42,34 @@
                     </span>
                 {% endif %}
             {% endif %}
+            {% if node.is_flagged_as_spam %}
+                <span class="col-md-2">
+                    <a href="{% url 'nodes:confirm-spam' guid=node.id %}"
+                       data-toggle="modal" data-target="#confirmSpamModal"
+                       class="btn btn-warning">
+                        Confirm Spam
+                    </a>
+                </span>
+                <div class="modal" id="confirmSpamModal">
+                    <div class="modal-dialog">
+                        <div class="modal-content"></div>
+                        {# Data from above link #}
+                    </div>
+                </div>
+                <span class="col-md-2">
+                    <a href="{% url 'nodes:confirm-ham' guid=node.id %}"
+                       data-toggle="modal" data-target="#confirmHamModal"
+                       class="btn btn-default">
+                        Confirm <strong>Not</strong> Spam
+                    </a>
+                </span>
+                <div class="modal" id="confirmHamModal">
+                    <div class="modal-dialog">
+                        <div class="modal-content"></div>
+                        {# Data from above link #}
+                    </div>
+                </div>                
+            {% endif %}
         </div>
         <div class="row">
             {% if node.is_registration %}
