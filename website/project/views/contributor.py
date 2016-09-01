@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import datetime as dt
 import httplib as http
 
 from flask import request
@@ -381,10 +380,11 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
         raise HTTPError(http.BAD_REQUEST, data=dict(
             message_long='User account can only be claimed with an existing user once every 24 hours'
         ))
-    # TODO: use normalized verification key generation
+
     # roll the valid token for each email, thus user cannot change email and approve a different email address
-    unclaimed_record['token'] = generate_verification_key()
-    unclaimed_record['expires'] = dt.datetime.utcnow() + dt.timedelta(days=settings.CLAIM_TOKEN_EXPIRATION)
+    verification_key = generate_verification_key(verification_type='claim')
+    unclaimed_record['token'] = verification_key['token']
+    unclaimed_record['expires'] = verification_key['expires']
     unclaimed_record['claimer_email'] = claimer.username
     unclaimed_user.save()
 
@@ -461,11 +461,11 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
             raise HTTPError(http.BAD_REQUEST, data=dict(
                 message_long='User account can only be claimed with an existing user once every 24 hours'
             ))
-        # TODO: use normalized verification key generation
         # roll the valid token for each email, thus user cannot change email and approve a different email address
+        verification_key = generate_verification_key(verification_type='claim')
         unclaimed_record['last_sent'] = get_timestamp()
-        unclaimed_record['token'] = generate_verification_key()
-        unclaimed_record['expires'] = dt.datetime.utcnow() + dt.timedelta(days=settings.CLAIM_TOKEN_EXPIRATION)
+        unclaimed_record['token'] = verification_key['token']
+        unclaimed_record['expires'] = verification_key['expires']
         unclaimed_record['claimer_email'] = claimer_email
         unclaimed_user.save()
 

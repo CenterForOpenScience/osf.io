@@ -353,7 +353,8 @@ class User(GuidStoredObject, AddonModelMixin):
     #   <token> : {
     #       'email': <email address>,
     #       'expiration': <datetime>,
-    #       'confirmed': whether user is confirmed or not
+    #       'confirmed': whether user is confirmed or not,
+    #       'external_identity': user's external identity,
     #   }
     # }
 
@@ -659,12 +660,14 @@ class User(GuidStoredObject, AddonModelMixin):
             clean_email = email.lower().strip()
         else:
             clean_email = None
+
+        verification_key = generate_verification_key(verification_type='claim')
         record = {
             'name': given_name,
             'referrer_id': referrer_id,
-            'token': generate_verification_key(),
-            'expires': dt.datetime.utcnow() + dt.timedelta(days=settings.CLAIM_TOKEN_EXPIRATION),
-            'email': clean_email
+            'token': verification_key['token'],
+            'expires': verification_key['expires'],
+            'email': clean_email,
         }
         self.unclaimed_records[project_id] = record
         return record
@@ -705,8 +708,7 @@ class User(GuidStoredObject, AddonModelMixin):
         try:
             return self.unclaimed_records[project_id]
         except KeyError:  # re-raise as ValueError
-            raise ValueError('No unclaimed record for user {self._id} on node {project_id}'
-                             .format(**locals()))
+            raise ValueError('No unclaimed record for user {self._id} on node {project_id}'.format(**locals()))
 
     def verify_claim_token(self, token, project_id):
         """
@@ -728,18 +730,17 @@ class User(GuidStoredObject, AddonModelMixin):
         Return the URL that an unclaimed user should use to claim their account.
         Raise `ValueError` if there is no unclaimed_record for the given project ID.
 
-        :param project_id: the project ID for the unclaimed record
-        :param external:
-        :rtype: string
+        :param project_id: the project id for the unclaimed record
+        :param external: absolute url or relative
         :returns: the claim url
         :raises: ValueError if there is no record for the given project.
         """
+
         unclaimed_record = self.get_unclaimed_record(project_id)
         uid = self._primary_key
         base_url = settings.DOMAIN if external else '/'
         token = unclaimed_record['token']
-        return '{base_url}user/{uid}/{project_id}/claim/?token={token}'.\
-            format(**locals())
+        return '{base_url}user/{uid}/{project_id}/claim/?token={token}'.format(**locals())
 
     def verify_password_token(self, token):
         """
@@ -751,7 +752,8 @@ class User(GuidStoredObject, AddonModelMixin):
 
         if token and self.verification_key_v2:
             try:
-                return self.verification_key_v2['token'] == token and self.verification_key_v2['expires'] > dt.datetime.utcnow()
+                return (self.verification_key_v2['token'] == token and
+                        self.verification_key_v2['expires'] > dt.datetime.utcnow())
             except AttributeError:
                 return False
         return False
