@@ -836,26 +836,22 @@ class User(GuidStoredObject, AddonModelMixin):
             raise ChangePasswordError(issues)
         self.set_password(raw_new_password)
 
-    def _set_email_token_expiration(self, token, expiration=None):
-        """Set the expiration date for given email token.
-
-        :param str token: The email token to set the expiration for.
-        :param datetime expiration: Datetime at which to expire the token. If ``None``, the
-            token will expire after ``settings.EMAIL_TOKEN_EXPIRATION`` hours. This is only
-            used for testing purposes.
+    def add_unconfirmed_email(self, email, external_identity=None):
         """
-        expiration = expiration or (dt.datetime.utcnow() + dt.timedelta(hours=settings.EMAIL_TOKEN_EXPIRATION))
-        self.email_verifications[token]['expiration'] = expiration
-        return expiration
+        Add an email verification token for a given email.
 
-    def add_unconfirmed_email(self, email, expiration=None, external_identity=None):
-        """Add an email verification token for a given email."""
+        :param email: the email to confirm
+        :param external_identity: the user's external identity
+        :return: a token
+        :raises: ValueError if email already confirmed, except for login through external idp.
+        """
 
         # TODO: This is technically not compliant with RFC 822, which requires
         #       that case be preserved in the "local-part" of an address. From
         #       a practical standpoint, the vast majority of email servers do
         #       not preserve case.
         #       ref: https://tools.ietf.org/html/rfc822#section-6
+
         email = email.lower().strip()
 
         if not external_identity and email in self.emails:
@@ -863,24 +859,21 @@ class User(GuidStoredObject, AddonModelMixin):
 
         utils.validate_email(email)
 
-        # If the unconfirmed email is already present, refresh the token
+        # If the unconfirmed email is already present, remove it and generate a new one
         if email in self.unconfirmed_emails:
             self.remove_unconfirmed_email(email)
-
-        token = generate_verification_key()
-
+        verification_key = generate_verification_key(verification_type='confirm')
         # handle when email_verifications is None
         if not self.email_verifications:
             self.email_verifications = {}
-
-        # confirmed used to check if link has been clicked
-        self.email_verifications[token] = {
+        self.email_verifications[verification_key['token']] = {
             'email': email,
             'confirmed': False,
-            'external_identity': external_identity
+            'expiration': verification_key['expires'],
+            'external_identity': external_identity,
         }
-        self._set_email_token_expiration(token, expiration=expiration)
-        return token
+
+        return verification_key['token']
 
     def remove_unconfirmed_email(self, email):
         """Remove an unconfirmed email addresses and their tokens."""
@@ -913,20 +906,21 @@ class User(GuidStoredObject, AddonModelMixin):
                         security_addr='primary email address ({})'.format(self.username))
 
     def get_confirmation_token(self, email, force=False, renew=False):
-        """Return the confirmation token for a given email.
+        """
+        Return the confirmation token for a given email.
 
-        :param str email: Email to get the token for.
-        :param bool force: If an expired token exists for the given email, generate a new
-            token and return that token.
-
+        :param str email: The email to get the token for.
+        :param bool force: If an expired token exists for the given email, generate a new one and return it.
+        :param bool renew: Generate a new token and return it.
+        :return Return the confirmation token.
         :raises: ExpiredTokenError if trying to access a token that is expired and force=False.
         :raises: KeyError if there no token for the email.
         """
+
         # TODO: Refactor "force" flag into User.get_or_add_confirmation_token
         for token, info in self.email_verifications.items():
             if info['email'].lower() == email.lower():
-                # Old records will not have an expiration key. If it's missing,
-                # assume the token is expired
+                # Old records will not have an expiration key. If it's missing, assume the token is expired.
                 expiration = info.get('expiration')
                 if renew:
                     new_token = self.add_unconfirmed_email(email)
@@ -943,11 +937,19 @@ class User(GuidStoredObject, AddonModelMixin):
         raise KeyError('No confirmation token for email "{0}"'.format(email))
 
     def get_confirmation_url(self, email, external=True, force=False, renew=False, external_id_provider=None):
-        """Return the confirmation url for a given email.
+        """
+        Return the confirmation url for a given email.
 
+        :param email: The email to confirm.
+        :param external: Use absolute or relative url.
+        :param force: If an expired token exists for the given email, generate a new one and return it.
+        :param renew: Generate a new token and return it.
+        :param external_id_provider: The external identity provider that authenticates the user.
+        :return: Return the confirmation url.
         :raises: ExpiredTokenError if trying to access a token that is expired.
         :raises: KeyError if there is no token for the email.
         """
+
         base = settings.DOMAIN if external else '/'
         token = self.get_confirmation_token(email, force=force, renew=renew)
 

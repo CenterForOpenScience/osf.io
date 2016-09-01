@@ -547,8 +547,15 @@ def unconfirmed_email_add(auth=None):
 
 def send_confirm_email(user, email, renew=False, external_id_provider=None, external_id=None):
     """
-    Sends a confirmation email to `user` to a given email.
+    Sends `user` a confirmation to the given `email`.
 
+
+    :param user: the user
+    :param email: the email
+    :param renew: refresh the token
+    :param external_id_provider: user's external id provider
+    :param external_id: user's external id
+    :return:
     :raises: KeyError if user does not have a confirmation token for the given email.
     """
 
