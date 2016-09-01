@@ -89,14 +89,25 @@ class NodeRemoveContributorView(OSFAdmin, DeleteView):
         return (Node.load(self.kwargs.get('node_id')),
                 User.load(self.kwargs.get('user_id')))
 
+class NodeDeleteBase(OSFAdmin, DeleteView):
+    template_name = None
+    context_object_name = 'node'
+    object = None
 
-class NodeDeleteView(OSFAdmin, DeleteView):
+    def get_context_data(self, **kwargs):
+        context = {}
+        context.setdefault('guid', kwargs.get('object').pk)
+        return super(NodeDeleteBase, self).get_context_data(**context)
+
+    def get_object(self, queryset=None):
+        return Node.load(self.kwargs.get('guid'))
+
+class NodeDeleteView(NodeDeleteBase):
     """ Allow authorized admin user to remove/hide nodes
 
     Interface with OSF database. No admin models.
     """
     template_name = 'nodes/remove_node.html'
-    context_object_name = 'node'
     object = None
 
     def delete(self, request, *args, **kwargs):
@@ -149,14 +160,6 @@ class NodeDeleteView(OSFAdmin, DeleteView):
                 )
             )
         return redirect(reverse_node(self.kwargs.get('guid')))
-
-    def get_context_data(self, **kwargs):
-        context = {}
-        context.setdefault('guid', kwargs.get('object').pk)
-        return super(NodeDeleteView, self).get_context_data(**context)
-
-    def get_object(self, queryset=None):
-        return Node.load(self.kwargs.get('guid'))
 
 
 class NodeView(OSFAdmin, GuidView):
@@ -229,3 +232,19 @@ class NodeFlaggedSpamList(NodeSpamList):
 class NodeKnownSpamList(NodeSpamList):
     SPAM_STATE = Node.SPAM
     template_name = 'nodes/known_spam_list.html'
+
+class NodeConfirmSpamView(NodeDeleteBase):
+    template_name = 'nodes/confirm_spam.html'
+
+    def delete(self, request, *args, **kwargs):
+        node = self.get_object()
+        node.confirm_spam(save=True)
+        return redirect(reverse_node(self.kwargs.get('guid')))
+
+class NodeConfirmHamView(NodeDeleteBase):
+    template_name = 'nodes/confirm_ham.html'
+
+    def delete(self, request, *args, **kwargs):
+        node = self.get_object()
+        node.confirm_ham(save=True)
+        return redirect(reverse_node(self.kwargs.get('guid')))

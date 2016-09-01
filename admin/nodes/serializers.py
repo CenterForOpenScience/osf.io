@@ -24,7 +24,9 @@ def serialize_node(node):
         'children': map(serialize_simple_node, node.nodes),
         'deleted': node.is_deleted,
         'pending_registration': node.is_pending_registration,
-        'creator': node.creator._id
+        'creator': node.creator._id,
+        'is_spam': node.is_spam,
+        'is_flagged_as_spam': node.is_flagged_as_spam
     }
 
 
