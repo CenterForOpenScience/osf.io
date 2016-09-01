@@ -3236,6 +3236,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             # Add contributor to recently added list for user
             if auth is not None:
                 user = auth.user
+                if not self.has_permission(user, ADMIN):
+                    raise PermissionsError('Must be an admin to change add contributors.')
                 if contrib_to_add in user.recently_added:
                     user.recently_added.remove(contrib_to_add)
                 user.recently_added.insert(0, contrib_to_add)

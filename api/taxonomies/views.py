@@ -3,6 +3,7 @@ from rest_framework import generics, permissions as drf_permissions
 from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error
 from api.base.filters import ODMFilterMixin
+from api.base.pagination import NoMaxPageSizePagination
 from api.base import permissions as base_permissions
 from api.taxonomies.serializers import TaxonomySerializer
 from website.project.taxonomies import Subject
@@ -47,6 +48,7 @@ class TaxonomyList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
     required_write_scopes = [CoreScopes.NULL]
     serializer_class = TaxonomySerializer
+    pagination_class = NoMaxPageSizePagination
     view_category = 'taxonomies'
     view_name = 'taxonomy-list'
 

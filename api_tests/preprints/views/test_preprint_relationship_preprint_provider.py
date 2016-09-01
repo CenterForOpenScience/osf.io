@@ -45,6 +45,18 @@ class TestPreprintRelationshipPreprintProvider(ApiTestCase):
         assert_in(self.preprint_provider_one, self.preprint.preprint_providers)
         assert_in(self.preprint_provider_two, self.preprint.preprint_providers)
 
+    def test_add_preprint_providers_permission_denied(self):
+        noncontrib = AuthUserFactory()
+        assert_equal(self.preprint.preprint_providers, None)
+        res = self.app.post_json_api(
+            self.preprint_preprint_providers_url,
+            self.create_payload(self.preprint_provider_one._id, self.preprint_provider_two._id),
+            auth=noncontrib.auth,
+            expect_errors=True
+        )
+
+        assert_equal(res.status_code, 403)
+
     def test_add_through_patch_one_provider_while_removing_other(self):
         self.preprint.preprint_providers = [self.preprint_provider_one]
         self.preprint.save()
