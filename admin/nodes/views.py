@@ -197,3 +197,35 @@ class RegistrationListView(OSFAdmin, ListView):
             'nodes': map(serialize_node, query_set),
             'page': page,
         }
+
+class NodeSpamList(OSFAdmin, ListView):
+    SPAM_STATE = None
+
+    paginate_by = 10
+    paginate_orphans = 1
+    ordering = 'date_created'
+    context_object_name = '-node'
+
+    def get_queryset(self):
+        query = (
+            Q('spam_status', 'eq', self.SPAM_STATE)
+        )
+        return Node.find(query).sort(self.ordering)
+
+    def get_context_data(self, **kwargs):
+        query_set = kwargs.pop('object_list', self.object_list)
+        page_size = self.get_paginate_by(query_set)
+        paginator, page, query_set, is_paginated = self.paginate_queryset(
+            query_set, page_size)
+        return {
+            'nodes': map(serialize_node, query_set),
+            'page': page,
+        }
+
+class NodeFlaggedSpamList(NodeSpamList):
+    SPAM_STATE = Node.FLAGGED
+    template_name = 'nodes/flagged_spam_list.html'
+
+class NodeKnownSpamList(NodeSpamList):
+    SPAM_STATE = Node.SPAM
+    template_name = 'nodes/known_spam_list.html'
