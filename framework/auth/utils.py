@@ -28,7 +28,7 @@ def validate_email(email):
     if not email or '@' not in email:
         raise ValidationError('Invalid Email')
 
-    if email.split('@')[1] in settings.BLACKLISTED_DOMAINS:
+    if email.split('@')[1].lower() in settings.BLACKLISTED_DOMAINS:
         raise ValidationError('Invalid Email')
 
     user_part, domain_part = email.rsplit('@', 1)
