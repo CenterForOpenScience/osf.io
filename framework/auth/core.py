@@ -118,32 +118,6 @@ def validate_social(value):
     validate_profile_websites(value.get('profileWebsites'))
 
 
-def get_user_with_verification_key_v2(username=None, token=None):
-    """
-    Check if the request with `user_name` and `token` is valid and has not expired.
-    If so, return the user object. Otherwise return None.
-    If user does not have verification_key_v2, return None.
-
-    :param username: user's username
-    :param token: one-time verification token
-    :rtype: User or None
-    """
-
-    if not username or not token:
-        return None
-    user_obj = get_user(email=username)
-    if user_obj:
-        try:
-            if user_obj.verification_key_v2:
-                if user_obj.verification_key_v2['token'] == token:
-                    if user_obj.verification_key_v2['expires'] > dt.datetime.utcnow():
-                        return user_obj
-        except AttributeError:
-            # If user does not have `verification_key_v2`, for example an old link with `verification_key`
-            return None
-    return None
-
-
 # TODO - rename to _get_current_user_from_session /HRYBACKI
 def _get_current_user():
     uid = session._get_current_object() and session.data.get('auth_user_id')
@@ -766,6 +740,21 @@ class User(GuidStoredObject, AddonModelMixin):
         token = unclaimed_record['token']
         return '{base_url}user/{uid}/{project_id}/claim/?token={token}'.\
             format(**locals())
+
+    def verify_password_token(self, token):
+        """
+        Verify that the password reset token for this user is valid.
+
+        :param token: the token in verification key
+        :return `True` if valid, otherwise `False`
+        """
+
+        if token and self.verification_key_v2:
+            try:
+                return self.verification_key_v2['token'] == token and self.verification_key_v2['expires'] > dt.datetime.utcnow()
+            except AttributeError:
+                return False
+        return False
 
     def set_password(self, raw_password, notify=True):
         """Set the password for this user to the hash of ``raw_password``.

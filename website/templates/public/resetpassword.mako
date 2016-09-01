@@ -8,7 +8,7 @@
                 id="resetPasswordForm"
                 name="resetPasswordForm"
                 method="POST"
-                action="/resetpassword/${username}/${verification_key}/"
+                action="/resetpassword/${uid}/${token}/"
                 >
 
             <div class="help-block" >
@@ -99,7 +99,7 @@
 <%def name="javascript_bottom()">
     <script type="text/javascript">
         window.contextVars = $.extend(true, {}, window.contextVars, {
-            verification_key: ${verification_key | sjson, n}
+            token: ${token | sjson, n}
         });
     </script>
     ${parent.javascript_bottom()}

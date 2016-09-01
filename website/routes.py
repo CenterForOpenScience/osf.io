@@ -525,7 +525,7 @@ def make_url_map(app):
 
         # reset password get
         Rule(
-            '/resetpassword/<username>/<verification_key>/',
+            '/resetpassword/<uid>/<token>/',
             'get',
             auth_views.reset_password_get,
             OsfWebRenderer('public/resetpassword.mako', render_mako_string, trust=False)
@@ -533,7 +533,7 @@ def make_url_map(app):
 
         # reset password post
         Rule(
-            '/resetpassword/<username>/<verification_key>/',
+            '/resetpassword/<uid>/<token>/',
             'post',
             auth_views.reset_password_post,
             OsfWebRenderer('public/resetpassword.mako', render_mako_string, trust=False)
@@ -1683,12 +1683,15 @@ def make_url_map(app):
             notification_views.configure_subscription,
             json_renderer,
         ),
+
+        # TODO: discuss this with ErinS
         Rule(
             '/resetpassword/<verification_key>/',
             'post',
             auth_views.reset_password_post,
             json_renderer,
         ),
+
         Rule(
             [
                 '/project/<pid>/settings/addons/',
