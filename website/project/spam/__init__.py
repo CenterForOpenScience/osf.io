@@ -22,16 +22,16 @@ def _check_for_spam(node_id, content, author_info, request_headers):
         referrer=request_headers.get('Referrer'),
         comment_content=content,
         comment_author=author_info['name'],
-        comment_author_email=author_info['email']
+        # comment_author_email=author_info['email']
     )
 
     if is_possible_spam:
         from website.project.model import Node
         node = Node.load(node_id)
-        logger.info("Node '{}' ({}) smells like spam".format(node.title, node._id))
+        logger.info("Node '{}' ({}) smells like SPAM".format(node.title, node._id))
         node.flag_spam(save=True)
     else:
-        logger.info('Node {} smells like ham'.format(node_id))
+        logger.info("Node '{}' ({}) smells like HAM".format(content.strip().split('\n')[0], node_id))
 
 def check_node_for_spam(document, creator, request_headers):
     content = """
@@ -41,9 +41,9 @@ def check_node_for_spam(document, creator, request_headers):
 
     {}
     """.format(
-        document['title'],
-        document['description'],
-        '\n'.join(document['wikis'].values())
+        (document['title'] or '').encode('utf-8'),
+        (document['description'] or '').encode('utf-8'),
+        '\n'.join(map(lambda d: d.encode('utf-8'), document['wikis'].values()))
     )
 
     args = (
