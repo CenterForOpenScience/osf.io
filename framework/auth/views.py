@@ -381,6 +381,7 @@ def external_login_confirm_email_get(auth, uid, token):
         raise HTTPError(http.FORBIDDEN, e.message)
 
     if not user.is_registered:
+        user.set_password(uuid.uuid4(), notify=False)
         user.register(email)
 
     if email.lower() not in user.emails:
@@ -655,6 +656,11 @@ def register_user(**kwargs):
                     email=markupsafe.escape(request.json['email1'])
                 )
             )
+        )
+    except ValidationError as e:
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data=dict(message_long=e.message)
         )
 
     if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:

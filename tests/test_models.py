@@ -445,6 +445,11 @@ class TestUser(OsfTestCase):
             self.user.add_unconfirmed_email('')
         assert_equal(exc_info.exception.message, "Invalid Email")
 
+    def test_add_blacklisted_domain_unconfirmed_email(self):
+        with assert_raises(ValidationError) as e:
+            self.user.add_unconfirmed_email('kanye@mailinator.com')
+        assert_equal(e.exception.message, 'Invalid Email')
+
     @mock.patch('website.security.random_string')
     def test_get_confirmation_token(self, random_string):
         random_string.return_value = '12345'
@@ -583,8 +588,8 @@ class TestUser(OsfTestCase):
         user = UserFactory()
         assert_equal(User.find().count(), 1)
         assert_true(user.username)
-        another_user = UserFactory(username='joe@example.com')
-        assert_equal(another_user.username, 'joe@example.com')
+        another_user = UserFactory(username='joe@mail.com')
+        assert_equal(another_user.username, 'joe@mail.com')
         assert_equal(User.find().count(), 2)
         assert_true(user.date_registered)
 
@@ -1006,7 +1011,7 @@ class TestMergingUsers(OsfTestCase):
         self.master = UserFactory(
             fullname='Joe Shmo',
             is_registered=True,
-            emails=['joe@example.com'],
+            emails=['joe@mail.com'],
         )
         self.dupe = UserFactory(
             fullname='Joseph Shmo',
