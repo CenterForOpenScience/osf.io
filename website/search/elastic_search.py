@@ -289,71 +289,75 @@ def update_node_async(self, node_id, index=None, bulk=False):
     except Exception as exc:
         self.retry(exc=exc)
 
+def serialize_node(node, category):
+    from website.addons.wiki.model import NodeWikiPage
+
+    elastic_document = {}
+    parent_id = node.parent_id
+
+    try:
+        normalized_title = six.u(node.title)
+    except TypeError:
+        normalized_title = node.title
+    normalized_title = unicodedata.normalize('NFKD', normalized_title).encode('ascii', 'ignore')
+
+    elastic_document = {
+        'id': node._id,
+        'contributors': [
+            {
+                'fullname': x.fullname,
+                'url': x.profile_url if x.is_active else None
+            }
+            for x in node.visible_contributors
+            if x is not None
+        ],
+        'title': node.title,
+        'normalized_title': normalized_title,
+        'category': category,
+        'public': node.is_public,
+        'tags': [tag._id for tag in node.tags if tag],
+        'description': node.description,
+        'url': node.url,
+        'is_registration': node.is_registration,
+        'is_pending_registration': node.is_pending_registration,
+        'is_retracted': node.is_retracted,
+        'is_pending_retraction': node.is_pending_retraction,
+        'embargo_end_date': node.embargo_end_date.strftime('%A, %b. %d, %Y') if node.embargo_end_date else False,
+        'is_pending_embargo': node.is_pending_embargo,
+        'registered_date': node.registered_date,
+        'wikis': {},
+        'parent_id': parent_id,
+        'date_created': node.date_created,
+        'license': serialize_node_license_record(node.license),
+        'affiliated_institutions': [inst.name for inst in node.affiliated_institutions],
+        'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
+    }
+    if not node.is_retracted:
+        for wiki in [
+            NodeWikiPage.load(x)
+            for x in node.wiki_pages_current.values()
+        ]:
+            elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
+
+    return elastic_document
+
 @requires_search
 def update_node(node, index=None, bulk=False):
     index = index or INDEX
-    from website.addons.wiki.model import NodeWikiPage
-
-    category = get_doctype_from_node(node)
-
-    elastic_document_id = node._id
-    parent_id = node.parent_id
 
     from website.files.models.osfstorage import OsfStorageFile
     for file_ in paginated(OsfStorageFile, Q('node', 'eq', node)):
         update_file(file_, index=index)
 
     if node.is_deleted or not node.is_public or node.archiving:
-        delete_doc(elastic_document_id, node, index=index)
+        delete_doc(node._id, node, index=index)
     else:
-        try:
-            normalized_title = six.u(node.title)
-        except TypeError:
-            normalized_title = node.title
-        normalized_title = unicodedata.normalize('NFKD', normalized_title).encode('ascii', 'ignore')
-
-        elastic_document = {
-            'id': elastic_document_id,
-            'contributors': [
-                {
-                    'fullname': x.fullname,
-                    'url': x.profile_url if x.is_active else None
-                }
-                for x in node.visible_contributors
-                if x is not None
-            ],
-            'title': node.title,
-            'normalized_title': normalized_title,
-            'category': category,
-            'public': node.is_public,
-            'tags': [tag._id for tag in node.tags if tag],
-            'description': node.description,
-            'url': node.url,
-            'is_registration': node.is_registration,
-            'is_pending_registration': node.is_pending_registration,
-            'is_retracted': node.is_retracted,
-            'is_pending_retraction': node.is_pending_retraction,
-            'embargo_end_date': node.embargo_end_date.strftime('%A, %b. %d, %Y') if node.embargo_end_date else False,
-            'is_pending_embargo': node.is_pending_embargo,
-            'registered_date': node.registered_date,
-            'wikis': {},
-            'parent_id': parent_id,
-            'date_created': node.date_created,
-            'license': serialize_node_license_record(node.license),
-            'affiliated_institutions': [inst.name for inst in node.affiliated_institutions],
-            'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
-        }
-        if not node.is_retracted:
-            for wiki in [
-                NodeWikiPage.load(x)
-                for x in node.wiki_pages_current.values()
-            ]:
-                elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
-
+        category = get_doctype_from_node(node)
+        elastic_document = serialize_node(node, category)
         if bulk:
             return elastic_document
         else:
-            es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
+            es.index(index=index, doc_type=category, id=node._id, body=elastic_document, refresh=True)
 
 def bulk_update_nodes(serialize, nodes, index=None):
     """Updates the list of input projects
