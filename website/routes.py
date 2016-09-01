@@ -658,8 +658,9 @@ def make_url_map(app):
             OsfWebRenderer('profile.mako', trust=False)
         ),
 
-        # Route for claiming and setting email and password.
-        # Verification token must be querystring argument
+        # unregistered user claim account (contributor-ship of a project)
+        # user will be required to set email and password
+        # claim token must be present in query parameter
         Rule(
             ['/user/<uid>/<pid>/claim/'],
             ['get', 'post'],
@@ -667,6 +668,9 @@ def make_url_map(app):
             OsfWebRenderer('claim_account.mako', trust=False)
         ),
 
+        # registered user claim account (contributor-ship of a project)
+        # user will be required to verify password
+        # claim token must be present in query parameter
         Rule(
             ['/user/<uid>/<pid>/claim/verify/<token>/'],
             ['get', 'post'],

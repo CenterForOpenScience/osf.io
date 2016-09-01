@@ -360,38 +360,56 @@ def project_remove_contributor(auth, **kwargs):
     return redirect_url
 
 
-def send_claim_registered_email(claimer, unreg_user, node, throttle=24 * 3600):
-    unclaimed_record = unreg_user.get_unclaimed_record(node._primary_key)
-    # roll the valid token for each email, thus user cannot change email and approve a different email address
+def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 3600):
+    """
+    A registered user claiming the unclaimed user account as an contributor to a project.
+    Send an email for claiming the account to the referrer and notify the claimer.
+
+    :param claimer: the claimer
+    :param unclaimed_user: the user account to claim
+    :param node: the project node where the user account is claimed
+    :param throttle: the time period in seconds before another claim for the account can be made
+    :return:
+    :raise: http.BAD_REQUEST
+    """
+
+    unclaimed_record = unclaimed_user.get_unclaimed_record(node._primary_key)
+
+    # check throttle
     timestamp = unclaimed_record.get('last_sent')
     if not throttle_period_expired(timestamp, throttle):
-        raise HTTPError(400, data=dict(
+        raise HTTPError(http.BAD_REQUEST, data=dict(
             message_long='User account can only be claimed with an existing user once every 24 hours'
         ))
+    # TODO: use normalized verification key generation
+    # roll the valid token for each email, thus user cannot change email and approve a different email address
     unclaimed_record['token'] = generate_verification_key()
     unclaimed_record['expires'] = dt.datetime.utcnow() + dt.timedelta(days=settings.CLAIM_TOKEN_EXPIRATION)
     unclaimed_record['claimer_email'] = claimer.username
-    unreg_user.save()
+    unclaimed_user.save()
+
     referrer = User.load(unclaimed_record['referrer_id'])
     claim_url = web_url_for(
         'claim_user_registered',
-        uid=unreg_user._primary_key,
+        uid=unclaimed_user._primary_key,
         pid=node._primary_key,
         token=unclaimed_record['token'],
         _external=True,
     )
+
     # Send mail to referrer, telling them to forward verification link to claimer
     mails.send_mail(
         referrer.username,
         mails.FORWARD_INVITE_REGISTERED,
-        user=unreg_user,
+        user=unclaimed_user,
         referrer=referrer,
         node=node,
         claim_url=claim_url,
         fullname=unclaimed_record['name'],
     )
     unclaimed_record['last_sent'] = get_timestamp()
-    unreg_user.save()
+    unclaimed_user.save()
+
     # Send mail to claimer, telling them to wait for referrer
     mails.send_mail(
         claimer.username,
@@ -402,50 +420,63 @@ def send_claim_registered_email(claimer, unreg_user, node, throttle=24 * 3600):
     )
 
 
-def send_claim_email(email, user, node, notify=True, throttle=24 * 3600, email_template='default'):
-    """Send an email for claiming a user account. Either sends to the given email
-    or the referrer's email, depending on the email address provided.
+def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 3600, email_template='default'):
+    """
+    Unregistered user claiming a user account as an contributor to a project. Send an email for claiming the account.
+    Either sends to the given email or the referrer's email, depending on the email address provided.
 
     :param str email: The address given in the claim user form
-    :param User user: The User record to claim.
+    :param User unclaimed_user: The User record to claim.
     :param Node node: The node where the user claimed their account.
     :param bool notify: If True and an email is sent to the referrer, an email
         will also be sent to the invited user about their pending verification.
     :param int throttle: Time period (in seconds) after the referrer is
         emailed during which the referrer will not be emailed again.
+    :param str email_template: the email template to use
+    :return
+    :raise http.BAD_REQUEST
 
     """
+
     claimer_email = email.lower().strip()
 
-    unclaimed_record = user.get_unclaimed_record(node._primary_key)
+    unclaimed_record = unclaimed_user.get_unclaimed_record(node._primary_key)
     referrer = User.load(unclaimed_record['referrer_id'])
-    claim_url = user.get_claim_url(node._primary_key, external=True)
-    # If given email is the same provided by user, just send to that email
+    claim_url = unclaimed_user.get_claim_url(node._primary_key, external=True)
+
+    # When adding the contributor, the referrer provides both name and email.
+    # The given email is the same provided by user, just send to that email.
     if unclaimed_record.get('email') == claimer_email:
         mail_tpl = getattr(mails, 'INVITE_{}'.format(email_template.upper()))
         to_addr = claimer_email
         unclaimed_record['claimer_email'] = claimer_email
-        user.save()
-
-    else:  # Otherwise have the referrer forward the email to the user
-        # roll the valid token for each email, thus user cannot change email and approve a different email address
+        unclaimed_user.save()
+    # When adding the contributor, the referred only provides the name.
+    # The account is later claimed by some one who provides the email.
+    # Send email to the referrer and ask her/him to forward the email to the user.
+    else:
+        # check throttle
         timestamp = unclaimed_record.get('last_sent')
         if not throttle_period_expired(timestamp, throttle):
-            raise HTTPError(400, data=dict(
+            raise HTTPError(http.BAD_REQUEST, data=dict(
                 message_long='User account can only be claimed with an existing user once every 24 hours'
             ))
+        # TODO: use normalized verification key generation
+        # roll the valid token for each email, thus user cannot change email and approve a different email address
         unclaimed_record['last_sent'] = get_timestamp()
         unclaimed_record['token'] = generate_verification_key()
         unclaimed_record['expires'] = dt.datetime.utcnow() + dt.timedelta(days=settings.CLAIM_TOKEN_EXPIRATION)
         unclaimed_record['claimer_email'] = claimer_email
-        user.save()
-        claim_url = user.get_claim_url(node._primary_key, external=True)
+        unclaimed_user.save()
+
+        claim_url = unclaimed_user.get_claim_url(node._primary_key, external=True)
+        # send an email to the invited user without `claim_url`
         if notify:
             pending_mail = mails.PENDING_VERIFICATION
             mails.send_mail(
                 claimer_email,
                 pending_mail,
-                user=user,
+                user=unclaimed_user,
                 referrer=referrer,
                 fullname=unclaimed_record['name'],
                 node=node
@@ -453,16 +484,18 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600, email_t
         mail_tpl = mails.FORWARD_INVITE
         to_addr = referrer.username
 
+    # send an email to the referrer with `claim_url`
     mails.send_mail(
         to_addr,
         mail_tpl,
-        user=user,
+        user=unclaimed_user,
         referrer=referrer,
         node=node,
         claim_url=claim_url,
         email=claimer_email,
         fullname=unclaimed_record['name']
     )
+
     return to_addr
 
 
@@ -708,29 +741,38 @@ def invite_contributor_post(node, **kwargs):
 
 @must_be_contributor_or_public
 def claim_user_post(node, **kwargs):
-    """View for claiming a user from the X-editable form on a project page.
     """
-    reqdata = request.json
-    # Unreg user
-    user = User.load(reqdata['pk'])
-    unclaimed_data = user.get_unclaimed_record(node._primary_key)
-    # Submitted through X-editable
-    if 'value' in reqdata:  # Submitted email address
-        email = reqdata['value'].lower().strip()
+    View for claiming a user from the X-editable form on a project page.
+
+    :param node: the project node
+    :return:
+    """
+
+    request_data = request.json
+
+    # The unclaimed user
+    unclaimed_user = User.load(request_data['pk'])
+    unclaimed_data = unclaimed_user.get_unclaimed_record(node._primary_key)
+
+    # Claimer is not logged in and submit her/his email through X-editable, stored in `request_data['value']`
+    if 'value' in request_data:
+        email = request_data['value'].lower().strip()
         claimer = get_user(email=email)
+        # registered user
         if claimer and claimer.is_registered:
-            send_claim_registered_email(claimer=claimer, unreg_user=user,
-                node=node)
+            send_claim_registered_email(claimer=claimer, unclaimed_user=unclaimed_user, node=node)
+        # unregistered user
         else:
-            send_claim_email(email, user, node, notify=True)
-    # TODO(sloria): Too many assumptions about the request data. Just use
-    elif 'claimerId' in reqdata:  # User is logged in and confirmed identity
-        claimer_id = reqdata['claimerId']
+            send_claim_email(email=email, unclaimed_user=unclaimed_user, node=node, notify=True)
+    # Claimer is logged in with confirmed identity stored in `request_data['claimerId']`
+    elif 'claimerId' in request_data:
+        claimer_id = request_data['claimerId']
         claimer = User.load(claimer_id)
-        send_claim_registered_email(claimer=claimer, unreg_user=user, node=node)
+        send_claim_registered_email(claimer=claimer, unclaimed_user=unclaimed_user, node=node)
         email = claimer.username
     else:
         raise HTTPError(http.BAD_REQUEST)
+
     return {
         'status': 'success',
         'email': email,
