@@ -213,10 +213,11 @@ def check_private_key_for_anonymized_link(private_key):
 def get_headers_from_request(req):
     """ Get and normalize DRF and Flask request headers
     """
+
     headers = getattr(req, 'META', {})
     if headers:
         headers = {
-            '-'.join(map(str.capitalize, k.split('_'))).replace('Http-', ''): v
+            '-'.join(map(lambda k: k.capitalize(), k.split('_'))).replace('Http-', ''): v
             for k, v in headers.items()
         }
     else:
