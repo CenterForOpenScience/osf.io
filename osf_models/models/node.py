@@ -427,6 +427,17 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
                 return self.is_admin_parent(user)
         return False
 
+    def has_permission_on_children(self, user, permission):
+        """Checks if the given user has a given permission on any child nodes
+            that are not registrations or deleted
+        """
+        if self.has_permission(user, permission):
+            return True
+        for node in self.nodes.filter(is_deleted=False).all():
+            if node.has_permission_on_children(user, permission):
+                return True
+        return False
+
     def is_admin_parent(self, user):
         if self.has_permission(user, 'admin', check_parent=False):
             return True
@@ -483,10 +494,19 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
             return self.parent_node.license
         return node_license
 
+    @property
+    def visible_contributors(self):
+        return OSFUser.objects.filter(
+            contributor__node=self,
+            contributor__visible=True
+        ).all()
+
     # visible_contributor_ids was moved to this property
     @property
     def visible_contributor_ids(self):
-        return self.contributor_set.filter(visible=True).values_list('user__guid__guid', flat=True)
+        return list(
+            self.contributor_set.filter(visible=True).values_list('user__guid__guid', flat=True)
+        )
 
     @property
     def system_tags(self):
