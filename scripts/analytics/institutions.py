@@ -2,6 +2,8 @@ from modularodm import Q
 
 from website.app import init_app
 from website.models import User, Node, Institution
+from website.settings import KEEN as keen_settings
+from keen.client import KeenClient
 
 
 def get_institutions():
@@ -9,33 +11,41 @@ def get_institutions():
     return institutions
 
 
-def get_user_count_by_institutions():
+def get_count_by_institutions():
     institutions = get_institutions()
-    user_counts = []
-    for institution in institutions:
-        query = Q('_affiliated_institutions', 'eq', institution.node)
-        user_counts.append({institution.name: User.find(query).count()})
-    return user_counts
+    counts = []
 
-
-def get_node_count_by_institutions():
-    institutions = get_institutions()
-    node_counts = []
     for institution in institutions:
-        query = (
+        user_query = Q('_affiliated_institutions', 'eq', institution.node)
+        node_query = (
             Q('is_deleted', 'ne', True) &
             Q('is_folder', 'ne', True) &
             Q('parent_node', 'eq', None)
         )
-        node_counts.append({institution.name: Node.find_by_institutions(institution, query).count()})
-    return node_counts
+        count = {
+            'institution': institution.name,
+            'users': User.find(user_query).count(),
+            'nodes': Node.find_by_institutions(institution, node_query).count(),
+        }
+        counts.append(count)
+    keen_payload = {'institution_analytics': counts}
+    return keen_payload
 
 
 def main():
-    users_by_institutions = get_user_count_by_institutions()
-    nodes_by_institutions = get_node_count_by_institutions()
-    print(users_by_institutions)
-    print(nodes_by_institutions)
+    counts_by_institutions = get_count_by_institutions()
+    keen_project = keen_settings['private']['project_id']
+    write_key = keen_settings['private']['write_key']
+    read_key = keen_settings['private']['read_key']
+    if keen_project and write_key:
+        client = KeenClient(
+            project_id=keen_project,
+            write_key=write_key,
+            read_key=read_key
+        )
+        client.add_events(counts_by_institutions)
+    else:
+        print(counts_by_institutions)
 
 
 if __name__ == '__main__':
