@@ -19,6 +19,7 @@ from api.preprint_providers.serializers import PreprintProviderSerializer
 from api.preprints.parsers import PreprintsJSONAPIParser, PreprintsJSONAPIParserForRegularJSON
 from api.preprints.serializers import PreprintSerializer, PreprintPreprintProvidersRelationshipSerializer
 from api.nodes.views import NodeMixin, WaterButlerMixin
+from api.nodes.permissions import ContributorOrPublic
 
 
 class PreprintMixin(NodeMixin):
@@ -134,6 +135,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ContributorOrPublic,
     )
 
     parser_classes = (PreprintsJSONAPIParser, PreprintsJSONAPIParserForRegularJSON,)
@@ -216,6 +218,7 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMi
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ContributorOrPublic,
     )
     parser_classes = (PreprintsJSONAPIParser, PreprintsJSONAPIParserForRegularJSON,)
 

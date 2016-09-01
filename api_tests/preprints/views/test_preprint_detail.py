@@ -57,6 +57,17 @@ class TestPreprintUpdate(ApiTestCase):
         self.preprint.reload()
         assert_equal(self.preprint.title, 'A new title')
 
+    def test_update_preprint_permission_denied(self):
+        update_title_payload = build_preprint_update_payload(self.preprint._id, attributes={'title': 'A new title'})
+
+        noncontrib = AuthUserFactory()
+
+        res = self.app.patch_json_api(self.url, update_title_payload, auth=noncontrib.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+        res = self.app.patch_json_api(self.url, update_title_payload, expect_errors=True)
+        assert_equal(res.status_code, 401)
+
     def test_update_preprint_tags(self):
         update_tags_payload = build_preprint_update_payload(self.preprint._id, attributes={'tags': ['newtag', 'bluetag']})
 
