@@ -2,19 +2,18 @@ from modularodm.exceptions import ValidationValueError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 
+from api.base.exceptions import Conflict, RelationshipPostMakesNoChanges
 from api.base.serializers import (
     JSONAPISerializer, IDField, JSONAPIListField, LinksField,
     RelationshipField, JSONAPIRelationshipSerializer, relationship_diff
 )
-from api.base.exceptions import Conflict, RelationshipPostMakesNoChanges
 from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import NodeTagField
 from api.taxonomies.serializers import TaxonomyField
 from framework.exceptions import PermissionsError
-from website.util import permissions
-from website.project import signals as project_signals
 from website.models import StoredFileNode, PreprintProvider, Node
-
+from website.project import signals as project_signals
+from website.util import permissions
 
 class PrimaryFileRelationshipField(RelationshipField):
     def get_object(self, file_id):
