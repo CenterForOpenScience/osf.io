@@ -157,7 +157,9 @@ class CommentDetailMixin(object):
         assert_equal(res.status_code, 200)
         url = res.json['data']['relationships']['replies']['links']['related']['href']
         uri = test_utils.urlparse_drop_netloc(url)
-        assert_equal(self.app.get(uri).status_code, 200)
+        res = self.app.get(uri)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data'][0]['type'], 'comments')
 
     def test_comment_has_reports_link(self):
         self._set_up_public_project_with_comment()

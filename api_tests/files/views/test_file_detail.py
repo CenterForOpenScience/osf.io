@@ -92,6 +92,7 @@ class TestFileView(ApiTestCase):
         assert_in('comments', res.json['data']['relationships'].keys())
         url = res.json['data']['relationships']['comments']['links']['related']['href']
         assert_equal(self.app.get(url, auth=self.user.auth).status_code, 200)
+        assert_equal(res.json['data']['type'], 'files')
 
     def test_file_has_correct_unread_comments_count(self):
         contributor = AuthUserFactory()
