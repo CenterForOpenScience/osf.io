@@ -31,6 +31,14 @@ BCRYPT_LOG_ROUNDS = 12
 with open(os.path.join(APP_PATH, 'package.json'), 'r') as fobj:
     VERSION = json.load(fobj)['version']
 
+# Expiration time for verification key
+EXPIRATION_TIME_DICT = {
+    'verify': 30,           # 30 minutes for forgot and reset password
+    'confirm': 24 * 60,     # 24 hours in minutes for confirm account and email
+    'claim': 7 * 24 * 60    # 7 days in minutes for claim contributor-ship
+}
+
+# TODO: remove this and use the one above after all three types are normalized
 # Minutes before verification key v2 expires
 VERIFICATION_KEY_V2_EXPIRATION = 30
 # Hours before email confirmation tokens expire

@@ -43,12 +43,28 @@ name_formatters = {
 logger = logging.getLogger(__name__)
 
 
-# verification key v1
-def generate_verification_key():
-    return security.random_string(30)
+# generate verification key
+def generate_verification_key(verification_type=None):
+    """
+    Generate a one-time verification key with an optional expiration time.
+    The type of the verification key determines the expiration time defined in `website.settings.EXPIRATION_TIME_DICT`.
+
+    :param verification_type: None, verify, confirm or claim
+    :return: a string or a dictionary
+    """
+    token = security.random_string(30)
+    # v1 with only the token
+    if not verification_type:
+        return token
+    # v2 with a token and the expiration time
+    expires = dt.datetime.utcnow() + dt.timedelta(minutes=settings.EXPIRATION_TIME_DICT[verification_type])
+    return {
+        'token': token,
+        'expires': expires,
+    }
 
 
-# verification key v2, expires in 30 minutes
+# TODO: remove this and use the one above after all three types are normalized
 def generate_verification_key_v2():
     token = security.random_string(30)
     expires = dt.datetime.utcnow() + dt.timedelta(minutes=settings.VERIFICATION_KEY_V2_EXPIRATION)
@@ -338,7 +354,7 @@ class User(GuidStoredObject, AddonModelMixin):
     # The user into which this account was merged
     merged_by = fields.ForeignField('user', default=None, index=True)
 
-    # verification key v1: only the token, no expiration time
+    # verification key v1: only the token string, no expiration time
     verification_key = fields.StringField()
 
     # verification key v2: token, and expiration time
