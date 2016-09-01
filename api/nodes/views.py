@@ -9,20 +9,17 @@ from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 
 from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
-from api.base.exceptions import (
-    EndpointNotImplementedError, Gone,
-    InvalidModelValueError, JSONAPIException, RelationshipPostMakesNoChanges
-)
+from api.base.exceptions import InvalidModelValueError, JSONAPIException, Gone
 from api.base.filters import ODMFilterMixin, ListFilterMixin
+from api.base.views import JSONAPIBaseView
 from api.base.parsers import (
     JSONAPIRelationshipParser,
     JSONAPIRelationshipParserForRegularJSON,
 )
+from api.base.exceptions import RelationshipPostMakesNoChanges, EndpointNotImplementedError
 from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination
-from api.base.settings import ADDONS_OAUTH, API_BASE
-from api.base.throttling import AddContributorThrottle
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
-from api.base.views import JSONAPIBaseView
+from api.base.settings import ADDONS_OAUTH, API_BASE
 from api.caching.tasks import ban_url
 from api.addons.views import AddonSettingsMixin
 from api.files.serializers import FileSerializer
@@ -31,6 +28,7 @@ from api.comments.permissions import CanCommentOrPublic
 from api.users.views import UserMixin
 from api.wikis.serializers import WikiSerializer
 from api.base.views import LinkedNodesRelationship, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList
+from api.base.throttling import AddContributorThrottle
 
 from api.nodes.serializers import (
     NodeSerializer,

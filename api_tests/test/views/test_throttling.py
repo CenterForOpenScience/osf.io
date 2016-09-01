@@ -33,10 +33,10 @@ class TestThrottling(ApiTestCase):
     def test_user_rate_allow_request_called(self, mock_allow):
         res = self.app.get(self.url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
-        assert_not_equal(len(mock_allow.mock_calls), 0)
+        assert_equal(mock_allow.call_count, 1)
 
     @mock.patch('api.base.throttling.TestAnonRateThrottle.allow_request')
     def test_anon_rate_allow_request_called(self, mock_allow):
         res = self.app.get(self.url)
         assert_equal(res.status_code, 200)
-        assert_not_equal(len(mock_allow.mock_calls), 0)
+        assert_equal(mock_allow.call_count, 1)

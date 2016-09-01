@@ -113,7 +113,7 @@ REST_FRAMEWORK = {
         'non-cookie-auth': '100/hour',
         'add-contributor': '10/hour',
         'test-user': '2/hour',
-        'test-anon': '1/hour'
+        'test-anon': '1/hour',
     }
 }
 

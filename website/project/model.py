@@ -45,7 +45,7 @@ from website.util import sanitize
 from website.exceptions import (
     NodeStateError,
     InvalidTagError, TagNotFoundError,
-    UserNotAffiliatedError
+    UserNotAffiliatedError,
 )
 from website.institutions.model import Institution, AffiliatedInstitutionsList
 from website.citations.utils import datetime_to_csl

@@ -1,31 +1,30 @@
 import weakref
-
 from django.conf import settings as django_settings
 from django.http import JsonResponse
-
-from rest_framework import generics
-from rest_framework import permissions as drf_permissions
-from rest_framework import status
 from rest_framework.decorators import api_view
-from rest_framework.exceptions import ValidationError, NotFound
-from rest_framework.mixins import ListModelMixin
 from rest_framework.response import Response
+from rest_framework import generics
+from rest_framework import status
+from rest_framework import permissions as drf_permissions
+from rest_framework.exceptions import ValidationError, NotFound
 
 from framework.auth.oauth_scopes import CoreScopes
 
+from rest_framework.mixins import ListModelMixin
 from api.base import permissions as base_permissions
-from api.base import utils
 from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.base.filters import ListFilterMixin
-from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
-from api.base.requests import EmbeddedRequest
-from api.base.serializers import LinkedNodesRelationshipSerializer
-from api.base.utils import is_bulk_request, get_user_auth
-
-from api.nodes.permissions import ReadOnlyIfRegistration
-from api.nodes.permissions import ContributorOrPublicForRelationshipPointers
 
 from api.users.serializers import UserSerializer
+from api.base.parsers import JSONAPIRelationshipParser
+from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
+from api.base.requests import EmbeddedRequest
+from api.base.serializers import LinkedNodesRelationshipSerializer
+from api.base import utils
+from api.nodes.permissions import ReadOnlyIfRegistration
+from api.nodes.permissions import ContributorOrPublicForRelationshipPointers
+from api.base.utils import is_bulk_request, get_user_auth
+
 
 CACHE = weakref.WeakKeyDictionary()
 

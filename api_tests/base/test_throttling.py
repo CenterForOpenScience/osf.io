@@ -19,7 +19,7 @@ class TestUserRateThrottle(ApiTestCase):
     def test_user_rate_allow_request_called(self, mock_allow):
         res = self.app.get(self.url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
-        assert_not_equal(len(mock_allow.mock_calls), 0)
+        assert_equal(mock_allow.call_count, 1)
 
 
 class TestNonCookieAuthThrottle(ApiTestCase):
@@ -32,7 +32,7 @@ class TestNonCookieAuthThrottle(ApiTestCase):
     def test_cookie_throttle_rate_allow_request_called(self, mock_allow):
         res = self.app.get(self.url)
         assert_equal(res.status_code, 200)
-        assert_not_equal(len(mock_allow.mock_calls), 0)
+        assert_equal(mock_allow.call_count, 1)
 
 
 class TestAddContributorEmailThrottle(ApiTestCase):
@@ -68,10 +68,10 @@ class TestAddContributorEmailThrottle(ApiTestCase):
     def test_add_contrib_throttle_rate_allow_request_not_called(self, mock_allow):
         res = self.app.get(self.url)
         assert_equal(res.status_code, 200)
-        assert_equal(len(mock_allow.mock_calls), 0)
+        assert_equal(mock_allow.call_count, 0)
 
     @mock.patch('api.base.throttling.AddContributorThrottle.allow_request')
     def test_add_contrib_throttle_rate_allow_request_called(self, mock_allow):
         res = self.app.post_json_api(self.public_url, self.data_user_two, auth=self.user.auth)
         assert_equal(res.status_code, 201)
-        assert_not_equal(len(mock_allow.mock_calls), 0)
+        assert_equal(mock_allow.call_count, 1)
