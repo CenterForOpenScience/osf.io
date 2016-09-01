@@ -3392,14 +3392,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         """ Overrides SpamMixin#save_spam. Make spammy node and its children private
         """
         super(Node, self).flag_spam(save=False)
-        for node in self.node_and_primary_descendants():
-            node.set_privacy(
-                Node.PRIVATE,
-                auth=None,
-                log=False,
-                save=True,
-                check_addons=False
-            )
+        if settings.HIDE_SPAM_NODES:
+            for node in self.node_and_primary_descendants():
+                node.set_privacy(
+                    Node.PRIVATE,
+                    auth=None,
+                    log=False,
+                    save=True,
+                    check_addons=False
+                )
 
     def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False, check_addons=True):
         """Set the permissions for this node. Also, based on meeting_creation, queues an email to user about abilities of
@@ -3414,7 +3415,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if auth and not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Must be an admin to change privacy settings.')
         if permissions == 'public' and not self.is_public:
-            if self.is_spammy:
+            if settings.HIDE_SPAM_NODES and self.is_spammy:
                 raise NodeStateError('This project has been marked as spam. Please contact the help desk if you think this is in error.')
             if self.is_registration:
                 if self.is_pending_embargo:
