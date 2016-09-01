@@ -10,6 +10,7 @@ from api.base.serializers import (
 from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import NodeTagField
 from api.taxonomies.serializers import TaxonomyField
+from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 from website.models import StoredFileNode, PreprintProvider, Node
 from website.project import signals as project_signals
@@ -45,6 +46,10 @@ class PreprintSerializer(JSONAPISerializer):
     abstract = ser.CharField(source='description', required=False)
     tags = JSONAPIListField(child=NodeTagField(), required=False)
     doi = ser.CharField(source='preprint_doi', required=False)
+
+    current_user_can_comment = ser.SerializerMethodField(help_text='Whether the current user is allowed to post comments')
+    current_user_permissions = ser.SerializerMethodField(help_text='List of strings representing the permissions '
+                                                                   'for the current user on this node.')
 
     primary_file = PrimaryFileRelationshipField(
         related_view='files:file-detail',
@@ -95,6 +100,26 @@ class PreprintSerializer(JSONAPISerializer):
 
     def get_absolute_url(self, obj):
         return self.get_preprint_url(obj)
+
+    def get_current_user_can_comment(self, obj):
+        """
+        Borrows permission implementation from node serializer. Change if preprints change.
+
+        The default is to allow comments from any logged-in user, if the project is public.
+        """
+        user = self.context['request'].user
+        auth = Auth(user if not user.is_anonymous() else None)
+        return obj.can_comment(auth)
+
+    def get_current_user_permissions(self, obj):
+        """Borrows permission implementation from node serializer. Change if preprints change."""
+        user = self.context['request'].user
+        if user.is_anonymous():
+            return ['read']
+        permissions = obj.get_permissions(user=user)
+        if not permissions:
+            permissions = ['read']
+        return permissions
 
     def get_doi_url(self, obj):
         return 'https://dx.doi.org/{}'.format(obj.preprint_doi) if obj.preprint_doi else None
