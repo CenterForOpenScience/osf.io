@@ -3382,6 +3382,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
         return contributor
 
+    @property
+    def is_spammy(self):
+        return (self.is_flagged_as_spam or self.is_spam) or (self.parent_node.is_spammy if self.parent_node else False)
+
     def flag_spam(self, save=False):
         """ Overrides SpamMixin#save_spam. Make spammy node and its children private
         """
@@ -3408,7 +3412,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         if auth and not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Must be an admin to change privacy settings.')
         if permissions == 'public' and not self.is_public:
-            if self.is_flagged_as_spam or self.is_spam:
+            if self.is_spammy:
                 raise NodeStateError('This project has been marked as spam. Please contact the help desk if you think this is in error.')
             if self.is_registration:
                 if self.is_pending_embargo:
