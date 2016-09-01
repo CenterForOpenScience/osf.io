@@ -107,12 +107,13 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_CLASSES': (
         'rest_framework.throttling.UserRateThrottle',
         'api.base.throttling.NonCookieAuthThrottle',
-        'api.base.throttling.AddContributorThrottle',
     ),
     'DEFAULT_THROTTLE_RATES': {
         'user': '10000/day',
         'non-cookie-auth': '100/hour',
         'add-contributor': '10/hour',
+        'test-user': '2/hour',
+        'test-anon': '1/hour'
     }
 }
 

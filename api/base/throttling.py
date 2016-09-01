@@ -50,10 +50,8 @@ class AddContributorThrottle(BaseThrottle, UserRateThrottle):
 class TestUserRateThrottle(UserRateThrottle):
 
     scope = 'test-user'
-    rate = '2/hour'
 
 
 class TestAnonRateThrottle(AnonRateThrottle):
 
     scope = 'test-anon'
-    rate = '1/hour'
