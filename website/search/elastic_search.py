@@ -354,7 +354,7 @@ def update_node(node, index=None, bulk=False, async=False, request_headers=None)
         if bulk:
             return elastic_document
 
-        if async and request_headers:
+        if async and request_headers and settings.CHECK_NODES_FOR_SPAM:
             check_node_for_spam(elastic_document, node.creator, request_headers)
 
         else:
