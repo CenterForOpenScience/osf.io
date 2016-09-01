@@ -34,6 +34,8 @@ def _check_for_spam(node_id, content, author_info, request_headers):
         logger.info('Node {} smells like ham'.format(node_id))
 
 def check_node_for_spam(document, creator, request_headers):
+    if not settings.CHECK_NODES_FOR_SPAM:
+        return
     content = """
     {}
 
@@ -46,7 +48,13 @@ def check_node_for_spam(document, creator, request_headers):
         '\n'.join(document['wikis'].values())
     )
 
-    _check_for_spam.delay(document['id'], content, {
-        'email': creator.username,
-        'name': creator.fullname
-    }, request_headers)
+    args = (
+        document['id'], content, {
+            'email': creator.username,
+            'name': creator.fullname
+        }, request_headers
+    )
+    if settings.USE_CELERY:
+        _check_for_spam.delay(*args)
+    else:
+        _check_for_spam(*args)
