@@ -154,8 +154,8 @@ class TestNodeDetail(ApiTestCase):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
         assert_in('comments', res.json['data']['relationships'].keys())
-        assert_in('filter[target]={}'.format(self.public_project._id),
-                  res.json['data']['relationships']['comments']['links']['related']['href'])
+        url = res.json['data']['relationships']['comments']['links']['related']['href']
+        assert_equal(self.app.get(url).status_code, 200)
 
     def test_node_has_correct_unread_comments_count(self):
         contributor = AuthUserFactory()

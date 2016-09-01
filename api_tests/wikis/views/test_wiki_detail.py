@@ -159,10 +159,9 @@ class TestWikiDetailView(ApiWikiTestCase):
     def test_wiki_has_comments_link(self):
         self._set_up_public_project_with_wiki_page()
         res = self.app.get(self.public_url)
-        url = res.json['data']['relationships']['comments']['links']['related']['href']
-        expected_url = '/{}nodes/{}/comments/?filter[target]={}'.format(API_BASE, self.public_project._id, self.public_wiki._id)
         assert_equal(res.status_code, 200)
-        assert_in(expected_url, url)
+        url = res.json['data']['relationships']['comments']['links']['related']['href']
+        assert_equal(self.app.get(url).status_code, 200)
 
     def test_only_project_contrib_can_comment_on_closed_project(self):
         self._set_up_public_project_with_wiki_page(project_options={'comment_level': 'private'})
