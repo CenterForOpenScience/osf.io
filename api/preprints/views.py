@@ -18,7 +18,7 @@ from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParse
 from api.preprint_providers.serializers import PreprintProviderSerializer
 from api.preprints.parsers import PreprintsJSONAPIParser, PreprintsJSONAPIParserForRegularJSON
 from api.preprints.serializers import PreprintSerializer, PreprintPreprintProvidersRelationshipSerializer
-from api.nodes.views import NodeMixin, WaterButlerMixin, NodeContributorsList, NodeContributorsSerializer
+from api.nodes.views import NodeMixin, WaterButlerMixin
 
 
 class PreprintMixin(NodeMixin):
@@ -229,16 +229,6 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMi
 
     def get_object(self):
         return self.get_node()
-
-
-class PreprintContributorsList(NodeContributorsList, PreprintMixin):
-    required_read_scopes = [CoreScopes.NODE_PREPRINTS_READ]
-    required_write_scopes = [CoreScopes.NODE_PREPRINTS_WRITE]
-
-    view_category = 'preprint'
-    view_name = 'preprint-contributors'
-
-    serializer_class = NodeContributorsSerializer
 
 
 class PreprintPreprintProvidersList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin, NodeMixin):
