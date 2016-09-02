@@ -6,7 +6,7 @@ class AkismetClientError(Exception):
         self.reason = reason
 
     def __str__(self):
-        return repr(self.value)
+        return repr(self.reason)
 
 class AkismetClient(object):
 
