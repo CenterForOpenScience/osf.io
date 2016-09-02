@@ -225,9 +225,20 @@ class NodeSpamList(OSFAdmin, ListView):
             'page': page,
         }
 
-class NodeFlaggedSpamList(NodeSpamList):
+class NodeFlaggedSpamList(NodeSpamList, DeleteView):
     SPAM_STATE = Node.FLAGGED
     template_name = 'nodes/flagged_spam_list.html'
+
+    def delete(self, request, *args, **kwargs):
+        node_ids = [
+            nid for nid in request.POST.keys()
+            if nid != 'csrfmiddlewaretoken'
+        ]
+        for nid in node_ids:
+            node = Node.load(nid)
+            node.confirm_spam(save=True)
+        return redirect('nodes:flagged-spam')
+
 
 class NodeKnownSpamList(NodeSpamList):
     SPAM_STATE = Node.SPAM
