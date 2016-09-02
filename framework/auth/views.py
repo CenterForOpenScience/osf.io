@@ -170,14 +170,15 @@ def forgot_password_post():
                 status.push_status_message('You have recently requested to change your password. Please wait a '
                                            'few minutes before trying again.', kind='error', trust=False)
             else:
-                # TODO: clean up this logic for [OSF-6673]
-                # if the user is an unclaimed contributor, then send a new confirmation email to user
+                # TODO [OSF-6673]: Use the feature in [OSF-6998] for user to resend claim email.
+                # if the user account is not claimed yet
                 if (user_obj.is_invited and
                         user_obj.unclaimed_records and
                         not user_obj.date_last_login and
                         not user_obj.is_claimed and
                         not user_obj.is_registered):
-                    send_confirm_email(user=user_obj, email=email, renew=True)
+                    status.push_status_message('You cannot reset password on this account. Please contact OSF Support.',
+                                               kind='error', trust=False)
                 else:
                     # new random verification key (v2)
                     user_obj.verification_key_v2 = generate_verification_key(verification_type='password')
@@ -196,7 +197,7 @@ def forgot_password_post():
                         mail=mails.FORGOT_PASSWORD,
                         reset_link=reset_link
                     )
-                status.push_status_message(status_message, kind='success', trust=False)
+                    status.push_status_message(status_message, kind='success', trust=False)
 
     return {}
 
