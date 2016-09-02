@@ -4,6 +4,7 @@ from framework.mongo import get_cache_key as get_request
 
 from website import settings
 from website.util import akismet, get_headers_from_request
+from website.project.licenses import serialize_node_license_record
 
 NODE_SPAM_FIELDS = set((
     'title',
@@ -29,6 +30,8 @@ def _get_content(node):
                 for x in node.wiki_pages_current.values()
             ]))
             continue
+        if field == 'node_license':
+            content.append(serialize_node_license_record(node.license))
         content.append((getattr(node, field, None) or '').encode('utf-8'))
     return '\n'.join(content)
 

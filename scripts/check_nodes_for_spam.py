@@ -21,9 +21,11 @@ def generate_ip():
     return '.'.join(map(lambda p: str(random.randint(*p)), ip_ranges))
 
 def check_nodes(num_nodes, flag=False):
-    nodes = model.Node.find(Q(
-        'is_registration', 'eq', False
-    )).sort('-date_created').limit(num_nodes)
+    nodes = model.Node.find(
+        Q('is_registration', 'eq', False) &
+        Q('spam_status', 'ne', model.Node.FLAGGED) &
+        Q('spam_status', 'ne', model.Node.SPAM)
+    ).sort('-date_created').limit(num_nodes)
     for node in nodes:
         serialized = serialize_node(node, get_doctype_from_node(node))
         spam.check_node_for_spam(
@@ -32,7 +34,7 @@ def check_nodes(num_nodes, flag=False):
                 'Remote-Addr': generate_ip(),
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36'
             },
-            flag=False
+            flag=flag
         )
 
 def main():
