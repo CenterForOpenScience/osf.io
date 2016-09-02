@@ -82,14 +82,15 @@ def add_poster_by_email(conference, message):
         if user_created:
             created.append(user)
             user.system_tags.append('osf4m')
-            set_password_url = web_url_for(
-                'reset_password_get',
-                username=user.username,
-                verification_key=user.verification_key,
-                _absolute=True,
-            )
             user.date_last_login = datetime.utcnow()
             user.save()
+            # must save the user first before accessing user._id
+            set_password_url = web_url_for(
+                'reset_password_get',
+                uid=user._id,
+                token=user.verification_key,
+                _absolute=True,
+            )
         else:
             set_password_url = None
 

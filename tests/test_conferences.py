@@ -540,6 +540,7 @@ class TestConferenceModel(OsfTestCase):
         assert_equal(conf.field_names['submission1'], 'poster')
         assert_equal(conf.field_names['mail_subject'], 'Presentation title')
 
+
 class TestConferenceIntegration(ContextTestCase):
 
     @mock.patch('website.conferences.views.send_mail')

@@ -826,11 +826,12 @@ class User(GuidStoredObject, AddonModelMixin):
             raise ChangePasswordError(issues)
         self.set_password(raw_new_password)
 
-    def add_unconfirmed_email(self, email, external_identity=None):
+    def add_unconfirmed_email(self, email, expiration=None, external_identity=None):
         """
         Add an email verification token for a given email.
 
         :param email: the email to confirm
+        :param email: overwrite default expiration time
         :param external_identity: the user's external identity
         :return: a token
         :raises: ValueError if email already confirmed, except for login through external idp.
@@ -859,7 +860,7 @@ class User(GuidStoredObject, AddonModelMixin):
         self.email_verifications[verification_key['token']] = {
             'email': email,
             'confirmed': False,
-            'expiration': verification_key['expires'],
+            'expiration': expiration if expiration else verification_key['expires'],
             'external_identity': external_identity,
         }
 
