@@ -38,14 +38,6 @@ EXPIRATION_TIME_DICT = {
     'claim': 7 * 24 * 60    # 7 days in minutes for claim contributor-ship
 }
 
-# TODO: remove this and use the one above after all three types are normalized
-# Minutes before verification key v2 expires
-VERIFICATION_KEY_V2_EXPIRATION = 30
-# Hours before email confirmation tokens expire
-EMAIL_TOKEN_EXPIRATION = 24
-# Days before claim tokens expire
-CLAIM_TOKEN_EXPIRATION = 7
-
 CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_components', 'styles')
 
 # Minimum seconds between forgot password email attempts

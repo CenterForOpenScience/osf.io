@@ -64,16 +64,6 @@ def generate_verification_key(verification_type=None):
     }
 
 
-# TODO: remove this and use the one above after all three types are normalized
-def generate_verification_key_v2():
-    token = security.random_string(30)
-    expires = dt.datetime.utcnow() + dt.timedelta(minutes=settings.VERIFICATION_KEY_V2_EXPIRATION)
-    return {
-        'token': token,
-        'expires': expires,
-    }
-
-
 def validate_history_item(item):
     string_required(item.get('institution'))
     startMonth = item.get('startMonth')
