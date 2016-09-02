@@ -8,6 +8,16 @@ from tests.base import ApiTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
 
 
+class TestDefaultThrottleClasses(ApiTestCase):
+
+    @mock.patch('rest_framework.throttling.BaseThrottle.get_ident')
+    def test_default_throttle_class_calls(self, mock_base):
+        base_url = '/{}'.format(API_BASE)
+        res = self.app.get(base_url)
+        assert_equal(res.status_code, 200)
+        assert_equal(mock_base.call_count, 2)
+
+
 class TestUserRateThrottle(ApiTestCase):
 
     def setUp(self):
