@@ -1,5 +1,6 @@
 from nose.tools import *  # flake8: noqa
 
+from framework.auth.core import Auth
 from tests.base import ApiTestCase
 from api.base.settings.defaults import API_BASE
 
@@ -55,6 +56,17 @@ class TestPreprintUpdate(ApiTestCase):
 
         self.preprint.reload()
         assert_equal(self.preprint.title, 'A new title')
+
+    def test_update_preprint_permission_denied(self):
+        update_title_payload = build_preprint_update_payload(self.preprint._id, attributes={'title': 'A new title'})
+
+        noncontrib = AuthUserFactory()
+
+        res = self.app.patch_json_api(self.url, update_title_payload, auth=noncontrib.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+        res = self.app.patch_json_api(self.url, update_title_payload, expect_errors=True)
+        assert_equal(res.status_code, 401)
 
     def test_update_preprint_tags(self):
         update_tags_payload = build_preprint_update_payload(self.preprint._id, attributes={'tags': ['newtag', 'bluetag']})
@@ -152,3 +164,74 @@ class TestPreprintUpdate(ApiTestCase):
 
         preprint_detail = self.app.get(self.url, auth=self.user.auth).json['data']
         assert_equal(preprint_detail['links']['doi'], 'https://dx.doi.org/{}'.format(new_doi))
+
+    def test_write_contrib_cannot_set_preprint_file(self):
+        user_two = AuthUserFactory()
+        self.preprint.add_contributor(user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
+        new_file = test_utils.create_test_file(self.preprint, 'openupthatwindow.pdf')
+
+        data = {
+            'data':{
+                'type': 'primary_file',
+                'id': self.preprint._id,
+                'attributes': {},
+                'relationships': {
+                    'primary_file': {
+                        'data': {
+                            'type': 'file',
+                            'id': new_file._id
+                        }
+                    }
+                }    
+            }
+        }
+ 
+        res = self.app.patch_json_api(self.url, data, auth=user_two.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_noncontrib_cannot_set_preprint_file(self):
+        user_two = AuthUserFactory()
+        new_file = test_utils.create_test_file(self.preprint, 'openupthatwindow.pdf')
+
+        data = {
+            'data':{
+                'type': 'primary_file',
+                'id': self.preprint._id,
+                'attributes': {},
+                'relationships': {
+                    'primary_file': {
+                        'data': {
+                            'type': 'file',
+                            'id': new_file._id
+                        }
+                    }
+                }    
+            }
+        }
+ 
+        res = self.app.patch_json_api(self.url, data, auth=user_two.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_write_contrib_cannot_set_subjects(self):
+        user_two = AuthUserFactory()
+        self.preprint.add_contributor(user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
+        
+        assert_not_equal(self.preprint.preprint_subjects[0], self.subject._id)
+        update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"subjects": [self.subject._id]})
+
+        res = self.app.patch_json_api(self.url, update_subjects_payload, auth=user_two.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+        assert_not_equal(self.preprint.preprint_subjects[0], self.subject._id)
+
+    def test_noncontrib_cannot_set_subjects(self):
+        user_two = AuthUserFactory()
+        self.preprint.add_contributor(user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
+        
+        assert_not_equal(self.preprint.preprint_subjects[0], self.subject._id)
+        update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"subjects": [self.subject._id]})
+
+        res = self.app.patch_json_api(self.url, update_subjects_payload, auth=user_two.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+        assert_not_equal(self.preprint.preprint_subjects[0], self.subject._id)

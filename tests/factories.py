@@ -107,7 +107,7 @@ class UserFactory(ModularOdmFactory):
         model = User
         abstract = False
 
-    username = Sequence(lambda n: 'fred{0}@example.com'.format(n))
+    username = Sequence(lambda n: 'fred{0}@mail.com'.format(n))
     # Don't use post generation call to set_password because
     # It slows down the tests dramatically
     password = 'password'
@@ -615,7 +615,7 @@ class DeprecatedUnregUserFactory(base.Factory):
         model = DeprecatedUnregUser
 
     nr_name = Sequence(lambda n: "Tom Jones{0}".format(n))
-    nr_email = Sequence(lambda n: "tom{0}@example.com".format(n))
+    nr_email = Sequence(lambda n: "tom{0}@mail.com".format(n))
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):

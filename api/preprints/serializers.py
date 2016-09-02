@@ -75,7 +75,7 @@ class PreprintSerializer(JSONAPISerializer):
     )
 
     contributors = RelationshipField(
-        related_view='preprints:preprint-contributors',
+        related_view='nodes:node-contributors',
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_contrib_count'},
     )
