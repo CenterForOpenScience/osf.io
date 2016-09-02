@@ -270,11 +270,14 @@ def make_response_from_ticket(ticket, service_url):
         # first time login from external identity provider
         if not user and external_credential and action == 'external_first_login':
             from website.util import web_url_for
-            # TODO: [#OSF-6935] verify both names are in attributes, which should be handled in CAS
+            # orcid attributes can be marked private and not shared, default to orcid otherwise
+            fullname = '{} {}'.format(cas_resp.attributes.get('given-names', ''), cas_resp.attributes.get('family-name', '')).strip()
+            if not fullname:
+                fullname = external_credential['id']
             user = {
                 'external_id_provider': external_credential['provider'],
                 'external_id': external_credential['id'],
-                'fullname': '{} {}'.format(cas_resp.attributes.get('given-names', ''), cas_resp.attributes.get('family-name', '')),
+                'fullname': fullname,
                 'access_token': cas_resp.attributes['accessToken'],
             }
             return external_first_login_authenticate(
