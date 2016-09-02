@@ -19,12 +19,12 @@ from tests.base import OsfTestCase, teardown_database
 
 class TestMetaData(OsfTestCase):
 
-    def setUp(self):
-        super(TestMetaData, self).setUp()
+    def tearDown(self):
+        super(TestMetaData, self).tearDown()
 
         # For whatever reason, DbTestCase only wipes the database during
         # *class* setup and teardown. This leaks database state across test
-        # cases, which a) smells pretty bad, and b) breaks the test_metadata_
+        # cases, which a) smells pretty bad, and b) breaks the test_metaschema_
         # tests here.
 
         teardown_database(database=database_proxy._get_current_object())
