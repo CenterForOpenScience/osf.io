@@ -1,6 +1,6 @@
 from website import settings
 from website.project import Node
-from website.project.utils import CONTENT_NODE_QUERY, recent_public_registrations
+from website.project.utils import recent_public_registrations
 
 from keen import KeenClient
 
