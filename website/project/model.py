@@ -3395,11 +3395,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
     def confirm_spam(self, save=False):
         super(Node, self).confirm_spam(save=save)
-        spam.confirm_spam(self)
+        enqueue_task(spam.confirm_spam.s(self._id))
 
     def confirm_ham(self, save=False):
         super(Node, self).confirm_ham(save=save)
-        spam.confirm_spam(self)
+        enqueue_task(spam.confirm_spam.s(self._id))
 
     def flag_spam(self, save=False):
         """ Overrides SpamMixin#save_spam. Make spammy node and its children private
