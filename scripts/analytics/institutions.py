@@ -36,8 +36,10 @@ def get_count_by_institutions():
         registered_project_public_query = registered_project_query & public_query
         registered_project_private_query = registered_project_query & private_query
         count = {
-            'id': institution._id,
-            'institution': institution.name,
+            'institution':{
+                'id': institution._id,
+                'name': institution.name,
+            },
             'users': {
                 'total': User.find(user_query).count(),
             },
@@ -54,12 +56,12 @@ def get_count_by_institutions():
             'registered_nodes': {
                 'total': Node.find_by_institutions(institution, registration_query).count(),
                 'public': Node.find_by_institutions(institution, registered_node_public_query).count(),
-                'private': Node.find_by_institutions(institution, registered_node_private_query).count(),
+                'embargoed': Node.find_by_institutions(institution, registered_node_private_query).count(),
             },
             'registered_projects': {
                 'total': Node.find_by_institutions(institution, registered_project_query).count(),
                 'public': Node.find_by_institutions(institution, registered_project_public_query).count(),
-                'private': Node.find_by_institutions(institution, registered_project_private_query).count(),
+                'embargoed': Node.find_by_institutions(institution, registered_project_private_query).count(),
             },
         }
         counts.append(count)
