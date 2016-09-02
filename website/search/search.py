@@ -1,10 +1,8 @@
 import logging
 
 from framework.celery_tasks.handlers import enqueue_task
-from framework.mongo import get_cache_key as get_request
 
 from website import settings
-from website import util
 from website.search import share_search
 
 logger = logging.getLogger(__name__)

@@ -28,7 +28,6 @@ from website import settings
 from website.filters import gravatar
 from website.models import User, Node
 from website.project.licenses import serialize_node_license_record
-from website.project.spam import check_node_for_spam
 from website.search import exceptions
 from website.search.util import build_query
 from website.util import sanitize
