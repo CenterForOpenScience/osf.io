@@ -26,12 +26,12 @@ def _get_content(node):
     for field in NODE_SPAM_FIELDS:
         if 'wiki' in field:
             content.append('\n'.join([
-                NodeWikiPage.load(x).raw_text(node)
+                NodeWikiPage.load(x).raw_text(node).encode('utf-8')
                 for x in node.wiki_pages_current.values()
             ]))
             continue
         if field == 'node_license':
-            content.append(serialize_node_license_record(node.license).get('text', ''))
+            content.append(serialize_node_license_record(node.license).get('text', '').encode('utf-8'))
             continue
         content.append((getattr(node, field, None) or '').encode('utf-8'))
     return '\n'.join(content)
