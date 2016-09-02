@@ -97,5 +97,7 @@ def _check_for_spam(node, content, request_headers, flag=True):
         return False
 
 def check_node_for_spam(node, request_headers, flag=True):
-    content = _get_content(node)
-    return _check_for_spam(node, content, request_headers, flag=flag)
+    if settings.CHECK_NODES_FOR_SPAM:
+        content = _get_content(node)
+        return _check_for_spam(node, content, request_headers, flag=flag)
+    return False
