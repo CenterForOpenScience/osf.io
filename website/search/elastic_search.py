@@ -283,10 +283,10 @@ def get_doctype_from_node(node):
         return node.category
 
 @celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
-def update_node_async(self, node_id, index=None, bulk=False, request_headers=None):
+def update_node_async(self, node_id, index=None, bulk=False):
     node = Node.load(node_id)
     try:
-        update_node(node=node, index=index, bulk=bulk, async=True, request_headers=request_headers)
+        update_node(node=node, index=index, bulk=bulk, async=True)
     except Exception as exc:
         self.retry(exc=exc)
 
@@ -343,14 +343,14 @@ def serialize_node(node, category):
     return elastic_document
 
 @requires_search
-def update_node(node, index=None, bulk=False, async=False, request_headers=None):
+def update_node(node, index=None, bulk=False, async=False):
     index = index or INDEX
 
     from website.files.models.osfstorage import OsfStorageFile
     for file_ in paginated(OsfStorageFile, Q('node', 'eq', node)):
         update_file(file_, index=index)
 
-    if node.is_deleted or not node.is_public or node.archiving:
+    if node.is_deleted or not node.is_public or node.archiving or node.is_spammy:
         delete_doc(node._id, node, index=index)
     else:
         category = get_doctype_from_node(node)
@@ -359,9 +359,6 @@ def update_node(node, index=None, bulk=False, async=False, request_headers=None)
             return elastic_document
         else:
             es.index(index=index, doc_type=category, id=node._id, body=elastic_document, refresh=True)
-
-        if async and request_headers and settings.CHECK_NODES_FOR_SPAM:
-            check_node_for_spam(elastic_document, node.creator, request_headers)
 
 def bulk_update_nodes(serialize, nodes, index=None):
     """Updates the list of input projects

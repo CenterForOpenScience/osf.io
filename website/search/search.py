@@ -28,21 +28,11 @@ def search(query, index=None, doc_type=None):
     return search_engine.search(query, index=index, doc_type=doc_type)
 
 @requires_search
-def update_node(node, index=None, bulk=False, async=True):
-    request = get_request()
-    headers = util.get_headers_from_request(request)
-    headers = {
-        k: v
-        for k, v in headers.items()
-        if isinstance(v, basestring)
-    }
-
+def update_node(node, index=None, bulk=False, async=True, saved_fields=None):
     kwargs = {
         'index': index,
-        'bulk': bulk,
-        'request_headers': headers
+        'bulk': bulk
     }
-
     if async:
         node_id = node._id
         # We need the transaction to be committed before trying to run celery tasks.
