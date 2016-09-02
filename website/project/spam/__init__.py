@@ -1,15 +1,22 @@
-from celery.utils.log import get_task_logger
-
+from framework.logging import logger
 from framework.celery_tasks import app as celery_app
+from framework.mongo import get_cache_key as get_request
 
 from website import settings
-from website.util import akismet
+from website.util import akismet, get_headers_from_request
 
-logger = get_task_logger(__name__)
+NODE_SPAM_FIELDS = set((
+    'title',
+    'description',
+    'wiki_pages_current',
+    'node_license'
+))
+
 
 
 @celery_app.task(ignore_result=True)
 def _check_for_spam(node_id, content, author_info, request_headers):
+def _check_for_spam(node, content, request_headers):
     client = akismet.AkismetClient(
         apikey=settings.AKISMET_APIKEY,
         website=settings.DOMAIN,
@@ -21,38 +28,34 @@ def _check_for_spam(node_id, content, author_info, request_headers):
         user_agent=request_headers['User-Agent'],
         referrer=request_headers.get('Referrer'),
         comment_content=content,
-        comment_author=author_info['name'],
-        # comment_author_email=author_info['email']
+        comment_author=node.creator.fullname,
+        # comment_author_email=node.creator.username,
     )
 
     if is_possible_spam:
-        from website.project.model import Node
-        node = Node.load(node_id)
-        logger.info("Node '{}' ({}) smells like SPAM".format(node.title, node._id))
+        logger.info("Node '{}' ({}) smells like SPAM".format(
+            node.title.encode('utf-8'),
+            node._id
+        ))
         node.flag_spam(save=True)
+        return True
     else:
-        logger.info("Node '{}' ({}) smells like HAM".format(content.strip().split('\n')[0], node_id))
+        logger.info("Node '{}' ({}) smells like HAM".format(
+            node.title.encode('utf-8'),
+            node._id
+        ))
+        return False
 
-def check_node_for_spam(document, creator, request_headers):
-    content = """
-    {}
+def check_node_for_spam(node, request_headers):
+    from website.addons.wiki.model import NodeWikiPage
 
-    {}
-
-    {}
-    """.format(
-        (document['title'] or '').encode('utf-8'),
-        (document['description'] or '').encode('utf-8'),
-        '\n'.join(map(lambda d: d.encode('utf-8'), document['wikis'].values()))
-    )
-
-    args = (
-        document['id'], content, {
-            'email': creator.username,
-            'name': creator.fullname
-        }, request_headers
-    )
-    if settings.USE_CELERY:
-        _check_for_spam.delay(*args)
-    else:
-        _check_for_spam(*args)
+    content = []
+    for field in NODE_SPAM_FIELDS:
+        if 'wiki' in field:
+            content.append('\n'.join([
+                NodeWikiPage.load(x).raw_text(node)
+                for x in node.wiki_pages_current.values()
+            ]))
+            continue
+        content.append((getattr(node, field, None) or '').encode('utf-8'))
+    return _check_for_spam(node, '\n'.join(content), request_headers)
