@@ -10,6 +10,17 @@ class GitLabSerializer(StorageAddonSerializer):
 
     addon_short_name = 'gitlab'
 
+    # Include host information with more informative labels / formatting
+    def serialize_account(self, external_account):
+        ret = super(GitLabSerializer, self).serialize_account(external_account)
+        host = external_account.oauth_key
+        ret.update({
+            'host': host,
+            'host_url': 'https://{0}'.format(host),
+        })
+
+        return ret
+
     def credentials_are_valid(self, user_settings, client):
         if user_settings:
             client = client or GitLabClient(external_account=user_settings.external_accounts[0])
@@ -30,8 +41,7 @@ class GitLabSerializer(StorageAddonSerializer):
         node = self.node_settings.owner
 
         return {
-            'auth': api_url_for('oauth_connect',
-                                service_name='gitlab'),
+            'auth': api_url_for('oauth_connect', service_name='GitLab'),
             'importAuth': node.api_url_for('gitlab_import_auth'),
             'files': node.web_url_for('collect_file_trees'),
             'folders': node.api_url_for('gitlab_root_folder'),

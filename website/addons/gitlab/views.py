@@ -109,29 +109,26 @@ def gitlab_add_user_account(auth, **kwargs):
     clientId = request.json.get('clientId')
     clientSecret = request.json.get('clientSecret')
 
-    provider = GitLabProvider()
-
-
-    # Note: `DataverseSerializer` expects display_name to be a URL
     try:
-        provider.account = ExternalAccount(
-            provider=provider.short_name,
-            provider_name=provider.name,
+        account = ExternalAccount(
+            provider='gitlab',
+            provider_name='GitLab',
             display_name=host,
             oauth_key=clientId,
             oauth_secret=clientSecret,
-            provider_id=clientId,   # Change to username if Dataverse allows
+            provider_id=host,
         )
-        provider.account.save()
+        account.save()
+        provider = GitLabProvider(account)
     except KeyExistsException:
         # ... or get the old one
-        provider.account = ExternalAccount.find_one(
-            Q('provider', 'eq', provider.short_name) &
+        account = ExternalAccount.find_one(
+            Q('provider', 'eq', 'gitlab') &
             Q('provider_id', 'eq', clientId)
         )
 
-    if provider.account not in user.external_accounts:
-        user.external_accounts.append(provider.account)
+    if account not in user.external_accounts:
+        user.external_accounts.append(account)
 
     user_addon = auth.user.get_addon('gitlab')
     if not user_addon:
