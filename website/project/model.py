@@ -3404,7 +3404,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
     def flag_spam(self, save=False):
         """ Overrides SpamMixin#save_spam. Make spammy node and its children private
         """
-        super(Node, self).flag_spam(save=False)
+        super(Node, self).flag_spam(save=save)
         if settings.HIDE_SPAM_NODES:
             for node in self.node_and_primary_descendants():
                 node.set_privacy(
