@@ -200,6 +200,9 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         node_license                    object             details of the license applied to the node
             year                        string             date range of the license
             copyright_holders           array of strings   holders of the applied license
+        _analytics_read_key             string             a read key giving access to analytics for the node, only
+                                                           available for public nodes.  *this attribute is private,
+                                                           and may be changed or removed at any time*
 
     ##Links
 
@@ -386,15 +389,18 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
         date_created                    iso8601 timestamp   timestamp that the node was created
         date_modified                   iso8601 timestamp   timestamp when the node was last updated
         tags                            array of strings    list of tags that describe the node
-        current_user_can_comment        boolean            Whether the current user is allowed to post comments
+        current_user_can_comment        boolean             whether the current user is allowed to post comments
         current_user_permissions        array of strings    list of strings representing the permissions for the current user on this node
         registration                    boolean             is this a registration? (always false - may be deprecated in future versions)
         fork                            boolean             is this node a fork of another node?
         public                          boolean             has this node been made publicly-visible?
         collection                      boolean             is this a collection? (always false - may be deprecated in future versions)
-        node_license                    object             details of the license applied to the node
-        year                            string             date range of the license
-        copyright_holders               array of strings   holders of the applied license
+        node_license                    object              details of the license applied to the node
+        year                            string              date range of the license
+        copyright_holders               array of strings    holders of the applied license
+        _analytics_read_key             string              a read key giving access to analytics for the node, only
+                                                            available for public nodes.  *this attribute is private,
+                                                            and may be changed or removed at any time*
 
     ##Relationships
 

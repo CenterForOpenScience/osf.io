@@ -117,6 +117,10 @@ class NodeSerializer(JSONAPISerializer):
     current_user_can_comment = ser.SerializerMethodField(help_text='Whether the current user is allowed to post comments')
     current_user_permissions = ser.SerializerMethodField(help_text='List of strings representing the permissions '
                                                                    'for the current user on this node.')
+    _analytics_read_key = ser.CharField(read_only=True, source='keenio_read_key',
+                                        help_text='Read key for viewing analytics for public projects. '
+                                                  '*DO NOT DEPEND ON THIS*. This is a private attribute '
+                                                  'and we reserve the right to change or remove it at any time')
 
     # Public is only write-able by admins--see update method
     public = ser.BooleanField(source='is_public', required=False,

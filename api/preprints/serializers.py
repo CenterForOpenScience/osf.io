@@ -46,8 +46,6 @@ class PreprintSerializer(JSONAPISerializer):
     abstract = ser.CharField(source='description', required=False)
     tags = JSONAPIListField(child=NodeTagField(), required=False)
     doi = ser.CharField(source='preprint_doi', required=False)
-    keenio_read_key = ser.CharField(read_only=True,
-                                    help_text='Read key for viewing Keen.io analytics for public projects.')
 
     primary_file = PrimaryFileRelationshipField(
         related_view='files:file-detail',
