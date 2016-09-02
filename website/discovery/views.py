@@ -86,15 +86,11 @@ def activity():
         CONTENT_NODE_QUERY
     )
 
-    recent_public_projects = Node.find(
-        recent_query &
-        Q('is_registration', 'eq', False)
-    ).sort(
-        '-date_created'
-    ).limit(10)
+    new_and_noteworthy_pointers = Node.find_one(Q('_id', 'eq', settings.NEW_AND_NOTEWORTHY_LINKS_NODE)).nodes_pointer
+    new_and_noteworthy_projects = [pointer.node for pointer in new_and_noteworthy_pointers]
 
     return {
-        'recent_public_projects': recent_public_projects,
+        'new_and_noteworthy_projects': new_and_noteworthy_projects,
         'recent_public_registrations': recent_public_registrations(),
         'popular_public_projects': popular_public_projects,
         'popular_public_registrations': popular_public_registrations,
