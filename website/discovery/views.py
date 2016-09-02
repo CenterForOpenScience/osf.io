@@ -78,14 +78,6 @@ def activity():
 
     # Projects
 
-    # Only show top-level projects (any category) in new and noteworthy lists
-    # This means that public children of private nodes will be excluded
-    recent_query = (
-        Q('parent_node', 'eq', None) &
-        Q('is_public', 'eq', True) &
-        CONTENT_NODE_QUERY
-    )
-
     new_and_noteworthy_pointers = Node.find_one(Q('_id', 'eq', settings.NEW_AND_NOTEWORTHY_LINKS_NODE)).nodes_pointer
     new_and_noteworthy_projects = [pointer.node for pointer in new_and_noteworthy_pointers]
 
