@@ -408,6 +408,7 @@ CELERY_IMPORTS = (
     'website.notifications.tasks',
     'website.archiver.tasks',
     'website.search.search',
+    'website.project.tasks',
     'scripts.populate_new_and_noteworthy_projects',
     'scripts.refresh_addon_tokens',
     'scripts.retract_registrations',
@@ -1741,3 +1742,7 @@ BLACKLISTED_DOMAINS = [
     'zxcvbnm.com',
     'zzz.com',
 ]
+
+AKISMET_APIKEY = None
+CHECK_NODES_FOR_SPAM = False
+HIDE_SPAM_NODES = False
