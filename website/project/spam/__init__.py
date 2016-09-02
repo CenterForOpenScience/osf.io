@@ -31,7 +31,8 @@ def _get_content(node):
             ]))
             continue
         if field == 'node_license':
-            content.append(serialize_node_license_record(node.license))
+            content.append(serialize_node_license_record(node.license).get('text', ''))
+            continue
         content.append((getattr(node, field, None) or '').encode('utf-8'))
     return '\n'.join(content)
 
@@ -101,6 +102,8 @@ def _check_for_spam(node, content, request_headers, flag=True):
 
 def check_node_for_spam(node, request_headers, flag=True):
     if settings.CHECK_NODES_FOR_SPAM:
+        if node.is_spammy:
+            return True
         content = _get_content(node)
         return _check_for_spam(node, content, request_headers, flag=flag)
     return False
