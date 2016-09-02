@@ -73,7 +73,6 @@ class AkismetClient(object):
         )
         return res.text == 'true', res.headers.get('X-akismet-pro-tip')
 
-    """
     def submit_spam(self, user_ip, user_agent, **kwargs):
         ALLOWED_ARGS = ('referrer', 'permalink', 'is_test',
                         'comment_author', 'comment_author_email', 'comment_author_url', 'comment_content')
@@ -86,11 +85,13 @@ class AkismetClient(object):
         data['user_ip'] = user_ip
         data['user_agent'] = user_agent
 
-        requests.post(
+        res = requests.post(
             '{}{}.{}/1.1/submit-spam'.format(self.API_PROTOCOL, self.apikey, self.API_HOST),
             data=data,
             headers=self._default_headers
         )
+        if res.status_code != requests.codes.ok:
+            raise AkismetClientError(reason=res.text)
 
     def submit_ham(self, user_ip, user_agent, **kwargs):
         ALLOWED_ARGS = ('referrer', 'permalink', 'is_test',
@@ -104,9 +105,10 @@ class AkismetClient(object):
         data['user_ip'] = user_ip
         data['user_agent'] = user_agent
 
-        requests.post(
+        res = requests.post(
             '{}{}.{}/1.1/submit-ham'.format(self.API_PROTOCOL, self.apikey, self.API_HOST),
             data=data,
             headers=self._default_headers
         )
-    """
+        if res.status_code != requests.codes.ok:
+            raise AkismetClientError(reason=res.text)
