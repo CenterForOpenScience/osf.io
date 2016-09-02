@@ -49,9 +49,7 @@ function ViewModel(url) {
         return Boolean(self.selectedHost());
     });
     self.tokenUrl = ko.pureComputed(function() {
-        var tokenPath = self.host() === 'gitlab.lib.virginia.edu'
-                ? '/account/apitoken' : '/gitlabuser.xhtml?selectTab=apiTokenTab';
-        return self.host() ? 'https://' + self.host() + tokenPath : null;
+        return self.host() ? 'https://' + self.host() + '/profile/applications' : null;
     });
 
     // Flashed messages
@@ -123,9 +121,10 @@ function ViewModel(url) {
                 clientId: self.clientId
             })
         ).done(function() {
+            self.updateAccounts();
             self.clearModal();
             $modal.modal('hide');
-            self.updateAccounts();
+            window.open('/oauth/connect/gitlab/');
 
         }).fail(function(xhr, textStatus, error) {
             var errorMessage = (xhr.status === 401) ? language.authInvalid : language.authError;

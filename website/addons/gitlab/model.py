@@ -4,6 +4,8 @@ import itertools
 import os
 import urlparse
 
+import pdb
+
 import markupsafe
 from modularodm import fields
 
@@ -29,25 +31,27 @@ hook_domain = gitlab_settings.HOOK_DOMAIN or settings.DOMAIN
 class GitLabProvider(ExternalProvider):
     name = 'GitLab'
     short_name = 'gitlab'
-
+    serializer = GitLabSerializer
 
     def __init__(self, account=None):
         super(GitLabProvider, self).__init__()
         self.account = account
-        self.default_scopes = 'api'
+        self.auth_url_base = self.auth_url_base()
+        self.callback_url = self.callback_url()
+        self.client_secret = self.client_secret()
+        self.client_id = self.client_id()
 
     def auth_url_base(self):
-        pdb.set_trace()
-        self.account.display_name + '/oauth/authorize'
+        return 'https://{0}{1}'.format(self.external_account.provider_id, '/oauth/authorize')
 
     def callback_url(self):
-        self.account.display_name  + '/oauth/token'
+        return 'https://{0}{1}'.format(self.external_account.provider_id, '/oauth/token')
 
     def client_secret(self):
-        self.account.oauth_secret
+        return self.external_account.oauth_secret
 
     def client_id(self):
-        self.account.oauth_key
+        return self.external_account.oauth_key
 
     def handle_callback(self, response):
         """View called when the OAuth flow is completed. Adds a new GitLabUserSettings
@@ -67,8 +71,6 @@ class GitLabProvider(ExternalProvider):
 
 
 class GitLabUserSettings(AddonOAuthUserSettingsBase):
-    """Stores user-specific gitlab information
-    """
     oauth_provider = GitLabProvider
     serializer = GitLabSerializer
 
@@ -242,6 +244,7 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         if not self.complete:
             raise exceptions.AddonError('Repo is not configured')
         return {
+            'host': self.external_account.oauth_key,
             'owner': self.user,
             'repo': self.repo,
             'repo_id': self.repo_id
@@ -271,6 +274,7 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 'path': path,
                 'urls': urls,
                 'gitlab': {
+                    'host': self.external_account.oauth_key,
                     'user': self.user,
                     'repo': self.repo,
                     'sha': sha,
