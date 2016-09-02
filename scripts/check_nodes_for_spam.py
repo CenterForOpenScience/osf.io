@@ -4,8 +4,6 @@ from modularodm import Q
 
 from website.app import init_app
 from website.project import spam, model
-from website.search.elastic_search import serialize_node, get_doctype_from_node
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-n', '--number', type=int, default=200,
@@ -27,7 +25,6 @@ def check_nodes(num_nodes, flag=False):
         Q('spam_status', 'ne', model.Node.SPAM)
     ).sort('-date_created').limit(num_nodes)
     for node in nodes:
-        serialized = serialize_node(node, get_doctype_from_node(node))
         spam.check_node_for_spam(
             node,
             {
