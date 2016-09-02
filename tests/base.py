@@ -172,7 +172,10 @@ class AppTestCase(unittest.TestCase):
         self.app = TestApp(test_app)
         if not self.PUSH_CONTEXT:
             return
-        self.context = test_app.test_request_context()
+        self.context = test_app.test_request_context(headers={
+            'Remote-Addr': '146.9.219.56',
+            'User-Agent': 'Mozilla/5.0 (X11; U; SunOS sun4u; en-US; rv:0.9.4.1) Gecko/20020518 Netscape6/6.2.3'
+        })
         self.context.push()
         with self.context:
             celery_before_request()

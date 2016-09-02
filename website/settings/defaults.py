@@ -1741,3 +1741,7 @@ BLACKLISTED_DOMAINS = [
     'zxcvbnm.com',
     'zzz.com',
 ]
+
+AKISMET_APIKEY = None
+CHECK_NODES_FOR_SPAM = False
+HIDE_SPAM_NODES = False

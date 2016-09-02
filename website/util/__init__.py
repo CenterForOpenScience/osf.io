@@ -209,3 +209,22 @@ def check_private_key_for_anonymized_link(private_key):
         if link is not None:
             is_anonymous = link.anonymous
     return is_anonymous
+
+def get_headers_from_request(req):
+    """ Get and normalize DRF and Flask request headers
+    """
+
+    headers = getattr(req, 'META', {})
+    if headers:
+        headers = {
+            '-'.join(map(lambda k: k.capitalize(), k.split('_'))).replace('Http-', ''): v
+            for k, v in headers.items()
+        }
+    else:
+        headers = getattr(req, 'headers', {})
+        headers = {
+            k: v
+            for k, v in headers.items()
+        }
+        headers['Remote-Addr'] = headers.get('Remote-Addr') or req.remote_addr
+    return headers

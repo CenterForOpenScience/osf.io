@@ -35,9 +35,9 @@
                     % if not node["is_public"]:
                         <button class="btn btn-default disabled">Private</button>
                         % if 'admin' in user['permissions'] and not (node['is_pending_registration'] or node['is_pending_embargo']) and not (node['is_embargoed'] and parent_node['exists']):
-                        <a disabled data-bind="attr: {'disabled': false}, css: {'disabled': nodeIsPendingEmbargoTermination}" class="btn btn-default"  href="#nodesPrivacy" data-toggle="modal">
+                        <a disabled data-bind="attr: {'disabled': false}, css: {'disabled': nodeIsPendingEmbargoTermination}" class="btn btn-default" href="#nodesPrivacy" data-toggle="modal">
                           Make Public
-			  <!-- ko if: nodeIsPendingEmbargoTermination -->
+                          <!-- ko if: nodeIsPendingEmbargoTermination -->
                           <span class="fa fa-info-circle hidden" data-bind="css: {'hidden': false}, tooltip: {title: makePublicTooltip, placement: 'bottom', disabled: true}"></span>
                           <!-- /ko -->
                         </a>
