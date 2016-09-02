@@ -106,6 +106,9 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
         pending_embargo_approval        boolean            is the associated Embargo awaiting approval by project admins?
         registered_meta                 dictionary         registration supplementary information
         registration_supplement         string             registration template
+        _analytics_read_key             string             a read key giving access to analytics for the registration.
+                                                           *this attribute is private, and may be changed or removed at
+                                                            any time*
 
     ##Relationships
 
@@ -218,6 +221,9 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, Regist
         pending_embargo_approval        boolean            is the associated Embargo awaiting approval by project admins?
         registered_meta                 dictionary         registration supplementary information
         registration_supplement         string             registration template
+        _analytics_read_key             string             a read key giving access to analytics for the registration.
+                                                           *this attribute is private, and may be changed or removed at
+                                                            any time*
 
     ##Actions
 
