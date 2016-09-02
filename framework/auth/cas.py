@@ -10,7 +10,7 @@ import requests
 
 from framework.auth import User
 from framework.auth import authenticate, external_first_login_authenticate
-from framework.auth.core import get_user
+from framework.auth.core import get_user, generate_verification_key
 from framework.flask import redirect
 from framework.exceptions import HTTPError
 from website import settings
@@ -252,6 +252,16 @@ def make_response_from_ticket(ticket, service_url):
             if user.verification_key:
                 user.verification_key = None
                 user.save()
+
+            if external_credential:
+                user.verification_key = generate_verification_key()
+                user.save()
+                return redirect(get_logout_url(get_login_url(
+                    service_url,
+                    username=user.username,
+                    verification_key=user.verification_key
+                )))
+
             return authenticate(
                 user,
                 cas_resp.attributes['accessToken'],
