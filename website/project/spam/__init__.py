@@ -69,7 +69,7 @@ def confirm_ham(node_id):
         # comment_author_email=node.creator.username,
     )
 
-def _check_for_spam(node, content, request_headers):
+def _check_for_spam(node, content, request_headers, flag=True):
     client = _get_client()
 
     is_possible_spam, pro_tip = client.check_comment(
@@ -86,7 +86,8 @@ def _check_for_spam(node, content, request_headers):
             node.title.encode('utf-8'),
             node._id
         ))
-        node.flag_spam(save=True)
+        if flag:
+            node.flag_spam(save=True)
         return True
     else:
         logger.info("Node '{}' ({}) smells like HAM".format(
@@ -95,6 +96,6 @@ def _check_for_spam(node, content, request_headers):
         ))
         return False
 
-def check_node_for_spam(node, request_headers):
+def check_node_for_spam(node, request_headers, flag=True):
     content = _get_content(node)
-    return _check_for_spam(node, content, request_headers)
+    return _check_for_spam(node, content, request_headers, flag=flag)
