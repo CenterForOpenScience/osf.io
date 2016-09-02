@@ -22,7 +22,7 @@ from tests import factories
 from tests.base import OsfTestCase
 from tests.test_search import SearchTestCase
 from tests.test_features import requires_search
-from tests.utils import mock_archive
+from tests.utils import mock_archive, run_celery_tasks
 
 
 def query(term):
@@ -188,7 +188,8 @@ class TestProject(SearchTestCase):
     def test_make_public(self):
         # Make project public, and verify that it is present in Elastic
         # Search.
-        self.project.set_privacy('public')
+        with run_celery_tasks():
+            self.project.set_privacy('public')
         docs = query(self.project.title)['results']
         assert_equal(len(docs), 1)
 
@@ -273,9 +274,10 @@ class TestRegistrationRetractions(SearchTestCase):
         for key, value in wiki_content.items():
             docs = query(value)['results']
             assert_equal(len(docs), 0)
-            self.registration.update_node_wiki(
-                key, value, self.consolidate_auth,
-            )
+            with run_celery_tasks():
+                self.registration.update_node_wiki(
+                    key, value, self.consolidate_auth,
+                )
             # Query and ensure unique string shows up
             docs = query(value)['results']
             assert_equal(len(docs), 1)
@@ -286,8 +288,9 @@ class TestRegistrationRetractions(SearchTestCase):
 
         # Retract registration
         self.registration.retract_registration(self.user, '')
-        self.registration.save()
-        self.registration.reload()
+        with run_celery_tasks():
+            self.registration.save()
+            self.registration.reload()
 
         # Query and ensure unique string in wiki doesn't show up
         docs = query('category:registration AND "{}"'.format(wiki_content['home']))['results']
@@ -304,9 +307,10 @@ class TestRegistrationRetractions(SearchTestCase):
         for key, value in wiki_content.items():
             docs = query(value)['results']
             assert_equal(len(docs), 0)
-            self.registration.update_node_wiki(
-                key, value, self.consolidate_auth,
-            )
+            with run_celery_tasks():
+                self.registration.update_node_wiki(
+                    key, value, self.consolidate_auth,
+                )
             # Query and ensure unique string shows up
             docs = query(value)['results']
             assert_equal(len(docs), 1)
@@ -318,9 +322,10 @@ class TestRegistrationRetractions(SearchTestCase):
         # Retract registration
         self.registration.retract_registration(self.user, '')
         self.registration.retraction.state = Retraction.APPROVED
-        self.registration.retraction.save()
-        self.registration.save()
-        self.registration.update_search()
+        with run_celery_tasks():
+            self.registration.retraction.save()
+            self.registration.save()
+            self.registration.update_search()
 
         # Query and ensure unique string in wiki doesn't show up
         docs = query('category:registration AND "{}"'.format(wiki_content['home']))['results']
@@ -369,7 +374,8 @@ class TestPublicNodes(SearchTestCase):
 
     def test_public_parent_title(self):
         self.project.set_title('hello &amp; world', self.consolidate_auth)
-        self.project.save()
+        with run_celery_tasks():
+            self.project.save()
         docs = query('category:component AND ' + self.title)['results']
         assert_equal(len(docs), 1)
         assert_equal(docs[0]['parent_title'], 'hello & world')
@@ -378,7 +384,8 @@ class TestPublicNodes(SearchTestCase):
     def test_make_parent_private(self):
         # Make parent of component, public, then private, and verify that the
         # component still appears but doesn't link to the parent in search.
-        self.project.set_privacy('private')
+        with run_celery_tasks():
+            self.project.set_privacy('private')
         docs = query('category:component AND ' + self.title)['results']
         assert_equal(len(docs), 1)
         assert_equal(docs[0]['parent_title'], '-- private project --')
@@ -395,8 +402,10 @@ class TestPublicNodes(SearchTestCase):
 
     def test_change_title(self):
         title_original = self.project.title
-        self.project.set_title(
-            'Blue Ordinary', self.consolidate_auth, save=True)
+        with run_celery_tasks():
+            self.project.set_title(
+                'Blue Ordinary', self.consolidate_auth, save=True
+            )
 
         docs = query('category:project AND ' + title_original)['results']
         assert_equal(len(docs), 0)
@@ -408,10 +417,11 @@ class TestPublicNodes(SearchTestCase):
 
         tags = ['stonecoldcrazy', 'just a poor boy', 'from-a-poor-family']
 
-        for tag in tags:
-            docs = query('tags:"{}"'.format(tag))['results']
-            assert_equal(len(docs), 0)
-            self.project.add_tag(tag, self.consolidate_auth, save=True)
+        with run_celery_tasks():
+            for tag in tags:
+                docs = query('tags:"{}"'.format(tag))['results']
+                assert_equal(len(docs), 0)
+                self.project.add_tag(tag, self.consolidate_auth, save=True)
 
         for tag in tags:
             docs = query('tags:"{}"'.format(tag))['results']
@@ -439,9 +449,10 @@ class TestPublicNodes(SearchTestCase):
         for key, value in wiki_content.items():
             docs = query(value)['results']
             assert_equal(len(docs), 0)
-            self.project.update_node_wiki(
-                key, value, self.consolidate_auth,
-            )
+            with run_celery_tasks():
+                self.project.update_node_wiki(
+                    key, value, self.consolidate_auth,
+                )
             docs = query(value)['results']
             assert_equal(len(docs), 1)
 
@@ -452,7 +463,8 @@ class TestPublicNodes(SearchTestCase):
         self.project.update_node_wiki(
             'home', wiki_content, self.consolidate_auth,
         )
-        self.project.update_node_wiki('home', '', self.consolidate_auth)
+        with run_celery_tasks():
+            self.project.update_node_wiki('home', '', self.consolidate_auth)
 
         docs = query(wiki_content)['results']
         assert_equal(len(docs), 0)
@@ -464,8 +476,8 @@ class TestPublicNodes(SearchTestCase):
 
         docs = query('category:project AND "{}"'.format(user2.fullname))['results']
         assert_equal(len(docs), 0)
-
-        self.project.add_contributor(user2, save=True)
+        with run_celery_tasks():
+            self.project.add_contributor(user2, save=True)
 
         docs = query('category:project AND "{}"'.format(user2.fullname))['results']
         assert_equal(len(docs), 1)
@@ -484,10 +496,12 @@ class TestPublicNodes(SearchTestCase):
     def test_hide_contributor(self):
         user2 = factories.UserFactory(fullname='Brian May')
         self.project.add_contributor(user2)
-        self.project.set_visible(user2, False, save=True)
+        with run_celery_tasks():
+            self.project.set_visible(user2, False, save=True)
         docs = query('category:project AND "{}"'.format(user2.fullname))['results']
         assert_equal(len(docs), 0)
-        self.project.set_visible(user2, True, save=True)
+        with run_celery_tasks():
+            self.project.set_visible(user2, True, save=True)
         docs = query('category:project AND "{}"'.format(user2.fullname))['results']
         assert_equal(len(docs), 1)
 
@@ -502,8 +516,9 @@ class TestPublicNodes(SearchTestCase):
     def test_tag_aggregation(self):
         tags = ['stonecoldcrazy', 'just a poor boy', 'from-a-poor-family']
 
-        for tag in tags:
-            self.project.add_tag(tag, self.consolidate_auth, save=True)
+        with run_celery_tasks():
+            for tag in tags:
+                self.project.add_tag(tag, self.consolidate_auth, save=True)
 
         docs = query(self.title)['tags']
         assert len(docs) == 3
@@ -848,7 +863,8 @@ class TestSearchFiles(SearchTestCase):
         find = query_file('Change_Gonna_Come.wav')['results']
         assert_equal(len(find), 1)
         self.node.is_public = False
-        self.node.save()
+        with run_celery_tasks():
+            self.node.save()
         find = query_file('Change_Gonna_Come.wav')['results']
         assert_equal(len(find), 0)
 
@@ -859,7 +875,8 @@ class TestSearchFiles(SearchTestCase):
         find = query_file('Try a Little Tenderness.flac')['results']
         assert_equal(len(find), 0)
         self.node.is_public = True
-        self.node.save()
+        with run_celery_tasks():
+            self.node.save()
         find = query_file('Try a Little Tenderness.flac')['results']
         assert_equal(len(find), 1)
 
@@ -871,6 +888,7 @@ class TestSearchFiles(SearchTestCase):
         find = query_file('The Dock of the Bay.mp3')['results']
         assert_equal(len(find), 1)
         node.is_deleted = True
-        node.save()
+        with run_celery_tasks():
+            node.save()
         find = query_file('The Dock of the Bay.mp3')['results']
         assert_equal(len(find), 0)
