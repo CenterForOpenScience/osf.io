@@ -89,14 +89,25 @@ class NodeRemoveContributorView(OSFAdmin, DeleteView):
         return (Node.load(self.kwargs.get('node_id')),
                 User.load(self.kwargs.get('user_id')))
 
+class NodeDeleteBase(OSFAdmin, DeleteView):
+    template_name = None
+    context_object_name = 'node'
+    object = None
 
-class NodeDeleteView(OSFAdmin, DeleteView):
+    def get_context_data(self, **kwargs):
+        context = {}
+        context.setdefault('guid', kwargs.get('object').pk)
+        return super(NodeDeleteBase, self).get_context_data(**context)
+
+    def get_object(self, queryset=None):
+        return Node.load(self.kwargs.get('guid'))
+
+class NodeDeleteView(NodeDeleteBase):
     """ Allow authorized admin user to remove/hide nodes
 
     Interface with OSF database. No admin models.
     """
     template_name = 'nodes/remove_node.html'
-    context_object_name = 'node'
     object = None
 
     def delete(self, request, *args, **kwargs):
@@ -150,14 +161,6 @@ class NodeDeleteView(OSFAdmin, DeleteView):
             )
         return redirect(reverse_node(self.kwargs.get('guid')))
 
-    def get_context_data(self, **kwargs):
-        context = {}
-        context.setdefault('guid', kwargs.get('object').pk)
-        return super(NodeDeleteView, self).get_context_data(**context)
-
-    def get_object(self, queryset=None):
-        return Node.load(self.kwargs.get('guid'))
-
 
 class NodeView(OSFAdmin, GuidView):
     """ Allow authorized admin user to view nodes
@@ -197,3 +200,62 @@ class RegistrationListView(OSFAdmin, ListView):
             'nodes': map(serialize_node, query_set),
             'page': page,
         }
+
+class NodeSpamList(OSFAdmin, ListView):
+    SPAM_STATE = None
+
+    paginate_by = 10
+    paginate_orphans = 1
+    ordering = 'date_created'
+    context_object_name = '-node'
+
+    def get_queryset(self):
+        query = (
+            Q('spam_status', 'eq', self.SPAM_STATE)
+        )
+        return Node.find(query).sort(self.ordering)
+
+    def get_context_data(self, **kwargs):
+        query_set = kwargs.pop('object_list', self.object_list)
+        page_size = self.get_paginate_by(query_set)
+        paginator, page, query_set, is_paginated = self.paginate_queryset(
+            query_set, page_size)
+        return {
+            'nodes': map(serialize_node, query_set),
+            'page': page,
+        }
+
+class NodeFlaggedSpamList(NodeSpamList, DeleteView):
+    SPAM_STATE = Node.FLAGGED
+    template_name = 'nodes/flagged_spam_list.html'
+
+    def delete(self, request, *args, **kwargs):
+        node_ids = [
+            nid for nid in request.POST.keys()
+            if nid != 'csrfmiddlewaretoken'
+        ]
+        for nid in node_ids:
+            node = Node.load(nid)
+            node.confirm_spam(save=True)
+        return redirect('nodes:flagged-spam')
+
+
+class NodeKnownSpamList(NodeSpamList):
+    SPAM_STATE = Node.SPAM
+    template_name = 'nodes/known_spam_list.html'
+
+class NodeConfirmSpamView(NodeDeleteBase):
+    template_name = 'nodes/confirm_spam.html'
+
+    def delete(self, request, *args, **kwargs):
+        node = self.get_object()
+        node.confirm_spam(save=True)
+        return redirect(reverse_node(self.kwargs.get('guid')))
+
+class NodeConfirmHamView(NodeDeleteBase):
+    template_name = 'nodes/confirm_ham.html'
+
+    def delete(self, request, *args, **kwargs):
+        node = self.get_object()
+        node.confirm_ham(save=True)
+        return redirect(reverse_node(self.kwargs.get('guid')))

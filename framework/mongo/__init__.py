@@ -12,7 +12,11 @@ from api.base.api_globals import api_globals
 
 
 class DummyRequest(object):
-    pass
+    remote_addr = '146.9.219.56'
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (X11; U; SunOS sun4u; en-US; rv:0.9.4.1) Gecko/20020518 Netscape6/6.2.3'
+    }
+
 dummy_request = DummyRequest()
 
 
