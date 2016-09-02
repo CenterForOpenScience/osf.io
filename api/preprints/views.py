@@ -56,16 +56,19 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
 
     OSF Preprint entities have the "preprint" `type`.
 
-        name               type                  description
-        ===========================================================================================
-        title              string                title of preprint, same as its project or component
-        abstract           string                description of the preprint
-        date_created       iso8601 timestamp     timestamp that the preprint was created
-        date_modified      iso8601 timestamp     timestamp when the preprint was last updated
-        tags               array of strings      list of tags that describe the node
-        subjects           array of objects      list of objects, each containing the subject text
-                                                 and id from the PLOS taxonomy
-        doi                string                bare DOI for the manuscript, as entered by the user
+        name                 type                  description
+        =============================================================================================
+        title                string                title of preprint, same as its project or component
+        abstract             string                description of the preprint
+        date_created         iso8601 timestamp     timestamp that the preprint was created
+        date_modified        iso8601 timestamp     timestamp when the preprint was last updated
+        tags                 array of strings      list of tags that describe the node
+        subjects             array of objects      list of objects, each containing the subject text
+                                                   and id from the PLOS taxonomy
+        doi                  string                bare DOI for the manuscript, as entered by the user
+        _analytics_read_key  string                a read key giving access to analytics for the node, only
+                                                   available for public nodes.  *this attribute is private,
+                                                   and may be changed or removed at any time*
 
     ##Relationships
 
@@ -178,17 +181,20 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMi
 
     OSF Preprint entities have the "preprint" `type`.
 
-        name              type                  description
-        ======================================================================
-        title             string                title of preprint, same as its project or component
-        abstract          string                description of the preprint
-        date_created      iso8601 timestamp     timestamp that the preprint was created
-        date_modified     iso8601 timestamp     timestamp when the preprint was last updated
-        tags              array of strings      list of tags that describe the node
-        subjects          array of objects      list of objects, each containing the subject text
-                                                and id from the PLOS taxonomy
-        provider          string                original source of the preprint
-        doi               string                bare DOI for the manuscript, as entered by the user
+        name                 type                  description
+        =========================================================================
+        title                string                title of preprint, same as its project or component
+        abstract             string                description of the preprint
+        date_created         iso8601 timestamp     timestamp that the preprint was created
+        date_modified        iso8601 timestamp     timestamp when the preprint was last updated
+        tags                 array of strings      list of tags that describe the node
+        subjects             array of objects      list of objects, each containing the subject text
+                                                   and id from the PLOS taxonomy
+        provider             string                original source of the preprint
+        doi                  string                bare DOI for the manuscript, as entered by the user
+        _analytics_read_key  string                a read key giving access to analytics for the node, only
+                                                   available for public nodes.  *this attribute is private,
+                                                   and may be changed or removed at any time*
 
     ###Updating Preprints
 

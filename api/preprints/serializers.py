@@ -46,6 +46,10 @@ class PreprintSerializer(JSONAPISerializer):
     abstract = ser.CharField(source='description', required=False)
     tags = JSONAPIListField(child=NodeTagField(), required=False)
     doi = ser.CharField(source='preprint_doi', required=False)
+    _analytics_read_key = ser.CharField(read_only=True, source='keenio_read_key',
+                                        help_text='Read key for viewing analytics for public projects. '
+                                                  '*DO NOT DEPEND ON THIS*. This is a private attribute '
+                                                  'and we reserve the right to change or remove it at any time')
 
     primary_file = PrimaryFileRelationshipField(
         related_view='files:file-detail',
