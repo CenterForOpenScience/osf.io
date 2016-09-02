@@ -1,9 +1,22 @@
 {% load node_extras %}
 {% include "util/pagination.html" with items=page status=status %}
+{% if form_action %}
+<form action={{form_action}} method="POST">
+{% endif %}
 <table class="table table-striped table-hover table-responsive">
     <thead>
         <tr>
+            {% if form_action %}
+            <th>
+                <i class="fa fa-check-square"></i>
+            </th>
+            {% endif %}
             <th>GUID</th>
+            {% if show_title %}
+            <th>
+                Title
+            </th>
+            {% endif %}
             <th>Parent</th>
             <th>Root</th>
             <th>Date created</th>
@@ -16,12 +29,22 @@
     <tbody>
         {% for node in nodes %}
         <tr>
+            {% if form_action %}
+            <td>
+                <input name="{{node.id}}" type="checkbox" value="1"/>
+            </td>
+            {% endif %}
             <td>
                 <a href="{{ node.id | reverse_node }}"
                    class="btn btn-primary">
                     {{ node.id }}
                 </a>
             </td>
+            {% if show_title %}
+            <td>
+                {{node.title}}
+            </td>
+            {% endif %}
             <td>
                 {% if not node.parent %}
                 {{ node.parent }}
@@ -59,3 +82,10 @@
         {% endfor %}
     </tbody>
 </table>
+{% if form_action %}
+<button class="btn btn-warning" type="submit">
+    Confirm All Are Spam
+</button>
+{% csrf_token %}
+</form>
+{% endif %}
