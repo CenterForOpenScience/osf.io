@@ -21,7 +21,9 @@ from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory, Watch
                              NodeWikiFactory, RegistrationFactory,  UnregUserFactory, UnconfirmedUserFactory,
                              PrivateLinkFactory)
 from website import settings, language
+from website.project.model import Node
 from website.util import web_url_for, api_url_for
+from scripts import populate_new_and_noteworthy_projects
 
 logging.getLogger('website.project.model').setLevel(logging.ERROR)
 
@@ -772,7 +774,23 @@ class TestExplorePublicActivity(OsfTestCase):
         self.registration = RegistrationFactory(project=self.project)
         self.private_project = ProjectFactory(title="Test private project")
 
-    @unittest.skip("Can't test this, since hiding newest project page https://github.com/CenterForOpenScience/osf.io/commit/c50d436cbb6bd9fbe2f0cbbc3724c05ed1ccb94e")
+        # Add project to new and noteworthy projects
+        self.new_and_noteworthy_links_node = ProjectFactory()
+        self.new_and_noteworthy_links_node._id = settings.NEW_AND_NOTEWORTHY_LINKS_NODE
+        self.new_and_noteworthy_links_node._id = settings.POPULAR_LINKS_NODE
+        self.new_and_noteworthy_links_node.save()
+        populate_new_and_noteworthy_projects.main(dry_run=False)
+        self.new_and_noteworthy_links_node.add_pointer(self.project, auth=Auth(self.new_and_noteworthy_links_node.creator), save=True)
+
+        self.new_and_noteworthy_links_node.save()
+        self.new_and_noteworthy_links_node.reload()
+        self.project.save()
+        self.project.reload()
+
+    def tearDown(self):
+        super(TestExplorePublicActivity, self).tearDown()
+        Node.remove()
+
     @mock.patch('website.discovery.views.KeenClient')
     def test_newest_public_project_and_registrations_show_in_explore_activity(self, mock_client):
 
