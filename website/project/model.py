@@ -774,7 +774,7 @@ def validate_doi(value):
     return True
 
 
-class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
+class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, SpamMixin):
 
     #: Whether this is a pointer or not
     primary = True

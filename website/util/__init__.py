@@ -216,7 +216,7 @@ def get_headers_from_request(req):
     headers = getattr(req, 'META', {})
     if headers:
         headers = {
-            '-'.join(map(str.capitalize, k.split('_'))).replace('Http-', ''): v
+            '-'.join([part.capitalize() for part in k.split('_')]).replace('Http-', ''): v
             for k, v in headers.items()
         }
     else:
