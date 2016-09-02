@@ -114,24 +114,24 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
         URL:           /preprints/
         Query Params:  <none>
         Body (JSON):   {
-                        "data": {
-                            "id": node_id,
-                            "attributes": {
-                                "subjects":      [{subject_id}, ...]  # required
-                                "description":   {description},       # optional
-                                "tags":          [{tag1}, ...],       # optional
-                                "provider":      {provider}           # optional
-                            },
-                            "relationships": {
-                                "primary_file": {                     # required
-                                    "data": {
-                                        "type": "primary",
-                                        "id": {file_id}
-                                    }
-                                }
-                            }
-                        }
-                    }
+                         "data": {
+                           "id": node_id,
+                           "attributes": {
+                             "subjects":    [{subject_id}, ...], # required
+                             "description": {description},       # optional
+                             "tags":        [{tag1}, ...],       # optional
+                             "provider":    {provider}           # optional
+                           },
+                           "relationships": {                    # required
+                             "primary_file": {
+                               "data": {
+                                 "type": "primary",
+                                 "id":   {file_id}
+                               }
+                             }
+                           }
+                         }
+                       }
         Success:       201 CREATED + preprint representation
 
     #This Request/Response
@@ -178,16 +178,17 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMi
 
     OSF Preprint entities have the "preprint" `type`.
 
-        name                            type                  description
-        ====================================================================================
-        title                           string                title of preprint, same as its project or component
-        abstract                        string                description of the preprint
-        date_created                    iso8601 timestamp     timestamp that the preprint was created
-        date_modified                   iso8601 timestamp     timestamp when the preprint was last updated
-        tags                            array of strings      list of tags that describe the node
-        subjects                        array of dictionaries list ids of Subject in the PLOS taxonomy. Dictrionary, containing the subject text and subject ID
-        provider                        string                original source of the preprint
-        doi                             string                bare DOI for the manuscript, as entered by the user
+        name              type                  description
+        ======================================================================
+        title             string                title of preprint, same as its project or component
+        abstract          string                description of the preprint
+        date_created      iso8601 timestamp     timestamp that the preprint was created
+        date_modified     iso8601 timestamp     timestamp when the preprint was last updated
+        tags              array of strings      list of tags that describe the node
+        subjects          array of objects      list of objects, each containing the subject text
+                                                and id from the PLOS taxonomy
+        provider          string                original source of the preprint
+        doi               string                bare DOI for the manuscript, as entered by the user
 
     ###Updating Preprints
 
@@ -197,24 +198,24 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMi
         URL:           /preprints/{node_id}/
         Query Params:  <none>
         Body (JSON):   {
-                        "data": {
-                            "id": node_id,
-                            "attributes": {
-                                "subjects":      [{subject_id}, ...]  # optional
-                                "description":   {description},       # optional
-                                "tags":          [{tag}, ...],        # optional
-                                "provider":      {provider}           # optional
-                            },
-                            "relationships": {
-                                "primary_file": {                     # optional
-                                    "data": {
-                                        "type": "primary",
-                                        "id": {file_id}
-                                    }
-                                }
-                            }
-                        }
-                    }
+                         "data": {
+                           "id": node_id,
+                           "attributes": {
+                             "subjects":    [{subject_id}, ...], # optional
+                             "description": {description},       # optional
+                             "tags":        [{tag}, ...],        # optional
+                             "provider":    {provider}           # optional
+                           },
+                           "relationships": {                    # optional
+                             "primary_file": {
+                               "data": {
+                                 "type": "primary",
+                                 "id":   {file_id}
+                               }
+                             }
+                           }
+                         }
+                       }
         Success:       200 OK + preprint representation
 
     #This Request/Response
