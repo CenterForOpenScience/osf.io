@@ -19,20 +19,23 @@ from tests.base import OsfTestCase, teardown_database
 
 class TestMetaData(OsfTestCase):
 
-    def tearDown(self):
-        super(TestMetaData, self).tearDown()
+    # For whatever reason (efficiency?), DbTestCase only wipes the database
+    # during *class* setup and teardown. This leaks database state across test
+    # cases, which a) smells pretty bad, and b) breaks the test_metaschema_
+    # tests here.
 
-        # For whatever reason, DbTestCase only wipes the database during
-        # *class* setup and teardown. This leaks database state across test
-        # cases, which a) smells pretty bad, and b) breaks the test_metaschema_
-        # tests here.
-
-        teardown_database(database=database_proxy._get_current_object())
+    def setUp(self):
+        super(TestMetaData, self).setUp()
         set_up_storage(
             website.models.MODELS,
             storage.MongoStorage,
             addons=settings.ADDONS_AVAILABLE,
         )
+
+    def tearDown(self):
+        super(TestMetaData, self).tearDown()
+        teardown_database(database=database_proxy._get_current_object())
+
 
     def test_ensure_schemas(self):
 
