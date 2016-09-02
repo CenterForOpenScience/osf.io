@@ -353,7 +353,14 @@ class ODMFilterMixin(FilterMixin):
                 sub_query_parts = []
                 for field_name, data in field_names.iteritems():
                     # Query based on the DB field, not the name of the serializer parameter
-                    sub_query = Q(data['source_field_name'], data['op'], data['value'])
+                    if isinstance(data, list):
+                        sub_query = functools.reduce(operator.and_, [
+                            Q(item['source_field_name'], item['op'], item['value'])
+                            for item in data
+                        ])
+                    else:
+                        sub_query = Q(data['source_field_name'], data['op'], data['value'])
+
                     sub_query_parts.append(sub_query)
 
                 try:

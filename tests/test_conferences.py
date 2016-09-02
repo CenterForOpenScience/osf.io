@@ -114,6 +114,13 @@ class TestConferenceUtils(OsfTestCase):
         assert_true(created)
         assert_not_equal(node._id, fetched._id)
 
+    def test_get_or_create_user_with_blacklisted_domain(self):
+        fullname = 'Kanye West'
+        username = 'kanye@mailinator.com'
+        with assert_raises(ValidationError) as e:
+            get_or_create_user(fullname, username, True)
+        assert_equal(e.exception.message, 'Invalid Email')
+
 
 class ContextTestCase(OsfTestCase):
 
@@ -635,7 +642,7 @@ class TestConferenceIntegration(ContextTestCase):
     @mock.patch('website.conferences.views.send_mail')
     @mock.patch('website.conferences.utils.upload_attachments')
     def test_integration_wo_full_name(self, mock_upload, mock_send_mail):
-        username = 'no_full_name@test.com'
+        username = 'no_full_name@mail.com'
         title = 'no full name only email'
         conference = ConferenceFactory()
         body = 'dragon on my back'

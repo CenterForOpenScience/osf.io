@@ -32,7 +32,7 @@ var MESSAGES = {
         tooManyNodesWarning: 'You can only change the privacy of 100 projects and components at a time.  Please go back and limit your selection.'
     },
     preprintPrivateWarning: 'The project you are attempting to make private currently represents a preprint.' +
-    '<p><strong>Making this project private will remove this preprint from curculation.</strong></p>'
+    '<p><strong>Making this project private will remove this preprint from circulation.</strong></p>'
 };
 
 function _flattenNodeTree(nodeTree) {

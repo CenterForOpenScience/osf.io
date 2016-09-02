@@ -445,6 +445,11 @@ class TestUser(OsfTestCase):
             self.user.add_unconfirmed_email('')
         assert_equal(exc_info.exception.message, "Invalid Email")
 
+    def test_add_blacklisted_domain_unconfirmed_email(self):
+        with assert_raises(ValidationError) as e:
+            self.user.add_unconfirmed_email('kanye@mailinator.com')
+        assert_equal(e.exception.message, 'Invalid Email')
+
     @mock.patch('website.security.random_string')
     def test_get_confirmation_token(self, random_string):
         random_string.return_value = '12345'
@@ -583,8 +588,8 @@ class TestUser(OsfTestCase):
         user = UserFactory()
         assert_equal(User.find().count(), 1)
         assert_true(user.username)
-        another_user = UserFactory(username='joe@example.com')
-        assert_equal(another_user.username, 'joe@example.com')
+        another_user = UserFactory(username='joe@mail.com')
+        assert_equal(another_user.username, 'joe@mail.com')
         assert_equal(User.find().count(), 2)
         assert_true(user.date_registered)
 
@@ -666,7 +671,7 @@ class TestUser(OsfTestCase):
             'password',
             '12345',
             '12345',
-            'Password should be at least six characters',
+            'Password should be at least eight characters',
         )
 
     def test_change_password_invalid_confirm_password(self):
@@ -774,7 +779,7 @@ class TestUser(OsfTestCase):
 
     def test_recently_added(self):
         # Project created
-        project = ProjectFactory()
+        project = ProjectFactory(creator=self.user)
 
         assert_true(hasattr(self.user, 'recently_added'))
 
@@ -794,8 +799,8 @@ class TestUser(OsfTestCase):
         user4 = UserFactory()
 
         # 2 projects created
-        project = ProjectFactory()
-        project2 = ProjectFactory()
+        project = ProjectFactory(creator=self.user)
+        project2 = ProjectFactory(creator=self.user)
 
         # Users 2 and 3 are added to original project
         project.add_contributor(contributor=user2, auth=self.auth)
@@ -812,7 +817,7 @@ class TestUser(OsfTestCase):
 
     def test_recently_added_length(self):
         # Project created
-        project = ProjectFactory()
+        project = ProjectFactory(creator=self.user)
 
         assert_equal(len(self.user.recently_added), 0)
         # Add 17 users
@@ -1006,7 +1011,7 @@ class TestMergingUsers(OsfTestCase):
         self.master = UserFactory(
             fullname='Joe Shmo',
             is_registered=True,
-            emails=['joe@example.com'],
+            emails=['joe@mail.com'],
         )
         self.dupe = UserFactory(
             fullname='Joseph Shmo',
@@ -2261,7 +2266,7 @@ class TestNodeTraversals(OsfTestCase):
         child = ProjectFactory(creator=self.viewer, parent=parent)
         child_non_admin = UserFactory()
         child.add_contributor(child_non_admin,
-                              auth=self.auth,
+                              auth=Auth(self.viewer),
                               permissions=expand_permissions(WRITE))
         grandchild = ProjectFactory(creator=self.user, parent=child)
 
@@ -2283,7 +2288,7 @@ class TestNodeTraversals(OsfTestCase):
         child = ProjectFactory(creator=self.viewer, parent=parent)
         child_non_admin = UserFactory()
         child.add_contributor(child_non_admin,
-                              auth=self.auth,
+                              auth=Auth(self.viewer),
                               permissions=expand_permissions(WRITE))
         grandchild = ProjectFactory(creator=self.user, parent=child)  # noqa
 
@@ -2304,7 +2309,7 @@ class TestNodeTraversals(OsfTestCase):
         child = ProjectFactory(creator=self.viewer, parent=parent)
         child_non_admin = UserFactory()
         child.add_contributor(child_non_admin,
-                              auth=self.auth,
+                              auth=Auth(self.viewer),
                               permissions=expand_permissions(WRITE))
         child.save()
 
@@ -2325,7 +2330,7 @@ class TestNodeTraversals(OsfTestCase):
         child = ProjectFactory(creator=self.viewer, parent=parent)
         child_non_admin = UserFactory()
         child.add_contributor(child_non_admin,
-                              auth=self.auth,
+                              auth=Auth(self.viewer),
                               permissions=expand_permissions(WRITE))
         child.save()
 

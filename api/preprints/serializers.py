@@ -11,6 +11,8 @@ from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import NodeTagField
 from api.taxonomies.serializers import TaxonomyField
 from framework.exceptions import PermissionsError
+from website.util import permissions
+from website.project import signals as project_signals
 from website.models import StoredFileNode, PreprintProvider, Node
 
 
@@ -75,7 +77,7 @@ class PreprintSerializer(JSONAPISerializer):
     )
 
     contributors = RelationshipField(
-        related_view='preprints:preprint-contributors',
+        related_view='nodes:node-contributors',
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_contrib_count'},
     )
@@ -94,13 +96,16 @@ class PreprintSerializer(JSONAPISerializer):
 
     def create(self, validated_data):
         node = Node.load(validated_data.pop('_id', None))
-
         if not node:
             raise exceptions.NotFound('Unable to find Node with specified id.')
+
+        auth = get_user_auth(self.context['request'])
+        if not node.has_permission(auth.user, permissions.ADMIN):
+            raise exceptions.PermissionDenied
+
         if node.is_preprint:
             raise Conflict('This node already stored as a preprint, use the update method instead.')
 
-        auth = get_user_auth(self.context['request'])
         primary_file = validated_data.pop('primary_file', None)
         if not primary_file:
             raise exceptions.ValidationError(detail='You must specify a primary_file to create a preprint.')
@@ -113,12 +118,23 @@ class PreprintSerializer(JSONAPISerializer):
 
         self.set_node_field(node.set_preprint_subjects, subjects, auth)
 
+        tags = validated_data.pop('tags', None)
+        if tags:
+            for tag in tags:
+                node.add_tag(tag, auth, save=False, log=False)
+
         for key, value in validated_data.iteritems():
             setattr(node, key, value)
         try:
             node.save()
         except ValidationValueError as e:
             raise exceptions.ValidationError(detail=e.message)
+
+        # Send preprint confirmation email signal to new authors on preprint!
+        for author in node.contributors:
+            if author != auth.user:
+                project_signals.contributor_added.send(node, contributor=author, auth=auth, email_template='preprint')
+
         return node
 
     def update(self, node, validated_data):
@@ -131,6 +147,19 @@ class PreprintSerializer(JSONAPISerializer):
         subjects = validated_data.pop('preprint_subjects', None)
         if subjects:
             self.set_node_field(node.set_preprint_subjects, subjects, auth)
+
+        old_tags = set([tag._id for tag in node.tags])
+        if 'tags' in validated_data:
+            current_tags = set(validated_data.pop('tags', []))
+        elif self.partial:
+            current_tags = set(old_tags)
+        else:
+            current_tags = set()
+
+        for new_tag in (current_tags - old_tags):
+            node.add_tag(new_tag, auth=auth)
+        for deleted_tag in (old_tags - current_tags):
+            node.remove_tag(deleted_tag, auth=auth)
 
         for key, value in validated_data.iteritems():
             setattr(node, key, value)

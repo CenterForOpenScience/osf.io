@@ -57,6 +57,8 @@ class UserSerializer(JSONAPISerializer):
                                                       allow_blank=True, help_text='AcademiaProfileID Field'), required=False, source='social.academiaProfileID')))
     baiduscholar = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.baiduScholar',
                                                            allow_blank=True, help_text='Baidu Scholar Account'), required=False, source='social.baiduScholar')))
+    ssrn = DevOnly(HideIfDisabled(AllowMissing(ser.CharField(required=False, source='social.ssrn',
+                                                           allow_blank=True, help_text='SSRN Account'), required=False, source='social.ssrn')))
     timezone = HideIfDisabled(ser.CharField(required=False, help_text="User's timezone, e.g. 'Etc/UTC"))
     locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))
 
@@ -91,7 +93,7 @@ class UserSerializer(JSONAPISerializer):
     def get_projects_in_common(self, obj):
         user = get_user_auth(self.context['request']).user
         if obj == user:
-            return len(user.contributed)
+            return len(user.contributor_to)
         return len(obj.get_projects_in_common(user, primary_keys=True))
 
     def absolute_url(self, obj):

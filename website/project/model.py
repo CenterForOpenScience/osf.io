@@ -3104,8 +3104,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
                     if ['read'] in permissions_changed.values():
                         project_signals.write_permissions_revoked.send(self)
         if visible is not None:
-            self.set_visible(user, visible, auth=auth, save=save)
-            self.update_visible_ids()
+            self.set_visible(user, visible, auth=auth)
+            self.update_visible_ids(save=save)
 
     def manage_contributors(self, user_dicts, auth, save=False):
         """Reorder and remove contributors.
@@ -3236,6 +3236,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             # Add contributor to recently added list for user
             if auth is not None:
                 user = auth.user
+                if not self.has_permission(user, ADMIN):
+                    raise PermissionsError('Must be an admin to change add contributors.')
                 if contrib_to_add in user.recently_added:
                     user.recently_added.remove(contrib_to_add)
                 user.recently_added.insert(0, contrib_to_add)
@@ -3306,7 +3308,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if save:
             self.save()
 
-    def add_unregistered_contributor(self, fullname, email, auth, send_email='default', permissions=None, save=False):
+    def add_unregistered_contributor(self, fullname, email, auth, send_email='default', visible=True, permissions=None, save=False):
         """Add a non-registered contributor to the project.
 
         :param str fullname: The full name of the person.
@@ -3334,7 +3336,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         self.add_contributor(
             contributor, permissions=permissions, auth=auth,
-            send_email=send_email, log=True, save=False
+            visible=visible, send_email=send_email, log=True, save=False
         )
         self.save()
         return contributor
@@ -3356,9 +3358,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         else:
 
             try:
-                contributor = self.add_unregistered_contributor(fullname=full_name, email=email,
-                                                                auth=auth, send_email=send_email,
-                                                                permissions=permissions, save=True)
+                contributor = self.add_unregistered_contributor(fullname=full_name, email=email, auth=auth,
+                                                                send_email=send_email, permissions=permissions,
+                                                                visible=bibliographic, save=True)
             except ValidationValueError:
                 contributor = get_user(email=email)
                 if contributor in self.contributors:

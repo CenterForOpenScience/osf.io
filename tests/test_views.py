@@ -7,11 +7,8 @@ from __future__ import absolute_import
 import datetime as dt
 import httplib as http
 import json
-import math
 import time
 import unittest
-import urllib
-import datetime
 
 import mock
 from nose.tools import *  # noqa PEP8 asserts
@@ -39,7 +36,6 @@ from tests.factories import (
     RegistrationFactory, UnconfirmedUserFactory, UnregUserFactory, UserFactory, WatchConfigFactory,
     InstitutionFactory,
 )
-from tests.test_features import requires_search
 from website import mailchimp_utils
 from website import mails, settings
 from website.addons.github.tests.factories import GitHubAccountFactory
@@ -1704,10 +1700,11 @@ class TestUserAccount(OsfTestCase):
         self.user.save()
 
     @mock.patch('website.profile.views.push_status_message')
-    def test_password_change_valid(self, mock_push_status_message):
-        old_password = 'password'
-        new_password = 'Pa$$w0rd'
-        confirm_password = new_password
+    def test_password_change_valid(self,
+                                   mock_push_status_message,
+                                   old_password='password',
+                                   new_password='Pa$$w0rd',
+                                   confirm_password='Pa$$w0rd'):
         url = web_url_for('user_account_password')
         post_data = {
             'old_password': old_password,
@@ -1761,9 +1758,16 @@ class TestUserAccount(OsfTestCase):
     def test_password_change_invalid_new_password_length(self):
         self.test_password_change_invalid(
             old_password='password',
-            new_password='12345',
-            confirm_password='12345',
-            error_message='Password should be at least six characters',
+            new_password='1234567',
+            confirm_password='1234567',
+            error_message='Password should be at least eight characters',
+        )
+
+    def test_password_change_valid_new_password_length(self):
+        self.test_password_change_valid(
+            old_password='password',
+            new_password='12345678',
+            confirm_password='12345678',
         )
 
     def test_password_change_invalid_blank_password(self, old_password='', new_password='', confirm_password=''):
@@ -2047,7 +2051,7 @@ class TestAddingContributorViews(OsfTestCase):
             'visible': True,
             'permissions': ['read', 'write']
         }]
-        project = ProjectFactory()
+        project = ProjectFactory(creator=self.auth.user)
         project.add_contributors(contributors, auth=self.auth)
         project.save()
         assert_true(send_mail.called)
@@ -3119,6 +3123,22 @@ class TestAuthViews(OsfTestCase):
         users = User.find(Q('username', 'eq', email))
         assert_equal(users.count(), 0)
 
+    def test_register_blacklisted_email_domain(self):
+        url = api_url_for('register_user')
+        name, email, password = fake.name(), 'bad@mailinator.com', 'agreatpasswordobviously'
+        res = self.app.post_json(
+            url, {
+                'fullName': name,
+                'email1': email,
+                'email2': email,
+                'password': password
+            },
+            expect_errors=True
+        )
+        assert_equal(res.status_code, http.BAD_REQUEST)
+        users = User.find(Q('username', 'eq', email))
+        assert_equal(users.count(), 0)
+
     def test_register_after_being_invited_as_unreg_contributor(self):
         # Regression test for:
         #    https://github.com/CenterForOpenScience/openscienceframework.org/issues/861
@@ -3184,7 +3204,7 @@ class TestAuthViews(OsfTestCase):
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_resend_confirmation(self, send_mail):
-        email = 'test@example.com'
+        email = 'test@mail.com'
         token = self.user.add_unconfirmed_email(email)
         self.user.save()
         url = api_url_for('resend_confirmation')
@@ -3201,7 +3221,7 @@ class TestAuthViews(OsfTestCase):
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_click_confirmation_email(self, send_mail):
-        email = 'test@example.com'
+        email = 'test@mail.com'
         token = self.user.add_unconfirmed_email(email)
         self.user.save()
         self.user.reload()
@@ -3219,7 +3239,7 @@ class TestAuthViews(OsfTestCase):
         assert_equal(email_verifications, [])
 
     def test_get_unconfirmed_email(self):
-        email = 'test@example.com'
+        email = 'test@mail.com'
         self.user.add_unconfirmed_email(email)
         self.user.save()
         self.user.reload()
@@ -3227,7 +3247,7 @@ class TestAuthViews(OsfTestCase):
         assert_equal(email_verifications, [])
 
     def test_get_email_to_add(self):
-        email = 'test@example.com'
+        email = 'test@mail.com'
         token = self.user.add_unconfirmed_email(email)
         self.user.save()
         self.user.reload()
@@ -3237,10 +3257,10 @@ class TestAuthViews(OsfTestCase):
         self.user.reload()
         assert_equal(self.user.email_verifications[token]['confirmed'], True)
         email_verifications = self.user.unconfirmed_email_info
-        assert_equal(email_verifications[0]['address'], 'test@example.com')
+        assert_equal(email_verifications[0]['address'], 'test@mail.com')
 
     def test_add_email(self):
-        email = 'test@example.com'
+        email = 'test@mail.com'
         token = self.user.add_unconfirmed_email(email)
         self.user.save()
         self.user.reload()
@@ -3253,10 +3273,10 @@ class TestAuthViews(OsfTestCase):
         res = self.app.put_json(put_email_url, email_verifications[0], auth=self.user.auth)
         self.user.reload()
         assert_equal(res.json_body['status'], 'success')
-        assert_equal(self.user.emails[1], 'test@example.com')
+        assert_equal(self.user.emails[1], 'test@mail.com')
 
     def test_remove_email(self):
-        email = 'test@example.com'
+        email = 'test@mail.com'
         token = self.user.add_unconfirmed_email(email)
         self.user.save()
         self.user.reload()
@@ -3272,7 +3292,7 @@ class TestAuthViews(OsfTestCase):
 
     def test_add_expired_email(self):
         # Do not return expired token and removes it from user.email_verifications
-        email = 'test@example.com'
+        email = 'test@mail.com'
         token = self.user.add_unconfirmed_email(email)
         self.user.email_verifications[token]['expiration'] = dt.datetime.utcnow() - dt.timedelta(days=100)
         self.user.save()
@@ -3285,7 +3305,7 @@ class TestAuthViews(OsfTestCase):
 
     def test_clean_email_verifications(self):
         # Do not return bad token and removes it from user.email_verifications
-        email = 'test@example.com'
+        email = 'test@mail.com'
         token = 'blahblahblah'
         self.user.email_verifications[token] = {'expiration': dt.datetime.utcnow() + dt.timedelta(days=1),
                                                 'email': email,
@@ -3310,7 +3330,7 @@ class TestAuthViews(OsfTestCase):
         email = u'\u0000\u0008\u000b\u000c\u000e\u001f\ufffe\uffffHello@yourmom.com'
         # illegal_str = u'\u0000\u0008\u000b\u000c\u000e\u001f\ufffe\uffffHello'
         # illegal_str += unichr(0xd800) + unichr(0xdbff) + ' World'
-        # email = 'test@example.com'
+        # email = 'test@mail.com'
         with assert_raises(ValidationError):
             self.user.add_unconfirmed_email(email)
 
@@ -3336,7 +3356,7 @@ class TestAuthViews(OsfTestCase):
         assert_equal(self.user.emails[1], 'copy@cat.com')
 
     def test_resend_confirmation_without_user_id(self):
-        email = 'test@example.com'
+        email = 'test@mail.com'
         url = api_url_for('resend_confirmation')
         header = {'address': email, 'primary': False, 'confirmed': False}
         res = self.app.put_json(url, {'email': header}, auth=self.user.auth, expect_errors=True)
@@ -3349,7 +3369,7 @@ class TestAuthViews(OsfTestCase):
         assert_equal(res.status_code, 400)
 
     def test_resend_confirmation_not_work_for_primary_email(self):
-        email = 'test@example.com'
+        email = 'test@mail.com'
         url = api_url_for('resend_confirmation')
         header = {'address': email, 'primary': True, 'confirmed': False}
         res = self.app.put_json(url, {'id': self.user._id, 'email': header}, auth=self.user.auth, expect_errors=True)
@@ -3357,7 +3377,7 @@ class TestAuthViews(OsfTestCase):
         assert_equal(res.json['message_long'], 'Cannnot resend confirmation for confirmed emails')
 
     def test_resend_confirmation_not_work_for_confirmed_email(self):
-        email = 'test@example.com'
+        email = 'test@mail.com'
         url = api_url_for('resend_confirmation')
         header = {'address': email, 'primary': False, 'confirmed': True}
         res = self.app.put_json(url, {'id': self.user._id, 'email': header}, auth=self.user.auth, expect_errors=True)
@@ -3366,7 +3386,7 @@ class TestAuthViews(OsfTestCase):
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_resend_confirmation_does_not_send_before_throttle_expires(self, send_mail):
-        email = 'test@example.com'
+        email = 'test@mail.com'
         self.user.save()
         url = api_url_for('resend_confirmation')
         header = {'address': email, 'primary': False, 'confirmed': False}
@@ -3808,220 +3828,6 @@ class TestTagViews(OsfTestCase):
         url = web_url_for('project_tag', tag='foo')
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
-
-
-@requires_search
-class TestSearchViews(OsfTestCase):
-
-    def setUp(self):
-        super(TestSearchViews, self).setUp()
-        import website.search.search as search
-        search.delete_all()
-
-        self.project = ProjectFactory(creator=UserFactory(fullname='Robbie Williams'))
-        self.contrib = UserFactory(fullname='Brian May')
-        for i in range(0, 12):
-            UserFactory(fullname='Freddie Mercury{}'.format(i))
-
-    def tearDown(self):
-        super(TestSearchViews, self).tearDown()
-        import website.search.search as search
-        search.delete_all()
-
-    def test_search_contributor(self):
-        url = api_url_for('search_contributor')
-        res = self.app.get(url, {'query': self.contrib.fullname})
-        assert_equal(res.status_code, 200)
-        result = res.json['users']
-        assert_equal(len(result), 1)
-        brian = result[0]
-        assert_equal(brian['fullname'], self.contrib.fullname)
-        assert_in('gravatar_url', brian)
-        assert_equal(brian['registered'], self.contrib.is_registered)
-        assert_equal(brian['active'], self.contrib.is_active)
-
-    def test_search_pagination_default(self):
-        url = api_url_for('search_contributor')
-        res = self.app.get(url, {'query': 'fr'})
-        assert_equal(res.status_code, 200)
-        result = res.json['users']
-        pages = res.json['pages']
-        page = res.json['page']
-        assert_equal(len(result), 5)
-        assert_equal(pages, 3)
-        assert_equal(page, 0)
-
-    def test_search_pagination_default_page_1(self):
-        url = api_url_for('search_contributor')
-        res = self.app.get(url, {'query': 'fr', 'page': 1})
-        assert_equal(res.status_code, 200)
-        result = res.json['users']
-        page = res.json['page']
-        assert_equal(len(result), 5)
-        assert_equal(page, 1)
-
-    def test_search_pagination_default_page_2(self):
-        url = api_url_for('search_contributor')
-        res = self.app.get(url, {'query': 'fr', 'page': 2})
-        assert_equal(res.status_code, 200)
-        result = res.json['users']
-        page = res.json['page']
-        assert_equal(len(result), 2)
-        assert_equal(page, 2)
-
-    def test_search_pagination_smaller_pages(self):
-        url = api_url_for('search_contributor')
-        res = self.app.get(url, {'query': 'fr', 'size': 5})
-        assert_equal(res.status_code, 200)
-        result = res.json['users']
-        pages = res.json['pages']
-        page = res.json['page']
-        assert_equal(len(result), 5)
-        assert_equal(page, 0)
-        assert_equal(pages, 3)
-
-    def test_search_pagination_smaller_pages_page_2(self):
-        url = api_url_for('search_contributor')
-        res = self.app.get(url, {'query': 'fr', 'page': 2, 'size': 5, })
-        assert_equal(res.status_code, 200)
-        result = res.json['users']
-        pages = res.json['pages']
-        page = res.json['page']
-        assert_equal(len(result), 2)
-        assert_equal(page, 2)
-        assert_equal(pages, 3)
-
-    def test_search_projects(self):
-        url = '/search/'
-        res = self.app.get(url, {'q': self.project.title})
-        assert_equal(res.status_code, 200)
-
-
-class TestODMTitleSearch(OsfTestCase):
-    """ Docs from original method:
-    :arg term: The substring of the title.
-    :arg category: Category of the node.
-    :arg isDeleted: yes, no, or either. Either will not add a qualifier for that argument in the search.
-    :arg isFolder: yes, no, or either. Either will not add a qualifier for that argument in the search.
-    :arg isRegistration: yes, no, or either. Either will not add a qualifier for that argument in the search.
-    :arg includePublic: yes or no. Whether the projects listed should include public projects.
-    :arg includeContributed: yes or no. Whether the search should include projects the current user has
-        contributed to.
-    :arg ignoreNode: a list of nodes that should not be included in the search.
-    :return: a list of dictionaries of projects
-    """
-    def setUp(self):
-        super(TestODMTitleSearch, self).setUp()
-
-        self.user = AuthUserFactory()
-        self.user_two = AuthUserFactory()
-        self.project = ProjectFactory(creator=self.user, title="foo")
-        self.project_two = ProjectFactory(creator=self.user_two, title="bar")
-        self.public_project = ProjectFactory(creator=self.user_two, is_public=True, title="baz")
-        self.registration_project = RegistrationFactory(creator=self.user, title="qux")
-        self.folder = CollectionFactory(creator=self.user, title="quux")
-        self.dashboard = BookmarkCollectionFactory(creator=self.user, title="Dashboard")
-        self.url = api_url_for('search_projects_by_title')
-
-    def test_search_projects_by_title(self):
-        res = self.app.get(self.url, {'term': self.project.title}, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 1)
-        res = self.app.get(self.url,
-                           {
-                               'term': self.public_project.title,
-                               'includePublic': 'yes',
-                               'includeContributed': 'no'
-                           }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 1)
-        res = self.app.get(self.url,
-                           {
-                               'term': self.project.title,
-                               'includePublic': 'no',
-                               'includeContributed': 'yes'
-                           }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 1)
-        res = self.app.get(self.url,
-                           {
-                               'term': self.project.title,
-                               'includePublic': 'no',
-                               'includeContributed': 'yes',
-                               'isRegistration': 'no'
-                           }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 1)
-        res = self.app.get(self.url,
-                           {
-                               'term': self.project.title,
-                               'includePublic': 'yes',
-                               'includeContributed': 'yes',
-                               'isRegistration': 'either'
-                           }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 1)
-        res = self.app.get(self.url,
-                           {
-                               'term': self.public_project.title,
-                               'includePublic': 'yes',
-                               'includeContributed': 'yes',
-                               'isRegistration': 'either'
-                           }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 1)
-        res = self.app.get(self.url,
-                           {
-                               'term': self.registration_project.title,
-                               'includePublic': 'yes',
-                               'includeContributed': 'yes',
-                               'isRegistration': 'either'
-                           }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 2)
-        res = self.app.get(self.url,
-                           {
-                               'term': self.registration_project.title,
-                               'includePublic': 'yes',
-                               'includeContributed': 'yes',
-                               'isRegistration': 'no'
-                           }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 1)
-        res = self.app.get(self.url,
-                           {
-                               'term': self.folder.title,
-                               'includePublic': 'yes',
-                               'includeContributed': 'yes',
-                               'isFolder': 'yes'
-                           }, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
-        res = self.app.get(self.url,
-                           {
-                               'term': self.folder.title,
-                               'includePublic': 'yes',
-                               'includeContributed': 'yes',
-                               'isFolder': 'no'
-                           }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 0)
-        res = self.app.get(self.url,
-                           {
-                               'term': self.dashboard.title,
-                               'includePublic': 'yes',
-                               'includeContributed': 'yes',
-                               'isFolder': 'no'
-                           }, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), 0)
-        res = self.app.get(self.url,
-                           {
-                               'term': self.dashboard.title,
-                               'includePublic': 'yes',
-                               'includeContributed': 'yes',
-                               'isFolder': 'yes'
-                           }, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
 
 
 class TestReorderComponents(OsfTestCase):

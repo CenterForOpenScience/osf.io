@@ -18,14 +18,15 @@ from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParse
 from api.preprint_providers.serializers import PreprintProviderSerializer
 from api.preprints.parsers import PreprintsJSONAPIParser, PreprintsJSONAPIParserForRegularJSON
 from api.preprints.serializers import PreprintSerializer, PreprintPreprintProvidersRelationshipSerializer
-from api.nodes.views import NodeMixin, WaterButlerMixin, NodeContributorsList, NodeContributorsSerializer
+from api.nodes.views import NodeMixin, WaterButlerMixin
+from api.nodes.permissions import ContributorOrPublic
 
 
 class PreprintMixin(NodeMixin):
     serializer_class = PreprintSerializer
     node_lookup_url_kwarg = 'node_id'
 
-    def get_node(self):
+    def get_node(self, check_object_permissions=True):
         node = get_object_or_error(
             Node,
             self.kwargs[self.node_lookup_url_kwarg],
@@ -33,12 +34,18 @@ class PreprintMixin(NodeMixin):
         )
         if not node.is_preprint and self.request.method != 'POST':
             raise NotFound
+        # May raise a permission denied
+        if check_object_permissions:
+            self.check_object_permissions(self.request, node)
 
         return node
 
 
 class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
     """Preprints that represent a special kind of preprint node. *Writeable*.
+
+    ##Note
+    **This API endpoint is under active development, and is subject to change in the future.**
 
     Paginated list of preprints ordered by their `date_created`.  Each resource contains a representation of the
     preprint.
@@ -133,6 +140,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ContributorOrPublic,
     )
 
     parser_classes = (PreprintsJSONAPIParser, PreprintsJSONAPIParserForRegularJSON,)
@@ -162,6 +170,9 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
 class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin, WaterButlerMixin):
     """Preprint Detail  *Writeable*.
 
+    ##Note
+    **This API endpoint is under active development, and is subject to change in the future.**
+
     ##Preprint Attributes
 
     Many of these preprint attributes are the same as node, with a few special fields added in.
@@ -179,11 +190,9 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMi
         provider                        string                original source of the preprint
         doi                             string                bare DOI for the manuscript, as entered by the user
 
-    ###Creating New Preprints
+    ###Updating Preprints
 
-    Create a new preprint by posting to the guid of the existing **node**, including the file_id for the
-    file you'd like to make the primary preprint file. Note that the **node id** will not be accessible via the
-    preprints detail view until after the preprint has been created.
+    Update a preprint by sending a patch request to the guid of the existing preprint node that you'd like to update.
 
         Method:        PATCH
         URL:           /preprints/{node_id}/
@@ -214,6 +223,7 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMi
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ContributorOrPublic,
     )
     parser_classes = (PreprintsJSONAPIParser, PreprintsJSONAPIParserForRegularJSON,)
 
@@ -229,19 +239,12 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMi
         return self.get_node()
 
 
-class PreprintContributorsList(NodeContributorsList, PreprintMixin):
-    required_read_scopes = [CoreScopes.NODE_PREPRINTS_READ]
-    required_write_scopes = [CoreScopes.NODE_PREPRINTS_WRITE]
-
-    view_category = 'preprint'
-    view_name = 'preprint-contributors'
-
-    serializer_class = NodeContributorsSerializer
-
-
 class PreprintPreprintProvidersList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin, NodeMixin):
     """ Detail of the preprint providers a preprint has, if any. Returns [] if the preprint has no
     preprnt providers.
+
+    ##Note
+    **This API endpoint is under active development, and is subject to change in the future**
 
     ##Attributes
 
@@ -282,6 +285,9 @@ class PreprintToPreprintProviderRelationship(JSONAPIBaseView, generics.RetrieveU
     """ Relationship Endpoint for Preprint -> PreprintProvider
 
     Used to set preprint_provider of a preprint to a PreprintProvider
+
+    ##Note
+    **This API endpoint is under active development, and is subject to change in the future.**
 
     ##Actions
 

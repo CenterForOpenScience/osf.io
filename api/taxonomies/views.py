@@ -3,6 +3,7 @@ from rest_framework import generics, permissions as drf_permissions
 from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error
 from api.base.filters import ODMFilterMixin
+from api.base.pagination import NoMaxPageSizePagination
 from api.base import permissions as base_permissions
 from api.taxonomies.serializers import TaxonomySerializer
 from website.project.taxonomies import Subject
@@ -11,6 +12,9 @@ from framework.auth.oauth_scopes import CoreScopes
 
 class TaxonomyList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     '''[PLOS taxonomy of subjects](http://journals.plos.org/plosone/browse/) in flattened form. *Read-only*
+
+    ##Note
+    **This API endpoint is under active development, and is subject to change in the future**
 
     ##Taxonomy Attributes
 
@@ -44,6 +48,7 @@ class TaxonomyList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
     required_write_scopes = [CoreScopes.NULL]
     serializer_class = TaxonomySerializer
+    pagination_class = NoMaxPageSizePagination
     view_category = 'taxonomies'
     view_name = 'taxonomy-list'
 
@@ -56,6 +61,9 @@ class TaxonomyList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
 
 class TaxonomyDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     '''[PLOS taxonomy subject](http://journals.plos.org/plosone/browse/) instance. *Read-only*
+
+    ##Note
+    **This API endpoint is under active development, and is subject to change in the future**
 
     ##Taxonomy Attributes
 

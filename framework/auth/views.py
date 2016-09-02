@@ -238,19 +238,15 @@ def auth_login(auth, **kwargs):
         return redirect(cas.get_login_url(web_url_for('dashboard', _absolute=True)))
 
     if campaign:
+        must_login_warning = False
         next_url = campaigns.campaign_url_for(campaign)
 
     if not next_url:
         next_url = request.args.get('redirect_url')
         must_login_warning = False
 
-    if next_url:
-        # Only allow redirects which are relative root or full domain, disallows external redirects.
-        if not (next_url[0] == '/'
-                or next_url.startswith(settings.DOMAIN)
-                or next_url.startswith(settings.CAS_SERVER_URL)
-                or next_url.startswith(settings.MFR_SERVER_URL)):
-            raise HTTPError(http.InvalidURL)
+    if not validate_next_url(next_url):
+        raise HTTPError(http.BAD_REQUEST)
 
     if auth.logged_in:
         if not log_out:
@@ -385,6 +381,7 @@ def external_login_confirm_email_get(auth, uid, token):
         raise HTTPError(http.FORBIDDEN, e.message)
 
     if not user.is_registered:
+        user.set_password(uuid.uuid4(), notify=False)
         user.register(email)
 
     if email.lower() not in user.emails:
@@ -583,6 +580,8 @@ def send_confirm_email(user, email, external_id_provider=None, external_id=None)
         mail_template = mails.CONFIRM_EMAIL
         confirmation_url = '{}?logout=1'.format(confirmation_url)
     elif campaign:  # campaign
+        # TODO: In the future, we may want to make confirmation email configurable as well (send new user to
+        #   appropriate landing page or with redirect after)
         mail_template = campaigns.email_template_for_campaign(campaign)
     else:  # account creation
         mail_template = mails.INITIAL_CONFIRM_EMAIL
@@ -657,6 +656,11 @@ def register_user(**kwargs):
                     email=markupsafe.escape(request.json['email1'])
                 )
             )
+        )
+    except ValidationError as e:
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data=dict(message_long=e.message)
         )
 
     if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
@@ -822,3 +826,27 @@ def external_login_email_post():
         'form': form,
         'external_id_provider': external_id_provider
     }
+
+
+def validate_next_url(next_url):
+    """
+    Non-view helper function that checks `next_url`.
+    Only allow redirects which are relative root or full domain (CAS, OSF and MFR).
+    Disallows external redirects.
+
+    :param next_url: the next url to check
+    :return: True if valid, False otherwise
+    """
+
+    if next_url:
+        # disable external domain using `//`: the browser allows `//` as a shortcut for non-protocol specific requests
+        # like http:// or https:// depending on the use of SSL on the page already.
+        if next_url.startswith('//'):
+            return False
+        # only OSF, MFR and CAS domains are allowed
+        if not (next_url[0] == '/' or
+                next_url.startswith(settings.DOMAIN) or
+                next_url.startswith(settings.CAS_SERVER_URL) or
+                next_url.startswith(settings.MFR_SERVER_URL)):
+            return False
+    return True

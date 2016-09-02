@@ -240,7 +240,8 @@ class User(GuidStoredObject, AddonModelMixin):
         'researchGate': u'https://researchgate.net/profile/{}',
         'academiaInstitution': u'https://{}',
         'academiaProfileID': u'.academia.edu/{}',
-        'baiduScholar': u'http://xueshu.baidu.com/scholarID/{}'
+        'baiduScholar': u'http://xueshu.baidu.com/scholarID/{}',
+        'ssrn': u'http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id={}',
     }
 
     # This is a GuidStoredObject, so this will be a GUID.
@@ -498,6 +499,8 @@ class User(GuidStoredObject, AddonModelMixin):
 
     @classmethod
     def create(cls, username, password, fullname):
+        utils.validate_email(username)  # Raises ValidationError if spam address
+
         user = cls(
             username=username,
             fullname=fullname,
@@ -755,8 +758,8 @@ class User(GuidStoredObject, AddonModelMixin):
             issues.append('Password cannot be the same as your email address')
         if not raw_old_password or not raw_new_password or not raw_confirm_password:
             issues.append('Passwords cannot be blank')
-        elif len(raw_new_password) < 6:
-            issues.append('Password should be at least six characters')
+        elif len(raw_new_password) < 8:
+            issues.append('Password should be at least eight characters')
         elif len(raw_new_password) > 256:
             issues.append('Password should not be longer than 256 characters')
 
@@ -1517,12 +1520,12 @@ class User(GuidStoredObject, AddonModelMixin):
         or just their primary keys
         """
         if primary_keys:
-            projects_contributed_to = set(self.contributed.get_keys())
-            other_projects_primary_keys = set(other_user.contributed.get_keys())
+            projects_contributed_to = set(self.contributor_to.get_keys())
+            other_projects_primary_keys = set(other_user.contributor_to.get_keys())
             return projects_contributed_to.intersection(other_projects_primary_keys)
         else:
-            projects_contributed_to = set(self.contributed)
-            return projects_contributed_to.intersection(other_user.contributed)
+            projects_contributed_to = set(self.contributor_to)
+            return projects_contributed_to.intersection(other_user.contributor_to)
 
     def n_projects_in_common(self, other_user):
         """Returns number of "shared projects" (projects that both users are contributors for)"""
