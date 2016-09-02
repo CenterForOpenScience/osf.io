@@ -351,7 +351,6 @@ LOW_PRI_MODULES = {
     'scripts.osfstorage.files_audit',
     'scripts.osfstorage.glacier_audit',
     'scripts.populate_new_and_noteworthy_projects',
-    'scripts.meeting_visit_count',
     'website.search.elastic_search',
 }
 
@@ -408,6 +407,7 @@ CELERY_IMPORTS = (
     'website.notifications.tasks',
     'website.archiver.tasks',
     'website.search.search',
+    'website.project.tasks',
     'scripts.populate_new_and_noteworthy_projects',
     'scripts.refresh_addon_tokens',
     'scripts.retract_registrations',
@@ -415,8 +415,7 @@ CELERY_IMPORTS = (
     'scripts.approve_registrations',
     'scripts.approve_embargo_terminations',
     'scripts.triggered_mails',
-    'scripts.send_queued_mails',
-    'scripts.meeting_visit_count',
+    'scripts.send_queued_mails'
 )
 
 # Modules that need metrics and release requirements
@@ -486,12 +485,7 @@ else:
             'task': 'scripts.populate_new_and_noteworthy_projects',
             'schedule': crontab(minute=0, hour=2, day_of_week=6),  # Saturday 2:00 a.m.
             'kwargs': {'dry_run': False}
-        },
-        'meeting_visit_count': {
-            'task': 'scripts.meeting_visit_count',
-            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
-            'kwargs': {'dry_run': False},
-        },
+        }
     }
 
     # Tasks that need metrics and release requirements
