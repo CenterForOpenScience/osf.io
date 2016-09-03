@@ -3409,7 +3409,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
     def confirm_ham(self, save=False):
         super(Node, self).confirm_ham(save=save)
-        enqueue_task(spam.confirm_spam.s(self._id, self._get_spam_headers()))
+        enqueue_task(spam.confirm_ham.s(self._id, self._get_spam_headers()))
 
     def flag_spam(self, save=False):
         """ Overrides SpamMixin#save_spam. Make spammy node and its children private
