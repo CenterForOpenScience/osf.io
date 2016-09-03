@@ -1,9 +1,8 @@
 from framework.logging import logger
 from framework.celery_tasks import app as celery_app
-from framework.mongo import get_cache_key as get_request
 
 from website import settings
-from website.util import akismet, get_headers_from_request
+from website.util import akismet
 from website.project.licenses import serialize_node_license_record
 
 NODE_SPAM_FIELDS = set((
@@ -38,12 +37,9 @@ def _get_content(node):
 
 
 @celery_app.task(ignore_result=True)
-def confirm_spam(node_id):
+def confirm_spam(node_id, request_headers):
     from website.models import Node
     node = Node.load(node_id)
-    request_headers = get_headers_from_request(
-        get_request()
-    )
     client = _get_client()
     content = _get_content(node)
     client.submit_spam(
@@ -56,12 +52,9 @@ def confirm_spam(node_id):
     )
 
 @celery_app.task(ignore_result=True)
-def confirm_ham(node_id):
+def confirm_ham(node_id, request_headers):
     from website.models import Node
     node = Node.load(node_id)
-    request_headers = get_headers_from_request(
-        get_request()
-    )
     content = _get_content(node)
     client = _get_client()
     client.submit_ham(
