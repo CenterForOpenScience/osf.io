@@ -111,7 +111,7 @@ def main(env):
             {
                 '_id': 'nyu',
                 'name': 'New York University',
-                'description': '...',
+                'description': 'A Research Project and File Management Tool for the NYU Community: <a href="https://www.nyu.edu/research.html">Research at NYU</a> | <a href="http://guides.nyu.edu/data_management">Research Data Management Planning</a> | <a href="https://library.nyu.edu/services/research/">NYU Library Research Services</a> | <a href="https://nyu.qualtrics.com/jfe6/form/SV_8dFc5TpA1FgLUMd">Get Help</a>',
                 'banner_name': 'nyu-banner.png',
                 'logo_name': 'nyu-shield.png',
                 'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:nyu.edu')),
@@ -295,7 +295,7 @@ def main(env):
             {
                 '_id': 'nyu',
                 'name': 'New York University [Test]',
-                'description': 'New York University [Test]',
+                'description': 'A Research Project and File Management Tool for the NYU Community: <a href="https://www.nyu.edu/research.html">Research at NYU</a> | <a href="http://guides.nyu.edu/data_management">Research Data Management Planning</a> | <a href="https://library.nyu.edu/services/research/">NYU Library Research Services</a> | <a href="https://nyu.qualtrics.com/jfe6/form/SV_8dFc5TpA1FgLUMd">Get Help</a>',
                 'banner_name': 'nyu-banner.png',
                 'logo_name': 'nyu-shield.png',
                 'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shibbolethqa.es.its.nyu.edu/idp/shibboleth')),

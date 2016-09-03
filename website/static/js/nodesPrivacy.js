@@ -242,17 +242,22 @@ NodesPrivacyViewModel.prototype.confirmChanges =  function() {
         patchNodesPrivacy(nodesChanged).then(function () {
             self.onSetPrivacy(nodesChanged);
 
-            $osf.unblock();
             self.nodesChangedPublic([]);
             self.nodesChangedPrivate([]);
             self.page(self.WARNING);
             window.location.reload();
-        }).fail(function () {
+        }).fail(function (xhr) {
             $osf.unblock();
-            $osf.growl('Error', 'Unable to update project privacy');
+            var errorMessage = 'Unable to update project privacy';
+            if (xhr.responseJSON && xhr.responseJSON.errors) {
+                errorMessage = xhr.responseJSON.errors[0].detail;
+            }
+            $osf.growl('Problem changing privacy', errorMessage);
             Raven.captureMessage('Could not PATCH project settings.');
             self.clear();
-            window.location.reload();
+            $('#nodesPrivacy').modal('hide');
+        }).always(function() {
+            $osf.unblock();
         });
     }
 };
