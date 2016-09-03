@@ -3393,13 +3393,23 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
     def is_spammy(self):
         return (self.is_flagged_as_spam or self.is_spam) or (self.parent_node.is_spammy if self.parent_node else False)
 
+    def _get_spam_headers(self):
+        request_headers = get_headers_from_request(
+            get_request()
+        )
+        return {
+            k: v
+            for k, v in request_headers.items()
+            if isinstance(v, basestring)
+        }
+
     def confirm_spam(self, save=False):
         super(Node, self).confirm_spam(save=save)
-        enqueue_task(spam.confirm_spam.s(self._id))
+        enqueue_task(spam.confirm_spam.s(self._id, self._get_spam_headers()))
 
     def confirm_ham(self, save=False):
         super(Node, self).confirm_ham(save=save)
-        enqueue_task(spam.confirm_spam.s(self._id))
+        enqueue_task(spam.confirm_spam.s(self._id, self._get_spam_headers()))
 
     def flag_spam(self, save=False):
         """ Overrides SpamMixin#save_spam. Make spammy node and its children private
