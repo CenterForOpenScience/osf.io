@@ -1,9 +1,8 @@
 from framework.logging import logger
 from framework.celery_tasks import app as celery_app
-from framework.mongo import get_cache_key as get_request
 
 from website import settings
-from website.util import akismet, get_headers_from_request
+from website.util import akismet
 from website.project.licenses import serialize_node_license_record
 
 NODE_SPAM_FIELDS = set((
