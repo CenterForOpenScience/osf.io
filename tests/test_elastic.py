@@ -37,7 +37,6 @@ class SearchTestCase(OsfTestCase):
         search.delete_index(elastic_search.INDEX)
         search.create_index(elastic_search.INDEX)
 
-
 def query(term):
     results = search.search(build_query(term), index=elastic_search.INDEX)
     return results
@@ -212,12 +211,13 @@ class TestNodeSearch(SearchTestCase):
 
     def setUp(self):
         super(TestNodeSearch, self).setUp()
-        self.node = factories.ProjectFactory(is_public=True, title='node')
-        self.public_child = factories.ProjectFactory(parent=self.node, is_public=True, title='public_child')
-        self.private_child = factories.ProjectFactory(parent=self.node, title='private_child')
-        self.public_subchild = factories.ProjectFactory(parent=self.private_child, is_public=True)
-        self.node.node_license = factories.NodeLicenseRecordFactory()
-        self.node.save()
+        with run_celery_tasks():
+            self.node = factories.ProjectFactory(is_public=True, title='node')
+            self.public_child = factories.ProjectFactory(parent=self.node, is_public=True, title='public_child')
+            self.private_child = factories.ProjectFactory(parent=self.node, title='private_child')
+            self.public_subchild = factories.ProjectFactory(parent=self.private_child, is_public=True)
+            self.node.node_license = factories.NodeLicenseRecordFactory()
+            self.node.save()
 
         self.query = 'category:project & category:component'
 
@@ -353,36 +353,39 @@ class TestRegistrationRetractions(SearchTestCase):
 class TestPublicNodes(SearchTestCase):
 
     def setUp(self):
-        super(TestPublicNodes, self).setUp()
-        self.user = factories.UserFactory(usename='Doug Bogie')
-        self.title = 'Red Special'
-        self.consolidate_auth = Auth(user=self.user)
-        self.project = factories.ProjectFactory(
-            title=self.title,
-            creator=self.user,
-            is_public=True,
-        )
-        self.component = factories.NodeFactory(
-            parent=self.project,
-            title=self.title,
-            creator=self.user,
-            is_public=True
-        )
-        self.registration = factories.ProjectFactory(
-            title=self.title,
-            creator=self.user,
-            is_public=True,
-            is_registration=True
-        )
+        with run_celery_tasks():
+            super(TestPublicNodes, self).setUp()
+            self.user = factories.UserFactory(usename='Doug Bogie')
+            self.title = 'Red Special'
+            self.consolidate_auth = Auth(user=self.user)
+            self.project = factories.ProjectFactory(
+                title=self.title,
+                creator=self.user,
+                is_public=True,
+            )
+            self.component = factories.NodeFactory(
+                parent=self.project,
+                title=self.title,
+                creator=self.user,
+                is_public=True
+            )
+            self.registration = factories.ProjectFactory(
+                title=self.title,
+                creator=self.user,
+                is_public=True,
+                is_registration=True
+            )
 
     def test_make_private(self):
         # Make project public, then private, and verify that it is not present
         # in search.
-        self.project.set_privacy('private')
+        with run_celery_tasks():
+            self.project.set_privacy('private')
         docs = query('category:project AND ' + self.title)['results']
         assert_equal(len(docs), 0)
 
-        self.component.set_privacy('private')
+        with run_celery_tasks():
+            self.component.set_privacy('private')
         docs = query('category:component AND ' + self.title)['results']
         assert_equal(len(docs), 0)
 
@@ -406,11 +409,13 @@ class TestPublicNodes(SearchTestCase):
         assert_false(docs[0]['parent_url'])
 
     def test_delete_project(self):
-        self.component.remove_node(self.consolidate_auth)
+        with run_celery_tasks():
+            self.component.remove_node(self.consolidate_auth)
         docs = query('category:component AND ' + self.title)['results']
         assert_equal(len(docs), 0)
 
-        self.project.remove_node(self.consolidate_auth)
+        with run_celery_tasks():
+            self.project.remove_node(self.consolidate_auth)
         docs = query('category:project AND ' + self.title)['results']
         assert_equal(len(docs), 0)
 
@@ -544,13 +549,15 @@ class TestAddContributor(SearchTestCase):
     # Tests of the search.search_contributor method
 
     def setUp(self):
-        super(TestAddContributor, self).setUp()
         self.name1 = 'Roger1 Taylor1'
         self.name2 = 'John2 Deacon2'
         self.name3 = u'j\xc3\xb3ebert3 Smith3'
         self.name4 = u'B\xc3\xb3bbert4 Jones4'
-        self.user = factories.UserFactory(fullname=self.name1)
-        self.user3 = factories.UserFactory(fullname=self.name3)
+
+        with run_celery_tasks():
+            super(TestAddContributor, self).setUp()
+            self.user = factories.UserFactory(fullname=self.name1)
+            self.user3 = factories.UserFactory(fullname=self.name3)
 
     def test_unreg_users_dont_show_in_search(self):
         unreg = factories.UnregUserFactory()
@@ -559,12 +566,13 @@ class TestAddContributor(SearchTestCase):
 
 
     def test_unreg_users_do_show_on_projects(self):
-        unreg = factories.UnregUserFactory(fullname='Robert Paulson')
-        self.project = factories.ProjectFactory(
-            title='Glamour Rock',
-            creator=unreg,
-            is_public=True,
-        )
+        with run_celery_tasks():
+            unreg = factories.UnregUserFactory(fullname='Robert Paulson')
+            self.project = factories.ProjectFactory(
+                title='Glamour Rock',
+                creator=unreg,
+                is_public=True,
+            )
         results = query(unreg.fullname)['results']
         assert_equal(len(results), 1)
 
@@ -624,40 +632,43 @@ class TestAddContributor(SearchTestCase):
 
 class TestProjectSearchResults(SearchTestCase):
     def setUp(self):
-        super(TestProjectSearchResults, self).setUp()
-        self.user = factories.UserFactory(usename='Doug Bogie')
-
         self.singular = 'Spanish Inquisition'
         self.plural = 'Spanish Inquisitions'
         self.possessive = 'Spanish\'s Inquisition'
 
-        self.project_singular = factories.ProjectFactory(
-            title=self.singular,
-            creator=self.user,
-            is_public=True,
-        )
+        with run_celery_tasks():
+            super(TestProjectSearchResults, self).setUp()
+            self.user = factories.UserFactory(usename='Doug Bogie')
 
-        self.project_plural = factories.ProjectFactory(
-            title=self.plural,
-            creator=self.user,
-            is_public=True,
-        )
 
-        self.project_possessive = factories.ProjectFactory(
-            title=self.possessive,
-            creator=self.user,
-            is_public=True,
-        )
+            self.project_singular = factories.ProjectFactory(
+                title=self.singular,
+                creator=self.user,
+                is_public=True,
+            )
 
-        self.project_unrelated = factories.ProjectFactory(
-            title='Cardinal Richelieu',
-            creator=self.user,
-            is_public=True,
-        )
+            self.project_plural = factories.ProjectFactory(
+                title=self.plural,
+                creator=self.user,
+                is_public=True,
+            )
+
+            self.project_possessive = factories.ProjectFactory(
+                title=self.possessive,
+                creator=self.user,
+                is_public=True,
+            )
+
+            self.project_unrelated = factories.ProjectFactory(
+                title='Cardinal Richelieu',
+                creator=self.user,
+                is_public=True,
+            )
 
     def test_singular_query(self):
         # Verify searching for singular term includes singular,
         # possessive and plural versions in results.
+        time.sleep(1)
         results = query(self.singular)['results']
         assert_equal(len(results), 3)
 
@@ -699,29 +710,30 @@ def job(**kwargs):
 
 class TestUserSearchResults(SearchTestCase):
     def setUp(self):
-        super(TestUserSearchResults, self).setUp()
-        self.user_one = factories.UserFactory(jobs=[job(institution='Oxford'),
-                                          job(institution='Star Fleet')],
-                                    fullname='Date Soong')
+        with run_celery_tasks():
+            super(TestUserSearchResults, self).setUp()
+            self.user_one = factories.UserFactory(jobs=[job(institution='Oxford'),
+                                                        job(institution='Star Fleet')],
+                                                  fullname='Date Soong')
 
-        self.user_two = factories.UserFactory(jobs=[job(institution='Grapes la Picard'),
-                                          job(institution='Star Fleet')],
-                                    fullname='Jean-Luc Picard')
+            self.user_two = factories.UserFactory(jobs=[job(institution='Grapes la Picard'),
+                                                        job(institution='Star Fleet')],
+                                                  fullname='Jean-Luc Picard')
 
-        self.user_three = factories.UserFactory(jobs=[job(institution='Star Fleet'),
-                                            job(institution='Federation Medical')],
-                                      fullname='Beverly Crusher')
+            self.user_three = factories.UserFactory(jobs=[job(institution='Star Fleet'),
+                                                      job(institution='Federation Medical')],
+                                                    fullname='Beverly Crusher')
 
-        self.user_four = factories.UserFactory(jobs=[job(institution='Star Fleet')],
-                                     fullname='William Riker')
+            self.user_four = factories.UserFactory(jobs=[job(institution='Star Fleet')],
+                                                   fullname='William Riker')
 
-        self.user_five = factories.UserFactory(jobs=[job(institution='Traveler intern'),
-                                           job(institution='Star Fleet Academy'),
-                                           job(institution='Star Fleet Intern')],
-                                     fullname='Wesley Crusher')
+            self.user_five = factories.UserFactory(jobs=[job(institution='Traveler intern'),
+                                                         job(institution='Star Fleet Academy'),
+                                                         job(institution='Star Fleet Intern')],
+                                                   fullname='Wesley Crusher')
 
-        for i in range(25):
-            factories.UserFactory(jobs=[job()])
+            for i in range(25):
+                factories.UserFactory(jobs=[job()])
 
         self.current_starfleet = [
             self.user_three,
