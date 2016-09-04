@@ -7,6 +7,7 @@ from django.http import Http404
 
 from modularodm import Q
 from website.project.model import Comment
+from website.project.spam.model import SpamStatus
 from website.settings import SUPPORT_EMAIL
 
 from admin.base.utils import OSFAdmin
@@ -21,10 +22,10 @@ from admin.spam.forms import EmailForm, ConfirmForm
 from admin.spam.templatetags.spam_extras import reverse_spam_detail
 
 STATUS = dict(
-    UNKNOWN=Comment.UNKNOWN,
-    SPAM=Comment.SPAM,
-    HAM=Comment.HAM,
-    FLAGGED=Comment.FLAGGED,
+    UNKNOWN=SpamStatus.UNKNOWN,
+    SPAM=SpamStatus.SPAM,
+    HAM=SpamStatus.HAM,
+    FLAGGED=SpamStatus.FLAGGED,
 )
 
 
@@ -172,7 +173,7 @@ class SpamDetail(OSFAdmin, FormView):
         spam_id = self.kwargs.get('spam_id')
         item = Comment.load(spam_id)
         try:
-            if int(form.cleaned_data.get('confirm')) == Comment.SPAM:
+            if int(form.cleaned_data.get('confirm')) == SpamStatus.SPAM:
                 item.confirm_spam()
                 item.is_deleted = True
                 log_message = 'Confirmed SPAM: {}'.format(spam_id)

@@ -3283,7 +3283,7 @@ class TestProject(OsfTestCase):
                     assert_equal(mock_request_embargo_termination.call_count, 1)
 
     def test_set_privacy_on_spammy_node(self):
-        with mock.patch.object(settings, 'HIDE_SPAM_NODES', return_value=True):
+        with mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', True):
             with mock.patch.object(Node, 'is_spammy', mock.PropertyMock(return_value=True)):
                 with assert_raises(NodeStateError):
                     self.project.set_privacy('public')
@@ -4756,39 +4756,32 @@ class TestNodeAddContributorRegisteredOrNot(OsfTestCase):
         assert_in(contributor._id, self.node.contributors)
         assert_equals(contributor.is_registered, True)
 
+
 class TestNodeSpam(OsfTestCase):
 
     def setUp(self):
         super(TestNodeSpam, self).setUp()
         self.node = ProjectFactory(is_public=True)
 
-    def test_flag_spam(self):
+    def test_flag_spam_make_node_private(self):
         assert_true(self.node.is_public)
-        with mock.patch.object(settings, 'HIDE_SPAM_NODES', return_value=True):
+        with mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', True):
             self.node.flag_spam()
         assert_true(self.node.is_spammy)
         assert_false(self.node.is_public)
 
-    def test_flag_spam_hides_children(self):
-        child = NodeFactory(parent=self.node, is_public=True)
-        subchild = NodeFactory(parent=child, is_public=True)
-        for n in (self.node, child, subchild):
-            assert_true(n.is_public)
-        with mock.patch.object(settings, 'HIDE_SPAM_NODES', return_value=True):
+    def test_flag_spam_do_not_make_node_private(self):
+        assert_true(self.node.is_public)
+        with mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', False):
             self.node.flag_spam()
-        for n in (self.node, child, subchild):
-            assert_false(n.is_public)
+        assert_true(self.node.is_spammy)
+        assert_true(self.node.is_public)
 
-    def test_is_spammy_looks_upward_recursively(self):
-        child = NodeFactory(parent=self.node, is_public=True)
-        subchild = NodeFactory(parent=child, is_public=True)
-        for n in (self.node, child, subchild):
-            assert_false(n.is_spammy)
-            assert_true(n.is_public)
-        with mock.patch.object(settings, 'HIDE_SPAM_NODES', return_value=True):
-            self.node.flag_spam()
-        for n in (self.node, child, subchild):
-            assert_true(n.is_spammy)
+    def test_confirm_spam_makes_node_private(self):
+        assert_true(self.node.is_public)
+        self.node.confirm_spam()
+        assert_true(self.node.is_spammy)
+        assert_false(self.node.is_public)
 
 
 if __name__ == '__main__':
