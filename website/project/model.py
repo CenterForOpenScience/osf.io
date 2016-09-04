@@ -3411,12 +3411,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
                 if newest_wiki_page:
                     content.append(newest_wiki_page.raw_text(self).encode('utf-8'))
             else:
-                content.append(getattr(self, field, '').encode('utf-8'))
+                content.append((getattr(self, field, None) or '').encode('utf-8'))
         if not content:
             return None
         return '\n\n'.join(content)
 
     def check_spam(self, saved_fields, request_headers):
+        if not settings.SPAM_CHECK_ENABLED:
+            return False
         content = self._get_spam_content(saved_fields)
         if not content:
             return
