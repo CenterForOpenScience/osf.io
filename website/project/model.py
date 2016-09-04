@@ -21,7 +21,7 @@ from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationValueError
 
 from framework import status
-from framework.mongo import ObjectId
+from framework.mongo import ObjectId, DummyRequest
 from framework.mongo import StoredObject
 from framework.mongo import validators
 from framework.mongo import get_cache_key as get_request
@@ -60,13 +60,9 @@ from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PE
 from website.project.commentable import Commentable
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.metadata.utils import create_jsonschema_from_metaschema
-from website.project.licenses import (
-    NodeLicense,
-    NodeLicenseRecord,
-)
+from website.project.licenses import (NodeLicense, NodeLicenseRecord)
 from website.project.taxonomies import Subject
 from website.project import signals as project_signals
-from website.project import spam
 from website.project import tasks as node_tasks
 from website.project.spam.model import SpamMixin
 from website.project.sanctions import (
@@ -832,7 +828,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
     ]
 
     # Node fields that trigger an update to Solr on save
-    SOLR_UPDATE_FIELDS = {
+    SEARCH_UPDATE_FIELDS = {
         'title',
         'category',
         'description',
@@ -849,6 +845,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         'node_license',
         '_affiliated_institutions',
         'preprint_file',
+    }
+
+    # Node fields that trigger a check to the spam filter on save
+    SPAM_CHECK_FIELDS = {
+        'title',
+        'description',
+        'wiki_pages_current',
     }
 
     # Fields that are writable by Node.update
@@ -1792,8 +1795,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
             project_signals.project_created.send(self)
 
-        request_headers = get_headers_from_request(get_request())
-        self.on_update(saved_fields, request_headers)
+        if saved_fields:
+            self.on_update(saved_fields)
 
         if 'node_license' in saved_fields:
             children = [c for c in self.get_descendants_recursive(
@@ -2232,12 +2235,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
             self.save()
         return None
 
-    def on_update(self, saved_fields, request_headers):
-        request_headers = {
-            k: v
-            for k, v in request_headers.items()
-            if isinstance(v, basestring)
-        }
+    def on_update(self, saved_fields):
+        request = get_request()
+        request_headers = None
+        if not isinstance(request, DummyRequest):
+            request_headers = {
+                k: v
+                for k, v in get_headers_from_request(request).items()
+                if isinstance(v, basestring)
+            }
         enqueue_task(node_tasks.on_node_updated.s(self._id, saved_fields, request_headers))
 
     def update_search(self):
@@ -3389,41 +3395,48 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
         return contributor
 
-    @property
-    def is_spammy(self):
-        return (self.is_flagged_as_spam or self.is_spam) or (self.parent_node.is_spammy if self.parent_node else False)
+    def _get_spam_content(self, saved_fields):
+        from website.addons.wiki.model import NodeWikiPage
+        spam_fields = self.SPAM_CHECK_FIELDS if self.is_public and 'is_public' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(saved_fields)
+        content = []
+        for field in spam_fields:
+            if field == 'wiki_pages_current':
+                newest_wiki_page = None
+                for wiki_page_id in self.wiki_pages_current.values():
+                    wiki_page = NodeWikiPage.load(wiki_page_id)
+                    if not newest_wiki_page:
+                        newest_wiki_page = wiki_page
+                    elif wiki_page.date > newest_wiki_page.date:
+                        newest_wiki_page = wiki_page
+                if newest_wiki_page:
+                    content.append(newest_wiki_page.raw_text(self).encode('utf-8'))
+            else:
+                content.append(getattr(self, field, '').encode('utf-8'))
+        if not content:
+            return None
+        return '\n\n'.join(content)
 
-    def _get_spam_headers(self):
-        request_headers = get_headers_from_request(
-            get_request()
+    def check_spam(self, saved_fields, request_headers):
+        content = self._get_spam_content(saved_fields)
+        if not content:
+            return
+        is_spam = self.do_check_spam(
+            self.creator.fullname,
+            self.creator.username,
+            content,
+            request_headers
         )
-        return {
-            k: v
-            for k, v in request_headers.items()
-            if isinstance(v, basestring)
-        }
+        logger.info("Node ({}) '{}' smells like {}".format(
+            self._id, self.title.encode('utf-8'), 'SPAM' if is_spam else 'HAM'
+        ))
+        return is_spam
 
-    def confirm_spam(self, save=False):
-        super(Node, self).confirm_spam(save=save)
-        enqueue_task(spam.confirm_spam.s(self._id, self._get_spam_headers()))
-
-    def confirm_ham(self, save=False):
-        super(Node, self).confirm_ham(save=save)
-        enqueue_task(spam.confirm_spam.s(self._id, self._get_spam_headers()))
-
-    def flag_spam(self, save=False):
-        """ Overrides SpamMixin#save_spam. Make spammy node and its children private
+    def flag_spam(self):
+        """ Overrides SpamMixin#save_spam. Make spammy node private
         """
-        super(Node, self).flag_spam(save=save)
-        if settings.HIDE_SPAM_NODES:
-            for node in self.node_and_primary_descendants():
-                node.set_privacy(
-                    Node.PRIVATE,
-                    auth=None,
-                    log=False,
-                    save=True,
-                    check_addons=False
-                )
+        super(Node, self).flag_spam()
+        if settings.SPAMMY_MAKE_NODE_PRIVATE:
+            self.set_privacy(Node.PRIVATE, auth=None, log=False, save=False, check_addons=False)
 
     def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False, check_addons=True):
         """Set the permissions for this node. Also, based on meeting_creation, queues an email to user about abilities of
@@ -3438,7 +3451,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         if auth and not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Must be an admin to change privacy settings.')
         if permissions == 'public' and not self.is_public:
-            if settings.HIDE_SPAM_NODES and self.is_spammy:
+            if settings.SPAMMY_MAKE_NODE_PRIVATE and self.is_spammy:
+                # TODO: Should say will review within a certain agreed upon time period.
                 raise NodeStateError('This project has been marked as spam. Please contact the help desk if you think this is in error.')
             if self.is_registration:
                 if self.is_pending_embargo:
