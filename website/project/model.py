@@ -3417,6 +3417,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         return '\n\n'.join(content)
 
     def check_spam(self, saved_fields, request_headers):
+        if not settings.SPAM_CHECK_ENABLED:
+            return False
         content = self._get_spam_content(saved_fields)
         if not content:
             return
