@@ -3282,6 +3282,12 @@ class TestProject(OsfTestCase):
                     registration.set_privacy('public', auth=self.auth)
                     assert_equal(mock_request_embargo_termination.call_count, 1)
 
+    def test_set_privacy_on_spammy_node(self):
+        with mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', True):
+            with mock.patch.object(Node, 'is_spammy', mock.PropertyMock(return_value=True)):
+                with assert_raises(NodeStateError):
+                    self.project.set_privacy('public')
+
     def test_set_description(self):
         old_desc = self.project.description
         self.project.set_description(
@@ -4749,6 +4755,33 @@ class TestNodeAddContributorRegisteredOrNot(OsfTestCase):
         contributor = self.node.add_contributor_registered_or_not(auth=Auth(self.user), full_name='F Mercury', email=self.registered_user.username)
         assert_in(contributor._id, self.node.contributors)
         assert_equals(contributor.is_registered, True)
+
+
+class TestNodeSpam(OsfTestCase):
+
+    def setUp(self):
+        super(TestNodeSpam, self).setUp()
+        self.node = ProjectFactory(is_public=True)
+
+    def test_flag_spam_make_node_private(self):
+        assert_true(self.node.is_public)
+        with mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', True):
+            self.node.flag_spam()
+        assert_true(self.node.is_spammy)
+        assert_false(self.node.is_public)
+
+    def test_flag_spam_do_not_make_node_private(self):
+        assert_true(self.node.is_public)
+        with mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', False):
+            self.node.flag_spam()
+        assert_true(self.node.is_spammy)
+        assert_true(self.node.is_public)
+
+    def test_confirm_spam_makes_node_private(self):
+        assert_true(self.node.is_public)
+        self.node.confirm_spam()
+        assert_true(self.node.is_spammy)
+        assert_false(self.node.is_public)
 
 
 if __name__ == '__main__':
