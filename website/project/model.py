@@ -3435,13 +3435,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         """ Overrides SpamMixin#save_spam. Make spammy node private
         """
         super(Node, self).flag_spam()
-        if settings.SPAMMY_MAKE_NODE_PRIVATE:
+        if settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE:
             self.set_privacy(Node.PRIVATE, auth=None, log=False, save=False, check_addons=False)
 
     def confirm_spam(self, save=False):
         super(Node, self).confirm_spam(save=False)
-        # potentially hide the node
-        self.flag_spam()
+        self.set_privacy(Node.PRIVATE, auth=None, log=False, save=False, check_addons=False)
         if save:
             self.save()
 
@@ -3458,7 +3457,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         if auth and not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Must be an admin to change privacy settings.')
         if permissions == 'public' and not self.is_public:
-            if settings.SPAMMY_MAKE_NODE_PRIVATE and self.is_spammy:
+            if settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE and self.is_spammy:
                 # TODO: Should say will review within a certain agreed upon time period.
                 raise NodeStateError('This project has been marked as spam. Please contact the help desk if you think this is in error.')
             if self.is_registration:

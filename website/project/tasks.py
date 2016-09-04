@@ -7,7 +7,7 @@ def on_node_updated(node_id, saved_fields, request_headers=None):
     from website.models import Node
     node = Node.load(node_id)
 
-    if request_headers and settings.SPAM_CHECK_UPDATES:
+    if request_headers and settings.SPAM_CHECK_ENABLED:
         if node.check_spam(saved_fields, request_headers):
             node.save()
 
