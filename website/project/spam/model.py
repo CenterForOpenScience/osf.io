@@ -1,4 +1,5 @@
 import abc
+import logging
 from datetime import datetime
 
 from modularodm import fields
@@ -8,6 +9,9 @@ from framework.mongo import StoredObject
 from website import settings
 from website.project.model import User
 from website.util import akismet
+
+
+logger = logging.getLogger(__name__)
 
 
 def _get_client():
@@ -147,6 +151,7 @@ class SpamMixin(StoredObject):
                 comment_author=self.spam_data['author'],
                 # comment_author_email=self.spam_data['author_email'],
             )
+            logger.info('confirm_ham update sent')
         self.spam_status = SpamStatus.HAM
         if save:
             self.save()
@@ -163,6 +168,7 @@ class SpamMixin(StoredObject):
                 comment_author=self.spam_data['author'],
                 # comment_author_email=self.spam_data['author_email'],
             )
+            logger.info('confirm_spam update sent')
         self.spam_status = SpamStatus.SPAM
         if save:
             self.save()
