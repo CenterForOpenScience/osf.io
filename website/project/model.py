@@ -3438,6 +3438,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         if settings.SPAMMY_MAKE_NODE_PRIVATE:
             self.set_privacy(Node.PRIVATE, auth=None, log=False, save=False, check_addons=False)
 
+    def confirm_spam(self, save=False):
+        super(Node, self).confirm_spam(save=False)
+        # potentially hide the node
+        self.flag_spam()
+        if save:
+            self.save()
+
     def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False, check_addons=True):
         """Set the permissions for this node. Also, based on meeting_creation, queues an email to user about abilities of
             public projects.
