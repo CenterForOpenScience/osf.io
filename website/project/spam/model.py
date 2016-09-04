@@ -180,8 +180,8 @@ class SpamMixin(StoredObject):
 
         client = _get_client()
         remote_addr = request_headers['Remote-Addr']
-        user_agent = request_headers['User-Agent']
-        referer = request_headers['Referer']
+        user_agent = request_headers.get('User-Agent')
+        referer = request_headers.get('Referer')
         is_spam, _ = client.check_comment(
             user_ip=remote_addr,
             user_agent=user_agent,
