@@ -1,7 +1,6 @@
 from django import forms
 from ckeditor.widgets import CKEditorWidget
 
-from website.project.model import Comment
 from website.project.spam.model import SpamStatus
 
 
