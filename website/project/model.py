@@ -3411,7 +3411,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
                 if newest_wiki_page:
                     content.append(newest_wiki_page.raw_text(self).encode('utf-8'))
             else:
-                content.append(getattr(self, field, '').encode('utf-8'))
+                content.append((getattr(self, field, None) or '').encode('utf-8'))
         if not content:
             return None
         return '\n\n'.join(content)
