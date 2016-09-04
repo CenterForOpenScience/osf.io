@@ -24,10 +24,7 @@ def _validate_reports(value, *args, **kwargs):
             raise ValidationValueError('Keys must be user IDs')
         if not isinstance(val, dict):
             raise ValidationTypeError('Values must be dictionaries')
-        if ('category' not in val or
-            'text' not in val or
-            'date' not in val or
-            'retracted' not in val):
+        if ('category' not in val or 'text' not in val or 'date' not in val or 'retracted' not in val):
             raise ValidationValueError(
                 ('Values must include `date`, `category`, ',
                  '`text`, `retracted` keys')
