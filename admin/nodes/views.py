@@ -13,8 +13,8 @@ from admin.common_auth.logs import (
     update_admin_log,
     NODE_REMOVED,
     NODE_RESTORED,
-    CONTRIBUTOR_REMOVED
-)
+    CONTRIBUTOR_REMOVED,
+    CONFIRM_SPAM, CONFIRM_HAM)
 from admin.nodes.templatetags.node_extras import reverse_node
 from admin.nodes.serializers import serialize_node, serialize_simple_user
 from website.project.spam.model import SpamStatus
@@ -205,7 +205,7 @@ class RegistrationListView(OSFAdmin, ListView):
 class NodeSpamList(OSFAdmin, ListView):
     SPAM_STATE = SpamStatus.UNKNOWN
 
-    paginate_by = 10
+    paginate_by = 25
     paginate_orphans = 1
     ordering = 'date_created'
     context_object_name = '-node'
@@ -238,6 +238,13 @@ class NodeFlaggedSpamList(NodeSpamList, DeleteView):
         for nid in node_ids:
             node = Node.load(nid)
             node.confirm_spam(save=True)
+            update_admin_log(
+                user_id=self.request.user.id,
+                object_id=nid,
+                object_repr='Node',
+                message='Confirmed SPAM: {}'.format(nid),
+                action_flag=CONFIRM_SPAM
+            )
         return redirect('nodes:flagged-spam')
 
 
@@ -255,6 +262,13 @@ class NodeConfirmSpamView(NodeDeleteBase):
     def delete(self, request, *args, **kwargs):
         node = self.get_object()
         node.confirm_spam(save=True)
+        update_admin_log(
+            user_id=self.request.user.id,
+            object_id=node._id,
+            object_repr='Node',
+            message='Confirmed SPAM: {}'.format(node._id),
+            action_flag=CONFIRM_SPAM
+        )
         return redirect(reverse_node(self.kwargs.get('guid')))
 
 class NodeConfirmHamView(NodeDeleteBase):
@@ -263,4 +277,11 @@ class NodeConfirmHamView(NodeDeleteBase):
     def delete(self, request, *args, **kwargs):
         node = self.get_object()
         node.confirm_ham(save=True)
+        update_admin_log(
+            user_id=self.request.user.id,
+            object_id=node._id,
+            object_repr='Node',
+            message='Confirmed HAM: {}'.format(node._id),
+            action_flag=CONFIRM_HAM
+        )
         return redirect(reverse_node(self.kwargs.get('guid')))
