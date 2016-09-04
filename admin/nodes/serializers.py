@@ -25,8 +25,6 @@ def serialize_node(node):
         'deleted': node.is_deleted,
         'pending_registration': node.is_pending_registration,
         'creator': node.creator._id,
-        'is_spam': node.is_spam,
-        'is_flagged_as_spam': node.is_flagged_as_spam
     }
 
 
