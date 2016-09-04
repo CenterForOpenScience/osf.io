@@ -89,6 +89,10 @@ class SpamMixin(StoredObject):
             self.save()
 
     @property
+    def is_spam(self):
+        return self.spam_status == SpamStatus.SPAM
+
+    @property
     def is_spammy(self):
         return self.spam_status in [SpamStatus.FLAGGED, SpamStatus.SPAM]
 
