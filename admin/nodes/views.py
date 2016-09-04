@@ -245,6 +245,10 @@ class NodeKnownSpamList(NodeSpamList):
     SPAM_STATE = SpamStatus.SPAM
     template_name = 'nodes/known_spam_list.html'
 
+class NodeKnownHamList(NodeSpamList):
+    SPAM_STATE = SpamStatus.HAM
+    template_name = 'nodes/known_spam_list.html'
+
 class NodeConfirmSpamView(NodeDeleteBase):
     template_name = 'nodes/confirm_spam.html'
 
