@@ -8,7 +8,15 @@
         <tr>
             {% if form_action %}
             <th>
-                <i class="fa fa-check-square"></i>
+                <input type="checkbox" onclick="toggle(this)">
+                <script language="javascript">
+                    function toggle(source) {
+                        var checkboxes = document.getElementsByClassName('selection');
+                        for (var i in checkboxes) {
+                            checkboxes[i].checked = source.checked;
+                        }
+                    }
+                </script>
             </th>
             {% endif %}
             <th>GUID</th>
@@ -31,7 +39,7 @@
         <tr>
             {% if form_action %}
             <td>
-                <input name="{{node.id}}" type="checkbox" value="1"/>
+                <input name="{{node.id}}" class="selection" type="checkbox"/>
             </td>
             {% endif %}
             <td>
