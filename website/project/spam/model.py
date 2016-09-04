@@ -136,9 +136,8 @@ class SpamMixin(StoredObject):
             self.save()
 
     def confirm_ham(self, save=False):
-        self.spam_status = SpamStatus.HAM
-        # not all mixins will implement check spam pre-req
-        if self.spam_data:
+        # not all mixins will implement check spam pre-req, only submit ham when it was incorrectly flagged
+        if self.spam_data and self.spam_status in [SpamStatus.FLAGGED, SpamStatus.SPAM]:
             client = _get_client()
             client.submit_ham(
                 user_ip=self.spam_data['headers']['Remote-Addr'],
@@ -148,13 +147,13 @@ class SpamMixin(StoredObject):
                 comment_author=self.spam_data['author'],
                 # comment_author_email=self.spam_data['author_email'],
             )
+        self.spam_status = SpamStatus.HAM
         if save:
             self.save()
 
     def confirm_spam(self, save=False):
-        self.spam_status = SpamStatus.SPAM
-        # not all mixins will implement check spam pre-req
-        if self.spam_data:
+        # not all mixins will implement check spam pre-req, only submit spam when it was incorrectly flagged
+        if self.spam_data and self.spam_status not in [SpamStatus.FLAGGED, SpamStatus.HAM]:
             client = _get_client()
             client.submit_spam(
                 user_ip=self.spam_data['headers']['Remote-Addr'],
@@ -164,6 +163,7 @@ class SpamMixin(StoredObject):
                 comment_author=self.spam_data['author'],
                 # comment_author_email=self.spam_data['author_email'],
             )
+        self.spam_status = SpamStatus.SPAM
         if save:
             self.save()
 
