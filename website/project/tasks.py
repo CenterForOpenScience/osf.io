@@ -6,7 +6,7 @@ def on_node_updated(node_id, saved_fields, request_headers=None):
     from website.models import Node
     node = Node.load(node_id)
 
-    if node.is_collection or node.archiving:
+    if not node.is_collection and not node.archiving:
         if request_headers and node.check_spam(saved_fields, request_headers):
             node.save()
 
