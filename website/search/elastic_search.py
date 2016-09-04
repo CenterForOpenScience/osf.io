@@ -349,7 +349,7 @@ def update_node(node, index=None, bulk=False, async=False):
     for file_ in paginated(OsfStorageFile, Q('node', 'eq', node)):
         update_file(file_, index=index)
 
-    if node.is_deleted or not node.is_public or node.archiving or node.is_spammy:
+    if node.is_deleted or not node.is_public or node.archiving or (node.is_spammy and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH):
         delete_doc(node._id, node, index=index)
     else:
         category = get_doctype_from_node(node)

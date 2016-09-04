@@ -17,6 +17,7 @@ from admin.common_auth.logs import (
 )
 from admin.nodes.templatetags.node_extras import reverse_node
 from admin.nodes.serializers import serialize_node, serialize_simple_user
+from website.project.spam.model import SpamStatus
 
 
 class NodeFormView(OSFAdmin, GuidFormView):
@@ -202,7 +203,7 @@ class RegistrationListView(OSFAdmin, ListView):
         }
 
 class NodeSpamList(OSFAdmin, ListView):
-    SPAM_STATE = None
+    SPAM_STATE = SpamStatus.UNKNOWN
 
     paginate_by = 10
     paginate_orphans = 1
@@ -226,7 +227,7 @@ class NodeSpamList(OSFAdmin, ListView):
         }
 
 class NodeFlaggedSpamList(NodeSpamList, DeleteView):
-    SPAM_STATE = Node.FLAGGED
+    SPAM_STATE = SpamStatus.FLAGGED
     template_name = 'nodes/flagged_spam_list.html'
 
     def delete(self, request, *args, **kwargs):
@@ -241,7 +242,11 @@ class NodeFlaggedSpamList(NodeSpamList, DeleteView):
 
 
 class NodeKnownSpamList(NodeSpamList):
-    SPAM_STATE = Node.SPAM
+    SPAM_STATE = SpamStatus.SPAM
+    template_name = 'nodes/known_spam_list.html'
+
+class NodeKnownHamList(NodeSpamList):
+    SPAM_STATE = SpamStatus.HAM
     template_name = 'nodes/known_spam_list.html'
 
 class NodeConfirmSpamView(NodeDeleteBase):
