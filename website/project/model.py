@@ -3416,7 +3416,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
             return None
         return '\n\n'.join(content)
 
-    def check_spam(self, saved_fields, request_headers):
+    def check_spam(self, saved_fields, request_headers, save=False):
         if not settings.SPAM_CHECK_ENABLED:
             return False
         content = self._get_spam_content(saved_fields)
@@ -3431,6 +3431,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         logger.info("Node ({}) '{}' smells like {}".format(
             self._id, self.title.encode('utf-8'), 'SPAM' if is_spam else 'HAM'
         ))
+        if save:
+            self.save()
         return is_spam
 
     def flag_spam(self):
