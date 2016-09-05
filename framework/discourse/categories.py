@@ -19,7 +19,7 @@ def get_categories():
 def create_category(category_name, color):
     data = {}
     data['name'] = category_name
-    data['slug'] = category_name
+    data['slug'] = category_name.lower()
     data['color'] = color
     data['text_color'] = 'FFFFFF'
     data['allow_badges'] = 'true'

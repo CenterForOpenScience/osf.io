@@ -29,7 +29,11 @@ logger = logging.getLogger(__name__)
 def import_discourse_ids(in_file, dry_run):
     for json_line in in_file:
         obj = json.loads(json_line)
-        target = models.Guid.find(Q('_id', 'eq', obj['guid']))[0].referent
+        found_models = models.Guid.find(Q('_id', 'eq', obj['guid']))
+        if found_models.count() == 0:
+            logger.warn('Object to import not found any more. Ignored object with guid ' + obj['guid'])
+            continue
+        target = found_models[0].referent
         if obj['type'] == 'user':
             target.discourse_user_id = obj['user_id']
             target.discourse_user_created = True
@@ -61,6 +65,8 @@ def main():
     discourse.common.in_migration = True
     import_discourse_ids(in_file, dry_run)
     discourse.common.in_migration = False
+
+    print('Migration of id numbers back from Discourse completed')
 
 if __name__ == '__main__':
     main()

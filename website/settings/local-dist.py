@@ -73,5 +73,31 @@ CELERY_RESULT_BACKEND = 'amqp://'
 
 USE_CDN_FOR_CLIENT_LIBS = False
 
+DISCOURSE_SSO_SECRET = 'changeme'
+DISCOURSE_DEV_MODE = True
+DISCOURSE_SERVER_URL = 'http://localhost:4000/' if DISCOURSE_DEV_MODE else 'http://192.168.99.100'
+DISCOURSE_API_KEY = 'changeme' if DISCOURSE_DEV_MODE else 'changeme'
+DISCOURSE_API_ADMIN_USER = 'system'
+
+try:
+    DISCOURSE_SERVER_SETTINGS = defaults.DISCOURSE_SERVER_SETTINGS
+except AttributeError:
+    DISCOURSE_SERVER_SETTINGS = {}
+DISCOURSE_SERVER_SETTINGS.update({
+                            'contact_email': 'changeme',
+                            'logo_url': DOMAIN + 'static/img/cos-white2.png',
+                            'logo_small_url': DOMAIN + 'static/img/cos-white2.png',
+                            'favicon_url': DOMAIN + 'favicon.ico',
+                            'sso_url': API_DOMAIN + 'v2/sso',
+                            'sso_secret': DISCOURSE_SSO_SECRET,
+                            'logout_redirect': DOMAIN + 'logout',
+                            'cors_origins': DOMAIN,
+                            'osf_domain': DOMAIN,
+                            'mfr_domain': MFR_SERVER_URL,
+                            })
+
+if DISCOURSE_DEV_MODE:
+    DISCOURSE_SERVER_SETTINGS.update({'port': '4000'})
+
 # Example of extending default settings
 # defaults.IMG_FMTS += ["pdf"]
