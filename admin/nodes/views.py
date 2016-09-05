@@ -20,14 +20,6 @@ from admin.nodes.serializers import serialize_node, serialize_simple_user
 from website.project.spam.model import SpamStatus
 
 
-SPAM_STATUS = dict(
-    UNKNOWN=SpamStatus.UNKNOWN,
-    SPAM=SpamStatus.SPAM,
-    HAM=SpamStatus.HAM,
-    FLAGGED=SpamStatus.FLAGGED,
-)
-
-
 class NodeFormView(OSFAdmin, GuidFormView):
     """ Allow authorized admin user to input specific node guid.
 
@@ -181,7 +173,7 @@ class NodeView(OSFAdmin, GuidView):
 
     def get_context_data(self, **kwargs):
         kwargs = super(NodeView, self).get_context_data(**kwargs)
-        kwargs.update(SPAM_STATUS)  # Pass spam status in to check against
+        kwargs.update({'SPAM_STATUS': SpamStatus})  # Pass spam status in to check against
         return kwargs
 
     def get_object(self, queryset=None):

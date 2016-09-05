@@ -21,13 +21,6 @@ from admin.spam.serializers import serialize_comment
 from admin.spam.forms import EmailForm, ConfirmForm
 from admin.spam.templatetags.spam_extras import reverse_spam_detail
 
-STATUS = dict(
-    UNKNOWN=SpamStatus.UNKNOWN,
-    SPAM=SpamStatus.SPAM,
-    HAM=SpamStatus.HAM,
-    FLAGGED=SpamStatus.FLAGGED,
-)
-
 
 class EmailFormView(OSFAdmin, FormView):
     """ Allow authorized admin user to Email spammers, use judiciously
@@ -166,7 +159,7 @@ class SpamDetail(OSFAdmin, FormView):
             raise Http404('Spam with id "{}" not found.'.format(spam_id))
         kwargs.setdefault('page_number', self.request.GET.get('page', '1'))
         kwargs.setdefault('status', self.request.GET.get('status', '1'))
-        kwargs.update(STATUS)  # Pass status in to check against
+        kwargs.update({'SPAM_STATUS': SpamStatus})  # Pass status in to check against
         return kwargs
 
     def form_valid(self, form):
