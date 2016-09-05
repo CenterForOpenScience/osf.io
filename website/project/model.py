@@ -1796,7 +1796,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
             project_signals.project_created.send(self)
 
         if saved_fields:
-            self.on_update(saved_fields)
+            self.on_update(first_save, saved_fields)
 
         if 'node_license' in saved_fields:
             children = [c for c in self.get_descendants_recursive(
@@ -2235,7 +2235,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
             self.save()
         return None
 
-    def on_update(self, saved_fields):
+    def on_update(self, first_save, saved_fields):
         request = get_request()
         request_headers = None
         if not isinstance(request, DummyRequest):
@@ -2244,7 +2244,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
                 for k, v in get_headers_from_request(request).items()
                 if isinstance(v, basestring)
             }
-        enqueue_task(node_tasks.on_node_updated.s(self._id, saved_fields, request_headers))
+        enqueue_task(node_tasks.on_node_updated.s(self._id, first_save, saved_fields, request_headers))
 
     def update_search(self):
         from website import search
@@ -3428,8 +3428,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
             content,
             request_headers
         )
-        logger.info("Node ({}) '{}' smells like {}".format(
-            self._id, self.title.encode('utf-8'), 'SPAM' if is_spam else 'HAM'
+        logger.info("Node ({}) '{}' smells like {} (tip: {})".format(
+            self._id, self.title.encode('utf-8'), 'SPAM' if is_spam else 'HAM', self.spam_pro_tip
         ))
         if save:
             self.save()
