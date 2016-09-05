@@ -1,4 +1,5 @@
 import abc
+import logging
 from datetime import datetime
 
 from modularodm import fields
@@ -8,6 +9,9 @@ from framework.mongo import StoredObject
 from website import settings
 from website.project.model import User
 from website.util import akismet
+
+
+logger = logging.getLogger(__name__)
 
 
 def _get_client():
@@ -50,8 +54,8 @@ class SpamMixin(StoredObject):
     # SPAM_UPDATE_FIELDS = {
     #     'spam_status',
     # }
-
     spam_status = fields.IntegerField(default=SpamStatus.UNKNOWN, index=True)
+    spam_pro_tip = fields.StringField(default=None)
     # Data representing the original spam indication
     # - author: author name
     # - author_email: email of the author
@@ -145,15 +149,16 @@ class SpamMixin(StoredObject):
                 referrer=self.spam_data['headers'].get('Referer'),
                 comment_content=self.spam_data['content'],
                 comment_author=self.spam_data['author'],
-                # comment_author_email=self.spam_data['author_email'],
+                comment_author_email=self.spam_data['author_email'],
             )
+            logger.info('confirm_ham update sent')
         self.spam_status = SpamStatus.HAM
         if save:
             self.save()
 
     def confirm_spam(self, save=False):
         # not all mixins will implement check spam pre-req, only submit spam when it was incorrectly flagged
-        if settings.SPAM_CHECK_ENABLED and self.spam_data and self.spam_status == SpamStatus.HAM:
+        if settings.SPAM_CHECK_ENABLED and self.spam_data and self.spam_status in [SpamStatus.UNKNOWN, SpamStatus.HAM]:
             client = _get_client()
             client.submit_spam(
                 user_ip=self.spam_data['headers']['Remote-Addr'],
@@ -161,14 +166,15 @@ class SpamMixin(StoredObject):
                 referrer=self.spam_data['headers'].get('Referer'),
                 comment_content=self.spam_data['content'],
                 comment_author=self.spam_data['author'],
-                # comment_author_email=self.spam_data['author_email'],
+                comment_author_email=self.spam_data['author_email'],
             )
+            logger.info('confirm_spam update sent')
         self.spam_status = SpamStatus.SPAM
         if save:
             self.save()
 
     @abc.abstractmethod
-    def check_spam(self, saved_fields, request_headers):
+    def check_spam(self, saved_fields, request_headers, save=False):
         """Must return is_spam"""
         pass
 
@@ -180,24 +186,25 @@ class SpamMixin(StoredObject):
 
         client = _get_client()
         remote_addr = request_headers['Remote-Addr']
-        user_agent = request_headers['User-Agent']
-        referer = request_headers['Referer']
-        is_spam, _ = client.check_comment(
+        user_agent = request_headers.get('User-Agent')
+        referer = request_headers.get('Referer')
+        is_spam, pro_tip = client.check_comment(
             user_ip=remote_addr,
             user_agent=user_agent,
             referrer=referer,
             comment_content=content,
             comment_author=author,
-            # comment_author_email=author_email
+            comment_author_email=author_email
         )
+        self.spam_pro_tip = pro_tip
+        self.spam_data['headers'] = {
+            'Remote-Addr': remote_addr,
+            'User-Agent': user_agent,
+            'Referer': referer,
+        }
+        self.spam_data['content'] = content
+        self.spam_data['author'] = author
+        self.spam_data['author_email'] = author_email
         if is_spam:
-            self.spam_data['headers'] = {
-                'Remote-Addr': remote_addr,
-                'User-Agent': user_agent,
-                'Referer': referer,
-            }
-            self.spam_data['content'] = content
-            self.spam_data['author'] = author
-            self.spam_data['author_email'] = author_email
             self.flag_spam()
         return is_spam

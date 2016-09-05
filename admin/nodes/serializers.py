@@ -1,3 +1,5 @@
+import json
+
 from website.project.model import User
 from website.util.permissions import reduce_permissions
 
@@ -25,6 +27,9 @@ def serialize_node(node):
         'deleted': node.is_deleted,
         'pending_registration': node.is_pending_registration,
         'creator': node.creator._id,
+        'spam_status': node.spam_status,
+        'spam_pro_tip': node.spam_pro_tip,
+        'spam_data': json.dumps(node.spam_data, indent=4),
     }
 
 
