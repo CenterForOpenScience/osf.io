@@ -96,7 +96,7 @@ class SpamUserDeleteView(UserDeleteView):
                 ))
         if user:
             for node in user.contributor_to:
-                if not node.is_registration:
+                if not node.is_registration and not node.is_spam:
                     node.confirm_spam(save=True)
                     update_admin_log(
                         user_id=request.user.id,
