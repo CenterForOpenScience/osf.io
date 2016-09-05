@@ -219,7 +219,8 @@ def get_headers_from_request(req):
             '-'.join([part.capitalize() for part in k.split('_')]).replace('Http-', ''): v
             for k, v in headers.items()
         }
-        headers['Remote-Addr'] = (headers.get('X-Forwarded-For') or headers.get('Remote-Addr')).split(',')[0].strip()
+        remote_addr = (headers.get('X-Forwarded-For') or headers.get('Remote-Addr'))
+        headers['Remote-Addr'] = remote_addr.split(',')[0].strip() if remote_addr else None
     else:
         headers = getattr(req, 'headers', {})
         headers = {
