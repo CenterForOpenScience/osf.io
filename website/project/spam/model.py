@@ -174,7 +174,7 @@ class SpamMixin(StoredObject):
             self.save()
 
     @abc.abstractmethod
-    def check_spam(self, saved_fields, request_headers):
+    def check_spam(self, saved_fields, request_headers, save=False):
         """Must return is_spam"""
         pass
 
