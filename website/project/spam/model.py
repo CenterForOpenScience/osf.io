@@ -54,8 +54,8 @@ class SpamMixin(StoredObject):
     # SPAM_UPDATE_FIELDS = {
     #     'spam_status',
     # }
-
     spam_status = fields.IntegerField(default=SpamStatus.UNKNOWN, index=True)
+    spam_pro_tip = fields.StringField(default=None)
     # Data representing the original spam indication
     # - author: author name
     # - author_email: email of the author
@@ -149,7 +149,7 @@ class SpamMixin(StoredObject):
                 referrer=self.spam_data['headers'].get('Referer'),
                 comment_content=self.spam_data['content'],
                 comment_author=self.spam_data['author'],
-                # comment_author_email=self.spam_data['author_email'],
+                comment_author_email=self.spam_data['author_email'],
             )
             logger.info('confirm_ham update sent')
         self.spam_status = SpamStatus.HAM
@@ -166,7 +166,7 @@ class SpamMixin(StoredObject):
                 referrer=self.spam_data['headers'].get('Referer'),
                 comment_content=self.spam_data['content'],
                 comment_author=self.spam_data['author'],
-                # comment_author_email=self.spam_data['author_email'],
+                comment_author_email=self.spam_data['author_email'],
             )
             logger.info('confirm_spam update sent')
         self.spam_status = SpamStatus.SPAM
@@ -188,14 +188,15 @@ class SpamMixin(StoredObject):
         remote_addr = request_headers['Remote-Addr']
         user_agent = request_headers.get('User-Agent')
         referer = request_headers.get('Referer')
-        is_spam, _ = client.check_comment(
+        is_spam, pro_tip = client.check_comment(
             user_ip=remote_addr,
             user_agent=user_agent,
             referrer=referer,
             comment_content=content,
             comment_author=author,
-            # comment_author_email=author_email
+            comment_author_email=author_email
         )
+        self.spam_pro_tip = pro_tip
         self.spam_data['headers'] = {
             'Remote-Addr': remote_addr,
             'User-Agent': user_agent,

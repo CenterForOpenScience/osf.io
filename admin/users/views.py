@@ -7,6 +7,7 @@ from django.core.mail import send_mail
 from django.shortcuts import redirect
 from django.http import Http404, HttpResponse
 
+from website.project.spam.model import SpamStatus
 from website.settings import SUPPORT_EMAIL, DOMAIN
 from website.security import random_string
 from framework.auth import get_user
@@ -162,6 +163,11 @@ class UserFormView(OSFAdmin, GuidFormView):
 class UserView(OSFAdmin, GuidView):
     template_name = 'users/user.html'
     context_object_name = 'user'
+
+    def get_context_data(self, **kwargs):
+        kwargs = super(UserView, self).get_context_data(**kwargs)
+        kwargs.update({'SPAM_STATUS': SpamStatus})  # Pass spam status in to check against
+        return kwargs
 
     def get_object(self, queryset=None):
         return serialize_user(User.load(self.kwargs.get('guid')))

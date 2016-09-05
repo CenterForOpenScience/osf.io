@@ -3,7 +3,7 @@ from framework.transactions.context import TokuTransaction
 
 
 @celery_app.task(ignore_results=True)
-def on_node_updated(node_id, saved_fields, request_headers=None):
+def on_node_updated(node_id, first_save, saved_fields, request_headers=None):
     from website.models import Node
     node = Node.load(node_id)
 

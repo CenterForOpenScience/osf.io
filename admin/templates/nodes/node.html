@@ -256,15 +256,20 @@
                 </td>
             </tr>
             <tr>
+                <td>SPAM Pro Tip</td>
+                    <td>{{ node.spam_pro_tip }}</td>
+                <td>
+            </tr>
+            <tr>
                 <td>SPAM Status</td>
                 <td>
-                    {% if node.spam_status == UNKNOWN %}
+                    {% if node.spam_status == SPAM_STATUS.UNKNOWN %}
                         <span class="label label-default">Unknown</span>
-                    {% elif node.spam_status == FLAGGED %}
+                    {% elif node.spam_status == SPAM_STATUS.FLAGGED %}
                         <span class="label label-warning">Flagged</span>
-                    {% elif node.spam_status == SPAM %}
+                    {% elif node.spam_status == SPAM_STATUS.SPAM %}
                         <span class="label label-danger">Spam</span>
-                    {% elif node.spam_status == HAM %}
+                    {% elif node.spam_status == SPAM_STATUS.HAM %}
                         <span class="label label-success">Ham</span>
                     {% endif %}
                 </td>
