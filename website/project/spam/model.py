@@ -196,14 +196,14 @@ class SpamMixin(StoredObject):
             comment_author=author,
             # comment_author_email=author_email
         )
+        self.spam_data['headers'] = {
+            'Remote-Addr': remote_addr,
+            'User-Agent': user_agent,
+            'Referer': referer,
+        }
+        self.spam_data['content'] = content
+        self.spam_data['author'] = author
+        self.spam_data['author_email'] = author_email
         if is_spam:
-            self.spam_data['headers'] = {
-                'Remote-Addr': remote_addr,
-                'User-Agent': user_agent,
-                'Referer': referer,
-            }
-            self.spam_data['content'] = content
-            self.spam_data['author'] = author
-            self.spam_data['author_email'] = author_email
             self.flag_spam()
         return is_spam
