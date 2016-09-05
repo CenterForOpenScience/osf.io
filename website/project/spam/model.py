@@ -158,7 +158,7 @@ class SpamMixin(StoredObject):
 
     def confirm_spam(self, save=False):
         # not all mixins will implement check spam pre-req, only submit spam when it was incorrectly flagged
-        if settings.SPAM_CHECK_ENABLED and self.spam_data and self.spam_status == SpamStatus.HAM:
+        if settings.SPAM_CHECK_ENABLED and self.spam_data and self.spam_status in [SpamStatus.UNKNOWN, SpamStatus.HAM]:
             client = _get_client()
             client.submit_spam(
                 user_ip=self.spam_data['headers']['Remote-Addr'],
