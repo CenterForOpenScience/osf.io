@@ -6,6 +6,7 @@ from nose_parameterized import parameterized
 
 from tests import factories
 from tests.test_search import SearchTestCase
+from tests.utils import mock_archive
 from website.util import api_url_for
 
 
@@ -38,9 +39,10 @@ class TestSearchSearchAPI(SearchTestCase):
     """Exercises the website.search.views.search_search view.
     """
 
-    def results(self, query):
+    def results(self, query, category):
         url = api_url_for('search_search')
-        return self.app.get(url, {'q': query}).json['results']
+        data = {'q': 'category:{} AND {}'.format(category, query)}
+        return self.app.get(url, data).json['results']
 
     @parameterized.expand(cases)
     def test(self, ignored, status, type_, role, included):
@@ -49,7 +51,7 @@ class TestSearchSearchAPI(SearchTestCase):
             factories.ProjectFactory(title='Flim Flammity', is_public=status is PUBLIC)
         elif type_ == REGISTRATION:
             project = factories.ProjectFactory(title='Flim Flammity', is_public=status is PUBLIC)
-            factories.RegistrationFactory(project=project, is_public=status is PUBLIC)
+            mock_archive(project, autocomplete=True, autoapprove=True).__enter__()
         elif type_ == COMPONENT:
             project = factories.ProjectFactory(title='Blim Blammity', is_public=status is PUBLIC)
             factories.NodeFactory(
@@ -64,7 +66,7 @@ class TestSearchSearchAPI(SearchTestCase):
         else:
             raise NotImplementedError
         expected = [('Flim Flammity', type_)] if included else []
-        results = self.results('flim')
+        results = self.results('flim', type_)
         assert_equal([(x[key], x['category']) for x in results], expected)
 
 
