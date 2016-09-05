@@ -12,8 +12,7 @@ def on_node_updated(node_id, saved_fields, request_headers=None):
 
     if request_headers:
         with TokuTransaction():
-            if node.check_spam(saved_fields, request_headers):
-                node.save()
+            node.check_spam(saved_fields, request_headers, save=True)
 
     need_update = bool(node.SEARCH_UPDATE_FIELDS.intersection(saved_fields))
     # due to async nature of call this can issue a search delete for a new record (acceptable trade-off)
