@@ -253,6 +253,14 @@ class TestContributorMethods:
         assert visible_contrib._id in node.visible_contributor_ids
         assert invisible_contrib._id not in node.visible_contributor_ids
 
+    def test_visible_contributors(self, node, user):
+        visible_contrib = UserFactory()
+        invisible_contrib = UserFactory()
+        Contributor.objects.create(user=visible_contrib, node=node, visible=True)
+        Contributor.objects.create(user=invisible_contrib, node=node, visible=False)
+        assert visible_contrib in node.visible_contributors
+        assert invisible_contrib not in node.visible_contributors
+
     def test_set_visible_false(self, node, auth):
         contrib = UserFactory()
         Contributor.objects.create(user=contrib, node=node, visible=True)
