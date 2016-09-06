@@ -449,12 +449,12 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
         try:
             contrib = user.contributor_set.get(node=self)
         except Contributor.DoesNotExist:
+            if permission == 'read' and check_parent:
+                return self.is_admin_parent(user)
             return False
         else:
             if getattr(contrib, permission, False):
                 return True
-            if permission == 'read' and check_parent:
-                return self.is_admin_parent(user)
         return False
 
     def has_permission_on_children(self, user, permission):
