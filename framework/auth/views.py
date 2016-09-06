@@ -56,10 +56,9 @@ def reset_password_get(auth, uid=None, token=None):
     # Check if request bears a valid pair of `uid` and `token`
     user_obj = User.load(uid)
     if not (user_obj and user_obj.verify_password_token(token=token)):
-        # TODO: do we want to reveal detailed error message to the client?
         error_data = {
             'message_short': 'Invalid Request.',
-            'message_long': 'The request URL is invalid, has been expired or already used',
+            'message_long': 'The requested URL is invalid, has expired, or was already used',
         }
         raise HTTPError(http.BAD_REQUEST, data=error_data)
 
@@ -89,10 +88,9 @@ def reset_password_post(uid=None, token=None):
     # Check if request bears a valid pair of `uid` and `token`
     user_obj = User.load(uid)
     if not (user_obj and user_obj.verify_password_token(token=token)):
-        # TODO: do we want to reveal detailed error message to the client?
         error_data = {
             'message_short': 'Invalid Request.',
-            'message_long': 'The request URL is invalid, has been expired or already used',
+            'message_long': 'The requested URL is invalid, has expired, or was already used',
         }
         raise HTTPError(http.BAD_REQUEST, data=error_data)
 
