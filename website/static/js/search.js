@@ -284,6 +284,7 @@ var ViewModel = function(params) {
         self.category(alias);
         if (alias.name === 'SHARE') {
             var win = window.open(window.contextVars.shareUrl + 'discover?' + $.param({q: self.query()}), '_blank');
+            win.opener = null;
             win.focus();
         } else {
             self.search();
