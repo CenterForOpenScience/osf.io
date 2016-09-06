@@ -95,16 +95,6 @@ class UserSerializer(JSONAPISerializer):
         self_view_kwargs={'user_id': '<pk>'},
     ))
 
-    education = DevOnly(HideIfDisabled(RelationshipField(
-        related_view='users:user-education',
-        related_view_kwargs={'user_id': '<pk>'},
-    )))
-
-    employment = DevOnly(HideIfDisabled(RelationshipField(
-        related_view='users:user-employment',
-        related_view_kwargs={'user_id': '<pk>'},
-    )))
-
     def github_url(self, obj):
         return account_url_list(obj, 'github', 'http://github.com/{}/')
 
