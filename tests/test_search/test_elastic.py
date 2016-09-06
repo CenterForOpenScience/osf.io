@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import time
 import unittest
 import logging
@@ -18,6 +20,7 @@ from website.models import Retraction, NodeLicense, Tag
 
 from tests import factories
 from tests.base import OsfTestCase
+from tests.test_search import SearchTestCase
 from tests.test_features import requires_search
 from tests.utils import mock_archive, run_celery_tasks
 
@@ -40,7 +43,6 @@ class SearchTestCase(OsfTestCase):
 def query(term):
     results = search.search(build_query(term), index=elastic_search.INDEX)
     return results
-
 
 def query_user(name):
     term = 'category:user AND "{}"'.format(name)
@@ -781,6 +783,7 @@ class TestSearchExceptions(OsfTestCase):
         if settings.SEARCH_ENGINE == 'elastic':
             search.search_engine.es = cls._es
 
+    @requires_search
     def test_connection_error(self):
         # Ensures that saving projects/users doesn't break as a result of connection errors
         self.user = factories.UserFactory(usename='Doug Bogie')

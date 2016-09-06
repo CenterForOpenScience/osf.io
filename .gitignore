@@ -126,3 +126,4 @@ celerybeat.pid
 website/analytics/
 
 piwik-migration
+scripts/image_maniplation/test_rounded_corners.html

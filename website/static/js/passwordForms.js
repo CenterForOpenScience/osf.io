@@ -53,7 +53,7 @@ var BaseViewModel = oop.extend(ChangeMessageMixin, {
 
         self.password = ko.observable('').extend({
             required: true,
-            minLength: 6,
+            minLength: 8,
             maxLength: 256,
             complexity: 2,
         });

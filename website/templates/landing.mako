@@ -65,7 +65,7 @@
                           </div>
                           <div class="form-group" data-bind="css: {'has-error': password() && !password.isValid(), 'has-success': password() && password.isValid()}">
                               <label class="placeholder-replace" style="display:none">Password</label>
-                              <input type="password" class="form-control" placeholder="Password (Must be 6 to 256 characters)" data-bind=", textInput: typedPassword, value: password, disable: submitted(), event: {blur: trim.bind($data, password)}">
+                              <input type="password" class="form-control" placeholder="Password (Must be 8 to 256 characters)" data-bind=", textInput: typedPassword, value: password, disable: submitted(), event: {blur: trim.bind($data, password)}">
 
                               <div class="row" data-bind="visible: typedPassword().length > 0">
                                   <div class="col-xs-8">

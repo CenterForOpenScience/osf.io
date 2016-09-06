@@ -415,7 +415,7 @@ CELERY_IMPORTS = (
     'scripts.approve_registrations',
     'scripts.approve_embargo_terminations',
     'scripts.triggered_mails',
-    'scripts.send_queued_mails'
+    'scripts.send_queued_mails',
 )
 
 # Modules that need metrics and release requirements
@@ -485,7 +485,7 @@ else:
             'task': 'scripts.populate_new_and_noteworthy_projects',
             'schedule': crontab(minute=0, hour=2, day_of_week=6),  # Saturday 2:00 a.m.
             'kwargs': {'dry_run': False}
-        }
+        },
     }
 
     # Tasks that need metrics and release requirements

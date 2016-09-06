@@ -827,7 +827,8 @@ class NodeProviderSerializer(JSONAPISerializer):
     )
     links = LinksField({
         'upload': WaterbutlerLink(),
-        'new_folder': WaterbutlerLink(kind='folder')
+        'new_folder': WaterbutlerLink(kind='folder'),
+        'storage_addons': 'get_storage_addons_url'
     })
 
     class Meta:
@@ -844,6 +845,12 @@ class NodeProviderSerializer(JSONAPISerializer):
                 'node_id': obj.node._id,
                 'provider': obj.provider
             }
+        )
+
+    def get_storage_addons_url(self, obj):
+        return absolute_reverse(
+            'addons:addon-list',
+            query_kwargs={'filter[categories]': 'storage'}
         )
 
 class InstitutionRelated(JSONAPIRelationshipSerializer):
