@@ -1688,14 +1688,6 @@ def make_url_map(app):
             json_renderer,
         ),
 
-        # TODO: discuss this with ErinS
-        Rule(
-            '/resetpassword/<verification_key>/',
-            'post',
-            auth_views.reset_password_post,
-            json_renderer,
-        ),
-
         Rule(
             [
                 '/project/<pid>/settings/addons/',
