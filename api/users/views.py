@@ -25,8 +25,7 @@ from api.base.utils import default_node_list_query, default_node_permission_quer
 from api.addons.views import AddonSettingsMixin
 
 from api.users.serializers import (UserSerializer, UserCreateSerializer,
-    UserAddonSettingsSerializer, UserDetailSerializer, UserInstitutionsRelationshipSerializer,
-    UserEducationSerializer, UserEmploymentSerializer)
+    UserAddonSettingsSerializer, UserDetailSerializer, UserInstitutionsRelationshipSerializer)
 from api.users.permissions import ReadOnlyOrCurrentUser, ReadOnlyOrCurrentUserRelationship, CurrentUser
 
 
