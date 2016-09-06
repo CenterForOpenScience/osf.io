@@ -703,9 +703,7 @@ class LinksField(ser.Field):
     """Links field that resolves to a links object. Used in conjunction with `Link`.
     If the object to be serialized implements `get_absolute_url`, then the return value
     of that method is used for the `self` link.
-
     Example: ::
-
         links = LinksField({
             'html': 'absolute_url',
             'children': {
@@ -738,30 +736,19 @@ class LinksField(ser.Field):
     def to_representation(self, obj):
         ret = {}
         for name, value in self.links.iteritems():
-            if isinstance(value, list):
-                url_list = []
-                for val in value:
-                    try:
-                        url = _url_val(val, obj=obj, serializer=self.parent)
-                    except SkipField:
-                        continue
-                    else:
-                        url_list.append(url)
-                ret[name] = url_list
+            try:
+                url = _url_val(value, obj=obj, serializer=self.parent)
+            except SkipField:
+                continue
             else:
-                try:
-                    url = _url_val(value, obj=obj, serializer=self.parent)
-                except SkipField:
-                    continue
-                else:
-                    ret[name] = url
+                ret[name] = url
         if hasattr(obj, 'get_absolute_url') and 'self' not in self.links:
             ret['self'] = self.extend_absolute_url(obj)
         return ret
 
 
 class ListLinksField(ser.Field):
-    """Links field that resolves to a links object. Used in conjunction with `Link`.
+    """Links field that resolves to a links object. Used in conjunction with `List of Link`.
     If the object to be serialized implements `get_absolute_url`, then the return value
     of that method is used for the `self` link.
 
@@ -770,15 +757,15 @@ class ListLinksField(ser.Field):
         links = LinksField({
             'html': 'absolute_url',
             'children': {
-                'related': Link('nodes:node-children', node_id='<pk>'),
+                'related': list of Link('nodes:node-children', node_id='<pk>'),
                 'count': 'get_node_count'
             },
             'contributors': {
-                'related': Link('nodes:node-contributors', node_id='<pk>'),
+                'related': list of Link('nodes:node-contributors', node_id='<pk>'),
                 'count': 'get_contrib_count'
             },
             'registrations': {
-                'related': Link('nodes:node-registrations', node_id='<pk>'),
+                'related': list of Link('nodes:node-registrations', node_id='<pk>'),
                 'count': 'get_registration_count'
             },
         })
@@ -816,6 +803,7 @@ class ListLinksField(ser.Field):
         if hasattr(obj, 'get_absolute_url') and 'self' not in self.links:
             ret['self'] = obj.get_absolute_url()
         return ret
+
 
 _tpl_pattern = re.compile(r'\s*<\s*(\S*)\s*>\s*')
 
