@@ -582,6 +582,7 @@ def test_travis_osf(ctx):
     jshint(ctx)
     test_osf(ctx)
     test_addons(ctx)
+    test_api(ctx)
 
 
 @task
