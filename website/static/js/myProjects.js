@@ -622,8 +622,10 @@ var MyProjects = {
                     } else if (lastcrumb.data.nodeType === 'registrations'){
                         if (self.institutionId) {
                             template = m('.db-non-load-template.m-md.p-md.osf-box',
-                            'There have been no completed registrations affiliated with this institution. For a list of the most viewed and most recent public registrations on the Open Science Framework, click ',
-                            m('a', {href: 'http://help.osf.io/m/registrations'}, 'here'), '.' );
+                                'There have been no completed registrations for this institution, but you can view the ',
+                                m('a', {href: 'https://osf.io/explore/activity/#newPublicRegistrations'}, 'newest public registrations'),
+                                ' or ',
+                                m('a', {href: 'https://osf.io/explore/activity/#popularPublicRegistrations'}, 'popular public registrations.'));
                         } else {
                             template = m('.db-non-load-template.m-md.p-md.osf-box',
                             'You have not made any registrations yet. Go to ',
