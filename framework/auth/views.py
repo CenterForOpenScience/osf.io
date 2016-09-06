@@ -255,6 +255,7 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
         data['status_code'] = http.FOUND
 
     # handle `claim_user_registered`
+    # TODO [#OSF-6998]: talk to product about the `must_login_warning`
     if logout and auth.logged_in:
         data['status_code'] = 'auth_logout'
         data['next_url'] = request.url
