@@ -583,6 +583,7 @@ def test_travis_osf(ctx):
     test_osf(ctx)
     test_addons(ctx)
     test_api(ctx)
+    test_admin(ctx)
 
 
 @task
