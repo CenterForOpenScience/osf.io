@@ -284,6 +284,12 @@ function _fangornColumns(item) {
             filter: false,
             custom : function() {return m('');}
         });
+        columns.push({
+            data: 'version',
+            filter: false,
+            sortInclude : false,
+            custom: function() {return m('');}
+        });
     }
     return columns;
 }
