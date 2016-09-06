@@ -32,7 +32,7 @@ class LogsTestCase(ApiTestCase):
         self.log_add_contributor = self.node.logs[1]
 
         self.public_node = ProjectFactory(is_public=True)
-        self.public_node.add_contributor(self.user, permissions=[osf_permissions.READ], auth=Auth(self.node.creator), log=True, save=True)
+        self.public_node.add_contributor(self.user, permissions=[osf_permissions.READ], auth=Auth(self.public_node.creator), log=True, save=True)
 
         self.public_log = self.public_node.logs[0]
         self.public_log_add_contributor = self.public_node.logs[1]

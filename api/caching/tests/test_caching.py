@@ -27,7 +27,7 @@ class TestVarnish(DbTestCase):
         super(TestVarnish, cls).setUpClass()
         username = uuid.uuid4()
         cls.user = User.create_confirmed(
-            username='{}@example.com'.format(str(username)),
+            username='{}@mail.com'.format(str(username)),
             password='password',
             fullname='Mocha Test User')
         cls.user.save()

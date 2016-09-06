@@ -21,9 +21,10 @@ from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationValueError
 
 from framework import status
-from framework.mongo import ObjectId
+from framework.mongo import ObjectId, DummyRequest
 from framework.mongo import StoredObject
 from framework.mongo import validators
+from framework.mongo import get_cache_key as get_request
 from framework.addons import AddonModelMixin
 from framework.auth import get_user, User, Auth
 from framework.exceptions import PermissionsError
@@ -36,12 +37,14 @@ from framework.analytics import (
 from framework.sentry import log_exception
 from framework.transactions.context import TokuTransaction
 from framework.utils import iso8601format
+from framework.celery_tasks.handlers import enqueue_task
 
 from website import language, settings
 from website.util import web_url_for
 from website.util import api_url_for
 from website.util import api_v2_url
 from website.util import sanitize
+from website.util import get_headers_from_request
 from website.exceptions import (
     NodeStateError,
     InvalidTagError, TagNotFoundError,
@@ -55,12 +58,10 @@ from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PE
 from website.project.commentable import Commentable
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.metadata.utils import create_jsonschema_from_metaschema
-from website.project.licenses import (
-    NodeLicense,
-    NodeLicenseRecord,
-)
+from website.project.licenses import (NodeLicense, NodeLicenseRecord)
 from website.project.taxonomies import Subject
 from website.project import signals as project_signals
+from website.project import tasks as node_tasks
 from website.project.spam.model import SpamMixin
 from website.project.sanctions import (
     DraftRegistrationApproval,
@@ -767,7 +768,7 @@ def validate_doi(value):
     return True
 
 
-class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
+class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, SpamMixin):
 
     #: Whether this is a pointer or not
     primary = True
@@ -825,7 +826,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
     ]
 
     # Node fields that trigger an update to Solr on save
-    SOLR_UPDATE_FIELDS = {
+    SEARCH_UPDATE_FIELDS = {
         'title',
         'category',
         'description',
@@ -842,6 +843,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         'node_license',
         '_affiliated_institutions',
         'preprint_file',
+    }
+
+    # Node fields that trigger a check to the spam filter on save
+    SPAM_CHECK_FIELDS = {
+        'title',
+        'description',
+        'wiki_pages_current',
     }
 
     # Fields that are writable by Node.update
@@ -1785,16 +1793,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
             project_signals.project_created.send(self)
 
-        # Only update Solr if at least one stored field has changed, and if
-        # public or privacy setting has changed
-        need_update = bool(self.SOLR_UPDATE_FIELDS.intersection(saved_fields))
-        if not self.is_public:
-            if first_save or 'is_public' not in saved_fields:
-                need_update = False
-        if self.is_collection or self.archiving:
-            need_update = False
-        if need_update:
-            self.update_search()
+        if saved_fields:
+            self.on_update(first_save, saved_fields)
 
         if 'node_license' in saved_fields:
             children = [c for c in self.get_descendants_recursive(
@@ -2232,6 +2232,17 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if save:
             self.save()
         return None
+
+    def on_update(self, first_save, saved_fields):
+        request = get_request()
+        request_headers = None
+        if not isinstance(request, DummyRequest):
+            request_headers = {
+                k: v
+                for k, v in get_headers_from_request(request).items()
+                if isinstance(v, basestring)
+            }
+        enqueue_task(node_tasks.on_node_updated.s(self._id, first_save, saved_fields, request_headers))
 
     def update_search(self):
         from website import search
@@ -3234,6 +3245,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             # Add contributor to recently added list for user
             if auth is not None:
                 user = auth.user
+                if not self.has_permission(user, ADMIN):
+                    raise PermissionsError('Must be an admin to change add contributors.')
                 if contrib_to_add in user.recently_added:
                     user.recently_added.remove(contrib_to_add)
                 user.recently_added.insert(0, contrib_to_add)
@@ -3377,7 +3390,82 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
 
         return contributor
 
-    def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False):
+    def _get_spam_content(self, saved_fields):
+        from website.addons.wiki.model import NodeWikiPage
+        spam_fields = self.SPAM_CHECK_FIELDS if self.is_public and 'is_public' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(saved_fields)
+        content = []
+        for field in spam_fields:
+            if field == 'wiki_pages_current':
+                newest_wiki_page = None
+                for wiki_page_id in self.wiki_pages_current.values():
+                    wiki_page = NodeWikiPage.load(wiki_page_id)
+                    if not newest_wiki_page:
+                        newest_wiki_page = wiki_page
+                    elif wiki_page.date > newest_wiki_page.date:
+                        newest_wiki_page = wiki_page
+                if newest_wiki_page:
+                    content.append(newest_wiki_page.raw_text(self).encode('utf-8'))
+            else:
+                content.append((getattr(self, field, None) or '').encode('utf-8'))
+        if not content:
+            return None
+        return '\n\n'.join(content)
+
+    def check_spam(self, saved_fields, request_headers, save=False):
+        if not settings.SPAM_CHECK_ENABLED:
+            return False
+        content = self._get_spam_content(saved_fields)
+        if not content:
+            return
+        is_spam = self.do_check_spam(
+            self.creator.fullname,
+            self.creator.username,
+            content,
+            request_headers
+        )
+        logger.info("Node ({}) '{}' smells like {} (tip: {})".format(
+            self._id, self.title.encode('utf-8'), 'SPAM' if is_spam else 'HAM', self.spam_pro_tip
+        ))
+        if save:
+            self.save()
+        return is_spam
+
+    def flag_spam(self):
+        """ Overrides SpamMixin#flag_spam.
+        """
+        super(Node, self).flag_spam()
+        if settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE:
+            self.set_privacy(Node.PRIVATE, auth=None, log=False, save=False, check_addons=False)
+            log = self.add_log(
+                action=NodeLog.MADE_PRIVATE,
+                params={
+                    'project': self.parent_id,
+                    'node': self._primary_key,
+                },
+                auth=None,
+                save=False
+            )
+            log.should_hide = True
+            log.save()
+
+    def confirm_spam(self, save=False):
+        super(Node, self).confirm_spam(save=False)
+        self.set_privacy(Node.PRIVATE, auth=None, log=False, save=False, check_addons=False)
+        log = self.add_log(
+            action=NodeLog.MADE_PRIVATE,
+            params={
+                'project': self.parent_id,
+                'node': self._primary_key,
+            },
+            auth=None,
+            save=False
+        )
+        log.should_hide = True
+        log.save()
+        if save:
+            self.save()
+
+    def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False, check_addons=True):
         """Set the permissions for this node. Also, based on meeting_creation, queues an email to user about abilities of
             public projects.
 
@@ -3385,10 +3473,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         :param auth: All the auth information including user, API key.
         :param bool log: Whether to add a NodeLog for the privacy change.
         :param bool meeting_creation: Whether this was created due to a meetings email.
+        :param bool check_addons: Check and collect messages for addons?
         """
         if auth and not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Must be an admin to change privacy settings.')
         if permissions == 'public' and not self.is_public:
+            if self.is_spam or (settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE and self.is_spammy):
+                # TODO: Should say will review within a certain agreed upon time period.
+                raise NodeStateError('This project has been marked as spam. Please contact the help desk if you think this is in error.')
             if self.is_registration:
                 if self.is_pending_embargo:
                     raise NodeStateError('A registration with an unapproved embargo cannot be made public.')
@@ -3412,10 +3504,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
             return False
 
         # After set permissions callback
-        for addon in self.get_addons():
-            message = addon.after_set_privacy(self, permissions)
-            if message:
-                status.push_status_message(message, kind='info', trust=False)
+        if check_addons:
+            for addon in self.get_addons():
+                message = addon.after_set_privacy(self, permissions)
+                if message:
+                    status.push_status_message(message, kind='info', trust=False)
 
         if log:
             action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE
