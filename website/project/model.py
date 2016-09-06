@@ -3436,15 +3436,37 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         return is_spam
 
     def flag_spam(self):
-        """ Overrides SpamMixin#save_spam. Make spammy node private
+        """ Overrides SpamMixin#flag_spam.
         """
         super(Node, self).flag_spam()
         if settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE:
             self.set_privacy(Node.PRIVATE, auth=None, log=False, save=False, check_addons=False)
+            log = self.add_log(
+                action=NodeLog.MADE_PRIVATE,
+                params={
+                    'project': self.parent_id,
+                    'node': self._primary_key,
+                },
+                auth=None,
+                save=False
+            )
+            log.should_hide = True
+            log.save()
 
     def confirm_spam(self, save=False):
         super(Node, self).confirm_spam(save=False)
         self.set_privacy(Node.PRIVATE, auth=None, log=False, save=False, check_addons=False)
+        log = self.add_log(
+            action=NodeLog.MADE_PRIVATE,
+            params={
+                'project': self.parent_id,
+                'node': self._primary_key,
+            },
+            auth=None,
+            save=False
+        )
+        log.should_hide=True
+        log.save()
         if save:
             self.save()
 
