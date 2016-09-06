@@ -3,6 +3,8 @@ from nameparser.parser import HumanName
 from modularodm.exceptions import ValidationError
 from modularodm import Q
 
+from website import settings
+
 # email verification adopted from django. For licence information, see NOTICE
 USER_REGEX = re.compile(
     r"(^[-!#$%&'*+/=?^_`{}|~0-9A-Z]+(\.[-!#$%&'*+/=?^_`{}|~0-9A-Z]+)*$"  # dot-atom
@@ -24,6 +26,9 @@ def validate_email(email):
         raise ValidationError('Invalid Email')
 
     if not email or '@' not in email:
+        raise ValidationError('Invalid Email')
+
+    if email.split('@')[1].lower() in settings.BLACKLISTED_DOMAINS:
         raise ValidationError('Invalid Email')
 
     user_part, domain_part = email.rsplit('@', 1)

@@ -114,12 +114,20 @@
                     </td>
                 </tr>
                 <tr>
-                    <td>Account disabled</td>
-                    <td>{{ user.disabled }}</td>
+                    <td>Registered</td>
+                    <td>{{ user.registered }}</td>
+                </tr>
+                <tr>
+                    <td>Confirmed</td>
+                    <td>{{ user.confirmed }}</td>
                 </tr>
                 <tr>
                     <td>Last login</td>
                     <td>{{ user.last_login }}</td>
+                </tr>
+                <tr>
+                    <td>Disabled</td>
+                    <td>{{ user.disabled }}</td>
                 </tr>
                 <tr>
                     <td>Two factor</td>
@@ -151,6 +159,7 @@
                                 <th>Public</th>
                                 <th>Registration</th>
                                 <th># of Contributors</th>
+                                <th>SPAM Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -166,6 +175,17 @@
                                 <td>{{ node.public }}</td>
                                 <td>{{ node.is_registration }}</td>
                                 <td>{{ node.number_contributors }}</td>
+                                <td>
+                                    {% if node.spam_status == SPAM_STATUS.UNKNOWN %}
+                                        <span class="label label-default">Unknown</span>
+                                    {% elif node.spam_status == SPAM_STATUS.FLAGGED %}
+                                        <span class="label label-warning">Flagged</span>
+                                    {% elif node.spam_status == SPAM_STATUS.SPAM %}
+                                        <span class="label label-danger">Spam</span>
+                                    {% elif node.spam_status == SPAM_STATUS.HAM %}
+                                        <span class="label label-success">Ham</span>
+                                    {% endif %}
+                                </td>
                                 <td>
                                 {% if node.number_contributors < 2 and not node.is_registration %}
                                     {% if node.deleted %}

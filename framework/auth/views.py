@@ -357,11 +357,14 @@ def external_login_confirm_email_get(auth, uid, token):
     if not user:
         raise HTTPError(http.BAD_REQUEST)
 
-    if auth and auth.user and auth.user._id == user._id:
-        new = request.args.get('new', None)
-        if new:
-            status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True)
-        return redirect(web_url_for('index'))
+    if auth and auth.user:
+        if auth.user._id == user._id:
+            new = request.args.get('new', None)
+            if new:
+                status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True)
+            return redirect(web_url_for('index'))
+        # If user is already logged in, log user out and retry request
+        return auth_logout(redirect_url=request.url)
 
     # token is invalid
     if token not in user.email_verifications:
@@ -381,6 +384,7 @@ def external_login_confirm_email_get(auth, uid, token):
         raise HTTPError(http.FORBIDDEN, e.message)
 
     if not user.is_registered:
+        user.set_password(uuid.uuid4(), notify=False)
         user.register(email)
 
     if email.lower() not in user.emails:
@@ -663,6 +667,11 @@ def register_user(**kwargs):
                     email=markupsafe.escape(request.json['email1'])
                 )
             )
+        )
+    except ValidationError as e:
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data=dict(message_long=e.message)
         )
 
     if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:

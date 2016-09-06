@@ -3,10 +3,15 @@ from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
+
+from framework.guid.model import Guid
+
 from website.addons.wiki.model import NodeWikiPage
+
 from tests.base import ApiWikiTestCase
 from tests.factories import (ProjectFactory, RegistrationFactory,
-                             NodeWikiFactory, PrivateLinkFactory)
+                             NodeWikiFactory, PrivateLinkFactory,
+                             CommentFactory)
 
 
 class TestWikiDetailView(ApiWikiTestCase):
@@ -159,10 +164,12 @@ class TestWikiDetailView(ApiWikiTestCase):
     def test_wiki_has_comments_link(self):
         self._set_up_public_project_with_wiki_page()
         res = self.app.get(self.public_url)
-        url = res.json['data']['relationships']['comments']['links']['related']['href']
-        expected_url = '/{}nodes/{}/comments/?filter[target]={}'.format(API_BASE, self.public_project._id, self.public_wiki._id)
         assert_equal(res.status_code, 200)
-        assert_in(expected_url, url)
+        url = res.json['data']['relationships']['comments']['links']['related']['href']
+        CommentFactory(node=self.public_project, target=Guid.load(self.public_wiki._id), user=self.user)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data'][0]['type'], 'comments')
 
     def test_only_project_contrib_can_comment_on_closed_project(self):
         self._set_up_public_project_with_wiki_page(project_options={'comment_level': 'private'})

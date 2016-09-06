@@ -65,7 +65,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         project.add_contributor(project_non_admin, auth=Auth(project.creator), save=True)
 
         child = NodeFactory(creator=child_admin, parent=project)
-        child.add_contributor(child_non_admin, auth=Auth(project.creator), save=True)
+        child.add_contributor(child_non_admin, auth=Auth(child.creator), save=True)
 
         grandchild = NodeFactory(creator=grandchild_admin, parent=child)  # noqa
 
