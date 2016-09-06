@@ -126,7 +126,7 @@ class TestDisableSpamUser(AdminTestCase):
         self.public_node.reload()
         nt.assert_true(self.user.is_disabled)
         nt.assert_false(self.public_node.is_public)
-        nt.assert_equal(OSFLogEntry.objects.count(), count + 2)
+        nt.assert_equal(OSFLogEntry.objects.count(), count + 3)
 
     def test_no_user(self):
         view = setup_view(UserDeleteView(), self.request, guid='meh')
