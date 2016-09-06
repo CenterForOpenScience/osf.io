@@ -3465,7 +3465,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
             auth=None,
             save=False
         )
-        log.should_hide=True
+        log.should_hide = True
         log.save()
         if save:
             self.save()
