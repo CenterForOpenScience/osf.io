@@ -7,7 +7,7 @@ from api.base.serializers import JSONAPIRelationshipSerializer, HideIfDisabled
 from website.models import User
 
 from api.base.serializers import (
-    JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField
+    JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField, ListLinksField
 )
 from api.base.utils import absolute_reverse, get_user_auth
 
@@ -36,7 +36,7 @@ class UserSerializer(JSONAPISerializer):
     timezone = HideIfDisabled(ser.CharField(required=False, help_text="User's timezone, e.g. 'Etc/UTC"))
     locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))
 
-    social = HideIfDisabled(LinksField(
+    social = HideIfDisabled(ListLinksField(
         {
             'self': 'get_absolute_url',
             'personal_website': 'personal_website_url',
@@ -95,32 +95,32 @@ class UserSerializer(JSONAPISerializer):
             github = obj.social['github']
         except KeyError:
             github = None
+        account_list = []
         if github:
             github_base_url = 'http://github.com/{}/'
             if isinstance(github, list):
-                account_list = []
                 for account in github:
                     account_list.append(github_base_url.format(account))
                 return account_list
             else:
                 return [github_base_url.format(github)]
-        return []
+        return account_list
 
     def scholar_url(self, obj):
         try:
             scholar = obj.social['scholar']
         except KeyError:
             scholar = None
+        account_list = []
         if scholar:
             scholar_base_url = 'http://scholar.google.com/citations?user={}'
             if isinstance(scholar, list):
-                scholar_list = []
                 for account in scholar:
-                    scholar_list.append(scholar_base_url.format(account))
-                return scholar_list
+                    account_list.append(scholar_base_url.format(account))
+                return account_list
             else:
-                return scholar_base_url.format(scholar)
-        return []
+                return [scholar_base_url.format(scholar)]
+        return account_list
 
     def personal_website_url(self, obj):
         try:
