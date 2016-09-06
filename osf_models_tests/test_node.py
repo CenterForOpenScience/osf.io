@@ -13,6 +13,7 @@ from website.util.permissions import READ, WRITE, ADMIN, expand_permissions
 from website.project.signals import contributor_added
 from website.exceptions import NodeStateError
 from website.util import permissions
+from website.citations.utils import datetime_to_csl
 
 from osf_models.models import Node, Tag, NodeLog, Contributor, Sanction
 from osf_models.exceptions import ValidationError
@@ -1578,3 +1579,67 @@ class TestHasPermissionOnChildren:
         assert (
             parent.has_permission_on_children(user, 'read')
         ) is False
+
+
+# copied from test/test_citations.py#CitationsNodeTestCase
+class TestCitationsProperties:
+
+    def test_csl_single_author(self, node):
+        # Nodes with one contributor generate valid CSL-data
+        assert (
+            node.csl ==
+            {
+                'publisher': 'Open Science Framework',
+                'author': [{
+                    'given': node.creator.given_name,
+                    'family': node.creator.family_name,
+                }],
+                'URL': node.display_absolute_url,
+                'issued': datetime_to_csl(node.logs.latest().date),
+                'title': node.title,
+                'type': 'webpage',
+                'id': node._id,
+            },
+        )
+
+    def test_csl_multiple_authors(self, node):
+        # Nodes with multiple contributors generate valid CSL-data
+        user = UserFactory()
+        node.add_contributor(user)
+        node.save()
+
+        assert (
+            node.csl ==
+            {
+                'publisher': 'Open Science Framework',
+                'author': [
+                    {
+                        'given': node.creator.given_name,
+                        'family': node.creator.family_name,
+                    },
+                    {
+                        'given': user.given_name,
+                        'family': user.family_name,
+                    }
+                ],
+                'URL': node.display_absolute_url,
+                'issued': datetime_to_csl(node.logs.latest().date),
+                'title': node.title,
+                'type': 'webpage',
+                'id': node._id,
+            },
+        )
+
+    def test_non_visible_contributors_arent_included_in_csl(self):
+        node = ProjectFactory()
+        visible = UserFactory()
+        node.add_contributor(visible, auth=Auth(node.creator))
+        invisible = UserFactory()
+        node.add_contributor(invisible, auth=Auth(node.creator), visible=False)
+        node.save()
+        assert len(node.csl['author']) == 2
+        expected_authors = [
+            contrib.csl_name for contrib in [node.creator, visible]
+        ]
+
+        assert node.csl['author'] == expected_authors
