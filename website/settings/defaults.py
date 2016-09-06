@@ -1519,6 +1519,7 @@ BLACKLISTED_DOMAINS = [
     'squizzy.de',
     'ssoia.com',
     'startkeys.com',
+    'stexsy.com',
     'stinkefinger.net',
     'stop-my-spam.cf',
     'stop-my-spam.com',
