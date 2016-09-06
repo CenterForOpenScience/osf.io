@@ -159,16 +159,15 @@ def forgot_password_post():
         status_message = ('If there is an OSF account associated with {0}, an email with instructions on how to '
                           'reset the OSF password has been sent to {0}. If you do not receive an email and believe '
                           'you should have, please contact OSF Support. ').format(email)
+        kind = 'success'
         # check if the user exists
         user_obj = get_user(email=email)
-        if not user_obj:
-            # do not reveal user existence information by pushing success message even when user not found
-            status.push_status_message(status_message, kind='success', trust=False)
-        else:
+        if user_obj:
             # rate limit forgot_password_post
             if not throttle_period_expired(user_obj.email_last_sent, settings.SEND_EMAIL_THROTTLE):
-                status.push_status_message('You have recently requested to change your password. Please wait a '
-                                           'few minutes before trying again.', kind='error', trust=False)
+                status_message = 'You have recently requested to change your password. Please wait a few minutes ' \
+                                 'before trying again.'
+                kind = 'error'
             else:
                 # TODO [OSF-6673]: Use the feature in [OSF-6998] for user to resend claim email.
                 # if the user account is not claimed yet
@@ -177,8 +176,8 @@ def forgot_password_post():
                         not user_obj.date_last_login and
                         not user_obj.is_claimed and
                         not user_obj.is_registered):
-                    status.push_status_message('You cannot reset password on this account. Please contact OSF Support.',
-                                               kind='error', trust=False)
+                    status_message = 'You cannot reset password on this account. Please contact OSF Support.'
+                    kind = 'error'
                 else:
                     # new random verification key (v2)
                     user_obj.verification_key_v2 = generate_verification_key(verification_type='password')
@@ -197,7 +196,8 @@ def forgot_password_post():
                         mail=mails.FORGOT_PASSWORD,
                         reset_link=reset_link
                     )
-                    status.push_status_message(status_message, kind='success', trust=False)
+
+        status.push_status_message(status_message, kind=kind, trust=False)
 
     return {}
 
