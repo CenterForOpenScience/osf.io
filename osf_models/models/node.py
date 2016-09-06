@@ -39,8 +39,10 @@ from framework.sentry import log_exception
 from website import settings
 from website.exceptions import UserNotAffiliatedError, NodeStateError
 from website.project import signals as project_signals
+from website.citations.utils import datetime_to_csl
 from website.util import api_url_for
 from website.util import web_url_for
+from website.util import sanitize
 from website.util.permissions import (
     expand_permissions,
     reduce_permissions,
@@ -301,6 +303,34 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
     @property
     def has_active_draft_registrations(self):
         return self.draft_registrations_active.exists()
+
+    @property
+    def csl(self):  # formats node information into CSL format for citation parsing
+        """a dict in CSL-JSON schema
+
+        For details on this schema, see:
+            https://github.com/citation-style-language/schema#csl-json-schema
+        """
+        csl = {
+            'id': self._id,
+            'title': sanitize.unescape_entities(self.title),
+            'author': [
+                contributor.csl_name  # method in auth/model.py which parses the names of authors
+                for contributor in self.visible_contributors
+            ],
+            'publisher': 'Open Science Framework',
+            'type': 'webpage',
+            'URL': self.display_absolute_url,
+        }
+
+        doi = self.get_identifier_value('doi')
+        if doi:
+            csl['DOI'] = doi
+
+        if self.logs:
+            csl['issued'] = datetime_to_csl(self.logs.latest().date)
+
+        return csl
 
     def update_search(self):
         from website import search
