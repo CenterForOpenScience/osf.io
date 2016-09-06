@@ -14,6 +14,22 @@ from api.base.utils import absolute_reverse, get_user_auth
 from framework.auth.views import send_confirm_email
 
 
+def account_url_list(obj, social_name, social_base_url):
+    try:
+        social = obj.social[social_name]
+    except KeyError:
+        social = None
+    account_list = []
+    if social:
+        if isinstance(social, list):
+            for account in social:
+                account_list.append(social_base_url.format(account))
+            return account_list
+        else:
+            return [social_base_url.format(social)]
+    return account_list
+
+
 class UserSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'full_name',
@@ -91,211 +107,43 @@ class UserSerializer(JSONAPISerializer):
     )))
 
     def github_url(self, obj):
-        try:
-            github = obj.social['github']
-        except KeyError:
-            github = None
-        account_list = []
-        if github:
-            github_base_url = 'http://github.com/{}/'
-            if isinstance(github, list):
-                for account in github:
-                    account_list.append(github_base_url.format(account))
-                return account_list
-            else:
-                return [github_base_url.format(github)]
-        return account_list
+        return account_url_list(obj, 'github', 'http://github.com/{}/')
 
     def scholar_url(self, obj):
-        try:
-            scholar = obj.social['scholar']
-        except KeyError:
-            scholar = None
-        account_list = []
-        if scholar:
-            scholar_base_url = 'http://scholar.google.com/citations?user={}'
-            if isinstance(scholar, list):
-                for account in scholar:
-                    account_list.append(scholar_base_url.format(account))
-                return account_list
-            else:
-                return [scholar_base_url.format(scholar)]
-        return account_list
+        return account_url_list(obj, 'scholar', 'http://scholar.google.com/citations?user={}')
 
     def personal_website_url(self, obj):
-        try:
-            personal_website = obj.social['profileWebsites']
-        except KeyError:
-            personal_website = None
-        if personal_website:
-            if isinstance(personal_website, list):
-                account_list = []
-                for account in personal_website:
-                    account_list.append(account)
-                return account_list
-            else:
-                return [personal_website]
-        return []
+        return account_url_list(obj, 'profileWebsites', '{}')
 
     def twitter_url(sel, obj):
-        try:
-            twitter = obj.social['twitter']
-        except KeyError:
-            twitter = None
-        if twitter:
-            twitter_base_url = 'http://twitter.com/{}'
-            if isinstance(twitter, list):
-                twitter_list = []
-                for account in twitter:
-                    twitter_list.append(twitter_base_url.format(account))
-                return twitter_list
-            else:
-                return [twitter_base_url.format(twitter)]
-        return []
+        return account_url_list(obj, 'twitter', 'http://twitter.com/{}')
 
     def linkedin_url(self, obj):
-        try:
-            linkedin = obj.social['linkedIn']
-        except KeyError:
-            linkedin = None
-        if linkedin:
-            linkedin_base_url = 'https://www.linkedin.com/{}'
-            if isinstance(linkedin, list):
-                account_list = []
-                for account in linkedin:
-                    account_list.append(linkedin_base_url.format(account))
-                return account_list
-            else:
-                return [linkedin_base_url.format(linkedin)]
-        return []
+        return account_url_list(obj, 'linkedIn', 'https://www.linkedin.com/{}')
 
     def orcid_url(self, obj):
-        try:
-            orcid = obj.social['orcid']
-        except KeyError:
-            orcid = None
-        if orcid:
-            orcide_base_url = 'http://orcid.org/{}'
-            if isinstance(orcid, list):
-                account_list = []
-                for account in orcid:
-                    account_list.append(orcide_base_url.format(account))
-                return account_list
-            else:
-                return [orcide_base_url.format(orcid)]
-        return []
+        return account_url_list(obj, 'orcid', 'http://orcid.org/{}')
 
     def impactstory_url(self, obj):
-        try:
-            impactstory = obj.social['impactStory']
-        except KeyError:
-            impactstory = None
-        if impactstory:
-            impactstory_base_url = 'https://impactstory.org/{}'
-            if isinstance(impactstory, list):
-                account_list = []
-                for account in impactstory:
-                    account_list.append(impactstory_base_url.format(account))
-                return account_list
-            else:
-                return [impactstory_base_url.format(impactstory)]
-        return []
+        return account_url_list(obj, 'impactStory', 'https://impactstory.org/{}')
 
     def researcherid_url(self, obj):
-        try:
-            researcherid = obj.social['researcherId']
-        except KeyError:
-            researcherid = None
-        if researcherid:
-            researcherid_url_base_url = 'http://researcherid.com/rid/{}'
-            if isinstance(researcherid, list):
-                account_list = []
-                for account in researcherid:
-                    account_list.append(researcherid_url_base_url.format(account))
-                return account_list
-            else:
-                return [researcherid_url_base_url.format(researcherid)]
-        return []
+        return account_url_list(obj, 'researcherId', 'http://researcherid.com/rid/{}')
 
     def researchgate_url(self, obj):
-        try:
-            researchgate = obj.social['researchGate']
-        except KeyError:
-            researchgate = None
-        if researchgate:
-            researchgate_base_url = 'https://researchgate.net/profile/{}'
-            if isinstance(researchgate, list):
-                account_list = []
-                for account in researchgate:
-                    account_list.append(researchgate_base_url.format(account))
-                return account_list
-            else:
-                return [researchgate_base_url.format(researchgate)]
-        return []
+        return account_url_list(obj, 'researchGate', 'https://researchgate.net/profile/{}')
 
     def academia_institution_url(self, obj):
-        try:
-            academia_institution = obj.social['academiaInstitution']
-        except KeyError:
-            academia_institution = None
-        if academia_institution:
-            academia_institution_base_url = 'https://{}'
-            if isinstance(academia_institution, list):
-                account_list = []
-                for account in academia_institution:
-                    account_list.append(academia_institution_base_url.format(account))
-                return account_list
-            else:
-                return [academia_institution_base_url.format(academia_institution)]
-        return []
+        return account_url_list(obj, 'academiaInstitution', 'https://{}')
 
     def academia_profile_id_url(self, obj):
-        try:
-            academia_profile_id = obj.social['academiaProfileID']
-        except KeyError:
-            academia_profile_id = None
-        if academia_profile_id:
-            academia_profile_id_based_url = '.academia.edu/{}'
-            if isinstance(academia_profile_id, list):
-                account_list = []
-                for account in academia_profile_id:
-                    account_list.append(academia_profile_id_based_url.format(account))
-                return account_list
-            else:
-                return [academia_profile_id_based_url.format(academia_profile_id)]
-        return []
+        return account_url_list(obj, 'academiaProfileID', '.academia.edu/{}')
 
     def baiduscholar_url(self, obj):
-        try:
-            baiduscholar = obj.social['baiduScholar']
-        except KeyError:
-            baiduscholar = None
-        if baiduscholar:
-            baiduscholar_base_url = 'http://xueshu.baidu.com/scholarID/{}'
-            if isinstance(baiduscholar, list):
-                account_list = []
-                for account in baiduscholar:
-                    account_list.append[baiduscholar_base_url.format(account)]
-                return account_list
-            else:
-                return [baiduscholar_base_url.format(baiduscholar)]
-        return []
+        return account_url_list(obj, 'baiduScholar', 'http://xueshu.baidu.com/scholarID/{}')
 
     def ssrn_url(self, obj):
-        try:
-            ssrn = obj.social['ssrn']
-        except KeyError:
-            ssrn = None
-        if ssrn:
-            ssrn_base_url = 'http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id={}'
-            if isinstance(ssrn, list):
-                account_list = []
-                for account in ssrn:
-                    account_list.append[ssrn_base_url.format(account)]
-                return account_list
-            else:
-                return [ssrn_base_url.format(ssrn)]
-        return []
+        return account_url_list(obj, 'ssrn', 'http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id={}')
 
     class Meta:
         type_ = 'users'
