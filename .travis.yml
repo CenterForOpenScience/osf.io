@@ -131,3 +131,5 @@ before_cache:
 
 notifications:
   flowdock: 0221882cdda034c0e9ac2a0e766053dd
+
+after_failure: cat $HOME/build/CenterForOpenScience/osf.io/npm-debug.log
