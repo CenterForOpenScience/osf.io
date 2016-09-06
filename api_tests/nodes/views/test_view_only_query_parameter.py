@@ -195,7 +195,7 @@ class TestNodeDetailViewOnlyLinks(ViewOnlyTestCase):
         }, auth=self.creation_user.auth)
         assert_equal(res.status_code, 200)
 
-    def test_view_only_token_in_relationships_links(self):
+    def test_view_only_key_in_relationships_links(self):
         res = self.app.get(self.private_node_one_url, {'view_only': self.private_node_one_private_link.key})
         assert_equal(res.status_code, 200)
         res_relationships = res.json['data']['relationships']
@@ -204,6 +204,13 @@ class TestNodeDetailViewOnlyLinks(ViewOnlyTestCase):
                 assert_in(self.private_node_one_private_link.key, value['links']['related']['href'])
             if value['links'].get('self'):
                 assert_in(self.private_node_one_private_link.key, value['links']['self']['href'])
+
+    def test_view_only_key_in_self_and_html_links(self):
+        res = self.app.get(self.private_node_one_url, {'view_only': self.private_node_one_private_link.key})
+        assert_equal(res.status_code, 200)
+        links = res.json['data']['links']
+        assert_in(self.private_node_one_private_link.key, links['self'])
+        assert_in(self.private_node_one_private_link.key, links['html'])
 
 
 class TestNodeListViewOnlyLinks(ViewOnlyTestCase):
