@@ -47,10 +47,10 @@ class NodeLicenseSerializer(RestrictedDictSerializer):
     year = ser.CharField(allow_blank=True, read_only=True)
 
 
-class NodeCitationSerializer(RestrictedDictSerializer):
+class NodeCitationSerializer(ser.Serializer):
     id = IDField(source='_id', read_only=True)
     title = ser.CharField(allow_blank=True, read_only=True)
-    author = ser.DictField(read_only=True)
+    author = ser.ListField(read_only=True)
     publisher = ser.CharField(allow_blank=True, read_only=True)
     type = ser.CharField(allow_blank=True, read_only=True)
     doi = ser.CharField(allow_blank=True, read_only=True)
@@ -59,6 +59,11 @@ class NodeCitationSerializer(RestrictedDictSerializer):
 
     def get_absolute_url(self, obj):
         return obj['URL']
+
+
+class NodeCitationStyleSerializer(ser.Serializer):
+
+    citation = ser.CharField(allow_blank=True, read_only=True)
 
 
 class NodeSerializer(JSONAPISerializer):
