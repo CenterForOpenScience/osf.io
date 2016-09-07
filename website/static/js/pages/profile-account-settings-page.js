@@ -22,4 +22,9 @@ $(function() {
         new accountSettings.ExportAccountViewModel(),
         '#exportAccount'
     );
+
+    $osf.applyBindings(
+        new accountSettings.ExternalIdentityViewModel(),
+        '#externalIdentity'
+    );
 });

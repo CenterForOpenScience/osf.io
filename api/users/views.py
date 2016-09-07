@@ -18,6 +18,7 @@ from api.base.views import JSONAPIBaseView
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
 from api.nodes.serializers import NodeSerializer
+from api.preprints.serializers import PreprintSerializer
 from api.institutions.serializers import InstitutionSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.base.utils import default_node_list_query, default_node_permission_query
@@ -503,6 +504,35 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
     # overrides ListAPIView
     def get_queryset(self):
         return Node.find(self.get_query_from_request())
+
+
+class UserPreprints(UserNodes):
+    required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_PREPRINTS_READ]
+    required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_PREPRINTS_WRITE]
+
+    serializer_class = PreprintSerializer
+    view_category = 'users'
+    view_name = 'user-preprints'
+
+    # overrides ODMFilterMixin
+    def get_default_odm_query(self):
+        user = self.get_user()
+
+        query = (
+            Q('is_deleted', 'ne', True) &
+            Q('contributors', 'eq', user._id) &
+            Q('preprint_file', 'ne', None) &
+            Q('is_public', 'eq', True)
+        )
+
+        return query
+
+    def get_queryset(self):
+        nodes = Node.find(self.get_query_from_request())
+        # TODO: Rearchitect how `.is_preprint` is determined,
+        # so that a query that is guaranteed to return only
+        # preprints can be contructed. Use generator in meantime.
+        return (node for node in nodes if node.is_preprint)
 
 
 class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):

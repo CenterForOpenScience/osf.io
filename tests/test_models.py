@@ -383,6 +383,29 @@ class TestUser(OsfTestCase):
             'primary email has not been added to emails list'
         )
 
+    def test_create_unconfirmed_from_external_service(self):
+        name, email = fake.name(), fake.email()
+        external_identity = {
+            'ORCID': {
+                fake.ean(): 'CREATE'
+            }
+        }
+        user = User.create_unconfirmed(
+            username=email,
+            password=str(fake.password()),
+            fullname=name,
+            external_identity=external_identity,
+        )
+        user.save()
+        assert_false(user.is_registered)
+        assert_equal(len(user.email_verifications.keys()), 1)
+        assert_equal(user.email_verifications.popitem()[1]['external_identity'], external_identity)
+        assert_equal(
+            len(user.emails),
+            0,
+            'primary email has not been added to emails list'
+        )
+
     def test_create_confirmed(self):
         name, email = fake.name(), fake.email()
         user = User.create_confirmed(
@@ -420,6 +443,11 @@ class TestUser(OsfTestCase):
         with assert_raises(ValidationError) as exc_info:
             self.user.add_unconfirmed_email('')
         assert_equal(exc_info.exception.message, "Invalid Email")
+
+    def test_add_blacklisted_domain_unconfirmed_email(self):
+        with assert_raises(ValidationError) as e:
+            self.user.add_unconfirmed_email('kanye@mailinator.com')
+        assert_equal(e.exception.message, 'Invalid Email')
 
     @mock.patch('website.security.random_string')
     def test_get_confirmation_token(self, random_string):
@@ -477,6 +505,14 @@ class TestUser(OsfTestCase):
         u.add_unconfirmed_email('foo@bar.com')
         assert_equal(u.get_confirmation_url('foo@bar.com'),
                 '{0}confirm/{1}/{2}/'.format(settings.DOMAIN, u._primary_key, 'abcde'))
+
+    @mock.patch('website.security.random_string')
+    def test_get_confirmation_url_for_external_service(self, random_string):
+        random_string.return_value = 'abcde'
+        u = UnconfirmedUserFactory()
+        assert_equal(u.get_confirmation_url(u.username, external_id_provider='service'),
+                '{0}confirm/external/{1}/{2}/'.format(settings.DOMAIN, u._id, 'abcde'))
+
 
     def test_get_confirmation_url_when_token_is_expired_raises_error(self):
         u = UserFactory()
@@ -551,8 +587,8 @@ class TestUser(OsfTestCase):
         user = UserFactory()
         assert_equal(User.find().count(), 1)
         assert_true(user.username)
-        another_user = UserFactory(username='joe@example.com')
-        assert_equal(another_user.username, 'joe@example.com')
+        another_user = UserFactory(username='joe@mail.com')
+        assert_equal(another_user.username, 'joe@mail.com')
         assert_equal(User.find().count(), 2)
         assert_true(user.date_registered)
 
@@ -634,7 +670,7 @@ class TestUser(OsfTestCase):
             'password',
             '12345',
             '12345',
-            'Password should be at least six characters',
+            'Password should be at least eight characters',
         )
 
     def test_change_password_invalid_confirm_password(self):
@@ -696,7 +732,7 @@ class TestUser(OsfTestCase):
 
     def test_recently_added(self):
         # Project created
-        project = ProjectFactory()
+        project = ProjectFactory(creator=self.user)
 
         assert_true(hasattr(self.user, 'recently_added'))
 
@@ -716,8 +752,8 @@ class TestUser(OsfTestCase):
         user4 = UserFactory()
 
         # 2 projects created
-        project = ProjectFactory()
-        project2 = ProjectFactory()
+        project = ProjectFactory(creator=self.user)
+        project2 = ProjectFactory(creator=self.user)
 
         # Users 2 and 3 are added to original project
         project.add_contributor(contributor=user2, auth=self.auth)
@@ -734,7 +770,7 @@ class TestUser(OsfTestCase):
 
     def test_recently_added_length(self):
         # Project created
-        project = ProjectFactory()
+        project = ProjectFactory(creator=self.user)
 
         assert_equal(len(self.user.recently_added), 0)
         # Add 17 users
@@ -928,7 +964,7 @@ class TestMergingUsers(OsfTestCase):
         self.master = UserFactory(
             fullname='Joe Shmo',
             is_registered=True,
-            emails=['joe@example.com'],
+            emails=['joe@mail.com'],
         )
         self.dupe = UserFactory(
             fullname='Joseph Shmo',
@@ -1519,6 +1555,20 @@ class TestNode(OsfTestCase):
     def test_validate_categories(self):
         with assert_raises(ValidationError):
             Node(category='invalid').save()  # an invalid category
+
+    def test_validate_bad_doi(self):
+        with assert_raises(ValidationError):
+            Node(preprint_doi='nope').save()
+        with assert_raises(ValidationError):
+            Node(preprint_doi='https://dx.doi.org/10.123.456').save()  # should save the bare DOI, not a URL
+        with assert_raises(ValidationError):
+            Node(preprint_doi='doi:10.10.1038/nwooo1170').save()  # should save without doi: prefix
+
+    def test_validate_good_doi(self):
+        doi = '10.10.1038/nwooo1170'
+        self.node.preprint_doi = doi
+        self.node.save()
+        assert_equal(self.node.preprint_doi, doi)
 
     def test_web_url_for(self):
         result = self.parent.web_url_for('view_project')
@@ -2169,7 +2219,7 @@ class TestNodeTraversals(OsfTestCase):
         child = ProjectFactory(creator=self.viewer, parent=parent)
         child_non_admin = UserFactory()
         child.add_contributor(child_non_admin,
-                              auth=self.auth,
+                              auth=Auth(self.viewer),
                               permissions=expand_permissions(WRITE))
         grandchild = ProjectFactory(creator=self.user, parent=child)
 
@@ -2191,7 +2241,7 @@ class TestNodeTraversals(OsfTestCase):
         child = ProjectFactory(creator=self.viewer, parent=parent)
         child_non_admin = UserFactory()
         child.add_contributor(child_non_admin,
-                              auth=self.auth,
+                              auth=Auth(self.viewer),
                               permissions=expand_permissions(WRITE))
         grandchild = ProjectFactory(creator=self.user, parent=child)  # noqa
 
@@ -2212,7 +2262,7 @@ class TestNodeTraversals(OsfTestCase):
         child = ProjectFactory(creator=self.viewer, parent=parent)
         child_non_admin = UserFactory()
         child.add_contributor(child_non_admin,
-                              auth=self.auth,
+                              auth=Auth(self.viewer),
                               permissions=expand_permissions(WRITE))
         child.save()
 
@@ -2233,7 +2283,7 @@ class TestNodeTraversals(OsfTestCase):
         child = ProjectFactory(creator=self.viewer, parent=parent)
         child_non_admin = UserFactory()
         child.add_contributor(child_non_admin,
-                              auth=self.auth,
+                              auth=Auth(self.viewer),
                               permissions=expand_permissions(WRITE))
         child.save()
 
@@ -3184,6 +3234,27 @@ class TestProject(OsfTestCase):
                 with mock.patch('website.project.model.Node.request_embargo_termination') as mock_request_embargo_termination:
                     registration.set_privacy('public', auth=self.auth)
                     assert_equal(mock_request_embargo_termination.call_count, 1)
+
+    def test_set_privacy_on_spammy_node(self):
+        with mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', True):
+            with mock.patch.object(Node, 'is_spammy', mock.PropertyMock(return_value=True)):
+                with assert_raises(NodeStateError):
+                    self.project.set_privacy('public')
+
+    def test_check_only_public_node(self):
+        # SPAM_CHECK_PUBLIC_ONLY is True by default
+        with mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True):
+            with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
+                self.project.set_privacy('private')
+                assert_false(self.project.check_spam(None, None))
+
+    def test_check_spam_on_private_node(self):
+        with mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True):
+            with mock.patch.object(settings, 'SPAM_CHECK_PUBLIC_ONLY', False):
+                with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
+                    with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(return_value=True)):
+                        self.project.set_privacy('private')
+                        assert_true(self.project.check_spam(None, None))
 
     def test_set_description(self):
         old_desc = self.project.description
@@ -4612,6 +4683,73 @@ class TestPrivateLink(OsfTestCase):
         assert_equal(schema, draft.registration_schema)
         assert_equal(data, draft.registration_metadata)
         assert_equal(proj, draft.branched_from)
+
+
+class TestNodeAddContributorRegisteredOrNot(OsfTestCase):
+
+    def setUp(self):
+        super(TestNodeAddContributorRegisteredOrNot, self).setUp()
+        self.user = AuthUserFactory()
+        self.node = ProjectFactory(creator=self.user)
+
+    def test_add_contributor_user_id(self):
+        self.registered_user = UserFactory()
+        contributor = self.node.add_contributor_registered_or_not(auth=Auth(self.user), user_id=self.registered_user._id, save=True)
+        assert_in(contributor._id, self.node.contributors)
+        assert_equals(contributor.is_registered, True)
+
+    def test_add_contributor_user_id_already_contributor(self):
+        with assert_raises(ValidationValueError) as e:
+            self.node.add_contributor_registered_or_not(auth=Auth(self.user), user_id=self.user._id, save=True)
+        assert_in('is already a contributor', e.exception.message)
+
+    def test_add_contributor_invalid_user_id(self):
+        with assert_raises(ValueError) as e:
+            self.node.add_contributor_registered_or_not(auth=Auth(self.user), user_id='abcde', save=True)
+        assert_in('was not found', e.exception.message)
+
+    def test_add_contributor_fullname_email(self):
+        contributor = self.node.add_contributor_registered_or_not(auth=Auth(self.user), full_name='Jane Doe', email='jane@doe.com')
+        assert_in(contributor._id, self.node.contributors)
+        assert_equals(contributor.is_registered, False)
+
+    def test_add_contributor_fullname(self):
+        contributor = self.node.add_contributor_registered_or_not(auth=Auth(self.user), full_name='Jane Doe')
+        assert_in(contributor._id, self.node.contributors)
+        assert_equals(contributor.is_registered, False)
+
+    def test_add_contributor_fullname_email_already_exists(self):
+        self.registered_user = UserFactory()
+        contributor = self.node.add_contributor_registered_or_not(auth=Auth(self.user), full_name='F Mercury', email=self.registered_user.username)
+        assert_in(contributor._id, self.node.contributors)
+        assert_equals(contributor.is_registered, True)
+
+
+class TestNodeSpam(OsfTestCase):
+
+    def setUp(self):
+        super(TestNodeSpam, self).setUp()
+        self.node = ProjectFactory(is_public=True)
+
+    def test_flag_spam_make_node_private(self):
+        assert_true(self.node.is_public)
+        with mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', True):
+            self.node.flag_spam()
+        assert_true(self.node.is_spammy)
+        assert_false(self.node.is_public)
+
+    def test_flag_spam_do_not_make_node_private(self):
+        assert_true(self.node.is_public)
+        with mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', False):
+            self.node.flag_spam()
+        assert_true(self.node.is_spammy)
+        assert_true(self.node.is_public)
+
+    def test_confirm_spam_makes_node_private(self):
+        assert_true(self.node.is_public)
+        self.node.confirm_spam()
+        assert_true(self.node.is_spammy)
+        assert_false(self.node.is_public)
 
 
 if __name__ == '__main__':

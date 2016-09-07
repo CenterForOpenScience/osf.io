@@ -735,6 +735,9 @@ def _view_project(node, auth, primary=False):
             'alternative_citations': [citation.to_json() for citation in node.alternative_citations],
             'has_draft_registrations': node.has_active_draft_registrations,
             'contributors': list(node.contributors.values_list('guid__guid', flat=True)),
+            'is_preprint': node.is_preprint,
+            'is_preprint_orphan': node.is_preprint_orphan,
+            'preprint_file_id': node.preprint_file._id if node.preprint_file else None
         },
         'parent_node': {
             'exists': parent is not None,

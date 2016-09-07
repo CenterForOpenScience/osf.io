@@ -82,7 +82,7 @@
 <div class="prereg-container">
     <h1 class="m-t-xl m-b-lg text-center">Welcome to the ${campaign_long}!</h1>
     <p>${description()}</p>
-    <p class="m-t-lg f-w-lg">Ready for the ${challenge_word()}?</p>
+    <p class="m-t-lg f-w-lg">Ready for the ${challenge_word()}? Please follow these steps:</p>
     <p>
         ${steps()}
     </p>

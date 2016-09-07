@@ -12,8 +12,8 @@ from django.conf import settings
 from website.addons.base.exceptions import InvalidFolderError, InvalidAuthError
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
-from website.models import Node, User, Comment, Institution, MetaSchema, DraftRegistration, PrivateLink
-from website.exceptions import NodeStateError
+from website.models import Node, Comment, Institution, MetaSchema, DraftRegistration, PrivateLink
+from website.exceptions import NodeStateError, TooManyRequests
 from website.util import permissions as osf_permissions
 from website.project import new_private_link
 from website.project.model import NodeUpdateError
@@ -23,7 +23,8 @@ from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHy
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField,
                                   HideIfRegistration, RestrictedDictSerializer,
                                   JSONAPIRelationshipSerializer, relationship_diff, )
-from api.base.exceptions import (InvalidModelValueError, RelationshipPostMakesNoChanges, Conflict,
+from api.base.exceptions import (InvalidModelValueError,
+                                 RelationshipPostMakesNoChanges, Conflict,
                                  EndpointNotImplementedError)
 from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
 
@@ -61,7 +62,8 @@ class NodeSerializer(JSONAPISerializer):
         'date_modified',
         'root',
         'parent',
-        'contributors'
+        'contributors',
+        'preprint'
     ])
 
     non_anonymized_fields = [
@@ -99,6 +101,7 @@ class NodeSerializer(JSONAPISerializer):
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
     registration = ser.BooleanField(read_only=True, source='is_registration')
+    preprint = ser.BooleanField(read_only=True, source='is_preprint')
     fork = ser.BooleanField(read_only=True, source='is_fork')
     collection = ser.BooleanField(read_only=True, source='is_collection')
     tags = JSONAPIListField(child=NodeTagField(), required=False)
@@ -631,6 +634,11 @@ class NodeContributorsSerializer(JSONAPISerializer):
         always_embed=True
     )
 
+    node = RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<node_id>'}
+    )
+
     class Meta:
         type_ = 'contributors'
 
@@ -652,25 +660,58 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
 class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     """
-    Overrides NodeContributorsSerializer to add target_type and required id field
+    Overrides NodeContributorsSerializer to add email, full_name, send_email, and non-required index and users field.
     """
-    id = ContributorIDField(required=True)
-    target_type = TargetTypeField(target_type='users')
+
+    id = ContributorIDField(source='_id', required=False, allow_null=True)
+    full_name = ser.CharField(required=False)
+    email = ser.EmailField(required=False)
+    index = ser.IntegerField(required=False)
+
+    users = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<pk>'},
+        required=False
+    )
+
+    email_preferences = ['default', 'preprint', 'false']
+
+    def validate_data(self, node, user_id=None, full_name=None, email=None, index=None):
+        if user_id and (full_name or email):
+            raise Conflict(detail='Full name and/or email should not be included with a user ID.')
+        if not user_id and not full_name:
+            raise exceptions.ValidationError(detail='A user ID or full name must be provided to add a contributor.')
+        if index > len(node.contributors):
+            raise exceptions.ValidationError(detail='{} is not a valid contributor index for node with id {}'.format(index, node._id))
 
     def create(self, validated_data):
-        auth = Auth(self.context['request'].user)
+        id = validated_data.get('_id')
+        email = validated_data.get('email')
+        index = validated_data.get('index')
         node = self.context['view'].get_node()
-        contributor = get_object_or_error(User, validated_data['_id'], display_name='user')
-        # Node object checks for contributor existence but can still change permissions anyway
-        if contributor in node.contributors:
-            raise exceptions.ValidationError('{} is already a contributor'.format(contributor.fullname))
-
-        bibliographic = validated_data['bibliographic']
+        auth = Auth(self.context['request'].user)
+        full_name = validated_data.get('full_name')
+        bibliographic = validated_data.get('bibliographic')
+        send_email = self.context['request'].GET.get('send_email') or 'default'
         permissions = osf_permissions.expand_permissions(validated_data.get('permission')) or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
-        node.add_contributor(contributor=contributor, auth=auth, visible=bibliographic, permissions=permissions, save=True)
-        contributor.permission = osf_permissions.reduce_permissions(node.get_permissions(contributor))
-        contributor.bibliographic = node.get_visible(contributor)
-        contributor.node_id = node._id
+
+        self.validate_data(node, user_id=id, full_name=full_name, email=email, index=index)
+
+        if send_email not in self.email_preferences:
+            raise exceptions.ValidationError(detail='{} is not a valid email preference.'.format(send_email))
+
+        try:
+            contributor = node.add_contributor_registered_or_not(
+                auth=auth, user_id=id, email=email, full_name=full_name, send_email=send_email,
+                permissions=permissions, bibliographic=bibliographic, index=index, save=True
+            )
+        except TooManyRequests:
+            raise exceptions.Throttled(detail='Too many contributor adds. Please wait a while and try again')
+        except ValidationValueError as e:
+            raise exceptions.ValidationError(detail=e.message)
+        except ValueError as e:
+            raise exceptions.NotFound(detail=e.message)
+
         return contributor
 
 
@@ -707,6 +748,8 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
         contributor.permission = osf_permissions.reduce_permissions(node.get_permissions(contributor))
         contributor.bibliographic = node.get_visible(contributor)
         contributor.node_id = node._id
+        if index is not None:
+            contributor.index = index
         return contributor
 
 
@@ -784,7 +827,8 @@ class NodeProviderSerializer(JSONAPISerializer):
     )
     links = LinksField({
         'upload': WaterbutlerLink(),
-        'new_folder': WaterbutlerLink(kind='folder')
+        'new_folder': WaterbutlerLink(kind='folder'),
+        'storage_addons': 'get_storage_addons_url'
     })
 
     class Meta:
@@ -801,6 +845,12 @@ class NodeProviderSerializer(JSONAPISerializer):
                 'node_id': obj.node._id,
                 'provider': obj.provider
             }
+        )
+
+    def get_storage_addons_url(self, obj):
+        return absolute_reverse(
+            'addons:addon-list',
+            query_kwargs={'filter[categories]': 'storage'}
         )
 
 class InstitutionRelated(JSONAPIRelationshipSerializer):
