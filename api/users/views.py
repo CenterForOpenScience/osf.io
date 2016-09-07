@@ -54,7 +54,7 @@ class UserMixin(object):
         return obj
 
 
-class UserList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
+class UserList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     """List of users registered on the OSF.
 
     Paginated list of users ordered by the date they registered.  Each resource contains the full representation of the
@@ -109,7 +109,7 @@ class UserList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
     )
 
     required_read_scopes = [CoreScopes.USERS_READ]
-    required_write_scopes = [CoreScopes.USERS_CREATE]
+    required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = UserSerializer
 
