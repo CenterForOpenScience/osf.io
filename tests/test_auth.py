@@ -146,7 +146,7 @@ class TestAuthUtils(OsfTestCase):
         resp.status_code = http.OK
         resp.json = mock.Mock(return_value={'success': True})
         req_post.return_value = resp
-        assert_true(validate_recaptcha(None))
+        assert_true(validate_recaptcha('a valid captcha'))
 
     @mock.patch('framework.auth.utils.requests.post')
     def test_validate_recaptcha_valid_req_failure(self, req_post):
@@ -166,6 +166,7 @@ class TestAuthUtils(OsfTestCase):
 
     @mock.patch('framework.auth.utils.requests.post', side_effect=AssertionError())
     def test_validate_recaptcha_empty_response(self, req_post):
+        # ensure None short circuits execution (no call to google)
         assert_false(validate_recaptcha(None))
 
 
