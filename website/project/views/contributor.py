@@ -12,7 +12,7 @@ from framework.auth.core import get_user, generate_confirm_token, generate_verif
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import PasswordForm, SetEmailAndPasswordForm
 from framework.auth.signals import user_registered
-from framework.auth.utils import validate_email
+from framework.auth.utils import validate_email, validate_recaptcha
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
@@ -633,7 +633,11 @@ def claim_user_form(auth, **kwargs):
     claimer_email = unclaimed_record.get('claimer_email') or unclaimed_record.get('email')
     form = SetEmailAndPasswordForm(request.form, token=token)
     if request.method == 'POST':
-        if form.validate():
+        if not form.validate():
+            forms.push_errors_to_status(form.errors)
+        elif settings.RECAPTCHA_SITE_KEY and not validate_recaptcha(request.form.get('g-recaptcha-response')):
+            status.push_status_message('Invalid captcha supplied.', kind='error')
+        else:
             username, password = claimer_email, form.password.data
             user.register(username=username, password=password)
             # Clear unclaimed records
@@ -648,8 +652,6 @@ def claim_user_form(auth, **kwargs):
                 username=user.username,
                 verification_key=user.verification_key
             ))
-        else:
-            forms.push_errors_to_status(form.errors)
 
     return {
         'firstname': user.given_name,

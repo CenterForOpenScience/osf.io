@@ -283,10 +283,22 @@ var SignUpViewModel = oop.extend(BaseViewModel, {
             });
             return false;
         }
+
+        var payload = ko.toJS(self);
+
+        // include recaptcha if it is enabled
+        if ($('.g-recaptcha').length !== 0) {
+            var captchaResponse = $('#g-recaptcha-response').val();
+            if (captchaResponse.length === 0) {
+                return false;
+            }
+            $.extend(payload, {'g-recaptcha-response': captchaResponse});
+        }
+
         window.ga('send', 'event', 'signupSubmit', 'click', 'new_user_submit');
         $osf.postJSON(
             submitUrl,
-            ko.toJS(self)
+            payload
         ).done(
             self.submitSuccess.bind(self)
         ).fail(
