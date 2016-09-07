@@ -1,15 +1,11 @@
 # -*- coding: utf-8 -*-
 
-from modularodm import Q
-
 from rest_framework import generics, permissions as drf_permissions
 
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 from api.base.pagination import SearchPagination
-
 from api.files.serializers import FileSerializer
-from api.institutions.serializers import InstitutionSerializer
 from api.nodes.serializers import NodeSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.search.serializers import (
@@ -17,11 +13,11 @@ from api.search.serializers import (
 )
 from api.users.serializers import UserSerializer
 
-from framework.auth.oauth_scopes import CoreScopes, ComposedScopes
 from framework.auth.core import User
+from framework.auth.oauth_scopes import CoreScopes, ComposedScopes
 
+from website.files.models import FileNode
 from website.models import Node
-
 from website.search import search
 from website.search.util import build_query
 
@@ -61,6 +57,7 @@ class SearchComponents(JSONAPIBaseView, generics.ListAPIView):
     view_category = 'search'
     view_name = 'search-components'
 
+    # TODO: DRY
     def get_queryset(self):
         query = self.request.query_params.get('q', '*')
         page = int(self.request.query_params.get('page', '1'))
@@ -76,28 +73,19 @@ class SearchFiles(JSONAPIBaseView, generics.ListAPIView):
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
 
+    model_class = FileNode
     serializer_class = FileSerializer
+    pagination_class = SearchPagination
+
     view_category = 'search'
     view_name = 'search-files'
 
+    # TODO: DRY
     def get_queryset(self):
-        pass
-
-
-class SearchInstitutions(JSONAPIBaseView, generics.ListAPIView):
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-    )
-
-    required_read_scopes = [CoreScopes.INSTITUTION_READ]
-
-    serializer_class = InstitutionSerializer
-    view_category = 'search'
-    view_name = 'search-institutions'
-
-    def get_queryset(self):
-        pass
+        query = self.request.query_params.get('q', '*')
+        page = int(self.request.query_params.get('page', '1'))
+        start = (page - 1) * 10
+        return search.search(build_query(query, start=start), doc_type='file', raw=True)
 
 
 class SearchProjects(JSONAPIBaseView, generics.ListAPIView):
@@ -116,6 +104,7 @@ class SearchProjects(JSONAPIBaseView, generics.ListAPIView):
     view_category = 'search'
     view_name = 'search-projects'
 
+    # TODO: DRY
     def get_queryset(self):
         query = self.request.query_params.get('q', '*')
         page = int(self.request.query_params.get('page', '1'))
@@ -139,6 +128,7 @@ class SearchRegistrations(JSONAPIBaseView, generics.ListAPIView):
     view_category = 'search'
     view_name = 'search-registrations'
 
+    # TODO: DRY
     def get_queryset(self):
         query = self.request.query_params.get('q', '*')
         page = int(self.request.query_params.get('page', '1'))
@@ -162,6 +152,7 @@ class SearchUsers(JSONAPIBaseView, generics.ListAPIView):
     view_category = 'search'
     view_name = 'search-users'
 
+    # TODO: DRY
     def get_queryset(self):
         query = self.request.query_params.get('q', '*')
         page = int(self.request.query_params.get('page', '1'))
