@@ -122,4 +122,4 @@ def validate_recaptcha(response):
     }
     resp = requests.post(settings.RECAPTCHA_VERIFY_URL, data=payload)
     json_data = json.loads(resp.text)
-    return resp.status_code == httplib.OK and json_data['success'] == 'true'
+    return resp.status_code == httplib.OK and json_data.get('success')

@@ -636,7 +636,7 @@ def claim_user_form(auth, **kwargs):
         if not form.validate():
             forms.push_errors_to_status(form.errors)
         elif settings.RECAPTCHA_SITE_KEY and not validate_recaptcha(request.form.get('g-recaptcha-response')):
-            raise HTTPError(http.BAD_REQUEST)
+            status.push_status_message('Invalid captcha supplied.', kind='error')
         else:
             username, password = claimer_email, form.password.data
             user.register(username=username, password=password)
