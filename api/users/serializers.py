@@ -89,7 +89,7 @@ class UserSerializer(JSONAPISerializer):
         required=False, source='social.researchGate'
     )))
     academia_institution = DevOnly(HideIfDisabled(AllowMissing(
-        ser.CharField(required=False, source='social.academiaInstitution',allow_blank=True, help_text='AcademiaInstitution Field'),
+        ser.CharField(required=False, source='social.academiaInstitution', allow_blank=True, help_text='AcademiaInstitution Field'),
         required=False, source='social.academiaInstitution'
     )))
     academia_profile_id = DevOnly(HideIfDisabled(AllowMissing(
