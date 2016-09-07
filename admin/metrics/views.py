@@ -48,7 +48,7 @@ def dump(qs, outfile_path):
             if callable(val):
                 val = val()
             if type(val) == unicode:
-                val = val.encode("utf-8")
+                val = val.encode('utf-8')
             row.append(val)
         writer.writerow(row)
 
