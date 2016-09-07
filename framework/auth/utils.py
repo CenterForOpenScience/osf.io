@@ -1,11 +1,11 @@
 import httplib
-import json
+import re
+
+from nameparser.parser import HumanName
+import requests
 
 from modularodm.exceptions import ValidationError
 from modularodm import Q
-from nameparser.parser import HumanName
-import re
-import requests
 
 from website import settings
 
@@ -115,11 +115,10 @@ def validate_recaptcha(response):
     :param response: the recaptcha response form submission
     :return: True if valid, False otherwise
     """
-
-    payload = {
+    if not response:
+        return False
+    resp = requests.post(settings.RECAPTCHA_VERIFY_URL, data={
         'secret': settings.RECAPTCHA_SECRET_KEY,
         'response': response,
-    }
-    resp = requests.post(settings.RECAPTCHA_VERIFY_URL, data=payload)
-    json_data = json.loads(resp.text)
-    return resp.status_code == httplib.OK and json_data.get('success')
+    })
+    return resp.status_code == httplib.OK and resp.json().get('success')
