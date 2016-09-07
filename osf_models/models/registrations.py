@@ -14,6 +14,10 @@ from osf_models.models import (
     Retraction, Embargo, DraftRegistrationApproval,
     EmbargoTerminationApproval,
 )
+
+# TODO DELETE ME POST MIGRATION
+from modularodm import Q as MQ
+# /TODO DELETE ME POST MIGRATION
 from osf_models.exceptions import ValidationValueError
 from osf_models.models.base import BaseModel, ObjectIDMixin
 from osf_models.models.node import AbstractNode
@@ -29,6 +33,10 @@ class RegistrationManager(models.Manager):
         return super(RegistrationManager, self).get_queryset().select_related('parent_node')
 
 class Registration(AbstractNode):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.project.model.Node'
+    modm_query = MQ('is_registration', 'eq', True)
+    # /TODO DELETE ME POST MIGRATION
     objects = RegistrationManager()
 
     registered_date = models.DateTimeField(db_index=True, null=True, blank=True)
@@ -346,9 +354,13 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
     field - action - simple action to track what happened
     field - user - user who did the action
     """
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.project.model.DraftRegistrationLog'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     date = models.DateTimeField()  # auto_add=True)
     action = models.CharField(max_length=255)
-    draft = models.ForeignKey('DraftRegistration', related_name='logs', null=True)
+    draft = models.ForeignKey('DraftRegistration', related_name='logs', null=True, blank=True)
     user = models.ForeignKey('OSFUser', null=True)
 
     SUBMITTED = 'submitted'
@@ -363,6 +375,10 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
 
 
 class DraftRegistration(ObjectIDMixin, BaseModel):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.project.model.DraftRegistration'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/drafts/{draft_id}'
 
     datetime_initiated = models.DateTimeField(default=timezone.now)  # auto_now_add=True)
@@ -388,7 +404,8 @@ class DraftRegistration(ObjectIDMixin, BaseModel):
     # }
     registration_metadata = DateTimeAwareJSONField(default=dict, blank=True)
     registration_schema = models.ForeignKey('MetaSchema', null=True)
-    registered_node = models.ForeignKey('Node', null=True, blank=True, related_name='draft_registration')
+    registered_node = models.ForeignKey('Registration', null=True, blank=True,
+                                        related_name='draft_registration')
 
     approval = models.ForeignKey('DraftRegistrationApproval', null=True, blank=True)
 

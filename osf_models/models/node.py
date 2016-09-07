@@ -1,22 +1,46 @@
+import functools
 import itertools
 import logging
+import operator
 import re
 import urlparse
 
 from django.apps import apps
 from django.contrib.contenttypes.fields import GenericRelation
+from datetime import datetime
+
+import pytz
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
-from django.dispatch import receiver
 from django.db.models.signals import post_save, pre_save
+from django.dispatch import receiver
 from django.utils import timezone
 from keen import scoped_keys
+from modularodm import Q as MQ
+from osf_models.apps import AppConfig as app_config
+from osf_models.models.citation import AlternativeCitation
+from osf_models.models.contributor import Contributor, RecentlyAddedContributor
+from osf_models.models.identifiers import Identifier
 from osf_models.models.identifiers import IdentifierMixin
+from osf_models.models.mixins import Loggable, Taggable, AddonModelMixin, NodeLinkMixin
+from osf_models.models.nodelog import NodeLog
+from osf_models.models.sanctions import RegistrationApproval
+from osf_models.models.user import OSFUser
+from osf_models.models.validators import validate_title
+from osf_models.modm_compat import Q
+from osf_models.utils.auth import Auth, get_user
+from osf_models.utils.base import api_v2_url
+from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from typedmodels.models import TypedModel
 
-# OSF imports
 from framework import status
+from framework.exceptions import PermissionsError
+from framework.sentry import log_exception
+from website import settings
 from website.exceptions import UserNotAffiliatedError, NodeStateError
+from website.project import signals as project_signals
+from website.util import api_url_for
+from website.util import web_url_for
 from website.util.permissions import (
     expand_permissions,
     reduce_permissions,
@@ -26,30 +50,10 @@ from website.util.permissions import (
     WRITE,
     ADMIN,
 )
-from website.util import web_url_for
-from website.util import api_url_for
-from website import settings
-from framework.sentry import log_exception
-from framework.exceptions import PermissionsError
-from website.project import signals as project_signals
-
-from osf_models.apps import AppConfig as app_config
-from osf_models.models.nodelog import NodeLog
-from osf_models.models.citation import AlternativeCitation
-from osf_models.models.contributor import Contributor, RecentlyAddedContributor
-from osf_models.models.mixins import Loggable, Taggable, AddonModelMixin, NodeLinkMixin
-from osf_models.models.identifiers import Identifier
-from osf_models.models.user import OSFUser
-from osf_models.models.sanctions import RegistrationApproval
-from osf_models.models.validators import validate_title
-from osf_models.utils.auth import Auth, get_user
-from osf_models.utils.base import api_v2_url
-from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf_models.modm_compat import Q
-
-from .base import BaseModel, GuidMixin
+from .base import BaseModel, GuidMixin, Guid
 
 logger = logging.getLogger(__name__)
+
 
 class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
                    NodeLinkMixin,
@@ -58,6 +62,7 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
     All things that inherit from AbstractNode will appear in
     the same table and will be differentiated by the `type` column.
     """
+
     class Meta:
         order_with_respect_to = 'parent_node'
 
@@ -96,8 +101,8 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
     # TODO: Can this be a reference instead of data?
     child_node_subscriptions = DateTimeAwareJSONField(default=dict, blank=True)
     _contributors = models.ManyToManyField(OSFUser,
-                                          through=Contributor,
-                                          related_name='nodes')
+                                           through=Contributor,
+                                           related_name='nodes')
 
     @property
     def contributors(self):
@@ -289,6 +294,7 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
 
     def update_search(self):
         from website import search
+
         try:
             search.search.update_node(self, bulk=False, async=True)
         except search.exceptions.SearchUnavailableError as e:
@@ -410,7 +416,7 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
     def set_permissions(self, user, permissions, validate=True, save=False):
         # Ensure that user's permissions cannot be lowered if they are the only admin
         if validate and (reduce_permissions(self.get_permissions(user)) == ADMIN and
-                         reduce_permissions(permissions) != ADMIN):
+                                 reduce_permissions(permissions) != ADMIN):
             admin_contribs = Contributor.objects.filter(node=self, admin=True)
             if admin_contribs.count() <= 1:
                 raise NodeStateError('Must have at least one registered admin contributor')
@@ -636,7 +642,7 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
         contributor = OSFUser.create_unregistered(fullname=fullname, email=email)
 
         contributor.add_unclaimed_record(node=self, referrer=auth.user,
-            given_name=fullname, email=email)
+                                         given_name=fullname, email=email)
         try:
             contributor.save()
         except ValidationError:  # User with same email already exists
@@ -646,7 +652,7 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
             if contributor.is_registered or self.is_contributor(contributor):
                 raise
             contributor.add_unclaimed_record(node=self, referrer=auth.user,
-                given_name=fullname, email=email)
+                                             given_name=fullname, email=email)
             contributor.save()
 
         self.add_contributor(
@@ -1220,6 +1226,14 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
             self.root = self._root
         return super(AbstractNode, self).save(*args, **kwargs)
 
+    @classmethod
+    def migrate_from_modm(cls, modm_obj):
+        django_obj = super(AbstractNode, cls).migrate_from_modm(modm_obj)
+        # force order, fix in subsequent pass
+        django_obj._order = 0
+        return django_obj
+
+
 class Node(AbstractNode):
     """
     Concrete Node class: Instance of AbstractNode(TypedModel). All things that inherit
@@ -1227,10 +1241,57 @@ class Node(AbstractNode):
 
     FYI: Behaviors common between Registration and Node should be on the parent class.
     """
+
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.project.model.Node'
+    modm_query = functools.reduce(operator.and_, [
+        MQ('is_registration', 'eq', False),
+        MQ('is_collection', 'eq', False),
+    ])
+
+    @classmethod
+    def migrate_from_modm(cls, modm_obj):
+        """
+        Given a modm object, make a django object with the same local fields.
+
+        This is a base method that may work for simple objects.
+        It should be customized in the child class if it
+        doesn't work.
+        :param modm_obj:
+        :return:
+        """
+        kwargs = {cls.primary_identifier_name: modm_obj._id}
+        guid, created = Guid.objects.get_or_create(**kwargs)
+        if created:
+            logger.debug('Created a new Guid for {} ({})'.format(modm_obj.__class__.__name__, modm_obj._id))
+
+        django_obj = cls()
+        django_obj.guid = guid
+
+        bad_names = ['institution_logo_name']
+        local_django_fields = set(
+            [x.name for x in django_obj._meta.get_fields() if not x.is_relation and x.name not in bad_names])
+
+        intersecting_fields = set(modm_obj.to_storage().keys()).intersection(
+            set(local_django_fields))
+
+        for field in intersecting_fields:
+            modm_value = getattr(modm_obj, field)
+            if modm_value is None:
+                continue
+            if isinstance(modm_value, datetime):
+                modm_value = pytz.utc.localize(modm_value)
+            setattr(django_obj, field, modm_value)
+        django_obj._order = 0
+        return django_obj
+
+    # /TODO DELETE ME POST MIGRATION
+
     @property
     def is_collection(self):
         """Compat with v1."""
         return False
+
 
 @receiver(post_save, sender=Node)
 def add_creator_as_contributor(sender, instance, created, **kwargs):
@@ -1243,6 +1304,7 @@ def add_creator_as_contributor(sender, instance, created, **kwargs):
             write=True,
             admin=True
         )
+
 
 @receiver(post_save, sender=Node)
 def add_project_created_log(sender, instance, created, **kwargs):
@@ -1264,10 +1326,12 @@ def add_project_created_log(sender, instance, created, **kwargs):
             save=True,
         )
 
+
 @receiver(post_save, sender=Node)
 def send_osf_signal(sender, instance, created, **kwargs):
     if created:
         project_signals.project_created.send(instance)
+
 
 # TODO: Add addons
 
@@ -1276,7 +1340,16 @@ def set_parent(sender, instance, *args, **kwargs):
     if getattr(instance, '_parent', None):
         instance.parent_node = instance._parent
 
+
 class Collection(NodeLinkMixin, GuidMixin, BaseModel):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.project.model.Node'
+    modm_query = functools.reduce(operator.and_, [
+        MQ('is_registration', 'eq', False),
+        MQ('is_collection', 'eq', True),
+    ])
+    # /TODO DELETE ME POST MIGRATION
+
     # TODO: Uncomment auto_* attributes after migration is complete
     date_created = models.DateTimeField(null=False, default=timezone.now)  # auto_now_add=True)
     date_modified = models.DateTimeField(null=True, blank=True,

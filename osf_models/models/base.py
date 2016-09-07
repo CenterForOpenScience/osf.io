@@ -2,11 +2,10 @@ import logging
 import random
 from datetime import datetime
 
-from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db import models
 import modularodm.exceptions
 import pytz
-
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import models
 from osf_models.exceptions import ValidationError
 from osf_models.modm_compat import to_django_query, Q
 from osf_models.utils.base import generate_object_id
@@ -55,6 +54,8 @@ class BaseModel(models.Model):
     """Base model that acts makes subclasses mostly compatible with the
     modular-odm ``StoredObject`` interface.
     """
+
+    migration_page_size = 20000
 
     objects = MODMCompatibilityQuerySet.as_manager()
 
@@ -130,7 +131,13 @@ class BaseModel(models.Model):
         :param modm_obj:
         :return:
         """
+        kwargs = {cls.primary_identifier_name: modm_obj._id}
+        guid, created = Guid.objects.get_or_create(**kwargs)
+        if created:
+            logger.debug('Created a new Guid for {} ({})'.format(modm_obj.__class__.__name__, modm_obj._id))
+
         django_obj = cls()
+        django_obj.guid = guid
 
         local_django_fields = set([x.name for x in django_obj._meta.get_fields() if not x.is_relation])
 
@@ -154,6 +161,13 @@ class Guid(BaseModel):
     Each ID field (e.g. 'guid', 'object_id') MUST have an accompanying method, named with
     'initialize_<ID type>' (e.g. 'initialize_guid') that generates and sets the field.
     """
+
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'framework.guid.model.Guid'
+    modm_query = None
+    migration_page_size = 500000
+    # /TODO DELETE ME POST MIGRATION
+
     id = models.AutoField(primary_key=True)
     guid = models.fields.CharField(max_length=255,
                                    unique=True,
@@ -172,6 +186,10 @@ class Guid(BaseModel):
 
     def initialize_object_id(self, instance):
         self.object_id = generate_object_id()
+
+    @property
+    def _id(self):
+        return self.guid or self.object_id
 
     # Override load in order to load by GUID
     @classmethod
@@ -214,10 +232,47 @@ class Guid(BaseModel):
     def referent(self, obj):
         obj.guid = self
 
+    @classmethod
+    def migrate_from_modm(cls, modm_obj):
+        """
+        Given a modm Guid make a django Guid
 
-class BlackListGuid(models.Model):
+        :param modm_obj:
+        :return:
+        """
+        django_obj = cls()
+
+        django_obj.guid = modm_obj._id
+
+        return django_obj
+
+
+class BlackListGuid(BaseModel):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'framework.guid.model.BlacklistGuid'
+    modm_query = None
+    migration_page_size = 500000
+    # /TODO DELETE ME POST MIGRATION
     id = models.AutoField(primary_key=True)
     guid = models.fields.CharField(max_length=255, unique=True, db_index=True)
+
+    @property
+    def _id(self):
+        return self.guid
+
+    @classmethod
+    def migrate_from_modm(cls, modm_obj):
+        """
+        Given a modm BlacklistGuid make a django BlackListGuid
+
+        :param modm_obj:
+        :return:
+        """
+        django_obj = cls()
+
+        django_obj.guid = modm_obj._id
+
+        return django_obj
 
 
 def generate_guid_instance():
@@ -239,7 +294,6 @@ class BaseIDMixin(models.Model):
     __guid_min_length__ = 5
 
     guid = models.OneToOneField('Guid',
-                                 default=generate_guid_instance,
                                  null=True, blank=True,
                                  unique=True,
                                  related_name='referent_%(class)s')
@@ -289,7 +343,7 @@ class BaseIDMixin(models.Model):
         kwargs = {cls.primary_identifier_name: modm_obj._id}
         guid, created = Guid.objects.get_or_create(**kwargs)
         if created:
-            logger.debug('Created a new Guid for {}'.format(modm_obj))
+            logger.debug('Created a new Guid for {} ({})'.format(modm_obj.__class__.__name__, modm_obj._id))
         django_obj = cls()
         django_obj.guid = guid
 

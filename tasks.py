@@ -72,6 +72,6 @@ def test(ctx, setup=False, update=False, requirements=True, branch=POSTGRES_BRAN
 
 @task
 def readme(ctx, browse=False):
-    ctx.run("rst2html.py README.rst > README.html")
+    ctx.run('rst2html.py README.rst > README.html')
     if browse:
         webbrowser.open_new_tab('README.html')

@@ -3,6 +3,11 @@ from django.db import models
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 class MetaSchema(ObjectIDMixin, BaseModel):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.project.model.MetaSchema'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
+
     name = models.CharField(max_length=255)
     schema = DateTimeAwareJSONField(default=dict)
     category = models.CharField(max_length=255, null=True, blank=True)

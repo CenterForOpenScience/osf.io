@@ -4,6 +4,10 @@ from osf_models.models.base import BaseModel, ObjectIDMixin
 
 
 class AlternativeCitation(ObjectIDMixin, BaseModel):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.project.model.AlternativeCitation'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     name = models.CharField(max_length=256)
     text = models.CharField(max_length=2048)
 
@@ -20,6 +24,13 @@ class CitationStyle(BaseModel):
 
     These are parsed from .csl files, so that metadata fields can be indexed.
     """
+
+    primary_identifier_name = 'object_id'
+
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.citations.models.CitationStyle'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
 
     # The name of the citation file, sans extension
     _id = models.CharField(max_length=255, db_index=True)

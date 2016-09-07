@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import json
+import re
 
 from django.db import models
 from osf_models.models.base import BaseModel, ObjectIDMixin
@@ -35,7 +37,11 @@ class ConferenceManager(models.Manager):
             raise ConferenceError('Endpoint {} not found'.format(endpoint))
 
 
-class Conference(BaseModel):
+class Conference(ObjectIDMixin, BaseModel):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.conferences.model.Conference'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     #: Determines the email address for submission and the OSF url
     # Example: If endpoint is spsp2014, then submission email will be
     # spsp2014-talk@osf.io or spsp2014-poster@osf.io and the OSF url will
@@ -63,6 +69,8 @@ class Conference(BaseModel):
 
     objects = ConferenceManager()
 
+    primary_identifier_name = 'object_id'
+
     def __repr__(self):
         return (
             '<Conference(endpoint={self.endpoint!r}, active={self.active})>'.format(self=self)
@@ -74,6 +82,16 @@ class Conference(BaseModel):
 
 
 class MailRecord(ObjectIDMixin, BaseModel):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.conferences.model.MailRecord'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     data = DateTimeAwareJSONField()
     nodes_created = models.ManyToManyField('Node')
     users_created = models.ManyToManyField('OSFUser')
+
+    @classmethod
+    def migrate_from_modm(cls, modm_obj):
+        cmp = re.compile(ur'\\+u0000')
+        modm_obj.data = json.loads(re.sub(cmp, '', json.dumps(modm_obj.data)))
+        return super(MailRecord, cls).migrate_from_modm(modm_obj)

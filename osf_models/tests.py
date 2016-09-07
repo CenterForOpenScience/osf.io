@@ -14,32 +14,32 @@ class DateTimeAwareJSONFieldTests(TestCase):
             nested_data=dict(
                 sample_date=dt.date.today(),
                 sample_datetime=dt.datetime.utcnow(),
-                sample_decimal=Decimal("10.259")
+                sample_decimal=Decimal('10.259')
             ),
             sample_datetime=dt.datetime.utcnow(),
-            sample_decimal=Decimal("10.259"),
+            sample_decimal=Decimal('10.259'),
             sample_text='wut wut',
             list_of_things=[
                 dict(
                     sample_date=dt.date.today(),
                     sample_datetime=dt.datetime.utcnow(),
-                    sample_decimal=Decimal("10.259")
+                    sample_decimal=Decimal('10.259')
                 ),
                 dict(
                     sample_date=dt.date.today(),
                     sample_datetime=dt.datetime.utcnow(),
-                    sample_decimal=Decimal("10.259")
+                    sample_decimal=Decimal('10.259')
                 ),
                 [
                     dict(
                         sample_date=dt.date.today(),
                         sample_datetime=dt.datetime.utcnow(),
-                        sample_decimal=Decimal("10.259")
+                        sample_decimal=Decimal('10.259')
                     ),
                     dict(
                         sample_date=dt.date.today(),
                         sample_datetime=dt.datetime.utcnow(),
-                        sample_decimal=Decimal("10.259")
+                        sample_decimal=Decimal('10.259')
                     ),
                 ]
             ]
@@ -48,12 +48,12 @@ class DateTimeAwareJSONFieldTests(TestCase):
             dict(
                 sample_date=dt.date.today(),
                 sample_datetime=dt.datetime.utcnow(),
-                sample_decimal=Decimal("10.259")
+                sample_decimal=Decimal('10.259')
             ),
             dict(
                 sample_date=dt.date.today(),
                 sample_datetime=dt.datetime.utcnow(),
-                sample_decimal=Decimal("10.259")
+                sample_decimal=Decimal('10.259')
             ),
         ]
 

@@ -2,8 +2,8 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
-from django.utils import timezone
 from django.db.models import Q
+from django.utils import timezone
 from osf_models.models import Node
 from osf_models.models import NodeLog
 from osf_models.models.base import GuidMixin, Guid, BaseModel
@@ -24,6 +24,10 @@ class CommentableMixin(object):
 
 
 class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.project.model.Comment'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     __guid_min_length__ = 12
 
     OVERVIEW = 'node'

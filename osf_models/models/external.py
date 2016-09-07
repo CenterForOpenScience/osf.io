@@ -40,6 +40,12 @@ class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
     The ``provider`` field is a de facto foreign key to an ``ExternalProvider``
     object, as providers are not stored in the database.
     """
+
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.oauth.models.ExternalAccount'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
+
     # The OAuth credentials. One or both of these fields should be populated.
     # For OAuth1, this is usually the "oauth_token"
     # For OAuth2, this is usually the "access_token"

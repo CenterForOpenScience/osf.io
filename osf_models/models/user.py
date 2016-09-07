@@ -88,6 +88,11 @@ class OSFUserManager(BaseUserManager):
 
 class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
               AbstractBaseUser, PermissionsMixin, AddonModelMixin):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'framework.auth.core.User'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
+
     USERNAME_FIELD = 'username'
 
     # Node fields that trigger an update to the search engine on save

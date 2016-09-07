@@ -22,6 +22,10 @@ def serialize_node_license_record(node_license_record):
     return ret
 
 class NodeLicense(ObjectIDMixin, BaseModel):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.project.licenses.NodeLicense'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     license_id = models.CharField(max_length=128, null=False, unique=True)
     name = models.CharField(max_length=256, null=False, unique=True)
     text = models.TextField(null=False)
@@ -39,7 +43,10 @@ class NodeLicense(ObjectIDMixin, BaseModel):
 
 
 class NodeLicenseRecord(ObjectIDMixin, BaseModel):
-
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.project.licenses.NodeLicenseRecord'
+    modm_query = None
+    # /TODO DELETE ME POST MIGRATION
     node_license = models.ForeignKey('NodeLicense', null=True, blank=True, on_delete=models.SET_NULL)
     # Deliberately left as a CharField to support year ranges (e.g. 2012-2015)
     year = models.CharField(max_length=128)
@@ -68,3 +75,9 @@ class NodeLicenseRecord(ObjectIDMixin, BaseModel):
         )
         copied.save()
         return copied
+
+    @classmethod
+    def migrate_from_modm(cls, modm_obj):
+        modm_obj.year = unicode(modm_obj.year)[:128]
+        modm_obj.copyright_holders = [unicode(cph)[:256] for cph in modm_obj.copyright_holders]
+        return super(NodeLicenseRecord, cls).migrate_from_modm(modm_obj)
