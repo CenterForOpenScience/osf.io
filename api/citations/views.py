@@ -11,14 +11,23 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from website.models import CitationStyle
 
-class CitationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
-    '''List of citations for a specific node. *Read-only*
+class CitationStyleList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
+    '''List of standard citation styles available for rendering citations. *Read-only*
 
     ##Note
     **This API endpoint is under active development, and is subject to change in the future**
 
     ##Citation Attributes
 
+            name           type               description
+        =========================================================================
+        date_parsed        string             date the citation style was first added to the database
+        summary            string             summary of the citation style
+        short_title        string             a short name or nickname for the citation style
+        title              string             official name of the citation style
+
+
+    Citation style may be filtered by their 'title', 'short_title', 'summary', and 'id'
     '''
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -39,11 +48,20 @@ class CitationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     def get_queryset(self):
         return CitationStyle.find(self.get_query_from_request())
 
-class CitationDetail(JSONAPIBaseView, generics.RetrieveAPIView):
-    '''Detail for a citation for a specific node*Read-only*
+class CitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView):
+    '''Detail for a citation style *Read-only*
 
     ##Note
     **This API endpoint is under active development, and is subject to change in the future**
+
+    ##Citation Attributes
+
+        name           type               description
+    =========================================================================
+    date_parsed        string             date the citation style was first added to the database
+    summary            string             summary of the citation style
+    short_title        string             a short name or nickname for the citation style
+    title              string             official name of the citation style
 
     '''
     permission_classes = (
