@@ -1737,7 +1737,15 @@ BLACKLISTED_DOMAINS = [
     'zzz.com',
 ]
 
+# reCAPTCHA API
+RECAPTCHA_SITE_KEY = None
+RECAPTCHA_SECRET_KEY = None
+RECAPTCHA_VERIFY_URL = 'https://www.google.com/recaptcha/api/siteverify'
+
+# akismet spam check
 AKISMET_APIKEY = None
 SPAM_CHECK_ENABLED = False
+SPAM_CHECK_PUBLIC_ONLY = True
 SPAM_FLAGGED_MAKE_NODE_PRIVATE = False
 SPAM_FLAGGED_REMOVE_FROM_SEARCH = False
+
