@@ -25,9 +25,9 @@ env:
     - VARNISH_DEB="varnish_4.1.0-1~trusty_amd64.deb"
     - GIT_SSL_NO_VERIFY=true
   matrix:
-    - TEST_BUILD=osf
-    - TEST_BUILD=else
-    - TEST_BUILD=varnish
+    - TEST_BUILD="osf"
+    - TEST_BUILD="else"
+    - TEST_BUILD="varnish"
 
 before_install:
     # cache directories
