@@ -613,7 +613,6 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
         if url is None:
             raise SkipField
-
         related_url = url['related']
         related_meta = self.get_meta_information(self.related_meta, value)
         self_url = url['self']

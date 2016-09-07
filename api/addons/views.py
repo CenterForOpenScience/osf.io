@@ -1,5 +1,6 @@
-import importlib
 
+from __future__ import unicode_literals
+import importlib
 from rest_framework.exceptions import NotFound
 from rest_framework import generics, permissions as drf_permissions
 

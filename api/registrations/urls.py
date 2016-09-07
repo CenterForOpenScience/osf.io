@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from django.conf.urls import url
 
 from api.registrations import views
@@ -18,8 +19,12 @@ urlpatterns = [
     url(r'^(?P<node_id>\w+)/contributors/$', views.RegistrationContributorsList.as_view(), name=views.RegistrationContributorsList.view_name),
     url(r'^(?P<node_id>\w+)/contributors/(?P<user_id>\w+)/$', views.RegistrationContributorDetail.as_view(), name=views.RegistrationContributorDetail.view_name),
     url(r'^(?P<node_id>\w+)/files/$', views.RegistrationProvidersList.as_view(), name=views.RegistrationProvidersList.view_name),
-    url(r'^(?P<node_id>\w+)/files/(?P<provider>\w+)(?P<path>/(?:.*/)?)$', views.RegistrationFilesList.as_view(), name=views.RegistrationFilesList.view_name),
     url(r'^(?P<node_id>\w+)/files/(?P<provider>\w+)(?P<path>/.+[^/])$', views.RegistrationFileDetail.as_view(), name=views.RegistrationFileDetail.view_name),
+    url(r'^(?P<node_id>\w+)/files/(?P<provider>\w+)(?P<path>/.*)$', views.RegistrationFilesList.as_view(), name=views.RegistrationFilesList.view_name),
+    url(r'^(?P<node_id>\w+)/citations/$', views.RegistrationAlternativeCitationsList.as_view(), name=views.RegistrationAlternativeCitationsList.view_name),
+    url(r'^(?P<node_id>\w+)/citations/(?P<citation_id>\w+)/$', views.RegistrationAlternativeCitationDetail.as_view(), name=views.RegistrationAlternativeCitationDetail.view_name),
+    url(r'^(?P<node_id>\w+)/comments/$', views.RegistrationCommentsList.as_view(), name=views.RegistrationCommentsList.view_name),
+    url(r'^(?P<node_id>\w+)/logs/$', views.RegistrationLogList.as_view(), name=views.RegistrationLogList.view_name),
     url(r'^(?P<node_id>\w+)/forks/$', views.RegistrationForksList.as_view(), name=views.RegistrationForksList.view_name),
     url(r'^(?P<node_id>\w+)/identifiers/$', identifier_views.IdentifierList.as_view(), name=identifier_views.IdentifierList.view_name),
     url(r'^(?P<node_id>\w+)/institutions/$', views.RegistrationInstitutionsList.as_view(), name=views.RegistrationInstitutionsList.view_name),

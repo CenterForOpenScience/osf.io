@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import furl
 from urlparse import urlparse
 from nose.tools import *  # flake8: noqa

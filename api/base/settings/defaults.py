@@ -180,11 +180,12 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = (
     ('rest_framework_swagger/css', os.path.join(BASE_DIR, 'static/css')),
     ('rest_framework_swagger/images', os.path.join(BASE_DIR, 'static/images')),
+    ('rest_framework_swagger/js', os.path.join(BASE_DIR, 'static/js')),
 )
 
 # TODO: Revisit methods for excluding private routes from swagger docs
 SWAGGER_SETTINGS = {
-    'api_path': '/',
+    'api_path': 'v2/',
     'info': {
         'description':
         """

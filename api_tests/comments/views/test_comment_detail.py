@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
 
@@ -165,7 +166,7 @@ class CommentDetailMixin(object):
         self._set_up_public_project_with_comment()
         res = self.app.get(self.public_url)
         url = res.json['data']['relationships']['reports']['links']['related']['href']
-        expected_url = '/{}comments/{}/reports/'.format(API_BASE, self.public_comment)
+        expected_url = '/{}comments/{}/reports/'.format(API_BASE, self.public_comment._id)
         assert_equal(res.status_code, 200)
         assert_equal(urlparse(url).path, expected_url)
 

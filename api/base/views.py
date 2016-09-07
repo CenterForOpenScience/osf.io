@@ -1,11 +1,18 @@
+from __future__ import unicode_literals
+import inspect
 import weakref
 from django.conf import settings as django_settings
 from django.http import JsonResponse
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, renderer_classes
 from rest_framework.response import Response
+from rest_framework.compat import coreapi, uritemplate, urlparse
 from rest_framework import generics
+from rest_framework import exceptions
 from rest_framework import status
 from rest_framework import permissions as drf_permissions
+from rest_framework import schemas
+from rest_framework_swagger.renderers import OpenAPIRenderer, SwaggerUIRenderer
+from rest_framework.request import clone_request
 from rest_framework.exceptions import ValidationError, NotFound
 
 from framework.auth.oauth_scopes import CoreScopes
@@ -25,8 +32,126 @@ from api.nodes.permissions import ReadOnlyIfRegistration
 from api.nodes.permissions import ContributorOrPublicForRelationshipPointers
 from api.base.utils import is_bulk_request, get_user_auth
 
-
 CACHE = weakref.WeakKeyDictionary()
+
+class SchemaGenerator(schemas.SchemaGenerator):
+
+    #def __init__(self, title=None, url=None, patterns=None, urlconf=None):
+    #    import ipdb; ipdb.set_trace()
+    #    super(SchemaGenerator, self).__init__(**kwargs)
+
+    def get_schema(self, request=None):
+        if self.endpoints is None:
+            self.endpoints = self.get_api_endpoints(self.patterns)
+
+        links = []
+        for path, method, category, action, callback in self.endpoints:
+            view = callback.cls()
+            for attr, val in getattr(callback, 'initkwargs', {}).items():
+                setattr(view, attr, val)
+            view.args = ()
+            view.kwargs = {
+                'user_id': 'me'
+            }
+            view.format_kwarg = None
+            if request is not None:
+                view.request = clone_request(request, method)
+                try:
+                    view.check_permissions(view.request)
+                except exceptions.APIException:
+                    continue
+            else:
+                view.request = None
+            link = self.get_link(path, method, callback, view)
+            links.append((category, action, link))
+        if not links:
+            return None
+        content = {}
+        for category, action, link in links:
+            if category is None:
+                content[action] = link
+            elif category in content:
+                content[category][action] = link
+            else:
+                content[category] = {action: link}
+        doc = coreapi.Document(title=self.title, content=content, url=self.url)
+        return doc
+
+    def get_link(self, path, method, callback, view):
+        """
+        Return a `coreapi.Link` instance for the given endpoint.
+        """
+        fields = self.get_path_fields(path, method, callback, view)
+        fields += self.get_serializer_fields(path, method, callback, view)
+        fields += self.get_pagination_fields(path, method, callback, view)
+        fields += self.get_filter_fields(path, method, callback, view)
+
+        if fields and any([field.location in ('form', 'body') for field in fields]):
+            encoding = self.get_encoding(path, method, callback, view)
+        else:
+            encoding = None
+
+        if self.url and path.startswith('/'):
+            path = path[1:]
+
+        try:
+            description = inspect.getdoc(callback.cls())
+        except:
+            description = 'No Description'
+
+        link = coreapi.Link(
+            url=urlparse.urljoin(self.url, path),
+            action=method.lower(),
+            encoding=encoding,
+            fields=fields,
+            description=description
+        )
+        return link
+
+    def get_path_fields(self, path, method, callback, view):
+        """
+        Return a list of `coreapi.Field` instances corresponding to any
+        templated path variables.
+        """
+        fields = []
+        for variable in uritemplate.URITemplate(path).variable_names:
+            field = coreapi.Field(name=variable, location='path', required=True)
+            fields.append(field)
+        return fields
+
+    def get_category(self, path, method, callback, action):
+        """
+        Return a descriptive category string for the endpoint, eg. 'users'.
+        """
+
+        try:
+            vn = callback.cls().view_name
+            return vn
+        except:
+            pass
+
+        path_components = path.strip('/').split('/')
+        path_components = [
+            component for component in path_components
+            if '{' not in component
+        ]
+
+        if action in self.known_actions:
+            idx = -1
+        else:
+            idx = -2
+
+        try:
+            return path_components[idx]
+        except IndexError:
+            return None
+
+@api_view()
+@renderer_classes([OpenAPIRenderer, SwaggerUIRenderer])
+def schema_view(request):
+    generator = SchemaGenerator(title='OSF API')
+    res = Response(generator.get_schema(request=request))
+    return res
 
 
 class JSONAPIBaseView(generics.GenericAPIView):

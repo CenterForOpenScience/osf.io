@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 from nose.tools import *  # flake8: noqa
 
 from modularodm import Q
@@ -1080,7 +1081,7 @@ class TestNodeBulkUpdate(ApiTestCase):
     def test_bulk_update_public_projects_logged_out(self):
         res = self.app.put_json_api(self.url, self.public_payload, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 401)
-        assert_equal(res.json['errors'][0]['detail'], "Authentication credentials were not provided.")
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
 
         url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
         url_two = '/{}nodes/{}/'.format(API_BASE, self.public_project_two._id)

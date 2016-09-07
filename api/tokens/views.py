@@ -1,6 +1,8 @@
 """
 Views related to personal access tokens. Intended for OSF internal use only
 """
+
+from __future__ import unicode_literals
 from rest_framework.exceptions import APIException
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions

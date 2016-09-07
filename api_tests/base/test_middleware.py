@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+from __future__ import unicode_literals
 from tests.base import ApiTestCase, fake
 
 from urlparse import urlparse

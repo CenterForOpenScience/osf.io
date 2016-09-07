@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 import itsdangerous
 import mock
 from nose.tools import *  # flake8: noqa
@@ -77,7 +78,7 @@ class TestWelcomeToApi(ApiTestCase):
             }
         )
         mock_auth.return_value = self.user, mock_cas_resp
-        res = self.app.get(self.url, headers={'Authorization': 'Bearer {}'.format(token.token_id)})
+        res = self.app.get(self.url, headers={'Authorization': str('Bearer {}'.format(token.token_id))})
 
         assert_equal(res.status_code, 200)
         assert_equal(res.json['meta']['admin'], True)
@@ -94,12 +95,12 @@ class TestWelcomeToApi(ApiTestCase):
             authenticated=True,
             user=self.user._id,
             attributes={
-                'accessToken': token.token_id,
-                'accessTokenScope': [s for s in token.scopes.split(' ')]
+                'accessToken': str(token.token_id),
+                'accessTokenScope': [str(s) for s in token.scopes.split(' ')]
             }
         )
         mock_auth.return_value = self.user, mock_cas_resp
-        res = self.app.get(self.url, headers={'Authorization': 'Bearer {}'.format(token.token_id)})
+        res = self.app.get(self.url, headers={'Authorization': str('Bearer {}'.format(token.token_id))})
 
         assert_equal(res.status_code, 200)
         assert_not_in('admin', res.json['meta'].keys())

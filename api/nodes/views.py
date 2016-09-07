@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed
@@ -130,9 +131,6 @@ class DraftMixin(object):
 
 class WaterButlerMixin(object):
 
-    path_lookup_url_kwarg = 'path'
-    provider_lookup_url_kwarg = 'provider'
-
     def get_file_item(self, item):
         attrs = item['attributes']
         file_node = FileNode.resolve_class(
@@ -140,24 +138,18 @@ class WaterButlerMixin(object):
             FileNode.FOLDER if attrs['kind'] == 'folder'
             else FileNode.FILE
         ).get_or_create(self.get_node(check_object_permissions=False), attrs['path'])
-
         file_node.update(None, attrs, user=self.request.user)
-
         self.check_object_permissions(self.request, file_node)
-
         return file_node
 
     def fetch_from_waterbutler(self):
         node = self.get_node(check_object_permissions=False)
-        path = self.kwargs[self.path_lookup_url_kwarg]
-        provider = self.kwargs[self.provider_lookup_url_kwarg]
-        return self.get_file_object(node, path, provider)
+        return self.get_file_object(node, self.kwargs['path'], self.kwargs['provider'])
 
     def get_file_object(self, node, path, provider, check_object_permissions=True):
         obj = get_file_object(node=node, path=path, provider=provider, request=self.request)
-        if provider == 'osfstorage':
-            if check_object_permissions:
-                self.check_object_permissions(self.request, obj)
+        if provider == 'osfstorage' and check_object_permissions:
+            self.check_object_permissions(self.request, obj)
         return obj
 
 
@@ -251,6 +243,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     #This Request/Response
 
     """
+
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -1480,6 +1473,7 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ODMF
 
     #This Request/Response
     """
+
     permission_classes = (
         IsPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -1515,12 +1509,15 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ODMF
 
 
 class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, ListFilterMixin, NodeMixin):
-    """Files attached to a node for a given provider. *Read-only*.
+    """Information about the contents of files and folders attached to a node for a given provider. *Read-only*.
 
     This gives a list of all of the files and folders that are attached to your project for the given storage provider.
     If the provider is not "osfstorage", the metadata for the files in the storage will be retrieved and cached whenever
     this endpoint is accessed.  To see the cached metadata, GET the endpoint for the file directly (available through
     its `/links/info` attribute).
+
+    If a path is given, and the path is a file entity, the response will contain details about that file entity.
+    If a path is given, and the path is a folder entity, the response will contain the contents of that folder as a list.
 
     When a create/update/delete action is performed against the file or folder, the action is handled by an external
     service called WaterButler.  The WaterButler response format differs slightly from the OSF's.
@@ -1752,6 +1749,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     #This Request/Response
 
     """
+
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.PermissionWithGetter(ContributorOrPublic, 'node'),
@@ -1789,6 +1787,8 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
 
 class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
+    """Node File Detail.
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.PermissionWithGetter(ContributorOrPublic, 'node'),
@@ -2199,8 +2199,7 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
             self.get_provider_item(addon.config.short_name)
             for addon
             in self.get_node().get_addons()
-            if addon.config.has_hgrid_files
-            and addon.configured
+            if addon.config.has_hgrid_files and addon.configured
         ]
 
 class NodeProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):

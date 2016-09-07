@@ -1,3 +1,5 @@
+
+from __future__ import unicode_literals
 import furl
 from django import http
 from rest_framework.exceptions import NotFound

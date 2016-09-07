@@ -9,3 +9,16 @@
     color: #333;
     text-decoration: none;
 }
+
+.swagger-section #header {
+    height: auto;
+    padding: 10px;
+    overflow: hidden;
+    background-color: #214762;
+}
+
+.osf-logo {
+    position: relative;
+    top: 1px;
+}
+

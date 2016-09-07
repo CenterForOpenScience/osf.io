@@ -1,7 +1,12 @@
+from __future__ import unicode_literals
 from django.conf.urls import url
 
 from api.nodes import views
 from website import settings
+
+#nodeProviderDetailView = views.NodeProviderDetailView.as_view()
+#def nodeProviderDetailHandler(node_id, provider, path):
+#    nodeProviderDetailView(node_id, provider, "/{}".format(path))
 
 urlpatterns = [
     # Examples:
@@ -20,8 +25,11 @@ urlpatterns = [
     url(r'^(?P<node_id>\w+)/draft_registrations/(?P<draft_id>\w+)/$', views.NodeDraftRegistrationDetail.as_view(), name=views.NodeDraftRegistrationDetail.view_name),
     url(r'^(?P<node_id>\w+)/files/$', views.NodeProvidersList.as_view(), name=views.NodeProvidersList.view_name),
     url(r'^(?P<node_id>\w+)/files/providers/(?P<provider>\w+)/?$', views.NodeProviderDetail.as_view(), name=views.NodeProviderDetail.view_name),
-    url(r'^(?P<node_id>\w+)/files/(?P<provider>\w+)(?P<path>/(?:.*/)?)$', views.NodeFilesList.as_view(), name=views.NodeFilesList.view_name),
     url(r'^(?P<node_id>\w+)/files/(?P<provider>\w+)(?P<path>/.+[^/])$', views.NodeFileDetail.as_view(), name=views.NodeFileDetail.view_name),
+    url(r'^(?P<node_id>\w+)/files/(?P<provider>\w+)(?P<path>/.*)$', views.NodeFilesList.as_view(), name=views.NodeFilesList.view_name),
+    #url(r'^(?P<node_id>\w+)/files/(?P<provider>\w+)/?(?P<path>/.+[^/])$', views.NodeFileDetail.as_view(), name=views.NodeFileDetail.view_name),
+    #url(r'^(?P<node_id>\w+)/files/(?P<provider>\w+)/?(?P<path>/.*/?)$', views.NodeFilesList.as_view(), name=views.NodeFilesList.view_name),
+    url(r'^(?P<node_id>\w+)/comments/$', views.NodeCommentsList.as_view(), name=views.NodeCommentsList.view_name),
     url(r'^(?P<node_id>\w+)/forks/$', views.NodeForksList.as_view(), name=views.NodeForksList.view_name),
     url(r'^(?P<node_id>\w+)/institutions/$', views.NodeInstitutionsList.as_view(), name=views.NodeInstitutionsList.view_name),
     url(r'^(?P<node_id>\w+)/linked_nodes/$', views.LinkedNodesList.as_view(), name=views.LinkedNodesList.view_name),

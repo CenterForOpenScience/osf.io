@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 import httplib as http
 import pkgutil
 
@@ -126,5 +127,5 @@ class TestJSONAPIBaseView(ApiTestCase):
 
 class TestSwaggerDocs(ApiTestCase):
     def test_swagger_doc_json_route(self):
-        res = self.app.get('/v2/docs/api-docs/v2')
+        res = self.app.get('/v2/docs/?format=openapi')
         assert_equal(res.status_code, 200)
