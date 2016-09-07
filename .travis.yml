@@ -26,6 +26,7 @@ env:
     - GIT_SSL_NO_VERIFY=true
   matrix:
     - TEST_BUILD=osf
+    - TEST_BUILD=else
 
 before_install:
     # cache directories
