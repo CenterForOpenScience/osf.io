@@ -530,8 +530,10 @@ class TestUserUpdate(ApiTestCase):
                 'type': 'users',
                 'attributes': {
                     'full_name': 'new_fullname',
-                    'github': 'even_newer_github',
                     'suffix': 'The Millionth'
+                },
+                'social': {
+                    'github': ['even_newer_github'],
                 }
             }
         }, auth=self.user_one.auth)
