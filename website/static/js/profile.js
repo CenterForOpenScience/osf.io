@@ -548,13 +548,24 @@ var SocialViewModel = function(urls, modes) {
         return false;
     });
 
+    function urlIsValid(value) {
+        // First validate the scheme
+        var schemes = ['http', 'https', 'ftp', 'ftps'];
+        if (!value.includes('://')) {
+            value = 'http://' + value;
+        }
+        var scheme = value.split('://')[0].toLowerCase();
+        if (!schemes.includes(scheme)) {
+            return false;
+        }
+        return socialRules.url.test(value);
+    }
 
     self.hasValidWebsites = ko.pureComputed(function() {
         //Check to see if there are bad profile websites
         var profileWebsites = ko.toJS(self.profileWebsites());
-        var urlexp = socialRules.url; // fragment locator
         for (var i=0; i<profileWebsites.length; i++) {
-            if (profileWebsites[i] && !urlexp.test(profileWebsites[i])) {
+            if (profileWebsites[i] && !urlIsValid(profileWebsites[i])) {
                 return false;
             }
         }
