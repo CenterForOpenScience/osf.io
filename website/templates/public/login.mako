@@ -69,7 +69,7 @@
         </div>
     %endif
     %if campaign != "institution" or not enable_institutions:
-        <div id="signUpScope" class="col-sm-8 col-sm-offset-2 col-md-6 col-md-offset-3 signup-form p-b-md m-b-m bg-color-light">
+        <div id="signUpScope" class="col-sm-10 col-sm-offset-1 col-md-9 col-md-offset-2 col-lg-8 col-lg-offset-3 signup-form p-b-md m-b-m bg-color-light">
             <form data-bind="submit: submit" class="form-horizontal">
                 <h3 class="m-b-lg"> Create a free account </h3>
                 <div
@@ -191,12 +191,14 @@
                         </div>
                     </div>
                     <!-- Flashed Messages -->
-                    <div class="help-block osf-box-lt" >
-                        <p data-bind="html: message, attr: {class: messageClass}" class=""></p>
+                    <div class="col-sm-12">
+                        <div class="help-block osf-box-lt">
+                            <p data-bind="html: message, attr: {class: messageClass}"></p>
+                        </div>
                     </div>
                     <br>
                     <div class="form-group m-t-md">
-                        <div class="col-md-8 col-sm-12" style="padding-left: 25px">
+                        <div class="col-md-5 col-sm-12" style="padding-left: 25px">
                             <a href="${login_url}" >Already have an account?</a><br>
 
                             %if redirect_url:
@@ -206,8 +208,15 @@
                             %endif
                         </div>
 
-                        <div class="col-md-4 col-sm-12">
-                            <span class="pull-right p-r-md"><button type="submit" class="btn btn-success" data-bind="disable: submitted()">Create account</button></span>
+                        <div class="col-md-7 col-sm-12">
+                            %if recaptcha_site_key:
+                                <div class="col-xs-12">
+                                    <div class="pull-right g-recaptcha" data-sitekey="${recaptcha_site_key}"></div>
+                                </div>
+                            %endif
+                            <div class="col-xs-12">
+                                <span class="pull-right p-t-sm"><button type="submit" class="btn btn-success" data-bind="disable: submitted()">Create account</button></span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -232,6 +241,9 @@
         });
     </script>
     <script src=${"/static/public/js/login-page.js" | webpack_asset}></script>
+    %if recaptcha_site_key:
+        <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    %endif
 </%def>
 
 <%def name="stylesheets()">

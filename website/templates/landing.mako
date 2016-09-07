@@ -99,8 +99,13 @@
                               <small> By clicking "Sign up free", you agree to our <a style="color:#5BC0DE" href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms</a> and that you have read our <a style="color:#5BC0DE" href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>, including our information on <a style="color:#5BC0DE" href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies">Cookie Use</a>.</small>
                           </div>
                           <!-- /ko -->
+                          %if recaptcha_site_key:
+                              <div data-bind="fadeVisible: (fullName.isValid() || email1.isValid() || email2.isValid() || password.isValid()) && !submitted()" class="col-md-12 m-t-sm" style="z-index: 9;">
+                                  <div class="g-recaptcha" style="display: inline-block; margin: 0 auto;" data-sitekey="${recaptcha_site_key}"></div>
+                              </div>
+                          %endif
                           <div>
-                              <button type="submit" class="btn btn-warning" data-bind="visible: !submitted()" id="signupSubmit">Sign up free</button>
+                              <button type="submit" class="btn btn-warning m-t-sm" data-bind="visible: !submitted()" id="signupSubmit">Sign up free</button>
                           </div>
                   </form>
 
@@ -347,4 +352,7 @@
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
     <script src=${"/static/public/js/landing-page.js" | webpack_asset}></script>
+    %if recaptcha_site_key:
+        <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    %endif
 </%def>
