@@ -8,9 +8,7 @@ from api.base.pagination import SearchPagination
 from api.files.serializers import FileSerializer
 from api.nodes.serializers import NodeSerializer
 from api.registrations.serializers import RegistrationSerializer
-from api.search.serializers import (
-    SearchSerializer,
-)
+from api.search.serializers import SearchSerializer
 from api.users.serializers import UserSerializer
 
 from framework.auth.core import User
@@ -22,16 +20,32 @@ from website.search import search
 from website.search.util import build_query
 
 
-class Search(JSONAPIBaseView, generics.ListAPIView):
+class BaseSearchView(JSONAPIBaseView, generics.ListAPIView):
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
 
+    pagination_class = SearchPagination
+
+    def __init__(self):
+        super(BaseSearchView, self).__init__()
+        assert getattr(self, 'doc_type', None), 'Must specify doc_type on search view.'
+
+    def get_queryset(self):
+        query = self.request.query_params.get('q', '*')
+        page = int(self.request.query_params.get('page', '1'))
+        start = (page - 1) * 10
+        return search.search(build_query(query, start=start), doc_type=self.doc_type, raw=True)
+
+
+class Search(BaseSearchView):
+
     required_read_scopes = [ComposedScopes.FULL_READ]
 
     serializer_class = SearchSerializer
+
     view_category = 'search'
     view_name = 'search-projects'
 
@@ -42,119 +56,61 @@ class Search(JSONAPIBaseView, generics.ListAPIView):
         pass
 
 
-class SearchComponents(JSONAPIBaseView, generics.ListAPIView):
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-    )
+class SearchComponents(BaseSearchView):
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
 
     model_class = Node
     serializer_class = NodeSerializer
-    pagination_class = SearchPagination
 
+    doc_type = 'component'
     view_category = 'search'
     view_name = 'search-components'
 
-    # TODO: DRY
-    def get_queryset(self):
-        query = self.request.query_params.get('q', '*')
-        page = int(self.request.query_params.get('page', '1'))
-        start = (page - 1) * 10
-        return search.search(build_query(query, start=start), doc_type='component', raw=True)
 
-
-class SearchFiles(JSONAPIBaseView, generics.ListAPIView):
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-    )
+class SearchFiles(BaseSearchView):
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
 
     model_class = FileNode
     serializer_class = FileSerializer
-    pagination_class = SearchPagination
 
+    doc_type = 'file'
     view_category = 'search'
     view_name = 'search-files'
 
-    # TODO: DRY
-    def get_queryset(self):
-        query = self.request.query_params.get('q', '*')
-        page = int(self.request.query_params.get('page', '1'))
-        start = (page - 1) * 10
-        return search.search(build_query(query, start=start), doc_type='file', raw=True)
 
-
-class SearchProjects(JSONAPIBaseView, generics.ListAPIView):
-
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-    )
+class SearchProjects(BaseSearchView):
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
 
     model_class = Node
     serializer_class = NodeSerializer
-    pagination_class = SearchPagination
 
+    doc_type = 'project'
     view_category = 'search'
     view_name = 'search-projects'
 
-    # TODO: DRY
-    def get_queryset(self):
-        query = self.request.query_params.get('q', '*')
-        page = int(self.request.query_params.get('page', '1'))
-        start = (page - 1) * 10
-        return search.search(build_query(query, start=start), doc_type='project', raw=True)
 
-
-class SearchRegistrations(JSONAPIBaseView, generics.ListAPIView):
-
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-    )
+class SearchRegistrations(BaseSearchView):
 
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
 
     model_class = Node
-    pagination_class = SearchPagination
     serializer_class = RegistrationSerializer
 
+    doc_type = 'registration'
     view_category = 'search'
     view_name = 'search-registrations'
 
-    # TODO: DRY
-    def get_queryset(self):
-        query = self.request.query_params.get('q', '*')
-        page = int(self.request.query_params.get('page', '1'))
-        start = (page - 1) * 10
-        return search.search(build_query(query, start=start), doc_type='registration', raw=True)
 
-
-class SearchUsers(JSONAPIBaseView, generics.ListAPIView):
-
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-    )
+class SearchUsers(BaseSearchView):
 
     required_read_scopes = [CoreScopes.USERS_READ]
 
     model_class = User
     serializer_class = UserSerializer
-    pagination_class = SearchPagination
 
+    doc_type = 'user'
     view_category = 'search'
     view_name = 'search-users'
-
-    # TODO: DRY
-    def get_queryset(self):
-        query = self.request.query_params.get('q', '*')
-        page = int(self.request.query_params.get('page', '1'))
-        start = (page - 1) * 10
-        return search.search(build_query(query, start=start), doc_type='user', raw=True)
