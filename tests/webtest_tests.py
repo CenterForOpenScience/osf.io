@@ -772,6 +772,7 @@ class TestExplorePublicActivity(OsfTestCase):
         self.registration = RegistrationFactory(project=self.project)
         self.private_project = ProjectFactory(title="Test private project")
 
+    @unittest.skip("Can't test this, since hiding newest project page https://github.com/CenterForOpenScience/osf.io/commit/c50d436cbb6bd9fbe2f0cbbc3724c05ed1ccb94e")
     @mock.patch('website.discovery.views.KeenClient')
     def test_newest_public_project_and_registrations_show_in_explore_activity(self, mock_client):
 

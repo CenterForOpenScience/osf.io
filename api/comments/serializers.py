@@ -17,6 +17,7 @@ from api.base.serializers import (JSONAPISerializer,
                                   RelationshipField,
                                   IDField, TypeField, LinksField,
                                   AuthorizedCharField)
+from website.project.spam.model import SpamStatus
 
 
 class CommentReport(object):
@@ -62,7 +63,7 @@ class CommentSerializer(JSONAPISerializer):
         type_ = 'comments'
 
     def get_is_ham(self, obj):
-        if obj.spam_status == Comment.HAM:
+        if obj.spam_status == SpamStatus.HAM:
             return True
         return False
 
@@ -73,7 +74,7 @@ class CommentSerializer(JSONAPISerializer):
         return user._id in obj.reports and not obj.reports[user._id].get('retracted', True)
 
     def get_is_abuse(self, obj):
-        if obj.spam_status == Comment.FLAGGED or obj.spam_status == Comment.SPAM:
+        if obj.spam_status == SpamStatus.FLAGGED or obj.spam_status == SpamStatus.SPAM:
             return True
         return False
 

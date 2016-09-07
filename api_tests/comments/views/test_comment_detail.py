@@ -154,11 +154,12 @@ class CommentDetailMixin(object):
     def test_comment_has_replies_link(self):
         self._set_up_public_project_with_comment()
         res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
         url = res.json['data']['relationships']['replies']['links']['related']['href']
         uri = test_utils.urlparse_drop_netloc(url)
-        expected_url = '/{}nodes/{}/comments/?filter[target]={}'.format(API_BASE, self.public_project._id, self.public_comment._id)
+        res = self.app.get(uri)
         assert_equal(res.status_code, 200)
-        assert_in(expected_url, uri)
+        assert_equal(res.json['data'][0]['type'], 'comments')
 
     def test_comment_has_reports_link(self):
         self._set_up_public_project_with_comment()
