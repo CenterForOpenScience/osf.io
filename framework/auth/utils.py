@@ -1,7 +1,11 @@
-import re
-from nameparser.parser import HumanName
+import httplib
+import json
+
 from modularodm.exceptions import ValidationError
 from modularodm import Q
+from nameparser.parser import HumanName
+import re
+import requests
 
 from website import settings
 
@@ -102,3 +106,20 @@ def ensure_external_identity_uniqueness(provider, identity, user=None):
             existing_user.external_identity.pop(provider)
         existing_user.save()
     return
+
+
+def validate_recaptcha(response):
+    """
+    Validate if the recaptcha response is valid.
+
+    :param response: the recaptcha response form submission
+    :return: True if valid, False otherwise
+    """
+
+    payload = {
+        'secret': settings.RECAPTCHA_SECRET_KEY,
+        'response': response,
+    }
+    resp = requests.post(settings.RECAPTCHA_VERIFY_URL, data=payload)
+    json_data = json.loads(resp.text)
+    return resp.status_code == httplib.OK and json_data['success'] == 'true'

@@ -565,6 +565,11 @@ EXTERNAL_IDENTITY_PROFILE = {
     'OrcidProfile': 'ORCID',
 }
 
+# reCAPTCHA API
+RECAPTCHA_SITE_KEY = None
+RECAPTCHA_SECRET_KEY = None
+RECAPTCHA_VERIFY_URL = 'https://www.google.com/recaptcha/api/siteverify'
+
 # Source: https://github.com/maxd/fake_email_validator/blob/master/config/fake_domains.list
 BLACKLISTED_DOMAINS = [
     '0-mail.com',
