@@ -155,7 +155,7 @@ def get_tags(query, index):
 
 
 @requires_search
-def search(query, index=None, doc_type='_all'):
+def search(query, index=None, doc_type='_all', raw=False):
     """Search for a query
 
     :param query: The substring of the username/project name/tag to search for
@@ -201,7 +201,7 @@ def search(query, index=None, doc_type='_all'):
         'tags': tags,
         'typeAliases': ALIASES
     }
-    return return_value
+    return raw_results if raw else return_value
 
 
 def format_results(results):

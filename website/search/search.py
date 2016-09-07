@@ -21,9 +21,9 @@ def requires_search(func):
 
 
 @requires_search
-def search(query, index=None, doc_type=None):
+def search(query, index=None, doc_type=None, raw=None):
     index = index or settings.ELASTIC_INDEX
-    return search_engine.search(query, index=index, doc_type=doc_type)
+    return search_engine.search(query, index=index, doc_type=doc_type, raw=raw)
 
 @requires_search
 def update_node(node, index=None, bulk=False, async=True):

@@ -6,6 +6,7 @@ from rest_framework import generics, permissions as drf_permissions
 
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
+from api.base.pagination import SearchPagination
 
 from api.files.serializers import FileSerializer
 from api.institutions.serializers import InstitutionSerializer
@@ -53,21 +54,18 @@ class SearchComponents(JSONAPIBaseView, generics.ListAPIView):
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
 
+    model_class = Node
     serializer_class = NodeSerializer
+    pagination_class = SearchPagination
+
     view_category = 'search'
     view_name = 'search-components'
 
     def get_queryset(self):
         query = self.request.query_params.get('q', '*')
-        res = search.search(build_query(query), doc_type='component')
-        results = res.get('results')
-        # what if results is None?
-        nodes = []
-        for item in results:
-            node = Node.load(item.get('id'))
-            if node and not node.is_deleted:
-                nodes.append(node)
-        return nodes
+        page = int(self.request.query_params.get('page', '1'))
+        start = (page - 1) * 10
+        return search.search(build_query(query, start=start), doc_type='component', raw=True)
 
 
 class SearchFiles(JSONAPIBaseView, generics.ListAPIView):
@@ -111,21 +109,18 @@ class SearchProjects(JSONAPIBaseView, generics.ListAPIView):
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
 
+    model_class = Node
     serializer_class = NodeSerializer
+    pagination_class = SearchPagination
+
     view_category = 'search'
     view_name = 'search-projects'
 
     def get_queryset(self):
         query = self.request.query_params.get('q', '*')
-        res = search.search(build_query(query), doc_type='project')
-        results = res.get('results')
-        # what if results is None?
-        nodes = []
-        for item in results:
-            node = Node.load(item.get('id'))
-            if node and not node.is_deleted:
-                nodes.append(node)
-        return nodes
+        page = int(self.request.query_params.get('page', '1'))
+        start = (page - 1) * 10
+        return search.search(build_query(query, start=start), doc_type='project', raw=True)
 
 
 class SearchRegistrations(JSONAPIBaseView, generics.ListAPIView):
@@ -137,21 +132,18 @@ class SearchRegistrations(JSONAPIBaseView, generics.ListAPIView):
 
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
 
+    model_class = Node
+    pagination_class = SearchPagination
     serializer_class = RegistrationSerializer
+
     view_category = 'search'
     view_name = 'search-registrations'
 
     def get_queryset(self):
         query = self.request.query_params.get('q', '*')
-        res = search.search(build_query(query), doc_type='registration')
-        results = res.get('results')
-        # what if results is None?
-        nodes = []
-        for item in results:
-            node = Node.load(item.get('id'))
-            if node and not node.is_deleted:
-                nodes.append(node)
-        return nodes
+        page = int(self.request.query_params.get('page', '1'))
+        start = (page - 1) * 10
+        return search.search(build_query(query, start=start), doc_type='registration', raw=True)
 
 
 class SearchUsers(JSONAPIBaseView, generics.ListAPIView):
@@ -163,19 +155,15 @@ class SearchUsers(JSONAPIBaseView, generics.ListAPIView):
 
     required_read_scopes = [CoreScopes.USERS_READ]
 
+    model_class = User
     serializer_class = UserSerializer
+    pagination_class = SearchPagination
+
     view_category = 'search'
     view_name = 'search-users'
 
     def get_queryset(self):
         query = self.request.query_params.get('q', '*')
-        res = search.search(build_query(query), doc_type='user')
-        results = res.get('results')
-        # what if results is None?
-        users = []
-        for item in results:
-            user = User.load(item.get('id'))
-            # same checks for /v2/users/
-            if user and user.is_registered and not user.is_merged and not user.date_disabled:
-                users.append(user)
-        return users
+        page = int(self.request.query_params.get('page', '1'))
+        start = (page - 1) * 10
+        return search.search(build_query(query, start=start), doc_type='user', raw=True)
