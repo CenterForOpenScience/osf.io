@@ -3156,7 +3156,7 @@ class TestAuthViews(OsfTestCase):
                     'g-recaptcha-response': captcha,
                 }
             )
-            validate_recaptcha.assert_called_with(captcha)
+            validate_recaptcha.assert_called_with(captcha, remote_ip=None)
             assert_equal(resp.status_code, http.OK)
             user = User.find_one(Q('username', 'eq', email))
             assert_equal(user.fullname, name)
@@ -3178,7 +3178,7 @@ class TestAuthViews(OsfTestCase):
                 },
                 expect_errors=True
             )
-            validate_recaptcha.assert_called_with(None)
+            validate_recaptcha.assert_called_with(None, remote_ip=None)
             assert_equal(resp.status_code, http.BAD_REQUEST)
 
     @mock.patch('framework.auth.views.validate_recaptcha', return_value=False)
