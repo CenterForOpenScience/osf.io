@@ -48,7 +48,6 @@ def reset_password_get(auth, uid=None, token=None):
     :raises: HTTPError(http.BAD_REQUEST) if verification key for the user is invalid or has expired
     """
 
-    # TODO: discuss this with @MattF
     # if users are logged in, log them out and redirect back to this page
     if auth.logged_in:
         return auth_logout(redirect_url=request.url)
