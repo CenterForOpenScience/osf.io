@@ -108,7 +108,7 @@ def ensure_external_identity_uniqueness(provider, identity, user=None):
     return
 
 
-def validate_recaptcha(response):
+def validate_recaptcha(response, remote_ip=None):
     """
     Validate if the recaptcha response is valid.
 
@@ -117,8 +117,11 @@ def validate_recaptcha(response):
     """
     if not response:
         return False
-    resp = requests.post(settings.RECAPTCHA_VERIFY_URL, data={
+    payload = {
         'secret': settings.RECAPTCHA_SECRET_KEY,
         'response': response,
-    })
+    }
+    if remote_ip:
+        payload.update({'remoteip': remote_ip})
+    resp = requests.post(settings.RECAPTCHA_VERIFY_URL, data=payload)
     return resp.status_code == httplib.OK and resp.json().get('success')
