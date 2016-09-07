@@ -11,6 +11,37 @@ var $osf = require('./osfHelpers');
 var koHelpers = require('./koHelpers');
 require('js/objectCreateShim');
 
+// Adapted from Django URLValidator
+function urlRegex() {
+    var ul = '\\u00a1-\\uffff'; // unicode character range
+    // IP patterns
+    var ipv4_re = '(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(?:\\.(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}';
+    var ipv6_re = '\\[[0-9a-f:\\.]+\\]';  // (simple regex, validated later)
+
+    // Host patterns
+    var hostname_re = '[a-z' + ul + '0-9](?:[a-z' + ul + '0-9-]{0,61}[a-z' + ul + '0-9])?';
+    // Max length for domain name labels is 63 characters per RFC 1034 sec. 3.1
+    var domain_re = '(?:\\.(?!-)[a-z' + ul + '0-9-]{0,62}[a-z' + ul + '0-9])*';
+    var tld_re = (
+        '\\.' +                               // dot
+        '(?!-)' +                             // can't start with a dash
+        '(?:xn--[a-z0-9]{1,59}' +             // punycode labels (first for an eager regex match)
+        '|[a-z' + ul + '-]{1,62}' +           // or domain label
+        '[a-z' + ul + '])' +                  // can't end with a dash
+        '\\.?');                              // may have a trailing dot
+    var host_re = '(' + hostname_re + domain_re + tld_re + '|localhost)';
+
+    var regex = (
+        '^(?:[a-z0-9\\.\\-\\+]*):\\/\\/' +  // scheme is validated separately
+        '(?:\\S+(?::\\S*)?@)?' +  // user:pass authentication
+        '(?:' + ipv4_re + '|' + ipv6_re + '|' + host_re + ')' +
+        '(?::\\d{2,5})?' +  // port
+        '(?:[/?#][^\\s]*)?' +  // resource path
+        '$');
+
+    return new RegExp(regex, 'i');
+}
+
 var socialRules = {
     orcid: /orcid\.org\/([-\d]+)/i,
     researcherId: /researcherid\.com\/rid\/([-\w]+)/i,
@@ -23,15 +54,7 @@ var socialRules = {
     academia: /(\w+)\.academia\.edu\/(\w+)/i,
     baiduScholar: /xueshu\.baidu\.com\/scholarID\/(\w+)/i,
     ssrn: /papers\.ssrn\.com\/sol3\/cf\_dev\/AbsByAuth\.cfm\?per\_id=(\w+)/i,
-    url: '^((https?|ftp):\\/\\/)?'+ // protocol
-            '([^\\/\\s]+(?::[^\\/\\s]*)?@)?'+ // # user:passauthentication
-            '((([a-zA-Z\\d\\u00a1-\\uffff][-a-zA-Z\\d\\u00a1-\\uffff]{0,61}[a-zA-Z\\d\\u00a1-\\uffff]?\\.){1,2}([\\u00a1-\\uffffa-zA-Z0-9]{2,}))|'+ // domain...
-            'localhost|'+ // or localhost...
-            '(((25[0-5]|2[0-4][0-9]|[1]?[0-9]?[0-9])\\.){3}(25[0-5]|2[0-4][0-9]|[1]?[0-9]?[0-9]))|'+ // OR ip (v4) address
-            '(\\[?[A-F0-9]*:[A-F0-9:]+\\]?))'+ // or ip (v6) address...
-            '(\\?[;&a-z\\d%_.~+=-]*)?'+ // query string
-            '(:\\d{2,5})?(\\/[-a-z\\u00a1-\\uffff\\d%_.~+]*)*'+ // port and path
-            '(\\/|\\/\\S+)*$'
+    url: urlRegex()
 };
 
 var cleanByRule = function(rule) {
@@ -529,7 +552,7 @@ var SocialViewModel = function(urls, modes) {
     self.hasValidWebsites = ko.pureComputed(function() {
         //Check to see if there are bad profile websites
         var profileWebsites = ko.toJS(self.profileWebsites());
-        var urlexp = new RegExp(socialRules.url,'i'); // fragment locator
+        var urlexp = socialRules.url; // fragment locator
         for (var i=0; i<profileWebsites.length; i++) {
             if (profileWebsites[i] && !urlexp.test(profileWebsites[i])) {
                 return false;
