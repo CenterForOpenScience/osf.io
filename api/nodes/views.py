@@ -1,3 +1,4 @@
+import re
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed
@@ -46,9 +47,11 @@ from api.nodes.serializers import (
     NodeContributorsCreateSerializer,
     NodeViewOnlyLinkSerializer,
     NodeViewOnlyLinkUpdateSerializer,
-    NodeCitationSerializer
+    NodeCitationSerializer,
+    NodeCitationStyleSerializer
 )
 from api.nodes.utils import get_file_object
+from api.citations.utils import render_citation
 
 from api.addons.serializers import NodeAddonFolderSerializer
 from api.registrations.serializers import RegistrationSerializer
@@ -1245,6 +1248,30 @@ class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
     def get_object(self):
         node = self.get_node()
         return node.csl
+
+class NodeStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
+        permission_classes = (
+            drf_permissions.IsAuthenticatedOrReadOnly,
+            base_permissions.TokenHasScope,
+        )
+
+        required_read_scopes = [CoreScopes.NODE_BASE_READ]
+        required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+
+        serializer_class = NodeCitationStyleSerializer
+        view_category = 'nodes'
+        view_name = 'node-citation'
+
+        def get_object(self):
+            node = self.get_node()
+            style = self.kwargs.get('style_id')
+            try:
+                citation = render_citation(node=node, style=style)
+            except ValueError as err:  # style requested could not be found
+                csl_name = re.findall('[a-zA-Z]+\.csl', err.message)[0]
+                raise NotFound('{} is not a known style.'.format(csl_name))
+
+            return {'citation': citation}
 
 
 # TODO: Make NodeLinks filterable. They currently aren't filterable because we have can't
