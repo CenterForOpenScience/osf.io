@@ -36,7 +36,8 @@
     "http://1337.net":"should accept valid website with just numbers in domain",
     "definitelyawebsite.com?real=yes&page=definitely":"should accept valid website with query",
     "http://a.b-c.de":"should accept valid website with dash",
-    "http://website.com:3000/?q=400":"should accept valid website with port and query"
+    "http://website.com:3000/?q=400":"should accept valid website with port and query",
+    "http://asd/asd@asd.com/":"should accept valid website with unusual username"
   },
   "testsNegative": {
     "notevenclose": "should deny simple invalid website",
@@ -65,6 +66,6 @@
     "http://567.100.100.100": "should deny invalid ipv4 website with a number out of range",
     "http://-a.b.co": "should deny invalid website with dash at beginning of sub-domain",
     "http://.www.foo.bar/": "should deny invalid website with dot before sub-domain",
-    "httsp://userid@example.com/": "should deny invalid user website"
+    "httsp://userid@example.com/": "should deny invalid website with username and invalid scheme"
   }
 }
