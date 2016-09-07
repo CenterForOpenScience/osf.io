@@ -24,6 +24,8 @@ env:
     - LIBPCRE_DEB="libpcre3_8.31-2ubuntu2.3_amd64.deb"
     - VARNISH_DEB="varnish_4.1.0-1~trusty_amd64.deb"
     - GIT_SSL_NO_VERIFY=true
+  matrix:
+    - TEST_BUILD=osf
 
 before_install:
     # cache directories
@@ -111,7 +113,7 @@ install:
 
 # Run Python tests (core and addon) and JS tests
 script:
-    - invoke test_travis_osf
+    - invoke test_travis_$TEST_BUILD
 
 before_cache:
   - rm -Rf $HOME/.cache/pip/http
