@@ -1233,13 +1233,30 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
 
 
 class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
+    """ The node citation for a node in CSL format *read only*
+
+    ##Note
+    **This API endpoint is under active development, and is subject to change in the future**
+
+    ##NodeCitationDetail Attributes
+
+        name                     type                description
+    =================================================================================
+        id                       string               unique ID for the citation
+        title                    string               title of project or component
+        author                   list                 list of authors for the work
+        publisher                string               publisher - most always 'Open Science Framework'
+        type                     string               type of citation - web
+        doi                      string               doi of the resource
+
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
-    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+    required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = NodeCitationSerializer
     view_category = 'nodes'
@@ -1249,29 +1266,41 @@ class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
         node = self.get_node()
         return node.csl
 
-class NodeStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
-        permission_classes = (
-            drf_permissions.IsAuthenticatedOrReadOnly,
-            base_permissions.TokenHasScope,
-        )
 
-        required_read_scopes = [CoreScopes.NODE_BASE_READ]
-        required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+class NodeCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
+    """ The node citation for a node in a specific style's format t *read only*
 
-        serializer_class = NodeCitationStyleSerializer
-        view_category = 'nodes'
-        view_name = 'node-citation'
+        ##Note
+        **This API endpoint is under active development, and is subject to change in the future**
 
-        def get_object(self):
-            node = self.get_node()
-            style = self.kwargs.get('style_id')
-            try:
-                citation = render_citation(node=node, style=style)
-            except ValueError as err:  # style requested could not be found
-                csl_name = re.findall('[a-zA-Z]+\.csl', err.message)[0]
-                raise NotFound('{} is not a known style.'.format(csl_name))
+    ##NodeCitationDetail Attributes
 
-            return {'citation': citation}
+        name                     type                description
+    =================================================================================
+        citation                string               complete citation for a node in the given style
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_BASE_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = NodeCitationStyleSerializer
+    view_category = 'nodes'
+    view_name = 'node-citation'
+
+    def get_object(self):
+        node = self.get_node()
+        style = self.kwargs.get('style_id')
+        try:
+            citation = render_citation(node=node, style=style)
+        except ValueError as err:  # style requested could not be found
+            csl_name = re.findall('[a-zA-Z]+\.csl', err.message)[0]
+            raise NotFound('{} is not a known style.'.format(csl_name))
+
+        return {'citation': citation}
 
 
 # TODO: Make NodeLinks filterable. They currently aren't filterable because we have can't
