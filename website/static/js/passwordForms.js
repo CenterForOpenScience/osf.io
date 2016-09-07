@@ -259,9 +259,11 @@ var SignUpViewModel = oop.extend(BaseViewModel, {
 
     submitError: function(xhr) {
         var self = this;
+        /* jshint ignore: start */
         if (typeof grecaptcha !== 'undefined') {
             grecaptcha.reset();
         }
+        /* jshint ignore: end */
         self.changeMessage(
             xhr.responseJSON.message_long,
             'text-danger p-xs',
