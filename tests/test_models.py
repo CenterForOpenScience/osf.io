@@ -3288,6 +3288,21 @@ class TestProject(OsfTestCase):
                 with assert_raises(NodeStateError):
                     self.project.set_privacy('public')
 
+    def test_check_only_public_node(self):
+        # SPAM_CHECK_PUBLIC_ONLY is True by default
+        with mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True):
+            with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
+                self.project.set_privacy('private')
+                assert_false(self.project.check_spam(None, None))
+
+    def test_check_spam_on_private_node(self):
+        with mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True):
+            with mock.patch.object(settings, 'SPAM_CHECK_PUBLIC_ONLY', False):
+                with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
+                    with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(return_value=True)):
+                        self.project.set_privacy('private')
+                        assert_true(self.project.check_spam(None, None))
+
     def test_set_description(self):
         old_desc = self.project.description
         self.project.set_description(
