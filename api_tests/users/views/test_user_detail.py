@@ -300,14 +300,16 @@ class TestUserUpdate(ApiTestCase):
                     'middle_names': 'Malik el-Shabazz',
                     'family_name': 'X',
                     'suffix': 'Sr.',
-                    'github': 'newGithub',
-                    'scholar': 'newScholar',
-                    'personal_website': 'http://www.newpersonalwebsite.com',
-                    'twitter': 'http://www.newpersonalwebsite.com',
-                    'linkedin': 'newLinkedIn',
-                    'impactstory': 'newImpactStory',
-                    'orcid': 'newOrcid',
-                    'researcherid': 'newResearcherId',
+                },
+                'social': {
+                    'github': ['http://github.com/even_newer_github/'],
+                    'scholar': ['http://scholar.google.com/citations?user=newScholar'],
+                    'personal_website': ['http://www.newpersonalwebsite.com'],
+                    'twitter': ['http://twitter.com/newtwitter'],
+                    'linkedin': ['https://www.linkedin.com/newLinkedIn'],
+                    'impactstory': ['https://impactstory.org/newImpactStory'],
+                    'orcid': ['http://orcid.org/newOrcid'],
+                    'researcherid': ['http://researcherid.com/rid/newResearcherId'],
                 }
             }
         }
@@ -470,8 +472,10 @@ class TestUserUpdate(ApiTestCase):
                 'type': 'users',
                 'attributes': {
                     'full_name': 'new_fullname',
-                    'github': 'even_newer_github',
                     'suffix': 'The Millionth'
+                },
+                'social': {
+                    'github': ['http://github.com/even_newer_github/'],
                 }
         }}, auth=self.user_one.auth)
         self.user_one.reload()
@@ -501,6 +505,9 @@ class TestUserUpdate(ApiTestCase):
                 'attributes': {
                     'full_name': 'new_fullname',
                     'suffix': 'The Millionth',
+                },
+                'social': {
+                    'github': ['http://github.com/even_newer_github/'],
                 }
             }
         }, auth=self.user_one.auth)
@@ -533,7 +540,7 @@ class TestUserUpdate(ApiTestCase):
                     'suffix': 'The Millionth'
                 },
                 'social': {
-                    'github': ['even_newer_github'],
+                    'github': ['http://github.com/even_newer_github/'],
                 }
             }
         }, auth=self.user_one.auth)
@@ -560,7 +567,7 @@ class TestUserUpdate(ApiTestCase):
         assert_equal(res.json['data']['attributes']['suffix'], self.new_user_one_data['data']['attributes']['suffix'])
         assert_in('newGithub', res.json['data']['social']['github'][0])
         assert_in('http://www.newpersonalwebsite.com', res.json['data']['social']['personal_website'][0])
-        assert_in('http://www.newpersonalwebsite.com', res.json['data']['social']['twitter'][0])
+        assert_in('newtwitter', res.json['data']['social']['twitter'][0])
         assert_in('newLinkedIn', res.json['data']['social']['linkedin'][0])
         assert_in('newImpactStory', res.json['data']['social']['impactstory'][0])
         assert_in('newOrcid', res.json['data']['social']['orcid'][0])
