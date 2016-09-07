@@ -638,7 +638,7 @@ def register_user(**kwargs):
         )
 
     # Verify that captcha is valid
-    if settings.RECAPTCHA_SITE_KEY and not validate_recaptcha(json_data.get('g-recaptcha-response')):
+    if settings.RECAPTCHA_SITE_KEY and not validate_recaptcha(json_data.get('g-recaptcha-response'), remote_ip=request.remote_addr):
         raise HTTPError(
             http.BAD_REQUEST,
             data=dict(message_long='Invalid Captcha')
