@@ -256,21 +256,11 @@ def generate_schema_from_data(data):
                 'qid': qid,
                 'type': 'string'
             }
-    schema = MetaSchema(
-        name='Test',
-        schema={
-            'name': "Test",
-            'version': 2,
-            'config': {
-                'hasFiles': True
-            },
-            'pages': [{
-                'id': 'page1',
-                'questions': [
-                    from_question(qid, q)
-                    for qid, q in data.items()
-                ]
-            }]
+    _schema = {
+        'name': 'Test',
+        'version': 2,
+        'config': {
+            'hasFiles': True
         },
         'pages': [{
             'id': 'page1',
