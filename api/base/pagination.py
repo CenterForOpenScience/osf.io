@@ -11,6 +11,7 @@ from rest_framework.utils.urls import (
 )
 from api.base.serializers import is_anonymized
 from api.base.settings import MAX_PAGE_SIZE
+from api.base.utils import absolute_reverse
 
 from framework.auth.core import User
 from framework.guid.model import Guid
@@ -193,15 +194,13 @@ class SearchPaginator(DjangoPaginator):
             return FileNode.load(obj_id)
 
     def _get_count(self):
-        self._count = self.object_list['hits']['total']
+        self._count = self.object_list['aggs']['total']
         return self._count
     count = property(_get_count)
 
     def page(self, number):
-        # what if results is None?
-        # what if self.load_obj returns None?
         number = self.validate_number(number)
-        results = self.object_list['hits']['hits']
+        results = self.object_list['results']
         items = [
             self.load_obj(result.get('_id'), result.get('_type'))
             for result in results
@@ -216,10 +215,8 @@ class SearchModelPaginator(SearchPaginator):
         self.model = model
 
     def page(self, number):
-        # what if results is None?
-        # what if self.model.load returns None?
         number = self.validate_number(number)
-        results = self.object_list['hits']['hits']
+        results = self.object_list['results']
         items = [
             self.model.load(result.get('_id'))
             for result in results
@@ -229,31 +226,88 @@ class SearchModelPaginator(SearchPaginator):
 
 class SearchPagination(JSONAPIPagination):
 
+    def __init__(self):
+        super(SearchPagination, self).__init__()
+        self.paginator = None
+
     def paginate_queryset(self, queryset, request, view=None):
         page_size = self.get_page_size(request)
         if not page_size:
             return None
 
-        paginator = SearchPaginator(queryset, page_size)
+        self.paginator = SearchPaginator(queryset, page_size)
         model = getattr(request.parser_context['view'], 'model_class', None)
         if model:
-            paginator = SearchModelPaginator(queryset, page_size, model)
+            self.paginator = SearchModelPaginator(queryset, page_size, model)
 
         page_number = request.query_params.get(self.page_query_param, 1)
         if page_number in self.last_page_strings:
-            page_number = paginator.num_pages
+            page_number = self.paginator.num_pages
 
         try:
-            self.page = paginator.page(page_number)
+            self.page = self.paginator.page(page_number)
         except InvalidPage as exc:
             msg = self.invalid_page_message.format(
                 page_number=page_number, message=six.text_type(exc)
             )
             raise NotFound(msg)
 
-        if paginator.num_pages > 1 and self.template is not None:
+        if self.paginator.num_pages > 1 and self.template is not None:
             # The browsable API should display pagination controls.
             self.display_page_controls = True
 
         self.request = request
         return list(self.page)
+
+    def get_search_field_url(self, query, field):
+        view_name = 'search:search-{}'.format(field)
+        return absolute_reverse(
+            view_name,
+            query_kwargs={
+                'q': query
+            }
+        )
+
+    def get_search_field_total(self, field):
+        return self.paginator.object_list['counts'].get(field, 0)
+
+    def get_response_dict(self, data, url):
+        if isinstance(self.paginator, SearchModelPaginator):
+            return super(SearchPagination, self).get_response_dict(data, url)
+        else:
+            query = self.request.query_params.get('q', '*')
+            return OrderedDict([
+                ('data', data),
+                ('search_fields', OrderedDict([
+                    ('files', OrderedDict([
+                        ('link', self.get_search_field_url(query, 'files')),
+                        ('total', self.get_search_field_total('file')),
+                    ])),
+                    ('projects', OrderedDict([
+                        ('link', self.get_search_field_url(query, 'projects')),
+                        ('total', self.get_search_field_total('project')),
+                    ])),
+                    ('components', OrderedDict([
+                        ('link', self.get_search_field_url(query, 'components')),
+                        ('total', self.get_search_field_total('component')),
+                    ])),
+                    ('registrations', OrderedDict([
+                        ('link', self.get_search_field_url(query, 'registrations')),
+                        ('total', self.get_search_field_total('registration')),
+                    ])),
+                    ('users', OrderedDict([
+                        ('link', self.get_search_field_url(query, 'users')),
+                        ('total', self.get_search_field_total('user')),
+                    ])),
+                ])),
+                ('links', OrderedDict([
+                    ('first', self.get_first_real_link(url)),
+                    ('last', self.get_last_real_link(url)),
+                    ('prev', self.get_previous_real_link(url)),
+                    ('next', self.get_next_real_link(url)),
+                    ('meta', OrderedDict([
+                        ('total', self.page.paginator.count),
+                        ('per_page', self.page.paginator.per_page),
+                    ]))
+                ])),
+            ])

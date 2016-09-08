@@ -35,7 +35,7 @@ class SearchSerializer(JSONAPISerializer):
         return None
 
     def get_absolute_url(self, obj):
-        pass
+        raise NotImplementedError
 
     class Meta:
         type_ = 'search'

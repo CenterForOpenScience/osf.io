@@ -192,17 +192,16 @@ def search(query, index=None, doc_type='_all', raw=False):
 
     # Run the real query and get the results
     raw_results = es.search(index=index, doc_type=doc_type, body=query)
-
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
+
     return_value = {
-        'results': format_results(results),
+        'results': raw_results['hits']['hits'] if raw else format_results(results),
         'counts': counts,
         'aggs': aggregations,
         'tags': tags,
         'typeAliases': ALIASES
     }
-    return raw_results if raw else return_value
-
+    return return_value
 
 def format_results(results):
     ret = []
