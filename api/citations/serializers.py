@@ -17,7 +17,6 @@ class CitationSerializer(JSONAPISerializer):
     short_title = ser.CharField(max_length=500)
     summary = ser.CharField(max_length=200)
 
-
     def get_absolute_url(self, obj):
         return obj.get_absolute_url()
 
