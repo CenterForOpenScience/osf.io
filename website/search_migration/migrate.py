@@ -17,6 +17,7 @@ import website.search.search as search
 from scripts import utils as script_utils
 from website.search.elastic_search import es
 from website.search.search import update_institution
+from website.institutions.model import Institution
 
 logger = logging.getLogger(__name__)
 
