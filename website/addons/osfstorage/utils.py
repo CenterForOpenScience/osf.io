@@ -12,7 +12,6 @@ from framework.analytics import update_counter
 
 from website.addons.osfstorage import settings
 
-
 logger = logging.getLogger(__name__)
 LOCATION_KEYS = ['service', settings.WATERBUTLER_RESOURCE, 'object']
 
@@ -23,6 +22,11 @@ def update_analytics(node, file_id, version_idx):
     :param str file_id: The _id field of a filenode
     :param int version_idx: Zero-based version index
     """
+    # Pass in contributors to check that contributors' downloads
+    # do not count towards total download count
+    node_info = {
+        'contributors': node.contributors
+    }
     update_counter(u'download:{0}:{1}'.format(node._id, file_id))
     update_counter(u'download:{0}:{1}:{2}'.format(node._id, file_id, version_idx))
 
