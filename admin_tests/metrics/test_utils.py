@@ -1,11 +1,17 @@
+import csv
+import itertools
+
 from nose import tools as nt
 from datetime import timedelta, datetime
+
+from django.db import models
+from django.test import TestCase
 
 from tests.base import AdminTestCase
 from tests.factories import (
     AuthUserFactory, NodeFactory, ProjectFactory, RegistrationFactory
 )
-
+from admin.metrics.views import render_to_csv_response
 from website.project.model import Node, User
 from framework.auth import Auth
 
@@ -181,3 +187,115 @@ class TestUserGet(AdminTestCase):
     def test_get_unregistered_users(self):
         count = get_unregistered_users()
         nt.assert_equal(count, 1)
+
+class Activity(models.Model):
+    name = models.CharField(max_length=50, verbose_name="Name of Activity")
+
+
+class Person(models.Model):
+    name = models.CharField(max_length=50, verbose_name=_("Person's name"))
+    address = models.CharField(max_length=255)
+    info = models.TextField(verbose_name="Info on Person")
+    hobby = models.ForeignKey(Activity)
+    born = models.DateTimeField(default=datetime(2001, 1, 1, 1, 1))
+
+    def __str__(self):
+        return self.name
+
+def create_people_and_get_queryset():
+    doing_magic, _ = Activity.objects.get_or_create(name="Doing Magic")
+    resting, _ = Activity.objects.get_or_create(name="Resting")
+
+    Person.objects.get_or_create(name='vetch', address='iffish',
+                                 info='wizard', hobby=doing_magic)
+    Person.objects.get_or_create(name='nemmerle', address='roke',
+                                 info='deceased arch mage', hobby=resting)
+    Person.objects.get_or_create(name='ged', address='gont',
+                                 info='former arch mage', hobby=resting)
+
+    return Person.objects.all()
+
+def _identity(x):
+    return x
+
+
+def _transform(dataset, arg):
+    if isinstance(arg, str):
+        field = arg
+        display_name = arg
+        transformer = _identity
+    else:
+        field, display_name, transformer = arg
+        if field is None:
+            field = dataset[0][0]
+    return (dataset[0].index(field), display_name, transformer)
+
+
+def SELECT(dataset, *args):
+    # turn the args into indices based on the first row
+    index_headers = [_transform(dataset, arg) for arg in args]
+    results = []
+
+    # treat header row as special
+    results += [[header[1] for header in index_headers]]
+
+    # add the rest of the rows
+    results += [[trans(datarow[i]) for i, h, trans in index_headers]
+                for datarow in dataset[1:]]
+    return results
+
+
+def EXCLUDE(dataset, *args):
+    antiargs = [value for index, value in enumerate(dataset[0])
+                if index not in args and value not in args]
+    return SELECT(dataset, *antiargs)
+
+
+class RenderToCSVResponseTests(TestCase):
+
+    def setUp(self):
+        self.qs = create_people_and_get_queryset()
+        self.BASE_CSV = [
+            ['id', 'name', 'address',
+             'info', 'hobby_id', 'born', 'hobby__name', 'Most Powerful'],
+            ['1', 'vetch', 'iffish',
+             'wizard', '1', '2001-01-01T01:01:00', 'Doing Magic', '0'],
+            ['2', 'nemmerle', 'roke',
+             'deceased arch mage', '2', '2001-01-01T01:01:00', 'Resting', '1'],
+            ['3', 'ged', 'gont',
+             'former arch mage', '2', '2001-01-01T01:01:00', 'Resting', '1']]
+
+        self.FULL_PERSON_CSV_NO_VERBOSE = EXCLUDE(self.BASE_CSV, 'hobby__name', 'Most Powerful')
+
+    def csv_match(self, csv_file, expected_data, **csv_kwargs):
+        assertion_results = []
+        csv_data = csv.reader(csv_file, **csv_kwargs)
+        iteration_happened = False
+        is_first = True
+        test_pairs = itertools.izip_longest(csv_data, expected_data,
+                                            fillvalue=[])
+        for csv_row, expected_row in test_pairs:
+            if is_first:
+                # add the BOM to the data
+                expected_row = (['\xef\xbb\xbf' + expected_row[0]] +
+                                expected_row[1:])
+                is_first = False
+            iteration_happened = True
+            assertion_results.append(csv_row == expected_row)
+
+        assertion_results.append(iteration_happened is True)
+
+        return assertion_results
+
+    def assertMatchesCsv(self, *args, **kwargs):
+        assertion_results = self.csv_match(*args, **kwargs)
+        self.assertTrue(all(assertion_results))
+
+    def test_render_to_csv_response(self):
+        response = render_to_csv_response(self.qs)
+        self.assertEqual(response['Content-Type'], 'text/csv')
+        self.assertMatchesCsv(response.content.split('\n'),
+                              self.FULL_PERSON_CSV_NO_VERBOSE)
+
+        self.assertRegexpMatches(response['Content-Disposition'],
+                                 r'attachment; filename=person_export.csv;')
