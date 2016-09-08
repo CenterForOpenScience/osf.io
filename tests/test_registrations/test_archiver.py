@@ -254,7 +254,7 @@ def generate_schema_from_data(data):
             return {
                 'qid': qid,
                 'type': 'string'
-            }                
+            }
     schema = MetaSchema(
         name='Test',
         schema={
@@ -553,7 +553,7 @@ class TestArchiverTasks(ArchiverTestCase):
                     name_factory(): {
                         'value': {
                             name_factory(): {
-                                'value': fake.word(),                                
+                                'value': fake.word(),
                                 'extra': [{
                                     'sha256': sha256,
                                     'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
@@ -567,7 +567,7 @@ class TestArchiverTasks(ArchiverTestCase):
                             name_factory(): {
                                 'value': fake.word()
                             }
-                        }                        
+                        }
                     },
                     name_factory(): {
                         'value': fake.word()
@@ -601,7 +601,7 @@ class TestArchiverTasks(ArchiverTestCase):
         comp1 = factories.NodeFactory(parent=node, creator=self.user)
         factories.NodeFactory(parent=comp1, creator=self.user)
         factories.NodeFactory(parent=node, creator=self.user)
-        nodes = [n for n in node.node_and_primary_descendants()]        
+        nodes = [n for n in node.node_and_primary_descendants()]
         file_trees, selected_files, node_index = generate_file_tree(nodes)
         data = generate_metadata(
             file_trees,
@@ -1280,7 +1280,7 @@ class TestArchiveJobModel(OsfTestCase):
         job.set_targets()
         assert_equal([t.name for t in job.target_addons], ['osfstorage', 'dropbox'])
 
-    def test_archive_tree_finished(self):
+    def test_archive_tree_finished_with_nodes(self):
         proj = factories.NodeFactory()
         factories.NodeFactory(parent=proj)
         comp2 = factories.NodeFactory(parent=proj)
@@ -1288,14 +1288,17 @@ class TestArchiveJobModel(OsfTestCase):
         reg = factories.RegistrationFactory(project=proj)
         rchild1 = reg.nodes[0]
         rchild2 = reg.nodes[1]
-        rchild2a = rchild2.nodes[0]
-        regs = itertools.chain([reg], reg.get_descendants_recursive())
-        for node in regs:
+        for node in reg.node_and_primary_descendants():
             assert_false(node.archive_job.archive_tree_finished())
-        for node in regs:
-            assert_false(node.archive_job.archive_tree_finished())
-        for node in [reg, rchild2]:
+
+        for target in rchild1.archive_job.target_addons:
+            rchild1.archive_job.update_target(target.name, ARCHIVER_SUCCESS)
+            rchild1.archive_job.save()
+
+        assert_false(reg.archive_job.archive_tree_finished())
+
+        for node in reg.node_and_primary_descendants():
             for target in node.archive_job.target_addons:
                 node.archive_job.update_target(target.name, ARCHIVER_SUCCESS)
-        for node in regs:
+        for node in reg.node_and_primary_descendants():
             assert_true(node.archive_job.archive_tree_finished())
