@@ -12,7 +12,9 @@ from rest_framework.utils.urls import (
 from api.base.serializers import is_anonymized
 from api.base.settings import MAX_PAGE_SIZE
 
+from framework.auth.core import User
 from framework.guid.model import Guid
+from website.files.models import FileNode
 from website.project.model import Node, Comment
 
 
@@ -179,14 +181,39 @@ class NodeContributorPagination(JSONAPIPagination):
 
 class SearchPaginator(DjangoPaginator):
 
-    def __init__(self, object_list, per_page, model):
+    def __init__(self, object_list, per_page):
         super(SearchPaginator, self).__init__(object_list, per_page)
-        self.model = model
+
+    def load_obj(self, obj_id, obj_type):
+        if obj_type in ['project', 'component', 'registration']:
+            return Node.load(obj_id)
+        if obj_type == 'user':
+            return User.load(obj_id)
+        if obj_type == 'file':
+            return FileNode.load(obj_id)
 
     def _get_count(self):
         self._count = self.object_list['hits']['total']
         return self._count
     count = property(_get_count)
+
+    def page(self, number):
+        # what if results is None?
+        # what if self.load_obj returns None?
+        number = self.validate_number(number)
+        results = self.object_list['hits']['hits']
+        items = [
+            self.load_obj(result.get('_id'), result.get('_type'))
+            for result in results
+        ]
+        return self._get_page(items, number, self)
+
+
+class SearchModelPaginator(SearchPaginator):
+
+    def __init__(self, object_list, per_page, model):
+        super(SearchModelPaginator, self).__init__(object_list, per_page)
+        self.model = model
 
     def page(self, number):
         # what if results is None?
@@ -207,8 +234,10 @@ class SearchPagination(JSONAPIPagination):
         if not page_size:
             return None
 
-        model = request.parser_context['view'].model_class
-        paginator = SearchPaginator(queryset, page_size, model)
+        paginator = SearchPaginator(queryset, page_size)
+        model = getattr(request.parser_context['view'], 'model_class', None)
+        if model:
+            paginator = SearchModelPaginator(queryset, page_size, model)
 
         page_number = request.query_params.get(self.page_query_param, 1)
         if page_number in self.last_page_strings:

@@ -223,7 +223,6 @@ def format_results(results):
 def format_result(result, parent_id=None):
     parent_info = load_parent(parent_id)
     formatted_result = {
-        'id': result['id'],
         'contributors': result['contributors'],
         'wiki_link': result['url'] + 'wiki/',
         # TODO: Remove unescape_entities when mako html safe comes in

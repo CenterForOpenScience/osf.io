@@ -31,7 +31,7 @@ class BaseSearchView(JSONAPIBaseView, generics.ListAPIView):
 
     def __init__(self):
         super(BaseSearchView, self).__init__()
-        assert getattr(self, 'doc_type', None), 'Must specify doc_type on search view.'
+        self.doc_type = getattr(self, 'doc_type', None)
 
     def get_queryset(self):
         query = self.request.query_params.get('q', '*')
@@ -47,13 +47,7 @@ class Search(BaseSearchView):
     serializer_class = SearchSerializer
 
     view_category = 'search'
-    view_name = 'search-projects'
-
-    def get_queryset(self):
-        pass
-
-    def get_serializer_class(self):
-        pass
+    view_name = 'search-search'
 
 
 class SearchComponents(BaseSearchView):
