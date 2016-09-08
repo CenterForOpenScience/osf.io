@@ -9,7 +9,8 @@ class PreprintProviderSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'name',
         'description',
-        'id'
+        'id',
+        'external_url'
     ])
 
     name = ser.CharField(required=True)
@@ -18,6 +19,7 @@ class PreprintProviderSerializer(JSONAPISerializer):
 
     logo_path = ser.CharField(read_only=True)
     banner_path = ser.CharField(read_only=True)
+    external_url = ser.CharField(read_only=True)
 
     preprints = RelationshipField(
         related_view='preprint_providers:preprints-list',
