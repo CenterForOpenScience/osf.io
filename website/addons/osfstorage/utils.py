@@ -24,11 +24,14 @@ def update_analytics(node, file_id, version_idx):
     """
     # Pass in contributors to check that contributors' downloads
     # do not count towards total download count
+    contributors = []
+    if node.contributors:
+        contributors = node.contributors
     node_info = {
-        'contributors': node.contributors
+        'contributors': contributors
     }
-    update_counter(u'download:{0}:{1}'.format(node._id, file_id))
-    update_counter(u'download:{0}:{1}:{2}'.format(node._id, file_id, version_idx))
+    update_counter(u'download:{0}:{1}'.format(node._id, file_id), node_info=node_info)
+    update_counter(u'download:{0}:{1}:{2}'.format(node._id, file_id, version_idx), node_info=node_info)
 
 
 def serialize_revision(node, record, version, index, anon=False):
