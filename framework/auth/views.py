@@ -686,7 +686,9 @@ def register_user(**kwargs):
     :raises: HTTPError(http.BAD_REQUEST) if validation fails or user already exists
     """
 
-    # Verify that email address match
+    # Verify that email address match.
+    # Both `landing.mako` and `register.mako` have this check on the page.
+    # Users can not submit the form if emails do not match.
     json_data = request.get_json()
     if str(json_data['email1']).lower() != str(json_data['email2']).lower():
         raise HTTPError(
