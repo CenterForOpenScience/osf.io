@@ -352,16 +352,19 @@ var MyProjects = {
         // Add All my Projects and All my registrations to collections
         self.systemCollections = options.systemCollections || [
             new LinkObject('collection', { nodeType : 'projects'}, 'All my projects'),
-            new LinkObject('collection', { nodeType : 'registrations'}, 'All my registrations')
+            new LinkObject('collection', { nodeType : 'registrations'}, 'All my registrations'),
+            new LinkObject('collection', { nodeType : 'preprints'}, 'All my preprints')
         ];
 
         self.fetchers = {};
         if (!options.systemCollections) {
           self.fetchers[self.systemCollections[0].id] = new NodeFetcher('nodes');
           self.fetchers[self.systemCollections[1].id] = new NodeFetcher('registrations');
+          self.fetchers[self.systemCollections[2].id] = new NodeFetcher('preprints');
         } else {
           self.fetchers[self.systemCollections[0].id] = new NodeFetcher('nodes', self.systemCollections[0].data.link);
           self.fetchers[self.systemCollections[1].id] = new NodeFetcher('registrations', self.systemCollections[1].data.link);
+          self.fetchers[self.systemCollections[2].id] = new NodeFetcher('preprints', self.systemCollections[2].data.link);
         }
 
         // Initial Breadcrumb for All my projects
@@ -860,6 +863,7 @@ var MyProjects = {
             self.loadCategories().then(function(){
                 self.fetchers[self.systemCollections[0].id].on(['page', 'done'], self.onPageLoad);
                 self.fetchers[self.systemCollections[1].id].on(['page', 'done'], self.onPageLoad);
+                self.fetchers[self.systemCollections[2].id].on(['page', 'done'], self.onPageLoad);
             });
             if (!self.viewOnly){
                 var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : 'linked_nodes', 'page[size]' : self.collectionsPageSize(), 'sort' : 'date_created', 'embed' : 'node_links'}});
