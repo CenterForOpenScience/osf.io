@@ -410,20 +410,20 @@ def elasticsearch(ctx):
         print('Your system is not recognized, you will have to start elasticsearch manually')
 
 @task
-def migrate_search(ctx, env, delete=False, index=settings.ELASTIC_INDEX):
+def migrate_search(ctx, delete=False, index=settings.ELASTIC_INDEX):
     """Migrate the search-enabled models."""
     from website.search_migration.migrate import migrate
-    migrate(delete, index=index, env=env)
+    migrate(delete, index=index)
 
 
 @task
-def rebuild_search(ctx, env):
+def rebuild_search(ctx):
     """Delete and recreate the index for elasticsearch"""
     ctx.run('curl -s -XDELETE {uri}/{index}*'.format(uri=settings.ELASTIC_URI,
                                              index=settings.ELASTIC_INDEX))
     ctx.run('curl -s -XPUT {uri}/{index}'.format(uri=settings.ELASTIC_URI,
                                           index=settings.ELASTIC_INDEX))
-    migrate_search(ctx, env=env)
+    migrate_search(ctx)
 
 
 @task
