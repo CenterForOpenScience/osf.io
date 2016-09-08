@@ -59,6 +59,11 @@ class NodeCitationSerializer(ser.Serializer):
 
     def get_absolute_url(self, obj):
         return obj['URL']
+#
+# class NodeCitationSerializer(ser.Serializer):
+#     csl = ser.DictField(read_only=True)
+#     apa = ser.CharField(allow_blank=True, read_only=True)
+#     mla = ser.CharField(allow_blank=True)
 
 
 class NodeCitationStyleSerializer(ser.Serializer):
@@ -250,6 +255,11 @@ class NodeSerializer(JSONAPISerializer):
     view_only_links = RelationshipField(
         related_view='nodes:node-view-only-links',
         related_view_kwargs={'node_id': '<pk>'},
+    )
+
+    citation = RelationshipField(
+        related_view='nodes:node-citation',
+        related_view_kwargs={'node_id': '<pk>'}
     )
 
     def get_current_user_permissions(self, obj):
