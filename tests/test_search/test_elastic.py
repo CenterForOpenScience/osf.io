@@ -18,6 +18,8 @@ from website.search.util import build_query
 from website.search_migration.migrate import migrate
 from website.models import Retraction, NodeLicense, Tag
 
+from scripts.populate_institutions import main as populate_institutions
+
 from tests import factories
 from tests.base import OsfTestCase
 from tests.test_search import SearchTestCase
@@ -806,6 +808,7 @@ class TestSearchMigration(SearchTestCase):
 
     def setUp(self):
         super(TestSearchMigration, self).setUp()
+        populate_institutions('test')
         self.es = search.search_engine.es
         search.delete_index(settings.ELASTIC_INDEX)
         search.create_index(settings.ELASTIC_INDEX)
@@ -853,11 +856,12 @@ class TestSearchMigration(SearchTestCase):
                 }
             }
         }
-
         res = self.es.search(index=settings.ELASTIC_INDEX, doc_type=None, search_type='count', body=count_query)
         for bucket in res['aggregations']['counts']['buckets']:
-            if bucket['key'] == 'institution':
+            if bucket['key'] == u'institution':
                 assert True
+                return
+
         assert False
 
 class TestSearchFiles(SearchTestCase):
