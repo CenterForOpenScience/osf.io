@@ -14,9 +14,9 @@ from framework.auth import User
 from website.models import Node
 from website.app import init_app
 import website.search.search as search
-from scripts import utils as script_utils, populate_institutions
+from scripts import utils as script_utils
 from website.search.elastic_search import es
-
+from website.search.search import update_institution
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +49,7 @@ def migrate_users(index):
     logger.info('Users iterated: {0}\nUsers migrated: {1}'.format(n_iter, n_migr))
 
 
-def migrate(delete, env=None, index=None, app=None, ):
+def migrate(delete, index=None, app=None):
     index = index or settings.ELASTIC_INDEX
     app = app or init_app('website.settings', set_backends=True, routes=True)
 
@@ -70,8 +70,10 @@ def migrate(delete, env=None, index=None, app=None, ):
     if delete:
         delete_old(new_index)
 
+    for inst in Institution.find(Q('is_deleted', 'ne', True)):
+        update_institution(inst)
+
     ctx.pop()
-    populate_institutions.main(env)
 
 def set_up_index(idx):
     alias = es.indices.get_aliases(index=idx)
@@ -113,13 +115,3 @@ def delete_old(index):
         old_index = index.split('_v')[0] + '_v' + str(old_version)
         logger.info('Deleting {}'.format(old_index))
         es.indices.delete(index=old_index, ignore=404)
-
-def parse_args():
-    import argparse
-    parser = argparse.ArgumentParser(description='Create fake data.')
-    parser.add_argument('-e', '--env', dest='env', required=False)
-    return parser.parse_args()
-
-if __name__ == '__main__':
-    args = parse_args()
-    migrate(False, args.env)
