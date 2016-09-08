@@ -644,7 +644,9 @@ def wheelhouse(ctx, addons=False, release=False, dev=False, metrics=False):
             if os.path.isdir(path):
                 req_file = os.path.join(path, 'requirements.txt')
                 if os.path.exists(req_file):
-                    cmd = 'pip wheel --find-links={} -r {} --wheel-dir={}'.format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
+                    cmd = 'pip wheel --find-links={} -r {} --wheel-dir={} -c {}'.format(
+                        WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH, CONSTRAINTS_PATH,
+                    )
                     ctx.run(cmd, pty=True)
     if release:
         req_file = os.path.join(HERE, 'requirements', 'release.txt')
@@ -654,7 +656,9 @@ def wheelhouse(ctx, addons=False, release=False, dev=False, metrics=False):
         req_file = os.path.join(HERE, 'requirements', 'metrics.txt')
     else:
         req_file = os.path.join(HERE, 'requirements.txt')
-    cmd = 'pip wheel --find-links={} -r {} --wheel-dir={}'.format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
+    cmd = 'pip wheel --find-links={} -r {} --wheel-dir={} -c {}'.format(
+        WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH, CONSTRAINTS_PATH,
+    )
     ctx.run(cmd, pty=True)
 
 

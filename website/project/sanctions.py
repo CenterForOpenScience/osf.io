@@ -22,7 +22,6 @@ from website import (
     settings,
     tokens,
 )
-from website.project.spam.model import SpamStatus
 from website.exceptions import (
     InvalidSanctionApprovalToken,
     InvalidSanctionRejectionToken,
