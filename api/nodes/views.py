@@ -1241,7 +1241,7 @@ class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
     ##NodeCitationDetail Attributes
 
         name                     type                description
-    =================================================================================
+        =================================================================================
         id                       string               unique ID for the citation
         title                    string               title of project or component
         author                   list                 list of authors for the work
@@ -1276,8 +1276,9 @@ class NodeCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMix
     ##NodeCitationDetail Attributes
 
         name                     type                description
-    =================================================================================
+        =================================================================================
         citation                string               complete citation for a node in the given style
+
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
