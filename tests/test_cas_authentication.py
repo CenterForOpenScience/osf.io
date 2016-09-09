@@ -55,7 +55,13 @@ def generate_external_user_with_resp(user=True, release=True):
         user.save()
         return user, validated_credentials, cas_resp
     else:
-        return None, validated_credentials, cas_resp
+        user = {
+            'external_id_provider': validated_credentials['provider'],
+            'external_id': validated_credentials['id'],
+            'fullname': validated_credentials['id'],
+            'access_token': cas_resp.attributes['accessToken'],
+        }
+        return user, validated_credentials, cas_resp
 
 RESPONSE_TEMPLATE = """
 <cas:serviceResponse xmlns:cas='http://www.yale.edu/tp/cas'>

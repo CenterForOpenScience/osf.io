@@ -137,6 +137,7 @@ class TestAuthUtils(OsfTestCase):
         assert_in('username={}'.format(user.username), resp.location)
         assert_in('verification_key={}'.format(user.verification_key), resp.location)
 
+    @mock.patch('framework.')
     @mock.patch('framework.auth.cas.get_user_from_cas_resp')
     @mock.patch('framework.auth.cas.CasClient.service_validate')
     def test_successful_external_first_login(self, mock_service_validate, mock_get_user_from_cas_resp):
@@ -148,6 +149,18 @@ class TestAuthUtils(OsfTestCase):
         resp = cas.make_response_from_ticket(ticket, service_url)
         assert_equal(resp.status_code, 302, 'redirect to external login email get')
         assert_in('/external-login/email', resp.location)
+
+    @mock.patch('framework.auth.cas.external_first_login_authenticate')
+    @mock.patch('framework.auth.cas.get_user_from_cas_resp')
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_successful_external_first_login_without_attributes(self, mock_service_validate, mock_get_user_from_cas_resp, mock_external_first_login_authenticate):
+        user, validated_credentials, cas_resp = generate_external_user_with_resp(user=False, release=False)
+        mock_service_validate.return_value = cas_resp
+        mock_get_user_from_cas_resp.return_value = (None, validated_credentials, 'external_first_login')
+        ticket = fake.md5()
+        service_url = 'http://accounts.osf.io/?ticket=' + ticket
+        resp = cas.make_response_from_ticket(ticket, service_url)
+        assert_equal(user, mock_external_first_login_authenticate.call_args[0][0])
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_password_change_sends_email(self, mock_mail):
