@@ -48,7 +48,10 @@ class UserDeleteView(OSFAdmin, DeleteView):
                 if kwargs.get('is_spam'):
                     if 'spam_threshold' in user.system_tags:
                         user.system_tags = list(set(user.system_tags) - {'spam_threshold'})
-                    user.system_tags.append('confirmed_spam')
+                    if 'confirmed_ham' in user.system_tags:
+                        user.system_tags = list(set(user.system_tags) - {'confirmed_ham'})
+                    if 'confirmed_spam' not in user.system_tags:
+                        user.system_tags.append('confirmed_spam')
                 flag = USER_REMOVED
                 message = 'User account {} disabled'.format(user.pk)
             else:
@@ -60,7 +63,8 @@ class UserDeleteView(OSFAdmin, DeleteView):
                         user.system_tags = list(set(user.system_tags) - {'confirmed_spam'})
                     if 'spam_threshold' in user.system_tags:
                         user.system_tags = list(set(user.system_tags) - {'spam_threshold'})
-                    user.system_tags.append('confirmed_ham')
+                    if 'confirmed_ham' not in user.system_tags:
+                        user.system_tags.append('confirmed_ham')
                 flag = USER_RESTORED
                 message = 'User account {} reenabled'.format(user.pk)
             user.save()
@@ -176,14 +180,12 @@ class UserSpamList(OSFAdmin, ListView):
             'page': page,
         }
 
+
 class UserFlaggedSpamList(UserSpamList, DeleteView):
     SPAM_TAG = 'spam_threshold'
     template_name = 'users/flagged_spam_list.html'
 
-    # TODO: unflag as ham
-
     def delete(self, request, *args, **kwargs):
-        # is more complex serialization possible? e.g. {'ham': [<id>], 'spam': [<id>]}
         user_ids = [
             uid for uid in request.POST.keys()
             if uid != 'csrfmiddlewaretoken'
