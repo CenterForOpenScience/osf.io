@@ -6,7 +6,6 @@ from api.base.filters import ODMFilterMixin
 from api.base.pagination import NoMaxPageSizePagination
 from api.base import permissions as base_permissions
 from api.citations.serializers import CitationSerializer
-from website.project.taxonomies import Subject
 from framework.auth.oauth_scopes import CoreScopes
 
 from website.models import CitationStyle
