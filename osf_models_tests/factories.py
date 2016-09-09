@@ -393,3 +393,72 @@ class CommentFactory(DjangoModelFactory):
             instance.root_target = target
         instance.save()
         return instance
+
+
+class SubjectFactory(DjangoModelFactory):
+    text = factory.Faker('word')
+
+    class Meta:
+        model = models.Subject
+
+
+class PreprintProviderFactory(DjangoModelFactory):
+    name = factory.Faker('company')
+    description = factory.Faker('bs')
+    external_url = factory.Faker('url')
+    logo_name = factory.Faker('file_name', category='image')
+    banner_name = factory.Faker('file_name', category='image')
+
+    class Meta:
+        model = models.PreprintProvider
+
+
+class PreprintFactory(DjangoModelFactory):
+    title = factory.Faker('catch_phrase')
+    description = factory.Faker('sentence')
+    date_created = factory.LazyFunction(timezone.now)
+    preprint_created = factory.LazyFunction(timezone.now)
+    creator = factory.SubFactory(UserFactory)
+    creator = None
+    category = 'project'
+    doi = factory.Sequence(lambda n: '10.123/{}'.format(n))
+    is_public = True
+
+    class Meta:
+        model = models.Preprint
+
+    @classmethod
+    def _create(cls, target_class, project=None, filename='preprint_file.txt', providers=None, doi=None, external_url=None, *args, **kwargs):
+        user = None
+        if project:
+            user = project.creator
+        user = kwargs.get('user') or kwargs.get('creator') or user or UserFactory()
+        kwargs['creator'] = user
+        # Original project to be converted to a preprint
+        project = project or target_class(*args, **kwargs)
+        project.save()
+        if not project.is_contributor(user):
+            project.add_contributor(
+                contributor=user,
+                permissions=permissions.CREATOR_PERMISSIONS,
+                log=False,
+                save=True
+            )
+
+        # TODO: Uncomment when OsfStorageFile is implemented
+        # file = OsfStorageFile.create(
+        #     is_file=True,
+        #     node=project,
+        #     path='/{}'.format(filename),
+        #     name=filename,
+        #     materialized_path='/{}'.format(filename))
+        # file.save()
+        # project.set_preprint_file(file, auth=Auth(project.creator))
+
+        project.subjects = [SubjectFactory()._id]
+        if providers:
+            project.providers.add(*providers)
+        project.doi = doi
+        project.save()
+
+        return project
