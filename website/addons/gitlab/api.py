@@ -13,16 +13,22 @@ from website.addons.gitlab.exceptions import NotFoundError
 https_cache = cachecontrol.CacheControlAdapter()
 default_adapter = HTTPAdapter()
 
+import pdb
+
+from framework.sessions import session
+
 class GitLabClient(object):
 
     def __init__(self, external_account=None, access_token=None):
 
         self.access_token = getattr(external_account, 'oauth_key', None) or access_token
 
+        self.host = getattr(external_account, 'host', None) or session.data['host']
+
         if self.access_token:
-            self.gitlab = gitlab.Gitlab('https://' + external_account.provider_id, oauth_token=self.access_token)
+            self.gitlab = gitlab.Gitlab('https://' + self.host, oauth_token=self.access_token)
         else:
-            self.gitlab = gitlab.Gitlab('https://' + external_account.provider_id)
+            self.gitlab = gitlab.Gitlab('https://' + self.host)
 
     def user(self, user=None):
         """Fetch a user or the authenticated user.
