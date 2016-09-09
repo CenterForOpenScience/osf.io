@@ -75,4 +75,6 @@ class CitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     view_name = 'citation-detail'
 
     def get_object(self):
-        return get_object_or_error(CitationStyle, self.kwargs['citation_id'])
+        cit = get_object_or_error(CitationStyle, self.kwargs['citation_id'])
+        self.check_object_permissions(self.request, cit)
+        return cit
