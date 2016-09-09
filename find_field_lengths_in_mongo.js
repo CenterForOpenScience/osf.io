@@ -3,8 +3,8 @@
 function findMax() {
     var max = 0;
 
-    db.nodewikipage.find().forEach(function(doc) {
-        var currentLength = doc.page_name.length;
+    db.apioauth2personaltoken.find().forEach(function(doc) {
+        var currentLength = doc.name.length;
         if (currentLength > max) {
            max = currentLength;
         }

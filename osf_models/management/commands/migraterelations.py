@@ -72,8 +72,12 @@ def fix_bad_data(django_obj):
     if isinstance(django_obj, models.Retraction):
         if django_obj.state == 'cancelled':
             django_obj.state = 'rejected'
-        # if django_obj.state == 'retracted':
-        #     django_obj.state = 'completed'
+        # TODO: I was told that this could not happen, but it did, so this is a guess. Check with someone.
+        if django_obj.state == 'retracted':
+            django_obj.state = 'completed'
+        # TODO: This is a guess. Check with someone.
+        if django_obj.state == 'pending':
+            django_obj.state = 'unapproved'
     return django_obj
 
 

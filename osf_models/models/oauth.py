@@ -129,11 +129,11 @@ class ApiOAuth2PersonalToken(base.ObjectIDMixin, base.BaseModel):
                                   unique=True)
 
     owner = models.ForeignKey('OSFUser', db_index=True, blank=True, null=True, on_delete=models.SET_NULL)
-
-    name = models.CharField(max_length=25, blank=False, null=False, db_index=True)
+    # max_length in staging is 89
+    name = models.CharField(max_length=100, blank=False, null=False, db_index=True)
 
     # This field is a space delimited list of scopes, e.g. "osf.full_read osf.full_write"
-    scopes = models.CharField(blank=False, null=False, max_length=100)
+    scopes = models.CharField(blank=False, null=False, max_length=255)  # max_length in staging was 251
 
     is_active = models.BooleanField(default=True, db_index=True)
 
