@@ -9,7 +9,6 @@ var bootbox = require('bootbox');
 var lodashGet = require('lodash.get');
 var KeenTracker = require('js/keen');
 var linkify = require('linkifyjs/html');
-var markdown = require('js/markdown');
 
 
 // TODO: For some reason, this require is necessary for custom ko validators to work
@@ -919,7 +918,7 @@ function getDomain(location) {
 
 function markdownAcceptsLinks(content){
     var linkify_opts = { target: function (href, type) { return type === 'url' ? '_top' : null; } };
-    return linkify(markdown.full.render(content), linkify_opts);
+    return linkify(content, linkify_opts);
 }
 
 // Also export these to the global namespace so that these can be used in inline
