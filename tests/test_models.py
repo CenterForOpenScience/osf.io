@@ -3300,7 +3300,7 @@ class TestProject(OsfTestCase):
     @mock.patch.object(settings, 'SPAM_CHECK_SYNC', True)
     def test_check_spam_on_private_node(self):
         # mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', False)
-        with mock.patch('website.projecdt.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
+        with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
             with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(return_value=True)):
                 self.project.set_privacy('private')
                 assert_true(self.project.check_spam(None, None))
