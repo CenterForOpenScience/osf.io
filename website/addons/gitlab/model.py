@@ -179,7 +179,7 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     @property
     def repo_url(self):
         if self.repo:
-            return  'https://{0}/{1}'.format(external_account.host, self.repo)
+            return  'https://{0}/{1}'.format(external_account.provider_id, self.repo)
 
     @property
     def short_url(self):
