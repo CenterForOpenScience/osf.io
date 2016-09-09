@@ -3139,6 +3139,67 @@ class TestAuthViews(OsfTestCase):
         users = User.find(Q('username', 'eq', email))
         assert_equal(users.count(), 0)
 
+    @mock.patch('framework.auth.views.validate_recaptcha', return_value=True)
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_register_good_captcha(self, _, validate_recaptcha):
+        url = api_url_for('register_user')
+        name, email, password = fake.name(), fake.email(), 'underpressure'
+        captcha = 'some valid captcha'
+        with mock.patch.object(settings, 'RECAPTCHA_SITE_KEY', 'some_value'):
+            resp = self.app.post_json(
+                url,
+                {
+                    'fullName': name,
+                    'email1': email,
+                    'email2': str(email).upper(),
+                    'password': password,
+                    'g-recaptcha-response': captcha,
+                }
+            )
+            validate_recaptcha.assert_called_with(captcha, remote_ip=None)
+            assert_equal(resp.status_code, http.OK)
+            user = User.find_one(Q('username', 'eq', email))
+            assert_equal(user.fullname, name)
+
+    @mock.patch('framework.auth.views.validate_recaptcha', return_value=False)
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_register_missing_captcha(self, _, validate_recaptcha):
+        url = api_url_for('register_user')
+        name, email, password = fake.name(), fake.email(), 'underpressure'
+        with mock.patch.object(settings, 'RECAPTCHA_SITE_KEY', 'some_value'):
+            resp = self.app.post_json(
+                url,
+                {
+                    'fullName': name,
+                    'email1': email,
+                    'email2': str(email).upper(),
+                    'password': password,
+                    # 'g-recaptcha-response': 'supposed to be None',
+                },
+                expect_errors=True
+            )
+            validate_recaptcha.assert_called_with(None, remote_ip=None)
+            assert_equal(resp.status_code, http.BAD_REQUEST)
+
+    @mock.patch('framework.auth.views.validate_recaptcha', return_value=False)
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_register_bad_captcha(self, _, validate_recaptcha):
+        url = api_url_for('register_user')
+        name, email, password = fake.name(), fake.email(), 'underpressure'
+        with mock.patch.object(settings, 'RECAPTCHA_SITE_KEY', 'some_value'):
+            resp = self.app.post_json(
+                url,
+                {
+                    'fullName': name,
+                    'email1': email,
+                    'email2': str(email).upper(),
+                    'password': password,
+                    'g-recaptcha-response': 'bad captcha',
+                },
+                expect_errors=True
+            )
+            assert_equal(resp.status_code, http.BAD_REQUEST)
+
     def test_register_after_being_invited_as_unreg_contributor(self):
         # Regression test for:
         #    https://github.com/CenterForOpenScience/openscienceframework.org/issues/861

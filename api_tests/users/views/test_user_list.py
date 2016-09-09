@@ -241,6 +241,7 @@ class TestUsers(ApiTestCase):
         assert_equal(res.status_code, 400)
 
 
+@unittest.skip('Disabling user creation for now')
 class TestUsersCreate(ApiTestCase):
 
     def setUp(self):

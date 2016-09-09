@@ -22,7 +22,7 @@ from framework.auth.exceptions import DuplicateEmailError, ExpiredTokenError, In
 from framework.auth.core import generate_verification_key
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import ResendConfirmationForm, ForgotPasswordForm, ResetPasswordForm
-from framework.auth.utils import ensure_external_identity_uniqueness
+from framework.auth.utils import ensure_external_identity_uniqueness, validate_recaptcha
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions.utils import remove_sessions_for_user, remove_session
@@ -635,13 +635,21 @@ def register_user(**kwargs):
     :raises: HTTPError(http.BAD_REQUEST) if validation fails or user already exists
     """
 
-    # Verify email address match
+    # Verify that email address match
     json_data = request.get_json()
     if str(json_data['email1']).lower() != str(json_data['email2']).lower():
         raise HTTPError(
             http.BAD_REQUEST,
             data=dict(message_long='Email addresses must match.')
         )
+
+    # Verify that captcha is valid
+    if settings.RECAPTCHA_SITE_KEY and not validate_recaptcha(json_data.get('g-recaptcha-response'), remote_ip=request.remote_addr):
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data=dict(message_long='Invalid Captcha')
+        )
+
     try:
         full_name = request.json['fullName']
         full_name = strip_html(full_name)
