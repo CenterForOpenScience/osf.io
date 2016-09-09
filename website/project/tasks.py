@@ -3,7 +3,7 @@ from framework.transactions.context import TokuTransaction
 
 
 @celery_app.task(ignore_results=True)
-def on_node_updated(node_id, first_save, saved_fields, request_headers=None):
+def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=None):
     from website.models import Node
     node = Node.load(node_id)
 
@@ -12,7 +12,8 @@ def on_node_updated(node_id, first_save, saved_fields, request_headers=None):
 
     if request_headers:
         with TokuTransaction():
-            node.check_spam(saved_fields, request_headers, save=True)
+            # Will ban spammer
+            node.check_spam(saved_fields, request_headers, mode='async', user_id=user_id, save=True)
 
     need_update = bool(node.SEARCH_UPDATE_FIELDS.intersection(saved_fields))
     # due to async nature of call this can issue a search delete for a new record (acceptable trade-off)
@@ -22,3 +23,17 @@ def on_node_updated(node_id, first_save, saved_fields, request_headers=None):
         need_update = False
     if need_update:
         node.update_search()
+
+
+@celery_app.task(ignore_results=True)
+def on_user_suspension(user_id, system_tag):
+    from framework.auth import User
+
+    with TokuTransaction():
+        user = User.load(user_id)
+        if system_tag not in user.system_tags:
+            user.system_tags.append(system_tag)
+        if not user.is_disabled:
+            user.disable_account()
+            user.is_registered = False
+        user.save()
