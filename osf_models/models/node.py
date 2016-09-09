@@ -177,6 +177,16 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
         """For v1 compat."""
         return False
 
+    @property
+    def is_preprint(self):
+        """For v1 compat."""
+        return False
+
+    @property
+    def is_collection(self):
+        """For v1 compat"""
+        return False
+
     @property  # TODO Separate out for submodels
     def absolute_api_v2_url(self):
         if self.is_registration:
@@ -1290,12 +1300,6 @@ class Node(AbstractNode):
         return django_obj
 
     # /TODO DELETE ME POST MIGRATION
-
-    @property
-    def is_collection(self):
-        """Compat with v1."""
-        return False
-
 
 @receiver(post_save, sender=Node)
 def add_creator_as_contributor(sender, instance, created, **kwargs):

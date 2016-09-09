@@ -10,7 +10,7 @@ class PreprintProvider(ObjectIDMixin, BaseModel):
     logo_name = models.CharField(null=True, blank=True, max_length=128)  # max length on prod: 17
     description = models.CharField(null=True, blank=True, max_length=256)  # max length on prod: 56
     banner_name = models.CharField(null=True, blank=True, max_length=128)  # max length on prod: 19
-    external_url = models.URLField(null=True, blank=True)  # max length on prod: 25
+    external_url = models.URLField(null=True, blank=True, max_length=200)  # max length on prod: 25
 
     def get_absolute_url(self):
         return '{}preprint_providers/{}'.format(self.absolute_api_v2_url, self._id)
