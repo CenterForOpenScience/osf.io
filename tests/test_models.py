@@ -3311,10 +3311,12 @@ class TestProject(OsfTestCase):
     def test_check_spam_on_private_node_bans_new_spam_user(self):
         with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
             with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(return_value=True)):
-                with assert_raises(NodeStateError):
-                    self.project.creator.date_confirmed = datetime.datetime.utcnow()
-                    self.project.set_privacy('private')
-                    assert_true(self.project.check_spam(None, None))
+                with mock.patch('website.project.model.on_user_suspension.delay'):
+                    with assert_raises(NodeStateError):
+                        self.project.creator.date_confirmed = datetime.datetime.utcnow()
+                        self.project.set_privacy('private')
+                        assert_true(self.project.check_spam(None, None))
+                handlers._local.queue = []  # prevent queue from running a mock object as a task
 
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_CHECK_PUBLIC_ONLY', False)
