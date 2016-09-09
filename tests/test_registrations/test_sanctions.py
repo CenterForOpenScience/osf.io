@@ -16,6 +16,7 @@ from framework.mongo import handlers
 
 from website.exceptions import NodeStateError
 from website.project.model import ensure_schemas, Node, NodeLog
+from website.project.spam.model import SpamStatus
 from website.project.sanctions import Sanction, TokenApprovableSanction, EmailApprovableSanction, PreregCallbackMixin
 
 def valid_user():
@@ -256,7 +257,7 @@ class TestEmailApprovableSanction(SanctionsTestCase):
             sanction._on_complete(self.user)
         assert_equal(mock_notify.call_count, 1)
 
-    def test_notify_initiator_with_PreregCallbackMixin(self):
+    def test_on_complete_errors_if_registration_is_spam(self):
         sanction = EmailApprovableSanctionTestClass(
             initiated_by=self.user,
             end_date=datetime.datetime.now() + datetime.timedelta(days=2),
@@ -264,9 +265,8 @@ class TestEmailApprovableSanction(SanctionsTestCase):
         )
         sanction.add_authorizer(self.user, sanction._get_registration())
         sanction.save()
-        with mock.patch.object(PreregCallbackMixin, '_notify_initiator') as mock_notify:
+        with mock.patch.object(EmailApprovableSanctionTestClass, '_notify_initiator'):
             sanction._on_complete(self.user)
-        assert_equal(mock_notify.call_count, 1)
 
 
 class TestRegistrationApproval(OsfTestCase):

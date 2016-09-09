@@ -219,7 +219,6 @@ var ProjectViewModel = function(data, options) {
 
     self.canCreateIdentifiers = ko.pureComputed(function() {
         return !self.hasIdentifiers() &&
-            self.isRegistration &&
             self.nodeIsPublic &&
             self.userPermissions.indexOf('admin') !== -1;
     });
@@ -238,7 +237,8 @@ var ProjectViewModel = function(data, options) {
             title: 'Create identifiers',
             message: '<p class="overflow">' +
                 'Are you sure you want to create a DOI and ARK for this ' +
-                $osf.htmlEscape(self.nodeType) + '?',
+                $osf.htmlEscape(self.nodeType) + '? DOI and ARK identifiers' +
+                ' are persistent and will always resolve to this page.',
             callback: function(confirmed) {
                 if (confirmed) {
                     self.createIdentifiers();

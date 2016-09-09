@@ -659,7 +659,6 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     if len(request.path.strip('/').split('/')) > 1:
         guid = file_node.get_guid(create=True)
         return redirect(furl.furl('/{}/'.format(guid._id)).set(args=extras).url)
-
     return addon_view_file(auth, node, file_node, version)
 
 

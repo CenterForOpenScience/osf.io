@@ -21,7 +21,7 @@ $(document).ready(function() {
     if (campaign === 'institution'){
         new InstitutionSignIn('#inst');
     } else {
-        new passwordForms.SignUp('#signUpScope');
+        new passwordForms.SignUp('#signUpScope', campaign);
     }
 });
 

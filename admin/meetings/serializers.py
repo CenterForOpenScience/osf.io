@@ -2,15 +2,16 @@
 
 def serialize_meeting(meeting):
     is_meeting = True
-    if hasattr(meeting, 'is_meeting'):
+    if hasattr(meeting, 'is_meeting') and meeting.is_meeting is not None:
         is_meeting = meeting.is_meeting
     return {
         'endpoint': meeting.endpoint,
         'name': meeting.name,
         'info_url': meeting.info_url,
+        'homepage_link_text': meeting.field_names['homepage_link_text'],
         'logo_url': meeting.logo_url,
         'active': meeting.active,
-        'admins': ', '.join([u.emails[0] for u in meeting.admins]),
+        'admins': ', '.join([u.username for u in meeting.admins]),
         'public_projects': meeting.public_projects,
         'poster': meeting.poster,
         'talk': meeting.talk,
