@@ -59,11 +59,6 @@ class NodeCitationSerializer(ser.Serializer):
 
     def get_absolute_url(self, obj):
         return obj['URL']
-#
-# class NodeCitationSerializer(ser.Serializer):
-#     csl = ser.DictField(read_only=True)
-#     apa = ser.CharField(allow_blank=True, read_only=True)
-#     mla = ser.CharField(allow_blank=True)
 
 
 class NodeCitationStyleSerializer(ser.Serializer):

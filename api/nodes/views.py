@@ -1255,7 +1255,7 @@ class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.NODE_BASE_READ]
+    required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = NodeCitationSerializer
@@ -1285,7 +1285,7 @@ class NodeCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMix
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.NODE_BASE_READ]
+    required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = NodeCitationStyleSerializer

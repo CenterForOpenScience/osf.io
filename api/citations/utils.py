@@ -26,4 +26,5 @@ def render_citation(node, style='apa'):
         pass
 
     bibliography.cite(citation, warn)
-    return unicode(bibliography.bibliography()[0])
+    bib = bibliography.bibliography()
+    return unicode(bib[0] if len(bib) else '')
