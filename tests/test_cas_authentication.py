@@ -43,6 +43,13 @@ def make_external_response(release=True):
 
 
 def generate_external_user_with_resp(user=True, release=True):
+    """
+    Generate mock user, external credential and cas response for tests.
+
+    :param user: set to `False` if user does not exists
+    :param release: set to `False` if attributes are not released due to privacy settings
+    :return: existing user object or new user, valid external credential, valid cas response
+    """
     cas_resp = make_external_response(release=release)
     validated_credentials = cas.validate_external_credential(cas_resp.user)
     if user:

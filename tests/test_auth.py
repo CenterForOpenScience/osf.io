@@ -112,16 +112,9 @@ class TestAuthUtils(OsfTestCase):
         )
 
     def test_get_user_by_external_info(self):
-        user = UserFactory.build()
-        validated_creds = cas.validate_external_credential(make_external_response().user)
-        user.external_identity = {
-            validated_creds['provider']: {
-                validated_creds['id']: 'VERIFIED'
-            }
-        }
+        user, validated_credentials, cas_resp = generate_external_user_with_resp()
         user.save()
-
-        assert_equal(auth.get_user(external_id_provider=validated_creds['provider'], external_id=validated_creds['id']), user)
+        assert_equal(auth.get_user(external_id_provider=validated_credentials['provider'], external_id=validated_credentials['id']), user)
 
     @mock.patch('framework.auth.cas.get_user_from_cas_resp')
     @mock.patch('framework.auth.cas.CasClient.service_validate')
@@ -137,7 +130,6 @@ class TestAuthUtils(OsfTestCase):
         assert_in('username={}'.format(user.username), resp.location)
         assert_in('verification_key={}'.format(user.verification_key), resp.location)
 
-    @mock.patch('framework.')
     @mock.patch('framework.auth.cas.get_user_from_cas_resp')
     @mock.patch('framework.auth.cas.CasClient.service_validate')
     def test_successful_external_first_login(self, mock_service_validate, mock_get_user_from_cas_resp):
