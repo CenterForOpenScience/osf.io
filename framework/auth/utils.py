@@ -1,3 +1,4 @@
+import datetime
 import httplib
 import re
 
@@ -24,6 +25,11 @@ DOMAIN_REGEX = re.compile(
     r'|^\[(25[0-5]|2[0-4]\d|[0-1]?\d?\d)'
     r'(\.(25[0-5]|2[0-4]\d|[0-1]?\d?\d)){3}\]$', re.IGNORECASE)
 
+
+def user_over_spam_threshold(user):
+    if settings.SPAM_ACCOUNT_SUSPENSION_ENABLED:
+        return (datetime.datetime.utcnow() - user.date_confirmed) > settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD
+    return False
 
 def validate_email(email):
     if len(email) > 254:
