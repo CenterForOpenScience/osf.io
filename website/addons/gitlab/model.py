@@ -24,6 +24,8 @@ from website.addons.gitlab import settings as gitlab_settings
 from website.addons.gitlab.exceptions import ApiError, NotFoundError, GitLabError
 from website.oauth.models import ExternalProvider
 
+from framework.sessions import session
+
 
 hook_domain = gitlab_settings.HOOK_DOMAIN or settings.DOMAIN
 
@@ -36,22 +38,22 @@ class GitLabProvider(ExternalProvider):
     def __init__(self, account=None):
         super(GitLabProvider, self).__init__()
         self.account = account
-        self.auth_url_base = self.auth_url_base()
-        self.callback_url = self.callback_url()
-        self.client_secret = self.client_secret()
-        self.client_id = self.client_id()
 
+    @property
     def auth_url_base(self):
-        return 'https://{0}{1}'.format(self.external_account.provider_id, '/oauth/authorize')
+        return 'https://{0}{1}'.format(session.data['oauth_host'], '/oauth/authorize')#'https://{0}{1}'.format(self.external_account.provider_id, '/oauth/authorize')
 
+    @property
     def callback_url(self):
-        return 'https://{0}{1}'.format(self.external_account.provider_id, '/oauth/token')
+        return 'https://{0}{1}'.format(session.data['oauth_host'], '/oauth/token') #'https://{0}{1}'.format(self.external_account.provider_id, '/oauth/token')
 
+    @property
     def client_secret(self):
-        return self.external_account.oauth_secret
+        return session.data['oauth_client_secret']#self.external_account.oauth_secret
 
+    @property
     def client_id(self):
-        return self.external_account.oauth_key
+        return session.data['oauth_client_id']#self.external_account.oauth_key
 
     def handle_callback(self, response):
         """View called when the OAuth flow is completed. Adds a new GitLabUserSettings

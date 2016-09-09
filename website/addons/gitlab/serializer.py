@@ -5,6 +5,9 @@ from website.util import api_url_for
 from website.addons.gitlab.api import GitLabClient
 from website.addons.gitlab.exceptions import GitLabError
 
+from framework.sessions import session
+
+import pdb
 
 class GitLabSerializer(StorageAddonSerializer):
 
@@ -13,9 +16,17 @@ class GitLabSerializer(StorageAddonSerializer):
     # Include host information with more informative labels / formatting
     def serialize_account(self, external_account):
         ret = super(GitLabSerializer, self).serialize_account(external_account)
-        host = external_account.oauth_key
+        key = external_account.oauth_key
+        secret = external_account.oauth_secret
+        host = external_account.display_name
+        session.data['oauth_client_id'] = key
+        session.data['oauth_client_secret'] = secret
+        session.data['oauth_host'] = host
         ret.update({
             'host': host,
+            'oauth_host': host,
+            'oauth_client_id': key,
+            'oauth_client_secret': secret,
             'host_url': 'https://{0}'.format(host),
         })
 

@@ -121,10 +121,10 @@ function ViewModel(url) {
                 clientId: self.clientId
             })
         ).done(function() {
-            self.updateAccounts();
+            //self.updateAccounts();
             self.clearModal();
             $modal.modal('hide');
-            window.open('/oauth/connect/gitlab/');
+            window.open('/oauth/connect/gitlab');
 
         }).fail(function(xhr, textStatus, error) {
             var errorMessage = (xhr.status === 401) ? language.authInvalid : language.authError;
