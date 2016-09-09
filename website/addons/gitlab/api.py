@@ -23,7 +23,7 @@ class GitLabClient(object):
 
         self.access_token = getattr(external_account, 'oauth_key', None) or access_token
 
-        self.host = getattr(external_account, 'host', None) or session.data['host']
+        self.host = getattr(external_account, 'display_name', None) or session.data['host']
 
         if self.access_token:
             self.gitlab = gitlab.Gitlab('https://' + self.host, oauth_token=self.access_token)

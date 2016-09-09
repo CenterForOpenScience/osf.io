@@ -66,9 +66,10 @@ class GitLabProvider(ExternalProvider):
         user_info = client.user()
 
         return {
-            'provider_id': user_info['id'],
+            'provider_id': client.host,
             'profile_url': user_info['web_url'],
-            'display_name': user_info['name']
+            'access_token': response['access_token'],
+            'display_name': client.host
         }
 
 
@@ -178,12 +179,12 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     @property
     def repo_url(self):
         if self.repo:
-            return  '{0}/{1}'.format(gitlab_settings.GITLAB_BASE_URL, self.repo)
+            return  'https://{0}/{1}'.format(external_account.host, self.repo)
 
     @property
     def short_url(self):
-        if self.user and self.repo:
-            return '/'.join([self.user, self.repo])
+        if self.repo:
+            return self.repo
 
     @property
     def is_private(self):
@@ -223,11 +224,12 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 'node_has_auth': True,
                 'gitlab_user': self.user or '',
                 'gitlab_repo': self.repo or '',
-                'gitlab_repo_id': self.repo_id if self.repo_id != None else '',
+                'gitlab_repo_id': self.repo_id if self.repo_id != None else '0',
                 'gitlab_repo_full_name': '{0} / {1}'.format(self.user, self.repo) if (self.user and self.repo) else '',
                 'auth_osf_name': owner.fullname,
                 'auth_osf_url': owner.url,
                 'auth_osf_id': owner._id,
+                'gitlab_host': self.external_account.provider_id,
                 'gitlab_user_name': self.external_account.display_name,
                 'gitlab_user_url': self.external_account.profile_url,
                 'is_owner': owner == user,

@@ -135,7 +135,7 @@ def gitlab_add_user_account(auth, **kwargs):
         user.add_addon('gitlab')
     user.save()
 
-    # Need to ensure that the user has dataverse enabled at this point
+    # Need to ensure that the user has gitlab enabled at this point
     user.get_or_add_addon('gitlab', auth=auth)
     user.save()
 
