@@ -59,7 +59,7 @@ class SearchComponents(BaseSearchView):
 
     doc_type = 'component'
     view_category = 'search'
-    view_name = 'search-components'
+    view_name = 'search-component'
 
 
 class SearchFiles(BaseSearchView):
@@ -71,7 +71,7 @@ class SearchFiles(BaseSearchView):
 
     doc_type = 'file'
     view_category = 'search'
-    view_name = 'search-files'
+    view_name = 'search-file'
 
 
 class SearchProjects(BaseSearchView):
@@ -83,7 +83,7 @@ class SearchProjects(BaseSearchView):
 
     doc_type = 'project'
     view_category = 'search'
-    view_name = 'search-projects'
+    view_name = 'search-project'
 
 
 class SearchRegistrations(BaseSearchView):
@@ -95,7 +95,7 @@ class SearchRegistrations(BaseSearchView):
 
     doc_type = 'registration'
     view_category = 'search'
-    view_name = 'search-registrations'
+    view_name = 'search-registration'
 
 
 class SearchUsers(BaseSearchView):
@@ -107,4 +107,4 @@ class SearchUsers(BaseSearchView):
 
     doc_type = 'user'
     view_category = 'search'
-    view_name = 'search-users'
+    view_name = 'search-user'

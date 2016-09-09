@@ -259,7 +259,7 @@ class SearchPagination(JSONAPIPagination):
         self.request = request
         return list(self.page)
 
-    def get_search_field_url(self, query, field):
+    def get_search_field_url(self, field, query):
         view_name = 'search:search-{}'.format(field)
         return absolute_reverse(
             view_name,
@@ -271,6 +271,16 @@ class SearchPagination(JSONAPIPagination):
     def get_search_field_total(self, field):
         return self.paginator.object_list['counts'].get(field, 0)
 
+    def get_search_field(self, field, query):
+        return OrderedDict([
+            ('related', OrderedDict([
+                ('href', self.get_search_field_url(field, query)),
+                ('meta', OrderedDict([
+                    ('total', self.get_search_field_total(field)),
+                ]))
+            ]))
+        ])
+
     def get_response_dict(self, data, url):
         if isinstance(self.paginator, SearchModelPaginator):
             return super(SearchPagination, self).get_response_dict(data, url)
@@ -279,26 +289,11 @@ class SearchPagination(JSONAPIPagination):
             return OrderedDict([
                 ('data', data),
                 ('search_fields', OrderedDict([
-                    ('files', OrderedDict([
-                        ('link', self.get_search_field_url(query, 'files')),
-                        ('total', self.get_search_field_total('file')),
-                    ])),
-                    ('projects', OrderedDict([
-                        ('link', self.get_search_field_url(query, 'projects')),
-                        ('total', self.get_search_field_total('project')),
-                    ])),
-                    ('components', OrderedDict([
-                        ('link', self.get_search_field_url(query, 'components')),
-                        ('total', self.get_search_field_total('component')),
-                    ])),
-                    ('registrations', OrderedDict([
-                        ('link', self.get_search_field_url(query, 'registrations')),
-                        ('total', self.get_search_field_total('registration')),
-                    ])),
-                    ('users', OrderedDict([
-                        ('link', self.get_search_field_url(query, 'users')),
-                        ('total', self.get_search_field_total('user')),
-                    ])),
+                    ('files', self.get_search_field('file', query)),
+                    ('projects', self.get_search_field('project', query)),
+                    ('components', self.get_search_field('component', query)),
+                    ('registrations', self.get_search_field('registration', query)),
+                    ('users', self.get_search_field('user', query)),
                 ])),
                 ('links', OrderedDict([
                     ('first', self.get_first_real_link(url)),
