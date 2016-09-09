@@ -82,6 +82,13 @@ class TestSetPreprintFile(OsfTestCase):
         self.project.reload()
         assert_true(self.project.is_preprint)
 
+    @assert_logs(NodeLog.MADE_PUBLIC, 'project')
+    @assert_logs(NodeLog.PREPRINT_CONVERSION, 'project', -2)
+    def test_preprint_is_conversion(self):
+        self.project.set_preprint_file(self.file, auth=self.auth, conversion=True, save=True)
+        self.project.reload()
+        assert_true(self.project.is_preprint)
+
     def test_project_made_public(self):
         assert_false(self.project.is_public)
         self.project.set_preprint_file(self.file, auth=self.auth, save=True)

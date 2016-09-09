@@ -75,5 +75,6 @@
     "affiliated_institution_added": "A user added an affiliation to a project",
     "affiliated_institution_removed": "A user removed an affiliation from a project",
     "preprint_initiated": "A user initiated a preprint of a project.",
-    "preprint_file_updated": "A user updated the primary file of a preprint."
+    "preprint_file_updated": "A user updated the primary file of a preprint.",
+    "preprint_conversion": "A user converted a project or component to a preprint."
 }

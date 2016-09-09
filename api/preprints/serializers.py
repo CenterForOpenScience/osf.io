@@ -46,6 +46,7 @@ class PreprintSerializer(JSONAPISerializer):
     abstract = ser.CharField(source='description', required=False)
     tags = JSONAPIListField(child=NodeTagField(), required=False)
     doi = ser.CharField(source='preprint_doi', required=False)
+    is_conversion = ser.BooleanField(source='preprint_conversion', required=False)
 
     primary_file = PrimaryFileRelationshipField(
         related_view='files:file-detail',
@@ -108,7 +109,7 @@ class PreprintSerializer(JSONAPISerializer):
         if not primary_file:
             raise exceptions.ValidationError(detail='You must specify a primary_file to create a preprint.')
 
-        self.set_node_field(node.set_preprint_file, primary_file, auth)
+        self.set_node_field(node.set_preprint_file, primary_file, auth, validated_data.get('preprint_conversion', False))
 
         subjects = validated_data.pop('preprint_subjects', None)
         if not subjects:
