@@ -1049,6 +1049,7 @@ class TestResetPassword(OsfTestCase):
         service_url = 'http://accounts.osf.io/?ticket=' + ticket
         resp = cas.make_response_from_ticket(ticket, service_url)
         assert_not_equal(self.user.verification_key, self.cas_key)
+
     #  logged-in user should be automatically logged out upon before reset password
     def test_reset_password_logs_out_user(self):
         # visit reset password link while another user is logged in
