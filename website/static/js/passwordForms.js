@@ -53,7 +53,7 @@ var BaseViewModel = oop.extend(ChangeMessageMixin, {
 
         self.password = ko.observable('').extend({
             required: true,
-            minLength: 6,
+            minLength: 8,
             maxLength: 256,
             complexity: 2,
         });
@@ -196,8 +196,9 @@ var SetPasswordViewModel = oop.extend(BaseViewModel, {
 });
 
 var SignUpViewModel = oop.extend(BaseViewModel, {
-    constructor: function (submitUrl) {
+    constructor: function (submitUrl, campaign) {
         var self = this;
+        self.campaign = campaign;
         self.fullName = ko.observable('').extend({
             required: true,
             minLength: 3
@@ -255,15 +256,19 @@ var SignUpViewModel = oop.extend(BaseViewModel, {
         );
         self.submitted(true);
     },
-
     submitError: function(xhr) {
         var self = this;
+
+        /* jshint ignore: start */
+        // jshint ignore is necessary for grecaptcha and resulting unbalenced brackets
         if(xhr.responseText.indexOf('UnicodeEncodeError') !== -1){
             self.changeMessage(
                 'Email address or password contains invalid characters',
                 'text-danger p-xs',
                 5000
             );
+        }else if(typeof grecaptcha !== 'undefined'){
+            grecaptcha.reset();
         }else{
             self.changeMessage(
                 'An error has occured',
@@ -271,6 +276,7 @@ var SignUpViewModel = oop.extend(BaseViewModel, {
                 5000
             );
         }
+        /* jshint ignore: end */
     },
     submit: function() {
         var self = this;
@@ -290,10 +296,22 @@ var SignUpViewModel = oop.extend(BaseViewModel, {
             });
             return false;
         }
+
+        var payload = ko.toJS(self);
+
+        // include recaptcha if it is enabled
+        if ($('.g-recaptcha').length !== 0) {
+            var captchaResponse = $('#g-recaptcha-response').val();
+            if (captchaResponse.length === 0) {
+                return false;
+            }
+            $.extend(payload, {'g-recaptcha-response': captchaResponse});
+        }
+
         window.ga('send', 'event', 'signupSubmit', 'click', 'new_user_submit');
         $osf.postJSON(
             submitUrl,
-            ko.toJS(self)
+            payload
         ).done(
             self.submitSuccess.bind(self)
         ).fail(
@@ -331,8 +349,8 @@ var SetPassword = function(selector) {
     });
 };
 
-var SignUp = function(selector) {
-    var viewModel = new SignUpViewModel();
+var SignUp = function(selector, campaign) {
+    var viewModel = new SignUpViewModel(undefined, campaign);
     $osf.applyBindings(viewModel, selector);
     // Necessary to prevent enter submitting forms with invalid frontend zxcvbn validation
     $(selector).keypress(function(event) {

@@ -259,7 +259,7 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
                        }
         Success:       201
 
-    This requires admin permissions on the nodes requested and for the user making the request to
+    This requires write permissions on the nodes requested and for the user making the request to
     have the institution affiliated in their account.
 
     ###Destroy
@@ -275,7 +275,7 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
                        }
         Success:       204
 
-    This requires admin permissions in the nodes requested.
+    This requires write permissions in the nodes requested.
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -308,8 +308,8 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         nodes = []
         for id_ in ids:
             node = Node.load(id_)
-            if not node.has_permission(user, osf_permissions.ADMIN):
-                raise exceptions.PermissionDenied(detail='Admin permission on node {} required'.format(id_))
+            if not node.has_permission(user, osf_permissions.WRITE):
+                raise exceptions.PermissionDenied(detail='Write permission on node {} required'.format(id_))
             nodes.append(node)
 
         for node in nodes:

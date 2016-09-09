@@ -34,6 +34,7 @@ class Conference(StoredObject):
     location = fields.StringField(required=False, default=None)
     start_date = fields.DateTimeField(default=None)
     end_date = fields.DateTimeField(default=None)
+    is_meeting = fields.BooleanField(required=True)
     active = fields.BooleanField(required=True)
     admins = fields.ForeignField('user', list=True, required=False, default=None)
     #: Whether to make submitted projects public

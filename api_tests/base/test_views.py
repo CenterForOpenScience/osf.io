@@ -23,7 +23,7 @@ import importlib
 
 URLS_MODULES = []
 for loader, name, _ in pkgutil.iter_modules(['api']):
-    if name != 'base':
+    if name != 'base' and name != 'test':
         try:
             URLS_MODULES.append(importlib.import_module('api.{}.urls'.format(name)))
         except ImportError:
@@ -124,3 +124,7 @@ class TestJSONAPIBaseView(ApiTestCase):
         assert_equal(response.status_code, 200)
 
 
+class TestSwaggerDocs(ApiTestCase):
+    def test_swagger_doc_json_route(self):
+        res = self.app.get('/v2/docs/api-docs/v2')
+        assert_equal(res.status_code, 200)

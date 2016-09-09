@@ -17,6 +17,7 @@ from api.base.serializers import (JSONAPISerializer,
                                   RelationshipField,
                                   IDField, TypeField, LinksField,
                                   AuthorizedCharField)
+from website.project.spam.model import SpamStatus
 
 
 class CommentReport(object):
@@ -43,8 +44,6 @@ class CommentSerializer(JSONAPISerializer):
 
     target = TargetField(link_type='related', meta={'type': 'get_target_type'})
     user = RelationshipField(related_view='users:user-detail', related_view_kwargs={'user_id': '<user._id>'})
-    node = RelationshipField(related_view='nodes:node-detail', related_view_kwargs={'node_id': '<node._id>'})
-    replies = RelationshipField(self_view='nodes:node-comments', self_view_kwargs={'node_id': '<node._id>'}, filter={'target': '<pk>'})
     reports = RelationshipField(related_view='comments:comment-reports', related_view_kwargs={'comment_id': '<pk>'})
 
     date_created = ser.DateTimeField(read_only=True)
@@ -64,7 +63,7 @@ class CommentSerializer(JSONAPISerializer):
         type_ = 'comments'
 
     def get_is_ham(self, obj):
-        if obj.spam_status == Comment.HAM:
+        if obj.spam_status == SpamStatus.HAM:
             return True
         return False
 
@@ -75,7 +74,7 @@ class CommentSerializer(JSONAPISerializer):
         return user._id in obj.reports and not obj.reports[user._id].get('retracted', True)
 
     def get_is_abuse(self, obj):
-        if obj.spam_status == Comment.FLAGGED or obj.spam_status == Comment.SPAM:
+        if obj.spam_status == SpamStatus.FLAGGED or obj.spam_status == SpamStatus.SPAM:
             return True
         return False
 
@@ -133,6 +132,16 @@ class CommentSerializer(JSONAPISerializer):
         return ret
 
 
+class RegistrationCommentSerializer(CommentSerializer):
+    replies = RelationshipField(related_view='registrations:registration-comments', related_view_kwargs={'node_id': '<node._id>'}, filter={'target': '<pk>'})
+    node = RelationshipField(related_view='registrations:registration-detail', related_view_kwargs={'node_id': '<node._id>'})
+
+
+class NodeCommentSerializer(CommentSerializer):
+    replies = RelationshipField(related_view='nodes:node-comments', related_view_kwargs={'node_id': '<node._id>'}, filter={'target': '<pk>'})
+    node = RelationshipField(related_view='nodes:node-detail', related_view_kwargs={'node_id': '<node._id>'})
+
+
 class CommentCreateSerializer(CommentSerializer):
 
     target_type = ser.SerializerMethodField(method_name='get_validated_target_type')
@@ -183,6 +192,16 @@ class CommentDetailSerializer(CommentSerializer):
     """
     Overrides CommentSerializer to make id required.
     """
+    id = IDField(source='_id', required=True)
+    deleted = ser.BooleanField(source='is_deleted', required=True)
+
+
+class RegistrationCommentDetailSerializer(RegistrationCommentSerializer):
+    id = IDField(source='_id', required=True)
+    deleted = ser.BooleanField(source='is_deleted', required=True)
+
+
+class NodeCommentDetailSerializer(NodeCommentSerializer):
     id = IDField(source='_id', required=True)
     deleted = ser.BooleanField(source='is_deleted', required=True)
 

@@ -6,6 +6,7 @@ from django.core.mail import send_mail
 from django.shortcuts import redirect
 from django.http import Http404, HttpResponse
 
+from website.project.spam.model import SpamStatus
 from website.settings import SUPPORT_EMAIL, DOMAIN
 from website.security import random_string
 from framework.auth import get_user
@@ -22,7 +23,7 @@ from admin.common_auth.logs import (
     USER_EMAILED,
     USER_REMOVED,
     USER_RESTORED,
-)
+    CONFIRM_SPAM)
 
 from admin.users.serializers import serialize_user
 from admin.users.forms import EmailResetForm
@@ -76,6 +77,38 @@ class UserDeleteView(OSFAdmin, DeleteView):
         return User.load(self.kwargs.get('guid'))
 
 
+class SpamUserDeleteView(UserDeleteView):
+    """
+    Allow authorized admin user to delete a spam user and mark all their nodes as private
+
+    """
+
+    template_name = 'users/remove_spam_user.html'
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            user = self.get_object()
+        except AttributeError:
+            raise Http404(
+                '{} with id "{}" not found.'.format(
+                    self.context_object_name.title(),
+                    self.kwargs.get('guid')
+                ))
+        if user:
+            for node in user.contributor_to:
+                if not node.is_registration and not node.is_spam:
+                    node.confirm_spam(save=True)
+                    update_admin_log(
+                        user_id=request.user.id,
+                        object_id=node._id,
+                        object_repr='Node',
+                        message='Confirmed SPAM: {} when user {} marked as spam'.format(node._id, user._id),
+                        action_flag=CONFIRM_SPAM
+                    )
+
+        return super(SpamUserDeleteView, self).delete(request, *args, **kwargs)
+
+
 class User2FactorDeleteView(UserDeleteView):
     """ Allow authorised admin user to remove 2 factor authentication.
 
@@ -115,6 +148,11 @@ class UserFormView(OSFAdmin, GuidFormView):
 class UserView(OSFAdmin, GuidView):
     template_name = 'users/user.html'
     context_object_name = 'user'
+
+    def get_context_data(self, **kwargs):
+        kwargs = super(UserView, self).get_context_data(**kwargs)
+        kwargs.update({'SPAM_STATUS': SpamStatus})  # Pass spam status in to check against
+        return kwargs
 
     def get_object(self, queryset=None):
         return serialize_user(User.load(self.kwargs.get('guid')))
