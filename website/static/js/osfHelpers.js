@@ -1006,7 +1006,6 @@ module.exports = window.$.osf = {
     onScrollToBottom: onScrollToBottom,
     mithrilToStr:mithrilToStr,
     extractContributorNamesFromAPIData: extractContributorNamesFromAPIData,
-    getDomain: getDomain
     getDomain: getDomain,
     toRelativeUrl: toRelativeUrl
 };
