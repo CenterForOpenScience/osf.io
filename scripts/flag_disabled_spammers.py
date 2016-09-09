@@ -24,12 +24,12 @@ def migrate():
     spammy = get_possible_spam_users()
     for user in spammy:
         if any((n.is_spam for n in user.contributor_to)):
-            logger.info('Confirmed user {} as SPAM'.format(user._id))
+            logger.info('Confirmed user {}: "{}" as SPAM'.format(user._id, user.fullname))
             user.system_tags.append('confirmed_spam')
             user.save()
             spam_count += 1
         else:
-            logger.info('User {} smells like HAM'.format(user._id))
+            logger.info('User {}: "{}" smells like HAM'.format(user._id, user.fullname))
     logger.info('Flagged {} users as SPAM'.format(spam_count))
 
 def main():
