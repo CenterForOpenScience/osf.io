@@ -19,11 +19,10 @@ from pymongo.errors import DuplicateKeyError
 from modularodm import Q
 from modularodm import fields
 from modularodm.validators import MaxLengthValidator
-from modularodm.exceptions import NoResultsFound
-from modularodm.exceptions import ValidationValueError
+from modularodm.exceptions import KeyExistsException, NoResultsFound, ValidationValueError
 
 from framework import status
-from framework.mongo import ObjectId
+from framework.mongo import ObjectId, DummyRequest
 from framework.mongo import StoredObject
 from framework.mongo import validators
 from framework.mongo import get_cache_key as get_request
@@ -47,12 +46,10 @@ from website.util import api_url_for
 from website.util import api_v2_url
 from website.util import sanitize
 from website.util import get_headers_from_request
-from website.util.time import throttle_period_expired
 from website.exceptions import (
     NodeStateError,
     InvalidTagError, TagNotFoundError,
     UserNotAffiliatedError,
-    TooManyRequests
 )
 from website.institutions.model import Institution, AffiliatedInstitutionsList
 from website.citations.utils import datetime_to_csl
@@ -62,13 +59,9 @@ from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PE
 from website.project.commentable import Commentable
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.metadata.utils import create_jsonschema_from_metaschema
-from website.project.licenses import (
-    NodeLicense,
-    NodeLicenseRecord,
-)
+from website.project.licenses import (NodeLicense, NodeLicenseRecord)
 from website.project.taxonomies import Subject
 from website.project import signals as project_signals
-from website.project import spam
 from website.project import tasks as node_tasks
 from website.project.spam.model import SpamMixin
 from website.project.sanctions import (
@@ -106,7 +99,7 @@ def has_anonymous_link(node, auth):
         return auth.private_link.anonymous
     return False
 
-@unique_on(['name', 'schema_version', '_id'])
+@unique_on(['name', 'schema_version'])
 class MetaSchema(StoredObject):
 
     _id = fields.StringField(default=lambda: str(ObjectId()))
@@ -163,24 +156,21 @@ class MetaSchema(StoredObject):
             raise ValidationValueError(e.message)
         return
 
+
 def ensure_schema(schema, name, version=1):
-    schema_obj = None
     try:
+        MetaSchema(
+            name=name,
+            schema_version=version,
+            schema=schema
+        ).save()
+    except KeyExistsException:
         schema_obj = MetaSchema.find_one(
             Q('name', 'eq', name) &
             Q('schema_version', 'eq', version)
         )
-    except NoResultsFound:
-        meta_schema = {
-            'name': name,
-            'schema_version': version,
-            'schema': schema,
-        }
-        schema_obj = MetaSchema(**meta_schema)
-    else:
         schema_obj.schema = schema
-    schema_obj.save()
-    return schema_obj
+        schema_obj.save()
 
 
 def ensure_schemas():
@@ -844,7 +834,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
     ]
 
     # Node fields that trigger an update to Solr on save
-    SOLR_UPDATE_FIELDS = {
+    SEARCH_UPDATE_FIELDS = {
         'title',
         'category',
         'description',
@@ -861,6 +851,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         'node_license',
         '_affiliated_institutions',
         'preprint_file',
+    }
+
+    # Node fields that trigger a check to the spam filter on save
+    SPAM_CHECK_FIELDS = {
+        'title',
+        'description',
+        'wiki_pages_current',
     }
 
     # Fields that are writable by Node.update
@@ -1832,8 +1829,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
             project_signals.project_created.send(self)
 
-        request_headers = get_headers_from_request(get_request())
-        self.on_update(saved_fields, request_headers)
+        if saved_fields:
+            self.on_update(first_save, saved_fields)
 
         if 'node_license' in saved_fields:
             children = [c for c in self.get_descendants_recursive(
@@ -2274,13 +2271,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
             self.save()
         return None
 
-    def on_update(self, saved_fields, request_headers):
-        request_headers = {
-            k: v
-            for k, v in request_headers.items()
-            if isinstance(v, basestring)
-        }
-        enqueue_task(node_tasks.on_node_updated.s(self._id, saved_fields, request_headers))
+    def on_update(self, first_save, saved_fields):
+        request = get_request()
+        request_headers = None
+        if not isinstance(request, DummyRequest):
+            request_headers = {
+                k: v
+                for k, v in get_headers_from_request(request).items()
+                if isinstance(v, basestring)
+            }
+        enqueue_task(node_tasks.on_node_updated.s(self._id, first_save, saved_fields, request_headers))
 
     def update_search(self):
         from website import search
@@ -3403,9 +3403,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
     def add_contributor_registered_or_not(self, auth, user_id=None, full_name=None, email=None, send_email='false',
                                           permissions=None, bibliographic=True, index=None, save=False):
 
-        if send_email != 'false' and not throttle_period_expired(auth.user.email_last_sent, settings.API_SEND_EMAIL_THROTTLE):
-            raise TooManyRequests
-
         if user_id:
             contributor = User.load(user_id)
             if not contributor:
@@ -3443,41 +3440,82 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
         return contributor
 
-    @property
-    def is_spammy(self):
-        return (self.is_flagged_as_spam or self.is_spam) or (self.parent_node.is_spammy if self.parent_node else False)
+    def _get_spam_content(self, saved_fields):
+        from website.addons.wiki.model import NodeWikiPage
+        spam_fields = self.SPAM_CHECK_FIELDS if self.is_public and 'is_public' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(saved_fields)
+        content = []
+        for field in spam_fields:
+            if field == 'wiki_pages_current':
+                newest_wiki_page = None
+                for wiki_page_id in self.wiki_pages_current.values():
+                    wiki_page = NodeWikiPage.load(wiki_page_id)
+                    if not newest_wiki_page:
+                        newest_wiki_page = wiki_page
+                    elif wiki_page.date > newest_wiki_page.date:
+                        newest_wiki_page = wiki_page
+                if newest_wiki_page:
+                    content.append(newest_wiki_page.raw_text(self).encode('utf-8'))
+            else:
+                content.append((getattr(self, field, None) or '').encode('utf-8'))
+        if not content:
+            return None
+        return '\n\n'.join(content)
 
-    def _get_spam_headers(self):
-        request_headers = get_headers_from_request(
-            get_request()
+    def check_spam(self, saved_fields, request_headers, save=False):
+        if not settings.SPAM_CHECK_ENABLED:
+            return False
+        if settings.SPAM_CHECK_PUBLIC_ONLY and not self.is_public:
+            return False
+        content = self._get_spam_content(saved_fields)
+        if not content:
+            return
+        is_spam = self.do_check_spam(
+            self.creator.fullname,
+            self.creator.username,
+            content,
+            request_headers
         )
-        return {
-            k: v
-            for k, v in request_headers.items()
-            if isinstance(v, basestring)
-        }
+        logger.info("Node ({}) '{}' smells like {} (tip: {})".format(
+            self._id, self.title.encode('utf-8'), 'SPAM' if is_spam else 'HAM', self.spam_pro_tip
+        ))
+        if save:
+            self.save()
+        return is_spam
+
+    def flag_spam(self):
+        """ Overrides SpamMixin#flag_spam.
+        """
+        super(Node, self).flag_spam()
+        if settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE:
+            self.set_privacy(Node.PRIVATE, auth=None, log=False, save=False, check_addons=False)
+            log = self.add_log(
+                action=NodeLog.MADE_PRIVATE,
+                params={
+                    'project': self.parent_id,
+                    'node': self._primary_key,
+                },
+                auth=None,
+                save=False
+            )
+            log.should_hide = True
+            log.save()
 
     def confirm_spam(self, save=False):
-        super(Node, self).confirm_spam(save=save)
-        enqueue_task(spam.confirm_spam.s(self._id, self._get_spam_headers()))
-
-    def confirm_ham(self, save=False):
-        super(Node, self).confirm_ham(save=save)
-        enqueue_task(spam.confirm_spam.s(self._id, self._get_spam_headers()))
-
-    def flag_spam(self, save=False):
-        """ Overrides SpamMixin#save_spam. Make spammy node and its children private
-        """
-        super(Node, self).flag_spam(save=save)
-        if settings.HIDE_SPAM_NODES:
-            for node in self.node_and_primary_descendants():
-                node.set_privacy(
-                    Node.PRIVATE,
-                    auth=None,
-                    log=False,
-                    save=True,
-                    check_addons=False
-                )
+        super(Node, self).confirm_spam(save=False)
+        self.set_privacy(Node.PRIVATE, auth=None, log=False, save=False, check_addons=False)
+        log = self.add_log(
+            action=NodeLog.MADE_PRIVATE,
+            params={
+                'project': self.parent_id,
+                'node': self._primary_key,
+            },
+            auth=None,
+            save=False
+        )
+        log.should_hide = True
+        log.save()
+        if save:
+            self.save()
 
     @disable_for_public_files_node
     def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False, check_addons=True):
@@ -3493,7 +3531,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         if auth and not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Must be an admin to change privacy settings.')
         if permissions == 'public' and not self.is_public:
-            if settings.HIDE_SPAM_NODES and self.is_spammy:
+            if self.is_spam or (settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE and self.is_spammy):
+                # TODO: Should say will review within a certain agreed upon time period.
                 raise NodeStateError('This project has been marked as spam. Please contact the help desk if you think this is in error.')
             if self.is_registration:
                 if self.is_pending_embargo:

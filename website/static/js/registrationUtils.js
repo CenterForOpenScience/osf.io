@@ -24,9 +24,6 @@ var RegistrationModal = require('js/registrationModal');
 
 // This value should match website.settings.DRAFT_REGISTRATION_APPROVAL_PERIOD
 var DRAFT_REGISTRATION_MIN_EMBARGO_DAYS = 10;
-var DRAFT_REGISTRATION_MIN_EMBARGO_TIMESTAMP = new Date().getTime() + (
-        DRAFT_REGISTRATION_MIN_EMBARGO_DAYS * 24 * 60 * 60 * 1000
-);
 
 var VALIDATORS = {
     required: {
@@ -634,14 +631,15 @@ Draft.prototype.preRegisterPrompts = function(response, confirm) {
     var validator = null;
     if (self.metaSchema.requiresApproval) {
         validator = {
-            validator: function(value) {
-                return (new Date(value)).getTime() > DRAFT_REGISTRATION_MIN_EMBARGO_TIMESTAMP;
+            validator: function(end) {
+                var min = moment().add(DRAFT_REGISTRATION_MIN_EMBARGO_DAYS, 'days');
+                return end.isAfter(min);
             },
             message: 'Embargo end date must be at least ' + DRAFT_REGISTRATION_MIN_EMBARGO_DAYS + ' days in the future.'
         };
     }
     var preRegisterPrompts = response.prompts || [];
-    
+
     var registrationModal = new RegistrationModal.ViewModel(
         confirm, preRegisterPrompts, validator
     );

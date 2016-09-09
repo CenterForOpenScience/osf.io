@@ -131,6 +131,7 @@ def get_globals():
         },
         'maintenance': maintenance.get_maintenance(),
         'public_files_id': public_files_id,
+        'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY
     }
 
 

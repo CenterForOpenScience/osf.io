@@ -105,7 +105,7 @@ function confirmEmails(emailsToAdd) {
         if (email.user_merge) {
             title = 'Merge account';
             requestMessage = 'Would you like to merge \<b>' + email.address + '\</b> into your account?  ' +
-                'This action is irreversable.';
+                'This action is irreversible.';
             confirmMessage = '\<b>' + email.address + '\</b> has been merged into your account.';
             nopeMessage = 'You have chosen to not merge \<b>' + email.address + '\</b>  into your account. ' +
                 'If you change your mind, visit the \<a href="/settings/account/">user settings page</a>.';

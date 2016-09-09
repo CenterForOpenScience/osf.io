@@ -307,6 +307,9 @@
                     </div>
                     <div class="panel-body">
                         <div class="help-block">
+                            % if 'write' not in user['permissions']:
+                                <p class="text-muted">Contributors with read-only permissions to this project cannot add or remove institutional affiliations.</p>
+                            % endif:
                             <!-- ko if: affiliatedInstitutions().length == 0 -->
                             Projects can be affiliated with institutions that have created OSF for Institutions accounts.
                             This allows:

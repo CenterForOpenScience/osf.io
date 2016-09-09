@@ -13,10 +13,11 @@ from admin.common_auth.logs import (
     update_admin_log,
     NODE_REMOVED,
     NODE_RESTORED,
-    CONTRIBUTOR_REMOVED
-)
+    CONTRIBUTOR_REMOVED,
+    CONFIRM_SPAM, CONFIRM_HAM)
 from admin.nodes.templatetags.node_extras import reverse_node
 from admin.nodes.serializers import serialize_node, serialize_simple_user
+from website.project.spam.model import SpamStatus
 
 
 class NodeFormView(OSFAdmin, GuidFormView):
@@ -170,6 +171,11 @@ class NodeView(OSFAdmin, GuidView):
     template_name = 'nodes/node.html'
     context_object_name = 'node'
 
+    def get_context_data(self, **kwargs):
+        kwargs = super(NodeView, self).get_context_data(**kwargs)
+        kwargs.update({'SPAM_STATUS': SpamStatus})  # Pass spam status in to check against
+        return kwargs
+
     def get_object(self, queryset=None):
         return serialize_node(Node.load(self.kwargs.get('guid')))
 
@@ -202,9 +208,9 @@ class RegistrationListView(OSFAdmin, ListView):
         }
 
 class NodeSpamList(OSFAdmin, ListView):
-    SPAM_STATE = None
+    SPAM_STATE = SpamStatus.UNKNOWN
 
-    paginate_by = 10
+    paginate_by = 25
     paginate_orphans = 1
     ordering = 'date_created'
     context_object_name = '-node'
@@ -226,7 +232,7 @@ class NodeSpamList(OSFAdmin, ListView):
         }
 
 class NodeFlaggedSpamList(NodeSpamList, DeleteView):
-    SPAM_STATE = Node.FLAGGED
+    SPAM_STATE = SpamStatus.FLAGGED
     template_name = 'nodes/flagged_spam_list.html'
 
     def delete(self, request, *args, **kwargs):
@@ -237,11 +243,22 @@ class NodeFlaggedSpamList(NodeSpamList, DeleteView):
         for nid in node_ids:
             node = Node.load(nid)
             node.confirm_spam(save=True)
+            update_admin_log(
+                user_id=self.request.user.id,
+                object_id=nid,
+                object_repr='Node',
+                message='Confirmed SPAM: {}'.format(nid),
+                action_flag=CONFIRM_SPAM
+            )
         return redirect('nodes:flagged-spam')
 
 
 class NodeKnownSpamList(NodeSpamList):
-    SPAM_STATE = Node.SPAM
+    SPAM_STATE = SpamStatus.SPAM
+    template_name = 'nodes/known_spam_list.html'
+
+class NodeKnownHamList(NodeSpamList):
+    SPAM_STATE = SpamStatus.HAM
     template_name = 'nodes/known_spam_list.html'
 
 class NodeConfirmSpamView(NodeDeleteBase):
@@ -250,6 +267,13 @@ class NodeConfirmSpamView(NodeDeleteBase):
     def delete(self, request, *args, **kwargs):
         node = self.get_object()
         node.confirm_spam(save=True)
+        update_admin_log(
+            user_id=self.request.user.id,
+            object_id=node._id,
+            object_repr='Node',
+            message='Confirmed SPAM: {}'.format(node._id),
+            action_flag=CONFIRM_SPAM
+        )
         return redirect(reverse_node(self.kwargs.get('guid')))
 
 class NodeConfirmHamView(NodeDeleteBase):
@@ -258,4 +282,11 @@ class NodeConfirmHamView(NodeDeleteBase):
     def delete(self, request, *args, **kwargs):
         node = self.get_object()
         node.confirm_ham(save=True)
+        update_admin_log(
+            user_id=self.request.user.id,
+            object_id=node._id,
+            object_repr='Node',
+            message='Confirmed HAM: {}'.format(node._id),
+            action_flag=CONFIRM_HAM
+        )
         return redirect(reverse_node(self.kwargs.get('guid')))

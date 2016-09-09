@@ -349,7 +349,7 @@ def update_node(node, index=None, bulk=False, async=False):
     for file_ in paginated(OsfStorageFile, Q('node', 'eq', node)):
         update_file(file_, index=index)
 
-    if node.is_deleted or not node.is_public or node.archiving or node.is_spammy:
+    if node.is_deleted or not node.is_public or node.archiving or (node.is_spammy and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH):
         delete_doc(node._id, node, index=index)
     else:
         category = get_doctype_from_node(node)
@@ -447,7 +447,6 @@ def update_user(user, index=None):
 
 @requires_search
 def update_file(file_, index=None, delete=False):
-
     index = index or INDEX
 
     if not file_.node.is_public or delete or file_.node.is_deleted or file_.node.archiving:
@@ -469,9 +468,14 @@ def update_file(file_, index=None, delete=False):
     )
     node_url = '/{node_id}/'.format(node_id=file_.node._id)
 
+    guid_url = None
+    file_guid = file_.get_guid(create=False)
+    if file_guid:
+        guid_url = '/{file_guid}/'.format(file_guid=file_guid._id)
     file_doc = {
         'id': file_._id,
         'deep_url': file_deep_url,
+        'guid_url': guid_url,
         'tags': [tag._id for tag in file_.tags],
         'name': file_.name,
         'category': 'file',
