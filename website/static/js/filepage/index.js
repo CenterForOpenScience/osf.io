@@ -108,8 +108,18 @@ var FileViewPage = {
         self.editorMeta = self.context.editor;
         self.file.checkoutUser = null;
         self.requestDone = false;
+        self.isLatestVersion = false;
+
+        self.selectLatest = function() {
+            self.isLatestVersion = true;
+        };
+
         self.isCheckoutUser = function() {
             $.ajax({
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/vnd.api+json'
+                },
                 method: 'get',
                 url: window.contextVars.apiV2Prefix + 'files' + self.file.path + '/',
                 beforeSend: $osf.setXHRAuthorization
@@ -160,12 +170,21 @@ var FileViewPage = {
         }
 
         $(document).on('fileviewpage:delete', function() {
+            var title = 'Delete file?';
+            var message = '<p class="overflow">' +
+                    'Are you sure you want to delete <strong>' +
+                    self.file.safeName + '</strong>?' + '</p>';
+
+            if (self.file.id === self.node.preprintFileId) {
+                title = 'Delete primary preprint file?';
+                message = '<p class="overflow">' +
+                    'Are you sure you want to delete <strong>' +
+                    self.file.safeName + '</strong>?' + ' It is currently the primary file ' +
+                    'for a preprint.</p> <p><strong>Deleting this file will remove this preprint from circulation.</strong></p>';
+            }
             bootbox.confirm({
-                title: 'Delete file?',
-                message: '<p class="overflow">' +
-                        'Are you sure you want to delete <strong>' +
-                        self.file.safeName + '</strong>?' +
-                    '</p>',
+                title: title,
+                message: message,
                 callback: function(confirm) {
                     if (!confirm) {
                         return;
@@ -363,7 +382,7 @@ var FileViewPage = {
 
         //Hack to polyfill the Panel interface
         //Ran into problems with mithrils caching messing up with multiple "Panels"
-        self.revisions = m.component(FileRevisionsTable, self.file, self.node, self.enableEditing, self.canEdit);
+        self.revisions = m.component(FileRevisionsTable, self.file, self.node, self.enableEditing, self.canEdit, self.selectLatest);
         self.revisions.selected = false;
         self.revisions.title = 'Revisions';
 
@@ -396,6 +415,7 @@ var FileViewPage = {
         }
 
         function changeVersionHeader(){
+            document.getElementById('versionLink').style.display = 'inline';
             m.render(document.getElementById('versionLink'), m('a', {onclick: toggleRevisions}, document.getElementById('versionLink').innerHTML));
         }
 
@@ -410,7 +430,9 @@ var FileViewPage = {
            }
         }
 
-        changeVersionHeader();
+        if(self.file.provider === 'osfstorage'){
+            changeVersionHeader();
+        }
 
     },
     view: function(ctrl) {
@@ -482,22 +504,22 @@ var FileViewPage = {
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
             // Special case whether or not to show the delete button for published Dataverse files
             (ctrl.canEdit() && (ctrl.file.provider !== 'osfstorage' || !ctrl.file.checkoutUser) && ctrl.requestDone && $(document).context.URL.indexOf('version=latest-published') < 0 ) ? m('.btn-group.m-l-xs.m-t-xs', [
-                m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
+                ctrl.isLatestVersion ? m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete') }, 'Delete') : null
             ]) : '',
             ctrl.context.currentUser.canEdit && (!ctrl.canEdit()) && ctrl.requestDone && (ctrl.context.currentUser.isAdmin) ? m('.btn-group.m-l-xs.m-t-xs', [
-                m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_checkin')}, 'Force check in')
+                ctrl.isLatestVersion ? m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_checkin')}, 'Force check in') : null
             ]) : '',
             ctrl.canEdit() && (!ctrl.file.checkoutUser) && ctrl.requestDone && (ctrl.file.provider === 'osfstorage') ? m('.btn-group.m-l-xs.m-t-xs', [
-                m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkout')}, 'Check out')
+                ctrl.isLatestVersion ? m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkout')}, 'Check out') : null
             ]) : '',
             (ctrl.canEdit() && (ctrl.file.checkoutUser === ctrl.context.currentUser.id) && ctrl.requestDone) ? m('.btn-group.m-l-xs.m-t-xs', [
-                m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkin')}, 'Check in')
+                ctrl.isLatestVersion ? m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkin')}, 'Check in') : null
             ]) : '',
             window.contextVars.node.isPublic? m('.btn-group.m-t-xs', [
                 m.component(SharePopover, {link: link, height: height})
             ]) : '',
             m('.btn-group.m-t-xs', [
-                m('button.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
+                ctrl.isLatestVersion ? m('button.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download') : null
             ]),
             m('.btn-group.btn-group-sm.m-t-xs', [
                ctrl.editor ? m( '.btn.btn-default.disabled', 'Toggle view: ') : null

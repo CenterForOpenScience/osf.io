@@ -93,6 +93,20 @@ var ajaxJSON = function(method, url, options) {
     return $.ajax(ajaxFields);
 };
 
+ /**
+  * Squashes APIv2 data.attributes to top level JSON for treebeard
+  *
+  * @param {Object} data JSON data
+  * @return {Object data}
+  */
+  var squashAPIAttributes = function(data) {
+    $.each(data.data, function(i, obj) {
+        var savedAttributes = obj.attributes;
+        delete obj.attributes;
+        $.extend(true, obj, savedAttributes);
+    });
+    return data;
+};
 
 /**
 * Posts JSON data.
@@ -884,6 +898,7 @@ function onScrollToBottom(element, callback) {
     });
 }
 
+
 /**
  * Return the current domain as a string, e.g. 'http://localhost:5000'
  */
@@ -900,12 +915,32 @@ function getDomain(location) {
     return ret;
 }
 
+
+/**
+ * Utility function to convert absolute URLs to relative urls
+ * See:
+ *      http://stackoverflow.com/questions/736513/how-do-i-parse-a-url-into-hostname-and-path-in-javascript
+ * This method have no effect on external urls.
+ * @param url {string} url to be converted
+ * @returns {string} converted relative url
+ */
+function toRelativeUrl(url, window) {
+    var parser = document.createElement('a');
+    parser.href = url;
+    var relative_url = url;
+    if (window.location.hostname === parser.hostname){
+        relative_url = parser.pathname + parser.search + parser.hash;
+    }
+    return relative_url;
+}
+
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
     postJSON: postJSON,
     putJSON: putJSON,
     ajaxJSON: ajaxJSON,
+    squashAPIAttributes: squashAPIAttributes,
     setXHRAuthorization: setXHRAuthorization,
     handleAddonApiHTTPError: handleAddonApiHTTPError,
     handleJSONError: handleJSONError,
@@ -940,5 +975,6 @@ module.exports = window.$.osf = {
     findContribName: findContribName,
     extractContributorNamesFromAPIData: extractContributorNamesFromAPIData,
     onScrollToBottom: onScrollToBottom,
-    getDomain: getDomain
+    getDomain: getDomain,
+    toRelativeUrl: toRelativeUrl
 };

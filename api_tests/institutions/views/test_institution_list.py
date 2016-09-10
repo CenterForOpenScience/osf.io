@@ -24,6 +24,7 @@ class TestInstitutionList(ApiTestCase):
 
         ids = [each['id'] for each in res.json['data']]
         assert_equal(len(res.json['data']), 2)
+        assert_equal(res.json['links']['meta']['per_page'], 1000)
         assert_in(self.institution._id, ids)
         assert_in(self.institution2._id, ids)
 

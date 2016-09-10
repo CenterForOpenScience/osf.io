@@ -44,26 +44,31 @@ var ShareButtons = {
 
 var ShareButtonsPopover = {
     controller: function() {
-        this.justBlurred = true;
+        this.showOnClick = true;
+        this.popupShowing = false;
     },
     view: function(ctrl, options) {
         return [
             m('a#sharePopoverBtn.btn.btn-default[href=#][data-toggle=popover]', {
+                onmousedown: function() {
+                    ctrl.showOnClick = !ctrl.popupShowing;
+                },
                 onclick: function() {
-                    if (!ctrl.justBlurred) {
+                    if (ctrl.showOnClick && !ctrl.popupShowing) {
+                        $('#sharePopoverBtn').focus();
+                    } else if (!ctrl.showOnClick && ctrl.popupShowing){
                         $('#sharePopoverBtn').blur();
-                    } else {
-                        ctrl.justBlurred = false;
                     }
                 },
                 onfocus: function() {
                     $('#sharePopoverBtn').popover('show');
                     m.render(document.getElementById('shareButtonsPopoverContent'),
                              ShareButtons.view(ctrl, {title: options.title, url: options.url}));
+                    ctrl.popupShowing = true;
                 },
                 onblur: function() {
-                    ctrl.justBlurred = true;
                     $('#sharePopoverBtn').popover('hide');
+                    ctrl.popupShowing = false;
                 },
                 config: function(el, isInitialized) {
                     if (!isInitialized) {

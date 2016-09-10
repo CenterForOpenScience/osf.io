@@ -86,13 +86,13 @@ class TestFileView(ApiTestCase):
         assert_in(expected_url, actual_url)
 
     def test_file_has_comments_link(self):
-        guid = self.file.get_guid(create=True)
+        self.file.get_guid(create=True)
         res = self.app.get(self.file_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_in('comments', res.json['data']['relationships'].keys())
-        expected_url = '/{}nodes/{}/comments/?filter[target]={}'.format(API_BASE, self.node._id, guid._id)
         url = res.json['data']['relationships']['comments']['links']['related']['href']
-        assert_in(expected_url, url)
+        assert_equal(self.app.get(url, auth=self.user.auth).status_code, 200)
+        assert_equal(res.json['data']['type'], 'files')
 
     def test_file_has_correct_unread_comments_count(self):
         contributor = AuthUserFactory()
