@@ -1643,3 +1643,108 @@ class TestCitationsProperties:
         ]
 
         assert node.csl['author'] == expected_authors
+
+
+# copied from tests/test_models.py
+class TestNodeUpdate:
+
+    def test_update_title(self, fake, auth, node):
+        # Creator (admin) can update
+        new_title = fake.catch_phrase()
+        node.update({'title': new_title}, auth=auth, save=True)
+        assert node.title == new_title
+
+        last_log = node.logs.latest()
+        assert last_log.action == NodeLog.EDITED_TITLE
+
+        # Write contrib can update
+        new_title2 = fake.catch_phrase()
+        write_contrib = UserFactory()
+        node.add_contributor(write_contrib, auth=auth, permissions=(READ, WRITE))
+        node.save()
+        node.update({'title': new_title2}, auth=auth)
+        assert node.title == new_title2
+
+    def test_update_description(self, fake, node, auth):
+        new_title = fake.bs()
+
+        node.update({'title': new_title}, auth=auth)
+        assert node.title == new_title
+
+        last_log = node.logs.latest()
+        assert last_log.action == NodeLog.EDITED_TITLE
+
+    def test_update_title_and_category(self, fake, node, auth):
+        new_title = fake.bs()
+
+        new_category = 'data'
+
+        node.update({'title': new_title, 'category': new_category}, auth=auth, save=True)
+        assert node.title == new_title
+        assert node.category == 'data'
+
+        logs = node.logs.order_by('-date')
+        last_log, penultimate_log = logs[:2]
+        assert penultimate_log.action == NodeLog.EDITED_TITLE
+        assert last_log.action == NodeLog.UPDATED_FIELDS
+
+    def test_update_is_public(self, node, user, auth):
+        node.update({'is_public': True}, auth=auth, save=True)
+        assert node.is_public
+
+        last_log = node.logs.latest()
+        assert last_log.action == NodeLog.MADE_PUBLIC
+
+        node.update({'is_public': False}, auth=auth, save=True)
+        last_log = node.logs.latest()
+        assert last_log.action == NodeLog.MADE_PRIVATE
+
+    def test_update_can_make_registration_public(self):
+        reg = RegistrationFactory(is_public=False)
+        reg.update({'is_public': True})
+
+        assert reg.is_public
+        last_log = reg.logs.latest()
+        assert last_log.action == NodeLog.MADE_PUBLIC
+
+    def test_updating_title_twice_with_same_title(self, fake, auth, node):
+        original_n_logs = node.logs.count()
+        new_title = fake.bs()
+        node.update({'title': new_title}, auth=auth, save=True)
+        assert node.logs.count() == original_n_logs + 1  # sanity check
+
+        # Call update with same title
+        node.update({'title': new_title}, auth=auth, save=True)
+        # A new log is not created
+        assert node.logs.count() == original_n_logs + 1
+
+    def test_updating_description_twice_with_same_content(self, fake, auth, node):
+        original_n_logs = node.logs.count()
+        new_desc = fake.bs()
+        node.update({'description': new_desc}, auth=auth, save=True)
+        assert node.logs.count() == original_n_logs + 1  # sanity check
+
+        # Call update with same description
+        node.update({'description': new_desc}, auth=auth, save=True)
+        # A new log is not created
+        assert node.logs.count() == original_n_logs + 1
+
+    # Regression test for https://openscience.atlassian.net/browse/OSF-4664
+    def test_updating_category_twice_with_same_content_generates_one_log(self, node, auth):
+        node.category = 'project'
+        node.save()
+        original_n_logs = node.logs.count()
+        new_category = 'data'
+
+        node.update({'category': new_category}, auth=auth, save=True)
+        assert node.logs.count() == original_n_logs + 1  # sanity check
+        assert node.category == new_category
+
+        # Call update with same category
+        node.update({'category': new_category}, auth=auth, save=True)
+
+        # Only one new log is created
+        assert node.logs.count() == original_n_logs + 1
+        assert node.category == new_category
+
+    # TODO: test permissions, non-writable fields
