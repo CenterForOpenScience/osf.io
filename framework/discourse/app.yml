@@ -91,8 +91,10 @@ hooks:
     - exec:
         cd: $home/script/import_scripts
         cmd:
-          - wget https://raw.githubusercontent.com/acshi/discourse/osf_import/script/import_scripts/osf.rb
-          - wget https://raw.githubusercontent.com/acshi/discourse/osf_import/script/import_scripts/remove_all_imported.rb
+          - git init
+          - git remote add origin https://github.com/acshi/discourse-osf-import
+          - git fetch
+          - git checkout -t origin/master
 
 ## Any custom commands to run after building
 run:

@@ -15,7 +15,7 @@ Use `docker-machine ls` to determine the ip address of the virtual machine.
 Use `docker-machine ssh` to ssh into the default machine.
 
 Boot2Docker is by default missing some important utilities.
-Run `tce-load -wi bash`, `tce-load -wi nano` (or make sure an editor you like is installed), and `export TERM=xterm`. You may want to put this last one in your ~/.bashrc file.
+Run `tce-load -wi bash`, `tce-load -wi nano` (or make sure an editor you like is installed). If nano gives an error about the terminal starting up, you may also need to run `export TERM=xterm` and add this to the ~/.bashrc file.
 
 ###Install Discourse
 <pre>sudo -s
