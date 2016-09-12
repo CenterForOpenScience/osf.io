@@ -109,7 +109,12 @@ class PreprintSerializer(JSONAPISerializer):
         if not primary_file:
             raise exceptions.ValidationError(detail='You must specify a primary_file to create a preprint.')
 
-        self.set_node_field(node.set_preprint_file, primary_file, auth, validated_data.get('preprint_conversion', False))
+        try:
+            node.set_preprint_file(primary_file, auth, validated_data.get('preprint_conversion', False))  # TODO: refactor to use the set_node_field function. It needs to accept more than 1 non-auth argument
+        except PermissionsError:
+            raise exceptions.PermissionDenied('Not authorized to update this node.')
+        except ValueError as e:
+            raise exceptions.ValidationError(detail=e.message)
 
         subjects = validated_data.pop('preprint_subjects', None)
         if not subjects:
