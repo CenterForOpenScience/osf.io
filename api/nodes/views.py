@@ -46,6 +46,7 @@ from api.nodes.serializers import (
     NodeAlternativeCitationSerializer,
     NodeContributorsCreateSerializer,
     NodeViewOnlyLinkSerializer,
+    NodeContributorsRelationshipSerializer,
     NodeViewOnlyLinkUpdateSerializer
 )
 from api.nodes.utils import get_file_object
@@ -688,6 +689,38 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
 
         return resource_object_list
 
+class NodeContributorsRelationship(BaseContributorList, generics.CreateAPIView, NodeMixin):
+    """ Relationship Endpoint for Node Contributor relationships
+    """
+    view_category = 'nodes'
+    view_name = 'node-contributors-relationship'
+
+    permission_classes = (
+        AdminOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
+    required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
+
+    serializer_class = NodeContributorsRelationshipSerializer
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+
+    def get_queryset(self):
+        queryset = self.get_queryset_from_request()
+        return queryset
+
+    def get_object(self):
+        contributors = self.get_queryset_from_request()
+        node = self.get_node()
+        obj = {'contributors': contributors, 'node': node}
+        return obj
+
+    def create(self, *args, **kwargs):
+        ret = super(NodeContributorsRelationship, self).create(*args, **kwargs)
+        return ret
 
 class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
     """Detail of a contributor for a node. *Writeable*.
