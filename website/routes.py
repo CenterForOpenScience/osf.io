@@ -902,7 +902,7 @@ def make_url_map(app):
         Rule(
             '/search/',
             'get',
-            {},
+            {'shareUrl': settings.SHARE_URL},
             OsfWebRenderer('search.mako', trust=False)
         ),
         Rule(

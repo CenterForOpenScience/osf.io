@@ -314,11 +314,9 @@
 </%def>
 
 <%def name="javascript_bottom()">
-    <% import website %>
     <script type="text/javascript">
         window.contextVars = $.extend(true, {}, window.contextVars, {
-            search:true,
-            shareUrl: ${ website.settings.SHARE_URL | sjson, n }
+            search:true
         });
     </script>
 
