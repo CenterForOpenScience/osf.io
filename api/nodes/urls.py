@@ -31,6 +31,7 @@ urlpatterns = [
     url(r'^(?P<node_id>\w+)/registrations/$', views.NodeRegistrationsList.as_view(), name=views.NodeRegistrationsList.view_name),
     url(r'^(?P<node_id>\w+)/relationships/institutions/$', views.NodeInstitutionsRelationship.as_view(), name=views.NodeInstitutionsRelationship.view_name),
     url(r'^(?P<node_id>\w+)/relationships/linked_nodes/$', views.NodeLinkedNodesRelationship.as_view(), name=views.NodeLinkedNodesRelationship.view_name),
+    url(r'^(?P<node_id>\w+)/relationships/contributors/$', views.NodeContributorsRelationship.as_view(), name=views.NodeContributorsRelationship.view_name),
     url(r'^(?P<node_id>\w+)/view_only_links/$', views.NodeViewOnlyLinksList.as_view(), name=views.NodeViewOnlyLinksList.view_name),
     url(r'^(?P<node_id>\w+)/view_only_links/(?P<link_id>\w+)/$', views.NodeViewOnlyLinkDetail.as_view(), name=views.NodeViewOnlyLinkDetail.view_name),
     url(r'^(?P<node_id>\w+)/wikis/$', views.NodeWikiList.as_view(), name=views.NodeWikiList.view_name),
