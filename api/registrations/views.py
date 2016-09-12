@@ -1,3 +1,5 @@
+import re
+
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, NotFound
 from framework.auth.oauth_scopes import CoreScopes
@@ -22,6 +24,7 @@ from api.registrations.serializers import (
     RegistrationProviderSerializer
 )
 
+from api.nodes.serializers import NodeCitationStyleSerializer, NodeCitationSerializer
 from api.nodes.views import (
     NodeMixin, ODMFilterMixin, NodeRegistrationsList,
     NodeCommentsList, NodeProvidersList, NodeFilesList, NodeFileDetail,
@@ -39,6 +42,8 @@ from api.nodes.permissions import (
     ContributorOrPublic
 )
 from api.base.utils import get_object_or_error
+from api.citations.utils import render_citation
+
 
 class RegistrationMixin(NodeMixin):
     """Mixin with convenience methods for retrieving the current registration based on the
@@ -539,6 +544,78 @@ class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ODMFilterM
         nodes = Node.find(query)
         auth = get_user_auth(self.request)
         return sorted([each for each in nodes if each.can_view(auth)], key=lambda n: n.date_modified, reverse=True)
+
+
+class RegistrationCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, RegistrationMixin):
+    """ The registration citation for a registration in CSL format *read only*
+
+    ##Note
+    **This API endpoint is under active development, and is subject to change in the future**
+
+    ##NodeCitationDetail Attributes
+
+        name                     type                description
+        =================================================================================
+        id                       string               unique ID for the citation
+        title                    string               title of project or component
+        author                   list                 list of authors for the work
+        publisher                string               publisher - most always 'Open Science Framework'
+        type                     string               type of citation - web
+        doi                      string               doi of the resource
+
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = NodeCitationSerializer
+    view_category = 'registrations'
+    view_name = 'registration-citation'
+
+    def get_object(self):
+        node = self.get_node()
+        return node.csl
+
+
+class RegistrationCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, RegistrationMixin):
+    """ The registration citation for a registration in a specific style's format t *read only*
+
+        ##Note
+        **This API endpoint is under active development, and is subject to change in the future**
+
+    ##NodeCitationDetail Attributes
+
+        name                     type                description
+        =================================================================================
+        citation                string               complete citation for a registration in the given style
+
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = NodeCitationStyleSerializer
+    view_category = 'registrations'
+    view_name = 'registration-citation'
+
+    def get_object(self):
+        node = self.get_node()
+        style = self.kwargs.get('style_id')
+        try:
+            citation = render_citation(node=node, style=style)
+        except ValueError as err:  # style requested could not be found
+            csl_name = re.findall('[a-zA-Z]+\.csl', err.message)[0]
+            raise NotFound('{} is not a known style.'.format(csl_name))
+
+        return {'citation': citation}
 
 class RegistrationForksList(NodeForksList, RegistrationMixin):
     """Forks of the current registration. *Writeable*.

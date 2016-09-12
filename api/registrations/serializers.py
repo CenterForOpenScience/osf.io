@@ -184,6 +184,11 @@ class BaseRegistrationSerializer(NodeSerializer):
         related_meta={'count': 'get_view_only_links_count'},
     ))
 
+    citation = HideIfWithdrawal(RelationshipField(
+        related_view='registrations:registration-citation',
+        related_view_kwargs={'node_id': '<pk>'}
+    ))
+
     links = LinksField({'self': 'get_registration_url', 'html': 'get_absolute_html_url'})
 
     def get_registration_url(self, obj):

@@ -98,8 +98,7 @@ class TestNodeRegistrationSerializer(DbTestCase):
         should_not_relate_to_registrations = [
             'registered_from',
             'registered_by',
-            'registration_schema',
-            'citation'
+            'registration_schema'
         ]
 
         # Attributes
