@@ -1748,3 +1748,57 @@ class TestNodeUpdate:
         assert node.category == new_category
 
     # TODO: test permissions, non-writable fields
+
+# copied from tests/test_models.py
+class TestRemoveNode:
+
+    @pytest.fixture()
+    def parent_project(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def project(self, parent_project, user):
+        return ProjectFactory(creator=user, parent=parent_project)
+
+    def test_remove_project_without_children(self, parent_project, project, auth):
+        project.remove_node(auth=auth)
+
+        assert project.is_deleted
+        # parent node should have a log of the event
+        assert (
+            parent_project.get_aggregate_logs_queryset(auth)[0].action ==
+            'node_removed'
+        )
+
+    def test_delete_project_log_present(self, project, parent_project, auth):
+        project.remove_node(auth=auth)
+        parent_project.remove_node(auth=auth)
+
+        assert parent_project.is_deleted
+        # parent node should have a log of the event
+        assert parent_project.logs.latest().action == 'project_deleted'
+
+    def test_remove_project_with_project_child_fails(self, parent_project, project, auth):
+        with pytest.raises(NodeStateError):
+            parent_project.remove_node(auth)
+
+    def test_remove_project_with_component_child_fails(self, user, project, parent_project, auth):
+        NodeFactory(creator=user, parent=project)
+
+        with pytest.raises(NodeStateError):
+            parent_project.remove_node(auth)
+
+    def test_remove_project_with_pointer_child(self, auth, user, project, parent_project):
+        target = ProjectFactory(creator=user)
+        project.add_pointer(node=target, auth=auth)
+
+        assert project.linked_nodes.count() == 1
+
+        project.remove_node(auth=auth)
+
+        assert (project.is_deleted)
+        # parent node should have a log of the event
+        assert parent_project.logs.latest().action == 'node_removed'
+
+        # target node shouldn't be deleted
+        assert target.is_deleted is False
