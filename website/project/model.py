@@ -2172,7 +2172,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable):
         if not self.can_edit(auth):
             raise PermissionsError('{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node'))
 
-        #if this is a collection, remove all the collections that this is pointing at.
+        # if this is a collection, remove all the collections that this is pointing at.
         if self.is_collection:
             for pointed in self.nodes_pointer:
                 if pointed.node.is_collection:

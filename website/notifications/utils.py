@@ -79,7 +79,7 @@ def remove_subscription(node):
 @app.task(max_retries=5, default_retry_delay=60)
 def remove_subscription_task(node_id):
     node = Node.load(node_id)
-    model.NotificationSubscription.remove(Q('owner', 'eq', node))
+    model.NotificationSubscription.remove(Q('node', 'eq', node))
     parent = node.parent_node
 
     if parent and parent.child_node_subscriptions:
