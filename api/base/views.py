@@ -20,7 +20,7 @@ from api.base.parsers import JSONAPIRelationshipParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
 from api.base.requests import EmbeddedRequest
 from api.base.serializers import LinkedNodesRelationshipSerializer
-from api.base.throttling import RootAnonThrottle
+from api.base.throttling import RootAnonThrottle, UserRateThrottle
 from api.base import utils
 from api.nodes.permissions import ReadOnlyIfRegistration
 from api.nodes.permissions import ContributorOrPublicForRelationshipPointers
@@ -256,7 +256,7 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
 
 
 @api_view(('GET',))
-@throttle_classes([RootAnonThrottle])
+@throttle_classes([RootAnonThrottle, UserRateThrottle])
 def root(request, format=None):
     """Welcome to the V2 Open Science Framework API. With this API you can access users, projects, components, logs, and files
     from the [Open Science Framework](https://osf.io/). The Open Science Framework (OSF) is a free, open-source service
