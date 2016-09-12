@@ -1011,11 +1011,8 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
 
     @property
     def nodes_primary(self):
-        return [
-            node
-            for node in self.nodes.all()
-            if node.primary
-        ]
+        """For v1 compat."""
+        return self.nodes.all()
 
     def add_citation(self, auth, save=False, log=True, citation=None, **kwargs):
         if not citation:
@@ -1474,6 +1471,73 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
                 },
                 auth=auth)
         return updated
+
+    def remove_node(self, auth, date=None):
+        """Marks a node as deleted.
+
+        TODO: Call a hook on addons
+        Adds a log to the parent node if applicable
+
+        :param auth: an instance of :class:`Auth`.
+        :param date: Date node was removed
+        :type date: `datetime.datetime` or `None`
+        """
+        # TODO: rename "date" param - it's shadowing a global
+
+        if self.is_bookmark_collection:
+            raise NodeStateError('Bookmark collections may not be deleted.')
+
+        if not self.can_edit(auth):
+            raise PermissionsError(
+                '{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node')
+            )
+
+        #if this is a collection, remove all the collections that this is pointing at.
+        if self.is_collection:
+            for pointed in self.linked_nodes:
+                if pointed.is_collection:
+                    pointed.remove_node(auth=auth)
+
+        if self.nodes.filter(is_deleted=False).exists():
+            raise NodeStateError('Any child components must be deleted prior to deleting this project.')
+
+        # After delete callback
+        for addon in self.get_addons():
+            message = addon.after_delete(self, auth.user)
+            if message:
+                status.push_status_message(message, kind='info', trust=False)
+
+        log_date = date or timezone.now()
+
+        # Add log to parent
+        if self.parent_node:
+            self.parent_node.add_log(
+                NodeLog.NODE_REMOVED,
+                params={
+                    'project': self._primary_key,
+                },
+                auth=auth,
+                log_date=log_date,
+                save=True,
+            )
+        else:
+            self.add_log(
+                NodeLog.PROJECT_DELETED,
+                params={
+                    'project': self._primary_key,
+                },
+                auth=auth,
+                log_date=log_date,
+                save=True,
+            )
+
+        self.is_deleted = True
+        self.deleted_date = date
+        self.save()
+
+        project_signals.node_deleted.send(self)
+
+        return True
 
 
 class Node(AbstractNode):
