@@ -4,6 +4,7 @@ import logging
 import operator
 import re
 import urlparse
+import warnings
 
 from django.apps import apps
 from django.contrib.contenttypes.fields import GenericRelation
@@ -37,6 +38,7 @@ from framework import status
 from framework.exceptions import PermissionsError
 from framework.sentry import log_exception
 from website import settings
+from website.project.model import NodeUpdateError
 from website.exceptions import UserNotAffiliatedError, NodeStateError
 from website.project import signals as project_signals
 from website.citations.utils import datetime_to_csl
@@ -88,6 +90,16 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
         'other': 'Other',
         '': 'Uncategorized',
     }
+
+    # Fields that are writable by Node.update
+    WRITABLE_WHITELIST = [
+        'title',
+        'description',
+        'category',
+        'is_public',
+        'node_license',
+    ]
+
     # Named constants
     PRIVATE = 'private'
     PUBLIC = 'public'
@@ -186,6 +198,11 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
 
     @property
     def is_collection(self):
+        """For v1 compat"""
+        return False
+
+    @property
+    def is_bookmark_collection(self):
         """For v1 compat"""
         return False
 
@@ -337,6 +354,14 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
 
         try:
             search.search.update_node(self, bulk=False, async=True)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+            log_exception()
+
+    def delete_search_entry(self):
+        from website import search
+        try:
+            search.search.delete_node(self)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
@@ -1307,6 +1332,148 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
     def resolve(self):
         """For compat with v1 Pointers."""
         return self
+
+    def set_title(self, title, auth, save=False):
+        """Set the title of this Node and log it.
+
+        :param str title: The new title.
+        :param auth: All the auth information including user, API key.
+        """
+        #Called so validation does not have to wait until save.
+        validate_title(title)
+
+        original_title = self.title
+        new_title = sanitize.strip_html(title)
+        # Title hasn't changed after sanitzation, bail out
+        if original_title == new_title:
+            return False
+        self.title = new_title
+        self.add_log(
+            action=NodeLog.EDITED_TITLE,
+            params={
+                'parent_node': self.parent_id,
+                'node': self._primary_key,
+                'title_new': self.title,
+                'title_original': original_title,
+            },
+            auth=auth,
+            save=False,
+        )
+        if save:
+            self.save()
+        return None
+
+    def set_description(self, description, auth, save=False):
+        """Set the description and log the event.
+
+        :param str description: The new description
+        :param auth: All the auth informtion including user, API key.
+        :param bool save: Save self after updating.
+        """
+        original = self.description
+        new_description = sanitize.strip_html(description)
+        if original == new_description:
+            return False
+        self.description = new_description
+        self.add_log(
+            action=NodeLog.EDITED_DESCRIPTION,
+            params={
+                'parent_node': self.parent_id,
+                'node': self._primary_key,
+                'description_new': self.description,
+                'description_original': original
+            },
+            auth=auth,
+            save=False,
+        )
+        if save:
+            self.save()
+        return None
+
+    def update(self, fields, auth=None, save=True):
+        """Update the node with the given fields.
+
+        :param dict fields: Dictionary of field_name:value pairs.
+        :param Auth auth: Auth object for the user making the update.
+        :param bool save: Whether to save after updating the object.
+        """
+        if not fields:  # Bail out early if there are no fields to update
+            return False
+        values = {}
+        for key, value in fields.iteritems():
+            if key not in self.WRITABLE_WHITELIST:
+                continue
+            if self.is_registration and key != 'is_public':
+                raise NodeUpdateError(reason='Registered content cannot be updated', key=key)
+            # Title and description have special methods for logging purposes
+            if key == 'title':
+                if not self.is_bookmark_collection:
+                    self.set_title(title=value, auth=auth, save=False)
+                else:
+                    raise NodeUpdateError(reason='Bookmark collections cannot be renamed.', key=key)
+            elif key == 'description':
+                self.set_description(description=value, auth=auth, save=False)
+            elif key == 'is_public':
+                self.set_privacy(
+                    Node.PUBLIC if value else Node.PRIVATE,
+                    auth=auth,
+                    log=True,
+                    save=False
+                )
+            elif key == 'node_license':
+                self.set_node_license(
+                    value.get('id'),
+                    value.get('year'),
+                    value.get('copyright_holders'),
+                    auth,
+                    save=save
+                )
+            else:
+                with warnings.catch_warnings():
+                    try:
+                        # This is in place because historically projects and components
+                        # live on different ElasticSearch indexes, and at the time of Node.save
+                        # there is no reliable way to check what the old Node.category
+                        # value was. When the cateogory changes it is possible to have duplicate/dead
+                        # search entries, so always delete the ES doc on categoryt change
+                        # TODO: consolidate Node indexes into a single index, refactor search
+                        if key == 'category':
+                            self.delete_search_entry()
+                        ###############
+                        old_value = getattr(self, key)
+                        if old_value != value:
+                            values[key] = {
+                                'old': old_value,
+                                'new': value,
+                            }
+                            setattr(self, key, value)
+                    except AttributeError:
+                        raise NodeUpdateError(reason="Invalid value for attribute '{0}'".format(key), key=key)
+                    except warnings.Warning:
+                        raise NodeUpdateError(
+                            reason="Attribute '{0}' doesn't exist on the Node class".format(key), key=key
+                        )
+        if save:
+            updated = self.save()
+        else:
+            updated = []
+        for key in values:
+            values[key]['new'] = getattr(self, key)
+        if values:
+            self.add_log(
+                NodeLog.UPDATED_FIELDS,
+                params={
+                    'node': self._id,
+                    'updated_fields': {
+                        key: {
+                            'old': values[key]['old'],
+                            'new': values[key]['new']
+                        }
+                        for key in values
+                    }
+                },
+                auth=auth)
+        return updated
 
 
 class Node(AbstractNode):
