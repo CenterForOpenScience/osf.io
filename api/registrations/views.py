@@ -552,7 +552,7 @@ class RegistrationCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, Regi
     ##Note
     **This API endpoint is under active development, and is subject to change in the future**
 
-    ##NodeCitationDetail Attributes
+    ##RegistraitonCitationDetail Attributes
 
         name                     type                description
         =================================================================================
@@ -587,7 +587,7 @@ class RegistrationCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView,
         ##Note
         **This API endpoint is under active development, and is subject to change in the future**
 
-    ##NodeCitationDetail Attributes
+    ##RegistrationCitationStyleDetail Attributes
 
         name                     type                description
         =================================================================================
@@ -604,7 +604,7 @@ class RegistrationCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView,
 
     serializer_class = NodeCitationStyleSerializer
     view_category = 'registrations'
-    view_name = 'registration-citation'
+    view_name = 'registration-style-citation'
 
     def get_object(self):
         node = self.get_node()
