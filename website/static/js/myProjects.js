@@ -505,7 +505,7 @@ var MyProjects = {
             var collectionNode = currentCollection.data.node; // If it's not a system collection like projects or registrations this will have a node
 
             var link_types = {'linked_nodes': {'data': []},
-                              'linked_registrations': {'data': []}}
+                              'linked_registrations': {'data': []}};
             self.selected().map(function(item){
                 if(item.data.type === 'nodes') {
                     link_types.linked_nodes.data.push({id: item.data.id,
@@ -514,7 +514,7 @@ var MyProjects = {
                     link_types.linked_registrations.data.push({id: item.data.id,
                                                  type: 'linked_registrations'});
                 }
-            })
+            });
 
             $.each(link_types, function(link_type, data) {
                 if(link_types[link_type].data.length > 0) {
@@ -539,7 +539,7 @@ var MyProjects = {
                         }
                         $osf.growl(message, 'Please try again.', 'danger', 5000);
                     });
-                };
+                }
             });
         };
 
@@ -1192,7 +1192,7 @@ var Collections = {
                     var collection = self.collections()[$(this).attr('data-index')];
                     // If multiple items are dragged they have to be selected to make it work
                     if (args.selected().length > 1) {
-                        var dataArray = args.selected().map(function(item){
+                        dataArray = args.selected().map(function(item){
                             return buildCollectionNodeData(item.data.id,
                                                            item.data.type);
                         });
