@@ -551,11 +551,11 @@ var SocialViewModel = function(urls, modes) {
     function urlIsValid(value) {
         // First validate the scheme
         var schemes = ['http', 'https', 'ftp', 'ftps'];
-        if (!value.includes('://')) {
+        if (value.indexOf('://') === -1) {
             value = 'http://' + value;
         }
         var scheme = value.split('://')[0].toLowerCase();
-        if (!schemes.includes(scheme)) {
+        if (schemes.indexOf(scheme) === -1) {
             return false;
         }
         return socialRules.url.test(value);
