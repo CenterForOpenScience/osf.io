@@ -2,6 +2,7 @@
 from operator import and_, or_
 
 from django.db.models import Q as DjangoQ
+from django.db.models import FieldDoesNotExist
 
 from modularodm import Q as MODMQ
 from modularodm.query import query, QueryGroup
@@ -73,6 +74,7 @@ class Q(BaseQ, query.RawQuery):
                 # behaves like 'contains' for postgres ArrayFields
                 # NOTE: GenericForeignKey does not implement get_internal_type
                 if (
+                    field and
                     hasattr(field, 'get_internal_type') and
                     field.get_internal_type() == 'ArrayField' and
                     query.operator == 'eq'
@@ -139,7 +141,10 @@ def _get_field(model_cls, field_name):
     from osf_models.models.base import BaseIDMixin
     if issubclass(model_cls, BaseIDMixin) and field_name == '_id':
         field_name = 'guid'
-    return model_cls._meta.get_field(field_name)
+    try:
+        return model_cls._meta.get_field(field_name)
+    except FieldDoesNotExist:
+        return None
 
 def to_django_query(query, model_cls=None):
     """Translate a modular-odm Q or QueryGroup to a Django query.
