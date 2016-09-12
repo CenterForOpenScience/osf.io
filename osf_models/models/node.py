@@ -1233,6 +1233,10 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
         django_obj._order = 0
         return django_obj
 
+    def resolve(self):
+        """For compat with v1 Pointers."""
+        return self
+
 
 class Node(AbstractNode):
     """
