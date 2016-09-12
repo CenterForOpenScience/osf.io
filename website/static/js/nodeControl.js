@@ -144,6 +144,8 @@ var ProjectViewModel = function(data, options) {
                 return {newValue: newValue};
             }
         }));
+    }else{
+        $('#nodeDescriptionEditable').html($osf.markdownAcceptsLinks(self.description()));
     }
 
     /**

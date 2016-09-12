@@ -7,6 +7,8 @@ var moment = require('moment');
 var URI = require('URIjs');
 var bootbox = require('bootbox');
 var lodashGet = require('lodash.get');
+var linkify = require('linkifyjs/html');
+var markdown = require('js/markdown');
 var KeenTracker = require('js/keen');
 
 
@@ -898,7 +900,6 @@ function onScrollToBottom(element, callback) {
     });
 }
 
-
 /**
  * Return the current domain as a string, e.g. 'http://localhost:5000'
  */
@@ -915,6 +916,10 @@ function getDomain(location) {
     return ret;
 }
 
+function markdownAcceptsLinks(content){
+    var linkify_opts = { target: function (href, type) { return type === 'url' ? '_top' : null; } };
+    return linkify(markdown.full.render(content), linkify_opts);
+}
 
 /**
  * Utility function to convert absolute URLs to relative urls
@@ -976,5 +981,6 @@ module.exports = window.$.osf = {
     extractContributorNamesFromAPIData: extractContributorNamesFromAPIData,
     onScrollToBottom: onScrollToBottom,
     getDomain: getDomain,
+    markdownAcceptsLinks:markdownAcceptsLinks,
     toRelativeUrl: toRelativeUrl
 };
