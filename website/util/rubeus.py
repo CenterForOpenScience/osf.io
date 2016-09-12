@@ -167,10 +167,8 @@ class NodeFileCollector(object):
         rv = []
         if not node.can_view(self.auth):
             return rv
-        for child in node.nodes:
-            if child.is_deleted:
-                continue
-            elif not child.can_view(self.auth):
+        for child in node.nodes.filter(is_deleted=False).all():
+            if not child.can_view(self.auth):
                 if child.primary:
                     for desc in child.find_readable_descendants(self.auth):
                         visited.append(desc.resolve()._id)
