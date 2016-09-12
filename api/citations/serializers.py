@@ -21,4 +21,4 @@ class CitationSerializer(JSONAPISerializer):
         return obj.get_absolute_url()
 
     class Meta:
-        type_ = 'citations'
+        type_ = 'citation-styles'

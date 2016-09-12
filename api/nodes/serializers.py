@@ -69,7 +69,7 @@ class NodeCitationStyleSerializer(JSONAPISerializer):
     citation = ser.CharField(allow_blank=True, read_only=True)
 
     class Meta:
-        type_ = 'citation-styles'
+        type_ = 'styled-citations'
 
 
 class NodeSerializer(JSONAPISerializer):
