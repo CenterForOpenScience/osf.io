@@ -916,9 +916,32 @@ function getDomain(location) {
     return ret;
 }
 
-function markdownAcceptsLinks(content){
-    var linkify_opts = { target: function (href, type) { return type === 'url' ? '_top' : null; } };
-    return linkify(content, linkify_opts);
+/**
+ * Utility function to convert absolute URLs to relative urls
+ * See:
+ *      http://stackoverflow.com/questions/736513/how-do-i-parse-a-url-into-hostname-and-path-in-javascript
+ * This method have no effect on external urls.
+ * @param url {string} url to be converted
+ * @returns {string} converted relative url
+ */
+function toRelativeUrl(url, window) {
+    var parser = document.createElement('a');
+    parser.href = url;
+    var relative_url = url;
+    if (window.location.hostname === parser.hostname){
+        relative_url = parser.pathname + parser.search + parser.hash;
+    }
+    return relative_url;
+}
+
+/**
+ * Utility function to render links in plain text to HTML a tags
+ * @param content {string} text to be converted
+ * @returns {string} linkified text
+ */
+function markdownAcceptsLinks(content) {
+    var linkifyOpts = { target: function (href, type) { return type === 'url' ? '_top' : null; } };
+    return linkify(content);
 }
 
 // Also export these to the global namespace so that these can be used in inline
@@ -963,5 +986,6 @@ module.exports = window.$.osf = {
     extractContributorNamesFromAPIData: extractContributorNamesFromAPIData,
     onScrollToBottom: onScrollToBottom,
     getDomain: getDomain,
-    markdownAcceptsLinks:markdownAcceptsLinks
+    toRelativeUrl: toRelativeUrl,
+    markdownAcceptsLinks: markdownAcceptsLinks
 };
