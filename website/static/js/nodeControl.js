@@ -145,7 +145,7 @@ var ProjectViewModel = function(data, options) {
             }
         }));
     } else {
-      $('#nodeDescriptionEditable').html($osf.markdownAcceptsLinks(self.description()));
+      $('#nodeDescriptionEditable').html($osf.linkifyText(self.description()));
     }
     /**
      * Add project to the Project Organizer.

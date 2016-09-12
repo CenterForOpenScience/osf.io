@@ -939,7 +939,7 @@ function toRelativeUrl(url, window) {
  * @param content {string} text to be converted
  * @returns {string} linkified text
  */
-function markdownAcceptsLinks(content) {
+function linkifyText(content) {
     var linkifyOpts = { target: function (href, type) { return type === 'url' ? '_top' : null; } };
     return linkify(content);
 }
@@ -987,5 +987,5 @@ module.exports = window.$.osf = {
     onScrollToBottom: onScrollToBottom,
     getDomain: getDomain,
     toRelativeUrl: toRelativeUrl,
-    markdownAcceptsLinks: markdownAcceptsLinks
+    linkifyText: linkifyText
 };
