@@ -2941,8 +2941,10 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
         return sorted([
             pointer.node for pointer in
             self.get_node().nodes_pointer
-            if not pointer.node.is_deleted and not pointer.node.is_collection and
-            pointer.node.can_view(auth)
+            if not pointer.node.is_deleted
+            and not pointer.node.is_collection
+            and not pointer.node.is_registration
+            and pointer.node.can_view(auth)
         ], key=lambda n: n.date_modified, reverse=True)
 
     # overrides APIView

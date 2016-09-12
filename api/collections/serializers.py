@@ -44,6 +44,14 @@ class CollectionSerializer(JSONAPISerializer):
         self_view_kwargs={'collection_id': '<pk>'}
     )
 
+    linked_registrations = RelationshipField(
+        related_view='collections:linked-registrations',
+        related_view_kwargs={'collection_id': '<pk>'},
+        related_meta={'count': 'get_registration_links_count'},
+        self_view='collections:collection-registration-pointer-relationship',
+        self_view_kwargs={'collection_id': '<pk>'}
+    )
+
     class Meta:
         type_ = 'collections'
 
@@ -54,7 +62,15 @@ class CollectionSerializer(JSONAPISerializer):
         count = 0
         auth = get_user_auth(self.context['request'])
         for pointer in obj.nodes_pointer:
-            if not pointer.node.is_deleted and not pointer.node.is_collection and pointer.node.can_view(auth):
+            if not pointer.node.is_deleted and not pointer.node.is_registration and not pointer.node.is_collection and pointer.node.can_view(auth):
+                count += 1
+        return count
+
+    def get_registration_links_count(self, obj):
+        count = 0
+        auth = get_user_auth(self.context['request'])
+        for pointer in obj.nodes_pointer:
+            if not pointer.node.is_deleted and pointer.node.is_registration and not pointer.node.is_collection and pointer.node.can_view(auth):
                 count += 1
         return count
 
