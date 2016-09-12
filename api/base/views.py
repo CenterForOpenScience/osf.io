@@ -1,7 +1,7 @@
 import weakref
 from django.conf import settings as django_settings
 from django.http import JsonResponse
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, throttle_classes
 from rest_framework.response import Response
 from rest_framework import generics
 from rest_framework import status
@@ -21,6 +21,7 @@ from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
 from api.base.requests import EmbeddedRequest
 from api.base.serializers import LinkedNodesRelationshipSerializer
 from api.base.serializers import LinkedRegistrationsRelationshipSerializer
+from api.base.throttling import RootAnonThrottle, UserRateThrottle
 from api.base import utils
 from api.nodes.permissions import ReadOnlyIfRegistration
 from api.nodes.permissions import ContributorOrPublicForRelationshipPointers
@@ -365,6 +366,7 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
 
 
 @api_view(('GET',))
+@throttle_classes([RootAnonThrottle, UserRateThrottle])
 def root(request, format=None):
     """Welcome to the V2 Open Science Framework API. With this API you can access users, projects, components, logs, and files
     from the [Open Science Framework](https://osf.io/). The Open Science Framework (OSF) is a free, open-source service
