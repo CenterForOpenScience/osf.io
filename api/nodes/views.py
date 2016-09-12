@@ -1301,7 +1301,7 @@ class NodeCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMix
             csl_name = re.findall('[a-zA-Z]+\.csl', err.message)[0]
             raise NotFound('{} is not a known style.'.format(csl_name))
 
-        return {'citation': citation}
+        return {'citation': citation, 'id': style}
 
 
 # TODO: Make NodeLinks filterable. They currently aren't filterable because we have can't
