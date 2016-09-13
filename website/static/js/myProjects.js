@@ -353,14 +353,14 @@ var MyProjects = {
         self.systemCollections = options.systemCollections || [
             new LinkObject('collection', { nodeType : 'projects'}, 'All my projects'),
             new LinkObject('collection', { nodeType : 'registrations'}, 'All my registrations'),
-            new LinkObject('collection', { nodeType : 'preprints'}, 'All my preprints')
+            new LinkObject('collection', { nodeType : 'preprints', link: $osf.apiV2Url('users/me/nodes/', { query : { 'filter[preprint]': true, 'related_counts' : 'children', 'embed' : 'contributors'}})}, 'All my preprints')
         ];
 
         self.fetchers = {};
         if (!options.systemCollections) {
           self.fetchers[self.systemCollections[0].id] = new NodeFetcher('nodes');
           self.fetchers[self.systemCollections[1].id] = new NodeFetcher('registrations');
-          self.fetchers[self.systemCollections[2].id] = new NodeFetcher('preprints');
+          self.fetchers[self.systemCollections[2].id] = new NodeFetcher('preprints', self.systemCollections[2].data.link);
         } else {
           self.fetchers[self.systemCollections[0].id] = new NodeFetcher('nodes', self.systemCollections[0].data.link);
           self.fetchers[self.systemCollections[1].id] = new NodeFetcher('registrations', self.systemCollections[1].data.link);
