@@ -24,7 +24,7 @@
         "forward": "full",
         "googledrive": "partial",
         "github": "partial",
-	    "owncloud": "partial",
+        "owncloud": "partial",
         "s3": "partial",
         "wiki": "full"
     },
@@ -36,7 +36,7 @@
         "figshare",
         "github",
         "googledrive",
-	"owncloud",
+        "owncloud",
         "s3"
     ],
     "addons_based_on_ids": [
