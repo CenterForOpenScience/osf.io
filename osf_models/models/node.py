@@ -35,6 +35,7 @@ from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from typedmodels.models import TypedModel
 
 from framework import status
+from framework.mongo.utils import to_mongo_key
 from framework.exceptions import PermissionsError
 from framework.sentry import log_exception
 from website import settings
@@ -1532,6 +1533,41 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
         project_signals.node_deleted.send(self)
 
         return True
+
+    def admin_public_wiki(self, user):
+        return (
+            self.has_addon('wiki') and
+            self.has_permission(user, 'admin') and
+            self.is_public
+        )
+
+    def include_wiki_settings(self, user):
+        """Check if node meets requirements to make publicly editable."""
+        return (
+            self.admin_public_wiki(user) or
+            any(
+                each.admin_public_wiki(user)
+                for each in self.get_descendants_recursive()
+            )
+        )
+
+    def get_wiki_page(self, name=None, version=None, id=None):
+        NodeWikiPage = apps.get_model('osf_models.NodeWikiPage')
+        if name:
+            name = (name or '').strip()
+            key = to_mongo_key(name)
+            try:
+                if version and (isinstance(version, int) or version.isdigit()):
+                    id = self.wiki_pages_versions[key][int(version) - 1]
+                elif version == 'previous':
+                    id = self.wiki_pages_versions[key][-2]
+                elif version == 'current' or version is None:
+                    id = self.wiki_pages_current[key]
+                else:
+                    return None
+            except (KeyError, IndexError):
+                return None
+        return NodeWikiPage.load(id)
 
 
 class Node(AbstractNode):
