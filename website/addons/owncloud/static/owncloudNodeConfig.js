@@ -90,25 +90,39 @@ var ViewModel = oop.extend(OauthAddonFolderPicker,{
     },
     connectAccount : function() {
         var self = this;
+        // Selection should not be empty
         if( !self.selectedHost() ){
-            self.changeMessage("Please select a OwnCloud repository.", 'text-danger');
+            self.setMessage("Please select a OwnCloud server.", 'text-danger');
             return;
         }
-        var url = self.urls().auth;
-        return $osf.postJSON(
+
+        if ( !self.useCustomHost() && !self.username() && !self.password() ){
+            self.setMessage("Please enter a username and password.", 'text-danger');
+            return;
+        }
+
+        if ( self.useCustomHost() && ( !self.customHost() || !self.username() || !self.password() ) )  {
+            self.setMessage("Please enter a OwnCloud host and credentials.", 'text-danger');
+            return;
+        }
+
+        var url = self.urls().create;
+
+        return osfHelpers.postJSON(
             url,
             ko.toJS({
                 host: self.host,
-                api_token: self.apiToken
+                password: self.password,
+                username: self.username
             })
         ).done(function() {
             self.clearModal();
             $modal.modal('hide');
-            self.userHasAuth(true);
-            self.importAuth();
+            self.updateAccounts();
+
         }).fail(function(xhr, textStatus, error) {
             var errorMessage = (xhr.status === 401) ? language.authInvalid : language.authError;
-            self.changeMessage(errorMessage, 'text-danger');
+            self.setMessage(errorMessage, 'text-danger');
             Raven.captureMessage('Could not authenticate with OwnCloud', {
                 url: url,
                 textStatus: textStatus,
