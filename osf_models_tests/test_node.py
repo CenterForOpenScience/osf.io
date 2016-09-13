@@ -130,15 +130,8 @@ class TestProject:
         api_url = project.api_url
         assert api_url == '/api/v1/project/{0}/'.format(project._primary_key)
 
-    def test_watch_url(self, project):
-        watch_url = project.watch_url
-        assert (
-            watch_url ==
-            '/api/v1/project/{0}/watch/'.format(project._primary_key)
-        )
-
     def test_parent_id(self, project):
-        assert project.parent_id is False
+        assert not project.parent_id
 
 
 class TestLogging:
