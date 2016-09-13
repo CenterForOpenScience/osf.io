@@ -785,7 +785,7 @@ class NodeContributorsRelationshipSerializer(JSONAPISerializer):
         for contrib in request_data:
             if contrib['user_id'] not in current_contrib_ids:
                 try:
-                    node.add_contributor(
+                    node.add_contributor_registered_or_not(
                         auth=auth, user_id=contrib['user_id'],
                         permissions=contrib['expanded_permissions'], bibliographic=contrib['bibliographic'], save=True
                     )
@@ -805,6 +805,15 @@ class NodeContributorsRelationshipSerializer(JSONAPISerializer):
         except ValueError as e:
             raise exceptions.ValidationError(detail=e.message)
         return user
+
+    # Sets changed contributor attributes so they will be included in response
+    def modify_contributor_attributes(self, node, request_data):
+        for index, contrib in enumerate(node.contributors):
+            contrib.permission = request_data[index]['short_permission']
+            contrib.bibliographic = request_data[index]['bibliographic']
+            contrib.index = index
+            contrib.node_id = node._id
+        return node
 
     def update(self, instance, validated_data):
         current_contrib_list = instance.contributors
@@ -850,25 +859,25 @@ class NodeContributorsRelationshipSerializer(JSONAPISerializer):
         for index, contrib in enumerate(request_data):
             node.move_contributor(contrib['user'], auth, index, save=True)
 
-        # Sets changed contributor attributes so they will be included in response
-        for index, contrib in enumerate(node.contributors):
-            contrib.permission = request_data[index]['short_permission']
-            contrib.bibliographic = request_data[index]['bibliographic']
-            contrib.index = index
-            contrib.node_id = node._id
-
         # If current user was not included in request data, remove current user last
         if current_user_request_data is None:
-            node.remove_contributor(user, auth, save=True)
             removed = node.remove_contributor(user, auth)
             if not removed:
                 raise exceptions.ValidationError('Must have at least one registered admin contributor')
+
+            self.modify_contributor_attributes(node, request_data)
+
             return self.make_instance_obj(node)
 
         # If current user was removing their admin permissions, change this last
         if current_user_request_data['short_permission'] != 'admin':
             self.update_contributor(node, current_user_request_data['user'], current_user_request_data['short_permission'], None, auth=auth, save=True)
+            # Sets changed contributor attributes so they will be included in response
+            self.modify_contributor_attributes(node, request_data)
             return self.make_instance_obj(node)
+
+        # Sets changed contributor attributes so they will be included in response
+        self.modify_contributor_attributes(node, request_data)
 
         return self.make_instance_obj(node)
 
