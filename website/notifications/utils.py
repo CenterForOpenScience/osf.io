@@ -1,5 +1,6 @@
 import collections
 
+from django.apps import apps
 from framework.postcommit_tasks.handlers import run_postcommit
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
@@ -78,7 +79,8 @@ def remove_subscription(node):
 @run_postcommit(once_per_request=False, celery=True)
 @app.task(max_retries=5, default_retry_delay=60)
 def remove_subscription_task(node_id):
-    node = Node.load(node_id)
+    AbstractNode = apps.get_model('osf_models.AbstractNode')
+    node = AbstractNode.load(node_id)
     model.NotificationSubscription.remove(Q('node', 'eq', node))
     parent = node.parent_node
 

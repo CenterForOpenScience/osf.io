@@ -186,9 +186,12 @@ class CollectionFactory(DjangoModelFactory):
     class Meta:
         model = models.Collection
 
+    is_bookmark_collection = False
     title = factory.Faker('catch_phrase')
-    user = factory.SubFactory(UserFactory)
+    creator = factory.SubFactory(UserFactory)
 
+class BookmarkCollectionFactory(CollectionFactory):
+    is_bookmark_collection = True
 
 class RegistrationFactory(AbstractNodeFactory):
 

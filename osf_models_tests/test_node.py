@@ -28,6 +28,7 @@ from .factories import (
     NodeLicenseRecordFactory,
     PrivateLinkFactory,
     CollectionFactory,
+    BookmarkCollectionFactory,
 )
 from .utils import capture_signals, assert_datetime_equal, mock_archive
 
@@ -1073,7 +1074,7 @@ class TestPointerMethods:
         pointer_project.add_pointer(pointed_project, Auth(pointer_project.creator), save=True)
 
         # Project is in a organizer collection
-        folder = CollectionFactory(user=pointed_project.creator)
+        folder = CollectionFactory(creator=pointed_project.creator)
         folder.add_pointer(pointed_project, Auth(pointed_project.creator), save=True)
 
         assert pointer_project in pointed_project.get_points(folders=False)
