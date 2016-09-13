@@ -145,6 +145,10 @@ class JSONAPIRelationshipParser(JSONParser):
                 if datum.get('type') is None:
                     raise JSONAPIException(source={'pointer': '/data/{}/type'.format(str(i))}, detail=NO_TYPE_ERROR)
 
+                if datum.get('attributes'):
+                    datum.update(datum.get('attributes'))
+                    del datum['attributes']
+
             return {'data': data}
 
         return {'data': []}
