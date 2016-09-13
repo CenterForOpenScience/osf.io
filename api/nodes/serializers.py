@@ -785,8 +785,8 @@ class NodeContributorsRelationshipSerializer(JSONAPISerializer):
         for contrib in request_data:
             if contrib['user_id'] not in current_contrib_ids:
                 try:
-                    node.add_contributor_registered_or_not(
-                        auth=auth, user_id=contrib['user_id'], send_email='default',
+                    node.add_contributor(
+                        auth=auth, user_id=contrib['user_id'],
                         permissions=contrib['expanded_permissions'], bibliographic=contrib['bibliographic'], save=True
                     )
                     new_contrib_ids.append(contrib['user_id'])
