@@ -492,7 +492,7 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
         """
         if self.has_permission(user, permission):
             return True
-        for node in self.nodes.filter(is_deleted=False).all():
+        for node in self.nodes.filter(is_deleted=False):
             if node.has_permission_on_children(user, permission):
                 return True
         return False
@@ -558,7 +558,7 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
         return OSFUser.objects.filter(
             contributor__node=self,
             contributor__visible=True
-        ).all()
+        )
 
     # visible_contributor_ids was moved to this property
     @property
@@ -1487,10 +1487,6 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
         :type date: `datetime.datetime` or `None`
         """
         # TODO: rename "date" param - it's shadowing a global
-
-        if self.is_bookmark_collection:
-            raise NodeStateError('Bookmark collections may not be deleted.')
-
         if not self.can_edit(auth):
             raise PermissionsError(
                 '{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node')
@@ -1662,6 +1658,7 @@ class Collection(AbstractNode):
             self.title = 'Bookmarks'
         # On creation, ensure there isn't an existing Bookmark collection for the given user
         if not self.pk:
+            # TODO: Use a partial index to enforce this constraint in the db
             if Collection.objects.filter(is_bookmark_collection=True, creator=self.creator).exists():
                 raise NodeStateError('Only one bookmark collection allowed per user.')
         return super(Collection, self).save(*args, **kwargs)
