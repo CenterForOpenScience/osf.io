@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from rest_framework import generics, permissions as drf_permissions
+from rest_framework.exceptions import ValidationError
 
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
@@ -17,6 +18,7 @@ from framework.auth.oauth_scopes import CoreScopes, ComposedScopes
 from website.files.models import FileNode
 from website.models import Node
 from website.search import search
+from website.search.exceptions import MalformedQueryError
 from website.search.util import build_query
 
 
@@ -37,7 +39,11 @@ class BaseSearchView(JSONAPIBaseView, generics.ListAPIView):
         query = self.request.query_params.get('q', '*')
         page = int(self.request.query_params.get('page', '1'))
         start = (page - 1) * 10
-        return search.search(build_query(query, start=start), doc_type=self.doc_type, raw=True)
+        try:
+            results = search.search(build_query(query, start=start), doc_type=self.doc_type, raw=True)
+        except MalformedQueryError as e:
+            raise ValidationError(e.message)
+        return results
 
 
 class Search(BaseSearchView):
