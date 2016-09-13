@@ -860,6 +860,9 @@ class NodeContributorsRelationshipSerializer(JSONAPISerializer):
         # If current user was not included in request data, remove current user last
         if current_user_request_data is None:
             node.remove_contributor(user, auth, save=True)
+            removed = node.remove_contributor(user, auth)
+            if not removed:
+                raise exceptions.ValidationError('Must have at least one registered admin contributor')
             return self.make_instance_obj(node)
 
         # If current user was removing their admin permissions, change this last
