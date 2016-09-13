@@ -53,7 +53,7 @@ var BaseViewModel = oop.extend(ChangeMessageMixin, {
 
         self.password = ko.observable('').extend({
             required: true,
-            minLength: 6,
+            minLength: 8,
             maxLength: 256,
             complexity: 2,
         });
@@ -259,6 +259,11 @@ var SignUpViewModel = oop.extend(BaseViewModel, {
 
     submitError: function(xhr) {
         var self = this;
+        /* jshint ignore: start */
+        if (typeof grecaptcha !== 'undefined') {
+            grecaptcha.reset();
+        }
+        /* jshint ignore: end */
         self.changeMessage(
             xhr.responseJSON.message_long,
             'text-danger p-xs',
@@ -283,10 +288,22 @@ var SignUpViewModel = oop.extend(BaseViewModel, {
             });
             return false;
         }
+
+        var payload = ko.toJS(self);
+
+        // include recaptcha if it is enabled
+        if ($('.g-recaptcha').length !== 0) {
+            var captchaResponse = $('#g-recaptcha-response').val();
+            if (captchaResponse.length === 0) {
+                return false;
+            }
+            $.extend(payload, {'g-recaptcha-response': captchaResponse});
+        }
+
         window.ga('send', 'event', 'signupSubmit', 'click', 'new_user_submit');
         $osf.postJSON(
             submitUrl,
-            ko.toJS(self)
+            payload
         ).done(
             self.submitSuccess.bind(self)
         ).fail(

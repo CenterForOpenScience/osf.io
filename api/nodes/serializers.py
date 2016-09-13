@@ -13,7 +13,7 @@ from website.addons.base.exceptions import InvalidFolderError, InvalidAuthError
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.models import Node, Comment, Institution, MetaSchema, DraftRegistration, PrivateLink
-from website.exceptions import NodeStateError, TooManyRequests
+from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 from website.project import new_private_link
 from website.project.model import NodeUpdateError
@@ -705,8 +705,6 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
                 auth=auth, user_id=id, email=email, full_name=full_name, send_email=send_email,
                 permissions=permissions, bibliographic=bibliographic, index=index, save=True
             )
-        except TooManyRequests:
-            raise exceptions.Throttled(detail='Too many contributor adds. Please wait a while and try again')
         except ValidationValueError as e:
             raise exceptions.ValidationError(detail=e.message)
         except ValueError as e:
@@ -827,7 +825,8 @@ class NodeProviderSerializer(JSONAPISerializer):
     )
     links = LinksField({
         'upload': WaterbutlerLink(),
-        'new_folder': WaterbutlerLink(kind='folder')
+        'new_folder': WaterbutlerLink(kind='folder'),
+        'storage_addons': 'get_storage_addons_url'
     })
 
     class Meta:
@@ -844,6 +843,12 @@ class NodeProviderSerializer(JSONAPISerializer):
                 'node_id': obj.node._id,
                 'provider': obj.provider
             }
+        )
+
+    def get_storage_addons_url(self, obj):
+        return absolute_reverse(
+            'addons:addon-list',
+            query_kwargs={'filter[categories]': 'storage'}
         )
 
 class InstitutionRelated(JSONAPIRelationshipSerializer):

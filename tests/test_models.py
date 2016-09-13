@@ -32,6 +32,8 @@ from website import filters, language, settings, mailchimp_utils
 from website.addons.wiki.model import NodeWikiPage
 from website.exceptions import NodeStateError, TagNotFoundError
 from website.profile.utils import serialize_user
+from website.project.tasks import on_node_updated
+from website.project.spam.model import SpamStatus
 from website.project.signals import contributor_added
 from website.project.model import (
     Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
@@ -671,7 +673,7 @@ class TestUser(OsfTestCase):
             'password',
             '12345',
             '12345',
-            'Password should be at least six characters',
+            'Password should be at least eight characters',
         )
 
     def test_change_password_invalid_confirm_password(self):
@@ -3288,6 +3290,21 @@ class TestProject(OsfTestCase):
                 with assert_raises(NodeStateError):
                     self.project.set_privacy('public')
 
+    def test_check_only_public_node(self):
+        # SPAM_CHECK_PUBLIC_ONLY is True by default
+        with mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True):
+            with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
+                self.project.set_privacy('private')
+                assert_false(self.project.check_spam(None, None))
+
+    def test_check_spam_on_private_node(self):
+        with mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True):
+            with mock.patch.object(settings, 'SPAM_CHECK_PUBLIC_ONLY', False):
+                with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
+                    with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(return_value=True)):
+                        self.project.set_privacy('private')
+                        assert_true(self.project.check_spam(None, None))
+
     def test_set_description(self):
         old_desc = self.project.description
         self.project.set_description(
@@ -4782,6 +4799,84 @@ class TestNodeSpam(OsfTestCase):
         self.node.confirm_spam()
         assert_true(self.node.is_spammy)
         assert_false(self.node.is_public)
+
+
+class TestNodeOnUpdate(OsfTestCase):
+
+    def setUp(self):
+        super(TestNodeOnUpdate, self).setUp()
+        self.node = ProjectFactory(is_public=True)
+
+    def tearDown(self):
+        handlers.celery_before_request()
+        super(TestNodeOnUpdate, self).tearDown()
+
+    @mock.patch('website.project.model.enqueue_task')
+    def test_enqueue_called(self, enqueue_task):
+        self.node.title = 'A new title'
+        self.node.save()
+
+        (task, ) = enqueue_task.call_args[0]
+
+        assert_equals(task.task, 'website.project.tasks.on_node_updated')
+        assert_equals(task.args[0], self.node._id)
+        assert_equals(task.args[1], False)
+        assert_equals(task.args[2], {'title'})
+
+    @mock.patch('website.project.tasks.requests')
+    def test_skips_no_settings(self, requests):
+        from website.project.tasks import settings
+        settings.SHARE_URL = None
+        settings.SHARE_API_TOKEN = None
+
+        on_node_updated(self.node._id, False, {'is_public'})
+        assert_false(requests.post.called)
+
+    @mock.patch('website.project.tasks.requests')
+    def test_updates_share(self, requests):
+        from website.project.tasks import settings
+        settings.SHARE_URL = 'https://share.osf.io'
+        settings.SHARE_API_TOKEN = 'Token'
+
+        on_node_updated(self.node._id, False, {'is_public'})
+
+        kwargs = requests.post.call_args[1]
+        graph = kwargs['json']['normalized_data']['@graph']
+
+        assert_true(requests.post.called)
+        assert_equals(kwargs['headers']['Authorization'], 'Bearer Token')
+        assert_equals(graph[0]['url'], '{}{}/'.format(settings.DOMAIN, self.node._id))
+
+    @mock.patch('website.project.tasks.requests')
+    def test_update_share_correctly(self, requests):
+        from website.project.tasks import settings
+        settings.SHARE_URL = 'https://share.osf.io'
+        settings.SHARE_API_TOKEN = 'Token'
+
+        cases = [{
+            'is_deleted': False,
+            'attrs': {'is_public': True, 'is_deleted': False, 'spam_status': SpamStatus.HAM}
+        }, {
+            'is_deleted': True,
+            'attrs': {'is_public': False, 'is_deleted': False, 'spam_status': SpamStatus.HAM}
+        }, {
+            'is_deleted': True,
+            'attrs': {'is_public': True, 'is_deleted': True, 'spam_status': SpamStatus.HAM}
+        }, {
+            'is_deleted': True,
+            'attrs': {'is_public': True, 'is_deleted': False, 'spam_status': SpamStatus.SPAM}
+        }]
+
+        for case in cases:
+            for attr, value in case['attrs'].items():
+                setattr(self.node, attr, value)
+            self.node.save()
+
+            on_node_updated(self.node._id, False, {'is_public'})
+
+            kwargs = requests.post.call_args[1]
+            graph = kwargs['json']['normalized_data']['@graph']
+            assert_equals(graph[2]['is_deleted'], case['is_deleted'])
 
 
 if __name__ == '__main__':

@@ -56,8 +56,9 @@ def get_globals():
     OSFWebRenderer.
     """
     user = _get_current_user()
-    user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path} for inst in user.affiliated_institutions] if user else []
-    all_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path} for inst in Institution.find().sort('name')]
+
+    user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in user.affiliated_institutions] if user else []
+    all_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in Institution.find().sort('name')]
     location = geolite2.lookup(request.remote_addr) if request.remote_addr else None
     if request.host_url != settings.DOMAIN:
         try:
@@ -122,6 +123,7 @@ def get_globals():
             },
         },
         'maintenance': maintenance.get_maintenance(),
+        'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY
     }
 
 

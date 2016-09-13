@@ -71,7 +71,7 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
     def test_cannot_access_withdrawn_node_links_detail(self):
         url = '/{}registrations/{}/node_links/{}/'.format(API_BASE, self.registration._id, self.public_pointer._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 403)
 
     def test_cannot_access_withdrawn_node_links_list(self):
         url = '/{}registrations/{}/node_links/'.format(API_BASE, self.registration._id)
@@ -95,15 +95,16 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
         res = self.app.get(self.withdrawn_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         attributes = res.json['data']['attributes']
+        registration.reload()
         expected_attributes = {
             'title': registration.title,
             'description': registration.description,
             'date_created': registration.date_created.isoformat(),
             'date_registered': registration.registered_date.isoformat(),
+            'date_modified': registration.date_modified.isoformat(),
             'withdrawal_justification': registration.retraction.justification,
             'public': None,
             'category': None,
-            'date_modified': None,
             'registration': True,
             'fork': None,
             'collection': None,
