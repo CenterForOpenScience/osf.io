@@ -386,13 +386,6 @@ def view_project(auth, node, **kwargs):
         config_entry='widget'
     ))
     ret.update(rubeus.collect_addon_assets(node))
-
-    try:
-        ret['discourse_topic_id'] = discourse.get_or_create_topic_id(node)
-    except (discourse.DiscourseException, requests.exceptions.ConnectionError):
-        logger.exception('Error creating Discourse topic')
-        ret['discourse_topic_id'] = None
-
     return ret
 
 # Reorder components
@@ -804,6 +797,7 @@ def _view_project(node, auth, primary=False,
         'discourse_url': settings.DISCOURSE_SERVER_URL,
         'discourse_apikey': discourse_user_apikey
     }
+    
     if embed_contributors and not anonymous:
         data['node']['contributors'] = utils.serialize_contributors(node.visible_contributors, node=node)
     if embed_descendants:
@@ -822,6 +816,13 @@ def _view_project(node, auth, primary=False,
             serialize_node_summary(node=each, auth=auth, show_path=False)
             for each in node.forks.exclude(type='osf.registration').exclude(is_deleted=True).sort('-forked_date').annotate(nlogs=Count('logs'))
         ]
+
+    try:
+        data['discourse_topic_id'] = discourse.get_or_create_topic_id(node)
+    except (discourse.DiscourseException, requests.exceptions.ConnectionError):
+        logger.exception('Error creating Discourse topic')
+        data['discourse_topic_id'] = None
+
     return data
 
 def get_affiliated_institutions(obj):
