@@ -94,7 +94,7 @@ var ViewModel = oop.extend(OauthAddonFolderPicker,{
             self.changeMessage("Please select a OwnCloud repository.", 'text-danger');
             return;
         }
-        var url = self.urls().create;
+        var url = self.urls().auth;
         return $osf.postJSON(
             url,
             ko.toJS({
