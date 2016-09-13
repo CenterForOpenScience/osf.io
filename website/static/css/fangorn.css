@@ -38,6 +38,9 @@
 .fangorn-selected > div span.text-muted {
 	color: #DDD;
 }
+.fangorn-preprint {
+    background-color: #d6e5e8;
+}
 .tb-disabled {
 	background: #eee;
 	color: #ccc;

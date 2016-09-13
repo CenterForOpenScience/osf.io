@@ -127,9 +127,10 @@ function _poResolveRows(item) {
     var mobile = window.innerWidth < MOBILE_WIDTH; // true if mobile view
     var tb = this;
     var defaultColumns = [];
-
     if(this.isMultiselected(item.id)){
         item.css = 'fangorn-selected';
+    } else if (item.data.attributes.preprint) {
+        item.css = 'fangorn-preprint';
     } else {
         item.css = '';
     }
