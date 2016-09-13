@@ -28,7 +28,6 @@ from .factories import (
     NodeLicenseRecordFactory,
     PrivateLinkFactory,
     CollectionFactory,
-    BookmarkCollectionFactory,
 )
 from .utils import capture_signals, assert_datetime_equal, mock_archive
 
@@ -109,6 +108,39 @@ class TestNodeMODMCompat:
         assert len(node._id) == 5
         assert node in Node.find(Q('_id', 'eq', node._id))
 
+
+# copied from tests/test_models.py
+class TestProject:
+
+    @pytest.fixture()
+    def project(self, user):
+        return ProjectFactory(creator=user, description='foobar')
+
+    def test_repr(self, project):
+        assert project.title in repr(project)
+        assert project._id in repr(project)
+
+    def test_url(self, project):
+        assert (
+            project.url ==
+            '/{0}/'.format(project._primary_key)
+        )
+
+    def test_api_url(self, project):
+        api_url = project.api_url
+        assert api_url == '/api/v1/project/{0}/'.format(project._primary_key)
+
+    def test_watch_url(self, project):
+        watch_url = project.watch_url
+        assert (
+            watch_url ==
+            '/api/v1/project/{0}/watch/'.format(project._primary_key)
+        )
+
+    def test_parent_id(self, project):
+        assert project.parent_id is False
+
+
 class TestLogging:
 
     def test_add_log(self, node, auth):
@@ -116,7 +148,7 @@ class TestLogging:
         node.add_log(NodeLog.EMBARGO_INITIATED, params={'node': node._id}, auth=auth)
         node.save()
 
-        last_log = node.logs.first()
+        last_log = node.logs.latest()
         assert last_log.action == NodeLog.EMBARGO_INITIATED
         # date is tzaware
         assert last_log.date.tzinfo == pytz.utc
