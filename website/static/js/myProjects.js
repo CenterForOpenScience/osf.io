@@ -1823,6 +1823,7 @@ var Information = {
                     m('.tab-content', [
                         m('[role="tabpanel"].tab-pane.active#tab-information',[
                             m('p.db-info-meta.text-muted', [
+                                item.attributes.preprint ? m('.osf-box.p-xs.m-b-xs', 'This project is a Preprint') : '',
                                 m('', 'Visibility : ' + (item.attributes.public ? 'Public' : 'Private')),
                                 m('.text-capitalize', 'Category: ' + item.attributes.category),
                                 m('.text-capitalize', 'Permission: ' + permission),
