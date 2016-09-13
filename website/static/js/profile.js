@@ -759,6 +759,7 @@ SocialViewModel.prototype.submit = function() {
         );
     }
     else if (this.hasValidProperty() && this.isValid()) {
+        var self = this;
         this.saving(true);
         $osf.putJSON(
             this.urls.crud,
@@ -770,7 +771,7 @@ SocialViewModel.prototype.submit = function() {
         ).fail(
             this.handleError.bind(this)
         ).always(
-            function() { this.saving(false); }
+            function() { self.saving(false); }
         );
     } else {
         this.showMessages(true);
