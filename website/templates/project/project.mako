@@ -179,10 +179,11 @@
                     % endif
                     </p>
                 <span data-bind="if: hasIdentifiers()" class="scripted">
-                  <br />
+                  <p>
                     Identifiers:
                   DOI <span data-bind="text: doi"></span> |
                   ARK <span data-bind="text: ark"></span>
+                  </p>
                 </span>
                 <span data-bind="if: canCreateIdentifiers()" class="scripted">
                   <!-- ko if: idCreationInProgress() -->
