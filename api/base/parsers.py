@@ -138,6 +138,8 @@ class JSONAPIRelationshipParser(JSONParser):
             if not isinstance(data, list):
                 raise ParseError('Data must be an array')
             for i, datum in enumerate(data):
+                if not isinstance(datum, dict):
+                    raise ParseError('Resource object must be dictionary')
 
                 if datum.get('id') is None:
                     raise JSONAPIException(source={'pointer': '/data/{}/id'.format(str(i))}, detail=NO_ID_ERROR)
