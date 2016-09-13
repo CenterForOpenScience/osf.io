@@ -3282,26 +3282,66 @@ class TestProject(OsfTestCase):
                     registration.set_privacy('public', auth=self.auth)
                     assert_equal(mock_request_embargo_termination.call_count, 1)
 
+    @mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', True)
     def test_set_privacy_on_spammy_node(self):
-        with mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', True):
-            with mock.patch.object(Node, 'is_spammy', mock.PropertyMock(return_value=True)):
-                with assert_raises(NodeStateError):
-                    self.project.set_privacy('public')
+        with mock.patch.object(Node, 'is_spammy', mock.PropertyMock(return_value=True)):
+            with assert_raises(NodeStateError):
+                self.project.set_privacy('public')
 
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     def test_check_only_public_node(self):
         # SPAM_CHECK_PUBLIC_ONLY is True by default
-        with mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True):
-            with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
+        with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
+            self.project.set_privacy('private')
+            assert_false(self.project.check_spam(None, None))
+
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_CHECK_PUBLIC_ONLY', False)
+    @mock.patch.object(settings, 'SPAM_CHECK_SYNC', True)
+    def test_check_spam_on_private_node(self):
+        with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(return_value=True)):
+                self.project.set_privacy('private')
+                assert_true(self.project.check_spam(None, None))
+
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_CHECK_PUBLIC_ONLY', False)
+    @mock.patch.object(settings, 'SPAM_CHECK_SYNC', True)
+    @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
+    def test_check_spam_on_private_node_bans_new_spam_user(self):
+        with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(return_value=True)):
+                with mock.patch('website.project.model.on_user_suspension.delay'):
+                    with assert_raises(NodeStateError):
+                        self.project.creator.date_confirmed = datetime.datetime.utcnow()
+                        self.project.set_privacy('private')
+                        assert_true(self.project.check_spam(None, None))
+                handlers._local.queue = []  # prevent queue from running a mock object as a task
+
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_CHECK_PUBLIC_ONLY', False)
+    @mock.patch.object(settings, 'SPAM_CHECK_SYNC', True)
+    @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
+    def test_check_spam_on_private_node_does_not_ban_old_spam_user_or_check_sync(self):
+        with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(return_value=True)):
+                # with assert_raises(NodeStateError):  # Would raise iff banned
+                self.project.creator.date_confirmed = datetime.datetime.utcnow() - datetime.timedelta(days=9001)
                 self.project.set_privacy('private')
                 assert_false(self.project.check_spam(None, None))
 
-    def test_check_spam_on_private_node(self):
-        with mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True):
-            with mock.patch.object(settings, 'SPAM_CHECK_PUBLIC_ONLY', False):
-                with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
-                    with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(return_value=True)):
-                        self.project.set_privacy('private')
-                        assert_true(self.project.check_spam(None, None))
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_CHECK_PUBLIC_ONLY', False)
+    @mock.patch.object(settings, 'SPAM_CHECK_SYNC', True)
+    @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
+    def test_check_spam_async_on_private_node_does_not_ban_old_spam_user(self):
+        with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(return_value=True)):
+                # with assert_raises(NodeStateError):  # Would raise iff banned
+                self.project.creator.date_confirmed = datetime.datetime.utcnow() - datetime.timedelta(days=9001)
+                self.project.set_privacy('private')
+                assert_true(self.project.check_spam(None, None, mode='async'))
+
 
     def test_set_description(self):
         old_desc = self.project.description

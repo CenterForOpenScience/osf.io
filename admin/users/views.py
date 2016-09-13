@@ -1,10 +1,11 @@
 from __future__ import unicode_literals
 
 from furl import furl
-from django.views.generic import FormView, DeleteView
+from django.views.generic import FormView, DeleteView, ListView
 from django.core.mail import send_mail
 from django.shortcuts import redirect
 from django.http import Http404, HttpResponse
+from modularodm import Q
 
 from website.project.spam.model import SpamStatus
 from website.settings import SUPPORT_EMAIL, DOMAIN
@@ -44,12 +45,26 @@ class UserDeleteView(OSFAdmin, DeleteView):
             if user.date_disabled is None:
                 user.disable_account()
                 user.is_registered = False
+                if kwargs.get('is_spam'):
+                    if 'spam_threshold' in user.system_tags:
+                        user.system_tags = list(set(user.system_tags) - {'spam_threshold'})
+                    if 'confirmed_ham' in user.system_tags:
+                        user.system_tags = list(set(user.system_tags) - {'confirmed_ham'})
+                    if 'confirmed_spam' not in user.system_tags:
+                        user.system_tags.append('confirmed_spam')
                 flag = USER_REMOVED
                 message = 'User account {} disabled'.format(user.pk)
             else:
                 user.date_disabled = None
                 subscribe_on_confirm(user)
                 user.is_registered = True
+                if kwargs.get('is_spam'):
+                    if 'confirmed_spam' in user.system_tags:
+                        user.system_tags = list(set(user.system_tags) - {'confirmed_spam'})
+                    if 'spam_threshold' in user.system_tags:
+                        user.system_tags = list(set(user.system_tags) - {'spam_threshold'})
+                    if 'confirmed_ham' not in user.system_tags:
+                        user.system_tags.append('confirmed_ham')
                 flag = USER_RESTORED
                 message = 'User account {} reenabled'.format(user.pk)
             user.save()
@@ -106,8 +121,97 @@ class SpamUserDeleteView(UserDeleteView):
                         action_flag=CONFIRM_SPAM
                     )
 
+        kwargs.update({'is_spam': True})
         return super(SpamUserDeleteView, self).delete(request, *args, **kwargs)
 
+class HamUserRestoreView(UserDeleteView):
+    """
+    Allow authorized admin user to undelete a ham user
+    """
+
+    template_name = 'users/restore_ham_user.html'
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            user = self.get_object()
+        except AttributeError:
+            raise Http404(
+                '{} with id "{}" not found.'.format(
+                    self.context_object_name.title(),
+                    self.kwargs.get('guid')
+                ))
+        if user:
+            for node in user.contributor_to:
+                if node.is_spam:
+                    node.confirm_ham(save=True)
+                    update_admin_log(
+                        user_id=request.user.id,
+                        object_id=node._id,
+                        object_repr='Node',
+                        message='Confirmed HAM: {} when user {} marked as ham'.format(node._id, user._id),
+                        action_flag=CONFIRM_SPAM
+                    )
+
+        kwargs.update({'is_spam': True})
+        return super(HamUserRestoreView, self).delete(request, *args, **kwargs)
+
+
+class UserSpamList(OSFAdmin, ListView):
+    SPAM_TAG = 'spam_threshold'
+
+    paginate_by = 25
+    paginate_orphans = 1
+    ordering = ('date_disabled')
+    context_object_name = '-user'
+
+    def get_queryset(self):
+        query = (
+            Q('system_tags', 'eq', self.SPAM_TAG)
+        )
+        return User.find(query).sort(self.ordering)
+
+    def get_context_data(self, **kwargs):
+        query_set = kwargs.pop('object_list', self.object_list)
+        page_size = self.get_paginate_by(query_set)
+        paginator, page, query_set, is_paginated = self.paginate_queryset(
+            query_set, page_size)
+        return {
+            'users': map(serialize_user, query_set),
+            'page': page,
+        }
+
+
+class UserFlaggedSpamList(UserSpamList, DeleteView):
+    SPAM_TAG = 'spam_threshold'
+    template_name = 'users/flagged_spam_list.html'
+
+    def delete(self, request, *args, **kwargs):
+        user_ids = [
+            uid for uid in request.POST.keys()
+            if uid != 'csrfmiddlewaretoken'
+        ]
+        for uid in user_ids:
+            user = User.load(uid)
+            user.system_tags = list(set(user.system_tags) - {'spam_threshold'})
+            user.system_tags.append('confirmed_spam')
+            user.save()
+            update_admin_log(
+                user_id=self.request.user.id,
+                object_id=uid,
+                object_repr='User',
+                message='Confirmed SPAM: {}'.format(uid),
+                action_flag=CONFIRM_SPAM
+            )
+        return redirect('users:flagged-spam')
+
+
+class UserKnownSpamList(UserSpamList):
+    SPAM_TAG = 'confirmed_spam'
+    template_name = 'users/known_spam_list.html'
+
+class UserKnownHamList(UserSpamList):
+    SPAM_TAG = 'confirmed_ham'
+    template_name = 'users/known_spam_list.html'
 
 class User2FactorDeleteView(UserDeleteView):
     """ Allow authorised admin user to remove 2 factor authentication.
