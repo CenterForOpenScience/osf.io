@@ -73,7 +73,6 @@ from website.project.sanctions import (
     Retraction,
 )
 from website.files.models import StoredFileNode
-from website.models import PreprintProvider
 
 from keen import scoped_keys
 
@@ -1593,6 +1592,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
                 auth=None,
                 log=True
             )
+
+        from website.models import PreprintProvider  # prevent circular import error
         self.preprint_providers = [PreprintProvider.load('osf')]
         if save:
             self.save()
