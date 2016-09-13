@@ -860,7 +860,7 @@ class NodeContributorsRelationshipSerializer(JSONAPISerializer):
 
         # If current user was removing their admin permissions, change this last
         if current_user_request_data['short_permission'] != 'admin':
-            self.update_contributor(node, contrib['user'], contrib['short_permission'], None, auth=auth, save=True)
+            self.update_contributor(node, current_user_request_data['user'], current_user_request_data['short_permission'], None, auth=auth, save=True)
             return self.make_instance_obj(node)
 
         return self.make_instance_obj(node)
