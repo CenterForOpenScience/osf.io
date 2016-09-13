@@ -1,6 +1,7 @@
 from framework.celery_tasks import app as celery_app
 from framework.transactions.context import TokuTransaction
 
+from website.mails import mails
 
 @celery_app.task(ignore_results=True)
 def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=None):
@@ -36,4 +37,7 @@ def on_user_suspension(user_id, system_tag):
         if not user.is_disabled:
             user.disable_account()
             user.is_registered = False
+            mails.send_mail(
+                mail=mails.SPAM_USER_BANNED,
+                user=user)
         user.save()
