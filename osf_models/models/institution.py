@@ -1,4 +1,5 @@
 from django.contrib.postgres import fields
+from django.core.urlresolvers import reverse
 from django.db import models
 from django.conf import settings
 from osf_models.models import Guid
@@ -46,3 +47,34 @@ class Institution(Loggable, base.GuidMixin, base.BaseModel):
         inst.description = modm_obj.description
         inst.is_deleted = modm_obj.is_deleted
         return inst
+
+    @property
+    def api_v2_url(self):
+        return reverse('institutions:institution-detail', kwargs={'institution_id': self._id})
+
+    @property
+    def absolute_api_v2_url(self):
+        from api.base.utils import absolute_reverse
+        return absolute_reverse('institutions:institution-detail', kwargs={'institution_id': self._id})
+
+    @property
+    def nodes_url(self):
+        return self.absolute_api_v2_url + 'nodes/'
+
+    @property
+    def nodes_relationship_url(self):
+        return self.absolute_api_v2_url + 'relationships/nodes/'
+
+    @property
+    def logo_path(self):
+        if self.logo_name:
+            return '/static/img/institutions/{}'.format(self.logo_name)
+        else:
+            return None
+
+    @property
+    def banner_path(self):
+        if self.banner_name:
+            return '/static/img/institutions/{}'.format(self.banner_name)
+        else:
+            return None
