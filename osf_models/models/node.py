@@ -1492,12 +1492,6 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
                 '{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node')
             )
 
-        #if this is a collection, remove all the collections that this is pointing at.
-        if self.is_collection:
-            for pointed in self.linked_nodes:
-                if pointed.is_collection:
-                    pointed.remove_node(auth=auth)
-
         if self.nodes.filter(is_deleted=False).exists():
             raise NodeStateError('Any child components must be deleted prior to deleting this project.')
 
@@ -1593,6 +1587,50 @@ class Node(AbstractNode):
 
     # /TODO DELETE ME POST MIGRATION
 
+
+class Collection(AbstractNode):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.project.model.Node'
+    modm_query = functools.reduce(operator.and_, [
+        MQ('is_registration', 'eq', False),
+        MQ('is_collection', 'eq', True),
+    ])
+    # /TODO DELETE ME POST MIGRATION
+    is_bookmark_collection = models.NullBooleanField(default=False, db_index=True)
+
+    @property
+    def is_collection(self):
+        """For v1 compat."""
+        return True
+
+    @property
+    def is_registration(self):
+        """For v1 compat."""
+        return False
+
+    def remove_node(self, auth, date=None):
+        if self.is_bookmark_collection:
+            raise NodeStateError('Bookmark collections may not be deleted.')
+        # Remove all the collections that this is pointing at.
+        for pointed in self.linked_nodes.all():
+            if pointed.is_collection:
+                pointed.remove_node(auth=auth)
+        return super(Collection, self).remove_node(auth=auth, date=date)
+
+    def save(self, *args, **kwargs):
+        # Bookmark collections are always named 'Bookmarks'
+        if self.is_bookmark_collection and self.title != 'Bookmarks':
+            self.title = 'Bookmarks'
+        # On creation, ensure there isn't an existing Bookmark collection for the given user
+        if not self.pk:
+            if Collection.objects.filter(is_bookmark_collection=True, creator=self.creator).exists():
+                raise NodeStateError('Only one bookmark collection allowed per user.')
+        return super(Collection, self).save(*args, **kwargs)
+
+
+##### Signal listeners #####
+
+@receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 def add_creator_as_contributor(sender, instance, created, **kwargs):
     if created:
@@ -1605,7 +1643,7 @@ def add_creator_as_contributor(sender, instance, created, **kwargs):
             admin=True
         )
 
-
+@receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 def add_project_created_log(sender, instance, created, **kwargs):
     if created and not instance.is_fork:
@@ -1627,6 +1665,7 @@ def add_project_created_log(sender, instance, created, **kwargs):
         )
 
 
+@receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 def send_osf_signal(sender, instance, created, **kwargs):
     if created:
@@ -1635,45 +1674,8 @@ def send_osf_signal(sender, instance, created, **kwargs):
 
 # TODO: Add addons
 
+@receiver(pre_save, sender=Collection)
 @receiver(pre_save, sender=Node)
 def set_parent(sender, instance, *args, **kwargs):
     if getattr(instance, '_parent', None):
         instance.parent_node = instance._parent
-
-
-class Collection(NodeLinkMixin, GuidMixin, BaseModel):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.project.model.Node'
-    modm_query = functools.reduce(operator.and_, [
-        MQ('is_registration', 'eq', False),
-        MQ('is_collection', 'eq', True),
-    ])
-    # /TODO DELETE ME POST MIGRATION
-
-    # TODO: Uncomment auto_* attributes after migration is complete
-    date_created = models.DateTimeField(null=False, default=timezone.now)  # auto_now_add=True)
-    date_modified = models.DateTimeField(null=True, blank=True,
-                                         db_index=True)  # auto_now=True)
-    is_bookmark_collection = models.BooleanField(default=False, db_index=True)
-    is_deleted = models.BooleanField(default=False, db_index=True)
-    title = models.TextField(
-        validators=[validate_title]
-    )  # this should be a charfield but data from mongo didn't fit in 255
-    user = models.ForeignKey('OSFUser', null=True, blank=True,
-                             on_delete=models.SET_NULL, related_name='collections')
-
-    def save(self, *args, **kwargs):
-        # Bookmark collections are always named 'Bookmarks'
-        if self.is_bookmark_collection and self.title != 'Bookmarks':
-            self.title = 'Bookmarks'
-        return super(Collection, self).save(*args, **kwargs)
-
-    @property
-    def is_collection(self):
-        """For v1 compat."""
-        return True
-
-    @property
-    def is_registration(self):
-        """For v1 compat."""
-        return False
