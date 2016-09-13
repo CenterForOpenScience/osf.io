@@ -48,17 +48,20 @@ class TestSearchSearchAPI(SearchTestCase):
     def test(self, ignored, status, type_, role, included):
         key = 'title'
         if type_ == PROJECT:
-            factories.ProjectFactory(title='Flim Flammity', is_public=status is PUBLIC)
+            project = factories.ProjectFactory(title='Flim Flammity', is_public=status is PUBLIC)
+            project.update_search()
         elif type_ == REGISTRATION:
             project = factories.ProjectFactory(title='Flim Flammity', is_public=status is PUBLIC)
             mock_archive(project, autocomplete=True, autoapprove=True).__enter__()
         elif type_ == COMPONENT:
             project = factories.ProjectFactory(title='Blim Blammity', is_public=status is PUBLIC)
-            factories.NodeFactory(
+            project.update_search()
+            component = factories.NodeFactory(
                 title='Flim Flammity',
                 parent=project,
                 is_public=status is PUBLIC,
             )
+            component.update_search()
         elif type_ == FILE:
             project = factories.ProjectFactory(title='Blim Blammity', is_public=status is PUBLIC)
             project.get_addon('osfstorage').get_root().append_file('Flim Flammity')
