@@ -455,7 +455,10 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
         return self.absolute_api_v2_url
 
     def get_permissions(self, user):
-        contrib = user.contributor_set.get(node=self)
+        try:
+            contrib = user.contributor_set.get(node=self)
+        except Contributor.DoesNotExist:
+            return []
         perm = []
         if contrib.read:
             perm.append(READ)
