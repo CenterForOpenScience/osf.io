@@ -689,7 +689,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
 
         return resource_object_list
 
-class NodeContributorsRelationship(BaseContributorList, generics.CreateAPIView, NodeMixin):
+class NodeContributorsRelationship(BaseContributorList, generics.UpdateAPIView, NodeMixin):
     """ Relationship Endpoint for Node Contributor relationships
     """
     view_category = 'nodes'
@@ -713,14 +713,8 @@ class NodeContributorsRelationship(BaseContributorList, generics.CreateAPIView, 
         return queryset
 
     def get_object(self):
-        contributors = self.get_queryset_from_request()
-        node = self.get_node()
-        obj = {'contributors': contributors, 'node': node}
-        return obj
+        return self.get_node()
 
-    def create(self, *args, **kwargs):
-        ret = super(NodeContributorsRelationship, self).create(*args, **kwargs)
-        return ret
 
 class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
     """Detail of a contributor for a node. *Writeable*.

@@ -806,11 +806,10 @@ class NodeContributorsRelationshipSerializer(JSONAPISerializer):
             raise exceptions.ValidationError(detail=e.message)
         return user
 
-    def create(self, validated_data):
-        instance = self.context['view'].get_object()
-        current_contrib_list = instance['contributors']
+    def update(self, instance, validated_data):
+        current_contrib_list = instance.contributors
         current_contrib_ids = [contrib._id for contrib in current_contrib_list]
-        node = instance['node']
+        node = instance
         auth = Auth(self.context['request'].user)
         request_data = self.clean_validated_data(validated_data['data'])
         user = self.context['request'].user
@@ -851,10 +850,12 @@ class NodeContributorsRelationshipSerializer(JSONAPISerializer):
         for index, contrib in enumerate(request_data):
             node.move_contributor(contrib['user'], auth, index, save=True)
 
+        # Sets changed contributor attributes so they will be included in response
         for index, contrib in enumerate(node.contributors):
             contrib.permission = request_data[index]['short_permission']
             contrib.bibliographic = request_data[index]['bibliographic']
             contrib.index = index
+            contrib.node_id = node._id
 
         # If current user was not included in request data, remove current user last
         if current_user_request_data is None:
