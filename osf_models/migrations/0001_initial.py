@@ -102,7 +102,7 @@ class Migration(migrations.Migration):
                 ('wiki_private_uuids', osf_models.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict)),
                 ('registered_date', models.DateTimeField(blank=True, db_index=True, null=True)),
                 ('registered_meta', osf_models.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict, null=True)),
-                ('preprint_created', models.DateTimeField(null=True)),
+                ('preprint_created', models.DateTimeField(blank=True, null=True)),
                 ('doi', models.CharField(blank=True, max_length=128, null=True, validators=[osf_models.models.preprint.validate_doi])),
                 ('_is_orphan', models.NullBooleanField(default=False)),
             ],

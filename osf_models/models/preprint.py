@@ -30,7 +30,7 @@ class Preprint(AbstractNode):
     # TODO: Uncomment when StoredFileNode is implemented
     # file = models.ForeignKey('StoredFileNode', on_delete=models.SET_NULL, null=True, blank=True)
 
-    preprint_created = models.DateTimeField()
+    preprint_created = models.DateTimeField(null=True, blank=True)
     subjects = models.ManyToManyField(Subject, related_name='preprints')
     providers = models.ManyToManyField(PreprintProvider, related_name='preprints')
     doi = models.CharField(max_length=128, null=True, blank=True, validators=[validate_doi])
@@ -74,7 +74,9 @@ class Preprint(AbstractNode):
             raise PermissionsError('Only admins can change a preprint\'s subjects.')
 
         self.subjects.clear()
-        self.subjects.add(*Subject.objects.filter(guid__object_id__in=preprint_subjects).all())
+        self.subjects.add(
+            *Subject.objects.filter(guid__object_id__in=preprint_subjects).values_list('pk', flat=True)
+        )
         if save:
             self.save()
 
