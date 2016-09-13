@@ -68,6 +68,9 @@ class NodeCitationStyleSerializer(JSONAPISerializer):
     id = ser.CharField(read_only=True)
     citation = ser.CharField(allow_blank=True, read_only=True)
 
+    def get_absolute_url(self, obj):
+        return obj['URL']
+
     class Meta:
         type_ = 'styled-citations'
 
