@@ -21,7 +21,7 @@ from website.project.model import NodeUpdateError
 from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse, is_truthy
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField,
-                                  HideIfRegistration, RestrictedDictSerializer,
+                                  HideIfRegistration, RestrictedDictSerializer, JSONAPIListSerializer,
                                   JSONAPIRelationshipSerializer, relationship_diff, )
 from api.base.exceptions import (InvalidModelValueError,
                                  RelationshipPostMakesNoChanges, Conflict,
@@ -751,7 +751,7 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
         return contributor
 
 class NodeContributorsRelationshipSerializer(JSONAPISerializer):
-    data = ser.ListField(child=NodeContributorDetailSerializer())
+    data = JSONAPIListSerializer(child=NodeContributorDetailSerializer())
 
     class Meta:
         type_ = 'contributors'
@@ -787,7 +787,7 @@ class NodeContributorsRelationshipSerializer(JSONAPISerializer):
                 try:
                     node.add_contributor_registered_or_not(
                         auth=auth, user_id=contrib['user_id'], send_email='default',
-                        permissions=contrib['expanded_permissions'], bibliographic=contrib['bibliographic'], save=False
+                        permissions=contrib['expanded_permissions'], bibliographic=contrib['bibliographic'], save=True
                     )
                     new_contrib_ids.append(contrib['user_id'])
                 except ValidationValueError as e:
@@ -797,7 +797,7 @@ class NodeContributorsRelationshipSerializer(JSONAPISerializer):
 
         return new_contrib_ids
 
-    def update_contributor(self, node, user, permission, bibliographic, auth, save=False):
+    def update_contributor(self, node, user, permission, bibliographic, auth, save=True):
         try:
             node.update_contributor(user, permission, bibliographic, auth=auth, save=save)
         except NodeStateError as e:
@@ -849,9 +849,12 @@ class NodeContributorsRelationshipSerializer(JSONAPISerializer):
 
         # Reorders contributors
         for index, contrib in enumerate(request_data):
-            node.move_contributor(contrib['user'], auth, index, save=False)
+            node.move_contributor(contrib['user'], auth, index, save=True)
 
-        node.save()
+        for index, contrib in enumerate(node.contributors):
+            contrib.permission = request_data[index]['short_permission']
+            contrib.bibliographic = request_data[index]['bibliographic']
+            contrib.index = index
 
         # If current user was not included in request data, remove current user last
         if current_user_request_data is None:
@@ -866,19 +869,8 @@ class NodeContributorsRelationshipSerializer(JSONAPISerializer):
         return self.make_instance_obj(node)
 
     def to_representation(self, value):
-        node = self.context['view'].get_object()['node']
-        contributors = value['data']
-        data = []
-        for index, contrib in enumerate(contributors[0]):
-            data.append({
-                'id': node._id + '-' + contrib._id,
-                'type': 'contributors',
-                'attributes': {
-                    'permission': contrib.permission,
-                    'bibliographic': contrib.bibliographic,
-                    'index': contrib.index
-                }
-            })
+        contributors = value['data'][0]
+        data = self.fields['data'].to_representation(contributors)
         return {'data': data}
 
 
