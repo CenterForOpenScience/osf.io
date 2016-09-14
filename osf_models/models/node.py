@@ -11,6 +11,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 from datetime import datetime
 
 import pytz
+from dirtyfields import DirtyFieldsMixin
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.db.models.signals import post_save, pre_save
@@ -24,6 +25,7 @@ from osf_models.models.contributor import Contributor, RecentlyAddedContributor
 from osf_models.models.identifiers import Identifier
 from osf_models.models.identifiers import IdentifierMixin
 from osf_models.models.mixins import Loggable, Taggable, AddonModelMixin, NodeLinkMixin
+from osf_models.models.tag import Tag
 from osf_models.models.nodelog import NodeLog
 from osf_models.models.sanctions import RegistrationApproval
 from osf_models.models.user import OSFUser
@@ -40,7 +42,12 @@ from framework.exceptions import PermissionsError
 from framework.sentry import log_exception
 from website import settings
 from website.project.model import NodeUpdateError
-from website.exceptions import UserNotAffiliatedError, NodeStateError
+from website.exceptions import (
+    UserNotAffiliatedError,
+    NodeStateError,
+    InvalidTagError,
+    TagNotFoundError,
+)
 from website.project import signals as project_signals
 from website.citations.utils import datetime_to_csl
 from website.util import api_url_for
@@ -60,7 +67,7 @@ from .base import BaseModel, GuidMixin, Guid
 logger = logging.getLogger(__name__)
 
 
-class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
+class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,
                    NodeLinkMixin,
                    Taggable, Loggable, GuidMixin, BaseModel):
     """
@@ -194,6 +201,15 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
 
     @property
     def is_preprint(self):
+        """For v1 compat."""
+        return False
+
+    @property
+    def preprint_file(self):
+        return None
+
+    @property
+    def is_preprint_orphan(self):
         """For v1 compat."""
         return False
 
@@ -582,6 +598,28 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
             auth=auth,
             save=False
         )
+
+    def remove_tag(self, tag, auth, save=True):
+        if not tag:
+            raise InvalidTagError
+        elif not self.tags.filter(name=tag).exists():
+            raise TagNotFoundError
+        else:
+            tag_obj = Tag.objects.get(name=tag)
+            self.tags.remove(tag_obj)
+            self.add_log(
+                action=NodeLog.TAG_REMOVED,
+                params={
+                    'parent_node': self.parent_id,
+                    'node': self._id,
+                    'tag': tag,
+                },
+                auth=auth,
+                save=False,
+            )
+            if save:
+                self.save()
+            return True
 
     def is_contributor(self, user):
         """Return whether ``user`` is a contributor on this node."""
@@ -1450,7 +1488,8 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
                             reason="Attribute '{0}' doesn't exist on the Node class".format(key), key=key
                         )
         if save:
-            updated = self.save()
+            updated = self.get_dirty_fields()
+            self.save()
         else:
             updated = []
         for key in values:

@@ -4,8 +4,9 @@ from django.apps import apps
 
 from osf_models.models.tag import Tag
 from osf_models.models.nodelog import NodeLog
-from website.exceptions import NodeStateError
-
+from website.exceptions import (
+    NodeStateError,
+)
 from framework.analytics import increment_user_activity_counters
 
 
