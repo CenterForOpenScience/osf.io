@@ -15,6 +15,7 @@ from mock import call
 from nose.tools import *  # noqa PEP8 asserts
 import httpretty
 from modularodm import Q
+from modularodm.exceptions import KeyExistsException
 
 from scripts import cleanup_failed_registrations as scripts
 
@@ -255,24 +256,40 @@ def generate_schema_from_data(data):
                 'qid': qid,
                 'type': 'string'
             }
-    schema = MetaSchema(
-        name='Test',
-        schema={
-            'name': "Test",
-            'version': 2,
-            'config': {
-                'hasFiles': True
-            },
-            'pages':  [{
-                'id': 'page1',
-                'questions': [
-                    from_question(qid, q)
-                    for qid, q in data.items()
-                ]
-            }]
+    _schema = {
+        'name': 'Test',
+        'version': 2,
+        'config': {
+            'hasFiles': True
         },
+        'pages': [{
+            'id': 'page1',
+            'questions': [
+                from_question(qid, q)
+                for qid, q in data.items()
+            ]
+        }]
+    }
+    schema = MetaSchema(
+        name=_schema['name'],
+        schema_version=_schema['version'],
+        schema=_schema
     )
-    schema.save()
+    try:
+        schema.save()
+    except KeyExistsException:
+
+        # Unfortunately, we don't have db isolation between test cases for some
+        # reason. Update the doc currently in the db rather than saving a new
+        # one.
+
+        schema = MetaSchema.find_one(
+            Q('name', 'eq', _schema['name']) &
+            Q('schema_version', 'eq', _schema['version'])
+        )
+        schema.schema = _schema
+        schema.save()
+
     return schema
 
 def generate_metadata(file_trees, selected_files, node_index):

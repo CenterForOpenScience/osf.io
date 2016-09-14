@@ -97,7 +97,7 @@ before_install:
 install:
     - cd $PROJECT_DIR
     - cp website/settings/local-travis.py website/settings/local.py
-    - cp api/base/settings/local-dist.py api/base/settings/local.py
+    - cp api/base/settings/local-travis.py api/base/settings/local.py
     # - travis_retry invoke encryption
 
     - travis_retry pip install --upgrade pip

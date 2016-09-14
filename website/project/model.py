@@ -17,8 +17,7 @@ from django.core.validators import URLValidator
 from modularodm import Q
 from modularodm import fields
 from modularodm.validators import MaxLengthValidator
-from modularodm.exceptions import NoResultsFound
-from modularodm.exceptions import ValidationValueError
+from modularodm.exceptions import KeyExistsException, NoResultsFound, ValidationValueError
 
 from framework import status
 from framework.mongo import ObjectId, DummyRequest
@@ -45,12 +44,10 @@ from website.util import api_url_for
 from website.util import api_v2_url
 from website.util import sanitize
 from website.util import get_headers_from_request
-from website.util.time import throttle_period_expired
 from website.exceptions import (
     NodeStateError,
     InvalidTagError, TagNotFoundError,
     UserNotAffiliatedError,
-    TooManyRequests
 )
 from website.institutions.model import Institution, AffiliatedInstitutionsList
 from website.citations.utils import datetime_to_csl
@@ -90,7 +87,7 @@ def has_anonymous_link(node, auth):
         return auth.private_link.anonymous
     return False
 
-@unique_on(['name', 'schema_version', '_id'])
+@unique_on(['name', 'schema_version'])
 class MetaSchema(StoredObject):
 
     _id = fields.StringField(default=lambda: str(ObjectId()))
@@ -147,24 +144,21 @@ class MetaSchema(StoredObject):
             raise ValidationValueError(e.message)
         return
 
+
 def ensure_schema(schema, name, version=1):
-    schema_obj = None
     try:
+        MetaSchema(
+            name=name,
+            schema_version=version,
+            schema=schema
+        ).save()
+    except KeyExistsException:
         schema_obj = MetaSchema.find_one(
             Q('name', 'eq', name) &
             Q('schema_version', 'eq', version)
         )
-    except NoResultsFound:
-        meta_schema = {
-            'name': name,
-            'schema_version': version,
-            'schema': schema,
-        }
-        schema_obj = MetaSchema(**meta_schema)
-    else:
         schema_obj.schema = schema
-    schema_obj.save()
-    return schema_obj
+        schema_obj.save()
 
 
 def ensure_schemas():
@@ -3354,9 +3348,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
     def add_contributor_registered_or_not(self, auth, user_id=None, full_name=None, email=None, send_email='false',
                                           permissions=None, bibliographic=True, index=None, save=False):
-
-        if send_email != 'false' and not throttle_period_expired(auth.user.email_last_sent, settings.API_SEND_EMAIL_THROTTLE):
-            raise TooManyRequests
 
         if user_id:
             contributor = User.load(user_id)

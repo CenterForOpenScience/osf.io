@@ -43,23 +43,29 @@ describe('nodeControl', () => {
                 vm.ark('24601');
                 assert.isTrue(vm.hasIdentifiers());
             });
-            it('can have identifiers when public, registered, and admin', () => {
+            it('can have identifiers when admin and public', () => {
                 var data = $.extend({}, nodeData);
                 data.node = $.extend(data.node, {is_registration: true, is_public: true});
                 var vm = new nodeControl._ProjectViewModel(data);
                 assert.isTrue(vm.canCreateIdentifiers());
+                data.node = $.extend(data.node, {is_registration: false, is_public: true});
+                vm = new nodeControl._ProjectViewModel(data);
+                assert.isTrue(vm.canCreateIdentifiers());
             });
-            it('cannot have identifiers when private, not registered, or not admin', () => {
+            it('cannot have identifiers when private or not admin', () => {
                 var vm;
                 var data = $.extend({}, nodeData);
                 data.node = $.extend(data.node, {is_registration: true, is_public: false});
                 vm = new nodeControl._ProjectViewModel(data);
                 assert.isFalse(vm.canCreateIdentifiers());
-                data.node = $.extend(data.node, {is_registration: false, is_public: true});
+                data.node = $.extend(data.node, {is_registration: false, is_public: false});
                 vm = new nodeControl._ProjectViewModel(data);
                 assert.isFalse(vm.canCreateIdentifiers());
                 data = $.extend(data, {user: {permissions: ['read', 'write']}});
                 data.node = $.extend(data.node, {is_registration: true, is_public: true});
+                vm = new nodeControl._ProjectViewModel(data);
+                assert.isFalse(vm.canCreateIdentifiers());
+                data.node = $.extend(data.node, {is_registration: false, is_public: true});
                 vm = new nodeControl._ProjectViewModel(data);
                 assert.isFalse(vm.canCreateIdentifiers());
             });

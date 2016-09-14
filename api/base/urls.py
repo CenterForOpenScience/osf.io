@@ -32,6 +32,7 @@ urlpatterns = [
                 url(r'^preprint_providers/', include('api.preprint_providers.urls', namespace='preprint_providers')),
                 url(r'^registrations/', include('api.registrations.urls', namespace='registrations')),
                 url(r'^taxonomies/', include('api.taxonomies.urls', namespace='taxonomies')),
+                url(r'^test/', include('api.test.urls', namespace='test')),
                 url(r'^tokens/', include('api.tokens.urls', namespace='tokens')),
                 url(r'^users/', include('api.users.urls', namespace='users')),
                 url(r'^view_only_links/', include('api.view_only_links.urls', namespace='view-only-links')),
