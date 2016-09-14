@@ -26,9 +26,11 @@ from framework.auth.exceptions import (
     InvalidTokenError,
     MergeConfirmedRequiredError
 )
+from framework.sessions.utils import remove_sessions_for_user
 from framework.exceptions import PermissionsError
 from framework.sentry import log_exception
 from website import filters
+from website import mails
 
 from osf_models.exceptions import reraise_django_validation_errors
 from osf_models.models.base import BaseModel, GuidMixin
@@ -254,6 +256,16 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     middle_names = models.CharField(max_length=255, blank=True)
     family_name = models.CharField(max_length=255, blank=True)
     suffix = models.CharField(max_length=255, blank=True)
+
+    # identity for user logged in through external idp
+    external_identity = DateTimeAwareJSONField(default=dict, blank=True)
+    # Format: {
+    #   <external_id_provider>: {
+    #       <external_id>: <status from ('VERIFIED, 'CREATE', 'LINK')>,
+    #       ...
+    #   },
+    #   ...
+    # }
 
     # Employment history
     # jobs = fields.DictionaryField(list=True, validate=validate_history_item)
@@ -529,14 +541,16 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
             remove_sessions_for_user(self)
 
     @classmethod
-    def create_unconfirmed(cls, username, password, fullname, do_confirm=True,
-                           campaign=None):
+    def create_unconfirmed(cls, username, password, fullname, external_identity=None,
+                           do_confirm=True, campaign=None):
         """Create a new user who has begun registration but needs to verify
         their primary email address (username).
         """
         user = cls.create(username, password, fullname)
-        user.add_unconfirmed_email(username)
+        user.add_unconfirmed_email(username, external_identity=external_identity)
         user.is_registered = False
+        if external_identity:
+            user.external_identity.update(external_identity)
         if campaign:
             # needed to prevent cirular import
             from framework.auth.campaigns import system_tag_for_campaign  # skipci
@@ -576,7 +590,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
             if self.email_verifications[token].get('confirmed', False):
                 try:
                     user_merge = OSFUser.find_one(
-                        Q('emails', 'eq', self.email_verifications[token]['email'].lower())
+                        Q('emails', 'contains', [self.email_verifications[token]['email'].lower()])
                     )
                 except NoResultsFound:
                     user_merge = False
@@ -632,7 +646,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         self.family_name = parsed['family']
         self.suffix = parsed['suffix']
 
-    def add_unconfirmed_email(self, email, expiration=None):
+    def add_unconfirmed_email(self, email, expiration=None, external_identity=None):
         """Add an email verification token for a given email."""
 
         # TODO: This is technically not compliant with RFC 822, which requires
@@ -642,7 +656,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         #       ref: https://tools.ietf.org/html/rfc822#section-6
         email = email.lower().strip()
 
-        if email in self.emails:
+        if not external_identity and email in self.emails:
             raise ValueError('Email already confirmed to this user.')
 
         with reraise_django_validation_errors():
@@ -659,8 +673,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
             self.email_verifications = {}
 
         # confirmed used to check if link has been clicked
-        self.email_verifications[token] = {'email': email,
-                                           'confirmed': False}
+        self.email_verifications[token] = {
+            'email': email,
+            'confirmed': False,
+            'external_identity': external_identity
+        }
         self._set_email_token_expiration(token, expiration=expiration)
         return token
 
@@ -699,7 +716,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
                 return token
         raise KeyError('No confirmation token for email "{0}"'.format(email))
 
-    def get_confirmation_url(self, email, external=True, force=False):
+    def get_confirmation_url(self, email, external=True, force=False, external_id_provider=None):
         """Return the confirmation url for a given email.
 
         :raises: ExpiredTokenError if trying to access a token that is expired.
@@ -708,7 +725,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         config = apps.get_app_config('osf_models')
         base = config.domain if external else '/'
         token = self.get_confirmation_token(email, force=force)
-        return '{0}confirm/{1}/{2}/'.format(base, self._id, token)
+        if external_id_provider:
+            return '{0}confirm/external/{1}/{2}/'.format(base, self._id, token)
+        else:
+            return '{0}confirm/{1}/{2}/'.format(base, self._id, token)
 
     def register(self, username, password=None):
         """Registers the user.

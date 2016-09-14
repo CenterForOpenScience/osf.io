@@ -486,6 +486,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         :param str permission: Required permission
         :returns: User has required permission
         """
+        if not user:
+            return False
         try:
             contrib = user.contributor_set.get(node=self)
         except Contributor.DoesNotExist:
