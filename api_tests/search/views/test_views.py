@@ -20,7 +20,6 @@ from website.project.model import ensure_schemas
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.search import search
 
-
 class ApiSearchTestCase(ApiTestCase):
 
     def setUp(self):
@@ -54,7 +53,7 @@ class ApiSearchTestCase(ApiTestCase):
         self.component.set_description('This is my part, nobody else speak', auth=Auth(self.user_two), save=True)
         self.component.add_tag('trumpets', auth=Auth(self.user_two), save=True)
 
-        self.component_two = ProjectFactory(parent=self.project, title='Highlights', creator=self.user_one, is_public=True)
+        self.component_two = NodeFactory(parent=self.project, title='Highlights', creator=self.user_one, is_public=True)
         self.private_component = NodeFactory(parent=self.project, title='Wavves', creator=self.user_one)
 
         self.file = create_test_file(self.component, self.user_one, filename='UltralightBeam.mp3')
@@ -97,11 +96,11 @@ class TestSearch(ApiSearchTestCase):
         components_found = search_fields['components']['related']['meta']['total']
         registrations_found = search_fields['registrations']['related']['meta']['total']
 
-        assert_equal(users_found, 2)
-        assert_equal(files_found, 1)
-        assert_equal(projects_found, 1)
-        assert_equal(components_found, 1)
-        assert_equal(registrations_found, 1)
+        assert_equal(users_found, 3)
+        assert_equal(files_found, 2)
+        assert_equal(projects_found, 2)
+        assert_equal(components_found, 2)
+        assert_equal(registrations_found, 2)
 
     def test_search_auth(self):
         res = self.app.get(self.url, auth=self.user)
@@ -114,11 +113,46 @@ class TestSearch(ApiSearchTestCase):
         components_found = search_fields['components']['related']['meta']['total']
         registrations_found = search_fields['registrations']['related']['meta']['total']
 
-        assert_equal(users_found, 2)
-        assert_equal(files_found, 1)
-        assert_equal(projects_found, 1)
-        assert_equal(components_found, 1)
-        assert_equal(registrations_found, 1)
+        assert_equal(users_found, 3)
+        assert_equal(files_found, 2)
+        assert_equal(projects_found, 2)
+        assert_equal(components_found, 2)
+        assert_equal(registrations_found, 2)
+
+    def test_search_fields_links(self):
+        res = self.app.get(self.url)
+        assert_equal(res.status_code, 200)
+
+        search_fields = res.json['search_fields']
+        users_link = search_fields['users']['related']['href']
+        files_link = search_fields['files']['related']['href']
+        projects_link = search_fields['projects']['related']['href']
+        components_link = search_fields['components']['related']['href']
+        registrations_link = search_fields['registrations']['related']['href']
+
+        assert_in('/{}search/users/?q=*'.format(API_BASE), users_link)
+        assert_in('/{}search/files/?q=*'.format(API_BASE), files_link)
+        assert_in('/{}search/projects/?q=*'.format(API_BASE), projects_link)
+        assert_in('/{}search/components/?q=*'.format(API_BASE), components_link)
+        assert_in('/{}search/registrations/?q=*'.format(API_BASE), registrations_link)
+
+    def test_search_fields_links_with_query(self):
+        url = '{}?q=science'.format(self.url)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+
+        search_fields = res.json['search_fields']
+        users_link = search_fields['users']['related']['href']
+        files_link = search_fields['files']['related']['href']
+        projects_link = search_fields['projects']['related']['href']
+        components_link = search_fields['components']['related']['href']
+        registrations_link = search_fields['registrations']['related']['href']
+
+        assert_in('/{}search/users/?q=science'.format(API_BASE), users_link)
+        assert_in('/{}search/files/?q=science'.format(API_BASE), files_link)
+        assert_in('/{}search/projects/?q=science'.format(API_BASE), projects_link)
+        assert_in('/{}search/components/?q=science'.format(API_BASE), components_link)
+        assert_in('/{}search/registrations/?q=science'.format(API_BASE), registrations_link)
 
 
 class TestSearchComponents(ApiSearchTestCase):
