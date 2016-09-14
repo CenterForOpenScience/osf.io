@@ -260,7 +260,6 @@ var SignUpViewModel = oop.extend(BaseViewModel, {
         var self = this;
 
         /* jshint ignore: start */
-        // jshint ignore is necessary for grecaptcha and resulting unbalenced brackets
         if(xhr.responseText.indexOf('UnicodeEncodeError') !== -1){
             self.changeMessage(
                 'Email address or password contains invalid characters',
