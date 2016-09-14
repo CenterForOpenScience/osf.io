@@ -837,7 +837,7 @@ class TestSearchMigration(SearchTestCase):
 
     def test_multiple_migrations_with_delete(self):
         for n in xrange(1, 21, 2):
-            migrate(delete=True,  index=settings.ELASTIC_INDEX, app=self.app.app)
+            migrate(delete=True, index=settings.ELASTIC_INDEX, app=self.app.app)
             var = self.es.indices.get_aliases()
             assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
 
@@ -856,13 +856,13 @@ class TestSearchMigration(SearchTestCase):
                 }
             }
         }
+        institution_bucket_found = False
         res = self.es.search(index=settings.ELASTIC_INDEX, doc_type=None, search_type='count', body=count_query)
         for bucket in res['aggregations']['counts']['buckets']:
             if bucket['key'] == u'institution':
-                assert True
-                return
+                institution_bucket_found = True
 
-        assert False
+        assert_equal(institution_bucket_found, True)
 
 class TestSearchFiles(SearchTestCase):
 
