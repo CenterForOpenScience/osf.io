@@ -3,15 +3,11 @@
 var ko = require('knockout');
 var $ = require('jquery');
 var Raven = require('raven-js');
-var bootbox = require('bootbox');
-require('js/osfToggleHeight');
 var OAuthAddonSettingsViewModel = require('js/addonSettings.js').OAuthAddonSettingsViewModel;
 var language = require('js/osfLanguage').Addons.owncloud;
 var osfHelpers = require('js/osfHelpers');
 var oop = require('js/oop');
-var ExternalAccount = require('js/addonSettings').ExternalAccount;
 var $modal = $('#ownCloudCredentialsModal');
-
 
 var ViewModel = oop.extend(OAuthAddonSettingsViewModel,{
     constructor: function(url){
@@ -65,8 +61,6 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel,{
     },
     clearModal : function() {
         var self = this;
-        self.message('');
-        self.messageClass('text-info');
         self.selectedHost(null);
         self.customHost(null);
     },

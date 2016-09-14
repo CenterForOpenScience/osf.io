@@ -84,7 +84,6 @@ var ViewModel = oop.extend(OauthAddonFolderPicker,{
                         }
                     ).done(self.onImportSuccess.bind(self)
                     ).fail(self.onImportError.bind(self));
-
                     self.changeMessage(self.messages.connectAccountSuccess(), 'text-success', 3000);
                 }
                 catch(err){
