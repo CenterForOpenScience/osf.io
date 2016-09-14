@@ -70,7 +70,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False):
             }
         else:
             flags = {
-                'visible': user._id in node.visible_contributor_ids,
+                'visible': node.contributor_set.filter(user=user, visible=True).exists(),
                 'permission': reduce_permissions(node.get_permissions(user)),
             }
         ret.update(flags)

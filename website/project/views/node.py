@@ -732,7 +732,7 @@ def _view_project(node, auth, primary=False):
                 'ark': node.get_identifier_value('ark'),
             },
             'institutions': get_affiliated_institutions(node) if node else [],
-            'alternative_citations': [citation.to_json() for citation in node.alternative_citations],
+            'alternative_citations': [citation.to_json() for citation in node.alternative_citations.all()],
             'has_draft_registrations': node.has_active_draft_registrations,
             'contributors': list(node.contributors.values_list('guid__guid', flat=True)),
             'is_preprint': node.is_preprint,
@@ -965,7 +965,7 @@ def node_child_tree(user, node_ids):
         affiliated_institutions = [{
             'id': affiliated_institution.pk,
             'name': affiliated_institution.name
-        } for affiliated_institution in node.affiliated_institutions]
+        } for affiliated_institution in node.affiliated_institutions.all()]
 
         children = []
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
@@ -974,9 +974,7 @@ def node_child_tree(user, node_ids):
             user,
             [
                 n._id
-                for n in node.nodes
-                if n.primary and
-                not n.is_deleted
+                for n in node.nodes.filter(is_deleted=False)
             ]
         ))
         item = {
@@ -992,7 +990,7 @@ def node_child_tree(user, node_ids):
             },
             'user_id': user._id,
             'children': children,
-            'kind': 'folder' if not node.node__parent or not node.parent_node.has_permission(user, 'read') else 'node',
+            'kind': 'folder' if not node.parent_node or not node.parent_node.has_permission(user, 'read') else 'node',
             'nodeType': node.project_or_component,
             'category': node.category,
             'permissions': {
@@ -1333,7 +1331,7 @@ def fork_pointer(auth, node, **kwargs):
 def abbrev_authors(node):
     lead_author = node.visible_contributors[0]
     ret = lead_author.family_name or lead_author.given_name or lead_author.fullname
-    if len(node.visible_contributor_ids) > 1:
+    if len(node.visible_contributors.count()) > 1:
         ret += ' et al.'
     return ret
 

@@ -29,7 +29,9 @@ from .factories import (
     UnconfirmedUserFactory
 )
 
-@pytest.mark.django_db
+
+pytestmark = pytest.mark.django_db
+
 def test_factory():
     user = UserFactory.build()
     user.save()
@@ -44,7 +46,6 @@ def auth(user):
     return Auth(user)
 
 # Tests copied from tests/test_models.py
-@pytest.mark.django_db
 class TestOSFUser:
 
     def test_create(self):
@@ -421,7 +422,6 @@ class TestOSFUser:
         assert user.is_affiliated_with_institution(institution2) is False
 
 
-@pytest.mark.django_db
 class TestProjectsInCommon:
 
     def test_get_projects_in_common(self, user, auth):
@@ -451,7 +451,6 @@ class TestProjectsInCommon:
         assert user.n_projects_in_common(user3) == 0
 
 
-@pytest.mark.django_db
 class TestCookieMethods:
 
     def test_user_get_cookie(self):
@@ -510,7 +509,6 @@ class TestCookieMethods:
         assert User.from_cookie(cookie) is None
 
 
-@pytest.mark.django_db
 class TestChangePassword:
 
     def test_change_password(self, user):
@@ -574,7 +572,6 @@ class TestChangePassword:
             self.test_change_password_invalid_blank_password('password', 'new password', password)
 
 
-@pytest.mark.django_db
 class TestIsActive:
 
     @pytest.fixture()
@@ -625,7 +622,6 @@ class TestIsActive:
         assert user.is_active is False
 
 
-@pytest.mark.django_db
 class TestAddUnconfirmedEmail:
 
     @mock.patch('osf_models.utils.security.random_string')
@@ -654,7 +650,6 @@ class TestAddUnconfirmedEmail:
 
 # Copied from tests/test_models.TestUnregisteredUser
 
-@pytest.mark.django_db
 class TestUnregisteredUser:
 
     @pytest.fixture()
@@ -750,7 +745,6 @@ class TestUnregisteredUser:
         assert bool(unreg_user.verify_claim_token('invalidtoken', project_id=project._primary_key)) is False
 
 # Copied from tests/test_models.py
-@pytest.mark.django_db
 class TestRecentlyAdded:
 
     def test_recently_added(self, user, auth):
@@ -808,7 +802,6 @@ class TestRecentlyAdded:
         assert len(list(user.get_recently_added())) == 15
 
 # New tests
-@pytest.mark.django_db
 class TestTagging:
     def test_add_system_tag(self, user):
         tag_name = fake.word()
@@ -833,3 +826,15 @@ class TestTagging:
         user.add_system_tag(tag_name)
 
         assert tag_name in user.system_tags
+
+class TestCitationProperties:
+
+    def test_user_csl(self, user):
+        # Convert a User instance to csl's name-variable schema
+        assert (
+            user.csl_name ==
+            {
+                'given': user.given_name,
+                'family': user.family_name,
+            },
+        )

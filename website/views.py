@@ -90,7 +90,7 @@ def index():
 
 def find_bookmark_collection(user):
     Collection = apps.get_model('osf_models.Collection')
-    bookmark_collection = Collection.find(Q('is_bookmark_collection', 'eq', True) & Q('user', 'eq', user))
+    bookmark_collection = Collection.find(Q('is_bookmark_collection', 'eq', True) & Q('creator', 'eq', user))
     if bookmark_collection.count() == 0:
         new_bookmark_collection(user)
     return bookmark_collection[0]
