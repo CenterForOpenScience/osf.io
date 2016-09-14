@@ -12,7 +12,7 @@ from django.conf import settings
 from website.addons.base.exceptions import InvalidFolderError, InvalidAuthError
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
-from website.models import Node, Comment, Institution, MetaSchema, DraftRegistration, PrivateLink
+from website.models import Node, Comment, Institution, MetaSchema, DraftRegistration, PrivateLink, User
 from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 from website.project import new_private_link
@@ -21,7 +21,7 @@ from website.project.model import NodeUpdateError
 from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse, is_truthy
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField,
-                                  HideIfRegistration, RestrictedDictSerializer,
+                                  HideIfRegistration, RestrictedDictSerializer, JSONAPIListSerializer,
                                   JSONAPIRelationshipSerializer, relationship_diff, )
 from api.base.exceptions import (InvalidModelValueError,
                                  RelationshipPostMakesNoChanges, Conflict,
@@ -749,6 +749,142 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
         if index is not None:
             contributor.index = index
         return contributor
+
+class NodeContributorsRelationshipSerializer(JSONAPISerializer):
+    data = JSONAPIListSerializer(child=NodeContributorDetailSerializer())
+
+    class Meta:
+        type_ = 'contributors'
+
+    def make_instance_obj(self, obj):
+        # Convenience method to format instance based on view's get_object
+        return {'data': [obj.contributors], 'self': obj}
+
+    def clean_validated_data(self, obj):
+        data = []
+        for index, contrib in enumerate(obj):
+            user_id = contrib[u'_id'].split('-')[1]
+            id = contrib[u'_id']
+            expanded_permissions = osf_permissions.expand_permissions(contrib[u'permission'])
+            short_permission = contrib[u'permission']
+            bibliographic = contrib[u'bibliographic']
+            if bibliographic is None:
+                bibliographic = True
+            data.append({
+                'user_id': user_id,
+                'id': id,
+                'user': User.load(user_id),
+                'expanded_permissions': expanded_permissions or ['read', 'write'],
+                'short_permission': short_permission or 'write',
+                'bibliographic': bibliographic
+            })
+        return data
+
+    def add_new_contributors(self, node, request_data, current_contrib_ids, auth):
+        new_contrib_ids = []
+        for contrib in request_data:
+            if contrib['user_id'] not in current_contrib_ids:
+                try:
+                    node.add_contributor_registered_or_not(
+                        auth=auth, user_id=contrib['user_id'],
+                        permissions=contrib['expanded_permissions'], bibliographic=contrib['bibliographic'], save=True
+                    )
+                    new_contrib_ids.append(contrib['user_id'])
+                except ValidationValueError as e:
+                    raise exceptions.ValidationError(detail=e.message)
+                except ValueError as e:
+                    raise exceptions.NotFound(detail=e.message)
+
+        return new_contrib_ids
+
+    def update_contributor(self, node, user, permission, bibliographic, auth, save=True):
+        try:
+            node.update_contributor(user, permission, bibliographic, auth=auth, save=save)
+        except NodeStateError as e:
+            raise exceptions.ValidationError(detail=e.message)
+        except ValueError as e:
+            raise exceptions.ValidationError(detail=e.message)
+        return user
+
+    # Sets changed contributor attributes so they will be included in response
+    def modify_contributor_attributes(self, node, request_data):
+        for index, contrib in enumerate(node.contributors):
+            contrib.permission = request_data[index]['short_permission']
+            contrib.bibliographic = request_data[index]['bibliographic']
+            contrib.index = index
+            contrib.node_id = node._id
+        return node
+
+    def update(self, instance, validated_data):
+        current_contrib_list = instance.contributors
+        current_contrib_ids = [contrib._id for contrib in current_contrib_list]
+        node = instance
+        auth = Auth(self.context['request'].user)
+        request_data = self.clean_validated_data(validated_data['data'])
+        user = self.context['request'].user
+        current_user_request_data = None
+
+        # Adds new contributors
+        contrib_ids_added = self.add_new_contributors(node, request_data, current_contrib_ids, auth)
+
+        # Updates those contributors whose permissions changing to "admin"
+        for contrib in request_data:
+            if str(contrib['user_id']) == user._id:
+                current_user_request_data = contrib
+            if contrib['user_id'] not in contrib_ids_added and contrib['short_permission'] == 'admin':
+                self.update_contributor(node, contrib['user'], contrib['short_permission'], None, auth=auth)
+
+        # Updates those contributors whose bibliographic info changing to True
+        for contrib in request_data:
+            if contrib['user_id'] not in contrib_ids_added and contrib['bibliographic'] is True:
+                self.update_contributor(node, contrib['user'], None, contrib['bibliographic'], auth=auth)
+
+        # Updates those contributors whose permissions changing to "read" or "write"
+        for contrib in request_data:
+            if contrib['user_id'] not in contrib_ids_added and contrib['short_permission'] != 'admin' and contrib['user_id'] != user._id:
+                self.update_contributor(node, contrib['user'], contrib['short_permission'], None, auth=auth)
+
+        # Updates those contributors whose bibliographic info changing to False
+        for contrib in request_data:
+            if contrib['user_id'] not in contrib_ids_added and contrib['bibliographic'] is False:
+                self.update_contributor(node, contrib['user'], None, contrib['bibliographic'], auth=auth)
+
+        # Deletes contributors who were not included in request
+        for contrib_id in current_contrib_ids:
+            if contrib_id not in [contrib['user_id'] for contrib in request_data] and contrib_id != user._id:
+                contributor = User.load(contrib_id)
+                node.remove_contributor(contributor, auth)
+
+        # Reorders contributors
+        for index, contrib in enumerate(request_data):
+            node.move_contributor(contrib['user'], auth, index, save=True)
+
+        # If current user was not included in request data, remove current user last
+        if current_user_request_data is None:
+            removed = node.remove_contributor(user, auth)
+            if not removed:
+                raise exceptions.ValidationError('Must have at least one registered admin contributor')
+
+            self.modify_contributor_attributes(node, request_data)
+
+            return self.make_instance_obj(node)
+
+        # If current user was removing their admin permissions, change this last
+        if current_user_request_data['short_permission'] != 'admin':
+            self.update_contributor(node, current_user_request_data['user'], current_user_request_data['short_permission'], None, auth=auth, save=True)
+            # Sets changed contributor attributes so they will be included in response
+            self.modify_contributor_attributes(node, request_data)
+            return self.make_instance_obj(node)
+
+        # Sets changed contributor attributes so they will be included in response
+        self.modify_contributor_attributes(node, request_data)
+
+        return self.make_instance_obj(node)
+
+    def to_representation(self, value):
+        contributors = value['data'][0]
+        data = self.fields['data'].to_representation(contributors)
+        return {'data': data}
 
 
 class NodeLinksSerializer(JSONAPISerializer):
