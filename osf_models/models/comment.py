@@ -1,5 +1,3 @@
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.db.models import Q
@@ -39,20 +37,14 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
     node = models.ForeignKey('Node', null=True)
 
     # The file or project overview page that the comment is for
-    root_target_content_type = models.ForeignKey(
-        ContentType,
-        on_delete=models.CASCADE,
-        related_name='root_comments',
-        null=True
-    )
-    root_target_id = models.PositiveIntegerField(null=True)
-    root_target = GenericForeignKey('root_target_content_type', 'root_target_id')
+    root_target = models.ForeignKey(Guid, on_delete=models.SET_NULL,
+                                    related_name='comments',
+                                    null=True, blank=True)
 
     # the direct 'parent' of the comment (e.g. the target of a comment reply is another comment)
-    target_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE,
-                                            related_name='comments', null=True)
-    target_id = models.PositiveIntegerField(null=True)
-    target = GenericForeignKey('target_content_type', 'target_id')
+    target = models.ForeignKey(Guid, on_delete=models.SET_NULL,
+                                    related_name='child_comments',
+                                    null=True, blank=True)
 
     date_created = models.DateTimeField(default=timezone.now)  # auto_now_add=True)
     date_modified = models.DateTimeField(default=timezone.now)  # auto_now=True)

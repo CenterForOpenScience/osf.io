@@ -102,6 +102,9 @@ class BaseModel(models.Model):
     def _primary_name(self):
         return '_id'
 
+    def reload(self):
+        return self.refresh_from_db()
+
     def _natural_key(self):
         return self.pk
 

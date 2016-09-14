@@ -123,6 +123,9 @@ class AddonModelMixin(models.Model):
     def get_addons(self):
         return []
 
+    def has_addon(self, name):
+        return True
+
     def get_addon_names(self):
         return [each.name for each in self.get_addons()]
 

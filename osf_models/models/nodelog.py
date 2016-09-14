@@ -2,6 +2,8 @@ from django.apps import apps
 from django.db import models
 from django.utils import timezone
 
+from website.util import api_v2_url
+
 from osf_models.models.base import BaseModel, ObjectIDMixin
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
@@ -137,6 +139,18 @@ class NodeLog(ObjectIDMixin, BaseModel):
     class Meta:
         ordering = ['-date']
         get_latest_by = 'date'
+
+    @property
+    def absolute_api_v2_url(self):
+        path = '/logs/{}/'.format(self._id)
+        return api_v2_url(path)
+
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
+    @property
+    def absolute_url(self):
+        return self.absolute_api_v2_url
 
     def clone_node_log(self, node_id):
         """

@@ -1,7 +1,10 @@
 import contextlib
 
 from django.core.exceptions import ValidationError as DjangoValidationError
-from modularodm.exceptions import ValidationError as MODMValidationError
+from modularodm.exceptions import (
+    ValidationError as MODMValidationError,
+    ValidationValueError as MODMValidationValueError,
+)
 
 class TokenError(Exception):
     pass
@@ -75,7 +78,7 @@ class UserNotAffiliatedError(OSFError):
     message_long = 'This user is not affiliated with this institution.'
 
 
-class ValidationError(MODMValidationError, DjangoValidationError):
+class ValidationError(DjangoValidationError, MODMValidationError):
     """Raised on database validation failure.
     This exists for compatibility with both modular-odm and Django.
     """
@@ -92,7 +95,7 @@ def reraise_django_validation_errors():
     except DjangoValidationError as err:
         raise ValidationError(*err.args)
 
-class ValidationValueError(ValidationError, ValueError):
+class ValidationValueError(DjangoValidationError, MODMValidationValueError):
     """ Raised during validation if the value of the input is unacceptable, but
      the type is correct """
     pass

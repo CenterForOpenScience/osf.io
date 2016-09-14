@@ -14,15 +14,15 @@ def validate_title(value):
     above 200 characters.
     """
     if value is None or not value.strip():
-        raise ValidationError('Title cannot be blank.')
+        raise ValidationValueError('Title cannot be blank.')
 
     value = strip_html(value)
 
     if value is None or not value.strip():
-        raise ValidationError('Invalid title.')
+        raise ValidationValueError('Invalid title.')
 
     if len(value) > 200:
-        raise ValidationError('Title cannot exceed 200 characters.')
+        raise ValidationValueError('Title cannot exceed 200 characters.')
 
     return True
 

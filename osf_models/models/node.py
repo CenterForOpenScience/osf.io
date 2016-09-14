@@ -4,6 +4,7 @@ import logging
 import operator
 import re
 import urlparse
+import warnings
 
 from django.apps import apps
 from django.contrib.contenttypes.fields import GenericRelation
@@ -34,13 +35,17 @@ from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from typedmodels.models import TypedModel
 
 from framework import status
+from framework.mongo.utils import to_mongo_key
 from framework.exceptions import PermissionsError
 from framework.sentry import log_exception
 from website import settings
+from website.project.model import NodeUpdateError
 from website.exceptions import UserNotAffiliatedError, NodeStateError
 from website.project import signals as project_signals
+from website.citations.utils import datetime_to_csl
 from website.util import api_url_for
 from website.util import web_url_for
+from website.util import sanitize
 from website.util.permissions import (
     expand_permissions,
     reduce_permissions,
@@ -86,6 +91,16 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
         'other': 'Other',
         '': 'Uncategorized',
     }
+
+    # Fields that are writable by Node.update
+    WRITABLE_WHITELIST = [
+        'title',
+        'description',
+        'category',
+        'is_public',
+        'node_license',
+    ]
+
     # Named constants
     PRIVATE = 'private'
     PUBLIC = 'public'
@@ -302,11 +317,47 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
     def has_active_draft_registrations(self):
         return self.draft_registrations_active.exists()
 
+    @property
+    def csl(self):  # formats node information into CSL format for citation parsing
+        """a dict in CSL-JSON schema
+
+        For details on this schema, see:
+            https://github.com/citation-style-language/schema#csl-json-schema
+        """
+        csl = {
+            'id': self._id,
+            'title': sanitize.unescape_entities(self.title),
+            'author': [
+                contributor.csl_name  # method in auth/model.py which parses the names of authors
+                for contributor in self.visible_contributors
+            ],
+            'publisher': 'Open Science Framework',
+            'type': 'webpage',
+            'URL': self.display_absolute_url,
+        }
+
+        doi = self.get_identifier_value('doi')
+        if doi:
+            csl['DOI'] = doi
+
+        if self.logs:
+            csl['issued'] = datetime_to_csl(self.logs.latest().date)
+
+        return csl
+
     def update_search(self):
         from website import search
 
         try:
             search.search.update_node(self, bulk=False, async=True)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+            log_exception()
+
+    def delete_search_entry(self):
+        from website import search
+        try:
+            search.search.delete_node(self)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
@@ -367,6 +418,17 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
             (user and self.has_permission(user, 'write')) or is_api_node
         )
 
+    def get_aggregate_logs_query(self, auth):
+        ids = [self._id] + [n._id
+                            for n in self.get_descendants_recursive()
+                            if n.can_view(auth)]
+        query = Q('node', 'in', ids) & Q('should_hide', 'ne', True)
+        return query
+
+    def get_aggregate_logs_queryset(self, auth):
+        query = self.get_aggregate_logs_query(auth)
+        return NodeLog.find(query).sort('-date')
+
     @property
     def comment_level(self):
         if self.public_comments:
@@ -388,7 +450,10 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
         return self.absolute_api_v2_url
 
     def get_permissions(self, user):
-        contrib = user.contributor_set.get(node=self)
+        try:
+            contrib = user.contributor_set.get(node=self)
+        except Contributor.DoesNotExist:
+            return []
         perm = []
         if contrib.read:
             perm.append(READ)
@@ -408,12 +473,23 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
         try:
             contrib = user.contributor_set.get(node=self)
         except Contributor.DoesNotExist:
+            if permission == 'read' and check_parent:
+                return self.is_admin_parent(user)
             return False
         else:
             if getattr(contrib, permission, False):
                 return True
-            if permission == 'read' and check_parent:
-                return self.is_admin_parent(user)
+        return False
+
+    def has_permission_on_children(self, user, permission):
+        """Checks if the given user has a given permission on any child nodes
+            that are not registrations or deleted
+        """
+        if self.has_permission(user, permission):
+            return True
+        for node in self.nodes.filter(is_deleted=False):
+            if node.has_permission_on_children(user, permission):
+                return True
         return False
 
     def is_admin_parent(self, user):
@@ -471,6 +547,13 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
         if not node_license and self.parent_node:
             return self.parent_node.license
         return node_license
+
+    @property
+    def visible_contributors(self):
+        return OSFUser.objects.filter(
+            contributor__node=self,
+            contributor__visible=True
+        )
 
     # visible_contributor_ids was moved to this property
     @property
@@ -925,11 +1008,8 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
 
     @property
     def nodes_primary(self):
-        return [
-            node
-            for node in self.nodes.all()
-            if node.primary
-        ]
+        """For v1 compat."""
+        return self.nodes.all()
 
     def add_citation(self, auth, save=False, log=True, citation=None, **kwargs):
         if not citation:
@@ -1247,6 +1327,240 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
         """For compat with v1 Pointers."""
         return self
 
+    def set_title(self, title, auth, save=False):
+        """Set the title of this Node and log it.
+
+        :param str title: The new title.
+        :param auth: All the auth information including user, API key.
+        """
+        #Called so validation does not have to wait until save.
+        validate_title(title)
+
+        original_title = self.title
+        new_title = sanitize.strip_html(title)
+        # Title hasn't changed after sanitzation, bail out
+        if original_title == new_title:
+            return False
+        self.title = new_title
+        self.add_log(
+            action=NodeLog.EDITED_TITLE,
+            params={
+                'parent_node': self.parent_id,
+                'node': self._primary_key,
+                'title_new': self.title,
+                'title_original': original_title,
+            },
+            auth=auth,
+            save=False,
+        )
+        if save:
+            self.save()
+        return None
+
+    def set_description(self, description, auth, save=False):
+        """Set the description and log the event.
+
+        :param str description: The new description
+        :param auth: All the auth informtion including user, API key.
+        :param bool save: Save self after updating.
+        """
+        original = self.description
+        new_description = sanitize.strip_html(description)
+        if original == new_description:
+            return False
+        self.description = new_description
+        self.add_log(
+            action=NodeLog.EDITED_DESCRIPTION,
+            params={
+                'parent_node': self.parent_id,
+                'node': self._primary_key,
+                'description_new': self.description,
+                'description_original': original
+            },
+            auth=auth,
+            save=False,
+        )
+        if save:
+            self.save()
+        return None
+
+    def update(self, fields, auth=None, save=True):
+        """Update the node with the given fields.
+
+        :param dict fields: Dictionary of field_name:value pairs.
+        :param Auth auth: Auth object for the user making the update.
+        :param bool save: Whether to save after updating the object.
+        """
+        if not fields:  # Bail out early if there are no fields to update
+            return False
+        values = {}
+        for key, value in fields.iteritems():
+            if key not in self.WRITABLE_WHITELIST:
+                continue
+            if self.is_registration and key != 'is_public':
+                raise NodeUpdateError(reason='Registered content cannot be updated', key=key)
+            # Title and description have special methods for logging purposes
+            if key == 'title':
+                if not self.is_bookmark_collection:
+                    self.set_title(title=value, auth=auth, save=False)
+                else:
+                    raise NodeUpdateError(reason='Bookmark collections cannot be renamed.', key=key)
+            elif key == 'description':
+                self.set_description(description=value, auth=auth, save=False)
+            elif key == 'is_public':
+                self.set_privacy(
+                    Node.PUBLIC if value else Node.PRIVATE,
+                    auth=auth,
+                    log=True,
+                    save=False
+                )
+            elif key == 'node_license':
+                self.set_node_license(
+                    value.get('id'),
+                    value.get('year'),
+                    value.get('copyright_holders'),
+                    auth,
+                    save=save
+                )
+            else:
+                with warnings.catch_warnings():
+                    try:
+                        # This is in place because historically projects and components
+                        # live on different ElasticSearch indexes, and at the time of Node.save
+                        # there is no reliable way to check what the old Node.category
+                        # value was. When the cateogory changes it is possible to have duplicate/dead
+                        # search entries, so always delete the ES doc on categoryt change
+                        # TODO: consolidate Node indexes into a single index, refactor search
+                        if key == 'category':
+                            self.delete_search_entry()
+                        ###############
+                        old_value = getattr(self, key)
+                        if old_value != value:
+                            values[key] = {
+                                'old': old_value,
+                                'new': value,
+                            }
+                            setattr(self, key, value)
+                    except AttributeError:
+                        raise NodeUpdateError(reason="Invalid value for attribute '{0}'".format(key), key=key)
+                    except warnings.Warning:
+                        raise NodeUpdateError(
+                            reason="Attribute '{0}' doesn't exist on the Node class".format(key), key=key
+                        )
+        if save:
+            updated = self.save()
+        else:
+            updated = []
+        for key in values:
+            values[key]['new'] = getattr(self, key)
+        if values:
+            self.add_log(
+                NodeLog.UPDATED_FIELDS,
+                params={
+                    'node': self._id,
+                    'updated_fields': {
+                        key: {
+                            'old': values[key]['old'],
+                            'new': values[key]['new']
+                        }
+                        for key in values
+                    }
+                },
+                auth=auth)
+        return updated
+
+    def remove_node(self, auth, date=None):
+        """Marks a node as deleted.
+
+        TODO: Call a hook on addons
+        Adds a log to the parent node if applicable
+
+        :param auth: an instance of :class:`Auth`.
+        :param date: Date node was removed
+        :type date: `datetime.datetime` or `None`
+        """
+        # TODO: rename "date" param - it's shadowing a global
+        if not self.can_edit(auth):
+            raise PermissionsError(
+                '{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node')
+            )
+
+        if self.nodes.filter(is_deleted=False).exists():
+            raise NodeStateError('Any child components must be deleted prior to deleting this project.')
+
+        # After delete callback
+        for addon in self.get_addons():
+            message = addon.after_delete(self, auth.user)
+            if message:
+                status.push_status_message(message, kind='info', trust=False)
+
+        log_date = date or timezone.now()
+
+        # Add log to parent
+        if self.parent_node:
+            self.parent_node.add_log(
+                NodeLog.NODE_REMOVED,
+                params={
+                    'project': self._primary_key,
+                },
+                auth=auth,
+                log_date=log_date,
+                save=True,
+            )
+        else:
+            self.add_log(
+                NodeLog.PROJECT_DELETED,
+                params={
+                    'project': self._primary_key,
+                },
+                auth=auth,
+                log_date=log_date,
+                save=True,
+            )
+
+        self.is_deleted = True
+        self.deleted_date = date
+        self.save()
+
+        project_signals.node_deleted.send(self)
+
+        return True
+
+    def admin_public_wiki(self, user):
+        return (
+            self.has_addon('wiki') and
+            self.has_permission(user, 'admin') and
+            self.is_public
+        )
+
+    def include_wiki_settings(self, user):
+        """Check if node meets requirements to make publicly editable."""
+        return (
+            self.admin_public_wiki(user) or
+            any(
+                each.admin_public_wiki(user)
+                for each in self.get_descendants_recursive()
+            )
+        )
+
+    def get_wiki_page(self, name=None, version=None, id=None):
+        NodeWikiPage = apps.get_model('osf_models.NodeWikiPage')
+        if name:
+            name = (name or '').strip()
+            key = to_mongo_key(name)
+            try:
+                if version and (isinstance(version, int) or version.isdigit()):
+                    id = self.wiki_pages_versions[key][int(version) - 1]
+                elif version == 'previous':
+                    id = self.wiki_pages_versions[key][-2]
+                elif version == 'current' or version is None:
+                    id = self.wiki_pages_current[key]
+                else:
+                    return None
+            except (KeyError, IndexError):
+                return None
+        return NodeWikiPage.load(id)
+
 
 class Node(AbstractNode):
     """
@@ -1301,6 +1615,56 @@ class Node(AbstractNode):
 
     # /TODO DELETE ME POST MIGRATION
 
+    @property
+    def is_bookmark_collection(self):
+        """For v1 compat"""
+        return False
+
+
+class Collection(AbstractNode):
+    # TODO DELETE ME POST MIGRATION
+    modm_model_path = 'website.project.model.Node'
+    modm_query = functools.reduce(operator.and_, [
+        MQ('is_registration', 'eq', False),
+        MQ('is_collection', 'eq', True),
+    ])
+    # /TODO DELETE ME POST MIGRATION
+    is_bookmark_collection = models.NullBooleanField(default=False, db_index=True)
+
+    @property
+    def is_collection(self):
+        """For v1 compat."""
+        return True
+
+    @property
+    def is_registration(self):
+        """For v1 compat."""
+        return False
+
+    def remove_node(self, auth, date=None):
+        if self.is_bookmark_collection:
+            raise NodeStateError('Bookmark collections may not be deleted.')
+        # Remove all the collections that this is pointing at.
+        for pointed in self.linked_nodes.all():
+            if pointed.is_collection:
+                pointed.remove_node(auth=auth)
+        return super(Collection, self).remove_node(auth=auth, date=date)
+
+    def save(self, *args, **kwargs):
+        # Bookmark collections are always named 'Bookmarks'
+        if self.is_bookmark_collection and self.title != 'Bookmarks':
+            self.title = 'Bookmarks'
+        # On creation, ensure there isn't an existing Bookmark collection for the given user
+        if not self.pk:
+            # TODO: Use a partial index to enforce this constraint in the db
+            if Collection.objects.filter(is_bookmark_collection=True, creator=self.creator).exists():
+                raise NodeStateError('Only one bookmark collection allowed per user.')
+        return super(Collection, self).save(*args, **kwargs)
+
+
+##### Signal listeners #####
+
+@receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 def add_creator_as_contributor(sender, instance, created, **kwargs):
     if created:
@@ -1313,7 +1677,7 @@ def add_creator_as_contributor(sender, instance, created, **kwargs):
             admin=True
         )
 
-
+@receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 def add_project_created_log(sender, instance, created, **kwargs):
     if created and not instance.is_fork:
@@ -1335,6 +1699,7 @@ def add_project_created_log(sender, instance, created, **kwargs):
         )
 
 
+@receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 def send_osf_signal(sender, instance, created, **kwargs):
     if created:
@@ -1343,45 +1708,8 @@ def send_osf_signal(sender, instance, created, **kwargs):
 
 # TODO: Add addons
 
+@receiver(pre_save, sender=Collection)
 @receiver(pre_save, sender=Node)
 def set_parent(sender, instance, *args, **kwargs):
     if getattr(instance, '_parent', None):
         instance.parent_node = instance._parent
-
-
-class Collection(NodeLinkMixin, GuidMixin, BaseModel):
-    # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.project.model.Node'
-    modm_query = functools.reduce(operator.and_, [
-        MQ('is_registration', 'eq', False),
-        MQ('is_collection', 'eq', True),
-    ])
-    # /TODO DELETE ME POST MIGRATION
-
-    # TODO: Uncomment auto_* attributes after migration is complete
-    date_created = models.DateTimeField(null=False, default=timezone.now)  # auto_now_add=True)
-    date_modified = models.DateTimeField(null=True, blank=True,
-                                         db_index=True)  # auto_now=True)
-    is_bookmark_collection = models.BooleanField(default=False, db_index=True)
-    is_deleted = models.BooleanField(default=False, db_index=True)
-    title = models.TextField(
-        validators=[validate_title]
-    )  # this should be a charfield but data from mongo didn't fit in 255
-    user = models.ForeignKey('OSFUser', null=True, blank=True,
-                             on_delete=models.SET_NULL, related_name='collections')
-
-    def save(self, *args, **kwargs):
-        # Bookmark collections are always named 'Bookmarks'
-        if self.is_bookmark_collection and self.title != 'Bookmarks':
-            self.title = 'Bookmarks'
-        return super(Collection, self).save(*args, **kwargs)
-
-    @property
-    def is_collection(self):
-        """For v1 compat."""
-        return True
-
-    @property
-    def is_registration(self):
-        """For v1 compat."""
-        return False
