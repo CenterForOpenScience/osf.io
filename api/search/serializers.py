@@ -39,4 +39,3 @@ class SearchSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'search'
-
