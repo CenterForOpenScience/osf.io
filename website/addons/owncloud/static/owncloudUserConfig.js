@@ -67,8 +67,6 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel,{
         var self = this;
         self.message('');
         self.messageClass('text-info');
-        self.username(null);
-        self.password(null);
         self.selectedHost(null);
         self.customHost(null);
     },
@@ -79,19 +77,15 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel,{
             self.setMessage("Please select a OwnCloud server.", 'text-danger');
             return;
         }
-
         if ( !self.useCustomHost() && !self.username() && !self.password() ){
             self.setMessage("Please enter a username and password.", 'text-danger');
             return;
         }
-
         if ( self.useCustomHost() && ( !self.customHost() || !self.username() || !self.password() ) )  {
             self.setMessage("Please enter a OwnCloud host and credentials.", 'text-danger');
             return;
         }
-
-        var url = self.urls().create;
-
+        var url = self.urls().auth;
         return osfHelpers.postJSON(
             url,
             ko.toJS({

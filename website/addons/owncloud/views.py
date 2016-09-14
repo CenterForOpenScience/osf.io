@@ -3,7 +3,7 @@
 import httplib as http
 
 from furl import furl
-
+import requests
 from flask import request
 from modularodm import Q
 from modularodm.storage.base import KeyExistsException
@@ -58,7 +58,7 @@ def owncloud_user_config_get(auth, **kwargs):
         'result': {
             'userHasAuth': user_has_auth,
             'urls': {
-                'create': api_url_for('owncloud_add_user_account'),
+                'auth': api_url_for('owncloud_add_user_account'),
                 'accounts': api_url_for('owncloud_account_list'),
             },
             'hosts': DEFAULT_HOSTS,
@@ -73,7 +73,9 @@ def owncloud_add_user_account(auth, **kwargs):
     """Verifies new external account credentials and adds to user's list"""
 
     # Ensure that ownCloud uses https
-    host = furl(request.json.get('host').rstrip('/'))
+    host_url = request.json.get('host')
+    host = furl()
+    host.host = host_url.rstrip('/').strip('https://').strip('http://')
     host.scheme = 'https'
 
     username = request.json.get('username')
@@ -83,10 +85,14 @@ def owncloud_add_user_account(auth, **kwargs):
         oc = owncloud.Client(host.url, verify_certs=settings.USE_SSL)
         oc.login(username, password)
         oc.logout()
+    except requests.exceptions.ConnectionError:
+        return {
+            'message': 'Invalid ownCloud server.'
+        }, http.BAD_REQUEST
     except owncloud.owncloud.HTTPResponseError:
         return {
             'message': 'ownCloud Login failed.'
-        }, http.BAD_REQUEST
+        }, http.UNAUTHORIZED
 
     provider = OwnCloudProvider(account=None, host=host.url,
                             username=username, password=password)
@@ -114,11 +120,11 @@ def owncloud_folder_list(node_addon, user_addon, **kwargs):
     """ Returns all the subsequent folders under the folder id passed.
         Not easily generalizable due to `path` kwarg.
     """
-    path = request.args.get('path', '/')
+    path = request.args.get('path')
     return node_addon.get_folders(path=path)
 
 def _set_folder(node_addon, folder, auth):
-    node_addon.set_folder(folder['name'], auth=auth)
+    node_addon.set_folder(folder['path'], auth=auth)
     node_addon.save()
 
 owncloud_set_config = generic_views.set_config(

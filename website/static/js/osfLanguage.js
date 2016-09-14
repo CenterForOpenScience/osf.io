@@ -84,7 +84,7 @@ module.exports = {
             deauthError: 'Could not disconnect the Google Drive account at this time',
         },
         owncloud: {
-            authError: 'Invalid ownCloud server specified.',
+            authError: 'Invalid ownCloud server',
             authInvalid: 'Invalid credentials. Please enter a valid username and password.',
             userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +
                 'contact ' + SUPPORT_LINK + ' if the problem persists.',

@@ -48,9 +48,6 @@ class AddonOwnCloudNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     @property
     def api(self):
-        """
-            authenticated ExternalProvider instance
-        """
         if self._api is None:
             self._api = OwnCloudProvider(self.external_account)
         return self._api
@@ -68,8 +65,7 @@ class AddonOwnCloudNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             folder = '/'
         self.folder_id = folder
         self.save()
-        if auth:
-            self.nodelogger.log(action='folder_selected', save=True)
+        self.nodelogger.log(action='folder_selected', save=True)
 
     def fetch_folder_name(self):
         if self.folder_id == '/':
@@ -104,7 +100,8 @@ class AddonOwnCloudNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         }
 
     def create_waterbutler_log(self, auth, action, metadata):
-        url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'], provider='owncloud')
+        url = self.owner.web_url_for('addon_view_or_download_file',
+                                     path=metadata['path'], provider='owncloud')
         self.owner.add_log(
             'owncloud_{0}'.format(action),
             auth=auth,
@@ -129,7 +126,21 @@ class AddonOwnCloudNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.save()
 
     def get_folders(self, **kwargs):
-        path = kwargs.get('path', '/')
+        path = kwargs.get('path')
+        if path is None:
+            return [{
+                'addon': 'owncloud',
+                'path': '/',
+                'kind': 'folder',
+                'id': '/',
+                'name': '/ (Full ownCloud)',
+                'urls': {
+                    'folders': api_v2_url('nodes/{}/addons/owncloud/folders/'.format(self.owner._id),
+                        params={
+                            'path': '/',
+                    })
+                }
+            }]
 
         provider = OwnCloudProvider(account=self.external_account)
 
