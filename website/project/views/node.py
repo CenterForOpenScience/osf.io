@@ -1328,7 +1328,7 @@ def fork_pointer(auth, node, **kwargs):
 def abbrev_authors(node):
     lead_author = node.visible_contributors[0]
     ret = lead_author.family_name or lead_author.given_name or lead_author.fullname
-    if len(node.visible_contributor_ids) > 1:
+    if len(node.visible_contributors.count()) > 1:
         ret += ' et al.'
     return ret
 

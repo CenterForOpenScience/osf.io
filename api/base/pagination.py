@@ -169,6 +169,6 @@ class NodeContributorPagination(JSONAPIPagination):
         kwargs = self.request.parser_context['kwargs'].copy()
         node_id = kwargs.get('node_id', None)
         node = Node.load(node_id)
-        total_bibliographic = len(node.visible_contributor_ids)
+        total_bibliographic = node.visible_contributors.count()
         response_dict['links']['meta']['total_bibliographic'] = total_bibliographic
         return Response(response_dict)

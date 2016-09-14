@@ -41,7 +41,7 @@ def get_node_contributors_abbrev(auth, node, **kwargs):
     if 'user_ids' in kwargs:
         users = [
             User.load(user_id) for user_id in kwargs['user_ids']
-            if user_id in node.visible_contributor_ids
+            if node.contributor_set.filter(user__guid__guid=user_id).exists()
         ]
     else:
         users = node.visible_contributors
@@ -334,8 +334,8 @@ def project_remove_contributor(auth, **kwargs):
             if auth.user != contributor:
                 raise HTTPError(http.FORBIDDEN)
 
-        if len(node.visible_contributor_ids) == 1 \
-                and node.visible_contributor_ids[0] == contributor._id:
+        if len(node.visible_contributors.count()) == 1 \
+                and node.visible_contributors[0] == contributor:
             raise HTTPError(http.FORBIDDEN, data={
                 'message_long': 'Must have at least one bibliographic contributor'
             })
