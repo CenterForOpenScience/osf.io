@@ -8,6 +8,7 @@ from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin
 from api.base.views import JSONAPIBaseView
+from api.base.views import BaseLinkedList
 from api.base.views import LinkedNodesRelationship
 from api.base.views import LinkedRegistrationsRelationship
 
@@ -297,7 +298,7 @@ class CollectionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, C
         node.save()
 
 
-class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin):
+class LinkedNodesList(BaseLinkedList, CollectionMixin):
     """List of nodes linked to this node. *Read-only*.
 
     Linked nodes are the project/component nodes pointed to by node links. This view will probably replace node_links in the near future.
@@ -345,32 +346,14 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin):
 
     #This Request/Response
     """
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublic,
-        ReadOnlyIfRegistration,
-        base_permissions.TokenHasScope,
-    )
-
-    required_read_scopes = [CoreScopes.NODE_LINKS_READ]
-    required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
-
     serializer_class = NodeSerializer
     view_category = 'collections'
     view_name = 'linked-nodes'
 
-    model_class = Pointer
-
     def get_queryset(self):
-        auth = get_user_auth(self.request)
-        return sorted([
-            pointer.node for pointer in
-            self.get_node().nodes_pointer
-            if not pointer.node.is_deleted
-            and not pointer.node.is_collection
-            and not pointer.node.is_registration
-            and pointer.node.can_view(auth)
-        ], key=lambda n: n.date_modified, reverse=True)
+        return [node for node in
+            super(LinkedNodesList, self).get_queryset()
+            if not node.is_registration]
 
     # overrides APIView
     def get_parser_context(self, http_request):
@@ -382,7 +365,7 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin):
         return res
 
 
-class LinkedRegistrationsList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin):
+class LinkedRegistrationsList(BaseLinkedList, CollectionMixin):
     """List of registrations linked to this node. *Read-only*.
 
     Linked registrations are the registration nodes pointed to by node links.
@@ -446,32 +429,14 @@ class LinkedRegistrationsList(JSONAPIBaseView, generics.ListAPIView, CollectionM
 
     #This Request/Response
     """
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublic,
-        ReadOnlyIfRegistration,
-        base_permissions.TokenHasScope,
-    )
-
-    required_read_scopes = [CoreScopes.NODE_LINKS_READ]
-    required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
-
     serializer_class = RegistrationSerializer
     view_category = 'collections'
     view_name = 'linked-registrations'
 
-    model_class = Pointer
-
     def get_queryset(self):
-        auth = get_user_auth(self.request)
-        return sorted([
-            pointer.node for pointer in
-            self.get_node().nodes_pointer
-            if not pointer.node.is_deleted
-            and not pointer.node.is_collection
-            and pointer.node.is_registration
-            and pointer.node.can_view(auth)
-        ], key=lambda n: n.date_modified, reverse=True)
+        return [node for node in
+            super(LinkedRegistrationsList, self).get_queryset()
+            if node.is_registration]
 
     # overrides APIView
     def get_parser_context(self, http_request):
@@ -485,6 +450,15 @@ class LinkedRegistrationsList(JSONAPIBaseView, generics.ListAPIView, CollectionM
 
 class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, CollectionMixin):
     """Node Links to other nodes. *Writeable*.
+
+    # Deprecated
+
+    The use of /collections/ID/node_links/ is deprecated in favor of linked_nodes, linked_registrations or a combination of both.
+
+    ## Known Issue
+
+    Linked nodes of type 'registrations' will be returned with an error 'Not found.' in the {embeds: target_node: {}} object.
+
 
     Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
     Node Links are a direct reference to the node that they point to.

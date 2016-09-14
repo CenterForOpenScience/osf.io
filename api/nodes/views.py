@@ -27,7 +27,7 @@ from api.comments.serializers import NodeCommentSerializer, CommentCreateSeriali
 from api.comments.permissions import CanCommentOrPublic
 from api.users.views import UserMixin
 from api.wikis.serializers import WikiSerializer
-from api.base.views import LinkedNodesRelationship, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList
+from api.base.views import LinkedNodesRelationship, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList, BaseLinkedList
 from api.base.throttling import AddContributorThrottle
 
 from api.nodes.serializers import (
@@ -2872,7 +2872,7 @@ class NodeLinkedNodesRelationship(LinkedNodesRelationship, NodeMixin):
     view_name = 'node-pointer-relationship'
 
 
-class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
+class LinkedNodesList(BaseLinkedList, NodeMixin):
     """List of nodes linked to this node. *Read-only*.
 
     Linked nodes are the nodes pointed to by node links. This view will probably replace node_links in the near future.
@@ -2920,32 +2920,14 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
 
     #This Request/Response
     """
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublic,
-        ReadOnlyIfRegistration,
-        base_permissions.TokenHasScope,
-    )
-
-    required_read_scopes = [CoreScopes.NODE_LINKS_READ]
-    required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
-
     serializer_class = NodeSerializer
     view_category = 'nodes'
     view_name = 'linked-nodes'
 
-    model_class = Pointer
-
     def get_queryset(self):
-        auth = get_user_auth(self.request)
-        return sorted([
-            pointer.node for pointer in
-            self.get_node().nodes_pointer
-            if not pointer.node.is_deleted
-            and not pointer.node.is_collection
-            and not pointer.node.is_registration
-            and pointer.node.can_view(auth)
-        ], key=lambda n: n.date_modified, reverse=True)
+        return [node for node in
+            super(LinkedNodesList, self).get_queryset()
+            if not node.is_registration]
 
     # overrides APIView
     def get_parser_context(self, http_request):

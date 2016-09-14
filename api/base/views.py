@@ -24,8 +24,10 @@ from api.base.serializers import LinkedRegistrationsRelationshipSerializer
 from api.base.throttling import RootAnonThrottle, UserRateThrottle
 from api.base import utils
 from api.nodes.permissions import ReadOnlyIfRegistration
+from api.nodes.permissions import ContributorOrPublic
 from api.nodes.permissions import ContributorOrPublicForRelationshipPointers
 from api.base.utils import is_bulk_request, get_user_auth
+from website.models import Pointer
 
 
 CACHE = weakref.WeakKeyDictionary()
@@ -782,4 +784,35 @@ class BaseNodeLinksList(JSONAPIBaseView, generics.ListAPIView):
             self.get_node().nodes_pointer
             if not pointer.node.is_deleted and not pointer.node.is_collection and
             pointer.node.can_view(auth) and not pointer.node.is_retracted
+        ], key=lambda n: n.date_modified, reverse=True)
+
+
+class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ContributorOrPublic,
+        ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_LINKS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    # subclass must set
+    serializer_class = None
+    view_category = None
+    view_name = None
+
+    model_class = Pointer
+
+    def get_queryset(self):
+        auth = get_user_auth(self.request)
+        return sorted([
+            pointer.node for pointer in
+            self.get_node().nodes_pointer
+            if not pointer.node.is_deleted
+            and not pointer.node.is_collection
+            # and pointer.node.is_registration
+            and pointer.node.can_view(auth)
         ], key=lambda n: n.date_modified, reverse=True)

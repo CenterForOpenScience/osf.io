@@ -867,32 +867,14 @@ class LinkedRegistrationsList(JSONAPIBaseView, generics.ListAPIView, Registratio
     Linked registrations are the registrations pointed to by node links.
 
     """
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublic,
-        ReadOnlyIfRegistration,
-        base_permissions.TokenHasScope,
-    )
-
-    required_read_scopes = [CoreScopes.NODE_LINKS_READ]
-    required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
-
     serializer_class = RegistrationSerializer
     view_category = 'registrations'
     view_name = 'linked-registrations'
 
-    model_class = Pointer
-
     def get_queryset(self):
-        auth = get_user_auth(self.request)
-        return sorted([
-            pointer.node for pointer in
-            self.get_node().nodes_pointer
-            if not pointer.node.is_deleted
-            and not pointer.node.is_collection
-            and pointer.node.is_registration
-            and pointer.node.can_view(auth)
-        ], key=lambda n: n.date_modified, reverse=True)
+        return [node for node in
+            super(LinkedNodesList, self).get_queryset()
+            if node.is_registration]
 
     # overrides APIView
     def get_parser_context(self, http_request):
@@ -902,11 +884,6 @@ class LinkedRegistrationsList(JSONAPIBaseView, generics.ListAPIView, Registratio
         res = super(LinkedNodesList, self).get_parser_context(http_request)
         res['is_relationship'] = True
         return res
-
-
-class RegistrationLinkedRegistraionsList(LinkedRegistrationsList, RegistrationMixin):
-    view_category = 'registrations'
-    view_name = 'linked-registrations'
 
 
 class RegistrationViewOnlyLinksList(NodeViewOnlyLinksList, RegistrationMixin):
