@@ -563,9 +563,7 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
     # visible_contributor_ids was moved to this property
     @property
     def visible_contributor_ids(self):
-        return list(
-            self.contributor_set.filter(visible=True).values_list('user__guid__guid', flat=True)
-        )
+        return self.contributor_set.filter(visible=True).values_list('user__guid__guid', flat=True)
 
     @property
     def system_tags(self):
