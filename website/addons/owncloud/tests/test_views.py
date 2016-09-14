@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
-from nose.tools import assert_false, assert_in, assert_true, assert_equal
+from nose.tools import assert_in, assert_equal
 import mock
 
 import httplib as http
-from tests.factories import AuthUserFactory
 
 from website.addons.base.testing.views import OAuthAddonAuthViewsTestCaseMixin
-from website.util import api_url_for
 from website.addons.base.testing import views
 from website.addons.owncloud.model import OwnCloudProvider
 from website.addons.owncloud.serializer import OwnCloudSerializer
@@ -24,21 +22,6 @@ class TestAuthViews(OAuthAddonAuthViewsTestCaseMixin, OwnCloudAddonTestCase):
 
     def test_oauth_finish(self):
         pass
-
-    def test_user_config_get(self):
-        url = api_url_for('owncloud_user_config_get')
-        new_user = AuthUserFactory.build()
-        res = self.app.get(url, auth=new_user.auth)
-
-        result = res.json.get('result')
-        assert_false(result['userHasAuth'])
-        assert_in('hosts', result)
-        assert_in('create', result['urls'])
-
-        res = self.app.get(url, auth=self.user.auth)
-
-        result = res.json.get('result')
-        assert_true(result['userHasAuth'])
 
 
 class TestConfigViews(OwnCloudAddonTestCase, views.OAuthAddonConfigViewsTestCaseMixin):
@@ -67,7 +50,8 @@ class TestConfigViews(OwnCloudAddonTestCase, views.OAuthAddonConfigViewsTestCase
         super(TestConfigViews, self).test_folder_list()
 
     def test_get_config(self):
-        url = self.project.api_url_for('{0}_get_config'.format(self.ADDON_SHORT_NAME))
+        url = self.project.api_url_for(
+            '{0}_get_config'.format(self.ADDON_SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, http.OK)
         assert_in('result', res.json)

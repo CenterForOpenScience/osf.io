@@ -44,7 +44,12 @@ owncloud_root_folder = generic_views.root_folder(
 
 @must_be_logged_in
 def owncloud_add_user_account(auth, **kwargs):
-    """Verifies new external account credentials and adds to user's list"""
+    """
+        Verifies new external account credentials and adds to user's list
+
+        This view expects `host`, `username` and `password` fields in the JSON
+        body of the request.
+    """
 
     # Ensure that ownCloud uses https
     host_url = request.json.get('host')
