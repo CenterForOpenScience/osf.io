@@ -192,6 +192,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     # verification key used for resetting password
     verification_key = models.CharField(max_length=255, null=True, blank=True)
 
+    email_last_sent = models.DateTimeField(null=True, blank=True)
+
     # confirmed emails
     #   emails should be stripped of whitespace and lower-cased before appending
     # TODO: Add validator to ensure an email address only exists once across
@@ -501,6 +503,30 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         user.update_guessed_names()
         user.set_password(password)
         return user
+
+    def set_password(self, raw_password, notify=True):
+        """Set the password for this user to the hash of ``raw_password``.
+        If this is a new user, we're done. If this is a password change,
+        then email the user about the change and clear all the old sessions
+        so that users will have to log in again with the new password.
+
+        :param raw_password: the plaintext value of the new password
+        :param notify: Only meant for unit tests to keep extra notifications from being sent
+        :rtype: list
+        :returns: Changed fields from the user save
+        """
+        had_existing_password = self.has_usable_password()
+        if self.username == raw_password:
+            raise ChangePasswordError(['Password cannot be the same as your email address'])
+        super(OSFUser, self).set_password(raw_password)
+        if had_existing_password and notify:
+            mails.send_mail(
+                to_addr=self.username,
+                mail=mails.PASSWORD_RESET,
+                mimetype='plain',
+                user=self
+            )
+            remove_sessions_for_user(self)
 
     @classmethod
     def create_unconfirmed(cls, username, password, fullname, do_confirm=True,
