@@ -634,6 +634,8 @@ var MyProjects = {
                             'You have not made any registrations yet. Go to ',
                             m('a', {href: 'http://help.osf.io/m/registrations'}, 'Getting Started'), ' to learn how registrations work.' );
                         }
+                    } else if (lastcrumb.data.nodeType === 'preprints'){
+                        template = m('.db-non-load-template.m-md.p-md.osf-box', [m('span', 'You have no preprints yet. '), m('a[href="/preprints/submit/"]', 'Add one now!')]);
                     } else if (lodashGet(lastcrumb, 'data.node.attributes.bookmarks')) {
                         template = m('.db-non-load-template.m-md.p-md.osf-box', 'You have no bookmarks. You can add projects or registrations by dragging them into your bookmarks or by clicking the Add to Bookmark button on the project or registration.');
                     } else {
