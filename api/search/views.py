@@ -13,7 +13,7 @@ from api.search.serializers import SearchSerializer
 from api.users.serializers import UserSerializer
 
 from framework.auth.core import User
-from framework.auth.oauth_scopes import CoreScopes, ComposedScopes
+from framework.auth.oauth_scopes import CoreScopes
 
 from website.files.models import FileNode
 from website.models import Node
@@ -23,6 +23,8 @@ from website.search.util import build_query
 
 
 class BaseSearchView(JSONAPIBaseView, generics.ListAPIView):
+
+    required_read_scopes = [CoreScopes.SEARCH]
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -48,8 +50,6 @@ class BaseSearchView(JSONAPIBaseView, generics.ListAPIView):
 
 class Search(BaseSearchView):
 
-    required_read_scopes = [ComposedScopes.FULL_READ]
-
     serializer_class = SearchSerializer
 
     view_category = 'search'
@@ -57,8 +57,6 @@ class Search(BaseSearchView):
 
 
 class SearchComponents(BaseSearchView):
-
-    required_read_scopes = [CoreScopes.NODE_BASE_READ]
 
     model_class = Node
     serializer_class = NodeSerializer
@@ -70,8 +68,6 @@ class SearchComponents(BaseSearchView):
 
 class SearchFiles(BaseSearchView):
 
-    required_read_scopes = [CoreScopes.NODE_FILE_READ]
-
     model_class = FileNode
     serializer_class = FileSerializer
 
@@ -81,8 +77,6 @@ class SearchFiles(BaseSearchView):
 
 
 class SearchProjects(BaseSearchView):
-
-    required_read_scopes = [CoreScopes.NODE_BASE_READ]
 
     model_class = Node
     serializer_class = NodeSerializer
@@ -94,8 +88,6 @@ class SearchProjects(BaseSearchView):
 
 class SearchRegistrations(BaseSearchView):
 
-    required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
-
     model_class = Node
     serializer_class = RegistrationSerializer
 
@@ -105,8 +97,6 @@ class SearchRegistrations(BaseSearchView):
 
 
 class SearchUsers(BaseSearchView):
-
-    required_read_scopes = [CoreScopes.USERS_READ]
 
     model_class = User
     serializer_class = UserSerializer
