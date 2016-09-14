@@ -553,12 +553,14 @@ class AbstractNode(TypedModel, AddonModelMixin, IdentifierMixin,
         return OSFUser.objects.filter(
             contributor__node=self,
             contributor__visible=True
-        )
+        ).order_by('contributor___order')
 
     # visible_contributor_ids was moved to this property
     @property
     def visible_contributor_ids(self):
-        return self.contributor_set.filter(visible=True).values_list('user__guid__guid', flat=True)
+        return self.contributor_set.filter(visible=True)\
+            .order_by('_order')\
+            .values_list('user__guid__guid', flat=True)
 
     @property
     def system_tags(self):
