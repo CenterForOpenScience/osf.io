@@ -52,6 +52,12 @@ class OwnCloudSerializer(StorageAddonSerializer):
         result['hosts'] = DEFAULT_HOSTS
         return result
 
+    @property
+    def serialized_user_settings(self):
+        result = super(OwnCloudSerializer, self).serialized_user_settings
+        result['hosts'] = DEFAULT_HOSTS
+        return result
+
     def serialize_settings(self, node_settings, current_user, client=None):
         ret = super(OwnCloudSerializer, self).serialize_settings(node_settings, current_user, client)
         ret['hosts'] = DEFAULT_HOSTS

@@ -7,12 +7,6 @@ from website.addons.owncloud import views
 api_routes = {
     'rules': [
         Rule(
-            '/settings/owncloud/',
-            'get',
-            views.owncloud_user_config_get,
-            json_renderer,
-        ),
-        Rule(
             [
                 '/project/<pid>/owncloud/user-auth/',
                 '/project/<pid>/node/<nid>/owncloud/user-auth/',

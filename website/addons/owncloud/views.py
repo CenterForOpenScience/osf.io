@@ -7,19 +7,16 @@ import requests
 from flask import request
 from modularodm import Q
 from modularodm.storage.base import KeyExistsException
-
 from framework.auth.decorators import must_be_logged_in
 
 from website.addons.base import generic_views
-import owncloud
-from website.addons.owncloud.model import OwnCloudProvider
-from website.addons.owncloud.settings import DEFAULT_HOSTS
-from website.addons.owncloud.serializer import OwnCloudSerializer
 from website.oauth.models import ExternalAccount
 from website.project.decorators import (
     must_have_addon)
-from website.util import api_url_for
 
+import owncloud
+from website.addons.owncloud.model import OwnCloudProvider
+from website.addons.owncloud.serializer import OwnCloudSerializer
 from website.addons.owncloud import settings
 
 SHORT_NAME = 'owncloud'
@@ -42,29 +39,6 @@ owncloud_deauthorize_node = generic_views.deauthorize_node(
 owncloud_root_folder = generic_views.root_folder(
     SHORT_NAME
 )
-
-@must_be_logged_in
-def owncloud_user_config_get(auth, **kwargs):
-    """View for getting a JSON representation of the logged-in user's
-    OwnCloud user settings.
-    """
-
-    user_addon = auth.user.get_addon('owncloud')
-    user_has_auth = False
-    if user_addon:
-        user_has_auth = user_addon.has_auth
-
-    return {
-        'result': {
-            'userHasAuth': user_has_auth,
-            'urls': {
-                'auth': api_url_for('owncloud_add_user_account'),
-                'accounts': api_url_for('owncloud_account_list'),
-            },
-            'hosts': DEFAULT_HOSTS,
-        },
-    }, http.OK
-
 
 ## Config ##
 

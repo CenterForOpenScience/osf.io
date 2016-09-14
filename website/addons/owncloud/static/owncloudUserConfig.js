@@ -19,7 +19,6 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel,{
         self.url = url;
         self.username = ko.observable();
         self.password = ko.observable();
-        self.urls = ko.observable({});
         self.hosts = ko.observableArray([]);
         self.selectedHost = ko.observable();
         self.customHost = ko.observable();
@@ -45,9 +44,7 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel,{
             type: 'GET',
             dataType: 'json'
         }).done(function (response) {
-            var data = response.result;
-            self.urls(data.urls);
-            self.hosts(data.hosts);
+            self.hosts(response.hosts);
             self.loaded(true);
             self.updateAccounts();
         }).fail(function (xhr, textStatus, error) {
@@ -79,9 +76,8 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel,{
             self.setMessage("Please enter a OwnCloud host and credentials.", 'text-danger');
             return;
         }
-        var url = self.urls().auth;
         return osfHelpers.postJSON(
-            url,
+            self.url,
             ko.toJS({
                 host: self.host,
                 password: self.password,
@@ -96,7 +92,7 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel,{
             var errorMessage = (xhr.status === 401) ? language.authInvalid : language.authError;
             self.setMessage(errorMessage, 'text-danger');
             Raven.captureMessage('Could not authenticate with OwnCloud', {
-                url: url,
+                url: self.url,
                 textStatus: textStatus,
                 error: error
             });
