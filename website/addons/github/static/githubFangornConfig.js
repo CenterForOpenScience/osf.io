@@ -384,7 +384,6 @@ function _fangornColumns (item) {
     if(tb.options.placement !== 'fileview') {
         columns.push({
             data : 'modified',
-            sortInclude : false,
             filter: false,
             custom : function() {return m('');}
         });
