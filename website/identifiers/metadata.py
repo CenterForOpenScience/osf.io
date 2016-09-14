@@ -54,6 +54,6 @@ def datacite_metadata_for_node(node, doi, pretty_print=False):
         title=node.title,
         creators=creators,
         publisher='Open Science Framework',
-        publication_year=node.registered_date.year,
+        publication_year=getattr(node.registered_date or node.date_created, 'year'),
         pretty_print=pretty_print
     )
