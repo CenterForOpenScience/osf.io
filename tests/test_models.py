@@ -33,7 +33,7 @@ from website import filters, language, settings, mailchimp_utils
 from website.addons.wiki.model import NodeWikiPage
 from website.exceptions import NodeStateError, TagNotFoundError
 from website.profile.utils import serialize_user
-from website.project.tasks import on_node_updated, on_user_suspension
+from website.project.tasks import on_node_updated
 from website.project.spam.model import SpamStatus
 from website.project.signals import contributor_added
 from website.project.model import (
@@ -3328,29 +3328,28 @@ class TestProject(OsfTestCase):
                 self.project.set_privacy('private')
                 assert_true(self.project.check_spam(self.user, None, None))
 
+    @mock.patch('website.project.model.mails.send_mail')
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
-    @mock.patch.object(settings, 'SPAM_CHECK_PUBLIC_ONLY', False)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
-    def test_check_spam_on_private_node_bans_new_spam_user(self):
+    def test_check_spam_on_private_node_bans_new_spam_user(self, mock_send_mail):
         with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
             with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(return_value=True)):
-                with mock.patch('website.project.model.on_user_suspension.delay'):
-                    with assert_raises(NodeStateError):
-                        self.project.creator.date_confirmed = datetime.datetime.utcnow()
-                        self.project.set_privacy('private')
-                        assert_true(self.project.check_spam(self.user, None, None))
-                handlers._local.queue = []  # prevent queue from running a mock object as a task
-
-    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
-    @mock.patch.object(settings, 'SPAM_CHECK_PUBLIC_ONLY', False)
-    @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
-    def test_check_spam_on_private_node_does_not_ban_existing_user(self):
-        with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
-            with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(return_value=True)):
-                # with assert_raises(NodeStateError):  # Would raise if banned
-                self.project.creator.date_confirmed = datetime.datetime.utcnow() - datetime.timedelta(days=9001)
-                self.project.set_privacy('private')
+                self.project.creator.date_confirmed = datetime.datetime.utcnow()
+                self.project.set_privacy('public')
                 assert_true(self.project.check_spam(self.user, None, None))
+                assert_true(self.user.is_disabled)
+                assert_false(self.project.is_public)
+
+    @mock.patch('website.project.model.mails.send_mail')
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
+    def test_check_spam_on_private_node_does_not_ban_existing_user(self, mock_send_mail):
+        with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(return_value=True)):
+                self.project.creator.date_confirmed = datetime.datetime.utcnow() - datetime.timedelta(days=9001)
+                self.project.set_privacy('public')
+                assert_true(self.project.check_spam(self.user, None, None))
+                assert_true(self.project.is_public)
 
     def test_set_description(self):
         old_desc = self.project.description
@@ -4929,38 +4928,6 @@ class TestOnNodeUpdate(OsfTestCase):
             graph = kwargs['json']['normalized_data']['@graph']
             assert_equals(graph[2]['is_deleted'], case['is_deleted'])
 
-
-class TestOnUserSuspension(OsfTestCase):
-
-    def setUp(self):
-        super(TestOnUserSuspension, self).setUp()
-        self.user = UserFactory()
-        self.session = SessionFactory(user=self.user)
-        set_session(self.session)
-        self.node = ProjectFactory(is_public=True)
-
-    def tearDown(self):
-        handlers.celery_before_request()
-        super(TestOnUserSuspension, self).tearDown()
-
-    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
-    @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
-    @mock.patch('website.project.model.on_user_suspension.delay')
-    def test_task_called(self, task):
-        self.user.date_confirmed = datetime.datetime.utcnow()
-        with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
-            with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(return_value=True)):
-                with assert_raises(NodeStateError):
-                    assert_true(self.node.check_spam(self.user, None, None))
-                args = task.call_args[0]
-                assert_equals(args[0], self.user._id)
-                assert_equals(args[1], 'spam_flagged')
-
-    def test_user_tagged_and_disabled(self):
-        on_user_suspension(self.user._id, 'spam_flagged')
-
-        assert_true(self.user.is_disabled)
-        assert_in('spam_flagged', self.user.system_tags)
 
 
 if __name__ == '__main__':
