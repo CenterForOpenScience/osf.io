@@ -3,7 +3,7 @@ import uuid
 
 from django.apps import apps
 
-from .model import Node, PrivateLink
+from .model import PrivateLink
 from framework.mongo.utils import from_mongo
 from modularodm import Q
 from modularodm.exceptions import ValidationValueError
@@ -34,7 +34,7 @@ seqm is a difflib.SequenceMatcher instance whose a & b are strings"""
     return ''.join(output)
 
 # TODO: This should be a class method of Node
-def new_node(category, title, user, description=None, parent=None):
+def new_node(category, title, user, description='', parent=None):
     """Create a new project or component.
 
     :param str category: Node category
@@ -45,6 +45,9 @@ def new_node(category, title, user, description=None, parent=None):
     :return Node: Created node
 
     """
+    # We use apps.get_model rather than import .model.Node
+    # because we want the concrete Node class, not AbstractNode
+    Node = apps.get_model('osf_models.Node')
     category = category
     title = strip_html(title.strip())
     if description:

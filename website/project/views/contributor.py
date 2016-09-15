@@ -332,7 +332,7 @@ def project_remove_contributor(auth, **kwargs):
             if auth.user != contributor:
                 raise HTTPError(http.FORBIDDEN)
 
-        if len(node.visible_contributors.count()) == 1 \
+        if node.visible_contributors.count() == 1 \
                 and node.visible_contributors[0] == contributor:
             raise HTTPError(http.FORBIDDEN, data={
                 'message_long': 'Must have at least one bibliographic contributor'
