@@ -1140,8 +1140,7 @@ class User(GuidStoredObject, AddonModelMixin):
         from mailchimp emails, remove any existing sessions.
         """
         from website import mailchimp_utils
-        from django.contrib.auth import logout as django_logout
-        from framework.auth import logout as flask_logout
+        from framework.auth import logout
 
         try:
             mailchimp_utils.unsubscribe_mailchimp(
@@ -1164,10 +1163,7 @@ class User(GuidStoredObject, AddonModelMixin):
         # sessions are revoked.
         req = get_cache_key()
         if isinstance(req, FlaskRequest):
-            flask_logout()
-        else:
-            django_logout(req)
-
+            logout()
         remove_sessions_for_user(self)
 
     @property
