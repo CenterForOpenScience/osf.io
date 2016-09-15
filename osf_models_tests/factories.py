@@ -63,6 +63,18 @@ class UserFactory(DjangoModelFactory):
         if self.username not in self.emails:
             self.emails.append(str(self.username))
 
+class AuthUserFactory(UserFactory):
+    """A user that automatically has an api key, for quick authentication.
+
+    Example: ::
+        user = AuthUserFactory()
+        res = self.app.get(url, auth=user.auth)  # user is "logged in"
+    """
+
+    @factory.post_generation
+    def add_auth(self, create, extracted):
+        self.auth = (self.username, 'queenfan86')
+
 class UnregUserFactory(DjangoModelFactory):
     email = factory.Faker('email')
     fullname = factory.Faker('name')
@@ -119,21 +131,21 @@ class UnconfirmedUserFactory(DjangoModelFactory):
         return instance
 
 
-class AbstractNodeFactory(DjangoModelFactory):
+class BaseNodeFactory(DjangoModelFactory):
     title = factory.Faker('catch_phrase')
     description = factory.Faker('sentence')
     date_created = factory.LazyFunction(timezone.now)
-    creator = factory.SubFactory(UserFactory)
+    creator = factory.SubFactory(AuthUserFactory)
 
     class Meta:
         model = models.Node
 
 
-class ProjectFactory(AbstractNodeFactory):
+class ProjectFactory(BaseNodeFactory):
     category = 'project'
 
 
-class NodeFactory(AbstractNodeFactory):
+class NodeFactory(BaseNodeFactory):
     category = 'hypothesis'
     parent = factory.SubFactory(ProjectFactory)
 
@@ -193,7 +205,7 @@ class CollectionFactory(DjangoModelFactory):
 class BookmarkCollectionFactory(CollectionFactory):
     is_bookmark_collection = True
 
-class RegistrationFactory(AbstractNodeFactory):
+class RegistrationFactory(BaseNodeFactory):
 
     creator = None
     # Default project is created if not provided
