@@ -135,8 +135,6 @@ function _poResolveRows(item) {
     var defaultColumns = [];
     if(this.isMultiselected(item.id)){
         item.css = 'fangorn-selected';
-    } else if (item.data.attributes.preprint) {
-        item.css = 'fangorn-preprint';
     } else {
         item.css = '';
     }
@@ -340,7 +338,8 @@ var tbOptions = {
     },
     onmultiselect : _poMultiselect,
     resolveIcon : function _poIconView(item) { // Project Organizer doesn't use icons
-        return m('i.' + iconmap.projectComponentIcons[item.data.attributes.category]);
+        var iconType = item.data.attributes.preprint ? 'preprint' : item.data.attributes.category;
+        return m('i.' + iconmap.projectComponentIcons[iconType]);
     },
     resolveToggle : _poResolveToggle,
     resolveLazyloadUrl : function(item) {
