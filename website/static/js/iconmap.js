@@ -19,7 +19,7 @@ module.exports = {
         component:  'fa fa-th-large',
         registeredComponent:  'fa fa-th-large text-muted',
         link:  'fa fa-link',
-        preprint : 'fa fa-file-text'
+        preprint: 'fa fa-file-text'
     },
     info: 'fa fa-info-circle',
     smaller: 'iconmap-smaller',
