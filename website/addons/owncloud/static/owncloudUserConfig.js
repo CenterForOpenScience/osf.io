@@ -31,10 +31,13 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel,{
             return self.hosts().concat([otherString]);
         });
         self.useCustomHost = ko.pureComputed(function() {
-            return self.selectedHost() === otherString;
+            return (self.selectedHost() === otherString || !self.hasDefaultHosts());
         });
         self.showCredentialInput = ko.pureComputed(function() {
-            return Boolean(self.selectedHost());
+            return true;
+        });
+        self.hasDefaultHosts = ko.pureComputed(function() {
+            return Boolean(self.hosts().length);
         });
     },
     fetch :function(){
@@ -64,16 +67,20 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel,{
     connectAccount : function() {
         var self = this;
         // Selection should not be empty
-        if( !self.selectedHost() ){
-            self.setMessage("Please select a OwnCloud server.", 'text-danger');
+        if( self.hasDefaultHosts() && !self.selectedHost() ){
+            if (self.useCustomHost()){
+                self.setMessage('Please enter an ownCloud server.', 'text-danger');
+            } else {
+                self.setMessage('Please select an ownCloud server.', 'text-danger');            
+            }
             return;
         }
         if ( !self.useCustomHost() && !self.username() && !self.password() ){
-            self.setMessage("Please enter a username and password.", 'text-danger');
+            self.setMessage('Please enter a username and password.', 'text-danger');
             return;
         }
         if ( self.useCustomHost() && ( !self.customHost() || !self.username() || !self.password() ) )  {
-            self.setMessage("Please enter a OwnCloud host and credentials.", 'text-danger');
+            self.setMessage('Please enter an ownCloud host and credentials.', 'text-danger');
             return;
         }
         return osfHelpers.postJSON(
@@ -91,7 +98,7 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel,{
         }).fail(function(xhr, textStatus, error) {
             var errorMessage = (xhr.status === 401) ? language.authInvalid : language.authError;
             self.setMessage(errorMessage, 'text-danger');
-            Raven.captureMessage('Could not authenticate with OwnCloud', {
+            Raven.captureMessage('Could not authenticate with ownCloud', {
                 url: self.url,
                 textStatus: textStatus,
                 error: error
