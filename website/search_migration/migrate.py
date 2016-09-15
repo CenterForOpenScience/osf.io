@@ -49,6 +49,10 @@ def migrate_users(index):
 
     logger.info('Users iterated: {0}\nUsers migrated: {1}'.format(n_iter, n_migr))
 
+def migrate_institutions(index):
+    for inst in Institution.find(Q('is_deleted', 'ne', True)):
+        update_institution(inst, index)
+
 
 def migrate(delete, index=None, app=None):
     index = index or settings.ELASTIC_INDEX
@@ -63,6 +67,7 @@ def migrate(delete, index=None, app=None):
 
     new_index = set_up_index(index)
 
+    migrate_institutions(new_index)
     migrate_nodes(new_index)
     migrate_users(new_index)
 
@@ -71,8 +76,6 @@ def migrate(delete, index=None, app=None):
     if delete:
         delete_old(new_index)
 
-    for inst in Institution.find(Q('is_deleted', 'ne', True)):
-        update_institution(inst)
 
     ctx.pop()
 
