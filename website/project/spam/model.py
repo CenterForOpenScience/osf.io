@@ -197,8 +197,8 @@ class SpamMixin(StoredObject):
                 comment_author=author,
                 comment_author_email=author_email
             )
-        except AkismetClientError as e:
-            logger.error('Error performing SPAM check: {}'.format(e.message))
+        except AkismetClientError:
+            logger.exception('Error performing SPAM check')
             return False
         self.spam_pro_tip = pro_tip
         self.spam_data['headers'] = {

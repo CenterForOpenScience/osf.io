@@ -2233,6 +2233,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
     def on_update(self, first_save, saved_fields):
         request, user_id = get_request_and_user_id()
         request_headers = {}
+        enqueue_task(node_tasks.on_node_updated.s(self._id, user_id, first_save, saved_fields, request_headers))
         if not isinstance(request, DummyRequest):
             request_headers = {
                 k: v
@@ -2241,8 +2242,19 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
             }
             user = User.load(user_id)
             if user:
-                self.check_spam(user, saved_fields, request_headers, save=True)
-        enqueue_task(node_tasks.on_node_updated.s(self._id, user_id, first_save, saved_fields, request_headers))
+                if self.check_spam(user, saved_fields, request_headers):
+                    if (
+                        settings.SPAM_ACCOUNT_SUSPENSION_ENABLED
+                        and (datetime.datetime.utcnow() - user.date_confirmed) <= settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD
+                    ):
+                        # raised an exception will cause the transaction to rollback, and the user suspension task must be async
+                        if settings.USE_CELERY:
+                            on_user_suspension.delay(user._id, 'spam_flagged')
+                        else:
+                            on_user_suspension(user._id, 'spam_flagged')
+                        self.set_privacy('private', log=False, save=False)
+                        # Specifically call the super class save method to avoid recursion into model save method.
+                        super(Node, self).save()
 
     def update_search(self):
         from website import search
@@ -3409,7 +3421,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
                 content.append((getattr(self, field, None) or '').encode('utf-8'))
         if not content:
             return None
-        return '\n\n'.join(content)
+        return ' '.join(content)
 
     def check_spam(self, user, saved_fields, request_headers, save=False):
         if not settings.SPAM_CHECK_ENABLED:
@@ -3431,15 +3443,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         logger.info("Node ({}) '{}' smells like {} (tip: {})".format(
             self._id, self.title.encode('utf-8'), 'SPAM' if is_spam else 'HAM', self.spam_pro_tip
         ))
-        if is_spam and settings.SPAM_ACCOUNT_SUSPENSION_ENABLED:
-            if (datetime.datetime.utcnow() - user.date_confirmed) <= settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD:
-                # raised an exception will cause the transaction to rollback, and the user suspension task must be async
-                on_user_suspension.delay(user._id, 'spam_flagged')
-                raise NodeStateError(
-                    'Account has been suspended due to suspicious activity. '
-                    'Please contact <a href="mailto: support@osf.io">support@osf.io</a> '
-                    'to initiate an account review.'
-                )
         if save:
             self.save()
         return is_spam
