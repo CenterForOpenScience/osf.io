@@ -2243,8 +2243,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
             user = User.load(user_id)
             if user:
                 if self.check_spam(user, saved_fields, request_headers):
-                    if settings.SPAM_ACCOUNT_SUSPENSION_ENABLED and \
-                        (datetime.datetime.utcnow() - user.date_confirmed) <= settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD:
+                    if (
+                        settings.SPAM_ACCOUNT_SUSPENSION_ENABLED
+                        and (datetime.datetime.utcnow() - user.date_confirmed) <= settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD
+                    ):
                         # raised an exception will cause the transaction to rollback, and the user suspension task must be async
                         if settings.USE_CELERY:
                             on_user_suspension.delay(user._id, 'spam_flagged')
