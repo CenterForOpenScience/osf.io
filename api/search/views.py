@@ -25,6 +25,7 @@ from website.search.util import build_query
 class BaseSearchView(JSONAPIBaseView, generics.ListAPIView):
 
     required_read_scopes = [CoreScopes.SEARCH]
+    required_write_scopes = [CoreScopes.NULL]
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,

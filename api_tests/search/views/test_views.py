@@ -20,6 +20,7 @@ from website.project.model import ensure_schemas
 from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 from website.search import search
 
+
 class ApiSearchTestCase(ApiTestCase):
 
     def setUp(self):
@@ -39,6 +40,7 @@ class ApiSearchTestCase(ApiTestCase):
             'title': 'Producer',
             'institution': 'GOOD Music, Inc.'
         }]
+        self.user_one.save()
 
         self.user_two = AuthUserFactory(fullname='Chance The Rapper')
 
@@ -59,24 +61,6 @@ class ApiSearchTestCase(ApiTestCase):
         self.file = create_test_file(self.component, self.user_one, filename='UltralightBeam.mp3')
         self.file_two = create_test_file(self.component_two, self.user_one, filename='Highlights.mp3')
         self.private_file = create_test_file(self.private_component, self.user_one, filename='Wavves.mp3')
-
-        ensure_schemas()
-        self.schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Replication Recipe (Brandt et al., 2013): Post-Completion') &
-            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
-        )
-
-        with mock_archive(self.project, autocomplete=True, autoapprove=True, schema=self.schema) as registration:
-            self.registration = registration
-
-        with mock_archive(self.project_two, autocomplete=True, autoapprove=True, schema=self.schema) as registration_two:
-            self.registration_two = registration_two
-
-        with mock_archive(self.private_project, autocomplete=True, autoapprove=True, schema=self.schema) as private_registration:
-            self.private_registration = private_registration
-
-        self.private_registration.is_public = False
-        self.private_registration.save()
 
 
 class TestSearch(ApiSearchTestCase):
@@ -100,7 +84,7 @@ class TestSearch(ApiSearchTestCase):
         assert_equal(files_found, 2)
         assert_equal(projects_found, 2)
         assert_equal(components_found, 2)
-        assert_equal(registrations_found, 2)
+        assert_equal(registrations_found, 0)
 
     def test_search_auth(self):
         res = self.app.get(self.url, auth=self.user)
@@ -117,7 +101,7 @@ class TestSearch(ApiSearchTestCase):
         assert_equal(files_found, 2)
         assert_equal(projects_found, 2)
         assert_equal(components_found, 2)
-        assert_equal(registrations_found, 2)
+        assert_equal(registrations_found, 0)
 
     def test_search_fields_links(self):
         res = self.app.get(self.url)
@@ -415,6 +399,26 @@ class TestSearchRegistrations(ApiSearchTestCase):
     def setUp(self):
         super(TestSearchRegistrations, self).setUp()
         self.url = '/{}search/registrations/'.format(API_BASE)
+
+        ensure_schemas()
+        self.schema = MetaSchema.find_one(
+            Q('name', 'eq', 'Replication Recipe (Brandt et al., 2013): Post-Completion') &
+            Q('schema_version', 'eq', LATEST_SCHEMA_VERSION)
+        )
+
+        with mock_archive(self.project, autocomplete=True, autoapprove=True, schema=self.schema) as registration:
+            self.registration = registration
+
+        with mock_archive(self.project_two, autocomplete=True, autoapprove=True,
+                          schema=self.schema) as registration_two:
+            self.registration_two = registration_two
+
+        with mock_archive(self.private_project, autocomplete=True, autoapprove=True,
+                          schema=self.schema) as private_registration:
+            self.private_registration = private_registration
+
+        self.private_registration.is_public = False
+        self.private_registration.save()
 
     def test_search_public_registration_no_auth(self):
         res = self.app.get(self.url)
