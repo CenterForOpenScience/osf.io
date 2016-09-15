@@ -165,12 +165,14 @@ PATCHED_MODELS = (
     'ArchiveTarget',
     'PrivateLink',
     'Comment',
+    'ApiOAuth2Application',
 )
 
 # TODO: This won't work for modules that do e.g. `from website import models`. Rethink.
 def patch_models(settings):
     model_map = {
         'User': 'OSFUser',
+        'Node': 'AbstractNode',
     }
     if not settings.USE_POSTGRES:
         return
