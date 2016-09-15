@@ -47,8 +47,7 @@ def get_request_and_user_id():
         user_id = session.data.get('auth_user_id')
     elif hasattr(req, 'user'):
         # admin module can return a user w/o an id
-        if hasattr(req, '_id'):
-            user_id = req.user._id
+        user_id = getattr(req.user, '_id')
     return req, user_id
 
 
