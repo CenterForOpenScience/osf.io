@@ -3532,6 +3532,14 @@ class TextExternalAuthViews(OsfTestCase):
         resp = self.app.get(url, expect_errors=True)
         assert_equal(resp.status_code, 401)
 
+    def test_external_login_email_get_with_another_user_logged_in(self):
+        another_user = AuthUserFactory()
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service')
+        res = self.app.get(url, auth=another_user.auth)
+        assert_equal(res.status_code, 302, 'redirects to cas logout')
+        assert_in('/logout?service=', res.location)
+        assert_in(url, res.location)
+
     @mock.patch('website.mails.send_mail')
     def test_external_login_confirm_email_get_create(self, mock_welcome):
         assert_false(self.user.is_registered)
