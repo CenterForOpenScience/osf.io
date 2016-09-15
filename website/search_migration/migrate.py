@@ -76,7 +76,6 @@ def migrate(delete, index=None, app=None):
     if delete:
         delete_old(new_index)
 
-
     ctx.pop()
 
 def set_up_index(idx):
