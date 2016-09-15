@@ -9,7 +9,7 @@ from framework.mongo import StoredObject
 from website import settings
 from website.project.model import User
 from website.util import akismet
-
+from website.util.akismet import AkismetClientError
 
 logger = logging.getLogger(__name__)
 
@@ -174,7 +174,7 @@ class SpamMixin(StoredObject):
             self.save()
 
     @abc.abstractmethod
-    def check_spam(self, saved_fields, request_headers, save=False):
+    def check_spam(self, user, saved_fields, request_headers, save=False):
         """Must return is_spam"""
         pass
 
@@ -188,14 +188,18 @@ class SpamMixin(StoredObject):
         remote_addr = request_headers['Remote-Addr']
         user_agent = request_headers.get('User-Agent')
         referer = request_headers.get('Referer')
-        is_spam, pro_tip = client.check_comment(
-            user_ip=remote_addr,
-            user_agent=user_agent,
-            referrer=referer,
-            comment_content=content,
-            comment_author=author,
-            comment_author_email=author_email
-        )
+        try:
+            is_spam, pro_tip = client.check_comment(
+                user_ip=remote_addr,
+                user_agent=user_agent,
+                referrer=referer,
+                comment_content=content,
+                comment_author=author,
+                comment_author_email=author_email
+            )
+        except AkismetClientError as e:
+            logger.error('Error performing SPAM check: {}'.format(e.message))
+            return False
         self.spam_pro_tip = pro_tip
         self.spam_data['headers'] = {
             'Remote-Addr': remote_addr,

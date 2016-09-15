@@ -2,8 +2,9 @@
 Changelog
 *********
 
-0.93.0 (2016-09-13)
+0.93.0 (2016-09-14)
 ===================
+
 - Update/replace GPLv3-licensed pyzotero
 - Remove spurious \.png with problematic file name
 - Allow ability to add DOIs/ARKs to Public Projects
@@ -16,8 +17,14 @@ Changelog
 - Refactor the registration modal
 - Fix Varnish tests
 
+Migrations
+----------
+
+- python -m scripts.migration.migrate_retraction_dates
+
 0.92.0 (2016-09-06)
 ===================
+
 - Ensure Mendeley 500 does not prevent file tree from loading
 - API Remove unused routes for registrations
 - Allow access to meetings in Admin App when unconfirmed users are contributors to meeting

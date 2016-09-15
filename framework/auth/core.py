@@ -1142,7 +1142,7 @@ class User(GuidStoredObject, AddonModelMixin):
     def disable_account(self):
         """
         Disables user account, making is_disabled true, while also unsubscribing user
-        from mailchimp emails.
+        from mailchimp emails, remove any existing sessions.
         """
         from website import mailchimp_utils
         try:
@@ -1161,6 +1161,7 @@ class User(GuidStoredObject, AddonModelMixin):
         except mailchimp_utils.mailchimp.EmailNotExistsError:
             pass
         self.is_disabled = True
+        remove_sessions_for_user(self)
 
     @property
     def is_disabled(self):
