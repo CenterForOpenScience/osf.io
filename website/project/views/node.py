@@ -6,7 +6,7 @@ from itertools import islice
 
 from flask import request
 from modularodm import Q
-from modularodm.exceptions import ModularOdmException, ValidationValueError
+from modularodm.exceptions import ModularOdmException, ValidationError
 
 from framework import status
 from framework.utils import iso8601format
@@ -59,7 +59,7 @@ def edit_node(auth, node, **kwargs):
     if edited_field == 'title':
         try:
             node.set_title(value, auth=auth)
-        except ValidationValueError as e:
+        except ValidationError as e:
             raise HTTPError(
                 http.BAD_REQUEST,
                 data=dict(message_long=e.message)
@@ -73,7 +73,7 @@ def edit_node(auth, node, **kwargs):
 
     try:
         node.save()
-    except ValidationValueError as e:
+    except ValidationError as e:
         raise HTTPError(
             http.BAD_REQUEST,
             data=dict(message_long=e.message)
@@ -126,7 +126,7 @@ def project_new_post(auth, **kwargs):
     else:
         try:
             project = new_node(category, title, user, description)
-        except ValidationValueError as e:
+        except ValidationError as e:
             raise HTTPError(
                 http.BAD_REQUEST,
                 data=dict(message_long=e.message)
@@ -166,7 +166,7 @@ def project_new_node(auth, node, **kwargs):
                 category=form.category.data,
                 parent=node,
             )
-        except ValidationValueError as e:
+        except ValidationError as e:
             raise HTTPError(
                 http.BAD_REQUEST,
                 data=dict(message_long=e.message)
@@ -178,7 +178,7 @@ def project_new_node(auth, node, **kwargs):
         ).format(component_url=new_component.url)
         if form.inherit_contributors.data and node.has_permission(user, WRITE):
             for contributor in node.contributors:
-                perm = CREATOR_PERMISSIONS if contributor is user else node.get_permissions(contributor)
+                perm = CREATOR_PERMISSIONS if contributor._id == user._id else node.get_permissions(contributor)
                 new_component.add_contributor(contributor, permissions=perm, auth=auth)
 
             new_component.save()
@@ -589,7 +589,7 @@ def component_remove(auth, node, **kwargs):
     status.push_status_message(message, kind='success', trust=False)
     parent = node.parent_node
     if parent and parent.can_view(auth):
-        redirect_url = node.node__parent[0].url
+        redirect_url = node.parent_node.url
     else:
         redirect_url = '/dashboard/'
 
@@ -717,7 +717,7 @@ def _view_project(node, auth, primary=False):
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
             'forked_date': iso8601format(node.forked_date) if node.is_fork else '',
-            'fork_count': node.forks.count(),
+            'fork_count': node.forks.filter(is_deleted=False).count(),
             'templated_count': node.templated_list.count(),
             'watched_count': node.watches.count(),
             'private_links': [x.to_json() for x in node.private_links_active],
@@ -897,7 +897,7 @@ def _get_summary(node, auth, primary=True, link_id=None, show_path=False):
             'parent_title': node.parent_node.title if node.parent_node else None,
             'parent_is_public': node.parent_node.is_public if node.parent_node else False,
             'show_path': show_path,
-            'nlogs': len(node.logs),
+            'nlogs': node.logs.count(),
         })
     else:
         summary['can_view'] = False
@@ -922,22 +922,19 @@ def get_summary(auth, node, **kwargs):
 @must_be_contributor_or_public
 def get_readable_descendants(auth, node, **kwargs):
     descendants = []
-    for child in node.nodes:
+    for child in node.nodes.filter(is_deleted=False):
         if request.args.get('permissions'):
             perm = request.args['permissions'].lower().strip()
             if perm not in child.get_permissions(auth.user):
                 continue
-        if child.is_deleted:
-            continue
         elif child.can_view(auth):
             descendants.append(child)
-        elif not child.primary:
-            if node.has_permission(auth.user, 'write'):
-                descendants.append(child)
-            continue
         else:
             for descendant in child.find_readable_descendants(auth):
                 descendants.append(descendant)
+    for linked_child in node.linked_nodes.filter(is_deleted=False):
+        if node.has_permission(auth.user, 'write'):
+            descendants.append(linked_child)
     return _render_nodes(descendants, auth)
 
 def node_child_tree(user, node_ids):
@@ -1013,7 +1010,7 @@ def get_node_tree(auth, **kwargs):
 
 @must_be_contributor_or_public
 def get_forks(auth, node, **kwargs):
-    fork_list = node.forks.sort('-forked_date')
+    fork_list = node.forks.exclude(type='osf_models.registration').sort('-forked_date')
     return _render_nodes(nodes=fork_list, auth=auth)
 
 
@@ -1044,7 +1041,7 @@ def project_generate_private_link_post(auth, node, **kwargs):
         new_link = new_private_link(
             name=name, user=auth.user, nodes=nodes, anonymous=anonymous
         )
-    except ValidationValueError as e:
+    except ValidationError as e:
         raise HTTPError(
             http.BAD_REQUEST,
             data=dict(message_long=e.message)
@@ -1059,7 +1056,7 @@ def project_private_link_edit(auth, **kwargs):
     name = request.json.get('value', '')
     try:
         validate_title(name)
-    except ValidationValueError as e:
+    except ValidationError as e:
         message = 'Invalid link name.' if e.message == 'Invalid title.' else e.message
         raise HTTPError(
             http.BAD_REQUEST,
