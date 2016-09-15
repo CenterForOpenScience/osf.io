@@ -639,6 +639,12 @@ def claim_user_form(auth, **kwargs):
             status.push_status_message('Invalid captcha supplied.', kind='error')
         else:
             username, password = claimer_email, form.password.data
+            if not username:
+                raise HTTPError(http.BAD_REQUEST, data=dict(
+                    message_long='No email associated with this account. Please claim this '
+                    'account on the project to which you were invited.'
+                ))
+
             user.register(username=username, password=password)
             # Clear unclaimed records
             user.unclaimed_records = {}
