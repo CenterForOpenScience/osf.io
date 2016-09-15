@@ -2320,6 +2320,22 @@ class TestClaimViews(OsfTestCase):
         )
         self.project.save()
 
+    def test_claim_user_invited_with_no_email_posts_to_claim_form(self):
+        given_name = fake.name()
+        invited_user = self.project.add_unregistered_contributor(
+            fullname=given_name,
+            email=None,
+            auth=Auth(user=self.referrer)
+        )
+        self.project.save()
+
+        url = invited_user.get_claim_url(self.project._primary_key)
+        res = self.app.post(url, {
+            'password': 'bohemianrhap',
+            'password2': 'bohemianrhap'
+        }, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
     @mock.patch('website.project.views.contributor.mails.send_mail')
     def test_claim_user_post_with_registered_user_id(self, send_mail):
         # registered user who is attempting to claim the unclaimed contributor
@@ -4272,7 +4288,7 @@ class TestUserConfirmSignal(OsfTestCase):
         # unclaimed user has been invited to a project.
         referrer = UserFactory()
         project = ProjectFactory(creator=referrer)
-        unclaimed_user.add_unclaimed_record(project, referrer, 'foo')
+        unclaimed_user.add_unclaimed_record(project, referrer, 'foo', email=fake.email())
         unclaimed_user.save()
 
         token = unclaimed_user.get_unclaimed_record(project._primary_key)['token']
