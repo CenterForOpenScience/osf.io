@@ -86,11 +86,13 @@ def git_logs(ctx, branch=None):
 
 
 @task
-def apiserver(ctx, port=8000, wait=True, host='127.0.0.1'):
+def apiserver(ctx, port=8000, wait=True, autoreload=True, host='127.0.0.1'):
     """Run the API server."""
     env = os.environ.copy()
     cmd = 'DJANGO_SETTINGS_MODULE=api.base.settings {} manage.py runserver {}:{} --nothreading'\
         .format(sys.executable, host, port)
+    if not autoreload:
+        cmd += ' --noreload'
     if settings.SECURE_MODE:
         cmd = cmd.replace('runserver', 'runsslserver')
         cmd += ' --certificate {} --key {}'.format(settings.OSF_SERVER_CERT, settings.OSF_SERVER_KEY)
@@ -532,10 +534,12 @@ def test_admin(ctx):
 @task
 def test_varnish(ctx):
     """Run the Varnish test suite."""
-    proc = apiserver(ctx, wait=False)
-    sleep(5)
-    test_module(ctx, module='api/caching/tests/test_caching.py')
-    proc.kill()
+    proc = apiserver(ctx, wait=False, autoreload=False)
+    try:
+        sleep(5)
+        test_module(ctx, module='api/caching/tests/test_caching.py')
+    finally:
+        proc.kill()
 
 
 @task
@@ -746,6 +750,7 @@ def packages(ctx):
         'install libxml2',
         'install libxslt',
         'install elasticsearch',
+        'install rabbitmq',
         'install gpg',
         'install node',
         'tap tokutek/tokumx',
