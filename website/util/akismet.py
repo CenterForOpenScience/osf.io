@@ -1,5 +1,8 @@
 import requests
 
+from requests.exceptions import RequestException
+
+
 class AkismetClientError(Exception):
 
     def __init__(self, reason):
@@ -66,11 +69,15 @@ class AkismetClient(object):
         data['user_ip'] = user_ip
         data['user_agent'] = user_agent
 
-        res = requests.post(
-            '{}{}.{}/1.1/comment-check'.format(self.API_PROTOCOL, self.apikey, self.API_HOST),
-            data=data,
-            headers=self._default_headers
-        )
+        try:
+            res = requests.post(
+                '{}{}.{}/1.1/comment-check'.format(self.API_PROTOCOL, self.apikey, self.API_HOST),
+                data=data,
+                headers=self._default_headers,
+                timeout=5
+            )
+        except RequestException as e:
+            raise AkismetClientError(reason=e.message)
         return res.text == 'true', res.headers.get('X-akismet-pro-tip')
 
     def submit_spam(self, user_ip, user_agent, **kwargs):
