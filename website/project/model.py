@@ -28,7 +28,7 @@ from framework.addons import AddonModelMixin
 from framework.auth import get_user, User, Auth
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject, Guid
-from framework.auth.utils import privacy_info_handle, user_over_spam_threshold
+from framework.auth.utils import privacy_info_handle
 from framework.mongo.utils import to_mongo_key, unique_on
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters
@@ -2231,7 +2231,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         return None
 
     def on_update(self, first_save, saved_fields):
-        request, uid = get_request_and_user_id()
+        request, user_id = get_request_and_user_id()
         request_headers = {}
         if not isinstance(request, DummyRequest):
             request_headers = {
@@ -2239,8 +2239,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
                 for k, v in get_headers_from_request(request).items()
                 if isinstance(v, basestring)
             }
-            self.check_spam(saved_fields, request_headers, user_id=uid, save=True)
-        enqueue_task(node_tasks.on_node_updated.s(self._id, uid, first_save, saved_fields, request_headers))
+            user = User.load(user_id)
+            if user:
+                self.check_spam(user, saved_fields, request_headers, save=True)
+        enqueue_task(node_tasks.on_node_updated.s(self._id, user_id, first_save, saved_fields, request_headers))
 
     def update_search(self):
         from website import search
@@ -3409,49 +3411,35 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
             return None
         return '\n\n'.join(content)
 
-    def check_spam(self, saved_fields, request_headers, mode='sync', user_id=None, save=False):
+    def check_spam(self, user, saved_fields, request_headers, save=False):
         if not settings.SPAM_CHECK_ENABLED:
             return False
         if settings.SPAM_CHECK_PUBLIC_ONLY and not self.is_public:
             return False
 
-        user = User.load(user_id) or self.creator
-        perform_check = True
-        user_older_than_limit = user_over_spam_threshold(user)
-        if mode == 'sync':
-            if not settings.SPAM_CHECK_SYNC:
-                perform_check = False
-            elif settings.SPAM_ACCOUNT_SUSPENSION_ENABLED:
-                perform_check = not user_older_than_limit
-        elif settings.SPAM_CHECK_SYNC and settings.SPAM_ACCOUNT_SUSPENSION_ENABLED:
-            perform_check = user_older_than_limit
-
-        is_spam = False
-        if perform_check:
-            user = User.load(user_id) or self.creator
-            content = self._get_spam_content(saved_fields)
-            if not content:
-                return
-            is_spam = self.do_check_spam(
-                user.fullname,
-                user.username,
-                content,
-                request_headers
-            )
-            logger.info("Node ({}) '{}' smells like {} (tip: {})".format(
-                self._id, self.title.encode('utf-8'), 'SPAM' if is_spam else 'HAM', self.spam_pro_tip
-            ))
-            if is_spam and settings.SPAM_ACCOUNT_SUSPENSION_ENABLED:
-                if not user_older_than_limit:
-                    # raised exception will cause the transaction to rollback, task must be async
-                    on_user_suspension.delay(self.creator._id, 'spam_threshold')
-                    raise NodeStateError(
-                        'Account has been suspended due to suspicious activity. '
-                        'Please contact <a href="mailto: support@osf.io">support@osf.io</a> '
-                        'to initiate an account review.'
-                    )
-            if save:
-                self.save()
+        content = self._get_spam_content(saved_fields)
+        if not content:
+            return
+        is_spam = self.do_check_spam(
+            user.fullname,
+            user.username,
+            content,
+            request_headers
+        )
+        logger.info("Node ({}) '{}' smells like {} (tip: {})".format(
+            self._id, self.title.encode('utf-8'), 'SPAM' if is_spam else 'HAM', self.spam_pro_tip
+        ))
+        if is_spam and settings.SPAM_ACCOUNT_SUSPENSION_ENABLED:
+            if (datetime.datetime.utcnow() - user.date_confirmed) <= settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD:
+                # raised an exception will cause the transaction to rollback, and the user suspension task must be async
+                on_user_suspension.delay(user._id, 'spam_threshold')
+                raise NodeStateError(
+                    'Account has been suspended due to suspicious activity. '
+                    'Please contact <a href="mailto: support@osf.io">support@osf.io</a> '
+                    'to initiate an account review.'
+                )
+        if save:
+            self.save()
         return is_spam
 
     def flag_spam(self):
