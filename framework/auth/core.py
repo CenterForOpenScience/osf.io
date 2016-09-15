@@ -10,6 +10,8 @@ import bson
 import pytz
 import itsdangerous
 
+from flask import Request as FlaskRequest
+
 from modularodm import fields, Q
 from modularodm.exceptions import NoResultsFound, ValidationError, ValidationValueError, QueryException
 from modularodm.validators import URLValidator
@@ -23,6 +25,7 @@ from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError, I
 from framework.bcrypt import generate_password_hash, check_password_hash
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
+from framework.mongo import get_cache_key
 from framework.mongo.validators import string_required
 from framework.sentry import log_exception
 from framework.sessions import session
@@ -1137,6 +1140,8 @@ class User(GuidStoredObject, AddonModelMixin):
         from mailchimp emails, remove any existing sessions.
         """
         from website import mailchimp_utils
+        from framework.auth import logout
+
         try:
             mailchimp_utils.unsubscribe_mailchimp(
                 list_name=settings.MAILCHIMP_GENERAL_LIST,
@@ -1153,6 +1158,11 @@ class User(GuidStoredObject, AddonModelMixin):
         except mailchimp_utils.mailchimp.EmailNotExistsError:
             pass
         self.is_disabled = True
+
+        # we must call both methods to ensure the current session is cleared and all existing
+        # sessions are revoked.
+        if isinstance(get_cache_key(), FlaskRequest):
+            logout()
         remove_sessions_for_user(self)
 
     @property
