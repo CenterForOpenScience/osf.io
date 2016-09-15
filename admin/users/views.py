@@ -42,7 +42,7 @@ class UserDeleteView(OSFAdmin, DeleteView):
     def delete(self, request, *args, **kwargs):
         try:
             user = self.get_object()
-            if user.date_disabled is None:
+            if user.date_disabled is None or kwargs.get('is_spam'):
                 user.disable_account()
                 user.is_registered = False
                 if kwargs.get('is_spam'):
@@ -58,11 +58,11 @@ class UserDeleteView(OSFAdmin, DeleteView):
                 user.date_disabled = None
                 subscribe_on_confirm(user)
                 user.is_registered = True
-                if 'spam_confirmed' in user.system_tags:
-                    user.system_tags.remove('spam_confirmed')
-                if 'spam_flagged' in user.system_tags:
-                    user.system_tags.remove('spam_flagged')
-                if kwargs.get('is_spam'):
+                if 'spam_confirmed' in user.system_tags or 'spam_flagged' in user.system_tags:
+                    if 'spam_confirmed' in user.system_tags:
+                        user.system_tags.remove('spam_confirmed')
+                    if 'spam_flagged' in user.system_tags:
+                        user.system_tags.remove('spam_flagged')
                     if 'ham_confirmed' not in user.system_tags:
                         user.system_tags.append('ham_confirmed')
                 flag = USER_RESTORED
@@ -152,7 +152,7 @@ class HamUserRestoreView(UserDeleteView):
                         action_flag=CONFIRM_SPAM
                     )
 
-        kwargs.update({'is_spam': True})
+        kwargs.update({'is_spam': False})
         return super(HamUserRestoreView, self).delete(request, *args, **kwargs)
 
 
