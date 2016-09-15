@@ -1,10 +1,12 @@
 from __future__ import unicode_literals
 
 from furl import furl
+import csv
 from django.views.generic import FormView, DeleteView, ListView
 from django.core.mail import send_mail
 from django.shortcuts import redirect
 from django.http import Http404, HttpResponse
+from djqscsv import render_to_csv_response
 from modularodm import Q
 
 from website.project.spam.model import SpamStatus
@@ -27,7 +29,8 @@ from admin.common_auth.logs import (
     CONFIRM_SPAM)
 
 from admin.users.serializers import serialize_user
-from admin.users.forms import EmailResetForm
+from admin.users.forms import EmailResetForm, WorkshopForm
+from admin.users.models import TemporaryWorkshopFollowUp
 
 
 class UserDeleteView(OSFAdmin, DeleteView):
@@ -261,6 +264,18 @@ class UserView(OSFAdmin, GuidView):
 
     def get_object(self, queryset=None):
         return serialize_user(User.load(self.kwargs.get('guid')))
+
+
+class UserWorkshopFormView(OSFAdmin, FormView):
+    form_class = WorkshopForm
+    object_type = 'user'
+    template_name = 'users/workshop.html'
+
+    def form_valid(self, form):
+        print 'here'
+
+    def form_invalid(self, form):
+        super(UserWorkshopFormView, self).form_invalid(form)
 
 
 class ResetPasswordView(OSFAdmin, FormView):
