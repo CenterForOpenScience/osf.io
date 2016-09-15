@@ -84,7 +84,7 @@ var returnTextParams = function (param, text, logObject, view_url) {
         }
         // If the user changed the home page, display logText with capitalized
         // name to reflect how home is displayed to user.
-        var type = logObject.attributes['action']
+        var type = logObject.attributes.action;
         if (type === 'wiki_updated' && source === 'home') {
             source = 'Home';
         }
