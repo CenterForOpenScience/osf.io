@@ -138,9 +138,9 @@ class TestDisableSpamUser(AdminTestCase):
 
 class SpamUserListMixin(AdminTestCase):
     def setUp(self):
-        self.flagged_user = UserFactory(system_tags=['spam_threshold'])
-        self.spam_user = UserFactory(system_tags=['confirmed_spam'])
-        self.ham_user = UserFactory(system_tags=['confirmed_ham'])
+        self.flagged_user = UserFactory(system_tags=['spam_flagged'])
+        self.spam_user = UserFactory(system_tags=['spam_confirmed'])
+        self.ham_user = UserFactory(system_tags=['ham_confirmed'])
         self.request = RequestFactory().post('/fake_path')
 
 class TestFlaggedSpamUserList(SpamUserListMixin):

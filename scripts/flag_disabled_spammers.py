@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 def get_possible_spam_users():
     users = User.find(
-        Q('system_tags', 'nin', ['confirmed_spam', 'confirmed_ham', 'spam_threshold']) &
+        Q('system_tags', 'nin', ['spam_confirmed', 'ham_confirmed', 'spam_flagged']) &
         Q('date_disabled', 'ne', None) &
         Q('is_registered', 'eq', False)
     )
@@ -25,7 +25,7 @@ def migrate():
     for user in spammy:
         if any((n.is_spam for n in user.contributor_to)):
             logger.info('Confirmed user {}: "{}" as SPAM'.format(user._id, user.fullname))
-            user.system_tags.append('confirmed_spam')
+            user.system_tags.append('spam_confirmed')
             user.save()
             spam_count += 1
         else:

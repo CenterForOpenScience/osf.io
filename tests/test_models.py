@@ -3299,16 +3299,26 @@ class TestProject(OsfTestCase):
 
     def test_check_spam_disabled_by_default(self):
         # SPAM_CHECK_ENABLED is False by default
-        with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
-            self.project.set_privacy('private')
-            assert_false(self.project.check_spam(self.user, None, None))
+        with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
+                self.project.set_privacy('public')
+                assert_false(self.project.check_spam(self.user, None, None))
 
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     def test_check_spam_only_public_node_by_default(self):
         # SPAM_CHECK_PUBLIC_ONLY is True by default
-        with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
-            self.project.set_privacy('private')
-            assert_false(self.project.check_spam(self.user, None, None))
+        with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
+                self.project.set_privacy('private')
+                assert_false(self.project.check_spam(self.user, None, None))
+
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    def test_check_spam_skips_ham_user(self):
+        with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
+                self.user.system_tags.extend(('ham_confirmed',))
+                self.project.set_privacy('public')
+                assert_false(self.project.check_spam(self.user, None, None))
 
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_CHECK_PUBLIC_ONLY', False)
@@ -4944,13 +4954,13 @@ class TestOnUserSuspension(OsfTestCase):
                     assert_true(self.node.check_spam(self.user, None, None))
                 args = task.call_args[0]
                 assert_equals(args[0], self.user._id)
-                assert_equals(args[1], 'spam_threshold')
+                assert_equals(args[1], 'spam_flagged')
 
     def test_user_tagged_and_disabled(self):
-        on_user_suspension(self.user._id, 'spam_threshold')
+        on_user_suspension(self.user._id, 'spam_flagged')
 
         assert_true(self.user.is_disabled)
-        assert_in('spam_threshold', self.user.system_tags)
+        assert_in('spam_flagged', self.user.system_tags)
 
 
 if __name__ == '__main__':

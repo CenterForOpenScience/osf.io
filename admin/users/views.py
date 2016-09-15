@@ -46,25 +46,25 @@ class UserDeleteView(OSFAdmin, DeleteView):
                 user.disable_account()
                 user.is_registered = False
                 if kwargs.get('is_spam'):
-                    if 'spam_threshold' in user.system_tags:
-                        user.system_tags = list(set(user.system_tags) - {'spam_threshold'})
-                    if 'confirmed_ham' in user.system_tags:
-                        user.system_tags = list(set(user.system_tags) - {'confirmed_ham'})
-                    if 'confirmed_spam' not in user.system_tags:
-                        user.system_tags.append('confirmed_spam')
+                    if 'spam_flagged' in user.system_tags:
+                        user.system_tags.remove('spam_flagged')
+                    if 'ham_confirmed' in user.system_tags:
+                        user.system_tags.remove('ham_confirmed')
+                    if 'spam_confirmed' not in user.system_tags:
+                        user.system_tags.append('spam_confirmed')
                 flag = USER_REMOVED
                 message = 'User account {} disabled'.format(user.pk)
             else:
                 user.date_disabled = None
                 subscribe_on_confirm(user)
                 user.is_registered = True
+                if 'spam_confirmed' in user.system_tags:
+                    user.system_tags.remove('spam_confirmed')
+                if 'spam_flagged' in user.system_tags:
+                    user.system_tags.remove('spam_flagged')
                 if kwargs.get('is_spam'):
-                    if 'confirmed_spam' in user.system_tags:
-                        user.system_tags = list(set(user.system_tags) - {'confirmed_spam'})
-                    if 'spam_threshold' in user.system_tags:
-                        user.system_tags = list(set(user.system_tags) - {'spam_threshold'})
-                    if 'confirmed_ham' not in user.system_tags:
-                        user.system_tags.append('confirmed_ham')
+                    if 'ham_confirmed' not in user.system_tags:
+                        user.system_tags.append('ham_confirmed')
                 flag = USER_RESTORED
                 message = 'User account {} reenabled'.format(user.pk)
             user.save()
@@ -157,7 +157,7 @@ class HamUserRestoreView(UserDeleteView):
 
 
 class UserSpamList(OSFAdmin, ListView):
-    SPAM_TAG = 'spam_threshold'
+    SPAM_TAG = 'spam_flagged'
 
     paginate_by = 25
     paginate_orphans = 1
@@ -182,7 +182,7 @@ class UserSpamList(OSFAdmin, ListView):
 
 
 class UserFlaggedSpamList(UserSpamList, DeleteView):
-    SPAM_TAG = 'spam_threshold'
+    SPAM_TAG = 'spam_flagged'
     template_name = 'users/flagged_spam_list.html'
 
     def delete(self, request, *args, **kwargs):
@@ -192,8 +192,9 @@ class UserFlaggedSpamList(UserSpamList, DeleteView):
         ]
         for uid in user_ids:
             user = User.load(uid)
-            user.system_tags = list(set(user.system_tags) - {'spam_threshold'})
-            user.system_tags.append('confirmed_spam')
+            if 'spam_flagged' in user.system_tags:
+                user.system_tags.remove('spam_flagged')
+            user.system_tags.append('spam_confirmed')
             user.save()
             update_admin_log(
                 user_id=self.request.user.id,
@@ -206,11 +207,11 @@ class UserFlaggedSpamList(UserSpamList, DeleteView):
 
 
 class UserKnownSpamList(UserSpamList):
-    SPAM_TAG = 'confirmed_spam'
+    SPAM_TAG = 'spam_confirmed'
     template_name = 'users/known_spam_list.html'
 
 class UserKnownHamList(UserSpamList):
-    SPAM_TAG = 'confirmed_ham'
+    SPAM_TAG = 'ham_confirmed'
     template_name = 'users/known_spam_list.html'
 
 class User2FactorDeleteView(UserDeleteView):

@@ -3416,6 +3416,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
             return False
         if settings.SPAM_CHECK_PUBLIC_ONLY and not self.is_public:
             return False
+        if 'ham_confirmed' in user.system_tags:
+            return False
 
         content = self._get_spam_content(saved_fields)
         if not content:
@@ -3432,7 +3434,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         if is_spam and settings.SPAM_ACCOUNT_SUSPENSION_ENABLED:
             if (datetime.datetime.utcnow() - user.date_confirmed) <= settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD:
                 # raised an exception will cause the transaction to rollback, and the user suspension task must be async
-                on_user_suspension.delay(user._id, 'spam_threshold')
+                on_user_suspension.delay(user._id, 'spam_flagged')
                 raise NodeStateError(
                     'Account has been suspended due to suspicious activity. '
                     'Please contact <a href="mailto: support@osf.io">support@osf.io</a> '
