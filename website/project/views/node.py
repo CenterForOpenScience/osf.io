@@ -10,7 +10,6 @@ from modularodm.exceptions import ModularOdmException, ValidationError
 
 from framework import status
 from framework.utils import iso8601format
-from framework.mongo import StoredObject
 from framework.flask import redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.exceptions import HTTPError, PermissionsError
@@ -392,25 +391,15 @@ def project_reorder_components(node, **kwargs):
     #       {'key': 'abc123', 'type': 'node'}
     #   }
     # }
-    new_list = [
-        tuple(n.split(':'))
-        for n in request.json.get('new_list', [])
+    new_node_guids = [
+        each.split(':')[0]
+        for each in request.get_json().get('new_list', [])
     ]
-    nodes_new = [
-        StoredObject.get_collection(schema).load(key)
-        for key, schema in new_list
-    ]
-
-    valid_nodes = [
-        n for n in node.nodes
-        if not n.is_deleted
-    ]
-    deleted_nodes = [
-        n for n in node.nodes
-        if n.is_deleted
-    ]
-    if len(valid_nodes) == len(nodes_new) and set(valid_nodes) == set(nodes_new):
-        node.set_abstractnode_order([each.pk for each in nodes_new + deleted_nodes])
+    new_node_ids = list(Node.objects.filter(guid__guid__in=new_node_guids).values_list('pk', flat=True))
+    valid_node_ids = list(node.nodes.filter(is_deleted=False).values_list('pk', flat=True))
+    deleted_node_ids = list(node.nodes.filter(is_deleted=True).values_list('pk', flat=True))
+    if len(valid_node_ids) == len(new_node_ids) and set(valid_node_ids) == set(new_node_ids):
+        node.set_abstractnode_order(new_node_ids + deleted_node_ids)
         node.save()
         return {}
 
@@ -1267,7 +1256,7 @@ def remove_pointer(auth, node, **kwargs):
     if pointer_id is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    pointer = Pointer.load(pointer_id)
+    pointer = Node.load(pointer_id)
     if pointer is None:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -1313,7 +1302,7 @@ def fork_pointer(auth, node, **kwargs):
 
     """
     pointer_id = request.json.get('pointerId')
-    pointer = Pointer.load(pointer_id)
+    pointer = Node.load(pointer_id)
 
     if pointer is None:
         # TODO: Change this to 404?

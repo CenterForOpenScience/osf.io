@@ -3904,8 +3904,8 @@ class TestReorderComponents(OsfTestCase):
         # subcomponent that only creator can see
         self.public_component = NodeFactory(creator=self.creator, is_public=True)
         self.private_component = NodeFactory(creator=self.creator, is_public=False)
-        self.project.nodes.append(self.public_component)
-        self.project.nodes.append(self.private_component)
+        self.project.nodes.add(self.public_component)
+        self.project.nodes.add(self.private_component)
 
         self.project.save()
 
