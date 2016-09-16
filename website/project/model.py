@@ -3450,6 +3450,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
             and (datetime.datetime.utcnow() - user.date_confirmed) <= settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD
         ):
             self.set_privacy('private', log=False, save=False)
+
             # Suspend the flagged user for spam.
             if 'spam_flagged' not in user.system_tags:
                 user.system_tags.append('spam_flagged')
@@ -3458,6 +3459,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
                 user.is_registered = False
                 mails.send_mail(to_addr=user.username, mail=mails.SPAM_USER_BANNED, user=user)
             user.save()
+
+            # Make public nodes private from this contributor
+            for node in user.contributed:
+                if self._id != node._id and len(node.contributors) == 1 and node.is_public:
+                    node.set_privacy('private', log=False, save=True)
 
     def flag_spam(self):
         """ Overrides SpamMixin#flag_spam.
