@@ -34,12 +34,13 @@ from api.nodes.views import (
     NodeCommentsList, NodeProvidersList, NodeFilesList, NodeFileDetail,
     NodeAlternativeCitationsList, NodeAlternativeCitationDetail, NodeLogList,
     NodeInstitutionsList, WaterButlerMixin, NodeForksList, NodeWikiList, LinkedNodesList,
-    NodeViewOnlyLinksList, NodeViewOnlyLinkDetail
+    NodeViewOnlyLinksList, NodeViewOnlyLinkDetail, NodeCitationDetail, NodeCitationStyleDetail
 )
 
 from api.registrations.serializers import RegistrationNodeLinksSerializer, RegistrationFileSerializer
 
 from api.base.utils import get_object_or_error
+
 
 class RegistrationMixin(NodeMixin):
     """Mixin with convenience methods for retrieving the current registration based on the
@@ -540,6 +541,50 @@ class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ODMFilterM
         nodes = Node.find(query)
         auth = get_user_auth(self.request)
         return sorted([each for each in nodes if each.can_view(auth)], key=lambda n: n.date_modified, reverse=True)
+
+
+class RegistrationCitationDetail(NodeCitationDetail, RegistrationMixin):
+    """ The registration citation for a registration in CSL format *read only*
+
+    ##Note
+    **This API endpoint is under active development, and is subject to change in the future**
+
+    ##RegistraitonCitationDetail Attributes
+
+        name                     type                description
+        =================================================================================
+        id                       string               unique ID for the citation
+        title                    string               title of project or component
+        author                   list                 list of authors for the work
+        publisher                string               publisher - most always 'Open Science Framework'
+        type                     string               type of citation - web
+        doi                      string               doi of the resource
+
+    """
+    required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
+
+    view_category = 'registrations'
+    view_name = 'registration-citation'
+
+
+class RegistrationCitationStyleDetail(NodeCitationStyleDetail, RegistrationMixin):
+    """ The registration citation for a registration in a specific style's format t *read only*
+
+        ##Note
+        **This API endpoint is under active development, and is subject to change in the future**
+
+    ##RegistrationCitationStyleDetail Attributes
+
+        name                     type                description
+        =================================================================================
+        citation                string               complete citation for a registration in the given style
+
+    """
+    required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
+
+    view_category = 'registrations'
+    view_name = 'registration-style-citation'
+
 
 class RegistrationForksList(NodeForksList, RegistrationMixin):
     """Forks of the current registration. *Writeable*.
