@@ -56,15 +56,19 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
 
     OSF Preprint entities have the "preprint" `type`.
 
-        name                            type                  description
-        ====================================================================================
-        title                           string                title of preprint, same as its project or component
-        abstract                        string                description of the preprint
-        date_created                    iso8601 timestamp     timestamp that the preprint was created
-        date_modified                   iso8601 timestamp     timestamp when the preprint was last updated
-        tags                            array of strings      list of tags that describe the node
-        subjects                        array of dictionaries list ids of Subject in the PLOS taxonomy. Dictrionary, containing the subject text and subject ID
-        doi                             string                bare DOI for the manuscript, as entered by the user
+        name                 type                  description
+        =============================================================================================
+        title                string                title of preprint, same as its project or component
+        abstract             string                description of the preprint
+        date_created         iso8601 timestamp     timestamp that the preprint was created
+        date_modified        iso8601 timestamp     timestamp when the preprint was last updated
+        tags                 array of strings      list of tags that describe the node
+        subjects             array of objects      list of objects, each containing the subject text
+                                                   and id from the PLOS taxonomy
+        doi                  string                bare DOI for the manuscript, as entered by the user
+        _analytics_read_key  string                a read key giving access to analytics for the node, only
+                                                   available for public nodes.  *this attribute is private,
+                                                   and may be changed or removed at any time*
 
     ##Relationships
 
@@ -94,41 +98,44 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
 
     + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
 
-    Preprints may be filtered by their `id`, `title`, `public`, `tags`, `date_created`, `date_modified`, and `subjects`
-    Most are string fields and will be filtered using simple substring matching.
+    Preprints may be filtered by their `id`, `title`, `public`, `tags`, `date_created`,
+    `date_modified`, and `subjects`. Most are string fields and will be filtered using simple substring
+    matching.
 
     ###Creating New Preprints
 
-    Create a new preprint by posting to the guid of the existing **node**, including the file_id for the
-    file you'd like to make the primary preprint file. Note that the **node id** will not be accessible via the
-    preprints detail view until after the preprint has been created.
+    New preprints are created by issuing a POST request to this endpoint. The payload should include
+    the id of the pre-existing node you want to turn into a preprint, a list of PLOS subject ids to
+    categorize the preprint, and the id of the file (stored in osfstorage) that will be the primary
+    file.  The provider identifies the organization the preprint should be associated with (ex. OSF,
+    PsyArXiv) and defaults to "osf".
+
+    The **node id** will not be accessible via the preprints detail view until after the preprint
+    has been created.
 
         Method:        POST
         URL:           /preprints/
         Query Params:  <none>
         Body (JSON):   {
-                        "data": {
-                            "id": node_id,
-                            "attributes": {
-                                "subjects":      [{subject_id}, ...]  # required
-                                "description":   {description},       # optional
-                                "tags":          [{tag1}, ...],       # optional
-                                "provider":      {provider}           # optional
-                            },
-                            "relationships": {
-                                "primary_file": {                     # required
-                                    "data": {
-                                        "type": "primary",
-                                        "id": {file_id}
-                                    }
-                                }
-                            }
-                        }
-                    }
+                         "data": {
+                           "id": node_id,
+                           "attributes": {
+                             "subjects":    [{subject_id}, ...], # required
+                             "description": {description},       # optional
+                             "tags":        [{tag1}, ...],       # optional
+                             "provider":    {provider}           # optional
+                           },
+                           "relationships": {                    # required
+                             "primary_file": {
+                               "data": {
+                                 "type": "primary",
+                                 "id":   {file_id}
+                               }
+                             }
+                           }
+                         }
+                       }
         Success:       201 CREATED + preprint representation
-
-    New preprints are created by issuing a POST request to this endpoint, along with the guid for the node to create a preprint from.
-    Provider defaults to osf.
 
     #This Request/Response
     """
@@ -174,16 +181,20 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMi
 
     OSF Preprint entities have the "preprint" `type`.
 
-        name                            type                  description
-        ====================================================================================
-        title                           string                title of preprint, same as its project or component
-        abstract                        string                description of the preprint
-        date_created                    iso8601 timestamp     timestamp that the preprint was created
-        date_modified                   iso8601 timestamp     timestamp when the preprint was last updated
-        tags                            array of strings      list of tags that describe the node
-        subjects                        array of dictionaries list ids of Subject in the PLOS taxonomy. Dictrionary, containing the subject text and subject ID
-        provider                        string                original source of the preprint
-        doi                             string                bare DOI for the manuscript, as entered by the user
+        name                 type                  description
+        =========================================================================
+        title                string                title of preprint, same as its project or component
+        abstract             string                description of the preprint
+        date_created         iso8601 timestamp     timestamp that the preprint was created
+        date_modified        iso8601 timestamp     timestamp when the preprint was last updated
+        tags                 array of strings      list of tags that describe the node
+        subjects             array of objects      list of objects, each containing the subject text
+                                                   and id from the PLOS taxonomy
+        provider             string                original source of the preprint
+        doi                  string                bare DOI for the manuscript, as entered by the user
+        _analytics_read_key  string                a read key giving access to analytics for the node, only
+                                                   available for public nodes.  *this attribute is private,
+                                                   and may be changed or removed at any time*
 
     ###Updating Preprints
 
@@ -193,24 +204,24 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMi
         URL:           /preprints/{node_id}/
         Query Params:  <none>
         Body (JSON):   {
-                        "data": {
-                            "id": node_id,
-                            "attributes": {
-                                "subjects":      [{subject_id}, ...]  # optional
-                                "description":   {description},       # optional
-                                "tags":          [{tag}, ...],        # optional
-                                "provider":      {provider}           # optional
-                            },
-                            "relationships": {
-                                "primary_file": {                     # optional
-                                    "data": {
-                                        "type": "primary",
-                                        "id": {file_id}
-                                    }
-                                }
-                            }
-                        }
-                    }
+                         "data": {
+                           "id": node_id,
+                           "attributes": {
+                             "subjects":    [{subject_id}, ...], # optional
+                             "description": {description},       # optional
+                             "tags":        [{tag}, ...],        # optional
+                             "provider":    {provider}           # optional
+                           },
+                           "relationships": {                    # optional
+                             "primary_file": {
+                               "data": {
+                                 "type": "primary",
+                                 "id":   {file_id}
+                               }
+                             }
+                           }
+                         }
+                       }
         Success:       200 OK + preprint representation
 
     #This Request/Response
