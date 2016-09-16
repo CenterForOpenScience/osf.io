@@ -25,6 +25,7 @@ from framework.celery_tasks import app as celery_app
 from framework.mongo.utils import paginated
 
 from website import settings
+from website.files.models import FileNode
 from website.filters import gravatar
 from website.models import User, Node
 from website.project.licenses import serialize_node_license_record
@@ -45,6 +46,14 @@ ALIASES = {
     'total': 'Total',
     'file': 'Files',
     'institution': 'Institutions',
+}
+
+DOC_TYPE_TO_MODEL = {
+    'component': Node,
+    'project': Node,
+    'registration': Node,
+    'user': User,
+    'file': FileNode,
 }
 
 # Prevent tokenizing and stop word removal.

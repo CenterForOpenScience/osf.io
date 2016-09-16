@@ -13,10 +13,9 @@ from api.base.serializers import is_anonymized
 from api.base.settings import MAX_PAGE_SIZE
 from api.base.utils import absolute_reverse
 
-from framework.auth.core import User
 from framework.guid.model import Guid
-from website.files.models import FileNode
 from website.project.model import Node, Comment
+from website.search.elastic_search import DOC_TYPE_TO_MODEL
 
 
 class JSONAPIPagination(pagination.PageNumberPagination):
@@ -185,13 +184,9 @@ class SearchPaginator(DjangoPaginator):
     def __init__(self, object_list, per_page):
         super(SearchPaginator, self).__init__(object_list, per_page)
 
-    def load_obj(self, obj_id, obj_type):
-        if obj_type in ['project', 'component', 'registration']:
-            return Node.load(obj_id)
-        if obj_type == 'user':
-            return User.load(obj_id)
-        if obj_type == 'file':
-            return FileNode.load(obj_id)
+    def search_type_to_model(self, obj_id, obj_type):
+        model = DOC_TYPE_TO_MODEL[obj_type]
+        return model.load(obj_id)
 
     def _get_count(self):
         self._count = self.object_list['aggs']['total']
@@ -202,7 +197,7 @@ class SearchPaginator(DjangoPaginator):
         number = self.validate_number(number)
         results = self.object_list['results']
         items = [
-            self.load_obj(result.get('_id'), result.get('_type'))
+            self.search_type_to_model(result.get('_id'), result.get('_type'))
             for result in results
         ]
         return self._get_page(items, number, self)
