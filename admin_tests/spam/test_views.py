@@ -21,6 +21,7 @@ from admin.spam.views import (
     SpamDetail,
     EmailFormView,
 )
+from website.project.spam.model import SpamStatus
 
 
 class TestSpamListView(AdminTestCase):
@@ -111,7 +112,7 @@ class TestSpamDetail(AdminTestCase):
         self.request.user = UserFactory()
 
     def test_confirm_spam(self):
-        form_data = {'confirm': str(Comment.SPAM)}
+        form_data = {'confirm': str(SpamStatus.SPAM)}
         form = ConfirmForm(data=form_data)
         nt.assert_true(form.is_valid())
         view = SpamDetail()
@@ -124,7 +125,7 @@ class TestSpamDetail(AdminTestCase):
         nt.assert_in('Confirmed SPAM:', obj.message())
 
     def test_confirm_ham(self):
-        form_data = {'confirm': str(Comment.HAM)}
+        form_data = {'confirm': str(SpamStatus.HAM)}
         form = ConfirmForm(data=form_data)
         nt.assert_true(form.is_valid())
         view = SpamDetail()
@@ -150,10 +151,10 @@ class TestSpamDetail(AdminTestCase):
         nt.assert_equal(res['status'], '1')
         nt.assert_equal(res['page_number'], '1')
         nt.assert_is_instance(res['comment'], dict)
-        nt.assert_equal(res['UNKNOWN'], Comment.UNKNOWN)
-        nt.assert_equal(res['SPAM'], Comment.SPAM)
-        nt.assert_equal(res['HAM'], Comment.HAM)
-        nt.assert_equal(res['FLAGGED'], Comment.FLAGGED)
+        nt.assert_equal(res['SPAM_STATUS'].UNKNOWN, SpamStatus.UNKNOWN)
+        nt.assert_equal(res['SPAM_STATUS'].SPAM, SpamStatus.SPAM)
+        nt.assert_equal(res['SPAM_STATUS'].HAM, SpamStatus.HAM)
+        nt.assert_equal(res['SPAM_STATUS'].FLAGGED, SpamStatus.FLAGGED)
 
     def test_get_context_data_bad_id(self):
         view = setup_view(SpamDetail(), self.request, spam_id='a1')

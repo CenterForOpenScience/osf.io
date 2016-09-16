@@ -38,8 +38,10 @@ var PullRequestItem = function(prItem) {
 };
 
 var DevModeControls = function(selector, source_file, branch_file) {
-    this.viewModel = new DevModeModel(source_file, branch_file);
-    $osf.applyBindings(this.viewModel, selector);
+    if ($(selector).length) {
+        this.viewModel = new DevModeModel(source_file, branch_file);
+        $osf.applyBindings(this.viewModel, selector);
+    }
 };
 
 module.exports = DevModeControls;

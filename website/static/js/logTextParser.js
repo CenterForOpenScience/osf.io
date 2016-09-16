@@ -5,6 +5,7 @@
  */
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 var logActions = require('json!js/_allLogTexts.json');
+var anonymousLogActions = require('json!js/_anonymousLogTexts.json');
 var $ = require('jquery');  // jQuery
 var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
@@ -23,7 +24,6 @@ function ravenMessage (message, logObject) {
         ravenMessagesCache.push(message);
     }
 }
-
 
 /**
  * Checks if the required parameter to complete the log is returned
@@ -82,7 +82,7 @@ var returnTextParams = function (param, text, logObject, view_url) {
         if (param === 'path'){
             source = stripBackslash(source);
         }
-        return view_url ? m('a', {href: view_url}, source) : m('span', source);
+        return view_url ? m('a', {href: $osf.toRelativeUrl(view_url, window)}, source) : m('span', source);
     }
     return m('span', text);
 };
@@ -103,7 +103,9 @@ var LogText = {
         var logText = function() {
             var text = logActions[logObject.attributes.action];
             if (text) {
-                if (text.indexOf('${user}') !== -1) {
+                if (logObject.anonymous) {
+                    return anonymousLogActions[logObject.attributes.action];
+                } else if (text.indexOf('${user}') !== -1) {
                     var userObject = logObject.embeds.user;
                     if (userInfoReturned(userObject)) {
                         return text;
@@ -112,14 +114,16 @@ var LogText = {
                         var newAction = logObject.attributes.action + '_no_user';
                         return logActions[newAction] ? logActions[newAction]: text;
                     }
+                } else {
+                    return text;
                 }
-                return text;
             }
         return null;
         };
         var message = '';
         var text = logText();
         if(text){
+            if (logObject.anonymous) { return m('span.osf-log-item', text); }
             var list = text.split(/(\${.*?})/);
             return m('span.osf-log-item', [
                 list.map(function(piece){
@@ -142,7 +146,10 @@ var LogText = {
                 })
             ]);
         } else {
-            message = 'There is no text entry in dictionary for the action :' + logObject.attributes.action;
+            message = 'The log viewer has encountered an unexpected log action: ' + logObject.attributes.action +
+                '. Please add a new log entry for this action to logActionsList.json' +
+                ' and anonymousLogActionsList.json, or, if this log relates to an addon, ' +
+                'to {addonName}LogActionList.json and {addonName}AnonymousLogActionList.json';
             ravenMessage(message, logObject);
             return m('em', 'Unable to retrieve log details');
         }
@@ -156,7 +163,7 @@ var LogPieces = {
             var userObject = logObject.embeds.user;
             var githubUser = logObject.attributes.params.github_user;
             if(paramIsReturned(userObject, logObject) && userObject.data) {
-                return m('a', {href: userObject.data.links.html, onclick: function() {
+                return m('a', {href: $osf.toRelativeUrl(userObject.data.links.html, window), onclick: function() {
                     $osf.trackClick(logObject.trackingCategory, logObject.trackingAction, 'navigate-to-user-from-logs');
                 }}, userObject.data.attributes.full_name);
             }
@@ -183,7 +190,7 @@ var LogPieces = {
             }}
             else if(paramIsReturned(nodeObject, logObject) && nodeObject.data){
                 if (nodeObject.data.links && nodeObject.data.attributes) {
-                    return m('a', {href: nodeObject.data.links.html, onclick: function() {
+                    return m('a', {href: $osf.toRelativeUrl(nodeObject.data.links.html, window), onclick: function() {
                         $osf.trackClick(logObject.trackingCategory, logObject.trackingAction, 'navigate-to-project-from-logs');
                     }}, nodeObject.data.attributes.title);
                 }
@@ -260,7 +267,7 @@ var LogPieces = {
         view: function (ctrl, logObject) {
             var linked_node = logObject.embeds.linked_node;
             if(paramIsReturned(linked_node, logObject)){
-                return m('a', {href: linked_node.data.links.html}, linked_node.data.attributes.title);
+                return m('a', {href: $osf.toRelativeUrl(linked_node.data.links.html, window)}, linked_node.data.attributes.title);
             }
             // Applicable when pointer has been deleted
             var pointer_info = logObject.attributes.params.pointer;
@@ -297,7 +304,7 @@ var LogPieces = {
             var template_node = logObject.embeds.template_node;
 
             if(paramIsReturned(template_node, logObject)){
-                return m('a', {href: template_node.data.links.html}, template_node.data.attributes.title);
+                return m('a', {href: $osf.toRelativeUrl(template_node.data.links.html, window)}, template_node.data.attributes.title);
             }
 
             var templateFromParams = logObject.attributes.params.template_node;
@@ -411,7 +418,7 @@ var LogPieces = {
                     destinationMaterialized = stripBackslash(destination.materialized);
                     return m('span', [destinationMaterialized, ' in ', destination.addon]);
                 }
-                return m('span', [m('a', {href: destination.url}, destinationMaterialized), ' in ', destination.addon]);
+                return m('span', [m('a', {href: $osf.toRelativeUrl(destination.url, window)}, destinationMaterialized), ' in ', destination.addon]);
             }
             return m('span','a new name/location' );
         }
@@ -567,7 +574,7 @@ var LogPieces = {
             if(paramIsReturned(path, logObject)){
                 path = stripBackslash(decodeURIComponent(path));
                 if (url) {
-                     return m('a', {href: url}, path);
+                     return m('a', {href: $osf.toRelativeUrl(url, window)}, path);
                 }
                 return m('span', path);
             }
@@ -623,11 +630,11 @@ var LogPieces = {
             // skip param.isReturned as not having a file or wiki is expected at times
             // Comment left on file
             if (file){
-                return m('span', ['on ', m('a', {href: file.url}, file.name)]);
+                return m('span', ['on ', m('a', {href: $osf.toRelativeUrl(file.url, window)}, file.name)]);
             }
             // Comment left on wiki
             if (wiki) {
-                return m('span', ['on wiki page ', m('a', {href: wiki.url}, wiki.name)]);
+                return m('span', ['on wiki page ', m('a', {href: $osf.toRelativeUrl(wiki.url, window)}, wiki.name)]);
             }
             // Comment left on project
             return m('span', '');

@@ -6,6 +6,7 @@ from website.app import init_app
 from website.project.model import Comment
 from framework.transactions.context import TokuTransaction
 from scripts import utils as script_utils
+from website.project.spam.model import SpamStatus
 
 logger = logging.getLogger(__name__)
 
@@ -13,9 +14,9 @@ logger = logging.getLogger(__name__)
 def migrate_status(records):
     for record in records:
         if len(record.reports) > 0:
-            record.spam_status = Comment.FLAGGED
+            record.spam_status = SpamStatus.FLAGGED
         else:
-            record.spam_status = Comment.UNKNOWN
+            record.spam_status = SpamStatus.UNKNOWN
         record.save()
         logger.info('Migrated spam_status for comment {}'.format(record._id))
 
@@ -42,7 +43,7 @@ def get_no_status_targets():
 def get_no_latest_targets():
     query = (
         Q('date_last_reported', 'eq', None) &
-        Q('spam_status', 'ne', Comment.UNKNOWN)
+        Q('spam_status', 'ne', SpamStatus.UNKNOWN)
     )
     return Comment.find(query)
 

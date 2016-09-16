@@ -75,9 +75,9 @@
                style="${'' if 'view' in panels_used else 'display: none'}">
               <div class="osf-panel panel panel-default no-border" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'view', 'osf-panel-flex': $root.singleVis() !== 'view' }">
                 <div class="panel-heading wiki-panel-header wiki-single-heading" data-bind="css: { 'osf-panel-heading-flex': $root.singleVis() !== 'view', 'wiki-single-heading': $root.singleVis() === 'view' }">
-                    <div class="row">
-                        <div class="col-sm-4">
-                            <span class="panel-title" > <i class="fa fa-eye"> </i>  View</span>
+                    <div class="row wiki-view-icon-container">
+                        <div class="col-lg-4">
+                            <div class="panel-title" > <i class="fa fa-eye"> </i>  View</div>
                         </div>
                         <div class="col-sm-8">
 
@@ -106,7 +106,7 @@
                 </div>
 
                 <div id="wikiViewPanel"  class="panel-body" data-bind="css: { 'osf-panel-body-flex': $root.singleVis() !== 'view' }">
-                  <div id="wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView, anchorScroll : { buffer: 50, elem : '#wikiViewPanel'}" class=" markdown-it-view">
+                  <div id="wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView, anchorScroll : { buffer: 50, elem : '#wikiViewPanel'}" class="markdown-it-view scripted">
                       % if wiki_content:
                           ${wiki_content}
                       % else:
@@ -123,7 +123,7 @@
                  class="${'col-sm-{0}'.format(12 / num_columns)}"
                  style="${'' if 'edit' in panels_used else 'display: none' | n}">
               <form id="wiki-form" action="${urls['web']['edit']}" method="POST">
-                <div class="osf-panel panel panel-default" data-bind="css: { 'no-border': $root.singleVis() === 'edit' }">
+                <div class="osf-panel panel panel-default osf-panel-edit" data-bind="css: { 'no-border': $root.singleVis() === 'edit' }">
                   <div class="panel-heading wiki-panel-header clearfix" data-bind="css : { 'wiki-single-heading': $root.singleVis() === 'edit' }">
                     <div class="row">
                       <div class="col-md-6">
@@ -389,6 +389,12 @@ ${parent.javascript_bottom()}
             userGravatar: ${ urls['gravatar'] | sjson, n }.replace('&amp;', '&')
         }
     };
+    window.contextVars.analyticsMeta = $.extend(true, {}, window.contextVars.analyticsMeta, {
+        pageMeta: {
+            title: 'Wiki: ' + ${wiki_name | sjson, n },
+            public: true,
+        },
+    });
 
 </script>
 <script src="//${sharejs_url}/text.js"></script>

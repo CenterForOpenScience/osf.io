@@ -10,6 +10,8 @@ from nose.tools import *  # flake8: noqa
 from tests.base import ApiTestCase
 from tests import factories
 
+from framework.auth.oauth_scopes import CoreScopes
+
 from api.base.settings.defaults import API_BASE
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from api.base.permissions import TokenHasScope
@@ -21,7 +23,7 @@ import importlib
 
 URLS_MODULES = []
 for loader, name, _ in pkgutil.iter_modules(['api']):
-    if name != 'base':
+    if name != 'base' and name != 'test':
         try:
             URLS_MODULES.append(importlib.import_module('api.{}.urls'.format(name)))
         except ImportError:
@@ -70,6 +72,8 @@ class TestApiBaseViews(ApiTestCase):
                 assert_true(bool(scopes))
                 for scope in scopes:
                     assert_is_not_none(scope)
+                if key == 'write':
+                    assert_not_in(CoreScopes.ALWAYS_PUBLIC, scopes)
 
     def test_view_classes_support_embeds(self):
         for view in VIEW_CLASSES:
@@ -120,3 +124,7 @@ class TestJSONAPIBaseView(ApiTestCase):
         assert_equal(response.status_code, 200)
 
 
+class TestSwaggerDocs(ApiTestCase):
+    def test_swagger_doc_json_route(self):
+        res = self.app.get('/v2/docs/api-docs/v2')
+        assert_equal(res.status_code, 200)

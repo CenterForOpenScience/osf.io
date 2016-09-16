@@ -370,6 +370,12 @@
       window.contextVars.isRegistration = ${ node['is_registration'] | sjson, n };
       window.contextVars.contributors = ${ contributors | sjson, n };
       window.contextVars.adminContributors = ${ adminContributors | sjson, n };
+      window.contextVars.analyticsMeta = $.extend(true, {}, window.contextVars.analyticsMeta, {
+          pageMeta: {
+              title: 'Contributors',
+              public: false,
+          },
+      });
     </script>
 
     <script src=${"/static/public/js/sharing-page.js" | webpack_asset}></script>

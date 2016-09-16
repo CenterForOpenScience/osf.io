@@ -569,6 +569,22 @@ class TestWikiDelete(OsfTestCase):
         self.project.reload()
         assert_not_in(to_mongo_key(SPECIAL_CHARACTERS_ALLOWED), self.project.wiki_pages_current)
 
+    @mock.patch('website.addons.wiki.utils.broadcast_to_sharejs')
+    def test_wiki_versions_do_not_reappear_after_delete(self, mock_sharejs):
+        # Creates a wiki page
+        self.project.update_node_wiki('Hippos', 'Hello hippos', self.consolidate_auth)
+        # Edits it two times
+        assert_equal(len(self.project.wiki_pages_versions['hippos']),1)
+        self.project.update_node_wiki('Hippos', 'Hello hippopotamus', self.consolidate_auth)
+        assert_equal(len(self.project.wiki_pages_versions['hippos']),2)
+        # Deletes the wiki page
+        self.project.delete_node_wiki('Hippos', self.consolidate_auth)
+        assert_true('hippos' not in self.project.wiki_pages_versions)
+        # Creates new wiki with same name
+        self.project.update_node_wiki('Hippos', 'Hello again hippos', self.consolidate_auth)
+        assert_equal(len(self.project.wiki_pages_versions['hippos']),1)
+        self.project.update_node_wiki('Hippos', 'Hello again hippopotamus', self.consolidate_auth)
+        assert_equal(len(self.project.wiki_pages_versions['hippos']),2)
 
 class TestWikiRename(OsfTestCase):
 

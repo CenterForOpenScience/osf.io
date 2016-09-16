@@ -1,127 +1,246 @@
 'use strict';
 
-var keen = require('keen-js');
-var oop = require('js/oop');
+
 var $ = require('jquery');
-var uuid = require('uuid');
+var md5 = require('js-md5');
 var Raven = require('raven-js');
+var Cookie = require('js-cookie');
+var lodashGet = require('lodash.get');
+var keenTracking = require('keen-tracking');
 
-var KeenTracker = oop.defclass({
-    constructor: function(keenProjectId, keenWriteKey, params) {
-        this.keenClient = new keen({
-            projectId: keenProjectId,
-            writeKey: keenWriteKey
-        });
-        this.currentUser = params.currentUser || null;
-        this.node = params.node || null;
-        this.init();
-    },
+var KeenTracker = (function() {
 
-    createOrUpdateKeenSession: function() {
+    function _nowUTC() {
+        var now = new Date();
+        return new Date(
+            now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(),
+            now.getUTCHours(), now.getUTCMinutes(), now.getUTCSeconds()
+        );
+    }
+
+    function _createOrUpdateKeenSession() {
         var expDate = new Date();
         var expiresInMinutes = 25;
-        expDate.setTime(expDate.getTime() + (expiresInMinutes*60*1000));
-        var currentSessionId = $.cookie('keenSessionId') || uuid.v1();
-        $.cookie('keenSessionId', currentSessionId, {expires: expDate, path: '/'});
-    },
+        expDate.setTime(expDate.getTime() + (expiresInMinutes * 60 * 1000));
+        var currentSessionId = Cookie.get('keenSessionId') || keenTracking.helpers.getUniqueId();
+        Cookie.set('keenSessionId', currentSessionId, {expires: expDate, path: '/'});
+    }
 
-    getOrCreateKeenId: function() {
-        if(!$.cookie('keenUserId')){
-            $.cookie('keenUserId', uuid.v1(), {expires: 365, path: '/'});
+    function _getOrCreateKeenId() {
+        if (!Cookie.get('keenUserId')) {
+            Cookie.set('keenUserId', keenTracking.helpers.getUniqueId(), {expires: 365, path: '/'});
         }
+        return Cookie.get('keenUserId');
+    }
 
-        return $.cookie('keenUserId');
-    },
 
-    trackPageView: function(){
-        this.createOrUpdateKeenSession();
-        var returning = Boolean($.cookie('keenUserId'));
-        var pageView = {
-            'pageUrl': document.URL,
-            'keenUserId': this.getOrCreateKeenId(),
-            'sessionId': $.cookie('keenSessionId'),
-            'pageTitle': document.title,
-            'userAgent': '${keen.user_agent}',
-            'referrer': {
-                'url': document.referrer
+    function _defaultKeenPayload() {
+        _createOrUpdateKeenSession();
+
+        var user = window.contextVars.currentUser;
+        var node = window.contextVars.node;
+        var pageMeta = lodashGet(window, 'contextVars.analyticsMeta.pageMeta', {});
+        return {
+            page: {
+                title: document.title,
+                url: document.URL,
+                meta: pageMeta,
+                info: {},
             },
-            'ipAddress': '${keen.ip}',
-            'returning': returning,
-            'keen': {
-                'addons': [
+            referrer: {
+                url: document.referrer,
+                info: {},
+            },
+            time: {
+                local: keenTracking.helpers.getDatetimeIndex(),
+                utc: keenTracking.helpers.getDatetimeIndex(_nowUTC()),
+            },
+            node: {
+                id: lodashGet(node, 'id'),
+                title: lodashGet(node, 'title'),
+                type: lodashGet(node, 'category'),
+                tags: lodashGet(node, 'tags'),
+            },
+            anon: {
+                id: md5(Cookie.get('keenSessionId')),
+                continent: user.anon.continent,
+                country: user.anon.country,
+            },
+            meta: {
+                epoch: 1, // version of pageview event schema
+            },
+            keen: {
+                addons: [
                     {
-                        'name': 'keen:ip_to_geo',
-                        'input': {
-                            'ip': 'ipAddress'
+                        name: 'keen:url_parser',
+                        input: {
+                            url: 'page.url',
                         },
-                        'output': 'ipGeoInfo'
+                        output: 'page.info',
                     },
                     {
-                        'name': 'keen:ua_parser',
-                        'input': {
-                            'ua_string': 'userAgent'
+                        name: 'keen:url_parser',
+                        input: {
+                            url: 'referrer.url',
                         },
-                        'output': 'parsedUserAgent'
+                        output: 'referrer.info',
                     },
                     {
-                        'name': 'keen:referrer_parser',
-                        'input': {
-                            'referrer_url': 'referrer.url',
-                            'page_url': 'pageUrl'
+                        name: 'keen:referrer_parser',
+                        input: {
+                            referrer_url: 'referrer.url',
+                            page_url: 'page.url',
                         },
-                        'output': 'referrer.info'
+                        output: 'referrer.info',
                     },
-                    {
-                        'name' : 'keen:url_parser',
-                        'input' : {
-                            'url' : 'pageUrl'
-                        },
-                        'output' : 'parsedPageUrl'
-                    },
-                    {
-                        'name' : 'keen:url_parser',
-                        'input' : {
-                            'url' : 'referrer.url'
-                        },
-                        'output' : 'parsedReferrerUrl'
-                    }
                 ]
-            }
-            // 'daysSinceFirstVisit':'',
-            // 'daysSinceLastVisit': '',
-            //'resolution': '' //temp user agent stuff
-            //'generationTime': ''
-            //'timeSpent': ''
+            },
         };
-        if(this.node){
-            pageView.node = {
-                'id': this.node.id,
-                'title': this.node.title,
-                'type': this.node.category,
-                'tags': this.node.tags
-            };
-        }
-        if(this.currentUser){
-            pageView.user = {
-                id: this.currentUser.id,
-                locale: this.currentUser.locale,
-                timezone: this.currentUser.timezone,
-                entryPoint: this.currentUser.entryPoint
-            };
-        }
+    }  // end _defaultKeenPayload
 
-        this.keenClient.addEvent('pageviews', pageView, function(err){
-            if(err){
-                Raven.captureMessage('Error sending Keen data: <' + err + '>', {
-                    extra: { payload: pageView, },
+    function _trackCustomEvent(client, collection, eventData) {
+        if (client === null) {
+            return;
+        }
+        client.recordEvent(collection, eventData, function (err) {
+            if (err) {
+                Raven.captureMessage('Error sending Keen data to ' + collection + ': <' + err + '>', {
+                    extra: {payload: eventData}
                 });
             }
         });
-    },
-
-    init: function(){
-        this.trackPageView();
     }
-});
+
+    function _trackCustomEvents(client, events) {
+        if (client === null) {
+            return;
+        }
+        client.recordEvents(events, function (err, res) {
+            if (err) {
+                Raven.captureMessage('Error sending Keen data for multiple events: <' + err + '>', {
+                    extra: {payload: events}
+                });
+            } else {
+                for (var collection in res) {
+                    var results = res[collection];
+                    for (var idx in results) {
+                        if (!results[idx].success) {
+                            Raven.captureMessage('Error sending Keen data to ' + collection + '.', {
+                                extra: {payload: events[collection][idx]}
+                            });
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function KeenTracker() {
+        if (instance) {
+            throw new Error('Cannot instantiate another KeenTracker instance.');
+        } else {
+            var self = this;
+
+            self._publicClient = null;
+            self._privateClient = null;
+
+            self.init = function _initKeentracker(params) {
+                var self = this;
+
+                if (params === undefined) {
+                    return self;
+                }
+
+                self._publicClient = new keenTracking({
+                    projectId: params.public.projectId,
+                    writeKey: params.public.writeKey,
+                });
+                self._publicClient.extendEvents(_defaultPublicKeenPayload);
+
+                self._privateClient = new keenTracking({
+                    projectId: params.private.projectId,
+                    writeKey: params.private.writeKey,
+                });
+                self._privateClient.extendEvents(_defaultPrivateKeenPayload);
+
+                return self;
+            };
+
+            var _defaultPublicKeenPayload = function() { return _defaultKeenPayload(); };
+            var _defaultPrivateKeenPayload = function() {
+                var payload = _defaultKeenPayload();
+                var user = window.contextVars.currentUser;
+                payload.visitor = {
+                    id: _getOrCreateKeenId(),
+                    session: Cookie.get('keenSessionId'),
+                    returning: Boolean(Cookie.get('keenUserId')),
+                };
+                payload.tech = {
+                    browser: keenTracking.helpers.getBrowserProfile(),
+                    ua: '${keen.user_agent}',
+                    ip: '${keen.ip}',
+                    info: {},
+                };
+                payload.user = {
+                    id: user.id,
+                    entry_point: user.entryPoint,
+                    institutions: user.institutions,
+                    locale: user.locale,
+                    timezone: user.timezone,
+                };
+                payload.keen.addons.push({
+                    name: 'keen:ip_to_geo',
+                    input: {
+                        ip: 'tech.ip',
+                    },
+                    output: 'geo',
+                });
+                payload.keen.addons.push({
+                    name: 'keen:ua_parser',
+                    input: {
+                        ua_string: 'tech.ua'
+                    },
+                    output: 'tech.info',
+                });
+
+                return payload;
+            };
+
+            self.trackPageView = function () {
+                var self = this;
+                if (lodashGet(window, 'contextVars.node.isPublic', false) &&
+                    lodashGet(window, 'contextVars.analyticsMeta.pageMeta.public', false)) {
+                    self.trackPublicEvent('pageviews', {});
+                }
+                self.trackPrivateEvent('pageviews', {});
+            };
+
+            self.trackPrivateEvent = function(collection, event) {
+                return _trackCustomEvent(self._privateClient, collection, event);
+            };
+            self.trackPrivateEvents = function(events) {
+                return _trackCustomEvents(self._privateClient, events);
+            };
+
+            self.trackPublicEvent = function(collection, event) {
+                return _trackCustomEvent(self._publicClient, collection, event);
+            };
+            self.trackPublicEvents = function(events) {
+                return _trackCustomEvents(self._publicClient, events);
+            };
+        }
+    }
+
+    var instance = null;
+    return {
+        getInstance: function() {
+            if (!instance) {
+                instance = new KeenTracker();
+                instance.init(window.contextVars.keen);
+            }
+            return instance;
+        }
+    };
+})();
 
 module.exports = KeenTracker;

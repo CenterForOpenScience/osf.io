@@ -13,6 +13,7 @@ from werkzeug.wrappers import BaseResponse
 
 from framework import auth
 from framework.auth import cas
+from framework.auth.utils import validate_recaptcha
 from framework.sessions import Session
 from framework.exceptions import HTTPError
 from tests.base import OsfTestCase, assert_is_redirect
@@ -33,6 +34,8 @@ from website.project.decorators import (
     must_be_contributor_or_public_but_not_anonymized,
     must_have_addon, must_be_addon_authorizer,
 )
+
+from tests.test_cas_authentication import make_external_response
 
 
 class TestAuthUtils(OsfTestCase):
@@ -109,6 +112,18 @@ class TestAuthUtils(OsfTestCase):
             auth.get_user(email=user.username, password='wrong')
         )
 
+    def test_get_user_by_external_info(self):
+        user = UserFactory.build()
+        validated_creds = cas.validate_external_credential(make_external_response().user)
+        user.external_identity = {
+            validated_creds['provider']: {
+                validated_creds['id']: 'VERIFIED'
+            }
+        }
+        user.save()
+
+        assert_equal(auth.get_user(external_id_provider=validated_creds['provider'], external_id=validated_creds['id']), user)
+
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_password_change_sends_email(self, mock_mail):
         user = UserFactory.build()
@@ -124,6 +139,35 @@ class TestAuthUtils(OsfTestCase):
             'mail': mails.PASSWORD_RESET,
             'to_addr': user.username,
         })
+
+    @mock.patch('framework.auth.utils.requests.post')
+    def test_validate_recaptcha_success(self, req_post):
+        resp = mock.Mock()
+        resp.status_code = http.OK
+        resp.json = mock.Mock(return_value={'success': True})
+        req_post.return_value = resp
+        assert_true(validate_recaptcha('a valid captcha'))
+
+    @mock.patch('framework.auth.utils.requests.post')
+    def test_validate_recaptcha_valid_req_failure(self, req_post):
+        resp = mock.Mock()
+        resp.status_code = http.OK
+        resp.json = mock.Mock(return_value={'success': False})
+        req_post.return_value = resp
+        assert_false(validate_recaptcha(None))
+
+    @mock.patch('framework.auth.utils.requests.post')
+    def test_validate_recaptcha_invalid_req_failure(self, req_post):
+        resp = mock.Mock()
+        resp.status_code = http.BAD_REQUEST
+        resp.json = mock.Mock(return_value={'success': True})
+        req_post.return_value = resp
+        assert_false(validate_recaptcha(None))
+
+    @mock.patch('framework.auth.utils.requests.post', side_effect=AssertionError())
+    def test_validate_recaptcha_empty_response(self, req_post):
+        # ensure None short circuits execution (no call to google)
+        assert_false(validate_recaptcha(None))
 
 
 class TestAuthObject(OsfTestCase):
@@ -214,10 +258,13 @@ class TestMustBeContributorDecorator(AuthAppTestCase):
         super(TestMustBeContributorDecorator, self).setUp()
         self.contrib = AuthUserFactory()
         self.non_contrib = AuthUserFactory()
+        admin = UserFactory()
         self.public_project = ProjectFactory(is_public=True)
+        self.public_project.add_contributor(admin, auth=Auth(self.public_project.creator), permissions=['read', 'write', 'admin'])
         self.private_project = ProjectFactory(is_public=False)
         self.public_project.add_contributor(self.contrib, auth=Auth(self.public_project.creator))
         self.private_project.add_contributor(self.contrib, auth=Auth(self.private_project.creator))
+        self.private_project.add_contributor(admin, auth=Auth(self.private_project.creator), permissions=['read', 'write', 'admin'])
         self.public_project.save()
         self.private_project.save()
 
@@ -401,26 +448,28 @@ class TestMustBeContributorOrPublicDecorator(AuthAppTestCase):
     def test_must_be_contributor_parent_write_public_project(self):
         user = UserFactory()
         node = NodeFactory(parent=self.public_project, creator=user)
-        self.public_project.set_permissions(self.public_project.creator, ['read', 'write'])
+        contrib = UserFactory()
+        self.public_project.add_contributor(contrib, auth=Auth(self.public_project.creator), permissions=['read', 'write'])
         self.public_project.save()
         with assert_raises(HTTPError) as exc_info:
             view_that_needs_contributor_or_public(
                 pid=self.public_project._id,
                 nid=node._id,
-                user=self.public_project.creator,
+                user=contrib,
             )
         assert_equal(exc_info.exception.code, 403)
 
     def test_must_be_contributor_parent_write_private_project(self):
         user = UserFactory()
         node = NodeFactory(parent=self.private_project, creator=user)
-        self.private_project.set_permissions(self.private_project.creator, ['read', 'write'])
+        contrib = UserFactory()
+        self.private_project.add_contributor(contrib, auth=Auth(self.private_project.creator), permissions=['read', 'write'])
         self.private_project.save()
         with assert_raises(HTTPError) as exc_info:
             view_that_needs_contributor_or_public(
                 pid=self.private_project._id,
                 nid=node._id,
-                user=self.private_project.creator,
+                user=contrib,
             )
         assert_equal(exc_info.exception.code, 403)
 
@@ -435,8 +484,11 @@ class TestMustBeContributorOrPublicButNotAnonymizedDecorator(AuthAppTestCase):
         super(TestMustBeContributorOrPublicButNotAnonymizedDecorator, self).setUp()
         self.contrib = AuthUserFactory()
         self.non_contrib = AuthUserFactory()
+        admin = UserFactory()
         self.public_project = ProjectFactory(is_public=True)
+        self.public_project.add_contributor(admin, auth=Auth(self.public_project.creator), permissions=['read', 'write', 'admin'])
         self.private_project = ProjectFactory(is_public=False)
+        self.private_project.add_contributor(admin, auth=Auth(self.private_project.creator), permissions=['read', 'write', 'admin'])
         self.public_project.add_contributor(self.contrib, auth=Auth(self.public_project.creator))
         self.private_project.add_contributor(self.contrib, auth=Auth(self.private_project.creator))
         self.public_project.save()

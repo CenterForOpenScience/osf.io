@@ -213,3 +213,7 @@ def evernote_widget(node_addon, **kwargs):
     })
 
     return ret
+
+evernote_root_folder = generic_views.root_folder(
+    SHORT_NAME
+)

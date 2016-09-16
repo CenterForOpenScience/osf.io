@@ -9,10 +9,11 @@ require('js/osfToggleHeight');
 var m = require('mithril');
 var Fangorn = require('js/fangorn');
 var Raven = require('raven-js');
+var lodashGet  = require('lodash.get');
 require('truncate');
 
 var $osf = require('js/osfHelpers');
-var LogFeed = require('js/logFeed');
+var LogFeed = require('js/components/logFeed');
 var pointers = require('js/pointers');
 var Comment = require('js/comment'); //jshint ignore:line
 var NodeControl = require('js/nodeControl');
@@ -20,17 +21,21 @@ var CitationList = require('js/citationList');
 var CitationWidget = require('js/citationWidget');
 var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
+var AddProject = require('js/addProjectPlugin');
+var mHelpers = require('js/mithrilHelpers');
+var SocialShare = require('js/components/socialshare');
 
 var ctx = window.contextVars;
+var node = window.contextVars.node;
 var nodeApiUrl = ctx.node.urls.api;
-var nodeCategories = ctx.nodeCategories || {};
+var nodeCategories = ctx.nodeCategories || [];
+
 
 // Listen for the nodeLoad event (prevents multiple requests for data)
 $('body').on('nodeLoad', function(event, data) {
     if (!data.node.is_retracted) {
         // Initialize controller for "Add Links" modal
         new pointers.PointerManager('#addPointer', window.contextVars.node.title);
-        new LogFeed('#logScope', nodeApiUrl + 'log/');
     }
     // Initialize CitationWidget if user isn't viewing through an anonymized VOL
     if (!data.node.anonymous && !data.node.is_retracted) {
@@ -55,7 +60,8 @@ if ($comments.length) {
         canComment: window.contextVars.currentUser.canComment,
         hasChildren: window.contextVars.node.hasChildren,
         currentUser: window.contextVars.currentUser,
-        pageTitle: window.contextVars.node.title
+        pageTitle: window.contextVars.node.title,
+        inputSelector: '.atwho-input'
     };
     Comment.init('#commentsLink', '.comment-pane', options);
 }
@@ -93,13 +99,41 @@ var institutionLogos = {
     }
 };
 
+
 $(document).ready(function () {
+
+    var AddComponentButton = m.component(AddProject, {
+        buttonTemplate: m('.btn.btn-sm.btn-default[data-toggle="modal"][data-target="#addSubComponent"]', {onclick: function() {
+            $osf.trackClick('project-dashboard', 'add-component', 'open-add-project-modal');
+        }}, 'Add Component'),
+        modalID: 'addSubComponent',
+        title: 'Create new component',
+        parentID: window.contextVars.node.id,
+        parentTitle: window.contextVars.node.title,
+        categoryList: nodeCategories,
+        stayCallback: function() {
+            // We need to reload because the components list needs to be re-rendered serverside
+            window.location.reload();
+        },
+        trackingCategory: 'project-dashboard',
+        trackingAction: 'add-component',
+        contributors: window.contextVars.node.contributors,
+        currentUserCanEdit: window.contextVars.currentUser.canEdit
+    });
+    var newComponentElem = document.getElementById('newComponent');
+    if (newComponentElem) {
+        m.mount(newComponentElem, AddComponentButton);
+    }
 
     if (ctx.node.institutions.length && !ctx.node.anonymous){
         m.mount(document.getElementById('instLogo'), m.component(institutionLogos, {institutions: window.contextVars.node.institutions}));
     }
     $('#contributorsList').osfToggleHeight();
+
     if (!ctx.node.isRetracted) {
+        // Recent Activity widget
+        m.mount(document.getElementById('logFeed'), m.component(LogFeed.LogFeed, {node: node}));
+
         // Treebeard Files view
         $.ajax({
             url:  nodeApiUrl + 'files/grid/'
@@ -107,6 +141,7 @@ $(document).ready(function () {
             var fangornOpts = {
                 divID: 'treeGrid',
                 filesData: data.data,
+                allowMove: !node.isRegistration,
                 uploads : true,
                 showFilter : true,
                 placement: 'dashboard',
@@ -117,7 +152,13 @@ $(document).ready(function () {
                     return [
                         {
                             title: 'Name',
-                            width : '100%',
+                            width : '70%',
+                            sort : true,
+                            sortType : 'text'
+                        },
+                        {
+                            title: 'Modified',
+                            width : '30%',
                             sort : true,
                             sortType : 'text'
                         }
@@ -137,7 +178,12 @@ $(document).ready(function () {
                                 data: 'name',
                                 folderIcons: true,
                                 filter: true,
-                                custom: Fangorn.DefaultColumns._fangornTitleColumn
+                                custom: Fangorn.DefaultColumns._fangornTitleColumn},
+                                {
+                                data: 'modified',
+                                folderIcons: false,
+                                filter: false,
+                                custom: Fangorn.DefaultColumns._fangornModifiedColumn
                             }];
                     if (item.parentID) {
                         item.data.permissions = item.data.permissions || item.parent().data.permissions;
@@ -198,24 +244,6 @@ $(document).ready(function () {
         }
     });
 
-    //Clear input fields on Add Component Modal
-    $('#confirm').on('click', function () {
-        $('#alert').text('');
-        $('#title').val('');
-        $('#category').val('');
-    });
-
-    // only focus input field on modals when not IE
-    $('#newComponent').on('shown.bs.modal', function(){
-        if(!$osf.isIE()){
-            $('#title').focus();
-        }
-    });
-
-    $('#newComponent').on('hidden.bs.modal', function(){
-        $('#newComponent .modal-alert').text('');
-    });
-
     $('#addPointer').on('shown.bs.modal', function(){
         if(!$osf.isIE()){
             $('#addPointer input').focus();
@@ -242,7 +270,10 @@ $(document).ready(function () {
                 var truncatedText = $.truncate(renderedText, {length: 400});
                 markdownElement.html(truncatedText);
                 mathrender.mathjaxify(markdownElement);
+                markdownElement.show();
             });
+        } else {
+            markdownElement.css('display', 'inherit');
         }
     }
 
@@ -254,10 +285,9 @@ $(document).ready(function () {
         });
     }
 
-    if (window.contextVars.node.isRegistration && window.contextVars.node.tags.length === 0) {
-        $('div.tags').remove();
+    if (window.contextVars.node.isPublic) {
+        m.mount(document.getElementById('shareButtonsPopover'),
+                m.component(SocialShare.ShareButtonsPopover,
+                    {title: window.contextVars.node.title, url: window.location.href}));
     }
-    $('a.btn').mouseup(function(){
-        $(this).blur();
-    });
 });

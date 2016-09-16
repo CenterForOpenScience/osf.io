@@ -24,12 +24,12 @@ def migrate_nodes(index):
     logger.info('Migrating nodes to index: {}'.format(index))
     query = Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False)
     total = Node.find(query).count()
-    increment = 1000
+    increment = 200
     total_pages = (total // increment) + 1
     pages = paginated(Node, query=query, increment=increment, each=False)
     for page_number, page in enumerate(pages):
         logger.info('Updating page {} / {}'.format(page_number + 1, total_pages))
-        Node.bulk_update_search(page)
+        Node.bulk_update_search(page, index=index)
         Node._clear_caches()
 
     logger.info('Nodes migrated: {}'.format(total))

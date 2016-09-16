@@ -15,6 +15,7 @@ from framework import sentry
 from framework.auth import utils as auth_utils
 from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
+from framework.auth.decorators import must_be_confirmed
 from framework.auth.exceptions import ChangePasswordError
 from framework.auth.views import send_confirm_email
 from framework.auth.signals import user_merged
@@ -297,6 +298,7 @@ def profile_view(auth):
 
 
 @collect_auth
+@must_be_confirmed
 def profile_view_id(uid, auth):
     user = User.load(uid)
     is_profile = auth and auth.user == user
@@ -344,7 +346,8 @@ def user_account(auth, **kwargs):
         'addons': user_addons,
         'addons_js': collect_user_config_js([addon for addon in settings.ADDONS_AVAILABLE if 'user' in addon.configs]),
         'addons_css': [],
-        'requested_deactivation': user.requested_deactivation
+        'requested_deactivation': user.requested_deactivation,
+        'external_identity': user.external_identity
     }
 
 
@@ -462,6 +465,23 @@ def personal_access_token_detail(auth, **kwargs):
             'token_detail_url': token_detail_url,
             'scope_options': get_available_scopes()}
 
+@must_be_logged_in
+def delete_external_identity(auth, **kwargs):
+    """Removes single external identity from user"""
+    data = request.get_json()
+    identity = data.get('identity')
+    if not identity:
+        raise HTTPError(http.BAD_REQUEST)
+
+    for service in auth.user.external_identity:
+        if identity in auth.user.external_identity[service]:
+            auth.user.external_identity[service].pop(identity)
+            if len(auth.user.external_identity[service]) == 0:
+                auth.user.external_identity.pop(service)
+            auth.user.save()
+            return
+
+    raise HTTPError(http.NOT_FOUND, 'Unable to find requested identity')
 
 def collect_user_config_js(addon_configs):
     """Collect webpack bundles for each of the addons' user-cfg.js modules. Return

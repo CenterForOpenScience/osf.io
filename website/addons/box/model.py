@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
+import httplib as http
 import logging
+import os
 
 from box import CredentialsV2, BoxClient
 from box.client import BoxClientException
 from modularodm import fields
+from oauthlib.oauth2 import InvalidGrantError
 import requests
+from urllib3.exceptions import MaxRetryError
 
 from framework.auth import Auth
 from framework.exceptions import HTTPError
@@ -12,6 +16,7 @@ from framework.exceptions import HTTPError
 from website.addons.base import exceptions
 from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase
 from website.addons.base import StorageAddonBase
+from website.util import api_v2_url
 
 from website.addons.box import settings
 from website.addons.box.serializer import BoxSerializer
@@ -31,6 +36,7 @@ class Box(ExternalProvider):
     callback_url = settings.BOX_OAUTH_TOKEN_ENDPOINT
     auto_refresh_url = callback_url
     refresh_time = settings.REFRESH_TIME
+    expiry_time = settings.EXPIRY_TIME
     default_scopes = ['root_readwrite']
 
     def handle_callback(self, response):
@@ -85,8 +91,6 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     folder_name = fields.StringField()
     folder_path = fields.StringField()
 
-    _folder_data = None
-
     _api = None
 
     @property
@@ -101,37 +105,94 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         return '{0}: {1}'.format(self.config.full_name, self.folder_id)
 
     def fetch_folder_name(self):
-        self._update_folder_data()
-        return getattr(self, 'folder_name', '').replace('All Files', '/ (Full Box)')
+        return self.folder_name
 
     def fetch_full_folder_path(self):
-        self._update_folder_data()
         return self.folder_path
 
-    def _update_folder_data(self):
-        if self.folder_id is None:
-            return None
+    def get_folders(self, **kwargs):
+        folder_id = kwargs.get('folder_id')
+        if folder_id is None:
+            return [{
+                'id': '0',
+                'path': '/',
+                'addon': 'box',
+                'kind': 'folder',
+                'name': '/ (Full Box)',
+                'urls': {
+                    # 'folders': node.api_url_for('box_folder_list', folderId=0),
+                    'folders': api_v2_url('nodes/{}/addons/box/folders/'.format(self.owner._id),
+                        params={'id': '0'}
+                    )
+                }
+            }]
 
-        if not self._folder_data:
-            try:
-                Box(self.external_account).refresh_oauth_key()
-                client = BoxClient(self.external_account.oauth_key)
-                self._folder_data = client.get_folder(self.folder_id)
-            except BoxClientException:
-                return
+        try:
+            Box(self.external_account).refresh_oauth_key()
+            client = BoxClient(self.external_account.oauth_key)
+        except BoxClientException:
+            raise HTTPError(http.FORBIDDEN)
 
-            self.folder_name = self._folder_data['name']
-            self.folder_path = '/'.join(
-                [x['name'] for x in self._folder_data['path_collection']['entries']]
-                + [self._folder_data['name']]
-            )
-            self.save()
+        try:
+            metadata = client.get_folder(folder_id)
+        except BoxClientException:
+            raise HTTPError(http.NOT_FOUND)
+        except MaxRetryError:
+            raise HTTPError(http.BAD_REQUEST)
+
+        # Raise error if folder was deleted
+        if metadata.get('is_deleted'):
+            raise HTTPError(http.NOT_FOUND)
+
+        folder_path = '/'.join(
+            [
+                x['name']
+                for x in metadata['path_collection']['entries']
+            ] + [metadata['name']]
+        )
+
+        return [
+            {
+                'addon': 'box',
+                'kind': 'folder',
+                'id': item['id'],
+                'name': item['name'],
+                'path': os.path.join(folder_path, item['name']).replace('All Files', ''),
+                'urls': {
+                    'folders': api_v2_url('nodes/{}/addons/box/folders/'.format(self.owner._id),
+                        params={'id': item['id']}
+                    )
+                }
+            }
+            for item in metadata['item_collection']['entries']
+            if item['type'] == 'folder'
+        ]
 
     def set_folder(self, folder_id, auth):
         self.folder_id = str(folder_id)
-        self._update_folder_data()
-        self.save()
+        self.folder_name, self.folder_path = self._folder_data(folder_id)
         self.nodelogger.log(action='folder_selected', save=True)
+
+    def _folder_data(self, folder_id):
+        # Split out from set_folder for ease of testing, due to
+        # outgoing requests. Should only be called by set_folder
+        try:
+            Box(self.external_account).refresh_oauth_key(force=True)
+        except InvalidGrantError:
+            raise exceptions.InvalidAuthError()
+        try:
+            client = BoxClient(self.external_account.oauth_key)
+            folder_data = client.get_folder(self.folder_id)
+        except BoxClientException:
+            raise exceptions.InvalidFolderError()
+
+        folder_name = folder_data['name'].replace('All Files', '') or '/ (Full Box)'
+        folder_path = '/'.join(
+            [x['name'] for x in folder_data['path_collection']['entries'] if x['name']]
+            + [folder_data['name']]
+        ).replace('All Files', '') or '/'
+
+        return folder_name, folder_path
 
     def clear_settings(self):
         self.folder_id = None
@@ -147,7 +208,6 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             extra = {'folder_id': folder_id}
             self.nodelogger.log(action='node_deauthorized', extra=extra, save=True)
 
-        self._update_folder_data()
         self.clear_auth()
 
     def serialize_waterbutler_credentials(self):
@@ -187,5 +247,4 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     def on_delete(self):
         self.deauthorize(add_log=False)
-        self.clear_auth()
         self.save()

@@ -1,5 +1,8 @@
+# -*- coding: utf-8 -*-
 
+from framework.exceptions import HTTPError
 from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase
+from website.addons.base import exceptions
 from website.addons.base import StorageAddonBase
 from website.addons.evernote import (settings, utils)
 from website.addons.evernote.serializer import EvernoteSerializer
@@ -11,10 +14,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 class Evernote(ExternalProvider):
-    """
-    First cut at the Evernote provider
 
-    """
     name = 'Evernote'
     short_name = 'evernote'
 
@@ -23,21 +23,14 @@ class Evernote(ExternalProvider):
 
     client_id = settings.EVERNOTE_CLIENT_ID
     client_secret = settings.EVERNOTE_CLIENT_SECRET
-    _sandbox = settings.EVERNOTE_SANDBOX
 
-    BASE_URL = "https://www.evernote.com" if not _sandbox  \
-           else "https://sandbox.evernote.com"
-
-    auth_url_base = '{}/OAuth.action'.format(BASE_URL)
-    request_token_url = '{}/oauth'.format(BASE_URL)
-    callback_url = '{}/oauth'.format(BASE_URL)
+    auth_url_base = '{}/OAuth.action'.format(settings.BASE_URL)
+    request_token_url = '{}/oauth'.format(settings.BASE_URL)
+    callback_url = '{}/oauth'.format(settings.BASE_URL)
 
     _oauth_version = OAUTH1
 
     def handle_callback(self, response):
-        """View called when the Oauth flow is completed. Adds a new BoxUserSettings
-        record to the user and saves the user's access token and account info.
-        """
 
         client = utils.get_evernote_client(token=response.get('oauth_token'))
 
@@ -54,7 +47,6 @@ class EvernoteUserSettings(AddonOAuthUserSettingsBase):
     oauth_provider = Evernote
     serializer = EvernoteSerializer
 
-
 class EvernoteNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     oauth_provider = Evernote
     serializer = EvernoteSerializer
@@ -63,20 +55,30 @@ class EvernoteNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     folder_name = fields.StringField()
     folder_path = fields.StringField()
 
-    # to hold data about current Notebook
-    _folder_data = None
+    _api = None
+
+    @property
+    def api(self):
+        """authenticated ExternalProvider instance"""
+        if self._api is None:
+            self._api = Evernote(self.external_account)
+        return self._api
 
     def set_user_auth(self, user_settings):
-        """Import a user's Evernote authentication and create a NodeLog.
-        :param EvernoteUserSettings user_settings: The user settings to link.
-        """
+
+        # TO DO:  but this function should go away upon switching to use the generic_views found in website/addons/base/
+        # https://github.com/CenterForOpenScience/osf.io/pull/4670#discussion_r67694204
+
         self.user_settings = user_settings
-        #nodelogger = BoxNodeLogger(node=self.owner, auth=Auth(user_settings.owner))
-        #nodelogger.log(action="node_authorized", save=True)
+        self.nodelogger.log(action='node_authorized', save=True)
 
     def set_folder(self, folder_id, auth):
+
         self.folder_id = str(folder_id)
-        self._update_folder_data()
+        client = utils.get_evernote_client(self.external_account.oauth_key)
+        _folder_data = utils.get_notebook(client, self.folder_id)
+        self.folder_name = _folder_data['name']
+        self.folder_path = _folder_data['name']
         self.save()
 
         if not self.complete:
@@ -87,42 +89,47 @@ class EvernoteNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             )
             self.user_settings.save()
 
-        # Add log to node
-        #nodelogger = BoxNodeLogger(node=self.owner, auth=auth)
-        #nodelogger.log(action="folder_selected", save=True)
-
-    def _update_folder_data(self):
-        """
-        given the folder_id, compute folder_name, folder_path
-        """
-        if self.folder_id is None:
-            return None
-
-        if not self._folder_data:
-            try:
-                # don't know whether we'll need to do something like this
-                #refresh_oauth_key(self.external_account)
-                client = utils.get_evernote_client(self.external_account.oauth_key)
-                self._folder_data = utils.get_notebook(client, self.folder_id)
-            except Exception:
-                return
-
-            self.folder_name = self._folder_data['name']
-            self.folder_path = self._folder_data['name']
-
-            self.save()
-
-    # Sam C says following can be removed https://github.com/CenterForOpenScience/osf.io/pull/4670/files#r49327525
-    # boilerplate from https://github.com/CenterForOpenScience/osf.io/blob/e4e1bd951b6e79d3bb2335d326bb44d9939bffb8/website/addons/box/model.py#L94-L99
-    # @property
-    # def complete(self):
-    #     return bool(self.has_auth and self.user_settings.verify_oauth_access(
-    #         node=self.owner,
-    #         external_account=self.external_account,
-    #     ))
+        self.nodelogger.log(action='folder_selected', save=True)
 
     # based on https://github.com/CenterForOpenScience/osf.io/blob/4a5d4e5a887c944174694300c42b399638184722/website/addons/box/model.py#L105-L107
     def fetch_full_folder_path(self):
         # don't know why this would be needed for Evernote
-        #self._update_folder_data()
+
         return self.folder_path
+
+    def fetch_folder_name(self):
+        # don't know why this would be needed for Evernote
+
+        return self.folder_path
+
+    def clear_settings(self):
+        self.folder_id = None
+        self.folder_name = None
+        self.folder_path = None
+
+    def deauthorize(self, auth=None, add_log=True):
+        """Remove user authorization from this node and log the event."""
+        folder_id = self.folder_id
+        self.clear_settings()
+
+        if add_log:
+            extra = {'folder_id': folder_id}
+            self.nodelogger.log(action='node_deauthorized', extra=extra, save=True)
+
+        self.clear_auth()
+
+    def serialize_waterbutler_credentials(self):
+        if not self.has_auth:
+            raise exceptions.AddonError('Addon is not authorized')
+        try:
+            return {'token': self.external_account.oauth_key}
+        except Exception as error:
+            raise HTTPError(str(error), data={'message_long': error.message})
+
+    def serialize_waterbutler_settings(self):
+        if self.folder_id is None:
+            raise exceptions.AddonError('Folder is not configured')
+        return {'folder': self.folder_id}
+
+    # TO DO : may need create_waterbutler_log
+    # https://github.com/CenterForOpenScience/osf.io/pull/4670/#discussion_r67736406

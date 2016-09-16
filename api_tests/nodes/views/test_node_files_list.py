@@ -127,6 +127,10 @@ class TestNodeFilesList(ApiTestCase):
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data'][0]['attributes']['provider'], 'osfstorage')
 
+    def test_returns_storage_addons_link(self):
+        res = self.app.get(self.private_url, auth=self.user.auth)
+        assert_in('storage_addons', res.json['data'][0]['links'])
+
     def test_returns_file_data(self):
         fobj = self.project.get_addon('osfstorage').get_root().append_file('NewFile')
         fobj.save()
@@ -136,6 +140,15 @@ class TestNodeFilesList(ApiTestCase):
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['attributes']['kind'], 'file')
         assert_equal(res.json['data']['attributes']['name'], 'NewFile')
+
+    def test_list_returns_folder_data(self):
+        fobj = self.project.get_addon('osfstorage').get_root().append_folder('NewFolder')
+        fobj.save()
+        res = self.app.get('{}osfstorage/'.format(self.private_url, fobj._id), auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 1)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['data'][0]['attributes']['name'], 'NewFolder')
 
     def test_returns_folder_data(self):
         fobj = self.project.get_addon('osfstorage').get_root().append_folder('NewFolder')

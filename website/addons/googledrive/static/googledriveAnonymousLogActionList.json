@@ -1,0 +1,10 @@
+{
+    "googledrive_file_added" : "A user added a file to Google Drive in a project",
+    "googledrive_file_removed" : "A user removed a file from Google Drive in a project",
+    "googledrive_file_updated" : "A user updated a file in Google Drive in a project",
+    "googledrive_folder_created" : "A user created a folder in Google Drive in a project",
+    "googledrive_folder_selected" : "A user linked a Google Drive folder to a project",
+    "googledrive_node_authorized" : "A user authorized the Google Drive addon for a project",
+    "googledrive_node_deauthorized" : "A user deauthorized the Google Drive addon for a project",
+    "googledrive_node_deauthorized_no_user" : "Google Drive addon for a project deauthorized"
+}

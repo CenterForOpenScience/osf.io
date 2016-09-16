@@ -1,7 +1,7 @@
 from django import forms
 from ckeditor.widgets import CKEditorWidget
 
-from website.project.model import Comment
+from website.project.spam.model import SpamStatus
 
 
 class EmailForm(forms.Form):
@@ -19,6 +19,6 @@ class EmailForm(forms.Form):
 
 class ConfirmForm(forms.Form):
     confirm = forms.ChoiceField(
-        choices=[(Comment.SPAM, 'Spam'), (Comment.HAM, 'Ham')],
+        choices=[(SpamStatus.SPAM, 'Spam'), (SpamStatus.HAM, 'Ham')],
         widget=forms.RadioSelect(),
     )

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# TODO: Remove me
+# TODO: Most of the forms are no longer used, need clean up
 
 from wtforms import ValidationError
 
@@ -100,8 +100,8 @@ confirm_email_field = TextField(
 password_field = PasswordField('Password',
     [
         validators.Required(message=u'Password is required'),
-        validators.Length(min=6, message=u'Password is too short. '
-            'Password should be at least 6 characters.'),
+        validators.Length(min=8, message=u'Password is too short. '
+            'Password should be at least 8 characters.'),
         validators.Length(max=256, message=u'Password is too long. '
             'Password should be at most 256 characters.'),
     ],
@@ -123,8 +123,8 @@ class ResetPasswordForm(Form):
     password = PasswordField('New Password',
         [
             validators.Required(message=u'Password is required'),
-            validators.Length(min=6, message=u'Password is too short. '
-                'Password should be at least 6 characters.'),
+            validators.Length(min=8, message=u'Password is too short. '
+                'Password should be at least 8 characters.'),
             validators.Length(max=256, message=u'Password is too long. '
                 'Password should be at most 256 characters.'),
         ],
@@ -145,15 +145,6 @@ class ResetPasswordForm(Form):
 class SetEmailAndPasswordForm(ResetPasswordForm):
     token = HiddenField()
 
-# TODO: use unique email field and remove redundant status message and
-# validation in the views
-class RegistrationForm(Form):
-    fullname = name_field
-    username = email_field
-    username2 = confirm_email_field
-    password = password_field
-    password2 = confirm_password_field
-
 
 class SignInForm(Form):
     username = email_field
@@ -170,27 +161,3 @@ class PasswordForm(Form):
 
 class ForgotPasswordForm(Form):
     email = email_field
-
-
-class MergeAccountForm(Form):
-    merged_username = TextField("Duplicate User's Email Address",
-    [
-        validators.Required(message=u'Email address is required'),
-        validators.Length(min=6, message=u'Email address is too short'),
-        validators.Length(max=120, message=u'Email address is too long'),
-        validators.Email(message=u'Email address is invalid'),
-        NoHtmlCharacters(),
-        EmailExists(),
-    ],
-        filters=[lowerstripped],
-        widget=BootstrapTextInput())
-    merged_password = PasswordField("Duplicate User's Password",
-                                    [validators.Required(
-                                        message=u"Please enter the user's password")],
-                                    filters=[stripped],
-                                    widget=BootstrapPasswordInput())
-    user_password = PasswordField("This Account's Password",
-                                    [validators.Required(
-                                        message=u"Please enter the password for this account")],
-                                    filters=[stripped],
-                                    widget=BootstrapPasswordInput())

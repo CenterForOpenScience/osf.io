@@ -24,7 +24,6 @@ var NodesPrivacy = require('js/nodesPrivacy').NodesPrivacy;
  */
 var ProjectViewModel = function(data, options) {
     var self = this;
-    self.categories = (options && options.categories) || {};
     
     self._id = data.node.id;
     self.apiUrl = data.node.api_url;
@@ -75,11 +74,7 @@ var ProjectViewModel = function(data, options) {
     // Add icon to title
     self.icon = ko.pureComputed(function() {
         var category = self.categoryValue();
-        if (Object.keys(iconmap.componentIcons).indexOf(category) >=0 ){
-            return iconmap.componentIcons[category];
-        } else {
-            return iconmap.projectIcons[category];
-        }
+        return iconmap.projectComponentIcons[category];
     });
 
     // Editable Title and Description
@@ -133,8 +128,9 @@ var ProjectViewModel = function(data, options) {
             }
         }));
 
-        var categoryOptions = $.map(self.categories, function(display, value) {
-            return {value: value, text: display};
+        var categories = (options && options.categories) || {};
+        var categoryOptions = $.map(categories, function(item) {
+            return {value: item.value, text: item.display_name};
         });
         $('#nodeCategoryEditable').editable($.extend({}, editableOptions, {
             type: 'select',
@@ -221,7 +217,6 @@ var ProjectViewModel = function(data, options) {
 
     self.canCreateIdentifiers = ko.pureComputed(function() {
         return !self.hasIdentifiers() &&
-            self.isRegistration &&
             self.nodeIsPublic &&
             self.userPermissions.indexOf('admin') !== -1;
     });
@@ -240,7 +235,8 @@ var ProjectViewModel = function(data, options) {
             title: 'Create identifiers',
             message: '<p class="overflow">' +
                 'Are you sure you want to create a DOI and ARK for this ' +
-                $osf.htmlEscape(self.nodeType) + '?',
+                $osf.htmlEscape(self.nodeType) + '? DOI and ARK identifiers' +
+                ' are persistent and will always resolve to this page.',
             callback: function(confirmed) {
                 if (confirmed) {
                     self.createIdentifiers();
