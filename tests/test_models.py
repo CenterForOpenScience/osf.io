@@ -21,6 +21,7 @@ from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
 from framework.auth import User, Auth
 from framework.auth import cas
+from framework.sessions import set_session
 from framework.sessions.model import Session
 from framework.auth import exceptions as auth_exc
 from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
@@ -64,8 +65,8 @@ from tests.factories import (
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, PrivateLinkFactory,
     AuthUserFactory, BookmarkCollectionFactory, CollectionFactory,
-    NodeLicenseRecordFactory, InstitutionFactory, CommentFactory
-)
+    NodeLicenseRecordFactory, InstitutionFactory, CommentFactory,
+    SessionFactory)
 from tests.utils import mock_archive
 
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
@@ -988,7 +989,10 @@ class TestDisablingUsers(OsfTestCase):
         assert_equal(new_date_disabled, old_date_disabled)
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
-    def test_disable_account(self, mock_mail):
+    def test_disable_account_and_remove_sessions(self, mock_mail):
+        session1 = SessionFactory(user=self.user, date_created=(datetime.datetime.utcnow() - datetime.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
+        session2 = SessionFactory(user=self.user, date_created=(datetime.datetime.utcnow() - datetime.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
+
         self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST] = True
         self.user.save()
         self.user.disable_account()
@@ -996,6 +1000,9 @@ class TestDisablingUsers(OsfTestCase):
         assert_true(self.user.is_disabled)
         assert_true(isinstance(self.user.date_disabled, datetime.datetime))
         assert_false(self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST])
+
+        assert_false(Session.load(session1._id))
+        assert_false(Session.load(session2._id))
 
     def test_disable_account_api(self):
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = True
@@ -3284,26 +3291,65 @@ class TestProject(OsfTestCase):
                     registration.set_privacy('public', auth=self.auth)
                     assert_equal(mock_request_embargo_termination.call_count, 1)
 
+    @mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', True)
     def test_set_privacy_on_spammy_node(self):
-        with mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', True):
-            with mock.patch.object(Node, 'is_spammy', mock.PropertyMock(return_value=True)):
-                with assert_raises(NodeStateError):
-                    self.project.set_privacy('public')
+        with mock.patch.object(Node, 'is_spammy', mock.PropertyMock(return_value=True)):
+            with assert_raises(NodeStateError):
+                self.project.set_privacy('public')
 
-    def test_check_only_public_node(self):
+    def test_check_spam_disabled_by_default(self):
+        # SPAM_CHECK_ENABLED is False by default
+        with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
+                self.project.set_privacy('public')
+                assert_false(self.project.check_spam(self.user, None, None))
+
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    def test_check_spam_only_public_node_by_default(self):
         # SPAM_CHECK_PUBLIC_ONLY is True by default
-        with mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True):
+        with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
             with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
                 self.project.set_privacy('private')
-                assert_false(self.project.check_spam(None, None))
+                assert_false(self.project.check_spam(self.user, None, None))
 
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    def test_check_spam_skips_ham_user(self):
+        with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
+                self.user.system_tags.extend(('ham_confirmed',))
+                self.project.set_privacy('public')
+                assert_false(self.project.check_spam(self.user, None, None))
+
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_CHECK_PUBLIC_ONLY', False)
     def test_check_spam_on_private_node(self):
-        with mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True):
-            with mock.patch.object(settings, 'SPAM_CHECK_PUBLIC_ONLY', False):
-                with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
-                    with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(return_value=True)):
-                        self.project.set_privacy('private')
-                        assert_true(self.project.check_spam(None, None))
+        with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(return_value=True)):
+                self.project.set_privacy('private')
+                assert_true(self.project.check_spam(self.user, None, None))
+
+    @mock.patch('website.project.model.mails.send_mail')
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
+    def test_check_spam_on_private_node_bans_new_spam_user(self, mock_send_mail):
+        with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(return_value=True)):
+                self.project.creator.date_confirmed = datetime.datetime.utcnow()
+                self.project.set_privacy('public')
+                assert_true(self.project.check_spam(self.user, None, None))
+                assert_true(self.user.is_disabled)
+                assert_false(self.project.is_public)
+
+    @mock.patch('website.project.model.mails.send_mail')
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
+    def test_check_spam_on_private_node_does_not_ban_existing_user(self, mock_send_mail):
+        with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(return_value=True)):
+                self.project.creator.date_confirmed = datetime.datetime.utcnow() - datetime.timedelta(days=9001)
+                self.project.set_privacy('public')
+                assert_true(self.project.check_spam(self.user, None, None))
+                assert_true(self.project.is_public)
 
     def test_set_description(self):
         old_desc = self.project.description
@@ -4801,15 +4847,18 @@ class TestNodeSpam(OsfTestCase):
         assert_false(self.node.is_public)
 
 
-class TestNodeOnUpdate(OsfTestCase):
+class TestOnNodeUpdate(OsfTestCase):
 
     def setUp(self):
-        super(TestNodeOnUpdate, self).setUp()
+        super(TestOnNodeUpdate, self).setUp()
+        self.user = UserFactory()
+        self.session = SessionFactory(user=self.user)
+        set_session(self.session)
         self.node = ProjectFactory(is_public=True)
 
     def tearDown(self):
         handlers.celery_before_request()
-        super(TestNodeOnUpdate, self).tearDown()
+        super(TestOnNodeUpdate, self).tearDown()
 
     @mock.patch('website.project.model.enqueue_task')
     def test_enqueue_called(self, enqueue_task):
@@ -4820,8 +4869,9 @@ class TestNodeOnUpdate(OsfTestCase):
 
         assert_equals(task.task, 'website.project.tasks.on_node_updated')
         assert_equals(task.args[0], self.node._id)
-        assert_equals(task.args[1], False)
-        assert_equals(task.args[2], {'title'})
+        assert_equals(task.args[1], self.user._id)
+        assert_equals(task.args[2], False)
+        assert_equals(task.args[3], {'title'})
 
     @mock.patch('website.project.tasks.requests')
     def test_skips_no_settings(self, requests):
@@ -4829,7 +4879,7 @@ class TestNodeOnUpdate(OsfTestCase):
         settings.SHARE_URL = None
         settings.SHARE_API_TOKEN = None
 
-        on_node_updated(self.node._id, False, {'is_public'})
+        on_node_updated(self.node._id, self.user._id, False, {'is_public'})
         assert_false(requests.post.called)
 
     @mock.patch('website.project.tasks.requests')
@@ -4838,7 +4888,7 @@ class TestNodeOnUpdate(OsfTestCase):
         settings.SHARE_URL = 'https://share.osf.io'
         settings.SHARE_API_TOKEN = 'Token'
 
-        on_node_updated(self.node._id, False, {'is_public'})
+        on_node_updated(self.node._id, self.user._id, False, {'is_public'})
 
         kwargs = requests.post.call_args[1]
         graph = kwargs['json']['normalized_data']['@graph']
@@ -4872,11 +4922,12 @@ class TestNodeOnUpdate(OsfTestCase):
                 setattr(self.node, attr, value)
             self.node.save()
 
-            on_node_updated(self.node._id, False, {'is_public'})
+            on_node_updated(self.node._id, self.user._id, False, {'is_public'})
 
             kwargs = requests.post.call_args[1]
             graph = kwargs['json']['normalized_data']['@graph']
             assert_equals(graph[2]['is_deleted'], case['is_deleted'])
+
 
 
 if __name__ == '__main__':
