@@ -3336,9 +3336,23 @@ class TestProject(OsfTestCase):
             with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(return_value=True)):
                 self.project.creator.date_confirmed = datetime.datetime.utcnow()
                 self.project.set_privacy('public')
+                user2 = UserFactory()
+                # project w/ one contributor
+                project2 = ProjectFactory(creator=self.user, description='foobar2', is_public=True)
+                project2.save()
+                # project with more than one contributor
+                project3 = ProjectFactory(creator=self.user, description='foobar3', is_public=True)
+                project3.add_contributor(user2)
+                project3.save()
+
                 assert_true(self.project.check_spam(self.user, None, None))
+
                 assert_true(self.user.is_disabled)
                 assert_false(self.project.is_public)
+                project2.reload()
+                assert_false(project2.is_public)
+                project3.reload()
+                assert_true(project3.is_public)
 
     @mock.patch('website.project.model.mails.send_mail')
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
