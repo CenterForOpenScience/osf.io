@@ -178,7 +178,7 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
                     fullname=fullname,
                     email=email)
                 contributor.save()
-            except ValidationValueError:
+            except ValidationError:
                 ## FIXME: This suppresses an exception if ID not found & new validation fails; get_user will return None
                 contributor = get_user(email=email)
 

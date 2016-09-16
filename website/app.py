@@ -166,6 +166,7 @@ PATCHED_MODELS = (
     'PrivateLink',
     'Comment',
     'ApiOAuth2Application',
+    'ApiOAuth2PersonalToken',
 )
 
 # TODO: This won't work for modules that do e.g. `from website import models`. Rethink.

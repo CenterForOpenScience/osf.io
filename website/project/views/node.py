@@ -911,20 +911,22 @@ def get_summary(auth, node, **kwargs):
 @must_be_contributor_or_public
 def get_readable_descendants(auth, node, **kwargs):
     descendants = []
-    for child in node.nodes.filter(is_deleted=False):
-        if request.args.get('permissions'):
-            perm = request.args['permissions'].lower().strip()
-            if perm not in child.get_permissions(auth.user):
-                continue
-        elif child.can_view(auth):
-            descendants.append(child)
+    for child in node.nodes_active:
+        primary = not node.linked_nodes.filter(id=child.id).exists()
+        if not primary:
+            if node.has_permission(auth.user, 'write'):
+                descendants.append(child)
         else:
-            for descendant in child.find_readable_descendants(auth):
-                descendants.append(descendant)
-    for linked_child in node.linked_nodes.filter(is_deleted=False):
-        if node.has_permission(auth.user, 'write'):
-            descendants.append(linked_child)
-    return _render_nodes(descendants, auth)
+            if request.args.get('permissions'):
+                perm = request.args['permissions'].lower().strip()
+                if perm not in child.get_permissions(auth.user):
+                    continue
+            elif child.can_view(auth):
+                descendants.append(child)
+            else:
+                for descendant in child.find_readable_descendants(auth):
+                    descendants.append(descendant)
+    return _render_nodes(descendants, auth=auth, parent_node=node)
 
 def node_child_tree(user, node_ids):
     """ Format data to test for node privacy settings for use in treebeard.
@@ -970,7 +972,7 @@ def node_child_tree(user, node_ids):
                 'title': node.title if can_read else 'Private Project',
                 'is_public': node.is_public,
                 'contributors': contributors,
-                'visible_contributors': node.visible_contributor_ids,
+                'visible_contributors': list(node.visible_contributor_ids),
                 'is_admin': node.has_permission(user, ADMIN),
                 'affiliated_institutions': affiliated_institutions
             },

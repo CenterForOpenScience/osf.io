@@ -744,7 +744,7 @@ def unserialize_social(auth, **kwargs):
         user.save()
     except ValidationError as exc:
         raise HTTPError(http.BAD_REQUEST, data=dict(
-            message_long=exc.args[0]
+            message_long=exc.messages[0]
         ))
 
 
