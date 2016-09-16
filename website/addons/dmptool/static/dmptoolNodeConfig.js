@@ -62,7 +62,7 @@ function ViewModel(url) {
         return Boolean(self.selectedHost());
     });
     self.tokenUrl = ko.pureComputed(function() {
-       return self.host() ? 'https://' + self.host() + '/account/apitoken' : null;
+       return self.host() ? 'https://' + self.host() + '/dashboard' : null;
     });
     self.savedHostUrl = ko.pureComputed(function() {
         return 'https://' + self.savedHost();
