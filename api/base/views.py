@@ -618,6 +618,7 @@ class BaseContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         user.permission = node.get_permissions(user)[-1]
         user.bibliographic = node.get_visible(user)
         user.node_id = node._id
+        user.index = node.contributors.index(user)
         return user
 
 class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
