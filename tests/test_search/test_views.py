@@ -25,7 +25,6 @@ Y, N = True, False
 
 cases = [
     ("private project hidden from anon", PRIVATE, PROJECT, ANON, N),
-    ("private registration hidden from anon", PRIVATE, REGISTRATION, ANON, N),
     ("private component hidden from anon", PRIVATE, COMPONENT, ANON, N),
     ("private file hidden from anon", PRIVATE, FILE, ANON, N),
 
