@@ -110,7 +110,7 @@
                       % if wiki_content:
                           ${wiki_content}
                       % else:
-                          <p><em>No wiki content</em></p>
+                          <p><em>No wiki content on home page. Please click "edit" in order add content.</em></p>
                       % endif
                   </div>
                 </div>
