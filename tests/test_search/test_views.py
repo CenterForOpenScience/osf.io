@@ -28,20 +28,29 @@ cases = [
     ("private component hidden from anon", PRIVATE, COMPONENT, ANON, N),
     ("private file hidden from anon", PRIVATE, FILE, ANON, N),
 
+    ("private project hidden from auth", PRIVATE, PROJECT, AUTH, N),
+    ("private component hidden from auth", PRIVATE, COMPONENT, AUTH, N),
+    ("private file hidden from auth", PRIVATE, FILE, AUTH, N),
+
     ("public project shown to anon", PUBLIC, PROJECT, ANON, Y),
     ("public registration shown to anon", PUBLIC, REGISTRATION, ANON, Y),
     ("public component shown to anon", PUBLIC, COMPONENT, ANON, Y),
     ("public file shown to anon", PUBLIC, FILE, ANON, Y),
+
+    ("public project shown to auth", PUBLIC, PROJECT, AUTH, Y),
+    ("public registration shown to auth", PUBLIC, REGISTRATION, AUTH, Y),
+    ("public component shown to auth", PUBLIC, COMPONENT, AUTH, Y),
+    ("public file shown to auth", PUBLIC, FILE, AUTH, Y),
 ]
 
 class TestSearchSearchAPI(SearchTestCase):
     """Exercises the website.search.views.search_search view.
     """
 
-    def results(self, query, category):
+    def results(self, query, category, auth):
         url = api_url_for('search_search')
         data = {'q': 'category:{} AND {}'.format(category, query)}
-        return self.app.get(url, data).json['results']
+        return self.app.get(url, data, auth=auth).json['results']
 
     @parameterized.expand(cases)
     def test(self, ignored, status, type_, role, included):
@@ -67,8 +76,13 @@ class TestSearchSearchAPI(SearchTestCase):
             key = 'name'
         else:
             raise NotImplementedError
+
+        auth = None
+        if role is AUTH:
+            auth = factories.AuthUserFactory().auth
+
         expected = [('Flim Flammity', type_)] if included else []
-        results = self.results('flim', type_)
+        results = self.results('flim', type_, auth)
         assert_equal([(x[key], x['category']) for x in results], expected)
 
 
