@@ -2,12 +2,11 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, NotFound
 from framework.auth.oauth_scopes import CoreScopes
 
-from website.project.model import Q, Node
+from website.project.model import Q, Node, Pointer
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList
 
 from api.base.serializers import HideIfWithdrawal
-from api.nodes.permissions import ReadOnlyIfRegistration, ContributorDetailPermissions, ContributorOrPublicForRelationshipPointers
 from api.base.serializers import LinkedNodesRelationshipSerializer
 from api.base.parsers import JSONAPIRelationshipParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
@@ -15,6 +14,14 @@ from api.base.utils import get_user_auth
 from api.comments.serializers import RegistrationCommentSerializer, CommentCreateSerializer
 from api.users.views import UserMixin
 
+from api.nodes.permissions import (
+    ReadOnlyIfRegistration,
+    ContributorDetailPermissions,
+    ContributorOrPublic,
+    ContributorOrPublicForRelationshipPointers,
+    AdminOrPublic,
+    ExcludeWithdrawals
+)
 from api.registrations.serializers import (
     RegistrationSerializer,
     RegistrationDetailSerializer,
@@ -30,14 +37,8 @@ from api.nodes.views import (
     NodeViewOnlyLinksList, NodeViewOnlyLinkDetail
 )
 
-from website.models import Pointer
 from api.registrations.serializers import RegistrationNodeLinksSerializer, RegistrationFileSerializer
 
-from api.nodes.permissions import (
-    AdminOrPublic,
-    ExcludeWithdrawals,
-    ContributorOrPublic
-)
 from api.base.utils import get_object_or_error
 
 class RegistrationMixin(NodeMixin):
@@ -858,6 +859,31 @@ class RegistrationLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveAPIV
         ], 'self': node}
         self.check_object_permissions(self.request, obj)
         return obj
+
+
+class LinkedRegistrationsList(JSONAPIBaseView, generics.ListAPIView, RegistrationMixin):
+    """List of registrations linked to this node. *Read-only*.
+
+    Linked registrations are the registrations pointed to by node links.
+
+    """
+    serializer_class = RegistrationSerializer
+    view_category = 'registrations'
+    view_name = 'linked-registrations'
+
+    def get_queryset(self):
+        return [node for node in
+            super(LinkedNodesList, self).get_queryset()
+            if node.is_registration]
+
+    # overrides APIView
+    def get_parser_context(self, http_request):
+        """
+        Tells parser that we are creating a relationship
+        """
+        res = super(LinkedNodesList, self).get_parser_context(http_request)
+        res['is_relationship'] = True
+        return res
 
 
 class RegistrationViewOnlyLinksList(NodeViewOnlyLinksList, RegistrationMixin):
