@@ -43,6 +43,40 @@ cases = [
     ("public file shown to auth", PUBLIC, FILE, AUTH, Y),
 ]
 
+def make_project(status):
+    project = factories.ProjectFactory(title='Flim Flammity', is_public=status is PUBLIC)
+    project.update_search()
+    return 'title'
+
+def make_registration(status):
+    project = factories.ProjectFactory(title='Flim Flammity', is_public=status is PUBLIC)
+    mock_archive(project, autocomplete=True, autoapprove=True).__enter__()
+    return 'title'
+
+def make_component(status):
+    project = factories.ProjectFactory(title='Blim Blammity', is_public=status is PUBLIC)
+    project.update_search()
+    component = factories.NodeFactory(
+        title='Flim Flammity',
+        parent=project,
+        is_public=status is PUBLIC,
+    )
+    component.update_search()
+    return 'title'
+
+def make_file(status):
+    project = factories.ProjectFactory(title='Blim Blammity', is_public=status is PUBLIC)
+    project.get_addon('osfstorage').get_root().append_file('Flim Flammity')
+    return 'name'
+
+makers = {
+    PROJECT: make_project,
+    REGISTRATION: make_registration,
+    COMPONENT: make_component,
+    FILE: make_file,
+}
+
+
 class TestSearchSearchAPI(SearchTestCase):
     """Exercises the website.search.views.search_search view.
     """
@@ -54,28 +88,7 @@ class TestSearchSearchAPI(SearchTestCase):
 
     @parameterized.expand(cases)
     def test(self, ignored, status, type_, role, included):
-        key = 'title'
-        if type_ == PROJECT:
-            project = factories.ProjectFactory(title='Flim Flammity', is_public=status is PUBLIC)
-            project.update_search()
-        elif type_ == REGISTRATION:
-            project = factories.ProjectFactory(title='Flim Flammity', is_public=status is PUBLIC)
-            mock_archive(project, autocomplete=True, autoapprove=True).__enter__()
-        elif type_ == COMPONENT:
-            project = factories.ProjectFactory(title='Blim Blammity', is_public=status is PUBLIC)
-            project.update_search()
-            component = factories.NodeFactory(
-                title='Flim Flammity',
-                parent=project,
-                is_public=status is PUBLIC,
-            )
-            component.update_search()
-        elif type_ == FILE:
-            project = factories.ProjectFactory(title='Blim Blammity', is_public=status is PUBLIC)
-            project.get_addon('osfstorage').get_root().append_file('Flim Flammity')
-            key = 'name'
-        else:
-            raise NotImplementedError
+        key = makers[type_](status)
 
         auth = None
         if role is AUTH:
