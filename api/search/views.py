@@ -6,6 +6,7 @@ from rest_framework.exceptions import ValidationError
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 from api.base.pagination import SearchPagination
+from api.base.settings import REST_FRAMEWORK, MAX_PAGE_SIZE
 from api.files.serializers import FileSerializer
 from api.nodes.serializers import NodeSerializer
 from api.registrations.serializers import RegistrationSerializer
@@ -41,9 +42,10 @@ class BaseSearchView(JSONAPIBaseView, generics.ListAPIView):
     def get_queryset(self):
         query = self.request.query_params.get('q', '*')
         page = int(self.request.query_params.get('page', '1'))
-        start = (page - 1) * 10
+        page_size = min(int(self.request.query_params.get('page[size]', REST_FRAMEWORK['PAGE_SIZE'])), MAX_PAGE_SIZE)
+        start = (page - 1) * page_size
         try:
-            results = search.search(build_query(query, start=start), doc_type=self.doc_type, raw=True)
+            results = search.search(build_query(query, start=start, size=page_size), doc_type=self.doc_type, raw=True)
         except MalformedQueryError as e:
             raise ValidationError(e.message)
         return results

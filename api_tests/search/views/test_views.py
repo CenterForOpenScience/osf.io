@@ -2,12 +2,11 @@ from modularodm import Q
 from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
-from api_tests.utils import create_test_file
+from api_tests import utils
 
 from framework.auth.core import Auth
-from framework.mongo import database as database_proxy
 
-from tests.base import ApiTestCase, teardown_database
+from tests.base import ApiTestCase
 from tests.factories import (
     AuthUserFactory,
     NodeFactory,
@@ -25,10 +24,6 @@ class ApiSearchTestCase(ApiTestCase):
 
     def setUp(self):
         super(ApiSearchTestCase, self).setUp()
-
-        # actually tear down the database and delete elastic indices for each test
-        teardown_database(database=database_proxy._get_current_object())
-        search.delete_all()
 
         self.user = AuthUserFactory()
         self.user_one = AuthUserFactory(fullname='Kanye Omari West')
@@ -58,9 +53,13 @@ class ApiSearchTestCase(ApiTestCase):
         self.component_two = NodeFactory(parent=self.project, title='Highlights', creator=self.user_one, is_public=True)
         self.private_component = NodeFactory(parent=self.project, title='Wavves', creator=self.user_one)
 
-        self.file = create_test_file(self.component, self.user_one, filename='UltralightBeam.mp3')
-        self.file_two = create_test_file(self.component_two, self.user_one, filename='Highlights.mp3')
-        self.private_file = create_test_file(self.private_component, self.user_one, filename='Wavves.mp3')
+        self.file = utils.create_test_file(self.component, self.user_one, filename='UltralightBeam.mp3')
+        self.file_two = utils.create_test_file(self.component_two, self.user_one, filename='Highlights.mp3')
+        self.private_file = utils.create_test_file(self.private_component, self.user_one, filename='Wavves.mp3')
+
+    def tearDown(self):
+        super(ApiSearchTestCase, self).tearDown()
+        search.delete_all()
 
 
 class TestSearch(ApiSearchTestCase):

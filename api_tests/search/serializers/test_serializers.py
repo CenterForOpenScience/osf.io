@@ -2,7 +2,7 @@ from modularodm import Q
 from nose.tools import *  # flake8: noqa
 
 from api.search.serializers import SearchSerializer
-from api_tests.utils import create_test_file
+from api_tests import utils
 
 from tests.base import DbTestCase
 from tests.factories import (
@@ -22,12 +22,11 @@ class TestSearchSerializer(DbTestCase):
 
     def setUp(self):
         super(TestSearchSerializer, self).setUp()
-        search.delete_all()
 
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user, is_public=True)
         self.component = NodeFactory(parent=self.project, creator=self.user, is_public=True)
-        self.file = create_test_file(self.component, self.user)
+        self.file = utils.create_test_file(self.component, self.user)
 
         ensure_schemas()
         self.schema = MetaSchema.find_one(
@@ -37,6 +36,10 @@ class TestSearchSerializer(DbTestCase):
 
         with mock_archive(self.project, autocomplete=True, autoapprove=True, schema=self.schema) as registration:
             self.registration = registration
+
+    def tearDown(self):
+        super(TestSearchSerializer, self).tearDown()
+        search.delete_all()
 
     def test_search_serializer_mixed_model_project(self):
         req = make_drf_request()
