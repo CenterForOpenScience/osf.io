@@ -2,11 +2,13 @@ from __future__ import unicode_literals
 
 from furl import furl
 import csv
+import codecs
+from datetime import datetime
+import pytz
 from django.views.generic import FormView, DeleteView, ListView
 from django.core.mail import send_mail
 from django.shortcuts import redirect
 from django.http import Http404, HttpResponse
-from djqscsv import render_to_csv_response
 from modularodm import Q
 
 from website.project.spam.model import SpamStatus
@@ -14,7 +16,7 @@ from website.settings import SUPPORT_EMAIL, DOMAIN
 from website.security import random_string
 from framework.auth import get_user
 
-from website.project.model import User
+from website.project.model import User, NodeLog
 from website.mailchimp_utils import subscribe_on_confirm
 
 from admin.base.views import GuidFormView, GuidView
@@ -272,7 +274,44 @@ class UserWorkshopFormView(OSFAdmin, FormView):
     template_name = 'users/workshop.html'
 
     def form_valid(self, form):
+        csv_file = form.cleaned_data['document']
+        dialect = csv.Sniffer().sniff(
+            codecs.EncodedFile(csv_file, 'utf-8').read(1024))
+        csv_file.open()
+        reader = csv.reader(codecs.EncodedFile(csv_file, 'unicode'), dialect=dialect)
+        final = []
+        for i, line in enumerate(reader):
+            if i == 0:
+                line.extend(['osf id', 'number of logs', 'number of nodes',
+                             'last active'])  # user.pk, --, --, if no logs user.is_active
+                final.append(line)
+                continue
+            email = line[5]
+            user_list_of_one = User.find_by_email(email)
+            if len(user_list_of_one) == 0:
+                line.extend(['', 0, 0, ''])
+                final.append(line)
+                continue
+            user = user_list_of_one[0]
+            date = datetime.strptime(line[1], '%m/%d/%y').astimezone(pytz.utc)
+            log_ids = [l for l in user.get_recent_log_ids(since=date)]
+            last_log_date = NodeLog.load(log_ids[0]).date.strftime('%m/%d/%Y')
+            nodes = []
+            for log in [NodeLog.load(l) for l in log_ids]:
+                if log.node.pk not in nodes:
+                    nodes.append(log.node.pk)
+            line.extend(user.pk, len(log_ids), len(nodes), last_log_date)
+            final.append(line)
         print 'here'
+
+    # def _read_catch(self, reader):
+    #     while True:
+    #         try:
+    #             line = reader.next()
+    #             yield reader.line_num, line
+    #         except UnicodeDecodeError:
+    #             print 'The line at {} is unreadable'.format(reader.line_num)
+
 
     def form_invalid(self, form):
         super(UserWorkshopFormView, self).form_invalid(form)
