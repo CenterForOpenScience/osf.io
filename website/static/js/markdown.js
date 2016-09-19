@@ -49,7 +49,16 @@ var markdownQuick = new MarkdownIt(('commonmark'), { })
     .use(bootstrapTable)
     .disable('strikethrough');
 
+// Markdown renderer for older wikis rendered before switch date
+var markdownOld = new MarkdownIt(('commonmark'), { })
+    .use(require('markdown-it-sanitizer'))
+    .use(insDel)
+    .enable('table')
+    .use(bootstrapTable)
+    .disable('strikethrough');
+
 module.exports = {
     full: markdown,
-    quick: markdownQuick
+    quick: markdownQuick,
+    old: markdownOld
 };
