@@ -550,7 +550,7 @@ class TestChangePassword:
             'password',
             '12345',
             '12345',
-            'Password should be at least six characters',
+            'Password should be at least eight characters',
         )
 
     def test_change_password_invalid_confirm_password(self):

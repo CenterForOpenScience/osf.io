@@ -22,9 +22,6 @@ from pymongo.errors import OperationFailure
 from django.test import SimpleTestCase, override_settings
 from django.test import TestCase as DjangoTestCase
 
-
-from api.base.wsgi import application as api_django_app
-from framework.mongo import set_up_storage, storage
 from framework.auth import User
 from framework.auth.core import Auth
 from framework.sessions.model import Session
@@ -42,7 +39,6 @@ from website import settings
 
 from website.addons.wiki.model import NodeWikiPage
 
-import website.models
 from website.notifications.listeners import subscribe_contributor, subscribe_creator
 from website.signals import ALL_SIGNALS
 from website.project.signals import contributor_added, project_created
@@ -71,6 +67,7 @@ SILENT_LOGGERS = [
     'factory.generate',
     'factory.containers',
     'website.search.elastic_search',
+    'framework.analytics',
     'framework.auth.core',
     'website.mails',
     'website.search_migration.migrate',
@@ -125,23 +122,24 @@ class DbTestCase(unittest.TestCase):
                 init_mock_addon(short_name, **options)
             )
 
-        cls._original_db_name = settings.DB_NAME
-        settings.DB_NAME = cls.DB_NAME
+        # cls._original_db_name = settings.DB_NAME
+        # settings.DB_NAME = cls.DB_NAME
         cls._original_enable_email_subscriptions = settings.ENABLE_EMAIL_SUBSCRIPTIONS
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
 
         cls._original_bcrypt_log_rounds = settings.BCRYPT_LOG_ROUNDS
         settings.BCRYPT_LOG_ROUNDS = 1
 
-        teardown_database(database=database_proxy._get_current_object())
+        # teardown_database(database=database_proxy._get_current_object())
+
         # TODO: With `database` as a `LocalProxy`, we should be able to simply
         # this logic
-        set_up_storage(
-            website.models.MODELS,
-            storage.MongoStorage,
-            addons=settings.ADDONS_AVAILABLE,
-        )
-        cls.db = database_proxy
+        # set_up_storage(
+        #     website.models.MODELS,
+        #     storage.MongoStorage,
+        #     addons=settings.ADDONS_AVAILABLE,
+        # )
+        # cls.db = database_proxy
 
     @classmethod
     def tearDownClass(cls):
@@ -150,8 +148,8 @@ class DbTestCase(unittest.TestCase):
         for addon in cls.__ADDONS_UNDER_TEST:
             remove_mock_addon(addon)
 
-        teardown_database(database=database_proxy._get_current_object())
-        settings.DB_NAME = cls._original_db_name
+        # teardown_database(database=database_proxy._get_current_object())
+        # settings.DB_NAME = cls._original_db_name
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = cls._original_enable_email_subscriptions
         settings.BCRYPT_LOG_ROUNDS = cls._original_bcrypt_log_rounds
 
