@@ -10,7 +10,6 @@ from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
 from django.contrib.postgres import fields
-from django.core.validators import validate_email
 from django.db import models
 from django.utils import timezone
 from modularodm.exceptions import NoResultsFound
@@ -19,11 +18,12 @@ import itsdangerous
 # OSF imports
 import framework.mongo
 from framework import analytics
-from framework.auth import signals
+from framework.auth import signals, Auth
 from framework.auth.exceptions import (
     ChangePasswordError,
     ExpiredTokenError,
     InvalidTokenError,
+    MergeConflictError,
     MergeConfirmedRequiredError
 )
 from framework.sessions.utils import remove_sessions_for_user
@@ -31,6 +31,7 @@ from framework.exceptions import PermissionsError
 from framework.sentry import log_exception
 from website import filters
 from website import mails
+from website import settings as website_settings
 
 from osf_models.exceptions import reraise_django_validation_errors
 from osf_models.models.base import BaseModel, GuidMixin
@@ -479,6 +480,163 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     @property
     def contributed(self):
         return self.nodes.all()
+
+    @property
+    def can_be_merged(self):
+        """The ability of the `merge_user` method to fully merge the user"""
+        return True
+        # TODO: Uncomment when addons are implemented
+        # return all((addon.can_be_merged for addon in self.get_addons()))
+
+    def merge_user(self, user):
+        """Merge a registered user into this account. This user will be
+        a contributor on any project. if the registered user and this account
+        are both contributors of the same project. Then it will remove the
+        registered user and set this account to the highest permission of the two
+        and set this account to be visible if either of the two are visible on
+        the project.
+
+        :param user: A User object to be merged.
+        """
+        # Fail if the other user has conflicts.
+        if not user.can_be_merged:
+            raise MergeConflictError('Users cannot be merged')
+        # Move over the other user's attributes
+        # TODO: confirm
+        for system_tag in user.system_tags.all():
+            self.add_system_tag(system_tag)
+
+        self.is_claimed = self.is_claimed or user.is_claimed
+        self.is_invited = self.is_invited or user.is_invited
+
+        # copy over profile only if this user has no profile info
+        if user.jobs and not self.jobs:
+            self.jobs = user.jobs
+
+        if user.schools and not self.schools:
+            self.schools = user.schools
+
+        if user.social and not self.social:
+            self.social = user.social
+
+        unclaimed = user.unclaimed_records.copy()
+        unclaimed.update(self.unclaimed_records)
+        self.unclaimed_records = unclaimed
+        # - unclaimed records should be connected to only one user
+        user.unclaimed_records = {}
+
+        security_messages = user.security_messages.copy()
+        security_messages.update(self.security_messages)
+        self.security_messages = security_messages
+
+        notifications_configured = user.notifications_configured.copy()
+        notifications_configured.update(self.notifications_configured)
+        self.notifications_configured = notifications_configured
+        if not website_settings.RUNNING_MIGRATION:
+            for key, value in user.mailchimp_mailing_lists.iteritems():
+                # subscribe to each list if either user was subscribed
+                subscription = value or self.mailchimp_mailing_lists.get(key)
+                signals.user_merged.send(self, list_name=key, subscription=subscription)
+
+                # clear subscriptions for merged user
+                signals.user_merged.send(user, list_name=key, subscription=False, send_goodbye=False)
+
+        for target_id, timestamp in user.comments_viewed_timestamp.iteritems():
+            if not self.comments_viewed_timestamp.get(target_id):
+                self.comments_viewed_timestamp[target_id] = timestamp
+            elif timestamp > self.comments_viewed_timestamp[target_id]:
+                self.comments_viewed_timestamp[target_id] = timestamp
+
+        self.emails.extend(user.emails)
+        user.emails = []
+
+        for k, v in user.email_verifications.iteritems():
+            email_to_confirm = v['email']
+            if k not in self.email_verifications and email_to_confirm != user.username:
+                self.email_verifications[k] = v
+        user.email_verifications = {}
+
+        self.affiliated_institutions.add(*user.affiliated_institutions.values_list('pk', flat=True))
+
+        for service in user.external_identity:
+            for service_id in user.external_identity[service].iterkeys():
+                if not (
+                    service_id in self.external_identity.get(service, '') and
+                    self.external_identity[service][service_id] == 'VERIFIED'
+                ):
+                    # Prevent 'CREATE', merging user has already been created.
+                    external = user.external_identity[service][service_id]
+                    status = 'VERIFIED' if external == 'VERIFIED' else 'LINK'
+                    if self.external_identity.get(service):
+                        self.external_identity[service].update(
+                            {service_id: status}
+                        )
+                    else:
+                        self.external_identity[service] = {
+                            service_id: status
+                        }
+        user.external_identity = {}
+
+        # FOREIGN FIELDS
+        WatchConfig.objects.filter(user=user).update(user=self)
+
+        self.external_accounts.add(*user.external_accounts.values_list('pk', flat=True))
+
+        # - addons
+        # Note: This must occur before the merged user is removed as a
+        #       contributor on the nodes, as an event hook is otherwise fired
+        #       which removes the credentials.
+        for addon in user.get_addons():
+            user_settings = self.get_or_add_addon(addon.config.short_name)
+            user_settings.merge(addon)
+            user_settings.save()
+
+        # - projects where the user was a contributor
+        for node in user.contributed:
+            # Skip bookmark collection node
+            if node.is_bookmark_collection:
+                continue
+            # if both accounts are contributor of the same project
+            if node.is_contributor(self) and node.is_contributor(user):
+                user_permissions = node.get_permissions(user)
+                self_permissions = node.get_permissions(self)
+                permissions = max([user_permissions, self_permissions])
+                node.set_permissions(user=self, permissions=permissions)
+
+                visible1 = self._id in node.visible_contributor_ids
+                visible2 = user._id in node.visible_contributor_ids
+                if visible1 != visible2:
+                    node.set_visible(user=self, visible=True, log=True, auth=Auth(user=self))
+
+                node.contributor_set.filter(user=user).delete()
+            else:
+                node.contributor_set.filter(user=user).update(user=self)
+
+            node.save()
+
+        # - projects where the user was the creator
+        user.created.update(creator=self)
+
+        # - file that the user has checked_out, import done here to prevent import error
+        # TODO: Uncoment when StoredFileNode is implemented
+        # from website.files.models.base import FileNode
+        # for file_node in FileNode.files_checked_out(user=user):
+        #     file_node.checkout = self
+        #     file_node.save()
+
+        # finalize the merge
+
+        remove_sessions_for_user(user)
+
+        # - username is set to the GUID so the merging user can set it primary
+        #   in the future (note: it cannot be set to None due to non-null constraint)
+        user.username = user._id
+        user.set_unusable_password()
+        user.verification_key = None
+        user.osf_mailing_lists = {}
+        user.merged_by = self
+
+        user.save()
 
     def update_is_active(self):
         """Update ``is_active`` to be consistent with the fields that
