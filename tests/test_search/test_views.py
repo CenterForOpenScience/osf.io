@@ -61,12 +61,10 @@ cases = [
 def make_project(status, user, perms):
     project = factories.ProjectFactory(title='Flim Flammity', is_public=status is PUBLIC)
     project.update_search()
-    return 'title'
 
 def make_registration(status, user, perms):
     project = factories.ProjectFactory(title='Flim Flammity', is_public=status is PUBLIC)
     mock_archive(project, autocomplete=True, autoapprove=True).__enter__()  # ?!
-    return 'title'
 
 def make_component(status, user, perms):
     project = factories.ProjectFactory(title='Blim Blammity', is_public=status is PUBLIC)
@@ -77,12 +75,10 @@ def make_component(status, user, perms):
         is_public=status is PUBLIC,
     )
     component.update_search()
-    return 'title'
 
 def make_file(status, user, perms):
     project = factories.ProjectFactory(title='Blim Blammity', is_public=status is PUBLIC)
     project.get_addon('osfstorage').get_root().append_file('Flim Flammity')
-    return 'name'
 
 makers = {
     PROJECT: make_project,
@@ -187,7 +183,8 @@ class TestSearchSearchAPI(SearchTestCase):
             user = factories.AuthUserFactory()
 
         make = makers[type_]
-        key = make(status, user, perms)
+        make(status, user, perms)
+        key = 'name' if make is make_file else 'title'
         expected = [('Flim Flammity', type_)] if included else []
         results = self.results('flim', type_, user.auth if user else None)
         assert_equal([(x[key], x['category']) for x in results], expected)
