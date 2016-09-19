@@ -912,8 +912,11 @@ def get_summary(auth, node, **kwargs):
 def get_readable_descendants(auth, node, **kwargs):
     descendants = []
     for child in node.nodes_active:
-        primary = not node.linked_nodes.filter(id=child.id).exists()
-        if not primary:
+        # User can view child
+        if child.can_view(auth):
+            descendants.append(child)
+        # Child is a node link and user has write permission
+        elif node.linked_nodes.filter(id=child.id).exists():
             if node.has_permission(auth.user, 'write'):
                 descendants.append(child)
         else:
