@@ -4,6 +4,8 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 from nose.tools import *  # noqa PEP8 asserts
 from nose_parameterized import parameterized
 
+from modularodm import Q
+
 from tests import factories
 from tests.base import DbIsolationMixin
 from tests.test_search import OsfTestCase, SearchTestCase
@@ -62,7 +64,7 @@ def make_project(status, user, perms):
 
 def make_registration(status, user, perms):
     project = factories.ProjectFactory(title='Flim Flammity', is_public=status is PUBLIC)
-    mock_archive(project, autocomplete=True, autoapprove=True).__enter__()
+    mock_archive(project, autocomplete=True, autoapprove=True).__enter__()  # ?!
     return 'title'
 
 def make_component(status, user, perms):
@@ -114,11 +116,27 @@ class TestMakers(DbIsolationMixin, OsfTestCase):
     def test_mr_specifies_title(self):
         assert make_registration('private', None, None) == 'title'
 
+    def test_mr_makes_private_registration_public_there_are_no_private_registrations(self):
+        make_registration(PRIVATE, None, None)
+        assert Node.find_one(Q('is_registration', 'eq', True)).is_public
+
+    def test_mr_makes_public_registration_public(self):
+        make_registration(PUBLIC, None, None)
+        assert Node.find_one(Q('is_registration', 'eq', True)).is_public
+
 
     # mc - make_component
 
     def test_mc_specifies_title(self):
         assert make_component('private', None, None) == 'title'
+
+    def test_mc_makes_private_component_private(self):
+        make_component(PRIVATE, None, None)
+        assert not Node.find_one(Q('parent_node', 'ne', None)).is_public
+
+    def test_mc_makes_public_component_public(self):
+        make_component(PUBLIC, None, None)
+        assert Node.find_one(Q('parent_node', 'ne', None)).is_public
 
 
     # mf - make_file
