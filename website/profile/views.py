@@ -4,6 +4,7 @@ import datetime
 import logging
 import httplib
 import httplib as http  # TODO: Inconsistent usage of aliased import
+import uuid
 from dateutil.parser import parse as parse_date
 
 from flask import request
@@ -417,8 +418,10 @@ def oauth_application_detail(auth, **kwargs):
     # The client ID must be an active and existing record, and the logged-in user must have permission to view it.
     try:
         #
-        record = ApiOAuth2Application.find_one(Q('client_id', 'eq', client_id))
+        record = ApiOAuth2Application.find_one(Q('client_id', 'eq', uuid.UUID(client_id)))
     except NoResultsFound:
+        raise HTTPError(http.NOT_FOUND)
+    except ValueError:  # Invalid client ID -- ApiOAuth2Application will not exist
         raise HTTPError(http.NOT_FOUND)
     if record.owner != auth.user:
         raise HTTPError(http.FORBIDDEN)

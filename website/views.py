@@ -27,7 +27,7 @@ from website.util import permissions
 logger = logging.getLogger(__name__)
 
 
-def _render_node(node, auth=None):
+def _render_node(node, auth=None, parent_node=None):
     """
 
     :param node:
@@ -46,7 +46,7 @@ def _render_node(node, auth=None):
         'id': node._primary_key,
         'url': node.url,
         'api_url': node.api_url,
-        'primary': node.primary,
+        'primary': not parent_node.linked_nodes.filter(id=node.id).exists() if parent_node else False,
         'date_modified': utils.iso8601format(node.date_modified),
         'category': node.category,
         'permissions': perm,  # A string, e.g. 'admin', or None,
@@ -56,7 +56,7 @@ def _render_node(node, auth=None):
     }
 
 
-def _render_nodes(nodes, auth=None, show_path=False):
+def _render_nodes(nodes, auth=None, show_path=False, parent_node=None):
     """
 
     :param nodes:
@@ -64,7 +64,7 @@ def _render_nodes(nodes, auth=None, show_path=False):
     """
     ret = {
         'nodes': [
-            _render_node(node, auth)
+            _render_node(node, auth=auth, parent_node=parent_node)
             for node in nodes
         ],
         'show_path': show_path

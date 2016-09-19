@@ -912,6 +912,10 @@ def get_summary(auth, node, **kwargs):
 def get_readable_descendants(auth, node, **kwargs):
     descendants = []
     for child in node.nodes_active:
+        if request.args.get('permissions'):
+            perm = request.args['permissions'].lower().strip()
+            if perm not in child.get_permissions(auth.user):
+                continue
         # User can view child
         if child.can_view(auth):
             descendants.append(child)
@@ -920,15 +924,8 @@ def get_readable_descendants(auth, node, **kwargs):
             if node.has_permission(auth.user, 'write'):
                 descendants.append(child)
         else:
-            if request.args.get('permissions'):
-                perm = request.args['permissions'].lower().strip()
-                if perm not in child.get_permissions(auth.user):
-                    continue
-            elif child.can_view(auth):
-                descendants.append(child)
-            else:
-                for descendant in child.find_readable_descendants(auth):
-                    descendants.append(descendant)
+            for descendant in child.find_readable_descendants(auth):
+                descendants.append(descendant)
     return _render_nodes(descendants, auth=auth, parent_node=node)
 
 def node_child_tree(user, node_ids):
@@ -1184,15 +1181,13 @@ def move_pointers(auth):
         raise HTTPError(http.BAD_REQUEST)
 
     for pointer_to_move in pointers_to_move:
-        pointer_id = from_node.pointing_at(pointer_to_move)
-        pointer_node = Node.load(pointer_to_move)
-
-        pointer = Pointer.load(pointer_id)
-        if pointer is None:
+        try:
+            pointer_node = from_node.linked_nodes.get(guid__guid=pointer_to_move)
+        except Node.DoesNotExist:
             raise HTTPError(http.BAD_REQUEST)
 
         try:
-            from_node.rm_pointer(pointer, auth=auth)
+            from_node.rm_pointer(pointer_node, auth=auth)
         except ValueError:
             raise HTTPError(http.BAD_REQUEST)
 
