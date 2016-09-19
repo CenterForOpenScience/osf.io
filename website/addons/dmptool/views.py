@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 import datetime
 import httplib as http
-from requests.exceptions import SSLError
 
 from flask import request, send_file
 import StringIO
@@ -24,9 +23,8 @@ from website.project.decorators import (
     must_have_permission, must_not_be_registration,
     must_be_contributor_or_public
 )
-from website.util import rubeus, api_url_for
+from website.util import api_url_for
 from website.util.sanitize import assert_clean
-import json
 
 SHORT_NAME = 'dmptool'
 FULL_NAME = 'DMPTool'
@@ -48,6 +46,10 @@ dmptool_deauthorize_node = generic_views.deauthorize_node(
 dmptool_get_config = generic_views.get_config(
     SHORT_NAME,
     DmptoolSerializer
+)
+
+dmptool_root_folder = generic_views.root_folder(
+    SHORT_NAME
 )
 
 ## Auth ##
@@ -207,71 +209,6 @@ def dmptool_publish_dataset(node_addon, auth, **kwargs):
 
     return {'dataset': dataset.title}, http.OK
 
-## HGRID ##
-
-def _dmptool_root_folder(node_addon, auth, **kwargs):
-    node = node_addon.owner
-
-    default_version = 'latest-published'
-    version = 'latest-published' if not node.can_edit(auth) else default_version
-
-    # Quit if no dataset linked
-    if not node_addon.complete:
-        return []
-
-    can_edit = node.can_edit(auth)
-
-    permissions = {
-        'edit': can_edit and not node.is_registration,
-        'view': node.can_view(auth)
-    }
-
-    try:
-        connection = client.connect_from_settings(node_addon)
-        dmptool = client.get_dmptool(connection, node_addon.dmptool_alias)
-        dataset = client.get_dataset(dmptool, node_addon.dataset_doi)
-    except SSLError:
-        return [rubeus.build_addon_root(
-            node_addon,
-            node_addon.dataset,
-            permissions=permissions
-        )]
-
-    # Quit if doi does not produce a dataset
-    if dataset is None:
-        return []
-
-    published_files = client.get_files(dataset, published=True)
-
-    # Produce draft version or quit if no published version is available
-    if not published_files:
-        if can_edit:
-            version = 'latest'
-        else:
-            return []
-
-    urls = {
-        'publish': node.api_url_for('dmptool_publish_dataset'),
-    }
-
-    return [rubeus.build_addon_root(
-        node_addon,
-        node_addon.dataset,
-        urls=urls,
-        permissions=permissions,
-        dataset=node_addon.dataset,
-        doi=dataset.doi,
-        dmptool=dmptool.title,
-        hasPublishedFiles=bool(published_files),
-        dmptoolIsPublished=dmptool.is_published,
-        version=version,
-    )]
-
-
-@must_be_contributor_or_public
-@must_have_addon(SHORT_NAME, 'node')
-def dmptool_root_folder(node_addon, auth, **kwargs):
-    return _dmptool_root_folder(node_addon, auth=auth)
 
 ## Widget ##
 
@@ -308,12 +245,11 @@ def dmptool_get_widget_contents(node_addon, **kwargs):
     dmptool_host = node_addon.external_account.oauth_key
 
     # loop through plans to add plan url to each plan
-    # https://dmptool.org/plans/21222/edit 
+    # https://dmptool.org/plans/21222/edit
     for plan in plans:
-        plan['url'] = "https://{}/plans/{}/edit".format(dmptool_host, plan['id'])
+        plan['url'] = 'https://{}/plans/{}/edit'.format(dmptool_host, plan['id'])
         plan['get_plan_url'] = node.api_url_for('dmptool_get_plan',
-                planid = plan['id'])
-
+                planid=plan['id'])
 
     data.update({
         'dmptool_host': dmptool_host,
@@ -336,20 +272,20 @@ def dmptool_get_plan(node_addon, planid, **kwargs):
     try:
         plan = connection.plans_full(id_=planid)
         plan['pdf_url'] = node.api_url_for('dmptool_download_plan',
-            planid = plan['id'], fmt='pdf')
+            planid=plan['id'], fmt='pdf')
         plan['docx_url'] = node.api_url_for('dmptool_download_plan',
-            planid = plan['id'], fmt='docx')
-        html_ = "HTML to come"
+            planid=plan['id'], fmt='docx')
+        html_ = 'HTML to come'
     except:
         plan = None
         html_ = None
 
     ret = {
-        'planid':planid,
+        'planid': planid,
         'plan': plan,
         'html': html_
     }
-    return ret, http.OK   
+    return ret, http.OK
 
 @must_have_addon(SHORT_NAME, 'user')
 @must_have_addon(SHORT_NAME, 'node')
@@ -362,6 +298,5 @@ def dmptool_download_plan(node_addon, planid, fmt, **kwargs):
     strIO.write(connection.plans_full(planid, fmt))
     strIO.seek(0)
     return send_file(strIO,
-                     attachment_filename="{}.{}".format(planid, fmt),
+                     attachment_filename='{}.{}'.format(planid, fmt),
                      as_attachment=True)
-

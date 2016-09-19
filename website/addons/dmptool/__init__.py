@@ -35,7 +35,7 @@ INCLUDE_CSS = {
 }
 
 HAS_HGRID_FILES = True
-GET_HGRID_DATA = views._dmptool_root_folder
+GET_HGRID_DATA = views.dmptool_root_folder
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 NODE_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'dmptool_node_settings.mako')
