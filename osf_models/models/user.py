@@ -34,6 +34,7 @@ from website import mails
 from website import settings as website_settings
 
 from osf_models.exceptions import reraise_django_validation_errors
+from osf_models.models.validators import validate_email, validate_social
 from osf_models.models.base import BaseModel, GuidMixin
 from osf_models.models.tag import Tag
 from osf_models.models.institution import Institution
@@ -303,7 +304,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     # Social links
     # social = fields.DictionaryField(validate=validate_social)
     # TODO: Add validation
-    social = DateTimeAwareJSONField(default=dict, blank=True)
+    social = DateTimeAwareJSONField(default=dict, blank=True, validators=[validate_social])
     # Format: {
     #     'profileWebsites': <list of profile websites>
     #     'twitter': <twitter id>,
