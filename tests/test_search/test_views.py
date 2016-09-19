@@ -10,6 +10,7 @@ from tests import factories
 from tests.base import DbIsolationMixin
 from tests.test_search import OsfTestCase, SearchTestCase
 from tests.utils import mock_archive
+from website.files.models.base import File
 from website.project.model import Node
 from website.util import api_url_for
 
@@ -143,6 +144,15 @@ class TestMakers(DbIsolationMixin, OsfTestCase):
 
     def test_mf_specifies_name(self):
         assert make_file('private', None, None) == 'name'
+
+    def test_mf_makes_private_file_private(self):
+        make_file(PRIVATE, None, None)
+        # Looks like privacy attaches to the node, not the file
+        assert not File.find_one(Q('is_file', 'eq', True)).node.is_public
+
+    def test_mf_makes_public_file_public(self):
+        make_file(PUBLIC, None, None)
+        assert File.find_one(Q('is_file', 'eq', True)).node.is_public
 
 
 class TestSearchSearchAPI(SearchTestCase):
