@@ -5,8 +5,10 @@ from nose.tools import *  # noqa PEP8 asserts
 from nose_parameterized import parameterized
 
 from tests import factories
+from tests.base import DbIsolationMixin
 from tests.test_search import OsfTestCase, SearchTestCase
 from tests.utils import mock_archive
+from website.project.model import Node
 from website.util import api_url_for
 
 
@@ -87,12 +89,24 @@ makers = {
 }
 
 
-class TestMakers(OsfTestCase):
+class TestMakers(DbIsolationMixin, OsfTestCase):
+
+    def test_there_are_no_nodes_to_start_with(self):
+        assert Node.find().count() == 0
+
 
     # mp - make_project
 
     def test_mp_specifies_title(self):
         assert make_project('private', None, None) == 'title'
+
+    def test_mp_makes_private_project_private(self):
+        make_project(PRIVATE, None, None)
+        assert not Node.find_one().is_public
+
+    def test_mp_makes_public_project_public(self):
+        make_project(PUBLIC, None, None)
+        assert Node.find_one().is_public
 
 
     # mr - make_registration
