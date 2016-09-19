@@ -1015,8 +1015,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
             issues.append('Password cannot be the same as your email address')
         if not raw_old_password or not raw_new_password or not raw_confirm_password:
             issues.append('Passwords cannot be blank')
-        elif len(raw_new_password) < 6:
-            issues.append('Password should be at least six characters')
+        elif len(raw_new_password) < 8:
+            issues.append('Password should be at least eight characters')
         elif len(raw_new_password) > 256:
             issues.append('Password should not be longer than 256 characters')
 

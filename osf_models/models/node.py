@@ -1928,7 +1928,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if current:
             for contrib in self.contributors:
                 if contrib.comments_viewed_timestamp.get(current._id, None):
-                    contrib.comments_viewed_timestamp[new_page._id] = contrib.comments_viewed_timestamp[current._id]
+                    timestamp = contrib.comments_viewed_timestamp[current._id]
+                    contrib.comments_viewed_timestamp[new_page._id] = timestamp
                     contrib.save()
                     del contrib.comments_viewed_timestamp[current._id]
 
