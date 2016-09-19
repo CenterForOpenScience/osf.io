@@ -40,7 +40,7 @@ from framework import status
 from framework.mongo.utils import to_mongo_key
 from framework.exceptions import PermissionsError
 from framework.sentry import log_exception
-from website import settings
+from website import settings, language
 from website.project.model import NodeUpdateError
 from website.exceptions import (
     UserNotAffiliatedError,
@@ -521,6 +521,41 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             return self.parent_node.is_admin_parent(user)
         return False
 
+    def find_readable_descendants(self, auth):
+        """ Returns a generator of first descendant node(s) readable by <user>
+        in each descendant branch.
+        """
+        new_branches = []
+        for node in self.nodes.filter(is_deleted=False):
+            if node.can_view(auth):
+                yield node
+            else:
+                new_branches.append(node)
+
+        for bnode in new_branches:
+            for node in bnode.find_readable_descendants(auth):
+                yield node
+
+    @property
+    def parents(self):
+        if self.parent_node:
+            return [self.parent_node] + self.parent_node.parents
+        return []
+
+    @property
+    def admin_contributor_ids(self):
+        def get_admin_contributor_ids(node):
+            return Contributor.objects.select_related('user').filter(
+                user__is_active=True,
+                admin=True
+            ).values_list('user__guid__guid')
+        contributor_ids = get_admin_contributor_ids(self)
+        admin_ids = set()
+        for parent in self.parents:
+            admins = get_admin_contributor_ids(parent)
+            admin_ids.update(set(admins).difference(contributor_ids))
+        return admin_ids
+
     def set_permissions(self, user, permissions, validate=True, save=False):
         # Ensure that user's permissions cannot be lowered if they are the only admin
         if validate and (reduce_permissions(self.get_permissions(user)) == ADMIN and
@@ -801,6 +836,145 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         self.save()
         return contributor
 
+    def callback(self, callback, recursive=False, *args, **kwargs):
+        """Invoke callbacks of attached add-ons and collect messages.
+
+        :param str callback: Name of callback method to invoke
+        :param bool recursive: Apply callback recursively over nodes
+        :return list: List of callback messages
+        """
+        messages = []
+
+        for addon in self.get_addons():
+            method = getattr(addon, callback)
+            message = method(self, *args, **kwargs)
+            if message:
+                messages.append(message)
+
+        if recursive:
+            for child in self.nodes.filter(is_deleted=False):
+                messages.extend(
+                    child.callback(
+                        callback, recursive, *args, **kwargs
+                    )
+                )
+
+        return messages
+
+    def replace_contributor(self, old, new):
+        try:
+            contrib_obj = self.contributor_set.get(user=old)
+        except Contributor.DoesNotExist:
+            return False
+        contrib_obj.user = new
+        contrib_obj.save()
+
+        # Remove unclaimed record for the project
+        if self._id in old.unclaimed_records:
+            del old.unclaimed_records[self._id]
+            old.save()
+        return True
+
+    def remove_contributor(self, contributor, auth, log=True):
+        """Remove a contributor from this node.
+
+        :param contributor: User object, the contributor to be removed
+        :param auth: All the auth information including user, API key.
+        """
+        # remove unclaimed record if necessary
+        if self._primary_key in contributor.unclaimed_records:
+            del contributor.unclaimed_records[self._primary_key]
+
+        if not self.visible_contributor_ids:
+            return False
+
+        # Node must have at least one registered admin user
+        admin_query = Contributor.objects.select_related('user').filter(
+            user__in=[contributor],
+            user__is_active=True,
+            admin=True
+        )
+        if admin_query.exists():
+            return False
+
+        contrib_obj = self.contributor_set.get(user=contributor)
+        contrib_obj.delete()
+
+        # After remove callback
+        for addon in self.get_addons():
+            message = addon.after_remove_contributor(self, contributor, auth)
+            if message:
+                # Because addons can return HTML strings, addons are responsible
+                # for markupsafe-escaping any messages returned
+                status.push_status_message(message, kind='info', trust=True)
+
+        if log:
+            self.add_log(
+                action=NodeLog.CONTRIB_REMOVED,
+                params={
+                    'project': self.parent_id,
+                    'node': self._id,
+                    'contributors': [contributor._id],
+                },
+                auth=auth,
+                save=False,
+            )
+
+        self.save()
+
+        #send signal to remove this user from project subscriptions
+        project_signals.contributor_removed.send(self, user=contributor)
+
+        return True
+
+    def remove_contributors(self, contributors, auth=None, log=True, save=False):
+
+        results = []
+        removed = []
+
+        for contrib in contributors:
+            outcome = self.remove_contributor(
+                contributor=contrib, auth=auth, log=False,
+            )
+            results.append(outcome)
+            removed.append(contrib._id)
+        if log:
+            self.add_log(
+                action=NodeLog.CONTRIB_REMOVED,
+                params={
+                    'project': self.parent_id,
+                    'node': self._primary_key,
+                    'contributors': removed,
+                },
+                auth=auth,
+                save=False,
+            )
+
+        if save:
+            self.save()
+
+        return all(results)
+
+    def move_contributor(self, user, auth, index, save=False):
+        if not self.has_permission(auth.user, ADMIN):
+            raise PermissionsError('Only admins can modify contributor order')
+        old_index = self.contributors.index(user)
+        self.contributors.insert(index, self.contributors.pop(old_index))
+        self.add_log(
+            action=NodeLog.CONTRIB_REORDERED,
+            params={
+                'project': self.parent_id,
+                'node': self._id,
+                'contributors': [
+                    user._id
+                ],
+            },
+            auth=auth,
+            save=False,
+        )
+        if save:
+            self.save()
+
     @classmethod
     def find_for_user(cls, user, subquery=None):
         combined_query = Q('contributors', 'eq', user)
@@ -1056,6 +1230,18 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def nodes_primary(self):
         """For v1 compat."""
         return self.nodes.all()
+
+    @property
+    def has_pointers_recursive(self):
+        """Recursively checks whether the current node or any of its nodes
+        contains a pointer.
+        """
+        if self.linked_nodes.exists():
+            return True
+        for node in self.nodes_primary:
+            if node.has_pointers_recursive:
+                return True
+        return False
 
     def add_citation(self, auth, save=False, log=True, citation=None, **kwargs):
         if not citation:
@@ -1607,6 +1793,74 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             except (KeyError, IndexError):
                 return None
         return NodeWikiPage.load(id)
+
+    def update_node_wiki(self, name, content, auth):
+        """Update the node's wiki page with new content.
+
+        :param page: A string, the page's name, e.g. ``"home"``.
+        :param content: A string, the posted content.
+        :param auth: All the auth information including user, API key.
+        """
+        NodeWikiPage = apps.get_model('osf_models.NodeWikiPage')
+        Comment = apps.get_model('osf_models.Comment')
+
+        name = (name or '').strip()
+        key = to_mongo_key(name)
+        has_comments = False
+        current = None
+
+        if key not in self.wiki_pages_current:
+            if key in self.wiki_pages_versions:
+                version = len(self.wiki_pages_versions[key]) + 1
+            else:
+                version = 1
+        else:
+            current = NodeWikiPage.load(self.wiki_pages_current[key])
+            version = current.version + 1
+            current.save()
+            if Comment.find(Q('root_target', 'eq', current._id)).count() > 0:
+                has_comments = True
+
+        new_page = NodeWikiPage(
+            page_name=name,
+            version=version,
+            user=auth.user,
+            node=self,
+            content=content
+        )
+        new_page.save()
+
+        if has_comments:
+            Comment.update(Q('root_target', 'eq', current._id), data={'root_target': Guid.load(new_page._id)})
+            Comment.update(Q('target', 'eq', current._id), data={'target': Guid.load(new_page._id)})
+
+        if current:
+            for contrib in self.contributors:
+                if contrib.comments_viewed_timestamp.get(current._id, None):
+                    contrib.comments_viewed_timestamp[new_page._id] = contrib.comments_viewed_timestamp[current._id]
+                    contrib.save()
+                    del contrib.comments_viewed_timestamp[current._id]
+
+        # check if the wiki page already exists in versions (existed once and is now deleted)
+        if key not in self.wiki_pages_versions:
+            self.wiki_pages_versions[key] = []
+        self.wiki_pages_versions[key].append(new_page._primary_key)
+        self.wiki_pages_current[key] = new_page._primary_key
+
+        self.add_log(
+            action=NodeLog.WIKI_UPDATED,
+            params={
+                'project': self.parent_id,
+                'node': self._primary_key,
+                'page': new_page.page_name,
+                'page_id': new_page._primary_key,
+                'version': new_page.version,
+            },
+            auth=auth,
+            log_date=new_page.date,
+            save=False,
+        )
+        self.save()
 
 
 class Node(AbstractNode):

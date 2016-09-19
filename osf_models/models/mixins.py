@@ -121,6 +121,9 @@ class Taggable(models.Model):
 # TODO: Implement me
 class AddonModelMixin(models.Model):
 
+    def add_addon(self, *args, **kwargs):
+        return None
+
     def get_addons(self):
         return []
 
@@ -135,6 +138,9 @@ class AddonModelMixin(models.Model):
 
     def get_addon(self, *args, **kwargs):
         return None
+
+    def config_addons(self, config, auth=None, save=True):
+        pass
 
     class Meta:
         abstract = True
