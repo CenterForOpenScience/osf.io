@@ -1371,6 +1371,92 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         return forked
 
+    def use_as_template(self, auth, changes=None, top_level=True):
+        """Create a new project, using an existing project as a template.
+
+        :param auth: The user to be assigned as creator
+        :param changes: A dictionary of changes, keyed by node id, which
+                        override the attributes of the template project or its
+                        children.
+        :return: The `Node` instance created.
+        """
+        changes = changes or dict()
+
+        # build the dict of attributes to change for the new node
+        try:
+            attributes = changes[self._id]
+            # TODO: explicitly define attributes which may be changed.
+        except (AttributeError, KeyError):
+            attributes = dict()
+
+        new = self.clone()
+
+        # Clear quasi-foreign fields
+        new.wiki_pages_current.clear()
+        new.wiki_pages_versions.clear()
+        new.wiki_private_uuids.clear()
+        new.file_guid_to_share_uuids.clear()
+
+        # set attributes which may be overridden by `changes`
+        new.is_public = False
+        new.description = ''
+
+        # apply `changes`
+        for attr, val in attributes.iteritems():
+            setattr(new, attr, val)
+
+        # set attributes which may NOT be overridden by `changes`
+        new.creator = auth.user
+        new.template_node = self
+        # Need to save in order to access contributors m2m table
+        new.save(suppress_log=True)
+        new.add_contributor(contributor=auth.user, permissions=CREATOR_PERMISSIONS, log=False, save=False)
+        new.is_fork = False
+        new.node_license = self.license.copy() if self.license else None
+
+        # If that title hasn't been changed, apply the default prefix (once)
+        if (
+            new.title == self.title and top_level and
+            language.TEMPLATED_FROM_PREFIX not in new.title
+        ):
+            new.title = ''.join((language.TEMPLATED_FROM_PREFIX, new.title, ))
+
+        # Slight hack - date_created is a read-only field.
+        new.date_created = timezone.now()
+
+        new.save(suppress_log=True)
+
+        # Log the creation
+        new.add_log(
+            NodeLog.CREATED_FROM,
+            params={
+                'node': new._primary_key,
+                'template_node': {
+                    'id': self._primary_key,
+                    'url': self.url,
+                    'title': self.title,
+                },
+            },
+            auth=auth,
+            log_date=new.date_created,
+            save=False,
+        )
+
+        # add mandatory addons
+        # TODO: This logic also exists in self.save()
+        for addon in settings.ADDONS_AVAILABLE:
+            if 'node' in addon.added_default:
+                new.add_addon(addon.short_name, auth=None, log=False)
+
+        # deal with the children of the node, if any
+        new.nodes = [
+            x.use_as_template(auth, changes, top_level=False)
+            for x in self.nodes.filter(is_deleted=False)
+            if x.can_view(auth)
+        ]
+        new.save()
+        return new
+
     def next_descendants(self, auth, condition=lambda auth, node: True):
         """
         Recursively find the first set of descedants under a given node that meet a given condition
@@ -1546,6 +1632,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def save(self, *args, **kwargs):
         if self.pk:
             self.root = self._root
+        if 'suppress_log' in kwargs.keys():
+            self._suppress_log = kwargs['suppress_log']
+            del kwargs['suppress_log']
+        else:
+            self._suppress_log = False
         return super(AbstractNode, self).save(*args, **kwargs)
 
     @classmethod
@@ -1981,7 +2072,7 @@ def add_creator_as_contributor(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 def add_project_created_log(sender, instance, created, **kwargs):
-    if created and not instance.is_fork:
+    if created and not instance.is_fork and not instance._suppress_log:
         # Define log fields for non-component project
         log_action = NodeLog.PROJECT_CREATED
         log_params = {
@@ -2003,7 +2094,7 @@ def add_project_created_log(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 def send_osf_signal(sender, instance, created, **kwargs):
-    if created:
+    if created and not instance._suppress_log:
         project_signals.project_created.send(instance)
 
 
