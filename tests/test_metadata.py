@@ -4,38 +4,16 @@ import unittest
 from nose.tools import *  # PEP8 asserts
 
 from framework.forms.utils import process_payload
-from framework.mongo import database as database_proxy, set_up_storage
-from modularodm import storage
 from modularodm.exceptions import KeyExistsException
 
-import website.models
-from website import settings
 from website.project.model import MetaSchema
 from website.project.model import ensure_schemas
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 
-from tests.base import OsfTestCase, teardown_database
+from tests.base import DbIsolationMixin, OsfTestCase
 
 
-class TestMetaData(OsfTestCase):
-
-    # For whatever reason (efficiency?), DbTestCase only wipes the database
-    # during *class* setup and teardown. This leaks database state across test
-    # cases, which a) smells pretty bad, and b) breaks the test_metaschema_
-    # tests here.
-
-    def setUp(self):
-        super(TestMetaData, self).setUp()
-        set_up_storage(
-            website.models.MODELS,
-            storage.MongoStorage,
-            addons=settings.ADDONS_AVAILABLE,
-        )
-
-    def tearDown(self):
-        super(TestMetaData, self).tearDown()
-        teardown_database(database=database_proxy._get_current_object())
-
+class TestMetaData(DbIsolationMixin, OsfTestCase):
 
     def test_ensure_schemas(self):
 
