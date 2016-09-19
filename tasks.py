@@ -43,7 +43,7 @@ def setup_tests(ctx, update=False, requirements=True, branch=POSTGRES_BRANCH):
         ctx.run('npm install list-of-licenses')
         # Install osf requirements
         ctx.run('invoke requirements')
-        ctx.run('invoke requirements --addons')
+        ctx.run('invoke requirements --addons --dev')
         # Hack to fix package conflict between uritemplate and uritemplate.py (dependency of github3.py)
         ctx.run('pip uninstall uritemplate.py --yes')
         ctx.run('pip install uritemplate.py==0.3.0')
@@ -66,9 +66,15 @@ def test(ctx, setup=False, update=False, requirements=True, branch=POSTGRES_BRAN
         print('Must run "inv setup_tests" before running tests.')
         sys.exit(1)
     os.chdir('osf.io')
-    retcode = pytest.main(['osf_models_tests'])
+    models_retcode = pytest.main(['osf_models_tests'])
+
+    views_retcode = pytest.main([os.path.join('tests', 'test_views.py')])
+    if not all([
+        models_retcode,
+        views_retcode,
+    ]):
+        sys.exit(1)
     os.chdir('..')
-    sys.exit(retcode)
 
 @task
 def readme(ctx, browse=False):
