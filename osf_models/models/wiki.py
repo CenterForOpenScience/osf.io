@@ -7,12 +7,13 @@ import markdown
 from bleach.callbacks import nofollow
 from markdown.extensions import codehilite, fenced_code, wikilinks
 from django.db import models
-from osf_models.models import Node
+from django.utils import timezone
 
 from website.addons.wiki import utils as wiki_utils
 from osf_models.models.base import GuidMixin, BaseModel
 from osf_models.models.validators import validate_page_name
 from osf_models.utils.base import api_v2_url
+from osf_models.models import Node
 import logging
 
 from website import settings
@@ -85,8 +86,8 @@ class NodeWikiPage(GuidMixin, BaseModel):
 
     page_name = models.CharField(max_length=200, validators=[validate_page_name, ])
     version = models.IntegerField()
-    date = models.DateTimeField()  # auto_now_add=True)
-    content = models.TextField(default='')
+    date = models.DateTimeField(default=timezone.now)  # auto_now_add=True)
+    content = models.TextField(default='', blank=True)
 
     user = models.ForeignKey('OSFUser', null=True, blank=True)
     node = models.ForeignKey('Node', null=True, blank=True)
