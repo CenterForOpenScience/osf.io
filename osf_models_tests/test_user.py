@@ -9,10 +9,13 @@ import pytest
 import pytz
 
 from framework.auth.exceptions import ExpiredTokenError, InvalidTokenError, ChangePasswordError
+from framework.auth.signals import user_merged
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
+from framework.celery_tasks import handlers
 from website import settings
 from website import filters
+from website import mailchimp_utils
 
 from osf_models.models import OSFUser as User, Tag, Node, Contributor, Session
 from osf_models.utils.auth import Auth
@@ -20,8 +23,11 @@ from osf_models.utils.names import impute_names_model
 from osf_models.exceptions import ValidationError
 from osf_models.modm_compat import Q
 
+from .utils import capture_signals
 from .factories import (
     fake,
+    ProjectFactory,
+    CollectionFactory,
     NodeFactory,
     InstitutionFactory,
     UserFactory,
@@ -838,3 +844,152 @@ class TestCitationProperties:
                 'family': user.family_name,
             },
         )
+
+
+# copied from tests/test_models.py
+class TestMergingUsers:
+
+    @pytest.fixture()
+    def master(self):
+        return UserFactory(
+            fullname='Joe Shmo',
+            is_registered=True,
+            emails=['joe@mail.com'],
+        )
+
+    @pytest.fixture()
+    def dupe(self):
+        return UserFactory(
+            fullname='Joseph Shmo',
+            emails=['joseph123@hotmail.com']
+        )
+
+    @pytest.fixture()
+    def merge_dupe(self, master, dupe):
+        def f():
+            '''Do the actual merge.'''
+            master.merge_user(dupe)
+            master.save()
+        return f
+
+    def test_bookmark_collection_nodes_arent_merged(self, dupe, master, merge_dupe):
+        dashnode = CollectionFactory(creator=dupe, is_bookmark_collection=True)
+        assert dashnode in dupe.contributed
+        merge_dupe()
+        assert dashnode not in master.contributed
+
+    def test_dupe_is_merged(self, dupe, master, merge_dupe):
+        merge_dupe()
+        assert dupe.is_merged
+        assert dupe.merged_by == master
+
+    def test_dupe_email_is_appended(self, master, merge_dupe):
+        merge_dupe()
+        assert 'joseph123@hotmail.com' in master.emails
+
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
+    def test_send_user_merged_signal(self, mock_get_mailchimp_api, dupe, merge_dupe):
+        dupe.mailchimp_mailing_lists['foo'] = True
+        dupe.save()
+
+        with capture_signals() as mock_signals:
+            merge_dupe()
+            assert mock_signals.signals_sent() == set([user_merged])
+
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
+    def test_merged_user_unsubscribed_from_mailing_lists(self, mock_get_mailchimp_api, dupe, merge_dupe):
+        handlers.celery_before_request()
+        list_name = 'foo'
+        username = dupe.username
+        dupe.mailchimp_mailing_lists[list_name] = True
+        dupe.save()
+        mock_client = mock.MagicMock()
+        mock_get_mailchimp_api.return_value = mock_client
+        mock_client.lists.list.return_value = {'data': [{'id': 2, 'list_name': list_name}]}
+        list_id = mailchimp_utils.get_list_id_from_name(list_name)
+        merge_dupe()
+        handlers.celery_teardown_request()
+        mock_client.lists.unsubscribe.assert_called_with(id=list_id, email={'email': username}, send_goodbye=False)
+        assert dupe.mailchimp_mailing_lists[list_name] is False
+
+    def test_inherits_projects_contributed_by_dupe(self, dupe, master, merge_dupe):
+        project = ProjectFactory()
+        project.add_contributor(dupe)
+        project.save()
+        merge_dupe()
+        project.reload()
+        assert project.is_contributor(master) is True
+        assert project.is_contributor(dupe) is False
+
+    def test_inherits_projects_created_by_dupe(self, dupe, master, merge_dupe):
+        project = ProjectFactory(creator=dupe)
+        merge_dupe()
+        project.reload()
+        assert project.creator == master
+
+    def test_adding_merged_user_as_contributor_adds_master(self, dupe, master, merge_dupe):
+        project = ProjectFactory(creator=UserFactory())
+        merge_dupe()
+        project.add_contributor(contributor=dupe)
+        assert project.is_contributor(master) is True
+        assert project.is_contributor(dupe) is False
+
+    def test_merging_dupe_who_is_contributor_on_same_projects(self, master, dupe, merge_dupe):
+        # Both master and dupe are contributors on the same project
+        project = ProjectFactory()
+        project.add_contributor(contributor=master, visible=True)
+        project.add_contributor(contributor=dupe, visible=True)
+        project.save()
+        merge_dupe()  # perform the merge
+        project.reload()
+        assert project.is_contributor(master)
+        assert project.is_contributor(dupe) is False
+        assert len(project.contributors) == 2   # creator and master
+                                                # are the only contribs
+        assert project.contributor_set.get(user=master).visible is True
+
+    def test_merging_dupe_who_has_different_visibility_from_master(self, master, dupe, merge_dupe):
+        # Both master and dupe are contributors on the same project
+        project = ProjectFactory()
+        project.add_contributor(contributor=master, visible=False)
+        project.add_contributor(contributor=dupe, visible=True)
+
+        project.save()
+        merge_dupe()  # perform the merge
+        project.reload()
+
+        assert project.contributor_set.get(user=master).visible is True
+
+    def test_merging_dupe_who_is_a_non_bib_contrib_and_so_is_the_master(self, master, dupe, merge_dupe):
+        # Both master and dupe are contributors on the same project
+        project = ProjectFactory()
+        project.add_contributor(contributor=master, visible=False)
+        project.add_contributor(contributor=dupe, visible=False)
+
+        project.save()
+        merge_dupe()  # perform the merge
+        project.reload()
+
+        assert project.contributor_set.get(user=master).visible is False
+
+    def test_merge_user_with_higher_permissions_on_project(self, master, dupe, merge_dupe):
+        # Both master and dupe are contributors on the same project
+        project = ProjectFactory()
+        project.add_contributor(contributor=master, permissions=('read', 'write'))
+        project.add_contributor(contributor=dupe, permissions=('read', 'write', 'admin'))
+
+        project.save()
+        merge_dupe()  # perform the merge
+
+        assert project.get_permissions(master) == ['read', 'write', 'admin']
+
+    def test_merge_user_with_lower_permissions_on_project(self, master, dupe, merge_dupe):
+        # Both master and dupe are contributors on the same project
+        project = ProjectFactory()
+        project.add_contributor(contributor=master, permissions=('read', 'write', 'admin'))
+        project.add_contributor(contributor=dupe, permissions=('read', 'write'))
+
+        project.save()
+        merge_dupe()  # perform the merge
+
+        assert project.get_permissions(master) == ['read', 'write', 'admin']

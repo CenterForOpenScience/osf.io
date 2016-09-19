@@ -477,3 +477,22 @@ class PreprintFactory(DjangoModelFactory):
         project.save()
 
         return project
+
+
+class TagFactory(DjangoModelFactory):
+    class Meta:
+        model = models.Tag
+
+    name = factory.Faker('word')
+    system = False
+
+
+class ApiOAuth2PersonalTokenFactory(DjangoModelFactory):
+    class Meta:
+        model = models.ApiOAuth2PersonalToken
+
+    owner = factory.SubFactory(UserFactory)
+
+    scopes = 'osf.full_write osf.full_read'
+
+    name = factory.Sequence(lambda n: 'Example OAuth2 Personal Token #{}'.format(n))
