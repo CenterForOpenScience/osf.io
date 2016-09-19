@@ -20,7 +20,7 @@ class TestSearchPage(SearchTestCase):
 
 PRIVATE, PUBLIC = range(2)
 PROJECT, REGISTRATION, COMPONENT, FILE = 'project registration component file'.split()
-ANON, AUTH, CONTRIB, OWNER = range(4)
+ANON, AUTH, READ = (None, '', 'r')
 Y, N = True, False
 
 cases = [
@@ -32,6 +32,11 @@ cases = [
     ("private component hidden from auth", PRIVATE, COMPONENT, AUTH, N),
     ("private file hidden from auth", PRIVATE, FILE, AUTH, N),
 
+    ("private project shown to read", PRIVATE, PROJECT, READ, Y),
+    ("private component shown to read", PRIVATE, COMPONENT, READ, Y),
+    ("private file shown to read", PRIVATE, FILE, READ, Y),
+
+
     ("public project shown to anon", PUBLIC, PROJECT, ANON, Y),
     ("public registration shown to anon", PUBLIC, REGISTRATION, ANON, Y),
     ("public component shown to anon", PUBLIC, COMPONENT, ANON, Y),
@@ -41,19 +46,24 @@ cases = [
     ("public registration shown to auth", PUBLIC, REGISTRATION, AUTH, Y),
     ("public component shown to auth", PUBLIC, COMPONENT, AUTH, Y),
     ("public file shown to auth", PUBLIC, FILE, AUTH, Y),
+
+    ("public project shown to read", PUBLIC, PROJECT, READ, Y),
+    ("public registration shown to read", PUBLIC, REGISTRATION, READ, Y),
+    ("public component shown to read", PUBLIC, COMPONENT, READ, Y),
+    ("public file shown to read", PUBLIC, FILE, READ, Y),
 ]
 
-def make_project(status):
+def make_project(status, user, perms):
     project = factories.ProjectFactory(title='Flim Flammity', is_public=status is PUBLIC)
     project.update_search()
     return 'title'
 
-def make_registration(status):
+def make_registration(status, user, perms):
     project = factories.ProjectFactory(title='Flim Flammity', is_public=status is PUBLIC)
     mock_archive(project, autocomplete=True, autoapprove=True).__enter__()
     return 'title'
 
-def make_component(status):
+def make_component(status, user, perms):
     project = factories.ProjectFactory(title='Blim Blammity', is_public=status is PUBLIC)
     project.update_search()
     component = factories.NodeFactory(
@@ -64,7 +74,7 @@ def make_component(status):
     component.update_search()
     return 'title'
 
-def make_file(status):
+def make_file(status, user, perms):
     project = factories.ProjectFactory(title='Blim Blammity', is_public=status is PUBLIC)
     project.get_addon('osfstorage').get_root().append_file('Flim Flammity')
     return 'name'
@@ -86,16 +96,17 @@ class TestSearchSearchAPI(SearchTestCase):
         data = {'q': 'category:{} AND {}'.format(category, query)}
         return self.app.get(url, data, auth=auth).json['results']
 
+
     @parameterized.expand(cases)
-    def test(self, ignored, status, type_, role, included):
-        key = makers[type_](status)
+    def test(self, ignored, status, type_, perms, included):
+        user = None
+        if perms is not None:
+            user = factories.AuthUserFactory()
 
-        auth = None
-        if role is AUTH:
-            auth = factories.AuthUserFactory().auth
-
+        make = makers[type_]
+        key = make(status, user, perms)
         expected = [('Flim Flammity', type_)] if included else []
-        results = self.results('flim', type_, auth)
+        results = self.results('flim', type_, user.auth if user else None)
         assert_equal([(x[key], x['category']) for x in results], expected)
 
 
