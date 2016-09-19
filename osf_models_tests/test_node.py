@@ -133,6 +133,21 @@ class TestProject:
     def test_parent_id(self, project):
         assert not project.parent_id
 
+    def test_nodes_active(self, project, auth):
+        node = NodeFactory(parent=project)
+        deleted_node = NodeFactory(parent=project, is_deleted=True)
+
+        linked_node = NodeFactory()
+        project.add_node_link(linked_node, auth=auth)
+        deleted_linked_node = NodeFactory(is_deleted=True)
+        project.add_node_link(deleted_linked_node, auth=auth)
+
+        assert node in project.nodes_active
+        assert deleted_node not in project.nodes_active
+
+        assert linked_node in project.nodes_active
+        assert deleted_linked_node not in project.nodes_active
+
 
 class TestLogging:
 
@@ -365,6 +380,27 @@ class TestContributorMethods:
         assert node2.has_permission(read, 'read') is True
         assert node2.has_permission(read, 'write') is False
         assert node2.has_permission(admin, 'admin') is True
+
+    def test_replace_contributor(self, node):
+        contrib = UserFactory()
+        node.add_contributor(contrib, auth=Auth(node.creator))
+        node.save()
+        assert contrib in node.contributors.all()  # sanity check
+        replacer = UserFactory()
+        old_length = node.contributors.count()
+        node.replace_contributor(contrib, replacer)
+        node.save()
+        new_length = node.contributors.count()
+        assert contrib not in node.contributors.all()
+        assert replacer in node.contributors.all()
+        assert old_length == new_length
+
+        # test unclaimed_records is removed
+        assert (
+            node._id not in
+            contrib.unclaimed_records.keys()
+        )
+
 
 class TestContributorAddedSignal:
 
