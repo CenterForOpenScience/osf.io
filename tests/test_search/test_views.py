@@ -5,7 +5,7 @@ from nose.tools import *  # noqa PEP8 asserts
 from nose_parameterized import parameterized
 
 from tests import factories
-from tests.test_search import SearchTestCase
+from tests.test_search import OsfTestCase, SearchTestCase
 from tests.utils import mock_archive
 from website.util import api_url_for
 
@@ -85,6 +85,32 @@ makers = {
     COMPONENT: make_component,
     FILE: make_file,
 }
+
+
+class TestMakers(OsfTestCase):
+
+    # mp - make_project
+
+    def test_mp_specifies_title(self):
+        assert make_project('private', None, None) == 'title'
+
+
+    # mr - make_registration
+
+    def test_mr_specifies_title(self):
+        assert make_registration('private', None, None) == 'title'
+
+
+    # mc - make_component
+
+    def test_mc_specifies_title(self):
+        assert make_component('private', None, None) == 'title'
+
+
+    # mf - make_file
+
+    def test_mf_specifies_name(self):
+        assert make_file('private', None, None) == 'name'
 
 
 class TestSearchSearchAPI(SearchTestCase):
