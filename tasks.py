@@ -69,7 +69,7 @@ def test(ctx, setup=False, update=False, requirements=True, branch=POSTGRES_BRAN
     models_retcode = pytest.main(['osf_models_tests'])
 
     views_retcode = pytest.main([os.path.join('tests', 'test_views.py')])
-    if not all([
+    if any([
         models_retcode,
         views_retcode,
     ]):

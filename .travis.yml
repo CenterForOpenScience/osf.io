@@ -2,8 +2,12 @@ language: python
 python:
     - "2.7"
 addons:
-    postgresql: "9.4"
-sudo: false
+    postgresql: "9.5"
+# Postgres 9.5 is only available on sudo-enabled trusty builds
+# https://github.com/travis-ci/travis-ci/issues/4264
+# https://docs.travis-ci.com/user/database-setup/#PostgreSQL
+sudo: required
+dist: trusty
 install:
     - travis_retry pip install --upgrade pip
     - travis_retry pip install .
