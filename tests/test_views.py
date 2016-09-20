@@ -58,6 +58,7 @@ pytestmark = pytest.mark.django_db
 from osf_models_tests.factories import (
     UserFactory,
     UnconfirmedUserFactory,
+    UnregUserFactory,
     AuthUserFactory,
     PrivateLinkFactory,
     ProjectFactory,
@@ -100,7 +101,7 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         link = PrivateLinkFactory()
         link.nodes.add(node)
         link.save()
-        url = node.api_url_for("project_private_link_edit")
+        url = node.api_url_for('project_private_link_edit')
         res = self.app.put_json(url, {'pk': link._id, 'value': ''}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_in('Title cannot be blank', res.body)
@@ -110,7 +111,7 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         link = PrivateLinkFactory()
         link.nodes.add(node)
         link.save()
-        url = node.api_url_for("project_private_link_edit")
+        url = node.api_url_for('project_private_link_edit')
         res = self.app.put_json(url, {'pk': link._id, 'value': '<a></a>'}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_in('Invalid link name.', res.body)

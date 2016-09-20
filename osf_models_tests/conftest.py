@@ -4,7 +4,7 @@ import pytest
 from faker import Factory
 
 from website import settings
-from website.app import patch_models
+from website.app import init_app, patch_models
 from website.project.signals import contributor_added
 from website.project.views.contributor import notify_added_contributor
 
@@ -28,6 +28,25 @@ for logger_name in SILENT_LOGGERS:
 def patched_models():
     patch_models(settings)
 
+
+@pytest.fixture()
+def app():
+    test_app = init_app(
+        settings_module='website.settings', routes=True, set_backends=False,
+    )
+    test_app.testing = True
+    return test_app
+
+
+@pytest.yield_fixture()
+def request_context(app):
+    context = app.test_request_context(headers={
+        'Remote-Addr': '146.9.219.56',
+        'User-Agent': 'Mozilla/5.0 (X11; U; SunOS sun4u; en-US; rv:0.9.4.1) Gecko/20020518 Netscape6/6.2.3'
+    })
+    context.push()
+    yield context
+    context.pop()
 
 DISCONNECTED_SIGNALS = {
     # disconnect notify_add_contributor so that add_contributor does not send "fake" emails in tests

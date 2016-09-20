@@ -897,8 +897,7 @@ class TestMergingUsers:
             assert mock_signals.signals_sent() == set([user_merged])
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
-    def test_merged_user_unsubscribed_from_mailing_lists(self, mock_get_mailchimp_api, dupe, merge_dupe):
-        handlers.celery_before_request()
+    def test_merged_user_unsubscribed_from_mailing_lists(self, mock_get_mailchimp_api, dupe, merge_dupe, request_context):
         list_name = 'foo'
         username = dupe.username
         dupe.mailchimp_mailing_lists[list_name] = True
@@ -909,6 +908,7 @@ class TestMergingUsers:
         list_id = mailchimp_utils.get_list_id_from_name(list_name)
         merge_dupe()
         handlers.celery_teardown_request()
+        dupe.reload()
         mock_client.lists.unsubscribe.assert_called_with(id=list_id, email={'email': username}, send_goodbye=False)
         assert dupe.mailchimp_mailing_lists[list_name] is False
 
