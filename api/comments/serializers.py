@@ -88,7 +88,9 @@ class CommentSerializer(JSONAPISerializer):
         return Comment.find(Q('target', 'eq', Guid.load(obj._id))).count() > 0
 
     def get_absolute_url(self, obj):
-        return absolute_reverse('comments:comment-detail', kwargs={'comment_id': obj._id})
+        kwargs = self.context['request'].parser_context['kwargs']
+        kwargs.update({'comment_id': obj._id})
+        return absolute_reverse('comments:comment-detail', kwargs=kwargs)
         # return self.data.get_absolute_url()
 
     def update(self, comment, validated_data):
@@ -219,13 +221,11 @@ class CommentReportSerializer(JSONAPISerializer):
         type_ = 'comment_reports'
 
     def get_absolute_url(self, obj):
-        comment_id = self.context['request'].parser_context['kwargs']['comment_id']
+        kwargs = self.context['request'].parser_context['kwargs']
+        kwargs.update({'user_id': obj._id})
         return absolute_reverse(
             'comments:report-detail',
-            kwargs={
-                'comment_id': comment_id,
-                'user_id': obj._id
-            }
+            kwargs=kwargs
         )
 
     def create(self, validated_data):

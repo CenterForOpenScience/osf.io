@@ -56,7 +56,9 @@ class CollectionSerializer(JSONAPISerializer):
         type_ = 'collections'
 
     def get_absolute_url(self, obj):
-        return absolute_reverse('collections:collection-detail', kwargs={'collection_id': obj._id})
+        kwargs = self.context['request'].parser_context['kwargs']
+        kwargs.update({'collection_id': obj._id})
+        return absolute_reverse('collections:collection-detail', kwargs=kwargs)
 
     def get_node_links_count(self, obj):
         count = 0
@@ -113,11 +115,9 @@ class CollectionDetailSerializer(CollectionSerializer):
 
 class CollectionNodeLinkSerializer(NodeLinksSerializer):
     def get_absolute_url(self, obj):
-        node_id = self.context['request'].parser_context['kwargs']['collection_id']
+        kwargs = self.context['request'].parser_context['kwargs']
+        kwargs.update({'node_link_id': obj._id})
         return absolute_reverse(
             'collections:node-pointer-detail',
-            kwargs={
-                'collection_id': node_id,
-                'node_link_id': obj._id
-            }
+            kwargs=kwargs
         )

@@ -676,13 +676,11 @@ class NodeContributorsSerializer(JSONAPISerializer):
         type_ = 'contributors'
 
     def get_absolute_url(self, obj):
-        node_id = self.context['request'].parser_context['kwargs']['node_id']
+        kwargs = self.context['request'].parser_context['kwargs']
+        kwargs.update({'user_id': obj._id})
         return absolute_reverse(
             'nodes:node-contributor-detail',
-            kwargs={
-                'node_id': node_id,
-                'user_id': obj._id
-            }
+            kwargs=kwargs
         )
 
     def get_unregistered_contributor(self, obj):
@@ -809,13 +807,11 @@ class NodeLinksSerializer(JSONAPISerializer):
     })
 
     def get_absolute_url(self, obj):
-        node_id = self.context['request'].parser_context['kwargs']['node_id']
+        kwargs = self.context['request'].parser_context['kwargs']
+        kwargs.update({'node_link_id': obj._id})
         return absolute_reverse(
             'nodes:node-pointer-detail',
-            kwargs={
-                'node_id': node_id,
-                'node_link_id': obj._id
-            }
+            kwargs=kwargs
         )
 
     def create(self, validated_data):
@@ -870,17 +866,21 @@ class NodeProviderSerializer(JSONAPISerializer):
         return '{}:{}'.format(obj.node._id, obj.provider)
 
     def get_absolute_url(self, obj):
+        kwargs = self.context['request'].parser_context['kwargs']
+        kwargs.update({
+            'node_id': obj.node._id,
+            'provider': obj.provider
+        })
         return absolute_reverse(
             'nodes:node-provider-detail',
-            kwargs={
-                'node_id': obj.node._id,
-                'provider': obj.provider
-            }
+            kwargs=kwargs
         )
 
     def get_storage_addons_url(self, obj):
+        kwargs = {'version': self.context['request'].parser_context['kwargs']['version']}
         return absolute_reverse(
             'addons:addon-list',
+            kwargs=kwargs,
             query_kwargs={'filter[categories]': 'storage'}
         )
 
@@ -1161,13 +1161,11 @@ class NodeViewOnlyLinkSerializer(JSONAPISerializer):
         return view_only_link
 
     def get_absolute_url(self, obj):
-        node_id = self.context['request'].parser_context['kwargs']['node_id']
+        kwargs = self.context['request'].parser_context['kwargs']
+        kwargs.update({'link_id': obj._id})
         return absolute_reverse(
             'nodes:node-view-only-link-detail',
-            kwargs={
-                'link_id': obj._id,
-                'node_id': node_id
-            }
+            kwargs=kwargs
         )
 
     class Meta:

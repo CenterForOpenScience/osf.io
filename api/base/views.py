@@ -369,7 +369,7 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
 
 @api_view(('GET',))
 @throttle_classes([RootAnonThrottle, UserRateThrottle])
-def root(request, format=None):
+def root(request, format=None, **kwargs):
     """Welcome to the V2 Open Science Framework API. With this API you can access users, projects, components, logs, and files
     from the [Open Science Framework](https://osf.io/). The Open Science Framework (OSF) is a free, open-source service
     maintained by the [Center for Open Science](http://cos.io/).
@@ -684,7 +684,7 @@ def root(request, format=None):
         current_user = UserSerializer(user, context={'request': request}).data
     else:
         current_user = None
-
+    kwargs = request.parser_context['kwargs']
     return_val = {
         'meta': {
             'message': 'Welcome to the OSF API.',
@@ -692,14 +692,14 @@ def root(request, format=None):
             'current_user': current_user,
         },
         'links': {
-            'nodes': utils.absolute_reverse('nodes:node-list'),
-            'users': utils.absolute_reverse('users:user-list'),
-            'collections': utils.absolute_reverse('collections:collection-list'),
-            'registrations': utils.absolute_reverse('registrations:registration-list'),
-            'institutions': utils.absolute_reverse('institutions:institution-list'),
-            'licenses': utils.absolute_reverse('licenses:license-list'),
-            'metaschemas': utils.absolute_reverse('metaschemas:metaschema-list'),
-            'addons': utils.absolute_reverse('addons:addon-list'),
+            'nodes': utils.absolute_reverse('nodes:node-list', kwargs=kwargs),
+            'users': utils.absolute_reverse('users:user-list', kwargs=kwargs),
+            'collections': utils.absolute_reverse('collections:collection-list', kwargs=kwargs),
+            'registrations': utils.absolute_reverse('registrations:registration-list', kwargs=kwargs),
+            'institutions': utils.absolute_reverse('institutions:institution-list', kwargs=kwargs),
+            'licenses': utils.absolute_reverse('licenses:license-list', kwargs=kwargs),
+            'metaschemas': utils.absolute_reverse('metaschemas:metaschema-list', kwargs=kwargs),
+            'addons': utils.absolute_reverse('addons:addon-list', kwargs=kwargs),
         }
     }
 

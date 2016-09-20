@@ -295,10 +295,12 @@ class FileVersionSerializer(JSONAPISerializer):
         type_ = 'file_versions'
 
     def self_url(self, obj):
-        return absolute_reverse('files:version-detail', kwargs={
+        kwargs = self.context['request'].parser_context['kwargs']
+        kwargs.update({
             'version_id': obj.identifier,
             'file_id': self.context['view'].kwargs['file_id']
         })
+        return absolute_reverse('files:version-detail', kwargs=kwargs)
 
     def absolute_url(self, obj):
         fobj = self.context['view'].get_file()
