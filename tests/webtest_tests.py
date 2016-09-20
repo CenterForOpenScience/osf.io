@@ -772,9 +772,13 @@ class TestExplorePublicActivity(OsfTestCase):
         self.registration = RegistrationFactory(project=self.project)
         self.private_project = ProjectFactory(title="Test private project")
 
-    @unittest.skip("Can't test this, since hiding newest project page https://github.com/CenterForOpenScience/osf.io/commit/c50d436cbb6bd9fbe2f0cbbc3724c05ed1ccb94e")
+        # Add project to new and noteworthy projects
+        self.new_and_noteworthy_links_node = ProjectFactory()
+        self.new_and_noteworthy_links_node._id = settings.NEW_AND_NOTEWORTHY_LINKS_NODE
+        self.new_and_noteworthy_links_node.add_pointer(self.project, auth=Auth(self.new_and_noteworthy_links_node.creator), save=True)
+
     @mock.patch('website.discovery.views.KeenClient')
-    def test_newest_public_project_and_registrations_show_in_explore_activity(self, mock_client):
+    def test_new_and_noteworthy_and_registrations_show_in_explore_activity(self, mock_client):
 
         mock_client.count.return_value = {
             'result': [
@@ -1049,6 +1053,7 @@ class TestResetPassword(OsfTestCase):
         service_url = 'http://accounts.osf.io/?ticket=' + ticket
         resp = cas.make_response_from_ticket(ticket, service_url)
         assert_not_equal(self.user.verification_key, self.cas_key)
+
     #  logged-in user should be automatically logged out upon before reset password
     def test_reset_password_logs_out_user(self):
         # visit reset password link while another user is logged in

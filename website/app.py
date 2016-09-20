@@ -4,6 +4,7 @@ import importlib
 import json
 import os
 import sys
+import thread
 from collections import OrderedDict
 
 import django
@@ -97,6 +98,10 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
     :param routes: Whether to set the url map.
 
     """
+    logger.info('Initializing the application from process {}, thread {}.'.format(
+        os.getpid(), thread.get_ident()
+    ))
+
     # The settings module
     settings = importlib.import_module(settings_module)
 

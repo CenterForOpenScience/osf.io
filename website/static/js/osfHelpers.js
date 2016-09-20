@@ -8,6 +8,7 @@ var URI = require('URIjs');
 var bootbox = require('bootbox');
 var lodashGet = require('lodash.get');
 var KeenTracker = require('js/keen');
+var linkify = require('linkifyjs/html');
 
 
 // TODO: For some reason, this require is necessary for custom ko validators to work
@@ -915,7 +916,6 @@ function getDomain(location) {
     return ret;
 }
 
-
 /**
  * Utility function to convert absolute URLs to relative urls
  * See:
@@ -932,6 +932,16 @@ function toRelativeUrl(url, window) {
         relative_url = parser.pathname + parser.search + parser.hash;
     }
     return relative_url;
+}
+
+/**
+ * Utility function to render links in plain text to HTML a tags
+ * @param content {string} text to be converted
+ * @returns {string} linkified text
+ */
+function linkifyText(content) {
+    var linkifyOpts = { target: function (href, type) { return type === 'url' ? '_top' : null; } };
+    return linkify(content);
 }
 
 // Also export these to the global namespace so that these can be used in inline
@@ -976,5 +986,6 @@ module.exports = window.$.osf = {
     extractContributorNamesFromAPIData: extractContributorNamesFromAPIData,
     onScrollToBottom: onScrollToBottom,
     getDomain: getDomain,
-    toRelativeUrl: toRelativeUrl
+    toRelativeUrl: toRelativeUrl,
+    linkifyText: linkifyText
 };

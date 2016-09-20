@@ -18,7 +18,7 @@
         },
         "fulfills": [{
             "name": "Prereg Challenge",
-            "info": "http://centerforopenscience.org/prereg/"
+            "info": "https://cos.io/prereg/"
         }]
     },
     "description": "Preregistration Challenge (pre-data collection): You will be asked a series of questions to ensure that your sampling, design, and analysis plans are solidified prior to beginning your study. Publications that pre register with this template may be eligible for a $1,000 prize. See project page for complete information.",

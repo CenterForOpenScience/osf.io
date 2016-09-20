@@ -44,6 +44,14 @@ class CollectionSerializer(JSONAPISerializer):
         self_view_kwargs={'collection_id': '<pk>'}
     )
 
+    linked_registrations = RelationshipField(
+        related_view='collections:linked-registrations',
+        related_view_kwargs={'collection_id': '<pk>'},
+        related_meta={'count': 'get_registration_links_count'},
+        self_view='collections:collection-registration-pointer-relationship',
+        self_view_kwargs={'collection_id': '<pk>'}
+    )
+
     class Meta:
         type_ = 'collections'
 
@@ -51,10 +59,20 @@ class CollectionSerializer(JSONAPISerializer):
         return absolute_reverse('collections:collection-detail', kwargs={'collection_id': obj._id})
 
     def get_node_links_count(self, obj):
+        count = 0
         auth = get_user_auth(self.context['request'])
-        return len(
-            [e for e in obj.linked_nodes.filter(is_deleted=False) if e.can_view(auth)]
-        )
+        for pointer in obj.linked_nodes.filter(is_deleted=False, type='osf_models.node'):
+            if pointer.can_view(auth):
+                count += 1
+        return count
+
+    def get_registration_links_count(self, obj):
+        count = 0
+        auth = get_user_auth(self.context['request'])
+        for pointer in obj.linked_nodes.filter(is_deleted=False, type='osf_models.registration'):
+            if pointer.node.can_view(auth):
+                count += 1
+        return count
 
     def create(self, validated_data):
         node = Node(**validated_data)

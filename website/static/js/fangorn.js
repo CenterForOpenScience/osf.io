@@ -1431,7 +1431,7 @@ function _fangornResolveRows(item) {
     });
     defaultColumns.push({
         data: 'version',
-        filter: true,
+        filter: false,
         sortInclude : false,
         custom: _fangornVersionColumn
     });

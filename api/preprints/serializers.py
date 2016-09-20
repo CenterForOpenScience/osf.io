@@ -46,6 +46,7 @@ class PreprintSerializer(JSONAPISerializer):
     abstract = ser.CharField(source='description', required=False)
     tags = JSONAPIListField(child=NodeTagField(), required=False)
     doi = ser.CharField(source='preprint_doi', required=False)
+    csl = ser.DictField(read_only=True)
 
     primary_file = PrimaryFileRelationshipField(
         related_view='files:file-detail',
