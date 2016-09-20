@@ -77,7 +77,6 @@ def add_poster_by_email(conference, message):
         user, user_created = get_or_create_user(
             message.sender_display,
             message.sender_email,
-            verification_type='password',
             is_spam=message.is_spam,
         )
         if user_created:
