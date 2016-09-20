@@ -28,6 +28,7 @@ from api.comments.permissions import CanCommentOrPublic
 from api.users.views import UserMixin
 from api.wikis.serializers import WikiSerializer
 from api.base.views import LinkedNodesRelationship, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList
+from api.base.throttling import AddContributorThrottle
 
 from api.nodes.serializers import (
     NodeSerializer,
@@ -619,6 +620,8 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
     required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
     required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
     model_class = User
+
+    throttle_classes = (AddContributorThrottle,)
 
     pagination_class = NodeContributorPagination
     serializer_class = NodeContributorsSerializer

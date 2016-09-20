@@ -104,6 +104,18 @@ REST_FRAMEWORK = {
         'api.base.authentication.drf.OSFSessionAuthentication',
         'api.base.authentication.drf.OSFCASAuthentication'
     ),
+    'DEFAULT_THROTTLE_CLASSES': (
+        'rest_framework.throttling.UserRateThrottle',
+        'api.base.throttling.NonCookieAuthThrottle',
+    ),
+    'DEFAULT_THROTTLE_RATES': {
+        'user': '10000/day',
+        'non-cookie-auth': '100/hour',
+        'add-contributor': '10/hour',
+        'root-anon-throttle': '1000/hour',
+        'test-user': '2/hour',
+        'test-anon': '1/hour',
+    }
 }
 
 # Settings related to CORS Headers addon: allow API to receive authenticated requests from OSF
@@ -196,7 +208,7 @@ SWAGGER_SETTINGS = {
         'title': 'OSF APIv2 Documentation',
     },
     'doc_expansion': 'list',
-    'exclude_namespaces': ['applications', 'tokens'],
+    'exclude_namespaces': ['applications', 'tokens', 'test'],
 }
 
 NODE_CATEGORY_MAP = osf_settings.NODE_CATEGORY_MAP
