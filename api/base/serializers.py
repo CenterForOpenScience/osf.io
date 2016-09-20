@@ -1162,6 +1162,12 @@ class JSONAPISerializer(ser.Serializer):
 
         if clean_html is True:
             self._validated_data = self.sanitize_data()
+            try:
+                social = self.context['request']._full_data['social']
+            except KeyError:
+                social = None
+            if social:
+                self._validated_data.update({'social': social})
 
         self._validated_data.pop('type', None)
         self._validated_data.pop('target_type', None)

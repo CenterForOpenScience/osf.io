@@ -33,8 +33,11 @@ def account_url_list(obj, key, social_base_url):
 
 
 def update_social_id(instance, val, key, social_strip_url):
-    #TODO: when social data remodel to be a list change this update function
-    social_url = ast.literal_eval(val)
+    if not isinstance(val, list):
+        social_url = ast.literal_eval(val)
+    else:
+        social_url = val
+    # TODO: when social data remodel to be a list change this update function
     social_id = re.sub(social_strip_url, '', social_url[0][:-1] if social_url[0].endswith('/') else social_url[0])
     instance.social[key] = social_id
 
@@ -111,7 +114,7 @@ class UserSerializer(JSONAPISerializer):
         return account_url_list(obj, 'scholar', 'http://scholar.google.com/citations?user={}')
 
     def personal_website_url(self, obj):
-        return account_url_list(obj, 'personal', '{}')
+        return account_url_list(obj, 'profileWebsites', '{}')
 
     def twitter_url(sel, obj):
         return account_url_list(obj, 'twitter', 'http://twitter.com/{}')
@@ -173,9 +176,11 @@ class UserSerializer(JSONAPISerializer):
                         update_social_id(instance, val, key, 'http://github.com/')
                     elif key == 'scholar':
                         update_social_id(instance, val, key, 'http://scholar.google.com/citations?user=')
-                    elif key == 'personal':
-                        social_url = ast.literal_eval(val)
-                        instance.social[key] = social_url[0]
+                    elif key == 'personal_website':
+                        if not isinstance(val, list):
+                            instance.social['profileWebsites'] = ast.literal_eval(val)
+                        else:
+                            instance.social['profileWebsites'] = val
                     elif key == 'twitter':
                         update_social_id(instance, val, key, 'http://twitter.com/')
                     elif key == 'linkedIn':

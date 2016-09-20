@@ -79,7 +79,7 @@ class JSONAPIParser(JSONParser):
         parsed = {'id': object_id, 'type': object_type}
 
         if social:
-            parsed.update(social)
+            parsed.update({'social': social})
 
         if attributes:
             parsed.update(attributes)
