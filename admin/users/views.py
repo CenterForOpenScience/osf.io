@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 
 from furl import furl
 import csv
-import codecs
 from datetime import datetime
 import pytz
 from django.views.generic import FormView, DeleteView, ListView
@@ -32,7 +31,6 @@ from admin.common_auth.logs import (
 
 from admin.users.serializers import serialize_user
 from admin.users.forms import EmailResetForm, WorkshopForm
-from admin.users.models import TemporaryWorkshopFollowUp
 
 
 class UserDeleteView(OSFAdmin, DeleteView):
@@ -275,15 +273,29 @@ class UserWorkshopFormView(OSFAdmin, FormView):
 
     def form_valid(self, form):
         csv_file = form.cleaned_data['document']
-        dialect = csv.Sniffer().sniff(
-            codecs.EncodedFile(csv_file, 'utf-8').read(1024))
-        csv_file.open()
-        reader = csv.reader(codecs.EncodedFile(csv_file, 'unicode'), dialect=dialect)
+        final = self.parse(csv_file)
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="workshop.csv"'
+        writer = csv.writer(response)
+        for row in final:
+            writer.writerow(row)
+        return response
+
+    @staticmethod
+    def parse(csv_file):
         final = []
-        for i, line in enumerate(reader):
+        for i, temp_line in enumerate(csv_file):
+            try:
+                line = temp_line.strip().split(',')[:-1]
+            except UnicodeDecodeError as e:
+                error = 'Unable to parse line: {}'.format(e)
+                line = [0] * 15
+                line[0] = error
+                final.append(line)
+                continue
             if i == 0:
                 line.extend(['osf id', 'number of logs', 'number of nodes',
-                             'last active'])  # user.pk, --, --, if no logs user.is_active
+                             'last active'])
                 final.append(line)
                 continue
             email = line[5]
@@ -302,16 +314,7 @@ class UserWorkshopFormView(OSFAdmin, FormView):
                     nodes.append(log.node.pk)
             line.extend(user.pk, len(log_ids), len(nodes), last_log_date)
             final.append(line)
-        print 'here'
-
-    # def _read_catch(self, reader):
-    #     while True:
-    #         try:
-    #             line = reader.next()
-    #             yield reader.line_num, line
-    #         except UnicodeDecodeError:
-    #             print 'The line at {} is unreadable'.format(reader.line_num)
-
+        return final
 
     def form_invalid(self, form):
         super(UserWorkshopFormView, self).form_invalid(form)
