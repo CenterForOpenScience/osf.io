@@ -326,6 +326,9 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
 
     # overrides RetrieveAPIView
     def get_object(self):
+        if self.request.GET and self.request.GET.get('giveGuid', False):
+            self.get_file().get_guid(create=True)
+
         return self.get_file()
 
 

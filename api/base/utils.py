@@ -128,7 +128,8 @@ def default_node_list_query():
     return (
         Q('is_deleted', 'ne', True) &
         Q('is_collection', 'ne', True) &
-        Q('is_registration', 'ne', True)
+        Q('is_registration', 'ne', True) &
+        Q('is_public_files_node', 'ne', True)
     )
 
 

@@ -1797,7 +1797,6 @@ var Filters = {
  */
 var Information = {
     view : function (ctrl, args) {
-
         var template = '';
         var showRemoveFromCollection;
         var collectionFilter = args.currentView().collection;
@@ -1833,7 +1832,7 @@ var Information = {
                         m('[role="tabpanel"].tab-pane.active#tab-information',[
                             m('p.db-info-meta.text-muted', [
                                 m('', 'Visibility : ' + (item.attributes.public ? 'Public' : 'Private')),
-                                m('.text-capitalize', 'Category: ' + item.attributes.category),
+                                m('div.text-capitalize', 'Category: ' + item.attributes.category),
                                 m('.text-capitalize', 'Permission: ' + permission),
                                 m('', 'Last Modified on: ' + (item.date ? item.date.local : ''))
                             ]),

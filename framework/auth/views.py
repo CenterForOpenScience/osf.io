@@ -11,6 +11,7 @@ from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationError
 from modularodm.exceptions import ValidationValueError
+from pymongo.errors import DuplicateKeyError
 
 from framework import forms, status
 from framework import auth as framework_auth
@@ -547,6 +548,13 @@ def unconfirmed_email_add(auth=None):
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': e.message_short,
             'message_long': e.message_long
+        })
+    except DuplicateKeyError:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'status': 'DuplicateKeyError',
+            'message_short': 'Merge Failed',
+            'message_long': ('Publics Files with the same name cannot be merged. Please delete '
+                            'conflicting files or move them to your primary account.')
         })
 
     user.save()

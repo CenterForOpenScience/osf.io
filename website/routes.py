@@ -43,11 +43,13 @@ from website.search import views as search_views
 from website.oauth import views as oauth_views
 from website.profile import views as profile_views
 from website.project import views as project_views
+from website.project.model import Node
 from website.addons.base import views as addon_views
 from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
 from website.preprints import views as preprint_views
 from website.institutions import views as institution_views
+from website.public_files import views as public_files_views
 from website.notifications import views as notification_views
 
 
@@ -56,10 +58,15 @@ def get_globals():
     OSFWebRenderer.
     """
     user = _get_current_user()
+    try:
+        public_files_id = Node.find_one(Q('contributors', 'eq', user._id) & Q('is_public_files_node', 'eq', True))._id
+    except (AttributeError, NoResultsFound):
+        public_files_id = None
+    user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path} for inst in user.affiliated_institutions] if user else []
+    all_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path} for inst in Institution.find().sort('name')]
 
-    user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in user.affiliated_institutions] if user else []
-    all_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in Institution.find().sort('name')]
     location = geolite2.lookup(request.remote_addr) if request.remote_addr else None
+
     if request.host_url != settings.DOMAIN:
         try:
             inst_id = (Institution.find_one(Q('domains', 'eq', request.host.lower())))._id
@@ -123,6 +130,7 @@ def get_globals():
             },
         },
         'maintenance': maintenance.get_maintenance(),
+        'public_files_id': public_files_id,
         'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY
     }
 
@@ -279,6 +287,22 @@ def make_url_map(app):
             OsfWebRenderer('home.mako', trust=False)
         ),
 
+        Rule(
+            [
+                '/public_files/',
+            ],
+            'get',
+            public_files_views.view_public_files,
+            OsfWebRenderer('public_files.mako', trust=False),
+        ),
+        Rule(
+            [
+                '/public_files/<uid>/',
+            ],
+            'get',
+            public_files_views.view_public_files_id,
+            OsfWebRenderer('public_files.mako', trust=False),
+        ),
         Rule(
             '/myprojects/',
             'get',
@@ -1116,14 +1140,6 @@ def make_url_map(app):
             project_views.register.node_registration_retraction_get,
             OsfWebRenderer('project/retract_registration.mako', trust=False)
         ),
-
-        Rule(
-            '/ids/<category>/<path:value>/',
-            'get',
-            project_views.register.get_referent_by_identifier,
-            notemplate,
-        ),
-
         # Statistics
         Rule(
             [
@@ -1528,7 +1544,12 @@ def make_url_map(app):
             '/project/<pid>/withdraw/',
             '/project/<pid>/node/<nid>/withdraw/'
         ], 'post', project_views.register.node_registration_retraction_post, json_renderer),
-
+        Rule(
+            '/ids/<category>/<path:value>/',
+            'get',
+            project_views.register.get_referent_by_identifier,
+            notemplate,
+        ),
         Rule(
             [
                 '/project/<pid>/identifiers/',
@@ -1684,6 +1705,7 @@ def make_url_map(app):
             notification_views.configure_subscription,
             json_renderer,
         ),
+
         Rule(
             '/resetpassword/<verification_key>/',
             'post',

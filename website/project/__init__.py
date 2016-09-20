@@ -109,7 +109,6 @@ def new_collection(title, user):
 
     return node
 
-
 def new_private_link(name, user, nodes, anonymous):
     """Create a new private link.
 

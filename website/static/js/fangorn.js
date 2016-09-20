@@ -19,7 +19,7 @@ var waterbutler = require('js/waterbutler');
 
 var iconmap = require('js/iconmap');
 var storageAddons = require('json!storageAddons.json');
-
+var cb = require('js/clipboard');
 // CSS
 require('css/fangorn.css');
 
@@ -90,7 +90,6 @@ function findByTempID(parent, tmpID) {
     }
     return item;
 }
-
 
 /**
  * Cancel a pending upload
@@ -1389,6 +1388,7 @@ function _fangornResolveRows(item) {
     var defaultColumns = [];
     var configOption;
     item.css = '';
+
     if(tb.isMultiselected(item.id)){
         item.css = 'fangorn-selected';
     }
@@ -1423,6 +1423,17 @@ function _fangornResolveRows(item) {
         filter : true,
         custom : _fangornTitleColumn
     });
+    if(window.contextVars.isPublicFilesNode && item.data.kind === 'file'){
+        defaultColumns.push({
+            data : 'share',
+            sortInclude : false,
+            filter : false,
+                custom : function() {
+                    var link = location.protocol+ '//' + location.host + '/' + item.data.extra.guid;
+                    return cb.generateClipboard(link); }
+            });
+    }
+
     defaultColumns.push({
         data : 'size',  // Data field name
         sortInclude : false,
@@ -1467,30 +1478,64 @@ function _fangornResolveRows(item) {
  */
 function _fangornColumnTitles () {
     var columns = [];
-    columns.push(
-    {
-        title: 'Name',
-        width : '54%',
-        sort : true,
-        sortType : 'text'
-    }, {
-        title : 'Size',
-        width : '8%',
-        sort : false
-    }, {
-        title: 'Version',
-        width : '10%',
-        sort : false
-    },{
-        title : 'Downloads',
-        width : '8%',
-        sort : false
-    }, {
-        title : 'Modified',
-        width : '20%',
-        sort : true,
-        sortType : 'text'
-    });
+    if(!window.contextVars.isPublicFilesNode){
+
+        columns.push(
+        {
+            title: 'Name',
+            width : '54%',
+            sort : true,
+            sortType : 'text'
+        }, {
+            title : 'Size',
+            width : '8%',
+            sort : false
+        }, {
+            title: 'Version',
+            width : '10%',
+            sort : false
+        },{
+            title : 'Downloads',
+            width : '8%',
+            sort : false
+        }, {
+            title : 'Modified',
+            width : '20%',
+            sort : true,
+            sortType : 'text'
+        });
+    }else{
+        columns.push(
+        {
+            title: 'Name',
+            width : '44%',
+            sort : true,
+            sortType : 'text'
+        }, {
+            title : 'Share Link',
+            width : '20%',
+            sort : false,
+            sortType : 'text'
+        }, {
+            title : 'Size',
+            width : '8%',
+            sort : false
+        }, {
+            title: 'Version',
+            width : '10%',
+            sort : false
+        },{
+            title : 'Downloads',
+            width : '8%',
+            sort : false
+        }, {
+            title : 'Modified',
+            width : '10%',
+            sort : true,
+            sortType : 'text'
+        });
+
+    }
     return columns;
 }
 
@@ -2474,6 +2519,7 @@ tbOptions = {
             m.redraw();
             dismissToolbar.call(tb);
         });
+
         $(window).on('beforeunload', function() {
             if(tb.dropzone && tb.dropzone.getUploadingFiles().length) {
                 return 'You have pending uploads, if you leave this page they may not complete.';

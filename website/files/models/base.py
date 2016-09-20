@@ -497,11 +497,13 @@ class FileNode(object):
         return self.stored_object.save()
 
     def serialize(self, **kwargs):
+
         return {
             'id': self._id,
             'path': self.path,
             'name': self.name,
             'kind': self.kind,
+            'guid': self.get_guid()._id if self.get_guid() else None
         }
 
     def generate_waterbutler_url(self, **kwargs):

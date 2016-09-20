@@ -163,6 +163,15 @@ def resolve_guid(guid, suffix=None):
     guid_object = Guid.load(guid)
     if guid_object:
 
+        # 404 if user tries to visit public files wiki or add contributors ect, redirect if they try to visit the root
+        # project page.
+        if Node.find(Q('_id', 'eq', guid) & Q('is_public_files_node', 'eq', True)):
+            if suffix:
+                if 'files/osfstorage/' not in suffix:
+                    raise HTTPError(http.NOT_FOUND)
+            else:
+                return redirect('public_files/' + Node.load(guid).creator._id)
+
         # verify that the object implements a GuidStoredObject-like interface. If a model
         #   was once GuidStoredObject-like but that relationship has changed, it's
         #   possible to have referents that are instances of classes that don't
