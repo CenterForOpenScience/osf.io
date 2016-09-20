@@ -151,7 +151,7 @@ def wiki_widget(**kwargs):
             more = True
         else:
             wiki_html = BeautifulSoup(wiki_html)
-            rendered_before_update = wiki_page.rendered_before_update
+        rendered_before_update = wiki_page.rendered_before_update
     else:
         wiki_html = None
 
