@@ -381,6 +381,21 @@ class TestContributorMethods:
         assert node2.has_permission(read, 'write') is False
         assert node2.has_permission(admin, 'admin') is True
 
+    def test_remove_contributor(self, node, auth):
+        # A user is added as a contributor
+        user2 = UserFactory()
+        node.add_contributor(contributor=user2, auth=auth, save=True)
+        assert user2 in node.contributors
+        # The user is removed
+        node.remove_contributor(auth=auth, contributor=user2)
+        node.reload()
+
+        assert user2 not in node.contributors
+        assert node.get_permissions(user2) == []
+        assert node.logs.latest().action == 'contributor_removed'
+        assert node.logs.latest().params['contributors'] == [user2._id]
+
+
     def test_replace_contributor(self, node):
         contrib = UserFactory()
         node.add_contributor(contrib, auth=Auth(node.creator))
