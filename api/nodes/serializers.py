@@ -328,7 +328,7 @@ class NodeSerializer(JSONAPISerializer):
         user = request.user
         if 'template_from' in validated_data:
             template_from = validated_data.pop('template_from')
-            template_node = Node.load(key=template_from)
+            template_node = Node.load(template_from)
             if template_node is None:
                 raise exceptions.NotFound
             if not template_node.has_permission(user, 'read', check_parent=False):
@@ -339,6 +339,7 @@ class NodeSerializer(JSONAPISerializer):
             node = template_node.use_as_template(auth=get_user_auth(request), changes=changed_data)
         else:
             node = Node(**validated_data)
+        node.recast('osf_models.node')
         try:
             node.save()
         except ValidationValueError as e:
@@ -363,7 +364,7 @@ class NodeSerializer(JSONAPISerializer):
         """
         assert isinstance(node, Node), 'node must be a Node'
         auth = get_user_auth(self.context['request'])
-        old_tags = set([tag._id for tag in node.tags])
+        old_tags = set(node.tags.values_list('name', flat=True))
         if 'tags' in validated_data:
             current_tags = set(validated_data.pop('tags', []))
         elif self.partial:

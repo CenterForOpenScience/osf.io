@@ -271,6 +271,12 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     ordering = ('-date_modified', )  # default ordering
 
+    def convert_key(self, field_name, field):
+        key = super(NodeList, self).convert_key(field_name, field)
+        if key == 'tags':
+            return 'tags__name'
+        return key
+
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         user = self.request.user
@@ -282,7 +288,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     def get_queryset(self):
         # For bulk requests, queryset is formed from request body.
         if is_bulk_request(self.request):
-            query = Q('_id', 'in', [node['id'] for node in self.request.data])
+            query = Q('guid__guid', 'in', [node['id'] for node in self.request.data])
             auth = get_user_auth(self.request)
 
             nodes = Node.find(query)
