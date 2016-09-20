@@ -2,16 +2,13 @@ from django.conf import settings
 from django.conf.urls import include, url
 from django.conf.urls.static import static
 from django.views.generic.base import RedirectView
-from settings import API_BASE
 
 from . import views
-
-base_pattern = '^{}'.format(API_BASE)
 
 # Please keep URLs alphabetized for auto-generated documentation
 
 urlpatterns = [
-    url(base_pattern,
+    url('^(?P<version>(v2))/',
         include(
             [
                 url(r'^$', views.root, name='root'),
