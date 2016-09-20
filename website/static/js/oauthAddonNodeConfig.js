@@ -136,12 +136,7 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                     inputType: 'select',
                     inputOptions: ko.utils.arrayMap(
                         self.accounts(),
-                        function(item) {
-                            return {
-                                text: $osf.htmlEscape(item.name),
-                                value: item.id
-                            };
-                        }
+                        self.formatExternalName
                     ),
                     value: self.accounts()[0].id,
                     callback: (self.connectExistingAccount.bind(self)),
@@ -191,6 +186,7 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             self.accounts(data.accounts.map(function(account) {
                 return {
                     name: account.display_name,
+                    profile: account.profile_url,
                     id: account.id
                 };
             }));
@@ -205,6 +201,12 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             });
         });
     },
+   formatExternalName: function(item) {
+        return {
+            text: $osf.htmlEscape(item.name),
+            value: item.id
+        };
+    }
 });
 
 // Public API
