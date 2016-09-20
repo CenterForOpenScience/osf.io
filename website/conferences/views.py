@@ -77,7 +77,8 @@ def add_poster_by_email(conference, message):
         user, user_created = get_or_create_user(
             message.sender_display,
             message.sender_email,
-            message.is_spam,
+            verification_type='password',
+            is_spam=message.is_spam,
         )
         if user_created:
             created.append(user)
@@ -88,7 +89,7 @@ def add_poster_by_email(conference, message):
             set_password_url = web_url_for(
                 'reset_password_get',
                 uid=user._id,
-                token=user.verification_key,
+                token=user.verification_key_v2['token'],
                 _absolute=True,
             )
         else:

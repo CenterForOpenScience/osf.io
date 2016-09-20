@@ -108,13 +108,15 @@ def register_unconfirmed(username, password, fullname, campaign=None):
     return user
 
 
-def get_or_create_user(fullname, address, is_spam=False):
-    """Get or create user by email address.
+def get_or_create_user(fullname, address, verification_type='password', is_spam=False):
+    """
+    Get or create user by fullname and email address.
 
-    :param str fullname: User full name
-    :param str address: User email address
-    :param bool is_spam: User flagged as potential spam
-    :return: Tuple of (user, created)
+    :param str fullname: user full name
+    :param str address: user email address
+    :param str verification_type: the type of verification_key_v2; if None, no verification is required
+    :param bool is_spam: user flagged as potential spam
+    :return: tuple of (user, created)
     """
     user = get_user(email=address)
     if user:
@@ -122,7 +124,8 @@ def get_or_create_user(fullname, address, is_spam=False):
     else:
         password = str(uuid.uuid4())
         user = User.create_confirmed(address, password, fullname)
-        user.verification_key = generate_verification_key()
+        if verification_type:
+            user.verification_key_v2 = generate_verification_key(verification_type=verification_type)
         if is_spam:
             user.system_tags.append('is_spam')
         return user, True
