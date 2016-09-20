@@ -31,9 +31,10 @@ def patched_models():
 
 @pytest.fixture()
 def app():
-    test_app = init_app(
-        settings_module='website.settings', routes=True, set_backends=False,
-    )
+    try:
+        test_app = init_app(routes=True, set_backends=False)
+    except AssertionError:  # Routes have already been set up
+        test_app = init_app(routes=False, set_backends=False)
     test_app.testing = True
     return test_app
 

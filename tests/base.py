@@ -55,10 +55,10 @@ def get_default_metaschema():
         ensure_schemas()
         return MetaSchema.find()[0]
 
-# Just a simple app without routing set up or backends
-test_app = init_app(
-    settings_module='website.settings', routes=True, set_backends=False,
-)
+try:
+    test_app = init_app(routes=True, set_backends=False)
+except AssertionError:  # Routes have already been set up
+    test_app = init_app(routes=False, set_backends=False)
 test_app.testing = True
 
 
