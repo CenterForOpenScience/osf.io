@@ -395,6 +395,28 @@ class TestContributorMethods:
         assert node.logs.latest().action == 'contributor_removed'
         assert node.logs.latest().params['contributors'] == [user2._id]
 
+    def test_remove_contributors(self, node, auth):
+        user1 = UserFactory()
+        user2 = UserFactory()
+        node.add_contributors(
+            [
+                {'user': user1, 'permissions': ['read', 'write'], 'visible': True},
+                {'user': user2, 'permissions': ['read', 'write'], 'visible': False}
+            ],
+            auth=auth
+        )
+        assert user1 in node.contributors
+        assert user2 in node.contributors
+
+        node.remove_contributors(auth=auth, contributors=[user1, user2], save=True)
+        node.reload()
+
+        assert user1 not in node.contributors
+        assert user2 not in node.contributors
+        assert node.get_permissions(user1) == []
+        assert node.get_permissions(user2) == []
+        assert node.logs.latest().action == 'contributor_removed'
+
 
     def test_replace_contributor(self, node):
         contrib = UserFactory()
