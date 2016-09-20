@@ -13,9 +13,10 @@ from werkzeug.wrappers import BaseResponse
 
 from framework import auth
 from framework.auth import cas
+from framework.auth.utils import validate_recaptcha
 from framework.sessions import Session
 from framework.exceptions import HTTPError
-from tests.base import OsfTestCase, assert_is_redirect
+from tests.base import OsfTestCase, assert_is_redirect, fake
 from tests.factories import (
     UserFactory, UnregUserFactory, AuthFactory,
     ProjectFactory, NodeFactory, AuthUserFactory, PrivateLinkFactory
@@ -34,7 +35,7 @@ from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
 )
 
-from tests.test_cas_authentication import make_external_response
+from tests.test_cas_authentication import make_external_response, generate_external_user_with_resp
 
 
 class TestAuthUtils(OsfTestCase):
@@ -112,16 +113,47 @@ class TestAuthUtils(OsfTestCase):
         )
 
     def test_get_user_by_external_info(self):
-        user = UserFactory.build()
-        validated_creds = cas.validate_external_credential(make_external_response().user)
-        user.external_identity = {
-            validated_creds['provider']: {
-                validated_creds['id']: 'VERIFIED'
-            }
-        }
+        user, validated_credentials, cas_resp = generate_external_user_with_resp()
         user.save()
+        assert_equal(auth.get_user(external_id_provider=validated_credentials['provider'], external_id=validated_credentials['id']), user)
 
-        assert_equal(auth.get_user(external_id_provider=validated_creds['provider'], external_id=validated_creds['id']), user)
+    @mock.patch('framework.auth.cas.get_user_from_cas_resp')
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_successful_external_login_cas_redirect(self, mock_service_validate, mock_get_user_from_cas_resp):
+        user, validated_credentials, cas_resp = generate_external_user_with_resp()
+        mock_service_validate.return_value = cas_resp
+        mock_get_user_from_cas_resp.return_value = (user, validated_credentials, 'authenticate')
+        ticket = fake.md5()
+        service_url = 'http://accounts.osf.io/?ticket=' + ticket
+        resp = cas.make_response_from_ticket(ticket, service_url)
+        assert_equal(resp.status_code, 302, 'redirect to CAS login')
+        assert_in('/login?service=', resp.location)
+        assert_in('username={}'.format(user.username), resp.location)
+        assert_in('verification_key={}'.format(user.verification_key), resp.location)
+
+    @mock.patch('framework.auth.cas.get_user_from_cas_resp')
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_successful_external_first_login(self, mock_service_validate, mock_get_user_from_cas_resp):
+        _, validated_credentials, cas_resp = generate_external_user_with_resp(user=False)
+        mock_service_validate.return_value = cas_resp
+        mock_get_user_from_cas_resp.return_value = (None, validated_credentials, 'external_first_login')
+        ticket = fake.md5()
+        service_url = 'http://accounts.osf.io/?ticket=' + ticket
+        resp = cas.make_response_from_ticket(ticket, service_url)
+        assert_equal(resp.status_code, 302, 'redirect to external login email get')
+        assert_in('/external-login/email', resp.location)
+
+    @mock.patch('framework.auth.cas.external_first_login_authenticate')
+    @mock.patch('framework.auth.cas.get_user_from_cas_resp')
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_successful_external_first_login_without_attributes(self, mock_service_validate, mock_get_user_from_cas_resp, mock_external_first_login_authenticate):
+        user, validated_credentials, cas_resp = generate_external_user_with_resp(user=False, release=False)
+        mock_service_validate.return_value = cas_resp
+        mock_get_user_from_cas_resp.return_value = (None, validated_credentials, 'external_first_login')
+        ticket = fake.md5()
+        service_url = 'http://accounts.osf.io/?ticket=' + ticket
+        resp = cas.make_response_from_ticket(ticket, service_url)
+        assert_equal(user, mock_external_first_login_authenticate.call_args[0][0])
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_password_change_sends_email(self, mock_mail):
@@ -138,6 +170,35 @@ class TestAuthUtils(OsfTestCase):
             'mail': mails.PASSWORD_RESET,
             'to_addr': user.username,
         })
+
+    @mock.patch('framework.auth.utils.requests.post')
+    def test_validate_recaptcha_success(self, req_post):
+        resp = mock.Mock()
+        resp.status_code = http.OK
+        resp.json = mock.Mock(return_value={'success': True})
+        req_post.return_value = resp
+        assert_true(validate_recaptcha('a valid captcha'))
+
+    @mock.patch('framework.auth.utils.requests.post')
+    def test_validate_recaptcha_valid_req_failure(self, req_post):
+        resp = mock.Mock()
+        resp.status_code = http.OK
+        resp.json = mock.Mock(return_value={'success': False})
+        req_post.return_value = resp
+        assert_false(validate_recaptcha(None))
+
+    @mock.patch('framework.auth.utils.requests.post')
+    def test_validate_recaptcha_invalid_req_failure(self, req_post):
+        resp = mock.Mock()
+        resp.status_code = http.BAD_REQUEST
+        resp.json = mock.Mock(return_value={'success': True})
+        req_post.return_value = resp
+        assert_false(validate_recaptcha(None))
+
+    @mock.patch('framework.auth.utils.requests.post', side_effect=AssertionError())
+    def test_validate_recaptcha_empty_response(self, req_post):
+        # ensure None short circuits execution (no call to google)
+        assert_false(validate_recaptcha(None))
 
 
 class TestAuthObject(OsfTestCase):

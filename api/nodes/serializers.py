@@ -13,7 +13,7 @@ from website.addons.base.exceptions import InvalidFolderError, InvalidAuthError
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, LATEST_SCHEMA_VERSION
 from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.models import Node, Comment, Institution, MetaSchema, DraftRegistration, PrivateLink
-from website.exceptions import NodeStateError, TooManyRequests
+from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 from website.project import new_private_link
 from website.project.model import NodeUpdateError
@@ -45,6 +45,34 @@ class NodeLicenseSerializer(RestrictedDictSerializer):
 
     copyright_holders = ser.ListField(allow_empty=True, read_only=True)
     year = ser.CharField(allow_blank=True, read_only=True)
+
+
+class NodeCitationSerializer(JSONAPISerializer):
+    id = IDField(read_only=True)
+    title = ser.CharField(allow_blank=True, read_only=True)
+    author = ser.ListField(read_only=True)
+    publisher = ser.CharField(allow_blank=True, read_only=True)
+    type = ser.CharField(allow_blank=True, read_only=True)
+    doi = ser.CharField(allow_blank=True, read_only=True)
+
+    links = LinksField({'self': 'get_absolute_url'})
+
+    def get_absolute_url(self, obj):
+        return obj['URL']
+
+    class Meta:
+        type_ = 'node-citation'
+
+class NodeCitationStyleSerializer(JSONAPISerializer):
+
+    id = ser.CharField(read_only=True)
+    citation = ser.CharField(allow_blank=True, read_only=True)
+
+    def get_absolute_url(self, obj):
+        return obj['URL']
+
+    class Meta:
+        type_ = 'styled-citations'
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -231,6 +259,11 @@ class NodeSerializer(JSONAPISerializer):
     view_only_links = RelationshipField(
         related_view='nodes:node-view-only-links',
         related_view_kwargs={'node_id': '<pk>'},
+    )
+
+    citation = RelationshipField(
+        related_view='nodes:node-citation',
+        related_view_kwargs={'node_id': '<pk>'}
     )
 
     def get_current_user_permissions(self, obj):
@@ -705,8 +738,6 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
                 auth=auth, user_id=id, email=email, full_name=full_name, send_email=send_email,
                 permissions=permissions, bibliographic=bibliographic, index=index, save=True
             )
-        except TooManyRequests:
-            raise exceptions.Throttled(detail='Too many contributor adds. Please wait a while and try again')
         except ValidationValueError as e:
             raise exceptions.ValidationError(detail=e.message)
         except ValueError as e:

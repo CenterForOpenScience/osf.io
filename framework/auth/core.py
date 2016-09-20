@@ -11,6 +11,8 @@ import bson
 import pytz
 import itsdangerous
 
+from flask import Request as FlaskRequest
+
 from modularodm import fields, Q
 from modularodm.exceptions import NoResultsFound, ValidationError, ValidationValueError, QueryException
 from modularodm.validators import URLValidator
@@ -24,6 +26,7 @@ from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError, I
 from framework.bcrypt import generate_password_hash, check_password_hash
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
+from framework.mongo import get_cache_key
 from framework.mongo.validators import string_required
 from framework.sentry import log_exception
 from framework.sessions import session
@@ -1189,9 +1192,11 @@ class User(GuidStoredObject, AddonModelMixin):
     def disable_account(self):
         """
         Disables user account, making is_disabled true, while also unsubscribing user
-        from mailchimp emails.
+        from mailchimp emails, remove any existing sessions.
         """
         from website import mailchimp_utils
+        from framework.auth import logout
+
         try:
             mailchimp_utils.unsubscribe_mailchimp(
                 list_name=settings.MAILCHIMP_GENERAL_LIST,
@@ -1208,6 +1213,13 @@ class User(GuidStoredObject, AddonModelMixin):
         except mailchimp_utils.mailchimp.EmailNotExistsError:
             pass
         self.is_disabled = True
+
+        # we must call both methods to ensure the current session is cleared and all existing
+        # sessions are revoked.
+        req = get_cache_key()
+        if isinstance(req, FlaskRequest):
+            logout()
+        remove_sessions_for_user(self)
 
     @property
     def is_disabled(self):

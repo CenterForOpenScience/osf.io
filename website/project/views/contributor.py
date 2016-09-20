@@ -12,7 +12,7 @@ from framework.auth.core import get_user, generate_verification_key
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import PasswordForm, SetEmailAndPasswordForm
 from framework.auth.signals import user_registered
-from framework.auth.utils import validate_email
+from framework.auth.utils import validate_email, validate_recaptcha
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
@@ -671,8 +671,18 @@ def claim_user_form(auth, **kwargs):
     claimer_email = unclaimed_record.get('claimer_email') or unclaimed_record.get('email')
     form = SetEmailAndPasswordForm(request.form, token=token)
     if request.method == 'POST':
-        if form.validate():
+        if not form.validate():
+            forms.push_errors_to_status(form.errors)
+        elif settings.RECAPTCHA_SITE_KEY and not validate_recaptcha(request.form.get('g-recaptcha-response'), remote_ip=request.remote_addr):
+            status.push_status_message('Invalid captcha supplied.', kind='error')
+        else:
             username, password = claimer_email, form.password.data
+            if not username:
+                raise HTTPError(http.BAD_REQUEST, data=dict(
+                    message_long='No email associated with this account. Please claim this '
+                    'account on the project to which you were invited.'
+                ))
+
             user.register(username=username, password=password)
             # Clear unclaimed records
             user.unclaimed_records = {}
@@ -686,8 +696,6 @@ def claim_user_form(auth, **kwargs):
                 username=user.username,
                 verification_key=user.verification_key
             ))
-        else:
-            forms.push_errors_to_status(form.errors)
 
     return {
         'firstname': user.given_name,

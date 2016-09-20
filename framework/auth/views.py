@@ -22,7 +22,7 @@ from framework.auth.exceptions import DuplicateEmailError, ExpiredTokenError, In
 from framework.auth.core import generate_verification_key
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import ResendConfirmationForm, ForgotPasswordForm, ResetPasswordForm
-from framework.auth.utils import ensure_external_identity_uniqueness
+from framework.auth.utils import ensure_external_identity_uniqueness, validate_recaptcha
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions.utils import remove_sessions_for_user, remove_session
@@ -346,6 +346,10 @@ def external_login_confirm_email_get(auth, uid, token):
     View for email confirmation links when user first login through external identity provider.
     HTTP Method: GET
 
+    When users click the confirm link, they are expected not to be logged in. If not, they will be logged out first and
+    redirected back to this view. After OSF verifies the link and performs all actions, they will be automatically
+    logged in through CAS and redirected back to this view again being authenticated.
+
     :param auth: the auth context
     :param uid: the user's primary key
     :param token: the verification token
@@ -354,13 +358,15 @@ def external_login_confirm_email_get(auth, uid, token):
     if not user:
         raise HTTPError(http.BAD_REQUEST)
 
+    # if user is already logged in
     if auth and auth.user:
+        # if it is the expected user
         if auth.user._id == user._id:
             new = request.args.get('new', None)
             if new:
                 status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True)
             return redirect(web_url_for('index'))
-        # If user is already logged in, log user out and retry request
+        # if it is a wrong user
         return auth_logout(redirect_url=request.url)
 
     # token is invalid
@@ -634,13 +640,21 @@ def register_user(**kwargs):
     :raises: HTTPError(http.BAD_REQUEST) if validation fails or user already exists
     """
 
-    # Verify email address match
+    # Verify that email address match
     json_data = request.get_json()
     if str(json_data['email1']).lower() != str(json_data['email2']).lower():
         raise HTTPError(
             http.BAD_REQUEST,
             data=dict(message_long='Email addresses must match.')
         )
+
+    # Verify that captcha is valid
+    if settings.RECAPTCHA_SITE_KEY and not validate_recaptcha(json_data.get('g-recaptcha-response'), remote_ip=request.remote_addr):
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data=dict(message_long='Invalid Captcha')
+        )
+
     try:
         full_name = request.json['fullName']
         full_name = strip_html(full_name)

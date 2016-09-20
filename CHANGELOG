@@ -2,6 +2,45 @@
 Changelog
 *********
 
+0.93.0 (2016-09-14)
+===================
+
+- Update/replace GPLv3-licensed pyzotero
+- Remove spurious \.png with problematic file name
+- Allow ability to add DOIs/ARKs to Public Projects
+- Add API rate limiting mechanism that works for all authorizations
+- Reference institutions with institution viewer text for empty collections
+- Put rabbitmq into the setup task
+- Replace "newest Public Projects" with "Noteworthy Public Projects
+- Tell Read-only contributors why they can't affiliate a project with their institution
+- Add date_modified lt/gt/lte/gte filter to registrations
+- Refactor the registration modal
+- Fix Varnish tests
+
+Migrations
+----------
+
+- python -m scripts.migration.migrate_retraction_dates
+
+0.92.0 (2016-09-06)
+===================
+
+- Ensure Mendeley 500 does not prevent file tree from loading
+- API Remove unused routes for registrations
+- Allow access to meetings in Admin App when unconfirmed users are contributors to meeting
+- Allow homepage link text to be not-required in Admin app
+- API Allow filtering on providers by type
+- Create analytics script for institutions data
+- API Make VOLs append view_only query parameter to generated links
+- Raise minimum password length to 8 characters
+- Add SSRN ID to social links
+- Warn users they cannot search by email address
+- Improve look of Institution Logos on dashboard
+- Display component descriptions in search results
+- Make log urls relative
+- Update At.js dependency
+- Refactor search tests
+
 0.91.0 (2016-08-28)
 ===================
 

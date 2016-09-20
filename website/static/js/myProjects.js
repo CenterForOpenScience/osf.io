@@ -51,8 +51,10 @@ if (!window.Set) {
 }
 
 
-function NodeFetcher(type, link, handleOrphans) {
+function NodeFetcher(type, link, handleOrphans, regType, regLink) {
   this.type = type || 'nodes';
+  this.regType = regType || null;
+  this.regLink = regLink || null;
   this.loaded = 0;
   this._failed = 0;
   this.total = 0;
@@ -186,9 +188,11 @@ NodeFetcher.prototype = {
         this._cache[parentId].children.push(item);
         return false;
       }).bind(this));
-
-      // if (results.data[i].relationships.children.links.related.meta.count > 0)
-      //   this.fetchChildren(results.data[i]);
+    }
+    if(!this.nextLink && this.regLink) {
+        this.nextLink = this.regLink;
+        this.type = this.regType;
+        this.regLink = null;
     }
 
     this._callbacks.page.forEach((function(cb) {
@@ -304,10 +308,10 @@ var LinkObject = function _LinkObject (type, data, label, institutionId) {
  * @param id {String} unique id of the node like 'ez8f3'
  * @returns {{data: {type: string, relationships: {nodes: {data: {type: string, id: *}}}}}}
  */
-function buildCollectionNodeData (id) {
+function buildCollectionNodeData (id, type) {
     return {
         'data': [{
-            'type': 'linked_nodes',
+            'type': 'linked_'+type,
             'id': id
         }]
     };
@@ -442,7 +446,7 @@ var MyProjects = {
 
         /* filesData is the link that loads tree data. This function refreshes that information. */
         self.updateFilesData = function _updateFilesData(linkObject) {
-            if ((linkObject.type === 'node') && self.viewOnly){
+            if ((linkObject.type === 'node' || linkObject.type === 'registration') && self.viewOnly){
                 return;
             }
 
@@ -500,32 +504,42 @@ var MyProjects = {
             var currentCollection = self.currentView().collection;
             var collectionNode = currentCollection.data.node; // If it's not a system collection like projects or registrations this will have a node
 
-            var data = {
-              data: self.selected().map(function(item){
-                return {id: item.data.id, type: 'linked_nodes'};
-              })
-            };
-
-            m.request({
-                method : 'DELETE',
-                url : collectionNode.links.self + 'relationships/' + 'linked_nodes/',  //collection.links.self + 'node_links/' + item.data.id + '/', //collection.links.self + relationship/ + linked_nodes/
-                config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain}),
-                data : data
-            }).then(function(result) {
-              data.data.forEach(function(item) {
-                  self.fetchers[currentCollection.id].remove(item.id);
-                  currentCollection.data.count(currentCollection.data.count()-1);
-                  self.updateSelected([]);
-              });
-              self.updateList();
-            }, function _removeProjectFromCollectionsFail(result){
-                var message = 'Some projects';
-                if(data.data.length === 1) {
-                    message = self.selected()[0].data.name;
+            var link_types = {'linked_nodes': {'data': []},
+                              'linked_registrations': {'data': []}};
+            self.selected().map(function(item){
+                if(item.data.type === 'nodes') {
+                    link_types.linked_nodes.data.push({id: item.data.id,
+                                                       type: 'linked_nodes'});
                 } else {
-                    message += ' could not be removed from the collection';
+                    link_types.linked_registrations.data.push({id: item.data.id,
+                                                 type: 'linked_registrations'});
                 }
-                $osf.growl(message, 'Please try again.', 'danger', 5000);
+            });
+
+            $.each(link_types, function(link_type, data) {
+                if(link_types[link_type].data.length > 0) {
+                    m.request({
+                        method : 'DELETE',
+                        url : collectionNode.links.self + 'relationships/' + link_type  + '/',
+                        config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain}),
+                        data : data
+                    }).then(function(result) {
+                      data.data.forEach(function(item) {
+                          self.fetchers[currentCollection.id].remove(item.id);
+                          currentCollection.data.count(currentCollection.data.count()-1);
+                          self.updateSelected([]);
+                      });
+                      self.updateList();
+                    }, function _removeProjectFromCollectionsFail(result){
+                        var message = 'Some projects';
+                        if(data.data.length === 1) {
+                            message = self.selected()[0].data.name;
+                        } else {
+                            message += ' could not be removed from the collection';
+                        }
+                        $osf.growl(message, 'Please try again.', 'danger', 5000);
+                    });
+                }
             });
         };
 
@@ -559,8 +573,6 @@ var MyProjects = {
             var contributors = self.currentView().contributor;
 
             return self.currentView().fetcher._flat.filter(function(node) {
-              // var tagMatch = tags.length === 0;
-              // var contribMatch = contributors.length === 0;
               var tagMatch = true;
               var contribMatch = true;
 
@@ -620,9 +632,17 @@ var MyProjects = {
                         template = m('.db-non-load-template.m-md.p-md.osf-box',
                             'You have not created any projects yet.');
                     } else if (lastcrumb.data.nodeType === 'registrations'){
-                        template = m('.db-non-load-template.m-md.p-md.osf-box',
+                        if (self.institutionId) {
+                            template = m('.db-non-load-template.m-md.p-md.osf-box',
+                                'There have been no completed registrations for this institution, but you can view the ',
+                                m('a', {href: 'https://osf.io/explore/activity/#newPublicRegistrations'}, 'newest public registrations'),
+                                ' or ',
+                                m('a', {href: 'https://osf.io/explore/activity/#popularPublicRegistrations'}, 'popular public registrations.'));
+                        } else {
+                            template = m('.db-non-load-template.m-md.p-md.osf-box',
                             'You have not made any registrations yet. Go to ',
                             m('a', {href: 'http://help.osf.io/m/registrations'}, 'Getting Started'), ' to learn how registrations work.' );
+                        }
                     } else if (lodashGet(lastcrumb, 'data.node.attributes.bookmarks')) {
                         template = m('.db-non-load-template.m-md.p-md.osf-box', 'You have no bookmarks. You can add projects or registrations by dragging them into your bookmarks or by clicking the Add to Bookmark button on the project or registration.');
                     } else {
@@ -797,12 +817,13 @@ var MyProjects = {
             var promise = m.request({method : 'GET', url : url, config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain})});
             promise.then(function(result){
                 result.data.forEach(function(node){
-                    var count = node.relationships.linked_nodes.links.related.meta.count;
-                    self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children', 'embed' : 'contributors' }, nodeType : 'collection', node : node, count : m.prop(count), loaded: 1 }, node.attributes.title));
+                    var count = node.relationships.linked_registrations.links.related.meta.count + node.relationships.linked_nodes.links.related.meta.count;
+                    self.collections().push(new LinkObject('collection', {nodeType : 'collection', node : node, count : m.prop(count), loaded: 1 }, node.attributes.title));
 
+                    var regLink = $osf.apiV2Url('collections/' + node.id + '/linked_registrations/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
                     var link = $osf.apiV2Url('collections/' + node.id + '/linked_nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
-                    self.fetchers[self.collections()[self.collections().length-1].id] = new NodeFetcher('nodes', link, false);
-                    self.fetchers[self.collections()[self.collections().length-1].id].on(['page', 'done'], self.onPageLoad);
+                    self.fetchers[self.collections()[self.collections().length-1].id] = new NodeFetcher('nodes', link, false, 'registraions', regLink);
+                    self.fetchers[self.collections()[self.collections().length-1].id].on(['page'], self.onPageLoad);
                 });
                 if(result.links.next){
                     self.loadCollections(result.links.next);
@@ -862,7 +883,7 @@ var MyProjects = {
                 self.fetchers[self.systemCollections[1].id].on(['page', 'done'], self.onPageLoad);
             });
             if (!self.viewOnly){
-                var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : 'linked_nodes', 'page[size]' : self.collectionsPageSize(), 'sort' : 'date_created', 'embed' : 'node_links'}});
+                var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : 'linked_registrations,linked_nodes', 'page[size]' : self.collectionsPageSize(), 'sort' : 'date_created', 'embed' : 'linked_nodes'}});
                 self.loadCollections(collectionsUrl);
             }
             // Add linkObject to the currentView
@@ -1169,16 +1190,16 @@ var Collections = {
                 drop: function( event, ui ) {
                     var dataArray = [];
                     var collection = self.collections()[$(this).attr('data-index')];
-                    var collectionLink = $osf.apiV2Url(collection.data.path, { query : collection.data.query});
                     // If multiple items are dragged they have to be selected to make it work
                     if (args.selected().length > 1) {
                         dataArray = args.selected().map(function(item){
-                            $osf.trackClick('myProjects', 'projectOrganizer', 'multiple-projects-dragged-to-collection');
-                            return buildCollectionNodeData(item.data.id);
+                            return buildCollectionNodeData(item.data.id,
+                                                           item.data.type);
                         });
+                        $osf.trackClick('myProjects', 'projectOrganizer', 'multiple-projects-dragged-to-collection');
                     } else {
                         // if single items are passed use the event information
-                        dataArray.push(buildCollectionNodeData(ui.draggable.find('.title-text>a').attr('data-nodeID'))); // data-nodeID attribute needs to be set in project organizer building title column
+                        dataArray.push(buildCollectionNodeData(ui.draggable.find('.title-text>a').attr('data-nodeID'), ui.draggable.find('.title-text>a').attr('data-nodeType'))); // data-nodeID and data-nodeType attribute needs to be set in project organizer building title column
                         var projectName = ui.draggable.find('.title-text>a').attr('data-nodeTitle');
                         $osf.trackClick('myProjects', 'projectOrganizer', 'single-project-dragged-to-collection');
                     }
@@ -1188,7 +1209,7 @@ var Collections = {
                         return args.currentView().fetcher === args.fetchers[collection.id] ? args.updateList() : null;
                       m.request({
                           method : 'POST',
-                          url : collection.data.node.links.self + 'relationships/linked_nodes/',
+                          url : collection.data.node.links.self + 'relationships/' + data[index].data[0].type  + '/',
                           config : mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain}),
                           data : data[index]
                       }).then(function(result){

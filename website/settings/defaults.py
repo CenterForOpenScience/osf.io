@@ -42,8 +42,6 @@ CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_compon
 
 # Minimum seconds between forgot password email attempts
 SEND_EMAIL_THROTTLE = 30
-# Minimum seconds between API actions that generate emails
-API_SEND_EMAIL_THROTTLE = 0.1
 
 # Hours before pending embargo/retraction/registration automatically becomes active
 RETRACTION_PENDING_TIME = datetime.timedelta(days=2)
@@ -356,7 +354,6 @@ LOW_PRI_MODULES = {
     'scripts.osfstorage.files_audit',
     'scripts.osfstorage.glacier_audit',
     'scripts.populate_new_and_noteworthy_projects',
-    'scripts.meeting_visit_count',
     'website.search.elastic_search',
 }
 
@@ -422,7 +419,6 @@ CELERY_IMPORTS = (
     'scripts.approve_embargo_terminations',
     'scripts.triggered_mails',
     'scripts.send_queued_mails',
-    'scripts.meeting_visit_count',
 )
 
 # Modules that need metrics and release requirements
@@ -492,11 +488,6 @@ else:
             'task': 'scripts.populate_new_and_noteworthy_projects',
             'schedule': crontab(minute=0, hour=2, day_of_week=6),  # Saturday 2:00 a.m.
             'kwargs': {'dry_run': False}
-        },
-        'meeting_visit_count': {
-            'task': 'scripts.meeting_visit_count',
-            'schedule': crontab(minute=0, hour=0),  # Daily 12 a.m
-            'kwargs': {'dry_run': False},
         },
     }
 
@@ -1524,6 +1515,7 @@ BLACKLISTED_DOMAINS = [
     'squizzy.de',
     'ssoia.com',
     'startkeys.com',
+    'stexsy.com',
     'stinkefinger.net',
     'stop-my-spam.cf',
     'stop-my-spam.com',
@@ -1748,7 +1740,19 @@ BLACKLISTED_DOMAINS = [
     'zzz.com',
 ]
 
+# reCAPTCHA API
+RECAPTCHA_SITE_KEY = None
+RECAPTCHA_SECRET_KEY = None
+RECAPTCHA_VERIFY_URL = 'https://www.google.com/recaptcha/api/siteverify'
+
+# akismet spam check
 AKISMET_APIKEY = None
 SPAM_CHECK_ENABLED = False
+SPAM_CHECK_PUBLIC_ONLY = True
+SPAM_ACCOUNT_SUSPENSION_ENABLED = False
+SPAM_ACCOUNT_SUSPENSION_THRESHOLD = timedelta(hours=24)
 SPAM_FLAGGED_MAKE_NODE_PRIVATE = False
 SPAM_FLAGGED_REMOVE_FROM_SEARCH = False
+
+SHARE_URL = 'http://localhost:8000/'
+SHARE_API_TOKEN = None
