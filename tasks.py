@@ -43,7 +43,7 @@ def setup_tests(ctx, update=False, requirements=True, branch=POSTGRES_BRANCH):
         ctx.run('npm install list-of-licenses')
         # Install osf requirements
         ctx.run('invoke requirements')
-        ctx.run('invoke requirements --addons')
+        ctx.run('invoke requirements --addons --dev')
         # Hack to fix package conflict between uritemplate and uritemplate.py (dependency of github3.py)
         ctx.run('pip uninstall uritemplate.py --yes')
         ctx.run('pip install uritemplate.py==0.3.0')
@@ -60,13 +60,18 @@ def flake(ctx):
 @task(pre=[flake])
 def test(ctx, setup=False, update=False, requirements=True, branch=POSTGRES_BRANCH):
     import pytest
+    # Paths relative to osf.io/
+    TEST_MODULES = [
+        'osf_models_tests',
+        os.path.join('tests', 'test_views.py'),
+    ]
     if setup or update:
         setup_tests(ctx, update=update, requirements=requirements, branch=branch)
     if not os.path.exists('osf.io'):
         print('Must run "inv setup_tests" before running tests.')
         sys.exit(1)
     os.chdir('osf.io')
-    retcode = pytest.main(['osf_models_tests'])
+    retcode = pytest.main(TEST_MODULES)
     os.chdir('..')
     sys.exit(retcode)
 

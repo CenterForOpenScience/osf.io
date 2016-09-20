@@ -10,7 +10,6 @@ from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
 from django.contrib.postgres import fields
-from django.core.validators import validate_email
 from django.db import models
 from django.utils import timezone
 from modularodm.exceptions import NoResultsFound
@@ -19,18 +18,23 @@ import itsdangerous
 # OSF imports
 import framework.mongo
 from framework import analytics
-from framework.auth import signals
+from framework.auth import signals, Auth
 from framework.auth.exceptions import (
     ChangePasswordError,
     ExpiredTokenError,
     InvalidTokenError,
+    MergeConflictError,
     MergeConfirmedRequiredError
 )
+from framework.sessions.utils import remove_sessions_for_user
 from framework.exceptions import PermissionsError
 from framework.sentry import log_exception
 from website import filters
+from website import mails
+from website import settings as website_settings
 
 from osf_models.exceptions import reraise_django_validation_errors
+from osf_models.models.validators import validate_email, validate_social
 from osf_models.models.base import BaseModel, GuidMixin
 from osf_models.models.tag import Tag
 from osf_models.models.institution import Institution
@@ -192,6 +196,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     # verification key used for resetting password
     verification_key = models.CharField(max_length=255, null=True, blank=True)
 
+    email_last_sent = models.DateTimeField(null=True, blank=True)
+
     # confirmed emails
     #   emails should be stripped of whitespace and lower-cased before appending
     # TODO: Add validator to ensure an email address only exists once across
@@ -253,6 +259,16 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     family_name = models.CharField(max_length=255, blank=True)
     suffix = models.CharField(max_length=255, blank=True)
 
+    # identity for user logged in through external idp
+    external_identity = DateTimeAwareJSONField(default=dict, blank=True)
+    # Format: {
+    #   <external_id_provider>: {
+    #       <external_id>: <status from ('VERIFIED, 'CREATE', 'LINK')>,
+    #       ...
+    #   },
+    #   ...
+    # }
+
     # Employment history
     # jobs = fields.DictionaryField(list=True, validate=validate_history_item)
     # TODO: Add validation
@@ -288,7 +304,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     # Social links
     # social = fields.DictionaryField(validate=validate_social)
     # TODO: Add validation
-    social = DateTimeAwareJSONField(default=dict, blank=True)
+    social = DateTimeAwareJSONField(default=dict, blank=True, validators=[validate_social])
     # Format: {
     #     'profileWebsites': <list of profile websites>
     #     'twitter': <twitter id>,
@@ -466,6 +482,163 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     def contributed(self):
         return self.nodes.all()
 
+    @property
+    def can_be_merged(self):
+        """The ability of the `merge_user` method to fully merge the user"""
+        return True
+        # TODO: Uncomment when addons are implemented
+        # return all((addon.can_be_merged for addon in self.get_addons()))
+
+    def merge_user(self, user):
+        """Merge a registered user into this account. This user will be
+        a contributor on any project. if the registered user and this account
+        are both contributors of the same project. Then it will remove the
+        registered user and set this account to the highest permission of the two
+        and set this account to be visible if either of the two are visible on
+        the project.
+
+        :param user: A User object to be merged.
+        """
+        # Fail if the other user has conflicts.
+        if not user.can_be_merged:
+            raise MergeConflictError('Users cannot be merged')
+        # Move over the other user's attributes
+        # TODO: confirm
+        for system_tag in user.system_tags.all():
+            self.add_system_tag(system_tag)
+
+        self.is_claimed = self.is_claimed or user.is_claimed
+        self.is_invited = self.is_invited or user.is_invited
+
+        # copy over profile only if this user has no profile info
+        if user.jobs and not self.jobs:
+            self.jobs = user.jobs
+
+        if user.schools and not self.schools:
+            self.schools = user.schools
+
+        if user.social and not self.social:
+            self.social = user.social
+
+        unclaimed = user.unclaimed_records.copy()
+        unclaimed.update(self.unclaimed_records)
+        self.unclaimed_records = unclaimed
+        # - unclaimed records should be connected to only one user
+        user.unclaimed_records = {}
+
+        security_messages = user.security_messages.copy()
+        security_messages.update(self.security_messages)
+        self.security_messages = security_messages
+
+        notifications_configured = user.notifications_configured.copy()
+        notifications_configured.update(self.notifications_configured)
+        self.notifications_configured = notifications_configured
+        if not website_settings.RUNNING_MIGRATION:
+            for key, value in user.mailchimp_mailing_lists.iteritems():
+                # subscribe to each list if either user was subscribed
+                subscription = value or self.mailchimp_mailing_lists.get(key)
+                signals.user_merged.send(self, list_name=key, subscription=subscription)
+
+                # clear subscriptions for merged user
+                signals.user_merged.send(user, list_name=key, subscription=False, send_goodbye=False)
+
+        for target_id, timestamp in user.comments_viewed_timestamp.iteritems():
+            if not self.comments_viewed_timestamp.get(target_id):
+                self.comments_viewed_timestamp[target_id] = timestamp
+            elif timestamp > self.comments_viewed_timestamp[target_id]:
+                self.comments_viewed_timestamp[target_id] = timestamp
+
+        self.emails.extend(user.emails)
+        user.emails = []
+
+        for k, v in user.email_verifications.iteritems():
+            email_to_confirm = v['email']
+            if k not in self.email_verifications and email_to_confirm != user.username:
+                self.email_verifications[k] = v
+        user.email_verifications = {}
+
+        self.affiliated_institutions.add(*user.affiliated_institutions.values_list('pk', flat=True))
+
+        for service in user.external_identity:
+            for service_id in user.external_identity[service].iterkeys():
+                if not (
+                    service_id in self.external_identity.get(service, '') and
+                    self.external_identity[service][service_id] == 'VERIFIED'
+                ):
+                    # Prevent 'CREATE', merging user has already been created.
+                    external = user.external_identity[service][service_id]
+                    status = 'VERIFIED' if external == 'VERIFIED' else 'LINK'
+                    if self.external_identity.get(service):
+                        self.external_identity[service].update(
+                            {service_id: status}
+                        )
+                    else:
+                        self.external_identity[service] = {
+                            service_id: status
+                        }
+        user.external_identity = {}
+
+        # FOREIGN FIELDS
+        WatchConfig.objects.filter(user=user).update(user=self)
+
+        self.external_accounts.add(*user.external_accounts.values_list('pk', flat=True))
+
+        # - addons
+        # Note: This must occur before the merged user is removed as a
+        #       contributor on the nodes, as an event hook is otherwise fired
+        #       which removes the credentials.
+        for addon in user.get_addons():
+            user_settings = self.get_or_add_addon(addon.config.short_name)
+            user_settings.merge(addon)
+            user_settings.save()
+
+        # - projects where the user was a contributor
+        for node in user.contributed:
+            # Skip bookmark collection node
+            if node.is_bookmark_collection:
+                continue
+            # if both accounts are contributor of the same project
+            if node.is_contributor(self) and node.is_contributor(user):
+                user_permissions = node.get_permissions(user)
+                self_permissions = node.get_permissions(self)
+                permissions = max([user_permissions, self_permissions])
+                node.set_permissions(user=self, permissions=permissions)
+
+                visible1 = self._id in node.visible_contributor_ids
+                visible2 = user._id in node.visible_contributor_ids
+                if visible1 != visible2:
+                    node.set_visible(user=self, visible=True, log=True, auth=Auth(user=self))
+
+                node.contributor_set.filter(user=user).delete()
+            else:
+                node.contributor_set.filter(user=user).update(user=self)
+
+            node.save()
+
+        # - projects where the user was the creator
+        user.created.update(creator=self)
+
+        # - file that the user has checked_out, import done here to prevent import error
+        # TODO: Uncoment when StoredFileNode is implemented
+        # from website.files.models.base import FileNode
+        # for file_node in FileNode.files_checked_out(user=user):
+        #     file_node.checkout = self
+        #     file_node.save()
+
+        # finalize the merge
+
+        remove_sessions_for_user(user)
+
+        # - username is set to the GUID so the merging user can set it primary
+        #   in the future (note: it cannot be set to None due to non-null constraint)
+        user.username = user._id
+        user.set_unusable_password()
+        user.verification_key = None
+        user.osf_mailing_lists = {}
+        user.merged_by = self
+
+        user.save()
+
     def update_is_active(self):
         """Update ``is_active`` to be consistent with the fields that
         it depends on.
@@ -502,15 +675,41 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         user.set_password(password)
         return user
 
+    def set_password(self, raw_password, notify=True):
+        """Set the password for this user to the hash of ``raw_password``.
+        If this is a new user, we're done. If this is a password change,
+        then email the user about the change and clear all the old sessions
+        so that users will have to log in again with the new password.
+
+        :param raw_password: the plaintext value of the new password
+        :param notify: Only meant for unit tests to keep extra notifications from being sent
+        :rtype: list
+        :returns: Changed fields from the user save
+        """
+        had_existing_password = self.has_usable_password()
+        if self.username == raw_password:
+            raise ChangePasswordError(['Password cannot be the same as your email address'])
+        super(OSFUser, self).set_password(raw_password)
+        if had_existing_password and notify:
+            mails.send_mail(
+                to_addr=self.username,
+                mail=mails.PASSWORD_RESET,
+                mimetype='plain',
+                user=self
+            )
+            remove_sessions_for_user(self)
+
     @classmethod
-    def create_unconfirmed(cls, username, password, fullname, do_confirm=True,
-                           campaign=None):
+    def create_unconfirmed(cls, username, password, fullname, external_identity=None,
+                           do_confirm=True, campaign=None):
         """Create a new user who has begun registration but needs to verify
         their primary email address (username).
         """
         user = cls.create(username, password, fullname)
-        user.add_unconfirmed_email(username)
+        user.add_unconfirmed_email(username, external_identity=external_identity)
         user.is_registered = False
+        if external_identity:
+            user.external_identity.update(external_identity)
         if campaign:
             # needed to prevent cirular import
             from framework.auth.campaigns import system_tag_for_campaign  # skipci
@@ -550,7 +749,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
             if self.email_verifications[token].get('confirmed', False):
                 try:
                     user_merge = OSFUser.find_one(
-                        Q('emails', 'eq', self.email_verifications[token]['email'].lower())
+                        Q('emails', 'contains', [self.email_verifications[token]['email'].lower()])
                     )
                 except NoResultsFound:
                     user_merge = False
@@ -606,7 +805,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         self.family_name = parsed['family']
         self.suffix = parsed['suffix']
 
-    def add_unconfirmed_email(self, email, expiration=None):
+    def add_unconfirmed_email(self, email, expiration=None, external_identity=None):
         """Add an email verification token for a given email."""
 
         # TODO: This is technically not compliant with RFC 822, which requires
@@ -616,7 +815,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         #       ref: https://tools.ietf.org/html/rfc822#section-6
         email = email.lower().strip()
 
-        if email in self.emails:
+        if not external_identity and email in self.emails:
             raise ValueError('Email already confirmed to this user.')
 
         with reraise_django_validation_errors():
@@ -633,8 +832,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
             self.email_verifications = {}
 
         # confirmed used to check if link has been clicked
-        self.email_verifications[token] = {'email': email,
-                                           'confirmed': False}
+        self.email_verifications[token] = {
+            'email': email,
+            'confirmed': False,
+            'external_identity': external_identity
+        }
         self._set_email_token_expiration(token, expiration=expiration)
         return token
 
@@ -673,7 +875,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
                 return token
         raise KeyError('No confirmation token for email "{0}"'.format(email))
 
-    def get_confirmation_url(self, email, external=True, force=False):
+    def get_confirmation_url(self, email, external=True, force=False, external_id_provider=None):
         """Return the confirmation url for a given email.
 
         :raises: ExpiredTokenError if trying to access a token that is expired.
@@ -682,7 +884,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         config = apps.get_app_config('osf_models')
         base = config.domain if external else '/'
         token = self.get_confirmation_token(email, force=force)
-        return '{0}confirm/{1}/{2}/'.format(base, self._id, token)
+        if external_id_provider:
+            return '{0}confirm/external/{1}/{2}/'.format(base, self._id, token)
+        else:
+            return '{0}confirm/{1}/{2}/'.format(base, self._id, token)
 
     def register(self, username, password=None):
         """Registers the user.
@@ -810,8 +1015,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
             issues.append('Password cannot be the same as your email address')
         if not raw_old_password or not raw_new_password or not raw_confirm_password:
             issues.append('Passwords cannot be blank')
-        elif len(raw_new_password) < 6:
-            issues.append('Password should be at least six characters')
+        elif len(raw_new_password) < 8:
+            issues.append('Password should be at least eight characters')
         elif len(raw_new_password) > 256:
             issues.append('Password should not be longer than 256 characters')
 

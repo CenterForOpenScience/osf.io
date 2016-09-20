@@ -4,8 +4,9 @@ from django.apps import apps
 
 from osf_models.models.tag import Tag
 from osf_models.models.nodelog import NodeLog
-from website.exceptions import NodeStateError
-
+from website.exceptions import (
+    NodeStateError,
+)
 from framework.analytics import increment_user_activity_counters
 
 
@@ -120,6 +121,9 @@ class Taggable(models.Model):
 # TODO: Implement me
 class AddonModelMixin(models.Model):
 
+    def add_addon(self, *args, **kwargs):
+        return None
+
     def get_addons(self):
         return []
 
@@ -134,6 +138,9 @@ class AddonModelMixin(models.Model):
 
     def get_addon(self, *args, **kwargs):
         return None
+
+    def config_addons(self, config, auth=None, save=True):
+        pass
 
     class Meta:
         abstract = True
