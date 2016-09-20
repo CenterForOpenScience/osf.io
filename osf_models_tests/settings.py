@@ -1,3 +1,5 @@
+# Use API defaults. This allows these settings to work with API tests
+from api.base.settings.defaults import *  # noqa
 DEBUG_PROPAGATE_EXCEPTIONS = True
 DATABASES = {
     'default': {
@@ -12,21 +14,6 @@ DATABASES = {
 }
 SITE_ID = 1
 SECRET_KEY = 'not very secret in tests'
-USE_TZ = True
-STATIC_URL = '/static/'
-MIDDLEWARE_CLASSES = (
-    'django.middleware.common.CommonMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-)
-INSTALLED_APPS = (
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.staticfiles',
-    'osf_models',
-)
 PASSWORD_HASHERS = (
     'django.contrib.auth.hashers.MD5PasswordHasher',
 )
-AUTH_USER_MODEL = 'osf_models.OSFUser'
