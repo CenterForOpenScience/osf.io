@@ -496,3 +496,15 @@ class ApiOAuth2PersonalTokenFactory(DjangoModelFactory):
     scopes = 'osf.full_write osf.full_read'
 
     name = factory.Sequence(lambda n: 'Example OAuth2 Personal Token #{}'.format(n))
+
+
+class ApiOAuth2ApplicationFactory(DjangoModelFactory):
+    class Meta:
+        model = models.ApiOAuth2Application
+
+    owner = factory.SubFactory(UserFactory)
+
+    name = factory.Sequence(lambda n: 'Example OAuth2 Application #{}'.format(n))
+
+    home_url = 'ftp://ftp.ncbi.nlm.nimh.gov/'
+    callback_url = 'http://example.uk'

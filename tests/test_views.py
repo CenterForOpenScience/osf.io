@@ -65,6 +65,8 @@ from osf_models_tests.factories import (
     NodeFactory,
     InstitutionFactory,
     RegistrationFactory,
+    ApiOAuth2ApplicationFactory,
+    ApiOAuth2PersonalTokenFactory,
 )
 
 class Addon(MockAddonNodeSettings):
@@ -774,7 +776,7 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res.status_code, 451)
 
     def test_private_link_edit_name(self):
-        link = PrivateLinkFactory()
+        link = PrivateLinkFactory(name='link')
         link.nodes.add(self.project)
         link.save()
         assert_equal(link.name, 'link')

@@ -95,7 +95,6 @@ class TestRegisterNode:
             set(project.contributors.values_list('id', flat=True))
         )
 
-    @pytest.mark.skip('fork_node not yet implemented')
     def test_forked_from(self, registration, project, auth):
         # A a node that is not a fork
         assert registration.forked_from is None
