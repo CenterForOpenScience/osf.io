@@ -68,7 +68,7 @@ class GitLabProvider(ExternalProvider):
         return {
             'provider_id': client.host,
             'profile_url': user_info['web_url'],
-            'access_token': response['access_token'],
+            'oauth_key': response['access_token'],
             'display_name': client.host
         }
 
@@ -179,7 +179,7 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     @property
     def repo_url(self):
         if self.repo:
-            return  'https://{0}/{1}'.format(external_account.provider_id, self.repo)
+            return  'https://{0}/{1}'.format(self.external_account.display_name, self.repo)
 
     @property
     def short_url(self):
@@ -207,10 +207,6 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             owner = self.user_settings.owner
             connection = GitLabClient(external_account=self.external_account)
 
-            # TODO: Fetch repo list client-side
-            # Since /user/repos excludes organization repos to which the
-            # current user has push access, we have to make extra requests to
-            # find them
             valid_credentials = True
             try:
                 repos = connection.repos()
@@ -229,7 +225,7 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 'auth_osf_name': owner.fullname,
                 'auth_osf_url': owner.url,
                 'auth_osf_id': owner._id,
-                'gitlab_host': self.external_account.provider_id,
+                'gitlab_host': self.external_account.display_name,
                 'gitlab_user_name': self.external_account.display_name,
                 'gitlab_user_url': self.external_account.profile_url,
                 'is_owner': owner == user,
@@ -341,7 +337,7 @@ class GitLabNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                     ' The files in this GitLab repo can be viewed on GitLab '
                     '<u><a href="{base_url}/{repo}/">here</a></u>.'
                 ).format(
-                    base_url=gitlab_settings.GITLAB_BASE_URL,
+                    base_url="https://{0}".format(self.external_account.display_name),
                     repo=self.repo,
                 )
             messages.append(message)

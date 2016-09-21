@@ -45,9 +45,11 @@
                 <select id="gitlabSelectRepo" class="form-control" ${'disabled' if not is_owner or is_registration else ''}>
                     <option>-----</option>
                         % if is_owner:
-                            % for repo in repos:
-                                <option value="${repo['id']}" ${'selected' if repo['id'] == int(gitlab_repo_id) else ''}>${repo['path_with_namespace']}</option>
-                            % endfor
+                            % if repos:
+                              % for repo in repos:
+                                  <option value="${repo['id']}" ${'selected' if repo['id'] == int(gitlab_repo_id) else ''}>${repo['path_with_namespace']}</option>
+                              % endfor
+                            % endif
                         % else:
                             <option selected>${gitlab_repo_full_name}</option>
                         % endif
