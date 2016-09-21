@@ -45,7 +45,7 @@ def reset_password_get(auth, uid=None, token=None):
     :param uid: the user id
     :param token: the token in verification key
     :return
-    :raises: HTTPError(http.BAD_REQUEST) if verification key for the user is invalid or has expired
+    :raises: HTTPError(http.BAD_REQUEST) if verification key for the user is invalid, has expired or was used
     """
 
     # if users are logged in, log them out and redirect back to this page
@@ -79,7 +79,7 @@ def reset_password_post(uid=None, token=None):
     :param uid: the user id
     :param token: the token in verification key
     :return:
-    :raises: HTTPError(http.BAD_REQUEST) if verification_key is invalid
+    :raises: HTTPError(http.BAD_REQUEST) if verification key for the user is invalid, has expired or was used
     """
 
     form = ResetPasswordForm(request.form)

@@ -768,15 +768,15 @@ def claim_user_post(node, **kwargs):
         claimer = get_user(email=email)
         # registered user
         if claimer and claimer.is_registered:
-            send_claim_registered_email(claimer=claimer, unclaimed_user=unclaimed_user, node=node)
+            send_claim_registered_email(claimer, unclaimed_user, node)
         # unregistered user
         else:
-            send_claim_email(email=email, unclaimed_user=unclaimed_user, node=node, notify=True)
+            send_claim_email(email, unclaimed_user, node, notify=True)
     # Claimer is logged in with confirmed identity stored in `request_data['claimerId']`
     elif 'claimerId' in request_data:
         claimer_id = request_data['claimerId']
         claimer = User.load(claimer_id)
-        send_claim_registered_email(claimer=claimer, unclaimed_user=unclaimed_user, node=node)
+        send_claim_registered_email(claimer, unclaimed_user, node)
         email = claimer.username
     else:
         raise HTTPError(http.BAD_REQUEST)

@@ -35,7 +35,7 @@ with open(os.path.join(APP_PATH, 'package.json'), 'r') as fobj:
 EXPIRATION_TIME_DICT = {
     'password': 30,         # 30 minutes for forgot and reset password
     'confirm': 24 * 60,     # 24 hours in minutes for confirm account and email
-    'claim': 7 * 24 * 60    # 7 days in minutes for claim contributor-ship
+    'claim': 30 * 24 * 60   # 30 days in minutes for claim contributor-ship
 }
 
 CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_components', 'styles')

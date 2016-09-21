@@ -904,7 +904,7 @@ class TestForgotPassword(OsfTestCase):
         self.user.verification_key_v2 = {}
         self.user.save()
 
-    # log user out before land on forgot password page
+    # log users out before they land on forgot password page
     def test_forgot_password_logs_out_user(self):
         # visit forgot password link while another user is logged in
         res = self.app.get(self.get_url, auth=self.auth_user.auth)
@@ -1072,7 +1072,7 @@ class TestResetPassword(OsfTestCase):
         cas.make_response_from_ticket(ticket, service_url)
         assert_equal(self.user.verification_key, None)
 
-    #  log user out before land on reset password page
+    #  log users out before they land on reset password page
     def test_reset_password_logs_out_user(self):
         # visit reset password link while another user is logged in
         res = self.app.get(self.get_url, auth=self.another_user.auth)

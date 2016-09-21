@@ -125,13 +125,13 @@ def get_user(email=None, password=None, token=None, external_id_provider=None, e
     1. email
     2. email and password
     3  token
-    4. oauth_provider and oauth_id
+    4. external_id_provider and external_id
 
     :param token: the token in verification key
     :param email: user's email
     :param password: user's password
-    :param external_id_provider: the oauth provider
-    :param external_id: the oauth id
+    :param external_id_provider: the external identity provider
+    :param external_id: the external id
     :rtype User or None
     """
 
@@ -294,14 +294,14 @@ class User(GuidStoredObject, AddonModelMixin):
     is_invited = fields.BooleanField(default=False, index=True)
 
     # Per-project unclaimed user data:
-    # TODO: add a validation function that ensures that all required keys are present in the input values for that field
+    # TODO: add validation
     unclaimed_records = fields.DictionaryField(required=False)
     # Format: {
     #   <project_id>: {
     #       'name': <name that referrer provided>,
     #       'referrer_id': <user ID of referrer>,
-    #       'token': <verification key v1, used for verification urls>,
-    #       'expires': <expiration time for this record>,
+    #       'token': <verification token>,
+    #       'expires': <verification expiration time>,
     #       'email': <email the referrer provided or None>,
     #       'claimer_email': <email the claimer entered or None>,
     #       'last_sent': <timestamp of last email sent to referrer or None>
@@ -322,13 +322,15 @@ class User(GuidStoredObject, AddonModelMixin):
     merged_by = fields.ForeignField('user', default=None, index=True)
 
     # verification key v1: only the token string, no expiration time
+    # used for cas login with username and verification key
     verification_key = fields.StringField()
 
     # verification key v2: token, and expiration time
+    # used for password reset, confirm account/email, claim account/contributor-ship
     verification_key_v2 = fields.DictionaryField(default=dict)
     # Format: {
-    #   'token': <the verification key string>
-    #   'expires': <the expiration time for the key>
+    #   'token': <verification token>
+    #   'expires': <verification expiration time>
     # }
 
     email_last_sent = fields.DateTimeField()
