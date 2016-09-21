@@ -2,12 +2,13 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 
 from modularodm import Q
-from modularodm.exceptions import ValidationValueError
+from modularodm.exceptions import ValidationError
 
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 
 from django.conf import settings
+from django.apps import apps
 
 from website.addons.base.exceptions import InvalidFolderError, InvalidAuthError
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, LATEST_SCHEMA_VERSION
@@ -326,6 +327,7 @@ class NodeSerializer(JSONAPISerializer):
     def create(self, validated_data):
         request = self.context['request']
         user = request.user
+        Node = apps.get_model('osf_models.Node')
         if 'template_from' in validated_data:
             template_from = validated_data.pop('template_from')
             template_node = Node.load(template_from)
@@ -339,22 +341,20 @@ class NodeSerializer(JSONAPISerializer):
             node = template_node.use_as_template(auth=get_user_auth(request), changes=changed_data)
         else:
             node = Node(**validated_data)
-        node.recast('osf_models.node')
         try:
             node.save()
-        except ValidationValueError as e:
-            raise InvalidModelValueError(detail=e.message)
+        except ValidationError as e:
+            raise InvalidModelValueError(detail=e.messages[0])
         if is_truthy(request.GET.get('inherit_contributors')) and validated_data['parent'].has_permission(user, 'write'):
             auth = get_user_auth(request)
             parent = validated_data['parent']
             contributors = []
-            for contributor in parent.contributors:
-                if contributor is not user:
-                    contributors.append({
-                        'user': contributor,
-                        'permissions': parent.get_permissions(contributor),
-                        'visible': parent.get_visible(contributor)
-                    })
+            for contributor in parent.contributor_set.exclude(user=user):
+                contributors.append({
+                    'user': contributor.user,
+                    'permissions': parent.get_permissions(contributor.user),
+                    'visible': contributor.visible
+                })
             node.add_contributors(contributors, auth=auth, log=True, save=True)
         return node
 
