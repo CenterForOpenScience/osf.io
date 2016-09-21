@@ -438,6 +438,23 @@ class TestContributorMethods:
             contrib.unclaimed_records.keys()
         )
 
+class TestContributorProperties:
+
+    def test_admin_contributor_ids(self, user, node, auth):
+        user1 = UserFactory()
+        user2 = UserFactory()
+        node.add_contributors(
+            [
+                {'user': user1, 'permissions': ['read', 'write', 'admin'], 'visible': True},
+                {'user': user2, 'permissions': ['read', 'write'], 'visible': True}
+            ],
+            auth=auth
+        )
+
+        assert user.guid.guid in node.admin_contributor_ids
+        assert user1.guid.guid in node.admin_contributor_ids
+        assert user2.guid.guid not in node.admin_contributor_ids
+
 
 class TestContributorAddedSignal:
 
@@ -1569,6 +1586,7 @@ class TestNodeOrdering:
     def test_can_set_node_order(self, project, children):
         project.set_abstractnode_order([children[2].pk, children[1].pk, children[0].pk])
         assert list(project.nodes.all()) == [children[2], children[1], children[0]]
+
 
 def test_templated_list(node):
     templated1, templated2 = ProjectFactory(template_node=node), NodeFactory(template_node=node)
