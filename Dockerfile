@@ -135,6 +135,7 @@ COPY ./website/addons/github/static/ /code/website/addons/github/static/
 COPY ./website/addons/googledrive/static/ /code/website/addons/googledrive/static/
 COPY ./website/addons/mendeley/static/ /code/website/addons/mendeley/static/
 COPY ./website/addons/osfstorage/static/ /code/website/addons/osfstorage/static/
+COPY ./website/addons/owncloud/static/ /code/website/addons/owncloud/static/
 COPY ./website/addons/s3/static/ /code/website/addons/s3/static/
 COPY ./website/addons/twofactor/static/ /code/website/addons/twofactor/static/
 COPY ./website/addons/wiki/static/ /code/website/addons/wiki/static/
