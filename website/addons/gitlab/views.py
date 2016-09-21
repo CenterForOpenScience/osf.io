@@ -314,7 +314,7 @@ def gitlab_hgrid_data(node_settings, auth, **kwargs):
         'fetch': node_settings.owner.api_url + 'gitlab/hgrid/' + (ref or ''),
         'branch': node_settings.owner.api_url + 'gitlab/hgrid/root/',
         'zip': node_settings.owner.api_url + 'gitlab/zipball/',
-        'repo': '{0}/{1}/tree/{2}'.format(gitlab_settings.GITLAB_BASE_URL, node_settings.repo, branch)
+        'repo': 'https://{0}/{1}/tree/{2}'.format(node_settings.external_account.display_name, node_settings.repo, branch)
     }
 
     branch_names = [each['name'] for each in branches]
