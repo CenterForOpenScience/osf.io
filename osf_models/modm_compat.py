@@ -70,16 +70,19 @@ class Q(BaseQ, query.RawQuery):
                 field_aliases = getattr(model_cls, 'FIELD_ALIASES', {})
                 attribute = field_aliases.get(attribute, attribute)
                 field = _get_field(model_cls, attribute)
+                internal_type = _get_internal_type(field)
                 # Mongo compatibility fix: an 'eq' query on array fields
                 # behaves like 'contains' for postgres ArrayFields
-                # NOTE: GenericForeignKey does not implement get_internal_type
                 if (
-                    field and
-                    hasattr(field, 'get_internal_type') and
-                    field.get_internal_type() == 'ArrayField' and
+                    internal_type == 'ArrayField' and
                     query.operator == 'eq'
                 ):
                     return cls(attribute, 'contains', [query.argument])
+                # Queries like Q('tags', 'eq', []) should be translated to
+                # Q('tags', 'isnull', True)
+                elif internal_type == 'ManyToManyField' and query.argument in (list(), tuple()):
+                    is_null = query.operator == 'eq'
+                    return cls(attribute, 'isnull', is_null)
             return cls(attribute, query.operator, query.argument)
         elif isinstance(query, cls):
             if model_cls:
@@ -145,6 +148,15 @@ def _get_field(model_cls, field_name):
         return model_cls._meta.get_field(field_name)
     except FieldDoesNotExist:
         return None
+
+
+def _get_internal_type(field):
+    # NOTE: GenericForeignKey does not implement get_internal_type
+    if hasattr(field, 'get_internal_type'):
+        return field.get_internal_type()
+    else:
+        return None
+
 
 def to_django_query(query, model_cls=None):
     """Translate a modular-odm Q or QueryGroup to a Django query.
