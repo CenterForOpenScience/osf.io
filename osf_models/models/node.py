@@ -958,8 +958,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def move_contributor(self, user, auth, index, save=False):
         if not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can modify contributor order')
-        old_index = self.contributors.index(user)
-        self.contributors.insert(index, self.contributors.pop(old_index))
+        contributor_ids = list(self.get_contributor_order())
+        old_index = contributor_ids.index(user.id)
+        contributor_ids.insert(index, contributor_ids.pop(old_index))
+        self.set_contributor_order(contributor_ids)
         self.add_log(
             action=NodeLog.CONTRIB_REORDERED,
             params={
