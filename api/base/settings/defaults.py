@@ -158,7 +158,6 @@ MIDDLEWARE_CLASSES = (
     'api.base.middleware.DjangoGlobalMiddleware',
     'api.base.middleware.MongoConnectionMiddleware',
     'api.base.middleware.CeleryTaskMiddleware',
-    'api.base.middleware.TokuTransactionMiddleware',
     'api.base.middleware.PostcommitTaskMiddleware',
 
     # A profiling middleware. ONLY FOR DEV USE

@@ -19,7 +19,7 @@ import mock
 from faker import Factory
 from nose.tools import *  # noqa (PEP8 asserts)
 from pymongo.errors import OperationFailure
-from django.test import SimpleTestCase, override_settings
+from django.test import TransactionTestCase, override_settings
 from django.test import TestCase as DjangoTestCase
 
 from framework.auth import User
@@ -72,7 +72,8 @@ SILENT_LOGGERS = [
     'website.mails',
     'website.search_migration.migrate',
     'website.util.paths',
-    'api.caching.tasks'
+    'api.caching.tasks',
+    'website.notifications.listeners',
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
@@ -243,11 +244,13 @@ class TestAppJSONAPI(TestApp, JSONAPIWrapper):
 
 
 @override_settings(DEBUG_PROPAGATE_EXCEPTIONS=True)
-class ApiAppTestCase(SimpleTestCase):
+class ApiAppTestCase(TransactionTestCase):
     """Base `TestCase` for OSF API v2 tests that require the WSGI app (but no database).
     """
+
     def setUp(self):
         super(ApiAppTestCase, self).setUp()
+        from api.base.wsgi import application as api_django_app
         self.app = TestAppJSONAPI(api_django_app)
 
 

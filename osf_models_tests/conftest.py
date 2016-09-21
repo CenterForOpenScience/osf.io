@@ -18,7 +18,8 @@ SILENT_LOGGERS = [
     'website.mails',
     'website.search_migration.migrate',
     'website.util.paths',
-    'api.caching.tasks'
+    'api.caching.tasks',
+    'wbsite.notifications.listeners',
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)

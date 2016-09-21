@@ -2,12 +2,13 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 
 from modularodm import Q
-from modularodm.exceptions import ValidationValueError
+from modularodm.exceptions import ValidationError
 
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 
 from django.conf import settings
+from django.apps import apps
 
 from website.addons.base.exceptions import InvalidFolderError, InvalidAuthError
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS, LATEST_SCHEMA_VERSION
@@ -164,31 +165,31 @@ class NodeSerializer(JSONAPISerializer):
 
     children = RelationshipField(
         related_view='nodes:node-children',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_node_count'},
     )
 
     comments = RelationshipField(
         related_view='nodes:node-comments',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
         related_meta={'unread': 'get_unread_comments_count'},
-        filter={'target': '<pk>'}
+        filter={'target': '<_id>'}
     )
 
     contributors = RelationshipField(
         related_view='nodes:node-contributors',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_contrib_count'},
     )
 
     files = RelationshipField(
         related_view='nodes:node-providers',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<_id>'}
     )
 
     wikis = RelationshipField(
         related_view='nodes:node-wikis',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<_id>'}
     )
 
     forked_from = RelationshipField(
@@ -203,12 +204,12 @@ class NodeSerializer(JSONAPISerializer):
 
     forks = RelationshipField(
         related_view='nodes:node-forks',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<_id>'}
     )
 
     node_links = RelationshipField(
         related_view='nodes:node-pointers',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_pointers_count'},
     )
 
@@ -220,20 +221,20 @@ class NodeSerializer(JSONAPISerializer):
 
     draft_registrations = HideIfRegistration(RelationshipField(
         related_view='nodes:node-draft-registrations',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<_id>'}
     ))
 
     registrations = HideIfRegistration(RelationshipField(
         related_view='nodes:node-registrations',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_registration_count'}
     ))
 
     affiliated_institutions = RelationshipField(
         related_view='nodes:node-institutions',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
         self_view='nodes:node-relationships-institutions',
-        self_view_kwargs={'node_id': '<pk>'}
+        self_view_kwargs={'node_id': '<_id>'}
     )
 
     root = RelationshipField(
@@ -243,27 +244,27 @@ class NodeSerializer(JSONAPISerializer):
 
     logs = RelationshipField(
         related_view='nodes:node-logs',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_logs_count'}
     )
 
     linked_nodes = RelationshipField(
         related_view='nodes:linked-nodes',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_node_links_count'},
         self_view='nodes:node-pointer-relationship',
-        self_view_kwargs={'node_id': '<pk>'},
+        self_view_kwargs={'node_id': '<_id>'},
         self_meta={'count': 'get_node_links_count'}
     )
 
     view_only_links = RelationshipField(
         related_view='nodes:node-view-only-links',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
     )
 
     citation = RelationshipField(
         related_view='nodes:node-citation',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<_id>'}
     )
 
     def get_current_user_permissions(self, obj):
@@ -326,9 +327,10 @@ class NodeSerializer(JSONAPISerializer):
     def create(self, validated_data):
         request = self.context['request']
         user = request.user
+        Node = apps.get_model('osf_models.Node')
         if 'template_from' in validated_data:
             template_from = validated_data.pop('template_from')
-            template_node = Node.load(key=template_from)
+            template_node = Node.load(template_from)
             if template_node is None:
                 raise exceptions.NotFound
             if not template_node.has_permission(user, 'read', check_parent=False):
@@ -341,19 +343,18 @@ class NodeSerializer(JSONAPISerializer):
             node = Node(**validated_data)
         try:
             node.save()
-        except ValidationValueError as e:
-            raise InvalidModelValueError(detail=e.message)
+        except ValidationError as e:
+            raise InvalidModelValueError(detail=e.messages[0])
         if is_truthy(request.GET.get('inherit_contributors')) and validated_data['parent'].has_permission(user, 'write'):
             auth = get_user_auth(request)
             parent = validated_data['parent']
             contributors = []
-            for contributor in parent.contributors:
-                if contributor is not user:
-                    contributors.append({
-                        'user': contributor,
-                        'permissions': parent.get_permissions(contributor),
-                        'visible': parent.get_visible(contributor)
-                    })
+            for contributor in parent.contributor_set.exclude(user=user):
+                contributors.append({
+                    'user': contributor.user,
+                    'permissions': parent.get_permissions(contributor.user),
+                    'visible': contributor.visible
+                })
             node.add_contributors(contributors, auth=auth, log=True, save=True)
         return node
 
@@ -363,7 +364,7 @@ class NodeSerializer(JSONAPISerializer):
         """
         assert isinstance(node, Node), 'node must be a Node'
         auth = get_user_auth(self.context['request'])
-        old_tags = set([tag._id for tag in node.tags])
+        old_tags = set(node.tags.values_list('name', flat=True))
         if 'tags' in validated_data:
             current_tags = set(validated_data.pop('tags', []))
         elif self.partial:
@@ -379,7 +380,7 @@ class NodeSerializer(JSONAPISerializer):
         if validated_data:
             try:
                 node.update(validated_data, auth=auth)
-            except ValidationValueError as e:
+            except ValidationError as e:
                 raise InvalidModelValueError(detail=e.message)
             except PermissionsError:
                 raise exceptions.PermissionDenied
@@ -606,7 +607,7 @@ class NodeForksSerializer(NodeSerializer):
 
         try:
             fork.save()
-        except ValidationValueError as e:
+        except ValidationError as e:
             raise InvalidModelValueError(detail=e.message)
 
         return fork
@@ -663,7 +664,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
     users = RelationshipField(
         related_view='users:user-detail',
-        related_view_kwargs={'user_id': '<pk>'},
+        related_view_kwargs={'user_id': '<_id>'},
         always_embed=True
     )
 
@@ -703,7 +704,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
 
     users = RelationshipField(
         related_view='users:user-detail',
-        related_view_kwargs={'user_id': '<pk>'},
+        related_view_kwargs={'user_id': '<_id>'},
         required=False
     )
 
@@ -738,7 +739,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
                 auth=auth, user_id=id, email=email, full_name=full_name, send_email=send_email,
                 permissions=permissions, bibliographic=bibliographic, index=index, save=True
             )
-        except ValidationValueError as e:
+        except ValidationError as e:
             raise exceptions.ValidationError(detail=e.message)
         except ValueError as e:
             raise exceptions.NotFound(detail=e.message)
@@ -797,7 +798,7 @@ class NodeLinksSerializer(JSONAPISerializer):
 
     target_node = RelationshipField(
         related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
         always_embed=True
 
     )
@@ -1065,7 +1066,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
             try:
                 # Required fields are only required when creating the actual registration, not updating the draft.
                 draft.validate_metadata(metadata=metadata, reviewer=reviewer, required_fields=False)
-            except ValidationValueError as e:
+            except ValidationError as e:
                 raise exceptions.ValidationError(e.message)
             draft.update_metadata(metadata)
             draft.save()
@@ -1096,7 +1097,7 @@ class DraftRegistrationDetailSerializer(DraftRegistrationSerializer):
             try:
                 # Required fields are only required when creating the actual registration, not updating the draft.
                 draft.validate_metadata(metadata=metadata, reviewer=reviewer, required_fields=False)
-            except ValidationValueError as e:
+            except ValidationError as e:
                 raise exceptions.ValidationError(e.message)
             draft.update_metadata(metadata)
             draft.save()
@@ -1155,7 +1156,7 @@ class NodeViewOnlyLinkSerializer(JSONAPISerializer):
                 nodes=[node],
                 anonymous=anonymous
             )
-        except ValidationValueError:
+        except ValidationError:
             raise exceptions.ValidationError('Invalid link name.')
 
         return view_only_link

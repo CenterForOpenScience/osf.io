@@ -1,5 +1,6 @@
 import re
 from modularodm import Q
+from django.apps import apps
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed
 from rest_framework.status import HTTP_204_NO_CONTENT
@@ -263,13 +264,32 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
-    model_class = Node
+    model_class = apps.get_model('osf_models.AbstractNode')
 
     serializer_class = NodeSerializer
     view_category = 'nodes'
     view_name = 'node-list'
 
     ordering = ('-date_modified', )  # default ordering
+
+    def convert_key(self, *args, **kwargs):
+        key = super(NodeList, self).convert_key(*args, **kwargs)
+        if key == '_id':
+            return 'guid__guid'
+        elif key == 'root':
+            return 'root__guid__guid'
+        return key
+
+    # overrides FilterMixin
+    def postprocess_query_param(self, key, field_name, operation):
+        # tag queries will usually be on Tag.name,
+        # ?filter[tags]=foo should be translated to Q('tags__name', 'eq', 'foo')
+        # But queries on lists should be tags, e.g.
+        # ?filter[tags]=foo,bar should be translated to Q('tags', 'isnull', True)
+        # ?filter[tags]=[] should be translated to Q('tags', 'isnull', True)
+        if field_name == 'tags':
+            if operation['value'] not in (list(), tuple()):
+                operation['source_field_name'] = 'tags__name'
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
@@ -282,7 +302,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     def get_queryset(self):
         # For bulk requests, queryset is formed from request body.
         if is_bulk_request(self.request):
-            query = Q('_id', 'in', [node['id'] for node in self.request.data])
+            query = Q('guid__guid', 'in', [node['id'] for node in self.request.data])
             auth = get_user_auth(self.request)
 
             nodes = Node.find(query)
