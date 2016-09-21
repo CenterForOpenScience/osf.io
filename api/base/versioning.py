@@ -4,11 +4,7 @@ from rest_framework.compat import unicode_http_header
 from rest_framework.utils.mediatypes import _MediaType
 
 from api.base import exceptions
-
-
-URL_PATH_VERSION_TO_DECIMAL = {
-    'v2': '2.0',
-}
+from api.base import utils
 
 
 class BaseVersioning(drf_versioning.BaseVersioning):
@@ -16,12 +12,29 @@ class BaseVersioning(drf_versioning.BaseVersioning):
     def __init__(self):
         super(BaseVersioning, self).__init__()
 
+    def get_major_version(self, version):
+        try:
+            major_version = int(float(version))
+        except ValueError:
+            major_version = int(version.split('.')[0])
+        return major_version
+
+    def url_path_version_to_decimal(self, url_path_version):
+        # 'v2' --> '2.0'
+        return str(float(url_path_version.split('v')[1]))
+
+    def decimal_version_to_url_path(self, decimal_version):
+        # '2.0' --> 'v2'
+        return 'v{}'.format(self.get_major_version(decimal_version))
+
     def get_url_path_version(self, kwargs):
         invalid_version_message = 'Invalid version in URL path.'
         version = kwargs.get(self.version_param)
-        version = URL_PATH_VERSION_TO_DECIMAL.get(version, self.default_version)
+        version = self.url_path_version_to_decimal(version)
         if not self.is_allowed_version(version):
             raise drf_exceptions.NotFound(invalid_version_message)
+        if self.get_major_version(version) == self.get_major_version(self.default_version):
+            return self.default_version
         return version
 
     def get_header_version(self, request):
@@ -45,9 +58,9 @@ class BaseVersioning(drf_versioning.BaseVersioning):
         return version
 
     def validate_pinned_versions(self, url_path_version, header_version, query_parameter_version):
-        url_path_major_version = int(url_path_version.split('.')[0])
-        header_major_version = int(header_version.split('.')[0]) if header_version else None
-        query_major_version = int(query_parameter_version.split('.')[0]) if query_parameter_version else None
+        url_path_major_version = self.get_major_version(url_path_version)
+        header_major_version = self.get_major_version(header_version) if header_version else None
+        query_major_version = self.get_major_version(query_parameter_version) if query_parameter_version else None
         if header_version and header_major_version != url_path_major_version:
             raise exceptions.Conflict(
                 detail='Version {} specified in "Accept" header does not fall within URL path version {}'.format(
@@ -83,4 +96,13 @@ class BaseVersioning(drf_versioning.BaseVersioning):
         return version
 
     def reverse(self, viewname, args=None, kwargs=None, request=None, format=None, **extra):
-        pass
+        url_path_version = self.get_url_path_version(kwargs)
+        query_parameter_version = self.get_query_param_version(request)
+
+        kwargs = {} if (kwargs is None) else kwargs
+        kwargs[self.version_param] = self.decimal_version_to_url_path(url_path_version)
+        query_kwargs = {'version': query_parameter_version} if query_parameter_version else None
+
+        return utils.absolute_reverse(
+            viewname, query_kwargs=query_kwargs, args=args, kwargs=kwargs
+        )
