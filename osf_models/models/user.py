@@ -1,6 +1,7 @@
 from copy import deepcopy
 import urlparse
 import datetime as dt
+import uuid
 import logging
 import re
 
@@ -440,6 +441,21 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
             'given': self.csl_given_name,
         }
 
+    def set_unusable_username(self):
+        """Sets username to an unusable value. Used for, e.g. for invited contributors
+        and merged users.
+
+        NOTE: This is necessary because Django does not allow the username column to be nullable.
+        """
+        if self._id:
+            self.username = self._id
+        else:
+            self.username = str(uuid.uuid4())
+        return self.username
+
+    def has_usable_username(self):
+        return '@' in self.username
+
     def is_authenticated(self):  # Needed for django compat
         return True
 
@@ -631,7 +647,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
 
         # - username is set to the GUID so the merging user can set it primary
         #   in the future (note: it cannot be set to None due to non-null constraint)
-        user.username = user._id
+        user.set_unusable_username()
         user.set_unusable_password()
         user.verification_key = None
         user.osf_mailing_lists = {}
@@ -792,6 +808,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
             is_invited=True,
             is_registered=False,
         )
+        if not email:
+            user.set_unusable_username()
         user.set_unusable_password()
         user.update_guessed_names()
         return user
