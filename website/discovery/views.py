@@ -1,5 +1,4 @@
 from website import settings
-from website.project import Node
 from website.project.utils import recent_public_registrations
 
 from keen import KeenClient
@@ -8,6 +7,8 @@ from modularodm.query.querydialect import DefaultQueryDialect as Q
 
 
 def activity():
+    # Prevent circular import
+    from website.project import Node
 
     popular_public_projects = []
     popular_public_registrations = []
