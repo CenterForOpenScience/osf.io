@@ -1,5 +1,6 @@
 import re
 from modularodm import Q
+from django.apps import apps
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed
 from rest_framework.status import HTTP_204_NO_CONTENT
@@ -263,13 +264,21 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
-    model_class = Node
+    model_class = apps.get_model('osf_models.AbstractNode')
 
     serializer_class = NodeSerializer
     view_category = 'nodes'
     view_name = 'node-list'
 
     ordering = ('-date_modified', )  # default ordering
+
+    def convert_key(self, *args, **kwargs):
+        key = super(NodeList, self).convert_key(*args, **kwargs)
+        if key == '_id':
+            return 'guid__guid'
+        elif key == 'root':
+            return 'root__guid__guid'
+        return key
 
     # overrides FilterMixin
     def postprocess_query_param(self, key, field_name, operation):
