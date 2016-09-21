@@ -417,29 +417,6 @@ class TestContributorMethods:
         assert node.get_permissions(user2) == []
         assert node.logs.latest().action == 'contributor_removed'
 
-    def test_move_contributor(self, user, node, auth):
-        user1 = UserFactory()
-        user2 = UserFactory()
-        node.add_contributors(
-            [
-                {'user': user1, 'permissions': ['read', 'write'], 'visible': True},
-                {'user': user2, 'permissions': ['read', 'write'], 'visible': True}
-            ],
-            auth=auth
-        )
-
-        user_contrib_id = node.contributor_set.get(user=user).id
-        user1_contrib_id = node.contributor_set.get(user=user1).id
-        user2_contrib_id = node.contributor_set.get(user=user2).id
-
-        old_order = [user_contrib_id, user1_contrib_id, user2_contrib_id]
-        assert list(node.get_contributor_order()) == old_order
-
-        node.move_contributor(user=user2, auth=auth, index=0, save=True)
-
-        new_order = [user2_contrib_id, user_contrib_id, user1_contrib_id]
-        assert list(node.get_contributor_order()) == new_order
-
 
     def test_replace_contributor(self, node):
         contrib = UserFactory()
@@ -1528,6 +1505,7 @@ class TestAlternativeCitationMethods:
             'name': name, 'text': text
         }
 
+
 class TestContributorOrdering:
 
     def test_can_get_contributor_order(self, node):
@@ -1546,6 +1524,30 @@ class TestContributorOrdering:
         node.set_contributor_order([contrib1.id, contrib2.id, creator_contrib.id])
         assert list(node.get_contributor_order()) == [contrib1.id, contrib2.id, creator_contrib.id]
         assert list(node.contributors.all()) == [user1, user2, node.creator]
+
+    def test_move_contributor(self, user, node, auth):
+        user1 = UserFactory()
+        user2 = UserFactory()
+        node.add_contributors(
+            [
+                {'user': user1, 'permissions': ['read', 'write'], 'visible': True},
+                {'user': user2, 'permissions': ['read', 'write'], 'visible': True}
+            ],
+            auth=auth
+        )
+
+        user_contrib_id = node.contributor_set.get(user=user).id
+        user1_contrib_id = node.contributor_set.get(user=user1).id
+        user2_contrib_id = node.contributor_set.get(user=user2).id
+
+        old_order = [user_contrib_id, user1_contrib_id, user2_contrib_id]
+        assert list(node.get_contributor_order()) == old_order
+
+        node.move_contributor(user=user2, auth=auth, index=0, save=True)
+
+        new_order = [user2_contrib_id, user_contrib_id, user1_contrib_id]
+        assert list(node.get_contributor_order()) == new_order
+
 
 class TestNodeOrdering:
 
