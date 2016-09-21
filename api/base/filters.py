@@ -247,8 +247,15 @@ class FilterMixin(object):
                                 'source_field_name': source_field_name
                             }
                         })
+                    self.postprocess_query_param(key, field_name, query[key][field_name])
 
         return query
+
+    def postprocess_query_param(self, key, field_name, operation):
+        """Hook to update parsed query parameters. Overrides of this method should either
+        update ``operation`` in-place or do nothing.
+        """
+        pass
 
     def convert_key(self, field_name, field):
         """Used so that that queries on fields with the source attribute set will work
