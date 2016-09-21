@@ -959,7 +959,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can modify contributor order')
         contributor_ids = list(self.get_contributor_order())
-        old_index = contributor_ids.index(user.id)
+        contributor = self.contributor_set.get(user=user)
+        old_index = contributor_ids.index(contributor.id)
         contributor_ids.insert(index, contributor_ids.pop(old_index))
         self.set_contributor_order(contributor_ids)
         self.add_log(
