@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-import httplib as http
+
 
 from modularodm import fields
 
-from framework.auth.decorators import Auth
 from framework.exceptions import HTTPError
 
 from website.addons.base import (
@@ -11,9 +10,8 @@ from website.addons.base import (
 )
 from website.addons.base import StorageAddonBase
 
-from website.addons.dmptool.client import connect_from_settings_or_401
 from website.addons.dmptool.serializer import DmptoolSerializer
-from website.addons.dmptool.utils import DmptoolNodeLogger
+#from website.addons.dmptool.utils import DmptoolNodeLogger
 
 
 class DmptoolProvider(object):
@@ -42,142 +40,76 @@ class AddonDmptoolNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     oauth_provider = DmptoolProvider
     serializer = DmptoolSerializer
 
-    dmptool_alias = fields.StringField()
-    dmptool = fields.StringField()
-    dataset_doi = fields.StringField()
-    _dataset_id = fields.StringField()
-    dataset = fields.StringField()
+    folder_id = fields.StringField(default='xxxxx')
+    folder_name = fields.StringField(default='xxxxx')
+    folder_path = fields.StringField(default='xxxxx')
 
-    @property
-    def folder_name(self):
-        return self.dataset
+    def set_user_auth(self, user_settings):
 
-    @property
-    def dataset_id(self):
-        if self._dataset_id is None and (self.dmptool_alias and self.dataset_doi):
-            connection = connect_from_settings_or_401(self)
-            dmptool = connection.get_dmptool(self.dmptool_alias)
-            dataset = dmptool.get_dataset_by_doi(self.dataset_doi)
-            self._dataset_id = dataset.id
-            self.save()
-        return self._dataset_id
+        # TO DO:  but this function should go away upon switching to use the generic_views found in website/addons/base/
+        # https://github.com/CenterForOpenScience/osf.io/pull/4670#discussion_r67694204
 
-    @property
-    def complete(self):
-        return bool(self.has_auth)
+        self.user_settings = user_settings
+        self.nodelogger.log(action='node_authorized', save=True)
 
-    @property
-    def folder_id(self):
-        return self.dataset_id
+    def set_folder(self, folder_id, auth):
 
-    @property
-    def folder_path(self):
-        pass
-
-    @property
-    def nodelogger(self):
-        # TODO: Use this for all log actions
-        auth = None
-        if self.user_settings:
-            auth = Auth(self.user_settings.owner)
-        return DmptoolNodeLogger(
-            node=self.owner,
-            auth=auth
-        )
-
-    def set_folder(self, dmptool, dataset, auth=None):
-        self.dmptool_alias = dmptool.alias
-        self.dmptool = dmptool.title
-
-        self.dataset_doi = dataset.doi
-        self._dataset_id = dataset.id
-        self.dataset = dataset.title
-
+        self.folder_id = str(folder_id)
+        # client = utils.get_evernote_client(self.external_account.oauth_key)
+        # _folder_data = utils.get_notebook(client, self.folder_id)
+        self.folder_name = 'xxxxx'
+        self.folder_path = 'xxxxx'
         self.save()
 
-        if auth:
-            self.owner.add_log(
-                action='dmptool_dataset_linked',
-                params={
-                    'project': self.owner.parent_id,
-                    'node': self.owner._id,
-                    'dataset': dataset.title,
-                },
-                auth=auth,
+        if not self.complete:
+            self.user_settings.grant_oauth_access(
+                node=self.owner,
+                external_account=self.external_account,
+                metadata={'folder': self.folder_id}
             )
+            self.user_settings.save()
 
-    def _get_fileobj_child_metadata(self, filenode, user, cookie=None, version=None):
-        try:
-            return super(AddonDmptoolNodeSettings, self)._get_fileobj_child_metadata(filenode, user, cookie=cookie, version=version)
-        except HTTPError as e:
-            # The Dmptool API returns a 404 if the dataset has no published files
-            if e.code == http.NOT_FOUND and version == 'latest-published':
-                return []
-            raise
+        self.nodelogger.log(action='folder_selected', save=True)
+
+    # based on https://github.com/CenterForOpenScience/osf.io/blob/4a5d4e5a887c944174694300c42b399638184722/website/addons/box/model.py#L105-L107
+    def fetch_full_folder_path(self):
+        # don't know why this would be needed for Evernote
+
+        return self.folder_path
+
+    def fetch_folder_name(self):
+        # don't know why this would be needed for Evernote
+
+        return self.folder_path
 
     def clear_settings(self):
-        """Clear selected Dmptool and dataset"""
-        self.dmptool_alias = None
-        self.dmptool = None
-        self.dataset_doi = None
-        self._dataset_id = None
-        self.dataset = None
+        self.folder_id = 'xxxxx'
+        self.folder_name = 'xxxxx'
+        self.folder_path = 'xxxxx'
 
     def deauthorize(self, auth=None, add_log=True):
         """Remove user authorization from this node and log the event."""
+        folder_id = self.folder_id
         self.clear_settings()
-        self.clear_auth()  # Also performs a save
 
-        # Log can't be added without auth
-        if add_log and auth:
-            node = self.owner
-            self.owner.add_log(
-                action='dmptool_node_deauthorized',
-                params={
-                    'project': node.parent_id,
-                    'node': node._id,
-                },
-                auth=auth,
-            )
+        if add_log:
+            extra = {'folder_id': folder_id}
+            self.nodelogger.log(action='node_deauthorized', extra=extra, save=True)
+
+        self.clear_auth()
 
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
             raise exceptions.AddonError('Addon is not authorized')
-        return {'token': self.external_account.oauth_secret}
+        try:
+            return {'token': self.external_account.oauth_key}
+        except Exception as error:
+            raise HTTPError(str(error), data={'message_long': error.message})
 
     def serialize_waterbutler_settings(self):
-        if not self.folder_id:
-            raise exceptions.AddonError('Dmptool is not configured')
-        return {
-            'host': self.external_account.oauth_key,
-            'doi': self.dataset_doi,
-            'id': self.dataset_id,
-            'name': self.dataset,
-        }
+        if self.folder_id is None:
+            raise exceptions.AddonError('Folder is not configured')
+        return {'folder': self.folder_id}
 
-    def create_waterbutler_log(self, auth, action, metadata):
-        url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'], provider='dmptool')
-        self.owner.add_log(
-            'dmptool_{0}'.format(action),
-            auth=auth,
-            params={
-                'project': self.owner.parent_id,
-                'node': self.owner._id,
-                'dataset': self.dataset,
-                'filename': metadata['materialized'].strip('/'),
-                'urls': {
-                    'view': url,
-                    'download': url + '?action=download'
-                },
-            },
-        )
-
-    ##### Callback overrides #####
-
-    def after_delete(self, node, user):
-        self.deauthorize(Auth(user=user), add_log=True)
-        self.save()
-
-    def on_delete(self):
-        self.deauthorize(add_log=False)
-        self.save()
+    # TO DO : may need create_waterbutler_log
+    # https://github.com/CenterForOpenScience/osf.io/pull/4670/#discussion_r67736406
