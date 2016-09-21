@@ -165,31 +165,31 @@ class NodeSerializer(JSONAPISerializer):
 
     children = RelationshipField(
         related_view='nodes:node-children',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_node_count'},
     )
 
     comments = RelationshipField(
         related_view='nodes:node-comments',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
         related_meta={'unread': 'get_unread_comments_count'},
-        filter={'target': '<pk>'}
+        filter={'target': '<_id>'}
     )
 
     contributors = RelationshipField(
         related_view='nodes:node-contributors',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_contrib_count'},
     )
 
     files = RelationshipField(
         related_view='nodes:node-providers',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<_id>'}
     )
 
     wikis = RelationshipField(
         related_view='nodes:node-wikis',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<_id>'}
     )
 
     forked_from = RelationshipField(
@@ -204,12 +204,12 @@ class NodeSerializer(JSONAPISerializer):
 
     forks = RelationshipField(
         related_view='nodes:node-forks',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<_id>'}
     )
 
     node_links = RelationshipField(
         related_view='nodes:node-pointers',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_pointers_count'},
     )
 
@@ -221,20 +221,20 @@ class NodeSerializer(JSONAPISerializer):
 
     draft_registrations = HideIfRegistration(RelationshipField(
         related_view='nodes:node-draft-registrations',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<_id>'}
     ))
 
     registrations = HideIfRegistration(RelationshipField(
         related_view='nodes:node-registrations',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_registration_count'}
     ))
 
     affiliated_institutions = RelationshipField(
         related_view='nodes:node-institutions',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
         self_view='nodes:node-relationships-institutions',
-        self_view_kwargs={'node_id': '<pk>'}
+        self_view_kwargs={'node_id': '<_id>'}
     )
 
     root = RelationshipField(
@@ -244,27 +244,27 @@ class NodeSerializer(JSONAPISerializer):
 
     logs = RelationshipField(
         related_view='nodes:node-logs',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_logs_count'}
     )
 
     linked_nodes = RelationshipField(
         related_view='nodes:linked-nodes',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_node_links_count'},
         self_view='nodes:node-pointer-relationship',
-        self_view_kwargs={'node_id': '<pk>'},
+        self_view_kwargs={'node_id': '<_id>'},
         self_meta={'count': 'get_node_links_count'}
     )
 
     view_only_links = RelationshipField(
         related_view='nodes:node-view-only-links',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
     )
 
     citation = RelationshipField(
         related_view='nodes:node-citation',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<_id>'}
     )
 
     def get_current_user_permissions(self, obj):
@@ -664,7 +664,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
     users = RelationshipField(
         related_view='users:user-detail',
-        related_view_kwargs={'user_id': '<pk>'},
+        related_view_kwargs={'user_id': '<_id>'},
         always_embed=True
     )
 
@@ -704,7 +704,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
 
     users = RelationshipField(
         related_view='users:user-detail',
-        related_view_kwargs={'user_id': '<pk>'},
+        related_view_kwargs={'user_id': '<_id>'},
         required=False
     )
 
@@ -798,7 +798,7 @@ class NodeLinksSerializer(JSONAPISerializer):
 
     target_node = RelationshipField(
         related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
         always_embed=True
 
     )
