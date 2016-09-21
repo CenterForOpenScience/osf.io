@@ -161,7 +161,7 @@ class GitLabClient(object):
     def _get_api_request(self, uri):
         headers = {"Authorization": 'Bearer {}'.format(self.access_token)}
 
-        return requests.get("{0}/{1}/{2}".format(gitlab_settings.GITLAB_BASE_URL, 'api/v3', uri),
+        return requests.get("https://{0}/{1}/{2}".format(self.host, 'api/v3', uri),
                             verify=True, headers=headers)
 
 
