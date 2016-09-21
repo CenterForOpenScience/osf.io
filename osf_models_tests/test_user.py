@@ -350,6 +350,24 @@ class TestOSFUser:
         )
         assert user.profile_image_url(settings.PROFILE_IMAGE_MEDIUM) == expected
 
+    def test_set_unusable_username_for_unsaved_user(self):
+        user = UserFactory.build()
+        user.set_unusable_username()
+        assert user.username is not None
+        user.save()
+        assert user.has_usable_username() is False
+
+    def test_set_unusable_username_for_saved_user(self):
+        user = UserFactory()
+        user.set_unusable_username()
+        assert user.username == user._id
+
+    def test_has_usable_username(self):
+        user = UserFactory()
+        assert user.has_usable_username() is True
+        user.username = user._id
+        assert user.has_usable_username() is False
+
     def test_profile_image_url_has_no_default_size(self, user):
         expected = filters.gravatar(
             user,
