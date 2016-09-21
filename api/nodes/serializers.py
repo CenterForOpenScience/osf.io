@@ -380,7 +380,7 @@ class NodeSerializer(JSONAPISerializer):
         if validated_data:
             try:
                 node.update(validated_data, auth=auth)
-            except ValidationValueError as e:
+            except ValidationError as e:
                 raise InvalidModelValueError(detail=e.message)
             except PermissionsError:
                 raise exceptions.PermissionDenied
@@ -607,7 +607,7 @@ class NodeForksSerializer(NodeSerializer):
 
         try:
             fork.save()
-        except ValidationValueError as e:
+        except ValidationError as e:
             raise InvalidModelValueError(detail=e.message)
 
         return fork
@@ -739,7 +739,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
                 auth=auth, user_id=id, email=email, full_name=full_name, send_email=send_email,
                 permissions=permissions, bibliographic=bibliographic, index=index, save=True
             )
-        except ValidationValueError as e:
+        except ValidationError as e:
             raise exceptions.ValidationError(detail=e.message)
         except ValueError as e:
             raise exceptions.NotFound(detail=e.message)
@@ -1066,7 +1066,7 @@ class DraftRegistrationSerializer(JSONAPISerializer):
             try:
                 # Required fields are only required when creating the actual registration, not updating the draft.
                 draft.validate_metadata(metadata=metadata, reviewer=reviewer, required_fields=False)
-            except ValidationValueError as e:
+            except ValidationError as e:
                 raise exceptions.ValidationError(e.message)
             draft.update_metadata(metadata)
             draft.save()
@@ -1097,7 +1097,7 @@ class DraftRegistrationDetailSerializer(DraftRegistrationSerializer):
             try:
                 # Required fields are only required when creating the actual registration, not updating the draft.
                 draft.validate_metadata(metadata=metadata, reviewer=reviewer, required_fields=False)
-            except ValidationValueError as e:
+            except ValidationError as e:
                 raise exceptions.ValidationError(e.message)
             draft.update_metadata(metadata)
             draft.save()
@@ -1156,7 +1156,7 @@ class NodeViewOnlyLinkSerializer(JSONAPISerializer):
                 nodes=[node],
                 anonymous=anonymous
             )
-        except ValidationValueError:
+        except ValidationError:
             raise exceptions.ValidationError('Invalid link name.')
 
         return view_only_link
