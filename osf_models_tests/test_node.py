@@ -10,9 +10,9 @@ import pytz
 
 from framework.exceptions import PermissionsError
 from website.util.permissions import READ, WRITE, ADMIN, expand_permissions
-from website.project.signals import contributor_added
+from website.project.signals import contributor_added, contributor_removed
 from website.exceptions import NodeStateError
-from website.util import permissions
+from website.util import permissions, disconnected_from_listeners
 from website.citations.utils import datetime_to_csl
 
 from osf_models.models import Node, Tag, NodeLog, Contributor, Sanction
@@ -387,7 +387,8 @@ class TestContributorMethods:
         node.add_contributor(contributor=user2, auth=auth, save=True)
         assert user2 in node.contributors
         # The user is removed
-        node.remove_contributor(auth=auth, contributor=user2)
+        with disconnected_from_listeners(contributor_removed):
+            node.remove_contributor(auth=auth, contributor=user2)
         node.reload()
 
         assert user2 not in node.contributors
@@ -408,7 +409,8 @@ class TestContributorMethods:
         assert user1 in node.contributors
         assert user2 in node.contributors
 
-        node.remove_contributors(auth=auth, contributors=[user1, user2], save=True)
+        with disconnected_from_listeners(contributor_removed):
+            node.remove_contributors(auth=auth, contributors=[user1, user2], save=True)
         node.reload()
 
         assert user1 not in node.contributors
