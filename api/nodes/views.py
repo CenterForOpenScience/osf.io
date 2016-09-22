@@ -1,5 +1,6 @@
 import re
 from modularodm import Q
+from django.apps import apps
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed
 from rest_framework.status import HTTP_204_NO_CONTENT
@@ -75,6 +76,7 @@ from website.addons.wiki.model import NodeWikiPage
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
 from website.models import Node, Pointer, Comment, NodeLog, Institution, DraftRegistration, PrivateLink
+from osf_models.models import AlternativeCitation
 from website.files.models import FileNode
 from framework.auth.core import User
 from api.base.utils import default_node_list_query, default_node_permission_query
@@ -263,13 +265,32 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
-    model_class = Node
+    model_class = apps.get_model('osf_models.AbstractNode')
 
     serializer_class = NodeSerializer
     view_category = 'nodes'
     view_name = 'node-list'
 
     ordering = ('-date_modified', )  # default ordering
+
+    def convert_key(self, *args, **kwargs):
+        key = super(NodeList, self).convert_key(*args, **kwargs)
+        if key == '_id':
+            return 'guid__guid'
+        elif key == 'root':
+            return 'root__guid__guid'
+        return key
+
+    # overrides FilterMixin
+    def postprocess_query_param(self, key, field_name, operation):
+        # tag queries will usually be on Tag.name,
+        # ?filter[tags]=foo should be translated to Q('tags__name', 'eq', 'foo')
+        # But queries on lists should be tags, e.g.
+        # ?filter[tags]=foo,bar should be translated to Q('tags', 'isnull', True)
+        # ?filter[tags]=[] should be translated to Q('tags', 'isnull', True)
+        if field_name == 'tags':
+            if operation['value'] not in (list(), tuple()):
+                operation['source_field_name'] = 'tags__name'
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
@@ -282,7 +303,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     def get_queryset(self):
         # For bulk requests, queryset is formed from request body.
         if is_bulk_request(self.request):
-            query = Q('_id', 'in', [node['id'] for node in self.request.data])
+            query = Q('guid__guid', 'in', [node['id'] for node in self.request.data])
             auth = get_user_auth(self.request)
 
             nodes = Node.find(query)
@@ -1380,11 +1401,7 @@ class NodeLinksList(BaseNodeLinksList, bulk_views.BulkDestroyJSONAPIView, bulk_v
     view_name = 'node-pointers'
 
     def get_queryset(self):
-        return [
-            pointer for pointer in
-            self.get_node().nodes_pointer
-            if not pointer.node.is_deleted
-        ]
+        return self.get_node().linked_nodes.filter(is_deleted=False)
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
@@ -2336,7 +2353,7 @@ class NodeAlternativeCitationsList(JSONAPIBaseView, generics.ListCreateAPIView, 
     view_name = 'alternative-citations'
 
     def get_queryset(self):
-        return self.get_node().alternative_citations
+        return self.get_node().alternative_citations.all()
 
 
 class NodeAlternativeCitationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin):
@@ -2381,8 +2398,8 @@ class NodeAlternativeCitationDetail(JSONAPIBaseView, generics.RetrieveUpdateDest
 
     def get_object(self):
         try:
-            return self.get_node().alternative_citations.find(Q('_id', 'eq', str(self.kwargs['citation_id'])))[0]
-        except IndexError:
+            return self.get_node().alternative_citations.get(guid__object_id=str(self.kwargs['citation_id']))
+        except AlternativeCitation.DoesNotExist:
             raise NotFound
 
     def perform_destroy(self, instance):

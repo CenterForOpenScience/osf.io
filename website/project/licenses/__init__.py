@@ -5,6 +5,7 @@ import warnings
 
 from modularodm import fields, Q
 from modularodm.exceptions import KeyExistsException
+from osf_models.exceptions import ValidationError
 
 from framework.mongo import (
     ObjectId,
@@ -113,7 +114,7 @@ def ensure_licenses(warn=True):
                     text=text,
                     properties=properties
                 ).save()
-            except KeyExistsException:
+            except (KeyExistsException, ValidationError):
                 node_license = NodeLicense.find_one(
                     Q('license_id', 'eq', id)
                 )

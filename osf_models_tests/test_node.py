@@ -10,9 +10,9 @@ import pytz
 
 from framework.exceptions import PermissionsError
 from website.util.permissions import READ, WRITE, ADMIN, expand_permissions
-from website.project.signals import contributor_added
+from website.project.signals import contributor_added, contributor_removed
 from website.exceptions import NodeStateError
-from website.util import permissions
+from website.util import permissions, disconnected_from_listeners
 from website.citations.utils import datetime_to_csl
 
 from osf_models.models import Node, Tag, NodeLog, Contributor, Sanction
@@ -381,6 +381,45 @@ class TestContributorMethods:
         assert node2.has_permission(read, 'write') is False
         assert node2.has_permission(admin, 'admin') is True
 
+    def test_remove_contributor(self, node, auth):
+        # A user is added as a contributor
+        user2 = UserFactory()
+        node.add_contributor(contributor=user2, auth=auth, save=True)
+        assert user2 in node.contributors
+        # The user is removed
+        with disconnected_from_listeners(contributor_removed):
+            node.remove_contributor(auth=auth, contributor=user2)
+        node.reload()
+
+        assert user2 not in node.contributors
+        assert node.get_permissions(user2) == []
+        assert node.logs.latest().action == 'contributor_removed'
+        assert node.logs.latest().params['contributors'] == [user2._id]
+
+    def test_remove_contributors(self, node, auth):
+        user1 = UserFactory()
+        user2 = UserFactory()
+        node.add_contributors(
+            [
+                {'user': user1, 'permissions': ['read', 'write'], 'visible': True},
+                {'user': user2, 'permissions': ['read', 'write'], 'visible': True}
+            ],
+            auth=auth
+        )
+        assert user1 in node.contributors
+        assert user2 in node.contributors
+
+        with disconnected_from_listeners(contributor_removed):
+            node.remove_contributors(auth=auth, contributors=[user1, user2], save=True)
+        node.reload()
+
+        assert user1 not in node.contributors
+        assert user2 not in node.contributors
+        assert node.get_permissions(user1) == []
+        assert node.get_permissions(user2) == []
+        assert node.logs.latest().action == 'contributor_removed'
+
+
     def test_replace_contributor(self, node):
         contrib = UserFactory()
         node.add_contributor(contrib, auth=Auth(node.creator))
@@ -400,6 +439,23 @@ class TestContributorMethods:
             node._id not in
             contrib.unclaimed_records.keys()
         )
+
+class TestContributorProperties:
+
+    def test_admin_contributor_ids(self, user, node, auth):
+        user1 = UserFactory()
+        user2 = UserFactory()
+        node.add_contributors(
+            [
+                {'user': user1, 'permissions': ['read', 'write', 'admin'], 'visible': True},
+                {'user': user2, 'permissions': ['read', 'write'], 'visible': True}
+            ],
+            auth=auth
+        )
+
+        assert user.guid.guid in node.admin_contributor_ids
+        assert user1.guid.guid in node.admin_contributor_ids
+        assert user2.guid.guid not in node.admin_contributor_ids
 
 
 class TestContributorAddedSignal:
@@ -1468,6 +1524,7 @@ class TestAlternativeCitationMethods:
             'name': name, 'text': text
         }
 
+
 class TestContributorOrdering:
 
     def test_can_get_contributor_order(self, node):
@@ -1486,6 +1543,30 @@ class TestContributorOrdering:
         node.set_contributor_order([contrib1.id, contrib2.id, creator_contrib.id])
         assert list(node.get_contributor_order()) == [contrib1.id, contrib2.id, creator_contrib.id]
         assert list(node.contributors.all()) == [user1, user2, node.creator]
+
+    def test_move_contributor(self, user, node, auth):
+        user1 = UserFactory()
+        user2 = UserFactory()
+        node.add_contributors(
+            [
+                {'user': user1, 'permissions': ['read', 'write'], 'visible': True},
+                {'user': user2, 'permissions': ['read', 'write'], 'visible': True}
+            ],
+            auth=auth
+        )
+
+        user_contrib_id = node.contributor_set.get(user=user).id
+        user1_contrib_id = node.contributor_set.get(user=user1).id
+        user2_contrib_id = node.contributor_set.get(user=user2).id
+
+        old_order = [user_contrib_id, user1_contrib_id, user2_contrib_id]
+        assert list(node.get_contributor_order()) == old_order
+
+        node.move_contributor(user=user2, auth=auth, index=0, save=True)
+
+        new_order = [user2_contrib_id, user_contrib_id, user1_contrib_id]
+        assert list(node.get_contributor_order()) == new_order
+
 
 class TestNodeOrdering:
 
@@ -1507,6 +1588,7 @@ class TestNodeOrdering:
     def test_can_set_node_order(self, project, children):
         project.set_abstractnode_order([children[2].pk, children[1].pk, children[0].pk])
         assert list(project.nodes.all()) == [children[2], children[1], children[0]]
+
 
 def test_templated_list(node):
     templated1, templated2 = ProjectFactory(template_node=node), NodeFactory(template_node=node)
