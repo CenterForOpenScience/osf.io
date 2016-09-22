@@ -74,13 +74,15 @@ INSTALLED_APPS = (
     'corsheaders',
     'raven.contrib.django.raven_compat',
     'django_extensions',
-    'debug_toolbar',
     'osf_models'
 )
 
 # local development using https
 if osf_settings.SECURE_MODE and osf_settings.DEBUG_MODE:
     INSTALLED_APPS += ('sslserver',)
+
+if osf_settings.DEBUG_MODE:
+    INSTALLED_APPS += ('debug_toolbar', )
 
 # TODO: Are there more granular ways to configure reporting specifically related to the API?
 RAVEN_CONFIG = {
