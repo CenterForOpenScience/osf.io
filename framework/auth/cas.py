@@ -301,7 +301,7 @@ def get_user_from_cas_resp(cas_resp):
     """
 
     if cas_resp.user:
-        user = User.load(cas_resp.user)
+        user = User.objects.get(pk=cas_resp.user)
         # cas returns a valid OSF user id
         if user:
             return user, None, 'authenticate'
