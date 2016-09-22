@@ -52,6 +52,9 @@ class Encryption(object):
 
         fingerprint = keys[0]['fingerprint']
 
+    elif not settings.DEV_MODE:
+        raise RuntimeError('Must use GnuPG outside of development mode.')
+
     def encrypt(self, value):
         if not settings.USE_GNUPG:
             return value
