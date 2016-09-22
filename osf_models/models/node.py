@@ -21,7 +21,7 @@ from keen import scoped_keys
 from modularodm import Q as MQ
 from osf_models.apps import AppConfig as app_config
 from osf_models.models.citation import AlternativeCitation
-from osf_models.models.contributor import Contributor, RecentlyAddedContributor
+from osf_models.models.contributor import Contributor, RecentlyAddedContributor, get_contributor_permissions
 from osf_models.models.identifiers import Identifier
 from osf_models.models.identifiers import IdentifierMixin
 from osf_models.models.mixins import Loggable, Taggable, AddonModelMixin, NodeLinkMixin
@@ -492,14 +492,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             contrib = user.contributor_set.get(node=self)
         except Contributor.DoesNotExist:
             return []
-        perm = []
-        if contrib.read:
-            perm.append(READ)
-        if contrib.write:
-            perm.append(WRITE)
-        if contrib.admin:
-            perm.append(ADMIN)
-        return perm
+        return get_contributor_permissions(contrib)
+
+    def get_visible(self, user):
+        try:
+            contributor = self.contributor_set.get(user=user)
+        except Contributor.DoesNotExist:
+            raise ValueError(u'User {0} not in contributors'.format(user))
+        return contributor.visible
 
     def has_permission(self, user, permission, check_parent=True):
         """Check whether user has permission.
