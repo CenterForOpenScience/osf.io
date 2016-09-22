@@ -26,6 +26,19 @@ var bootstrapTable = function(md) {
     md.renderer.rules.table_open = function() { return '<table class="table">'; };
 };
 
+var oldMarkdownList = function(md) {
+    console.log(md.renderer.rules);
+
+    md.block.ruler.before('list', 'my_rule', function replace(state) {
+
+        if (state.parentType === 'list') {
+            // do something here
+        }
+
+        return false;
+    });
+};
+
 // Full markdown renderer for views / wiki pages / pauses between typing
 var markdown = new MarkdownIt('commonmark', {
     highlight: highlighter
@@ -50,11 +63,12 @@ var markdownQuick = new MarkdownIt(('commonmark'), { })
     .disable('strikethrough');
 
 // Markdown renderer for older wikis rendered before switch date
-var markdownOld = new MarkdownIt(('commonmark'), { })
+var markdownOld = new MarkdownIt(('commonmark'), { html: true })
     .use(require('markdown-it-sanitizer'))
     .use(insDel)
     .enable('table')
     .use(bootstrapTable)
+    .use(oldMarkdownList)
     .disable('strikethrough');
 
 module.exports = {
