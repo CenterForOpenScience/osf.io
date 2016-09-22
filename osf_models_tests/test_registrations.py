@@ -4,7 +4,7 @@ import datetime
 
 from django.utils import timezone
 from framework.auth.core import Auth
-from osf_models.models import Node, Registration, Sanction, MetaSchema, DraftRegistrationApproval
+from osf_models.models import Node, Registration, Sanction, MetaSchema
 from osf_models.modm_compat import Q
 
 from website import settings
@@ -460,7 +460,7 @@ class TestDraftRegistrations:
         assert draft.registration_schema == schema
         assert draft.registration_metadata == data
 
-    @pytest.mark.skip('Need to figure out reg error')
+    @pytest.mark.skip('Need to figure out registration error')
     @mock.patch('osf_models.models.node.AbstractNode.register_node')
     def test_register(self, mock_register_node):
         user = factories.UserFactory()
@@ -554,88 +554,3 @@ class TestDraftRegistrations:
         draft.update_metadata(new_data)
         draft.save()
         assert draft.registration_metadata['foo']['comments'] == comments
-
-
-class TestDraftRegistrationApprovals:
-
-    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_on_complete_immediate_creates_registration_for_draft_initiator(self, mock_enquque):
-        user = factories.UserFactory()
-        approval = DraftRegistrationApproval(
-            initiated_by=user,
-            meta={
-                'registration_choice': 'immediate'
-            }
-        )
-        approval.save()
-
-        approval._on_complete(user)
-
-        project = factories.ProjectFactory(creator=user)
-        draft = factories.DraftRegistrationFactory(branched_from=project)
-        draft.registration_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', 2)
-        )
-        draft.approval = approval
-        draft.save()
-
-        registered_node = draft.registered_node
-        assert registered_node is not None
-        assert registered_node.is_pending_registration
-        assert registered_node.registered_user == draft.initiator
-
-    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_on_complete_embargo_creates_registration_for_draft_initiator(self, mock_enquque):
-        user = factories.UserFactory()
-        end_date = datetime.datetime.now() + datetime.timedelta(days=366)  # <- leap year
-        approval = DraftRegistrationApproval(
-            initiated_by=user,
-            meta={
-                'registration_choice': 'embargo',
-                'embargo_end_date': end_date.isoformat()
-            }
-        )
-        approval.save()
-        project = factories.ProjectFactory(creator=user)
-        draft = factories.DraftRegistrationFactory(branched_from=project)
-        draft.registration_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', 2)
-        )
-        draft.approval = approval
-        draft.save()
-
-        approval._on_complete(user)
-        registered_node = draft.registered_node
-        assert registered_node is not None
-        assert registered_node.is_pending_embargo
-        assert registered_node.registered_user == self.draft.initiator
-
-    def test_approval_requires_only_a_single_authorizer(self):
-        approval = DraftRegistrationApproval(
-            initiated_by=user,
-            meta={
-                'registration_choice': 'immediate',
-            }
-        )
-        approval.save()
-        with mock.patch.object(approval, '_on_complete') as mock_on_complete:
-            authorizer1 = factories.AuthUserFactory()
-            authorizer1.add_system_tag(settings.PREREG_ADMIN_TAG)
-            approval.approve(authorizer1)
-            assert mock_on_complete.called
-            assert approval.is_approved
-
-    @mock.patch('website.mails.send_mail')
-    def test_on_reject(self, mock_send_mail):
-        user = factories.UserFactory()
-        approval = DraftRegistrationApproval(
-            initiated_by=user,
-            meta={
-                'registration_choice': 'immediate'
-            }
-        )
-        approval._on_reject(user)
-        assert self.approval.meta == {}
-        assert mock_send_mail.call_count == 1
