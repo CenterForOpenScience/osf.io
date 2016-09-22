@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from modularodm.exceptions import (
     ValidationError as MODMValidationError,
     ValidationValueError as MODMValidationValueError,
+    ValidationTypeError as MODMValidationTypeError,
 )
 
 class TokenError(Exception):
@@ -96,6 +97,11 @@ def reraise_django_validation_errors():
         raise ValidationError(*err.args)
 
 class ValidationValueError(DjangoValidationError, MODMValidationValueError):
-    """ Raised during validation if the value of the input is unacceptable, but
-     the type is correct """
+    """ Raised during validation if the value of the input is unacceptable but
+     the type is correct.
+     """
+    pass
+
+class ValidationTypeError(DjangoValidationError, MODMValidationTypeError):
+    """ Raised during validation if the value of the input is unacceptable and type is incorrect """
     pass

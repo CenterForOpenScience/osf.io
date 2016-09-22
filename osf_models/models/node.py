@@ -30,6 +30,7 @@ from osf_models.models.nodelog import NodeLog
 from osf_models.models.mixins import CommentableMixin
 from osf_models.models.sanctions import RegistrationApproval
 from osf_models.models.user import OSFUser
+from osf_models.models.spam import SpamMixin
 from osf_models.models.validators import validate_title
 from osf_models.modm_compat import Q
 from osf_models.utils.auth import Auth, get_user
@@ -69,7 +70,7 @@ logger = logging.getLogger(__name__)
 
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,
-                   NodeLinkMixin, CommentableMixin,
+                   NodeLinkMixin, CommentableMixin, SpamMixin,
                    Taggable, Loggable, GuidMixin, BaseModel):
     """
     All things that inherit from AbstractNode will appear in

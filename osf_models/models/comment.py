@@ -7,15 +7,12 @@ from osf_models.models import NodeLog
 from osf_models.models.base import GuidMixin, Guid, BaseModel
 from osf_models.utils.base import api_v2_url
 from osf_models.models.mixins import CommentableMixin
+from osf_models.models.spam import SpamMixin
 
 from framework.exceptions import PermissionsError
 from website import settings
 from website.project import signals as project_signals
 from website.project.model import get_valid_mentioned_users_guids
-
-
-class SpamMixin(object):
-    pass
 
 
 class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
