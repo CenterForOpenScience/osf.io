@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Tests ported from tests/test_sanctions.py."""
+"""Tests ported from tests/test_sanctions.py and tests/test_registrations.py"""
 import mock
 import pytest
 import datetime
 
 from osf_models.modm_compat import Q
-from osf_models import DraftRegistrationApproval, MetaSchema
+from osf_models.models import DraftRegistrationApproval, MetaSchema
 from osf_models_tests import factories
 from osf_models_tests.utils import mock_archive
 
@@ -14,6 +14,7 @@ from framework.auth import Auth
 from website import settings
 from website.exceptions import NodeStateError
 from website.project.model import NodeLog
+from website.project.model import ensure_schemas
 
 
 @pytest.mark.django_db
@@ -73,29 +74,35 @@ class TestNodeEmbargoTerminations:
         assert last_log.user is None
 
 
+@pytest.mark.django_db
 class TestDraftRegistrationApprovals:
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_on_complete_immediate_creates_registration_for_draft_initiator(self, mock_enquque):
+        ensure_schemas()
         user = factories.UserFactory()
+        project = factories.ProjectFactory(creator=user)
+        registration_schema = MetaSchema.find_one(
+            Q('name', 'eq', 'Prereg Challenge') &
+            Q('schema_version', 'eq', 2)
+        )
+        draft = factories.DraftRegistrationFactory(
+            branched_from=project,
+            registration_schema=registration_schema,
+        )
         approval = DraftRegistrationApproval(
-            initiated_by=user,
             meta={
                 'registration_choice': 'immediate'
             }
         )
         approval.save()
-
-        approval._on_complete(user)
-
-        project = factories.ProjectFactory(creator=user)
-        draft = factories.DraftRegistrationFactory(branched_from=project)
-        draft.registration_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Prereg Challenge') &
-            Q('schema_version', 'eq', 2)
-        )
+        approval.reload()
         draft.approval = approval
         draft.save()
+        draft.reload()
+
+        # MetaSchema.remove()
+        approval._on_complete(user)
 
         registered_node = draft.registered_node
         assert registered_node is not None
@@ -114,10 +121,13 @@ class TestDraftRegistrationApprovals:
         )
         approval.save()
         project = factories.ProjectFactory(creator=user)
-        draft = factories.DraftRegistrationFactory(branched_from=project)
-        draft.registration_schema = MetaSchema.find_one(
+        registration_schema = MetaSchema.find_one(
             Q('name', 'eq', 'Prereg Challenge') &
             Q('schema_version', 'eq', 2)
+        )
+        draft = factories.DraftRegistrationFactory(
+            branched_from=project,
+            registration_schema=registration_schema,
         )
         draft.approval = approval
         draft.save()
