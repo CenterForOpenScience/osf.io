@@ -27,18 +27,17 @@
 
                             <!-- Custom input -->
                             <div data-bind="if: useCustomHost">
-                                <label>Host URL</label><i class="fa fa-info-circle text-muted" data-bind="tooltip: {title: 'e.g. \'owncloud.example.org\'', placement: 'bottom'}"></i>
-                                <div class="input-group">
+                                <label>Host URL</label>
+                                <div class="input-group form-group">
                                     <div class="input-group-addon">https://</div>
-                                    <input type="text" class="form-control" name="customHost" data-bind="value: customHost">
+                                    <input type="text" class="form-control" name="customHost" data-bind="value: customHost" placeholder="owncloud.example.org">
                                 </div>
-                                <div class="text-info" style="text-align: center">
-                                    <em>Only ownCloud instances supporting <a href="https://doc.owncloud.org/server/7.0/user_manual/files/files.html">WebDAV</a> and <a href="https://www.freedesktop.org/wiki/Specifications/open-collaboration-services-1.7/">
+                                <div class="text-muted" style="text-align: center">
+                                    <em>Only ownCloud instances supporting <a href="https://doc.owncloud.org/server/9.1/user_manual/files/access_webdav.html" target="_blank">WebDAV</a> and <a href="https://www.freedesktop.org/wiki/Specifications/open-collaboration-services-1.7/" target="_blank">
                                         OCS v1.7</a> are supported.
                                         </em>
                                 </div>
                             </div>
-
                         </div>
                         <div class="col-sm-6">
                             <!-- API Token Input-->
@@ -46,11 +45,15 @@
                                 <label for="username">
                                     Username
                                 </label>
-                                <input class="form-control" name="username" data-bind="value: username"/>
+                                <input class="form-control" name="username" data-bind="value: username" placeholder="username" />
                                 <label for="password">
                                     Password
                                 </label>
-                                <input class="form-control" name="password" data-bind="value: password" type="password"/>
+                                <input class="form-control" name="password" data-bind="value: password" type="password" placeholder="********" />
+                            </div>
+                            <div class="text-muted" style="text-align: center">
+                                <em> These credentials will be encrypted. However, we <strong>strongly encourage</strong> using a <a href="https://doc.owncloud.org/server/9.1/user_manual/session_management.html#managing-devices" target="_blank"> Device (or App) Password</a>.
+                                </em>
                             </div>
                         </div>
 
