@@ -47,6 +47,8 @@ def get_current_user():
 def get_username(user=None):
     if user is None:
         user = get_current_user()
+    if user is None:
+        return None
 
     if not user.discourse_user_created:
         create_user(user)
@@ -55,6 +57,8 @@ def get_username(user=None):
 def get_user_id(user=None):
     if user is None:
         user = get_current_user()
+    if user is None:
+        return None
 
     if not user.discourse_user_created:
         create_user(user)
