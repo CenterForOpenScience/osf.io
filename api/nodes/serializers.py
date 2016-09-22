@@ -1004,10 +1004,10 @@ class NodeAlternativeCitationSerializer(JSONAPISerializer):
         name = data.get('name', None)
         text = data.get('text', None)
         citations = self.context['view'].get_node().alternative_citations
-        if not (self.instance and self.instance.name == name) and citations.find(Q('name', 'eq', name)).count() > 0:
+        if not (self.instance and self.instance.name == name) and citations.filter(name=name).count() > 0:
             errors.append("There is already a citation named '{}'".format(name))
         if not (self.instance and self.instance.text == text):
-            matching_citations = citations.find(Q('text', 'eq', text))
+            matching_citations = citations.filter(text=text)
             if matching_citations.count() > 0:
                 names = "', '".join([str(citation.name) for citation in matching_citations])
                 errors.append("Citation matches '{}'".format(names))

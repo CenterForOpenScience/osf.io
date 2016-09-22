@@ -76,6 +76,7 @@ from website.addons.wiki.model import NodeWikiPage
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
 from website.models import Node, Pointer, Comment, NodeLog, Institution, DraftRegistration, PrivateLink
+from osf_models.models import AlternativeCitation
 from website.files.models import FileNode
 from framework.auth.core import User
 from api.base.utils import default_node_list_query, default_node_permission_query
@@ -1400,11 +1401,7 @@ class NodeLinksList(BaseNodeLinksList, bulk_views.BulkDestroyJSONAPIView, bulk_v
     view_name = 'node-pointers'
 
     def get_queryset(self):
-        return [
-            pointer for pointer in
-            self.get_node().nodes_pointer
-            if not pointer.node.is_deleted
-        ]
+        return self.get_node().linked_nodes.filter(is_deleted=False)
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
@@ -2356,7 +2353,7 @@ class NodeAlternativeCitationsList(JSONAPIBaseView, generics.ListCreateAPIView, 
     view_name = 'alternative-citations'
 
     def get_queryset(self):
-        return self.get_node().alternative_citations
+        return self.get_node().alternative_citations.all()
 
 
 class NodeAlternativeCitationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin):
@@ -2401,8 +2398,8 @@ class NodeAlternativeCitationDetail(JSONAPIBaseView, generics.RetrieveUpdateDest
 
     def get_object(self):
         try:
-            return self.get_node().alternative_citations.find(Q('_id', 'eq', str(self.kwargs['citation_id'])))[0]
-        except IndexError:
+            return self.get_node().alternative_citations.get(guid__object_id=str(self.kwargs['citation_id']))
+        except AlternativeCitation.DoesNotExist:
             raise NotFound
 
     def perform_destroy(self, instance):
