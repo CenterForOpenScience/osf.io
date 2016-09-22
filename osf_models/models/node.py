@@ -908,11 +908,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         # Node must have at least one registered admin user
         admin_query = Contributor.objects.select_related('user').filter(
-            user__in=[contributor],
+            user=contributor,
             user__is_active=True,
             admin=True
         )
-        if admin_query.exists():
+        if not admin_query.exists():
             return False
 
         contrib_obj = self.contributor_set.get(user=contributor)
@@ -1645,8 +1645,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 else:
                     to_remove.append(user)
 
-            admins = list(self.get_admin_contributors(users))
-            if users is None or not admins:
+            if users is None or not self.contributor_set.filter(admin=True).exists():
                 raise NodeStateError(
                     'Must have at least one registered admin contributor'
                 )
