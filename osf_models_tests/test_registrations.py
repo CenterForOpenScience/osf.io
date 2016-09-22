@@ -16,13 +16,16 @@ from .factories import get_default_metaschema
 
 pytestmark = pytest.mark.django_db
 
+
 @pytest.fixture(autouse=True)
 def _ensure_schemas():
     return ensure_schemas()
 
+
 @pytest.fixture()
 def user():
     return factories.UserFactory()
+
 
 @pytest.fixture()
 def project(user, auth, fake):
@@ -30,9 +33,11 @@ def project(user, auth, fake):
     ret.add_tag(fake.word(), auth=auth)
     return ret
 
+
 @pytest.fixture()
 def auth(user):
     return Auth(user)
+
 
 # copied from tests/test_models.py
 def test_factory(user, project):
@@ -61,6 +66,7 @@ def test_factory(user, project):
         registration2.registered_meta[get_default_metaschema()._id] ==
         {'some': 'data'}
     )
+
 
 # copied from tests/test_models.py
 class TestRegisterNode:
@@ -265,15 +271,15 @@ class TestRegisterNode:
         wiki = factories.NodeWikiFactory(node=project)
         current_wiki = factories.NodeWikiFactory(node=project, version=2)
         registration = project.register_node(get_default_metaschema(), Auth(self.user), '', None)
-        assert_equal(self.registration.wiki_private_uuids, {})
+        assert self.registration.wiki_private_uuids == {}
 
         registration_wiki_current = NodeWikiPage.load(registration.wiki_pages_current[current_wiki.page_name])
-        assert_equal(registration_wiki_current.node, registration)
-        assert_not_equal(registration_wiki_current._id, current_wiki._id)
+        assert registration_wiki_current.node == registration
+        assert registration_wiki_current._id != current_wiki._id
 
         registration_wiki_version = NodeWikiPage.load(registration.wiki_pages_versions[wiki.page_name][0])
-        assert_equal(registration_wiki_version.node, registration)
-        assert_not_equal(registration_wiki_version._id, wiki._id)
+        assert registration_wiki_version.node == registration
+        assert registration_wiki_version._id != wiki._id
 
     def test_legacy_private_registrations_can_be_made_public(self, registration, auth):
         registration.is_public = False
