@@ -5,6 +5,7 @@ import functools
 
 from framework.auth.core import Auth
 from modularodm import Q
+import pytest
 
 from website.models import NodeLog
 from website.views import find_bookmark_collection
@@ -14,7 +15,7 @@ from website.util.sanitize import strip_html
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiTestCase, fake
-from tests.factories import (
+from osf_models_tests.factories import (
     NodeFactory,
     ProjectFactory,
     RegistrationFactory,
@@ -164,7 +165,7 @@ class TestNodeDetail(ApiTestCase):
     def test_node_comments_link_query_params_formatted(self):
         CommentFactory(node=self.public_project, user=self.user)
         self.private_project_link = PrivateLinkFactory(anonymous=False)
-        self.private_project_link.nodes.append(self.private_project)
+        self.private_project_link.nodes.add(self.private_project)
         self.private_project_link.save()
 
         res = self.app.get(self.private_url, auth=self.user.auth)
@@ -192,7 +193,7 @@ class TestNodeDetail(ApiTestCase):
         assert_equal(res.json['data']['attributes']['tags'], [])
 
     def test_requesting_folder_returns_error(self):
-        folder = NodeFactory(is_collection=True, creator=self.user)
+        folder = CollectionFactory(creator=self.user)
         res = self.app.get(
             '/{}nodes/{}/'.format(API_BASE, folder._id),
             auth=self.user.auth,
@@ -657,18 +658,18 @@ class TestNodeUpdate(NodeCRUDTestCase):
         self.private_project.save()
         new_category = 'data'
         payload = make_node_payload(self.private_project, attributes={'category': new_category})
-        original_n_logs = len(self.private_project.logs)
+        original_n_logs = self.private_project.logs.count()
 
         res = self.app.patch_json_api(self.private_url, payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         self.private_project.reload()
         assert_equal(self.private_project.category, new_category)
-        assert_equal(len(self.private_project.logs), original_n_logs + 1)  # sanity check
+        assert_equal(self.private_project.logs.count(), original_n_logs + 1)  # sanity check
 
         res = self.app.patch_json_api(self.private_url, payload, auth=self.user.auth)
         self.private_project.reload()
         assert_equal(self.private_project.category, new_category)
-        assert_equal(len(self.private_project.logs), original_n_logs + 1)
+        assert_equal(self.private_project.logs.count(), original_n_logs + 1)
 
     def test_partial_update_invalid_id(self):
         res = self.app.patch_json_api(self.public_url, {
@@ -746,6 +747,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Title cannot exceed 200 characters.')
 
+    @pytest.mark.skip('Addons not yet implemented')
     def test_public_project_with_publicly_editable_wiki_turns_private(self):
         wiki = self.public_project.get_addon('wiki')
         wiki.set_editing(permissions=True, auth=Auth(user=self.user), log=True)
@@ -948,8 +950,8 @@ class TestNodeTags(ApiTestCase):
         assert_equal(res.json['data']['attributes']['tags'][0], 'new-tag')
         # Ensure data is correct in the database
         self.public_project.reload()
-        assert_equal(len(self.public_project.tags), 1)
-        assert_equal(self.public_project.tags[0]._id, 'new-tag')
+        assert_equal(self.public_project.tags.count(), 1)
+        assert_equal(self.public_project.tags.first()._id, 'new-tag')
         # Ensure data is correct when GETting the resource again
         reload_res = self.app.get(self.public_url)
         assert_equal(len(reload_res.json['data']['attributes']['tags']), 1)
@@ -964,8 +966,8 @@ class TestNodeTags(ApiTestCase):
         assert_equal(res.json['data']['attributes']['tags'][0], 'new-tag')
         # Ensure data is correct in the database
         self.private_project.reload()
-        assert_equal(len(self.private_project.tags), 1)
-        assert_equal(self.private_project.tags[0]._id, 'new-tag')
+        assert_equal(self.private_project.tags.count(), 1)
+        assert_equal(self.private_project.tags.first()._id, 'new-tag')
         # Ensure data is correct when GETting the resource again
         reload_res = self.app.get(self.private_url, auth=self.user.auth)
         assert_equal(len(reload_res.json['data']['attributes']['tags']), 1)

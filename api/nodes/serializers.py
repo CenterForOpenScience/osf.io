@@ -290,7 +290,7 @@ class NodeSerializer(JSONAPISerializer):
     # TODO: See if we can get the count filters into the filter rather than the serializer.
 
     def get_logs_count(self, obj):
-        return len(obj.logs)
+        return obj.logs.count()
 
     def get_node_count(self, obj):
         auth = get_user_auth(self.context['request'])
@@ -306,13 +306,13 @@ class NodeSerializer(JSONAPISerializer):
         return len(registrations)
 
     def get_pointers_count(self, obj):
-        return len(obj.nodes_pointer)
+        return obj.linked_nodes.count()
 
     def get_node_links_count(self, obj):
         count = 0
         auth = get_user_auth(self.context['request'])
-        for pointer in obj.nodes_pointer:
-            if not pointer.node.is_deleted and not pointer.node.is_collection and pointer.node.can_view(auth):
+        for pointer in obj.linked_nodes.filter(is_deleted=False).exclude(type='osf_models.collection'):
+            if pointer.node.can_view(auth):
                 count += 1
         return count
 
