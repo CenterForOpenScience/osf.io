@@ -2,6 +2,8 @@ from django.test import RequestFactory
 from django.http import Http404
 from nose import tools as nt
 import mock
+import csv
+import os
 
 from tests.base import AdminTestCase
 from website import settings
@@ -18,6 +20,7 @@ from admin.users.views import (
     UserFlaggedSpamList,
     UserKnownSpamList,
     UserKnownHamList,
+    UserWorkshopFormView,
 )
 from admin.common_auth.logs import OSFLogEntry
 
@@ -136,12 +139,14 @@ class TestDisableSpamUser(AdminTestCase):
         with nt.assert_raises(Http404):
             view.delete(self.request)
 
+
 class SpamUserListMixin(AdminTestCase):
     def setUp(self):
         self.flagged_user = UserFactory(system_tags=['spam_flagged'])
         self.spam_user = UserFactory(system_tags=['spam_confirmed'])
         self.ham_user = UserFactory(system_tags=['ham_confirmed'])
         self.request = RequestFactory().post('/fake_path')
+
 
 class TestFlaggedSpamUserList(SpamUserListMixin):
     def setUp(self):
@@ -178,6 +183,7 @@ class TestConfirmedHamUserList(SpamUserListMixin):
         nt.assert_equal(qs.count(), 1)
         nt.assert_equal(qs[0]._id, self.ham_user._id)
 
+
 class TestRemove2Factor(AdminTestCase):
     def setUp(self):
         super(TestRemove2Factor, self).setUp()
@@ -201,3 +207,37 @@ class TestRemove2Factor(AdminTestCase):
         post_addon = self.user.get_addon('twofactor')
         nt.assert_equal(post_addon, None)
         nt.assert_equal(OSFLogEntry.objects.count(), count + 1)
+
+
+class TestUserWorkshopFormView(AdminTestCase):
+    def setUp(self):
+        self.user_1 = AuthUserFactory()
+        self.user_2 = AuthUserFactory()
+        self.user_3 = AuthUserFactory()
+        self.data = [
+            ['none', 'date', 'thing', 'more', 'less', 'email', 'none'],
+            [None, '9/19/16', None, None, None, self.user_1.username, None],
+            [None, '9/19/16', None, None, None, self.user_2.username, None],
+            [None, '9/19/16', None, None, None, self.user_3.username, None],
+        ]
+        with open('test.csv', 'w') as fp:
+            writer = csv.writer(fp)
+            for row in self.data:
+                writer.writerow(row)
+        self.view = UserWorkshopFormView()
+
+    def test_no_extra_info(self):
+        with file('test.csv') as fp:
+            final = self.view.parse(fp)
+        nt.assert_equal(len(self.data[0]) + 3, len(final[0]))
+
+    def test_one_node(self):
+        node = ProjectFactory(creator=self.user_1)
+        node.save()
+        best = self.user_1.created
+        with file('test.csv') as fp:
+            final = self.view.parse(fp)
+        nt.assert_equal(1, final[1][-2])
+
+    def tearDown(self):
+        os.remove('test.csv')
