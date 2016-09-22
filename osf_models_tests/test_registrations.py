@@ -1,5 +1,6 @@
 import mock
 import pytest
+import datetime
 
 from django.utils import timezone
 from framework.auth.core import Auth
@@ -522,3 +523,34 @@ class TestDraftRegistrations:
         assert draft in project.draft_registrations_active.all()
         assert draft2 in project.draft_registrations_active.all()
         assert finished_draft in project.draft_registrations_active.all()
+
+    def test_update_metadata_interleaves_comments_by_created_timestamp(self, project):
+        draft = factories.DraftRegistrationFactory(branched_from=project)
+        now = datetime.datetime.today()
+
+        comments = []
+        times = (now + datetime.timedelta(minutes=i) for i in range(6))
+        for time in times:
+            comments.append({
+                'created': time.isoformat(),
+                'value': 'Foo'
+            })
+        orig_data = {
+            'foo': {
+                'value': 'bar',
+                'comments': [comments[i] for i in range(0, 6, 2)]
+            }
+        }
+        draft.update_metadata(orig_data)
+        draft.save()
+        assert draft.registration_metadata['foo']['comments'] == [comments[i] for i in range(0, 6, 2)]
+
+        new_data = {
+            'foo': {
+                'value': 'bar',
+                'comments': [comments[i] for i in range(1, 6, 2)]
+            }
+        }
+        draft.update_metadata(new_data)
+        draft.save()
+        assert draft.registration_metadata['foo']['comments'] == comments
