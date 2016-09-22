@@ -27,6 +27,7 @@ from osf_models.models.identifiers import IdentifierMixin
 from osf_models.models.mixins import Loggable, Taggable, AddonModelMixin, NodeLinkMixin
 from osf_models.models.tag import Tag
 from osf_models.models.nodelog import NodeLog
+from osf_models.models.mixins import CommentableMixin
 from osf_models.models.sanctions import RegistrationApproval
 from osf_models.models.user import OSFUser
 from osf_models.models.validators import validate_title
@@ -68,7 +69,7 @@ logger = logging.getLogger(__name__)
 
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,
-                   NodeLinkMixin,
+                   NodeLinkMixin, CommentableMixin,
                    Taggable, Loggable, GuidMixin, BaseModel):
     """
     All things that inherit from AbstractNode will appear in
@@ -278,6 +279,22 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def embargo_end_date(self):
         """For v1 compat."""
         return False
+
+    # For Comment API compatibility
+    @property
+    def target_type(self):
+        """The object "type" used in the OSF v2 API."""
+        return 'nodes'
+
+    @property
+    def root_target_page(self):
+        """The comment page type associated with Nodes."""
+        Comment = apps.get_model('osf_models.Comment')
+        return Comment.OVERVIEW
+
+    def belongs_to_node(self, node_id):
+        """Check whether this node matches the specified node."""
+        return self._id == node_id
 
     @property
     def category_display(self):
