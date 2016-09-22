@@ -115,8 +115,11 @@ class CollectionDetailSerializer(CollectionSerializer):
 
 class CollectionNodeLinkSerializer(NodeLinksSerializer):
     def get_absolute_url(self, obj):
-        kwargs = self.context['request'].parser_context['kwargs']
-        kwargs.update({'node_link_id': obj._id})
+        kwargs = {
+            'collection_id': self.context['request'].parser_context['kwargs']['collection_id'],
+            'node_link_id': obj._id,
+            'version': self.context['request'].parser_context['kwargs']['version']
+        }
         return absolute_reverse(
             'collections:node-pointer-detail',
             kwargs=kwargs

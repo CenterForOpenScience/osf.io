@@ -676,8 +676,11 @@ class NodeContributorsSerializer(JSONAPISerializer):
         type_ = 'contributors'
 
     def get_absolute_url(self, obj):
-        kwargs = self.context['request'].parser_context['kwargs']
-        kwargs.update({'user_id': obj._id})
+        kwargs = {
+            'user_id': obj._id,
+            'node_id': self.context['request'].parser_context['kwargs']['node_id'],
+            'version': self.context['request'].parser_context['kwargs']['version']
+        }
         return absolute_reverse(
             'nodes:node-contributor-detail',
             kwargs=kwargs
@@ -807,8 +810,11 @@ class NodeLinksSerializer(JSONAPISerializer):
     })
 
     def get_absolute_url(self, obj):
-        kwargs = self.context['request'].parser_context['kwargs']
-        kwargs.update({'node_link_id': obj._id})
+        kwargs = {
+            'node_link_id': obj._id,
+            'node_id': self.context['request'].parser_context['kwargs']['node_id'],
+            'version': self.context['request'].parser_context['kwargs']['version']
+        }
         return absolute_reverse(
             'nodes:node-pointer-detail',
             kwargs=kwargs

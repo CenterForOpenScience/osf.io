@@ -33,13 +33,13 @@ class VersioningTestCase(ApiTestCase):
         self.invalid_query_parameter_version_url = '/v2/?version={}'.format(self.invalid_query_parameter_version)
 
         settings.REST_FRAMEWORK['ALLOWED_VERSIONS'] = TESTING_ALLOWED_VERSIONS
+        settings.REST_FRAMEWORK['DEFAULT_VERSION'] = '2.0'
 
 
 class TestBaseVersioning(VersioningTestCase):
 
     def setUp(self):
         super(TestBaseVersioning, self).setUp()
-        settings.REST_FRAMEWORK['DEFAULT_VERSION'] = '2.0'
 
     def test_url_path_version(self):
         res = self.app.get(self.valid_url_path_version_url)
@@ -127,27 +127,3 @@ class TestBaseVersioning(VersioningTestCase):
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 404)
         assert_equal(res.json['errors'][0]['detail'], 'Invalid version in query parameter.')
-
-
-class TestDefaultVersionURLPathSame(VersioningTestCase):
-
-    def setUp(self):
-        super(TestDefaultVersionURLPathSame, self).setUp()
-        settings.REST_FRAMEWORK['DEFAULT_VERSION'] = '2.1'
-
-    def test_default_version_within_url_path_major_version(self):
-        res = self.app.get(self.valid_url_path_version_url)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['meta']['version'], '2.1')
-
-
-class TestDefaultVersionURLPathDiffer(VersioningTestCase):
-
-    def setUp(self):
-        super(TestDefaultVersionURLPathDiffer, self).setUp()
-        settings.REST_FRAMEWORK['DEFAULT_VERSION'] = '3.0'
-
-    def test_default_version_differs_from_url_path_major_version(self):
-        res = self.app.get(self.valid_url_path_version_url, expect_errors=True)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.json['meta']['version'], '2.0')

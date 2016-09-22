@@ -1,12 +1,15 @@
-from django.conf import settings
+from django.conf import settings as drf_settings
 from django.conf.urls import include, url
 from django.conf.urls.static import static
 from django.views.generic.base import RedirectView
 
 from . import views
+from . import settings
+from . import versioning
+
+default_version = versioning.decimal_version_to_url_path(settings.REST_FRAMEWORK['DEFAULT_VERSION'])
 
 # Please keep URLs alphabetized for auto-generated documentation
-
 urlpatterns = [
     url('^(?P<version>(v2))/',
         include(
@@ -38,10 +41,10 @@ urlpatterns = [
             ],
         )
         ),
-    url(r'^$', RedirectView.as_view(pattern_name=views.root), name='redirect-to-root')
+    url(r'^$', RedirectView.as_view(pattern_name=views.root), name='redirect-to-root', kwargs={'version': default_version})
 ]
 
 
-urlpatterns += static('/static/', document_root=settings.STATIC_ROOT)
+urlpatterns += static('/static/', document_root=drf_settings.STATIC_ROOT)
 
 handler404 = views.error_404

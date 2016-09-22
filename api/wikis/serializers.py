@@ -76,8 +76,10 @@ class WikiSerializer(JSONAPISerializer):
         }
 
     def get_wiki_content(self, obj):
-        kwargs = self.context['request'].parser_context['kwargs']
-        kwargs.update({'wiki_id': obj._id})
+        kwargs = {
+            'wiki_id': obj._id,
+            'version': self.context['request'].parser_context['kwargs']['version']
+        }
         return absolute_reverse('wikis:wiki-content', kwargs=kwargs)
 
 

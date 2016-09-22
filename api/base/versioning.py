@@ -7,33 +7,36 @@ from api.base import exceptions
 from api.base import utils
 
 
+def get_major_version(version):
+    try:
+        major_version = int(float(version))
+    except ValueError:
+        major_version = int(version.split('.')[0])
+    return major_version
+
+
+def url_path_version_to_decimal(url_path_version):
+    # 'v2' --> '2.0'
+    return str(float(url_path_version.split('v')[1]))
+
+
+def decimal_version_to_url_path(decimal_version):
+    # '2.0' --> 'v2'
+    return 'v{}'.format(get_major_version(decimal_version))
+
+
 class BaseVersioning(drf_versioning.BaseVersioning):
 
     def __init__(self):
         super(BaseVersioning, self).__init__()
 
-    def get_major_version(self, version):
-        try:
-            major_version = int(float(version))
-        except ValueError:
-            major_version = int(version.split('.')[0])
-        return major_version
-
-    def url_path_version_to_decimal(self, url_path_version):
-        # 'v2' --> '2.0'
-        return str(float(url_path_version.split('v')[1]))
-
-    def decimal_version_to_url_path(self, decimal_version):
-        # '2.0' --> 'v2'
-        return 'v{}'.format(self.get_major_version(decimal_version))
-
     def get_url_path_version(self, kwargs):
         invalid_version_message = 'Invalid version in URL path.'
         version = kwargs.get(self.version_param)
-        version = self.url_path_version_to_decimal(version)
+        version = url_path_version_to_decimal(version)
         if not self.is_allowed_version(version):
             raise drf_exceptions.NotFound(invalid_version_message)
-        if self.get_major_version(version) == self.get_major_version(self.default_version):
+        if get_major_version(version) == get_major_version(self.default_version):
             return self.default_version
         return version
 
@@ -58,9 +61,9 @@ class BaseVersioning(drf_versioning.BaseVersioning):
         return version
 
     def validate_pinned_versions(self, url_path_version, header_version, query_parameter_version):
-        url_path_major_version = self.get_major_version(url_path_version)
-        header_major_version = self.get_major_version(header_version) if header_version else None
-        query_major_version = self.get_major_version(query_parameter_version) if query_parameter_version else None
+        url_path_major_version = get_major_version(url_path_version)
+        header_major_version = get_major_version(header_version) if header_version else None
+        query_major_version = get_major_version(query_parameter_version) if query_parameter_version else None
         if header_version and header_major_version != url_path_major_version:
             raise exceptions.Conflict(
                 detail='Version {} specified in "Accept" header does not fall within URL path version {}'.format(
@@ -100,7 +103,7 @@ class BaseVersioning(drf_versioning.BaseVersioning):
         query_parameter_version = self.get_query_param_version(request)
 
         kwargs = {} if (kwargs is None) else kwargs
-        kwargs[self.version_param] = self.decimal_version_to_url_path(url_path_version)
+        kwargs[self.version_param] = decimal_version_to_url_path(url_path_version)
         query_kwargs = {'version': query_parameter_version} if query_parameter_version else None
 
         return utils.absolute_reverse(

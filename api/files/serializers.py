@@ -48,12 +48,15 @@ class CheckoutField(ser.HyperlinkedRelatedField):
 
         super(CheckoutField, self).__init__('users:user-detail', **kwargs)
 
-    def resolve(self, resource):
+    def resolve(self, resource, request):
         """
         Resolves the view when embedding.
         """
         embed_value = resource.stored_object.checkout.pk
-        kwargs = {self.lookup_url_kwarg: embed_value}
+        kwargs = {
+            self.lookup_url_kwarg: embed_value,
+            'version': request.parser_context['kwargs']['version']
+        }
         return resolve(
             reverse(
                 self.view_name,
@@ -67,7 +70,12 @@ class CheckoutField(ser.HyperlinkedRelatedField):
     def get_url(self, obj, view_name, request, format):
         if obj is None:
             return {}
-        return super(CheckoutField, self).get_url(obj, view_name, request, format)
+        lookup_value = getattr(obj, self.lookup_field)
+        kwargs = {
+            self.lookup_url_kwarg: lookup_value,
+            'version': self.context['request'].parser_context['kwargs']['version']
+        }
+        return absolute_reverse(self.view_name, kwargs=kwargs)
 
     def to_internal_value(self, data):
         if data is None:
@@ -295,11 +303,11 @@ class FileVersionSerializer(JSONAPISerializer):
         type_ = 'file_versions'
 
     def self_url(self, obj):
-        kwargs = self.context['request'].parser_context['kwargs']
-        kwargs.update({
+        kwargs = {
             'version_id': obj.identifier,
-            'file_id': self.context['view'].kwargs['file_id']
-        })
+            'file_id': self.context['view'].kwargs['file_id'],
+            'version': self.context['request'].parser_context['kwargs']['version']
+        }
         return absolute_reverse('files:version-detail', kwargs=kwargs)
 
     def absolute_url(self, obj):

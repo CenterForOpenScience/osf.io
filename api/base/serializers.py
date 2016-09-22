@@ -183,13 +183,13 @@ class AllowMissing(ser.Field):
         return self.field.to_internal_value(data)
 
 
-def _url_val(val, obj, serializer, **kwargs):
+def _url_val(val, obj, serializer, request, **kwargs):
     """Function applied by `HyperlinksField` to get the correct value in the
     schema.
     """
     url = None
     if isinstance(val, Link):  # If a Link is passed, get the url value
-        url = val.resolve_url(obj, **kwargs)
+        url = val.resolve_url(obj, request)
     elif isinstance(val, basestring):  # if a string is passed, it's a method of the serializer
         if getattr(serializer, 'field', None):
             serializer = serializer.parent
@@ -388,7 +388,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         if kwargs.get('read_only') is not None:
             self.read_only = kwargs['read_only']
 
-    def resolve(self, resource, field_name):
+    def resolve(self, resource, field_name, request):
         """
         Resolves the view when embedding.
         """
@@ -396,8 +396,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         if callable(lookup_url_kwarg):
             lookup_url_kwarg = lookup_url_kwarg(getattr(resource, field_name))
 
-        kwargs = {attr_name: self.lookup_attribute(resource, attr) for (attr_name, attr) in
-                  lookup_url_kwarg.items()}
+        kwargs = {attr_name: self.lookup_attribute(resource, attr) for (attr_name, attr) in lookup_url_kwarg.items()}
+        kwargs.update({'version': request.parser_context['kwargs']['version']})
+
         view = self.view_name
         if callable(self.view_name):
             view = view(getattr(resource, field_name))
@@ -452,11 +453,11 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 field_counts_requested = self.process_related_counts_parameters(show_related_counts, value)
 
                 if utils.is_truthy(show_related_counts):
-                    meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
+                    meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent, request=self.context['request'])
                 elif utils.is_falsy(show_related_counts):
                     continue
                 elif self.field_name in field_counts_requested:
-                    meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
+                    meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent, request=self.context['request'])
                 else:
                     continue
             elif key == 'projects_in_common':
@@ -464,9 +465,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     continue
                 if not self.context['request'].query_params.get('show_projects_in_common', False):
                     continue
-                meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
+                meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent, request=self.context['request'])
             else:
-                meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
+                meta[key] = website_utils.rapply(meta_data[key], _url_val, obj=value, serializer=self.parent, request=self.context['request'])
         return meta
 
     def lookup_attribute(self, obj, lookup_field):
@@ -660,7 +661,7 @@ class TargetField(ser.Field):
         self.link_type = kwargs.pop('link_type', 'url')
         super(TargetField, self).__init__(read_only=True, **kwargs)
 
-    def resolve(self, resource, field_name):
+    def resolve(self, resource, field_name, request):
         """
         Resolves the view for target node or target comment when embedding.
         """
@@ -673,7 +674,7 @@ class TargetField(ser.Field):
             return None, None, None
         embed_value = resource.target._id
 
-        kwargs = {view_info['lookup_kwarg']: embed_value}
+        kwargs = {view_info['lookup_kwarg']: embed_value, 'version': request.parser_context['kwargs']['version']}
         return resolve(
             reverse(
                 view_info['view'],
@@ -696,7 +697,7 @@ class TargetField(ser.Field):
         If no meta information, self.link_type is equal to a string containing link's URL.  Otherwise,
         the link is represented as a links object with 'href' and 'meta' members.
         """
-        meta = website_utils.rapply(self.meta, _url_val, obj=value, serializer=self.parent)
+        meta = website_utils.rapply(self.meta, _url_val, obj=value, serializer=self.parent, request=self.context['request'])
         return {'links': {self.link_type: {'href': value.referent.get_absolute_url(), 'meta': meta}}}
 
 
@@ -740,7 +741,7 @@ class LinksField(ser.Field):
         ret = {}
         for name, value in self.links.iteritems():
             try:
-                url = _url_val(value, obj=obj, serializer=self.parent)
+                url = _url_val(value, obj=obj, serializer=self.parent, request=self.context['request'])
             except SkipField:
                 continue
             else:
@@ -795,8 +796,9 @@ class Link(object):
         self.reverse_kwargs = kw
         self.query_kwargs = query_kwargs or {}
 
-    def resolve_url(self, obj):
+    def resolve_url(self, obj, request):
         kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in self.kwargs.items()}
+        kwarg_values.update({'version': request.parser_context['kwargs']['version']})
         arg_values = [_get_attr_from_tpl(attr_tpl, obj) for attr_tpl in self.args]
         query_kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in self.query_kwargs.items()}
         # Presumably, if you have are expecting a value but the value is empty, then the link is invalid.
@@ -821,7 +823,7 @@ class WaterbutlerLink(Link):
         self.must_be_file = must_be_file
         self.must_be_folder = must_be_folder
 
-    def resolve_url(self, obj):
+    def resolve_url(self, obj, request):
         """Reverse URL lookup for WaterButler routes
         """
         if self.must_be_folder is True and not obj.path.endswith('/'):

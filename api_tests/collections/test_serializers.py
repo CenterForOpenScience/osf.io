@@ -19,6 +19,7 @@ class TestNodeSerializer(DbTestCase):
     def test_collection_serialization(self):
         collection = CollectionFactory(creator=self.user)
         req = make_drf_request()
+        req.parser_context['kwargs'] = {'version': 'v2'}
         result = CollectionSerializer(collection, context={'request': req}).data
         data = result['data']
         assert_equal(data['id'], collection._id)

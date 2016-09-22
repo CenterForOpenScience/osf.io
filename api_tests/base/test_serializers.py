@@ -104,13 +104,13 @@ class TestNullLinks(ApiTestCase):
 
     def test_null_links_are_omitted(self):
         req = make_drf_request()
+        req.parser_context['kwargs'] = {'version': 'v2'}
         rep = FakeSerializer(FakeModel, context={'request': req}).data['data']
 
         assert_not_in('null_field', rep['links'])
         assert_in('valued_field', rep['links'])
         assert_not_in('null_link_field', rep['relationships'])
         assert_in('valued_link_field', rep['relationships'])
-
 
 
 class TestApiBaseSerializers(ApiTestCase):
@@ -225,7 +225,6 @@ class TestApiBaseSerializers(ApiTestCase):
         assert_equal(res.json['errors'][0]['detail'], "Acceptable values for the related_counts query param are 'true', 'false', or any of the relationship fields; got 'title'")
 
 
-
 class TestRelationshipField(DbTestCase):
 
     # We need a Serializer to test the Relationship field (needs context)
@@ -266,7 +265,7 @@ class TestRelationshipField(DbTestCase):
         registered_from = RelationshipField(
             related_view=lambda n: 'registrations:registration-detail' if n and n.is_registration else 'nodes:node-detail',
             related_view_kwargs=lambda n: {
-                'node_id': '<registered_from_id>'
+                'node_id': '<registered_from_id>',
             }
         )
 
@@ -284,6 +283,7 @@ class TestRelationshipField(DbTestCase):
     # Regression test for https://openscience.atlassian.net/browse/OSF-4832
     def test_serializing_meta(self):
         req = make_drf_request()
+        req.parser_context['kwargs'] = {'version': 'v2'}
         project = factories.ProjectFactory()
         node = factories.NodeFactory(parent=project)
         data = self.BasicNodeSerializer(node, context={'request': req}).data['data']
@@ -295,6 +295,7 @@ class TestRelationshipField(DbTestCase):
 
     def test_self_and_related_fields(self):
         req = make_drf_request()
+        req.parser_context['kwargs'] = {'version': 'v2'}
         project = factories.ProjectFactory()
         node = factories.NodeFactory(parent=project)
         data = self.BasicNodeSerializer(node, context={'request': req}).data['data']
@@ -305,6 +306,7 @@ class TestRelationshipField(DbTestCase):
 
     def test_field_with_two_kwargs(self):
         req = make_drf_request()
+        req.parser_context['kwargs'] = {'version': 'v2'}
         project = factories.ProjectFactory()
         node = factories.NodeFactory(parent=project)
         data = self.BasicNodeSerializer(node, context={'request': req}).data['data']
@@ -313,6 +315,7 @@ class TestRelationshipField(DbTestCase):
 
     def test_field_with_non_attribute(self):
         req = make_drf_request()
+        req.parser_context['kwargs'] = {'version': 'v2'}
         project = factories.ProjectFactory()
         node = factories.NodeFactory(parent=project)
         data = self.BasicNodeSerializer(node, context={'request': req}).data['data']
@@ -321,6 +324,7 @@ class TestRelationshipField(DbTestCase):
 
     def test_field_with_callable_related_attrs(self):
         req = make_drf_request()
+        req.parser_context['kwargs'] = {'version': 'v2'}
         project = factories.ProjectFactory()
         node = factories.NodeFactory(parent=project)
         data = self.BasicNodeSerializer(node, context={'request': req}).data['data']

@@ -191,8 +191,10 @@ class BaseRegistrationSerializer(NodeSerializer):
     links = LinksField({'self': 'get_registration_url', 'html': 'get_absolute_html_url'})
 
     def get_registration_url(self, obj):
-        kwargs = self.context['request'].parser_context['kwargs']
-        kwargs.update({'node_id': obj._id})
+        kwargs = {
+            'node_id': obj._id,
+            'version': self.context['request'].parser_context['kwargs']['version']
+        }
         return absolute_reverse('registrations:registration-detail', kwargs=kwargs)
 
     def get_absolute_url(self, obj):
@@ -298,8 +300,11 @@ class RegistrationDetailSerializer(BaseRegistrationSerializer):
 
 class RegistrationNodeLinksSerializer(NodeLinksSerializer):
     def get_absolute_url(self, obj):
-        kwargs = self.context['request'].parser_context['kwargs']
-        kwargs.update({'node_link_id': obj._id})
+        kwargs = {
+            'node_link_id': obj._id,
+            'node_id': self.context['request'].parser_context['kwargs']['node_id'],
+            'version': self.context['request'].parser_context['kwargs']['version']
+        }
         return absolute_reverse(
             'registrations:registration-pointer-detail',
             kwargs=kwargs
@@ -308,8 +313,11 @@ class RegistrationNodeLinksSerializer(NodeLinksSerializer):
 
 class RegistrationContributorsSerializer(NodeContributorsSerializer):
     def get_absolute_url(self, obj):
-        kwargs = self.context['request'].parser_context['kwargs']
-        kwargs.update({'user_id': obj._id})
+        kwargs = {
+            'user_id': obj._id,
+            'node_id': self.context['request'].parser_context['kwargs']['node_id'],
+            'version': self.context['request'].parser_context['kwargs']['version']
+        }
         return absolute_reverse(
             'registrations:registration-contributor-detail',
             kwargs=kwargs

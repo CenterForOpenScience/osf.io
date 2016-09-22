@@ -20,8 +20,11 @@ REST_FRAMEWORK = {
     ),
     'EXCEPTION_HANDLER': 'api.base.exceptions.json_api_exception_handler',
     'DEFAULT_CONTENT_NEGOTIATION_CLASS': 'api.base.content_negotiation.JSONAPIContentNegotiation',
-    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.AcceptHeaderVersioning',
+    'DEFAULT_VERSIONING_CLASS': 'api.base.versioning.BaseVersioning',
     'DEFAULT_VERSION': '2.0',
+    'ALLOWED_VERSIONS': (
+        '2.0'
+    ),
     'DEFAULT_FILTER_BACKENDS': ('api.base.filters.ODMOrderingFilter',),
     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',
     'ORDERING_PARAM': 'sort',
