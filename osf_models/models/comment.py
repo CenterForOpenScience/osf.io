@@ -28,7 +28,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
 
     user = models.ForeignKey('OSFUser', null=True)
     # the node that the comment belongs to
-    node = models.ForeignKey('Node', null=True)
+    node = models.ForeignKey('AbstractNode', null=True)
 
     # The file or project overview page that the comment is for
     root_target = models.ForeignKey(Guid, on_delete=models.SET_NULL,
