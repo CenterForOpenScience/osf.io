@@ -29,6 +29,8 @@ from api.nodes.permissions import ContributorOrPublicForRelationshipPointers
 from api.base.utils import is_bulk_request, get_user_auth
 from website.models import Pointer
 
+from osf_models.models.contributor import Contributor, get_contributor_permissions
+
 
 CACHE = weakref.WeakKeyDictionary()
 
@@ -725,12 +727,15 @@ class BaseContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         user = self.get_user()
         # May raise a permission denied
         self.check_object_permissions(self.request, user)
-        if user not in node.contributors:
+        try:
+            contributor = node.contributor_set.get(user=user)
+        except Contributor.DoesNotExist:
             raise NotFound('{} cannot be found in the list of contributors.'.format(user))
-        user.permission = node.get_permissions(user)[-1]
-        user.bibliographic = node.get_visible(user)
+
+        user.permission = get_contributor_permissions(contributor, as_list=False)
+        user.bibliographic = contributor.visible
         user.node_id = node._id
-        user.index = node.contributors.index(user)
+        user.index = list(node.get_contributor_order()).index(contributor.id)
         return user
 
 class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
