@@ -1243,12 +1243,12 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
         req_query = self.get_query_from_request()
 
         query = (
-            Q('_id', 'in', [e._id for e in node.nodes if e.primary]) &
+            Q('pk', 'in', node.nodes.values_list('pk', flat=True)) &
             req_query
         )
-        nodes = Node.find(query)
+        nodes = Node.find(query).order_by('-date_modified')
         auth = get_user_auth(self.request)
-        return sorted([each for each in nodes if each.can_view(auth)], key=lambda n: n.date_modified, reverse=True)
+        return [each for each in nodes if each.can_view(auth)]
 
     # overrides ListBulkCreateJSONAPIView
     def perform_create(self, serializer):
