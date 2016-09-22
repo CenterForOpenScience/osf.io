@@ -74,7 +74,7 @@ var institutionLogos = {
         self.width = self.nLogos > 1 ? (self.nLogos === 2 ? '115px' : '86px') : '75px';
         self.makeLogo = function(institution){
             return m('a', {href: '/institutions/' + institution.id},
-                m('img.img-circle', {
+                m('img', {
                     height: self.side, width: self.side,
                     style: {margin: '3px'},
                     title: institution.name,
