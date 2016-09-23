@@ -157,6 +157,19 @@ class TestDraftRegistrationApprovals:
                 'registration_choice': 'immediate'
             }
         )
+        approval.save()
+        project = factories.ProjectFactory(creator=user)
+        ensure_schemas()
+        registration_schema = MetaSchema.find_one(
+            Q('name', 'eq', 'Prereg Challenge') &
+            Q('schema_version', 'eq', 2)
+        )
+        draft = factories.DraftRegistrationFactory(
+            branched_from=project,
+            registration_schema=registration_schema,
+        )
+        draft.approval = approval
+        draft.save()
         approval._on_reject(user)
         assert approval.meta == {}
         assert mock_send_mail.call_count == 1
