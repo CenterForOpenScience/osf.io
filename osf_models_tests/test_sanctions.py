@@ -118,6 +118,7 @@ class TestDraftRegistrationApprovals:
         )
         approval.save()
         project = factories.ProjectFactory(creator=user)
+        ensure_schemas()
         registration_schema = MetaSchema.find_one(
             Q('name', 'eq', 'Prereg Challenge') &
             Q('schema_version', 'eq', 2)
@@ -130,10 +131,11 @@ class TestDraftRegistrationApprovals:
         draft.save()
 
         approval._on_complete(user)
+        draft.reload()
         registered_node = draft.registered_node
         assert registered_node is not None
         assert registered_node.is_pending_embargo
-        assert registered_node.registered_user == self.draft.initiator
+        assert registered_node.registered_user == draft.initiator
 
     def test_approval_requires_only_a_single_authorizer(self):
         approval = DraftRegistrationApproval(
