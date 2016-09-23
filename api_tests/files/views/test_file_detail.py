@@ -71,6 +71,7 @@ class TestFileView(ApiTestCase):
         assert_equal(attributes['last_touched'], None)
         assert_equal(attributes['provider'], self.file.provider)
         assert_equal(attributes['size'], self.file.versions[-1].size)
+        assert_equal(attributes['current_version'], len(self.file.history))
         assert_equal(attributes['date_modified'], _dt_to_iso8601(self.file.versions[-1].date_created.replace(tzinfo=pytz.utc)))
         assert_equal(attributes['date_created'], _dt_to_iso8601(self.file.versions[0].date_created.replace(tzinfo=pytz.utc)))
         assert_equal(attributes['extra']['hashes']['md5'], None)
