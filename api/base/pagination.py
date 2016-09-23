@@ -260,6 +260,9 @@ class SearchPagination(JSONAPIPagination):
             view_name,
             query_kwargs={
                 'q': query
+            },
+            kwargs={
+                'version': self.request.parser_context['kwargs']['version']
             }
         )
 
