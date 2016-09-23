@@ -1,3 +1,4 @@
+import pytz
 import functools
 
 from dateutil.parser import parse as parse_date
@@ -882,10 +883,13 @@ class DraftRegistrationApproval(Sanction):
         if registration_choice == 'immediate':
             sanction = functools.partial(registration.require_approval, draft.initiator)
         elif registration_choice == 'embargo':
+            embargo_end_date = parse_date(self.meta.get('embargo_end_date'))
+            if not embargo_end_date.tzinfo:
+                embargo_end_date = embargo_end_date.replace(tzinfo=pytz.UTC)
             sanction = functools.partial(
                 registration.embargo_registration,
                 draft.initiator,
-                parse_date(self.meta.get('embargo_end_date'), ignoretz=True)
+                embargo_end_date
             )
         else:
             raise ValueError("'registration_choice' must be either 'embargo' or 'immediate'")
