@@ -412,6 +412,47 @@ def root(request, format=None, **kwargs):
     endpoint, including the name, a description, the acceptable request formats, the allowed response formats, and any
     actions available via the endpoint.
 
+    ###Versioning
+    Versioning can be specified in three different ways:
+
+    1. URL Path Versioning, e.g. `/v2/` or `/v3/`
+
+        + A version specified via the URL path is a **required** part of the URL.
+
+        + Only a major version can be specified via the URL path, i.e. `/v2.0.6/` is invalid,
+        additionally, paths such as `/v2.0/` are invalid.
+
+        + If the default version of the API is within the major version specified in the URL path,
+        the default version will be applied (i.e. if the default version is `2.3` and the URL path is `/v2/`,
+        then version returned will be `2.3`).
+
+        + If the default version of the API is not within the major version specified in the URL path,
+        the URL path version will be applied (i.e. if the default version is `3.0` and the URL path is `/v2/`,
+        then the version returned will be `2.0`)
+
+    2. Query Parameter Versioning, e.g. `/v2/nodes/?version=2.1.6`
+
+        + Pinning to a specific version via a query parameter is **optional**.
+
+        + A specific version (major, minor, or patch) for a single request can be specified via the `version`
+        query parameter, as long as it is an allowed version.
+
+        + If the version specified in the query parameter does not fall within the same major version
+         specified in the URL path, i.e `/v2/nodes/?version=3.1.4` a `409 Conflict` response will be returned.
+
+    3.  Header Versioning, e.g. `Accept-Header=application/vnd.api+json;version=3.0.1`
+
+        + Pinning to a specific version via request header is **optional**.
+
+        + A specific version (major, minor, or patch) for a single request can be specified
+         via the `Accept Header` of the request, as long as it is an allowed version.
+
+        + If the version specified in the header does not fall within the same major version specified
+         in the URL path a `409 Conflict` response will be returned.
+
+        + If both a header version and query parameter version are specified, the versions must match exactly
+          or a `409 Conflict` response will be returned (i.e. one does not take precedence over the other).
+
     ###Filtering
 
     Entity collections can be filtered by adding a query parameter in the form:
