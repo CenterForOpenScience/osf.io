@@ -160,11 +160,12 @@ class DbTestCase(unittest.TestCase):
 class DbIsolationMixin(object):
     """Use this mixin when test-level database isolation is desired.
 
-    For whatever reason (efficiency?), DbTestCase only wipes the database
-    during *class* setup and teardown. This leaks database state across test
-    cases, which smells pretty bad. Place this mixin before DbTestCase (or
-    derivatives, such as OsfTestCase) in your test class definition to wipe the
-    database during *test* setup and teardown.
+    As an optimization, DbTestCase only wipes the database during *class* setup
+    and teardown. This leaks database state across test cases, which smells
+    pretty bad. Place this mixin before DbTestCase (or derivatives, such as
+    OsfTestCase) in your test class definition to wipe the database during
+    *test* setup and teardown ... but be prepared to suffer a 20x performance
+    hit, ample time to pine and long for a glorious Postgres future.
 
     """
 
