@@ -908,10 +908,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         # Node must have at least one registered admin user
         admin_query = Contributor.objects.select_related('user').filter(
-            user=contributor,
             user__is_active=True,
             admin=True
-        )
+        ).exclude(user=contributor)
         if not admin_query.exists():
             return False
 
@@ -1563,16 +1562,18 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 else:
                     yield (contrib, node)
 
-    def get_admin_contributors(self, users):
-        """Return a set of all admin contributors for this node. Excludes contributors on node links and
-        inactive users.
-        """
-        query = Contributor.objects.select_related('user').filter(
+    def _get_admin_contributors_query(self, users):
+        return Contributor.objects.select_related('user').filter(
             user__in=users,
             user__is_active=True,
             admin=True
         )
-        return (each.user for each in query)
+
+    def get_admin_contributors(self, users):
+        """Return a set of all admin contributors for this node. Excludes contributors on node links and
+        inactive users.
+        """
+        return (each.user for each in self._get_admin_contributors_query(users))
 
     def get_admin_contributors_recursive(self, unique_users=False, *args, **kwargs):
         """Yield (admin, node) tuples for this node and
@@ -1645,7 +1646,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 else:
                     to_remove.append(user)
 
-            if users is None or not self.contributor_set.filter(admin=True).exists():
+            if users is None or not self._get_admin_contributors_query(users).exists():
                 raise NodeStateError(
                     'Must have at least one registered admin contributor'
                 )
