@@ -186,8 +186,9 @@ class Registration(AbstractNode):
 
     def _is_embargo_date_valid(self, end_date):
         now = timezone.now()
-        if (end_date - now) >= settings.EMBARGO_END_DATE_MIN:
-            if (end_date - now) <= settings.EMBARGO_END_DATE_MAX:
+        end_date_aware = end_date.replace(tzinfo=now.tzinfo)
+        if (end_date_aware - now) >= settings.EMBARGO_END_DATE_MIN:
+            if (end_date_aware - now) <= settings.EMBARGO_END_DATE_MAX:
                 return True
         return False
 
