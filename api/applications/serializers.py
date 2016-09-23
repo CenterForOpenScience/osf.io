@@ -33,9 +33,10 @@ class ApiOAuthApplicationBaseSerializer(JSONAPISerializer):
         return obj.get_absolute_url()
 
     def reset_url(self, obj):
-        kwargs = self.context['request'].parser_context['kwargs']
-        kwargs.update({'client_id': obj.client_id})
-        return absolute_reverse('applications:application-reset', kwargs=kwargs)
+        return absolute_reverse('applications:application-reset', kwargs={
+            'client_id': obj.client_id,
+            'version': self.context['request'].parser_context['kwargs']['version']
+        })
 
     class Meta:
         type_ = 'applications'
@@ -99,6 +100,7 @@ class ApiOAuth2ApplicationResetSerializer(ApiOAuth2ApplicationDetailSerializer):
         return obj.absolute_url
 
     def reset_url(self, obj):
-        kwargs = self.context['request'].parser_context['kwargs']
-        kwargs.update({'client_id': obj['client_id']})
-        return absolute_reverse('applications:application-reset', kwargs=kwargs)
+        return absolute_reverse('applications:application-reset', kwargs={
+            'client_id': obj['client_id'],
+            'version': self.context['request'].parser_context['kwargs']['version']
+        })

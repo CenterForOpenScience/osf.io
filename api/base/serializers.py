@@ -674,11 +674,13 @@ class TargetField(ser.Field):
             return None, None, None
         embed_value = resource.target._id
 
-        kwargs = {view_info['lookup_kwarg']: embed_value, 'version': request.parser_context['kwargs']['version']}
         return resolve(
             reverse(
                 view_info['view'],
-                kwargs=kwargs
+                kwargs={
+                    view_info['lookup_kwarg']: embed_value,
+                    'version': request.parser_context['kwargs']['version']
+                }
             )
         )
 

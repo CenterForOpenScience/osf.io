@@ -676,14 +676,13 @@ class NodeContributorsSerializer(JSONAPISerializer):
         type_ = 'contributors'
 
     def get_absolute_url(self, obj):
-        kwargs = {
-            'user_id': obj._id,
-            'node_id': self.context['request'].parser_context['kwargs']['node_id'],
-            'version': self.context['request'].parser_context['kwargs']['version']
-        }
         return absolute_reverse(
             'nodes:node-contributor-detail',
-            kwargs=kwargs
+            kwargs={
+                'user_id': obj._id,
+                'node_id': self.context['request'].parser_context['kwargs']['node_id'],
+                'version': self.context['request'].parser_context['kwargs']['version']
+            }
         )
 
     def get_unregistered_contributor(self, obj):
@@ -810,14 +809,13 @@ class NodeLinksSerializer(JSONAPISerializer):
     })
 
     def get_absolute_url(self, obj):
-        kwargs = {
-            'node_link_id': obj._id,
-            'node_id': self.context['request'].parser_context['kwargs']['node_id'],
-            'version': self.context['request'].parser_context['kwargs']['version']
-        }
         return absolute_reverse(
             'nodes:node-pointer-detail',
-            kwargs=kwargs
+            kwargs={
+                'node_link_id': obj._id,
+                'node_id': self.context['request'].parser_context['kwargs']['node_id'],
+                'version': self.context['request'].parser_context['kwargs']['version']
+            }
         )
 
     def create(self, validated_data):
@@ -872,22 +870,24 @@ class NodeProviderSerializer(JSONAPISerializer):
         return '{}:{}'.format(obj.node._id, obj.provider)
 
     def get_absolute_url(self, obj):
-        kwargs = self.context['request'].parser_context['kwargs']
-        kwargs.update({
-            'node_id': obj.node._id,
-            'provider': obj.provider
-        })
         return absolute_reverse(
             'nodes:node-provider-detail',
-            kwargs=kwargs
+            kwargs={
+                'node_id': obj.node._id,
+                'provider': obj.provider,
+                'version': self.context['request'].parser_context['kwargs']['version']
+            }
         )
 
     def get_storage_addons_url(self, obj):
-        kwargs = {'version': self.context['request'].parser_context['kwargs']['version']}
         return absolute_reverse(
             'addons:addon-list',
-            kwargs=kwargs,
-            query_kwargs={'filter[categories]': 'storage'}
+            kwargs={
+                'version': self.context['request'].parser_context['kwargs']['version']
+            },
+            query_kwargs={
+                'filter[categories]': 'storage'
+            }
         )
 
 class InstitutionRelated(JSONAPIRelationshipSerializer):
@@ -1167,11 +1167,13 @@ class NodeViewOnlyLinkSerializer(JSONAPISerializer):
         return view_only_link
 
     def get_absolute_url(self, obj):
-        kwargs = self.context['request'].parser_context['kwargs']
-        kwargs.update({'link_id': obj._id})
         return absolute_reverse(
             'nodes:node-view-only-link-detail',
-            kwargs=kwargs
+            kwargs={
+                'link_id': obj._id,
+                'node_id': self.context['request'].parser_context['kwargs']['node_id'],
+                'version': self.context['request'].parser_context['kwargs']['version']
+            }
         )
 
     class Meta:

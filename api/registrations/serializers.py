@@ -191,11 +191,10 @@ class BaseRegistrationSerializer(NodeSerializer):
     links = LinksField({'self': 'get_registration_url', 'html': 'get_absolute_html_url'})
 
     def get_registration_url(self, obj):
-        kwargs = {
+        return absolute_reverse('registrations:registration-detail', kwargs={
             'node_id': obj._id,
             'version': self.context['request'].parser_context['kwargs']['version']
-        }
-        return absolute_reverse('registrations:registration-detail', kwargs=kwargs)
+        })
 
     def get_absolute_url(self, obj):
         return self.get_registration_url(obj)
@@ -300,27 +299,25 @@ class RegistrationDetailSerializer(BaseRegistrationSerializer):
 
 class RegistrationNodeLinksSerializer(NodeLinksSerializer):
     def get_absolute_url(self, obj):
-        kwargs = {
-            'node_link_id': obj._id,
-            'node_id': self.context['request'].parser_context['kwargs']['node_id'],
-            'version': self.context['request'].parser_context['kwargs']['version']
-        }
         return absolute_reverse(
             'registrations:registration-pointer-detail',
-            kwargs=kwargs
+            kwargs={
+                'node_link_id': obj._id,
+                'node_id': self.context['request'].parser_context['kwargs']['node_id'],
+                'version': self.context['request'].parser_context['kwargs']['version']
+            }
         )
 
 
 class RegistrationContributorsSerializer(NodeContributorsSerializer):
     def get_absolute_url(self, obj):
-        kwargs = {
-            'user_id': obj._id,
-            'node_id': self.context['request'].parser_context['kwargs']['node_id'],
-            'version': self.context['request'].parser_context['kwargs']['version']
-        }
         return absolute_reverse(
             'registrations:registration-contributor-detail',
-            kwargs=kwargs
+            kwargs={
+                'user_id': obj._id,
+                'node_id': self.context['request'].parser_context['kwargs']['node_id'],
+                'version': self.context['request'].parser_context['kwargs']['version']
+            }
         )
 
 

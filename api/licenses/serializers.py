@@ -22,6 +22,7 @@ class LicenseSerializer(JSONAPISerializer):
         type_ = 'licenses'
 
     def get_absolute_url(self, obj):
-        kwargs = self.context['request'].parser_context['kwargs']
-        kwargs.update({'license_id': obj._id})
-        return absolute_reverse('licenses:license-detail', kwargs=kwargs)
+        return absolute_reverse('licenses:license-detail', kwargs={
+            'license_id': obj._id,
+            'version': self.context['request'].parser_context['kwargs']['version']
+        })

@@ -76,11 +76,10 @@ class WikiSerializer(JSONAPISerializer):
         }
 
     def get_wiki_content(self, obj):
-        kwargs = {
+        return absolute_reverse('wikis:wiki-content', kwargs={
             'wiki_id': obj._id,
             'version': self.context['request'].parser_context['kwargs']['version']
-        }
-        return absolute_reverse('wikis:wiki-content', kwargs=kwargs)
+        })
 
 
 class WikiDetailSerializer(WikiSerializer):

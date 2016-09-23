@@ -31,11 +31,12 @@ class ViewOnlyLinkDetailSerializer(JSONAPISerializer):
     )
 
     def get_absolute_url(self, obj):
-        kwargs = self.context['request'].parser_context['kwargs']
-        kwargs.update({'link_id': obj._id})
         return absolute_reverse(
             'nodes:node-view-only-link-detail',
-            kwargs=kwargs
+            kwargs={
+                'link_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version']
+            }
         )
 
     class Meta:
@@ -56,11 +57,12 @@ class ViewOnlyLinkNodesSerializer(ser.Serializer):
     })
 
     def get_self_url(self, obj):
-        kwargs = self.context['request'].parser_context['kwargs']
-        kwargs.update({'link_id': obj['self']._id})
         return absolute_reverse(
             'view-only-links:view-only-link-nodes',
-            kwargs=kwargs
+            kwargs={
+                'link_id': obj['self']._id,
+                'version': self.context['request'].parser_context['kwargs']['version']
+            }
         )
 
     def make_instance_obj(self, obj):
