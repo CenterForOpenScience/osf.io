@@ -418,7 +418,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
 
     @property
     def email(self):
-        return self.username
+        if self.has_usable_username():
+            return self.username
+        else:
+            return None
 
     @property
     def system_tags(self):

@@ -36,6 +36,7 @@ from osf_models.modm_compat import Q
 from osf_models.utils.auth import Auth, get_user
 from osf_models.utils.base import api_v2_url
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf_models.exceptions import ValidationValueError
 from typedmodels.models import TypedModel
 
 from framework import status
@@ -715,12 +716,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.save()
 
     def add_contributor(self, contributor, permissions=None, visible=True,
-                        auth=None, log=True, save=False):
+                        send_email='default', auth=None, log=True, save=False):
         """Add a contributor to the project.
 
         :param User contributor: The contributor to be added
         :param list permissions: Permissions to grant to the contributor
         :param bool visible: Contributor is visible in project dashboard
+        :param str send_email: Email preference for notifying added contributor
         :param Auth auth: All the auth information including user, API key
         :param bool log: Add log to self
         :param bool save: Save after adding contributor
@@ -769,8 +771,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if save:
                 self.save()
 
-            if self._id:
-                project_signals.contributor_added.send(self, contributor=contributor, auth=auth)
+            if self._id and send_email != 'false':
+                project_signals.contributor_added.send(self,
+                                                       contributor=contributor,
+                                                       auth=auth, email_template=send_email)
 
             return True
 
@@ -820,8 +824,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if save:
             self.save()
 
-    def add_unregistered_contributor(self, fullname, email, auth,
-                                     permissions=None, save=False):
+    def add_unregistered_contributor(self, fullname, email, auth, send_email='default',
+                                     visible=True, permissions=None, save=False):
         """Add a non-registered contributor to the project.
 
         :param str fullname: The full name of the person.
@@ -849,9 +853,54 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         self.add_contributor(
             contributor, permissions=permissions, auth=auth,
-            log=True, save=False,
+            visible=visible, send_email=send_email, log=True, save=False
         )
         self.save()
+        return contributor
+
+    def add_contributor_registered_or_not(self, auth, user_id=None,
+                                          full_name=None, email=None, send_email='false',
+                                          permissions=None, bibliographic=True, index=None, save=False):
+
+        if user_id:
+            contributor = OSFUser.load(user_id)
+            if not contributor:
+                raise ValueError('User with id {} was not found.'.format(user_id))
+            if self.contributor_set.filter(user=contributor).exists():
+                raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
+            self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
+                                 permissions=permissions, send_email=send_email, save=True)
+        else:
+
+            try:
+                contributor = self.add_unregistered_contributor(
+                    fullname=full_name, email=email, auth=auth,
+                    send_email=send_email, permissions=permissions,
+                    visible=bibliographic, save=True
+                )
+            except ValidationError:
+                contributor = get_user(email=email)
+                if self.contributor_set.filter(user=contributor).exists():
+                    raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
+                self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
+                                     send_email=send_email, permissions=permissions, save=True)
+
+        auth.user.email_last_sent = timezone.now()
+        auth.user.save()
+
+        if index is not None:
+            self.move_contributor(user=contributor, index=index, auth=auth, save=True)
+
+        contributor_obj = self.contributor_set.get(user=contributor)
+        contributor.permission = get_contributor_permissions(contributor_obj, as_list=False)
+        contributor.bibliographic = contributor_obj.visible
+        contributor.node_id = self._id
+        contributor_order = list(self.get_contributor_order())
+        contributor.index = contributor_order.index(contributor_obj.pk)
+
+        if save:
+            contributor.save()
+
         return contributor
 
     def callback(self, callback, recursive=False, *args, **kwargs):
