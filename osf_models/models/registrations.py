@@ -358,7 +358,7 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
     modm_model_path = 'website.project.model.DraftRegistrationLog'
     modm_query = None
     # /TODO DELETE ME POST MIGRATION
-    date = models.DateTimeField()  # auto_add=True)
+    date = models.DateTimeField(default=timezone.now)
     action = models.CharField(max_length=255)
     draft = models.ForeignKey('DraftRegistration', related_name='logs', null=True, blank=True)
     user = models.ForeignKey('OSFUser', null=True)
