@@ -172,6 +172,8 @@ PATCHED_MODELS = (
     'Comment',
     'ApiOAuth2Application',
     'ApiOAuth2PersonalToken',
+    'DraftRegistration',
+    'MetaSchema',
 )
 
 # TODO: This won't work for modules that do e.g. `from website import models`. Rethink.
