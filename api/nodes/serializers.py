@@ -740,9 +740,9 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
                 permissions=permissions, bibliographic=bibliographic, index=index, save=True
             )
         except ValidationError as e:
-            raise exceptions.ValidationError(detail=e.message)
+            raise exceptions.ValidationError(detail=e.messages[0])
         except ValueError as e:
-            raise exceptions.NotFound(detail=e.message)
+            raise exceptions.NotFound(detail=e.args[0])
 
         return contributor
 
