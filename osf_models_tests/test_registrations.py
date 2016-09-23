@@ -460,20 +460,15 @@ class TestDraftRegistrations:
         assert draft.registration_schema == schema
         assert draft.registration_metadata == data
 
-    @pytest.mark.skip('Need to figure out registration error')
-    @mock.patch('osf_models.models.node.AbstractNode.register_node')
-    def test_register(self, mock_register_node):
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
+    def test_register(self, mock_enquque):
         user = factories.UserFactory()
         auth = Auth(user)
         project = factories.ProjectFactory(creator=user)
         draft = factories.DraftRegistrationFactory(branched_from=project)
-
-        draft.register(auth)  # throws error - DraftRegistration.registered_node must be a "Registration" instance.
-        mock_register_node.assert_called_with(
-            schema=draft.registration_schema,
-            auth=auth,
-            data=draft.registration_metadata,
-        )
+        assert not draft.registered_node
+        draft.register(auth)
+        assert draft.registered_node
 
     def test_update_metadata_tracks_changes(self, project):
         draft = factories.DraftRegistrationFactory(branched_from=project)
