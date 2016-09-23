@@ -4,11 +4,17 @@ from nose import tools as nt
 import mock
 import csv
 import os
+from datetime import datetime, timedelta
 
 from tests.base import AdminTestCase
 from website import settings
-from framework.auth import User
-from tests.factories import UserFactory, AuthUserFactory, ProjectFactory
+from framework.auth import User, Auth
+from tests.factories import (
+    UserFactory,
+    AuthUserFactory,
+    ProjectFactory,
+    NodeLogFactory,
+)
 from admin_tests.utilities import setup_view, setup_log_view
 
 from admin.users.views import (
@@ -212,13 +218,14 @@ class TestRemove2Factor(AdminTestCase):
 class TestUserWorkshopFormView(AdminTestCase):
     def setUp(self):
         self.user_1 = AuthUserFactory()
+        self.auth_1 = Auth(self.user_1)
         self.user_2 = AuthUserFactory()
         self.user_3 = AuthUserFactory()
         self.data = [
             ['none', 'date', 'thing', 'more', 'less', 'email', 'none'],
-            [None, '9/19/16', None, None, None, self.user_1.username, None],
-            [None, '9/19/16', None, None, None, self.user_2.username, None],
-            [None, '9/19/16', None, None, None, self.user_3.username, None],
+            [None, '9/1/16', None, None, None, self.user_1.username, None],
+            [None, '9/1/16', None, None, None, self.user_2.username, None],
+            [None, '9/1/16', None, None, None, self.user_3.username, None],
         ]
         with open('test.csv', 'w') as fp:
             writer = csv.writer(fp)
@@ -234,7 +241,17 @@ class TestUserWorkshopFormView(AdminTestCase):
     def test_one_node(self):
         node = ProjectFactory(creator=self.user_1)
         node.save()
-        best = self.user_1.created
+        node.add_log(
+            'log_added',
+            params={'project': node.pk},
+            auth=self.auth_1,
+            log_date=datetime.utcnow() - timedelta(days=4),
+            save=True
+        )
+        node.reload()
+        self.user_1.save()
+        # nodelog = NodeLogFactory()
+        # best = self.user_1.created
         with file('test.csv') as fp:
             final = self.view.parse(fp)
         nt.assert_equal(1, final[1][-2])

@@ -306,7 +306,7 @@ class UserWorkshopFormView(OSFAdmin, FormView):
                 continue
             user = user_list_of_one[0]
             date = datetime.strptime(line[1], '%m/%d/%y')  # .astimezone(pytz.utc)
-            log_ids = [l for l in user.get_recent_log_ids(since=date)]
+            log_ids = list(user.get_recent_log_ids(since=date))
             try:
                 last_log_date = NodeLog.load(log_ids[0]).date.strftime('%m/%d/%Y')
                 nodes = []
