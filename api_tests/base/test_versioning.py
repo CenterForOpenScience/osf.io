@@ -3,7 +3,9 @@ from nose.tools import *    # flake8: noqa
 from api.base import settings
 from tests.base import ApiTestCase
 
-
+# The versions below are specifically for testing purposes and do not reflect the actual versioning of the API.
+# If changes are made to this list, or to DEFAULT_VERSION, please reflect those changes in:
+# api/base/settings/local-travis.py so that travis tests will pass.
 TESTING_ALLOWED_VERSIONS = (
     '2.0',
     '2.0.1',
@@ -11,6 +13,8 @@ TESTING_ALLOWED_VERSIONS = (
     '3.0',
     '3.0.1',
 )
+
+DEFAULT_VERSION = '2.0'
 
 
 class VersioningTestCase(ApiTestCase):
@@ -33,7 +37,7 @@ class VersioningTestCase(ApiTestCase):
         self.invalid_query_parameter_version_url = '/v2/?version={}'.format(self.invalid_query_parameter_version)
 
         settings.REST_FRAMEWORK['ALLOWED_VERSIONS'] = TESTING_ALLOWED_VERSIONS
-        settings.REST_FRAMEWORK['DEFAULT_VERSION'] = '2.0'
+        settings.REST_FRAMEWORK['DEFAULT_VERSION'] = DEFAULT_VERSION
 
 
 class TestBaseVersioning(VersioningTestCase):
@@ -103,7 +107,7 @@ class TestBaseVersioning(VersioningTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.json['meta']['version'], self.valid_header_version)
 
-    def test_header_version_and_query_parameter_version_not_mismatch(self):
+    def test_header_version_and_query_parameter_version_mismatch(self):
         headers = {'accept': 'application/vnd.api+json;version={}'.format(self.valid_header_version)}
         url = '/v2/?version={}'.format(self.valid_query_parameter_version)
         res = self.app.get(url, headers=headers, expect_errors=True)
