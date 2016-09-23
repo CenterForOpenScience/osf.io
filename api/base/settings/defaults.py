@@ -96,7 +96,8 @@ REST_FRAMEWORK = {
     'DEFAULT_VERSIONING_CLASS': 'api.base.versioning.BaseVersioning',
     'DEFAULT_VERSION': '2.0',
     'ALLOWED_VERSIONS': (
-        '2.0'
+        '2.0',
+        '2.1'
     ),
     'DEFAULT_FILTER_BACKENDS': ('api.base.filters.ODMOrderingFilter',),
     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',

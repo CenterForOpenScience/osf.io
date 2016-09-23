@@ -41,6 +41,10 @@ class JSONAPIPagination(pagination.PageNumberPagination):
 
         return paginated_url
 
+    def get_self_real_link(self, url):
+        page_number = self.page.number
+        return self.page_number_query(url, page_number)
+
     def get_first_real_link(self, url):
         if not self.page.has_previous():
             return None
@@ -79,6 +83,22 @@ class JSONAPIPagination(pagination.PageNumberPagination):
             ])),
         ])
 
+    def get_response_dict_updated_pagination(self, data, url):
+        return OrderedDict([
+            ('data', data),
+            ('meta', OrderedDict([
+                ('total', self.page.paginator.count),
+                ('per_page', self.page.paginator.per_page),
+            ])),
+            ('links', OrderedDict([
+                ('self', self.get_self_real_link(url)),
+                ('first', self.get_first_real_link(url)),
+                ('last', self.get_last_real_link(url)),
+                ('prev', self.get_previous_real_link(url)),
+                ('next', self.get_next_real_link(url)),
+            ])),
+        ])
+
     def get_paginated_response(self, data):
         """
         Formats paginated response in accordance with JSON API.
@@ -93,7 +113,10 @@ class JSONAPIPagination(pagination.PageNumberPagination):
         if embedded:
             reversed_url = reverse(view_name, kwargs=kwargs)
 
-        response_dict = self.get_response_dict(data, reversed_url)
+        if self.request.version == '2.0':
+            response_dict = self.get_response_dict(data, reversed_url)
+        else:
+            response_dict = self.get_response_dict_updated_pagination(data, reversed_url)
 
         if is_anonymized(self.request):
             if response_dict.get('meta', False):
