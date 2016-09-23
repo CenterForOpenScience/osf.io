@@ -763,8 +763,8 @@ class User(GuidStoredObject, AddonModelMixin):
             issues.append('Passwords cannot be blank')
         elif len(raw_new_password) < 8:
             issues.append('Password should be at least eight characters')
-        elif len(raw_new_password) > 256:
-            issues.append('Password should not be longer than 256 characters')
+        elif len(raw_new_password) > 255:
+            issues.append('Password should not be longer than 255 characters')
 
         if raw_new_password != raw_confirm_password:
             issues.append('Password does not match the confirmation')
