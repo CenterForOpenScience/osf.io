@@ -836,7 +836,7 @@ class DraftRegistrationApproval(Sanction):
 
     # Since draft registrations that require approval are not immediately registered,
     # meta stores registration_choice and embargo_end_date (when applicable)
-    meta = DateTimeAwareJSONField(default=dict)
+    meta = DateTimeAwareJSONField(default=dict, blank=True)
 
     def _send_rejection_email(self, user, draft):
         schema = draft.registration_schema
