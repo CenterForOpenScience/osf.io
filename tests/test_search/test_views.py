@@ -12,7 +12,7 @@ from tests.test_search import OsfTestCase, SearchTestCase
 from tests.utils import mock_archive
 from website.files.models.base import File
 from website.project.model import Node
-from website.util import api_url_for
+from website.util import api_url_for, permissions
 
 
 class TestSearchPage(SearchTestCase):
@@ -25,7 +25,7 @@ class TestSearchPage(SearchTestCase):
 
 PRIVATE, PUBLIC = range(2)
 PROJECT, REGISTRATION, COMPONENT, FILE = 'project registration component file'.split()
-ANON, AUTH, READ = (None, '', 'r')
+ANON, AUTH, READ = (None, [], [permissions.READ])
 Y, N = True, False
 
 cases = [
@@ -58,15 +58,17 @@ cases = [
     ("public file shown to read", PUBLIC, FILE, READ, Y),
 ]
 
-def make_project(status, user, perms):
+def make_project(status):
     project = factories.ProjectFactory(title='Flim Flammity', is_public=status is PUBLIC)
     project.update_search()
+    return project
 
-def make_registration(status, user, perms):
+def make_registration(status):
     project = factories.ProjectFactory(title='Flim Flammity', is_public=status is PUBLIC)
     mock_archive(project, autocomplete=True, autoapprove=True).__enter__()  # ?!
+    return project
 
-def make_component(status, user, perms):
+def make_component(status):
     project = factories.ProjectFactory(title='Blim Blammity', is_public=status is PUBLIC)
     project.update_search()
     component = factories.NodeFactory(
@@ -75,10 +77,12 @@ def make_component(status, user, perms):
         is_public=status is PUBLIC,
     )
     component.update_search()
+    return component
 
-def make_file(status, user, perms):
+def make_file(status):
     project = factories.ProjectFactory(title='Blim Blammity', is_public=status is PUBLIC)
     project.get_addon('osfstorage').get_root().append_file('Flim Flammity')
+    return project
 
 makers = {
     PROJECT: make_project,
@@ -119,6 +123,7 @@ class TestMakers(DbIsolationMixin, OsfTestCase):
         assert make_registration('private', None, None) == 'title'
 
     def test_mr_makes_private_registration_public_there_are_no_private_registrations(self):
+        # TODO Instead we need to test the different approval/embargo workflow states
         make_registration(PRIVATE, None, None)
         assert Node.find_one(Q('is_registration', 'eq', True)).is_public
 
@@ -175,18 +180,21 @@ class TestSearchSearchAPI(SearchTestCase):
         data = {'q': 'category:{} AND {}'.format(category, query)}
         return self.app.get(url, data, auth=auth).json['results']
 
-
     @parameterized.expand(cases)
     def test(self, ignored, status, type_, perms, included):
-        user = None
+        make = makers[type_]
+        thing = make(status)
+        key = 'name' if make is make_file else 'title'
+
+        auth = None
         if perms is not None:
             user = factories.AuthUserFactory()
+            auth = user.auth
+            if perms:
+                thing.add_contributor(user, perms)
 
-        make = makers[type_]
-        make(status, user, perms)
-        key = 'name' if make is make_file else 'title'
         expected = [('Flim Flammity', type_)] if included else []
-        results = self.results('flim', type_, user.auth if user else None)
+        results = self.results('flim', type_, auth)
         assert_equal([(x[key], x['category']) for x in results], expected)
 
 
