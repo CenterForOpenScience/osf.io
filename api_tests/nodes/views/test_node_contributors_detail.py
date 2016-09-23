@@ -110,6 +110,19 @@ class TestContributorDetail(NodeCRUDTestCase):
         assert_equal(res.json['data']['embeds']['users']['data']['attributes']['full_name'], 'Robert Jackson')
         assert_equal(res.json['data']['attributes'].get('unregistered_contributor'), 'Bob Jackson')
 
+    def test_detail_includes_index(self):
+        res = self.app.get(self.public_url)
+        data = res.json['data']
+        assert_in('index', data['attributes'].keys())
+        assert_equal(data['attributes']['index'], 0)
+
+        other_contributor = AuthUserFactory()
+        self.public_project.add_contributor(other_contributor, auth=Auth(self.user), save=True)
+
+        other_contributor_detail = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.public_project, other_contributor._id)
+        res = self.app.get(other_contributor_detail)
+        assert_equal(res.json['data']['attributes']['index'], 1)
+
 
 class TestNodeContributorOrdering(ApiTestCase):
     def setUp(self):

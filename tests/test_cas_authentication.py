@@ -10,6 +10,7 @@ from framework.auth import cas
 from tests.base import OsfTestCase, fake
 from tests.factories import UserFactory
 
+
 def make_successful_response(user):
     return cas.CasResponse(
         authenticated=True, user=user._primary_key,
@@ -18,21 +19,56 @@ def make_successful_response(user):
         }
     )
 
+
 def make_failure_response():
     return cas.CasResponse(
         authenticated=False, user=None,
     )
 
-def make_external_response():
+
+def make_external_response(release=True):
+    attributes = {
+            'accessToken': fake.md5(),
+    }
+    if release:
+        attributes.update({
+            'given-names': fake.first_name(),
+            'family-name': fake.last_name(),
+        })
     return cas.CasResponse(
         authenticated=True,
         user='OrcidProfile#{}'.format(fake.numerify('####-####-####-####')),
-        attributes={
-            'given-names': fake.first_name(),
-            'family-name': fake.last_name(),
-            'accessToken': fake.md5(),
-        }
+        attributes=attributes
     )
+
+
+def generate_external_user_with_resp(user=True, release=True):
+    """
+    Generate mock user, external credential and cas response for tests.
+
+    :param user: set to `False` if user does not exists
+    :param release: set to `False` if attributes are not released due to privacy settings
+    :return: existing user object or new user, valid external credential, valid cas response
+    """
+    cas_resp = make_external_response(release=release)
+    validated_credentials = cas.validate_external_credential(cas_resp.user)
+    if user:
+        user = UserFactory.build()
+        user.external_identity = {
+            validated_credentials['provider']: {
+                validated_credentials['id']: 'VERIFIED'
+            }
+        }
+        user.save()
+        return user, validated_credentials, cas_resp
+    else:
+        user = {
+            'external_id_provider': validated_credentials['provider'],
+            'external_id': validated_credentials['id'],
+            'fullname': validated_credentials['id'],
+            'access_token': cas_resp.attributes['accessToken'],
+        }
+        return user, validated_credentials, cas_resp
 
 RESPONSE_TEMPLATE = """
 <cas:serviceResponse xmlns:cas='http://www.yale.edu/tp/cas'>
@@ -50,6 +86,8 @@ RESPONSE_TEMPLATE = """
     </cas:authenticationSuccess>
 </cas:serviceResponse>
 """
+
+
 def make_service_validation_response_body(user, access_token=None):
     token = access_token or fake.md5()
     return RESPONSE_TEMPLATE.format(

@@ -3,10 +3,8 @@ import datetime
 import requests
 
 from framework.celery_tasks import app as celery_app
-from framework.transactions.context import TokuTransaction
 
 from website import settings
-from website.mails import mails
 
 
 @celery_app.task(ignore_results=True)
@@ -51,22 +49,3 @@ def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=
                     }]
                 },
             }, headers={'Authorization': 'Bearer {}'.format(settings.SHARE_API_TOKEN)}).raise_for_status()
-
-
-@celery_app.task(ignore_results=True)
-def on_user_suspension(user_id, system_tag):
-    from framework.auth import User
-
-    with TokuTransaction():
-        user = User.load(user_id)
-        if system_tag not in user.system_tags:
-            user.system_tags.append(system_tag)
-        if not user.is_disabled:
-            user.disable_account()
-            user.is_registered = False
-            mails.send_mail(
-                to_addr=user.username,
-                mail=mails.SPAM_USER_BANNED,
-                user=user
-            )
-        user.save()

@@ -6,10 +6,9 @@ from requests.exceptions import RequestException
 class AkismetClientError(Exception):
 
     def __init__(self, reason):
+        super(AkismetClientError, self).__init__(reason)
         self.reason = reason
 
-    def __str__(self):
-        return repr(self.reason)
 
 class AkismetClient(object):
 
@@ -76,8 +75,9 @@ class AkismetClient(object):
                 headers=self._default_headers,
                 timeout=5
             )
+            res.raise_for_status()
         except RequestException as e:
-            raise AkismetClientError(reason=e.message)
+            raise AkismetClientError(reason=e.args[0])
         return res.text == 'true', res.headers.get('X-akismet-pro-tip')
 
     def submit_spam(self, user_ip, user_agent, **kwargs):

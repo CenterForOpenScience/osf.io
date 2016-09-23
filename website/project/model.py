@@ -39,6 +39,7 @@ from framework.utils import iso8601format
 from framework.celery_tasks.handlers import enqueue_task
 
 from website import language, settings
+from website.mails import mails
 from website.util import web_url_for
 from website.util import api_url_for
 from website.util import api_v2_url
@@ -70,7 +71,6 @@ from website.project.sanctions import (
     Retraction,
 )
 from website.files.models import StoredFileNode
-from website.project.tasks import on_user_suspension
 
 from keen import scoped_keys
 
@@ -2239,10 +2239,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
                 for k, v in get_headers_from_request(request).items()
                 if isinstance(v, basestring)
             }
-            user = User.load(user_id)
-            if user:
-                self.check_spam(user, saved_fields, request_headers, save=True)
         enqueue_task(node_tasks.on_node_updated.s(self._id, user_id, first_save, saved_fields, request_headers))
+        user = User.load(user_id)
+        if user and self.check_spam(user, saved_fields, request_headers):
+            # Specifically call the super class save method to avoid recursion into model save method.
+            super(Node, self).save()
 
     def update_search(self):
         from website import search
@@ -2743,8 +2744,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         return self.absolute_api_v2_url + 'relationships/linked_nodes/'
 
     @property
+    def linked_registrations_self_url(self):
+        return self.absolute_api_v2_url + 'relationships/linked_registrations/'
+
+    @property
     def linked_nodes_related_url(self):
         return self.absolute_api_v2_url + 'linked_nodes/'
+
+    @property
+    def linked_registrations_related_url(self):
+        return self.absolute_api_v2_url + 'linked_registrations/'
 
     @property
     def csl(self):  # formats node information into CSL format for citation parsing
@@ -3409,9 +3418,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
                 content.append((getattr(self, field, None) or '').encode('utf-8'))
         if not content:
             return None
-        return '\n\n'.join(content)
+        return ' '.join(content)
 
-    def check_spam(self, user, saved_fields, request_headers, save=False):
+    def check_spam(self, user, saved_fields, request_headers):
         if not settings.SPAM_CHECK_ENABLED:
             return False
         if settings.SPAM_CHECK_PUBLIC_ONLY and not self.is_public:
@@ -3431,18 +3440,30 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         logger.info("Node ({}) '{}' smells like {} (tip: {})".format(
             self._id, self.title.encode('utf-8'), 'SPAM' if is_spam else 'HAM', self.spam_pro_tip
         ))
-        if is_spam and settings.SPAM_ACCOUNT_SUSPENSION_ENABLED:
-            if (datetime.datetime.utcnow() - user.date_confirmed) <= settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD:
-                # raised an exception will cause the transaction to rollback, and the user suspension task must be async
-                on_user_suspension.delay(user._id, 'spam_flagged')
-                raise NodeStateError(
-                    'Account has been suspended due to suspicious activity. '
-                    'Please contact <a href="mailto: support@osf.io">support@osf.io</a> '
-                    'to initiate an account review.'
-                )
-        if save:
-            self.save()
+        if is_spam:
+            self._check_spam_user(user)
         return is_spam
+
+    def _check_spam_user(self, user):
+        if (
+            settings.SPAM_ACCOUNT_SUSPENSION_ENABLED
+            and (datetime.datetime.utcnow() - user.date_confirmed) <= settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD
+        ):
+            self.set_privacy('private', log=False, save=False)
+
+            # Suspend the flagged user for spam.
+            if 'spam_flagged' not in user.system_tags:
+                user.system_tags.append('spam_flagged')
+            if not user.is_disabled:
+                user.disable_account()
+                user.is_registered = False
+                mails.send_mail(to_addr=user.username, mail=mails.SPAM_USER_BANNED, user=user)
+            user.save()
+
+            # Make public nodes private from this contributor
+            for node in user.contributed:
+                if self._id != node._id and len(node.contributors) == 1 and node.is_public:
+                    node.set_privacy('private', log=False, save=True)
 
     def flag_spam(self):
         """ Overrides SpamMixin#flag_spam.
