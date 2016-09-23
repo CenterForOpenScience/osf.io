@@ -96,15 +96,12 @@ class TestDraftRegistrationApprovals:
             }
         )
         approval.save()
-        approval.reload()
         draft.approval = approval
         draft.save()
-        draft.reload()
-
-        # MetaSchema.remove()
         approval._on_complete(user)
-
+        draft.reload()
         registered_node = draft.registered_node
+
         assert registered_node is not None
         assert registered_node.is_pending_registration
         assert registered_node.registered_user == draft.initiator
