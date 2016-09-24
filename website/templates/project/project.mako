@@ -232,9 +232,7 @@
 
 <%include file="project/modal_add_pointer.mako"/>
 
-% if user['can_comment'] or node['has_comments']:
-    <%include file="include/comment_pane_template.mako"/>
-% endif
+<%include file="include/comment_pane_template.mako"/>
 
 % if node['is_preprint']:
 <div class="row">
@@ -385,6 +383,7 @@
         % endif
 
         <!-- Forum Feed (Latest Topics) -->
+        % if not node['anonymous']:
         <div class="panel panel-default">
             <div class="panel-heading clearfix">
                 <h3 class="panel-title">Latest Forum Topics</h3>
@@ -398,6 +397,7 @@
                 </div>
             </div>
         </div>
+        % endif
 
         <!-- Show child on right if widgets -->
         % if addons:

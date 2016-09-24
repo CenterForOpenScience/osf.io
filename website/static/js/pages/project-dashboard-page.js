@@ -207,7 +207,8 @@ $(document).ready(function () {
 
     m.mount(document.getElementById('forumFeed'), m.component(ForumFeed.ForumFeed, {
         discourse_url: window.contextVars.discourseUrl,
-        discourse_user_apikey: window.contextVars.discourseUserApikey,
+        discourse_user_apikey: window.contextVars.discourseUserApikey || '',
+        view_only: $osf.urlParams().view_only || '',
         node: node,
         user: window.contextVars.currentUser
     }));

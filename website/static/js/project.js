@@ -274,14 +274,6 @@ $(document).ready(function() {
                 $(this).closest('li').addClass('active');
             }
         });
-
-        // Remove Comments link from project nav bar for pages not bound to the comment view model
-        var commentsLinkElm = document.getElementById('commentsLink');
-        if (commentsLinkElm) {
-            if(!ko.dataFor(commentsLinkElm)) {
-                commentsLinkElm.parentNode.removeChild(commentsLinkElm);
-            }
-        }
     });
 });
 

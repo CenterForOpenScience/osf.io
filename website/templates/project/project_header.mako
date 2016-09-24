@@ -40,7 +40,9 @@
                                 Files
                             </a>
                         </li>
-                        <li><a href="${discourse_url}forum/${node['id']}">Forum</a></li>
+                        % if not node['anonymous']:
+                            <li><a href="${discourse_url}forum/${node['id']}/${'?view_only=' + node['link'] if node['link'] else ''}">Forum</a></li>
+                        % endif
 
                         <!-- Add-on tabs -->
                         % for addon in addons_enabled:
@@ -78,17 +80,14 @@
                             <li><a href="${node['url']}settings/">Settings</a></li>
                         % endif
                     % endif
-                    % if user['can_comment'] or node['has_comments']:
-                        <li id="commentsLink">
-                            <a href="" class="visible-xs cp-handle" data-bind="click:removeCount" data-toggle="collapse" data-target="#projectSubnav .navbar-collapse">
-                                Comments
-                                <span data-bind="if: unreadComments() !== 0">
-                                    <span data-bind="text: displayCount" class="badge"></span>
-                                </span>
-                           </a>
-                       </li>
-                    % endif
-
+                    <li id="commentsLink">
+                        <a href="" class="visible-xs cp-handle" data-bind="click:removeCount" data-toggle="collapse" data-target="#projectSubnav .navbar-collapse">
+                            Comments
+                            <span data-bind="if: unreadComments() !== 0">
+                                <span data-bind="text: displayCount" class="badge"></span>
+                            </span>
+                        </a>
+                    </li>
                     </ul>
                 </div>
             </div>

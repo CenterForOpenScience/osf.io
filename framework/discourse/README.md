@@ -70,6 +70,8 @@ Most of the steps listed above still apply, but there are some important differe
 
 The basic instructions for setup can be found at http://blog.discourse.org/2013/04/discourse-as-your-first-rails-app/ Make sure VirtualBox, Vagrant, and git are all installed. Pull the discourse git repo to someplace convenient for development. Once everything is installed, the virtual machine and environment can be set up by just running `vagrant up` from the main discourse directory; the environment is set up according to the Vagrantfile in that directory. (In this mode, I was not able to get SideKiq and email to work at all, so don't worry about them.) Run `vagrant ssh` from the discourse directory to enter your virtual machine and navigate to /vagrant. Then to set up Discourse run `bundle install` to install required ruby gems followed by `bundle exec rake db:migrate` to set up the database. Then, to setup an admin account, run `rake admin:create` and follow the prompts.
 
+To allow requests to Discourse from the OSF, we need to enable CORS. Make a new Discourse config file with `cp config/discourse_defaults.conf config/discourse.conf` and then set enable_cors to true in discourse.conf. The origins that are allowed will be set by the framework.discourse.configure script and can be managed by the Discourse admin interface with the admin account.
+
 One of the great things about Vagrant is that it will mount your project directory inside of the virtual machine. This means, we don't have to bother with scp or cp to get files between the host machine and Discourse. To install the OSF integration plugins. Navigate to discourse/plugins and then run `git clone https://github.com/CenterForOpenScience/discourse-osf-plugin` and `git clone https://github.com/CenterForOpenScience/discourse-osf-projects`. If you plan on modifying these plugins (you probably are if you are bothering with the Development setup), first branch them yourself and then `git clone` your own branches. To add the migration scripts, navigate to discourse/script/import_scripts and then run <pre>git init
 git remote add origin https://github.com/acshi/discourse-osf-import
 git fetch
@@ -125,11 +127,11 @@ In website/templates/project/project.mako we take the Discourse url and API key 
 ##Further Work/Bugs to Fix
 Apparently there is a better way to hook onto project changes that would be more targeted.
 
-It seems that there are performance implications in calling save() more than absolutely necessary. The hooks around changes and in framework.discourse could be reworked to insure that only one call to save() is ever made.
-
-If the Discourse server is down, this should minimally impact the rest of the OSF. Currently, exceptions raised will not be caught until they crash the requested page and display debugging information instead. While this helps with debugging, it would be inappropriate in a production environment.
+It seems that there are performance implications in calling save() more than absolutely necessary. The hooks around changes and in framework.discourse could be reworked to ensure that only one call to save() is ever made.
 
 Log Discourse errors correctly.
+
+It seems that the hook for logging out of the OSF also logging you out of Discourse is not currently working.
 
 Since we seem to be using docstrings with Sphinx conventions, these could also be added to OSF code.
 

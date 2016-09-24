@@ -21,7 +21,7 @@
             </h4>
 
             ## Discourse comment embedding
-            <div id='discourse-comments' data-discourse-url='${ discourse_url }/' data-discourse-topic-id='${ discourse_topic_id }'></div>
+            <div id='discourse-comments' data-discourse-url='${ discourse_url }' data-discourse-topic-id='${ discourse_topic_id }'></div>
         </div>
     </div>
 

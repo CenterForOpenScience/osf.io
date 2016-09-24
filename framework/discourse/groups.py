@@ -38,19 +38,22 @@ def get_or_create_group_id(project_node):
         create_group(project_node)
     return project_node.discourse_group_id
 
-def update_group_visibility(project_node):
+def update_group_privacy(project_node):
     group_id = project_node.discourse_group_id
     if group_id is None:
         return create_group(project_node)
 
-    if project_node.discourse_group_public == project_node.is_public:
+    if (project_node.discourse_group_public == project_node.is_public and
+       len(set(project_node.discourse_view_only_keys) ^ set(project_node.private_link_keys_active)) == 0):
         return
 
     data = {}
     data['visible'] = 'true' if project_node.is_public else 'false'
+    data['view_only_keys[]'] = project_node.private_link_keys_active
     result = request('put', '/admin/groups/' + str(group_id), data)
 
     project_node.discourse_group_public = project_node.is_public
+    project_node.view_only_keys = project_node.private_link_keys_active
     project_node.save()
 
     return result
@@ -91,7 +94,7 @@ def remove_group_users(project_node, users):
         project_node.save()
 
 def sync_group(project_node):
-    update_group_visibility(project_node)
+    update_group_privacy(project_node)
 
     users = [get_username(user) for user in project_node.contributors if user.username]
     users = [u for u in users if u]

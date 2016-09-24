@@ -4,6 +4,7 @@
 'use strict';
 var $ = require('jquery');
 var m = require('mithril');
+var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
 var utils = require('js/components/utils');
 var required = utils.required;
@@ -21,26 +22,32 @@ var ForumFeed = {
         if (self.discourse_url.endsWith('/')) {
             self.discourse_url = self.discourse_url.slice(0, -1);
         }
+        self.view_only = required(options, 'view_only');
         self.user_apikey = required(options, 'discourse_user_apikey');
         var requestUrl = self.discourse_url + '/forum/' + self.node.id + '/latest.json';
-        var data = { api_key: self.user_apikey, api_username: self.user.id };
+        var data;
+        if (self.view_only) {
+            data = { view_only: self.view_only };
+        } else {
+            data = { api_key: self.user_apikey, api_username: self.user.id };
+        }
         m.request({method : 'GET', url : requestUrl, data: data}).then(function(results) {
             self.topics = results.topic_list.topics;
             self.usernamesToNames = {};
-            results.users.forEach(user => {
+            results.users.forEach(function(user) {
                 self.usernamesToNames[user.username] = user.name;
             });
-            self.topics.forEach(topic => {
+            self.topics.forEach(function(topic) {
                 if (topic.excerpt_mentioned_users) {
-                    topic.excerpt_mentioned_users.forEach(user => {
+                    topic.excerpt_mentioned_users.forEach(function(user) {
                         self.usernamesToNames[user.username] = user.name;
                     });
                 }
             });
-            results.topic_list.contributors.forEach(contributor => {
+            results.topic_list.contributors.forEach(function(contributor) {
                 self.usernamesToNames[contributor.username] = contributor.name;
             });
-            self.topics.forEach(topic => {
+            self.topics.forEach(function(topic) {
                 if (!topic.excerpt) {
                     topic.excerpt = '';
                     return;
@@ -48,7 +55,7 @@ var ForumFeed = {
                 var excerpt = topic.excerpt;
                 var mentions = topic.excerpt.match(/@[a-z0-9]+/g);
                 if (mentions) {
-                    mentions.forEach(mention => {
+                    mentions.forEach(function(mention) {
                         var username = mention.substr(1);
                         if (self.usernamesToNames[username]) {
                             excerpt = excerpt.replace(mention, '@' + self.usernamesToNames[username]);
@@ -68,6 +75,8 @@ var ForumFeed = {
     },
     view: function(ctrl, options) {
         var self = this;
+        var queryString = $osf.urlParams().view_only;
+        queryString = queryString ? '?view_only=' + queryString : '';
         return m('div.forum-feed ', [
             ctrl.failed ? m('p', [
                 'Unable to retrieve forum topics at this time. Please refresh the page or contact ',
@@ -79,13 +88,13 @@ var ForumFeed = {
                 m('.logo-spin.logo-lg'),
                 m('p.m-t-sm.fg-load-message', 'Loading forum topics...')
             ]) :
-            m('table', m('tbody', ctrl.topics.slice(0, 5).map(topic => {
+            m('table', m('tbody', ctrl.topics.slice(0, 5).map(function(topic) {
                 var postNumber = topic.highest_post_number;
                 if (topic.last_read_post_number) {
                     postNumber = Math.min(topic.last_read_post_number + 1, topic.highest_post_number);
                 }
-                var postUrl = ctrl.discourse_url + '/t/' + topic.slug + '/' + topic.id + '/' + postNumber;
-                var projectUrl = ctrl.discourse_url + '/forum/' + topic.project_guid;
+                var postUrl = ctrl.discourse_url + '/t/' + topic.slug + '/' + topic.id + '/' + postNumber + queryString;
+                var projectUrl = ctrl.discourse_url + '/forum/' + topic.project_guid + queryString;
                 return m('tr',
                     m('td', [
                         m('a.title', {href: postUrl}, topic.fancy_title),

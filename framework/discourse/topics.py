@@ -55,12 +55,12 @@ def create_topic(node):
     project_node = _get_project_node(node)
 
     if wiki_category is None:
-        raise DiscourseException('Cannot create topic. Discourse did not properly load when the OSF was started. Insure Discourse is running and restart the OSF.')
+        raise DiscourseException('Cannot create topic. Discourse did not properly load when the OSF was started. Ensure Discourse is running and restart the OSF.')
 
     # privacy is completely relegated to the group with the corresponding project_guid
     data['archetype'] = 'regular'
 
-    get_or_create_group_id(project_node) # insure existance of the group
+    get_or_create_group_id(project_node) # ensure existance of the group
     data['title'] = node.label
     data['raw'] = make_topic_content(node)
     data['parent_guids[]'] = get_parent_guids(node)
