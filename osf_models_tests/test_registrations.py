@@ -17,7 +17,7 @@ from .factories import get_default_metaschema
 pytestmark = pytest.mark.django_db
 
 @pytest.fixture(autouse=True)
-def _ensure_schemas():
+def _ensure_schemas(patched_models):
     return ensure_schemas()
 
 @pytest.fixture()
