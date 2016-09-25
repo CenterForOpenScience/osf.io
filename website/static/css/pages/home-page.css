@@ -25,9 +25,6 @@ h3, h4 {
     background-size: cover;
     color: #fff;
 }
-.meetings .btn {
-    box-shadow: 0 0 9px -4px #000;
-}
 
 .prereg {
     background: #C5D6E6 url("/static/img/bg6.jpg") no-repeat center top;
@@ -37,6 +34,11 @@ h3, h4 {
 .preprints {
     background: #34495e;
     color: #FFF;
+}
+
+.btn-banner {
+    box-shadow: 0 0 9px -4px #000;
+    width: 70%;
 }
 
 .footer {
