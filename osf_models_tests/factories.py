@@ -544,3 +544,19 @@ class NodeWikiFactory(DjangoModelFactory):
         else:
             self.node.wiki_pages_versions[self.page_name] = [self._id]
         self.node.save()
+
+
+class ForkFactory(DjangoModelFactory):
+    class Meta:
+        model = models.Node
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+
+        project = kwargs.pop('project', None)
+        user = kwargs.pop('user', project.creator)
+        title = kwargs.pop('title', None)
+
+        fork = project.fork_node(auth=Auth(user), title=title)
+        fork.save()
+        return fork
