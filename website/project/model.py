@@ -11,6 +11,7 @@ import warnings
 import jsonschema
 
 import pytz
+from django.apps import apps
 from django.core.urlresolvers import reverse
 from django.core.validators import URLValidator
 
@@ -147,6 +148,7 @@ class MetaSchema(StoredObject):
 
 
 def ensure_schema(schema, name, version=1):
+    MetaSchema = apps.get_model('osf_models.MetaSchema')
     try:
         MetaSchema(
             name=name,
