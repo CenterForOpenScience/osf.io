@@ -13,6 +13,7 @@ import jsonschema
 import pytz
 from django.apps import apps
 from django.core.urlresolvers import reverse
+from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 
 from modularodm import Q
@@ -155,7 +156,7 @@ def ensure_schema(schema, name, version=1):
             schema_version=version,
             schema=schema
         ).save()
-    except KeyExistsException:
+    except (KeyExistsException, ValidationError):
         schema_obj = MetaSchema.find_one(
             Q('name', 'eq', name) &
             Q('schema_version', 'eq', version)

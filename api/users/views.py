@@ -683,7 +683,7 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
     def get_object(self):
         user = self.get_user(check_permissions=False)
         obj = {
-            'data': user.affiliated_institutions,
+            'data': user.affiliated_institutions.all(),
             'self': user
         }
         self.check_object_permissions(self.request, obj)
@@ -692,7 +692,7 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
     def perform_destroy(self, instance):
         data = self.request.data['data']
         user = self.request.user
-        current_institutions = {inst._id for inst in user.affiliated_institutions}
+        current_institutions = set(user.affiliated_institutions.values_list('guid__guid', flat=True))
 
         # DELETEs normally dont get type checked
         # not the best way to do it, should be enforced everywhere, maybe write a test for it

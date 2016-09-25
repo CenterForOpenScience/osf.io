@@ -3,11 +3,12 @@ import httplib as http
 import contextlib
 import mock
 
+import pytest
 from nose.tools import *  # flake8: noqa
 import re
 
 from tests.base import ApiTestCase, DbTestCase
-from tests import factories
+from osf_models_tests import factories
 from tests.utils import make_drf_request
 
 from api.base.settings.defaults import API_BASE
@@ -226,33 +227,34 @@ class TestApiBaseSerializers(ApiTestCase):
 
 
 
-class TestRelationshipField(DbTestCase):
+@pytest.mark.django_db
+class TestRelationshipField:
 
     # We need a Serializer to test the Relationship field (needs context)
     class BasicNodeSerializer(JSONAPISerializer):
 
         parent = RelationshipField(
             related_view='nodes:node-detail',
-            related_view_kwargs={'node_id': '<pk>'}
+            related_view_kwargs={'node_id': '<_id>'}
         )
 
         parent_with_meta = RelationshipField(
             related_view='nodes:node-detail',
-            related_view_kwargs={'node_id': '<pk>'},
+            related_view_kwargs={'node_id': '<_id>'},
             related_meta={'count': 'get_count', 'extra': 'get_extra'},
         )
 
         self_and_related_field = RelationshipField(
             related_view='nodes:node-detail',
-            related_view_kwargs={'node_id': '<pk>'},
+            related_view_kwargs={'node_id': '<_id>'},
             self_view='nodes:node-contributors',
-            self_view_kwargs={'node_id': '<pk>'},
+            self_view_kwargs={'node_id': '<_id>'},
         )
 
         two_url_kwargs = RelationshipField(
             # fake url, for testing purposes
             related_view='nodes:node-pointer-detail',
-            related_view_kwargs={'node_id': '<pk>', 'node_link_id': '<pk>'},
+            related_view_kwargs={'node_id': '<_id>', 'node_link_id': '<_id>'},
         )
 
         not_attribute_on_target = RelationshipField(
@@ -330,8 +332,3 @@ class TestRelationshipField(DbTestCase):
         data = self.BasicNodeSerializer(registration, context={'request': req}).data['data']
         field = data['relationships']['registered_from']['links']
         assert_in('/v2/nodes/{}/'.format(node._id), field['related']['href'])
-
-        registration_registration = factories.RegistrationFactory(project=registration)
-        data = self.BasicNodeSerializer(registration_registration, context={'request': req}).data['data']
-        field = data['relationships']['registered_from']['links']
-        assert_in('/v2/registrations/{}/'.format(registration._id), field['related']['href'])

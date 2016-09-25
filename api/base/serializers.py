@@ -1209,14 +1209,14 @@ class AddonAccountSerializer(JSONAPISerializer):
 
 
 class LinkedNode(JSONAPIRelationshipSerializer):
-    id = ser.CharField(source='node._id', required=False, allow_null=True)
+    id = ser.CharField(source='_id', required=False, allow_null=True)
 
     class Meta:
         type_ = 'linked_nodes'
 
 
 class LinkedRegistration(JSONAPIRelationshipSerializer):
-    id = ser.CharField(source='node._id', required=False, allow_null=True)
+    id = ser.CharField(source='_id', required=False, allow_null=True)
 
     class Meta:
         type_ = 'linked_registrations'
@@ -1239,8 +1239,8 @@ class LinkedNodesRelationshipSerializer(ser.Serializer):
 
     def get_pointers_to_add_remove(self, pointers, new_pointers):
         diff = relationship_diff(
-            current_items={pointer.node._id: pointer for pointer in pointers},
-            new_items={val['node']['_id']: val for val in new_pointers}
+            current_items={pointer._id: pointer for pointer in pointers},
+            new_items={val['_id']: val for val in new_pointers}
         )
 
         nodes_to_add = []
@@ -1256,10 +1256,7 @@ class LinkedNodesRelationshipSerializer(ser.Serializer):
         # Convenience method to format instance based on view's get_object
         return {'data': [
             pointer for pointer in
-            obj.nodes_pointer
-            if not pointer.node.is_deleted
-            and not pointer.node.is_registration
-            and not pointer.node.is_collection
+            obj.linked_nodes.filter(is_deleted=False, type='osf_models.node')
         ], 'self': obj}
 
     def update(self, instance, validated_data):
@@ -1308,7 +1305,7 @@ class LinkedRegistrationsRelationshipSerializer(ser.Serializer):
 
     def get_pointers_to_add_remove(self, pointers, new_pointers):
         diff = relationship_diff(
-            current_items={pointer.node._id: pointer for pointer in pointers},
+            current_items={pointer._id: pointer for pointer in pointers},
             new_items={val['node']['_id']: val for val in new_pointers}
         )
 
@@ -1325,10 +1322,7 @@ class LinkedRegistrationsRelationshipSerializer(ser.Serializer):
         # Convenience method to format instance based on view's get_object
         return {'data': [
             pointer for pointer in
-            obj.nodes_pointer
-            if not pointer.node.is_deleted
-            and pointer.node.is_registration
-            and not pointer.node.is_collection
+            obj.linked_nodes.filter(is_deleted=False, type='osf_models.registration')
         ], 'self': obj}
 
     def update(self, instance, validated_data):

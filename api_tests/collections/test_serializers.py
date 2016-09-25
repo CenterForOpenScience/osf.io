@@ -3,14 +3,14 @@ from urlparse import urlparse
 
 from nose.tools import *  # flake8: noqa
 
-from tests.base import DbTestCase
+from tests.base import ApiTestCase
 from tests.utils import make_drf_request
-from tests.factories import UserFactory, CollectionFactory
+from osf_models_tests.factories import UserFactory, CollectionFactory
 
 from api.collections.serializers import CollectionSerializer
 
 
-class TestNodeSerializer(DbTestCase):
+class TestNodeSerializer(ApiTestCase):
 
     def setUp(self):
         super(TestNodeSerializer, self).setUp()

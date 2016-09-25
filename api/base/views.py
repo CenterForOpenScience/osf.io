@@ -236,11 +236,8 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
         auth = utils.get_user_auth(self.request)
         obj = {'data': [
             pointer for pointer in
-            object.nodes_pointer
-            if not pointer.node.is_deleted
-            and not pointer.node.is_collection
-            and not pointer.node.is_registration
-            and pointer.node.can_view(auth)
+            object.linked_nodes.filter(is_deleted=False, type='osf_models.node')
+            if pointer.can_view(auth)
         ], 'self': object}
         self.check_object_permissions(self.request, obj)
         return obj
@@ -248,7 +245,7 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
     def perform_destroy(self, instance):
         data = self.request.data['data']
         auth = utils.get_user_auth(self.request)
-        current_pointers = {pointer.node._id: pointer for pointer in instance['data']}
+        current_pointers = {pointer._id: pointer for pointer in instance['data']}
         collection = instance['self']
         for val in data:
             if val['id'] in current_pointers:
@@ -814,11 +811,10 @@ class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
-        return sorted([
-            pointer.node for pointer in
-            self.get_node().nodes_pointer
-            if not pointer.node.is_deleted
-            and not pointer.node.is_collection
-            # and pointer.node.is_registration
-            and pointer.node.can_view(auth)
-        ], key=lambda n: n.date_modified, reverse=True)
+        return [
+            each for each in self.get_node().linked_nodes
+            .filter(is_deleted=False)
+            .exclude(type='osf_models.collection')
+            .order_by('-date_modified')
+            if each.can_view(auth)
+        ]
