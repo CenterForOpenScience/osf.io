@@ -9,6 +9,7 @@ from api.base.settings import BULK_SETTINGS
 from api.base.exceptions import Conflict, JSONAPIException, Gone
 from api.base.utils import is_bulk_request
 
+from django.db import transaction
 
 class ListBulkCreateJSONAPIView(bulk_generics.ListBulkCreateAPIView):
     """
@@ -25,7 +26,8 @@ class ListBulkCreateJSONAPIView(bulk_generics.ListBulkCreateAPIView):
             if not request.data:
                 raise ValidationError('Request must contain array of resource identifier objects.')
 
-        response = super(ListBulkCreateJSONAPIView, self).create(request, *args, **kwargs)
+        with transaction.atomic():
+            response = super(ListBulkCreateJSONAPIView, self).create(request, *args, **kwargs)
         if 'data' not in response.data:
             response.data = {'data': response.data}
         return response
@@ -56,7 +58,8 @@ class BulkUpdateJSONAPIView(bulk_generics.BulkUpdateAPIView):
         if not request.data:
             raise ValidationError('Request must contain array of resource identifier objects.')
 
-        response = super(BulkUpdateJSONAPIView, self).bulk_update(request, *args, **kwargs)
+        with transaction.atomic():
+            response = super(BulkUpdateJSONAPIView, self).bulk_update(request, *args, **kwargs)
         errors = {}
         if 'errors' in response.data[-1]:
             errors = response.data.pop(-1)
@@ -156,5 +159,6 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
                 self.perform_bulk_destroy(allowed)
                 return Response(status=status.HTTP_200_OK, data={'errors': skipped})
 
-        self.perform_bulk_destroy(resource_object_list)
+        with transaction.atomic():
+            self.perform_bulk_destroy(resource_object_list)
         return Response(status=status.HTTP_204_NO_CONTENT)

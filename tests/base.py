@@ -234,7 +234,7 @@ class TestAppJSONAPI(TestApp, JSONAPIWrapper):
             content_type = 'application/vnd.api+json'
             if bulk:
                 content_type = 'application/vnd.api+json; ext=bulk'
-            return JSONAPIWrapper.make_wrapper(self, url, method, content_type , params, **kw)
+            return JSONAPIWrapper.make_wrapper(self, url, method, content_type, params, **kw)
         return wrapper
 
     post_json_api = json_api_method('POST')

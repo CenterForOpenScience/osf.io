@@ -194,7 +194,7 @@ class NodeSerializer(JSONAPISerializer):
 
     forked_from = RelationshipField(
         related_view=lambda n: 'registrations:registration-detail' if getattr(n, 'is_registration', False) else 'nodes:node-detail',
-        related_view_kwargs={'node_id': '<forked_from_id>'}
+        related_view_kwargs={'node_id': '<forked_from_guid>'}
     )
 
     template_node = RelationshipField(
@@ -740,9 +740,9 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
                 permissions=permissions, bibliographic=bibliographic, index=index, save=True
             )
         except ValidationError as e:
-            raise exceptions.ValidationError(detail=e.message)
+            raise exceptions.ValidationError(detail=e.messages[0])
         except ValueError as e:
-            raise exceptions.NotFound(detail=e.message)
+            raise exceptions.NotFound(detail=e.args[0])
 
         return contributor
 
