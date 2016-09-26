@@ -13,6 +13,7 @@ from website.files.models import (
 
 from api.base.exceptions import Gone
 from api.base.permissions import PermissionWithGetter
+from api.base.throttling import CreateGuidThrottle, NonCookieAuthThrottle, UserRateThrottle
 from api.base import utils
 from api.base.views import JSONAPIBaseView
 from api.base import permissions as base_permissions
@@ -318,6 +319,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
     serializer_class = FileDetailSerializer
+    throttle_classes = (CreateGuidThrottle, NonCookieAuthThrottle, UserRateThrottle, )
     view_category = 'files'
     view_name = 'file-detail'
 
@@ -328,7 +330,6 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     def get_object(self):
         user = utils.get_user_auth(self.request).user
 
-        # TODO [OSF-6799]: Rate limit
         if (self.request.GET.get('create_guid', False) and
                 self.get_node().has_permission(user, 'admin') and
                 utils.has_admin_scope(self.request)):
