@@ -8,6 +8,7 @@ from osf_models.models.base import GuidMixin, Guid, BaseModel
 from osf_models.utils.base import api_v2_url
 from osf_models.models.mixins import CommentableMixin
 from osf_models.models.spam import SpamMixin
+from osf_models.models import validators
 
 from framework.exceptions import PermissionsError
 from website import settings
@@ -46,7 +47,11 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
     is_deleted = models.BooleanField(default=False)
     # The type of root_target: node/files
     page = models.CharField(max_length=255, blank=True)
-    content = models.TextField(max_length=settings.COMMENT_MAXLENGTH, blank=True)
+    content = models.TextField(
+        validators=[validators.comment_maxlength(settings.COMMENT_MAXLENGTH),
+                    validators.string_required],
+        blank=True
+    )
 
     # The mentioned users
     # TODO This should be made into an M2M STAT

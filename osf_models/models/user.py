@@ -366,6 +366,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         return urlparse.urljoin(config.domain, self.url)
 
     @property
+    def absolute_api_v2_url(self):
+        from website import util
+        return util.api_v2_url('users/{}/'.format(self._id))
+
+    @property
     def api_url(self):
         return '/api/v1/profile/{}/'.format(self._id)
 
@@ -444,6 +449,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
             'family': self.family_name,
             'given': self.csl_given_name,
         }
+
+    @property
+    def contributor_to(self):
+        return self.nodes.filter(is_deleted=False).exclude(type='osf_models.collection')
 
     def set_unusable_username(self):
         """Sets username to an unusable value. Used for, e.g. for invited contributors
@@ -1099,14 +1108,18 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
             for each in self.recentlyaddedcontributor_set.order_by('-date_added')
         )
 
+    def _projects_in_common_query(self, other_user):
+        return (self.nodes
+                 .filter(is_deleted=False)
+                 .exclude(type='osf_models.collection')
+                 .filter(_contributors=other_user)
+                 .distinct())
+
     def get_projects_in_common(self, other_user, primary_keys=True):
         """Returns either a collection of "shared projects" (projects that both users are contributors for)
         or just their primary keys
         """
-        Node = apps.get_model('osf_models.Node')
-        query = (Node.objects
-                 .filter(_contributors=self)
-                 .filter(_contributors=other_user))
+        query = self._projects_in_common_query(other_user)
         if primary_keys:
             return set(query.values_list('guid__guid', flat=True))
         else:
@@ -1114,7 +1127,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
 
     def n_projects_in_common(self, other_user):
         """Returns number of "shared projects" (projects that both users are contributors for)"""
-        return len(self.get_projects_in_common(other_user, primary_keys=True))
+        return self._projects_in_common_query(other_user).count()
 
     def add_unclaimed_record(self, node, referrer, given_name, email=None):
         """Add a new project entry in the unclaimed records dictionary.
@@ -1189,6 +1202,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
                                                 if each not in affiliated])
         except (IndexError, NoResultsFound):
             pass
+
+    def remove_institution(self, inst_id):
+        try:
+            inst = self.affiliated_institutions.get(guid__guid=inst_id)
+        except Institution.DoesNotExist:
+            return False
+        else:
+            self.affiliated_institutions.remove(inst)
+            return True
 
     def get_activity_points(self, db=None):
         db = db or framework.mongo.database

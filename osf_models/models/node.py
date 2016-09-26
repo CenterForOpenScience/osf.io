@@ -448,7 +448,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def can_view(self, auth):
         if auth and getattr(auth.private_link, 'anonymous', False):
-            return self._id in auth.private_link.nodes
+            return auth.private_link.nodes.filter(pk=self.pk).exists()
 
         if not auth and not self.is_public:
             return False
