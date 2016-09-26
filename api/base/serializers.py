@@ -66,6 +66,8 @@ class ShowIfVersion(ser.Field):
     def __init__(self, field, min_version, max_version, **kwargs):
         super(ShowIfVersion, self).__init__(**kwargs)
         self.field = field
+        self.required = field.required
+        self.read_only = field.read_only
         self.min_version = min_version
         self.max_version = max_version
 
@@ -80,6 +82,10 @@ class ShowIfVersion(ser.Field):
         self.field.bind(field_name, self)
 
     def to_representation(self, value):
+        if getattr(self.field.root, 'child', None):
+            self.field.parent = self.field.root.child
+        else:
+            self.field.parent = self.field.root
         return self.field.to_representation(value)
 
     def to_internal_value(self, data):
