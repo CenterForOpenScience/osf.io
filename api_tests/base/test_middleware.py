@@ -11,7 +11,7 @@ from website.util import api_v2_url
 from api.base import settings
 from api.base.middleware import TokuTransactionMiddleware, CorsMiddleware
 from tests.base import ApiTestCase
-from tests import factories
+from osf_models_tests import factories
 
 class MiddlewareTestCase(ApiTestCase):
     MIDDLEWARE = None
@@ -48,8 +48,8 @@ class TestCorsMiddleware(MiddlewareTestCase):
         url = api_v2_url('users/me/')
         domain = urlparse("https://dinosaurs.sexy")
         institution = factories.InstitutionFactory(
-            institution_domains=[domain.netloc.lower()],
-            title="Institute for Sexy Lizards"
+            domains=[domain.netloc.lower()],
+            name="Institute for Sexy Lizards"
         )
         settings.load_institutions()
         request = self.request_factory.get(url, HTTP_ORIGIN=domain.geturl())

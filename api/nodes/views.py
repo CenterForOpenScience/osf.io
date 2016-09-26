@@ -2726,7 +2726,7 @@ class NodeInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin
 
     def get_queryset(self):
         node = self.get_node()
-        return node.affiliated_institutions or []
+        return node.affiliated_institutions.all() or []
 
 
 class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, NodeMixin):

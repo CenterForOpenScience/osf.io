@@ -1,8 +1,10 @@
 import re
 import functools
 import operator
-from dateutil import parser as date_parser
 import datetime
+
+import pytz
+from dateutil import parser as date_parser
 
 from django.db.models import QuerySet as DjangoQuerySet
 from django.core.exceptions import ValidationError
@@ -286,7 +288,10 @@ class FilterMixin(object):
                 )
         elif isinstance(field, self.DATE_FIELDS):
             try:
-                return date_parser.parse(value)
+                ret = date_parser.parse(value, ignoretz=False)
+                if not ret.tzinfo:
+                    ret = ret.replace(tzinfo=pytz.utc)
+                return ret
             except ValueError:
                 raise InvalidFilterValue(
                     value=value,

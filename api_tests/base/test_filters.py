@@ -4,6 +4,7 @@ import functools
 import operator
 import re
 
+import pytz
 from dateutil import parser
 
 from modularodm import Q
@@ -144,7 +145,7 @@ class TestFilterMixin(ApiTestCase):
         }
 
         fields = self.view.parse_query_params(query_params)
-        start = parser.parse('2014-12-12')
+        start = parser.parse('2014-12-12').replace(tzinfo=pytz.utc)
         stop = start + datetime.timedelta(days=1)
         for key, field_name in fields.iteritems():
             for match in field_name['date_field']:
@@ -254,7 +255,7 @@ class TestFilterMixin(ApiTestCase):
         field = FakeSerializer._declared_fields['date_field']
         value = self.view.convert_value(value, field)
         assert_true(isinstance(value, datetime.datetime))
-        assert_equal(value, parser.parse('2014-12-12'))
+        assert_equal(value, parser.parse('2014-12-12').replace(tzinfo=pytz.utc))
 
     def test_convert_value_int(self):
         value = '9000'
@@ -410,8 +411,8 @@ class TestFilterMixin(ApiTestCase):
         assert_equals(
             repr(query),
             repr(functools.reduce(operator.and_, [
-                Q('date_field', 'gte', datetime.datetime(2016, 8, 24)),
-                Q('date_field', 'lt', datetime.datetime(2016, 8, 25)),
+                Q('date_field', 'gte', datetime.datetime(2016, 8, 24, tzinfo=pytz.utc)),
+                Q('date_field', 'lt', datetime.datetime(2016, 8, 25, tzinfo=pytz.utc)),
             ]))
         )
 

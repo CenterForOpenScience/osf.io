@@ -9,7 +9,7 @@ from website.settings import PREREG_ADMIN_TAG
 from website.project.model import ensure_schemas
 from test_node_draft_registration_list import DraftRegistrationTestCase
 
-from tests.factories import (
+from osf_models_tests.factories import (
     ProjectFactory,
     DraftRegistrationFactory,
     AuthUserFactory,
