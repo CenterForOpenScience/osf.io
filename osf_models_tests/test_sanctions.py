@@ -1,15 +1,21 @@
 # -*- coding: utf-8 -*-
-"""Tests ported from tests/test_sanctions.py."""
+"""Tests ported from tests/test_sanctions.py and tests/test_registrations.py"""
 import mock
 import pytest
+import datetime
 
+from osf_models.modm_compat import Q
+from osf_models.models import DraftRegistrationApproval, MetaSchema
 from osf_models_tests import factories
 from osf_models_tests.utils import mock_archive
 
 from framework.auth import Auth
 
+from website import settings
 from website.exceptions import NodeStateError
 from website.project.model import NodeLog
+from website.project.model import ensure_schemas
+
 
 @pytest.mark.django_db
 class TestRegistrationApprovalHooks:
@@ -24,6 +30,7 @@ class TestRegistrationApprovalHooks:
         assert registration.registration_approval.is_pending_approval is True  # sanity check
         registration.registration_approval._on_complete(None)
         assert registration.registration_approval.is_pending_approval is False
+
 
 @pytest.mark.django_db
 class TestNodeEmbargoTerminations:
@@ -65,3 +72,106 @@ class TestNodeEmbargoTerminations:
         last_log = node.logs.first()
         assert last_log.action == NodeLog.EMBARGO_TERMINATED
         assert last_log.user is None
+
+
+@pytest.mark.django_db
+class TestDraftRegistrationApprovals:
+
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
+    def test_on_complete_immediate_creates_registration_for_draft_initiator(self, mock_enquque):
+        ensure_schemas()
+        user = factories.UserFactory()
+        project = factories.ProjectFactory(creator=user)
+        registration_schema = MetaSchema.find_one(
+            Q('name', 'eq', 'Prereg Challenge') &
+            Q('schema_version', 'eq', 2)
+        )
+        draft = factories.DraftRegistrationFactory(
+            branched_from=project,
+            registration_schema=registration_schema,
+        )
+        approval = DraftRegistrationApproval(
+            meta={
+                'registration_choice': 'immediate'
+            }
+        )
+        approval.save()
+        draft.approval = approval
+        draft.save()
+        approval._on_complete(user)
+        draft.reload()
+        registered_node = draft.registered_node
+
+        assert registered_node is not None
+        assert registered_node.is_pending_registration
+        assert registered_node.registered_user == draft.initiator
+
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
+    def test_on_complete_embargo_creates_registration_for_draft_initiator(self, mock_enquque):
+        user = factories.UserFactory()
+        end_date = datetime.datetime.now() + datetime.timedelta(days=366)  # <- leap year
+        approval = DraftRegistrationApproval(
+            meta={
+                'registration_choice': 'embargo',
+                'embargo_end_date': end_date.isoformat()
+            }
+        )
+        approval.save()
+        project = factories.ProjectFactory(creator=user)
+        ensure_schemas()
+        registration_schema = MetaSchema.find_one(
+            Q('name', 'eq', 'Prereg Challenge') &
+            Q('schema_version', 'eq', 2)
+        )
+        draft = factories.DraftRegistrationFactory(
+            branched_from=project,
+            registration_schema=registration_schema,
+        )
+        draft.approval = approval
+        draft.save()
+
+        approval._on_complete(user)
+        draft.reload()
+        registered_node = draft.registered_node
+        assert registered_node is not None
+        assert registered_node.is_pending_embargo
+        assert registered_node.registered_user == draft.initiator
+
+    def test_approval_requires_only_a_single_authorizer(self):
+        approval = DraftRegistrationApproval(
+            meta={
+                'registration_choice': 'immediate',
+            }
+        )
+        approval.save()
+        with mock.patch.object(approval, '_on_complete') as mock_on_complete:
+            authorizer1 = factories.AuthUserFactory()
+            authorizer1.add_system_tag(settings.PREREG_ADMIN_TAG)
+            approval.approve(authorizer1)
+            assert mock_on_complete.called
+            assert approval.is_approved
+
+    @mock.patch('website.mails.send_mail')
+    def test_on_reject(self, mock_send_mail):
+        user = factories.UserFactory()
+        approval = DraftRegistrationApproval(
+            meta={
+                'registration_choice': 'immediate'
+            }
+        )
+        approval.save()
+        project = factories.ProjectFactory(creator=user)
+        ensure_schemas()
+        registration_schema = MetaSchema.find_one(
+            Q('name', 'eq', 'Prereg Challenge') &
+            Q('schema_version', 'eq', 2)
+        )
+        draft = factories.DraftRegistrationFactory(
+            branched_from=project,
+            registration_schema=registration_schema,
+        )
+        draft.approval = approval
+        draft.save()
+        approval._on_reject(user)
+        assert approval.meta == {}
+        assert mock_send_mail.call_count == 1
