@@ -460,8 +460,9 @@ class TestDraftRegistrations:
         assert draft.registration_schema == schema
         assert draft.registration_metadata == data
 
-    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_register(self, mock_enquque):
+    def test_register(self):
+        previous_archiver_settings = settings.ENABLE_ARCHIVER
+        settings.ENABLE_ARCHIVER = False
         user = factories.UserFactory()
         auth = Auth(user)
         project = factories.ProjectFactory(creator=user)
@@ -469,6 +470,7 @@ class TestDraftRegistrations:
         assert not draft.registered_node
         draft.register(auth)
         assert draft.registered_node
+        settings.ENABLE_ARCHIVER = previous_archiver_settings
 
     def test_update_metadata_tracks_changes(self, project):
         draft = factories.DraftRegistrationFactory(branched_from=project)
