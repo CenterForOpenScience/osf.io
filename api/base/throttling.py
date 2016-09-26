@@ -47,6 +47,11 @@ class AddContributorThrottle(BaseThrottle, UserRateThrottle):
         return True
 
 
+class RootAnonThrottle(AnonRateThrottle):
+
+    scope = 'root-anon-throttle'
+
+
 class TestUserRateThrottle(UserRateThrottle):
 
     scope = 'test-user'

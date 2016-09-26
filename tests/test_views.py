@@ -2320,6 +2320,22 @@ class TestClaimViews(OsfTestCase):
         )
         self.project.save()
 
+    def test_claim_user_invited_with_no_email_posts_to_claim_form(self):
+        given_name = fake.name()
+        invited_user = self.project.add_unregistered_contributor(
+            fullname=given_name,
+            email=None,
+            auth=Auth(user=self.referrer)
+        )
+        self.project.save()
+
+        url = invited_user.get_claim_url(self.project._primary_key)
+        res = self.app.post(url, {
+            'password': 'bohemianrhap',
+            'password2': 'bohemianrhap'
+        }, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
     @mock.patch('website.project.views.contributor.mails.send_mail')
     def test_claim_user_post_with_registered_user_id(self, send_mail):
         # registered user who is attempting to claim the unclaimed contributor
@@ -3516,6 +3532,14 @@ class TextExternalAuthViews(OsfTestCase):
         resp = self.app.get(url, expect_errors=True)
         assert_equal(resp.status_code, 401)
 
+    def test_external_login_email_get_with_another_user_logged_in(self):
+        another_user = AuthUserFactory()
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service')
+        res = self.app.get(url, auth=another_user.auth)
+        assert_equal(res.status_code, 302, 'redirects to cas logout')
+        assert_in('/logout?service=', res.location)
+        assert_in(url, res.location)
+
     @mock.patch('website.mails.send_mail')
     def test_external_login_confirm_email_get_create(self, mock_welcome):
         assert_false(self.user.is_registered)
@@ -4272,7 +4296,7 @@ class TestUserConfirmSignal(OsfTestCase):
         # unclaimed user has been invited to a project.
         referrer = UserFactory()
         project = ProjectFactory(creator=referrer)
-        unclaimed_user.add_unclaimed_record(project, referrer, 'foo')
+        unclaimed_user.add_unclaimed_record(project, referrer, 'foo', email=fake.email())
         unclaimed_user.save()
 
         token = unclaimed_user.get_unclaimed_record(project._primary_key)['token']

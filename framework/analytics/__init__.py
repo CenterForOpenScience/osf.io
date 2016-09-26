@@ -75,7 +75,7 @@ def build_page(rex, kwargs):
     except KeyError:
         return None
 
-def update_counter(page, db=None):
+def update_counter(page, node_info=None, db=None):
     """Update counters for page.
 
     :param str page: Colon-delimited page key in analytics collection
@@ -117,10 +117,20 @@ def update_counter(page, db=None):
         visited.append(page)
         session.data['visited'] = visited
     d['$inc']['total'] = 1
+
+    # If a download counter is being updated, only perform the update
+    # if the user who is downloading isn't a contributor to the project
+    page_type = page.split(':')[0]
+    if page_type == 'download' and node_info:
+        contributors = node_info['contributors']
+        current_user = session.data.get('auth_user_id')
+        if current_user and current_user in contributors:
+            d['$inc']['unique'] = 0
+            d['$inc']['total'] = 0
+
     collection.update({'_id': page}, d, True, False)
 
-
-def update_counters(rex, db=None):
+def update_counters(rex, node_info=None, db=None):
     """Create a decorator that updates analytics in `pagecounters` when the
     decorated function is called. Note: call inner function before incrementing
     counters so that counters are not changed if inner function fails.
@@ -133,7 +143,7 @@ def update_counters(rex, db=None):
         def wrapped(*args, **kwargs):
             ret = func(*args, **kwargs)
             page = build_page(rex, kwargs)
-            update_counter(page, db)
+            update_counter(page, node_info, db)
             return ret
         return wrapped
     return wrapper

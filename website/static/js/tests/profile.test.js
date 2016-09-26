@@ -6,6 +6,7 @@ var faker = require('faker');
 
 var utils = require('./utils');
 var profile = require('../profile');
+var urlData = require('json!../../urlValidatorTest.json');
 
 // Add sinon asserts to chai.assert, so we can do assert.calledWith instead of sinon.assert.calledWith
 sinon.assert.expose(assert, {prefix: ''});
@@ -96,33 +97,17 @@ describe('profile', () => {
             });
 
             describe('hasValidWebsites', () => {
-                it('should reject simple invalid website', () => {
-                    vm.profileWebsites(['definitelynotawebsite']) ;
-                    assert.isFalse(vm.hasValidWebsites()) ;
+                Object.keys(urlData.testsPositive).forEach(url => {
+                    it(urlData.testsPositive[url], () => {
+                        vm.profileWebsites([url]) ;
+                        assert.isTrue(vm.hasValidWebsites()) ;
+                    });
                 });
-                it('should accept simple valid website', () => {
-                    vm.profileWebsites(['definitelyawebsite.com']) ;
-                    assert.isTrue(vm.hasValidWebsites()) ;
-                });
-                it('should accept valid website with protocol', () => {
-                    vm.profileWebsites(['https://definitelyawebsite.com']) ;
-                    assert.isTrue(vm.hasValidWebsites()) ;
-                });
-                it('should accept valid IPv4 website', () => {
-                    vm.profileWebsites(['127.0.0.1']) ;
-                    assert.isTrue(vm.hasValidWebsites()) ;
-                });
-                it('should accept valid website with path', () => {
-                    vm.profileWebsites(['definitelyawebsite.com/definitelyapage/']) ;
-                    assert.isTrue(vm.hasValidWebsites()) ;
-                });
-                it('should accept valid website with port and path', () => {
-                    vm.profileWebsites(['127.0.0.1:5000/hello/']) ;
-                    assert.isTrue(vm.hasValidWebsites()) ;
-                });
-                it('should accept valid website with query strings', () => {
-                    vm.profileWebsites(['definitelyawebsite.com?real=yes&page=definitely']) ;
-                    assert.isTrue(vm.hasValidWebsites()) ;
+                Object.keys(urlData.testsNegative).forEach(url => {
+                    it(urlData.testsNegative[url], () => {
+                        vm.profileWebsites([url]) ;
+                        assert.isFalse(vm.hasValidWebsites()) ;
+                    });
                 });
             });
 
@@ -148,4 +133,3 @@ describe('profile', () => {
     // TODO: Test other profile ViewModels
     });
 });
-

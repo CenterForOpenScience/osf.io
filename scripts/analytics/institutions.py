@@ -21,16 +21,17 @@ def get_count_by_institutions():
             Q('is_deleted', 'ne', True) &
             Q('is_folder', 'ne', True)
         )
+
         registration_query = node_query & Q('is_registration', 'eq', True)
         non_registration_query = node_query & Q('is_registration', 'eq', False)
         project_query = non_registration_query & Q('parent_node', 'eq', None)
-        registered_project_query = non_registration_query & Q('parent_node', 'eq', None)
+        registered_project_query = registration_query & Q('parent_node', 'eq', None)
         public_query = Q('is_public', 'eq', True)
         private_query = Q('is_public', 'eq', False)
         node_public_query = non_registration_query & public_query
         node_private_query = non_registration_query & private_query
-        project_public_query = non_registration_query & public_query
-        project_private_query = non_registration_query & private_query
+        project_public_query = project_query & public_query
+        project_private_query = project_query & private_query
         registered_node_public_query = registration_query & public_query
         registered_node_private_query = registration_query & private_query
         registered_project_public_query = registered_project_query & public_query

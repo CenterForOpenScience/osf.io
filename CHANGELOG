@@ -2,8 +2,44 @@
 Changelog
 *********
 
+0.94.0 (2016-09-22)
+===================
+- Remove GPLv3-only python-crontab library
+- API Put index on on contributor detail
+- Make analytics for OSF4I differentiate properly between nodes and projects
+- Fix My Projects registrations that aren't yours have blank contributor names and throw 404 error when expanded
+- Fix filtering by Name and Modified Date on Files page
+- Improve look of Institution logos on project pages
+- API Add citations for projects
+- Add unit tests for ORCiD login
+- Auto-link bare URLs in node descriptions
+- Alert when you cannot delete a project when they click the delete button
+- Add social icons to user profile
+- Change download count to not include contributors' downloads
+
+0.93.0 (2016-09-14)
+===================
+
+- Update/replace GPLv3-licensed pyzotero
+- Remove spurious \.png with problematic file name
+- Allow ability to add DOIs/ARKs to Public Projects
+- Add API rate limiting mechanism that works for all authorizations
+- Reference institutions with institution viewer text for empty collections
+- Put rabbitmq into the setup task
+- Replace "newest Public Projects" with "Noteworthy Public Projects
+- Tell Read-only contributors why they can't affiliate a project with their institution
+- Add date_modified lt/gt/lte/gte filter to registrations
+- Refactor the registration modal
+- Fix Varnish tests
+
+Migrations
+----------
+
+- python -m scripts.migration.migrate_retraction_dates
+
 0.92.0 (2016-09-06)
 ===================
+
 - Ensure Mendeley 500 does not prevent file tree from loading
 - API Remove unused routes for registrations
 - Allow access to meetings in Admin App when unconfirmed users are contributors to meeting

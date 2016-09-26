@@ -380,6 +380,12 @@ function _fangornColumns (item) {
             filter : false,
             custom : function() {return m('');}
         });
+        columns.push({
+            data: 'version',
+            filter: false,
+            sortInclude : false,
+            custom: function() {return m('');}
+        });
     }
     if(tb.options.placement !== 'fileview') {
         columns.push({
