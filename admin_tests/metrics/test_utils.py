@@ -190,6 +190,7 @@ class TestUserGet(AdminTestCase):
         count = get_unregistered_users()
         nt.assert_equal(count, 1)
 
+
 class Activity(models.Model):
     name = models.CharField(max_length=50, verbose_name='Name of Activity')
 
@@ -218,57 +219,17 @@ def create_people_and_get_queryset():
 
     return Person.objects.all()
 
-def _identity(x):
-    return x
-
-
-def _transform(dataset, arg):
-    if isinstance(arg, str):
-        field = arg
-        display_name = arg
-        transformer = _identity
-    else:
-        field, display_name, transformer = arg
-        if field is None:
-            field = dataset[0][0]
-    return (dataset[0].index(field), display_name, transformer)
-
-
-def SELECT(dataset, *args):
-    # turn the args into indices based on the first row
-    index_headers = [_transform(dataset, arg) for arg in args]
-    results = []
-
-    # treat header row as special
-    results += [[header[1] for header in index_headers]]
-
-    # add the rest of the rows
-    results += [[trans(datarow[i]) for i, h, trans in index_headers]
-                for datarow in dataset[1:]]
-    return results
-
-
-def EXCLUDE(dataset, *args):
-    antiargs = [value for index, value in enumerate(dataset[0])
-                if index not in args and value not in args]
-    return SELECT(dataset, *antiargs)
-
 
 class RenderToCSVResponseTests(TestCase):
 
     def setUp(self):
         self.qs = create_people_and_get_queryset()
-        self.BASE_CSV = [
-            ['id', 'name', 'address',
-             'info', 'hobby_id', 'born', 'hobby__name', 'Most Powerful'],
-            ['1', 'vetch', 'iffish',
-             'wizard', '1', '2001-01-01T01:01:00', 'Doing Magic', '0'],
-            ['2', 'nemmerle', 'roke',
-             'deceased arch mage', '2', '2001-01-01T01:01:00', 'Resting', '1'],
-            ['3', 'ged', 'gont',
-             'former arch mage', '2', '2001-01-01T01:01:00', 'Resting', '1']]
 
-        self.FULL_PERSON_CSV_NO_VERBOSE = EXCLUDE(self.BASE_CSV, 'hobby__name', 'Most Powerful')
+        self.FULL_PERSON_CSV_NO_VERBOSE = [
+            ['id', 'name', 'address', 'info', 'hobby_id', 'born'],
+            ['1', 'vetch', 'iffish', 'wizard', '1', '2001-01-01T01:01:00'],
+            ['2', 'nemmerle', 'roke', 'deceased arch mage', '2', '2001-01-01T01:01:00'],
+            ['3', 'ged', 'gont', 'former arch mage', '2', '2001-01-01T01:01:00']]
 
     def csv_match(self, csv_file, expected_data, **csv_kwargs):
         assertion_results = []
