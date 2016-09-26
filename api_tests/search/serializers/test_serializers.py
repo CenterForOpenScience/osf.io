@@ -43,25 +43,30 @@ class TestSearchSerializer(DbTestCase):
 
     def test_search_serializer_mixed_model_project(self):
         req = make_drf_request()
+        req.parser_context['kwargs'] = {'version': 'v2'}
         result = SearchSerializer(self.project, context={'request': req}).data
         assert_equal(result['data']['type'], 'nodes')
 
     def test_search_serializer_mixed_model_component(self):
         req = make_drf_request()
+        req.parser_context['kwargs'] = {'version': 'v2'}
         result = SearchSerializer(self.component, context={'request': req}).data
         assert_equal(result['data']['type'], 'nodes')
 
     def test_search_serializer_mixed_model_registration(self):
         req = make_drf_request()
+        req.parser_context['kwargs'] = {'version': 'v2'}
         result = SearchSerializer(self.registration, context={'request': req}).data
         assert_equal(result['data']['type'], 'registrations')
 
     def test_search_serializer_mixed_model_file(self):
         req = make_drf_request()
+        req.parser_context['kwargs'] = {'version': 'v2'}
         result = SearchSerializer(self.file, context={'request': req}).data
         assert_equal(result['data']['type'], 'files')
 
     def test_search_serializer_mixed_model_user(self):
         req = make_drf_request()
+        req.parser_context['kwargs'] = {'version': 'v2'}
         result = SearchSerializer(self.user, context={'request': req}).data
         assert_equal(result['data']['type'], 'users')
