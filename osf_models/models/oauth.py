@@ -11,6 +11,8 @@ from osf_models.utils.security import random_string
 
 from framework.auth import cas
 
+from website import settings
+
 generate_client_secret = functools.partial(random_string, length=40)
 
 
@@ -28,6 +30,8 @@ class ApiOAuth2Scope(base.ObjectIDMixin, base.BaseModel):
     description = models.CharField(max_length=255, null=False, blank=False)
     is_active = models.BooleanField(default=True, db_index=True)  # TODO: Add mechanism to deactivate a scope?
 
+def generate_client_id():
+    return uuid.uuid4().hex
 
 class ApiOAuth2Application(base.ObjectIDMixin, base.BaseModel):
     """Registration and key for user-created OAuth API applications
@@ -43,9 +47,11 @@ class ApiOAuth2Application(base.ObjectIDMixin, base.BaseModel):
 
     # Client ID and secret. Use separate ID field so ID format doesn't
     # have to be restricted to database internals.
-    client_id = models.UUIDField(default=uuid.uuid4,  # Not *guaranteed* unique, but very unlikely
-                                   unique=True,
-                                   db_index=True)
+    # Not *guaranteed* unique, but very unlikely
+    client_id = models.CharField(default=generate_client_id,
+                                 unique=True,
+                                 max_length=50,
+                                 db_index=True)
 
     client_secret = models.CharField(default=generate_client_secret, max_length=40)
 
@@ -99,8 +105,7 @@ class ApiOAuth2Application(base.ObjectIDMixin, base.BaseModel):
 
     @property
     def absolute_url(self):
-        app_config = apps.get_containing_app_config(self)
-        return urlparse.urljoin(app_config.domain, self.url)
+        return urlparse.urljoin(settings.DOMAIN, self.url)
 
     # Properties used by Django and DRF "Links: self" field
     @property
