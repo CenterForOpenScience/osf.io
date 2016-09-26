@@ -4,10 +4,6 @@ import itertools
 from nose import tools as nt
 from datetime import timedelta, datetime
 
-from django.db import models
-from django.test import TestCase
-from django.utils.translation import ugettext as _
-
 from tests.base import AdminTestCase
 from tests.factories import (
     AuthUserFactory, NodeFactory, ProjectFactory, RegistrationFactory
@@ -15,6 +11,8 @@ from tests.factories import (
 from admin.metrics.views import render_to_csv_response
 from website.project.model import Node, User
 from framework.auth import Auth
+from webtest_plus import TestApp
+from tests.base import test_app
 
 from admin.metrics.utils import (
     get_projects,
@@ -190,32 +188,21 @@ class TestUserGet(AdminTestCase):
         nt.assert_equal(count, 1)
 
 
-class Person(models.Model):
-    name = models.CharField(max_length=50, verbose_name=_('Person`s name'))
-    address = models.CharField(max_length=255)
-    info = models.TextField(verbose_name='Info on Person')
-    born = models.DateTimeField(default=datetime(2001, 1, 1, 1, 1))
-
-    def __str__(self):
-        return self.name
-
-
-def create_people_and_get_queryset():
-    Person.objects.get_or_create(name='vetch', address='iffish',
-                                 info='wizard')
-    Person.objects.get_or_create(name='nemmerle', address='roke',
-                                 info='deceased arch mage')
-    Person.objects.get_or_create(name='ged', address='gont',
-                                 info='former arch mage')
-
-    return Person.objects.all()
-
-
-class RenderToCSVResponseTests(TestCase):
+class TestRenderToCSVResponse(AdminTestCase):
 
     def setUp(self):
-
-        self.qs = create_people_and_get_queryset()
+        super(TestRenderToCSVResponse, self).setUp()
+        self.app = TestApp(test_app)
+        Node.remove()
+        time_now = get_previous_midnight()
+        NodeFactory(category='project', date_created=time_now)
+        NodeFactory(category='project',
+                    date_created=time_now - timedelta(days=1))
+        last_time = time_now - timedelta(days=2)
+        NodeFactory(category='project', date_created=last_time)
+        NodeFactory(category='project', date_created=last_time)
+        get_days_statistics(last_time + timedelta(seconds=1))
+        self.time = time_now + timedelta(seconds=1)
 
         self.FULL_PERSON_CSV_NO_VERBOSE = [
             ['id', 'name', 'address', 'info', 'born'],
@@ -232,7 +219,6 @@ class RenderToCSVResponseTests(TestCase):
                                             fillvalue=[])
         for csv_row, expected_row in test_pairs:
             if is_first:
-                # add the BOM to the data
                 expected_row = (['\xef\xbb\xbf' + expected_row[0]] +
                                 expected_row[1:])
                 is_first = False
@@ -248,7 +234,8 @@ class RenderToCSVResponseTests(TestCase):
         self.assertTrue(all(assertion_results))
 
     def test_render_to_csv_response(self):
-        response = render_to_csv_response(self.qs)
+        queryset = OSFWebsiteStatistics.objects.all().order_by('-date')
+        response = render_to_csv_response(queryset)
         self.assertEqual(response['Content-Type'], 'text/csv')
         self.assertMatchesCsv(response.content.split('\n'),
                               self.FULL_PERSON_CSV_NO_VERBOSE)
