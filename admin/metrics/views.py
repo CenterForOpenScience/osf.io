@@ -15,7 +15,7 @@ def update_metrics(request):
     return redirect(reverse('metrics:stats_list'))
 
 
-def dump(qs, outfile_path):
+def dump(qs, response):
     """
     source from http://palewi.re/posts/2009/03/03/django-recipe-dump-your-queryset-out-as-a-csv-file/
 
@@ -34,7 +34,7 @@ def dump(qs, outfile_path):
 
     """
     model = qs
-    writer = csv.writer(open(outfile_path, 'w'))
+    writer = csv.writer(response)
 
     headers = []
     for field in model._meta.fields:
