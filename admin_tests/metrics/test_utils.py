@@ -190,15 +190,10 @@ class TestUserGet(AdminTestCase):
         nt.assert_equal(count, 1)
 
 
-class Activity(models.Model):
-    name = models.CharField(max_length=50, verbose_name='Name of Activity')
-
-
 class Person(models.Model):
     name = models.CharField(max_length=50, verbose_name=_('Person`s name'))
     address = models.CharField(max_length=255)
     info = models.TextField(verbose_name='Info on Person')
-    hobby = models.ForeignKey(Activity)
     born = models.DateTimeField(default=datetime(2001, 1, 1, 1, 1))
 
     def __str__(self):
@@ -206,15 +201,12 @@ class Person(models.Model):
 
 
 def create_people_and_get_queryset():
-    doing_magic, _ = Activity.objects.get_or_create(name='Doing Magic')
-    resting, _ = Activity.objects.get_or_create(name='Resting')
-
     Person.objects.get_or_create(name='vetch', address='iffish',
-                                 info='wizard', hobby=doing_magic)
+                                 info='wizard')
     Person.objects.get_or_create(name='nemmerle', address='roke',
-                                 info='deceased arch mage', hobby=resting)
+                                 info='deceased arch mage')
     Person.objects.get_or_create(name='ged', address='gont',
-                                 info='former arch mage', hobby=resting)
+                                 info='former arch mage')
 
     return Person.objects.all()
 
@@ -222,13 +214,14 @@ def create_people_and_get_queryset():
 class RenderToCSVResponseTests(TestCase):
 
     def setUp(self):
+
         self.qs = create_people_and_get_queryset()
 
         self.FULL_PERSON_CSV_NO_VERBOSE = [
-            ['id', 'name', 'address', 'info', 'hobby_id', 'born'],
-            ['1', 'vetch', 'iffish', 'wizard', '1', '2001-01-01T01:01:00'],
-            ['2', 'nemmerle', 'roke', 'deceased arch mage', '2', '2001-01-01T01:01:00'],
-            ['3', 'ged', 'gont', 'former arch mage', '2', '2001-01-01T01:01:00']]
+            ['id', 'name', 'address', 'info', 'born'],
+            ['1', 'vetch', 'iffish', 'wizard', '2001-01-01T01:01:00'],
+            ['2', 'nemmerle', 'roke', 'deceased arch mage', '2001-01-01T01:01:00'],
+            ['3', 'ged', 'gont', 'former arch mage', '2001-01-01T01:01:00']]
 
     def csv_match(self, csv_file, expected_data, **csv_kwargs):
         assertion_results = []
