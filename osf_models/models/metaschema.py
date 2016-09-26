@@ -1,6 +1,12 @@
-from osf_models.models.base import BaseModel, ObjectIDMixin
+# -*- coding: utf-8 -*-
 from django.db import models
+import jsonschema
+
+from osf_models.models.base import BaseModel, ObjectIDMixin
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf_models.exceptions import ValidationValueError
+
+from website.project.metadata.utils import create_jsonschema_from_metaschema
 
 class MetaSchema(ObjectIDMixin, BaseModel):
     # TODO DELETE ME POST MIGRATION
@@ -16,7 +22,7 @@ class MetaSchema(ObjectIDMixin, BaseModel):
     schema_version = models.IntegerField()
 
     class Meta:
-        unique_together = ('name', 'schema_version', 'guid')
+        unique_together = ('name', 'schema_version')
 
     @property
     def _config(self):
@@ -48,3 +54,18 @@ class MetaSchema(ObjectIDMixin, BaseModel):
             name='Prereg Challenge',
             schema_version=2
         )
+
+    def validate_metadata(self, metadata, reviewer=False, required_fields=False):
+        """
+        Validates registration_metadata field.
+        """
+        schema = create_jsonschema_from_metaschema(self.schema,
+                                                   required_fields=required_fields,
+                                                   is_reviewer=reviewer)
+        try:
+            jsonschema.validate(metadata, schema)
+        except jsonschema.ValidationError as e:
+            raise ValidationValueError(e.message)
+        except jsonschema.SchemaError as e:
+            raise ValidationValueError(e.message)
+        return

@@ -282,6 +282,28 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """For v1 compat."""
         return False
 
+    @property
+    def forked_from_guid(self):
+        if self.forked_from:
+            return self.forked_from._id
+        return None
+
+    @property
+    def linked_nodes_self_url(self):
+        return self.absolute_api_v2_url + 'relationships/linked_nodes/'
+
+    @property
+    def linked_registrations_self_url(self):
+        return self.absolute_api_v2_url + 'relationships/linked_registrations/'
+
+    @property
+    def linked_nodes_related_url(self):
+        return self.absolute_api_v2_url + 'linked_nodes/'
+
+    @property
+    def linked_registrations_related_url(self):
+        return self.absolute_api_v2_url + 'linked_registrations/'
+
     # For Comment API compatibility
     @property
     def target_type(self):
@@ -1424,6 +1446,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 pass  # If this exception is thrown omit the node from the result set
             if forked_node is not None:
                 forked.nodes.add(forked_node)
+
+        # Copy node links
+        forked.linked_nodes.add(*self.linked_nodes.values_list('pk', flat=True))
 
         if title is None:
             forked.title = PREFIX + original.title

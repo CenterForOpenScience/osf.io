@@ -76,6 +76,12 @@ class Registration(AbstractNode):
                                                     on_delete=models.SET_NULL)
 
     @property
+    def registered_schema_id(self):
+        if self.registered_schema:
+            return self.registered_schema.first()._id
+        return None
+
+    @property
     def is_registration(self):
         """For v1 compat."""
         return True
