@@ -143,7 +143,7 @@ COPY ./website/addons/zotero/static/ /code/website/addons/zotero/static/
 RUN mkdir -p /code/website/static/built/ \
     && invoke build_js_config_files \
     && node ./node_modules/webpack/bin/webpack.js --config webpack.prod.config.js \
-    && rm -rf /code/node_modules \
+    # && rm -rf /code/node_modules \ (needed for sharejs)
     && npm install list-of-licenses \
     && rm -rf /root/.npm \
     npm cache clean
