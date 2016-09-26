@@ -16,6 +16,7 @@ from api.base.filters import ODMFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.serializers import JSONAPISerializer
 from api.base.utils import get_object_or_error, get_user_auth
+from api.base.pagination import MaxSizePagination
 from api.base.parsers import (
     JSONAPIRelationshipParser,
     JSONAPIRelationshipParserForRegularJSON,
@@ -69,6 +70,7 @@ class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     required_write_scopes = [CoreScopes.NULL]
     model_class = Institution
 
+    pagination_class = MaxSizePagination
     serializer_class = InstitutionSerializer
     view_category = 'institutions'
     view_name = 'institution-list'
@@ -257,7 +259,7 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
                        }
         Success:       201
 
-    This requires admin permissions on the nodes requested and for the user making the request to
+    This requires write permissions on the nodes requested and for the user making the request to
     have the institution affiliated in their account.
 
     ###Destroy
@@ -273,7 +275,7 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
                        }
         Success:       204
 
-    This requires admin permissions in the nodes requested.
+    This requires write permissions in the nodes requested.
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -306,8 +308,8 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         nodes = []
         for id_ in ids:
             node = Node.load(id_)
-            if not node.has_permission(user, osf_permissions.ADMIN):
-                raise exceptions.PermissionDenied(detail='Admin permission on node {} required'.format(id_))
+            if not node.has_permission(user, osf_permissions.WRITE):
+                raise exceptions.PermissionDenied(detail='Write permission on node {} required'.format(id_))
             nodes.append(node)
 
         for node in nodes:

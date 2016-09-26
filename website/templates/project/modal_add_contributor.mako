@@ -22,18 +22,18 @@
                                         <input type="submit" value="Search" class="btn btn-default">
                                     </span>
                                 </div>
-                            </div>
-                        </div>
-                    <hr />
-                        <div class="row search-contributor-links">
-                            <div class="col-md-12">
-                                <div>
-                                    <!-- ko if:parentId -->
-                                        <a class="f-w-lg" data-bind="click:importFromParent, text:'Import contributors from ' + parentTitle"></a>
-                                    <!-- /ko -->
+                                <div class="row search-contributor-links">
+                                    <div class="col-md-12">
+                                        <div style='margin-left: 5px'>
+                                            <!-- ko if:parentId -->
+                                                <a class="f-w-lg" data-bind="click: startSearchParent, text:'Import contributors from ' + parentTitle"></a>
+                                            <!-- /ko -->
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                    <hr />
                     </form>
 
 
@@ -115,16 +115,33 @@
                                         <li data-bind="css: style"><a href="#" data-bind="click: handler, text: text"></a></li>
                                     </ul>
                                     <p>
-                                        <a href="#" data-bind="click:gotoInvite">Add <strong><em data-bind="text: query"></em></strong> as an unregistered contributor</a>.
+                                        <div data-bind='ifnot: emailSearch'>
+                                            <a href="#" data-bind="click:gotoInvite">Add <strong><em data-bind="text: query"></em></strong> as an unregistered contributor</a>.
+                                        </div>
                                     </p>
+                                </div>
+                                <div data-bind="if: parentPagination">
+                                    <ul class="pagination pagination-sm" data-bind="foreach: paginators">
+                                        <li data-bind="css: style"><a href="#" data-bind="click: handler, text: text"></a></li>
+                                    </ul>
                                 </div>
                                 <div data-bind="if: showLoading">
                                     <p class="text-muted">Searching contributors...</p>
                                 </div>
-                                    <div data-bind="if: noResults">
-                                        No results found. Try a more specific search or
+                                <div data-bind="if: noResults">
+                                    <div data-bind='if: emailSearch'>
+                                      No results found. Try a more specific search.
+                                    </div>
+                                    <div data-bind='ifnot: emailSearch'>
+                                      No results found. Try a more specific search
+                                    </div>
+                                    <div data-bind="ifnot: emailSearch"> or
                                         <a href="#" data-bind="click:gotoInvite">add <strong><em data-bind="text: query"></em></strong> as an unregistered contributor</a>.
                                     </div>
+                                </div>
+                                <div data-bind="if: emailSearch">
+                                    <p>It looks like you are trying to search by email address. Please try your search again using your collaborator's name. You will be able to add users without OSF accounts as unregistered contributors.</p>
+                                </div>
                             </div>
                         </div><!-- ./col-md -->
 
@@ -270,4 +287,3 @@
         </div><!-- end modal-content -->
     </div><!-- end modal-dialog -->
 </div><!-- end modal -->
-

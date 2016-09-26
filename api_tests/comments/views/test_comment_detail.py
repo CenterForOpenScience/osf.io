@@ -32,6 +32,7 @@ class CommentDetailMixin(object):
                 'id': target_id,
                 'type': 'comments',
                 'attributes': {
+                    'content': 'Updating this comment',
                     'deleted': False
                 }
             }
@@ -121,7 +122,7 @@ class CommentDetailMixin(object):
 
     def test_registration_logged_in_contributor_can_view_comment(self):
         self._set_up_registration_with_comment()
-        res = self.app.get(self.registration_url, auth=self.user.auth)
+        res = self.app.get(self.comment_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(self.registration_comment._id, res.json['data']['id'])
         assert_equal(self.registration_comment.content, res.json['data']['attributes']['content'])
@@ -142,13 +143,23 @@ class CommentDetailMixin(object):
         assert_equal(res.status_code, 200)
         assert_equal(urlparse(url).path, expected_url)
 
+    def test_registration_comment_has_node_link(self):
+        self._set_up_registration_with_comment()
+        res = self.app.get(self.comment_url, auth=self.user.auth)
+        url = res.json['data']['relationships']['node']['links']['related']['href']
+        expected_url = '/{}registrations/{}/'.format(API_BASE, self.registration._id)
+        assert_equal(res.status_code, 200)
+        assert_equal(urlparse(url).path, expected_url)
+
     def test_comment_has_replies_link(self):
         self._set_up_public_project_with_comment()
         res = self.app.get(self.public_url)
-        url = res.json['data']['relationships']['replies']['links']['self']['href']
-        expected_url = '/{}nodes/{}/comments/?filter[target]={}'.format(API_BASE, self.public_project._id, self.public_comment._id)
         assert_equal(res.status_code, 200)
-        assert_in(expected_url, url)
+        url = res.json['data']['relationships']['replies']['links']['related']['href']
+        uri = test_utils.urlparse_drop_netloc(url)
+        res = self.app.get(uri)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data'][0]['type'], 'comments')
 
     def test_comment_has_reports_link(self):
         self._set_up_public_project_with_comment()
@@ -202,7 +213,7 @@ class CommentDetailMixin(object):
 
     def test_update_comment_cannot_exceed_max_length(self):
         self._set_up_private_project_with_comment()
-        content = ''.join(['c' for c in range(osf_settings.COMMENT_MAXLENGTH + 1)])
+        content = ('c' * (osf_settings.COMMENT_MAXLENGTH + 3))
         payload = self._set_up_payload(self.comment._id, content=content)
         res = self.app.put_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
@@ -436,8 +447,12 @@ class TestCommentDetailView(CommentDetailMixin, ApiTestCase):
 
     def _set_up_registration_with_comment(self):
         self.registration = RegistrationFactory(creator=self.user)
+        self.registration_url = '/{}registrations/{}/'.format(API_BASE, self.registration._id)
         self.registration_comment = CommentFactory(node=self.registration, user=self.user)
-        self.registration_url = '/{}comments/{}/'.format(API_BASE, self.registration_comment._id)
+        self.comment_url = '/{}comments/{}/'.format(API_BASE, self.registration_comment._id)
+        reply_target = Guid.load(self.registration_comment._id)
+        self.registration_comment_reply = CommentFactory(node=self.registration, target=reply_target, user=self.user)
+        self.replies_url = '/{}registrations/{}/comments/?filter[target]={}'.format(API_BASE, self.registration._id, self.registration_comment._id)
 
     def test_comment_has_target_link_with_correct_type(self):
         self._set_up_public_project_with_comment()
@@ -477,6 +492,34 @@ class TestCommentDetailView(CommentDetailMixin, ApiTestCase):
         res = self.app.delete_json_api(url, auth=self.non_contributor.auth)
         assert_equal(res.status_code, 204)
 
+    def test_registration_comment_has_usable_replies_relationship_link(self):
+        self._set_up_registration_with_comment()
+        res = self.app.get(self.registration_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        comments_url = res.json['data']['relationships']['comments']['links']['related']['href']
+        comments_uri = test_utils.urlparse_drop_netloc(comments_url)
+        comments_res = self.app.get(comments_uri, auth=self.user.auth)
+        assert_equal(comments_res.status_code, 200)
+        replies_url = comments_res.json['data'][0]['relationships']['replies']['links']['related']['href']
+        replies_uri = test_utils.urlparse_drop_netloc(replies_url)
+        replies_res = self.app.get(replies_uri, auth=self.user.auth)
+        node_url = comments_res.json['data'][0]['relationships']['node']['links']['related']['href']
+        node_uri = test_utils.urlparse_drop_netloc(node_url)
+        assert_equal(node_uri, self.registration_url)
+
+    def test_registration_comment_has_usable_node_relationship_link(self):
+        self._set_up_registration_with_comment()
+        res = self.app.get(self.registration_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        comments_url = res.json['data']['relationships']['comments']['links']['related']['href']
+        comments_uri = test_utils.urlparse_drop_netloc(comments_url)
+        comments_res = self.app.get(comments_uri, auth=self.user.auth)
+        assert_equal(comments_res.status_code, 200)
+        node_url = comments_res.json['data'][0]['relationships']['node']['links']['related']['href']
+        node_uri = test_utils.urlparse_drop_netloc(node_url)
+        node_res = self.app.get(node_uri, auth=self.user.auth)
+        assert_in(self.registration._id, node_res.json['data']['id'])
+
 
 class TestFileCommentDetailView(CommentDetailMixin, ApiTestCase):
 
@@ -500,7 +543,9 @@ class TestFileCommentDetailView(CommentDetailMixin, ApiTestCase):
         self.registration = RegistrationFactory(creator=self.user, comment_level='private')
         self.registration_file = test_utils.create_test_file(self.registration, self.user)
         self.registration_comment = CommentFactory(node=self.registration, target=self.registration_file.get_guid(), user=self.user)
-        self.registration_url = '/{}comments/{}/'.format(API_BASE, self.registration_comment._id)
+        self.comment_url = '/{}comments/{}/'.format(API_BASE, self.registration_comment._id)
+        reply_target = Guid.load(self.registration_comment._id)
+        self.registration_comment_reply = CommentFactory(node=self.registration, target=reply_target, user=self.user)
 
     def test_file_comment_has_target_link_with_correct_type(self):
         self._set_up_public_project_with_comment()
@@ -575,7 +620,9 @@ class TestWikiCommentDetailView(CommentDetailMixin, ApiTestCase):
         self.registration = RegistrationFactory(creator=self.user, comment_level='private')
         self.registration_wiki = NodeWikiFactory(node=self.registration, user=self.user)
         self.registration_comment = CommentFactory(node=self.registration, target=Guid.load(self.registration_wiki._id), user=self.user)
-        self.registration_url = '/{}comments/{}/'.format(API_BASE, self.registration_comment._id)
+        self.comment_url = '/{}comments/{}/'.format(API_BASE, self.registration_comment._id)
+        reply_target = Guid.load(self.registration_comment._id)
+        self.registration_comment_reply = CommentFactory(node=self.registration, target=reply_target, user=self.user)
 
     def test_wiki_comment_has_target_link_with_correct_type(self):
         self._set_up_public_project_with_comment()

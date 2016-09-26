@@ -60,7 +60,8 @@ if ($comments.length) {
         canComment: window.contextVars.currentUser.canComment,
         hasChildren: window.contextVars.node.hasChildren,
         currentUser: window.contextVars.currentUser,
-        pageTitle: window.contextVars.node.title
+        pageTitle: window.contextVars.node.title,
+        inputSelector: '.atwho-input'
     };
     Comment.init('#commentsLink', '.comment-pane', options);
 }
@@ -73,7 +74,7 @@ var institutionLogos = {
         self.width = self.nLogos > 1 ? (self.nLogos === 2 ? '115px' : '86px') : '75px';
         self.makeLogo = function(institution){
             return m('a', {href: '/institutions/' + institution.id},
-                m('img.img-circle', {
+                m('img', {
                     height: self.side, width: self.side,
                     style: {margin: '3px'},
                     title: institution.name,
@@ -140,6 +141,7 @@ $(document).ready(function () {
             var fangornOpts = {
                 divID: 'treeGrid',
                 filesData: data.data,
+                allowMove: !node.isRegistration,
                 uploads : true,
                 showFilter : true,
                 placement: 'dashboard',
@@ -268,7 +270,10 @@ $(document).ready(function () {
                 var truncatedText = $.truncate(renderedText, {length: 400});
                 markdownElement.html(truncatedText);
                 mathrender.mathjaxify(markdownElement);
+                markdownElement.show();
             });
+        } else {
+            markdownElement.css('display', 'inherit');
         }
     }
 

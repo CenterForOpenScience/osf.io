@@ -105,7 +105,7 @@ function confirmEmails(emailsToAdd) {
         if (email.user_merge) {
             title = 'Merge account';
             requestMessage = 'Would you like to merge \<b>' + email.address + '\</b> into your account?  ' +
-                'This action is irreversable.';
+                'This action is irreversible.';
             confirmMessage = '\<b>' + email.address + '\</b> has been merged into your account.';
             nopeMessage = 'You have chosen to not merge \<b>' + email.address + '\</b>  into your account. ' +
                 'If you change your mind, visit the \<a href="/settings/account/">user settings page</a>.';
@@ -208,14 +208,10 @@ $(function() {
     }
     new NavbarControl('.osf-nav-wrapper');
     new DevModeControls('#devModeControls', '/static/built/git_logs.json', '/static/built/git_branch.txt');
-    if(window.contextVars.keenProjectId){
-        var params = {};
-        params.currentUser = window.contextVars.currentUser;
-        params.node = window.contextVars.node;
-
+    if (window.contextVars.keen){
         //Don't track PhantomJS visits with KeenIO
-        if(!(/PhantomJS/.test(navigator.userAgent))){
-            new KeenTracker(window.contextVars.keenProjectId, window.contextVars.keenWriteKey, params);
+        if (!(/PhantomJS/.test(navigator.userAgent))){
+            KeenTracker.getInstance().trackPageView();
         }
     }
 

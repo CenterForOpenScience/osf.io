@@ -7,6 +7,7 @@ from django.http import Http404
 
 from modularodm import Q
 from website.project.model import Comment
+from website.project.spam.model import SpamStatus
 from website.settings import SUPPORT_EMAIL
 
 from admin.base.utils import OSFAdmin
@@ -19,13 +20,6 @@ from admin.common_auth.logs import (
 from admin.spam.serializers import serialize_comment
 from admin.spam.forms import EmailForm, ConfirmForm
 from admin.spam.templatetags.spam_extras import reverse_spam_detail
-
-STATUS = dict(
-    UNKNOWN=Comment.UNKNOWN,
-    SPAM=Comment.SPAM,
-    HAM=Comment.HAM,
-    FLAGGED=Comment.FLAGGED,
-)
 
 
 class EmailFormView(OSFAdmin, FormView):
@@ -165,14 +159,14 @@ class SpamDetail(OSFAdmin, FormView):
             raise Http404('Spam with id "{}" not found.'.format(spam_id))
         kwargs.setdefault('page_number', self.request.GET.get('page', '1'))
         kwargs.setdefault('status', self.request.GET.get('status', '1'))
-        kwargs.update(STATUS)  # Pass status in to check against
+        kwargs.update({'SPAM_STATUS': SpamStatus})  # Pass status in to check against
         return kwargs
 
     def form_valid(self, form):
         spam_id = self.kwargs.get('spam_id')
         item = Comment.load(spam_id)
         try:
-            if int(form.cleaned_data.get('confirm')) == Comment.SPAM:
+            if int(form.cleaned_data.get('confirm')) == SpamStatus.SPAM:
                 item.confirm_spam()
                 item.is_deleted = True
                 log_message = 'Confirmed SPAM: {}'.format(spam_id)

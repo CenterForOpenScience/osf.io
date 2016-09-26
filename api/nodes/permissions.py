@@ -3,7 +3,7 @@ from rest_framework import permissions
 from rest_framework import exceptions
 
 from website.addons.base import AddonSettingsBase
-from website.models import Node, Pointer, User, Institution, DraftRegistration
+from website.models import Node, Pointer, User, Institution, DraftRegistration, PrivateLink
 from website.project.metadata.utils import is_prereg_admin
 from website.util import permissions as osf_permissions
 
@@ -33,7 +33,7 @@ class IsPublic(permissions.BasePermission):
 
 class IsAdmin(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (Node, DraftRegistration)), 'obj must be a Node or a Draft Registration, got {}'.format(obj)
+        assert isinstance(obj, (Node, DraftRegistration, PrivateLink)), 'obj must be a Node, Draft Registration, or PrivateLink, got {}'.format(obj)
         auth = get_user_auth(request)
         node = Node.load(request.parser_context['kwargs']['node_id'])
         return node.has_permission(auth.user, osf_permissions.ADMIN)
@@ -44,7 +44,7 @@ class IsAdminOrReviewer(permissions.BasePermission):
     Prereg admins can update draft registrations.
     """
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (Node, DraftRegistration)), 'obj must be a Node or a Draft Registration, got {}'.format(obj)
+        assert isinstance(obj, (Node, DraftRegistration, PrivateLink)), 'obj must be a Node, Draft Registration, or PrivateLink, got {}'.format(obj)
         auth = get_user_auth(request)
         node = Node.load(request.parser_context['kwargs']['node_id'])
         if request.method != 'DELETE' and is_prereg_admin(auth.user):
@@ -55,7 +55,7 @@ class IsAdminOrReviewer(permissions.BasePermission):
 class AdminOrPublic(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (Node, User, Institution, AddonSettingsBase, DraftRegistration)), 'obj must be a Node, User, Institution, Draft Registration, or AddonSettings; got {}'.format(obj)
+        assert isinstance(obj, (Node, User, Institution, AddonSettingsBase, DraftRegistration, PrivateLink)), 'obj must be a Node, User, Institution, Draft Registration, PrivateLink, or AddonSettings; got {}'.format(obj)
         auth = get_user_auth(request)
         node = Node.load(request.parser_context['kwargs'][view.node_lookup_url_kwarg])
         if request.method in permissions.SAFE_METHODS:
@@ -108,6 +108,7 @@ class ContributorOrPublicForPointers(permissions.BasePermission):
             has_auth = parent_node.can_edit(auth)
             return has_auth
 
+
 class ContributorOrPublicForRelationshipPointers(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
@@ -136,7 +137,28 @@ class ContributorOrPublicForRelationshipPointers(permissions.BasePermission):
                     break
             return has_pointer_auth
 
-class AdminOrPublicForRelationshipInstitutions(permissions.BasePermission):
+
+class RegistrationAndPermissionCheckForPointers(permissions.BasePermission):
+
+    def has_object_permission(self, request, view, obj):
+        node_link = Pointer.load(request.parser_context['kwargs']['node_link_id'])
+        node = Node.load(request.parser_context['kwargs'][view.node_lookup_url_kwarg])
+        auth = get_user_auth(request)
+        if request.method == 'DELETE'and node.is_registration:
+            raise exceptions.MethodNotAllowed(method=request.method)
+        if node.is_collection or node.is_registration:
+            raise exceptions.NotFound
+        if node_link.node.is_registration:
+            if request.method not in permissions.SAFE_METHODS:
+                raise exceptions.MethodNotAllowed
+        if node not in node_link.parent:
+            raise exceptions.NotFound
+        if request.method == 'DELETE' and not node.can_edit(auth):
+            return False
+        return True
+
+
+class WriteOrPublicForRelationshipInstitutions(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         assert isinstance(obj, dict)
         auth = get_user_auth(request)
@@ -145,7 +167,8 @@ class AdminOrPublicForRelationshipInstitutions(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return node.is_public or node.can_view(auth)
         else:
-            return node.has_permission(auth.user, osf_permissions.ADMIN)
+            return node.has_permission(auth.user, osf_permissions.WRITE)
+
 
 class ReadOnlyIfRegistration(permissions.BasePermission):
     """Makes PUT and POST forbidden for registrations."""

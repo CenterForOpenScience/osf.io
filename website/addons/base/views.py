@@ -571,6 +571,7 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
         'file_path': file_path,
         'file_name_title': file_name_title,
         'file_name_ext': file_name_ext,
+        'version_id': None,
         'file_guid': file_guid,
         'file_id': file_node._id,
         'provider': file_node.provider,
@@ -652,12 +653,12 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
                 'message_long': 'File not associated with required object.'
             })
         guid = file_node.get_guid(create=True)
+        guid.referent.save()
         return dict(guid=guid._id)
 
     if len(request.path.strip('/').split('/')) > 1:
         guid = file_node.get_guid(create=True)
         return redirect(furl.furl('/{}/'.format(guid._id)).set(args=extras).url)
-
     return addon_view_file(auth, node, file_node, version)
 
 
@@ -706,6 +707,7 @@ def addon_view_file(auth, node, file_node, version):
         'file_name': file_node.name,
         'file_name_title': os.path.splitext(file_node.name)[0],
         'file_name_ext': os.path.splitext(file_node.name)[1],
+        'version_id': version.identifier,
         'file_path': file_node.path,
         'sharejs_uuid': sharejs_uuid,
         'provider': file_node.provider,

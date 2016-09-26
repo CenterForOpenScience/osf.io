@@ -25,9 +25,9 @@
         <div class="col-sm-8 col-md-9" role="main" class="m-t-lg">
             <h1 class="page-header">Public Activity</h1>
             <section id='newPublicProjects'>
-                <h3 class='anchor'>Newest public projects</h3>
+                <h3 class='anchor'>New and noteworthy projects</h3>
                 <div class='project-list'>
-                    ${node_list(recent_public_projects, prefix='newest_public', metric='date_created')}
+                    ${node_list(new_and_noteworthy_projects, prefix='newest_public', metric='date_created')}
                 </div>
             </section>
             <section id='newPublicRegistrations' class="m-t-lg">
