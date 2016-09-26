@@ -100,9 +100,6 @@ class TestMakers(DbIsolationMixin, OsfTestCase):
 
     # mp - make_project
 
-    def test_mp_specifies_title(self):
-        assert make_project('private', None, None) == 'title'
-
     def test_mp_makes_private_project_private(self):
         make_project(PRIVATE, None, None)
         assert not Node.find_one().is_public
@@ -113,9 +110,6 @@ class TestMakers(DbIsolationMixin, OsfTestCase):
 
 
     # mr - make_registration
-
-    def test_mr_specifies_title(self):
-        assert make_registration('private', None, None) == 'title'
 
     def test_mr_makes_private_registration_public_there_are_no_private_registrations(self):
         # TODO Instead we need to test the different approval/embargo workflow states
@@ -129,9 +123,6 @@ class TestMakers(DbIsolationMixin, OsfTestCase):
 
     # mc - make_component
 
-    def test_mc_specifies_title(self):
-        assert make_component('private', None, None) == 'title'
-
     def test_mc_makes_private_component_private(self):
         make_component(PRIVATE, None, None)
         assert not Node.find_one(Q('parent_node', 'ne', None)).is_public
@@ -142,9 +133,6 @@ class TestMakers(DbIsolationMixin, OsfTestCase):
 
 
     # mf - make_file
-
-    def test_mf_specifies_name(self):
-        assert make_file('private', None, None) == 'name'
 
     def test_mf_makes_private_file_private(self):
         make_file(PRIVATE, None, None)
