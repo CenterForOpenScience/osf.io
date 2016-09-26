@@ -18,7 +18,7 @@ except ImportError as error:
     warnings.warn('No api/base/settings/local.py settings file found. Did you remember to '
                   'copy local-dist.py to local.py?', ImportWarning)
 
-if not DEBUG and os.environ.get('DJANGO_SETTINGS_MODULE') == 'api.base.settings':
+if not DEV_MODE and os.environ.get('DJANGO_SETTINGS_MODULE') == 'api.base.settings':
     from . import local
     from . import defaults
     for setting in ('JWE_SECRET', 'JWT_SECRET'):
