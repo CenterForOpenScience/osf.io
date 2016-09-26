@@ -21,14 +21,19 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 DATABASES = {
     'default': {
         'CONN_MAX_AGE': 0,
-        'ENGINE': 'osf_models.db.backends.postgresql',
-        'HOST': '',
-        'NAME': 'osf',
-        'PASSWORD': '',
-        'PORT': '',
-        'USER': '',
+        'ENGINE': 'osf_models.db.backends.postgresql',  # django.db.backends.postgresql
+        'NAME': os.environ.get('OSF_DB_NAME', 'osf'),
+        'USER': os.environ.get('OSF_DB_USER', 'postgres'),
+        'PASSWORD': os.environ.get('OSF_DB_PASSWORD', ''),
+        'HOST': os.environ.get('OSF_DB_HOST', '127.0.0.1'),
+        'PORT': os.environ.get('OSF_DB_PORT', '5432'),
     }
 }
+
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+    'django.contrib.auth.hashers.BCryptPasswordHasher',
+]
 
 AUTH_USER_MODEL = 'osf_models.OSFUser'
 
@@ -79,10 +84,10 @@ INSTALLED_APPS = (
 )
 
 # local development using https
-if osf_settings.SECURE_MODE and DEBUG:
+if osf_settings.SECURE_MODE and DEV_MODE:
     INSTALLED_APPS += ('sslserver',)
 
-if DEBUG:
+if DEV_MODE:
     INSTALLED_APPS += ('debug_toolbar', )
 
 # TODO: Are there more granular ways to configure reporting specifically related to the API?
