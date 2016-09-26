@@ -1,8 +1,9 @@
 from __future__ import unicode_literals
 
 import itsdangerous
-import pytz
+import mock
 from nose.tools import *  # flake8: noqa
+import pytz
 
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils
@@ -60,13 +61,16 @@ class TestFileView(ApiTestCase):
         assert_is_not_none(guid)
         assert_equal(res.json['data']['attributes']['guid'], guid._id)
 
-    def test_file_guid_not_created_with_basic_auth(self):
+    @mock.patch('api.base.throttling.CreateGuidThrottle.allow_request')
+    def test_file_guid_not_created_with_basic_auth(self, mock_allow):
         res = self.app.get(self.file_url + '?create_guid=1', auth=self.user.auth)
         guid = res.json['data']['attributes'].get('guid', None)
         assert_equal(res.status_code, 200)
+        assert_equal(mock_allow.call_count, 1)
         assert guid is None
 
-    def test_file_guid_created_with_cookie(self):
+    @mock.patch('api.base.throttling.CreateGuidThrottle.allow_request')
+    def test_file_guid_created_with_cookie(self, mock_allow):
         session = Session(data={'auth_user_id': self.user._id})
         session.save()
         cookie = itsdangerous.Signer(website_settings.SECRET_KEY).sign(session._id)
@@ -82,6 +86,7 @@ class TestFileView(ApiTestCase):
         assert_is_not_none(guid)
 
         assert_equal(guid, self.file.get_guid()._id)
+        assert_equal(mock_allow.call_count, 1)
 
     def test_get_file(self):
         res = self.app.get(self.file_url, auth=self.user.auth)
