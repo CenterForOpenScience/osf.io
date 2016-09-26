@@ -390,7 +390,8 @@ def get_global_notification_type(global_subscription, user):
     :return: str notification type (e.g. 'email_transactional')
     """
     for notification_type in constants.NOTIFICATION_TYPES:
-        if user in getattr(global_subscription, notification_type):
+        # TODO Optimize me
+        if user in getattr(global_subscription, notification_type).all():
             return notification_type
 
 
