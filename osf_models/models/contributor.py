@@ -1,4 +1,9 @@
 from django.db import models
+from website.util.permissions import (
+    READ,
+    WRITE,
+    ADMIN,
+)
 
 
 class AbstractBaseContributor(models.Model):
@@ -39,3 +44,16 @@ class RecentlyAddedContributor(models.Model):
 
     class Meta:
         unique_together = ('user', 'contributor')
+
+def get_contributor_permissions(contributor, as_list=True):
+    perm = []
+    if contributor.read:
+        perm.append(READ)
+    if contributor.write:
+        perm.append(WRITE)
+    if contributor.admin:
+        perm.append(ADMIN)
+    if as_list:
+        return perm
+    else:
+        return perm[-1]

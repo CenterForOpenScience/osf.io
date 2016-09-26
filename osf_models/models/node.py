@@ -21,19 +21,22 @@ from keen import scoped_keys
 from modularodm import Q as MQ
 from osf_models.apps import AppConfig as app_config
 from osf_models.models.citation import AlternativeCitation
-from osf_models.models.contributor import Contributor, RecentlyAddedContributor
+from osf_models.models.contributor import Contributor, RecentlyAddedContributor, get_contributor_permissions
 from osf_models.models.identifiers import Identifier
 from osf_models.models.identifiers import IdentifierMixin
 from osf_models.models.mixins import Loggable, Taggable, AddonModelMixin, NodeLinkMixin
 from osf_models.models.tag import Tag
 from osf_models.models.nodelog import NodeLog
+from osf_models.models.mixins import CommentableMixin
 from osf_models.models.sanctions import RegistrationApproval
 from osf_models.models.user import OSFUser
+from osf_models.models.spam import SpamMixin
 from osf_models.models.validators import validate_title
 from osf_models.modm_compat import Q
 from osf_models.utils.auth import Auth, get_user
 from osf_models.utils.base import api_v2_url
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf_models.exceptions import ValidationValueError
 from typedmodels.models import TypedModel
 
 from framework import status
@@ -68,7 +71,7 @@ logger = logging.getLogger(__name__)
 
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,
-                   NodeLinkMixin,
+                   NodeLinkMixin, CommentableMixin, SpamMixin,
                    Taggable, Loggable, GuidMixin, BaseModel):
     """
     All things that inherit from AbstractNode will appear in
@@ -280,6 +283,44 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return False
 
     @property
+    def forked_from_guid(self):
+        if self.forked_from:
+            return self.forked_from._id
+        return None
+
+    @property
+    def linked_nodes_self_url(self):
+        return self.absolute_api_v2_url + 'relationships/linked_nodes/'
+
+    @property
+    def linked_registrations_self_url(self):
+        return self.absolute_api_v2_url + 'relationships/linked_registrations/'
+
+    @property
+    def linked_nodes_related_url(self):
+        return self.absolute_api_v2_url + 'linked_nodes/'
+
+    @property
+    def linked_registrations_related_url(self):
+        return self.absolute_api_v2_url + 'linked_registrations/'
+
+    # For Comment API compatibility
+    @property
+    def target_type(self):
+        """The object "type" used in the OSF v2 API."""
+        return 'nodes'
+
+    @property
+    def root_target_page(self):
+        """The comment page type associated with Nodes."""
+        Comment = apps.get_model('osf_models.Comment')
+        return Comment.OVERVIEW
+
+    def belongs_to_node(self, node_id):
+        """Check whether this node matches the specified node."""
+        return self._id == node_id
+
+    @property
     def category_display(self):
         """The human-readable representation of this node's category."""
         return settings.NODE_CATEGORY_MAP[self.category]
@@ -474,14 +515,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             contrib = user.contributor_set.get(node=self)
         except Contributor.DoesNotExist:
             return []
-        perm = []
-        if contrib.read:
-            perm.append(READ)
-        if contrib.write:
-            perm.append(WRITE)
-        if contrib.admin:
-            perm.append(ADMIN)
-        return perm
+        return get_contributor_permissions(contrib)
+
+    def get_visible(self, user):
+        try:
+            contributor = self.contributor_set.get(user=user)
+        except Contributor.DoesNotExist:
+            raise ValueError(u'User {0} not in contributors'.format(user))
+        return contributor.visible
 
     def has_permission(self, user, permission, check_parent=True):
         """Check whether user has permission.
@@ -697,12 +738,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.save()
 
     def add_contributor(self, contributor, permissions=None, visible=True,
-                        auth=None, log=True, save=False):
+                        send_email='default', auth=None, log=True, save=False):
         """Add a contributor to the project.
 
         :param User contributor: The contributor to be added
         :param list permissions: Permissions to grant to the contributor
         :param bool visible: Contributor is visible in project dashboard
+        :param str send_email: Email preference for notifying added contributor
         :param Auth auth: All the auth information including user, API key
         :param bool log: Add log to self
         :param bool save: Save after adding contributor
@@ -751,8 +793,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if save:
                 self.save()
 
-            if self._id:
-                project_signals.contributor_added.send(self, contributor=contributor, auth=auth)
+            if self._id and send_email != 'false':
+                project_signals.contributor_added.send(self,
+                                                       contributor=contributor,
+                                                       auth=auth, email_template=send_email)
 
             return True
 
@@ -802,8 +846,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if save:
             self.save()
 
-    def add_unregistered_contributor(self, fullname, email, auth,
-                                     permissions=None, save=False):
+    def add_unregistered_contributor(self, fullname, email, auth, send_email='default',
+                                     visible=True, permissions=None, save=False):
         """Add a non-registered contributor to the project.
 
         :param str fullname: The full name of the person.
@@ -831,9 +875,54 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         self.add_contributor(
             contributor, permissions=permissions, auth=auth,
-            log=True, save=False,
+            visible=visible, send_email=send_email, log=True, save=False
         )
         self.save()
+        return contributor
+
+    def add_contributor_registered_or_not(self, auth, user_id=None,
+                                          full_name=None, email=None, send_email='false',
+                                          permissions=None, bibliographic=True, index=None, save=False):
+
+        if user_id:
+            contributor = OSFUser.load(user_id)
+            if not contributor:
+                raise ValueError('User with id {} was not found.'.format(user_id))
+            if self.contributor_set.filter(user=contributor).exists():
+                raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
+            self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
+                                 permissions=permissions, send_email=send_email, save=True)
+        else:
+
+            try:
+                contributor = self.add_unregistered_contributor(
+                    fullname=full_name, email=email, auth=auth,
+                    send_email=send_email, permissions=permissions,
+                    visible=bibliographic, save=True
+                )
+            except ValidationError:
+                contributor = get_user(email=email)
+                if self.contributor_set.filter(user=contributor).exists():
+                    raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
+                self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
+                                     send_email=send_email, permissions=permissions, save=True)
+
+        auth.user.email_last_sent = timezone.now()
+        auth.user.save()
+
+        if index is not None:
+            self.move_contributor(user=contributor, index=index, auth=auth, save=True)
+
+        contributor_obj = self.contributor_set.get(user=contributor)
+        contributor.permission = get_contributor_permissions(contributor_obj, as_list=False)
+        contributor.bibliographic = contributor_obj.visible
+        contributor.node_id = self._id
+        contributor_order = list(self.get_contributor_order())
+        contributor.index = contributor_order.index(contributor_obj.pk)
+
+        if save:
+            contributor.save()
+
         return contributor
 
     def callback(self, callback, recursive=False, *args, **kwargs):
@@ -890,11 +979,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         # Node must have at least one registered admin user
         admin_query = Contributor.objects.select_related('user').filter(
-            user__in=[contributor],
             user__is_active=True,
             admin=True
-        )
-        if admin_query.exists():
+        ).exclude(user=contributor)
+        if not admin_query.exists():
             return False
 
         contrib_obj = self.contributor_set.get(user=contributor)
@@ -1141,8 +1229,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered.creator = self.creator
         registered.tags.add(*self.tags.all())
         registered.affiliated_institutions.add(*self.affiliated_institutions.all())
-        # TODO: Uncomment when alternative citations are implemented
-        # registered.alternative_citations = self.alternative_citations
+        registered.alternative_citations.add(*self.alternative_citations.values_list('pk', flat=True))
         registered.node_license = original.license.copy() if original.license else None
         registered.wiki_private_uuids = {}
 
@@ -1265,6 +1352,47 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 self.save()
         return citation
 
+    def edit_citation(self, auth, instance, save=False, log=True, **kwargs):
+        citation = {'name': instance.name, 'text': instance.text}
+        new_name = kwargs.get('name', instance.name)
+        new_text = kwargs.get('text', instance.text)
+        if new_name != instance.name:
+            instance.name = new_name
+            citation['new_name'] = new_name
+        if new_text != instance.text:
+            instance.text = new_text
+            citation['new_text'] = new_text
+        instance.save()
+        if log:
+            self.add_log(
+                action=NodeLog.CITATION_EDITED,
+                params={
+                    'node': self._primary_key,
+                    'citation': citation
+                },
+                auth=auth,
+                save=False
+            )
+        if save:
+            self.save()
+        return instance
+
+    def remove_citation(self, auth, instance, save=False, log=True):
+        citation = {'name': instance.name, 'text': instance.text}
+        self.alternative_citations.remove(instance)
+        if log:
+            self.add_log(
+                action=NodeLog.CITATION_REMOVED,
+                params={
+                    'node': self._primary_key,
+                    'citation': citation
+                },
+                auth=auth,
+                save=False
+            )
+        if save:
+            self.save()
+
     # TODO: Optimize me (e.g. use bulk create)
     def fork_node(self, auth, title=None):
         """Recursively fork a node.
@@ -1318,6 +1446,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 pass  # If this exception is thrown omit the node from the result set
             if forked_node is not None:
                 forked.nodes.add(forked_node)
+
+        # Copy node links
+        forked.linked_nodes.add(*self.linked_nodes.values_list('pk', flat=True))
 
         if title is None:
             forked.title = PREFIX + original.title
@@ -1505,16 +1636,18 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 else:
                     yield (contrib, node)
 
-    def get_admin_contributors(self, users):
-        """Return a set of all admin contributors for this node. Excludes contributors on node links and
-        inactive users.
-        """
-        query = Contributor.objects.select_related('user').filter(
+    def _get_admin_contributors_query(self, users):
+        return Contributor.objects.select_related('user').filter(
             user__in=users,
             user__is_active=True,
             admin=True
         )
-        return (each.user for each in query)
+
+    def get_admin_contributors(self, users):
+        """Return a set of all admin contributors for this node. Excludes contributors on node links and
+        inactive users.
+        """
+        return (each.user for each in self._get_admin_contributors_query(users))
 
     def get_admin_contributors_recursive(self, unique_users=False, *args, **kwargs):
         """Yield (admin, node) tuples for this node and
@@ -1587,8 +1720,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 else:
                     to_remove.append(user)
 
-            admins = list(self.get_admin_contributors(users))
-            if users is None or not admins:
+            if users is None or not self._get_admin_contributors_query(users).exists():
                 raise NodeStateError(
                     'Must have at least one registered admin contributor'
                 )
@@ -1631,6 +1763,50 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         with transaction.atomic():
             if to_remove or permissions_changed and ['read'] in permissions_changed.values():
                 project_signals.write_permissions_revoked.send(self)
+
+    # TODO: optimize me
+    def update_contributor(self, user, permission, visible, auth, save=False):
+        """ TODO: this method should be updated as a replacement for the main loop of
+        Node#manage_contributors. Right now there are redundancies, but to avoid major
+        feature creep this will not be included as this time.
+
+        Also checks to make sure unique admin is not removing own admin privilege.
+        """
+        if not self.has_permission(auth.user, ADMIN):
+            raise PermissionsError('Only admins can modify contributor permissions')
+
+        if permission:
+            permissions = expand_permissions(permission)
+            admins = self.contributor_set.filter(admin=True)
+            if not admins.count() > 1:
+                # has only one admin
+                admin = admins.first()
+                if admin.user == user and ADMIN not in permissions:
+                    raise NodeStateError('{} is the only admin.'.format(user.fullname))
+            if not self.contributor_set.filter(user=user).exists():
+                raise ValueError(
+                    'User {0} not in contributors'.format(user.fullname)
+                )
+            if set(permissions) != set(self.get_permissions(user)):
+                self.set_permissions(user, permissions, save=save)
+                permissions_changed = {
+                    user._id: permissions
+                }
+                self.add_log(
+                    action=NodeLog.PERMISSIONS_UPDATED,
+                    params={
+                        'project': self.parent_id,
+                        'node': self._id,
+                        'contributors': permissions_changed,
+                    },
+                    auth=auth,
+                    save=save
+                )
+                with transaction.atomic():
+                    if ['read'] in permissions_changed.values():
+                        project_signals.write_permissions_revoked.send(self)
+        if visible is not None:
+            self.set_visible(user, visible, auth=auth)
 
     def save(self, *args, **kwargs):
         if self.pk:
@@ -1953,6 +2129,28 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             },
             auth=auth,
             log_date=new_page.date,
+            save=False,
+        )
+        self.save()
+
+    def delete_node_wiki(self, name, auth):
+        name = (name or '').strip()
+        key = to_mongo_key(name)
+        page = self.get_wiki_page(key)
+
+        del self.wiki_pages_current[key]
+        if key != 'home':
+            del self.wiki_pages_versions[key]
+
+        self.add_log(
+            action=NodeLog.WIKI_DELETED,
+            params={
+                'project': self.parent_id,
+                'node': self._primary_key,
+                'page': page.page_name,
+                'page_id': page._primary_key,
+            },
+            auth=auth,
             save=False,
         )
         self.save()

@@ -6,19 +6,13 @@ from osf_models.models import Node
 from osf_models.models import NodeLog
 from osf_models.models.base import GuidMixin, Guid, BaseModel
 from osf_models.utils.base import api_v2_url
+from osf_models.models.mixins import CommentableMixin
+from osf_models.models.spam import SpamMixin
 
 from framework.exceptions import PermissionsError
 from website import settings
 from website.project import signals as project_signals
 from website.project.model import get_valid_mentioned_users_guids
-
-
-class SpamMixin(object):
-    pass
-
-
-class CommentableMixin(object):
-    pass
 
 
 class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
@@ -34,7 +28,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
 
     user = models.ForeignKey('OSFUser', null=True)
     # the node that the comment belongs to
-    node = models.ForeignKey('Node', null=True)
+    node = models.ForeignKey('AbstractNode', null=True)
 
     # The file or project overview page that the comment is for
     root_target = models.ForeignKey(Guid, on_delete=models.SET_NULL,

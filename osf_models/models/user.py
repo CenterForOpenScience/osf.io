@@ -15,6 +15,7 @@ from django.db import models
 from django.utils import timezone
 from modularodm.exceptions import NoResultsFound
 import itsdangerous
+import pytz
 
 # OSF imports
 import framework.mongo
@@ -417,7 +418,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
 
     @property
     def email(self):
-        return self.username
+        if self.has_usable_username():
+            return self.username
+        else:
+            return None
 
     @property
     def system_tags(self):
@@ -1241,3 +1245,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
 
     def is_watching(self, node):
         return self.watched.filter(id=node.id).exists()
+
+    def get_node_comment_timestamps(self, target_id):
+        """ Returns the timestamp for when comments were last viewed on a node, file or wiki.
+        """
+        default_timestamp = dt.datetime(1970, 1, 1, 12, 0, 0, tzinfo=pytz.utc)
+        return self.comments_viewed_timestamp.get(target_id, default_timestamp)
