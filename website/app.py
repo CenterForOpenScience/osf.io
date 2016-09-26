@@ -174,6 +174,7 @@ PATCHED_MODELS = (
     'ApiOAuth2PersonalToken',
     'DraftRegistration',
     'MetaSchema',
+    'NodeWikiPage',
 )
 
 # TODO: This won't work for modules that do e.g. `from website import models`. Rethink.

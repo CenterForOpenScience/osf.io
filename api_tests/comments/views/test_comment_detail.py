@@ -1,4 +1,7 @@
+import mock
 from urlparse import urlparse
+
+import pytest
 from nose.tools import *  # flake8: noqa
 
 from framework.auth import core
@@ -72,7 +75,7 @@ class CommentDetailMixin(object):
     def test_private_node_user_with_private_link_can_see_comment(self):
         self._set_up_private_project_with_comment()
         private_link = PrivateLinkFactory(anonymous=False)
-        private_link.nodes.append(self.private_project)
+        private_link.nodes.add(self.private_project)
         private_link.save()
         res = self.app.get('/{}comments/{}/'.format(API_BASE, self.comment._id), {'view_only': private_link.key}, expect_errors=True)
         assert_equal(res.status_code, 200)
@@ -82,7 +85,7 @@ class CommentDetailMixin(object):
     def test_private_node_user_with_anonymous_link_cannot_see_commenter_info(self):
         self._set_up_private_project_with_comment()
         private_link = PrivateLinkFactory(anonymous=True)
-        private_link.nodes.append(self.private_project)
+        private_link.nodes.add(self.private_project)
         private_link.save()
         res = self.app.get('/{}comments/{}/'.format(API_BASE, self.comment._id), {'view_only': private_link.key})
         assert_equal(res.status_code, 200)
@@ -114,7 +117,7 @@ class CommentDetailMixin(object):
     def test_public_node_user_with_private_link_can_view_comment(self):
         self._set_up_public_project_with_comment()
         private_link = PrivateLinkFactory(anonymous=False)
-        private_link.nodes.append(self.public_project)
+        private_link.nodes.add(self.public_project)
         private_link.save()
         res = self.app.get('/{}comments/{}/'.format(API_BASE, self.public_comment._id), {'view_only': private_link.key}, expect_errors=True)
         assert_equal(self.public_comment._id, res.json['data']['id'])
@@ -165,7 +168,7 @@ class CommentDetailMixin(object):
         self._set_up_public_project_with_comment()
         res = self.app.get(self.public_url)
         url = res.json['data']['relationships']['reports']['links']['related']['href']
-        expected_url = '/{}comments/{}/reports/'.format(API_BASE, self.public_comment)
+        expected_url = '/{}comments/{}/reports/'.format(API_BASE, self.public_comment._id)
         assert_equal(res.status_code, 200)
         assert_equal(urlparse(url).path, expected_url)
 
@@ -359,7 +362,7 @@ class CommentDetailMixin(object):
         self.comment.save()
 
         private_link = PrivateLinkFactory(anonymous=False)
-        private_link.nodes.append(self.private_project)
+        private_link.nodes.add(self.private_project)
         private_link.save()
 
         res = self.app.get('/{}comments/{}/'.format(API_BASE, self.comment._id), {'view_only': private_link.key}, expect_errors=True)
@@ -372,7 +375,7 @@ class CommentDetailMixin(object):
         self.comment.save()
 
         anonymous_link = PrivateLinkFactory(anonymous=True)
-        anonymous_link.nodes.append(self.private_project)
+        anonymous_link.nodes.add(self.private_project)
         anonymous_link.save()
 
         res = self.app.get('/{}comments/{}/'.format(API_BASE, self.comment._id), {'view_only': anonymous_link.key}, expect_errors=True)
@@ -421,7 +424,7 @@ class CommentDetailMixin(object):
         self.public_comment.save()
 
         private_link = PrivateLinkFactory(anonymous=False)
-        private_link.nodes.append(self.public_project)
+        private_link.nodes.add(self.public_project)
         private_link.save()
 
         res = self.app.get('/{}comments/{}/'.format(API_BASE, self.public_comment._id), {'view_only': private_link.key}, expect_errors=True)
@@ -521,6 +524,7 @@ class TestCommentDetailView(CommentDetailMixin, ApiTestCase):
         assert_in(self.registration._id, node_res.json['data']['id'])
 
 
+@pytest.mark.skip('Files not yet implemented')
 class TestFileCommentDetailView(CommentDetailMixin, ApiTestCase):
 
     def _set_up_private_project_with_comment(self):
@@ -603,7 +607,8 @@ class TestWikiCommentDetailView(CommentDetailMixin, ApiTestCase):
     def _set_up_private_project_with_comment(self):
         self.private_project = ProjectFactory.create(is_public=False, creator=self.user, comment_level='private')
         self.private_project.add_contributor(self.contributor, save=True)
-        self.wiki = NodeWikiFactory(node=self.private_project, user=self.user)
+        with mock.patch('osf_models.models.AbstractNode.update_search'):
+            self.wiki = NodeWikiFactory(node=self.private_project, user=self.user)
         self.comment = CommentFactory(node=self.private_project, target=Guid.load(self.wiki._id), user=self.user)
         self.private_url = '/{}comments/{}/'.format(API_BASE, self.comment._id)
         self.payload = self._set_up_payload(self.comment._id)
@@ -611,14 +616,16 @@ class TestWikiCommentDetailView(CommentDetailMixin, ApiTestCase):
     def _set_up_public_project_with_comment(self):
         self.public_project = ProjectFactory.create(is_public=True, creator=self.user, comment_level='private')
         self.public_project.add_contributor(self.contributor, save=True)
-        self.public_wiki = NodeWikiFactory(node=self.public_project, user=self.user)
+        with mock.patch('osf_models.models.AbstractNode.update_search'):
+            self.public_wiki = NodeWikiFactory(node=self.public_project, user=self.user)
         self.public_comment = CommentFactory(node=self.public_project, target=Guid.load(self.public_wiki._id), user=self.user)
         self.public_url = '/{}comments/{}/'.format(API_BASE, self.public_comment._id)
         self.public_comment_payload = self._set_up_payload(self.public_comment._id)
 
     def _set_up_registration_with_comment(self):
         self.registration = RegistrationFactory(creator=self.user, comment_level='private')
-        self.registration_wiki = NodeWikiFactory(node=self.registration, user=self.user)
+        with mock.patch('osf_models.models.AbstractNode.update_search'):
+            self.registration_wiki = NodeWikiFactory(node=self.registration, user=self.user)
         self.registration_comment = CommentFactory(node=self.registration, target=Guid.load(self.registration_wiki._id), user=self.user)
         self.comment_url = '/{}comments/{}/'.format(API_BASE, self.registration_comment._id)
         reply_target = Guid.load(self.registration_comment._id)
