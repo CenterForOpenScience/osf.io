@@ -71,20 +71,20 @@ class UserSerializer(JSONAPISerializer):
 
     nodes = HideIfDisabled(RelationshipField(
         related_view='users:user-nodes',
-        related_view_kwargs={'user_id': '<pk>'},
+        related_view_kwargs={'user_id': '<_id>'},
         related_meta={'projects_in_common': 'get_projects_in_common'},
     ))
 
     registrations = DevOnly(HideIfDisabled(RelationshipField(
         related_view='users:user-registrations',
-        related_view_kwargs={'user_id': '<pk>'},
+        related_view_kwargs={'user_id': '<_id>'},
     )))
 
     institutions = HideIfDisabled(RelationshipField(
         related_view='users:user-institutions',
-        related_view_kwargs={'user_id': '<pk>'},
+        related_view_kwargs={'user_id': '<_id>'},
         self_view='users:user-institutions-relationship',
-        self_view_kwargs={'user_id': '<pk>'},
+        self_view_kwargs={'user_id': '<_id>'},
     ))
 
     class Meta:

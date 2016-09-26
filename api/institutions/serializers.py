@@ -27,17 +27,17 @@ class InstitutionSerializer(JSONAPISerializer):
 
     nodes = RelationshipField(
         related_view='institutions:institution-nodes',
-        related_view_kwargs={'institution_id': '<pk>'},
+        related_view_kwargs={'institution_id': '<_id>'},
     )
 
     registrations = RelationshipField(
         related_view='institutions:institution-registrations',
-        related_view_kwargs={'institution_id': '<pk>'}
+        related_view_kwargs={'institution_id': '<_id>'}
     )
 
     users = RelationshipField(
         related_view='institutions:institution-users',
-        related_view_kwargs={'institution_id': '<pk>'}
+        related_view_kwargs={'institution_id': '<_id>'}
     )
 
     def get_api_url(self, obj):

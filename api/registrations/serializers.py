@@ -75,31 +75,31 @@ class BaseRegistrationSerializer(NodeSerializer):
 
     children = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-children',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_node_count'},
     ))
 
     comments = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-comments',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
         related_meta={'unread': 'get_unread_comments_count'},
-        filter={'target': '<pk>'}
+        filter={'target': '<_id>'}
     ))
 
     contributors = RelationshipField(
         related_view='registrations:registration-contributors',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_contrib_count'}
     )
 
     files = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-providers',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<_id>'}
     ))
 
     wikis = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-wikis',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
     ))
 
     forked_from = HideIfWithdrawal(RelationshipField(
@@ -119,17 +119,17 @@ class BaseRegistrationSerializer(NodeSerializer):
 
     logs = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-logs',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
     ))
 
     forks = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-forks',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<_id>'}
     ))
 
     node_links = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-pointers',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_pointers_count'}
     ))
 
@@ -146,7 +146,7 @@ class BaseRegistrationSerializer(NodeSerializer):
 
     affiliated_institutions = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-institutions',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<_id>'}
     ))
 
     registration_schema = RelationshipField(
@@ -156,36 +156,36 @@ class BaseRegistrationSerializer(NodeSerializer):
 
     registrations = HideIfRegistration(RelationshipField(
         related_view='nodes:node-registrations',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<_id>'}
     ))
 
     draft_registrations = HideIfRegistration(RelationshipField(
         related_view='nodes:node-draft-registrations',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<_id>'}
     ))
 
     identifiers = HideIfWithdrawal(RelationshipField(
         related_view='registrations:identifier-list',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<_id>'}
     ))
 
     linked_nodes = HideIfWithdrawal(RelationshipField(
         related_view='registrations:linked-nodes',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_node_links_count'},
         self_view='registrations:node-pointer-relationship',
-        self_view_kwargs={'node_id': '<pk>'}
+        self_view_kwargs={'node_id': '<_id>'}
     ))
 
     view_only_links = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-view-only-links',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_view_only_links_count'},
     ))
 
     citation = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-citation',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<_id>'}
     ))
 
     links = LinksField({'self': 'get_registration_url', 'html': 'get_absolute_html_url'})

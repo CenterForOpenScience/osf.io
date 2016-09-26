@@ -38,7 +38,7 @@ class WikiSerializer(JSONAPISerializer):
         related_view='nodes:node-comments',
         related_view_kwargs={'node_id': '<node._id>'},
         related_meta={'unread': 'get_unread_comments_count'},
-        filter={'target': '<pk>'}
+        filter={'target': '<_id>'}
     )
 
     # LinksField.to_representation adds link to "self"

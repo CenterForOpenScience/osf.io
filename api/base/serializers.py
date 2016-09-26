@@ -303,9 +303,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
         children = RelationshipField(
             related_view='nodes:node-children',
-            related_view_kwargs={'node_id': '<pk>'},
+            related_view_kwargs={'node_id': '<_id>'},
             self_view='nodes:node-node-children-relationship',
-            self_view_kwargs={'node_id': '<pk>'},
+            self_view_kwargs={'node_id': '<_id>'},
             related_meta={'count': 'get_node_count'}
         )
 
@@ -345,7 +345,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
     replies = RelationshipField(
         self_view='nodes:node-comments',
         self_view_kwargs={'node_id': '<node._id>'},
-        filter={'target': '<pk>'})
+        filter={'target': '<_id>'})
     )
     """
     json_api_link = True  # serializes to a links object
@@ -709,15 +709,15 @@ class LinksField(ser.Field):
         links = LinksField({
             'html': 'absolute_url',
             'children': {
-                'related': Link('nodes:node-children', node_id='<pk>'),
+                'related': Link('nodes:node-children', node_id='<_id>'),
                 'count': 'get_node_count'
             },
             'contributors': {
-                'related': Link('nodes:node-contributors', node_id='<pk>'),
+                'related': Link('nodes:node-contributors', node_id='<_id>'),
                 'count': 'get_contrib_count'
             },
             'registrations': {
-                'related': Link('nodes:node-registrations', node_id='<pk>'),
+                'related': Link('nodes:node-registrations', node_id='<_id>'),
                 'count': 'get_registration_count'
             },
         })

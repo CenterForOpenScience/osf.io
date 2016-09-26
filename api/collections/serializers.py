@@ -31,25 +31,25 @@ class CollectionSerializer(JSONAPISerializer):
 
     node_links = RelationshipField(
         related_view='collections:node-pointers',
-        related_view_kwargs={'collection_id': '<pk>'},
+        related_view_kwargs={'collection_id': '<_id>'},
         related_meta={'count': 'get_node_links_count'}
     )
 
     # TODO: Add a self link to this when it's available
     linked_nodes = RelationshipField(
         related_view='collections:linked-nodes',
-        related_view_kwargs={'collection_id': '<pk>'},
+        related_view_kwargs={'collection_id': '<_id>'},
         related_meta={'count': 'get_node_links_count'},
         self_view='collections:collection-node-pointer-relationship',
-        self_view_kwargs={'collection_id': '<pk>'}
+        self_view_kwargs={'collection_id': '<_id>'}
     )
 
     linked_registrations = RelationshipField(
         related_view='collections:linked-registrations',
-        related_view_kwargs={'collection_id': '<pk>'},
+        related_view_kwargs={'collection_id': '<_id>'},
         related_meta={'count': 'get_registration_links_count'},
         self_view='collections:collection-registration-pointer-relationship',
-        self_view_kwargs={'collection_id': '<pk>'}
+        self_view_kwargs={'collection_id': '<_id>'}
     )
 
     class Meta:

@@ -20,7 +20,6 @@ from api.comments.serializers import (
     CommentReport
 )
 from framework.auth.core import Auth
-from framework.guid.model import Guid
 from framework.auth.oauth_scopes import CoreScopes
 from framework.exceptions import PermissionsError
 from website.project.model import Comment, Node
@@ -175,7 +174,7 @@ class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Comm
             comment_node = comment.target.referent
         elif isinstance(comment.target.referent, (NodeWikiPage,
                                                   StoredFileNode)):
-            comment_node = Guid.load(comment.target.referent.node).referent
+            comment_node = comment.target.referent.node
 
         if comment_node.is_registration:
             self.serializer_class = RegistrationCommentDetailSerializer

@@ -57,14 +57,14 @@ class PreprintSerializer(JSONAPISerializer):
 
     files = RelationshipField(
         related_view='nodes:node-providers',
-        related_view_kwargs={'node_id': '<pk>'}
+        related_view_kwargs={'node_id': '<_id>'}
     )
 
     providers = RelationshipField(
         related_view='preprints:preprint-preprint_providers',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
         self_view='preprints:preprint-relationships-preprint_providers',
-        self_view_kwargs={'node_id': '<pk>'}
+        self_view_kwargs={'node_id': '<_id>'}
     )
 
     links = LinksField(
@@ -77,7 +77,7 @@ class PreprintSerializer(JSONAPISerializer):
 
     contributors = RelationshipField(
         related_view='nodes:node-contributors',
-        related_view_kwargs={'node_id': '<pk>'},
+        related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_contrib_count'},
     )
 
