@@ -1,4 +1,3 @@
-import csv
 import unicodecsv
 import itertools
 
