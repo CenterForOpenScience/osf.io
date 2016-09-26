@@ -13,7 +13,6 @@ from tests.factories import (
     UserFactory,
     AuthUserFactory,
     ProjectFactory,
-    NodeLogFactory,
 )
 from admin_tests.utilities import setup_view, setup_log_view
 
@@ -240,7 +239,6 @@ class TestUserWorkshopFormView(AdminTestCase):
 
     def test_one_node(self):
         node = ProjectFactory(creator=self.user_1)
-        node.save()
         node.add_log(
             'log_added',
             params={'project': node.pk},
@@ -248,13 +246,10 @@ class TestUserWorkshopFormView(AdminTestCase):
             log_date=datetime.utcnow() - timedelta(days=4),
             save=True
         )
-        node.reload()
-        self.user_1.save()
-        # nodelog = NodeLogFactory()
-        # best = self.user_1.created
         with file('test.csv') as fp:
             final = self.view.parse(fp)
         nt.assert_equal(1, final[1][-2])
+        nt.assert_equal(1, final[1][-3])
 
     def tearDown(self):
         os.remove('test.csv')

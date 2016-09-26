@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 from furl import furl
 import csv
 from datetime import datetime
-import pytz
 from django.views.generic import FormView, DeleteView, ListView
 from django.core.mail import send_mail
 from django.shortcuts import redirect
@@ -306,17 +305,19 @@ class UserWorkshopFormView(OSFAdmin, FormView):
                 continue
             user = user_list_of_one[0]
             date = datetime.strptime(line[1], '%m/%d/%y')  # .astimezone(pytz.utc)
-            log_ids = list(user.get_recent_log_ids(since=date))
+            query = Q('user', 'eq', user.pk)
+            query &= Q('date', 'gt', date)
+            logs = NodeLog.find(query)
             try:
-                last_log_date = NodeLog.load(log_ids[0]).date.strftime('%m/%d/%Y')
+                last_log_date = NodeLog.load(logs[0]).date.strftime('%m/%d/%Y')
                 nodes = []
-                for log in [NodeLog.load(l) for l in log_ids]:
+                for log in [NodeLog.load(l) for l in logs]:
                     if log.node.pk not in nodes:
                         nodes.append(log.node.pk)
             except IndexError:
                 last_log_date = ''
                 nodes = []
-            line.extend([user.pk, len(log_ids), len(nodes), last_log_date])
+            line.extend([user.pk, logs.count(), len(nodes), last_log_date])
             final.append(line)
         return final
 
