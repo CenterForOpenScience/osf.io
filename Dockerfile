@@ -16,7 +16,7 @@ RUN apt-get update \
         # matplotlib
         libfreetype6-dev \
         libxft-dev \
-        # # scipy
+        # scipy
         gfortran \
         libopenblas-dev \
         liblapack-dev \
@@ -25,6 +25,8 @@ RUN apt-get update \
         libssl-dev \
         libffi-dev \
         python-dev \
+        # postgresql
+        libpq-dev \
     && apt-get clean \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
