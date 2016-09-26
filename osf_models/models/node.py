@@ -587,15 +587,22 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def admin_contributor_ids(self):
         def get_admin_contributor_ids(node):
             return Contributor.objects.select_related('user').filter(
+                node=node,
                 user__is_active=True,
                 admin=True
             ).values_list('user__guid__guid', flat=True)
-        contributor_ids = get_admin_contributor_ids(self)
-        admin_ids = set(contributor_ids)
+        contributor_ids = set(self.contributors.values_list('guid__guid', flat=True))
+        admin_ids = set()
         for parent in self.parents:
             admins = get_admin_contributor_ids(parent)
             admin_ids.update(set(admins).difference(contributor_ids))
         return admin_ids
+
+    @property
+    def admin_contributors(self):
+        return OSFUser.objects.filter(
+            guid__guid__in=self.admin_contributor_ids
+        ).order_by('family_name')
 
     def set_permissions(self, user, permissions, validate=True, save=False):
         # Ensure that user's permissions cannot be lowered if they are the only admin
