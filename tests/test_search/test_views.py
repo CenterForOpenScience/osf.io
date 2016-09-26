@@ -111,11 +111,6 @@ class TestMakers(DbIsolationMixin, OsfTestCase):
         make_project(PUBLIC, None, None)
         assert Node.find_one().is_public
 
-    def test_mp_uses_default_permissions(self):
-        make_project(PUBLIC, None, None)
-        node = Node.find_one()
-        assert node.permissions == {node.creator._id: ['read', 'write', 'admin']}
-
 
     # mr - make_registration
 
@@ -145,11 +140,6 @@ class TestMakers(DbIsolationMixin, OsfTestCase):
         make_component(PUBLIC, None, None)
         assert Node.find_one(Q('parent_node', 'ne', None)).is_public
 
-    def test_mc_uses_default_permissions(self):
-        make_component(PUBLIC, None, None)
-        node = Node.find_one(Q('parent_node', 'ne', None))
-        assert node.permissions == {node.creator._id: ['read', 'write', 'admin']}
-
 
     # mf - make_file
 
@@ -164,11 +154,6 @@ class TestMakers(DbIsolationMixin, OsfTestCase):
     def test_mf_makes_public_file_public(self):
         make_file(PUBLIC, None, None)
         assert File.find_one(Q('is_file', 'eq', True)).node.is_public
-
-    def test_mf_uses_default_permissions(self):
-        make_file(PUBLIC, None, None)
-        node = File.find_one(Q('is_file', 'eq', True)).node
-        assert node.permissions == {node.creator._id: ['read', 'write', 'admin']}
 
 
 class TestSearchSearchAPI(SearchTestCase):
