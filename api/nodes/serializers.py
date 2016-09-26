@@ -22,7 +22,7 @@ from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse,
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField,
                                   HideIfRegistration, RestrictedDictSerializer,
-                                  JSONAPIRelationshipSerializer, relationship_diff, )
+                                  JSONAPIRelationshipSerializer, relationship_diff, ShowIfVersion,)
 from api.base.exceptions import (InvalidModelValueError,
                                  RelationshipPostMakesNoChanges, Conflict,
                                  EndpointNotImplementedError)
@@ -206,11 +206,12 @@ class NodeSerializer(JSONAPISerializer):
         related_view_kwargs={'node_id': '<pk>'}
     )
 
-    node_links = RelationshipField(
+    node_links = ShowIfVersion(RelationshipField(
         related_view='nodes:node-pointers',
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_pointers_count'},
-    )
+        help_text='This feature will be depreciated in version 2.1'
+    ), min_version='2.0', max_version='2.1')
 
     parent = RelationshipField(
         related_view='nodes:node-detail',

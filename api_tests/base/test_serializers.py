@@ -339,3 +339,39 @@ class TestRelationshipField(DbTestCase):
         data = self.BasicNodeSerializer(registration_registration, context={'request': req}).data['data']
         field = data['relationships']['registered_from']['links']
         assert_in('/v2/registrations/{}/'.format(registration._id), field['related']['href'])
+
+
+class TestShowIfVersion(DbTestCase):
+
+    def setUp(self):
+        super(TestShowIfVersion, self).setUp()
+        self.node = factories.NodeFactory()
+        self.registration = factories.RegistrationFactory()
+
+    def test_node_links_allowed_version_node_serializer(self):
+        req = make_drf_request()
+        req.parser_context['kwargs'] = {'version': 'v2'}
+        req.version = '2.0'
+        data = NodeSerializer(self.node, context={'request': req}).data['data']
+        assert_in('node_links', data['relationships'])
+
+    def test_node_links_bad_version_node_serializer(self):
+        req = make_drf_request()
+        req.parser_context['kwargs'] = {'version': 'v2'}
+        req.version = '2.1'
+        data = NodeSerializer(self.node, context={'request': req}).data['data']
+        assert_not_in('node_links', data['relationships'])
+
+    def test_node_links_allowed_version_registration_serializer(self):
+        req = make_drf_request()
+        req.parser_context['kwargs'] = {'version': 'v2'}
+        req.version = '2.0'
+        data = RegistrationSerializer(self.registration, context={'request': req}).data['data']
+        assert_in('node_links', data['attributes'])
+
+    def test_node_links_bad_version_registration_serializer(self):
+        req = make_drf_request()
+        req.parser_context['kwargs'] = {'version': 'v2'}
+        req.version = '2.1'
+        data = RegistrationSerializer(self.registration, context={'request': req}).data['data']
+        assert_not_in('node_links', data['attributes'])

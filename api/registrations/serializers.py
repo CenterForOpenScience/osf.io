@@ -15,7 +15,8 @@ from api.nodes.serializers import NodeSerializer, NodeProviderSerializer
 from api.nodes.serializers import NodeLinksSerializer, NodeLicenseSerializer
 from api.nodes.serializers import NodeContributorsSerializer, NodeTagField
 from api.base.serializers import (IDField, RelationshipField, LinksField, HideIfWithdrawal,
-                                  FileCommentRelationshipField, NodeFileHyperLinkField, HideIfRegistration, JSONAPIListField)
+                                  FileCommentRelationshipField, NodeFileHyperLinkField, HideIfRegistration,
+                                  JSONAPIListField, ShowIfVersion,)
 
 
 class BaseRegistrationSerializer(NodeSerializer):
@@ -127,11 +128,12 @@ class BaseRegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<pk>'}
     ))
 
-    node_links = HideIfWithdrawal(RelationshipField(
+    node_links = ShowIfVersion(HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-pointers',
         related_view_kwargs={'node_id': '<pk>'},
-        related_meta={'count': 'get_pointers_count'}
-    ))
+        related_meta={'count': 'get_pointers_count'},
+        help_text='This feature will be depreciated in version 2.1'
+    )), min_version='2.0', max_version='2.1')
 
     parent = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-detail',

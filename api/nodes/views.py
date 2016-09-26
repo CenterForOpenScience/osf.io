@@ -68,6 +68,7 @@ from api.nodes.permissions import (
     IsAdminOrReviewer,
     WriteOrPublicForRelationshipInstitutions,
     ExcludeWithdrawals,
+    NodeLinksShowIfVersion,
 )
 from api.logs.serializers import NodeLogSerializer
 
@@ -1369,6 +1370,7 @@ class NodeLinksList(BaseNodeLinksList, bulk_views.BulkDestroyJSONAPIView, bulk_v
         ContributorOrPublic,
         base_permissions.TokenHasScope,
         ExcludeWithdrawals,
+        NodeLinksShowIfVersion,
     )
 
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]
@@ -1456,7 +1458,8 @@ class NodeLinksDetail(BaseNodeLinksDetail, generics.RetrieveDestroyAPIView, Node
         base_permissions.TokenHasScope,
         drf_permissions.IsAuthenticatedOrReadOnly,
         RegistrationAndPermissionCheckForPointers,
-        ExcludeWithdrawals
+        ExcludeWithdrawals,
+        NodeLinksShowIfVersion,
     )
 
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]

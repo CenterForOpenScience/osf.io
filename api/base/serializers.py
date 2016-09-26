@@ -58,6 +58,34 @@ def is_anonymized(request):
     return website_utils.check_private_key_for_anonymized_link(private_key)
 
 
+class ShowIfVersion(ser.Field):
+    """
+    Skips the field if the specified request version is not within the field's allowed versions.
+    """
+
+    def __init__(self, field, min_version, max_version, **kwargs):
+        super(ShowIfVersion, self).__init__(**kwargs)
+        self.field = field
+        self.min_version = min_version
+        self.max_version = max_version
+
+    def get_attribute(self, instance):
+        request = self.context.get('request')
+        if request and (request.version >= self.max_version or request.version < self.min_version):
+            raise SkipField
+        return self.field.get_attribute(instance)
+
+    def bind(self, field_name, parent):
+        super(ShowIfVersion, self).bind(field_name, parent)
+        self.field.bind(field_name, self)
+
+    def to_representation(self, value):
+        return self.field.to_representation(value)
+
+    def to_internal_value(self, data):
+        return self.field.to_internal_value(data)
+
+
 class HideIfRegistration(ser.Field):
     """
     If node is a registration, this field will return None.

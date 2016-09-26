@@ -180,3 +180,24 @@ class ReadOnlyIfRegistration(permissions.BasePermission):
         if obj.is_registration:
             return request.method in permissions.SAFE_METHODS
         return True
+
+
+class ShowIfVersion(permissions.BasePermission):
+
+    def __init__(self, min_version, max_version):
+        super(ShowIfVersion, self).__init__()
+        self.min_version = min_version
+        self.max_version = max_version
+
+    def has_object_permission(self, request, view, obj):
+        if request.version < self.min_version or request.version >= self.max_version:
+            raise exceptions.NotFound('This feature is depreciated as of version {}'.format(self.max_version))
+        return True
+
+
+class NodeLinksShowIfVersion(ShowIfVersion):
+
+    def __init__(self):
+        min_version = '2.0'
+        max_version = '2.1'
+        super(NodeLinksShowIfVersion, self).__init__(min_version, max_version)
