@@ -120,7 +120,8 @@ COPY ./api/base/settings /code/api/base/settings/
 COPY ./website/__init__.py /code/website/__init__.py
 COPY ./addons.json /code/addons.json
 RUN mv /code/website/settings/local-dist.py /code/website/settings/local.py \
-    && mv /code/api/base/settings/local-dist.py /code/api/base/settings/local.py
+    && mv /code/api/base/settings/local-dist.py /code/api/base/settings/local.py \
+    && sed 's/DEV_MODE = True/DEV_MODE = False/' -i /code/website/settings/local.py
 
 COPY ./webpack* /code/
 COPY ./website/static /code/website/static/

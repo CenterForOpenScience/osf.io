@@ -78,10 +78,10 @@ INSTALLED_APPS = (
 )
 
 # local development using https
-if osf_settings.SECURE_MODE and osf_settings.DEBUG_MODE:
+if osf_settings.SECURE_MODE and osf_settings.DEV_MODE:
     INSTALLED_APPS += ('sslserver',)
 
-if osf_settings.DEBUG_MODE:
+if osf_settings.DEV_MODE:
     INSTALLED_APPS += ('debug_toolbar', )
 
 # TODO: Are there more granular ways to configure reporting specifically related to the API?
