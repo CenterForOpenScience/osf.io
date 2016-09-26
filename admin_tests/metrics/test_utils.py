@@ -1,4 +1,5 @@
 import csv
+import unicodecsv
 import itertools
 
 from nose import tools as nt
@@ -6,6 +7,7 @@ from datetime import timedelta, datetime
 
 from django.db import models
 from django.test import TestCase
+from django.utils.translation import ugettext as _
 
 from tests.base import AdminTestCase
 from tests.factories import (
@@ -189,22 +191,23 @@ class TestUserGet(AdminTestCase):
         nt.assert_equal(count, 1)
 
 class Activity(models.Model):
-    name = models.CharField(max_length=50, verbose_name="Name of Activity")
+    name = models.CharField(max_length=50, verbose_name='Name of Activity')
 
 
 class Person(models.Model):
-    name = models.CharField(max_length=50, verbose_name=_("Person's name"))
+    name = models.CharField(max_length=50, verbose_name=_('Person`s name'))
     address = models.CharField(max_length=255)
-    info = models.TextField(verbose_name="Info on Person")
+    info = models.TextField(verbose_name='Info on Person')
     hobby = models.ForeignKey(Activity)
     born = models.DateTimeField(default=datetime(2001, 1, 1, 1, 1))
 
     def __str__(self):
         return self.name
 
+
 def create_people_and_get_queryset():
-    doing_magic, _ = Activity.objects.get_or_create(name="Doing Magic")
-    resting, _ = Activity.objects.get_or_create(name="Resting")
+    doing_magic, _ = Activity.objects.get_or_create(name='Doing Magic')
+    resting, _ = Activity.objects.get_or_create(name='Resting')
 
     Person.objects.get_or_create(name='vetch', address='iffish',
                                  info='wizard', hobby=doing_magic)
@@ -269,7 +272,7 @@ class RenderToCSVResponseTests(TestCase):
 
     def csv_match(self, csv_file, expected_data, **csv_kwargs):
         assertion_results = []
-        csv_data = csv.reader(csv_file, **csv_kwargs)
+        csv_data = unicodecsv.reader(csv_file, **csv_kwargs)
         iteration_happened = False
         is_first = True
         test_pairs = itertools.izip_longest(csv_data, expected_data,
