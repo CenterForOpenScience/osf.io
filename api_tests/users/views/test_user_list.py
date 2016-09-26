@@ -8,7 +8,7 @@ import urlparse
 from modularodm import Q
 
 from tests.base import ApiTestCase
-from tests.factories import AuthUserFactory, UserFactory, ProjectFactory, Auth
+from osf_models_tests.factories import AuthUserFactory, UserFactory, ProjectFactory, Auth
 
 from api.base.settings.defaults import API_BASE
 
@@ -24,8 +24,8 @@ class TestUsers(ApiTestCase):
 
     def setUp(self):
         super(TestUsers, self).setUp()
-        self.user_one = AuthUserFactory()
-        self.user_two = AuthUserFactory()
+        self.user_one = AuthUserFactory(fullname='Freddie Mercury I')
+        self.user_two = AuthUserFactory(fullname='Freddie Mercury II')
 
     def tearDown(self):
         super(TestUsers, self).tearDown()
@@ -100,7 +100,7 @@ class TestUsers(ApiTestCase):
         res = self.app.get(url, auth=self.user_two.auth)
         user_json = res.json['data']
         for user in user_json:
-            if user['id'] == self.user_one._id or user['id'] == self.user_two._id:
+            if user['id'] == self.user_two._id:
                 meta = user['relationships']['nodes']['links']['related']['meta']
                 assert_in('projects_in_common', meta)
                 assert_equal(meta['projects_in_common'], 2)
@@ -202,12 +202,12 @@ class TestUsers(ApiTestCase):
             assert_equal(int(query_dict.get('s')[0]), size)
 
     def test_users_list_filter_multiple_field(self):
-        self.john_doe = UserFactory(full_name='John Doe')
+        self.john_doe = UserFactory(fullname='John Doe')
         self.john_doe.given_name = 'John'
         self.john_doe.family_name = 'Doe'
         self.john_doe.save()
 
-        self.doe_jane = UserFactory(full_name='Doe Jane')
+        self.doe_jane = UserFactory(fullname='Doe Jane')
         self.doe_jane.given_name = 'Doe'
         self.doe_jane.family_name = 'Jane'
         self.doe_jane.save()
@@ -218,19 +218,17 @@ class TestUsers(ApiTestCase):
         assert_equal(len(data), 2)
 
     def test_users_list_filter_multiple_fields_with_additional_filters(self):
-        self.john_doe = UserFactory(full_name='John Doe')
+        self.john_doe = UserFactory(fullname='John Doe')
         self.john_doe.given_name = 'John'
         self.john_doe.family_name = 'Doe'
-        self.john_doe._id = 'abcde'
         self.john_doe.save()
 
-        self.doe_jane = UserFactory(full_name='Doe Jane')
+        self.doe_jane = UserFactory(fullname='Doe Jane')
         self.doe_jane.given_name = 'Doe'
         self.doe_jane.family_name = 'Jane'
-        self.doe_jane._id = 'zyxwv'
         self.doe_jane.save()
 
-        url = "/{}users/?filter[given_name,family_name]=Doe&filter[id]=abcde".format(API_BASE)
+        url = "/{}users/?filter[given_name,family_name]=Doe&filter[id]={}".format(API_BASE, self.john_doe._id)
         res = self.app.get(url)
         data = res.json['data']
         assert_equal(len(data), 1)

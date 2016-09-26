@@ -22,7 +22,7 @@ class UserSerializer(JSONAPISerializer):
         'id'
     ])
     non_anonymized_fields = ['type']
-    id = IDField(source='_id', read_only=True)
+    id = IDField(source='guid.guid', read_only=True)
     type = TypeField()
     full_name = ser.CharField(source='fullname', required=True, label='Full name', help_text='Display name used in the general user interface')
     given_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
@@ -93,8 +93,8 @@ class UserSerializer(JSONAPISerializer):
     def get_projects_in_common(self, obj):
         user = get_user_auth(self.context['request']).user
         if obj == user:
-            return len(user.contributor_to)
-        return len(obj.get_projects_in_common(user, primary_keys=True))
+            return user.contributor_to.count()
+        return obj.n_projects_in_common(user)
 
     def absolute_url(self, obj):
         if obj is not None:
