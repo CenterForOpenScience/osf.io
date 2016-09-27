@@ -60,8 +60,7 @@ def render_to_csv_response(queryset):
     response['Content-Disposition'] = 'attachment; filename=%s;' % filename
     response['Cache-Control'] = 'no-cache'
 
-    for query in queryset.iterator():
-        dump(query, response)
+    dump(queryset, response)
 
     return response
 
