@@ -1,3 +1,4 @@
+import pytz
 import json
 
 from modularodm.exceptions import ValidationValueError
@@ -221,7 +222,7 @@ class BaseRegistrationSerializer(NodeSerializer):
         if registration_choice == 'embargo':
             if not embargo_lifted:
                 raise exceptions.ValidationError('lift_embargo must be specified.')
-            embargo_end_date = embargo_lifted.replace(tzinfo=None)
+            embargo_end_date = embargo_lifted.replace(tzinfo=pytz.utc)
             try:
                 registration.embargo_registration(auth.user, embargo_end_date)
             except ValidationValueError as err:

@@ -161,15 +161,24 @@ class TestRegisterNode:
 
         # Registration has the nodes
         assert registration.nodes.count() == 2
-        # TODO: Test ordering when node ordering is implemented
         assert(
-            set(registration.nodes.values_list('title', flat=True)) ==
-            set(project.nodes.values_list('title', flat=True))
+            list(registration.nodes.values_list('title', flat=True)) ==
+            list(project.nodes.values_list('title', flat=True))
         )
         # Nodes are copies and not the original versions
         for node in registration.nodes.all():
             assert node not in project.nodes.all()
             assert node.is_registration
+
+    def test_linked_nodes(self, project, user, auth):
+        linked_node = factories.ProjectFactory()
+        project.add_node_link(linked_node, auth=auth, save=True)
+
+        registration = factories.RegistrationFactory(project=project)
+        registration.refresh_from_db()
+
+        assert project.linked_nodes.count() == registration.linked_nodes.count()
+        assert project.linked_nodes.first().title == registration.linked_nodes.first().title
 
     def test_private_contributor_registration(self, project, user):
 
