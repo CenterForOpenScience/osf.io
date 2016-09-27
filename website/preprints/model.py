@@ -1,4 +1,5 @@
 import datetime
+import urlparse
 
 from modularodm import fields
 from modularodm.exceptions import ValidationValueError
@@ -12,6 +13,7 @@ from website.project.model import NodeLog
 from website.project.taxonomies import Subject
 from website.util import api_v2_url
 from website.util.permissions import ADMIN
+from website import settings
 
 @unique_on(['node', 'provider'])
 class PreprintService(GuidStoredObject):
@@ -45,7 +47,20 @@ class PreprintService(GuidStoredObject):
     @property
     def deep_url(self):
         # Required for GUID routing
-        return '/preprint/{}/'.format(self._primary_key)
+        return '/preprints/{}/'.format(self._primary_key)
+
+    @property
+    def url(self):
+        return '/{}/'.format(self._id)
+
+    @property
+    def absolute_url(self):
+        return urlparse.urljoin(settings.DOMAIN, self.url)
+
+    @property
+    def absolute_api_v2_url(self):
+        path = '/preprints/{}/'.format(self._id)
+        return api_v2_url(path)
 
     def get_preprint_subjects(self):
         ret = []
@@ -89,11 +104,11 @@ class PreprintService(GuidStoredObject):
         # there is no preprint file yet! This is the first time!
         if not self.node.preprint_file:
             self.node.preprint_file = preprint_file
-            self.add_log(action=NodeLog.PREPRINT_INITIATED, params={}, auth=auth, save=False)
+            self.node.add_log(action=NodeLog.PREPRINT_INITIATED, params={}, auth=auth, save=False)
         elif preprint_file != self.node.preprint_file:
             # if there was one, check if it's a new file
             self.node.preprint_file = preprint_file
-            self.add_log(
+            self.node.add_log(
                 action=NodeLog.PREPRINT_FILE_UPDATED,
                 params={},
                 auth=auth,
