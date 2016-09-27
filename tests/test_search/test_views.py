@@ -22,42 +22,6 @@ class TestSearchPage(SearchTestCase):
         res = self.app.get('/search/', {'q': 'foo'})
         assert_equal(res.status_code, 200)
 
-
-PRIVATE, PUBLIC = range(2)
-PROJECT, REGISTRATION, COMPONENT, FILE = 'project registration component file'.split()
-ANON, AUTH, READ = (None, [], [permissions.READ])
-Y, N = True, False
-
-cases = [
-    ("private project hidden from anon", PRIVATE, PROJECT, ANON, N),
-    ("private component hidden from anon", PRIVATE, COMPONENT, ANON, N),
-    ("private file hidden from anon", PRIVATE, FILE, ANON, N),
-
-    ("private project hidden from auth", PRIVATE, PROJECT, AUTH, N),
-    ("private component hidden from auth", PRIVATE, COMPONENT, AUTH, N),
-    ("private file hidden from auth", PRIVATE, FILE, AUTH, N),
-
-    ("private project shown to read", PRIVATE, PROJECT, READ, Y),
-    ("private component shown to read", PRIVATE, COMPONENT, READ, Y),
-    ("private file shown to read", PRIVATE, FILE, READ, Y),
-
-
-    ("public project shown to anon", PUBLIC, PROJECT, ANON, Y),
-    ("public registration shown to anon", PUBLIC, REGISTRATION, ANON, Y),
-    ("public component shown to anon", PUBLIC, COMPONENT, ANON, Y),
-    ("public file shown to anon", PUBLIC, FILE, ANON, Y),
-
-    ("public project shown to auth", PUBLIC, PROJECT, AUTH, Y),
-    ("public registration shown to auth", PUBLIC, REGISTRATION, AUTH, Y),
-    ("public component shown to auth", PUBLIC, COMPONENT, AUTH, Y),
-    ("public file shown to auth", PUBLIC, FILE, AUTH, Y),
-
-    ("public project shown to read", PUBLIC, PROJECT, READ, Y),
-    ("public registration shown to read", PUBLIC, REGISTRATION, READ, Y),
-    ("public component shown to read", PUBLIC, COMPONENT, READ, Y),
-    ("public file shown to read", PUBLIC, FILE, READ, Y),
-]
-
 def make_project(status):
     project = factories.ProjectFactory(title='Flim Flammity', is_public=status is PUBLIC)
     project.update_search()
@@ -83,13 +47,6 @@ def make_file(status):
     project = factories.ProjectFactory(title='Blim Blammity', is_public=status is PUBLIC)
     project.get_addon('osfstorage').get_root().append_file('Flim Flammity')
     return project
-
-makers = {
-    PROJECT: make_project,
-    REGISTRATION: make_registration,
-    COMPONENT: make_component,
-    FILE: make_file,
-}
 
 
 class TestMakers(DbIsolationMixin, OsfTestCase):
@@ -144,6 +101,46 @@ class TestMakers(DbIsolationMixin, OsfTestCase):
         assert File.find_one(Q('is_file', 'eq', True)).node.is_public
 
 
+PRIVATE, PUBLIC = range(2)
+PROJECT, REGISTRATION, COMPONENT, FILE = 'project registration component file'.split()
+ANON, AUTH, READ = (None, [], [permissions.READ])
+Y, N = True, False
+
+_cases = [
+    ("private project hidden from anon", make_project, PRIVATE, ANON, PROJECT, N, 'title'),
+    ("private component hidden from anon", make_component, PRIVATE, ANON, COMPONENT, N, 'title'),
+    ("private file hidden from anon", make_file, PRIVATE, ANON, FILE, N, 'name'),
+
+    ("private project hidden from auth", make_project, PRIVATE, AUTH, PROJECT, N, 'title'),
+    ("private component hidden from auth", make_component, PRIVATE, AUTH, COMPONENT, N, 'title'),
+    ("private file hidden from auth", make_file, PRIVATE, AUTH, FILE, N, 'name'),
+
+    ("private project shown to read", make_project, PRIVATE, READ, PROJECT, Y, 'title'),
+    ("private component shown to read", make_component, PRIVATE, READ, COMPONENT, Y, 'title'),
+    ("private file shown to read", make_file, PRIVATE, READ, FILE, Y, 'name'),
+
+
+    ("public project shown to anon", make_project, PUBLIC, ANON, PROJECT, Y, 'title'),
+    ("public registration shown to anon", make_registration, PUBLIC, ANON, REGISTRATION, Y, 'title'),
+    ("public component shown to anon", make_component, PUBLIC, ANON, COMPONENT, Y, 'title'),
+    ("public file shown to anon", make_file, PUBLIC, ANON, FILE, Y, 'name'),
+
+    ("public project shown to auth", make_project, PUBLIC, AUTH, PROJECT, Y, 'title'),
+    ("public registration shown to auth", make_registration, PUBLIC, AUTH, REGISTRATION, Y, 'title'),
+    ("public component shown to auth", make_component, PUBLIC, AUTH, COMPONENT, Y, 'title'),
+    ("public file shown to auth", make_file, PUBLIC, AUTH, FILE, Y, 'name'),
+
+    ("public project shown to read", make_project, PUBLIC, READ, PROJECT, Y, 'title'),
+    ("public registration shown to read", make_registration, PUBLIC, READ, REGISTRATION, Y, 'title'),
+    ("public component shown to read", make_component, PUBLIC, READ, COMPONENT, Y, 'title'),
+    ("public file shown to read", make_file, PUBLIC, READ, FILE, Y, 'name'),
+]
+
+def cases():
+    for case in _cases:
+        yield case
+
+
 class TestSearchSearchAPI(SearchTestCase):
     """Exercises the website.search.views.search_search view.
     """
@@ -154,10 +151,8 @@ class TestSearchSearchAPI(SearchTestCase):
         return self.app.get(url, data, auth=auth).json['results']
 
     @parameterized.expand(cases)
-    def test(self, ignored, status, type_, perms, included):
-        make = makers[type_]
+    def test(self, ignored, make, status, perms, type_, included, key):
         node = make(status)
-        key = 'name' if make is make_file else 'title'
 
         auth = None
         if perms is not None:
