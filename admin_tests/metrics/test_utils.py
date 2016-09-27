@@ -201,16 +201,16 @@ class TestRenderToCSVResponse(AdminTestCase):
         get_days_statistics(last_time + timedelta(seconds=1))
         self.time = time_now + timedelta(seconds=1)
 
-        self.FULL_PERSON_CSV_NO_VERBOSE = ['id,users,delta_users,unregistered_users,projects,delta_projects,'
-                                           'public_projects,delta_public_projects,registered_projects,'
-                                           'delta_registered_projects,date\r',
-                                           '1,0,0,0,0,0,0,0,0,0,2016-09-25 00:00:01.000001\r', '']
+        self.initial_static = [
+            'id,users,delta_users,unregistered_users,projects,delta_projects,public_projects,'
+            'delta_public_projects,registered_projects,delta_registered_projects,date\r',
+            '1,0,0,0,0,0,0,0,0,0,'+time_now.strftime('%Y-%m-%d %H:%M:%s.%f')+'\r', '']
 
     def test_render_to_csv_response(self):
         queryset = OSFWebsiteStatistics.objects.all().order_by('-date')
         response = render_to_csv_response(queryset)
         self.assertEqual(response['Content-Type'], 'text/csv')
         self.assertEqual(response.content.split('\n'),
-                         self.FULL_PERSON_CSV_NO_VERBOSE)
+                         self.initial_static)
         self.assertRegexpMatches(response['Content-Disposition'],
                                  r'attachment; filename=osfwebsitestatistics_export.csv;')
