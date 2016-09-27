@@ -1,6 +1,3 @@
-import unicodecsv
-import itertools
-
 from nose import tools as nt
 from datetime import timedelta, datetime
 
