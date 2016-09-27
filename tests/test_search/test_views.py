@@ -104,41 +104,31 @@ class TestMakers(DbIsolationMixin, OsfTestCase):
 PRIVATE, PUBLIC = range(2)
 PROJECT, REGISTRATION, COMPONENT, FILE = 'project registration component file'.split()
 ANON, AUTH, READ = (None, [], [permissions.READ])
-Y, N = True, False
 
-_cases = [
-    ("private project hidden from anon", make_project, PRIVATE, ANON, PROJECT, N, 'title'),
-    ("private component hidden from anon", make_component, PRIVATE, ANON, COMPONENT, N, 'title'),
-    ("private file hidden from anon", make_file, PRIVATE, ANON, FILE, N, 'name'),
+def get_test_name(status, type_, included, perms, **_):
+    return "{} {} {} {}".format(
+        'private' if status is PRIVATE else 'public',
+        type_,
+        'shown to' if included else 'hidden from',
+        'anon' if perms is ANON else 'auth' if perms is AUTH else 'read'
+    )
 
-    ("private project hidden from auth", make_project, PRIVATE, AUTH, PROJECT, N, 'title'),
-    ("private component hidden from auth", make_component, PRIVATE, AUTH, COMPONENT, N, 'title'),
-    ("private file hidden from auth", make_file, PRIVATE, AUTH, FILE, N, 'name'),
-
-    ("private project shown to read", make_project, PRIVATE, READ, PROJECT, Y, 'title'),
-    ("private component shown to read", make_component, PRIVATE, READ, COMPONENT, Y, 'title'),
-    ("private file shown to read", make_file, PRIVATE, READ, FILE, Y, 'name'),
-
-
-    ("public project shown to anon", make_project, PUBLIC, ANON, PROJECT, Y, 'title'),
-    ("public registration shown to anon", make_registration, PUBLIC, ANON, REGISTRATION, Y, 'title'),
-    ("public component shown to anon", make_component, PUBLIC, ANON, COMPONENT, Y, 'title'),
-    ("public file shown to anon", make_file, PUBLIC, ANON, FILE, Y, 'name'),
-
-    ("public project shown to auth", make_project, PUBLIC, AUTH, PROJECT, Y, 'title'),
-    ("public registration shown to auth", make_registration, PUBLIC, AUTH, REGISTRATION, Y, 'title'),
-    ("public component shown to auth", make_component, PUBLIC, AUTH, COMPONENT, Y, 'title'),
-    ("public file shown to auth", make_file, PUBLIC, AUTH, FILE, Y, 'name'),
-
-    ("public project shown to read", make_project, PUBLIC, READ, PROJECT, Y, 'title'),
-    ("public registration shown to read", make_registration, PUBLIC, READ, REGISTRATION, Y, 'title'),
-    ("public component shown to read", make_component, PUBLIC, READ, COMPONENT, Y, 'title'),
-    ("public file shown to read", make_file, PUBLIC, READ, FILE, Y, 'name'),
-]
+MAKERS = {
+    PROJECT: make_project,
+    REGISTRATION: make_registration,
+    COMPONENT: make_component,
+    FILE: make_file,
+}
 
 def cases():
-    for case in _cases:
-        yield case
+    for status in (PRIVATE, PUBLIC):
+        for type_ in (PROJECT, REGISTRATION, COMPONENT, FILE):
+            make = MAKERS[type_]
+            if status is PRIVATE and type_ is REGISTRATION: continue
+            for perms in (ANON, AUTH, READ):
+                included = perms is READ if status is PRIVATE else True
+                key = 'name' if type_ is FILE else 'title'
+                yield get_test_name(**locals()), make, status, perms, type_, included, key
 
 
 class TestSearchSearchAPI(SearchTestCase):
