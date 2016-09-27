@@ -101,11 +101,11 @@ class TestMakers(DbIsolationMixin, OsfTestCase):
     # mp - make_project
 
     def test_mp_makes_private_project_private(self):
-        make_project(PRIVATE, None, None)
+        make_project(PRIVATE)
         assert not Node.find_one().is_public
 
     def test_mp_makes_public_project_public(self):
-        make_project(PUBLIC, None, None)
+        make_project(PUBLIC)
         assert Node.find_one().is_public
 
 
@@ -113,34 +113,34 @@ class TestMakers(DbIsolationMixin, OsfTestCase):
 
     def test_mr_makes_private_registration_public_there_are_no_private_registrations(self):
         # TODO Instead we need to test the different approval/embargo workflow states
-        make_registration(PRIVATE, None, None)
+        make_registration(PRIVATE)
         assert Node.find_one(Q('is_registration', 'eq', True)).is_public
 
     def test_mr_makes_public_registration_public(self):
-        make_registration(PUBLIC, None, None)
+        make_registration(PUBLIC)
         assert Node.find_one(Q('is_registration', 'eq', True)).is_public
 
 
     # mc - make_component
 
     def test_mc_makes_private_component_private(self):
-        make_component(PRIVATE, None, None)
+        make_component(PRIVATE)
         assert not Node.find_one(Q('parent_node', 'ne', None)).is_public
 
     def test_mc_makes_public_component_public(self):
-        make_component(PUBLIC, None, None)
+        make_component(PUBLIC)
         assert Node.find_one(Q('parent_node', 'ne', None)).is_public
 
 
     # mf - make_file
 
     def test_mf_makes_private_file_private(self):
-        make_file(PRIVATE, None, None)
+        make_file(PRIVATE)
         # Looks like privacy attaches to the node, not the file
         assert not File.find_one(Q('is_file', 'eq', True)).node.is_public
 
     def test_mf_makes_public_file_public(self):
-        make_file(PUBLIC, None, None)
+        make_file(PUBLIC)
         assert File.find_one(Q('is_file', 'eq', True)).node.is_public
 
 
