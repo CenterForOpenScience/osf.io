@@ -236,7 +236,7 @@ class TestRenderToCSVResponse(AdminTestCase):
         queryset = OSFWebsiteStatistics.objects.all().order_by('-date')
         response = render_to_csv_response(queryset)
         self.assertEqual(response['Content-Type'], 'text/csv')
-        self.assertEqual(response.content.split('\n'), [])
+        self.assertEqual(response.content.split('\n'), self.FULL_PERSON_CSV_NO_VERBOSE)
         self.assertMatchesCsv(response.content.split('\n'),
                               self.FULL_PERSON_CSV_NO_VERBOSE)
 
