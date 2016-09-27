@@ -68,7 +68,7 @@ class JSONAPIPagination(pagination.PageNumberPagination):
         page_number = self.page.next_page_number()
         return self.page_number_query(url, page_number)
 
-    def get_response_dict(self, data, url):
+    def get_response_dict_deprecated(self, data, url):
         return OrderedDict([
             ('data', data),
             ('links', OrderedDict([
@@ -83,7 +83,7 @@ class JSONAPIPagination(pagination.PageNumberPagination):
             ])),
         ])
 
-    def get_response_dict_updated_pagination(self, data, url):
+    def get_response_dict(self, data, url):
         return OrderedDict([
             ('data', data),
             ('meta', OrderedDict([
@@ -101,7 +101,9 @@ class JSONAPIPagination(pagination.PageNumberPagination):
 
     def get_paginated_response(self, data):
         """
-        Formats paginated response in accordance with JSON API.
+        Formats paginated response in accordance with JSON API, as of version 2.1.
+        Version 2.0 uses the response_dict_deprecated function,
+        which does not return JSON API compliant pagination links.
 
         Creates pagination links from the view_name if embedded resource,
         rather than the location used in the request.
@@ -113,10 +115,10 @@ class JSONAPIPagination(pagination.PageNumberPagination):
         if embedded:
             reversed_url = reverse(view_name, kwargs=kwargs)
 
-        if self.request.version == '2.0':
-            response_dict = self.get_response_dict(data, reversed_url)
+        if self.request.version < '2.1':
+            response_dict = self.get_response_dict_deprecated(data, reversed_url)
         else:
-            response_dict = self.get_response_dict_updated_pagination(data, reversed_url)
+            response_dict = self.get_response_dict(data, reversed_url)
 
         if is_anonymized(self.request):
             if response_dict.get('meta', False):

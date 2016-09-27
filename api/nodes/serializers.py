@@ -210,7 +210,7 @@ class NodeSerializer(JSONAPISerializer):
         related_view='nodes:node-pointers',
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_pointers_count'},
-        help_text='This feature will be depreciated in version 2.1'
+        help_text='This feature is deprecated as of version 2.1. Use linked_nodes instead.'
     ), min_version='2.0', max_version='2.1')
 
     parent = RelationshipField(
