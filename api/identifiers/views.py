@@ -7,9 +7,10 @@ from framework.auth.oauth_scopes import CoreScopes
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 from api.base.filters import ODMFilterMixin
+from api.base.serializers import JSONAPISerializer
 from api.base.utils import get_object_or_error
 
-from api.identifiers.serializers import IdentifierSerializer
+from api.identifiers.serializers import IdentifierNodeSerializer, IdentifierRegistrationSerializer
 
 from api.nodes.permissions import (
     IsPublic,
@@ -64,8 +65,7 @@ class IdentifierList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     required_read_scopes = [CoreScopes.IDENTIFIERS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    serializer_class = IdentifierSerializer
-
+    serializer_class = IdentifierRegistrationSerializer
     view_category = 'identifiers'
     view_name = 'identifier-list'
     node_lookup_url_kwarg = 'node_id'
@@ -84,6 +84,13 @@ class IdentifierList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
         if check_object_permissions:
             self.check_object_permissions(self.request, node)
         return node
+
+    def get_serializer_class(self):
+        if 'node_id' in self.kwargs:
+            if self.get_node().is_registration:
+                return IdentifierRegistrationSerializer
+            return IdentifierNodeSerializer
+        return JSONAPISerializer
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
@@ -129,9 +136,16 @@ class IdentifierDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     required_read_scopes = [CoreScopes.IDENTIFIERS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    serializer_class = IdentifierSerializer
+    serializer_class = IdentifierRegistrationSerializer
     view_category = 'identifiers'
     view_name = 'identifier-detail'
+
+    def get_serializer_class(self):
+        if 'identifier_id' in self.kwargs:
+            if self.get_object().referent.is_registration:
+                return IdentifierRegistrationSerializer
+            return IdentifierNodeSerializer
+        return JSONAPISerializer
 
     def get_object(self):
         return Identifier.load(self.kwargs['identifier_id'])
