@@ -198,13 +198,14 @@ class TestRenderToCSVResponse(AdminTestCase):
         last_time = time_now - timedelta(days=2)
         NodeFactory(category='project', date_created=last_time)
         NodeFactory(category='project', date_created=last_time)
-        get_days_statistics(last_time + timedelta(seconds=1))
+        initial_time = last_time + timedelta(seconds=1)
+        get_days_statistics(initial_time)
         self.time = time_now + timedelta(seconds=1)
 
         self.initial_static = [
             'id,users,delta_users,unregistered_users,projects,delta_projects,public_projects,'
             'delta_public_projects,registered_projects,delta_registered_projects,date\r',
-            '1,0,0,0,0,0,0,0,0,0,' + last_time.strftime('%Y-%m-%d %H:%M:%S.%f') + '\r', '']
+            '1,0,0,0,0,0,0,0,0,0,' + initial_time.strftime('%Y-%m-%d %H:%M:%S.%f') + '\r', '']
 
     def test_render_to_csv_response(self):
         queryset = OSFWebsiteStatistics.objects.all().order_by('-date')
