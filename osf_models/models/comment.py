@@ -48,7 +48,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
     # The type of root_target: node/files
     page = models.CharField(max_length=255, blank=True)
     content = models.TextField(
-        validators=[validators.comment_maxlength(settings.COMMENT_MAXLENGTH),
+        validators=[validators.CommentMaxLength(settings.COMMENT_MAXLENGTH),
                     validators.string_required],
         blank=True
     )

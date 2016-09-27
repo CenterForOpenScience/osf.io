@@ -2,7 +2,6 @@ from django.contrib.postgres import fields
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.conf import settings
-from osf_models.models import Guid
 
 from osf_models.models import base
 from osf_models.models.contributor import InstitutionalContributor
@@ -10,7 +9,7 @@ from osf_models.models.mixins import Loggable
 from modularodm import Q as MQ
 
 
-class Institution(Loggable, base.GuidMixin, base.BaseModel):
+class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.project.model.Node'
     modm_query = MQ('is_institution', 'eq', True)
@@ -34,9 +33,8 @@ class Institution(Loggable, base.GuidMixin, base.BaseModel):
 
     @classmethod
     def migrate_from_modm(cls, modm_obj):
-        guid, created = Guid.objects.get_or_create(guid=modm_obj._id)
         inst = Institution()
-        inst._guid = guid
+        inst._id = modm_obj.institution_id
         inst.auth_url = modm_obj.institution_auth_url
         inst.banner_name = modm_obj.institution_banner_name
         inst.domains = modm_obj.institution_domains
