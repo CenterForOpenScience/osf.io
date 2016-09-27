@@ -73,7 +73,7 @@ djangorestframework-bulk==0.2.1
 pyjwt==1.4.0
 pyjwe==1.0.0
 jsonschema==2.5.1
-git+https://github.com/CenterForOpenScience/osf-models.git@master
+git+https://github.com/CenterForOpenScience/osf-models.git@592bc2ea45b809083ab52cfdc1b0ea799cbb4127
 django-sslserver==0.19
 django-debug-toolbar==1.5
 
