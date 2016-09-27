@@ -89,6 +89,13 @@ class ShowIfVersion(ser.Field):
             self.field.parent = self.field.root
         return self.field.to_representation(value)
 
+    def to_esi_representation(self, value, envelope='data'):
+        if getattr(self.field.root, 'child', None):
+            self.field.parent = self.field.root.child
+        else:
+            self.field.parent = self.field.root
+        return self.field.to_esi_representation(value, envelope)
+
     def to_internal_value(self, data):
         return self.field.to_internal_value(data)
 
