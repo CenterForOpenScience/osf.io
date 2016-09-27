@@ -59,7 +59,6 @@ from website.project.commentable import Commentable
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project.metadata.utils import create_jsonschema_from_metaschema
 from website.project.licenses import (NodeLicense, NodeLicenseRecord)
-from website.project.taxonomies import Subject
 from website.project import signals as project_signals
 from website.project import tasks as node_tasks
 from website.project.spam.model import SpamMixin
@@ -70,8 +69,6 @@ from website.project.sanctions import (
     RegistrationApproval,
     Retraction,
 )
-from website.files.models import StoredFileNode
-
 from keen import scoped_keys
 
 logger = logging.getLogger(__name__)
@@ -888,10 +885,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
     # Preprint fields
     preprint_file = fields.ForeignField('StoredFileNode')
-    preprint_created = fields.DateTimeField()
-    preprint_subjects = fields.ForeignField('Subject', list=True)
-    preprint_providers = fields.ForeignField('PreprintProvider', list=True)
-    preprint_doi = fields.StringField(validate=validate_doi)
+    preprint_article_doi = fields.StringField(validate=validate_doi)
     _is_preprint_orphan = fields.BooleanField(default=False)
 
     # A list of all MetaSchemas for which this Node has registered_meta
@@ -1190,14 +1184,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         if (not self.is_preprint) and self._is_preprint_orphan:
             return True
         return False
-
-    def get_preprint_subjects(self):
-        ret = []
-        for subj_id in set(self.preprint_subjects):
-            subj = Subject.load(subj_id)
-            if subj:
-                ret.append({'id': subj_id, 'text': subj.text})
-        return ret
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
@@ -1542,74 +1528,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
         if save:
             self.save()
-
-    def set_preprint_subjects(self, preprint_subjects, auth, save=False):
-        if not self.has_permission(auth.user, ADMIN):
-            raise PermissionsError('Only admins can change a preprint\'s subjects.')
-
-        self.preprint_subjects = []
-        for s in preprint_subjects:
-            subject = Subject.load(s)
-            if not subject:
-                raise ValidationValueError('Subject with id <{}> could not be found.'.format(s))
-            self.preprint_subjects.append(s)
-
-        if save:
-            self.save()
-
-    def set_preprint_file(self, preprint_file, auth, save=False):
-        if not self.has_permission(auth.user, ADMIN):
-            raise PermissionsError('Only admins can change a preprint\'s primary file.')
-
-        if not isinstance(preprint_file, StoredFileNode):
-            preprint_file = preprint_file.stored_object
-
-        if preprint_file.node != self or preprint_file.provider != 'osfstorage':
-            raise ValueError('This file is not a valid primary file for this preprint.')
-
-        # there is no preprint file yet! This is the first time!
-        if not self.preprint_file:
-            self.preprint_file = preprint_file
-            self.preprint_created = datetime.datetime.utcnow()
-            self.add_log(action=NodeLog.PREPRINT_INITIATED, params={}, auth=auth, save=False)
-        elif preprint_file != self.preprint_file:
-            # if there was one, check if it's a new file
-            self.preprint_file = preprint_file
-            self.add_log(
-                action=NodeLog.PREPRINT_FILE_UPDATED,
-                params={},
-                auth=auth,
-                save=False,
-            )
-        if not self.is_public:
-            self.set_privacy(
-                Node.PUBLIC,
-                auth=None,
-                log=True
-            )
-        if save:
-            self.save()
-
-    def add_preprint_provider(self, preprint_provider, user, save=False):
-        if not self.has_permission(user, ADMIN):
-            raise PermissionsError('Only admins can update a preprint provider.')
-        if not preprint_provider:
-            raise ValueError('Must specify a provider to set as the preprint_provider')
-        self.preprint_providers.append(preprint_provider)
-        if save:
-            self.save()
-
-    def remove_preprint_provider(self, preprint_provider, user, save=False):
-        if not self.has_permission(user, ADMIN):
-            raise PermissionsError('Only admins can remove a preprint provider.')
-        if not preprint_provider:
-            raise ValueError('Must specify a provider to remove from this preprint.')
-        if preprint_provider in self.preprint_providers:
-            self.preprint_providers.remove(preprint_provider)
-            if save:
-                self.save()
-            return True
-        return False
 
     def generate_keenio_read_key(self):
         return scoped_keys.encrypt(settings.KEEN['public']['master_key'], options={
@@ -4435,34 +4353,3 @@ class DraftRegistration(StoredObject):
         Validates draft's metadata
         """
         return self.registration_schema.validate_metadata(*args, **kwargs)
-
-
-class PreprintProvider(StoredObject):
-    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
-    name = fields.StringField(required=True)
-    logo_name = fields.StringField()
-    description = fields.StringField()
-    banner_name = fields.StringField()
-    external_url = fields.StringField()
-
-    def get_absolute_url(self):
-        return '{}preprint_providers/{}'.format(self.absolute_api_v2_url, self._id)
-
-    @property
-    def absolute_api_v2_url(self):
-        path = '/preprint_providers/{}/'.format(self._id)
-        return api_v2_url(path)
-
-    @property
-    def logo_path(self):
-        if self.logo_name:
-            return '/static/img/preprint_providers/{}'.format(self.logo_name)
-        else:
-            return None
-
-    @property
-    def banner_path(self):
-        if self.logo_name:
-            return '/static/img/preprint_providers/{}'.format(self.logo_name)
-        else:
-            return None
