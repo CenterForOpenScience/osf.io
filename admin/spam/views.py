@@ -6,7 +6,6 @@ from django.http import Http404
 from modularodm import Q
 from website.project.model import Comment
 from website.project.spam.model import SpamStatus
-from website.settings import SUPPORT_EMAIL
 
 from admin.base.utils import OSFAdmin
 from admin.common_auth.logs import (
