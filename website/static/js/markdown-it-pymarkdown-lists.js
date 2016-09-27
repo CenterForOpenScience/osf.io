@@ -2,13 +2,20 @@
 
 'use strict';
 
-// var isSpace = require('../common/utils').isSpace;
 
+function isSpace(code) {
+  switch (code) {
+    case 0x09:
+    case 0x20:
+      return true;
+  }
+  return false;
+}
 
 // Search `[-+*][\n ]`, returns next pos arter marker on success
 // or -1 on fail.
 function skipBulletListMarker(state, startLine) {
-  var marker, pos, max, ch;
+  var marker, pos, max;
 
   pos = state.bMarks[startLine] + state.tShift[startLine];
   max = state.eMarks[startLine];
@@ -21,13 +28,9 @@ function skipBulletListMarker(state, startLine) {
     return -1;
   }
 
-  if (pos < max) {
-    ch = state.src.charCodeAt(pos);
-
-    // if (!isSpace(ch)) {
-    //   // " -test " - is not a list item
-    //   return -1;
-    // }
+  if (pos < max && !isSpace(state.src.charCodeAt(pos))) {
+    // " 1.test " - is not a list item
+    return -1;
   }
 
   return pos;
@@ -37,8 +40,7 @@ function skipBulletListMarker(state, startLine) {
 // or -1 on fail.
 function skipOrderedListMarker(state, startLine) {
   var ch,
-      start = state.bMarks[startLine] + state.tShift[startLine],
-      pos = start,
+      pos = state.bMarks[startLine] + state.tShift[startLine],
       max = state.eMarks[startLine];
 
   // List marker should have at least 2 chars (digit + dot)
@@ -55,11 +57,6 @@ function skipOrderedListMarker(state, startLine) {
     ch = state.src.charCodeAt(pos++);
 
     if (ch >= 0x30/* 0 */ && ch <= 0x39/* 9 */) {
-
-      // List marker should have no more than 9 digits
-      // (prevents integer overflow in browsers)
-      if (pos - start >= 10) { return -1; }
-
       continue;
     }
 
@@ -72,13 +69,9 @@ function skipOrderedListMarker(state, startLine) {
   }
 
 
-  if (pos < max) {
-    ch = state.src.charCodeAt(pos);
-
-    // if (!isSpace(ch)) {
-    //   // " 1.test " - is not a list item
-    //   return -1;
-    // }
+  if (pos < max && !isSpace(state.src.charCodeAt(pos))/* space */) {
+    // " 1.test " - is not a list item
+    return -1;
   }
   return pos;
 }
@@ -97,72 +90,37 @@ function markTightParagraphs(state, idx) {
 }
 
 
-module.exports = function pymark_list(state, startLine, endLine, silent) {
-    debugger;
-  var ch,
-      contentStart,
-      i,
+module.exports = function list(state, startLine, endLine, silent) {
+  var nextLine,
       indent,
-      indentAfterMarker,
-      initial,
-      isOrdered,
-      itemLines,
-      l,
-      listLines,
-      listTokIdx,
-      markerCharCode,
-      markerValue,
-      max,
-      nextLine,
-      offset,
-      oldIndent,
-      oldLIndent,
-      oldParentType,
       oldTShift,
+      oldIndent,
       oldTight,
-      pos,
-      posAfterMarker,
-      prevEmptyEnd,
+      oldParentType,
       start,
-      terminate,
+      posAfterMarker,
+      max,
+      indentAfterMarker,
+      markerValue,
+      markerCharCode,
+      isOrdered,
+      contentStart,
+      listTokIdx,
+      prevEmptyEnd,
+      listLines,
+      itemLines,
+      tight = true,
       terminatorRules,
       token,
-      isTerminatingParagraph = false,
-      tight = true;
+      i, l, terminate;
 
-  // limit conditions when list can interrupt
-  // a paragraph (validation mode only)
-  if (silent && state.parentType === 'paragraph') {
-    // Next list item should still terminate previous list item;
-    //
-    // This code can fail if plugins use blkIndent as well as lists,
-    // but I hope the spec gets fixed long before that happens.
-    //
-    if (state.tShift[startLine] >= state.blkIndent) {
-      isTerminatingParagraph = true;
-    }
-  }
   // Detect list type and position after marker
   if ((posAfterMarker = skipOrderedListMarker(state, startLine)) >= 0) {
     isOrdered = true;
-    start = state.bMarks[startLine] + state.tShift[startLine];
-    markerValue = Number(state.src.substr(start, posAfterMarker - start - 1));
-
-    // If we're starting a new ordered list right after
-    // a paragraph, it should start with 1.
-    if (isTerminatingParagraph && markerValue !== 1) return false;
-
   } else if ((posAfterMarker = skipBulletListMarker(state, startLine)) >= 0) {
     isOrdered = false;
-
   } else {
     return false;
-  }
-
-  // If we're starting a new unordered list right after
-  // a paragraph, first line should not be empty.
-  if (isTerminatingParagraph) {
-    if (state.skipSpaces(posAfterMarker) >= state.eMarks[startLine]) return false;
   }
 
   // We should terminate list on style change. Remember first one to compare.
@@ -175,8 +133,11 @@ module.exports = function pymark_list(state, startLine, endLine, silent) {
   listTokIdx = state.tokens.length;
 
   if (isOrdered) {
+    start = state.bMarks[startLine] + state.tShift[startLine];
+    markerValue = Number(state.src.substr(start, posAfterMarker - start - 1));
+
     token       = state.push('ordered_list_open', 'ol', 1);
-    if (markerValue !== 1) {
+    if (markerValue > 1) {
       token.attrs = [ [ 'start', markerValue ] ];
     }
 
@@ -195,38 +156,15 @@ module.exports = function pymark_list(state, startLine, endLine, silent) {
   prevEmptyEnd = false;
   terminatorRules = state.md.block.ruler.getRules('list');
 
-  oldParentType = state.parentType;
-  state.parentType = 'list';
-
   while (nextLine < endLine) {
-    pos = posAfterMarker;
+    contentStart = state.skipSpaces(posAfterMarker);
     max = state.eMarks[nextLine];
-
-    initial = offset = state.sCount[nextLine] + posAfterMarker - (state.bMarks[startLine] + state.tShift[startLine]);
-
-    while (pos < max) {
-      ch = state.src.charCodeAt(pos);
-
-      // if (isSpace(ch)) {
-      //   if (ch === 0x09) {
-      //     offset += 4 - (offset + state.bsCount[nextLine]) % 4;
-      //   } else {
-      //     offset++;
-      //   }
-      // } else {
-      //   break;
-      // }
-
-      pos++;
-    }
-
-    contentStart = pos;
 
     if (contentStart >= max) {
       // trimming space in "-    \n  3" case, indent is 1 here
       indentAfterMarker = 1;
     } else {
-      indentAfterMarker = offset - initial;
+      indentAfterMarker = contentStart - posAfterMarker;
     }
 
     // If we have more than 4 spaces, the indent is 1
@@ -235,7 +173,7 @@ module.exports = function pymark_list(state, startLine, endLine, silent) {
 
     // "  -  test"
     //  ^^^^^ - calculating total length of this thing
-    indent = initial + indentAfterMarker;
+    indent = (posAfterMarker - state.bMarks[nextLine]) + indentAfterMarker;
 
     // Run subparser & write tokens
     token        = state.push('list_item_open', 'li', 1);
@@ -245,24 +183,13 @@ module.exports = function pymark_list(state, startLine, endLine, silent) {
     oldIndent = state.blkIndent;
     oldTight = state.tight;
     oldTShift = state.tShift[startLine];
-    oldLIndent = state.sCount[startLine];
+    oldParentType = state.parentType;
+    state.tShift[startLine] = contentStart - state.bMarks[startLine];
     state.blkIndent = indent;
     state.tight = true;
-    state.tShift[startLine] = contentStart - state.bMarks[startLine];
-    state.sCount[startLine] = offset;
+    state.parentType = 'list';
 
-    if (contentStart >= max && state.isEmpty(startLine + 1)) {
-      // workaround for this case
-      // (list item is empty, list terminates before "foo"):
-      // ~~~~~~~~
-      //   -
-      //
-      //     foo
-      // ~~~~~~~~
-      state.line = Math.min(state.line + 2, endLine);
-    } else {
-      state.md.block.tokenize(state, startLine, endLine, true);
-    }
+    state.md.block.tokenize(state, startLine, endLine, true);
 
     // If any of list item is tight, mark list as tight
     if (!state.tight || prevEmptyEnd) {
@@ -274,8 +201,8 @@ module.exports = function pymark_list(state, startLine, endLine, silent) {
 
     state.blkIndent = oldIndent;
     state.tShift[startLine] = oldTShift;
-    state.sCount[startLine] = oldLIndent;
     state.tight = oldTight;
+    state.parentType = oldParentType;
 
     token        = state.push('list_item_close', 'li', -1);
     token.markup = String.fromCharCode(markerCharCode);
@@ -286,10 +213,14 @@ module.exports = function pymark_list(state, startLine, endLine, silent) {
 
     if (nextLine >= endLine) { break; }
 
+    if (state.isEmpty(nextLine)) {
+      break;
+    }
+
     //
     // Try to check if list is terminated or continued.
     //
-    if (state.sCount[nextLine] < state.blkIndent) { break; }
+    if (state.tShift[nextLine] < state.blkIndent) { break; }
 
     // fail if terminating block found
     terminate = false;
@@ -323,8 +254,6 @@ module.exports = function pymark_list(state, startLine, endLine, silent) {
 
   listLines[1] = nextLine;
   state.line = nextLine;
-
-  state.parentType = oldParentType;
 
   // mark paragraphs tight if needed
   if (tight) {
