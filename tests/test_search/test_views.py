@@ -156,7 +156,7 @@ class TestSearchSearchAPI(SearchTestCase):
     @parameterized.expand(cases)
     def test(self, ignored, status, type_, perms, included):
         make = makers[type_]
-        thing = make(status)
+        node = make(status)
         key = 'name' if make is make_file else 'title'
 
         auth = None
@@ -164,7 +164,7 @@ class TestSearchSearchAPI(SearchTestCase):
             user = factories.AuthUserFactory()
             auth = user.auth
             if perms:
-                thing.add_contributor(user, perms)
+                node.add_contributor(user, perms)
 
         expected = [('Flim Flammity', type_)] if included else []
         results = self.results('flim', type_, auth)
