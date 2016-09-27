@@ -212,7 +212,6 @@ class TestRenderToCSVResponse(AdminTestCase):
             '1,0,0,0,0,0,0,0,0,0,' + initial_time.strftime('%Y-%m-%d %H:%M:%S.%f') + '\r',
             '1,0,0,0,2,0,0,0,0,0,' + self.time.strftime('%Y-%m-%d %H:%M:%S.%f') + '\r', '']
 
-
     def test_render_to_csv_response(self):
         queryset = OSFWebsiteStatistics.objects.all().order_by('-date')
         response = render_to_csv_response(queryset)
@@ -225,8 +224,8 @@ class TestRenderToCSVResponse(AdminTestCase):
         get_osf_statistics()
         new_queryset = OSFWebsiteStatistics.objects.all().order_by('-date')
         new_res = render_to_csv_response(new_queryset)
-        self.assertEqual(response['Content-Type'], 'text/csv')
-        self.assertEqual(response.content.split('\n'),
+        self.assertEqual(new_res['Content-Type'], 'text/csv')
+        self.assertEqual(new_res.content.split('\n'),
                          self.latest_static)
-        self.assertRegexpMatches(response['Content-Disposition'],
+        self.assertRegexpMatches(new_res['Content-Disposition'],
                                  r'attachment; filename=osfwebsitestatistics_export.csv;')
