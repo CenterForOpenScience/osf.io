@@ -278,6 +278,23 @@ class RegistrationFactory(BaseNodeFactory):
         reg.save()
         return reg
 
+class WithdrawnRegistrationFactory(BaseNodeFactory):
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+
+        registration = kwargs.pop('registration', None)
+        registration.is_public = True
+        user = kwargs.pop('user', registration.creator)
+
+        registration.retract_registration(user)
+        withdrawal = registration.retraction
+        token = withdrawal.approval_state.values()[0]['approval_token']
+        with patch('osf_models.models.AbstractNode.update_search'):
+            withdrawal.approve_retraction(user, token)
+        withdrawal.save()
+
+        return withdrawal
 
 class SanctionFactory(DjangoModelFactory):
     class Meta:

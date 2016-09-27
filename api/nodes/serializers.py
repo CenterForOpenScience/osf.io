@@ -35,7 +35,7 @@ from website.oauth.models import ExternalAccount
 class NodeTagField(ser.Field):
     def to_representation(self, obj):
         if obj is not None:
-            return obj._id
+            return obj.name
         return None
 
     def to_internal_value(self, data):

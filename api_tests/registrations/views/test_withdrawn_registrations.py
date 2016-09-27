@@ -7,7 +7,7 @@ from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
 
 from tests.base import fake
-from tests.factories import (
+from osf_models_tests.factories import (
     ProjectFactory,
     CommentFactory,
     RegistrationFactory,
@@ -99,9 +99,9 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
         expected_attributes = {
             'title': registration.title,
             'description': registration.description,
-            'date_created': registration.date_created.isoformat(),
-            'date_registered': registration.registered_date.isoformat(),
-            'date_modified': registration.date_modified.isoformat(),
+            'date_created': registration.date_created.isoformat().replace('+00:00', 'Z'),
+            'date_registered': registration.registered_date.isoformat().replace('+00:00', 'Z'),
+            'date_modified': registration.date_modified.isoformat().replace('+00:00', 'Z'),
             'withdrawal_justification': registration.retraction.justification,
             'public': None,
             'category': None,
@@ -116,7 +116,7 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
             'embargo_end_date': None,
             'registered_meta': None,
             'current_user_permissions': None,
-            'registration_supplement': registration.registered_schema[0].name
+            'registration_supplement': registration.registered_schema.first().name
         }
 
         for attribute in expected_attributes:

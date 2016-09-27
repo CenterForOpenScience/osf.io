@@ -75,8 +75,8 @@ from api.logs.serializers import NodeLogSerializer
 from website.addons.wiki.model import NodeWikiPage
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
-from website.models import Pointer, Comment, NodeLog, Institution, DraftRegistration, PrivateLink
-from osf_models.models import AlternativeCitation, Node
+from website.models import Comment, NodeLog, Institution, DraftRegistration
+from osf_models.models import AlternativeCitation, Node, PrivateLink
 from website.files.models import FileNode
 from framework.auth.core import User
 from api.base.utils import default_node_list_query, default_node_permission_query
@@ -3104,11 +3104,7 @@ class NodeViewOnlyLinksList(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
     view_name = 'node-view-only-links'
 
     def get_default_queryset(self):
-        return [
-            link for link in
-            self.get_node().private_links
-            if not link.is_deleted
-        ]
+        return self.get_node().private_links.filter(is_deleted=False)
 
     def get_queryset(self):
         return self.get_queryset_from_request()
@@ -3187,10 +3183,10 @@ class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIV
         return NodeViewOnlyLinkSerializer
 
     def get_object(self):
-        for link in self.get_node().private_links:
-            if link._id == self.kwargs['link_id']:
-                return link
-        raise NotFound
+        try:
+            return self.get_node().private_links.get(guid__object_id=self.kwargs['link_id'])
+        except PrivateLink.DoesNotExist:
+            raise NotFound
 
     def perform_destroy(self, link):
         assert isinstance(link, PrivateLink), 'link must be a PrivateLink'

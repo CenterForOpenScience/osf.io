@@ -14,7 +14,7 @@ from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistr
 
 
 from tests.base import ApiTestCase
-from tests.factories import (
+from osf_models_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
     AuthUserFactory,
@@ -37,10 +37,6 @@ class TestRegistrationList(ApiTestCase):
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_registration_project = RegistrationFactory(creator=self.user, project=self.public_project, is_public=True)
         self.user_two = AuthUserFactory()
-
-    def tearDown(self):
-        super(TestRegistrationList, self).tearDown()
-        Node.remove()
 
     def test_return_public_registrations_logged_out(self):
         res = self.app.get(self.url)
@@ -117,10 +113,6 @@ class TestRegistrationFiltering(ApiTestCase):
         self.bookmark_collection = BookmarkCollectionFactory()
 
         self.url = "/{}registrations/".format(API_BASE)
-
-    def tearDown(self):
-        super(TestRegistrationFiltering, self).tearDown()
-        Node.remove()
 
     def test_filtering_by_category(self):
         url = '/{}registrations/?filter[category]=hypothesis'.format(API_BASE)

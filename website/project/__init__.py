@@ -135,9 +135,12 @@ def new_private_link(name, user, nodes, anonymous):
         key=key,
         name=name,
         creator=user,
-        nodes=nodes,
         anonymous=anonymous
     )
+
+    private_link.save()
+
+    private_link.nodes.add(*nodes)
 
     private_link.save()
 
