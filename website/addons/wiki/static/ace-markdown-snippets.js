@@ -72,6 +72,14 @@ snippet vimeo-video\n\
 	\n\
 	@[vimeo](${1:url})\n\
 \n\
+snippet vine-video\n\
+	\n\
+	@[vine](${1:url})\n\
+\n\
+snippet prezi-video\n\
+	\n\
+	@[prezi](${1:url})\n\
+\n\
 snippet table-of-contents\n\
 	\n\
 	@[toc](${1:optional_label})\n\

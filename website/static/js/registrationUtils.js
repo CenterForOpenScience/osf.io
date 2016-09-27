@@ -24,9 +24,6 @@ var RegistrationModal = require('js/registrationModal');
 
 // This value should match website.settings.DRAFT_REGISTRATION_APPROVAL_PERIOD
 var DRAFT_REGISTRATION_MIN_EMBARGO_DAYS = 10;
-var DRAFT_REGISTRATION_MIN_EMBARGO_TIMESTAMP = new Date().getTime() + (
-        DRAFT_REGISTRATION_MIN_EMBARGO_DAYS * 24 * 60 * 60 * 1000
-);
 
 var VALIDATORS = {
     required: {
@@ -501,11 +498,15 @@ MetaSchema.prototype.askConsent = function(pre) {
             $osf.unblock();
             bootbox.hideAll();
             ret.resolve();
+            $(document.body).removeClass('background-unscrollable');
+            $('.modal').removeClass('modal-scrollable');
         },
         cancel: function() {
             $osf.unblock();
             bootbox.hideAll();
             ret.reject();
+            $(document.body).removeClass('background-unscrollable');
+            $('.modal').removeClass('modal-scrollable');
         }
     };
 
@@ -513,9 +514,15 @@ MetaSchema.prototype.askConsent = function(pre) {
         size: 'large',
         message: function() {
             ko.renderTemplate('preRegistrationConsent', viewModel, {}, this);
+            $(document.body).addClass('background-unscrollable');
         }
     });
 
+    $('.bootbox-close-button.close').click(function() {
+        $(document.body).removeClass('background-unscrollable');
+        $('.modal').removeClass('modal-scrollable');
+    });
+    $('.modal').addClass('modal-scrollable');
     return ret.promise();
 };
 
@@ -582,7 +589,7 @@ var Draft = function(params, metaSchema) {
         }).length > 0;
     });
 
-    self.completion = ko.computed(function() {
+    self.completion = ko.pureComputed(function() {
         var complete = 0;
         var questions = self.metaSchema.flatQuestions()
                 .filter(function(question) {
@@ -594,6 +601,20 @@ var Draft = function(params, metaSchema) {
             }
         });
         return Math.ceil(100 * (complete / questions.length));
+    });
+
+    self.isComplete = ko.pureComputed(function() {
+        var complete = true;
+        var questions = self.metaSchema.flatQuestions()
+                .filter(function(question) {
+                    return question.required;
+                });
+        $.each(questions, function(_, question) {
+            if (!question.isComplete()) {
+                complete = false;
+            }
+        });
+        return complete;
     });
 };
 Draft.prototype.getUnseenComments = function() {
@@ -610,14 +631,15 @@ Draft.prototype.preRegisterPrompts = function(response, confirm) {
     var validator = null;
     if (self.metaSchema.requiresApproval) {
         validator = {
-            validator: function(value) {
-                return (new Date(value)).getTime() > DRAFT_REGISTRATION_MIN_EMBARGO_TIMESTAMP;
+            validator: function(end) {
+                var min = moment().add(DRAFT_REGISTRATION_MIN_EMBARGO_DAYS, 'days');
+                return end.isAfter(min);
             },
             message: 'Embargo end date must be at least ' + DRAFT_REGISTRATION_MIN_EMBARGO_DAYS + ' days in the future.'
         };
     }
     var preRegisterPrompts = response.prompts || [];
-    
+
     var registrationModal = new RegistrationModal.ViewModel(
         confirm, preRegisterPrompts, validator
     );
@@ -778,6 +800,7 @@ var RegistrationEditor = function(urls, editorId, preview) {
     self.readonly = ko.observable(false);
 
     self.draft = ko.observable();
+    self.pk = null;
 
     self.currentQuestion = ko.observable();
     self.showValidation = ko.observable(false);
@@ -909,6 +932,7 @@ RegistrationEditor.prototype.init = function(draft) {
     var self = this;
 
     self.draft(draft);
+    self.pk = draft.pk;
     var metaSchema = draft ? draft.metaSchema: null;
 
     self.saveManager = null;
@@ -981,7 +1005,7 @@ RegistrationEditor.prototype.context = function(data, $root, preview) {
     });
 
     if (this.extensions[data.type]) {
-        return new this.extensions[data.type](data, $root, preview);
+        return new this.extensions[data.type](data, $root.pk, preview);
     }
     return data;
 };
@@ -1319,9 +1343,6 @@ RegistrationManager.prototype.init = function() {
             var drafts = $.map(response.drafts, function(draft) {
                 return new Draft(draft);
             });
-            drafts.sort(function(a, b) {
-                return a.initiated.getTime() < b.initiated.getTime();
-            });
             self.drafts(drafts);
             self.loadingDrafts(false);
         });
@@ -1337,17 +1358,25 @@ RegistrationManager.prototype.init = function() {
         });
 
         var urlParams = $osf.urlParams();
-        if (urlParams.campaign && urlParams.campaign === 'prereg') {
-            $osf.block();
-            getSchemas.done(function() {
-                var preregSchema = self.schemas().filter(function(schema) {
-                    return schema.name === 'Prereg Challenge';
-                })[0];
-                preregSchema.askConsent(true).then(function() {
-                    self.selectedSchema(preregSchema);
-                    $('#newDraftRegistrationForm').submit();
-                });
-            }).always($osf.unblock);
+        if (urlParams.campaign) {
+            var schemaName;
+            if (urlParams.campaign === 'prereg'){
+                schemaName = 'Prereg Challenge';
+            } else if (urlParams.campaign === 'erpc') {
+                schemaName = 'Election Research Preacceptance Competition';
+            }
+            if (schemaName) {
+                $osf.block();
+                getSchemas.done(function() {
+                    var preregSchema = self.schemas().filter(function(schema) {
+                        return schema.name === schemaName;
+                    })[0];
+                    preregSchema.askConsent(true).then(function() {
+                        self.selectedSchema(preregSchema);
+                        $('#newDraftRegistrationForm').submit();
+                    });
+                }).always($osf.unblock);   
+            }
         }
     }
 };
@@ -1422,6 +1451,8 @@ RegistrationManager.prototype.createDraftModal = function(selected) {
                     var selectedSchema = self.selectedSchema();
                     if (selectedSchema.requiresConsent) {
                         selectedSchema.askConsent(true).then(function() {
+                            $(document.body).removeClass('background-unscrollable');
+                            $('.modal').removeClass('modal-scrollable');
                             $('#newDraftRegistrationForm').submit();
                         });
                     }

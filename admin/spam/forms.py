@@ -1,10 +1,10 @@
 from django import forms
 
-from website.project.model import Comment
+from website.project.spam.model import SpamStatus
 
 
 class ConfirmForm(forms.Form):
     confirm = forms.ChoiceField(
-        choices=[(Comment.SPAM, 'Spam'), (Comment.HAM, 'Ham')],
+        choices=[(SpamStatus.SPAM, 'Spam'), (SpamStatus.HAM, 'Ham')],
         widget=forms.RadioSelect(),
     )

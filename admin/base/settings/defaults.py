@@ -205,9 +205,9 @@ TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 NOSE_ARGS = ['--verbosity=2']
 
 # Keen.io settings in local.py
-KEEN_PROJECT_ID = osf_settings.KEEN_PROJECT_ID
-KEEN_READ_KEY = osf_settings.KEEN_READ_KEY
-KEEN_WRITE_KEY = osf_settings.KEEN_WRITE_KEY
+KEEN_PROJECT_ID = osf_settings.KEEN['private']['project_id']
+KEEN_READ_KEY = osf_settings.KEEN['private']['read_key']
+KEEN_WRITE_KEY = osf_settings.KEEN['private']['write_key']
 
 KEEN_CREDENTIALS = {
     'keen_ready': False

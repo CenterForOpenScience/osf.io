@@ -27,6 +27,7 @@ from website.project.model import ensure_schemas
 from website.project.sanctions import PreregCallbackMixin
 from website.util import permissions
 from website.exceptions import NodeStateError
+from website.project.spam.model import SpamStatus
 
 DUMMY_TOKEN = tokens.encode({
     'dummy': 'token'
@@ -83,7 +84,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         project.add_contributor(project_non_admin, auth=Auth(project.creator), save=True)
 
         child = NodeFactory(creator=child_admin, parent=project)
-        child.add_contributor(child_non_admin, auth=Auth(project.creator), save=True)
+        child.add_contributor(child_non_admin, auth=Auth(child.creator), save=True)
 
         grandchild = NodeFactory(creator=grandchild_admin, parent=child)  # noqa
 
@@ -406,6 +407,19 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         with mock.patch.object(PreregCallbackMixin, '_notify_initiator') as mock_notify:
             self.registration.embargo._on_complete(self.user)
         assert_equal(mock_notify.call_count, 1)
+
+    def test_on_complete_raises_error_if_registration_is_spam(self):
+        self.registration.embargo_registration(
+            self.user,
+            datetime.datetime.utcnow() + datetime.timedelta(days=10),
+            notify_initiator_on_complete=True
+        )
+        self.registration.spam_status = SpamStatus.FLAGGED
+        self.registration.save()
+        with mock.patch.object(PreregCallbackMixin, '_notify_initiator') as mock_notify:
+            with assert_raises(NodeStateError):
+                self.registration.embargo._on_complete(self.user)
+        assert_equal(mock_notify.call_count, 0)
 
 
 class RegistrationWithChildNodesEmbargoModelTestCase(OsfTestCase):
