@@ -105,14 +105,13 @@ class TestMakers(DbIsolationMixin, OsfTestCase):
 
 PRIVATE, PUBLIC = range(2)
 PROJECT, REGISTRATION, COMPONENT, FILE = 'project registration component file'.split()
-ANON, AUTH, READ = (None, [], [permissions.READ])
 
-def get_test_name(status, type_, included, perms, **_):
+def get_test_name(status, type_, included, permfunc, **_):
     return "{} {} {} {}".format(
         'private' if status is PRIVATE else 'public',
         type_,
         'shown to' if included else 'hidden from',
-        'anon' if perms is ANON else 'auth' if perms is AUTH else 'read'
+        permfunc.__name__
     )
 
 MAKERS = {
@@ -122,15 +121,28 @@ MAKERS = {
     FILE: make_file,
 }
 
+
+def anon(node):
+    return None
+
+def auth(node):
+    return factories.AuthUserFactory().auth
+
+def read(node):
+    user = factories.AuthUserFactory()
+    node.add_contributor(user, permissions.READ)
+    return user.auth
+
+
 def generate_cases():
     for status in (PRIVATE, PUBLIC):
         for type_ in (PROJECT, REGISTRATION, COMPONENT, FILE):
             make = MAKERS[type_]
             if status is PRIVATE and type_ is REGISTRATION: continue
-            for perms in (ANON, AUTH, READ):
-                included = perms is READ if status is PRIVATE else True
+            for permfunc in (anon, auth, read):
+                included = permfunc is read if status is PRIVATE else True
                 key = 'name' if type_ is FILE else 'title'
-                yield get_test_name(**locals()), make, status, perms, type_, included, key
+                yield get_test_name(**locals()), make, status, permfunc, type_, included, key
 
 
 class TestGenerateCases(unittest.TestCase):
@@ -155,16 +167,9 @@ class TestSearchSearchAPI(SearchTestCase):
         return self.app.get(url, data, auth=auth).json['results']
 
     @parameterized.expand(generate_cases)
-    def test(self, ignored, make, status, perms, type_, included, key):
+    def test(self, ignored, make, status, permfunc, type_, included, key):
         node = make(status)
-
-        auth = None
-        if perms is not None:
-            user = factories.AuthUserFactory()
-            auth = user.auth
-            if perms:
-                node.add_contributor(user, perms)
-
+        auth = permfunc(node)
         expected = [('Flim Flammity', type_)] if included else []
         results = self.results('flim', type_, auth)
         assert_equal([(x[key], x['category']) for x in results], expected)
