@@ -33,7 +33,7 @@ def dump(qs, response):
         http://www.djangosnippets.org/snippets/790/
 
     """
-    model = qs
+    model = qs.model
     writer = csv.writer(response)
 
     headers = []
