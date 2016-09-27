@@ -2,7 +2,6 @@ from django.contrib.postgres import fields
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.conf import settings
-from osf_models.models import Guid
 
 from osf_models.models import base
 from osf_models.models.contributor import InstitutionalContributor
