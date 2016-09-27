@@ -74,6 +74,8 @@ pyjwt==1.4.0
 pyjwe==1.0.0
 jsonschema==2.5.1
 git+https://github.com/CenterForOpenScience/osf-models.git@master
+django-sslserver==0.19
+django-debug-toolbar==1.5
 
 # Admin requirements
 django-webpack-loader==0.2.3
