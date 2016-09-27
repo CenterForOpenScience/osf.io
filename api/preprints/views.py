@@ -20,7 +20,7 @@ class PreprintMixin(NodeMixin):
     serializer_class = PreprintSerializer
     preprint_lookup_url_kwarg = 'preprint_id'
 
-    def get_node(self, check_object_permissions=True):
+    def get_preprint(self, check_object_permissions=True):
         preprint = get_object_or_error(
             PreprintService,
             self.kwargs[self.preprint_lookup_url_kwarg],

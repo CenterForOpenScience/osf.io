@@ -27,9 +27,9 @@ class PreprintService(GuidStoredObject):
 
     # This is a list of tuples of Subject id's. MODM doesn't do schema
     # validation for DictionaryFields, but would unsuccessfully attempt
-    # to validate the schema for a list of tuples of ForeignFields.
+    # to validate the schema for a list of lists of ForeignFields.
     #
-    # Format: [(root_subject._id, ..., child_subject._id), ...]
+    # Format: [[root_subject._id, ..., child_subject._id], ...]
     subjects = fields.DictionaryField(list=True)
 
     @property
@@ -64,9 +64,9 @@ class PreprintService(GuidStoredObject):
 
     def get_preprint_subjects(self):
         ret = []
-        for subj_tuple in set(self.subjects):
-            subj_hierarchy = ()
-            for subj_id in subj_tuple:
+        for subj_list in set(self.subjects):
+            subj_hierarchy = []
+            for subj_id in subj_list:
                 subj = Subject.load(subj_id)
                 if subj:
                     subj_hierarchy += ({'id': subj_id, 'text': subj.text}, )
@@ -79,14 +79,15 @@ class PreprintService(GuidStoredObject):
             raise PermissionsError('Only admins can change a preprint\'s subjects.')
 
         self.subjects = []
-        for subj_tuple in preprint_subjects:
-            subj_hierarchy = ()
-            for s in subj_hierarchy:
+        for subj_list in preprint_subjects:
+            subj_hierarchy = []
+            for s in subj_list:
                 subject = Subject.load(s)
                 if not subject:
                     raise ValidationValueError('Subject with id <{}> could not be found.'.format(s))
-                subj_hierarchy += (s, )
-            self.subjects.append(subj_hierarchy)
+                subj_hierarchy.append(s)
+            if subj_hierarchy:
+                self.subjects.append(subj_hierarchy)
 
         if save:
             self.save()

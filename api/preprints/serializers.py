@@ -51,7 +51,7 @@ class PreprintSerializer(JSONAPISerializer):
     ])
 
     id = IDField(source='_id', required=False)
-    subjects = JSONAPIListField(child=TaxonomyField(), required=False)
+    subjects = JSONAPIListField(child=JSONAPIListField(child=TaxonomyField()), required=False)
     provider = ser.CharField(required=False)
     date_created = ser.DateTimeField(read_only=True)
     date_published = ser.DateTimeField(read_only=True)
@@ -137,11 +137,11 @@ class PreprintSerializer(JSONAPISerializer):
 
         primary_file = validated_data.pop('primary_file', None)
         if primary_file:
-            self.set_node_field(preprint.set_preprint_file, primary_file, auth)
+            self.set_field(preprint.set_preprint_file, primary_file, auth)
             save_node = True
         subjects = validated_data.pop('subjects', None)
         if subjects:
-            self.set_node_field(preprint.set_preprint_subjects, subjects, auth)
+            self.set_field(preprint.set_preprint_subjects, subjects, auth)
             save_preprint = True
 
         if 'doi' in validated_data:
