@@ -20,5 +20,16 @@ describe('oldMarkdown', () => {
             assert.equal(rendered, html);
         });
     });
+    describe('orderedListChangeSymbols', () => {
+
+        it('returns a numbered list even when the symbols change', () => {
+            var text = '1. hello \n 2. there \n * friend';
+
+            var rendered = mdOld.render(text);
+
+            var html = '<ol>\n<li>hello</li><li>there</li><li>friend</li></ol>';
+            assert.equal(rendered, html);
+        });
+    });
 
 });
