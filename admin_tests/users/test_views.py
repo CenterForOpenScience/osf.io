@@ -243,13 +243,14 @@ class TestUserWorkshopFormView(AdminTestCase):
             'log_added',
             params={'project': node.pk},
             auth=self.auth_1,
-            log_date=datetime.utcnow() - timedelta(days=4),
+            log_date=datetime.utcnow(),
             save=True
         )
         with file('test.csv') as fp:
             final = self.view.parse(fp)
         nt.assert_equal(1, final[1][-2])
-        nt.assert_equal(1, final[1][-3])
+        nt.assert_equal(2, final[1][-3])
+        nt.assert_equal(self.user_1.pk, final[1][-4])
 
     def tearDown(self):
         os.remove('test.csv')

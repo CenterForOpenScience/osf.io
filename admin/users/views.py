@@ -304,20 +304,20 @@ class UserWorkshopFormView(OSFAdmin, FormView):
                 final.append(line)
                 continue
             user = user_list_of_one[0]
-            date = datetime.strptime(line[1], '%m/%d/%y')  # .astimezone(pytz.utc)
+            date = datetime.strptime(line[1], '%m/%d/%y')
             query = Q('user', 'eq', user.pk)
             query &= Q('date', 'gt', date)
-            logs = NodeLog.find(query)
+            logs = list(NodeLog.find(query))
             try:
-                last_log_date = NodeLog.load(logs[0]).date.strftime('%m/%d/%Y')
+                last_log_date = logs[-1].date.strftime('%m/%d/%Y')
                 nodes = []
-                for log in [NodeLog.load(l) for l in logs]:
+                for log in logs:
                     if log.node.pk not in nodes:
                         nodes.append(log.node.pk)
             except IndexError:
                 last_log_date = ''
                 nodes = []
-            line.extend([user.pk, logs.count(), len(nodes), last_log_date])
+            line.extend([user.pk, len(logs), len(nodes), last_log_date])
             final.append(line)
         return final
 
