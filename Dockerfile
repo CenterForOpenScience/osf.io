@@ -152,6 +152,9 @@ RUN mkdir -p /code/website/static/built/ \
 # Copy the rest of the code over
 COPY ./ /code/
 
+ARG GIT_COMMIT=
+ENV GIT_COMMIT ${GIT_COMMIT}
+
 RUN export DJANGO_SETTINGS_MODULE=api.base.settings && python manage.py collectstatic --noinput --no-init-app \
     && export DJANGO_SETTINGS_MODULE=admin.base.settings && python manage.py collectstatic --noinput --no-init-app
 
