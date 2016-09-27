@@ -206,6 +206,12 @@ class TestRenderToCSVResponse(AdminTestCase):
             'id,users,delta_users,unregistered_users,projects,delta_projects,public_projects,'
             'delta_public_projects,registered_projects,delta_registered_projects,date\r',
             '1,0,0,0,0,0,0,0,0,0,' + initial_time.strftime('%Y-%m-%d %H:%M:%S.%f') + '\r', '']
+        self.latest_static = [
+            'id,users,delta_users,unregistered_users,projects,delta_projects,public_projects,'
+            'delta_public_projects,registered_projects,delta_registered_projects,date\r',
+            '1,0,0,0,0,0,0,0,0,0,' + initial_time.strftime('%Y-%m-%d %H:%M:%S.%f') + '\r',
+            '1,0,0,0,2,0,0,0,0,0,' + self.time.strftime('%Y-%m-%d %H:%M:%S.%f') + '\r', '']
+
 
     def test_render_to_csv_response(self):
         queryset = OSFWebsiteStatistics.objects.all().order_by('-date')
@@ -213,5 +219,14 @@ class TestRenderToCSVResponse(AdminTestCase):
         self.assertEqual(response['Content-Type'], 'text/csv')
         self.assertEqual(response.content.split('\n'),
                          self.initial_static)
+        self.assertRegexpMatches(response['Content-Disposition'],
+                                 r'attachment; filename=osfwebsitestatistics_export.csv;')
+
+        get_osf_statistics()
+        new_queryset = OSFWebsiteStatistics.objects.all().order_by('-date')
+        new_res = render_to_csv_response(new_queryset)
+        self.assertEqual(response['Content-Type'], 'text/csv')
+        self.assertEqual(response.content.split('\n'),
+                         self.latest_static)
         self.assertRegexpMatches(response['Content-Disposition'],
                                  r'attachment; filename=osfwebsitestatistics_export.csv;')
