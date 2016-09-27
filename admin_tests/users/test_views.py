@@ -4,7 +4,7 @@ from nose import tools as nt
 import mock
 import csv
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from tests.base import AdminTestCase
 from website import settings
