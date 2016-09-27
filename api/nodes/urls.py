@@ -1,6 +1,7 @@
 from django.conf.urls import url
 
 from api.nodes import views
+from api.identifiers import views as identifier_views
 from website import settings
 
 urlpatterns = [
@@ -25,6 +26,7 @@ urlpatterns = [
     url(r'^(?P<node_id>\w+)/files/(?P<provider>\w+)(?P<path>/(?:.*/)?)$', views.NodeFilesList.as_view(), name=views.NodeFilesList.view_name),
     url(r'^(?P<node_id>\w+)/files/(?P<provider>\w+)(?P<path>/.+[^/])$', views.NodeFileDetail.as_view(), name=views.NodeFileDetail.view_name),
     url(r'^(?P<node_id>\w+)/forks/$', views.NodeForksList.as_view(), name=views.NodeForksList.view_name),
+    url(r'^(?P<node_id>\w+)/identifiers/$', identifier_views.IdentifierList.as_view(), name=identifier_views.IdentifierList.view_name),
     url(r'^(?P<node_id>\w+)/institutions/$', views.NodeInstitutionsList.as_view(), name=views.NodeInstitutionsList.view_name),
     url(r'^(?P<node_id>\w+)/linked_nodes/$', views.LinkedNodesList.as_view(), name=views.LinkedNodesList.view_name),
     url(r'^(?P<node_id>\w+)/logs/$', views.NodeLogList.as_view(), name=views.NodeLogList.view_name),
