@@ -108,7 +108,7 @@ class TestUserInstititutionRelationship(ApiTestCase):
 
         self.user.reload()
 
-        ids = [inst._id for inst in self.user.affiliated_institutions]
+        ids = list(self.user.affiliated_institutions.values_list('guid__guid', flat=True))
         assert_not_in(self.institution1._id, ids)
         assert_in(self.institution2._id, ids)
 
@@ -137,7 +137,7 @@ class TestUserInstititutionRelationship(ApiTestCase):
 
         self.user.reload()
 
-        ids = [inst._id for inst in self.user.affiliated_institutions]
+        ids = list(self.user.affiliated_institutions.values_list('guid__guid', flat=True))
         assert_not_in(self.institution1._id, ids)
         assert_not_in(self.institution2._id, ids)
 
@@ -154,7 +154,7 @@ class TestUserInstititutionRelationship(ApiTestCase):
 
         self.user.reload()
 
-        ids = [inst._id for inst in self.user.affiliated_institutions]
+        ids = list(self.user.affiliated_institutions.values_list('guid__guid', flat=True))
         assert_in(self.institution1._id, ids)
         assert_in(self.institution2._id, ids)
 

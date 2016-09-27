@@ -652,9 +652,8 @@ class UserRegistrations(UserNodes):
         current_user = self.request.user
 
         query = (
-            Q('is_collection', 'ne', True) &
             Q('is_deleted', 'ne', True) &
-            Q('is_registration', 'eq', True) &
+            Q('type', 'eq', 'osf_models.registration') &
             Q('contributors', 'eq', user._id)
         )
         permission_query = Q('is_public', 'eq', True)

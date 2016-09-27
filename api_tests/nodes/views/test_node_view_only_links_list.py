@@ -5,7 +5,7 @@ from website.util import permissions
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiTestCase
-from tests.factories import (
+from osf_models_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
     PrivateLinkFactory
@@ -27,7 +27,7 @@ class ViewOnlyLinkTestCase(ApiTestCase):
         self.public_project.save()
 
         self.view_only_link = PrivateLinkFactory(name='testlink')
-        self.view_only_link.nodes.append(self.public_project)
+        self.view_only_link.nodes.add(self.public_project)
         self.view_only_link.save()
 
 

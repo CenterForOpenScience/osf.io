@@ -75,8 +75,8 @@ from api.logs.serializers import NodeLogSerializer
 from website.addons.wiki.model import NodeWikiPage
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
-from website.models import Node, Pointer, Comment, NodeLog, Institution, DraftRegistration, PrivateLink
-from osf_models.models import AlternativeCitation
+from website.models import Pointer, Comment, NodeLog, Institution, DraftRegistration, PrivateLink
+from osf_models.models import AlternativeCitation, Node
 from website.files.models import FileNode
 from framework.auth.core import User
 from api.base.utils import default_node_list_query, default_node_permission_query
@@ -1394,7 +1394,7 @@ class NodeLinksList(BaseNodeLinksList, bulk_views.BulkDestroyJSONAPIView, bulk_v
 
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]
     required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
-    model_class = Pointer
+    model_class = Node
 
     serializer_class = NodeLinksSerializer
     view_category = 'nodes'
@@ -1487,7 +1487,7 @@ class NodeLinksDetail(BaseNodeLinksDetail, generics.RetrieveDestroyAPIView, Node
     # overrides RetrieveAPIView
     def get_object(self):
         node_link = get_object_or_error(
-            Pointer,
+            Node,
             self.kwargs[self.node_link_lookup_url_kwarg],
             'node link'
         )
