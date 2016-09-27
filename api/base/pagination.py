@@ -318,6 +318,33 @@ class SearchPagination(JSONAPIPagination):
                     ('registrations', self.get_search_field('registration', query)),
                     ('users', self.get_search_field('user', query)),
                 ])),
+                ('meta', OrderedDict([
+                    ('total', self.page.paginator.count),
+                    ('per_page', self.page.paginator.per_page),
+                ])),
+                ('links', OrderedDict([
+                    ('self', self.get_self_real_link(url)),
+                    ('first', self.get_first_real_link(url)),
+                    ('last', self.get_last_real_link(url)),
+                    ('prev', self.get_previous_real_link(url)),
+                    ('next', self.get_next_real_link(url)),
+                ])),
+            ])
+
+    def get_response_dict_deprecated(self, data, url):
+        if isinstance(self.paginator, SearchModelPaginator):
+            return super(SearchPagination, self).get_response_dict_deprecated(data, url)
+        else:
+            query = self.request.query_params.get('q', '*')
+            return OrderedDict([
+                ('data', data),
+                ('search_fields', OrderedDict([
+                    ('files', self.get_search_field('file', query)),
+                    ('projects', self.get_search_field('project', query)),
+                    ('components', self.get_search_field('component', query)),
+                    ('registrations', self.get_search_field('registration', query)),
+                    ('users', self.get_search_field('user', query)),
+                ])),
                 ('links', OrderedDict([
                     ('first', self.get_first_real_link(url)),
                     ('last', self.get_last_real_link(url)),
