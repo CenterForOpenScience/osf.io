@@ -65,18 +65,21 @@ def validate_email(value):
         raise ValidationError('Invalid Email')
 
 
-def comment_maxlength(max_length):
+@deconstructible
+class CommentMaxLength(object):
+    mention_re = re.compile(r'\[([@|\+].*?)\]\(htt[ps]{1,2}:\/\/[a-z\d:.]+?\/[a-z\d]{5}\/\)')
+    max_length = None
+
+    def __init__(self, max_length=500):
+        self.max_length = max_length
+
+    @staticmethod
     def link_repl(matchobj):
         return matchobj.group(1)
 
-    mention_re = re.compile(r'\[([@|\+].*?)\]\(htt[ps]{1,2}:\/\/[a-z\d:.]+?\/[a-z\d]{5}\/\)')
+    def __call__(self, value):
+        reduced_comment = self.mention_re.sub(self.link_repl(value))
+        if len(reduced_comment) > self.max_length + 2:
+            raise ValidationValueError('Ensure this field has no more than {} characters.'.format(self.max_length))
 
-    def validator(value):
-        reduced_comment = mention_re.sub(link_repl, value)
-
-        # two characters accounts for the \r\n at the end of comments
-        if len(reduced_comment) > max_length + 2:
-            raise ValidationValueError('Ensure this field has no more than {} characters.'.format(max_length))
         return True
-    return validator
-
