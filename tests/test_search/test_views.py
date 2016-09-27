@@ -8,6 +8,7 @@ from nose_parameterized import parameterized
 
 from modularodm import Q
 
+from framework.auth.core import User
 from tests import factories
 from tests.base import DbIsolationMixin
 from tests.test_search import OsfTestCase, SearchTestCase
@@ -132,6 +133,51 @@ def read(node):
     user = factories.AuthUserFactory()
     node.add_contributor(user, permissions.READ)
     return user.auth
+
+
+class TestPermFuncs(DbIsolationMixin, OsfTestCase):
+
+    @staticmethod
+    def get_user_id_from_authtuple(authtuple):
+        return User.find_one(Q('emails', 'eq', authtuple[0]))._id
+
+
+    # anon
+
+    def test_anon_returns_none(self):
+        assert_equal(anon(make_project(PUBLIC)), None)
+
+    def test_anon_makes_no_user(self):
+        anon(make_project(PUBLIC))
+        assert_equal(len(User.find()), 1)  # only the project creator
+
+
+    # auth
+
+    def test_auth_returns_authtuple(self):
+        assert_equal(auth(make_project(PUBLIC))[1], 'password')
+
+    def test_auth_creates_a_user(self):
+        auth(make_project(PUBLIC))
+        assert_equal(len(User.find()), 2)  # project creator + 1
+
+    def test_auth_user_is_not_a_contributor_on_the_node(self):
+        user_id = self.get_user_id_from_authtuple(auth(make_project(PUBLIC)))
+        assert_not_in(user_id, Node.find_one().permissions.keys())
+
+
+    # read
+
+    def test_read_returns_authtuple(self):
+        assert_equal(read(make_project(PUBLIC))[1], 'password')
+
+    def test_read_creates_a_user(self):
+        read(make_project(PUBLIC))
+        assert_equal(len(User.find()), 2)  # project creator + 1
+
+    def test_read_user_is_a_contributor_on_the_node(self):
+        user_id = self.get_user_id_from_authtuple(read(make_project(PUBLIC)))
+        assert_in(user_id, Node.find_one().permissions.keys())
 
 
 def generate_cases():
