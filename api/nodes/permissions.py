@@ -7,7 +7,7 @@ from website.models import Node, Pointer, User, Institution, DraftRegistration, 
 from website.project.metadata.utils import is_prereg_admin
 from website.util import permissions as osf_permissions
 
-from api.base.utils import get_user_auth
+from api.base.utils import get_user_auth, is_deprecated
 
 
 class ContributorOrPublic(permissions.BasePermission):
@@ -190,7 +190,7 @@ class ShowIfVersion(permissions.BasePermission):
         self.max_version = max_version
 
     def has_object_permission(self, request, view, obj):
-        if request.version < self.min_version or request.version >= self.max_version:
+        if is_deprecated(request.version, self.min_version, self.max_version):
             raise exceptions.NotFound('This feature is depreciated as of version {}'.format(self.max_version))
         return True
 

@@ -73,7 +73,7 @@ class ShowIfVersion(ser.Field):
 
     def get_attribute(self, instance):
         request = self.context.get('request')
-        if request and (request.version >= self.max_version or request.version < self.min_version):
+        if request and utils.is_deprecated(request.version, self.min_version, self.max_version):
             raise SkipField
         return self.field.get_attribute(instance)
 
