@@ -107,6 +107,7 @@ ViewModel.prototype.disableTwofactorConfirm = function() {
             self.isEnabled(false);
             self.isConfirmed(false);
             $(self.qrCodeSelector).html('');
+            self.tfaCode('');
         })
         .fail(function(xhr, status, error) {
             Raven.captureMessage('Failed to disable two-factor.', {

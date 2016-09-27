@@ -35,7 +35,7 @@
     % endif
 
     <!-- Facebook display -->
-    <meta name="og:image" content="http://centerforopenscience.org/static/img/cos_center_logo_small.png"/>
+    <meta name="og:image" content="https://cos.io/static/img/cos_center_logo_small.png"/>
     <meta name="og:title" content="${self.title()}"/>
     <meta name="og:ttl" content="3"/>
     <meta name="og:description" content="${self.og_description()}"/>
@@ -52,18 +52,39 @@
 <body data-spy="scroll" data-target=".scrollspy">
 
     % if dev_mode:
-    <style>
-        #devmode {
-            position:fixed;
-            bottom:0;
-            left:0;
-            border-top-right-radius:8px;
-            background-color:red;
-            color:white;
-            padding:.5em;
-        }
-    </style>
-    <div id='devmode'><strong>WARNING</strong>: This site is running in development mode.</div>
+        <div class="dev-mode-helper scripted" id="devModeControls">
+        <div id="metaInfo" data-bind="visible: showMetaInfo">
+            <h2>Current branch: <span data-bind="text: branch"></span></h2>
+            <table>
+                <thead>
+                <tr>
+                    <th>PR</th>
+                    <th>Title</th>
+                    <th>Date Merged</th>
+                </tr>
+                </thead>
+                <tbody data-bind="foreach: pullRequests">
+                    <tr>
+                        <td>#<a data-bind="attr: {href: url}, text: number"></a></td>
+                        <td data-bind="text: title"></td>
+                        <td data-bind="text: mergedAt"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <style>
+            #devmode {
+                position:fixed;
+                bottom:0;
+                left:0;
+                border-top-right-radius:8px;
+                background-color:red;
+                color:white;
+                padding:.5em;
+            }
+        </style>
+        <div id='devmode' data-bind='click: showHideMetaInfo'><strong>WARNING</strong>: This site is running in development mode.</div>
+    </div>
     % endif
 
     <%namespace name="nav_file" file="nav.mako"/>
@@ -87,7 +108,7 @@
                 <div>
                     <a data-bind="click: trackClick.bind($data, 'Create Account')" class="btn btn-primary" href="${web_url_for('index')}#signUp">Create an Account</a>
 
-                    <a data-bind="click: trackClick.bind($data, 'Learn More')" class="btn btn-primary" href="/getting-started/">Learn More</a>
+                    <a data-bind="click: trackClick.bind($data, 'Learn More')" class="btn btn-primary" href="http://help.osf.io" target="_blank" rel="noreferrer">Learn More</a>
                     <a data-bind="click: dismiss">Hide this message</a>
                 </div>
             </div>
@@ -149,10 +170,6 @@
           </script>
         % endif
 
-        % if piwik_host:
-            <script src="${ piwik_host }piwik.js" type="text/javascript"></script>
-        % endif
-
         <script>
             // Mako variables accessible globally
             window.contextVars = $.extend(true, {}, window.contextVars, {
@@ -161,49 +178,40 @@
                 isOnRootDomain: ${domain | sjson, n } === window.location.origin + '/',
                 cookieName: ${ cookie_name | sjson, n },
                 apiV2Prefix: ${ api_v2_base | sjson, n },
-                registerUrl: ${ api_url_for('register_user') | sjson, n},
+                registerUrl: ${ api_url_for('register_user') | sjson, n },
                 currentUser: {
                     id: ${ user_id | sjson, n },
                     locale: ${ user_locale | sjson, n },
-                    timezone: ${ user_timezone | sjson, n }
+                    timezone: ${ user_timezone | sjson, n },
+                    entryPoint: ${ user_entry_point | sjson, n },
+                    institutions: ${ user_institutions | sjson, n},
+                    emailsToAdd: ${ user_email_verifications | sjson, n },
+                    anon: ${ anon | sjson, n },
                 },
-                popular: ${ popular_links_node | sjson, n},
-                newAndNoteworthy: ${ noteworthy_links_node | sjson, n}
+                allInstitutions: ${ all_institutions | sjson, n},
+                popular: ${ popular_links_node | sjson, n },
+                newAndNoteworthy: ${ noteworthy_links_node | sjson, n },
+                maintenance: ${ maintenance | sjson, n},
+                analyticsMeta: {},
             });
         </script>
 
-        % if piwik_host:
-            <% is_public = node.get('is_public', 'ERROR') if node else True %>
-            <script type="text/javascript">
-
-                $(function() {
-                    var cvars = [];
-                    % if user_id:
-                        cvars.push([1, "User ID", ${ user_id | sjson, n }, "visit"]);
-                        cvars.push([2, "User Name", ${ user_full_name | sjson, n }, "visit"]);
-                    % endif
-                    % if node:
-                        <% parent_project = parent_node.get('id') or node.get('id') %>
-                        cvars.push([2, "Project ID", ${ parent_project | sjson, n }, "page"]);
-                        cvars.push([3, "Node ID", ${ node.get('id') | sjson, n }, "page"]);
-                        cvars.push([4, "Tags", ${ ','.join(node.get('tags', [])) | sjson , n }, "page"]);
-                    % endif
-                    // Note: Use cookies for global site ID; only one cookie
-                    // will be used, so this won't overflow uwsgi header
-                    // buffer.
-                    $.osf.trackPiwik(${ piwik_host | sjson, n}, ${ piwik_site_id | sjson, n }, cvars, true);
+        % if keen['public']['project_id']:
+            <script>
+                window.contextVars = $.extend(true, {}, window.contextVars, {
+                    keen: {
+                        public: {
+                            projectId: ${ keen['public']['project_id'] | sjson, n },
+                            writeKey: ${ keen['public']['write_key'] | sjson, n },
+                        },
+                        private: {
+                            projectId: ${ keen['private']['project_id'] | sjson, n },
+                            writeKey: ${ keen['private']['write_key'] | sjson, n },
+                        },
+                    },
                 });
             </script>
         % endif
-
-        %if keen_project_id:
-            <script>
-                window.contextVars = $.extend(true, {}, window.contextVars, {
-                    keenProjectId: ${keen_project_id | sjson, n},
-                    keenWriteKey: ${keen_write_key | sjson, n}
-                })
-            </script>
-        %endif
 
 
         ${self.javascript_bottom()}
@@ -256,6 +264,18 @@
 <%def name="content_wrap()">
     <div class="watermarked">
         <div class="container ${self.container_class()}">
+            % if maintenance:
+            ## Maintenance alert
+            <div id="maintenance" class="scripted alert alert-info alert-dismissible" role="alert">
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span></button>
+                <strong>Notice:</strong> The site will undergo maintenance between
+                <span id="maintenanceTime"></span>.
+                Thank you for your patience.
+            </div>
+            ## End Maintenance alert
+            % endif
+
             % if status:
                 ${self.alert()}
             % endif
@@ -303,5 +323,4 @@
     ## the webpack runtime and a number of necessary stylesheets which should be loaded before the user sees
     ## content.
     <script src="${'/static/public/js/vendor.js' | webpack_asset}"></script>
-
 </%def>

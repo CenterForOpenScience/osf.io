@@ -99,6 +99,17 @@ viewed directly on the OSF. Files will not be rendered if the MFR is not running
 MFR [repository] (https://github.com/CenterForOpenScience/modular-file-renderer) for information on how to install 
 and run the MFR.
 
+#### Celery Beat
+
+Normally you don't need to run celery_beat. If you work on tasks that are dispatched by celery_beat:
+```
+invoke celery_beat
+```
+Some beat-dispatched tasks require metrics and release requirements. If needed:
+```
+invoke requirements --metrics
+```
+
 #### Sharejs
 
 ShareJS is used for collaborative editing features, such as the OSF wiki. It will be installed by the OSF installer 
@@ -174,7 +185,7 @@ $ cp api/base/settings/local-dist.py api/base/settings/local.py
 - On MacOSX with [homebrew](http://brew.sh/), there is a script that should automate much of the install process:
 
 ```bash
-$ pip install invoke
+$ pip install invoke==0.12.2
 $ invoke setup
 ```
 
@@ -272,6 +283,12 @@ $ apt-get update
 $ apt-get install tokumx
 ```
 
+##### Installing on REHL/CentOS
+
+```bash
+$ sudo yum install http://www.percona.com/downloads/percona-release/redhat/0.1-3/percona-release-0.1-3.noarch.rpm
+```
+
 ##### Migrating from MongoDB
 
 TokuMX and MongoDB use different binary formats. To migrate data from MongoDB to TokuMX:
@@ -334,6 +351,12 @@ _note: Oracle JDK 7 must be installed for elasticsearch to run_
 ```bash
 $ wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.2.1.deb
 $ sudo dpkg -i elasticsearch-1.2.1.deb
+```
+
+##### REHL/CentOS
+```bash
+$ wget https://download.elastic.co/elasticsearch/elasticsearch/elasticsearch-1.2.1.noarch.rpm
+$ sudo rpm -ivh elasticsearch-1.2.1.noarch.rpm
 ```
 
 ##### Using Elasticsearch

@@ -91,11 +91,11 @@ def conditionally_add_query_item(query, item, condition):
 
     condition = condition.lower()
 
-    if condition == "yes":
+    if condition == 'yes':
         return query & Q(item, 'eq', True)
-    elif condition == "no":
+    elif condition == 'no':
         return query & Q(item, 'eq', False)
-    elif condition == "either":
+    elif condition == 'either':
         return query
 
     raise HTTPError(http.BAD_REQUEST)
@@ -146,14 +146,14 @@ def search_projects_by_title(**kwargs):
     my_project_count = 0
     public_projects = []
 
-    if include_contributed == "yes":
+    if include_contributed == 'yes':
         my_projects = Node.find(
             matching_title &
             Q('contributors', 'eq', user._id)  # user is a contributor
         ).limit(max_results)
         my_project_count = my_project_count
 
-    if my_project_count < max_results and include_public == "yes":
+    if my_project_count < max_results and include_public == 'yes':
         public_projects = Node.find(
             matching_title &
             Q('is_public', 'eq', True)  # is public

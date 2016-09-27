@@ -7,7 +7,6 @@ var Treebeard = require('treebeard');
 var $osf = require('js/osfHelpers');
 var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
-
 function expandOnLoad() {
     var tb = this;  // jshint ignore: line
     for (var i = 0; i < tb.treeData.children.length; i++) {
@@ -84,7 +83,7 @@ function NodesPrivacyTreebeard(divID, data, nodesState, nodesOriginal) {
                     filter : false,
                     custom : function () {
                         return m('input[type=checkbox]', {
-                            disabled : !item.data.node.can_write,
+                            disabled : !item.data.node.is_admin,
                             onclick : function() {
                                 item.data.node.is_public = !item.data.node.is_public;
                                 item.open = true;

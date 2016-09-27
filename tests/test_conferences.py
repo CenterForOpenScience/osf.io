@@ -48,6 +48,7 @@ class ConferenceFactory(ModularOdmFactory):
     endpoint = Sequence(lambda n: 'conference{0}'.format(n))
     name = FakerAttribute('catch_phrase')
     active = True
+    is_meeting = True
 
     @post_generation
     def admins(self, create, extracted, **kwargs):
@@ -112,6 +113,13 @@ class TestConferenceUtils(OsfTestCase):
         fetched, created = utils.get_or_create_node(title, creator)
         assert_true(created)
         assert_not_equal(node._id, fetched._id)
+
+    def test_get_or_create_user_with_blacklisted_domain(self):
+        fullname = 'Kanye West'
+        username = 'kanye@mailinator.com'
+        with assert_raises(ValidationError) as e:
+            get_or_create_user(fullname, username, True)
+        assert_equal(e.exception.message, 'Invalid Email')
 
 
 class ContextTestCase(OsfTestCase):
@@ -358,6 +366,16 @@ class TestMessage(ContextTestCase):
                 msg = message.ConferenceMessage()
                 assert_equal(msg.sender_name, name[1])
 
+    def test_sender_email(self):
+        emails = [
+            (u'fred@queen.com', u'fred@queen.com'),
+            (u'FRED@queen.com', u'fred@queen.com')
+        ]
+        for email in emails:
+            with self.make_context(data={'from': email[0]}):
+                msg = message.ConferenceMessage()
+                assert_equal(msg.sender_email, email[1])
+
     def test_route_invalid_pattern(self):
         with self.make_context(data={'recipient': 'spam@osf.io'}):
             self.app.app.preprocess_request()
@@ -366,7 +384,7 @@ class TestMessage(ContextTestCase):
                 msg.route
 
     def test_route_invalid_test(self):
-        recipient = '{0}conf-talk@osf.io'.format('' if settings.DEV_MODE else 'test-')
+        recipient = '{0}conf-talk@osf.io'.format('' if settings.DEV_MODE else 'stage-')
         with self.make_context(data={'recipient': recipient}):
             self.app.app.preprocess_request()
             msg = message.ConferenceMessage()
@@ -624,7 +642,7 @@ class TestConferenceIntegration(ContextTestCase):
     @mock.patch('website.conferences.views.send_mail')
     @mock.patch('website.conferences.utils.upload_attachments')
     def test_integration_wo_full_name(self, mock_upload, mock_send_mail):
-        username = 'no_full_name@test.com'
+        username = 'no_full_name@mail.com'
         title = 'no full name only email'
         conference = ConferenceFactory()
         body = 'dragon on my back'

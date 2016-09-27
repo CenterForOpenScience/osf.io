@@ -1,34 +1,30 @@
-import itertools
-
 from django import forms
-
-from admin.pre_reg.utils import get_prereg_reviewers
 
 
 class DraftRegistrationForm(forms.Form):
 
     proof_of_publication = forms.ChoiceField(
-        label="Proof of publication",
+        label='Proof of publication',
         choices=(
-            ("not_submitted", "Published Article Not Yet Submitted"),
-            ("submitted", "Published Article Submitted"),
-            ("under_review", "Published Article Under Review"),
-            ("approved", "Published Article Approved"),
-            ("rejected", "Published Article Rejected"),
+            ('not_submitted', 'Published Article Not Yet Submitted'),
+            ('submitted', 'Published Article Submitted'),
+            ('under_review', 'Published Article Under Review'),
+            ('approved', 'Published Article Approved'),
+            ('rejected', 'Published Article Rejected'),
         )
     )
     payment_sent = forms.BooleanField(
-        label="Payment sent",
+        label='Payment sent',
         required=False
     )
     assignee = forms.ChoiceField(
-        label="Assignee",
+        label='Assignee',
         choices=list(),
         required=False,
     )
 
     notes = forms.CharField(
-        label="Notes",
+        label='Notes',
         widget=forms.Textarea(
             attrs={
                 'class': 'prereg-form-notes'
@@ -37,9 +33,18 @@ class DraftRegistrationForm(forms.Form):
         required=False
     )
 
+    approve_reject = forms.ChoiceField(
+        label='Action',
+        choices=(
+            ('approve', 'Approve'),
+            ('reject', 'Reject'),
+        ),
+        required=False,
+        widget=forms.RadioSelect(),
+    )
+
     def __init__(self, *args, **kwargs):
-        prereg_reviewers = itertools.chain(
-            ((None, 'None'), ), get_prereg_reviewers())
+        prereg_reviewers = ((None, 'None'), )
         self.base_fields['assignee'] = forms.ChoiceField(
-            choices=prereg_reviewers)
+            choices=prereg_reviewers, required=False)
         super(DraftRegistrationForm, self).__init__(*args, **kwargs)

@@ -6,7 +6,7 @@ import logging
 import datetime as dt
 
 from website.app import init_app
-from website.models import DraftRegistration, Sanction, User
+from website.project.model import DraftRegistration, Sanction
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.WARN)

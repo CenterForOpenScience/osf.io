@@ -29,6 +29,16 @@ AUTHENTICATION_BACKENDS = (
 DEBUG = osf_settings.DEBUG_MODE
 DEBUG_PROPAGATE_EXCEPTIONS = True
 
+# session:
+SESSION_COOKIE_NAME = 'api'
+SESSION_COOKIE_SECURE = osf_settings.SECURE_MODE
+SESSION_COOKIE_HTTPONLY = osf_settings.SESSION_COOKIE_HTTPONLY
+
+# csrf:
+CSRF_COOKIE_NAME = 'api-csrf'
+CSRF_COOKIE_SECURE = osf_settings.SECURE_MODE
+CSRF_COOKIE_HTTPONLY = osf_settings.SECURE_MODE
+
 ALLOWED_HOSTS = [
     '.osf.io'
 ]
@@ -47,6 +57,10 @@ INSTALLED_APPS = (
     'corsheaders',
     'raven.contrib.django.raven_compat',
 )
+
+# local development using https
+if osf_settings.SECURE_MODE and osf_settings.DEBUG_MODE:
+    INSTALLED_APPS += ('sslserver',)
 
 # TODO: Are there more granular ways to configure reporting specifically related to the API?
 RAVEN_CONFIG = {
@@ -90,6 +104,18 @@ REST_FRAMEWORK = {
         'api.base.authentication.drf.OSFSessionAuthentication',
         'api.base.authentication.drf.OSFCASAuthentication'
     ),
+    'DEFAULT_THROTTLE_CLASSES': (
+        'rest_framework.throttling.UserRateThrottle',
+        'api.base.throttling.NonCookieAuthThrottle',
+    ),
+    'DEFAULT_THROTTLE_RATES': {
+        'user': '10000/day',
+        'non-cookie-auth': '100/hour',
+        'add-contributor': '10/hour',
+        'root-anon-throttle': '1000/hour',
+        'test-user': '2/hour',
+        'test-anon': '1/hour',
+    }
 }
 
 # Settings related to CORS Headers addon: allow API to receive authenticated requests from OSF
@@ -98,7 +124,11 @@ CORS_ORIGIN_ALLOW_ALL = False
 CORS_ORIGIN_WHITELIST = (urlparse(osf_settings.DOMAIN).netloc,
                          osf_settings.DOMAIN,
                          )
+# This needs to remain True to allow cross origin requests that are in CORS_ORIGIN_WHITELIST to
+# use cookies.
 CORS_ALLOW_CREDENTIALS = True
+# Set dynamically on app init
+INSTITUTION_ORIGINS_WHITELIST = ()
 
 MIDDLEWARE_CLASSES = (
     # TokuMX transaction support
@@ -166,8 +196,8 @@ STATICFILES_DIRS = (
 
 # TODO: Revisit methods for excluding private routes from swagger docs
 SWAGGER_SETTINGS = {
+    'api_path': '/',
     'info': {
-        'api_path': '/',
         'description':
         """
         Welcome to the fine documentation for the Open Science Framework's API!  Please click
@@ -178,7 +208,10 @@ SWAGGER_SETTINGS = {
         'title': 'OSF APIv2 Documentation',
     },
     'doc_expansion': 'list',
+    'exclude_namespaces': ['applications', 'tokens', 'test'],
 }
+
+NODE_CATEGORY_MAP = osf_settings.NODE_CATEGORY_MAP
 
 DEBUG_TRANSACTIONS = DEBUG
 
@@ -189,3 +222,6 @@ ENABLE_VARNISH = osf_settings.ENABLE_VARNISH
 ENABLE_ESI = osf_settings.ENABLE_ESI
 VARNISH_SERVERS = osf_settings.VARNISH_SERVERS
 ESI_MEDIA_TYPES = osf_settings.ESI_MEDIA_TYPES
+
+ADDONS_FOLDER_CONFIGURABLE = ['box', 'dropbox', 's3', 'googledrive']
+ADDONS_OAUTH = ADDONS_FOLDER_CONFIGURABLE + ['dataverse', 'github', 'mendeley', 'zotero', 'forward']

@@ -76,6 +76,8 @@ class AddonCitationsNodeSettings(AddonOAuthNodeSettingsBase):
         addon settings.
         """
         self.list_id = None
+        self.save()
+
         return super(AddonCitationsNodeSettings, self).set_auth(*args, **kwargs)
 
     def deauthorize(self, auth=None, add_log=True):

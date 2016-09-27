@@ -10,9 +10,16 @@ from website.project.model import (
     Node, NodeLog,
     Tag, WatchConfig, MetaSchema, Pointer,
     Comment, PrivateLink, MetaData,
-    Retraction, Embargo, RegistrationApproval,
     AlternativeCitation,
-    DraftRegistrationApproval, DraftRegistration,
+    DraftRegistration,
+    DraftRegistrationLog, PreprintProvider
+)
+from website.project.sanctions import (
+    DraftRegistrationApproval,
+    Embargo,
+    EmbargoTerminationApproval,
+    RegistrationApproval,
+    Retraction,
 )
 from website.oauth.models import ApiOAuth2Application, ExternalAccount, ApiOAuth2PersonalToken
 from website.identifiers.model import Identifier
@@ -28,6 +35,7 @@ from website.notifications.model import NotificationDigest
 from website.notifications.model import NotificationSubscription
 from website.archiver.model import ArchiveJob, ArchiveTarget
 from website.project.licenses import NodeLicense, NodeLicenseRecord
+from website.project.taxonomies import Subject
 
 # All models
 MODELS = (
@@ -38,11 +46,12 @@ MODELS = (
     MailRecord, Comment, PrivateLink, MetaData, Conference,
     NotificationSubscription, NotificationDigest, CitationStyle,
     CitationStyle, ExternalAccount, Identifier,
-    Embargo, Retraction, RegistrationApproval,
+    Embargo, Retraction, RegistrationApproval, EmbargoTerminationApproval,
     ArchiveJob, ArchiveTarget, BlacklistGuid,
     QueuedMail, AlternativeCitation,
-    DraftRegistration, DraftRegistrationApproval,
-    NodeLicense, NodeLicenseRecord
+    DraftRegistration, DraftRegistrationApproval, DraftRegistrationLog,
+    NodeLicense, NodeLicenseRecord,
+    Subject, PreprintProvider
 )
 
 GUID_MODELS = (User, Node, Comment, MetaData)

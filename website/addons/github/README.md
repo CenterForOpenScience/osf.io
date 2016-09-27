@@ -2,7 +2,7 @@
 
 ## Enabling the addon for development
 
-1. On your Github user settings, go to “Applications” -> “Register new application”
+1. On your Github user settings, go to “OAuth Applications” -> "Developer applications" -> “Register new application”
 2. Enter any name for the application name, e..g “OSF Github Addon (local)”
 3. In the Homepage URL field, enter "http://localhost:5000/“
 4. In the Authorization Callback URL field, enter "http://localhost:5000/oauth/callback/github".

@@ -13,6 +13,12 @@
     font-weight: 900;
     font-size: 120%;
 }
+.registration-editor-textarea-lg {
+    min-height: 80px;
+}
+.registration-editor-textarea-xl {
+    min-height: 160px;
+}
 #selectedFile{
     font-weight: 500;
 }
@@ -30,4 +36,7 @@
     border-radius: 2px;
     display: inline-block;
     margin-bottom: 10px;
+}
+.breaklines {
+    white-space: pre-wrap;
 }

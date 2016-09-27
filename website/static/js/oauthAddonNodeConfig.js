@@ -5,7 +5,6 @@
 'use strict';
 
 var ko = require('knockout');
-require('knockout.punches');
 var $ = require('jquery');
 var Raven = require('raven-js');
 var bootbox = require('bootbox');
@@ -14,7 +13,6 @@ var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 var FolderPickerViewModel = require('js/folderPickerNodeConfig');
 
-ko.punches.enableAll();
 
 /**
  * View model to support instances of AddonNodeConfig (folder picker widget)
@@ -27,7 +25,7 @@ ko.punches.enableAll();
  * @param {Object} opts Optional overrides to the class' default treebeardOptions, in particular onPickFolder
  */
 var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
-    constructor: function(addonName, url, selector, folderPicker, opts) {
+    constructor: function(addonName, url, selector, folderPicker, opts, tbOpts) {
         var self = this;
         self.super.constructor.call(self, addonName, url, selector, folderPicker);
         // externalAccounts
@@ -84,6 +82,7 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         };
         // Overrides
         self.options = $.extend({}, defaults, opts);
+
         // Treebeard config
         self.treebeardOptions = $.extend(
             {},
@@ -93,9 +92,13 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                     return this.options.onPickFolder.call(this, evt, item);
                 }.bind(this),
                 resolveLazyloadUrl: function(item) {
+                    if (item.data.links) {
+                        return item.data.links.children;
+                    }
                     return item.data.urls.folders;
                 }
-            }
+            },
+            tbOpts
         );
     },
     afterUpdate: function() {
@@ -129,13 +132,13 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         self.updateAccounts().then(function () {
             if (self.accounts().length > 1) {
                 bootbox.prompt({
-                    title: 'Choose ' + self.addonName + ' Account to Import',
+                    title: 'Choose ' + $osf.htmlEscape(self.addonName) + ' Account to Import',
                     inputType: 'select',
                     inputOptions: ko.utils.arrayMap(
                         self.accounts(),
                         function(item) {
                             return {
-                                text: item.name,
+                                text: $osf.htmlEscape(item.name),
                                 value: item.id
                             };
                         }
@@ -205,12 +208,13 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
 });
 
 // Public API
-function OauthAddonNodeConfig(addonName, selector, url, folderPicker, opts) {
+function OauthAddonNodeConfig(addonName, selector, url, folderPicker, opts, tbOpts) {
     var self = this;
     self.url = url;
     self.folderPicker = folderPicker;
     opts = opts || {};
-    self.viewModel = new OauthAddonFolderPickerViewModel(addonName, url, selector, folderPicker, opts);
+    tbOpts = tbOpts || {};
+    self.viewModel = new OauthAddonFolderPickerViewModel(addonName, url, selector, folderPicker, opts, tbOpts);
     self.viewModel.updateFromData();
     $osf.applyBindings(self.viewModel, selector);
 }

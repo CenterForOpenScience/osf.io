@@ -2,6 +2,7 @@
 import httplib as http
 
 import mock
+import datetime
 import unittest
 
 from nose.tools import *  # noqa (PEP8 asserts)
@@ -262,6 +263,7 @@ class TestGithubViews(OsfTestCase):
     @mock.patch('website.addons.github.views.verify_hook_signature')
     def test_hook_callback_add_file_not_thro_osf(self, mock_verify):
         url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
+        timestamp = str(datetime.datetime.utcnow())
         self.app.post_json(
             url,
             {
@@ -270,7 +272,7 @@ class TestGithubViews(OsfTestCase):
                     "id": "b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
                     "distinct": True,
                     "message": "foo",
-                    "timestamp": "2014-01-08T14:15:51-08:00",
+                    "timestamp": timestamp,
                     "url": "https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
                     "author": {"name": "Illidan", "email": "njqpw@osf.io"},
                     "committer": {"name": "Testor", "email": "test@osf.io", "username": "tester"},
@@ -294,13 +296,14 @@ class TestGithubViews(OsfTestCase):
     @mock.patch('website.addons.github.views.verify_hook_signature')
     def test_hook_callback_modify_file_not_thro_osf(self, mock_verify):
         url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
+        timestamp = str(datetime.datetime.utcnow())
         self.app.post_json(
             url,
             {"test": True,
                  "commits": [{"id": "b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
                               "distinct": True,
                               "message": " foo",
-                              "timestamp": "2014-01-08T14:15:51-08:00",
+                              "timestamp": timestamp,
                               "url": "https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
                               "author": {"name": "Illidan", "email": "njqpw@osf.io"},
                               "committer": {"name": "Testor", "email": "test@osf.io",
@@ -320,13 +323,14 @@ class TestGithubViews(OsfTestCase):
     @mock.patch('website.addons.github.views.verify_hook_signature')
     def test_hook_callback_remove_file_not_thro_osf(self, mock_verify):
         url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
+        timestamp = str(datetime.datetime.utcnow())
         self.app.post_json(
             url,
             {"test": True,
              "commits": [{"id": "b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
                           "distinct": True,
                           "message": "foo",
-                          "timestamp": "2014-01-08T14:15:51-08:00",
+                          "timestamp": timestamp,
                           "url": "https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
                           "author": {"name": "Illidan", "email": "njqpw@osf.io"},
                           "committer": {"name": "Testor", "email": "test@osf.io", "username": "tester"},

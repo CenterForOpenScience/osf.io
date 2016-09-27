@@ -1,7 +1,7 @@
 'use strict';
 
 var $ = require('jquery');
-var bootbox = require('bootbox');
+var bootbox = require('bootbox');  // TODO: Why is this required? Is it? See [#OSF-6100]
 var Raven = require('raven-js');
 var ko = require('knockout');
 var $osf = require('js/osfHelpers');
@@ -28,9 +28,7 @@ var ProjectSettings = oop.extend(
             self.categoryOptions = params.categoryOptions;
             self.categoryPlaceholder = params.category;
             self.selectedCategory = ko.observable(params.category);
-
-            self.disabled = params.disabled || false;
-
+            
             if (!params.updateUrl) {
                 throw new Error(language.instantiationErrorMessage);
             }
@@ -152,6 +150,11 @@ var getConfirmationCode = function(nodeType) {
     // It's possible that the XHR request for contributors has not finished before getting to this
     // point; only construct the HTML for the list of contributors if the contribs list is populated
     var message = '<p>It will no longer be available to other contributors on the project.';
+
+    if (window.contextVars.node.isPreprint) {
+        message += '<p>This project represents a preprint.</p>' +
+            '<p><strong>Deleting this project will remove the preprint from circulation.</strong></p>';
+    }
 
     $osf.confirmDangerousAction({
         title: 'Are you sure you want to delete this ' + nodeType + '?',

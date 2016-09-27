@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import json
 import httplib
 import logging
 from datetime import datetime
@@ -84,7 +83,7 @@ def add_poster_by_email(conference, message):
             created.append(user)
             user.system_tags.append('osf4m')
             set_password_url = web_url_for(
-                'reset_password',
+                'reset_password_get',
                 verification_key=user.verification_key,
                 _absolute=True,
             )
@@ -216,7 +215,7 @@ def conference_results(meeting):
     data = conference_data(meeting)
 
     return {
-        'data': json.dumps(data),
+        'data': data,
         'label': meeting,
         'meeting': conf.to_storage(),
         # Needed in order to use base.mako namespace
@@ -230,13 +229,21 @@ def conference_submissions(**kwargs):
     in the Conference.num_submissions field.
     """
     submissions = []
+    #  TODO: Revisit this loop, there has to be a way to optimize it
     for conf in Conference.find():
+        if (hasattr(conf, 'is_meeting') and (conf.is_meeting is False)):
+            break
         # For efficiency, we filter by tag first, then node
         # instead of doing a single Node query
         projects = set()
-        for tag in Tag.find(Q('lower', 'eq', conf.endpoint.lower())):
-            for node in Node.find(Q('tags', 'eq', tag._id) & Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False)):
-                projects.add(node)
+
+        tags = Tag.find(Q('lower', 'eq', conf.endpoint.lower())).get_keys()
+        nodes = Node.find(
+            Q('tags', 'in', tags) &
+            Q('is_public', 'eq', True) &
+            Q('is_deleted', 'ne', True)
+        )
+        projects.update(list(nodes))
 
         for idx, node in enumerate(projects):
             submissions.append(_render_conference_node(node, idx, conf))
@@ -254,9 +261,13 @@ def conference_view(**kwargs):
     for conf in Conference.find():
         if conf.num_submissions < settings.CONFERENCE_MIN_COUNT:
             continue
+        if (hasattr(conf, 'is_meeting') and (conf.is_meeting is False)):
+            continue
         meetings.append({
             'name': conf.name,
-            'active': conf.active,
+            'location': conf.location,
+            'end_date': conf.end_date.strftime('%b %d, %Y') if conf.end_date else None,
+            'start_date': conf.start_date.strftime('%b %d, %Y') if conf.start_date else None,
             'url': web_url_for('conference_results', meeting=conf.endpoint),
             'count': conf.num_submissions,
         })

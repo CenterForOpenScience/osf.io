@@ -1,5 +1,3 @@
-<%page expression_filter="h"/>
-
 <!-- Delete Wiki Page Modal -->
 <div class="modal fade" id="deleteWiki">
     <div class="modal-dialog">
@@ -26,9 +24,9 @@
             window.contextVars.wiki.triggeredDelete = true;
             $.ajax({
                 type:'DELETE',
-                url: '${urls['api']['delete']}',
+                url: ${ urls['api']['delete'] | sjson, n },
                 success: function(response) {
-                    window.location.href = '${urls['web']['home']}';
+                    window.location.href = ${ urls['web']['home'] | sjson, n };
                 }
             })
         });

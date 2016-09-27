@@ -59,7 +59,7 @@ if ($('#wgrid').length) {
 $(document).ready(function() {
     // Apply KO bindings for Project Settings
     if ($('#institutionSettings').length) {
-        new InstitutionProjectSettings('#institutionSettings', window.contextVars);
+        new InstitutionProjectSettings.InstitutionProjectSettings('#institutionSettings', window.contextVars);
     }
     var categoryOptions = [];
     var keys = Object.keys(window.contextVars.nodeCategories);
@@ -69,7 +69,6 @@ $(document).ready(function() {
             value: keys[i]
         });
     }
-    var disableCategory = !window.contextVars.node.parentExists;
     // need check because node category doesn't exist for registrations
     if ($('#projectSettings').length) {
         var projectSettingsVM = new ProjectSettings.ProjectSettings( {
@@ -79,13 +78,16 @@ $(document).ready(function() {
             categoryOptions: categoryOptions,
             node_id: ctx.node.id,
             updateUrl:  $osf.apiV2Url('nodes/' + ctx.node.id + '/'),
-            disabled: disableCategory
         });
         ko.applyBindings(projectSettingsVM, $('#projectSettings')[0]);
     }
 
     $('#deleteNode').on('click', function() {
-        ProjectSettings.getConfirmationCode(ctx.node.nodeType);
+        if(ctx.node.childExists){
+            $osf.growl('Error', 'Any child components must be deleted prior to deleting this project.','danger', 30000);
+        }else{
+            ProjectSettings.getConfirmationCode(ctx.node.nodeType);
+        }
     });
 
     // TODO: Knockout-ify me
@@ -229,12 +231,16 @@ $(document).ready(function() {
       if(unchecked.length > 0 || checked.length > 0) {
           return 'The changes on addon setting are not submitted!';
       }
-    /* Before closing the page, Check whether changes made to category, title or description are updated or not */
-      if (projectSettingsVM.title() !== projectSettingsVM.titlePlaceholder ||
-          projectSettingsVM.description() !== projectSettingsVM.descriptionPlaceholder ||
-          projectSettingsVM.selectedCategory() !== projectSettingsVM.categoryPlaceholder) {
-          return 'There are unsaved changes in your project settings.';
-      }
+
+        if (projectSettingsVM) {
+            /* Before closing the page, check whether changes made to category, title or
+               description are updated or not */
+            if (projectSettingsVM.title() !== projectSettingsVM.titlePlaceholder ||
+                projectSettingsVM.description() !== projectSettingsVM.descriptionPlaceholder ||
+                projectSettingsVM.selectedCategory() !== projectSettingsVM.categoryPlaceholder) {
+                return 'There are unsaved changes in your project settings.';
+            }
+        }
     });
 
     // Show capabilities modal on selecting an addon; unselect if user
@@ -299,4 +305,6 @@ WikiSettingsViewModel.enabled.subscribe(function(newValue) {
     return true;
 }, WikiSettingsViewModel);
 
-$osf.applyBindings(WikiSettingsViewModel, '#selectWikiForm');
+if ($('#selectWikiForm').length) {
+    $osf.applyBindings(WikiSettingsViewModel, '#selectWikiForm');
+}

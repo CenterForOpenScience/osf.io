@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 import collections
-import re
+import json
 
 import bleach
-import json
 
 
 def strip_html(unclean):
@@ -65,7 +64,7 @@ def escape_html(data):
     return data
 
 
-# FIXME: Not sure what this function is trying to accomplish. Candidate for deletion?
+# FIXME: Doesn't raise either type of exception expected, and can probably be deleted along with sole use
 def assert_clean(data):
     """Ensure that data is cleaned
 
@@ -129,9 +128,3 @@ def safe_json(value):
     :return: A JSON-formatted string that explicitly escapes forward slashes when needed
     """
     return json.dumps(value).replace('</', '<\\/')  # Fix injection of closing markup in strings
-
-def strip_ko(value):
-    """Filter that prevents display of Knockout punches syntax when rendering variables.
-    e.g. {{expression}}
-    """
-    return re.sub(r'}\s*}', '', re.sub(r'{\s*{', '', value))

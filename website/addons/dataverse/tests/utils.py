@@ -3,21 +3,25 @@ import mock
 from dataverse import Connection, Dataverse, Dataset, DataverseFile
 
 from tests.factories import ExternalAccountFactory
-from website.addons.base.testing import AddonTestCase
+from website.addons.base.testing import OAuthAddonTestCaseMixin, AddonTestCase
+from website.addons.dataverse.model import DataverseProvider
+from website.addons.dataverse.tests.factories import DataverseAccountFactory
 
 
-class DataverseAddonTestCase(AddonTestCase):
+class DataverseAddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
     ADDON_SHORT_NAME = 'dataverse'
-
-    def set_user_settings(self, settings):
-        settings.api_token = 'snowman-frosty'
+    ExternalAccountFactory = DataverseAccountFactory
+    Provider = DataverseProvider
 
     def set_node_settings(self, settings):
+        super(DataverseAddonTestCase, self).set_node_settings(settings)
         settings.dataverse_alias = 'ALIAS2'
         settings.dataverse = 'Example 2'
         settings.dataset_doi = 'doi:12.3456/DVN/00001'
-        settings.dataset_id = '18'
+        settings._dataset_id = '18'
         settings.dataset = 'Example (DVN/00001)'
+        settings.external_account = self.external_account
+        settings.save()
 
 
 def create_external_account(host='foo.bar.baz', token='doremi-abc-123'):

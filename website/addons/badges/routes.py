@@ -6,10 +6,15 @@ from . import views
 
 render_routes = {
     'rules': [
-        Rule([
-            '/project/<pid>/badges/',
-            '/project/<pid>/node/<nid>/badges/',
-        ], 'get', views.render.badges_page, OsfWebRenderer('../addons/badges/templates/badges_page.mako')),
+        Rule(
+            [
+                '/project/<pid>/badges/',
+                '/project/<pid>/node/<nid>/badges/',
+            ],
+            'get',
+            views.render.badges_page,
+            OsfWebRenderer('../addons/badges/templates/badges_page.mako', trust=False)
+        ),
     ],
 }
 
@@ -45,7 +50,10 @@ guid_urls = {
     'rules': [
         Rule(
             '/badge/<bid>/',
-            'get', views.render.view_badge, OsfWebRenderer('../addons/badges/templates/view_badge.mako')),
+            'get',
+            views.render.view_badge,
+            OsfWebRenderer('../addons/badges/templates/view_badge.mako', trust=False)
+        ),
         Rule(
             '/badge/<bid>/json/',
             'get', views.openbadge.get_badge_json, json_renderer),

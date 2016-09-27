@@ -3,6 +3,8 @@ import httplib as http
 import datetime
 import itertools
 
+from operator import itemgetter
+
 from dateutil.parser import parse as parse_date
 from flask import request, redirect
 
@@ -22,6 +24,8 @@ from website.project.decorators import (
     http_error_if_disk_saving_mode
 )
 from website import language, settings
+from website.models import NodeLog
+from website.prereg import utils as prereg_utils
 from website.project import utils as project_utils
 from website.project.model import MetaSchema, DraftRegistration
 from website.project.metadata.schemas import ACTIVE_META_SCHEMAS
@@ -130,6 +134,16 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
         save=True
     )
 
+    if prereg_utils.get_prereg_schema() == draft.registration_schema:
+
+        node.add_log(
+            action=NodeLog.PREREG_REGISTRATION_INITIATED,
+            params={'node': node._primary_key},
+            auth=auth,
+            save=False
+        )
+        node.save()
+
     push_status_message(language.AFTER_SUBMIT_FOR_REVIEW,
                         kind='info',
                         trust=False)
@@ -212,10 +226,13 @@ def get_draft_registrations(auth, node, *args, **kwargs):
     :return: serialized draft registrations
     :rtype: dict
     """
+    #'updated': '2016-08-03T14:24:12Z'
     count = request.args.get('count', 100)
     drafts = itertools.islice(node.draft_registrations_active, 0, count)
+    serialized_drafts = [serialize_draft_registration(d, auth) for d in drafts]
+    sorted_serialized_drafts = sorted(serialized_drafts, key=itemgetter('updated'), reverse=True)
     return {
-        'drafts': [serialize_draft_registration(d, auth) for d in drafts]
+        'drafts': sorted_serialized_drafts
     }, http.OK
 
 @must_have_permission(ADMIN)
@@ -230,7 +247,7 @@ def new_draft_registration(auth, node, *args, **kwargs):
     if node.is_registration:
         raise HTTPError(http.FORBIDDEN, data={
             'message_short': "Can't create draft",
-            'message_long': "Creating draft registrations on registered projects is not allowed."
+            'message_long': 'Creating draft registrations on registered projects is not allowed.'
         })
     data = request.values
 

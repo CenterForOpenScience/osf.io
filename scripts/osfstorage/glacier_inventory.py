@@ -9,6 +9,8 @@ import datetime
 
 from boto.glacier.layer2 import Layer2
 
+from framework.celery_tasks import app as celery_app
+
 from scripts import utils as scripts_utils
 from scripts.osfstorage import settings as storage_settings
 
@@ -35,5 +37,6 @@ def main():
     logger.info('Started retrieve inventory job with id {}'.format(job.id))
 
 
-if __name__ == '__main__':
+@celery_app.task(name='scripts.osfstorage.glacier_inventory')
+def run_main():
     main()

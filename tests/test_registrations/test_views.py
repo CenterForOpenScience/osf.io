@@ -208,7 +208,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         assert_false(reg.is_public)
         # The registration is pending an embargo that has not been approved
         assert_true(reg.is_pending_embargo)
-        assert_false(reg.embargo_end_date)
+        assert_true(reg.embargo_end_date)
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_register_draft_registration_with_embargo_adds_to_parent_project_logs(self, mock_enqueue):

@@ -19,6 +19,7 @@ var koHelpers = require('./koHelpers');  // URL validators etc
 var $osf = require('./osfHelpers');
 var oop = require('js/oop');
 var language = require('js/osfLanguage');
+var makeClient = require('js/clipboard');
 
 
 /*

@@ -263,12 +263,9 @@ utils.loadRawNormalized = function(result){
         url: '/api/v1/share/documents/' + source + '/' + docID + '/',
         unwrapSuccess: function(data) {
             var unwrapped = {};
-            var normed = JSON.parse(data.normalized);
-            var allRaw = JSON.parse(data.raw);
-            unwrapped.normalized = JSON.parse(data.normalized);
-            unwrapped.raw = allRaw.doc;
-            unwrapped.rawfiletype = allRaw.filetype;
-            unwrapped.normalized = normed;
+            unwrapped.raw = data.raw.doc;
+            unwrapped.rawfiletype = data.raw.filetype;
+            unwrapped.normalized = data.normalized;
 
             return unwrapped;
         },

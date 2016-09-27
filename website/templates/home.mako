@@ -7,10 +7,10 @@
             % if status:
                 ${self.alert()}
             % endif
-            </div>
-        </div><!-- end container -->
-        ${self.content()}
+        </div>
     </div><!-- end watermarked -->
+
+    ${self.content()}
 </%def>
 
 

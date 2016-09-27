@@ -3,9 +3,9 @@ Views related to personal access tokens. Intended for OSF internal use only
 """
 from rest_framework.exceptions import APIException
 from rest_framework import generics
-from rest_framework import renderers
 from rest_framework import permissions as drf_permissions
 
+from api.base.renderers import JSONAPIRenderer, JSONRendererWithESISupport
 from modularodm import Q
 
 from framework.auth import cas
@@ -37,7 +37,9 @@ class TokenList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
     view_category = 'tokens'
     view_name = 'token-list'
 
-    renderer_classes = [renderers.JSONRenderer]  # Hide from web-browsable API tool
+    # TODO: When we switch to Swagger this should be removed in lieu of a better
+    # solution for hiding this api endpoint
+    renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
     def get_default_odm_query(self):
 
@@ -77,7 +79,9 @@ class TokenDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
     view_category = 'tokens'
     view_name = 'token-detail'
 
-    renderer_classes = [renderers.JSONRenderer]  # Hide from web-browsable API tool
+    # TODO: When we switch to Swagger this should be removed in lieu of a better
+    # solution for hiding this api endpoint
+    renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -95,7 +99,7 @@ class TokenDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
         try:
             obj.deactivate(save=True)
         except cas.CasHTTPError:
-            raise APIException("Could not revoke tokens; please try again later")
+            raise APIException('Could not revoke tokens; please try again later')
 
     def perform_update(self, serializer):
         """Necessary to prevent owner field from being blanked on updates"""

@@ -39,6 +39,14 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase)
 
     ## Mixin Overrides ##
 
+    def _node_settings_class_kwargs(self, node, user_settings):
+        return {
+            'user_settings': self.user_settings,
+            'repo': 'mock',
+            'user': 'abc',
+            'owner': self.node
+        }
+
     def test_set_folder(self):
         # GitHub doesn't use folderpicker, and the nodesettings model
         # does not need a `set_repo` method

@@ -10,8 +10,6 @@ var $osf = require('js/osfHelpers');
 var AddonPermissionsTable = require('js/addonPermissions');
 var addonSettings = require('js/addonSettings');
 
-ko.punches.enableAll();
-
 
 // Show capabilities modal on selecting an addon; unselect if user
 // rejects terms
@@ -113,10 +111,6 @@ for (var i=0; i < addonEnabledSettings.length; i++) {
                                       window.contextVars.addonsWithNodes[addonName].fullName);
    }
 }
-
-$(document).ready(function(){
-    $('.addon-auth-table').osfToggleHeight({height: 140});
-});
 
 /* Before closing the page, Check whether the newly checked addon are updated or not */
 $(window).on('beforeunload',function() {

@@ -21,6 +21,8 @@ def main():
         oid_to_datetime(watch_config['_id'])
         for watch_config in watch_configs
     ]
+    if not dates_watched:
+        return
     fig = plot_dates(dates_watched)
     plt.title('nodes watched ({}) total)'.format(len(dates_watched)))
     plt.savefig(os.path.join(FIG_PATH, 'nodes-watched.png'))

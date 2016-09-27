@@ -25,7 +25,7 @@ var Paginator = oop.defclass({
             self.paginators.push({
                 style: (self.currentPage() === 0) ? 'disabled' : '',
                 handler: self.previousPage.bind(self),
-                text: '&lt;'
+                text: '<'
             }); /* jshint ignore:line */
                 /* functions defined inside loop */
 
@@ -132,7 +132,7 @@ var Paginator = oop.defclass({
             self.paginators.push({
                 style: (self.currentPage() === self.numberOfPages() - 1) ? 'disabled' : '',
                 handler: self.nextPage.bind(self),
-                text: '&gt;'
+                text: '>'
             });
         }
     },

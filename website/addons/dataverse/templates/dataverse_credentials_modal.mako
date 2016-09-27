@@ -45,7 +45,7 @@
                                 <label for="apiToken">
                                     API Token
                                     <!-- Link to API token generation page -->
-                                    <a href="{{tokenUrl}}"
+                                    <a data-bind="attr: {href: tokenUrl}"
                                        target="_blank" class="text-muted addon-external-link">
                                         (Get from Dataverse <i class="fa fa-external-link-square"></i>)
                                     </a>

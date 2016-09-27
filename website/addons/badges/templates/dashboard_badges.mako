@@ -23,6 +23,7 @@ You have not created any Badges.
     $(document).ready(function() {
         $('#newBadge').click(function(){
             bootbox.dialog({
+                // TODO: Rewrite substantially before reactivating addon
               message: '<form id="badgeForm">' +
               '<input type="text" class="form-control" name="badgeName" placeholder="Badge Name"><br />' +
               '<input type="text" class="form-control" name="description" placeholder="Description"><br />' +

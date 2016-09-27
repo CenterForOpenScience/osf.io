@@ -24,9 +24,6 @@ var RegistrationModal = require('js/registrationModal');
 
 // This value should match website.settings.DRAFT_REGISTRATION_APPROVAL_PERIOD
 var DRAFT_REGISTRATION_MIN_EMBARGO_DAYS = 10;
-var DRAFT_REGISTRATION_MIN_EMBARGO_TIMESTAMP = new Date().getTime() + (
-        DRAFT_REGISTRATION_MIN_EMBARGO_DAYS * 24 * 60 * 60 * 1000
-);
 
 var VALIDATORS = {
     required: {
@@ -182,7 +179,17 @@ var Question = function(questionSchema, data) {
     self.properties = questionSchema.properties || [];
     self.match = questionSchema.match || '';
 
-    self.extra = ko.observable(self.data.extra || {});
+    var extra = self.data.extra;
+    if (self.data.extra && !$.isArray(self.data.extra)) {
+        extra = [self.data.extra];
+    }
+    self.extra = ko.observableArray(extra || []);
+
+    self.formattedFileList = ko.pureComputed(function() {
+        return self.extra().map(function(elem) {
+            return elem.selectedFileName;
+        }).join(', ');
+    });
     self.showExample = ko.observable(false);
 
     self.comments = ko.observableArray(
@@ -275,7 +282,7 @@ var Question = function(questionSchema, data) {
                 var ret = true;
                 $.each(self.properties, function(_, subQuestion) {
                     var value = subQuestion.value();
-                    if (subQuestion.required && !(Boolean(value === true || (value && value.length)))) {
+                    if (!subQuestion.isComplete()) {
                         ret = false;
                         return;
                     }
@@ -320,7 +327,19 @@ Question.prototype.toggleExample = function() {
 };
 
 Question.prototype.validationInfo = function() {
-    return ko.validation.group(this, {deep: true})();
+    var errors = ko.validation.group(this, {deep: true})();
+
+    var errorSet = ko.utils.arrayGetDistinctValues(errors);
+    var finalErrorSet = [];
+    $.each(errorSet, function(_, error) {
+        if (errors.indexOf(error) !== errors.lastIndexOf(error)) {
+            finalErrorSet.push(VALIDATOR_LOOKUP[error].messagePlural);
+        }
+        else {
+            finalErrorSet.push(error);
+        }
+    });
+    return ko.utils.arrayGetDistinctValues(finalErrorSet);
 };
 
 /**
@@ -370,17 +389,7 @@ var Page = function(schemaPage, schemaData) {
             return Boolean(errors);
         });
 
-        var errorSet = ko.utils.arrayGetDistinctValues(errors);
-        var finalErrorSet = [];
-        $.each(errorSet, function(_, error) {
-            if (errors.indexOf(error) !== errors.lastIndexOf(error)) {
-                finalErrorSet.push(VALIDATOR_LOOKUP[error].messagePlural);
-            }
-            else {
-                finalErrorSet.push(error);
-            }
-        });
-        return finalErrorSet;
+        return ko.utils.arrayGetDistinctValues(errors);
     }, {deferEvaluation: true});
 
     self.hasValidationInfo = ko.computed(function() {
@@ -489,11 +498,15 @@ MetaSchema.prototype.askConsent = function(pre) {
             $osf.unblock();
             bootbox.hideAll();
             ret.resolve();
+            $(document.body).removeClass('background-unscrollable');
+            $('.modal').removeClass('modal-scrollable');
         },
         cancel: function() {
             $osf.unblock();
             bootbox.hideAll();
             ret.reject();
+            $(document.body).removeClass('background-unscrollable');
+            $('.modal').removeClass('modal-scrollable');
         }
     };
 
@@ -501,9 +514,15 @@ MetaSchema.prototype.askConsent = function(pre) {
         size: 'large',
         message: function() {
             ko.renderTemplate('preRegistrationConsent', viewModel, {}, this);
+            $(document.body).addClass('background-unscrollable');
         }
     });
 
+    $('.bootbox-close-button.close').click(function() {
+        $(document.body).removeClass('background-unscrollable');
+        $('.modal').removeClass('modal-scrollable');
+    });
+    $('.modal').addClass('modal-scrollable');
     return ret.promise();
 };
 
@@ -570,7 +589,7 @@ var Draft = function(params, metaSchema) {
         }).length > 0;
     });
 
-    self.completion = ko.computed(function() {
+    self.completion = ko.pureComputed(function() {
         var complete = 0;
         var questions = self.metaSchema.flatQuestions()
                 .filter(function(question) {
@@ -582,6 +601,20 @@ var Draft = function(params, metaSchema) {
             }
         });
         return Math.ceil(100 * (complete / questions.length));
+    });
+
+    self.isComplete = ko.pureComputed(function() {
+        var complete = true;
+        var questions = self.metaSchema.flatQuestions()
+                .filter(function(question) {
+                    return question.required;
+                });
+        $.each(questions, function(_, question) {
+            if (!question.isComplete()) {
+                complete = false;
+            }
+        });
+        return complete;
     });
 };
 Draft.prototype.getUnseenComments = function() {
@@ -598,8 +631,9 @@ Draft.prototype.preRegisterPrompts = function(response, confirm) {
     var validator = null;
     if (self.metaSchema.requiresApproval) {
         validator = {
-            validator: function(value) {
-                return (new Date(value)).getTime() > DRAFT_REGISTRATION_MIN_EMBARGO_TIMESTAMP;
+            validator: function(end) {
+                var min = moment().add(DRAFT_REGISTRATION_MIN_EMBARGO_DAYS, 'days');
+                return end.isAfter(min);
             },
             message: 'Embargo end date must be at least ' + DRAFT_REGISTRATION_MIN_EMBARGO_DAYS + ' days in the future.'
         };
@@ -677,10 +711,6 @@ Draft.prototype.registerWithoutReview = function() {
         }
     });
 };
-Draft.prototype.onRegisterFail = bootbox.alert.bind(null, {
-    title: 'Registration failed',
-    message: language.registerFail
-});
 Draft.prototype.register = function(url, data) {
     var self = this;
 
@@ -693,9 +723,25 @@ Draft.prototype.register = function(url, data) {
             }
         })
         .fail(function() {
-            self.onRegisterFail();
+            bootbox.alert({
+                title: 'Registration failed',
+                message: language.registerFail,
+                callback: function() {
+                    $osf.unblock();
+                    if (self.urls.registrations) {
+                        window.location.assign(self.urls.registrations);
+                    }
+                },
+                buttons: {
+                    ok: {
+                        label: 'Back to project',
+                    }
+                }
+            });
         })
-        .always($osf.unblock);
+        .always(function() {
+            $osf.unblock();
+        });
     return request;
 };
 Draft.prototype.submitForReview = function() {
@@ -749,12 +795,12 @@ Draft.prototype.reject = function() {
  **/
 var RegistrationEditor = function(urls, editorId, preview) {
     var self = this;
-
     self.urls = urls;
 
     self.readonly = ko.observable(false);
 
     self.draft = ko.observable();
+    self.pk = null;
 
     self.currentQuestion = ko.observable();
     self.showValidation = ko.observable(false);
@@ -841,33 +887,38 @@ var RegistrationEditor = function(urls, editorId, preview) {
 
     preview = preview || false;
     if (preview) {
+	var unwrap = function(question) {
+	    var $elem = $('<span>');
+	    if (question.type === 'object') {
+                $elem.append(
+		    $('<p class="breaklines"><small><em>' + $osf.htmlEscape(question.description) + '</em></small></p>'),
+                    $.map(question.properties, function(subQuestion) {
+                        subQuestion = self.context(subQuestion, self, true);
+			return unwrap(subQuestion);
+		    })
+                );
+            }
+	    else {
+                var value;
+                if (self.extensions[question.type] ) {
+                    value = question.preview();
+                } else {
+                    value = $osf.htmlEscape(question.value() || '');
+                }
+		$elem.append(
+		    $('<span class="col-md-12">').append(
+			$('<p class="breaklines"><small><em>' + $osf.htmlEscape(question.description) + '</em></small></p>'),
+                            $('<span class="well col-xs-12">').append(value)
+		));
+            }
+	    return $elem;
+	};
+
         ko.bindingHandlers.previewQuestion = {
             init: function(elem, valueAccessor) {
                 var question = valueAccessor();
                 var $elem = $(elem);
-
-                if (question.type === 'object') {
-                    $elem.append(
-                        $.map(question.properties, function(subQuestion) {
-                            subQuestion = self.context(subQuestion, self, true);
-                            var value;
-                            if (self.extensions[subQuestion.type] ) {
-                                value = subQuestion.preview();
-                            } else {
-                                value = $osf.htmlEscape(subQuestion.value() || '');
-                            }
-                            return $('<p>').append(value);
-                        })
-                    );
-                } else {
-                    var value;
-                    if (self.extensions[question.type] ) {
-                        value = question.preview();
-                    } else {
-                        value = $osf.htmlEscape(question.value() || '');
-                    }
-                    $elem.append(value);
-                }
+		$elem.append(unwrap(question));
             }
         };
     }
@@ -881,6 +932,7 @@ RegistrationEditor.prototype.init = function(draft) {
     var self = this;
 
     self.draft(draft);
+    self.pk = draft.pk;
     var metaSchema = draft ? draft.metaSchema: null;
 
     self.saveManager = null;
@@ -901,7 +953,7 @@ RegistrationEditor.prototype.init = function(draft) {
             return self.draft().updated;
         }
         else {
-            return 'never';            
+            return 'never';
         }
     });
 
@@ -953,7 +1005,7 @@ RegistrationEditor.prototype.context = function(data, $root, preview) {
     });
 
     if (this.extensions[data.type]) {
-        return new this.extensions[data.type](data, $root, preview);
+        return new this.extensions[data.type](data, $root.pk, preview);
     }
     return data;
 };
@@ -1023,8 +1075,10 @@ RegistrationEditor.prototype.updateData = function(response) {
     var self = this;
 
     var draft = self.draft();
+
     draft.pk = response.pk;
     draft.updated = new Date(response.updated);
+
     self.draft(draft);
 };
 
@@ -1204,7 +1258,7 @@ var RegistrationManager = function(node, draftsSelector, urls, createButton) {
 
     self.urls = urls;
 
-    self.schemas = ko.observableArray();
+    self.schemas = ko.observableArray([]);
     self.selectedSchema = ko.computed({
         read: function() {
             return self.schemas().filter(function(s) {
@@ -1233,7 +1287,7 @@ var RegistrationManager = function(node, draftsSelector, urls, createButton) {
 
     // TODO: convert existing registration UI to frontend impl.
     // self.registrations = ko.observable([]);
-    self.drafts = ko.observableArray();
+    self.drafts = ko.observableArray([]);
     self.hasDrafts = ko.pureComputed(function() {
         return self.drafts().length > 0;
     });
@@ -1289,9 +1343,6 @@ RegistrationManager.prototype.init = function() {
             var drafts = $.map(response.drafts, function(draft) {
                 return new Draft(draft);
             });
-            drafts.sort(function(a, b) {
-                return a.initiated.getTime() < b.initiated.getTime();
-            });
             self.drafts(drafts);
             self.loadingDrafts(false);
         });
@@ -1307,17 +1358,25 @@ RegistrationManager.prototype.init = function() {
         });
 
         var urlParams = $osf.urlParams();
-        if (urlParams.campaign && urlParams.campaign === 'prereg') {
-            $osf.block();
-            getSchemas.done(function() {
-                var preregSchema = self.schemas().filter(function(schema) {
-                    return schema.name === 'Prereg Challenge';
-                })[0];
-                preregSchema.askConsent(true).then(function() {
-                    self.selectedSchema(preregSchema);
-                    $('#newDraftRegistrationForm').submit();
-                });
-            }).always($osf.unblock);
+        if (urlParams.campaign) {
+            var schemaName;
+            if (urlParams.campaign === 'prereg'){
+                schemaName = 'Prereg Challenge';
+            } else if (urlParams.campaign === 'erpc') {
+                schemaName = 'Election Research Preacceptance Competition';
+            }
+            if (schemaName) {
+                $osf.block();
+                getSchemas.done(function() {
+                    var preregSchema = self.schemas().filter(function(schema) {
+                        return schema.name === schemaName;
+                    })[0];
+                    preregSchema.askConsent(true).then(function() {
+                        self.selectedSchema(preregSchema);
+                        $('#newDraftRegistrationForm').submit();
+                    });
+                }).always($osf.unblock);   
+            }
         }
     }
 };
@@ -1392,6 +1451,8 @@ RegistrationManager.prototype.createDraftModal = function(selected) {
                     var selectedSchema = self.selectedSchema();
                     if (selectedSchema.requiresConsent) {
                         selectedSchema.askConsent(true).then(function() {
+                            $(document.body).removeClass('background-unscrollable');
+                            $('.modal').removeClass('modal-scrollable');
                             $('#newDraftRegistrationForm').submit();
                         });
                     }

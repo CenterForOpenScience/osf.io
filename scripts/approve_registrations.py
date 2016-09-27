@@ -2,17 +2,17 @@
 elapsed the pending approval time..
 """
 
-import datetime
 import logging
-import sys
+import datetime
 
 from modularodm import Q
 
+from framework.celery_tasks import app as celery_app
 from framework.transactions.context import TokuTransaction
-from framework.auth import Auth
-from website import models, settings
+
 from website.app import init_app
-from website.project.model import NodeLog
+from website import models, settings
+
 from scripts import utils as scripts_utils
 
 
@@ -54,9 +54,10 @@ def should_be_approved(pending_registration):
     return (datetime.datetime.utcnow() - pending_registration.initiation_date) >= settings.REGISTRATION_APPROVAL_TIME
 
 
-if __name__ == '__main__':
-    dry_run = 'dry' in sys.argv
+@celery_app.task(name='scripts.approve_registrations')
+def run_main(dry_run=True):
     init_app(routes=False)
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
     main(dry_run=dry_run)
+

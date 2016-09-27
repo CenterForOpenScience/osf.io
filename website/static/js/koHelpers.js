@@ -4,6 +4,9 @@ var $ = require('jquery');
 var ko = require('knockout');
 var pikaday = require('pikaday');
 require('knockout.validation');
+var makeClient = require('js/clipboard');
+
+require('css/koHelpers.css');
 
 var iconmap = require('js/iconmap');
 
@@ -192,7 +195,6 @@ ko.validation.rules.mustEqual = {
     message: 'The field does not match the required input.'
 };
 
-
 // Add custom effects
 
 // fadeVisible : http://knockoutjs.com/examples/animatedTransitions.html
@@ -209,9 +211,60 @@ ko.bindingHandlers.fadeVisible = {
     }
 };
 
+var fitHelper = function(value, length, replacement, trimWhere) {
+    if (length && ('' + value).length > length) {
+        replacement = '' + (replacement || '...');
+        length = length - replacement.length;
+        value = '' + value;
+        switch (trimWhere) {
+            case 'left':
+                return replacement + value.slice(-length);
+            case 'middle':
+                var leftLen = Math.ceil(length / 2);
+                return value.substr(0, leftLen) + replacement + value.slice(leftLen-length);
+            default:
+                return value.substr(0, length) + replacement;
+        }
+    } else {
+        return value;
+    }
+};
+/**
+    Trim the text to a specified width. Adapted from knockout.punches "fit" filter
+    Behavior can be modified by the presence of additional related bindings on the same element:
+    @param value {Object} A hash of options describing the text to truncate, and how
+    @param value.text {String} The string to truncate
+    @param value.length {Integer}  Specifies the maximum length of the truncated string (default no limit)
+    @param [value.replacement='...'] {String} Specifies the sequence to use in place of trimmed characters
+    @param [value.trimWhere='right'] {String} Trim extra characters from the left, middle, or right side
+*/
+ko.bindingHandlers.fitText = {
+    update: function(element, valueAccessor, allBindings) {
+        var value = ko.unwrap(valueAccessor());
+        var trimValue = fitHelper(
+            value.text,
+            value.length,
+            value.replacement,
+            value.trimWhere
+        );
+        $(element).text(trimValue);
+    }
+};
+
 var tooltip = function(el, valueAccessor) {
-    var params = valueAccessor();
-    $(el).tooltip(params);
+    var params = ko.toJS(valueAccessor());
+    if(params.title) {
+        $(el).tooltip(params);
+        if(params.disabled) {
+            // A slight hack to get tooltips to work on
+            // disabled btn/a/etc. '.ensure-bs-tooltips'
+            // lets pointer events get captured on the
+            // disabled element, while the added onclick
+            // handler keeps these events from bubbling
+            $(el).addClass('ensure-bs-tooltips');
+            $(el).on('click', function() {return false;});
+        }
+    }
 };
 // Run Bootstrap tooltip JS automagically
 // http://getbootstrap.com/javascript/#tooltips
@@ -219,6 +272,15 @@ ko.bindingHandlers.tooltip = {
     init: tooltip,
     update: tooltip
 };
+
+var clipboard = function(el, valueAccessor) {
+    makeClient(el);
+    $(el).attr('data-clipboard-text', ko.unwrap(valueAccessor()));
+};
+ko.bindingHandlers.clipboard = {
+    init: clipboard
+};
+
 // Attach view model logic to global keypress events
 ko.bindingHandlers.onKeyPress = {
     init: function(el, valueAccessor) {
@@ -396,6 +458,39 @@ ko.bindingHandlers.datePicker = {
 };
 
  /**
+ * Bind content of contenteditable to observable. Looks for maxlength attr
+ * and underMaxLength binding to limit input.
+ * Example:
+ * <div contenteditable="true" data-bind="editableHTML: {observable: <observable_name>, onUpdate: handleUpdate" maxlength="500"></div>
+ */
+ko.bindingHandlers.editableHTML = {
+    init: function(element, valueAccessor, allBindings, bindingContext) {
+        var $element = $(element);
+        var options = valueAccessor();
+        var initialValue = options.observable();
+        $element.html(initialValue);
+        $element.on('change input paste keyup blur', function() {
+            options.observable($element.html());
+        });
+    },
+    update: function(element, valueAccessor, allBindings, viewModel) {
+        var $element = $(element);
+        var options = valueAccessor();
+        var initialValue = options.observable();
+        // NOTE: Maybe we should leave this up to onUpdate? Rethink.
+        var charLimit = $element.attr('maxlength');
+        var inputTextLength = $element[0].innerText.length || 0;
+        // + 1 to account for the <br> that is added to the end of the contenteditable content
+        // <br> is necessary for the return key to function properly
+        var underOrEqualMaxLength = inputTextLength <= parseInt(charLimit) + 1 || charLimit == undefined;  // jshint ignore: line
+        options.onUpdate.call(viewModel, element, underOrEqualMaxLength, charLimit);
+        if (initialValue === '') {
+            $(element).html(initialValue);
+        }
+    }
+};
+
+ /**
  * Adds class returned from iconmap to the element. The value accessor should be the
  * category of the node.
  * Example:
@@ -403,14 +498,8 @@ ko.bindingHandlers.datePicker = {
  */
 ko.bindingHandlers.getIcon = {
     init: function(elem, valueAccessor) {
-        var icon;
         var category = valueAccessor();
-        if (Object.keys(iconmap.componentIcons).indexOf(category) >=0 ){
-            icon = iconmap.componentIcons[category];
-        }
-        else {
-            icon = iconmap.projectIcons[category];
-        }
+        var icon =  iconmap.projectComponentIcons[category];
         $(elem).addClass(icon);
     }
 };
@@ -433,6 +522,7 @@ ko.virtualElements.allowedBindings.stopBinding = true;
 module.exports = {
     makeExtender: makeExtender,
     addExtender: addExtender,
+    _fitHelper: fitHelper,
     makeRegexValidator: makeRegexValidator,
     sanitizedObservable: sanitizedObservable,
     mapJStoKO: mapJStoKO

@@ -9,11 +9,10 @@ var History = require('exports?History!history');
 var siteLicenses = require('js/licenses');
 var licenses = siteLicenses.list;
 var DEFAULT_LICENSE = siteLicenses.DEFAULT_LICENSE;
-var OTHER_LICENSE = siteLicenses.OTHER_LICENSE;
+var OTHER_LICENSE = siteLicenses.OTHER_LICENSE;  // TODO: Why is this required? Is it? See [#OSF-6100]
 
 var $osf = require('js/osfHelpers');
-// Enable knockout punches
-ko.punches.enableAll();
+
 
 // Disable IE Caching of JSON
 $.ajaxSetup({ cache: false });
@@ -89,6 +88,7 @@ var ViewModel = function(params) {
     self.currentPage = ko.observable(1);
     self.totalResults = ko.observable(0);
     self.results = ko.observableArray([]);
+    self.urlLists = ko.observableArray([]);
     self.searching = ko.observable(false);
     self.resultsPerPage = ko.observable(10);
     self.categories = ko.observableArray([]);
@@ -357,6 +357,7 @@ var ViewModel = function(params) {
             self.tags([]);
             self.tagMaxCount(1);
             self.results.removeAll();
+            self.urlLists.removeAll();
             self.categories.removeAll();
             self.shareCategory('');
 
@@ -385,7 +386,10 @@ var ViewModel = function(params) {
 
             data.results.forEach(function(result){
                 if(result.category === 'user'){
-                    self.results.push(new User(result));
+                    if ($.inArray(result.url, self.urlLists()) === -1) {
+                        self.results.push(new User(result));
+                        self.urlLists.push(result.url);
+                    }
                 }
                 else {
                     if(typeof result.url !== 'undefined'){

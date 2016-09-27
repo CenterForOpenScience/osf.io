@@ -28,7 +28,7 @@
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How can it be free? How are you funded?</h5>
-                            <div class="support-body">The OSF is maintained and developed by the <a href="http://cos.io">Center for Open Science</a> (COS), a non-profit organization. COS is supported through grants from a variety of supporters, including <a href="http://centerforopenscience.org/about_sponsors/"> federal agencies, private foundations, and commercial entities</a>.</div>
+                            <div class="support-body">The OSF is maintained and developed by the <a href="http://cos.io">Center for Open Science</a> (COS), a non-profit organization. COS is supported through grants from a variety of supporters, including <a href="https://cos.io/about_sponsors/"> federal agencies, private foundations, and commercial entities</a>.</div>
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> What if you run out of funding? What happens to my data?</h5>
@@ -36,7 +36,7 @@
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How will the OSF be useful to my research?</h5>
-                            <div class="support-body">The OSF integrates with the scientist's daily workflow. The OSF helps document and archive study designs, materials, and data. The OSF facilitates sharing of materials and data within a laboratory or across laboratories. The OSF also facilitates transparency of laboratory research and provides a network design that details and credits individual contributions for all aspects of the research process. To see how it works, watch our short <a href="/getting-started">Getting Started</a> videos, see the <a href="https://osf.io/4znZP/wiki/home">OSF Features</a> page, or see how other scientists <a href="https://osf.io/svje2/">use the OSF.</a></div>
+                            <div class="support-body">The OSF integrates with the scientist's daily workflow. The OSF helps document and archive study designs, materials, and data. The OSF facilitates sharing of materials and data within a laboratory or across laboratories. The OSF also facilitates transparency of laboratory research and provides a network design that details and credits individual contributions for all aspects of the research process. To see how it works, read our <a href="http://help.osf.io" target="_blank" rel="noreferrer">Guides</a>, see the <a href="https://osf.io/4znZP/wiki/home">OSF Features</a> page, or see how other scientists <a href="https://osf.io/svje2/">use the OSF.</a></div>
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How can I help develop the OSF?</h5>
@@ -56,8 +56,8 @@
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How can I get started on using the OSF?</h5>
                             <div class="support-body">OSF membership is open and free, so you can
-                                just register and check out our <a href="/getting-started">Getting Started</a>
-                                page for a thorough run-down of how it works. This FAQ page will only cover a few of the most basic questions about the OSF, so it’s highly recommended that you read through Getting Started if you have any issues.</div>
+                                just register and check out our <a href="http://help.osf.io" target="_blank" rel="noreferrer">Guides</a>
+                                for a thorough run-down of how it works. This FAQ page will only cover a few of the most basic questions about the OSF, so it’s highly recommended that you read through Getting Started if you have any issues.</div>
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How do I create a lab group/organizational group?</h5>
@@ -65,7 +65,7 @@
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> What services can I use with the OSF?</h5>
-                            <div class="support-body">The OSF supports many third-party add-ons. For storage, you can connect to Amazon S3, Box, Dataverse, Dropbox, Figshare, Github, and Google Drive, and the OSF has its own default storage add-on, OSF Storage, if you choose not to connect to any third-party add-ons. The OSF also supports Mendeley and Zotero as citation managers. Please refer to the helpful <a href="/getting-started/#addons">Add-ons section</a> of our Getting Started page for more information on how to use add-ons.</div>
+                            <div class="support-body">The OSF supports many third-party add-ons. For storage, you can connect to Amazon S3, Box, Dataverse, Dropbox, Figshare, Github, and Google Drive, and the OSF has its own default storage add-on, OSF Storage, if you choose not to connect to any third-party add-ons. The OSF also supports Mendeley and Zotero as citation managers. Please refer to the helpful <a href="http://help.osf.io/m/addons" target="_blank" rel="noreferrer">Add-ons section</a> of our Guides for more information on how to use add-ons.</div>
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> What can I do with a file after uploading it into a storage add-on?</h5>
@@ -73,7 +73,7 @@
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> What is a registration?</h5>
-                            <div class="support-body">A registration is a frozen version of your project that can never be edited or deleted, but you can issue a retraction of it later, leaving behind basic metadata. When you create the registration, you have the option of either making it public immediately or making it private for up to four years through an embargo. A registration is useful for certifying what you did in a project in advance of data analysis, or for confirming the exact state of the project at important points of the lifecycle, such as manuscript submission or the onset of data collection.</div>
+                            <div class="support-body">A registration is a frozen version of your project that can never be edited or deleted, but you can issue a withdrawal of it later, leaving behind basic metadata. When you create the registration, you have the option of either making it public immediately or making it private for up to four years through an embargo. A registration is useful for certifying what you did in a project in advance of data analysis, or for confirming the exact state of the project at important points of the lifecycle, such as manuscript submission or the onset of data collection.</div>
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> What if I don't want to register anything in the OSF?</h5>
@@ -81,7 +81,7 @@
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> What is the cap on data per user?</h5>
-                            <div class="support-body">There is a limit on the size of individual files uploaded to the OSF. This limit is 5 GB. If you have larger files to upload, you might consider utilizing add-ons. When archiving files during the registration process, there is a 1 GB total limit across all storage add-ons being archived.</div>
+                            <div class="support-body">There is a limit on the size of individual files uploaded to the OSF. This limit is 5 GB. If you have larger files to upload, you might consider utilizing add-ons. When archiving files during the registration process, there is a 5 GB total limit per registration across all storage being archived (OSF Storage plus Add-ons).</div>
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How do I get a DOI or ARK for my project?</h5>
@@ -104,13 +104,15 @@
                                 password. This provides extra security. No one but you can know your
                                 password. When you click "Forgot your password," the OSF sends you a new random
                                 password because it neither stores nor has the ability to compute your password.
-                                <br/><br/>
-                                Data and materials posted on the OSF are not yet encrypted, unless you encrypt
-                                them before uploading to the site. This means that if our servers were
-                                compromised, the intruder would have access to raw data. While we have taken
-                                technological measures to minimize this risk, the level of security can be
-                                improved further. We will offer encryption soon, and we will partner with
-                                data storage services that offer strong security features.</div>
+                                </div>
+                        </div>
+                        <div class="support-item">
+                            <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> Is data stored on OSF Storage encrypted? What are my options?</h5>
+                            <div class="support-body">Transfer of data to OSF storage is encrypted with SSL. If you would like your data to be encrypted at rest, you can encrypt it before uploading to OSF Storage. You can also use the Amazon S3 add-on and implement server-side encryption to encrypt your data before saving it on S3 servers and decrypt it when you download it. Otherwise, data at rest is not encrypted on OSF Storage.</div>
+                        </div>
+                        <div class="support-item">
+                            <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How do I report a potential security issue?</h5>
+                            <div class="support-body">If you would like to report a security issue, please email <a href="mailto:support@osf.io">support@osf.io</a> for instructions on how to report the security issue. Do not include details of the issue in that email.</div>
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> Is the OSF HIPAA compliant?</h5>
@@ -119,6 +121,14 @@
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How can I license my data/code/etc.?</h5>
                             <div class="support-body">To apply a license to your OSF project, visit the project's overview page and select one from the "License picker," below the project's description. You can select from a variety of commonly used licenses or upload your own.</div>
+                        </div>
+                        <div class="support-item">
+                            <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> Does the OSF have a public API?</h5>
+                            <div class="support-body">Yes! Read more on the <a href="https://api.osf.io/v2/docs/">API docs</a></div>
+                        </div>
+                        <div class="support-item">
+                            <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> I'm a developer. Is the OSF open source? Can I contribute to the OSF?</h5>
+                            <div class="support-body">Yes! Find our code and docs on <a href="https://github.com/CenterForOpenScience/osf.io">our Github page</a>.</div>
                         </div>
                         <div class="support-item">
                             <h5 class="support-head f-w-xl"><i class="fa fa-angle-right"></i> How does the OSF store and backup files that I upload to the site?</h5>

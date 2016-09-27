@@ -3,10 +3,13 @@
  */
 'use strict';
 
+require('css/add-contributors.css');
+
 var $ = require('jquery');
 var ko = require('knockout');
-var bootbox = require('bootbox');
+var bootbox = require('bootbox');  // TODO: Why is this required? Is it? See [#OSF-6100]
 var Raven = require('raven-js');
+var lodashGet = require('lodash.get');
 
 var oop = require('js/oop');
 var $osf = require('js/osfHelpers');
@@ -91,11 +94,25 @@ AddContributorViewModel = oop.extend(Paginator, {
         self.notification = ko.observable('');
         self.inviteError = ko.observable('');
         self.doneSearching = ko.observable(false);
+        self.parentImport = ko.observable(false);
         self.totalPages = ko.observable(0);
         self.childrenToChange = ko.observableArray();
 
+        self.emailSearch = ko.pureComputed(function () {
+            var emailRegex = new RegExp('[^\\s]+@[^\\s]+\\.[^\\s]');
+            if (emailRegex.test(String(self.query()))) {
+                return true;
+            } else {
+                return false;
+            }
+        });
+
         self.foundResults = ko.pureComputed(function () {
-            return self.query() && self.results().length;
+            return self.query() && self.results().length && !self.parentImport();
+        });
+
+        self.parentPagination = ko.pureComputed(function () {
+            return self.doneSearching() && self.parentImport();
         });
 
         self.noResults = ko.pureComputed(function () {
@@ -145,7 +162,7 @@ AddContributorViewModel = oop.extend(Paginator, {
         for (var key in nodesState) {
             var i;
             var node = nodesState[key];
-            var enabled = nodesState[key].canWrite;
+            var enabled = nodesState[key].isAdmin;
             var checked = nodesState[key].checked;
             if (enabled) {
                 var nodeContributors = [];
@@ -186,35 +203,41 @@ AddContributorViewModel = oop.extend(Paginator, {
      * currently logged-in user has in common with the contributor.
      */
     startSearch: function () {
+        this.parentImport(false);
         this.pageToGet(0);
         this.fetchResults();
     },
     fetchResults: function () {
-        var self = this;
-        self.notification(false);
-        if (self.query()) {
-            return $.getJSON(
-                '/api/v1/user/search/', {
-                    query: self.query(),
-                    page: self.pageToGet
-                },
-                function (result) {
-                    var contributors = result.users.map(function (userData) {
-                        userData.added = (self.contributors().indexOf(userData.id) !== -1);
-                        return new Contributor(userData);
-                    });
-                    self.doneSearching(true);
-                    self.results(contributors);
-                    self.currentPage(result.page);
-                    self.numberOfPages(result.pages);
-                    self.addNewPaginators();
-                }
-            );
+        if (this.parentImport()){
+            this.importFromParent();
         } else {
-            self.results([]);
-            self.currentPage(0);
-            self.totalPages(0);
-            self.doneSearching(true);
+            var self = this;
+            self.doneSearching(false);
+            self.notification(false);
+            if (self.query()) {
+                return $.getJSON(
+                    '/api/v1/user/search/', {
+                        query: self.query(),
+                        page: self.pageToGet
+                    },
+                    function (result) {
+                        var contributors = result.users.map(function (userData) {
+                            userData.added = (self.contributors().indexOf(userData.id) !== -1);
+                            return new Contributor(userData);
+                        });
+                        self.doneSearching(true);
+                        self.results(contributors);
+                        self.currentPage(result.page);
+                        self.numberOfPages(result.pages);
+                        self.addNewPaginators(false);
+                    }
+                );
+            } else {
+                self.results([]);
+                self.currentPage(0);
+                self.totalPages(0);
+                self.doneSearching(true);
+            }
         }
     },
     getContributors: function () {
@@ -231,16 +254,22 @@ AddContributorViewModel = oop.extend(Paginator, {
             xhrFields: {withCredentials: true},
             processData: false
         }).done(function (response) {
-            var contributors = response.data.map(function (user) {
-                return user.id;
+            var contributors = response.data.map(function (contributor) {
+                // contrib ID has the form <nodeid>-<userid>
+                return contributor.id.split('-')[1];
             });
             self.contributors(contributors);
         });
     },
+    startSearchParent: function () {
+        this.parentImport(true);
+        this.importFromParent();
+    },
     importFromParent: function () {
         var self = this;
+        self.doneSearching(false);
         self.notification(false);
-        $.getJSON(
+        return $.getJSON(
             self.nodeApiUrl + 'get_contributors_from_parent/', {},
             function (result) {
                 var contributors = result.contributors.map(function (user) {
@@ -248,7 +277,22 @@ AddContributorViewModel = oop.extend(Paginator, {
                     var updatedUser = $.extend({}, user, {added: added});
                     return updatedUser;
                 });
-                self.results(contributors);
+                var pageToShow = [];
+                var startingSpot = (self.pageToGet() * 5);
+                if (contributors.length > startingSpot + 5){
+                    for (var iterate = startingSpot; iterate < startingSpot + 5; iterate++) {
+                        pageToShow.push(contributors[iterate]);
+                    }
+                } else {
+                    for (var iterateTwo = startingSpot; iterateTwo < contributors.length; iterateTwo++) {
+                        pageToShow.push(contributors[iterateTwo]);
+                    }
+                }
+                self.doneSearching(true);
+                self.results(pageToShow);
+                self.currentPage(self.pageToGet());
+                self.numberOfPages(Math.ceil(contributors.length/5));
+                self.addNewPaginators(true);
             }
         );
     },
@@ -398,7 +442,8 @@ AddContributorViewModel = oop.extend(Paginator, {
         }).fail(function (xhr, status, error) {
             self.hide();
             $osf.unblock();
-            $osf.growl('Could not add contributors', 'There was a problem trying to add contributors. ' + osfLanguage.REFRESH_OR_SUPPORT);
+            var errorMessage = lodashGet(xhr, 'responseJSON.message') || ('There was a problem trying to add contributors.' + osfLanguage.REFRESH_OR_SUPPORT);
+            $osf.growl('Could not add contributors', errorMessage);
             Raven.captureMessage('Error adding contributors', {
                 extra: {
                     url: url,
@@ -411,6 +456,7 @@ AddContributorViewModel = oop.extend(Paginator, {
     clear: function () {
         var self = this;
         self.page('whom');
+        self.parentImport(false);
         self.query('');
         self.results([]);
         self.selection([]);
@@ -462,7 +508,7 @@ AddContributorViewModel = oop.extend(Paginator, {
             //parent node is changed by default
             nodesState[nodeParent].checked = true;
             //parent node cannot be changed
-            nodesState[nodeParent].canWrite = false;
+            nodesState[nodeParent].isAdmin = false;
             self.nodesState(nodesState);
         }).fail(function (xhr, status, error) {
             $osf.growl('Error', 'Unable to retrieve project settings');
@@ -504,7 +550,7 @@ ContribAdder.prototype.init = function() {
     self.viewModel.fetchNodeTree(treebeardUrl).done(function(response) {
         new NodeSelectTreebeard('addContributorsTreebeard', response, self.viewModel.nodesState);
     });
-    ko.applyBindings(self.viewModel, self.$element[0]);
+    $osf.applyBindings(self.viewModel, self.$element[0]);
     // Clear popovers on dismiss start
     self.$element.on('hide.bs.modal', function() {
         self.$element.find('.popover').popover('hide');

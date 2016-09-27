@@ -1,38 +1,36 @@
 # -*- coding: utf-8 -*-
 
 import httplib as http
-import time
 
 from flask import request
 from modularodm.exceptions import ValidationError, ValidationValueError
 
-from framework import forms
-from framework import status
+from framework import forms, status
 from framework.auth import cas
-from framework.auth import User, get_user
-from framework.auth.core import generate_confirm_token
+from framework.auth import User
+from framework.auth.core import get_user, generate_confirm_token, generate_verification_key
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import PasswordForm, SetEmailAndPasswordForm
 from framework.auth.signals import user_registered
-from framework.auth.utils import validate_email
+from framework.auth.utils import validate_email, validate_recaptcha
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
 from framework.transactions.handlers import no_auto_transaction
-
-from website import mails
-from website import language
-from website import security
-from website import settings
+from website import mails, language, settings
 from website.models import Node
+from website.notifications.utils import check_if_all_global_subscriptions_are_none
 from website.profile import utils as profile_utils
-from website.project.decorators import (must_have_permission, must_be_valid_project,
-        must_not_be_registration, must_be_contributor_or_public, must_be_contributor)
+from website.project.decorators import (must_have_permission, must_be_valid_project, must_not_be_registration,
+                                        must_be_contributor_or_public, must_be_contributor)
 from website.project.model import has_anonymous_link
 from website.project.signals import unreg_contributor_added, contributor_added
+from website.util import sanitize
 from website.util import web_url_for, is_json_request
 from website.util.permissions import expand_permissions, ADMIN
-from website.util import sanitize
+from website.util.time import get_timestamp, throttle_period_expired
+from website.exceptions import NodeStateError
+
 
 @collect_auth
 @must_be_valid_project(retractions_valid=True)
@@ -191,8 +189,6 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
                 given_name=fullname,
                 email=email)
             contributor.save()
-            unreg_contributor_added.send(node, contributor=contributor,
-                auth=auth)
 
         contribs.append({
             'user': contributor,
@@ -203,10 +199,10 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
 
 
 @unreg_contributor_added.connect
-def finalize_invitation(node, contributor, auth):
+def finalize_invitation(node, contributor, auth, email_template='default'):
     record = contributor.get_unclaimed_record(node._primary_key)
     if record['email']:
-        send_claim_email(record['email'], contributor, node, notify=True)
+        send_claim_email(record['email'], contributor, node, notify=True, email_template=email_template)
 
 
 @must_be_valid_project
@@ -229,7 +225,11 @@ def project_contributors_post(auth, node, **kwargs):
     except ValidationError as e:
         return {'status': 400, 'message': e.message}, 400
 
-    node.add_contributors(contributors=contribs, auth=auth)
+    try:
+        node.add_contributors(contributors=contribs, auth=auth)
+    except NodeStateError as e:
+        return {'status': 400, 'message': e.args[0]}, 400
+
     node.save()
 
     # Disconnect listener to avoid multiple invite emails
@@ -279,11 +279,11 @@ def project_manage_contributors(auth, node, **kwargs):
     # Update permissions and order
     try:
         node.manage_contributors(contributors, auth=auth, save=True)
-    except ValueError as error:
-        raise HTTPError(http.BAD_REQUEST, data={'message_long': error.message})
+    except (ValueError, NodeStateError) as error:
+        raise HTTPError(http.BAD_REQUEST, data={'message_long': error.args[0]})
 
-    # If user has removed herself from project, alert; redirect to user
-    # dashboard if node is private, else node dashboard
+    # If user has removed herself from project, alert; redirect to
+    # node summary if node is public, else to user's dashboard page
     if not node.is_contributor(auth.user):
         status.push_status_message(
             'You have removed yourself as a contributor from this project',
@@ -344,8 +344,8 @@ def project_remove_contributor(auth, **kwargs):
             raise HTTPError(http.BAD_REQUEST, data={
                 'message_long': 'Could not remove contributor.'})
 
-        # On parent node, if user has removed herself from project, alert; redirect to user
-        # dashboard if node is private, else node dashboard
+        # On parent node, if user has removed herself from project, alert; redirect to
+        # node summary if node is public, else to user's dashboard page
         if not node.is_contributor(auth.user) and node_id == parent_id:
             status.push_status_message(
                 'You have removed yourself as a contributor from this project',
@@ -354,18 +354,9 @@ def project_remove_contributor(auth, **kwargs):
             )
             if node.is_public:
                 redirect_url = {'redirectUrl': node.url}
-            # Else stay on current page
             else:
                 redirect_url = {'redirectUrl': web_url_for('dashboard')}
     return redirect_url
-
-
-def get_timestamp():
-    return int(time.time())
-
-
-def throttle_period_expired(timestamp, throttle):
-    return timestamp is None or (get_timestamp() - timestamp) > throttle
 
 
 def send_claim_registered_email(claimer, unreg_user, node, throttle=24 * 3600):
@@ -409,7 +400,7 @@ def send_claim_registered_email(claimer, unreg_user, node, throttle=24 * 3600):
     )
 
 
-def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
+def send_claim_email(email, user, node, notify=True, throttle=24 * 3600, email_template='default'):
     """Send an email for claiming a user account. Either sends to the given email
     or the referrer's email, depending on the email address provided.
 
@@ -429,7 +420,7 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
     claim_url = user.get_claim_url(node._primary_key, external=True)
     # If given email is the same provided by user, just send to that email
     if unclaimed_record.get('email') == claimer_email:
-        mail_tpl = mails.INVITE
+        mail_tpl = getattr(mails, 'INVITE_{}'.format(email_template.upper()))
         to_addr = claimer_email
         unclaimed_record['claimer_email'] = claimer_email
         user.save()
@@ -471,7 +462,7 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
 
 
 @contributor_added.connect
-def notify_added_contributor(node, contributor, auth=None, throttle=None):
+def notify_added_contributor(node, contributor, auth=None, throttle=None, email_template='default'):
     throttle = throttle or settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
 
     # Exclude forks and templates because the user forking/templating the project gets added
@@ -480,6 +471,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None):
     if (contributor.is_registered and not node.template_node and not node.is_fork and
             (not node.parent_node or
                 (node.parent_node and not node.parent_node.is_contributor(contributor)))):
+        email_template = getattr(mails, 'CONTRIBUTOR_ADDED_{}'.format(email_template.upper()))
         contributor_record = contributor.contributor_added_email_records.get(node._id, {})
         if contributor_record:
             timestamp = contributor_record.get('last_sent', None)
@@ -491,14 +483,18 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None):
 
         mails.send_mail(
             contributor.username,
-            mails.CONTRIBUTOR_ADDED,
+            email_template,
             user=contributor,
             node=node,
-            referrer_name=auth.user.fullname if auth else ''
+            referrer_name=auth.user.fullname if auth else '',
+            all_global_subscriptions_none=check_if_all_global_subscriptions_are_none(contributor)
         )
 
         contributor.contributor_added_email_records[node._id]['last_sent'] = get_timestamp()
         contributor.save()
+
+    elif not contributor.is_registered:
+        unreg_contributor_added.send(node, contributor=contributor, auth=auth, email_template=email_template)
 
 
 def verify_claim_token(user, token, pid):
@@ -520,16 +516,17 @@ def verify_claim_token(user, token, pid):
 @collect_auth
 @must_be_valid_project
 def claim_user_registered(auth, node, **kwargs):
-    """View that prompts user to enter their password in order to claim
-    contributorship on a project.
-
+    """
+    View that prompts user to enter their password in order to claim being a contributor on a project.
     A user must be logged in.
     """
+
     current_user = auth.user
 
     sign_out_url = web_url_for('auth_login', logout=True, next=request.url)
     if not current_user:
         return redirect(sign_out_url)
+
     # Logged in user should not be a contributor the project
     if node.is_contributor(current_user):
         logout_url = web_url_for('auth_logout', redirect_url=request.url)
@@ -539,10 +536,15 @@ def claim_user_registered(auth, node, **kwargs):
                 'project. Would you like to <a href="{}">log out</a>?').format(logout_url)
         }
         raise HTTPError(http.BAD_REQUEST, data=data)
+
     uid, pid, token = kwargs['uid'], kwargs['pid'], kwargs['token']
     unreg_user = User.load(uid)
     if not verify_claim_token(unreg_user, token, pid=node._primary_key):
-        raise HTTPError(http.BAD_REQUEST)
+        error_data = {
+            'message_short': 'Invalid url.',
+            'message_long': 'The token in the URL is invalid or has expired.'
+        }
+        raise HTTPError(http.BAD_REQUEST, data=error_data)
 
     # Store the unreg_user data on the session in case the user registers
     # a new account
@@ -558,10 +560,12 @@ def claim_user_registered(auth, node, **kwargs):
                 node.save()
                 status.push_status_message(
                     'You are now a contributor to this project.',
-                    kind='success')
+                    kind='success',
+                    trust=False
+                )
                 return redirect(node.url)
             else:
-                status.push_status_message(language.LOGIN_FAILED, kind='warning', trust=True)
+                status.push_status_message(language.LOGIN_FAILED, kind='warning', trust=False)
         else:
             forms.push_errors_to_status(form.errors)
     if is_json_request():
@@ -598,27 +602,30 @@ def replace_unclaimed_user_with_registered(user):
 
 @collect_auth
 def claim_user_form(auth, **kwargs):
-    """View for rendering the set password page for a claimed user.
-
-    Must have ``token`` as a querystring argument.
-
-    Renders the set password form, validates it, and sets the user's password.
     """
+    View for rendering the set password page for a claimed user.
+    Must have ``token`` as a querystring argument.
+    Renders the set password form, validates it, and sets the user's password.
+    HTTP Method: GET, POST
+    """
+
     uid, pid = kwargs['uid'], kwargs['pid']
     token = request.form.get('token') or request.args.get('token')
+    user = User.load(uid)
+
+    # If unregistered user is not in database, or url bears an invalid token raise HTTP 400 error
+    if not user or not verify_claim_token(user, token, pid):
+        error_data = {
+            'message_short': 'Invalid url.',
+            'message_long': 'Claim user does not exists, the token in the URL is invalid or has expired.'
+        }
+        raise HTTPError(http.BAD_REQUEST, data=error_data)
 
     # If user is logged in, redirect to 're-enter password' page
     if auth.logged_in:
         return redirect(web_url_for('claim_user_registered',
             uid=uid, pid=pid, token=token))
 
-    user = User.load(uid)  # The unregistered user
-    # user ID is invalid. Unregistered user is not in database
-    if not user:
-        raise HTTPError(http.BAD_REQUEST)
-    # If claim token not valid, redirect to registration page
-    if not verify_claim_token(user, token, pid):
-        return redirect(web_url_for('auth_login'))
     unclaimed_record = user.unclaimed_records[pid]
     user.fullname = unclaimed_record['name']
     user.update_guessed_names()
@@ -626,27 +633,32 @@ def claim_user_form(auth, **kwargs):
     claimer_email = unclaimed_record.get('claimer_email') or unclaimed_record.get('email')
     form = SetEmailAndPasswordForm(request.form, token=token)
     if request.method == 'POST':
-        if form.validate():
+        if not form.validate():
+            forms.push_errors_to_status(form.errors)
+        elif settings.RECAPTCHA_SITE_KEY and not validate_recaptcha(request.form.get('g-recaptcha-response'), remote_ip=request.remote_addr):
+            status.push_status_message('Invalid captcha supplied.', kind='error')
+        else:
             username, password = claimer_email, form.password.data
+            if not username:
+                raise HTTPError(http.BAD_REQUEST, data=dict(
+                    message_long='No email associated with this account. Please claim this '
+                    'account on the project to which you were invited.'
+                ))
+
             user.register(username=username, password=password)
             # Clear unclaimed records
             user.unclaimed_records = {}
-            user.verification_key = security.random_string(20)
+            user.verification_key = generate_verification_key()
             user.save()
             # Authenticate user and redirect to project page
-            node = Node.load(pid)
-            status.push_status_message(language.CLAIMED_CONTRIBUTOR.format(node=node),
-                                       kind='success',
-                                       trust=True)
+            status.push_status_message(language.CLAIMED_CONTRIBUTOR, kind='success', trust=True)
             # Redirect to CAS and authenticate the user with a verification key.
             return redirect(cas.get_login_url(
-                web_url_for('user_profile', _absolute=True),
-                auto=True,
+                web_url_for('view_project', pid=pid, _absolute=True),
                 username=user.username,
                 verification_key=user.verification_key
             ))
-        else:
-            forms.push_errors_to_status(form.errors)
+
     return {
         'firstname': user.given_name,
         'email': claimer_email if claimer_email else '',

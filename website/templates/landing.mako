@@ -42,7 +42,7 @@
               <a class="youtube" href="//www.youtube.com/watch?v=2TV21gOzfhw" aria-label="OSF YouTube Video"><i class="icon icon-play"></i></a>
               <img src="/static/img/front-page/screenshot.png" class="img-responsive" id="screenshot" alt="Screenshot of OSF" />
             </div>
-            <div class="col-sm-6">
+            <div class="col-sm-6 sign-up-div">
               <h2>Free and open source. Start now.</h2>
 
              <div id="signUp" class="anchor"></div>
@@ -65,21 +65,47 @@
                           </div>
                           <div class="form-group" data-bind="css: {'has-error': password() && !password.isValid(), 'has-success': password() && password.isValid()}">
                               <label class="placeholder-replace" style="display:none">Password</label>
-                              <input type="password" class="form-control" placeholder="Password (Must be 6 to 256 characters)" data-bind=" value: password, disable: submitted(), event: {blur: trim.bind($data, password)}">
-                                <p class="help-block osf-box-lt" data-bind="validationMessage: password" style="display: none;"></p>
+                              <input type="password" class="form-control" placeholder="Password (Must be 8 to 255 characters)" data-bind=", textInput: typedPassword, value: password, disable: submitted(), event: {blur: trim.bind($data, password)}">
+
+                              <div class="row" data-bind="visible: typedPassword().length > 0">
+                                  <div class="col-xs-8">
+                                      <div class="progress create-password">
+                                          <div class="progress-bar progress-bar-sm" role="progressbar" data-bind="attr: passwordComplexityInfo().attr"></div>
+                                      </div>
+                                  </div>
+                                  <div class="col-xs-4 f-w-xl text-left pv-darkbg">
+                                      <!-- ko if: passwordFeedback() -->
+                                      <p id="front-password-info" data-bind="text: passwordComplexityInfo().text, attr: passwordComplexityInfo().text_attr"></p>
+                                      <!-- /ko -->
+                                  </div>
+                              </div>
+
+                              <div class="pv-darkbg">
+                                  <!-- ko if: passwordFeedback() -->
+                                  <p class="help-block osf-box-lt p-xs" data-bind="validationMessage: password" style="display: none;"></p>
+                                  <p class="osf-box-lt" data-bind="css : { 'p-xs': passwordFeedback().warning }, visible: typedPassword().length > 0, text: passwordFeedback().warning"></p>
+                                  <!-- /ko -->
+                              </div>
+
+
                           </div>
 
                           <!-- Flashed Messages -->
                           <div class="help-block osf-box-lt" >
-                              <p data-bind="html: flashMessage, attr.class: flashMessageClass" class=""></p>
+                              <p data-bind="html: message, attr: {class: messageClass}" class=""></p>
                           </div>
                           <!-- ko ifnot: submitted -->
                           <div>
                               <small> By clicking "Sign up free", you agree to our <a style="color:#5BC0DE" href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms</a> and that you have read our <a style="color:#5BC0DE" href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>, including our information on <a style="color:#5BC0DE" href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies">Cookie Use</a>.</small>
                           </div>
                           <!-- /ko -->
+                          %if recaptcha_site_key:
+                              <div data-bind="fadeVisible: (fullName.isValid() || email1.isValid() || email2.isValid() || password.isValid()) && !submitted()" class="col-md-12 m-t-sm" style="z-index: 9;">
+                                  <div class="g-recaptcha" style="display: inline-block; margin: 0 auto;" data-sitekey="${recaptcha_site_key}"></div>
+                              </div>
+                          %endif
                           <div>
-                              <button type="submit" class="btn btn-warning" data-bind="visible: !submitted()" id="signupSubmit">Sign up free</button>
+                              <button type="submit" class="btn btn-warning m-t-sm" data-bind="visible: !submitted()" id="signupSubmit">Sign up free</button>
                           </div>
                   </form>
 
@@ -236,7 +262,7 @@
             <div class="col-md-4 col-md-offset-1">
               <i class="icon icon-nonprofit"></i>
               <h2>We are a <strong>mission-driven non-profit</strong></h2>
-              <p>The OSF is a free, open-source service of the <a href="https://cos.io/">Center for Open Science</a>. We’re aligning scientific practices with scientific values by improving openness, integrity and reproducibility of research. <span class="label label-success">Non-Profit</span></p>
+              <p>The OSF is a free, open source service of the <a href="https://cos.io/">Center for Open Science</a>. We’re aligning scientific practices with scientific values by improving openness, integrity and reproducibility of research. <span class="label label-success">Non-Profit</span></p>
             </div>
           </div>
         </div>
@@ -258,14 +284,14 @@
           </div>
           <div class="col-xs-8">
             <h3>Making research reproducible &amp; verifiable</h3>
-            <p>The OSF helps our students understand and apply sound data management principles to their work. And since we have easy access to all of the files the students are working with, it greatly enhances our ability to offer them constructive guidance.<br/><small><em>Richard Ball, Professor of Economics, Haverford College</em></small></em></small></p>
+            <p>The OSF helps our students understand and apply sound data management principles to their work. And since we have easy access to all of the files the students are working with, it greatly enhances our ability to offer them constructive guidance.<br/><small><em>Richard Ball, Professor of Economics, Haverford College</em></small></p>
           </div>
         </div>
 
         <div class="row hidden-xs hidden-sm">
           <div class="col-md-7 col-md-offset-2">
             <h3>Version control makes life easier</h3>
-            <p>The OSF makes version control effortless. My PI, my lab mates, and I have access to previous versions of a file at any time&#151;and the most current version is always readily available.<br/><small><em>Erica Baranski, PhD Student, Social and Personality Psychology Funder Lab, UC Riverside</em></small></em></small></p>
+            <p>The OSF makes version control effortless. My PI, my lab mates, and I have access to previous versions of a file at any time&#151;and the most current version is always readily available.<br/><small><em>Erica Baranski, PhD Student, Social and Personality Psychology Funder Lab, UC Riverside</em></small></p>
           </div>
           <div class="col-md-3">
             <img src="/static/img/front-page/user3.jpg" class="img-circle img-responsive" alt="Erica Baranski" />
@@ -278,7 +304,7 @@
           </div>
           <div class="col-md-7">
             <h3>A centralized hub of information</h3>
-            <p>The OSF creates a centralized hub of information where I can oversee a diversity of research projects across multiple classes. The centralization, organization and anywhere-access save me the time and energy necessary for managing these projects.<br/><small><em>Anne Allison, Associate Professor of Biology at Piedmont Virginia Community College</em></small></em></small></p>
+            <p>The OSF creates a centralized hub of information where I can oversee a diversity of research projects across multiple classes. The centralization, organization and anywhere-access save me the time and energy necessary for managing these projects.<br/><small><em>Anne Allison, Associate Professor of Biology at Piedmont Virginia Community College</em></small></p>
           </div>
         </div>
 
@@ -326,4 +352,7 @@
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
     <script src=${"/static/public/js/landing-page.js" | webpack_asset}></script>
+    %if recaptcha_site_key:
+        <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    %endif
 </%def>

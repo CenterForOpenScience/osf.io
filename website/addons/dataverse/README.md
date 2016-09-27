@@ -14,7 +14,7 @@ $ invoke encryption
 
 Creating a Dataverse dataset on the test server
 
-1. Go to http://dvn-demo.iq.harvard.edu/ and create an account
+1. Go to https://demo.dataverse.org/ and create an account
 2. On the homepage, click the "Create Dataverse" button to create a Dataverse
 3. Click the options icon on the Dataverse page
 4. On the Settings tab, set "Dataverse Publish Settings" to "Published" and save changes.

@@ -36,6 +36,7 @@ var entry = {
     'registration-edit-page': staticPath('js/pages/registration-edit-page.js'),
     'register-page': staticPath('js/pages/register-page.js'),
     'wiki-edit-page': staticPath('js/pages/wiki-edit-page.js'),
+    'statistics-page': staticPath('js/pages/statistics-page.js'),
     'file-page': staticPath('js/pages/file-page.js'),
     'files-page': staticPath('js/pages/files-page.js'),
     'prereg-landing-page': staticPath('js/pages/prereg-landing-page.js'),
@@ -54,6 +55,8 @@ var entry = {
     'profile-settings-addons-page': staticPath('js/pages/profile-settings-addons-page.js'),
     'twofactor-page': staticPath('js/pages/twofactor-page.js'),
     'forgotpassword-page': staticPath('js/pages/forgotpassword-page.js'),
+    'resetpassword-page': staticPath('js/pages/resetpassword-page.js'),
+    'claimaccount-page': staticPath('js/pages/claimaccount-page.js'),
     'login-page': staticPath('js/pages/login-page.js'),
     'notifications-config-page': staticPath('js/pages/notifications-config-page.js'),
     'faq-page' : staticPath('js/pages/faq-page.js'),
@@ -65,7 +68,6 @@ var entry = {
         // Vendor libraries
         'knockout',
         'knockout.validation',
-        'knockout.punches',
         'moment',
         'bootstrap',
         'bootbox',
@@ -75,7 +77,8 @@ var entry = {
         'knockout-sortable',
         'loaders.css',
         'treebeard',
-        'jquery.cookie',
+        'lodash.get',
+        'js-cookie',
         'URIjs',
         // Common internal modules
         'js/fangorn',
@@ -90,7 +93,9 @@ var entry = {
 
 // Collect log text from addons
 var mainLogs = require(staticPath('js/logActionsList.json'));
+var anonymousLogs = require(staticPath('js/anonymousLogActionsList.json'));
 var addonLog;
+var anonymousAddonLog;
 
 // Collect addons endpoints. If an addon's static folder has
 // any of the following files, it will be added as an entry point
@@ -112,9 +117,16 @@ addons.addons.forEach(function(addonName) {
         addonLog = require(logTextPath);
         for (var attrname in addonLog) { mainLogs[attrname] = addonLog[attrname]; }
     }
+    var anonymousLogTextPath = path.join(__dirname, 'website', 'addons',
+        addonName, 'static', addonName + 'AnonymousLogActionList.json');
+    if(fs.existsSync(anonymousLogTextPath)) {
+        anonymousAddonLog = require(anonymousLogTextPath);
+        for (var log in anonymousAddonLog) { anonymousLogs[log] = anonymousAddonLog[log]; }
+    }
 });
 
 fs.writeFileSync(staticPath('js/_allLogTexts.json'), JSON.stringify(mainLogs));
+fs.writeFileSync(staticPath('js/_anonymousLogTexts.json'), JSON.stringify(anonymousLogs));
 
 var resolve = {
     extensions: ['', '.es6.js', '.js', '.min.js'],
@@ -141,6 +153,7 @@ var resolve = {
         'pagedown-ace-sanitizer': addonsPath('wiki/static/pagedown-ace/Markdown.Sanitizer.js'),
         'pagedown-ace-editor': addonsPath('wiki/static/pagedown-ace/Markdown.Editor.js'),
         'wikiPage': addonsPath('wiki/static/wikiPage.js'),
+        'typo': staticPath('vendor/ace-plugins/typo.js'),
         'highlight-css': nodePath('highlight.js/styles/default.css'),
         'pikaday-css': nodePath('pikaday/css/pikaday.css'),
         // Also alias some internal libraries for easy access
@@ -149,6 +162,7 @@ var resolve = {
         // GASP Items not defined as main in its package.json
         'TweenLite' : nodePath('gsap/src/minified/TweenLite.min.js'),
         'EasePack' : nodePath('gsap/src/minified/easing/EasePack.min.js'),
+        'keen-dataset' : nodePath('keen-dataviz/lib/dataset/'),
     }
 };
 

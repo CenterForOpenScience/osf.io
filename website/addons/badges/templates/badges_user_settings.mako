@@ -96,6 +96,7 @@ You have not created any Badges.
 
 //todo fetch url from server
   var jsonToList = function(badge, id) {
+      // TODO: Rewrite this substantially before this feature is re-activated
     return '<li class="media">' +
           '<a class="pull-left" href="/' + id + '/">' +
             '<img class="media-object" src="' + badge['imageurl'] + '" width="64px" height="64px"> </a>' +

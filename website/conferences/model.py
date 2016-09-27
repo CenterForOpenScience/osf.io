@@ -5,8 +5,20 @@ from modularodm import fields, Q
 from modularodm.exceptions import ModularOdmException
 
 from framework.mongo import StoredObject
-
 from website.conferences.exceptions import ConferenceError
+
+DEFAULT_FIELD_NAMES = {
+    'submission1': 'poster',
+    'submission2': 'talk',
+    'submission1_plural': 'posters',
+    'submission2_plural': 'talks',
+    'meeting_title_type': 'Posters & Talks',
+    'add_submission': 'poster or talk',
+    'mail_subject': 'Presentation title',
+    'mail_message_body': 'Presentation abstract (if any)',
+    'mail_attachment': 'Your presentation file (e.g., PowerPoint, PDF, etc.)',
+    'homepage_link_text': 'Conference homepage',
+}
 
 
 class Conference(StoredObject):
@@ -19,6 +31,10 @@ class Conference(StoredObject):
     name = fields.StringField(required=True)
     info_url = fields.StringField(required=False, default=None)
     logo_url = fields.StringField(required=False, default=None)
+    location = fields.StringField(required=False, default=None)
+    start_date = fields.DateTimeField(default=None)
+    end_date = fields.DateTimeField(default=None)
+    is_meeting = fields.BooleanField(required=True)
     active = fields.BooleanField(required=True)
     admins = fields.ForeignField('user', list=True, required=False, default=None)
     #: Whether to make submitted projects public
@@ -27,22 +43,15 @@ class Conference(StoredObject):
     talk = fields.BooleanField(default=True)
     # field_names are used to customize the text on the conference page, the categories
     # of submissions, and the email adress to send material to.
-    field_names = fields.DictionaryField(
-        default=lambda: {
-            'submission1': 'poster',
-            'submission2': 'talk',
-            'submission1_plural': 'posters',
-            'submission2_plural': 'talks',
-            'meeting_title_type': 'Posters & Talks',
-            'add_submission': 'poster or talk',
-            'mail_subject': 'Presentation title',
-            'mail_message_body': 'Presentation abstract (if any)',
-            'mail_attachment': 'Your presentation file (e.g., PowerPoint, PDF, etc.)'
-        }
-    )
+    field_names = fields.DictionaryField(default=lambda: DEFAULT_FIELD_NAMES)
 
     # Cached number of submissions
     num_submissions = fields.IntegerField(default=0)
+
+    def __repr__(self):
+        return (
+            '<Conference(endpoint={self.endpoint!r}, active={self.active})>'.format(self=self)
+        )
 
     @classmethod
     def get_by_endpoint(cls, endpoint, active=True):

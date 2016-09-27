@@ -42,6 +42,34 @@ class TestNodeWikiPageModel(OsfTestCase):
         with assert_raises(ValidationValueError):
             page.save()
 
+    def test_is_current_with_single_version(self):
+        node = NodeFactory()
+        page = NodeWikiPage(page_name='foo', node=node)
+        page.save()
+        node.wiki_pages_current['foo'] = page._id
+        node.wiki_pages_versions['foo'] = [page._id]
+        node.save()
+        assert_true(page.is_current)
+
+    def test_is_current_with_multiple_versions(self):
+        node = NodeFactory()
+        ver1 = NodeWikiPage(page_name='foo', node=node)
+        ver2 = NodeWikiPage(page_name='foo', node=node)
+        ver1.save()
+        ver2.save()
+        node.wiki_pages_current['foo'] = ver2._id
+        node.wiki_pages_versions['foo'] = [ver1._id, ver2._id]
+        node.save()
+        assert_false(ver1.is_current)
+        assert_true(ver2.is_current)
+
+    def test_is_current_deleted_page(self):
+        node = NodeFactory()
+        ver = NodeWikiPage(page_name='foo', node=node)
+        ver.save()
+        # Simulate a deleted page by not adding ver to
+        # node.wiki_pages_current and node.wiki_pages_versions
+        assert_false(ver.is_current)
 
 class TestWikiViews(OsfTestCase):
 
@@ -541,6 +569,22 @@ class TestWikiDelete(OsfTestCase):
         self.project.reload()
         assert_not_in(to_mongo_key(SPECIAL_CHARACTERS_ALLOWED), self.project.wiki_pages_current)
 
+    @mock.patch('website.addons.wiki.utils.broadcast_to_sharejs')
+    def test_wiki_versions_do_not_reappear_after_delete(self, mock_sharejs):
+        # Creates a wiki page
+        self.project.update_node_wiki('Hippos', 'Hello hippos', self.consolidate_auth)
+        # Edits it two times
+        assert_equal(len(self.project.wiki_pages_versions['hippos']),1)
+        self.project.update_node_wiki('Hippos', 'Hello hippopotamus', self.consolidate_auth)
+        assert_equal(len(self.project.wiki_pages_versions['hippos']),2)
+        # Deletes the wiki page
+        self.project.delete_node_wiki('Hippos', self.consolidate_auth)
+        assert_true('hippos' not in self.project.wiki_pages_versions)
+        # Creates new wiki with same name
+        self.project.update_node_wiki('Hippos', 'Hello again hippos', self.consolidate_auth)
+        assert_equal(len(self.project.wiki_pages_versions['hippos']),1)
+        self.project.update_node_wiki('Hippos', 'Hello again hippopotamus', self.consolidate_auth)
+        assert_equal(len(self.project.wiki_pages_versions['hippos']),2)
 
 class TestWikiRename(OsfTestCase):
 
@@ -811,8 +855,8 @@ class TestWikiUuid(OsfTestCase):
         assert_equal(fork_res.status_code, 200)
         fork.reload()
 
-        # uuids are stored the same internally
-        assert_equal(
+        # uuids are not copied over to forks
+        assert_not_equal(
             self.project.wiki_private_uuids.get(self.wkey),
             fork.wiki_private_uuids.get(self.wkey)
         )
@@ -831,12 +875,12 @@ class TestWikiUuid(OsfTestCase):
         original_uuid = generate_private_uuid(self.project, self.wname)
         self.project.update_node_wiki(self.wname, 'Hello world', Auth(self.user))
         fork = self.project.fork_node(Auth(self.user))
-        assert_equal(original_uuid, fork.wiki_private_uuids.get(self.wkey))
+        assert_equal(fork.wiki_private_uuids.get(self.wkey), None)
 
         migrate_uuid(self.project, self.wname)
 
         assert_not_equal(original_uuid, self.project.wiki_private_uuids.get(self.wkey))
-        assert_equal(original_uuid, fork.wiki_private_uuids.get(self.wkey))
+        assert_equal(fork.wiki_private_uuids.get(self.wkey), None)
 
     @mock.patch('website.addons.wiki.utils.broadcast_to_sharejs')
     def test_uuid_persists_after_delete(self, mock_sharejs):

@@ -4,15 +4,17 @@ import httplib as http
 import json
 
 from modularodm import Q
+from modularodm.exceptions import ValidationValueError
 
 import mock
 from nose.tools import *  # noqa
+
 from tests.base import fake, OsfTestCase
 from tests.factories import (
     AuthUserFactory, EmbargoFactory, NodeFactory, ProjectFactory,
     RegistrationFactory, UserFactory, UnconfirmedUserFactory, DraftRegistrationFactory
 )
-from modularodm.exceptions import ValidationValueError
+from tests import utils
 
 from framework.exceptions import PermissionsError
 from framework.auth import Auth
@@ -20,9 +22,12 @@ from website.exceptions import (
     InvalidSanctionRejectionToken, InvalidSanctionApprovalToken, NodeStateError,
 )
 from website import tokens
-from website.models import Embargo, Node
-from website.project.model import ensure_schemas, PreregCallbackMixin
-
+from website.models import Embargo, Node, User
+from website.project.model import ensure_schemas
+from website.project.sanctions import PreregCallbackMixin
+from website.util import permissions
+from website.exceptions import NodeStateError
+from website.project.spam.model import SpamStatus
 
 DUMMY_TOKEN = tokens.encode({
     'dummy': 'token'
@@ -79,7 +84,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         project.add_contributor(project_non_admin, auth=Auth(project.creator), save=True)
 
         child = NodeFactory(creator=child_admin, parent=project)
-        child.add_contributor(child_non_admin, auth=Auth(project.creator), save=True)
+        child.add_contributor(child_non_admin, auth=Auth(child.creator), save=True)
 
         grandchild = NodeFactory(creator=grandchild_admin, parent=child)  # noqa
 
@@ -401,7 +406,20 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         self.registration.save()
         with mock.patch.object(PreregCallbackMixin, '_notify_initiator') as mock_notify:
             self.registration.embargo._on_complete(self.user)
-        mock_notify.assert_called()
+        assert_equal(mock_notify.call_count, 1)
+
+    def test_on_complete_raises_error_if_registration_is_spam(self):
+        self.registration.embargo_registration(
+            self.user,
+            datetime.datetime.utcnow() + datetime.timedelta(days=10),
+            notify_initiator_on_complete=True
+        )
+        self.registration.spam_status = SpamStatus.FLAGGED
+        self.registration.save()
+        with mock.patch.object(PreregCallbackMixin, '_notify_initiator') as mock_notify:
+            with assert_raises(NodeStateError):
+                self.registration.embargo._on_complete(self.user)
+        assert_equal(mock_notify.call_count, 0)
 
 
 class RegistrationWithChildNodesEmbargoModelTestCase(OsfTestCase):
@@ -895,23 +913,95 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         # Logs: Created, registered, embargo initiated
         assert_equal(len(self.project.logs), initial_project_logs + 1)
 
-    def test_embargoed_registration_cannot_be_made_public(self):
+    @mock.patch('website.project.sanctions.TokenApprovableSanction.ask')
+    def test_embargoed_registration_set_privacy_requests_embargo_termination(self, mock_ask):
         # Initiate and approve embargo
+        for i in range(3):
+            c = AuthUserFactory()
+            self.registration.add_contributor(c, [permissions.ADMIN], auth=Auth(self.user))
+        self.registration.save()
         self.registration.embargo_registration(
             self.user,
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
-        approval_token = self.registration.embargo.approval_state[self.user._id]['approval_token']
-        self.registration.embargo.approve_embargo(self.user, approval_token)
+        for user_id, embargo_tokens in self.registration.embargo.approval_state.iteritems():
+            approval_token = embargo_tokens['approval_token']
+            self.registration.embargo.approve_embargo(User.load(user_id), approval_token)
         self.registration.save()
 
         res = self.app.post(
             self.registration.api_url_for('project_set_privacy', permissions='public'),
             auth=self.user.auth,
-            expect_errors=True
         )
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['message_long'], 'An embargoed registration cannot be made public.')
+        assert_equal(res.status_code, 200)
+        for reg in self.registration.node_and_primary_descendants():
+            reg.reload()
+            assert_false(reg.is_public)
+        assert_true(reg.embargo_termination_approval)
+        assert_true(reg.embargo_termination_approval.is_pending_approval)
+
+    def test_cannot_request_termination_on_component_of_embargo(self):
+        node = ProjectFactory()
+        child = ProjectFactory(parent=node, creator=node.creator)
+
+        with utils.mock_archive(node, embargo=True, autocomplete=True, autoapprove=True) as reg:
+            with assert_raises(NodeStateError):
+                reg.nodes[0].request_embargo_termination(Auth(node.creator))
+
+    @mock.patch('website.mails.send_mail')
+    def test_embargoed_registration_set_privacy_sends_mail(self, mock_send_mail):
+        """
+        Integration test for https://github.com/CenterForOpenScience/osf.io/pull/5294#issuecomment-212613668
+        """
+        # Initiate and approve embargo
+        for i in range(3):
+            c = AuthUserFactory()
+            self.registration.add_contributor(c, [permissions.ADMIN], auth=Auth(self.user))
+        self.registration.save()
+        self.registration.embargo_registration(
+            self.user,
+            datetime.datetime.utcnow() + datetime.timedelta(days=10)
+        )
+        for user_id, embargo_tokens in self.registration.embargo.approval_state.iteritems():
+            approval_token = embargo_tokens['approval_token']
+            self.registration.embargo.approve_embargo(User.load(user_id), approval_token)
+        self.registration.save()
+
+        res = self.app.post(
+            self.registration.api_url_for('project_set_privacy', permissions='public'),
+            auth=self.user.auth,
+        )
+        assert_equal(res.status_code, 200)
+        for admin in self.registration.admin_contributors:
+            assert_true(any([c[0][0] == admin.username for c in mock_send_mail.call_args_list]))
+
+    @mock.patch('website.project.sanctions.TokenApprovableSanction.ask')
+    def test_make_child_embargoed_registration_public_asks_all_admins_in_tree(self, mock_ask):
+        # Initiate and approve embargo
+        node = NodeFactory(creator=self.user)
+        c1 = AuthUserFactory()
+        child = NodeFactory(parent=node, creator=c1)
+        c2 = AuthUserFactory()
+        NodeFactory(parent=child, creator=c2)
+        registration = RegistrationFactory(project=node)
+
+        registration.embargo_registration(
+            self.user,
+            datetime.datetime.utcnow() + datetime.timedelta(days=10)
+        )
+        for user_id, embargo_tokens in registration.embargo.approval_state.iteritems():
+            approval_token = embargo_tokens['approval_token']
+            registration.embargo.approve_embargo(User.load(user_id), approval_token)
+        self.registration.save()
+
+        res = self.app.post(
+            registration.api_url_for('project_set_privacy', permissions='public'),
+            auth=self.user.auth
+        )
+        assert_equal(res.status_code, 200)
+        asked_admins = [(admin._id, n._id) for admin, n in mock_ask.call_args[0][0]]
+        for admin, node in registration.get_admin_contributors_recursive():
+            assert_in((admin._id, node._id), asked_admins)
 
     def test_non_contributor_GET_approval_returns_HTTPError(self):
         non_contributor = AuthUserFactory()
@@ -928,7 +1018,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         res = self.app.get(approval_url, auth=non_contributor.auth, expect_errors=True)
         assert_equal(http.FORBIDDEN, res.status_code)
         assert_true(self.registration.is_pending_embargo)
-        assert_false(self.registration.embargo_end_date)
+        assert_true(self.registration.embargo_end_date)
 
     def test_non_contributor_GET_disapproval_returns_HTTPError(self):
         non_contributor = AuthUserFactory()
@@ -945,4 +1035,4 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         res = self.app.get(approval_url, auth=non_contributor.auth, expect_errors=True)
         assert_equal(http.FORBIDDEN, res.status_code)
         assert_true(self.registration.is_pending_embargo)
-        assert_false(self.registration.embargo_end_date)
+        assert_true(self.registration.embargo_end_date)

@@ -96,14 +96,15 @@ class TestNodeSettings(OsfTestCase):
             external_account=self.external_account,
             user=self.user
         )
+        self.user_settings.reload()
 
         assert_equal(
             self.node_settings.external_account,
             self.external_account
         )
         assert_equal(
-            self.node_settings.user_settings,
-            self.user_settings
+            self.node_settings.user_settings._id,
+            self.user_settings._id
         )
         assert_in(
             self.project._id,
@@ -118,10 +119,16 @@ class TestNodeSettings(OsfTestCase):
             external_account=self.external_account,
             user=self.user
         )
+        self.user_settings.reload()
+        assert_equal(
+            self.user_settings.oauth_grants,
+            {self.project._id: {self.external_account._id: {}}}
+        )
+
         self.user_settings.revoke_oauth_access(self.external_account, auth=Auth(self.user))
         self.user_settings.reload()
 
-        mock_deauth.assert_called()
+        assert_true(mock_deauth.called)
         assert_equal(
             self.user_settings.oauth_grants,
             {self.project._id: {}}

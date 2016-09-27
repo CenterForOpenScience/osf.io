@@ -17,7 +17,7 @@ var AddonPermissionsTable = {
             var apiUrl = $(this).attr('api-url')+ addonShortName + '/config/';
             bootbox.confirm({
                 title: 'Remove addon?',
-                message: 'Are you sure you want to disconnnect the ' + addonFullname + ' account from this project?',
+                message: 'Are you sure you want to disconnnect the ' + $osf.htmlEscape(addonFullname) + ' account from this project?',
                 callback: function (confirm) {
                     if (confirm) {
                         $.ajax({

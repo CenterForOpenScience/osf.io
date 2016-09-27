@@ -14,7 +14,9 @@ var $ = require('jquery');
 var m = require('mithril');
 var moment = require('moment');
 var $osf = require('js/osfHelpers');
-
+var lodashGet = require('lodash.get');
+var lodashFind = require('lodash.find');
+var iconmap = require('js/iconmap');
 
 var LinkObject;
 var NodeFetcher;
@@ -37,14 +39,15 @@ function _poTitleColumn(item) {
     if (item.data.archiving) { // TODO check if this variable will be available
         return  m('span', {'class': 'registration-archiving'}, node.attributes.title + ' [Archiving]');
     } else if(node.links.html){
-        return [ m('a.fg-file-links', { 'class' : css, href : node.links.html, 'data-nodeID' : node.id, 'data-nodeTitle': node.attributes.title, onclick : function(event) {
+        return [ m('a.fg-file-links', { 'class' : css, href : node.links.html, 'data-nodeID' : node.id, 'data-nodeTitle': node.attributes.title, 'data-nodeType': node.type, onclick : function(event) {
             preventSelect.call(this, event);
             $osf.trackClick('myProjects', 'projectOrganizer', 'navigate-to-specific-project');
         }}, node.attributes.title) ];
     } else {
-        return  m('span', { 'class' : css, 'data-nodeID' : node.id, 'data-nodeTitle': node.attributes.title }, node.attributes.title);
+        return  m('span', { 'class' : css, 'data-nodeID' : node.id, 'data-nodeTitle': node.attributes.title, 'data-nodeType': node.type}, node.attributes.title);
     }
 }
+
 
 /**
  * Contributors have first person's name and then number of contributors. This function returns the proper html
@@ -52,31 +55,31 @@ function _poTitleColumn(item) {
  * @returns {Object} A Mithril virtual DOM template object
  * @private
  */
+
 function _poContributors(item) {
-    var contributorList = item.data.embeds.contributors.data;
-    if(!contributorList){
-        return '';
-    }
+    var contributorList = lodashGet(item, 'data.embeds.contributors.data', []);
+
     if (contributorList.length === 0) {
         return '';
     }
+    var totalContributors = lodashGet(item, 'data.embeds.contributors.links.meta.total');
+    var isContributor = lodashFind(contributorList, ['id', window.contextVars.currentUser.id]);
+
+    if (!isContributor) {
+        // bibliographic contributors
+        contributorList = contributorList.filter(function (contrib) {
+            return contrib.attributes.bibliographic;
+        });
+        totalContributors = item.data.embeds.contributors.links.meta.total_bibliographic;
+    }
 
     return contributorList.map(function (person, index, arr) {
+        var names = $osf.extractContributorNamesFromAPIData(person);
         var name;
-        var familyName;
-        var givenName;
-        var fullName;
-        if (person.embeds.users.data) {
-            familyName = person.embeds.users.data.attributes.family_name;
-            givenName = person.embeds.users.data.attributes.given_name;
-            fullName = person.embeds.users.data.attributes.full_name;
+        var familyName = names.familyName;
+        var givenName = names.givenName;
+        var fullName = names.fullName;
 
-        }
-        if (person.embeds.users.errors) {
-            familyName = person.embeds.users.errors[0].meta.family_name;
-            givenName = person.embeds.users.errors[0].meta.given_name;
-            fullName = person.embeds.users.errors[0].meta.full_name;
-        }
         if (familyName) {
             name = familyName;
         } else if(givenName){
@@ -96,7 +99,7 @@ function _poContributors(item) {
             return m('span');
         }
         if (index === 2) {
-            return m('span', ' + ' + (arr.length - 2));
+            return m('span', ' + ' + (totalContributors - 2)); // We already show names of the two
         }
         return m('span', comma + name);
     });
@@ -240,7 +243,7 @@ function _poMultiselect(event, tree) {
     tb.options.updateSelected(tb.multiselected());
     if (tb.multiselected().length === 1) {
         tb.select('#tb-tbody').removeClass('unselectable');
-        if (event.currentTarget != null) {
+        if (event.currentTarget != null && event.target.className.indexOf('po-draggable') !== -1) {
             $osf.trackClick('myProjects', 'projectOrganizer', 'single-project-selected');
         }
     } else if (tb.multiselected().length > 1) {
@@ -330,10 +333,7 @@ var tbOptions = {
     },
     onmultiselect : _poMultiselect,
     resolveIcon : function _poIconView(item) { // Project Organizer doesn't use icons
-        if (item.data.attributes.registration){
-            return m('i.fa.fa-cube.text-muted-more');
-        }
-        return m('i.fa.fa-cube');
+        return m('i.' + iconmap.projectComponentIcons[item.data.attributes.category]);
     },
     resolveToggle : _poResolveToggle,
     resolveLazyloadUrl : function(item) {

@@ -14,13 +14,31 @@ h3, h4 {
     color: #FFF;
 }
 
+.institutions-panel {
+    background: #166595 url("/static/img/front-page/bg-web.png") no-repeat center top;
+    background-size: cover;
+    padding-top: 25px;
+}
+
 .meetings {
     background: #166595 url("/static/img/front-page/bg-web.png") no-repeat center top;
     background-size: cover;
     color: #fff;
 }
-.meetings .btn {
+
+.prereg {
+    background: #C5D6E6 url("/static/img/bg6.jpg") no-repeat center top;
+    background-size: cover;
+}
+
+.preprints {
+    background: #34495e;
+    color: #FFF;
+}
+
+.btn-banner {
     box-shadow: 0 0 9px -4px #000;
+    width: 70%;
 }
 
 .footer {

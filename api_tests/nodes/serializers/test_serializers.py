@@ -35,6 +35,7 @@ class TestNodeSerializer(DbTestCase):
         assert_equal(attributes['description'], node.description)
         assert_equal(attributes['public'], node.is_public)
         assert_equal(attributes['tags'], [str(each) for each in node.tags])
+        assert_equal(attributes['current_user_can_comment'], False)
         assert_equal(attributes['category'], node.category)
         assert_equal(attributes['registration'], node.is_registration)
         assert_equal(attributes['fork'], node.is_fork)
@@ -46,7 +47,7 @@ class TestNodeSerializer(DbTestCase):
         assert_in('contributors', relationships)
         assert_in('files', relationships)
         assert_in('parent', relationships)
-        assert_in('primary_institution', relationships)
+        assert_in('affiliated_institutions', relationships)
         parent_link = relationships['parent']['links']['related']['href']
         assert_equal(
             urlparse(parent_link).path,
@@ -70,6 +71,20 @@ class TestNodeSerializer(DbTestCase):
             '/{}nodes/{}/'.format(API_BASE, node._id)
         )
 
+    def test_template_serialization(self):
+        node = NodeFactory(creator=self.user)
+        fork = node.use_as_template(auth=Auth(user=node.creator))
+        result = NodeSerializer(fork, context={'request': make_drf_request()}).data
+        data = result['data']
+
+        # Relationships
+        relationships = data['relationships']
+        templated_from = relationships['template_node']['links']['related']['href']
+        assert_equal(
+            urlparse(templated_from).path,
+            '/{}nodes/{}/'.format(API_BASE, node._id)
+        )
+
 class TestNodeRegistrationSerializer(DbTestCase):
 
     def test_serialization(self):
@@ -83,6 +98,7 @@ class TestNodeRegistrationSerializer(DbTestCase):
         should_not_relate_to_registrations = [
             'registered_from',
             'registered_by',
+            'registration_schema'
         ]
 
         # Attributes

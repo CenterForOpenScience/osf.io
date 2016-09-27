@@ -142,7 +142,7 @@ var buildExternalUrl = function(csl) {
     if (csl.URL) {
         return csl.URL;
     } else if (csl.DOI) {
-        return 'http://dx.doi.org/' + csl.DOI;
+        return 'https://doi.org/' + csl.DOI;
     } else if (csl.PMID) {
         return 'http://www.ncbi.nlm.nih.gov/pubmed/' + csl.PMID;
     }
@@ -353,7 +353,7 @@ CitationGrid.prototype.updateStyle = function(name, xml) {
     this.styleName = name;
     this.styleXml = xml;
     this.bibliographies = {};
-    this.treebeard.tbController.redraw();
+    this.treebeard.redraw();
 };
 
 CitationGrid.prototype.makeBibliography = function(folder, format) {

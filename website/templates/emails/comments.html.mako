@@ -6,7 +6,7 @@
         <td style="line-height: 17px;border-collapse: collapse;">
             <span class="person" style="font-weight: bold;">${user.fullname} </span>
             <span class="text" style="color: grey;"> commented on your ${provider + ' ' if page_type == 'file' else ''}${page_type}</span>
-            %if page_type == 'file':
+            %if page_type == 'file' or page_type == 'wiki':
                 <span class="title" style="font-style: italic; color: grey;"> ${page_title} </span>
             %endif
             <span class="timestamp" style="color: grey;"> at ${localized_timestamp}: </span>

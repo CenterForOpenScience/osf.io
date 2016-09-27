@@ -17,8 +17,8 @@ from website.citations.providers import CitationsOauthProvider
 MAX_CITATION_LOAD = 200
 
 class Zotero(CitationsOauthProvider):
-    name = "Zotero"
-    short_name = "zotero"
+    name = 'Zotero'
+    short_name = 'zotero'
     _oauth_version = 1
 
     client_id = settings.ZOTERO_CLIENT_ID
@@ -78,7 +78,7 @@ class Zotero(CitationsOauthProvider):
         more = True
         offset = 0
         while more and len(citations) <= MAX_CITATION_LOAD:
-            page = self.client.collection_items(list_id, content='csljson', size=100, start=offset)
+            page = self.client.collection_items(list_id, content='csljson', limit=100, start=offset)
             citations = citations + page
             if len(page) == 0 or len(page) < 100:
                 more = False

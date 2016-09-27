@@ -29,7 +29,7 @@ from website.util import api_url_for, rubeus
 from website.project import new_private_link
 from website.project.views.node import _view_project as serialize_node
 from website.addons.base import AddonConfig, AddonNodeSettingsBase, views
-from tests.base import OsfTestCase
+from tests.base import OsfTestCase, get_default_metaschema
 from tests.factories import AuthUserFactory, ProjectFactory
 from website.addons.github.exceptions import ApiError
 from website.addons.github.tests.factories import GitHubAccountFactory
@@ -533,9 +533,15 @@ def assert_urls_equal(url1, url2):
 class TestFileNode(models.FileNode):
     provider = 'test_addons'
 
-    def touch(self, bearer, revision=None, **kwargs):
-        if revision:
-            return self.versions[0]
+    def touch(self, bearer, version=None, revision=None, **kwargs):
+        if version:
+            if self.versions:
+                try:
+                    return self.versions[int(version) - 1]
+                except (IndexError, ValueError):
+                    return None
+            else:
+                return None
         return models.FileVersion()
 
 
@@ -588,11 +594,25 @@ class TestAddonFileViews(OsfTestCase):
     def get_test_file(self):
         version = models.FileVersion(identifier='1')
         version.save()
+        versions = [version]
         ret = TestFile(
             name='Test',
             node=self.project,
             path='/test/Test',
             materialized_path='/test/Test',
+            versions=versions
+        )
+        ret.save()
+        return ret
+
+    def get_second_test_file(self):
+        version = models.FileVersion(identifier='1')
+        version.save()
+        ret = TestFile(
+            name='Test2',
+            node=self.project,
+            path='/test/Test2',
+            materialized_path='/test/Test2',
             versions=[version]
         )
         ret.save()
@@ -613,6 +633,7 @@ class TestAddonFileViews(OsfTestCase):
                 'mfr': '',
                 'gravatar': '',
                 'external': '',
+                'archived_from': '',
             },
             'size': '',
             'extra': '',
@@ -658,7 +679,7 @@ class TestAddonFileViews(OsfTestCase):
         assert_equals(resp.status_code, 302)
         location = furl.furl(resp.location)
         # Note: version is added but us but all other url params are added as well
-        assert_urls_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, revision=1, version=1))
+        assert_urls_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, revision=1, version=None))
 
     @mock.patch('website.addons.base.views.addon_view_file')
     def test_action_view_calls_view_file(self, mock_view_file):
@@ -713,6 +734,27 @@ class TestAddonFileViews(OsfTestCase):
 
         assert_true(file_node.get_guid())
 
+    def test_view_file_does_not_delete_file_when_requesting_invalid_version(self):
+        with mock.patch('website.addons.github.model.GitHubNodeSettings.is_private',
+                        new_callable=mock.PropertyMock) as mock_is_private:
+            mock_is_private.return_value = False
+
+            file_node = self.get_test_file()
+            assert_is(file_node.get_guid(), None)
+
+            url = self.project.web_url_for(
+                'addon_view_or_download_file',
+                path=file_node.path.strip('/'),
+                provider='github',
+            )
+            # First view generated GUID
+            self.app.get(url, auth=self.user.auth)
+
+            self.app.get(url + '?version=invalid', auth=self.user.auth, expect_errors=True)
+
+            assert_is_not_none(StoredFileNode.load(file_node._id))
+            assert_is_none(TrashedFileNode.load(file_node._id))
+
     def test_unauthorized_addons_raise(self):
         path = 'cloudfiles'
         self.node_addon.user_settings = None
@@ -760,7 +802,7 @@ class TestAddonFileViews(OsfTestCase):
         resp = self.app.head('/{}/?revision=1&foo=bar'.format(guid._id), auth=self.user.auth)
         location = furl.furl(resp.location)
         # Note: version is added but us but all other url params are added as well
-        assert_urls_equal(location.url, file_node.generate_waterbutler_url(direct=None, revision=1, version=1, foo='bar'))
+        assert_urls_equal(location.url, file_node.generate_waterbutler_url(direct=None, revision=1, version=None, foo='bar'))
 
     def test_nonexistent_addons_raise(self):
         path = 'cloudfiles'
@@ -807,7 +849,7 @@ class TestAddonFileViews(OsfTestCase):
                 'materialized': '/test/Test'
             }
         }
-        views.addon_delete_file_node(self=None, node=self.project, event_type='file_removed', payload=payload)
+        views.addon_delete_file_node(self=None, node=self.project, user=self.user, event_type='file_removed', payload=payload)
         assert_false(StoredFileNode.load(file_node._id))
         assert_true(TrashedFileNode.load(file_node._id))
 
@@ -828,10 +870,52 @@ class TestAddonFileViews(OsfTestCase):
                 'materialized': '/test/'
             }
         }
-        views.addon_delete_file_node(self=None, node=self.project, event_type='file_removed', payload=payload)
+        views.addon_delete_file_node(self=None, node=self.project, user=self.user, event_type='file_removed', payload=payload)
         assert_false(StoredFileNode.load(file_node._id))
         assert_true(TrashedFileNode.load(file_node._id))
         assert_false(StoredFileNode.load(subfolder._id))
+
+    @mock.patch('website.archiver.tasks.archive')
+    def test_archived_from_url(self, mock_archive):
+        file_node = self.get_test_file()
+        second_file_node = self.get_second_test_file()
+        file_node.copied_from = second_file_node
+
+        registered_node = self.project.register_node(
+            schema=get_default_metaschema(),
+            auth=Auth(self.user),
+            data=None,
+        )
+
+        archived_from_url = views.get_archived_from_url(registered_node, file_node)
+        view_url = self.project.web_url_for('addon_view_or_download_file', provider=file_node.provider, path=file_node.copied_from._id)
+        assert_true(archived_from_url)
+        assert_urls_equal(archived_from_url, view_url)
+
+    @mock.patch('website.archiver.tasks.archive')
+    def test_archived_from_url_without_copied_from(self, mock_archive):
+        file_node = self.get_test_file()
+
+        registered_node = self.project.register_node(
+            schema=get_default_metaschema(),
+            auth=Auth(self.user),
+            data=None,
+        )
+        archived_from_url = views.get_archived_from_url(registered_node, file_node)
+        assert_false(archived_from_url)
+
+    @mock.patch('website.archiver.tasks.archive')
+    def test_copied_from_id_trashed(self, mock_archive):
+        file_node = self.get_test_file()
+        second_file_node = self.get_second_test_file()
+        file_node.copied_from = second_file_node
+        self.project.register_node(
+            schema=get_default_metaschema(),
+            auth=Auth(self.user),
+            data=None,
+        )
+        trashed_node = second_file_node.delete()
+        assert_false(trashed_node.copied_from)
 
 
 class TestLegacyViews(OsfTestCase):

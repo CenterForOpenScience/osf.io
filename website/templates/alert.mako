@@ -12,7 +12,7 @@
         <div class="jumbotron">
         %endif
         % if trust:
-          <p>${message | n}</p>
+          <p>${ message | unicode, n }</p>
         % else:
           <p>${message}</p>
         % endif

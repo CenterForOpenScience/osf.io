@@ -11,7 +11,7 @@ class UserFactory(factory.Factory):
     email = 'cello@email.org'
     first_name = 'Yo-yo'
     last_name = 'Ma'
-    osf_user = 'abc12'
+    osf_id = 'abc12'
 
     @classmethod
     def is_in_group(cls, value):

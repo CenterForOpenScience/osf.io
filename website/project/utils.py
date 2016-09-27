@@ -6,16 +6,33 @@ from website.project.model import Node
 
 # Alias the project serializer
 from website.project.views.node import _view_project
-serialize_node = _view_project
+serialize_node = _view_project  # Not recommended practice
+
+CONTENT_NODE_QUERY = (
+    # Can encompass accessible projects, registrations, or forks
+    # Note: is_bookmark collection(s) are implicitly assumed to also be collections; that flag intentionally omitted
+    Q('is_collection', 'ne', True) &
+    Q('is_deleted', 'eq', False)
+)
+
+PROJECT_QUERY = (
+    # Excludes registrations
+    CONTENT_NODE_QUERY &
+    Q('is_registration', 'ne', True)
+)
+
+TOP_LEVEL_PROJECT_QUERY = (
+    # Top level project is defined based on whether node (of any category) has a parent. Can include forks.
+    Q('parent_node', 'eq', None) &
+    PROJECT_QUERY
+)
+
 
 def recent_public_registrations(n=10):
-    recent_query = (
-        Q('category', 'eq', 'project') &
-        Q('is_public', 'eq', True) &
-        Q('is_deleted', 'eq', False)
-    )
     registrations = Node.find(
-        recent_query &
+        CONTENT_NODE_QUERY &
+        Q('parent_node', 'eq', None) &
+        Q('is_public', 'eq', True) &
         Q('is_registration', 'eq', True)
     ).sort(
         '-registered_date'
@@ -24,6 +41,7 @@ def recent_public_registrations(n=10):
         if not n:
             break
         if reg.is_retracted or reg.is_pending_embargo:
+            # Filter based on calculated properties
             continue
-        n = n - 1
+        n -= 1
         yield reg

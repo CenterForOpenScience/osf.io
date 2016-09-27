@@ -22,7 +22,7 @@ SPF_PASS_VALUES = ['Pass', 'Neutral']
 
 ANGLE_BRACKETS_REGEX = re.compile(r'<(.*?)>')
 BASE_REGEX = r'''
-        (?P<test>test-)?
+        (?P<test>test-|stage-)?
         (?P<meeting>\w*?)
         -
         (?P<category>{allowed_types})
@@ -123,10 +123,10 @@ class ConferenceMessage(object):
         match = ANGLE_BRACKETS_REGEX.search(self.sender)
         if match:
             # sender format: "some name" <email@domain.tld>
-            return match.groups()[0]
+            return match.groups()[0].lower().strip()
         elif '@' in self.sender:
             # sender format: email@domain.tld
-            return self.sender
+            return self.sender.lower().strip()
         raise ConferenceError('Could not extract sender email')
 
     @cached_property
@@ -140,11 +140,13 @@ class ConferenceMessage(object):
             raise ConferenceError('Invalid recipient: '.format(self.form['recipient']))
         data = match.groupdict()
         if bool(settings.DEV_MODE) != bool(data['test']):
-            raise ConferenceError(
-                'Mismatch between `DEV_MODE` and recipient {0}'.format(
-                    self.form['recipient']
+            # NOTE: test.osf.io has DEV_MODE = False
+            if not data['test'] or (data['test'] and data['test'].rstrip('-') != 'test'):
+                raise ConferenceError(
+                    'Mismatch between `DEV_MODE` and recipient {0}'.format(
+                        self.form['recipient']
+                    )
                 )
-            )
         return data
 
     @cached_property

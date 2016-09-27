@@ -173,6 +173,16 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         self.node.remove()
         self.user.remove()
 
+    def test_configured_true(self):
+        assert_true(self.node_settings.has_auth)
+        assert_true(self.node_settings.complete)
+        assert_true(self.node_settings.configured)
+
+    def test_configured_false(self):
+        self.node_settings.clear_settings()
+        self.node_settings.save()
+        assert_false(self.node_settings.configured)
+
     def test_complete_true(self):
         assert_true(self.node_settings.has_auth)
         assert_true(self.node_settings.complete)
@@ -181,6 +191,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         with mock_auth(self.user):
             self.user_settings.revoke_oauth_access(self.external_account)
 
+        self.node_settings.reload()
         assert_false(self.node_settings.has_auth)
         assert_false(self.node_settings.complete)
 
@@ -251,7 +262,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         assert_is(self.node_settings.user_settings, None)
         assert_is(self.node_settings.folder_id, None)
         assert_true(self.node_settings.deleted)
-        assert_equal(self.node.logs, old_logs)
+        assert_equal(list(self.node.logs), list(old_logs))
 
     def test_deauthorize(self):
         assert_true(self.node_settings.user_settings)
@@ -290,7 +301,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         node_settings.save()
 
         assert_true(node_settings.has_auth)
-        assert_equal(node_settings.user_settings, user_settings)
+        assert_equal(node_settings.user_settings._id, user_settings._id)
         # A log was saved
         last_log = node_settings.owner.logs[-1]
         assert_equal(last_log.action, '{0}_node_authorized'.format(self.short_name))
@@ -348,7 +359,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         clone, message = self.node_settings.after_fork(
             node=self.node, fork=fork, user=self.user_settings.owner
         )
-        assert_equal(clone.user_settings, self.user_settings)
+        assert_equal(clone.user_settings._id, self.user_settings._id)
 
     def test_after_fork_by_unauthorized_user(self):
         fork = ProjectFactory()
@@ -377,7 +388,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         self.node_settings.save()
         assert_is_none(self.node_settings.user_settings)
         assert_true(message)
-        assert_in("You can re-authenticate", message)
+        assert_in('You can re-authenticate', message)
 
     def test_after_remove_authorized_user_self(self):
         auth = Auth(user=self.user_settings.owner)
@@ -386,7 +397,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         self.node_settings.save()
         assert_is_none(self.node_settings.user_settings)
         assert_true(message)
-        assert_not_in("You can re-authenticate", message)
+        assert_not_in('You can re-authenticate', message)
 
     def test_after_delete(self):
         self.node.remove_node(Auth(user=self.node.creator))
@@ -422,7 +433,7 @@ class OAuthCitationsNodeSettingsTestSuiteMixin(OAuthAddonNodeSettingsTestSuiteMi
 
         assert_equal(
             self.node_settings.fetch_folder_name,
-            "All Documents"
+            'All Documents'
         )
 
     def test_selected_folder_name_empty(self):
@@ -548,6 +559,7 @@ class OAuthCitationsNodeSettingsTestSuiteMixin(OAuthAddonNodeSettingsTestSuiteMi
     def test_fork_by_authorizer(self, mock_push_status):
         fork = self.node.fork_node(auth=Auth(user=self.node.creator))
 
+        self.user_settings.reload()
         assert_true(fork.get_addon(self.short_name).has_auth)
         assert_true(self.user_settings.verify_oauth_access(fork, self.external_account))
 

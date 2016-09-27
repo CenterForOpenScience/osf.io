@@ -2,15 +2,17 @@
 
 import datetime
 import logging
-import sys
 
 from modularodm import Q
 
 from framework.auth import Auth
+from framework.celery_tasks import app as celery_app
 from framework.transactions.context import TokuTransaction
-from website import models, settings
+
 from website.app import init_app
+from website import models, settings
 from website.project.model import NodeLog
+
 from scripts import utils as scripts_utils
 
 
@@ -42,7 +44,8 @@ def main(dry_run=True):
                         parent_registration.registered_from.add_log(
                             action=NodeLog.RETRACTION_APPROVED,
                             params={
-                                'node': parent_registration._id,
+                                'node': parent_registration.registered_from._id,
+                                'registration': parent_registration._id,
                                 'retraction_id': parent_registration.retraction._id,
                             },
                             auth=Auth(parent_registration.retraction.initiated_by),
@@ -63,9 +66,10 @@ def should_be_retracted(retraction):
     return (datetime.datetime.utcnow() - retraction.initiation_date) >= settings.RETRACTION_PENDING_TIME
 
 
-if __name__ == '__main__':
-    dry_run = 'dry' in sys.argv
+@celery_app.task(name='scripts.retract_registrations')
+def run_main(dry_run=True):
     init_app(routes=False)
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
-        main(dry_run=dry_run)
+    main(dry_run=dry_run)
+

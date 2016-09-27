@@ -76,7 +76,7 @@
 
                     <!-- Flashed Messages -->
                     <div class="help-block">
-                        <p data-bind="html: $root.message, attr.class: $root.messageClass"></p>
+                        <p data-bind="html: $root.message, attr: {class: $root.messageClass}"></p>
                     </div>
 
                     <div class="padded">

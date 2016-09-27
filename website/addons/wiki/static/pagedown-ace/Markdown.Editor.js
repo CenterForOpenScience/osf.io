@@ -1,11 +1,22 @@
-﻿// OSF Note: This file has been changed for UI reasons, to prevent
+// OSF Note: This file has been changed for UI reasons, to prevent
 // automatic rendering, and to add a checkbox for toggling snippet
 // autocompletion. This is only here for the toolbar
 
 // needs Markdown.Converter.js at the moment
+
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var Range = ace.require('ace/range').Range;
+var Cookie = require('js-cookie');
+
+$(function(){
+    var toggled_off = Cookie.get('spellcheckPersistKey' + window.location.toString()) === '0';
+    if (toggled_off) {
+        document.getElementById('ace_editor_body').innerHTML = '';
+        document.getElementById('ace_editor_line_numbers').innerHTML = '';
+
+    }
+});
 
 (function () {
 
@@ -33,6 +44,8 @@ var Range = ace.require('ace/range').Range;
         italic: "Emphasis <em>",
         italicexample: "emphasized text",
 
+        spellcheck: "Spellcheck: Toggle spellcheck on and off",
+
         link: "Hyperlink <a>",
         linkdescription: "enter link description here",
         linkdialog: "<div class='modal-header'> <h4 class='modal-title f-w-lg'>Add hyperlink</h4></div><div class='modal-body'> <p><b>Example:</b><br>http://example.com/ \"optional title\"</p></div>",
@@ -59,7 +72,7 @@ var Range = ace.require('ace/range').Range;
         undo: "Undo -",
         redo: "Redo -",
 
-        help: "Markdown Editing Help"
+        help: "Wiki Syntax Help"
     };
 
     var keyStrokes = {
@@ -110,7 +123,7 @@ var Range = ace.require('ace/range').Range;
         redo: {
             win: 'Ctrl-Y|Ctrl-Shift-Z',
             mac: 'Command-Y|Command-Shift-Z',
-        },
+        }
     };
 
 
@@ -1649,6 +1662,22 @@ var Range = ace.require('ace/range').Range;
                 buttonRow.appendChild(button);
                 return button;
             };
+            var makeHelpButton = function(id,title,XShift){
+              var button = document.createElement("li");
+              button.className = "wmd-button";
+              button.setAttribute('data-toggle','modal');
+              button.setAttribute('data-target','#wiki-help-modal');
+              button.style.left = xPosition + "px";
+              xPosition += 25;
+              var buttonImage = document.createElement("span");
+              button.id = id + postfix;
+              button.appendChild(buttonImage);
+              button.title = title;
+              button.XShift = XShift;
+              setupButton(button, true);
+              buttonRow.appendChild(button);
+              return button;
+            }
             var makeCheckBox = function (div_id, cb_id, XShift, text) {
                 var li = document.createElement("li");
                 li.id = div_id;
@@ -1680,6 +1709,7 @@ var Range = ace.require('ace/range').Range;
 
             buttons.bold = makeButton("wmd-bold-button", getStringAndKey("bold"), "0px", bindCommand("doBold"));
             buttons.italic = makeButton("wmd-italic-button", getStringAndKey("italic"), "-20px", bindCommand("doItalic"));
+            buttons.spellcheck = makeButton("wmd-spellcheck-button",getString("spellcheck"),"-280px", bindCommand("doMisspelled"));
             makeSpacer(1);
             buttons.link = makeButton("wmd-link-button", getStringAndKey("link"), "-40px", bindCommand(function (chunk, postProcessing) {
                 return this.doLinkOrImage(chunk, postProcessing, false);
@@ -1704,8 +1734,12 @@ var Range = ace.require('ace/range').Range;
 
             buttons.redo = makeButton("wmd-redo-button", getStringAndKey("redo"), "-220px", null);
             buttons.redo.execute = function (manager) { inputBox.session.getUndoManager().redo(); };
+
             makeSpacer(4);
             makeCheckBox("wmd-autocom-toggle", "autocom", "-240px", "Autocomplete");
+
+            makeSpacer(5);
+            buttons.help = makeHelpButton("wmd-help-button",getString("help"),"-240px");
 
             if (helpOptions) {
                 var helpButton = document.createElement("li");
@@ -1772,6 +1806,18 @@ var Range = ace.require('ace/range').Range;
 
     commandProto.doItalic = function (chunk, postProcessing) {
         return this.doBorI(chunk, postProcessing, 1, this.getString("italicexample"));
+    };
+
+    commandProto.doMisspelled = function () {
+        var body_spelling = document.getElementById('ace_editor_body');
+        var line_tag = document.getElementById('ace_editor_line_numbers');
+        body_spelling.innerHTML = body_spelling.innerHTML ? '' : '.ace_marker-layer .misspelled { position: absolute; z-index: -2; border-bottom: 1px dotted red; margin-bottom: -1px; }';
+        line_tag.innerHTML = line_tag.innerHTML ? '' : '.misspelled { border-bottom: 1px dotted red; margin-bottom: -1px; }';
+        if(body_spelling.innerHTML !== ''){
+            Cookie.set('spellcheckPersistKey' + window.location.toString(), '1', { expires: 1, path: '/'});
+        } else{
+            Cookie.set('spellcheckPersistKey' + window.location.toString(), '0', { expires: 1, path: '/'});
+        }
     };
 
     // chunk: The selected region that will be enclosed with */**
@@ -2440,6 +2486,5 @@ var Range = ace.require('ace/range').Range;
         chunk.selection = "";
         chunk.skipLines(2, 1, true);
     }
-
 
 })();

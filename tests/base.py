@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 '''Base TestCase class for OSF unittests. Uses a temporary MongoDB database.'''
+import abc
 import os
 import re
 import shutil
@@ -24,9 +25,9 @@ from django.test import TestCase as DjangoTestCase
 
 
 from api.base.wsgi import application as api_django_app
-from admin.base.wsgi import application as admin_django_app
 from framework.mongo import set_up_storage
 from framework.auth import User
+from framework.auth.core import Auth
 from framework.sessions.model import Session
 from framework.guid.model import Guid
 from framework.mongo import client as client_proxy
@@ -43,8 +44,9 @@ from website import settings
 from website.addons.wiki.model import NodeWikiPage
 
 import website.models
+from website.notifications.listeners import subscribe_contributor, subscribe_creator
 from website.signals import ALL_SIGNALS
-from website.project.signals import contributor_added
+from website.project.signals import contributor_added, project_created
 from website.app import init_app
 from website.addons.base import AddonConfig
 from website.project.views.contributor import notify_added_contributor
@@ -126,8 +128,6 @@ class DbTestCase(unittest.TestCase):
 
         cls._original_db_name = settings.DB_NAME
         settings.DB_NAME = cls.DB_NAME
-        cls._original_piwik_host = settings.PIWIK_HOST
-        settings.PIWIK_HOST = None
         cls._original_enable_email_subscriptions = settings.ENABLE_EMAIL_SUBSCRIPTIONS
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
 
@@ -153,7 +153,6 @@ class DbTestCase(unittest.TestCase):
 
         teardown_database(database=database_proxy._get_current_object())
         settings.DB_NAME = cls._original_db_name
-        settings.PIWIK_HOST = cls._original_piwik_host
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = cls._original_enable_email_subscriptions
         settings.BCRYPT_LOG_ROUNDS = cls._original_bcrypt_log_rounds
 
@@ -173,7 +172,10 @@ class AppTestCase(unittest.TestCase):
         self.app = TestApp(test_app)
         if not self.PUSH_CONTEXT:
             return
-        self.context = test_app.test_request_context()
+        self.context = test_app.test_request_context(headers={
+            'Remote-Addr': '146.9.219.56',
+            'User-Agent': 'Mozilla/5.0 (X11; U; SunOS sun4u; en-US; rv:0.9.4.1) Gecko/20020518 Netscape6/6.2.3'
+        })
         self.context.push()
         with self.context:
             celery_before_request()
@@ -250,12 +252,6 @@ class ApiAppTestCase(SimpleTestCase):
     def setUp(self):
         super(ApiAppTestCase, self).setUp()
         self.app = TestAppJSONAPI(api_django_app)
-
-
-class AdminAppTestCase(DjangoTestCase):
-    def setUp(self):
-        super(AdminAppTestCase, self).setUp()
-        self.app = TestApp(admin_django_app)
 
 
 class UploadTestCase(unittest.TestCase):
@@ -336,10 +332,118 @@ class ApiTestCase(DbTestCase, ApiAppTestCase, UploadTestCase, MockRequestTestCas
         super(ApiTestCase, self).setUp()
         settings.USE_EMAIL = False
 
+class ApiAddonTestCase(ApiTestCase):
+    """Base `TestCase` for tests that require interaction with addons.
 
-class AdminTestCase(DbTestCase, AdminAppTestCase, UploadTestCase, MockRequestTestCase):
+    """
+
+    @abc.abstractproperty
+    def short_name(self):
+        pass
+
+    @abc.abstractproperty
+    def addon_type(self):
+        pass
+
+    @abc.abstractmethod
+    def _apply_auth_configuration(self):
+        pass
+
+    @abc.abstractmethod
+    def _set_urls(self):
+        pass
+
+    def _settings_kwargs(self, node, user_settings):
+        return {
+            'user_settings': self.user_settings,
+            'folder_id': '1234567890',
+            'owner': self.node
+        }
+
+    def setUp(self):
+        super(ApiAddonTestCase, self).setUp()
+        from tests.factories import (
+            ProjectFactory,
+            AuthUserFactory,
+        )
+        from website.addons.base import (
+            AddonOAuthNodeSettingsBase, AddonNodeSettingsBase,
+            AddonOAuthUserSettingsBase, AddonUserSettingsBase
+        )
+        assert self.addon_type in ('CONFIGURABLE', 'OAUTH', 'UNMANAGEABLE', 'INVALID')  
+        self.account = None
+        self.node_settings = None
+        self.user_settings = None
+        self.user = AuthUserFactory()
+        self.auth = Auth(self.user)
+        self.node = ProjectFactory(creator=self.user)
+
+        if self.addon_type not in ('UNMANAGEABLE', 'INVALID'):
+            if self.addon_type in ('OAUTH', 'CONFIGURABLE'):
+                self.account = self.AccountFactory()
+                self.user.external_accounts.append(self.account)
+                self.user.save()
+
+            self.user_settings = self.user.get_or_add_addon(self.short_name)
+            self.node_settings = self.node.get_or_add_addon(self.short_name, auth=self.auth)
+
+            if self.addon_type in ('OAUTH', 'CONFIGURABLE'):
+                self.node_settings.set_auth(self.account, self.user)
+                self._apply_auth_configuration()
+            
+        if self.addon_type in ('OAUTH', 'CONFIGURABLE'):
+            assert isinstance(self.node_settings, AddonOAuthNodeSettingsBase)
+            assert isinstance(self.user_settings, AddonOAuthUserSettingsBase)
+
+        self.account_id = self.account._id if self.account else None
+        self.set_urls()
+
+    def tearDown(self):
+        super(ApiAddonTestCase, self).tearDown()
+        self.user.remove()
+        self.node.remove()
+        if self.node_settings:
+            self.node_settings.remove()
+        if self.user_settings:
+            self.user_settings.remove()
+        if self.account:
+            self.account.remove()
+
+
+class AdminTestCase(DbTestCase, DjangoTestCase, UploadTestCase, MockRequestTestCase):
     pass
 
+
+class NotificationTestCase(OsfTestCase):
+    """An `OsfTestCase` to use when testing specific subscription behavior.
+    Use when you'd like to manually create all Node subscriptions and subscriptions
+    for added contributors yourself, and not rely on automatically added ones.
+    """
+    DISCONNECTED_SIGNALS = {
+        # disconnect signals so that add_contributor does not send "fake" emails in tests
+        contributor_added: [notify_added_contributor, subscribe_contributor],
+        project_created: [subscribe_creator]
+    }
+
+    def setUp(self):
+        super(NotificationTestCase, self).setUp()
+
+    def tearDown(self):
+        super(NotificationTestCase, self).tearDown()
+
+
+class ApiWikiTestCase(ApiTestCase):
+
+    def setUp(self):
+        from tests.factories import AuthUserFactory
+        super(ApiWikiTestCase, self).setUp()
+        self.user = AuthUserFactory()
+        self.non_contributor = AuthUserFactory()
+
+    def _add_project_wiki_page(self, node, user):
+        from tests.factories import NodeWikiFactory
+        # API will only return current wiki pages
+        return NodeWikiFactory(node=node, user=user)
 
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py
 class CaptureSignals(object):
@@ -404,11 +508,10 @@ def assert_before(lst, item1, item2):
     assert_less(lst.index(item1), lst.index(item2),
         '{0!r} appears before {1!r}'.format(item1, item2))
 
-
 def assert_datetime_equal(dt1, dt2, allowance=500):
     """Assert that two datetimes are about equal."""
-    assert_less(dt1 - dt2, dt.timedelta(milliseconds=allowance))
 
+    assert abs(dt1 - dt2) < dt.timedelta(milliseconds=allowance)
 
 def init_mock_addon(short_name, user_settings=None, node_settings=None):
     """Add an addon to the settings, so that it is ready for app init

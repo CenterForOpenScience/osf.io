@@ -7,15 +7,59 @@ var $ = require('jquery');
 var ko = require('knockout');
 var moment = require('moment');
 var Raven = require('raven-js');
+var linkifyHtml = require('linkifyjs/html');
 var koHelpers = require('./koHelpers');
-require('knockout.punches');
 require('jquery-autosize');
-ko.punches.enableAll();
 
 var osfHelpers = require('js/osfHelpers');
 var CommentPane = require('js/commentpane');
 var markdown = require('js/markdown');
+var atMention = require('js/atMention');
 
+// Cached contributor data, to prevent multiple fetches for @mentions
+var __contributorCache = null;
+
+var getContributorList = function(url, contributors, ret) {
+    contributors = contributors || [];
+    ret = ret || $.Deferred();
+    if (__contributorCache !== null) {
+        ret.resolve(__contributorCache);
+    } else {
+        var request = osfHelpers.ajaxJSON(
+            'GET',
+            url,
+            {'isCors': true});
+        request.done(function(response) {
+            var activeContributors = response.data.filter(function(item) {
+                return item.embeds.users.data.attributes.active === true;
+            });
+            contributors = contributors.concat(activeContributors);
+            if (response.links.next) {
+                return getContributorList(response.links.next, contributors, ret);
+            }
+            var data = contributors.map(function(item) {
+                var userData = item.embeds.users.data;
+                return {
+                    'id': userData.id,
+                    'name': userData.attributes.given_name,
+                    'fullName': userData.attributes.full_name,
+                    'link': userData.links.html
+                };
+            });
+            __contributorCache = data;
+            ret.resolve(data);
+        });
+        request.fail(function(xhr, status, error) {
+            Raven.captureMessage('Error getting contributors', {
+                url: url,
+                status: status,
+                error: error
+            });
+            ret.reject(xhr, status, error);
+        });
+    }
+    return ret.promise();
+};
 
 // Maximum length for comments, in characters
 var MAXLENGTH = 500;
@@ -27,6 +71,7 @@ var ABUSE_CATEGORIES = {
 };
 
 var FILES = 'files';
+var WIKI = 'wiki';
 
 /*
  * Format UTC datetime relative to current datetime, ensuring that time
@@ -40,7 +85,8 @@ var relativeDate = function(datetime) {
 };
 
 var notEmpty = function(value) {
-    return !!$.trim(value);
+    var trimmed = $.trim(value).toLowerCase();
+    return !!trimmed && trimmed !== '<br>';
 };
 
 var exclusify = function(subscriber, subscribees) {
@@ -63,6 +109,54 @@ var exclusifyGroup = function() {
     }
 };
 
+var convertMentionHtmlToMarkdown = function(commentContent) {
+    var content = commentContent || '';
+    var pattern = '<span[^>]*?data-atwho-guid="([a-z\\d]{5})"[^>]*?>((@|\\+)[^<]+)<\/span>';
+    var regex = new RegExp(pattern);
+    var regexG = new RegExp(pattern, 'g');
+    var matches = content.match(regexG);
+    if (matches) {
+        for (var i = 0; i < matches.length; i++) {
+            var match = regex.exec(matches[i]);
+            var guid = match[1];
+            var mention = match[2];
+            var url = osfHelpers.getDomain() + '/' + guid + '/';
+            content = content.replace(match[0], '['+ mention + '](' + url + ')');
+        }
+    }
+    // '&#13;&#10;' is the character entity reference for '\r\n'
+    // '\r\n' is treated differently and breaks conversion from markdown to html
+    content = content.replace(/<span[^>]*?>/g, '')
+        .replace(/<\/span>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/<br>/g, '&#13;&#10;');
+    return content;
+};
+
+var convertMentionMarkdownToHtml = function(commentContent) {
+    var content = commentContent ||'';
+    var pattern = '\\[(@|\\+)(.*?)\\]\\(htt[ps]{1,2}:\\/\\/[a-z\\d:.]+?\\/([a-z\\d]{5})\\/\\)';
+    var regex = new RegExp(pattern);
+    var regexG = new RegExp(pattern, 'g');
+    var matches = content.match(regexG);
+    if (matches) {
+        for (var i = 0; i < matches.length; i++) {
+            var match = regex.exec(matches[i]);
+            var atwho = match[1];
+            var guid = match[3];
+            var mention = match[2];
+
+            content = content.replace(
+                match[0],
+                '<span class="atwho-inserted" contenteditable="false" data-atwho-guid="' +
+                    guid + '" data-atwho-at-query="' + atwho + '">' +
+                    atwho + mention + '</span>'
+            );
+        }
+    }
+    return content.replace(/\r\n/g, '<br>');
+};
+
 var BaseComment = function() {
 
     var self = this;
@@ -79,9 +173,19 @@ var BaseComment = function() {
     self.replying = ko.observable(false);
     self.replyContent = ko.observable('');
 
+    self.urlForNext = ko.observable();
+
+    self.saveContent = ko.pureComputed(function() {
+        return convertMentionHtmlToMarkdown(self.replyContent());
+    });
+
     self.submittingReply = ko.observable(false);
 
     self.comments = ko.observableArray();
+
+    self.loadingComments = ko.observable(true);
+
+    self.underMaxLength = ko.observable(true);
 
     self.replyNotEmpty = ko.pureComputed(function() {
         return notEmpty(self.replyContent());
@@ -89,7 +193,16 @@ var BaseComment = function() {
     self.commentButtonText = ko.computed(function() {
         return self.submittingReply() ? 'Commenting' : 'Comment';
     });
+    self.validateReply = ko.pureComputed(function() {
+        return self.replyNotEmpty() && self.underMaxLength();
+    });
 
+};
+
+BaseComment.prototype.handleEditableUpdate = function(element, underMaxLength, charLimit) {
+    var self = this;
+    self.underMaxLength(underMaxLength);
+    self.errorMessage(underMaxLength ? '' : 'Exceeds character limit. Please reduce to ' + charLimit + ' characters or less.');
 };
 
 BaseComment.prototype.abuseLabel = function(item) {
@@ -105,6 +218,7 @@ BaseComment.prototype.cancelReply = function() {
     this.replying(false);
     this.submittingReply(false);
     this.replyErrorMessage('');
+    this.errorMessage('');
 };
 
 BaseComment.prototype.setupToolTips = function(elm) {
@@ -120,31 +234,41 @@ BaseComment.prototype.setupToolTips = function(elm) {
 
 BaseComment.prototype.fetch = function() {
     var self = this;
+    var setUnread = self.getTargetType() !== 'comments' && !osfHelpers.urlParams().view_only && self.author.id !== '';
     if (self.comments().length === 0) {
         var urlParams = osfHelpers.urlParams();
         var query = 'embed=user';
+        if (!osfHelpers.urlParams().view_only && setUnread) {
+            query += '&related_counts=True';
+        }
         if (urlParams.view_only && !window.contextVars.node.isPublic) {
             query += '&view_only=' + urlParams.view_only;
         }
         if (self.id() !== undefined) {
             query += '&filter[target]=' + self.id();
         }
+        query += '&page[size]=30';
         var url = osfHelpers.apiV2Url(self.$root.nodeType + '/' + window.contextVars.node.id + '/comments/', {query: query});
-        self.fetchNext(url, []);
+        self.fetchNext(url, [], setUnread);
     }
 };
 
-/* Go through the paginated API response to fetch all comments for the specified target */
-BaseComment.prototype.fetchNext = function(url, comments) {
+/* Go get the next specified page of the API response, and add to the comments list */
+BaseComment.prototype.fetchNext = function(url, comments, setUnread) {
     var self = this;
     var request = osfHelpers.ajaxJSON(
         'GET',
         url,
         {'isCors': true});
+    self.loadingComments(true);
     request.done(function(response) {
         comments = response.data;
         if (self._loaded !== true) {
             self._loaded = true;
+        }
+        if (setUnread && response.links.meta.unread) {
+            self.$root.unreadComments(response.links.meta.unread);
+            setUnread = false;
         }
         comments.forEach(function(comment) {
             self.comments.push(
@@ -152,38 +276,22 @@ BaseComment.prototype.fetchNext = function(url, comments) {
             );
         });
         self.configureCommentsVisibility();
-        if (response.links.next !== null) {
-            self.fetchNext(response.links.next, comments);
-        } else {
-            self.loadingComments(false);
-        }
-    }).fail(function () {
+        self.urlForNext(response.links.next);
+    }).always(function () {
         self.loadingComments(false);
     });
 };
 
-BaseComment.prototype.setUnreadCommentCount = function() {
+BaseComment.prototype.getMoreComments = function() {
     var self = this;
-    var url;
-    if (self.page() === FILES) {
-        url = osfHelpers.apiV2Url('files/' + self.$root.fileId + '/', {query: 'related_counts=True'});
-    } else {
-        url = osfHelpers.apiV2Url(self.$root.nodeType + '/' + window.contextVars.node.id + '/', {query: 'related_counts=True'});
-    }
-    var request = osfHelpers.ajaxJSON(
-        'GET',
-        url,
-        {'isCors': true});
-    request.done(function(response) {
-        if (self.page() === FILES) {
-            self.unreadComments(response.data.relationships.comments.links.related.meta.unread);
-        } else {
-            self.unreadComments(response.data.relationships.comments.links.related.meta.unread.node);
-        }
-    });
-    return request;
-};
+    var nextUrl = self.urlForNext();
+    var comments = self.comments();
+    var setUnread = self.getTargetType() !== 'comments' && !osfHelpers.urlParams().view_only && self.author.id !== '';
 
+    if (self.urlForNext() && !self.loadingComments()) {
+        self.fetchNext(nextUrl, comments, setUnread);
+    }
+};
 
 BaseComment.prototype.configureCommentsVisibility = function() {
     var self = this;
@@ -193,12 +301,15 @@ BaseComment.prototype.configureCommentsVisibility = function() {
     }
 };
 
-var getTargetType = function(self) {
+BaseComment.prototype.getTargetType = function() {
+    var self = this;
     if (self.id() === window.contextVars.node.id) {
         return 'nodes';
     } else if (self.id() === self.$root.rootId() && self.page() === FILES) {
         return 'files';
-    } else{
+    } else if (self.id() === self.$root.rootId() && self.page() === WIKI) {
+        return 'wiki';
+    } else {
         return 'comments';
     }
 };
@@ -224,12 +335,12 @@ BaseComment.prototype.submitReply = function() {
                 'data': {
                     'type': 'comments',
                     'attributes': {
-                        'content': self.replyContent()
+                        'content': self.saveContent(),
                     },
                     'relationships': {
                         'target': {
                             'data': {
-                                'type': getTargetType(self),
+                                'type': self.getTargetType(),
                                 'id': self.id() === window.contextVars.node.id ? window.contextVars.node.id : self.id()
                             }
                         }
@@ -282,31 +393,65 @@ var CommentModel = function(data, $parent, $root) {
     self.isAbuse = ko.observable(data.attributes.is_abuse);
     self.canEdit = ko.observable(data.attributes.can_edit);
     self.hasChildren = ko.observable(data.attributes.has_children);
+    self.hasReport = ko.observable(data.attributes.has_report);
+    self.isHam = ko.observable(data.attributes.is_ham);
+
+    self.isDeletedAbuse = ko.pureComputed(function() {
+        return self.isDeleted() && self.isAbuse();
+    });
+    self.isDeletedNotAbuse = ko.pureComputed(function() {
+        return self.isDeleted() && !self.isAbuse();
+    });
+    self.isAbuseNotDeleted = ko.pureComputed(function() {
+        return !self.isDeleted() && self.isAbuse();
+    });
 
     if (window.contextVars.node.anonymous) {
         self.author = {
             'id': null,
-            'url': '',
+            'urls': {'profile': ''},
             'fullname': 'A User',
             'gravatarUrl': ''
         };
-    } else if ('embeds' in data && 'user' in data.embeds) {
+    } else if ('embeds' in data && 'user' in data.embeds && 'data' in data.embeds.user) {
         var userData = data.embeds.user.data;
         self.author = {
             'id': userData.id,
-            'url': userData.links.html,
+            'urls': {'profile': userData.links.html},
             'fullname': userData.attributes.full_name,
             'gravatarUrl': userData.links.profile_image
         };
+    } else if ('embeds' in data && 'user' in data.embeds && 'errors' in data.embeds.user) {
+        var errors = data.embeds.user.errors;
+        for (var e in data.embeds.user.errors) {
+            if ('meta' in errors[e] && 'full_name' in errors[e].meta) {
+                self.author = {
+                    'id': null,
+                    'urls': {'profile': ''},
+                    'fullname': errors[e].meta.full_name,
+                    'gravatarUrl': ''
+                };
+                break;
+            }
+        }
     } else {
         self.author = self.$root.author;
     }
 
-    self.contentDisplay = ko.observable(markdown.full.render(self.content()));
+    self.editableContent = ko.pureComputed(function() {
+        return convertMentionMarkdownToHtml(self.content());
+    });
+
+    self.editedContent = ko.pureComputed(function() {
+        return convertMentionHtmlToMarkdown(self.content());
+    });
+
+    var linkifyOpts = { target: function (href, type) { return type === 'url' ? '_top' : null; } };
+    self.contentDisplay = ko.observable(linkifyHtml(markdown.full.render(self.content()), linkifyOpts));
 
     // Update contentDisplay with rendered markdown whenever content changes
     self.content.subscribe(function(newContent) {
-        self.contentDisplay(markdown.full.render(newContent));
+        self.contentDisplay(linkifyHtml(markdown.full.render(newContent), linkifyOpts));
     });
 
     self.prettyDateCreated = ko.computed(function() {
@@ -339,16 +484,16 @@ var CommentModel = function(data, $parent, $root) {
         return notEmpty(self.content());
     });
 
+    self.validateEdit = ko.pureComputed(function() {
+        return self.editNotEmpty() && self.underMaxLength();
+    });
+
     self.toggleIcon = ko.computed(function() {
         return self.showChildren() ? 'fa fa-minus' : 'fa fa-plus';
     });
 
     self.canReport = ko.pureComputed(function() {
         return self.$root.canComment() && !self.canEdit();
-    });
-
-    self.shouldShow = ko.pureComputed(function() {
-        return !self.isDeleted() || self.hasChildren() || self.canEdit();
     });
 
     self.nodeUrl = '/' + self.$root.nodeId() + '/';
@@ -360,19 +505,24 @@ CommentModel.prototype = new BaseComment();
 CommentModel.prototype.edit = function() {
     if (this.canEdit()) {
         this._content = this.content();
+        this.content(this.editableContent());
         this.editing(true);
         this.$root.editors += 1;
     }
 };
 
 CommentModel.prototype.autosizeText = function(elm) {
-    $(elm).find('textarea').autosize().focus();
+    var self = this;
+    var $elm = $(elm);
+    $elm.find('textarea').autosize().focus();
+    initAtMention(self.$root.nodeId(), $elm.find(self.$root.inputSelector));
 };
 
 CommentModel.prototype.cancelEdit = function() {
     this.editing(false);
     this.$root.editors -= 1;
     this.editErrorMessage('');
+    this.errorMessage('');
     this.content(this._content);
 };
 
@@ -396,7 +546,7 @@ CommentModel.prototype.submitEdit = function(data, event) {
                     'id': self.id(),
                     'type': 'comments',
                     'attributes': {
-                        'content': self.content(),
+                        'content': self.editedContent(),
                         'deleted': false
                     }
                 }
@@ -458,6 +608,7 @@ CommentModel.prototype.submitAbuse = function() {
     request.done(function() {
         self.isAbuse(true);
         self.reporting(false);
+        self.hasReport(true);
     });
     request.fail(function(xhr, status, error) {
         self.errorMessage('Could not report abuse.');
@@ -590,26 +741,23 @@ var CommentListModel = function(options) {
     self.$root = self;
     self.MAXLENGTH = MAXLENGTH;
 
+    self.inputSelector = options.inputSelector;
     self.editors = 0;
     self.nodeId = ko.observable(options.nodeId);
     self.nodeApiUrl = options.nodeApiUrl;
     self.nodeType = options.isRegistration ? 'registrations' : 'nodes';
     self.page(options.page);
+    self.pageTitle = options.pageTitle;
     self.id = ko.observable(options.rootId);
     self.rootId = ko.observable(options.rootId);
     self.fileId = options.fileId || '';
     self.canComment = ko.observable(options.canComment);
     self.hasChildren = ko.observable(options.hasChildren);
     self.author = options.currentUser;
-    self.loadingComments = ko.observable(true);
 
     self.togglePane = options.togglePane;
 
     self.unreadComments = ko.observable(0);
-    if (!osfHelpers.urlParams().view_only) {
-        self.setUnreadCommentCount();
-    }
-
     self.displayCount = ko.pureComputed(function() {
         if (self.unreadComments() !== 0) {
             return self.unreadComments().toString();
@@ -623,8 +771,9 @@ var CommentListModel = function(options) {
         self.unreadComments(0);
     };
 
-    self.fetch(options.nodeId);
+    osfHelpers.onScrollToBottom(document.getElementById('comments_window'), self.getMoreComments.bind(self));
 
+    self.fetch(options.nodeId);
 };
 
 CommentListModel.prototype = new BaseComment();
@@ -641,8 +790,8 @@ CommentListModel.prototype.initListeners = function() {
     });
 };
 
-var onOpen = function(page, rootId, nodeApiUrl) {
-    if (osfHelpers.urlParams().view_only){
+var onOpen = function(page, rootId, nodeApiUrl, currentUserId) {
+    if (osfHelpers.urlParams().view_only || !currentUserId) {
         return null;
     }
     var timestampUrl = nodeApiUrl + 'comments/timestamps/';
@@ -652,7 +801,7 @@ var onOpen = function(page, rootId, nodeApiUrl) {
             page: page,
             rootId: rootId
         }
-    );    
+    );
     request.fail(function(xhr, textStatus, errorThrown) {
         Raven.captureMessage('Could not update comment timestamp', {
             extra: {
@@ -665,6 +814,19 @@ var onOpen = function(page, rootId, nodeApiUrl) {
     return request;
 };
 
+
+function initAtMention(nodeId, selectorOrElem) {
+    var url = osfHelpers.apiV2Url('nodes/' + nodeId + '/contributors/', {
+        query: {
+            'page[size]': 50
+        }
+    });
+    return getContributorList(url)
+        .then(function(contributors) {
+            atMention(selectorOrElem, contributors);
+        });
+}
+
 /* options example: {
  *      nodeId: Node._id,
  *      nodeApiUrl: Node.api_url,
@@ -673,19 +835,17 @@ var onOpen = function(page, rootId, nodeApiUrl) {
  *      rootId: Node._id,
  *      fileId: StoredFileNode._id,
  *      canComment: User.canComment,
- *      hasChildren: Node.hasChildren, 
- *      currentUser: {
- *          id: User._id,
- *          url: User.url,
- *          fullname: User.fullname,
- *          gravatarUrl: User.profile_image_url
- *      }
+ *      hasChildren: Node.hasChildren,
+ *      currentUser: window.contextVars.currentUser,
+ *      pageTitle: Node.title
  * }
  */
 var init = function(commentLinkSelector, commentPaneSelector, options) {
+    // TODO: Don't hardcode selector here; pass argument in page module
+    initAtMention(options.nodeId, options.inputSelector);
     var cp = new CommentPane(commentPaneSelector, {
         onOpen: function(){
-            return onOpen(options.page, options.rootId, options.nodeApiUrl);
+            return onOpen(options.page, options.rootId, options.nodeApiUrl, options.currentUser.id);
         }
     });
     options.togglePane = cp.toggle;
@@ -698,5 +858,7 @@ var init = function(commentLinkSelector, commentPaneSelector, options) {
 };
 
 module.exports = {
-    init: init
+    init: init,
+    convertMentionHtmlToMarkdown: convertMentionHtmlToMarkdown,
+    convertMentionMarkdownToHtml: convertMentionMarkdownToHtml
 };

@@ -83,6 +83,11 @@ def json_api_exception_handler(exc, context):
     return response
 
 
+class EndpointNotImplementedError(APIException):
+    status_code = status.HTTP_501_NOT_IMPLEMENTED
+    default_detail = _('This endpoint is not yet implemented.')
+
+
 class ServiceUnavailableError(APIException):
     status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     default_detail = _('Service is unavailable at this time.')
@@ -160,10 +165,10 @@ class InvalidFilterValue(JSONAPIParameterException):
         if not detail:
             detail = "Value '{0}' is not valid".format(value)
             if field_type:
-                detail += " for a filter on type {0}".format(
+                detail += ' for a filter on type {0}'.format(
                     field_type
                 )
-            detail += "."
+            detail += '.'
         super(InvalidFilterValue, self).__init__(detail=detail, parameter='filter')
 
 
@@ -226,3 +231,14 @@ class TargetNotSupportedError(Exception):
 class RelationshipPostMakesNoChanges(Exception):
     """Raised when a post is on a relationship that already exists, so view can return a 204"""
     pass
+
+
+class NonDescendantNodeError(APIException):
+    """Raised when a client attempts to associate a non-descendant node with a view only link"""
+    status_code = 400
+    default_detail = _('The node {0} cannot be affiliated with this View Only Link because the node you\'re trying to affiliate is not descended from the node that the View Only Link is attached to.')
+
+    def __init__(self, node_id, detail=None):
+        if not detail:
+            detail = self.default_detail.format(node_id)
+        super(NonDescendantNodeError, self).__init__(detail=detail)
