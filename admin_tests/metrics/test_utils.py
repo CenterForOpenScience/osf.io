@@ -204,11 +204,10 @@ class TestRenderToCSVResponse(AdminTestCase):
         get_days_statistics(last_time + timedelta(seconds=1))
         self.time = time_now + timedelta(seconds=1)
 
-        self.FULL_PERSON_CSV_NO_VERBOSE = [
-            ['id', 'name', 'address', 'info', 'born'],
-            ['1', 'vetch', 'iffish', 'wizard', '2001-01-01T01:01:00'],
-            ['2', 'nemmerle', 'roke', 'deceased arch mage', '2001-01-01T01:01:00'],
-            ['3', 'ged', 'gont', 'former arch mage', '2001-01-01T01:01:00']]
+        self.FULL_PERSON_CSV_NO_VERBOSE = ['id,users,delta_users,unregistered_users,projects,delta_projects,'
+                                           'public_projects,delta_public_projects,registered_projects,'
+                                           'delta_registered_projects,date\r',
+                                           '1,0,0,0,0,0,0,0,0,0,2016-09-25 00:00:01.000001\r', '']
 
     def csv_match(self, csv_file, expected_data, **csv_kwargs):
         assertion_results = []
