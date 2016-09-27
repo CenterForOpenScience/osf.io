@@ -60,7 +60,8 @@ def is_anonymized(request):
 
 class ShowIfVersion(ser.Field):
     """
-    Skips the field if the specified request version is not within the field's allowed versions.
+    Skips the field if the specified request version is not after a feature's earliest supported version,
+    or not before the feature's latest supported version.
     """
 
     def __init__(self, field, min_version, max_version, **kwargs):

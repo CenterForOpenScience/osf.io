@@ -89,7 +89,7 @@ class TestNodeLinksList(ApiTestCase):
         url = '{}?version=2.1'.format(self.public_url)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
-        assert_equal(res.json['errors'][0]['detail'], 'This feature is depreciated as of version 2.1')
+        assert_equal(res.json['errors'][0]['detail'], 'This feature is deprecated as of version 2.1')
 
 
 class TestNodeLinkCreate(ApiTestCase):

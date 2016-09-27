@@ -8,11 +8,7 @@ from api.base import utils
 
 
 def get_major_version(version):
-    try:
-        major_version = int(float(version))
-    except ValueError:
-        major_version = int(version.split('.')[0])
-    return major_version
+    return int(version.split('.')[0])
 
 
 def url_path_version_to_decimal(url_path_version):

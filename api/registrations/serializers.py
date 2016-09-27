@@ -133,7 +133,7 @@ class BaseRegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_pointers_count'},
         help_text='This feature is deprecated as of version 2.1. Use linked_nodes instead.'
-    )), min_version='2.0', max_version='2.1')
+    )), min_version='2.0', max_version='2.0')
 
     parent = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-detail',
