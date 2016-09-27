@@ -204,7 +204,7 @@ class TestRenderToCSVResponse(AdminTestCase):
         self.initial_static = [
             'id,users,delta_users,unregistered_users,projects,delta_projects,public_projects,'
             'delta_public_projects,registered_projects,delta_registered_projects,date\r',
-            '1,0,0,0,0,0,0,0,0,0,' + time_now.strftime('%Y-%m-%d %H:%M:%s.%f')+'\r', '']
+            '1,0,0,0,0,0,0,0,0,0,' + time_now.strftime('%Y-%m-%d %H:%M:%s.%f') + '\r', '']
 
     def test_render_to_csv_response(self):
         queryset = OSFWebsiteStatistics.objects.all().order_by('-date')
