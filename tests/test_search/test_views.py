@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+import unittest
+
 from nose.tools import *  # noqa PEP8 asserts
 from nose_parameterized import parameterized
 
@@ -120,7 +122,7 @@ MAKERS = {
     FILE: make_file,
 }
 
-def cases():
+def generate_cases():
     for status in (PRIVATE, PUBLIC):
         for type_ in (PROJECT, REGISTRATION, COMPONENT, FILE):
             make = MAKERS[type_]
@@ -129,6 +131,18 @@ def cases():
                 included = perms is READ if status is PRIVATE else True
                 key = 'name' if type_ is FILE else 'title'
                 yield get_test_name(**locals()), make, status, perms, type_, included, key
+
+
+class TestGenerateCases(unittest.TestCase):
+
+    # gc - generate_cases
+
+    def test_gc_generates_cases(self):
+        assert_equal(len(list(generate_cases())), 21)
+
+    def test_gc_doesnt_create_any_nodes(self):
+        list(generate_cases())
+        assert_equal(len(Node.find()), 0)
 
 
 class TestSearchSearchAPI(SearchTestCase):
@@ -140,7 +154,7 @@ class TestSearchSearchAPI(SearchTestCase):
         data = {'q': 'category:{} AND {}'.format(category, query)}
         return self.app.get(url, data, auth=auth).json['results']
 
-    @parameterized.expand(cases)
+    @parameterized.expand(generate_cases)
     def test(self, ignored, make, status, perms, type_, included, key):
         node = make(status)
 
