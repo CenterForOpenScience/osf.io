@@ -24,3 +24,4 @@ from osf_models.models.wiki import NodeWikiPage  # noqa
 from osf_models.models.subject import Subject  # noqa
 from osf_models.models.preprint_provider import PreprintProvider  # noqa
 from osf_models.models.preprint import Preprint  # noqa
+from osf_models.models.identifiers import Identifier  # noqa

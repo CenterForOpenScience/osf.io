@@ -1262,15 +1262,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 status.push_status_message(message, kind='info', trust=False)
 
         for node_contained in original.nodes.filter(is_deleted=False):
-            child_registration = node_contained.register_node(  # noqa
+            node_contained.register_node(  # noqa
                 schema=schema,
                 auth=auth,
                 data=data,
                 parent=registered,
             )
-            # TODO: Add links
-            # if child_registration and not child_registration.primary:
-            #     registered.nodes.append(child_registration)
+        # Copy linked nodes
+        registered.linked_nodes.add(*original.linked_nodes.values_list('pk', flat=True))
 
         registered.save()
 
