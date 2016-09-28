@@ -398,6 +398,20 @@ class TestFileView(ApiTestCase):
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
+    def test_current_version_is_equal_to_length_of_history(self):
+        res = self.app.get(self.file_url, auth=self.user.auth)
+        assert_equal(res.json['data']['attributes']['current_version'], 1)
+        for version in range(2, 4):
+            self.file.create_version(self.user, {
+                'object': '06d80e' + str(version),
+                'service': 'cloud',
+                osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+            }, {'size': 1337,
+                'contentType': 'img/png'
+            }).save()
+            res = self.app.get(self.file_url, auth=self.user.auth)
+            assert_equal(res.json['data']['attributes']['current_version'], version)
+
 
 class TestFileVersionView(ApiTestCase):
     def setUp(self):
