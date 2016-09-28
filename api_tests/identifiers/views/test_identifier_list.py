@@ -90,6 +90,13 @@ class TestRegistrationIdentifierList(ApiTestCase):
         assert_equal(self.identifier._id, data[0]['id'])
         assert_not_equal(self.node_identifier._id, data[0]['id'])
 
+    def test_node_not_allowed_from_registrations_endpoint(self):
+        self.node = NodeFactory(creator=self.user, is_public=True)
+        self.node_identifier = IdentifierFactory(referent=self.node)
+        url = '/{}registrations/{}/identifiers/'.format(API_BASE, self.node._id)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
 
 class TestNodeIdentifierList(ApiTestCase):
 
@@ -156,7 +163,7 @@ class TestNodeIdentifierList(ApiTestCase):
         total = new_res.json['links']['meta']['total']
         assert_equal(total, carpid_total)
 
-    def test_node_identifier_not_returned_from_registration_endpoint(self):
+    def test_registration_identifier_not_returned_from_registration_endpoint(self):
         self.registration = RegistrationFactory(creator=self.user, is_public=True)
         self.registration_identifier = IdentifierFactory(referent=self.registration)
         res = self.app.get(self.url)
@@ -165,3 +172,10 @@ class TestNodeIdentifierList(ApiTestCase):
         assert_equal(len(data), 1)
         assert_equal(self.identifier._id, data[0]['id'])
         assert_not_equal(self.registration_identifier._id, data[0]['id'])
+
+    def test_registration_not_allowed_from_nodes_endpoint(self):
+        self.registration = RegistrationFactory(creator=self.user, is_public=True)
+        self.registration_identifier = IdentifierFactory(referent=self.registration)
+        url = '/{}nodes/{}/identifiers/'.format(API_BASE, self.registration._id)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 404)

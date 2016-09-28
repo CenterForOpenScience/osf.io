@@ -1,6 +1,7 @@
 import weakref
 from django.conf import settings as django_settings
 from django.http import JsonResponse
+from modularodm import Q
 from rest_framework.decorators import api_view, throttle_classes
 from rest_framework.response import Response
 from rest_framework import generics
@@ -13,7 +14,7 @@ from framework.auth.oauth_scopes import CoreScopes
 from rest_framework.mixins import ListModelMixin
 from api.base import permissions as base_permissions
 from api.base.exceptions import RelationshipPostMakesNoChanges
-from api.base.filters import ListFilterMixin
+from api.base.filters import ListFilterMixin, ODMFilterMixin
 
 from api.users.serializers import UserSerializer
 from api.base.parsers import JSONAPIRelationshipParser
@@ -23,11 +24,16 @@ from api.base.serializers import LinkedNodesRelationshipSerializer
 from api.base.serializers import LinkedRegistrationsRelationshipSerializer
 from api.base.throttling import RootAnonThrottle, UserRateThrottle
 from api.base import utils
-from api.nodes.permissions import ReadOnlyIfRegistration
-from api.nodes.permissions import ContributorOrPublic
-from api.nodes.permissions import ContributorOrPublicForRelationshipPointers
+from api.nodes.permissions import (
+    IsPublic,
+    ExcludeWithdrawals,
+    ContributorOrPublic,
+    ReadOnlyIfRegistration,
+    ContributorOrPublicForRelationshipPointers,
+)
+
 from api.base.utils import is_bulk_request, get_user_auth
-from website.models import Pointer
+from website.models import Pointer, Identifier
 
 
 CACHE = weakref.WeakKeyDictionary()
@@ -817,3 +823,29 @@ class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
             # and pointer.node.is_registration
             and pointer.node.can_view(auth)
         ], key=lambda n: n.date_modified, reverse=True)
+
+
+class BaseIdentifierList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
+
+    permission_classes = (
+        IsPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ExcludeWithdrawals
+    )
+
+    required_read_scopes = [CoreScopes.IDENTIFIERS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = None
+    view_category = None
+    view_name = None
+    node_lookup_url_kwarg = 'node_id'
+
+    # overrides ODMFilterMixin
+    def get_default_odm_query(self):
+        return Q('referent', 'eq', self.get_node())
+
+    # overrides ListCreateAPIView
+    def get_queryset(self):
+        return Identifier.find(self.get_query_from_request())

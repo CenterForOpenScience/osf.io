@@ -4,7 +4,7 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from website.project.model import Q, Node, Pointer
 from api.base import permissions as base_permissions
-from api.base.views import JSONAPIBaseView, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList
+from api.base.views import JSONAPIBaseView, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList, BaseIdentifierList
 
 from api.base.serializers import HideIfWithdrawal
 from api.base.serializers import LinkedNodesRelationshipSerializer
@@ -12,6 +12,7 @@ from api.base.parsers import JSONAPIRelationshipParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
 from api.base.utils import get_user_auth
 from api.comments.serializers import RegistrationCommentSerializer, CommentCreateSerializer
+from api.identifiers.serializers import IdentifierRegistrationSerializer
 from api.users.views import UserMixin
 
 from api.nodes.permissions import (
@@ -947,3 +948,42 @@ class RegistrationViewOnlyLinkDetail(NodeViewOnlyLinkDetail, RegistrationMixin):
 
     view_category = 'registrations'
     view_name = 'registration-view-only-link-detail'
+
+
+class RegistrationIdentifierList(BaseIdentifierList, RegistrationMixin):
+    """List of identifiers for a specified node. *Read-only*.
+
+    ##Identifier Attributes
+
+    OSF Identifier entities have the "identifiers" `type`.
+
+        name           type                   description
+        ----------------------------------------------------------------------------
+        category       string                 e.g. 'ark', 'doi'
+        value          string                 the identifier value itself
+
+    ##Links
+
+        self: this identifier's detail page
+
+    ##Relationships
+
+    ###Referent
+
+    The identifier is refers to this node.
+
+    ##Actions
+
+    *None*.
+
+    ##Query Params
+
+     Identifiers may be filtered by their category.
+
+    #This Request/Response
+
+    """
+
+    serializer_class = IdentifierRegistrationSerializer
+    view_category = 'registrations'
+    view_name = 'registration-identifier-list'

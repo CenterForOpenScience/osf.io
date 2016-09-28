@@ -28,7 +28,7 @@ from api.comments.serializers import NodeCommentSerializer, CommentCreateSeriali
 from api.comments.permissions import CanCommentOrPublic
 from api.users.views import UserMixin
 from api.wikis.serializers import WikiSerializer
-from api.base.views import LinkedNodesRelationship, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList, BaseLinkedList
+from api.base.views import LinkedNodesRelationship, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList, BaseLinkedList, BaseIdentifierList
 from api.base.throttling import AddContributorThrottle
 
 from api.nodes.serializers import (
@@ -57,6 +57,7 @@ from api.citations.utils import render_citation
 from api.addons.serializers import NodeAddonFolderSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.institutions.serializers import InstitutionSerializer
+from api.identifiers.serializers import IdentifierNodeSerializer
 from api.nodes.permissions import (
     IsAdmin,
     IsPublic,
@@ -3175,3 +3176,42 @@ class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIV
         link.is_deleted = True
         link.save()
         enqueue_postcommit_task(ban_url, (self.get_node(),), {}, celery=True, once_per_request=True)
+
+
+class NodeIdentifierList(BaseIdentifierList, NodeMixin):
+    """List of identifiers for a specified node. *Read-only*.
+
+    ##Identifier Attributes
+
+    OSF Identifier entities have the "identifiers" `type`.
+
+        name           type                   description
+        ----------------------------------------------------------------------------
+        category       string                 e.g. 'ark', 'doi'
+        value          string                 the identifier value itself
+
+    ##Links
+
+        self: this identifier's detail page
+
+    ##Relationships
+
+    ###Referent
+
+    The identifier is refers to this node.
+
+    ##Actions
+
+    *None*.
+
+    ##Query Params
+
+     Identifiers may be filtered by their category.
+
+    #This Request/Response
+
+    """
+
+    serializer_class = IdentifierNodeSerializer
+    view_category = 'nodes'
+    view_name = 'node-identifier-list'
