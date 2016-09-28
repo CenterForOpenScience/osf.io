@@ -30,7 +30,7 @@
 
                     % endif
                         <li>
-                            <a href="${node['url']}"  class="project-title"> 
+                            <a href="${node['url']}"  class="project-title">
                                 ${ node['title'] }
                             </a>
                         </li>
@@ -67,7 +67,7 @@
                         % if not node['anonymous']:
                             <li><a href="${node['url']}forks/">Forks</a></li>
                         %endif
-                        
+
                         % if user['is_contributor']:
                             <li><a href="${node['url']}contributors/">Contributors</a></li>
                         % endif
@@ -76,7 +76,7 @@
                             <li><a href="${node['url']}settings/">Settings</a></li>
                         % endif
                     % endif
-                    % if user['can_comment'] or node['has_comments']:
+                    % if (user['can_comment'] or node['has_comments']) and not node['anonymous']:
                         <li id="commentsLink">
                             <a href="" class="visible-xs cp-handle" data-bind="click:removeCount" data-toggle="collapse" data-target="#projectSubnav .navbar-collapse">
                                 Comments
@@ -113,7 +113,7 @@
                 <div class="alert alert-info">
                     <div>This is a pending registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>, awaiting approval from project administrators. This registration will be final when all project administrators approve the registration or 48 hours pass, whichever comes first.</div>
 
-                    % if 'admin' in user['permissions']: 
+                    % if 'admin' in user['permissions']:
                         <div>
                             <br>
                             <button type="button" id="registrationCancelButton" class="btn btn-danger" data-toggle="modal" data-target="#registrationCancel">
