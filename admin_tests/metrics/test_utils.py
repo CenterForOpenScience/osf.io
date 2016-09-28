@@ -185,6 +185,15 @@ class TestUserGet(AdminTestCase):
         nt.assert_equal(count, 1)
 
 
+def construct_query(id, time):
+    return '{},{},0,0,{},0,0,0,0,0,{}\r'.format(
+        id,
+        get_active_user_count(time),
+        get_projects(time),
+        time.strftime('%Y-%m-%d %H:%M:%S.%f')
+    )
+
+
 class TestRenderToCSVResponse(AdminTestCase):
 
     def setUp(self):
@@ -206,13 +215,13 @@ class TestRenderToCSVResponse(AdminTestCase):
         self.initial_static = [
             'id,users,delta_users,unregistered_users,projects,delta_projects,public_projects,'
             'delta_public_projects,registered_projects,delta_registered_projects,date\r',
-            '1,0,0,0,0,0,0,0,0,0,{}\r'.format(initial_time.strftime('%Y-%m-%d %H:%M:%S.%f')), '']
+            construct_query(1, initial_time), '']
         self.latest_static = [
             'id,users,delta_users,unregistered_users,projects,delta_projects,public_projects,'
             'delta_public_projects,registered_projects,delta_registered_projects,date\r',
-            '3,0,0,0,0,0,0,0,0,0,{}\r'.format(self.time.strftime('%Y-%m-%d %H:%M:%S.%f')),
-            '2,0,0,0,0,0,0,0,0,0,{}\r'.format(midtime.strftime('%Y-%m-%d %H:%M:%S.%f')),
-            '1,0,0,0,0,0,0,0,0,0,{}\r'.format(initial_time.strftime('%Y-%m-%d %H:%M:%S.%f')), '']
+            construct_query(3, self.time),
+            construct_query(2, midtime),
+            construct_query(1, initial_time), '']
 
     def test_render_to_csv_response(self):
         queryset = OSFWebsiteStatistics.objects.all().order_by('-date')
