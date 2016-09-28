@@ -25,18 +25,23 @@ class TestSearchPage(SearchTestCase):
         res = self.app.get('/search/', {'q': 'foo'})
         assert_equal(res.status_code, 200)
 
-def make_project(status):
+
+###################################################################################################
+# Search Permissions Tests
+
+PRIVATE, PUBLIC = range(2)
+PROJECT, COMPONENT = 'project component'.split()
+
+
+# nodefuncs
+
+def proj(status=PUBLIC):
     project = factories.ProjectFactory(title='Flim Flammity', is_public=status is PUBLIC)
     project.update_search()
     return project
 
-def make_registration(status):
-    project = factories.ProjectFactory(title='Flim Flammity', is_public=status is PUBLIC)
-    mock_archive(project, autocomplete=True, autoapprove=True).__enter__()  # ?!
-    return project
-
-def make_component(status):
-    project = factories.ProjectFactory(title='Blim Blammity', is_public=status is PUBLIC)
+def comp(status=PUBLIC):
+    project = factories.ProjectFactory(title='Slim Slammity', is_public=status is PUBLIC)
     project.update_search()
     component = factories.NodeFactory(
         title='Flim Flammity',
@@ -46,82 +51,36 @@ def make_component(status):
     component.update_search()
     return component
 
-def make_file(status):
-    project = factories.ProjectFactory(title='Blim Blammity', is_public=status is PUBLIC)
-    project.get_addon('osfstorage').get_root().append_file('Flim Flammity')
-    return project
 
-
-class TestMakers(DbIsolationMixin, OsfTestCase):
+class TestNodeFuncs(DbIsolationMixin, OsfTestCase):
 
     def test_there_are_no_nodes_to_start_with(self):
         assert Node.find().count() == 0
 
 
-    # mp - make_project
+    # proj
 
-    def test_mp_makes_private_project_private(self):
-        make_project(PRIVATE)
+    def test_proj_makes_private_project_private(self):
+        proj(PRIVATE)
         assert not Node.find_one().is_public
 
-    def test_mp_makes_public_project_public(self):
-        make_project(PUBLIC)
+    def test_proj_makes_public_project_public(self):
+        proj(PUBLIC)
         assert Node.find_one().is_public
 
 
-    # mr - make_registration
+    # comp
 
-    def test_mr_makes_private_registration_public_there_are_no_private_registrations(self):
-        # TODO Instead we need to test the different approval/embargo workflow states
-        make_registration(PRIVATE)
-        assert Node.find_one(Q('is_registration', 'eq', True)).is_public
-
-    def test_mr_makes_public_registration_public(self):
-        make_registration(PUBLIC)
-        assert Node.find_one(Q('is_registration', 'eq', True)).is_public
-
-
-    # mc - make_component
-
-    def test_mc_makes_private_component_private(self):
-        make_component(PRIVATE)
+    def test_comp_makes_private_component_private(self):
+        comp(PRIVATE)
         assert not Node.find_one(Q('parent_node', 'ne', None)).is_public
 
-    def test_mc_makes_public_component_public(self):
-        make_component(PUBLIC)
+    def test_comp_makes_public_component_public(self):
+        comp(PUBLIC)
         assert Node.find_one(Q('parent_node', 'ne', None)).is_public
 
 
-    # mf - make_file
-
-    def test_mf_makes_private_file_private(self):
-        make_file(PRIVATE)
-        # Looks like privacy attaches to the node, not the file
-        assert not File.find_one(Q('is_file', 'eq', True)).node.is_public
-
-    def test_mf_makes_public_file_public(self):
-        make_file(PUBLIC)
-        assert File.find_one(Q('is_file', 'eq', True)).node.is_public
-
-
-PRIVATE, PUBLIC = range(2)
-PROJECT, REGISTRATION, COMPONENT, FILE = 'project registration component file'.split()
-
-def get_test_name(status, type_, included, permfunc, **_):
-    return "{} {} {} {}".format(
-        'private' if status is PRIVATE else 'public',
-        type_,
-        'shown to' if included else 'hidden from',
-        permfunc.__name__
-    )
-
-MAKERS = {
-    PROJECT: make_project,
-    REGISTRATION: make_registration,
-    COMPONENT: make_component,
-    FILE: make_file,
-}
-
+# permfuncs
 
 def anon(node):
     return None
@@ -145,50 +104,100 @@ class TestPermFuncs(DbIsolationMixin, OsfTestCase):
     # anon
 
     def test_anon_returns_none(self):
-        assert_equal(anon(make_project(PUBLIC)), None)
+        assert_equal(anon(proj(PUBLIC)), None)
 
     def test_anon_makes_no_user(self):
-        anon(make_project(PUBLIC))
+        anon(proj(PUBLIC))
         assert_equal(len(User.find()), 1)  # only the project creator
 
 
     # auth
 
     def test_auth_returns_authtuple(self):
-        assert_equal(auth(make_project(PUBLIC))[1], 'password')
+        assert_equal(auth(proj(PUBLIC))[1], 'password')
 
     def test_auth_creates_a_user(self):
-        auth(make_project(PUBLIC))
+        auth(proj(PUBLIC))
         assert_equal(len(User.find()), 2)  # project creator + 1
 
     def test_auth_user_is_not_a_contributor_on_the_node(self):
-        user_id = self.get_user_id_from_authtuple(auth(make_project(PUBLIC)))
+        user_id = self.get_user_id_from_authtuple(auth(proj(PUBLIC)))
         assert_not_in(user_id, Node.find_one().permissions.keys())
 
 
     # read
 
     def test_read_returns_authtuple(self):
-        assert_equal(read(make_project(PUBLIC))[1], 'password')
+        assert_equal(read(proj(PUBLIC))[1], 'password')
 
     def test_read_creates_a_user(self):
-        read(make_project(PUBLIC))
+        read(proj(PUBLIC))
         assert_equal(len(User.find()), 2)  # project creator + 1
 
     def test_read_user_is_a_contributor_on_the_node(self):
-        user_id = self.get_user_id_from_authtuple(read(make_project(PUBLIC)))
+        user_id = self.get_user_id_from_authtuple(read(proj(PUBLIC)))
         assert_in(user_id, Node.find_one().permissions.keys())
 
 
+# varyfuncs
+
+def base(node):
+    type_ = 'project' if node.parent_node is None else 'component'
+    return 'flim', type_, 'title', 'Flim Flammity'
+
+def file_on(node):
+    node.get_addon('osfstorage').get_root().append_file('Blim Blammity')
+    return 'blim', 'file', 'name', 'Blim Blammity'
+
+def registration_of(node):
+    mock_archive(node, autocomplete=True, autoapprove=True).__enter__()  # ?!
+    return 'flim', 'registration', 'title', 'Flim Flammity'
+
+
+class TestVaryFuncs(DbIsolationMixin, OsfTestCase):
+
+    # base
+
+    def test_base_specifies_project_for_project(self):
+        assert_equal(base(proj())[1], 'project')
+
+    def test_base_specifies_component_for_component(self):
+        assert_equal(base(comp())[1], 'component')
+
+
+    # fo - file_on
+
+    def test_fo_makes_a_file_on_a_node(self):
+        file_on(factories.ProjectFactory())
+        assert_equal(File.find_one(Q('is_file', 'eq', True)).name, 'Blim Blammity')
+
+
+    # ro - registration_of
+
+    def test_ro_makes_a_registration_of_a_node(self):
+        registration_of(factories.ProjectFactory(title='Flim Flammity'))
+        assert_equal(Node.find_one(Q('is_registration', 'eq', True)).title, 'Flim Flammity')
+
+
+# gettin' it together
+
+def namefunc(varyfunc, status, nodefunc, included, permfunc, **_):
+    return "{}{} {} {} {}".format(
+        '' if varyfunc is base else varyfunc.__name__.replace('_', ' ') + ' ',
+        'private' if status is PRIVATE else 'public',
+        'project' if nodefunc is proj else 'component',
+        'shown to' if included else 'hidden from',
+        permfunc.__name__
+    )
+
 def generate_cases():
     for status in (PRIVATE, PUBLIC):
-        for type_ in (PROJECT, REGISTRATION, COMPONENT, FILE):
-            make = MAKERS[type_]
-            if status is PRIVATE and type_ is REGISTRATION: continue
+        for nodefunc in (proj, comp):
             for permfunc in (anon, auth, read):
                 included = permfunc is read if status is PRIVATE else True
-                key = 'name' if type_ is FILE else 'title'
-                yield get_test_name(**locals()), make, status, permfunc, type_, included, key
+                for varyfunc in (base, file_on, registration_of):
+                    if status is PRIVATE and varyfunc is registration_of: continue
+                    yield namefunc(**locals()), varyfunc, nodefunc, status, permfunc, included
 
 
 class TestGenerateCases(unittest.TestCase):
@@ -196,7 +205,7 @@ class TestGenerateCases(unittest.TestCase):
     # gc - generate_cases
 
     def test_gc_generates_cases(self):
-        assert_equal(len(list(generate_cases())), 21)
+        assert_equal(len(list(generate_cases())), 30)
 
     def test_gc_doesnt_create_any_nodes(self):
         list(generate_cases())
@@ -213,12 +222,16 @@ class TestSearchSearchAPI(SearchTestCase):
         return self.app.get(url, data, auth=auth).json['results']
 
     @parameterized.expand(generate_cases)
-    def test(self, ignored, make, status, permfunc, type_, included, key):
-        node = make(status)
+    def test(self, ignored, varyfunc, nodefunc, status, permfunc, included):
+        node = nodefunc(status)
         auth = permfunc(node)
-        expected = [('Flim Flammity', type_)] if included else []
-        results = self.results('flim', type_, auth)
+        query, type_, key, expected_name = varyfunc(node)
+        expected = [(expected_name, type_)] if included else []
+        results = self.results(query, type_, auth)
         assert_equal([(x[key], x['category']) for x in results], expected)
+
+#
+###################################################################################################
 
 
 class TestUserSearchAPI(SearchTestCase):
