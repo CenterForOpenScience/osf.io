@@ -12,7 +12,7 @@ var $modal = $('#ownCloudCredentialsModal');
 var ViewModel = oop.extend(OAuthAddonSettingsViewModel,{
     constructor: function(url){
         var self = this;
-        self.super.constructor('owncloud','ownCloud');
+        self.super.constructor.call(self, 'owncloud', 'ownCloud');
 
         const otherString = 'Other (Please Specify)';
 
