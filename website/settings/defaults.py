@@ -31,8 +31,13 @@ BCRYPT_LOG_ROUNDS = 12
 with open(os.path.join(APP_PATH, 'package.json'), 'r') as fobj:
     VERSION = json.load(fobj)['version']
 
-# Hours before email confirmation tokens expire
-EMAIL_TOKEN_EXPIRATION = 24
+# Expiration time for verification key
+EXPIRATION_TIME_DICT = {
+    'password': 30,         # 30 minutes for forgot and reset password
+    'confirm': 24 * 60,     # 24 hours in minutes for confirm account and email
+    'claim': 30 * 24 * 60   # 30 days in minutes for claim contributor-ship
+}
+
 CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_components', 'styles')
 
 # Minimum seconds between forgot password email attempts

@@ -526,7 +526,7 @@ def make_url_map(app):
 
         # reset password get
         Rule(
-            '/resetpassword/<verification_key>/',
+            '/resetpassword/<uid>/<token>/',
             'get',
             auth_views.reset_password_get,
             OsfWebRenderer('public/resetpassword.mako', render_mako_string, trust=False)
@@ -534,7 +534,7 @@ def make_url_map(app):
 
         # reset password post
         Rule(
-            '/resetpassword/<verification_key>/',
+            '/resetpassword/<uid>/<token>/',
             'post',
             auth_views.reset_password_post,
             OsfWebRenderer('public/resetpassword.mako', render_mako_string, trust=False)
@@ -659,8 +659,9 @@ def make_url_map(app):
             OsfWebRenderer('profile.mako', trust=False)
         ),
 
-        # Route for claiming and setting email and password.
-        # Verification token must be querystring argument
+        # unregistered user claim account (contributor-ship of a project)
+        # user will be required to set email and password
+        # claim token must be present in query parameter
         Rule(
             ['/user/<uid>/<pid>/claim/'],
             ['get', 'post'],
@@ -668,6 +669,9 @@ def make_url_map(app):
             OsfWebRenderer('claim_account.mako', trust=False)
         ),
 
+        # registered user claim account (contributor-ship of a project)
+        # user will be required to verify password
+        # claim token must be present in query parameter
         Rule(
             ['/user/<uid>/<pid>/claim/verify/<token>/'],
             ['get', 'post'],
@@ -1684,12 +1688,7 @@ def make_url_map(app):
             notification_views.configure_subscription,
             json_renderer,
         ),
-        Rule(
-            '/resetpassword/<verification_key>/',
-            'post',
-            auth_views.reset_password_post,
-            json_renderer,
-        ),
+
         Rule(
             [
                 '/project/<pid>/settings/addons/',
