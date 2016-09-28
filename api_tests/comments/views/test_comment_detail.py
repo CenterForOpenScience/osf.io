@@ -79,16 +79,14 @@ class CommentDetailMixin(object):
         assert_equal(self.comment._id, res.json['data']['id'])
         assert_equal(self.comment.content, res.json['data']['attributes']['content'])
 
-    def test_private_node_user_with_anonymous_link_cannot_see_commenter_info(self):
+    def test_private_node_user_with_anonymous_link_cannot_see_comment(self):
         self._set_up_private_project_with_comment()
         private_link = PrivateLinkFactory(anonymous=True)
         private_link.nodes.append(self.private_project)
         private_link.save()
-        res = self.app.get('/{}comments/{}/'.format(API_BASE, self.comment._id), {'view_only': private_link.key})
-        assert_equal(res.status_code, 200)
-        assert_equal(self.comment._id, res.json['data']['id'])
-        assert_equal(self.comment.content, res.json['data']['attributes']['content'])
-        assert_not_in('user', res.json['data']['relationships'])
+        res = self.app.get('/{}comments/{}/'.format(API_BASE, self.comment._id), {'view_only': private_link.key}, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
     def test_public_node_logged_in_contributor_can_view_comment(self):
         self._set_up_public_project_with_comment()
@@ -363,19 +361,6 @@ class CommentDetailMixin(object):
         private_link.save()
 
         res = self.app.get('/{}comments/{}/'.format(API_BASE, self.comment._id), {'view_only': private_link.key}, expect_errors=True)
-        assert_equal(res.status_code, 200)
-        assert_is_none(res.json['data']['attributes']['content'])
-
-    def test_private_node_anonymous_view_only_link_user_cannot_see_deleted_comment(self):
-        self._set_up_private_project_with_comment()
-        self.comment.is_deleted = True
-        self.comment.save()
-
-        anonymous_link = PrivateLinkFactory(anonymous=True)
-        anonymous_link.nodes.append(self.private_project)
-        anonymous_link.save()
-
-        res = self.app.get('/{}comments/{}/'.format(API_BASE, self.comment._id), {'view_only': anonymous_link.key}, expect_errors=True)
         assert_equal(res.status_code, 200)
         assert_is_none(res.json['data']['attributes']['content'])
 

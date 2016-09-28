@@ -4,7 +4,7 @@ from rest_framework import permissions
 from api.base.utils import get_user_auth
 from api.comments.serializers import CommentReport
 from website.models import Node, Comment
-
+from website.project.model import has_anonymous_link
 
 class CanCommentOrPublic(permissions.BasePermission):
 
@@ -16,6 +16,8 @@ class CanCommentOrPublic(permissions.BasePermission):
         elif isinstance(obj, Node):
             node = obj
 
+        if has_anonymous_link(node, auth):
+            return False
         if request.method in permissions.SAFE_METHODS:
             return node.is_public or node.can_view(auth)
         else:
@@ -29,6 +31,8 @@ class CommentDetailPermissions(permissions.BasePermission):
         auth = get_user_auth(request)
         comment = obj
         node = obj.node
+        if has_anonymous_link(node, auth):
+            return False
         if request.method in permissions.SAFE_METHODS:
             return node.is_public or node.can_view(auth)
         else:
