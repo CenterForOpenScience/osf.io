@@ -35,7 +35,7 @@ from website.util import metrics
 from website.util import paths
 from website.util import sanitize
 from website import maintenance
-from website.models import Institution
+from website.models import Institution, Node
 from website import landing_pages as landing_page_views
 from website import views as website_views
 from website.citations import views as citation_views
@@ -58,7 +58,14 @@ def get_globals():
     user = _get_current_user()
 
     user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in user.affiliated_institutions] if user else []
-    all_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in Institution.find().sort('name')]
+    all_institutions = [inst for inst in Institution.find().sort('name')]
+    # currently only checking for >= 5 public nodes of any type (project or registration)
+    dashboard_institutions = [
+        {'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners}
+        for inst in all_institutions
+        if len(Node.find_by_institutions(inst, query=Q('is_public', 'eq', True))) >= settings.INSTITUTION_DISPLAY_NODE_THRESHOLD
+    ]
+
     location = geolite2.lookup(request.remote_addr) if request.remote_addr else None
     if request.host_url != settings.DOMAIN:
         try:
@@ -81,7 +88,7 @@ def get_globals():
         'user_api_url': user.api_url if user else '',
         'user_entry_point': metrics.get_entry_point(user) if user else '',
         'user_institutions': user_institutions if user else None,
-        'all_institutions': all_institutions,
+        'dashboard_institutions': dashboard_institutions,
         'display_name': get_display_name(user.fullname) if user else '',
         'anon': {
             'continent': getattr(location, 'continent', None),

@@ -1751,3 +1751,6 @@ SPAM_FLAGGED_REMOVE_FROM_SEARCH = False
 
 SHARE_URL = 'http://localhost:8000/'
 SHARE_API_TOKEN = None
+
+# number of nodes that need to be affiliated with an institution before the institution logo is shown on the dashboard
+INSTITUTION_DISPLAY_NODE_THRESHOLD = 5
