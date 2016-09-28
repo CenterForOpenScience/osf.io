@@ -137,3 +137,5 @@ Since we seem to be using docstrings with Sphinx conventions, these could also b
 
 ##Other Issues
 Apparently the first page loads of Discourse in Development mode are only supposed to take 5-10 seconds (http://blog.discourse.org/2013/04/discourse-as-your-first-rails-app/), so I wonder why I have gotten so used to minute-long page loads. Funnily enough, it seems that during the majority of this time the rails server is idle.
+
+It looks like after renaming a project, the Discourse /posts/:post_id end point is called ~6 times in a row...  

@@ -80,14 +80,16 @@
                             <li><a href="${node['url']}settings/">Settings</a></li>
                         % endif
                     % endif
-                    <li id="commentsLink">
-                        <a href="" class="visible-xs cp-handle" data-bind="click:removeCount" data-toggle="collapse" data-target="#projectSubnav .navbar-collapse">
-                            Comments
-                            <span data-bind="if: unreadComments() !== 0">
-                                <span data-bind="text: displayCount" class="badge"></span>
-                            </span>
-                        </a>
-                    </li>
+                    % if not node['anonymous']:
+                        <li id="commentsLink">
+                            <a href="" class="visible-xs cp-handle" data-bind="click:removeCount" data-toggle="collapse" data-target="#projectSubnav .navbar-collapse">
+                                Comments
+                                <span data-bind="if: unreadComments() !== 0">
+                                    <span data-bind="text: displayCount" class="badge"></span>
+                                </span>
+                            </a>
+                        </li>
+                    % endif
                     </ul>
                 </div>
             </div>

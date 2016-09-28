@@ -8,7 +8,7 @@
 ## Use full page width
 <%def name="container_class()">container-xxl</%def>
 
-% if (user['can_comment'] or node['has_comments']):
+% if not node['anonymous']:
     <%include file="include/comment_pane_template.mako"/>
 % endif
 

@@ -43,17 +43,19 @@ def update_group_privacy(project_node):
     if group_id is None:
         return create_group(project_node)
 
+    view_only_keys = [a.key for a in project_node.private_links_active if not a.anonymous]
+
     if (project_node.discourse_group_public == project_node.is_public and
-       len(set(project_node.discourse_view_only_keys) ^ set(project_node.private_link_keys_active)) == 0):
+       len(set(project_node.discourse_view_only_keys) ^ set(view_only_keys)) == 0):
         return
 
     data = {}
     data['visible'] = 'true' if project_node.is_public else 'false'
-    data['view_only_keys[]'] = project_node.private_link_keys_active
+    data['view_only_keys[]'] = view_only_keys
     result = request('put', '/admin/groups/' + str(group_id), data)
 
     project_node.discourse_group_public = project_node.is_public
-    project_node.view_only_keys = project_node.private_link_keys_active
+    project_node.discourse_view_only_keys = view_only_keys
     project_node.save()
 
     return result
