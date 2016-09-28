@@ -80,6 +80,16 @@ class TestRegistrationIdentifierList(ApiTestCase):
         total = new_res.json['links']['meta']['total']
         assert_equal(total, carpid_total)
 
+    def test_node_identifier_not_returned_from_registration_endpoint(self):
+        self.node = NodeFactory(creator=self.user, is_public=True)
+        self.node_identifier = IdentifierFactory(referent=self.node)
+        res = self.app.get(self.url)
+        assert_equal(res.status_code, 200)
+        data = res.json['data']
+        assert_equal(len(data), 1)
+        assert_equal(self.identifier._id, data[0]['id'])
+        assert_not_equal(self.node_identifier._id, data[0]['id'])
+
 
 class TestNodeIdentifierList(ApiTestCase):
 
@@ -145,3 +155,13 @@ class TestNodeIdentifierList(ApiTestCase):
 
         total = new_res.json['links']['meta']['total']
         assert_equal(total, carpid_total)
+
+    def test_node_identifier_not_returned_from_registration_endpoint(self):
+        self.registration = RegistrationFactory(creator=self.user, is_public=True)
+        self.registration_identifier = IdentifierFactory(referent=self.registration)
+        res = self.app.get(self.url)
+        assert_equal(res.status_code, 200)
+        data = res.json['data']
+        assert_equal(len(data), 1)
+        assert_equal(self.identifier._id, data[0]['id'])
+        assert_not_equal(self.registration_identifier._id, data[0]['id'])
