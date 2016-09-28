@@ -14,7 +14,7 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel,{
         var self = this;
         self.super.constructor.call(self, 'owncloud', 'ownCloud');
 
-        const otherString = 'Other (Please Specify)';
+        var otherString = 'Other (Please Specify)';
 
         self.url = url;
         self.username = ko.observable();
