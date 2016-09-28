@@ -4,6 +4,7 @@ require('highlight-css');
 var MarkdownIt = require('markdown-it');
 
 var insDel = require('markdown-it-ins-del');
+var pymarkdownList = require('js/markdown-it-pymarkdown-lists');
 
 var highlighter = function (str, lang) {
         if (lang && hljs.getLanguage(lang)) {
@@ -27,27 +28,7 @@ var bootstrapTable = function(md) {
 };
 
 var oldMarkdownList = function(md) {
-
-    md.block.ruler.after('list', 'pymark_list', function replace(state) {
-
-        var this_list_markup;
-        var list_type;
-
-        if (state.tokens.length > 0) {
-            if (state.tokens.slice(-2)[0].type === 'ordered_list_open') {
-                list_type = 'ordered';
-            }
-
-        }
-        for (var i = 0; i < state.tokens.length; i++) {
-            if (list_type === 'ordered') {
-                if (state.tokens[i].markup === '*') {
-                    state.tokens[i].markup = '1';
-                }
-            }
-        }
-
-    });
+    md.block.ruler.after('hr', 'pyMarkdownList', pymarkdownList);
 };
 
 // Full markdown renderer for views / wiki pages / pauses between typing
