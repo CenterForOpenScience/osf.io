@@ -235,13 +235,23 @@ module.exports = function list(state, startLine, endLine, silent) {
         // fail if list has another type
         if (isOrdered) {
             posAfterMarker = skipOrderedListMarker(state, nextLine);
-            if (posAfterMarker < 0) { break; }
+            if (posAfterMarker < 0) {
+                posAfterMarker = skipBulletListMarker(state, nextLine);
+                if (posAfterMarker < 0) {
+                    break;
+                }
+            }
         } else {
             posAfterMarker = skipBulletListMarker(state, nextLine);
-            if (posAfterMarker < 0) { break; }
+            if (posAfterMarker < 0) {
+                posAfterMarker = skipOrderedListMarker(state, nextLine);
+                if (posAfterMarker < 0) {
+                    break;
+                }
+            }
         }
 
-        if (markerCharCode !== state.src.charCodeAt(posAfterMarker - 1)) { break; }
+        // if (markerCharCode !== state.src.charCodeAt(posAfterMarker - 1)) { break; }
     }
 
     // Finilize list
