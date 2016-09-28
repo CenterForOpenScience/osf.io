@@ -5,9 +5,11 @@ from tests.base import AdminTestCase
 from tests.factories import (
     AuthUserFactory, NodeFactory, ProjectFactory, RegistrationFactory
 )
-
+from admin.metrics.views import render_to_csv_response
 from website.project.model import Node, User
 from framework.auth import Auth
+from webtest_plus import TestApp
+from tests.base import test_app
 
 from admin.metrics.utils import (
     get_projects,
@@ -181,3 +183,60 @@ class TestUserGet(AdminTestCase):
     def test_get_unregistered_users(self):
         count = get_unregistered_users()
         nt.assert_equal(count, 1)
+
+
+def construct_query(id, time):
+    return '{},{},0,0,{},0,0,0,0,0,{}\r'.format(
+        id,
+        get_active_user_count(time),
+        get_projects(time),
+        time.strftime('%Y-%m-%d %H:%M:%S.%f')
+    )
+
+
+class TestRenderToCSVResponse(AdminTestCase):
+
+    def setUp(self):
+        super(TestRenderToCSVResponse, self).setUp()
+        self.app = TestApp(test_app)
+        Node.remove()
+        time_now = get_previous_midnight()
+        NodeFactory(category='project', date_created=time_now)
+        NodeFactory(category='project',
+                    date_created=time_now - timedelta(days=1))
+        last_time = time_now - timedelta(days=2)
+        NodeFactory(category='project', date_created=last_time)
+        NodeFactory(category='project', date_created=last_time)
+        initial_time = last_time + timedelta(seconds=1)
+        get_days_statistics(initial_time)
+        midtime = last_time + timedelta(days=1, seconds=1)
+        self.time = time_now + timedelta(seconds=1)
+
+        self.initial_static = [
+            'id,users,delta_users,unregistered_users,projects,delta_projects,public_projects,'
+            'delta_public_projects,registered_projects,delta_registered_projects,date\r',
+            construct_query(1, initial_time), '']
+        self.latest_static = [
+            'id,users,delta_users,unregistered_users,projects,delta_projects,public_projects,'
+            'delta_public_projects,registered_projects,delta_registered_projects,date\r',
+            construct_query(3, self.time),
+            construct_query(2, midtime),
+            construct_query(1, initial_time), '']
+
+    def test_render_to_csv_response(self):
+        queryset = OSFWebsiteStatistics.objects.all().order_by('-date')
+        response = render_to_csv_response(queryset)
+        self.assertEqual(response['Content-Type'], 'text/csv')
+        self.assertEqual(response.content.split('\n'),
+                         self.initial_static)
+        self.assertRegexpMatches(response['Content-Disposition'],
+                                 r'attachment; filename=osfwebsitestatistics_export.csv;')
+
+        get_osf_statistics()
+        new_queryset = OSFWebsiteStatistics.objects.all().order_by('-date')
+        new_res = render_to_csv_response(new_queryset)
+        self.assertEqual(new_res['Content-Type'], 'text/csv')
+        self.assertEqual(new_res.content.split('\n'),
+                         self.latest_static)
+        self.assertRegexpMatches(new_res['Content-Disposition'],
+                                 r'attachment; filename=osfwebsitestatistics_export.csv;')
