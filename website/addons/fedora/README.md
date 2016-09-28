@@ -1,9 +1,18 @@
-# OSF Dropbox Addon
+OSF fedora Addon
 
-Enabling the addon for development
 
-1. In `website/settings/local.py` add, `"dropbox"` to `ADDONS_REQUESTED`.
-2. Create a local dropbox settings file with `cp website/addons/dropbox/settings/local-dist.py website/addons/dropbox/setings/local.py`
-3. Create an app and get a key and secret from https://www.dropbox.com/developers/apps.
-5. At the Dropbox app console, add http://localhost:5000/oauth/callback/dropbox/ to your list of Oauth2 redirect URIs.
-4. Enter your key and secret in `website/addons/dropbox/settings/local.py`.
+## Setup:
+1. Copy settings/local-dist.py to settings/local.py and change the necessary settings.
+2. The setting `DEFAULT_HOSTS` can be set to a list of known hosts that satisfies [OCS1.7](https://www.freedesktop.org/wiki/Specifications/open-collaboration-services-1.7/). While this is not necessary, a default list can be used to provide users with suggested hosts.
+3. Make sure GnuPG is enabled as below:
+
+## Enabling the addon for development
+
+ - Install gpg.
+ ```sh
+ $ brew install gpg
+ ```
+ - Import a private key into your GnuPG keyring.
+```sh
+$ invoke encryption
+```

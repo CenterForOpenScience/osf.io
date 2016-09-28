@@ -1,0 +1,10 @@
+{
+    "fedora_file_added" : "A user added a file to fedora in a project",
+    "fedora_file_removed" : "A user removed a file from fedora in a project",
+    "fedora_file_updated" : "A user updated a file in fedora in a project",
+    "fedora_folder_created" : "A user created a folder in fedora in a project",
+    "fedora_folder_selected" : "A user linked a fedora folder in a project",
+    "fedora_node_authorized" : "A user authorized the fedora addon for a project",
+    "fedora_node_deauthorized" : "A user deauthorized the fedora addon for a project",
+    "fedora_node_deauthorized_no_user" : "fedora addon for a project deauthorized"
+}

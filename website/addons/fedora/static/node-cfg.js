@@ -1,4 +1,4 @@
-'use strict';
+var FedoraNodeConfig = require('./FedoraNodeConfig.js');
 
-require('./fedora.css');
-
+var url = window.contextVars.node.urls.api + 'fedora/settings/';
+new FedoraNodeConfig('#fedoraScope', url);
