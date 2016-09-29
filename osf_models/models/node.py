@@ -434,6 +434,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def is_affiliated_with_institution(self, institution):
         return self.affiliated_institutions.filter(id=institution.id).exists()
 
+    @classmethod
+    def find_by_institutions(cls, inst, query=None):
+        base_query = Q('affiliated_institutions', 'eq', inst)
+        if query:
+            final_query = base_query & query
+        else:
+            final_query = base_query
+        return cls.find(final_query)
+
     def add_affiliated_institution(self, inst, user, save=False, log=True):
         if not user.is_affiliated_with_institution(inst):
             raise UserNotAffiliatedError('User is not affiliated with {}'.format(inst.name))
