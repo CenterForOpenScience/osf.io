@@ -577,3 +577,18 @@ class ForkFactory(DjangoModelFactory):
         fork = project.fork_node(auth=Auth(user), title=title)
         fork.save()
         return fork
+
+
+class IdentifierFactory(DjangoModelFactory):
+    class Meta:
+        model = models.Identifier
+
+    referent = factory.SubFactory(RegistrationFactory)
+    value = factory.Sequence(lambda n: 'carp:/2460{}'.format(n))
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        kwargs['category'] = kwargs.get('category', 'carpid')
+
+        return super(IdentifierFactory, cls)._create(*args, **kwargs)
+
