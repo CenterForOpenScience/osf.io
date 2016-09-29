@@ -4,7 +4,7 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from website.project.model import Q, Node, Pointer
 from api.base import permissions as base_permissions
-from api.base.views import JSONAPIBaseView, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList, BaseIdentifierList
+from api.base.views import JSONAPIBaseView, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList
 
 from api.base.serializers import HideIfWithdrawal
 from api.base.serializers import LinkedNodesRelationshipSerializer
@@ -12,7 +12,8 @@ from api.base.parsers import JSONAPIRelationshipParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
 from api.base.utils import get_user_auth
 from api.comments.serializers import RegistrationCommentSerializer, CommentCreateSerializer
-from api.identifiers.serializers import IdentifierRegistrationSerializer
+from api.identifiers.serializers import RegistrationIdentifierSerializer
+from api.identifiers.views import IdentifierList
 from api.users.views import UserMixin
 
 from api.nodes.permissions import (
@@ -950,7 +951,7 @@ class RegistrationViewOnlyLinkDetail(NodeViewOnlyLinkDetail, RegistrationMixin):
     view_name = 'registration-view-only-link-detail'
 
 
-class RegistrationIdentifierList(BaseIdentifierList, RegistrationMixin):
+class RegistrationIdentifierList(RegistrationMixin, IdentifierList):
     """List of identifiers for a specified node. *Read-only*.
 
     ##Identifier Attributes
@@ -984,6 +985,4 @@ class RegistrationIdentifierList(BaseIdentifierList, RegistrationMixin):
 
     """
 
-    serializer_class = IdentifierRegistrationSerializer
-    view_category = 'registrations'
-    view_name = 'registration-identifier-list'
+    serializer_class = RegistrationIdentifierSerializer

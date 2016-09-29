@@ -3,7 +3,7 @@ from api.base.utils import absolute_reverse
 from api.base.serializers import JSONAPISerializer, RelationshipField, IDField, LinksField
 
 
-class IdentifierRegistrationSerializer(JSONAPISerializer):
+class RegistrationIdentifierSerializer(JSONAPISerializer):
 
     category = ser.CharField(read_only=True)
 
@@ -38,7 +38,7 @@ class IdentifierRegistrationSerializer(JSONAPISerializer):
         })
 
 
-class IdentifierNodeSerializer(IdentifierRegistrationSerializer):
+class NodeIdentifierSerializer(RegistrationIdentifierSerializer):
 
     referent = RelationshipField(
         related_view='nodes:node-detail',
