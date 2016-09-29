@@ -26,6 +26,14 @@ services:
       - requirements-volume:/site-packages
       - ./:/code
 
+  assets:
+    image: quay.io/centerforopenscience/osf:develop
+    command: /bin/bash -c "invoke assets -dw"
+    restart: 'no'
+    volumes:
+      - requirements-volume:/site-packages
+      - ./:/code
+
   elasticsearch:
     image: elasticsearch:2
     ports:
