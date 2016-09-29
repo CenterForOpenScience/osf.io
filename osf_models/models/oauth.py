@@ -171,8 +171,7 @@ class ApiOAuth2PersonalToken(base.ObjectIDMixin, base.BaseModel):
 
     @property
     def absolute_url(self):
-        app_config = apps.get_containing_app_config(self)
-        return urlparse.urljoin(app_config.domain, self.url)
+        return urlparse.urljoin(settings.DOMAIN, self.url)
 
     # Properties used by Django and DRF "Links: self" field
     @property

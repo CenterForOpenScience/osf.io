@@ -747,6 +747,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
             user.add_system_tag(system_tag_for_campaign(campaign))
         return user
 
+    @classmethod
+    def create_confirmed(cls, username, password, fullname):
+        user = cls.create(username, password, fullname)
+        user.is_registered = True
+        user.is_claimed = True
+        user.date_confirmed = user.date_registered
+        user.emails.append(username)
+        return user
+
     def get_unconfirmed_email_for_token(self, token):
         """Return email if valid.
         :rtype: bool
