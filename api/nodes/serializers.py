@@ -896,17 +896,17 @@ class NodeInstitutionsRelationshipSerializer(ser.Serializer):
                         'html': 'get_related_url'})
 
     def get_self_url(self, obj):
-        return obj['self'].institutions_relationship_url()
+        return obj['self'].institutions_relationship_url
 
     def get_related_url(self, obj):
-        return obj['self'].institutions_url()
+        return obj['self'].institutions_url
 
     class Meta:
         type_ = 'institutions'
 
     def get_institutions_to_add_remove(self, institutions, new_institutions):
         diff = relationship_diff(
-            current_items={inst._id: inst for inst in institutions},
+            current_items={inst._id: inst for inst in institutions.all()},
             new_items={inst['_id']: inst for inst in new_institutions}
         )
 
@@ -921,7 +921,7 @@ class NodeInstitutionsRelationshipSerializer(ser.Serializer):
 
     def make_instance_obj(self, obj):
         return {
-            'data': obj.affiliated_institutions,
+            'data': obj.affiliated_institutions.all(),
             'self': obj
         }
 
@@ -940,7 +940,7 @@ class NodeInstitutionsRelationshipSerializer(ser.Serializer):
             node.remove_affiliated_institution(inst, user)
 
         for inst in add:
-            if inst not in user.affiliated_institutions:
+            if not user.is_affiliated_with_institution(inst):
                 raise exceptions.PermissionDenied(detail='User needs to be affiliated with {}'.format(inst.name))
             node.add_affiliated_institution(inst, user)
 
@@ -961,7 +961,7 @@ class NodeInstitutionsRelationshipSerializer(ser.Serializer):
             raise RelationshipPostMakesNoChanges
 
         for inst in add:
-            if inst not in user.affiliated_institutions:
+            if not user.is_affiliated_with_institution(inst):
                 raise exceptions.PermissionDenied(detail='User needs to be affiliated with {}'.format(inst.name))
 
         for inst in add:

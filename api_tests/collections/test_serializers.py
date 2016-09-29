@@ -27,8 +27,8 @@ class TestNodeSerializer(ApiTestCase):
         # Attributes
         attributes = data['attributes']
         assert_equal(attributes['title'], collection.title)
-        assert_equal(attributes['date_created'], collection.date_created.isoformat())
-        assert_equal(attributes['date_modified'], collection.date_modified.isoformat())
+        assert_equal(attributes['date_created'], collection.date_created.isoformat().replace('+00:00', 'Z'))
+        assert_equal(attributes['date_modified'], collection.date_modified.isoformat().replace('+00:00', 'Z'))
         assert_equal(attributes['bookmarks'], collection.is_bookmark_collection)
 
         # Relationships

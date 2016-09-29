@@ -28,8 +28,8 @@ from api.nodes.permissions import (
 )
 
 from website.exceptions import NodeStateError
-from website.models import Node, Pointer
-from osf_models.models import Collection
+from website.models import Pointer
+from osf_models.models import Collection, Node
 from website.util.permissions import ADMIN
 
 
@@ -139,7 +139,10 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
             Q('is_deleted', 'ne', True)
         )
         user = self.request.user
-        permission_query = Q('user', 'eq', user)
+        if not user.is_anonymous():
+            permission_query = Q('creator', 'eq', user)
+        else:
+            permission_query = Q('is_public', 'eq', True)
         query = base_query & permission_query
         return query
 
@@ -147,7 +150,7 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
     def get_queryset(self):
         # For bulk requests, queryset is formed from request body.
         if is_bulk_request(self.request):
-            query = Q('_id', 'in', [node['id'] for node in self.request.data])
+            query = Q('guid__guid', 'in', [node['id'] for node in self.request.data])
 
             auth = get_user_auth(self.request)
             nodes = Node.find(query)
@@ -509,13 +512,14 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
     serializer_class = CollectionNodeLinkSerializer
     view_category = 'collections'
     view_name = 'node-pointers'
-    model_class = Pointer
+    model_class = Node
 
     def get_queryset(self):
         return [
             pointer for pointer in
-            self.get_node().nodes_pointer
-            if not pointer.node.is_deleted and not pointer.node.is_collection
+            self.get_node().linked_nodes
+                .filter(is_deleted=False)
+                .exclude(type='osf_models.collection')
         ]
 
     # Overrides BulkDestroyJSONAPIView
@@ -590,7 +594,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
     def get_object(self):
         node_link_lookup_url_kwarg = 'node_link_id'
         node_link = get_object_or_error(
-            Pointer,
+            Node,
             self.kwargs[node_link_lookup_url_kwarg],
             'node link'
         )
