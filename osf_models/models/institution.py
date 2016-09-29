@@ -17,7 +17,7 @@ class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
 
     # TODO Remove null=True for things that shouldn't be nullable
     auth_url = models.URLField(null=True)
-    banner_name = models.CharField(max_length=255, null=True)
+    banner_name = models.CharField(max_length=255, null=True, blank=True)
     contributors = models.ManyToManyField(settings.AUTH_USER_MODEL,
                                           through=InstitutionalContributor,
                                           related_name='institutions')
@@ -26,6 +26,9 @@ class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
     logo_name = models.CharField(max_length=255, null=True)  # TODO: Could this be a FilePathField?
     logout_url = models.URLField(null=True)
     name = models.CharField(max_length=255)
+
+    description = models.TextField(blank=True, default='')
+    is_deleted = models.BooleanField(default=False, db_index=True)
 
     def __init__(self, *args, **kwargs):
         kwargs.pop('node', None)
