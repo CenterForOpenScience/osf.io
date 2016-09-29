@@ -880,6 +880,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
 
         return False
 
+    def remove_email(self, email):
+        """Remove a confirmed email"""
+        if email == self.username:
+            raise PermissionsError("Can't remove primary email")
+        if email in self.emails:
+            self.emails.remove(email)
+            signals.user_email_removed.send(self, email=email)
+
     def get_confirmation_token(self, email, force=False):
         """Return the confirmation token for a given email.
 
