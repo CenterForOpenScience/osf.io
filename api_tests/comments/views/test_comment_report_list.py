@@ -1,7 +1,8 @@
+from django.utils import timezone
+
 import mock
 import pytest
 from nose.tools import *  # flake8: noqa
-from datetime import datetime
 
 from framework.guid.model import Guid
 
@@ -94,7 +95,7 @@ class CommentReportsMixin(object):
         self.public_comment.reports[self.non_contributor._id] = {
             'category': 'spam',
             'text': 'This is spam',
-            'date': datetime.utcnow(),
+            'date': timezone.now(),
             'retracted': False,
         }
         self.public_comment.save()
@@ -252,7 +253,7 @@ class TestCommentReportsView(CommentReportsMixin, ApiTestCase):
         self.comment.reports[self.user._id] = {
             'category': 'spam',
             'text': 'This is spam',
-            'date': datetime.utcnow(),
+            'date': timezone.now(),
             'retracted': False,
         }
         self.comment.save()
@@ -266,7 +267,7 @@ class TestCommentReportsView(CommentReportsMixin, ApiTestCase):
         self.public_comment.reports[self.user._id] = {
             'category': 'spam',
             'text': 'This is spam',
-            'date': datetime.utcnow(),
+            'date': timezone.now(),
             'retracted': False,
         }
         self.public_comment.save()
@@ -285,7 +286,7 @@ class TestWikiCommentReportsView(CommentReportsMixin, ApiTestCase):
         self.comment.reports[self.user._id] = {
             'category': 'spam',
             'text': 'This is spam',
-            'date': datetime.utcnow(),
+            'date': timezone.now(),
             'retracted': False,
         }
         self.comment.save()
@@ -301,7 +302,7 @@ class TestWikiCommentReportsView(CommentReportsMixin, ApiTestCase):
         self.public_comment.reports[self.user._id] = {
             'category': 'spam',
             'text': 'This is spam',
-            'date': datetime.utcnow(),
+            'date': timezone.now(),
             'retracted': False,
         }
         self.public_comment.save()
@@ -319,7 +320,7 @@ class TestFileCommentReportsView(CommentReportsMixin, ApiTestCase):
         self.comment.reports[self.user._id] = {
             'category': 'spam',
             'text': 'This is spam',
-            'date': datetime.utcnow(),
+            'date': timezone.now(),
             'retracted': False,
         }
         self.comment.save()
@@ -334,7 +335,7 @@ class TestFileCommentReportsView(CommentReportsMixin, ApiTestCase):
         self.public_comment.reports[self.user._id] = {
             'category': 'spam',
             'text': 'This is spam',
-            'date': datetime.utcnow(),
+            'date': timezone.now(),
             'retracted': False,
         }
         self.public_comment.save()

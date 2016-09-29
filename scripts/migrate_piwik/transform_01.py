@@ -6,6 +6,8 @@ import sqlite3
 from datetime import datetime, timedelta
 from hashlib import sha256, md5
 
+from django.utils import timezone
+
 from geoip import geolite2
 
 from modularodm import Q
@@ -47,7 +49,7 @@ def main(force=False):
     transform_dir = utils.get_dir_for('transform01')
 
     logger.info('Run ID: {}\n'.format(complaints_run_id))
-    logger.info('Beginning extraction at: {}Z\n'.format(datetime.utcnow()))
+    logger.info('Beginning extraction at: {}Z\n'.format(timezone.now()))
     tally = {'missing_user': 0, 'missing_node': 0}
     lastline = 0
     try:
@@ -246,7 +248,7 @@ def main(force=False):
                     output_file.write(json.dumps(pageview) + '\n')
                     resume_file.write(str(linenum) + '\n')
 
-    logger.info('Finished extraction at: {}Z\n'.format(datetime.utcnow()))
+    logger.info('Finished extraction at: {}Z\n'.format(timezone.now()))
     logger.info('Final count was: {}\n'.format(linenum))
     logger.info('{} pageviews lacked a user id.\n'.format(tally['missing_user']))
     logger.info('{} pageviews lacked a node id.\n'.format(tally['missing_node']))

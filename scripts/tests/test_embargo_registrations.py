@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
+from datetime import timedelta
 
-from datetime import date, datetime, timedelta
+from django.utils import timezone
+
 from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
@@ -18,7 +20,7 @@ class TestRetractRegistrations(OsfTestCase):
         self.registration = RegistrationFactory(creator=self.user)
         self.registration.embargo_registration(
             self.user,
-            datetime.utcnow() + timedelta(days=10)
+            timezone.now() + timedelta(days=10)
         )
         self.registration.save()
 
@@ -34,7 +36,7 @@ class TestRetractRegistrations(OsfTestCase):
         # Embargo#iniation_date is read only
         self.registration.embargo._fields['initiation_date'].__set__(
             self.registration.embargo,
-            (datetime.utcnow() - timedelta(hours=47)),
+            (timezone.now() - timedelta(hours=47)),
             safe=True
         )
         self.registration.embargo.save()
@@ -47,7 +49,7 @@ class TestRetractRegistrations(OsfTestCase):
         # Embargo#iniation_date is read only
         self.registration.embargo._fields['initiation_date'].__set__(
             self.registration.embargo,
-            (datetime.utcnow() - timedelta(hours=48)),
+            (timezone.now() - timedelta(hours=48)),
             safe=True
         )
         self.registration.embargo.save()
@@ -62,7 +64,7 @@ class TestRetractRegistrations(OsfTestCase):
         # Embargo#iniation_date is read only
         self.registration.embargo._fields['initiation_date'].__set__(
             self.registration.embargo,
-            (datetime.utcnow() - timedelta(days=365)),
+            (timezone.now() - timedelta(days=365)),
             safe=True
         )
         self.registration.embargo.save()
@@ -83,7 +85,7 @@ class TestRetractRegistrations(OsfTestCase):
         # Embargo#iniation_date is read only
         self.registration.embargo._fields['end_date'].__set__(
             self.registration.embargo,
-            (datetime.utcnow() - timedelta(days=1)),
+            (timezone.now() - timedelta(days=1)),
             safe=True
         )
         self.registration.embargo.save()
@@ -105,7 +107,7 @@ class TestRetractRegistrations(OsfTestCase):
         # Embargo#iniation_date is read only
         self.registration.embargo._fields['end_date'].__set__(
             self.registration.embargo,
-            (datetime.utcnow() + timedelta(days=1)),
+            (timezone.now() + timedelta(days=1)),
             safe=True
         )
         self.registration.embargo.save()
@@ -121,7 +123,7 @@ class TestRetractRegistrations(OsfTestCase):
         # Embargo#iniation_date is read only
         self.registration.embargo._fields['initiation_date'].__set__(
             self.registration.embargo,
-            (datetime.utcnow() - timedelta(days=365)),
+            (timezone.now() - timedelta(days=365)),
             safe=True
         )
         self.registration.embargo.save()
@@ -141,7 +143,7 @@ class TestRetractRegistrations(OsfTestCase):
         # Embargo#iniation_date is read only
         self.registration.embargo._fields['end_date'].__set__(
             self.registration.embargo,
-            (datetime.utcnow() - timedelta(days=1)),
+            (timezone.now() - timedelta(days=1)),
             safe=True
         )
         self.registration.embargo.save()

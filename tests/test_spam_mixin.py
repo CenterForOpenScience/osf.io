@@ -1,5 +1,7 @@
 from __future__ import absolute_import
-from datetime import datetime
+
+from django.utils import timezone
+
 from nose.tools import *  # noqa PEP8 asserts
 from modularodm.exceptions import ValidationValueError, ValidationTypeError
 
@@ -19,7 +21,7 @@ class TestSpamMixin(OsfTestCase):
 
     def test_report_abuse(self):
         user = UserFactory()
-        time = datetime.utcnow()
+        time = timezone.now()
         self.comment.report_abuse(
                 user, date=time, category='spam', text='ads', save=True)
         assert_equal(self.comment.spam_status, SpamStatus.FLAGGED)
@@ -43,7 +45,7 @@ class TestSpamMixin(OsfTestCase):
 
     def test_retract_report(self):
         user = UserFactory()
-        time = datetime.utcnow()
+        time = timezone.now()
         self.comment.report_abuse(
                 user, date=time, category='spam', text='ads', save=True
         )
@@ -72,7 +74,7 @@ class TestSpamMixin(OsfTestCase):
     def test_retract_one_report_of_many(self):
         user_1 = UserFactory()
         user_2 = UserFactory()
-        time = datetime.utcnow()
+        time = timezone.now()
         self.comment.report_abuse(
                 user_1, date=time, category='spam', text='ads', save=True
         )

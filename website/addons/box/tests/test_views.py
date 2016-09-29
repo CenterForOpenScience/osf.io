@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 """Views tests for the Box addon."""
 import unittest
+
+from django.utils import timezone
+
 from nose.tools import *  # noqa (PEP8 asserts)
 import mock
 import httplib
-from datetime import datetime
 
 from framework.auth import Auth
 from website.util import api_url_for
@@ -182,7 +184,7 @@ class TestRestrictions(BoxAddonTestCase):
         self.user.add_addon('box')
         settings = self.user.get_addon('box')
         settings.access_token = '12345abc'
-        settings.last_refreshed = datetime.utcnow()
+        settings.last_refreshed = timezone.now()
         settings.save()
 
         self.patcher = mock.patch('website.addons.box.model.BoxNodeSettings.fetch_folder_name')

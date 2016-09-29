@@ -1,5 +1,7 @@
 from collections import OrderedDict
 
+from django.utils import timezone  # noqa
+
 import mock
 from nose.tools import *
 
@@ -178,7 +180,7 @@ class TestFileUpdated(OsfTestCase):
     @mock.patch('website.notifications.emails.notify')
     def test_file_updated(self, mock_notify):
         self.event.perform()
-        # notify('exd', 'file_updated', 'user', self.project, datetime.utcnow())
+        # notify('exd', 'file_updated', 'user', self.project, timezone.now())
         assert_true(mock_notify.called)
 
 
@@ -205,7 +207,7 @@ class TestFileAdded(NotificationTestCase):
     @mock.patch('website.notifications.emails.notify')
     def test_file_added(self, mock_notify):
         self.event.perform()
-        # notify('exd', 'file_updated', 'user', self.project, datetime.utcnow())
+        # notify('exd', 'file_updated', 'user', self.project, timezone.now())
         assert_true(mock_notify.called)
 
 
@@ -240,7 +242,7 @@ class TestFileRemoved(NotificationTestCase):
     @mock.patch('website.notifications.emails.notify')
     def test_file_removed(self, mock_notify):
         self.event.perform()
-        # notify('exd', 'file_updated', 'user', self.project, datetime.utcnow())
+        # notify('exd', 'file_updated', 'user', self.project, timezone.now())
         assert_true(mock_notify.called)
 
 

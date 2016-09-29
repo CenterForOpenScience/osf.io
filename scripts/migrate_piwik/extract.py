@@ -4,6 +4,8 @@ from binascii import b2a_hex
 from socket import inet_ntoa
 from datetime import datetime
 
+from django.utils import timezone
+
 import MySQLdb
 
 from scripts.migrate_piwik import utils
@@ -44,7 +46,7 @@ def main():
     last_count = 0
 
     history_file.write(settings.RUN_HEADER + '{}\n'.format(uuid.uuid4()))
-    history_file.write('Beginning extraction at: {}Z\n'.format(datetime.utcnow()))
+    history_file.write('Beginning extraction at: {}Z\n'.format(timezone.now()))
     visit_cursor = get_visits(mysql_db)
     visit = visit_cursor.fetchone()
     while visit is not None:
@@ -119,7 +121,7 @@ def main():
 
         visit = visit_cursor.fetchone()
 
-    history_file.write('Finished extraction at: {}Z\n'.format(datetime.utcnow()))
+    history_file.write('Finished extraction at: {}Z\n'.format(timezone.now()))
     history_file.write('Final count was: {}\n'.format(count))
     print("Final count is: {}".format(count))
     history_file.close()

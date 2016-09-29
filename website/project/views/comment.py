@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from datetime import datetime
+from django.utils import timezone
 
 import markdown
 import pytz
@@ -123,7 +123,7 @@ def send_comment_added_notification(comment, auth):
         parent_comment=target.referent.content if is_reply(target) else '',
         url=comment.get_comment_page_url()
     )
-    time_now = datetime.utcnow().replace(tzinfo=pytz.utc)
+    time_now = timezone.now().replace(tzinfo=pytz.utc)
     sent_subscribers = notify(
         event='comments',
         user=auth.user,
@@ -159,7 +159,7 @@ def send_mention_added_notification(comment, new_mentions, auth):
         new_mentions=new_mentions,
         url=comment.get_comment_page_url()
     )
-    time_now = datetime.utcnow().replace(tzinfo=pytz.utc)
+    time_now = timezone.now().replace(tzinfo=pytz.utc)
     notify_mentions(
         event='global_mentions',
         user=auth.user,
@@ -184,7 +184,7 @@ def _update_comments_timestamp(auth, node, page=Comment.OVERVIEW, root_id=None):
         # update node timestamp
         if page == Comment.OVERVIEW:
             root_id = node._id
-        auth.user.comments_viewed_timestamp[root_id] = datetime.utcnow()
+        auth.user.comments_viewed_timestamp[root_id] = timezone.now()
         auth.user.save()
         return {root_id: auth.user.comments_viewed_timestamp[root_id].isoformat()}
     else:

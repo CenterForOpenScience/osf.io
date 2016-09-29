@@ -1,4 +1,6 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
+
+from django.utils import timezone
 
 from dateutil.parser import parse
 
@@ -26,7 +28,7 @@ def set_maintenance(start=None, end=None):
     """
     if not database:
         return None
-    start = parse(start) if start else datetime.utcnow()
+    start = parse(start) if start else timezone.now()
     end = parse(end) if end else start + timedelta(1)
 
     if not start.tzinfo:
