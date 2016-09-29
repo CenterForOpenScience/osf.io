@@ -24,7 +24,7 @@ var ViewModel = oop.extend(OauthAddonFolderPicker,{
         self.customHost = ko.observable();      // Host specified in input element
         self.savedHost = ko.observable();       // Configured host
 
-        const otherString = 'Other (Please Specify)';
+        var otherString = 'Other (Please Specify)';
         // Designated host, specified from select or input element
         self.host = ko.pureComputed(function() {
             return self.useCustomHost() ? self.customHost() : self.selectedHost();
