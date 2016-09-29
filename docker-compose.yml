@@ -26,14 +26,6 @@ services:
       - requirements-volume:/site-packages
       - ./:/code
 
-  assets:
-    image: quay.io/centerforopenscience/osf:develop
-    command: /bin/bash -c "invoke assets -dw"
-    restart: 'no'
-    volumes:
-      - requirements-volume:/site-packages
-      - ./:/code
-
   elasticsearch:
     image: elasticsearch:2
     ports:
@@ -84,6 +76,14 @@ services:
 #      - 5555:5555
 #    environment:
 #      BROKER_URL: amqp://guest:guest@rabbitmq:5672/
+
+  assets:
+    image: quay.io/centerforopenscience/osf:develop
+    command: /bin/bash -c "invoke assets -dw"
+    restart: unless-stopped
+    volumes:
+      - requirements-volume:/site-packages
+      - ./:/code
 
 #  beat:
 #    image: quay.io/centerforopenscience/osf:develop
