@@ -28,6 +28,12 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
     constructor: function(addonName, url, selector, folderPicker, opts, tbOpts) {
         var self = this;
         self.super.constructor.call(self, addonName, url, selector, folderPicker);
+        self.construct(addonName, url, selector, folderPicker, opts, tbOpts);
+    },
+    construct: function(addonName, url, selector, folderPicker, opts, tbOpts){
+        // Broken out from `constructor` due to recursive scoping issue with oop super calls
+        // TODO: [OSF-7069]
+        var self = this;
         // externalAccounts
         self.accounts = ko.observableArray();
         self.selectedFolderType = ko.pureComputed(function() {
