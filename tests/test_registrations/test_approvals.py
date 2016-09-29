@@ -3,6 +3,8 @@ import datetime
 import httplib as http
 import json
 
+from django.utils import timezone
+
 from modularodm import Q
 
 import mock
@@ -40,5 +42,5 @@ class DraftRegistrationApprovalTestCase(OsfTestCase):
         )
         self.registration = RegistrationFactory(project=self.project)
         self.embargo = EmbargoFactory(user=self.user)
-        self.valid_embargo_end_date = datetime.datetime.utcnow() + datetime.timedelta(days=3)
+        self.valid_embargo_end_date = timezone.now() + datetime.timedelta(days=3)
 

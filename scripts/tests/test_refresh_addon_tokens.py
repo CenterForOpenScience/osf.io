@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from django.utils import timezone
 
 import mock
 from nose.tools import *  # noqa
@@ -38,7 +39,7 @@ class TestRefreshTokens(OsfTestCase):
         assert_equal(fake_result, None)
 
     def test_get_targets(self):
-        now = datetime.datetime.utcnow()
+        now = timezone.now()
         records = [
             BoxAccountFactory(expires_at=now + datetime.timedelta(days=4)),
             BoxAccountFactory(expires_at=now + datetime.timedelta(days=2)),
@@ -61,9 +62,9 @@ class TestRefreshTokens(OsfTestCase):
     @mock.patch('scripts.refresh_addon_tokens.GoogleDriveProvider.refresh_oauth_key')
     @mock.patch('scripts.refresh_addon_tokens.Box.refresh_oauth_key')
     def test_refresh(self, mock_box_refresh, mock_drive_refresh, mock_mendeley_refresh):
-        fake_box_account = BoxAccountFactory(expires_at=datetime.datetime.utcnow())
-        fake_drive_account = GoogleDriveAccountFactory(expires_at=datetime.datetime.utcnow())
-        fake_mendeley_account = MendeleyAccountFactory(expires_at=datetime.datetime.utcnow())
+        fake_box_account = BoxAccountFactory(expires_at=timezone.now())
+        fake_drive_account = GoogleDriveAccountFactory(expires_at=timezone.now())
+        fake_mendeley_account = MendeleyAccountFactory(expires_at=timezone.now())
         for addon in self.addons:
             Provider = look_up_provider(addon)
             main(delta=relativedelta(days=-3), Provider=Provider, dry_run=False)

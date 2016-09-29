@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 
-import datetime
 import logging
 import httplib
 import httplib as http  # TODO: Inconsistent usage of aliased import
 import uuid
 from dateutil.parser import parse as parse_date
+
+from django.utils import timezone
 
 from flask import request
 import markupsafe
@@ -124,7 +125,7 @@ def resend_confirmation(auth):
     # TODO: This setting is now named incorrectly.
     if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
         send_confirm_email(user, email=address)
-        user.email_last_sent = datetime.datetime.utcnow()
+        user.email_last_sent = timezone.now()
 
     user.save()
 
@@ -818,7 +819,7 @@ def request_export(auth):
         mail=mails.REQUEST_EXPORT,
         user=auth.user,
     )
-    user.email_last_sent = datetime.datetime.utcnow()
+    user.email_last_sent = timezone.now()
     user.save()
     return {'message': 'Sent account export request'}
 
@@ -838,7 +839,7 @@ def request_deactivation(auth):
         mail=mails.REQUEST_DEACTIVATION,
         user=auth.user,
     )
-    user.email_last_sent = datetime.datetime.utcnow()
+    user.email_last_sent = timezone.now()
     user.requested_deactivation = True
     user.save()
     return {'message': 'Sent account deactivation request'}

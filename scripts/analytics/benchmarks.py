@@ -2,8 +2,9 @@
 # encoding: utf-8
 
 import os
-import datetime
 import collections
+
+from django.utils import timezone
 
 import tabulate
 from modularodm import Q
@@ -133,7 +134,7 @@ def get_log_counts(users):
         counts = count_users_logs(
             users,
             (
-                Q('date', 'gte', datetime.datetime.utcnow() - counter.delta)
+                Q('date', 'gte', timezone.now() - counter.delta)
                 if counter.delta
                 else None
             ),

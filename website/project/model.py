@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+ # -*- coding: utf-8 -*-
 import itertools
 import functools
 import os
@@ -15,6 +15,7 @@ from django.apps import apps
 from django.core.urlresolvers import reverse
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
+from django.utils import timezone
 
 from modularodm import Q
 from modularodm import fields
@@ -376,7 +377,7 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
         log_dict.update(self.root_target.referent.get_extra_log_params(self))
         self.content = content
         self.modified = True
-        self.date_modified = datetime.datetime.utcnow()
+        self.date_modified = timezone.now()
         new_mentions = get_valid_mentioned_users_guids(self, self.node.contributors)
 
         if save:
@@ -403,7 +404,7 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
         }
         self.is_deleted = True
         log_dict.update(self.root_target.referent.get_extra_log_params(self))
-        self.date_modified = datetime.datetime.utcnow()
+        self.date_modified = timezone.now()
         if save:
             self.save()
             self.node.add_log(
@@ -425,7 +426,7 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
             'comment': self._id,
         }
         log_dict.update(self.root_target.referent.get_extra_log_params(self))
-        self.date_modified = datetime.datetime.utcnow()
+        self.date_modified = timezone.now()
         if save:
             self.save()
             self.node.add_log(
@@ -1572,7 +1573,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         # there is no preprint file yet! This is the first time!
         if not self.preprint_file:
             self.preprint_file = preprint_file
-            self.preprint_created = datetime.datetime.utcnow()
+            self.preprint_created = timezone.now()
             self.add_log(action=NodeLog.PREPRINT_INITIATED, params={}, auth=auth, save=False)
         elif preprint_file != self.preprint_file:
             # if there was one, check if it's a new file
@@ -1867,7 +1868,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         # Slight hack - date_created is a read-only field.
         new._fields['date_created'].__set__(
             new,
-            datetime.datetime.utcnow(),
+            timezone.now(),
             safe=True
         )
 
@@ -2316,7 +2317,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
             if message:
                 status.push_status_message(message, kind='info', trust=False)
 
-        log_date = date or datetime.datetime.utcnow()
+        log_date = date or timezone.now()
 
         # Add log to parent
         if self.node__parent:
@@ -2362,7 +2363,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         if not (self.is_public or self.has_permission(user, 'read')):
             raise PermissionsError('{0!r} does not have permission to fork node {1!r}'.format(user, self._id))
 
-        when = datetime.datetime.utcnow()
+        when = timezone.now()
 
         original = self.load(self._primary_key)
 
@@ -2476,7 +2477,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         if self.is_collection:
             raise NodeStateError('Folders may not be registered')
 
-        when = datetime.datetime.utcnow()
+        when = timezone.now()
 
         original = self.load(self._primary_key)
 
@@ -3385,7 +3386,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
                 self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
                                      send_email=send_email, permissions=permissions, save=True)
 
-        auth.user.email_last_sent = datetime.datetime.utcnow()
+        auth.user.email_last_sent = timezone.now()
         auth.user.save()
 
         if index is not None:
@@ -3449,7 +3450,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
     def _check_spam_user(self, user):
         if (
             settings.SPAM_ACCOUNT_SUSPENSION_ENABLED
-            and (datetime.datetime.utcnow() - user.date_confirmed) <= settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD
+            and (timezone.now() - user.date_confirmed) <= settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD
         ):
             self.set_privacy('private', log=False, save=False)
 
@@ -3829,7 +3830,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         return retraction
 
     def _is_embargo_date_valid(self, end_date):
-        today = datetime.datetime.utcnow()
+        today = timezone.now()
         if (end_date - today) >= settings.EMBARGO_END_DATE_MIN:
             if (end_date - today) <= settings.EMBARGO_END_DATE_MAX:
                 return True
@@ -3870,7 +3871,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         if not self.has_permission(user, 'admin'):
             raise PermissionsError('Only admins may embargo a registration')
         if not self._is_embargo_date_valid(end_date):
-            if (end_date - datetime.datetime.utcnow()) >= settings.EMBARGO_END_DATE_MIN:
+            if (end_date - timezone.now()) >= settings.EMBARGO_END_DATE_MIN:
                 raise ValidationValueError('Registrations can only be embargoed for up to four years.')
             raise ValidationValueError('Embargo end date must be at least three days in the future.')
 

@@ -4,7 +4,8 @@ This will allow proper use of no_login email starting 2 months from day migratio
 """
 import sys
 import logging
-import datetime
+
+from django.utils import timezone
 
 from website import models
 from website.app import init_app
@@ -22,7 +23,7 @@ def main():
         if user.is_active:
             logger.info('User {0} "date_last_login" updated'.format(user._id))
             if not dry_run:
-                user.date_last_login = datetime.datetime.utcnow()
+                user.date_last_login = timezone.now()
                 user.save()
 
 if __name__ == '__main__':

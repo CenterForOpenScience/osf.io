@@ -2,7 +2,8 @@
 from __future__ import absolute_import
 
 import logging
-import datetime
+
+from django.utils import timezone
 
 from dateutil import relativedelta
 
@@ -32,6 +33,6 @@ def clear_sessions_relative(months=1, dry_run=False):
     """Remove all sessions last modified over `months` months ago.
     """
     logger.warn('Clearing sessions older than {0} months'.format(months))
-    now = datetime.datetime.utcnow()
+    now = timezone.now()
     delta = relativedelta.relativedelta(months=months)
     clear_sessions(now - delta, dry_run=dry_run)

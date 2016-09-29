@@ -1,6 +1,8 @@
 import datetime
 import json
 
+from django.utils import timezone
+
 import httpretty
 from nose.tools import *  # flake8: noqa
 
@@ -372,7 +374,7 @@ class TestNodeFilesListFiltering(ApiTestCase):
         assert_equal(res.json['data'][0]['attributes']['name'], 'abc')
 
     def test_node_files_external_provider_can_filter_by_last_touched(self):
-        yesterday_stamp = datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        yesterday_stamp = timezone.now() - datetime.timedelta(days=1)
         self.add_github()
         url = '/{}nodes/{}/files/github/?filter[last_touched][gt]={}'.format(API_BASE,
                                                                              self.project._id,
@@ -382,7 +384,7 @@ class TestNodeFilesListFiltering(ApiTestCase):
         assert_equal(len(res.json['data']), 2)
 
     def test_node_files_osfstorage_cannot_filter_by_last_touched(self):
-        yesterday_stamp = datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        yesterday_stamp = timezone.now() - datetime.timedelta(days=1)
         self.file = api_utils.create_test_file(self.project, self.user)
 
         url = '/{}nodes/{}/files/osfstorage/?filter[last_touched][gt]={}'.format(API_BASE,

@@ -7,6 +7,8 @@ import unittest
 from nose.tools import *  # noqa
 import httplib as http
 
+from django.utils import timezone
+
 import jwe
 import jwt
 import furl
@@ -111,7 +113,7 @@ class TestAddonAuth(OsfTestCase):
             nid=self.node._id,
             provider=self.node_addon.config.short_name,
             ), **kwargs),
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
+            'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
         }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), self.JWE_KEY)}
         return api_url_for('get_auth', **options)
 

@@ -3,6 +3,7 @@ import datetime
 import furl
 import httplib as http
 
+from django.utils import timezone
 import markupsafe
 from flask import request
 import uuid
@@ -175,7 +176,7 @@ def forgot_password_post(auth, **kwargs):
                 # this verification key is used twice, one for GET reset_password and one for POST reset_password
                 # and it will be destroyed when POST reset_password succeeds
                 user_obj.verification_key = generate_verification_key()
-                user_obj.email_last_sent = datetime.datetime.utcnow()
+                user_obj.email_last_sent = timezone.now()
                 user_obj.save()
                 reset_link = furl.urljoin(
                     settings.DOMAIN,
@@ -396,7 +397,7 @@ def external_login_confirm_email_get(auth, uid, token):
     if email.lower() not in user.emails:
         user.emails.append(email.lower())
 
-    user.date_last_logged_in = datetime.datetime.utcnow()
+    user.date_last_logged_in = timezone.now()
     user.external_identity[provider][provider_id] = 'VERIFIED'
     user.social[provider.lower()] = provider_id
     del user.email_verifications[token]
@@ -475,7 +476,7 @@ def confirm_email_get(token, auth=None, **kwargs):
         })
 
     if is_initial_confirmation:
-        user.date_last_login = datetime.datetime.utcnow()
+        user.date_last_login = timezone.now()
         user.save()
 
         # send out our welcome message
@@ -733,7 +734,7 @@ def resend_confirmation_post(auth):
                     # already confirmed, redirect to dashboard
                     status_message = 'This email {0} has already been confirmed.'.format(clean_email)
                     kind = 'warning'
-                user.email_last_sent = datetime.datetime.utcnow()
+                user.email_last_sent = timezone.now()
                 user.save()
             else:
                 status_message = ('You have recently requested to resend your confirmation email. '

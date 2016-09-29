@@ -4,6 +4,7 @@ import os
 import uuid
 import markupsafe
 
+from django.utils import timezone
 
 from flask import make_response
 from flask import redirect
@@ -276,7 +277,7 @@ def get_auth(auth, **kwargs):
         raise HTTPError(httplib.BAD_REQUEST)
 
     return {'payload': jwe.encrypt(jwt.encode({
-        'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
+        'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
         'data': {
             'auth': make_auth(auth.user),  # A waterbutler auth dict not an Auth object
             'credentials': credentials,
