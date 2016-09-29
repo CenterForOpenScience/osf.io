@@ -1,3 +1,7 @@
+# Settings
+#
+# cp ./website/settings/local-dist.py ./website/settings/local.py
+
 # Setup the Shared Virtual Environment
 #
 # docker-compose up requirements
