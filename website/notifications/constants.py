@@ -29,5 +29,6 @@ PROVIDERS = {
     'figshare': 'figshare',
     'github': 'GitHub',
     'googledrive': 'Google Drive',
+    'owncloud': 'ownCloud',
     's3': 'Amazon S3'
 }
