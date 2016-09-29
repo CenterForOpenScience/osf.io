@@ -304,6 +304,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def linked_registrations_related_url(self):
         return self.absolute_api_v2_url + 'linked_registrations/'
 
+    @property
+    def institutions_url(self):
+        return self.absolute_api_v2_url + 'institutions/'
+
+    @property
+    def institutions_relationship_url(self):
+        return self.absolute_api_v2_url + 'relationships/institutions/'
+
     # For Comment API compatibility
     @property
     def target_type(self):
@@ -426,10 +434,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def is_affiliated_with_institution(self, institution):
         return self.affiliated_institutions.filter(id=institution.id).exists()
 
-    def add_affiliated_intitution(self, inst, user, save=False, log=True):
+    def add_affiliated_institution(self, inst, user, save=False, log=True):
         if not user.is_affiliated_with_institution(inst):
             raise UserNotAffiliatedError('User is not affiliated with {}'.format(inst.name))
-        if self.is_affiliated_with_institution(inst):
+        if not self.is_affiliated_with_institution(inst):
             self.affiliated_institutions.add(inst)
         if log:
             from website.project.model import NodeLog

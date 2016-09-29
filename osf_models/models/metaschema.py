@@ -2,6 +2,8 @@
 from django.db import models
 import jsonschema
 
+from website.util import api_v2_url
+
 from osf_models.models.base import BaseModel, ObjectIDMixin
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf_models.exceptions import ValidationValueError
@@ -47,6 +49,11 @@ class MetaSchema(ObjectIDMixin, BaseModel):
     @property
     def has_files(self):
         return self._config.get('hasFiles', False)
+
+    @property
+    def absolute_api_v2_url(self):
+        path = '/metaschemas/{}/'.format(self._id)
+        return api_v2_url(path)
 
     @classmethod
     def get_prereg_schema(cls):
