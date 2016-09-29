@@ -31,6 +31,9 @@ class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
         kwargs.pop('node', None)
         super(Institution, self).__init__(*args, **kwargs)
 
+    def __unicode__(self):
+        return u'{} : ({})'.format(self.name, self._id)
+
     @classmethod
     def migrate_from_modm(cls, modm_obj):
         inst = Institution()
