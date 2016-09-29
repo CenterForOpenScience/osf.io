@@ -340,11 +340,8 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
         auth = utils.get_user_auth(self.request)
         obj = {'data': [
             pointer for pointer in
-            object.nodes_pointer
-            if not pointer.node.is_deleted
-            and not pointer.node.is_collection
-            and pointer.node.is_registration
-            and pointer.node.can_view(auth)
+            object.linked_nodes.filter(is_deleted=False, type='osf_models.registration')
+            if pointer.can_view(auth)
         ], 'self': object}
         self.check_object_permissions(self.request, obj)
         return obj

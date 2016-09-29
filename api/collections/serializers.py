@@ -5,6 +5,8 @@ from framework.exceptions import PermissionsError
 from website.exceptions import NodeStateError
 
 from website.models import Node
+from osf_models.models import Collection
+from osf_models.exceptions import ValidationError
 from api.base.serializers import LinksField, RelationshipField
 from api.base.serializers import JSONAPISerializer, IDField, TypeField
 from api.base.exceptions import InvalidModelValueError
@@ -75,13 +77,12 @@ class CollectionSerializer(JSONAPISerializer):
         return count
 
     def create(self, validated_data):
-        node = Node(**validated_data)
-        node.is_collection = True
+        node = Collection(**validated_data)
         node.category = ''
         try:
             node.save()
-        except ValidationValueError as e:
-            raise InvalidModelValueError(detail=e.message)
+        except ValidationError as e:
+            raise InvalidModelValueError(detail=e.messages[0])
         except NodeStateError:
             raise ser.ValidationError('Each user cannot have more than one Bookmark collection.')
         return node
@@ -96,8 +97,8 @@ class CollectionSerializer(JSONAPISerializer):
         if validated_data:
             try:
                 node.update(validated_data, auth=auth)
-            except ValidationValueError as e:
-                raise InvalidModelValueError(detail=e.message)
+            except ValidationError as e:
+                raise InvalidModelValueError(detail=e.messages[0])
             except PermissionsError:
                 raise exceptions.PermissionDenied
 
