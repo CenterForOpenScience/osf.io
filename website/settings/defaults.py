@@ -86,10 +86,6 @@ SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
 ELASTIC_URI = 'localhost:9200'
 ELASTIC_TIMEOUT = 10
 ELASTIC_INDEX = 'website'
-SHARE_ELASTIC_URI = ELASTIC_URI
-SHARE_ELASTIC_INDEX = 'share'
-# For old indices
-SHARE_ELASTIC_INDEX_TEMPLATE = 'share_v{}'
 
 # Sessions
 COOKIE_NAME = 'osf'
@@ -317,10 +313,8 @@ EZID_PASSWORD = 'changeme'
 # Format for DOIs and ARKs
 EZID_FORMAT = '{namespace}osf.io/{guid}'
 
-
-USE_SHARE = True
 SHARE_REGISTRATION_URL = ''
-SHARE_API_DOCS_URL = ''
+SHARE_URL = 'https://share.osf.io/'
 
 CAS_SERVER_URL = 'http://localhost:8080'
 MFR_SERVER_URL = 'http://localhost:7778'
