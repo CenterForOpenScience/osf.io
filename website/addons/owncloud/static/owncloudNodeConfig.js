@@ -13,7 +13,9 @@ var language = require('js/osfLanguage').Addons.owncloud;
 var ViewModel = oop.extend(OauthAddonFolderPicker,{
     constructor: function(addonName, url, selector, folderPicker, opts, tbOpts) {
         var self = this;
-        self.super.constructor.call(self, addonName, url, selector, folderPicker, tbOpts);
+        // TODO: [OSF-7069]
+        self.super.super.constructor.call(self, addonName, url, selector, folderPicker, tbOpts);
+        self.super.construct.call(self, addonName, url, selector, folderPicker, opts, tbOpts);
         // Non-Oauth fields:
         self.username = ko.observable('');
         self.password = ko.observable('');
