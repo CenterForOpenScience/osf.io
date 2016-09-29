@@ -1,3 +1,4 @@
+from django.apps import apps
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 from rest_framework import exceptions
@@ -78,7 +79,7 @@ class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     ordering = ('name', )
 
     def get_default_odm_query(self):
-        return Q('_id', 'ne', None)
+        return Q('guid.object_id', 'ne', None) & Q('is_deleted', 'ne', True)
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -155,8 +156,6 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
 
     base_node_query = (
         Q('is_deleted', 'ne', True) &
-        Q('is_folder', 'ne', True) &
-        Q('is_registration', 'eq', False) &
         Q('parent_node', 'eq', None) &
         Q('is_public', 'eq', True)
     )
@@ -167,9 +166,10 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
 
     # overrides RetrieveAPIView
     def get_queryset(self):
+        ConcreteNode = apps.get_model('osf_models.Node')
         inst = self.get_institution()
         query = self.get_query_from_request()
-        return Node.find_by_institutions(inst, query)
+        return ConcreteNode.find_by_institutions(inst, query)
 
 
 class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView, InstitutionMixin):
@@ -191,7 +191,7 @@ class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         inst = self.get_institution()
-        query = Q('_affiliated_institutions', 'eq', inst.node)
+        query = Q('affiliated_institutions', 'eq', inst)
         return query
 
     # overrides RetrieveAPIView
@@ -226,17 +226,16 @@ class InstitutionRegistrationList(InstitutionNodeList):
 
     base_node_query = (
         Q('is_deleted', 'ne', True) &
-        Q('is_folder', 'ne', True) &
-        Q('is_registration', 'eq', True) &
         Q('is_public', 'eq', True)
     )
 
     ordering = ('-date_modified', )
 
     def get_queryset(self):
+        Registration = apps.get_model('osf_models.Registration')
         inst = self.get_institution()
         query = self.get_query_from_request()
-        nodes = Node.find_by_institutions(inst, query)
+        nodes = Registration.find_by_institutions(inst, query)
         return [node for node in nodes if not node.is_retracted]
 
 class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, generics.CreateAPIView, InstitutionMixin):
@@ -291,9 +290,12 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
     view_name = 'institution-relationships-nodes'
 
     def get_object(self):
+        ConcreteNode = apps.get_model('osf_models.Node')
         inst = self.get_institution()
         auth = get_user_auth(self.request)
-        nodes = [node for node in Node.find_by_institutions(inst, Q('is_registration', 'eq', False) & Q('is_deleted', 'ne', True)) if node.is_public or node.can_view(auth)]
+        nodes = [node for node in
+                 ConcreteNode.find_by_institutions(inst, Q('is_deleted', 'ne', True))
+                 if node.can_view(auth)]
         ret = {
             'data': nodes,
             'self': inst
