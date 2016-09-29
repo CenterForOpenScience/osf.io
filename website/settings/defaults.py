@@ -318,6 +318,7 @@ SHARE_REGISTRATION_URL = ''
 SHARE_API_DOCS_URL = ''
 
 CAS_SERVER_URL = 'http://localhost:8080'
+CAS_SERVER_URL_INTERNAL = CAS_SERVER_URL
 MFR_SERVER_URL = 'http://localhost:7778'
 
 ###### ARCHIVER ###########

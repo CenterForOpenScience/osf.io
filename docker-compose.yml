@@ -1,0 +1,164 @@
+# Setup the Shared Virtual Environment
+#
+# docker-compose up requirements
+
+# Run the OSF
+#
+# docker-compose up elasticsearch tokumx fakecas assets web api
+
+version: '2'
+volumes:
+  requirements-volume:
+    external: false
+  asssets-volume:
+    external: false
+
+services:
+  requirements:
+    image: quay.io/centerforopenscience/osf:develop
+    command: /bin/bash -c "invoke requirements --quick && cp -Rf /usr/local/lib/python2.7/site-packages /"
+    restart: 'no'
+    volumes:
+      - requirements-volume:/site-packages
+      - ./:/code
+
+  elasticsearch:
+    image: elasticsearch:2
+    ports:
+      - 9200:9200
+
+#  rabbitmq:
+#    image: rabbitmq:management
+#    ports:
+#      - 5672:5672
+#      - 15672:15672
+
+#  postgres:
+#    image: postgres
+#    command: /bin/bash -c "sed -i -e 's/max_connections.*/max_connections = 5000/' /var/lib/postgresql/data/postgresql.conf || true && sed -i -e 's/#log_min_duration_statement = .*/log_min_duration_statement = 0/' /var/lib/postgresql/data/postgresql.conf || true && /docker-entrypoint.sh postgres"
+#    ports:
+#      - 5432:5432
+#    environment:
+#      POSTGRES_DB: osf
+
+  tokumx:
+    image: quay.io/centerforopenscience/tokumx:latest
+    command: mongod --ipv6
+    ports:
+      - 27017:27017
+    environment:
+      TOKU_HUGE_PAGES_OK: 1
+
+  fakecas:
+    image: quay.io/centerforopenscience/fakecas:latest
+    command: fakecas -host=0.0.0.0:8080 -dbaddress=tokumx:27017
+    restart: unless-stopped
+    ports:
+      - 8080:8080
+    depends_on:
+      - tokumx
+    links:
+      - tokumx
+
+# TODO
+#  flower:
+#    image: quay.io/centerforopenscience/osf:develop
+#    command: python manage.py celery flower
+#    depends_on:
+#      - rabbitmq
+#    links:
+#      - rabbitmq
+#    ports:
+#      - 5555:5555
+#    environment:
+#      BROKER_URL: amqp://guest:guest@rabbitmq:5672/
+
+#  beat:
+#    image: quay.io/centerforopenscience/osf:develop
+#    command: invoke celery_beat
+#    depends_on:
+#      - tokumx
+#      - rabbitmq
+#      - elasticsearch
+#    links:
+#      - tokumx
+#      - rabbitmq
+#      - elasticsearch
+#    volumes:
+#      - requirements-volume:/usr/local/lib/python2.7/site-packages
+#      - ./:/code
+#    environment:
+#      DB_HOST: tokumx
+#      ELASTIC_URI: elasticsearch:9200
+#      BROKER_URL: amqp://guest:guest@rabbitmq:5672/
+
+#  worker:
+#    image: quay.io/centerforopenscience/osf:develop
+#    command: invoke celery_worker
+#    restart: unless-stopped
+#    depends_on:
+#      - tokumx
+#      - rabbitmq
+#      - elasticsearch
+#    links:
+#      - tokumx
+#      - rabbitmq
+#      - elasticsearch
+#    volumes:
+#      - requirements-volume:/usr/local/lib/python2.7/site-packages
+#      - ./:/code
+#    environment:
+#      C_FORCE_ROOT: 1
+#      DB_HOST: tokumx
+#      ELASTIC_URI: elasticsearch:9200
+#      BROKER_URL: amqp://guest:guest@rabbitmq:5672/
+
+  web:
+    image: quay.io/centerforopenscience/osf:develop
+    command: invoke server -h 0.0.0.0
+    restart: unless-stopped
+    ports:
+      - 5000:5000
+    depends_on:
+      - tokumx
+#      - rabbitmq
+      - elasticsearch
+      - fakecas
+    links:
+      - tokumx
+#      - rabbitmq
+      - elasticsearch
+      - fakecas
+    volumes:
+      - requirements-volume:/usr/local/lib/python2.7/site-packages
+      - ./:/code
+    environment:
+      DB_HOST: tokumx
+      ELASTIC_URI: elasticsearch:9200
+#      BROKER_URL: amqp://guest:guest@rabbitmq:5672/
+      CAS_SERVER_URL_INTERNAL: http://fakecas:8080
+
+  api:
+    image: quay.io/centerforopenscience/osf:develop
+    command: invoke apiserver -h 0.0.0.0
+    restart: unless-stopped
+    ports:
+      - 8000:8000
+    depends_on:
+      - tokumx
+#      - rabbitmq
+      - elasticsearch
+      - fakecas
+    links:
+      - tokumx
+#      - rabbitmq
+      - elasticsearch
+      - fakecas
+    volumes:
+      - requirements-volume:/usr/local/lib/python2.7/site-packages
+      - ./:/code
+    environment:
+      DB_HOST: tokumx
+      ELASTIC_URI: elasticsearch:9200
+#      BROKER_URL: amqp://guest:guest@rabbitmq:5672/
+      CAS_SERVER_URL_INTERNAL: http://fakecas:8080

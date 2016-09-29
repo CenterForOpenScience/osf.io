@@ -77,6 +77,9 @@ except ConnectionError as e:
     except AssertionError:  # App has not yet been initialized
         logger.exception(message)
     es = None
+    if settings.DEBUG_MODE:
+        logging.warn('elasticsearch unavailable, the application will now exit')
+        exit(1)
 
 
 def requires_search(func):

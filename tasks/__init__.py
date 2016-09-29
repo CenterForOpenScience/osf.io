@@ -497,7 +497,9 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, metric
                 pip_install(req_file, constraints_file=CONSTRAINTS_PATH),
                 echo=True
             )
-
+    # fix URITemplate name conflict h/t @github
+    ctx.run('pip uninstall uritemplate.py --yes || true')
+    ctx.run('pip install --no-cache-dir uritemplate.py==0.3.0')
 
 @task
 def test_module(ctx, module=None, verbosity=2):
@@ -771,8 +773,8 @@ def packages(ctx):
 def bower_install(ctx):
     print('Installing bower-managed packages')
     bower_bin = os.path.join(HERE, 'node_modules', 'bower', 'bin', 'bower')
-    ctx.run('{} prune'.format(bower_bin), echo=True)
-    ctx.run('{} install'.format(bower_bin), echo=True)
+    ctx.run('{} prune --allow-root'.format(bower_bin), echo=True)
+    ctx.run('{} install --allow-root'.format(bower_bin), echo=True)
 
 
 @task
