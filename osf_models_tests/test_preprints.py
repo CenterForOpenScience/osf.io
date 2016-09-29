@@ -1,8 +1,8 @@
-import pytest
 
-import datetime as dt
+from django.utils import timezone
 
 from modularodm import StoredObject
+import pytest
 import pytz
 
 from framework.exceptions import PermissionsError
@@ -53,7 +53,7 @@ class TestMigrateFromModm:
         subject1.save()
         subject2.save()
 
-        preprint_created = dt.datetime.utcnow()
+        preprint_created = timezone.now()
 
         node = project_model.Node(
             preprint_subjects=[subject1, subject2],

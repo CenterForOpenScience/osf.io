@@ -1,5 +1,6 @@
 # Ported from tests.test_mails
-import datetime as dt
+
+from django.utils import timezone
 
 import pytest
 import mock
@@ -12,7 +13,7 @@ from website import mails
 @pytest.fixture()
 def user():
     # TODO: Remove date_registered after migration is complete
-    return UserFactory(is_registered=True, date_registered=dt.datetime.utcnow())
+    return UserFactory(is_registered=True, date_registered=timezone.now())
 
 @pytest.mark.django_db
 class TestQueuedMail:
@@ -20,7 +21,7 @@ class TestQueuedMail:
     def queue_mail(self, mail, user, send_at=None, **kwargs):
         mail = queue_mail(
             to_addr=user.username if user else self.user.username,
-            send_at=send_at or dt.datetime.utcnow(),
+            send_at=send_at or timezone.now(),
             user=user,
             mail=mail,
             fullname=user.fullname if user else self.user.username,
@@ -31,16 +32,16 @@ class TestQueuedMail:
     @mock.patch('osf_models.models.queued_mail.send_mail')
     def test_no_login_presend_for_active_user(self, mock_mail, user):
         mail = self.queue_mail(mail=mails.NO_LOGIN, user=user)
-        user.date_last_login = dt.datetime.utcnow() + dt.timedelta(seconds=10)
+        user.date_last_login = timezone.now() + dt.timedelta(seconds=10)
         user.save()
         assert mail.send_mail() is False
 
     @mock.patch('osf_models.models.queued_mail.send_mail')
     def test_no_login_presend_for_inactive_user(self, mock_mail, user):
         mail = self.queue_mail(mail=mails.NO_LOGIN, user=user)
-        user.date_last_login = dt.datetime.utcnow() - dt.timedelta(weeks=10)
+        user.date_last_login = timezone.now() - dt.timedelta(weeks=10)
         user.save()
-        assert dt.datetime.utcnow() - dt.timedelta(days=1) > user.date_last_login
+        assert timezone.now() - dt.timedelta(days=1) > user.date_last_login
         assert bool(mail.send_mail()) is True
 
     @mock.patch('osf_models.models.queued_mail.send_mail')
@@ -72,7 +73,7 @@ class TestQueuedMail:
     # TODO: Uncomment when FileNodeModel is implemented
     # @mock.patch('osf_models.models.queued_mail.send_mail')
     # def test_welcome_osf4m_presend(self, mock_mail, user):
-    #     user.date_last_login = dt.datetime.utcnow() - dt.timedelta(days=13)
+    #     user.date_last_login = timezone.now() - dt.timedelta(days=13)
     #     user.save()
     #     mail = self.queue_mail(
     #         mail=mails.WELCOME_OSF4M,
@@ -133,7 +134,7 @@ class TestQueuedMail:
 
     @mock.patch('osf_models.models.queued_mail.send_mail')
     def test_user_is_not_active_is_disabled(self, mock_mail):
-        user = UserFactory(date_disabled=dt.datetime.utcnow())
+        user = UserFactory(date_disabled=timezone.now())
         mail = self.queue_mail(
             user=user,
             mail=mails.NO_ADDON,

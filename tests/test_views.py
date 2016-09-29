@@ -10,6 +10,8 @@ import json
 import time
 import unittest
 
+from django.utils import timezone
+
 import mock
 from nose.tools import *  # noqa PEP8 asserts
 from django.utils import timezone
@@ -2630,7 +2632,7 @@ class TestWatchViews(OsfTestCase):
             NodeLog.TAG_ADDED,
             params={'node': self.project._primary_key},
             auth=self.consolidate_auth,
-            log_date=dt.datetime.utcnow(),
+            log_date=timezone.now(),
             save=True,
         )
         # Clear watched list
@@ -3404,7 +3406,7 @@ class TestAuthViews(OsfTestCase):
         # Do not return expired token and removes it from user.email_verifications
         email = 'test@mail.com'
         token = self.user.add_unconfirmed_email(email)
-        self.user.email_verifications[token]['expiration'] = dt.datetime.utcnow() - dt.timedelta(days=100)
+        self.user.email_verifications[token]['expiration'] = timezone.now() - dt.timedelta(days=100)
         self.user.save()
         self.user.reload()
         assert_equal(self.user.email_verifications[token]['email'], email)
@@ -3417,7 +3419,7 @@ class TestAuthViews(OsfTestCase):
         # Do not return bad token and removes it from user.email_verifications
         email = 'test@mail.com'
         token = 'blahblahblah'
-        self.user.email_verifications[token] = {'expiration': dt.datetime.utcnow() + dt.timedelta(days=1),
+        self.user.email_verifications[token] = {'expiration': timezone.now() + dt.timedelta(days=1),
                                                 'email': email,
                                                 'confirmed': False }
         self.user.save()

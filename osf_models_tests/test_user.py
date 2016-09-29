@@ -3,6 +3,8 @@
 import datetime as dt
 import urlparse
 
+from django.utils import timezone
+
 import mock
 import itsdangerous
 import pytest
@@ -60,7 +62,7 @@ class TestOSFUser:
             username=email, password='foobar', fullname=name
         )
         # TODO: Remove me when auto_now_add is enabled (post-migration)
-        user.date_registered = dt.datetime.utcnow()
+        user.date_registered = timezone.now()
         user.save()
         assert user.check_password('foobar') is True
         assert user._id
@@ -72,7 +74,7 @@ class TestOSFUser:
             username=email, password='foobar', fullname=name
         )
         # TODO: Remove me when auto_now_add is enabled (post-migration)
-        user.date_registered = dt.datetime.utcnow()
+        user.date_registered = timezone.now()
         user.save()
         assert user.is_registered is False
         assert len(user.email_verifications.keys()) == 1
@@ -103,7 +105,7 @@ class TestOSFUser:
         u = User.create_unregistered(email=email,
                                      fullname=name)
         # TODO: Remove post-migration
-        u.date_registered = dt.datetime.utcnow()
+        u.date_registered = timezone.now()
         u.save()
         assert u.username == email
         assert u.is_registered is False
@@ -117,7 +119,7 @@ class TestOSFUser:
     def test_search_not_updated_for_unreg_users(self, update_search):
         u = User.create_unregistered(fullname=fake.name(), email=fake.email())
         # TODO: Remove post-migration
-        u.date_registered = dt.datetime.utcnow()
+        u.date_registered = timezone.now()
         u.save()
         assert not update_search.called
 
@@ -182,7 +184,7 @@ class TestOSFUser:
     def test_get_confirmation_token_when_token_is_expired_raises_error(self):
         u = UserFactory()
         # Make sure token is already expired
-        expiration = dt.datetime.utcnow() - dt.timedelta(seconds=1)
+        expiration = timezone.now() - dt.timedelta(seconds=1)
         u.add_unconfirmed_email('foo@bar.com', expiration=expiration)
 
         with pytest.raises(ExpiredTokenError):
@@ -193,7 +195,7 @@ class TestOSFUser:
         random_string.return_value = '12345'
         u = UserFactory()
         # Make sure token is already expired
-        expiration = dt.datetime.utcnow() - dt.timedelta(seconds=1)
+        expiration = timezone.now() - dt.timedelta(seconds=1)
         u.add_unconfirmed_email('foo@bar.com', expiration=expiration)
 
         # sanity check
@@ -233,7 +235,7 @@ class TestOSFUser:
     def test_get_confirmation_url_when_token_is_expired_raises_error(self):
         u = UserFactory()
         # Make sure token is already expired
-        expiration = dt.datetime.utcnow() - dt.timedelta(seconds=1)
+        expiration = timezone.now() - dt.timedelta(seconds=1)
         u.add_unconfirmed_email('foo@bar.com', expiration=expiration)
 
         with pytest.raises(ExpiredTokenError):
@@ -244,7 +246,7 @@ class TestOSFUser:
         random_string.return_value = '12345'
         u = UserFactory()
         # Make sure token is already expired
-        expiration = dt.datetime.utcnow() - dt.timedelta(seconds=1)
+        expiration = timezone.now() - dt.timedelta(seconds=1)
         u.add_unconfirmed_email('foo@bar.com', expiration=expiration)
 
         # sanity check
@@ -299,7 +301,7 @@ class TestOSFUser:
 
         valid_token = u.get_confirmation_token('foo@bar.com')
         assert bool(u.get_unconfirmed_email_for_token(valid_token)) is True
-        manual_expiration = dt.datetime.utcnow() - dt.timedelta(0, 10)
+        manual_expiration = timezone.now() - dt.timedelta(0, 10)
         u._set_email_token_expiration(valid_token, expiration=manual_expiration)
 
         with pytest.raises(ExpiredTokenError):
@@ -398,7 +400,7 @@ class TestOSFUser:
         # Do not return bad token and removes it from user.email_verifications
         email = 'test@example.com'
         token = 'blahblahblah'
-        user.email_verifications[token] = {'expiration': (dt.datetime.utcnow() + dt.timedelta(days=1)),
+        user.email_verifications[token] = {'expiration': (timezone.now() + dt.timedelta(days=1)),
                                                 'email': email,
                                                 'confirmed': False }
         user.save()
@@ -606,7 +608,7 @@ class TestIsActive:
                 is_registered=True,
                 merged_by=None,
                 is_disabled=False,
-                date_confirmed=dt.datetime.utcnow(),
+                date_confirmed=timezone.now(),
             )
             user.set_password('secret')
             for attr, value in attrs.items():
@@ -642,7 +644,7 @@ class TestIsActive:
         assert user.is_active is False
 
     def test_is_active_is_false_if_disabled(self, make_user):
-        user = make_user(date_disabled=dt.datetime.utcnow())
+        user = make_user(date_disabled=timezone.now())
         assert user.is_active is False
 
 
