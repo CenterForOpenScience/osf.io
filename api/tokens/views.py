@@ -43,7 +43,7 @@ class TokenList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
 
     def get_default_odm_query(self):
 
-        owner = self.request.user._id
+        owner = self.request.user
         return (
             Q('owner', 'eq', owner) &
             Q('is_active', 'eq', True)
@@ -86,7 +86,7 @@ class TokenDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
     # overrides RetrieveAPIView
     def get_object(self):
         obj = get_object_or_error(ApiOAuth2PersonalToken,
-                                  Q('_id', 'eq', self.kwargs['_id']) &
+                                  Q('guid.object_id', 'eq', self.kwargs['_id']) &
                                   Q('is_active', 'eq', True))
 
         self.check_object_permissions(self.request, obj)
