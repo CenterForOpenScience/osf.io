@@ -908,7 +908,7 @@ var RegistrationEditor = function(urls, editorId, preview) {
 		$elem.append(
 		    $('<span class="col-md-12">').append(
 			$('<p class="breaklines"><small><em>' + $osf.htmlEscape(question.description) + '</em></small></p>'),
-                            $('<span class="well col-xs-12">').append(value)
+                            $('<span class="well breaklines col-xs-12">').append(value)
 		));
             }
 	    return $elem;
