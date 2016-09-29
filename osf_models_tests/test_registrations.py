@@ -260,7 +260,7 @@ class TestRegisterNode:
         user.affiliated_institutions.add(institution)
         user.save()
 
-        node.add_affiliated_intitution(institution, user=user)
+        node.add_affiliated_institution(institution, user=user)
         node.save()
 
         registration = factories.RegistrationFactory(project=node)
