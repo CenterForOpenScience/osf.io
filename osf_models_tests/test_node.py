@@ -15,7 +15,7 @@ from website.exceptions import NodeStateError
 from website.util import permissions, disconnected_from_listeners
 from website.citations.utils import datetime_to_csl
 
-from osf_models.models import Node, Tag, NodeLog, Contributor, Sanction
+from osf_models.models import Node, Tag, NodeLog, Contributor, Sanction, NodeWikiPage
 from osf_models.exceptions import ValidationError
 from osf_models.utils.auth import Auth
 
@@ -28,6 +28,7 @@ from .factories import (
     NodeLicenseRecordFactory,
     PrivateLinkFactory,
     CollectionFactory,
+    NodeWikiFactory,
 )
 from .utils import capture_signals, assert_datetime_equal, mock_archive
 
@@ -1267,7 +1268,7 @@ class TestPointerMethods:
         assert forked.is_fork is True
         assert forked.forked_from == content
         assert forked.primary is True
-        assert node.linked_nodes.first() == forked
+        assert node.nodes.first() == forked
         assert(
             node.logs.latest().action == NodeLog.POINTER_FORKED
         )
@@ -1284,12 +1285,10 @@ class TestPointerMethods:
             }
         )
 
-    @pytest.mark.skip('forking not yet implemented')
     def test_fork_pointer_project(self, node, user, auth):
         project = ProjectFactory(creator=user)
         self._fork_pointer(node=node, content=project, auth=auth)
 
-    @pytest.mark.skip('forking not yet implemented')
     def test_fork_pointer_component(self, node, user, auth):
         component = NodeFactory(creator=user)
         self._fork_pointer(node=node, content=component, auth=auth)
@@ -1509,21 +1508,23 @@ class TestForkNode:
         assert fork.wiki_pages_current == {}
         assert fork.wiki_private_uuids == {}
 
-    @pytest.mark.skip('wikis not yet implemented')
+    @pytest.mark.skip('Unskip when addons and hooks (i.e. after_fork) are implemented')
     def test_forking_clones_project_wiki_pages(self, user, auth):
-        project = ProjectFactory(creator=self.user, is_public=True)
-        wiki = NodeWikiFactory(node=project)
-        current_wiki = NodeWikiFactory(node=project, version=2)
-        fork = project.fork_node(self.auth)
-        assert_equal(fork.wiki_private_uuids, {})
+        project = ProjectFactory(creator=user, is_public=True)
+        # TODO: Unmock when StoredFileNode is implemented
+        with mock.patch('osf_models.models.AbstractNode.update_search'):
+            wiki = NodeWikiFactory(node=project)
+            current_wiki = NodeWikiFactory(node=project, version=2)
+        fork = project.fork_node(auth)
+        assert fork.wiki_private_uuids == {}
 
         registration_wiki_current = NodeWikiPage.load(fork.wiki_pages_current[current_wiki.page_name])
-        assert_equal(registration_wiki_current.node, fork)
-        assert_not_equal(registration_wiki_current._id, current_wiki._id)
+        assert registration_wiki_current.node == fork
+        assert registration_wiki_current._id != current_wiki._id
 
         registration_wiki_version = NodeWikiPage.load(fork.wiki_pages_versions[wiki.page_name][0])
-        assert_equal(registration_wiki_version.node, fork)
-        assert_not_equal(registration_wiki_version._id, wiki._id)
+        assert registration_wiki_version.node == fork
+        assert registration_wiki_version._id != wiki._id
 
 class TestAlternativeCitationMethods:
 

@@ -2896,7 +2896,7 @@ class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMi
     def get_default_odm_query(self):
         node = self.get_node()
         node_wiki_pages = node.wiki_pages_current.values() if node.wiki_pages_current else []
-        return Q('_id', 'in', node_wiki_pages)
+        return Q('guid.guid', 'in', node_wiki_pages)
 
     def get_queryset(self):
         return NodeWikiPage.find(self.get_query_from_request())

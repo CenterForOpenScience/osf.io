@@ -132,26 +132,26 @@ class TestOSFUser:
         with pytest.raises(ValidationError):
             dupe.save()
 
-    @pytest.mark.skip('User#merge_user not yet implemented')
-    def test_merged_user_with_two_account_on_same_project_with_different_visibility_and_permissions(self):
+    def test_merged_user_with_two_account_on_same_project_with_different_visibility_and_permissions(self, user):
         user2 = UserFactory.build()
         user2.save()
 
         project = ProjectFactory(is_public=True)
         # Both the master and dupe are contributors
         project.add_contributor(user2, log=False)
-        project.add_contributor(self.user, log=False)
-        project.set_permissions(user=self.user, permissions=['read'])
+        project.add_contributor(user, log=False)
+        project.set_permissions(user=user, permissions=['read'])
         project.set_permissions(user=user2, permissions=['read', 'write', 'admin'])
-        project.set_visible(user=self.user, visible=False)
+        project.set_visible(user=user, visible=False)
         project.set_visible(user=user2, visible=True)
         project.save()
-        self.user.merge_user(user2)
-        self.user.save()
+        user.merge_user(user2)
+        user.save()
         project.reload()
-        assert_true('admin' in project.permissions[self.user._id])
-        assert_true(self.user._id in project.visible_contributor_ids)
-        assert_false(project.is_contributor(user2))
+
+        assert project.has_permission(user, 'admin') is True
+        assert project.get_visible(user) is True
+        assert project.is_contributor(user2) is False
 
     def test_cant_create_user_without_username(self):
         u = User()  # No username given
@@ -412,14 +412,16 @@ class TestOSFUser:
         u = UserFactory()
         assert u.display_full_name() == u.fullname
 
-    @pytest.mark.skip('add_unregistered_contributor not yet implemented')
     def test_display_full_name_unregistered(self):
         name = fake.name()
         u = UnregUserFactory()
         project = NodeFactory()
-        project.add_unregistered_contributor(fullname=name, email=u.username,
-            auth=Auth(project.creator))
+        project.add_unregistered_contributor(
+            fullname=name, email=u.username,
+            auth=Auth(project.creator)
+        )
         project.save()
+        u.reload()
         assert u.display_full_name(node=project) == name
 
     def test_username_is_automatically_lowercased(self):
