@@ -71,6 +71,11 @@ class TestGetGlobals(OsfTestCase):
             node.affiliated_institutions.append(self.inst_two)
             node.save()
 
+        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
+            registration = factories.RegistrationFactory(creator=self.user, is_public=True)
+            registration.affiliated_institutions.append(self.inst_two)
+            registration.save()
+
     def test_get_globals_dashboard_institutions(self):
         globals = routes.get_globals()
         dashboard_institutions = globals['dashboard_institutions']

@@ -63,7 +63,9 @@ def get_globals():
     dashboard_institutions = [
         {'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners}
         for inst in all_institutions
-        if len(Node.find_by_institutions(inst, query=Q('is_public', 'eq', True))) >= settings.INSTITUTION_DISPLAY_NODE_THRESHOLD
+        if len(
+            Node.find_by_institutions(inst, query=(Q('is_public', 'eq', True) & Q('is_registration', 'eq', False)))
+        ) >= settings.INSTITUTION_DISPLAY_NODE_THRESHOLD
     ]
 
     location = geolite2.lookup(request.remote_addr) if request.remote_addr else None
