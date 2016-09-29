@@ -1105,7 +1105,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         NOTE: Unclaimed users may have a different name for different nodes.
         """
         if node:
-            unclaimed_data = self.unclaimed_records.get(node._primary_key, None)
+            unclaimed_data = self.unclaimed_records.get(str(node._id), None)
             if unclaimed_data:
                 return unclaimed_data['name']
         return self.fullname
@@ -1158,8 +1158,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         if not node.can_edit(user=referrer):
             raise PermissionsError('Referrer does not have permission to add a contributor '
                 'to project {0}'.format(node._primary_key))
-        project_id = node._primary_key
-        referrer_id = referrer._primary_key
+        project_id = str(node._id)
+        referrer_id = str(referrer._id)
         if email:
             clean_email = email.lower().strip()
         else:
