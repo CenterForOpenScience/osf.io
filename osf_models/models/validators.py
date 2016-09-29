@@ -78,7 +78,7 @@ class CommentMaxLength(object):
         return matchobj.group(1)
 
     def __call__(self, value):
-        reduced_comment = self.mention_re.sub(self.link_repl(value))
+        reduced_comment = self.mention_re.sub(self.link_repl, value)
         if len(reduced_comment) > self.max_length + 2:
             raise ValidationValueError(
                 'Ensure this field has no more than {} characters.'.format(self.max_length))
