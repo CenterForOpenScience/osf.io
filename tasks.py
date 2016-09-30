@@ -5,8 +5,8 @@ import webbrowser
 
 from invoke import task
 
-OSF_GIT_URL = 'https://github.com/sloria/osf.io.git'
-POSTGRES_BRANCH = 'feature/django-osf-preprints'
+OSF_GIT_URL = 'https://github.com/CenterForOpenScience/osf.io.git'
+POSTGRES_BRANCH = 'feature/django-osf'
 
 @task
 def setup_tests(ctx, update=False, requirements=True, branch=POSTGRES_BRANCH):
