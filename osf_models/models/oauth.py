@@ -2,7 +2,6 @@ import urlparse
 import uuid
 
 import functools
-from django.apps import apps
 from django.db import models
 from django.utils import timezone
 from osf_models.models import base
