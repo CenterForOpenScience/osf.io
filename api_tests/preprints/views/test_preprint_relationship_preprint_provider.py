@@ -1,7 +1,7 @@
-from nose.tools import *
+from nose.tools import *  # flake8: noqa
 
 from tests.base import ApiTestCase
-from tests.factories import AuthUserFactory, PreprintFactory, PreprintProviderFactory
+from osf_models_tests.factories import AuthUserFactory, PreprintFactory, PreprintProviderFactory
 
 from api.base.settings.defaults import API_BASE
 
@@ -31,7 +31,7 @@ class TestPreprintRelationshipPreprintProvider(ApiTestCase):
         return {'data': data}
 
     def test_add_preprint_providers(self):
-        assert_equal(self.preprint.preprint_providers, None)
+        assert_equal(self.preprint.preprint_providers.count(), 0)
         res = self.app.post_json_api(
             self.preprint_preprint_providers_url,
             self.create_payload(self.preprint_provider_one._id, self.preprint_provider_two._id),
@@ -42,12 +42,12 @@ class TestPreprintRelationshipPreprintProvider(ApiTestCase):
 
         # check the relationship
         self.preprint.reload()
-        assert_in(self.preprint_provider_one, self.preprint.preprint_providers)
-        assert_in(self.preprint_provider_two, self.preprint.preprint_providers)
+        assert_in(self.preprint_provider_one, self.preprint.preprint_providers.all())
+        assert_in(self.preprint_provider_two, self.preprint.preprint_providers.all())
 
     def test_add_preprint_providers_permission_denied(self):
         noncontrib = AuthUserFactory()
-        assert_equal(self.preprint.preprint_providers, None)
+        assert_equal(self.preprint.preprint_providers.count(), 0)
         res = self.app.post_json_api(
             self.preprint_preprint_providers_url,
             self.create_payload(self.preprint_provider_one._id, self.preprint_provider_two._id),
@@ -61,8 +61,8 @@ class TestPreprintRelationshipPreprintProvider(ApiTestCase):
         self.preprint.preprint_providers = [self.preprint_provider_one]
         self.preprint.save()
 
-        assert_in(self.preprint_provider_one, self.preprint.preprint_providers)
-        assert_not_in(self.preprint_provider_two, self.preprint.preprint_providers)
+        assert_in(self.preprint_provider_one, self.preprint.preprint_providers.all())
+        assert_not_in(self.preprint_provider_two, self.preprint.preprint_providers.all())
 
         res = self.app.patch_json_api(
             self.preprint_preprint_providers_url,
@@ -73,15 +73,15 @@ class TestPreprintRelationshipPreprintProvider(ApiTestCase):
         assert_equal(res.status_code, 200)
 
         self.preprint.reload()
-        assert_not_in(self.preprint_provider_one, self.preprint.preprint_providers)
-        assert_in(self.preprint_provider_two, self.preprint.preprint_providers)
+        assert_not_in(self.preprint_provider_one, self.preprint.preprint_providers.all())
+        assert_in(self.preprint_provider_two, self.preprint.preprint_providers.all())
 
     def test_add_through_post_to_preprint_with_provider(self):
         self.preprint.preprint_providers = [self.preprint_provider_one]
         self.preprint.save()
 
-        assert_in(self.preprint_provider_one, self.preprint.preprint_providers)
-        assert_not_in(self.preprint_provider_two, self.preprint.preprint_providers)
+        assert_in(self.preprint_provider_one, self.preprint.preprint_providers.all())
+        assert_not_in(self.preprint_provider_two, self.preprint.preprint_providers.all())
 
         res = self.app.post_json_api(
             self.preprint_preprint_providers_url,
@@ -92,8 +92,8 @@ class TestPreprintRelationshipPreprintProvider(ApiTestCase):
         assert_equal(res.status_code, 201)
 
         self.preprint.reload()
-        assert_in(self.preprint_provider_one, self.preprint.preprint_providers)
-        assert_in(self.preprint_provider_two, self.preprint.preprint_providers)
+        assert_in(self.preprint_provider_one, self.preprint.preprint_providers.all())
+        assert_in(self.preprint_provider_two, self.preprint.preprint_providers.all())
 
     def test_add_provider_with_no_permissions(self):
         new_user = AuthUserFactory()
@@ -119,7 +119,7 @@ class TestPreprintRelationshipPreprintProvider(ApiTestCase):
         self.preprint.preprint_providers = [self.preprint_provider_one]
         self.preprint.save()
 
-        assert_in(self.preprint_provider_one, self.preprint.preprint_providers)
+        assert_in(self.preprint_provider_one, self.preprint.preprint_providers.all())
         res = self.app.put_json_api(
             self.preprint_preprint_providers_url,
             self.create_payload(),
@@ -127,7 +127,7 @@ class TestPreprintRelationshipPreprintProvider(ApiTestCase):
         )
         assert_equal(res.status_code, 200)
         self.preprint.reload()
-        assert_equal(self.preprint.preprint_providers, [])
+        assert_equal(self.preprint.preprint_providers.count(), 0)
 
     def test_remove_providers_with_no_auth(self):
         res = self.app.put_json_api(
@@ -140,7 +140,7 @@ class TestPreprintRelationshipPreprintProvider(ApiTestCase):
     def test_using_post_making_no_changes_returns_204(self):
         self.preprint.preprint_providers = [self.preprint_provider_one]
         self.preprint.save()
-        assert_in(self.preprint_provider_one, self.preprint.preprint_providers)
+        assert_in(self.preprint_provider_one, self.preprint.preprint_providers.all())
 
         res = self.app.post_json_api(
             self.preprint_preprint_providers_url,
@@ -150,12 +150,12 @@ class TestPreprintRelationshipPreprintProvider(ApiTestCase):
 
         assert_equal(res.status_code, 204)
         self.preprint.reload()
-        assert_in(self.preprint_provider_one, self.preprint.preprint_providers)
+        assert_in(self.preprint_provider_one, self.preprint.preprint_providers.all())
 
     def test_delete_user_is_admin(self):
         self.preprint.preprint_providers = [self.preprint_provider_one]
         self.preprint.save()
-        assert_in(self.preprint_provider_one, self.preprint.preprint_providers)
+        assert_in(self.preprint_provider_one, self.preprint.preprint_providers.all())
 
         res = self.app.delete_json_api(
             self.preprint_preprint_providers_url,
@@ -165,12 +165,12 @@ class TestPreprintRelationshipPreprintProvider(ApiTestCase):
 
         assert_equal(res.status_code, 204)
         self.preprint.reload()
-        assert_not_in(self.preprint_provider_one, self.preprint.preprint_providers)
+        assert_not_in(self.preprint_provider_one, self.preprint.preprint_providers.all())
 
     def test_delete_provider_user_is_read_write(self):
         self.preprint.preprint_providers = [self.preprint_provider_one]
         self.preprint.save()
-        assert_in(self.preprint_provider_one, self.preprint.preprint_providers)
+        assert_in(self.preprint_provider_one, self.preprint.preprint_providers.all())
 
         res = self.app.delete_json_api(
             self.preprint_preprint_providers_url,
@@ -181,13 +181,13 @@ class TestPreprintRelationshipPreprintProvider(ApiTestCase):
 
         assert_equal(res.status_code, 403)
         self.preprint.reload()
-        assert_in(self.preprint_provider_one, self.preprint.preprint_providers)
+        assert_in(self.preprint_provider_one, self.preprint.preprint_providers.all())
 
     def test_add_provider_user_is_read_write(self):
         self.preprint.preprint_providers = []
-        self.preprint.preprint_providers.append(self.preprint_provider_one)
+        self.preprint.preprint_providers.add(self.preprint_provider_one)
         self.preprint.save()
-        assert_in(self.preprint_provider_one, self.preprint.preprint_providers)
+        assert_in(self.preprint_provider_one, self.preprint.preprint_providers.all())
 
         res = self.app.post_json_api(
             self.preprint_preprint_providers_url,
@@ -198,13 +198,13 @@ class TestPreprintRelationshipPreprintProvider(ApiTestCase):
 
         assert_equal(res.status_code, 403)
         self.preprint.reload()
-        assert_in(self.preprint_provider_one, self.preprint.preprint_providers)
+        assert_in(self.preprint_provider_one, self.preprint.preprint_providers.all())
 
     def test_change_provider_user_is_read_write(self):
         self.preprint.preprint_providers = []
-        self.preprint.preprint_providers.append(self.preprint_provider_one)
+        self.preprint.preprint_providers.add(self.preprint_provider_one)
         self.preprint.save()
-        assert_in(self.preprint_provider_one, self.preprint.preprint_providers)
+        assert_in(self.preprint_provider_one, self.preprint.preprint_providers.all())
 
         res = self.app.put_json_api(
             self.preprint_preprint_providers_url,
@@ -215,7 +215,7 @@ class TestPreprintRelationshipPreprintProvider(ApiTestCase):
 
         assert_equal(res.status_code, 403)
         self.preprint.reload()
-        assert_in(self.preprint_provider_one, self.preprint.preprint_providers)
+        assert_in(self.preprint_provider_one, self.preprint.preprint_providers.all())
 
     def test_get_relationship_information(self):
         res = self.app.get(self.preprint_preprint_providers_url,auth=self.user.auth)

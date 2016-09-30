@@ -1,11 +1,12 @@
 from nose.tools import *  # flake8: noqa
+import pytest
 
 from framework.auth.core import Auth
 from tests.base import ApiTestCase
 from api.base.settings.defaults import API_BASE
 
 from website.files.models.osfstorage import OsfStorageFile
-from tests.factories import PreprintFactory, AuthUserFactory, ProjectFactory, SubjectFactory
+from osf_models_tests.factories import PreprintFactory, AuthUserFactory, ProjectFactory, SubjectFactory
 from api_tests import utils as test_utils
 
 def build_preprint_update_payload(node_id, attributes=None, relationships=None):
@@ -75,9 +76,10 @@ class TestPreprintUpdate(ApiTestCase):
         assert_equal(res.status_code, 200)
 
         self.preprint.reload()
-        assert_in('newtag', self.preprint.tags)
-        assert_in('bluetag', self.preprint.tags)
-        assert_in('tag_added', [l.action for l in self.preprint.logs])
+        tag_names = list(self.preprint.tags.values_list('name', flat=True))
+        assert_in('newtag', tag_names)
+        assert_in('bluetag', tag_names)
+        assert_in('tag_added', list(self.preprint.logs.values_list('action', flat=True)))
 
     def test_update_preprint_tags_not_list(self):
         update_tags_payload = build_preprint_update_payload(self.preprint._id, attributes={'tags': 'newtag'})
@@ -92,14 +94,14 @@ class TestPreprintUpdate(ApiTestCase):
         assert_equal(res.status_code, 400)
 
     def test_update_preprint_subjects(self):
-        assert_not_equal(self.preprint.preprint_subjects[0], self.subject._id)
+        assert_not_equal(self.preprint.preprint_subjects.first()._id, self.subject._id)
         update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"subjects": [self.subject._id]})
 
         res = self.app.patch_json_api(self.url, update_subjects_payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
         self.preprint.reload()
-        assert_equal(self.preprint.preprint_subjects[0], self.subject)
+        assert_equal(self.preprint.preprint_subjects.first(), self.subject)
 
     def test_update_invalid_subjects(self):
         preprint_subjects = self.preprint.preprint_subjects
@@ -111,6 +113,7 @@ class TestPreprintUpdate(ApiTestCase):
         self.preprint.reload()
         assert_equal(self.preprint.preprint_subjects, preprint_subjects)
 
+    @pytest.mark.skip('Unskip when StoredFileNode is implemented')
     def test_update_primary_file(self):
         new_file = test_utils.create_test_file(self.preprint, 'openupthatwindow.pdf')
         relationships = {
@@ -130,6 +133,7 @@ class TestPreprintUpdate(ApiTestCase):
         self.preprint.reload()
         assert_equal(self.preprint.preprint_file, new_file)
 
+    @pytest.mark.skip('Unskip when StoredFileNode is implemented')
     def test_new_primary_not_in_node(self):
         project = ProjectFactory()
         file_for_project = test_utils.create_test_file(project, 'letoutthatantidote.pdf')
@@ -165,6 +169,7 @@ class TestPreprintUpdate(ApiTestCase):
         preprint_detail = self.app.get(self.url, auth=self.user.auth).json['data']
         assert_equal(preprint_detail['links']['doi'], 'https://dx.doi.org/{}'.format(new_doi))
 
+    @pytest.mark.skip('Unskip when StoredFileNode is implemented')
     def test_write_contrib_cannot_set_preprint_file(self):
         user_two = AuthUserFactory()
         self.preprint.add_contributor(user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
@@ -182,13 +187,14 @@ class TestPreprintUpdate(ApiTestCase):
                             'id': new_file._id
                         }
                     }
-                }    
+                }
             }
         }
- 
+
         res = self.app.patch_json_api(self.url, data, auth=user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+    @pytest.mark.skip('Unskip when StoredFileNode is implemented')
     def test_noncontrib_cannot_set_preprint_file(self):
         user_two = AuthUserFactory()
         new_file = test_utils.create_test_file(self.preprint, 'openupthatwindow.pdf')
@@ -205,33 +211,33 @@ class TestPreprintUpdate(ApiTestCase):
                             'id': new_file._id
                         }
                     }
-                }    
+                }
             }
         }
- 
+
         res = self.app.patch_json_api(self.url, data, auth=user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_write_contrib_cannot_set_subjects(self):
         user_two = AuthUserFactory()
         self.preprint.add_contributor(user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
-        
-        assert_not_equal(self.preprint.preprint_subjects[0], self.subject._id)
+
+        assert_not_equal(self.preprint.preprint_subjects.first()._id, self.subject._id)
         update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"subjects": [self.subject._id]})
 
         res = self.app.patch_json_api(self.url, update_subjects_payload, auth=user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-        assert_not_equal(self.preprint.preprint_subjects[0], self.subject._id)
+        assert_not_equal(self.preprint.preprint_subjects.first()._id, self.subject._id)
 
     def test_noncontrib_cannot_set_subjects(self):
         user_two = AuthUserFactory()
         self.preprint.add_contributor(user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
-        
-        assert_not_equal(self.preprint.preprint_subjects[0], self.subject._id)
+
+        assert_not_equal(self.preprint.preprint_subjects.first()._id, self.subject._id)
         update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"subjects": [self.subject._id]})
 
         res = self.app.patch_json_api(self.url, update_subjects_payload, auth=user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-        assert_not_equal(self.preprint.preprint_subjects[0], self.subject._id)
+        assert_not_equal(self.preprint.preprint_subjects.first()._id, self.subject._id)

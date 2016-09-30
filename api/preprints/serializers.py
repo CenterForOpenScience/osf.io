@@ -1,4 +1,4 @@
-from modularodm.exceptions import ValidationValueError
+from modularodm.exceptions import ValidationError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 
@@ -126,8 +126,8 @@ class PreprintSerializer(JSONAPISerializer):
             setattr(node, key, value)
         try:
             node.save()
-        except ValidationValueError as e:
-            raise exceptions.ValidationError(detail=e.message)
+        except ValidationError as e:
+            raise exceptions.ValidationError(detail=e.messages[0])
 
         # Send preprint confirmation email signal to new authors on preprint!
         for author in node.contributors:
@@ -137,7 +137,6 @@ class PreprintSerializer(JSONAPISerializer):
         return node
 
     def update(self, node, validated_data):
-        from website.models import Node
         assert isinstance(node, Node), 'You must specify a valid node to be updated.'
         auth = get_user_auth(self.context['request'])
         primary_file = validated_data.pop('primary_file', None)
@@ -147,7 +146,7 @@ class PreprintSerializer(JSONAPISerializer):
         if subjects:
             self.set_node_field(node.set_preprint_subjects, subjects, auth)
 
-        old_tags = set([tag._id for tag in node.tags])
+        old_tags = set(node.tags.values_list('name', flat=True))
         if 'tags' in validated_data:
             current_tags = set(validated_data.pop('tags', []))
         elif self.partial:
@@ -164,8 +163,8 @@ class PreprintSerializer(JSONAPISerializer):
             setattr(node, key, value)
         try:
             node.save()
-        except ValidationValueError as e:
-            raise exceptions.ValidationError(detail=e.message)
+        except ValidationError as e:
+            raise exceptions.ValidationError(detail=e.messages[0])
         return node
 
     def set_node_field(self, func, val, auth):
@@ -206,7 +205,7 @@ class PreprintPreprintProvidersRelationshipSerializer(ser.Serializer):
 
     def make_instance_obj(self, obj):
         return {
-            'data': obj.preprint_providers,
+            'data': obj.preprint_providers.all(),
             'self': obj
         }
 

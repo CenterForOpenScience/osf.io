@@ -1,7 +1,6 @@
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 
-from modularodm import Q
 from modularodm.exceptions import ValidationError
 
 from framework.auth.core import Auth

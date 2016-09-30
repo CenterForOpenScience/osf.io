@@ -25,10 +25,6 @@ class TestTaxonomy(ApiTestCase):
         self.res = self.app.get(self.url)
         self.data = self.res.json['data']
 
-    def tearDown(self):
-        super(TestTaxonomy, self).tearDown()
-        Subject.remove()
-
     def test_taxonomy_success(self):
         assert_greater(len(self.subjects), 0)  # make sure there are subjects to filter through
         assert_equal(self.res.status_code, 200)
@@ -45,8 +41,8 @@ class TestTaxonomy(ApiTestCase):
             parents_ids = []
             for parent in self.data[index]['attributes']['parents']:
                 parents_ids.append(parent['id'])
-            for parent in subject.parents:
-                assert parent._id in parents_ids
+            for parent_id in subject.parents.values_list('guid__object_id', flat=True):
+                assert parent_id in parents_ids
 
     def test_taxonomy_filter_top_level(self):
         top_level_subjects = Subject.find(

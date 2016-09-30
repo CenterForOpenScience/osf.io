@@ -5,7 +5,7 @@ from api.base.serializers import JSONAPISerializer, LinksField, JSONAPIListField
 class TaxonomyField(ser.Field):
     def to_representation(self, obj):
         if obj is not None:
-            return {'id': obj._id,
+            return {'id': str(obj._id),
                     'text': obj.text}
         return None
 
@@ -18,7 +18,7 @@ class TaxonomySerializer(JSONAPISerializer):
         'parents',
         'id'
     ])
-    id = ser.CharField(source='_id', required=True)
+    id = ser.CharField(source='guid.object_id', required=True)
     text = ser.CharField(max_length=200)
     parents = JSONAPIListField(child=TaxonomyField())
     child_count = ser.IntegerField()
@@ -29,7 +29,7 @@ class TaxonomySerializer(JSONAPISerializer):
     })
 
     def get_parent_urls(self, obj):
-        return [p.get_absolute_url() for p in obj.parents]
+        return [p.get_absolute_url() for p in obj.parents.all()]
 
     def get_absolute_url(self, obj):
         return obj.get_absolute_url()

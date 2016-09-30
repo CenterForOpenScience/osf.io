@@ -433,6 +433,13 @@ class SubjectFactory(DjangoModelFactory):
     class Meta:
         model = models.Subject
 
+    @classmethod
+    def _create(cls, target_class, parents=None, *args, **kwargs):
+        ret = super(SubjectFactory, cls)._create(target_class, *args, **kwargs)
+        if parents:
+            ret.parents.add(*parents)
+        return ret
+
 
 class PreprintProviderFactory(DjangoModelFactory):
     name = factory.Faker('company')
