@@ -457,7 +457,7 @@ class PreprintFactory(DjangoModelFactory):
     is_public = True
 
     class Meta:
-        model = models.Preprint
+        model = models.Node
 
     @classmethod
     def _create(cls, target_class, project=None, filename='preprint_file.txt', providers=None, doi=None, external_url=None, *args, **kwargs):
@@ -487,10 +487,11 @@ class PreprintFactory(DjangoModelFactory):
         # file.save()
         # project.set_preprint_file(file, auth=Auth(project.creator))
 
-        project.subjects = [SubjectFactory()._id]
+        project.preprint_subjects = [SubjectFactory()._id]
         if providers:
-            project.providers.add(*providers)
-        project.doi = doi
+            project.preprint_providers.add(*providers)
+        project.preprint_doi = doi
+        project.preprint_created = timezone.now()
         project.save()
 
         return project
