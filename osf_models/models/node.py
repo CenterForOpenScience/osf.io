@@ -102,6 +102,33 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         '': 'Uncategorized',
     }
 
+    # Node fields that trigger an update to Solr on save
+    SEARCH_UPDATE_FIELDS = {
+        'title',
+        'category',
+        'description',
+        'visible_contributor_ids',
+        'tags',
+        'is_fork',
+        'is_registration',
+        'retraction',
+        'embargo',
+        'is_public',
+        'is_deleted',
+        'wiki_pages_current',
+        'is_retracted',
+        'node_license',
+        '_affiliated_institutions',
+        'preprint_file',
+    }
+
+    # Node fields that trigger a check to the spam filter on save
+    SPAM_CHECK_FIELDS = {
+        'title',
+        'description',
+        'wiki_pages_current',
+    }
+
     # Fields that are writable by Node.update
     WRITABLE_WHITELIST = [
         'title',
