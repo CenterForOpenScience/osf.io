@@ -48,7 +48,9 @@ function skipOrderedListMarker(state, startLine) {
 
     ch = state.src.charCodeAt(pos++);
 
-    if (ch < 0x30/* 0 */ || ch > 0x39/* 9 */) { return -1; }
+    if (ch < 0x30/* 0 */ || ch > 0x39/* 9 */) {
+        return -1;
+    }
 
     for (;;) {
         // EOL -> fail
@@ -77,8 +79,7 @@ function skipOrderedListMarker(state, startLine) {
 }
 
 function markTightParagraphs(state, idx) {
-    var i, l,
-            level = state.level + 2;
+    var i, l, level = state.level + 2;
 
     for (i = idx + 2, l = state.tokens.length - 2; i < l; i++) {
         if (state.tokens[i].level === level && state.tokens[i].type === 'paragraph_open') {
@@ -89,9 +90,19 @@ function markTightParagraphs(state, idx) {
     }
 }
 
+function hideOldListContent(state, idx) {
+    var i, l;
+
+    for (i = idx - 2, l = state.tokens.length; i < l; i++) {
+        state.tokens[i].hidden = true;
+        state.tokens[i].content = '';
+    }
+}
+
 
 module.exports = function list(state, startLine, endLine, silent) {
     var nextLine,
+            content,
             indent,
             oldTShift,
             oldIndent,
@@ -105,6 +116,7 @@ module.exports = function list(state, startLine, endLine, silent) {
             markerCharCode,
             isOrdered,
             contentStart,
+            firstStartLine,
             listTokIdx,
             prevEmptyEnd,
             listLines,
@@ -123,30 +135,50 @@ module.exports = function list(state, startLine, endLine, silent) {
         return false;
     }
 
-    // We should terminate list on style change. Remember first one to compare.
+    // save variable to state to check if the list should be rendered
+    if (!state.isEmpty(startLine - 1)) {
+        state.renderList = false;
+    } else {
+        state.renderList = true;
+    }
+
+    // Save the first start line for putting into one token if list shouldn't be rendered
+    var firstStartLine = startLine;
+
+    // Remember char code to set it later on
     markerCharCode = state.src.charCodeAt(posAfterMarker - 1);
 
     // For validation mode we can terminate immediately
-    if (silent) { return true; }
+    if (silent) {
+        return true;
+    }
 
-    // Start list
+    // Start list - token index of where the list begins
     listTokIdx = state.tokens.length;
 
     if (isOrdered) {
         start = state.bMarks[startLine] + state.tShift[startLine];
         markerValue = Number(state.src.substr(start, posAfterMarker - start - 1));
 
-        token       = state.push('ordered_list_open', 'ol', 1);
+        if (state.renderList) {
+            token = state.push('ordered_list_open', 'ol', 1);
+            token.map = listLines = [ startLine, 0 ];
+        } else {
+            listLines = [];
+        }
         if (markerValue > 1) {
-            token.attrs = [ [ 'start', markerValue ] ];
+            token.attrs = [['start', markerValue ]];
         }
 
     } else {
-        token       = state.push('bullet_list_open', 'ul', 1);
+        if (state.renderList) {
+            token = state.push('bullet_list_open', 'ul', 1);
+            token.markup = String.fromCharCode(markerCharCode);
+            token.map = listLines = [ startLine, 0 ];
+        } else {
+            listLines = [];
+        }
     }
-
-    token.map    = listLines = [ startLine, 0 ];
-    token.markup = String.fromCharCode(markerCharCode);
 
     //
     // Iterate list items
@@ -176,9 +208,13 @@ module.exports = function list(state, startLine, endLine, silent) {
         indent = (posAfterMarker - state.bMarks[nextLine]) + indentAfterMarker;
 
         // Run subparser & write tokens
-        token        = state.push('list_item_open', 'li', 1);
-        token.markup = String.fromCharCode(markerCharCode);
-        token.map    = itemLines = [ startLine, 0 ];
+        if (state.renderList) {
+            token        = state.push('list_item_open', 'li', 1);
+            token.markup = String.fromCharCode(markerCharCode);
+            token.map    = itemLines = [ startLine, 0 ];
+        } else {
+            itemLines = [];
+        }
 
         oldIndent = state.blkIndent;
         oldTight = state.tight;
@@ -195,8 +231,9 @@ module.exports = function list(state, startLine, endLine, silent) {
         if (!state.tight || prevEmptyEnd) {
             tight = false;
         }
-        // Item become loose if finish with empty line,
-        // but we should filter last element, because it means list finish
+
+        // Item becomes loose if it emds with an empty line,
+        // should filter last element, because it means list is finished
         prevEmptyEnd = (state.line - startLine) > 1 && state.isEmpty(state.line - 1);
 
         state.blkIndent = oldIndent;
@@ -204,23 +241,27 @@ module.exports = function list(state, startLine, endLine, silent) {
         state.tight = oldTight;
         state.parentType = oldParentType;
 
-        token        = state.push('list_item_close', 'li', -1);
-        token.markup = String.fromCharCode(markerCharCode);
+        if (state.renderList) {
+            token = state.push('list_item_close', 'li', -1);
+            token.markup = String.fromCharCode(markerCharCode);
+        }
 
         nextLine = startLine = state.line;
         itemLines[1] = nextLine;
         contentStart = state.bMarks[startLine];
 
-        if (nextLine >= endLine) { break; }
+        if (nextLine >= endLine) {
+            break;
+        }
 
         if (state.isEmpty(nextLine)) {
             break;
         }
 
-        //
         // Try to check if list is terminated or continued.
-        //
-        if (state.tShift[nextLine] < state.blkIndent) { break; }
+        if (state.tShift[nextLine] < state.blkIndent) {
+            break;
+        }
 
         // fail if terminating block found
         terminate = false;
@@ -232,7 +273,7 @@ module.exports = function list(state, startLine, endLine, silent) {
         }
         if (terminate) { break; }
 
-        // fail if list has another type
+        // keep going with original list type if markdown changes
         if (isOrdered) {
             posAfterMarker = skipOrderedListMarker(state, nextLine);
             if (posAfterMarker < 0) {
@@ -250,25 +291,44 @@ module.exports = function list(state, startLine, endLine, silent) {
                 }
             }
         }
-
-        // if (markerCharCode !== state.src.charCodeAt(posAfterMarker - 1)) { break; }
     }
 
     // Finilize list
-    if (isOrdered) {
-        token = state.push('ordered_list_close', 'ol', -1);
+    if (state.renderList) {
+        if (isOrdered) {
+            token = state.push('ordered_list_close', 'ol', -1);
+            token.markup = String.fromCharCode(markerCharCode);
+        } else {
+            token = state.push('bullet_list_close', 'ul', -1);
+            token.markup = String.fromCharCode(markerCharCode);
+
+        }
+        listLines[1] = nextLine;
+
+        // mark paragraphs tight if needed
+        if (tight) {
+            markTightParagraphs(state, listTokIdx);
+        }
     } else {
-        token = state.push('bullet_list_close', 'ul', -1);
-    }
-    token.markup = String.fromCharCode(markerCharCode);
 
-    listLines[1] = nextLine;
+        // mark everything in the old list hidden
+        hideOldListContent(state, listTokIdx);
+
+        // now render everything into one paragraph!
+        token = state.push('paragraph_open', 'p', 1);
+        token.map  = [ firstStartLine, nextLine ];
+
+        content = state.getLines(firstStartLine - 1, nextLine, 0, true);
+
+        token = state.push('inline', '', 0);
+        token.content = content;
+        token.map = [ firstStartLine, nextLine ];
+        token.children = [];
+
+        token = state.push('paragraph_close', 'p', -1);
+    }
+
     state.line = nextLine;
-
-    // mark paragraphs tight if needed
-    if (tight) {
-        markTightParagraphs(state, listTokIdx);
-    }
-
+    state.renderList = true;
     return true;
 };
