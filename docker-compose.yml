@@ -1,20 +1,51 @@
-# Settings
+# Alias localhost in order to allow docker containers
+# access your machines loopback interface (127.0.0.1).
+#
+# sudo ifconfig lo0 alias 192.168.168.167
+
+# Settings (default osf configuration settings)
 #
 # cp ./website/settings/local-dist.py ./website/settings/local.py
 
-# Setup the Shared Virtual Environment
+# Setup / Update the shared Python site-packages environment
 #
 # docker-compose up requirements
 
+# Configure remote debugging and environment variables
+# by modifying the .docker-compose.env file.
+#
+# WEB_REMOTE_DEBUG=192.168.168.167:11000
+# API_REMOTE_DEBUG=192.168.168.167:12000
+# WORKER_REMOTE_DEBUG=192.168.168.167:13000
+
+# Run services (assets can take up to 10 minutes the first run)
+#
+# docker-compose up elasticsearch tokumx fakecas assets
+
 # Run the OSF
 #
-# docker-compose up elasticsearch tokumx fakecas assets web api
+# docker-compose up web api
+
+# Resetting persistent storage volumes
+#
+# e.g.
+# docker-compose stop -t 0 tokumx
+# docker-compose rm tokumx
+# docker volume rm [projectname]_tokumx_volume
+
+# Using IPDB
+# You can detach from a container and leave it running using the CTRL-p CTRL-q key sequence.
+#
+# docker attach [projectname]_web_1
+
 
 version: '2'
 volumes:
-  requirements-volume:
+  requirements_volume:
     external: false
-  asssets-volume:
+  tokumx_volume:
+    external: false
+  elasticsearch_volume:
     external: false
 
 services:
@@ -23,13 +54,15 @@ services:
     command: /bin/bash -c "invoke requirements --quick && cp -Rf /usr/local/lib/python2.7/site-packages /"
     restart: 'no'
     volumes:
-      - requirements-volume:/site-packages
+      - requirements_volume:/site-packages
       - ./:/code
 
   elasticsearch:
     image: elasticsearch:2
     ports:
       - 9200:9200
+    volumes:
+      - elasticsearch_volume:/usr/share/elasticsearch/data
 
 #  rabbitmq:
 #    image: rabbitmq:management
@@ -52,6 +85,8 @@ services:
       - 27017:27017
     environment:
       TOKU_HUGE_PAGES_OK: 1
+    volumes:
+      - tokumx_volume:/data/db
 
   fakecas:
     image: quay.io/centerforopenscience/fakecas:latest
@@ -64,7 +99,6 @@ services:
     links:
       - tokumx
 
-# TODO
 #  flower:
 #    image: quay.io/centerforopenscience/osf:develop
 #    command: python manage.py celery flower
@@ -76,14 +110,6 @@ services:
 #      - 5555:5555
 #    environment:
 #      BROKER_URL: amqp://guest:guest@rabbitmq:5672/
-
-  assets:
-    image: quay.io/centerforopenscience/osf:develop
-    command: /bin/bash -c "invoke assets -dw"
-    restart: unless-stopped
-    volumes:
-      - requirements-volume:/site-packages
-      - ./:/code
 
 #  beat:
 #    image: quay.io/centerforopenscience/osf:develop
@@ -97,7 +123,7 @@ services:
 #      - rabbitmq
 #      - elasticsearch
 #    volumes:
-#      - requirements-volume:/usr/local/lib/python2.7/site-packages
+#      - requirements_volume:/usr/local/lib/python2.7/site-packages
 #      - ./:/code
 #    environment:
 #      DB_HOST: tokumx
@@ -117,13 +143,21 @@ services:
 #      - rabbitmq
 #      - elasticsearch
 #    volumes:
-#      - requirements-volume:/usr/local/lib/python2.7/site-packages
+#      - requirements_volume:/usr/local/lib/python2.7/site-packages
 #      - ./:/code
 #    environment:
 #      C_FORCE_ROOT: 1
 #      DB_HOST: tokumx
 #      ELASTIC_URI: elasticsearch:9200
 #      BROKER_URL: amqp://guest:guest@rabbitmq:5672/
+
+  assets:
+    image: quay.io/centerforopenscience/osf:develop
+    command: invoke assets -dw
+    restart: unless-stopped
+    volumes:
+      - requirements_volume:/site-packages
+      - ./:/code
 
   web:
     image: quay.io/centerforopenscience/osf:develop
@@ -141,18 +175,17 @@ services:
 #      - rabbitmq
       - elasticsearch
       - fakecas
+    env_file:
+      - .docker-compose.env
+    stdin_open: true
+    tty: true
     volumes:
-      - requirements-volume:/usr/local/lib/python2.7/site-packages
+      - requirements_volume:/usr/local/lib/python2.7/site-packages
       - ./:/code
-    environment:
-      DB_HOST: tokumx
-      ELASTIC_URI: elasticsearch:9200
-#      BROKER_URL: amqp://guest:guest@rabbitmq:5672/
-      CAS_SERVER_URL_INTERNAL: http://fakecas:8080
 
   api:
     image: quay.io/centerforopenscience/osf:develop
-    command: invoke apiserver -h 0.0.0.0
+    command: invoke apiserver -h 0.0.0.0  # --remote 192.168.168.167:12000
     restart: unless-stopped
     ports:
       - 8000:8000
@@ -166,11 +199,10 @@ services:
 #      - rabbitmq
       - elasticsearch
       - fakecas
+    env_file:
+      - .docker-compose.env
+    stdin_open: true
+    tty: true
     volumes:
-      - requirements-volume:/usr/local/lib/python2.7/site-packages
+      - requirements_volume:/usr/local/lib/python2.7/site-packages
       - ./:/code
-    environment:
-      DB_HOST: tokumx
-      ELASTIC_URI: elasticsearch:9200
-#      BROKER_URL: amqp://guest:guest@rabbitmq:5672/
-      CAS_SERVER_URL_INTERNAL: http://fakecas:8080
