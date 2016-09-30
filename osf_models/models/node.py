@@ -2256,9 +2256,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             raise PermissionsError('Only admins can change a preprint\'s subjects.')
 
         self.preprint_subjects.clear()
-        self.preprint_subjects.add(
-            *Subject.objects.filter(guid__object_id__in=preprint_subjects).values_list('pk', flat=True)
-        )
+        subject_pks = Subject.objects.filter(
+            guid__object_id__in=preprint_subjects).values_list('pk', flat=True)
+        if subject_pks.count() < preprint_subjects:
+            raise ValidationValueError('Invalid subject ID passed')
+        self.preprint_subjects.add(*subject_pks)
         if save:
             self.save()
 
