@@ -3,7 +3,6 @@
 import httplib as http
 
 from flask import request
-from modularodm import Q
 from modularodm.exceptions import ValidationError, ValidationValueError
 
 from framework import forms, status
