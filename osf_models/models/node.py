@@ -1305,13 +1305,18 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if message:
                 status.push_status_message(message, kind='info', trust=False)
 
+        child_pks = []
         for node_contained in original.nodes.filter(is_deleted=False):
-            node_contained.register_node(  # noqa
+            registered_child = node_contained.register_node(  # noqa
                 schema=schema,
                 auth=auth,
                 data=data,
                 parent=registered,
             )
+            child_pks.append(registered_child.pk)
+        # Preserve ordering of children
+        registered.set_abstractnode_order(child_pks)
+
         # Copy linked nodes
         registered.linked_nodes.add(*original.linked_nodes.values_list('pk', flat=True))
 

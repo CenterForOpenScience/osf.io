@@ -350,7 +350,7 @@ class EmailApprovableSanction(TokenApprovableSanction):
 
 class PreregCallbackMixin(object):
     def _notify_initiator(self):
-        from osf_models.models import DraftRegistration
+        DraftRegistration = apps.get_model('osf_models.DraftRegistration')
 
         registration = self._get_registration()
         prereg_schema = MetaSchema.get_prereg_schema()
