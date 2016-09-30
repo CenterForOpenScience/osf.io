@@ -457,7 +457,7 @@ class TestContributorProperties:
         project.set_permissions(project.creator, ['read', 'write'])
         project.save()
         assert list(child1.admin_contributors) == [admin]
-        assert list(child2.admin_contributors) == [child1.creator, admin]
+        assert list(child2.admin_contributors) == sorted([child1.creator, admin], key=lambda user: user.family_name)
 
     def test_admin_contributor_ids(self, user):
         project = ProjectFactory(creator=user)
