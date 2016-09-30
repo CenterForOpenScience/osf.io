@@ -1,4 +1,5 @@
-// Lists
+// Lists -- markdown-it to pymarkdown!
+// Adapted from markdown-it block list rule at https://github.com/markdown-it/markdown-it/
 
 'use strict';
 
@@ -232,8 +233,8 @@ module.exports = function list(state, startLine, endLine, silent) {
             tight = false;
         }
 
-        // Item becomes loose if it emds with an empty line,
-        // should filter last element, because it means list is finished
+        // Item becomes loose if it ends with an empty line,
+        // should filter last element, because it means the list is finished
         prevEmptyEnd = (state.line - startLine) > 1 && state.isEmpty(state.line - 1);
 
         state.blkIndent = oldIndent;
@@ -290,6 +291,11 @@ module.exports = function list(state, startLine, endLine, silent) {
                     break;
                 }
             }
+        }
+
+        // if there's a space in a previously un-rendered list, start anew
+        if (!state.renderList && state.isEmpty(state.line - 1)) {
+            break;
         }
     }
 
