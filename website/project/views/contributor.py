@@ -671,8 +671,8 @@ def claim_user_form(auth, **kwargs):
     claimer_email = unclaimed_record.get('claimer_email') or unclaimed_record.get('email')
 
     # If there is a registered user with this email, redirect to 're-enter password' page
-    user = User.find_by_email(claimer_email)
-    user_from_email = user[0] if user else None
+    found_by_email = User.find_by_email(claimer_email)
+    user_from_email = found_by_email[0] if found_by_email else None
     if user_from_email and user_from_email.is_registered:
         return redirect(web_url_for('claim_user_registered', uid=uid, pid=pid, token=token))
 
