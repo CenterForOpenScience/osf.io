@@ -102,7 +102,8 @@ class AddonDmptoolNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         if not self.has_auth:
             raise exceptions.AddonError('Addon is not authorized')
         try:
-            return {'token': self.external_account.oauth_key}
+            return {'host': self.external_account.oauth_key,
+                    'api_token': self.external_account.oauth_secret}
         except Exception as error:
             raise HTTPError(str(error), data={'message_long': error.message})
 

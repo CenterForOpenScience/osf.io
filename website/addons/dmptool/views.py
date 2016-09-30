@@ -27,7 +27,7 @@ from website.util import api_url_for
 from website.util.sanitize import assert_clean
 
 SHORT_NAME = 'dmptool'
-FULL_NAME = 'DMPTool'
+FULL_NAME = 'Dmptool'
 
 dmptool_account_list = generic_views.account_list(
     SHORT_NAME,
