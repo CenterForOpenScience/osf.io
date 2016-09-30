@@ -242,8 +242,8 @@
                 "text": "Making an OSF project public or private is independent of ownCloud privacy. The OSF does not alter the permissions of linked ownCloud folders."
             },
             "View / download file versions": {
-                "status": "full",
-                "text": "ownCloud files and their versions can be viewed/downloaded via OSF."
+                "status": "partial",
+                "text": "ownCloud files can be viewed/downloaded via OSF, but version history is not supported by the ownCloud WebDAV API."
             },
             "Add / update files": {
                 "status": "full",
