@@ -70,8 +70,9 @@ class DbIsolationMixinTests(object):
     @classmethod
     def setUpClass(cls, *a, **kw):
         super(DbIsolationMixinTests, cls).setUpClass(*a, **kw)
-        cls.ntest_calls = 0  # set here instead of at class scope to avoid bleeding across
-                             # test case classes below
+        cls.ntest_calls = 0  # If we set this at class scope on DbIsolationMixinTests then it
+                             # would be shared across the subclasses. Setting it directly on each
+                             # subclass here avoids such bleedthrough.
 
     def check(self):
         ProjectFactory()

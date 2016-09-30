@@ -160,26 +160,29 @@ class DbTestCase(unittest.TestCase):
 class DbIsolationMixin(object):
     """Use this mixin when test-level database isolation is desired.
 
-    As an optimization, DbTestCase only wipes the database during *class* setup
-    and teardown. This leaks database state across test cases, which smells
-    pretty bad. Place this mixin before DbTestCase (or derivatives, such as
-    OsfTestCase) in your test class definition to wipe the database during
-    *test* setup and teardown ... but be prepared to suffer a 20x performance
-    hit, ample time to pine and long for a glorious Postgres future.
+    DbTestCase only wipes the database during *class* setup and teardown. This
+    leaks database state across test cases, which smells pretty bad. Place this
+    mixin before DbTestCase (or derivatives, such as OsfTestCase) in your test
+    class definition to empty your database during *test* setup and teardown.
+
+    This removes all documents from all collections on tearDown. It doesn't
+    drop collections and it doesn't touch indexes.
 
     """
 
-    def setUp(self):
-        super(DbIsolationMixin, self).setUp()
-        set_up_storage(
-            website.models.MODELS,
-            storage.MongoStorage,
-            addons=settings.ADDONS_AVAILABLE,
-        )
-
     def tearDown(self):
         super(DbIsolationMixin, self).tearDown()
-        teardown_database(database=database_proxy._get_current_object())
+        # eval is deprecated in Mongo 3, and may be removed in the future. It's
+        # nice here because it saves us collections.length database calls.
+        self.db.eval('''
+
+            var collections = db.getCollectionNames();
+            for (var collection, i=0; collection = collections[i]; i++) {
+                if (collection.indexOf('system.') === 0) continue
+                db[collection].remove();
+            }
+
+        ''')
 
 
 class AppTestCase(unittest.TestCase):
