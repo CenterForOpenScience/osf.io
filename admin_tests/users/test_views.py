@@ -1,5 +1,7 @@
 from django.test import RequestFactory
 from django.http import Http404
+from django.conf import settings
+from django.core.files.uploadedfile import SimpleUploadedFile
 from nose import tools as nt
 import mock
 import csv
@@ -14,7 +16,7 @@ from tests.factories import (
     AuthUserFactory,
     ProjectFactory,
 )
-from admin_tests.utilities import setup_view, setup_log_view
+from admin_tests.utilities import setup_view, setup_log_view, setup_form_view
 
 from admin.users.views import (
     UserView,
@@ -27,6 +29,7 @@ from admin.users.views import (
     UserKnownHamList,
     UserWorkshopFormView,
 )
+from admin.users.forms import WorkshopForm
 from admin.common_auth.logs import OSFLogEntry
 
 
@@ -251,6 +254,22 @@ class TestUserWorkshopFormView(AdminTestCase):
         nt.assert_equal(1, final[1][-2])
         nt.assert_equal(2, final[1][-3])
         nt.assert_equal(self.user_1.pk, final[1][-4])
+
+    def test_unicode_error(self):
+        path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), 'unicode.csv')
+        with file(path, mode='U') as fp:
+            final = self.view.parse(fp)
+        nt.assert_in('Unable to parse line:', final[1][0])
+
+    def test_form_valid(self):
+        request = RequestFactory().post('/fake_path')
+        with file('test.csv', mode='rb') as fp:
+            uploaded = SimpleUploadedFile(fp.name, fp.read(), content_type='text/csv')
+        form = WorkshopForm(data={'document': uploaded})
+        form.is_valid()
+        form.cleaned_data['document'] = uploaded
+        view = setup_form_view(self.view, request, form)
 
     def tearDown(self):
         os.remove('test.csv')

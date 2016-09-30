@@ -282,11 +282,16 @@ class UserWorkshopFormView(OSFAdmin, FormView):
 
     @staticmethod
     def parse(csv_file):
+        """ Parse and add to csv file.
+
+        :param csv_file: Comma separated
+        :return: A list
+        """
         final = []
         for i, temp_line in enumerate(csv_file):
             try:
                 line = temp_line.strip().split(',')[:-1]
-            except UnicodeDecodeError as e:
+            except UnicodeDecodeError as e:  # catches unicode error
                 error = 'Unable to parse line: {}'.format(e)
                 line = [0] * 15
                 line[0] = error
