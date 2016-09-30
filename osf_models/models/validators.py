@@ -84,3 +84,9 @@ class CommentMaxLength(object):
                 'Ensure this field has no more than {} characters.'.format(self.max_length))
 
         return True
+
+def validate_doi(value):
+    # DOI must start with 10 and have a slash in it - avoided getting too complicated
+    if not re.match('10\\.\\S*\\/', value):
+        raise ValidationValueError('"{}" is not a valid DOI'.format(value))
+    return True
