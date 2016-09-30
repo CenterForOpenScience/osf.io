@@ -868,7 +868,7 @@ class DraftRegistrationApproval(Sanction):
         self._on_reject(user)
 
     def _on_complete(self, user):
-        from website.project.model import DraftRegistration
+        DraftRegistration = apps.get_model('osf_models.DraftRegistration')
 
         draft = DraftRegistration.find_one(
             Q('approval', 'eq', self)
@@ -896,7 +896,7 @@ class DraftRegistrationApproval(Sanction):
         sanction(notify_initiator_on_complete=True)
 
     def _on_reject(self, user, *args, **kwargs):
-        from website.project.model import DraftRegistration
+        DraftRegistration = apps.get_model('osf_models.DraftRegistration')
 
         # clear out previous registration options
         self.meta = {}
