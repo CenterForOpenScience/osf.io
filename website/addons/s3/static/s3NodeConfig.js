@@ -17,9 +17,7 @@ var s3FolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
 
     constructor: function(addonName, url, selector, folderPicker, opts, tbOpts) {
         var self = this;
-        // TODO: [OSF-7069]
-        self.super.super.constructor.call(self, addonName, url, selector, folderPicker, tbOpts);
-        self.super.construct.call(self, addonName, url, selector, folderPicker, opts, tbOpts);
+        self.super.constructor(addonName, url, selector, folderPicker, tbOpts);
         // Non-OAuth fields
         self.accessKey = ko.observable('');
         self.secretKey = ko.observable('');
