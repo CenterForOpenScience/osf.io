@@ -38,10 +38,11 @@ from website.oauth.models import (
     ExternalAccount,
     ExternalProvider
 )
+from website.preprints.model import PreprintProvider, PreprintService
 from website.project.model import (
     Comment, DraftRegistration, MetaSchema, Node, NodeLog, Pointer,
     PrivateLink, Tag, WatchConfig, AlternativeCitation,
-    ensure_schemas, Institution, PreprintProvider
+    ensure_schemas, Institution
 )
 from website.project.sanctions import (
     Embargo,
@@ -232,15 +233,18 @@ class PreprintProviderFactory(ModularOdmFactory):
         return provider
 
 
-class PreprintFactory(AbstractNodeFactory):
+class PreprintFactory(ModularOdmFactory):
     creator = None
     category = 'project'
     doi = Sequence(lambda n: '10.123/{}'.format(n))
-    providers = [SubFactory(PreprintProviderFactory)]
+    provider = SubFactory(PreprintProviderFactory)
     external_url = 'http://hello.org'
 
+    class Meta:
+        model = PreprintService
+
     @classmethod
-    def _create(cls, target_class, project=None, is_public=True, filename='preprint_file.txt', providers=None, doi=None, external_url=None, *args, **kwargs):
+    def _create(cls, target_class, project=None, is_public=True, filename='preprint_file.txt', provider=None, doi=None, external_url=None, is_published=True, finish=True, *args, **kwargs):
         save_kwargs(**kwargs)
         user = None
         if project:
@@ -248,7 +252,7 @@ class PreprintFactory(AbstractNodeFactory):
         user = kwargs.get('user') or kwargs.get('creator') or user or UserFactory()
         kwargs['creator'] = user
         # Original project to be converted to a preprint
-        project = project or target_class(*args, **kwargs)
+        project = project or AbstractNodeFactory(*args, **kwargs)
         if user._id not in project.permissions:
             project.add_contributor(
                 contributor=user,
@@ -267,14 +271,19 @@ class PreprintFactory(AbstractNodeFactory):
             materialized_path='/{}'.format(filename))
         file.save()
 
-        project.set_preprint_file(file, auth=Auth(project.creator))
-        project.preprint_subjects = [SubjectFactory()._id]
-        project.preprint_providers = providers
-        project.preprint_doi = doi
-        project.external_url = external_url
+        preprint = target_class(node=project, provider=provider)
+
+        auth = Auth(project.creator)
+
+        if finish:
+            preprint.set_preprint_file(file, auth=auth)
+            preprint.set_preprint_subjects([[SubjectFactory()._id, SubjectFactory()._id, SubjectFactory()._id]], auth=auth)
+            preprint.set_published(kwargs.get('is_published'), auth=auth)
+
+        project.preprint_article_doi = doi
         project.save()
 
-        return project
+        return preprint
 
 
 class SubjectFactory(ModularOdmFactory):
