@@ -266,7 +266,7 @@ $(document).ready(function () {
         });
         request.done(function(resp) {
             var rawText = resp.wiki_content || '*No wiki content*';
-            var renderedText = ctx.renderedBeforeUpdate ? md.render(rawText) : oldMd.render(rawText);
+            var renderedText = ctx.renderedBeforeUpdate ? oldMd.render(rawText) : md.render(rawText);
             var truncatedText = $.truncate(renderedText, {length: 400});
             markdownElement.html(truncatedText);
             mathrender.mathjaxify(markdownElement);
