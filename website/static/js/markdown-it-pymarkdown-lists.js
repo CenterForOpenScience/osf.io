@@ -93,10 +93,11 @@ function markTightParagraphs(state, idx) {
 
 function hideOldListContent(state, idx) {
     var i, l;
-
-    for (i = idx - 2, l = state.tokens.length; i < l; i++) {
-        state.tokens[i].hidden = true;
-        state.tokens[i].content = '';
+    if (idx > 1) {
+        for (i = idx - 2, l = state.tokens.length; i < l; i++) {
+            state.tokens[i].hidden = true;
+            state.tokens[i].content = '';
+        }
     }
 }
 
@@ -137,7 +138,7 @@ module.exports = function list(state, startLine, endLine, silent) {
     }
 
     // save variable to state to check if the list should be rendered
-    if (!state.isEmpty(startLine - 1)) {
+    if (!state.isEmpty(startLine - 1) && startLine !== 0) {
         state.renderList = false;
     } else {
         state.renderList = true;
