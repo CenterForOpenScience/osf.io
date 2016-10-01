@@ -16,7 +16,7 @@ describe('oldMarkdown', () => {
 
             var rendered = mdOld.render(text);
 
-            var html = '<ol>\n<li>hello</li><li>there</li></ol>';
+            var html = '<ol>\n<li>hello</li>\n<li>there</li>\n</ol>\n';
             assert.equal(rendered, html);
         });
     });
@@ -27,7 +27,7 @@ describe('oldMarkdown', () => {
 
             var rendered = mdOld.render(text);
 
-            var html = '<ol>\n<li>hello</li><li>there</li><li>friend</li></ol>';
+            var html = '<ol>\n<li>hello</li>\n<li>there</li>\n<li>friend</li>\n</ol>\n';
             assert.equal(rendered, html);
         });
 
@@ -35,11 +35,11 @@ describe('oldMarkdown', () => {
     describe('listNoSpace', () => {
 
         it('returns a paragraph because there is not a blank line before list starts', () => {
-            var text = 'This Should Not Render\n1. hello \n 2. there \n * friend';
+            var text = 'Not a list but a paragraph\n1. hello\n2. there\n* friend';
 
             var rendered = mdOld.render(text);
 
-            var html = '<p>1. hello 2. there * friend</p>';
+            var html = '<p>Not a list but a paragraph\n1. hello\n2. there\n* friend</p>\n';
             assert.equal(rendered, html);
         });
 
