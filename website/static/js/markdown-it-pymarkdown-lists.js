@@ -1,5 +1,5 @@
 // Lists -- markdown-it to pymarkdown!
-// Adapted from markdown-it block list rule at https://github.com/markdown-it/markdown-it/
+// Adapted from markdown-it.js block list rule (MIT Licensed)
 
 'use strict';
 
@@ -322,9 +322,6 @@ module.exports = function list(state, startLine, endLine, silent) {
         hideOldListContent(state, listTokIdx);
 
         // now render everything into one paragraph!
-        token = state.push('paragraph_open', 'p', 1);
-        token.map  = [ firstStartLine, nextLine ];
-
         content = state.getLines(firstStartLine - 1, nextLine, 0, true);
 
         token = state.push('inline', '', 0);
@@ -332,7 +329,7 @@ module.exports = function list(state, startLine, endLine, silent) {
         token.map = [ firstStartLine, nextLine ];
         token.children = [];
 
-        token = state.push('paragraph_close', 'p', -1);
+        state.push('paragraph_close', 'p', -1);
     }
 
     state.line = nextLine;
