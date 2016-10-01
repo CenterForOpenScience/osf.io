@@ -145,7 +145,7 @@ module.exports = function list(state, startLine, endLine, silent) {
     }
 
     // Save the first start line for putting into one token if list shouldn't be rendered
-    var firstStartLine = startLine;
+    firstStartLine = startLine;
 
     // Remember char code to set it later on
     markerCharCode = state.src.charCodeAt(posAfterMarker - 1);
