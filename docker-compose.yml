@@ -1,5 +1,4 @@
-# Alias localhost in order to allow docker containers
-# access your machines loopback interface (127.0.0.1).
+# Setup the Operation System
 #
 # OSX
 # - Alias the loopback interface
@@ -15,29 +14,32 @@
 #     netsh inteface set interface "Ethernet 2" newname="Loopback"
 # - Assign the Loopback interface an IP address
 #   netsh interface ip add address "Loopback" 192.168.168.167 255.255.255.255
+# - Allow Docker to access to Drive your project is stored on
+#   Open the Docker Client -> Settings -> Shared Drives -> e.g. C -> Apply
 
 # Settings (default osf configuration settings)
 #
 # cp ./website/settings/local-dist.py ./website/settings/local.py
 
-# Setup / Update the shared Python site-packages environment
-#
-# docker-compose up requirements
-
-# Configure remote debugging and environment variables
-# by modifying the .docker-compose.env file.
+# Configure remote debugging and additional environment variables
+# by modifying the .docker-compose.env file in your project root.
 #
 # WEB_REMOTE_DEBUG=192.168.168.167:11000
 # API_REMOTE_DEBUG=192.168.168.167:12000
 # WORKER_REMOTE_DEBUG=192.168.168.167:13000
 
-# Run services (assets can take up to 10 minutes the first run)
+# Application Environment Setup
 #
-# docker-compose up elasticsearch tokumx fakecas assets
+# docker-compose up requirements assets
+
+# Run Application Services
+# requirements container will exit when its operations complete
+#
+# docker-compose up elasticsearch tokumx
 
 # Run the OSF
 #
-# docker-compose up web api
+# docker-compose up fakecas web api
 
 # Resetting persistent storage volumes
 #
@@ -198,7 +200,7 @@ services:
 
   api:
     image: quay.io/centerforopenscience/osf:develop
-    command: invoke apiserver -h 0.0.0.0  # --remote 192.168.168.167:12000
+    command: invoke apiserver -h 0.0.0.0
     restart: unless-stopped
     ports:
       - 8000:8000
