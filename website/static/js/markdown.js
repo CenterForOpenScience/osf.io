@@ -55,7 +55,7 @@ var markdownQuick = new MarkdownIt(('commonmark'), { })
     .disable('strikethrough');
 
 // Markdown renderer for older wikis rendered before switch date
-var markdownOld = new MarkdownIt(('commonmark'), { html: true })
+var markdownOld = new MarkdownIt(('commonmark'), { })
     .use(require('markdown-it-sanitizer'))
     .use(insDel)
     .enable('table')
