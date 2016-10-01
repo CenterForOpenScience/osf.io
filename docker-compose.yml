@@ -4,7 +4,7 @@
 # - Alias the loopback interface
 #   sudo ifconfig lo0 alias 192.168.168.167
 #
-# Windows (https://social.technet.microsoft.com/Forums/windows/en-US/259c7ef2-3770-4212-8fca-c58936979851/how-to-install-microsoft-loopback-adapter?forum=w7itpronetworking)
+# Windows
 # - Install Microsoft Loopback Adapter (Windows 10 follow community comments as the driver was renamed)
 #   https://technet.microsoft.com/en-us/library/cc708322(v=ws.10).aspx
 # - Rename the new Loopback Interface (typically called 'Ethernet 2')
