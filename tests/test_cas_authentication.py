@@ -6,7 +6,6 @@ import httpretty
 import furl
 
 from framework.auth import cas
-from website import settings
 
 from tests.base import OsfTestCase, fake
 from tests.factories import UserFactory
@@ -116,9 +115,7 @@ class TestCASClient(OsfTestCase):
     def setUp(self):
         OsfTestCase.setUp(self)
         self.base_url = 'http://accounts.test.test'
-        settings.CAS_SERVER_URL = self.base_url
-        settings.CAS_SERVER_URL_INTERNAL = self.base_url
-        self.client = cas.CasClient()
+        self.client = cas.CasClient(self.base_url)
 
     @httpretty.activate
     def test_service_validate(self):
