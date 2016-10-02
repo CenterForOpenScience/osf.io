@@ -1880,7 +1880,7 @@ var FGToolbar = {
                     m.component(FGInput, {
                         onkeypress: function (event) {
                             if (ctrl.tb.pressedKey === ENTER_KEY) {
-                                _createFolder.call(ctrl.tb, event, ctrl.dismissToolbar);
+                                ctrl.createFolder.call(ctrl.tb, event, ctrl.dismissToolbar);
                             }
                         },
                         id: 'createFolderInput',
