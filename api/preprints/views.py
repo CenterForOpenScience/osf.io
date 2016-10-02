@@ -11,7 +11,7 @@ from api.base.filters import ODMFilterMixin
 from api.base.utils import get_object_or_error
 from api.base import permissions as base_permissions
 from api.preprints.parsers import PreprintsJSONAPIParser, PreprintsJSONAPIParserForRegularJSON
-from api.preprints.serializers import PreprintSerializer
+from api.preprints.serializers import PreprintSerializer, PreprintCreateSerializer
 from api.nodes.views import NodeMixin, WaterButlerMixin
 from api.nodes.permissions import ContributorOrPublic
 
@@ -134,6 +134,12 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
     ordering = ('-date_created')
     view_category = 'preprints'
     view_name = 'preprint-list'
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return PreprintCreateSerializer
+        else:
+            return PreprintSerializer
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):

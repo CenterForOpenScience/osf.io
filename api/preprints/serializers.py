@@ -97,31 +97,6 @@ class PreprintSerializer(JSONAPISerializer):
     def get_doi_url(self, obj):
         return 'https://dx.doi.org/{}'.format(obj.preprint_article_doi) if obj.preprint_article_doi else None
 
-    def create(self, validated_data):
-        node = Node.load(validated_data.pop('node', None))
-        if not node:
-            raise exceptions.NotFound('Unable to find Node with specified id.')
-
-        auth = get_user_auth(self.context['request'])
-        if not node.has_permission(auth.user, permissions.ADMIN):
-            raise exceptions.PermissionDenied
-
-        primary_file = validated_data.pop('primary_file', None)
-        if not primary_file:
-            raise exceptions.ValidationError(detail='You must specify a primary_file to create a preprint.')
-
-        provider = validated_data.pop('provider', None)
-        if not provider:
-            raise exceptions.ValidationError(detail='You must specify a provider to create a preprint.')
-
-        if PreprintService.find(Q('node', 'eq', node) & Q('provider', 'eq', provider)).count():
-            raise exceptions.ValidationError('Only one preprint per provider can be submitted for a node.')
-
-        preprint = PreprintService(node=node, provider=provider)
-        self.set_field(preprint.set_preprint_file, primary_file, auth, save=True)
-
-        return preprint
-
     def update(self, preprint, validated_data):
         from website.models import Node
         assert isinstance(preprint, PreprintService), 'You must specify a valid preprint to be updated'
@@ -181,3 +156,33 @@ class PreprintSerializer(JSONAPISerializer):
             raise exceptions.PermissionDenied('Not authorized to update this node.')
         except ValueError as e:
             raise exceptions.ValidationError(detail=e.message)
+
+
+class PreprintCreateSerializer(PreprintSerializer):
+    # Overrides PreprintSerializer to make id nullable, adds `create`
+    id = IDField(source='_id', required=False, allow_null=True)
+
+    def create(self, validated_data):
+        node = Node.load(validated_data.pop('node', None))
+        if not node:
+            raise exceptions.NotFound('Unable to find Node with specified id.')
+
+        auth = get_user_auth(self.context['request'])
+        if not node.has_permission(auth.user, permissions.ADMIN):
+            raise exceptions.PermissionDenied
+
+        primary_file = validated_data.pop('primary_file', None)
+        if not primary_file:
+            raise exceptions.ValidationError(detail='You must specify a primary_file to create a preprint.')
+
+        provider = validated_data.pop('provider', None)
+        if not provider:
+            raise exceptions.ValidationError(detail='You must specify a provider to create a preprint.')
+
+        if PreprintService.find(Q('node', 'eq', node) & Q('provider', 'eq', provider)).count():
+            raise exceptions.ValidationError('Only one preprint per provider can be submitted for a node.')
+
+        preprint = PreprintService(node=node, provider=provider)
+        self.set_field(preprint.set_preprint_file, primary_file, auth, save=True)
+
+        return preprint
