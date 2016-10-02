@@ -39,11 +39,14 @@
 
 # Run the OSF
 #
-# docker-compose up fakecas web api
+# docker-compose up mfr wb fakecas web api
 
-# Resetting persistent storage volumes
+# Resetting the Environment
 #
-# e.g.
+# ALL volumes and containers
+# docker-compose down -v
+#
+# Delete a persistent storage volume
 # docker-compose stop -t 0 tokumx
 # docker-compose rm tokumx
 # docker volume rm [projectname]_tokumx_vol
@@ -148,7 +151,7 @@ services:
       - requirements_wb_vol:/site-packages
 
   wb:
-    image: quay.io/centerforopenscience/waterbutler:develop
+    image: quay.io/centerforopenscience/waterbutler:feature-docker-compose
     command: invoke server
     restart: unless-stopped
     ports:
