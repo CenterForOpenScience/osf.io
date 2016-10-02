@@ -17,20 +17,20 @@
 # - Allow Docker to access to Drive your project is stored on
 #   Open the Docker Client -> Settings -> Shared Drives -> e.g. C -> Apply
 
-# Settings (default osf configuration settings)
+# Application Settings
 #
+# e.g. OSF default local.py
 # cp ./website/settings/local-dist.py ./website/settings/local.py
-
-# Configure remote debugging and additional environment variables
-# by modifying the .docker-compose.env file in your project root.
 #
+# Environment variables (incl. remote debugging)
+# e.g. .docker-compose.env
 # WEB_REMOTE_DEBUG=192.168.168.167:11000
 # API_REMOTE_DEBUG=192.168.168.167:12000
 # WORKER_REMOTE_DEBUG=192.168.168.167:13000
 
 # Application Environment Setup
 #
-# docker-compose up requirements assets
+# docker-compose up requirements assets requirements_mfr requirements_wb
 
 # Run Application Services
 # requirements container will exit when its operations complete
@@ -46,7 +46,7 @@
 # e.g.
 # docker-compose stop -t 0 tokumx
 # docker-compose rm tokumx
-# docker volume rm [projectname]_tokumx_volume
+# docker volume rm [projectname]_tokumx_vol
 
 # Using IPDB
 # You can detach from a container and leave it running using the CTRL-p CTRL-q key sequence.
@@ -66,35 +66,31 @@
 # - Configure .docker-compose.env REMOTE_DEBUG environment variables to match settings.
 
 version: '2'
+
 volumes:
-  requirements_volume:
+  tokumx_vol:
     external: false
-  tokumx_volume:
+  elasticsearch_vol:
     external: false
-  elasticsearch_volume:
+  requirements_osf_vol:
+    external: false
+  requirements_mfr_vol:
+    external: false
+  requirements_wb_vol:
     external: false
 
 services:
-  requirements:
-    image: quay.io/centerforopenscience/osf:develop
-    command: /bin/bash -c "invoke requirements --quick && cp -Rf /usr/local/lib/python2.7/site-packages /"
-    restart: 'no'
-    volumes:
-      - requirements_volume:/site-packages
-      - ./:/code
+
+  ###################
+  # Shared Services #
+  ###################
 
   elasticsearch:
     image: elasticsearch:2
     ports:
       - 9200:9200
     volumes:
-      - elasticsearch_volume:/usr/share/elasticsearch/data
-
-#  rabbitmq:
-#    image: rabbitmq:management
-#    ports:
-#      - 5672:5672
-#      - 15672:15672
+      - elasticsearch_vol:/usr/share/elasticsearch/data
 
 #  postgres:
 #    image: postgres
@@ -112,7 +108,55 @@ services:
     environment:
       TOKU_HUGE_PAGES_OK: 1
     volumes:
-      - tokumx_volume:/data/db
+      - tokumx_vol:/data/db
+
+
+  #########################
+  # Modular File Renderer #
+  #########################
+
+#  mfr:
+#    image: quay.io/centerforopenscience/mfr:develop
+#    command: invoke server
+#    restart: unless-stopped
+#    ports:
+#      - 7778:7778
+#    env_file:
+#      - .docker-compose.mfr.env
+#    stdin_open: true
+#    tty: true
+#    volumes:
+#      - requirements_mfr_vol:/usr/local/lib/python3.5/site-packages
+
+
+  ###############
+  # WaterButler #
+  ###############
+
+  requirements_wb:
+    image: quay.io/centerforopenscience/waterbutler:feature-docker-compose
+    command: /bin/bash -c "invoke install --develop && cp -Rf /usr/local/lib/python3.5/site-packages /"
+    restart: 'no'
+    volumes:
+      - requirements_wb_vol:/site-packages
+
+  wb:
+    image: quay.io/centerforopenscience/waterbutler:develop
+    command: invoke server
+    restart: unless-stopped
+    ports:
+      - 7777:7777
+    env_file:
+      - .docker-compose.wb.env
+    stdin_open: true
+    tty: true
+    volumes:
+      - requirements_wb_vol:/usr/local/lib/python3.5/site-packages
+
+
+  ###################################
+  # Central Authentication Services #
+  ###################################
 
   fakecas:
     image: quay.io/centerforopenscience/fakecas:latest
@@ -124,6 +168,17 @@ services:
       - tokumx
     links:
       - tokumx
+
+
+  #######
+  # OSF #
+  #######
+
+#  rabbitmq:
+#    image: rabbitmq:management
+#    ports:
+#      - 5672:5672
+#      - 15672:15672
 
 #  flower:
 #    image: quay.io/centerforopenscience/osf:develop
@@ -149,7 +204,7 @@ services:
 #      - rabbitmq
 #      - elasticsearch
 #    volumes:
-#      - requirements_volume:/usr/local/lib/python2.7/site-packages
+#      - requirements_osf_vol:/usr/local/lib/python2.7/site-packages
 #      - ./:/code
 #    environment:
 #      DB_HOST: tokumx
@@ -169,7 +224,7 @@ services:
 #      - rabbitmq
 #      - elasticsearch
 #    volumes:
-#      - requirements_volume:/usr/local/lib/python2.7/site-packages
+#      - requirements_osf_vol:/usr/local/lib/python2.7/site-packages
 #      - ./:/code
 #    environment:
 #      C_FORCE_ROOT: 1
@@ -177,12 +232,20 @@ services:
 #      ELASTIC_URI: elasticsearch:9200
 #      BROKER_URL: amqp://guest:guest@rabbitmq:5672/
 
+  requirements:
+    image: quay.io/centerforopenscience/osf:develop
+    command: /bin/bash -c "invoke requirements --quick && cp -Rf /usr/local/lib/python2.7/site-packages /"
+    restart: 'no'
+    volumes:
+      - requirements_osf_vol:/site-packages
+      - ./:/code
+
   assets:
     image: quay.io/centerforopenscience/osf:develop
     command: invoke assets -dw
     restart: unless-stopped
     volumes:
-      - requirements_volume:/site-packages
+      - requirements_osf_vol:/site-packages
       - ./:/code
 
   web:
@@ -196,17 +259,23 @@ services:
 #      - rabbitmq
       - elasticsearch
       - fakecas
+#      - cas
+      - wb
+#      - mfr
     links:
       - tokumx
 #      - rabbitmq
       - elasticsearch
       - fakecas
+#      - cas
+      - wb
+#      - mfr
     env_file:
       - .docker-compose.env
     stdin_open: true
     tty: true
     volumes:
-      - requirements_volume:/usr/local/lib/python2.7/site-packages
+      - requirements_osf_vol:/usr/local/lib/python2.7/site-packages
       - ./:/code
 
   api:
@@ -220,15 +289,21 @@ services:
 #      - rabbitmq
       - elasticsearch
       - fakecas
+#      - cas
+      - wb
+#      - mfr
     links:
       - tokumx
 #      - rabbitmq
       - elasticsearch
       - fakecas
+#      - cas
+      - wb
+#      - mfr
     env_file:
       - .docker-compose.env
     stdin_open: true
     tty: true
     volumes:
-      - requirements_volume:/usr/local/lib/python2.7/site-packages
+      - requirements_osf_vol:/usr/local/lib/python2.7/site-packages
       - ./:/code

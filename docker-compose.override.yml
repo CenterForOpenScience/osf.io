@@ -1,0 +1,11 @@
+version: '2'
+
+#services:
+
+#  wb:
+#    volumes:
+#      - ../waterbutler/:/code
+
+#  mfr:
+#    volumes:
+#      - ../modular-file-renderer/:/code
