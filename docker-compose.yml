@@ -115,18 +115,25 @@ services:
   # Modular File Renderer #
   #########################
 
-#  mfr:
-#    image: quay.io/centerforopenscience/mfr:develop
-#    command: invoke server
-#    restart: unless-stopped
-#    ports:
-#      - 7778:7778
-#    env_file:
-#      - .docker-compose.mfr.env
-#    stdin_open: true
-#    tty: true
-#    volumes:
-#      - requirements_mfr_vol:/usr/local/lib/python3.5/site-packages
+  requirements_mfr:
+    image: quay.io/centerforopenscience/mfr:feature-docker-compose
+    command: /bin/bash -c "invoke install --develop && cp -Rf /usr/local/lib/python3.5/site-packages /"
+    restart: 'no'
+    volumes:
+      - requirements_mfr_vol:/site-packages
+
+  mfr:
+    image: quay.io/centerforopenscience/mfr:feature-docker-compose
+    command: invoke server
+    restart: unless-stopped
+    ports:
+      - 7778:7778
+    env_file:
+      - .docker-compose.mfr.env
+    stdin_open: true
+    tty: true
+    volumes:
+      - requirements_mfr_vol:/usr/local/lib/python3.5/site-packages
 
 
   ###############
@@ -154,9 +161,9 @@ services:
       - requirements_wb_vol:/usr/local/lib/python3.5/site-packages
 
 
-  ###################################
-  # Central Authentication Services #
-  ###################################
+  ##################################
+  # Central Authentication Service #
+  ##################################
 
   fakecas:
     image: quay.io/centerforopenscience/fakecas:latest
@@ -260,16 +267,16 @@ services:
       - elasticsearch
       - fakecas
 #      - cas
+      - mfr
       - wb
-#      - mfr
     links:
       - tokumx
 #      - rabbitmq
       - elasticsearch
       - fakecas
 #      - cas
+      - mfr
       - wb
-#      - mfr
     env_file:
       - .docker-compose.env
     stdin_open: true
@@ -290,16 +297,16 @@ services:
       - elasticsearch
       - fakecas
 #      - cas
+      - mfr
       - wb
-#      - mfr
     links:
       - tokumx
 #      - rabbitmq
       - elasticsearch
       - fakecas
 #      - cas
+      - mfr
       - wb
-#      - mfr
     env_file:
       - .docker-compose.env
     stdin_open: true
