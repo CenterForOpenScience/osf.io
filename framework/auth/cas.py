@@ -57,8 +57,11 @@ class CasResponse(object):
 class CasClient(object):
     """HTTP client for the CAS server."""
 
+    def __init__(self, base_url):
+        self.BASE_URL = base_url
+
     def get_login_url(self, service_url, username=None, verification_key=None):
-        url = furl.furl(settings.CAS_SERVER_URL)
+        url = furl.furl(self.BASE_URL)
         url.path.segments.append('login')
         url.args['service'] = service_url
         if username and verification_key:
@@ -67,18 +70,18 @@ class CasClient(object):
         return url.url
 
     def get_logout_url(self, service_url):
-        url = furl.furl(settings.CAS_SERVER_URL)
+        url = furl.furl(self.BASE_URL)
         url.path.segments.append('logout')
         url.args['service'] = service_url
         return url.url
 
     def get_profile_url(self):
-        url = furl.furl(settings.CAS_SERVER_URL_INTERNAL)
+        url = furl.furl(self.BASE_URL)
         url.path.segments.extend(('oauth2', 'profile',))
         return url.url
 
     def get_auth_token_revocation_url(self):
-        url = furl.furl(settings.CAS_SERVER_URL_INTERNAL)
+        url = furl.furl(self.BASE_URL)
         url.path.segments.extend(('oauth2', 'revoke'))
         return url.url
 
@@ -92,7 +95,7 @@ class CasClient(object):
         :raises: CasError if an unexpected response is returned
         """
 
-        url = furl.furl(settings.CAS_SERVER_URL_INTERNAL)
+        url = furl.furl(self.BASE_URL)
         url.path.segments.extend(('p3', 'serviceValidate',))
         url.args['ticket'] = ticket
         url.args['service'] = service_url
@@ -192,7 +195,7 @@ def parse_auth_header(header):
 
 
 def get_client():
-    return CasClient()
+    return CasClient(settings.CAS_SERVER_URL)
 
 
 def get_login_url(*args, **kwargs):

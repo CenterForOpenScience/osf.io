@@ -31,9 +31,9 @@
 # Application Environment Setup
 #
 # docker-compose up requirements assets requirements_mfr requirements_wb
+# (requirements containers exit when complete)
 
 # Run Application Services
-# requirements container will exit when its operations complete
 #
 # docker-compose up elasticsearch tokumx
 
@@ -52,9 +52,9 @@
 # docker volume rm [projectname]_tokumx_vol
 
 # Using IPDB
-# You can detach from a container and leave it running using the CTRL-p CTRL-q key sequence.
 #
 # docker attach [projectname]_web_1
+# (you can detach from a container and leave it running using the CTRL-p CTRL-q key sequence.)
 
 # Using PyCharm
 #
@@ -170,13 +170,11 @@ services:
 
   fakecas:
     image: quay.io/centerforopenscience/fakecas:latest
-    command: fakecas -host=0.0.0.0:8080 -dbaddress=tokumx:27017
+    command: fakecas -host=0.0.0.0:8080 -osfhost=192.168.168.167:5000 -dbaddress=192.168.168.167:27017
     restart: unless-stopped
     ports:
       - 8080:8080
     depends_on:
-      - tokumx
-    links:
       - tokumx
 
 
@@ -195,8 +193,6 @@ services:
 #    command: python manage.py celery flower
 #    depends_on:
 #      - rabbitmq
-#    links:
-#      - rabbitmq
 #    ports:
 #      - 5555:5555
 #    environment:
@@ -206,10 +202,6 @@ services:
 #    image: quay.io/centerforopenscience/osf:develop
 #    command: invoke celery_beat
 #    depends_on:
-#      - tokumx
-#      - rabbitmq
-#      - elasticsearch
-#    links:
 #      - tokumx
 #      - rabbitmq
 #      - elasticsearch
@@ -226,10 +218,6 @@ services:
 #    command: invoke celery_worker
 #    restart: unless-stopped
 #    depends_on:
-#      - tokumx
-#      - rabbitmq
-#      - elasticsearch
-#    links:
 #      - tokumx
 #      - rabbitmq
 #      - elasticsearch
@@ -272,14 +260,6 @@ services:
 #      - cas
       - mfr
       - wb
-    links:
-      - tokumx
-#      - rabbitmq
-      - elasticsearch
-      - fakecas
-#      - cas
-      - mfr
-      - wb
     env_file:
       - .docker-compose.env
     stdin_open: true
@@ -295,14 +275,6 @@ services:
     ports:
       - 8000:8000
     depends_on:
-      - tokumx
-#      - rabbitmq
-      - elasticsearch
-      - fakecas
-#      - cas
-      - mfr
-      - wb
-    links:
       - tokumx
 #      - rabbitmq
       - elasticsearch
