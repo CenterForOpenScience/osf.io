@@ -1185,6 +1185,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
             return True
         return False
 
+    @property
+    def preprints(self):
+        from website.preprints.model import PreprintService
+        if not self.is_preprint:
+            return None
+        return PreprintService.find(Q('node', 'eq', self))
+
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
         Must specify one of (`auth`, `user`).
