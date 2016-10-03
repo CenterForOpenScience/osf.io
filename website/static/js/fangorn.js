@@ -1842,7 +1842,6 @@ var FGToolbar = {
     controller : function(args) {
         var self = this;
         self.tb = args.treebeard;
-        self.tb.inputValue = m.prop('');
         self.tb.toolbarMode = m.prop(toolbarModes.DEFAULT);
         self.items = args.treebeard.multiselected;
         self.mode = self.tb.toolbarMode;
@@ -1905,15 +1904,13 @@ var FGToolbar = {
                 m('.col-xs-9',
                     m.component(FGInput, {
                         onkeypress: function (event) {
-                            ctrl.tb.inputValue($(event.target).val());
                             if (ctrl.tb.pressedKey === ENTER_KEY) {
                                 _renameEvent.call(ctrl.tb);
                             }
                         },
                         id: 'renameInput',
                         helpTextId: 'renameHelpText',
-                        placeholder: null,
-                        value: ctrl.tb.inputValue()
+                        placeholder: "Enter name",
                     }, ctrl.helpText())
                 ),
                 m('.col-xs-3.tb-buttons-col',
@@ -2115,7 +2112,6 @@ function openParentFolders (item) {
     } else if (tb.multiselected().length > 1) {
         tb.select('#tb-tbody').addClass('unselectable');
     }
-    tb.inputValue(tb.multiselected()[0].data.name);
     m.redraw();
     reapplyTooltips();
 }
