@@ -244,7 +244,8 @@ class PreprintFactory(ModularOdmFactory):
         model = PreprintService
 
     @classmethod
-    def _create(cls, target_class, project=None, is_public=True, filename='preprint_file.txt', provider=None, doi=None, external_url=None, is_published=True, finish=True, *args, **kwargs):
+    def _create(cls, target_class, project=None, is_public=True, filename='preprint_file.txt', provider=None, 
+                doi=None, external_url=None, is_published=True, subjects=None, finish=True, *args, **kwargs):
         save_kwargs(**kwargs)
         user = None
         if project:
@@ -277,11 +278,13 @@ class PreprintFactory(ModularOdmFactory):
 
         if finish:
             preprint.set_preprint_file(file, auth=auth)
-            preprint.set_preprint_subjects([[SubjectFactory()._id, SubjectFactory()._id, SubjectFactory()._id]], auth=auth)
+            subjects = subjects or [[SubjectFactory()._id, SubjectFactory()._id, SubjectFactory()._id]]
+            preprint.set_preprint_subjects(subjects, auth=auth)
             preprint.set_published(kwargs.get('is_published'), auth=auth)
 
         project.preprint_article_doi = doi
         project.save()
+        preprint.save()
 
         return preprint
 
