@@ -247,7 +247,7 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
             # invalid campaign
             raise HTTPError(http.BAD_REQUEST)
 
-    # if user is already logged in, overwrite the actions above and redirect to service url
+    # if user is already logged in, redirect to data['next_url'] directly, bypassing cas-login or osf-register process
     if not logout and auth.logged_in:
         data['status_code'] = http.FOUND
 
@@ -345,6 +345,10 @@ def auth_login(auth):
     """
 
     campaign = request.args.get('campaign')
+    # `/login` only takes valid campaign or none query parameter, and `login_and_register_handler` builds the next url
+    # if campaign and logged in, go to campaign landing page
+    # if campaign and logged out, go to register page with campaign title
+    # if not campaign, go to `/dashboard` which is decorated by `@must_be_logged_in`
     data = login_and_register_handler(auth, login=True, campaign=campaign)
     if data['status_code'] == http.FOUND:
         return redirect(data['next_url'])
@@ -698,8 +702,8 @@ def register_user(**kwargs):
     """
 
     # Verify that email address match.
-    # Both `landing.mako` and `register.mako` have this check on the page.
-    # Users can not submit the form if emails do not match.
+    # Note: Both `landing.mako` and `register.mako` already have this check on the form. Users can not submit the form
+    # if emails do not match. However, this check should not be removed given we may use the raw api call directly.
     json_data = request.get_json()
     if str(json_data['email1']).lower() != str(json_data['email2']).lower():
         raise HTTPError(
