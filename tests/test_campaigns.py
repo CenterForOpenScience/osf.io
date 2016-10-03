@@ -10,60 +10,92 @@ from tests.base import OsfTestCase
 from tests.utils import mock_auth
 
 
-# Prereg, ERPC and PrePrints follows the same auth login/register logic
+# prereg, erpc preprints follow similar auth login/register logic
 class TestCampaignsAuthViews(OsfTestCase):
 
     def setUp(self):
-        super(TestCampaignsAuthViews, self).setUp()
-        self.campaign = 'prereg'
-        self.url_login = web_url_for('auth_login', campaign=self.campaign)
-        self.url_register = web_url_for('auth_register', campaign=self.campaign)
-        self.url_landing_page = campaigns.campaign_url_for(self.campaign)
+        super(TestCampaignsAuthViews, self).setUp();
+        self.campaigns = {
+            'prereg': {
+                'title_register': 'Preregistration Challenge',
+                'title_landing': 'Welcome to the Prereg Challenge!'
+            },
+            'erpc': {
+                'title_register': 'Election Research Preacceptance Competition',
+                'title_landing': 'Welcome to the Election Research Preacceptance Competition!'
+            },
+            'osf-preprints': {
+                'title_register': 'OSF Preprint Service',
+                'title_landing': 'OSF Preprints'
+            }
+        }
+        for key, value in self.campaigns.items():
+            value.update({'url_login': web_url_for('auth_login', campaign=key)})
+            value.update({'url_register': web_url_for('auth_register', campaign=key)})
+            value.update({'url_landing_page': campaigns.campaign_url_for(key)})
         self.user = factories.AuthUserFactory()
 
-    def test_auth_register_with_prereg_logged_in(self):
-        resp = self.app.get(self.url_register, auth=self.user.auth)
-        assert_equal(resp.status_code, http.FOUND)
-        assert_equal(self.url_landing_page, resp.headers['Location'])
+    def test_campaign_register_view_logged_in(self):
+        for key, value in self.campaigns.items():
+            resp = self.app.get(value['url_register'], auth=self.user.auth)
+            assert_equal(resp.status_code, http.FOUND)
+            assert_equal(value['url_landing_page'], resp.headers['Location'])
 
-    def test_auth_register_with_prereg_logged_out(self):
-        resp = self.app.get(self.url_register)
-        assert_equal(resp.status_code, http.OK)
-        assert_in('Preregistration Challenge', resp)
+    def test_campaign_register_view_logged_out(self):
+        for key, value in self.campaigns.items():
+            resp = self.app.get(value['url_register'])
+            assert_equal(resp.status_code, http.OK)
+            assert_in(value['title_register'], resp)
 
-    def test_auth_login_with_prereg_logged_in(self):
-        resp = self.app.get(self.url_login, auth=self.user.auth)
-        assert_equal(resp.status_code, http.FOUND)
-        assert_in(self.url_register, resp.headers['Location'])
+    def test_campaign_login_logged_in(self):
+        for key, value in self.campaigns.items():
+            resp = self.app.get(value['url_login'], auth=self.user.auth)
+            assert_equal(resp.status_code, http.FOUND)
+            assert_in(value['url_register'], resp.headers['Location'])
 
-    def test_auth_login_with_prereg_logged_out(self):
-        resp = self.app.get(self.url_login)
-        assert_equal(resp.status_code, http.FOUND)
-        assert_in(self.url_register, resp.headers['Location'])
+    def test_campaign_login_logged_out(self):
+        for key, value in self.campaigns.items():
+            resp = self.app.get(value['url_login'])
+            assert_equal(resp.status_code, http.FOUND)
+            assert_in(value['url_register'], resp.headers['Location'])
 
-    def test_auth_prereg_landing_page_logged_in(self):
+    def test_campaign_landing_logged_in(self):
         ensure_schemas()
-        resp = self.app.get(self.url_landing_page, auth=self.user.auth)
-        assert_equal(resp.status_code, http.OK)
-        assert_in('Welcome to the Prereg Challenge!', resp)
+        for key, value in self.campaigns.items():
+            resp = self.app.get(value['url_landing_page'], auth=self.user.auth)
+            assert_equal(resp.status_code, http.OK)
+            assert_in(value['title_landing'], resp)
 
     def test_auth_prereg_landing_page_logged_out(self):
-        resp = self.app.get(self.url_landing_page)
-        assert_equal(resp.status_code, http.FOUND)
-        assert_in(cas.get_login_url(self.url_landing_page), resp.headers['Location'])
+        for key, value in self.campaigns.items():
+            resp = self.app.get(value['url_landing_page'])
+            if key == 'osf-preprints':
+                assert_equal(resp.status_code, http.OK)
+                assert_in(value['title_landing'], resp)
+            else:
+                assert_equal(resp.status_code, http.FOUND)
+                assert_in(cas.get_login_url(value['url_landing_page']), resp.headers['Location'])
+
+
+class TestRegistrationThroughCampaigns(OsfTestCase):
+
+    def setUp(self):
+        super(TestRegistrationThroughCampaigns, self).setUp()
 
     def test_confirm_email_get_with_campaign(self):
-        user = factories.UnconfirmedUserFactory()
-        user.system_tags.append(campaigns.CAMPAIGNS[self.campaign]['system_tag'])
-        user.save()
-        token = user.get_confirmation_token(user.username)
-        kwargs = {
-            'uid': user._id,
-        }
-        with self.app.app.test_request_context(), mock_auth(user):
-            res = auth_views.confirm_email_get(token, **kwargs)
-            assert_equal(res.status_code, http.FOUND)
-            assert_equal(res.location, campaigns.CAMPAIGNS[self.campaign]['redirect_url']())
+
+        for key, value in campaigns.CAMPAIGNS.items():
+            user = factories.UnconfirmedUserFactory()
+            user.system_tags.append(campaigns.CAMPAIGNS[key]['system_tag'])
+            user.save()
+            token = user.get_confirmation_token(user.username)
+            kwargs = {
+                'uid': user._id,
+            }
+            with self.app.app.test_request_context(), mock_auth(user):
+                res = auth_views.confirm_email_get(token, **kwargs)
+                assert_equal(res.status_code, http.FOUND)
+                assert_equal(res.location, campaigns.campaign_url_for(key))
 
 
 class TestCampaignsCASInstitutionLogin(OsfTestCase):
