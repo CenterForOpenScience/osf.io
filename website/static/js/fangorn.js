@@ -431,11 +431,11 @@ function checkConflicts(tb, item, folder, cb) {
     for(var i = 0; i < folder.children.length; i++) {
         var child = folder.children[i];
         if (child.data.name === item.data.name && child.id !== item.id) {
-            messageArray.push(m('p', 'An item named "' + item.data.name + '" already exists in this location.'));
+            messageArray.push(m('p', 'An item named "' + child.data.name + '" already exists in this location.'));
 
             if (window.contextVars.node.preprintFileId === child.data.path.replace('/', '')) {
                 messageArray = messageArray.concat([
-                    m('p', 'The file "' + item.data.name + '" is the primary file for a preprint, so it should not be replaced.'),
+                    m('p', 'The file "' + child.data.name + '" is the primary file for a preprint, so it should not be replaced.'),
                     m('strong', 'Replacing this file will remove this preprint from circulation.')
                 ]);
             }
@@ -445,7 +445,7 @@ function checkConflicts(tb, item, folder, cb) {
                     m('span.btn.btn-primary', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
                     m('span.btn.btn-primary', {onclick: cb.bind(tb, 'replace')},'Replace')
                 ],
-                m('h3.break-word.modal-title', 'Replace "' + item.data.name + '"?')
+                m('h3.break-word.modal-title', 'Replace "' + child.data.name + '"?')
             );
             return;
         }
@@ -459,11 +459,11 @@ function checkConflictsRename(tb, item, name, cb) {
     for(var i = 0; i < parent.children.length; i++) {
         var child = parent.children[i];
         if (child.data.name === name && child.id !== item.id) {
-            messageArray.push(m('p', 'An item named "' + item.data.name + '" already exists in this location.'));
+            messageArray.push(m('p', 'An item named "' + child.data.name + '" already exists in this location.'));
 
             if (window.contextVars.node.preprintFileId === child.data.path.replace('/', '')) {
                 messageArray = messageArray.concat([
-                    m('p', 'The file "' + item.data.name + '" is the primary file for a preprint, so it should not be replaced.'),
+                    m('p', 'The file "' + child.data.name + '" is the primary file for a preprint, so it should not be replaced.'),
                     m('strong', 'Replacing this file will remove this preprint from circulation.')
                 ]);
             }
@@ -473,7 +473,7 @@ function checkConflictsRename(tb, item, name, cb) {
                     m('span.btn.btn-primary', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
                     m('span.btn.btn-primary', {onclick: cb.bind(tb, 'replace')},'Replace')
                 ],
-                m('h3.break-word.modal-title', 'Replace "' + item.data.name + '"?')
+                m('h3.break-word.modal-title', 'Replace "' + child.data.name + '"?')
             );
             return;
         }
@@ -1835,7 +1835,7 @@ var dismissToolbar = function(helpText){
     tb.toolbarMode(toolbarModes.DEFAULT);
     tb.filterText('');
     if(typeof helpText === 'function'){
-        helpText(''); // TODO: dismissToolbar is being called when there is no helpText prop, that should be changed
+        helpText(''); // TODO: dismissToolbar is being called when there is no helpText prop, helpText could be refactored as a growl instead
     }
     m.redraw();
 };
