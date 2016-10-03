@@ -1835,7 +1835,7 @@ var dismissToolbar = function(helpText){
     tb.toolbarMode(toolbarModes.DEFAULT);
     tb.filterText('');
     if(typeof helpText === 'function'){
-        helpText(''); // TODO: dismissToolbar is being called when there is no helpText prop, helpText could be refactored as a growl instead
+        helpText('');
     }
     m.redraw();
 };
