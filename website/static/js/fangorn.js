@@ -1912,7 +1912,7 @@ var FGToolbar = {
                         },
                         id: 'renameInput',
                         helpTextId: 'renameHelpText',
-                        placeholder: "Enter name",
+                        placeholder: 'Enter name',
                     }, ctrl.helpText())
                 ),
                 m('.col-xs-3.tb-buttons-col',
