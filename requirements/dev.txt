@@ -23,3 +23,6 @@ django-sslserver==0.19
 
 # Ipdb
 ipdb==0.10.1
+
+# PyDevD (Remote Debugging)
+pydevd==0.0.6

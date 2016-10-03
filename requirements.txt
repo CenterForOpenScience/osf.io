@@ -6,7 +6,6 @@
 # To install metrics requirements: inv requirements --metrics
 # To install release requirements: inv requirements --release
 
-pydevd==0.0.6
 invoke==0.13.0
 Werkzeug==0.10.4
 Flask==0.10.1
