@@ -308,11 +308,11 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
                 query = self.get_query_from_request()
                 if preprints:
                     nodes = Node.find(query)
-                    return [node for node in nodes if node.is_preprint]
+                    return (node for node in nodes if node.is_preprint)
                 else:
                     query.nodes = [node for node in query.nodes if hasattr(node, 'attribute') and node.attribute != 'preprint_file']
                     nodes = Node.find(query)
-                    return [node for node in nodes if not node.is_preprint]
+                    return (node for node in nodes if not node.is_preprint)
             query = self.get_query_from_request()
             return Node.find(query)
 
