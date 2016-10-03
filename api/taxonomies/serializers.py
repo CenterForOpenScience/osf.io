@@ -4,8 +4,9 @@ from api.base.serializers import JSONAPISerializer, LinksField, JSONAPIListField
 from website.models import Subject
 
 class TaxonomyField(ser.Field):
-    def to_representation(self, subject_id):
-        subject = Subject.load(subject_id)
+    def to_representation(self, subject):
+        if not isinstance(subject, Subject):
+            subject = Subject.load(subject)
         if subject is not None:
             return {'id': subject._id,
                     'text': subject.text}
