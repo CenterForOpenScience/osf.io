@@ -53,7 +53,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
         date_created                    iso8601 timestamp                   timestamp that the preprint was created
         date_published                  iso8601 timestamp                   timestamp when the preprint was published
         is_published                    boolean                             whether or not this preprint is published
-        subjects                        array of tuples of dictionaries     ids of Subject in the PLOS taxonomy. Dictrionary, containing the subject text and subject ID
+        subjects                        list of lists of dictionaries       ids of Subject in the PLOS taxonomy. Dictrionary, containing the subject text and subject ID
         provider                        string                              original source of the preprint
         doi                             string                              bare DOI for the manuscript, as entered by the user
 
@@ -82,7 +82,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
 
     + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
 
-    Preprints may be filtered by their `id`, `title`, `public`, `tags`, `date_created`, `date_modified`, and `subjects`
+    Preprints may be filtered by their `id`, `is_published`, `date_created`, `date_modified`, `provider`
     Most are string fields and will be filtered using simple substring matching.
 
     ###Creating New Preprints
@@ -96,18 +96,26 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
         Query Params:  <none>
         Body (JSON):   {
                         "data": {
-                            "id": node_id,
-                            "attributes": {
-                                "subjects":      [{subject_id}, ...]  # required
-                                "provider":      {provider}           # required
-                            },
+                            "attributes": {},
                             "relationships": {
-                                "primary_file": {                     # required
+                                "node": {                           # required
                                     "data": {
-                                        "type": "primary",
+                                        "type": "node",
+                                        "id": {node_id}
+                                    }
+                                },
+                                "primary_file": {                   # required
+                                    "data": {
+                                        "type": "primary_file",
                                         "id": {file_id}
                                     }
-                                }
+                                },
+                                "provider": {                       # required
+                                    "data": {
+                                        "type": "provider",
+                                        "id": {provider_id}
+                                    }
+                                },
                             }
                         }
                     }
