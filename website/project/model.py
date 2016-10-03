@@ -22,6 +22,7 @@ from modularodm.validators import MaxLengthValidator
 from modularodm.exceptions import KeyExistsException, NoResultsFound, ValidationValueError
 
 from framework import status
+from framework.guid.model import Guid
 from framework.mongo import ObjectId, DummyRequest
 from framework.mongo import StoredObject
 from framework.mongo import validators
@@ -184,8 +185,9 @@ class MetaData(GuidStoredObject):
 
 
 def validate_contributor(guid, contributors):
+    guid_id = Guid.load(guid).id
     user = User.find(
-        Q('_id', 'eq', guid) &
+        Q('_id', 'eq', guid_id) &
         Q('is_claimed', 'eq', True)
     )
     if user.count() != 1:
