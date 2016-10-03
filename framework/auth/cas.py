@@ -268,6 +268,9 @@ def make_response_from_ticket(ticket, service_url):
                 user.verification_key = None
                 user.save()
 
+            # if user is authenticated by external IDP, ask CAS to authenticate user for a second time
+            # this extra step will guarantee that 2FA are enforced
+            # current CAS session created by external login must be cleared first before authentication
             if external_credential:
                 user.verification_key = generate_verification_key()
                 user.save()
@@ -277,6 +280,7 @@ def make_response_from_ticket(ticket, service_url):
                     verification_key=user.verification_key
                 )))
 
+            # if user is authenticated by CAS
             return authenticate(
                 user,
                 cas_resp.attributes['accessToken'],

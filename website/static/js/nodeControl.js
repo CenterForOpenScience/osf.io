@@ -42,7 +42,7 @@ var ProjectViewModel = function(data, options) {
     self.userCanEdit = data.user.can_edit;
     self.userPermissions = data.user.permissions;
     self.node = data.node;
-    self.description = ko.observable(data.node.description);
+    self.description = ko.observable(data.node.description ? data.node.description : '');
     self.title = data.node.title;
     self.categoryValue = ko.observable(data.node.category_short);
     self.isRegistration = data.node.is_registration;
@@ -144,8 +144,9 @@ var ProjectViewModel = function(data, options) {
                 return {newValue: newValue};
             }
         }));
+    } else {
+      $('#nodeDescriptionEditable').html($osf.linkifyText(self.description()));
     }
-
     /**
      * Add project to the Project Organizer.
      */

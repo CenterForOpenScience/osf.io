@@ -23,7 +23,7 @@ var Preprints = {
                         ]
                     ),
                     m('.col-md-4.text-center',
-                        m('div',  m('a.btn.btn-success.btn-lg.btn-success-high-contrast.m-v-xl.f-w-xl', { style : 'box-shadow: 0 0 9px -4px #000;', type:'button',  href:'/preprints/', onclick: function() {
+                        m('div',  m('a.btn.btn-banner.btn-success.btn-lg.btn-success-high-contrast.m-v-xl.f-w-xl', { type:'button',  href:'/preprints/', onclick: function() {
                             $osf.trackClick('Preprints', 'navigate', 'navigate-to-preprints');
                         }}, 'View preprints'))
                     )

@@ -30,7 +30,7 @@ class Guid(StoredObject):
     def generate(self, referent=None, min_length=5):
         while True:
             # Create GUID
-            guid_id = ''.join(random.sample(ALPHABET, min_length))
+            guid_id = ''.join([random.choice(ALPHABET) for _ in range(min_length)])
 
             # Check GUID against blacklist
             blacklist_guid = BlacklistGuid.load(guid_id)

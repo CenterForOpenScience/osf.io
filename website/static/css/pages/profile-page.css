@@ -31,6 +31,59 @@ table.table.table-plain th, table.table.table-plain td {
     padding-left: 10px;
 }
 
+/* Social Links
+-------------------------------------------------- */
+
+.link-title {
+    vertical-align: middle !important;
+}
+
+.table-links .fa,
+.table-links .ai {
+    background-color: #FFF;
+}
+
+.table-links .fa-globe {
+    color:#17158E;
+}
+
+.table-links .fa-twitter-square {
+    color:#32CCFE;
+}
+
+.table-links .fa-github-square {
+    color: #070709;
+}
+
+.table-links .fa-linkedin-square {
+    color: #0085AE;
+}
+
+.table-links .ai-impactstory-square {
+    color: #ff4000;
+}
+
+.table-links .ai-orcid-square {
+    color: #a6ce39;
+}
+
+.table-links .ai-researchgate-square {
+    color: #0cb;
+}
+
+.table-links .ai-academia-square {
+    color: #5A5A5A;
+}
+
+.table-links .ai-google-scholar-square {
+    color: #4285f4;
+}
+
+.icon-image {
+    width:24px;
+    height:auto;
+}
+
 /* Profile gravatar
 -------------------------------------------------- */
 .profile-gravatar {

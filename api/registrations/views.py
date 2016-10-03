@@ -2,12 +2,11 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, NotFound
 from framework.auth.oauth_scopes import CoreScopes
 
-from website.project.model import Q, Node
+from website.project.model import Q, Node, Pointer
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList
 
 from api.base.serializers import HideIfWithdrawal
-from api.nodes.permissions import ReadOnlyIfRegistration, ContributorDetailPermissions, ContributorOrPublicForRelationshipPointers
 from api.base.serializers import LinkedNodesRelationshipSerializer
 from api.base.parsers import JSONAPIRelationshipParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
@@ -15,6 +14,14 @@ from api.base.utils import get_user_auth
 from api.comments.serializers import RegistrationCommentSerializer, CommentCreateSerializer
 from api.users.views import UserMixin
 
+from api.nodes.permissions import (
+    ReadOnlyIfRegistration,
+    ContributorDetailPermissions,
+    ContributorOrPublic,
+    ContributorOrPublicForRelationshipPointers,
+    AdminOrPublic,
+    ExcludeWithdrawals
+)
 from api.registrations.serializers import (
     RegistrationSerializer,
     RegistrationDetailSerializer,
@@ -27,18 +34,13 @@ from api.nodes.views import (
     NodeCommentsList, NodeProvidersList, NodeFilesList, NodeFileDetail,
     NodeAlternativeCitationsList, NodeAlternativeCitationDetail, NodeLogList,
     NodeInstitutionsList, WaterButlerMixin, NodeForksList, NodeWikiList, LinkedNodesList,
-    NodeViewOnlyLinksList, NodeViewOnlyLinkDetail
+    NodeViewOnlyLinksList, NodeViewOnlyLinkDetail, NodeCitationDetail, NodeCitationStyleDetail
 )
 
-from website.models import Pointer
 from api.registrations.serializers import RegistrationNodeLinksSerializer, RegistrationFileSerializer
 
-from api.nodes.permissions import (
-    AdminOrPublic,
-    ExcludeWithdrawals,
-    ContributorOrPublic
-)
 from api.base.utils import get_object_or_error
+
 
 class RegistrationMixin(NodeMixin):
     """Mixin with convenience methods for retrieving the current registration based on the
@@ -540,6 +542,50 @@ class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ODMFilterM
         auth = get_user_auth(self.request)
         return sorted([each for each in nodes if each.can_view(auth)], key=lambda n: n.date_modified, reverse=True)
 
+
+class RegistrationCitationDetail(NodeCitationDetail, RegistrationMixin):
+    """ The registration citation for a registration in CSL format *read only*
+
+    ##Note
+    **This API endpoint is under active development, and is subject to change in the future**
+
+    ##RegistraitonCitationDetail Attributes
+
+        name                     type                description
+        =================================================================================
+        id                       string               unique ID for the citation
+        title                    string               title of project or component
+        author                   list                 list of authors for the work
+        publisher                string               publisher - most always 'Open Science Framework'
+        type                     string               type of citation - web
+        doi                      string               doi of the resource
+
+    """
+    required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
+
+    view_category = 'registrations'
+    view_name = 'registration-citation'
+
+
+class RegistrationCitationStyleDetail(NodeCitationStyleDetail, RegistrationMixin):
+    """ The registration citation for a registration in a specific style's format t *read only*
+
+        ##Note
+        **This API endpoint is under active development, and is subject to change in the future**
+
+    ##RegistrationCitationStyleDetail Attributes
+
+        name                     type                description
+        =================================================================================
+        citation                string               complete citation for a registration in the given style
+
+    """
+    required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
+
+    view_category = 'registrations'
+    view_name = 'registration-style-citation'
+
+
 class RegistrationForksList(NodeForksList, RegistrationMixin):
     """Forks of the current registration. *Writeable*.
 
@@ -858,6 +904,31 @@ class RegistrationLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveAPIV
         ], 'self': node}
         self.check_object_permissions(self.request, obj)
         return obj
+
+
+class LinkedRegistrationsList(JSONAPIBaseView, generics.ListAPIView, RegistrationMixin):
+    """List of registrations linked to this node. *Read-only*.
+
+    Linked registrations are the registrations pointed to by node links.
+
+    """
+    serializer_class = RegistrationSerializer
+    view_category = 'registrations'
+    view_name = 'linked-registrations'
+
+    def get_queryset(self):
+        return [node for node in
+            super(LinkedNodesList, self).get_queryset()
+            if node.is_registration]
+
+    # overrides APIView
+    def get_parser_context(self, http_request):
+        """
+        Tells parser that we are creating a relationship
+        """
+        res = super(LinkedNodesList, self).get_parser_context(http_request)
+        res['is_relationship'] = True
+        return res
 
 
 class RegistrationViewOnlyLinksList(NodeViewOnlyLinksList, RegistrationMixin):

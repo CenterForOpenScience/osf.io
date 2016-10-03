@@ -892,6 +892,7 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
     if (msgText !== 'Upload canceled.') {
         addFileStatus(treebeard, file, false, msgText, '');
     }
+    treebeard.dropzone.options.queuecomplete(file);
 }
 
 /**
@@ -1431,7 +1432,7 @@ function _fangornResolveRows(item) {
     });
     defaultColumns.push({
         data: 'version',
-        filter: true,
+        filter: false,
         sortInclude : false,
         custom: _fangornVersionColumn
     });

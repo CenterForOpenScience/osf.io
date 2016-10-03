@@ -95,15 +95,16 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
         res = self.app.get(self.withdrawn_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         attributes = res.json['data']['attributes']
+        registration.reload()
         expected_attributes = {
             'title': registration.title,
             'description': registration.description,
             'date_created': registration.date_created.isoformat(),
             'date_registered': registration.registered_date.isoformat(),
+            'date_modified': registration.date_modified.isoformat(),
             'withdrawal_justification': registration.retraction.justification,
             'public': None,
             'category': None,
-            'date_modified': None,
             'registration': True,
             'fork': None,
             'collection': None,

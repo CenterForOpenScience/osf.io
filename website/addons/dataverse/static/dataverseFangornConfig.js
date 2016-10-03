@@ -96,9 +96,11 @@ var _dataverseItemButtons = {
                     default:
                         message = 'Error: Something went wrong when attempting to publish your dataset.';
                         Raven.captureMessage('Could not publish dataset', {
-                            url: url,
-                            textStatus: status,
-                            error: error
+                            extra: {
+                                url: url,
+                                textStatus: status,
+                                error: error
+                            }
                         });
                     }
 
@@ -276,6 +278,12 @@ function _fangornColumns(item) {
             sortInclude : false,
             filter : false,
             custom : function() {return m('');}
+        });
+        columns.push({
+            data: 'version',
+            filter: false,
+            sortInclude : false,
+            custom: function() {return m('');}
         });
     }
     if(tb.options.placement !== 'fileview') {
