@@ -3,6 +3,7 @@ from modularodm.exceptions import ValidationValueError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 
+from api.base.exceptions import Conflict
 from api.base.serializers import (
     JSONAPISerializer, IDField, JSONAPIListField,
     LinksField, RelationshipField
@@ -44,8 +45,6 @@ class PreprintSerializer(JSONAPISerializer):
         'id',
         'date_created',
         'date_published',
-        'subjects',
-        'doi',
         'provider',
         'is_published',
     ])
@@ -173,14 +172,14 @@ class PreprintCreateSerializer(PreprintSerializer):
 
         primary_file = validated_data.pop('primary_file', None)
         if not primary_file:
-            raise exceptions.ValidationError(detail='You must specify a primary_file to create a preprint.')
+            raise exceptions.ValidationError(detail='You must specify a valid primary_file to create a preprint.')
 
         provider = validated_data.pop('provider', None)
         if not provider:
-            raise exceptions.ValidationError(detail='You must specify a provider to create a preprint.')
+            raise exceptions.ValidationError(detail='You must specify a valid provider to create a preprint.')
 
         if PreprintService.find(Q('node', 'eq', node) & Q('provider', 'eq', provider)).count():
-            raise exceptions.ValidationError('Only one preprint per provider can be submitted for a node.')
+            raise Conflict('Only one preprint per provider can be submitted for a node.')
 
         preprint = PreprintService(node=node, provider=provider)
         self.set_field(preprint.set_preprint_file, primary_file, auth, save=True)
