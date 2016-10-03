@@ -2098,9 +2098,9 @@ function openParentFolders (item) {
  function _fangornMultiselect (event, row) {
     var tb = this;
     var scrollToItem = false;
+    dismissToolbar.call(tb);
     filterRowsNotInParent.call(tb, tb.multiselected());
     if (tb.toolbarMode() === 'filter') {
-        dismissToolbar.call(tb);
         scrollToItem = true;
         // recursively open parents of the selected item but do not lazyload;
         openParentFolders.call(tb, row);
