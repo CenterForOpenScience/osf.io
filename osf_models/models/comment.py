@@ -1,8 +1,5 @@
-<<<<<<< Updated upstream
 
-=======
 import pytz
->>>>>>> Stashed changes
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.db.models import Q
@@ -142,10 +139,8 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
                 view_timestamp = view_timestamp.replace(tzinfo=pytz.utc)
 
             return cls.objects.filter(
-                Q(node=node) & ~Q(user=user) &
-                Q(is_deleted=False) &
-                (Q(date_created__gt=view_timestamp) |
-                 Q(date_modified__gt=view_timestamp)) &
+                Q(node=node) & ~Q(user=user) & Q(is_deleted=False) &
+                (Q(date_created__gt=view_timestamp) | Q(date_modified__gt=view_timestamp)) &
                 Q(root_target=root_target)
             ).count()
 
