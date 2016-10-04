@@ -9,6 +9,7 @@ from osf_models.models.base import BaseModel, ObjectIDMixin
 class Subject(ObjectIDMixin, BaseModel):
     """A subject discipline that may be attached to a preprint."""
     modm_model_path = 'website.project.taxonomies.Subject'
+    modm_query = None
 
     text = models.CharField(null=False, max_length=256, unique=True)  # max length on prod: 73
     parents = models.ManyToManyField('self', symmetrical=False, related_name='children')

@@ -87,6 +87,7 @@ class Loggable(models.Model):
     class Meta:
         abstract = True
 
+
 class Taggable(models.Model):
 
     tags = models.ManyToManyField('Tag', related_name='tagged')

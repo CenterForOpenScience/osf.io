@@ -21,6 +21,7 @@ def serialize_node_license_record(node_license_record):
     ret.update(_serialize(('year', 'copyright_holders'), node_license_record))
     return ret
 
+
 class NodeLicense(ObjectIDMixin, BaseModel):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.project.licenses.NodeLicense'
@@ -39,7 +40,7 @@ class NodeLicense(ObjectIDMixin, BaseModel):
         return django_obj
 
     class Meta:
-        unique_together = ['guid', 'license_id']
+        unique_together = ['_id', 'license_id']
 
 
 class NodeLicenseRecord(ObjectIDMixin, BaseModel):
@@ -50,7 +51,9 @@ class NodeLicenseRecord(ObjectIDMixin, BaseModel):
     node_license = models.ForeignKey('NodeLicense', null=True, blank=True, on_delete=models.SET_NULL)
     # Deliberately left as a CharField to support year ranges (e.g. 2012-2015)
     year = models.CharField(max_length=128)
-    copyright_holders = ArrayField(models.CharField(max_length=256), default=list, blank=True)
+    copyright_holders = ArrayField(
+        models.CharField(max_length=256, blank=True, null=True),
+        default=list, blank=True)
 
     @property
     def name(self):

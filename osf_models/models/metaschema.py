@@ -10,6 +10,7 @@ from osf_models.exceptions import ValidationValueError
 
 from website.project.metadata.utils import create_jsonschema_from_metaschema
 
+
 class MetaSchema(ObjectIDMixin, BaseModel):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.project.model.MetaSchema'
@@ -24,7 +25,7 @@ class MetaSchema(ObjectIDMixin, BaseModel):
     schema_version = models.IntegerField()
 
     class Meta:
-        unique_together = ('name', 'schema_version')
+        unique_together = ('name', 'schema_version', '_id')
 
     @property
     def _config(self):

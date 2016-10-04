@@ -6,6 +6,11 @@ from website.util import api_v2_url
 from osf_models.models.base import BaseModel, ObjectIDMixin
 
 class PreprintProvider(ObjectIDMixin, BaseModel):
+    # TODO REMOVE AFTER MIGRATION
+    modm_model_path = 'website.project.model.PreprintProvider'
+    modm_query = None
+    # /TODO REMOVE AFTER MIGRATION
+
     name = models.CharField(null=False, max_length=128)  # max length on prod: 22
     logo_name = models.CharField(null=True, blank=True, max_length=128)  # max length on prod: 17
     description = models.CharField(null=True, blank=True, max_length=256)  # max length on prod: 56

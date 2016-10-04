@@ -14,6 +14,14 @@ class NodeLog(ObjectIDMixin, BaseModel):
     modm_query = None
     migration_page_size = 100000
     # /TODO DELETE ME POST MIGRATION
+
+    FIELD_ALIASES = {
+        # TODO: Find a better way
+        'node': 'node__guids___id',
+        'user': 'user__guids___id',
+        'original_node': 'original_node__guids___id'
+    }
+
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
 
     # Log action constants -- NOTE: templates stored in log_templates.mako
@@ -126,7 +134,8 @@ class NodeLog(ObjectIDMixin, BaseModel):
     action_choices = [(action, action.upper()) for action in actions]
     date = models.DateTimeField(default=timezone.now, db_index=True,
                                 null=True, blank=True)  # auto_now_add=True)
-    action = models.CharField(max_length=255, db_index=True, choices=action_choices)
+    # TODO build action choices on the fly with the addon stuff
+    action = models.CharField(max_length=255, db_index=True)  # , choices=action_choices)
     params = DateTimeAwareJSONField(default=dict)
     should_hide = models.BooleanField(default=False)
     user = models.ForeignKey('OSFUser', related_name='logs', db_index=True, null=True, blank=True)
@@ -170,3 +179,17 @@ class NodeLog(ObjectIDMixin, BaseModel):
         log_clone.user = original_log.user
         log_clone.save()
         return log_clone
+
+    @classmethod
+    def migrate_from_modm(cls, modm_obj):
+        django_obj = super(NodeLog, cls).migrate_from_modm(modm_obj)
+
+        # No logs for institution
+        if modm_obj.node and modm_obj.node.institution_id is not None:
+            print('Institution nodelog {}, skipping...'.format(modm_obj._id))
+            return None
+
+        return django_obj
+
+    def _natural_key(self):
+        return self._id

@@ -69,8 +69,6 @@ class Conference(ObjectIDMixin, BaseModel):
 
     objects = ConferenceManager()
 
-    primary_identifier_name = 'object_id'
-
     def __repr__(self):
         return (
             '<Conference(endpoint={self.endpoint!r}, active={self.active})>'.format(self=self)

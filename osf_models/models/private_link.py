@@ -6,6 +6,7 @@ from website.util import sanitize
 
 from osf_models.models.base import BaseModel, ObjectIDMixin
 
+
 class PrivateLink(ObjectIDMixin, BaseModel):
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.project.model.PrivateLink'
@@ -13,7 +14,7 @@ class PrivateLink(ObjectIDMixin, BaseModel):
     # /TODO DELETE ME POST MIGRATION
     date_created = models.DateTimeField(default=timezone.now)
     key = models.CharField(max_length=512, null=False, unique=True, blank=False)
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, blank=True, null=True)
     is_deleted = models.BooleanField(default=False)
     anonymous = models.BooleanField(default=False)
 
@@ -22,7 +23,7 @@ class PrivateLink(ObjectIDMixin, BaseModel):
 
     @property
     def node_ids(self):
-        return self.nodes.filter(is_deleted=False).values_list('guid__guid', flat=True)
+        return self.nodes.filter(is_deleted=False).values_list('guids___id', flat=True)
 
     def node_scale(self, node):
         # node may be None if previous node's parent is deleted

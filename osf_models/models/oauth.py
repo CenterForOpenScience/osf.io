@@ -21,7 +21,8 @@ class ApiOAuth2Scope(base.ObjectIDMixin, base.BaseModel):
         be requested by third parties.
     """
     # TODO DELETE ME POST MIGRATION
-    modm_model_path = 'website.oauth.models.ApiOAuth2Scope'
+    # disable this migration for now
+    # modm_model_path = 'website.oauth.models.ApiOAuth2Scope'
     modm_query = None
     # /TODO DELETE ME POST MIGRATION
 
@@ -133,11 +134,10 @@ class ApiOAuth2PersonalToken(base.ObjectIDMixin, base.BaseModel):
                                   unique=True)
 
     owner = models.ForeignKey('OSFUser', db_index=True, blank=True, null=True, on_delete=models.SET_NULL)
-    # max_length in staging is 89
     name = models.CharField(max_length=100, blank=False, null=False, db_index=True)
 
     # This field is a space delimited list of scopes, e.g. "osf.full_read osf.full_write"
-    scopes = models.CharField(blank=False, null=False, max_length=255)  # max_length in staging was 251
+    scopes = models.CharField(blank=False, null=False, max_length=300)
 
     is_active = models.BooleanField(default=True, db_index=True)
 

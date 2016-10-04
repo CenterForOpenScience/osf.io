@@ -25,12 +25,14 @@ from osf_models.models.nodelog import NodeLog
 from osf_models.utils.base import api_v2_url
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
+
 class RegistrationManager(models.Manager):
     """Custom manager for registration that selects parent_node by default because
     parent_node is used by the sanction-related properties, e.g. sanction, is_pending_embargo.
     """
     def get_queryset(self):
         return super(RegistrationManager, self).get_queryset().select_related('parent_node')
+
 
 class Registration(AbstractNode):
     # TODO DELETE ME POST MIGRATION

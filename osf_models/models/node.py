@@ -12,6 +12,7 @@ from datetime import datetime
 
 import pytz
 from dirtyfields import DirtyFieldsMixin
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.db.models.signals import post_save, pre_save
@@ -75,10 +76,15 @@ logger = logging.getLogger(__name__)
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,
                    NodeLinkMixin, CommentableMixin, SpamMixin,
                    Taggable, Loggable, GuidMixin, BaseModel):
+
     """
     All things that inherit from AbstractNode will appear in
     the same table and will be differentiated by the `type` column.
     """
+
+    primary_identifier_name = 'guid_string'
+    modm_model_path = 'website.models.Node'
+    modm_query = None
 
     class Meta:
         order_with_respect_to = 'parent_node'
@@ -87,6 +93,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     primary = True
 
     FIELD_ALIASES = {
+        # TODO: Find a better way
+        '_id': 'guids___id',
         'contributors': '_contributors',
     }
 
@@ -191,10 +199,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     # permissions = Permissions are now on contributors
     piwik_site_id = models.IntegerField(null=True, blank=True)
     public_comments = models.BooleanField(default=True)
-    primary_institution = models.ForeignKey(
-        'Institution',
-        related_name='primary_nodes',
-        null=True, blank=True)
     root = models.ForeignKey('self',
                              related_name='absolute_parent',
                              on_delete=models.SET_NULL,
@@ -2256,9 +2260,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             raise PermissionsError('Only admins can change a preprint\'s subjects.')
 
         self.preprint_subjects.clear()
-        subject_pks = Subject.objects.filter(
-            guid__object_id__in=preprint_subjects).values_list('pk', flat=True)
-        if subject_pks.count() < len(preprint_subjects):
+        subject_pks = Subject.objects.filter(_id__in=preprint_subjects).values_list('pk', flat=True)
+        if len(subject_pks) < len(preprint_subjects):
             raise ValidationValueError('Invalid subject ID passed')
         self.preprint_subjects.add(*subject_pks)
         if save:
@@ -2317,23 +2320,16 @@ class Node(AbstractNode):
     @classmethod
     def migrate_from_modm(cls, modm_obj):
         """
-        Given a modm object, make a django object with the same local fields.
+        Given a modm node, make a django object with the same local fields.
 
-        This is a base method that may work for simple objects.
-        It should be customized in the child class if it
-        doesn't work.
         :param modm_obj:
         :return:
         """
-        kwargs = {cls.primary_identifier_name: modm_obj._id}
-        guid, created = Guid.objects.get_or_create(**kwargs)
-        if created:
-            logger.debug('Created a new Guid for {} ({})'.format(modm_obj.__class__.__name__, modm_obj._id))
 
         django_obj = cls()
-        django_obj.guid = guid
+        content_type_pk = ContentType.objects.get_for_model(cls).pk
 
-        bad_names = ['institution_logo_name']
+        bad_names = ['institution_logo_name', '_id']
         local_django_fields = set(
             [x.name for x in django_obj._meta.get_fields() if not x.is_relation and x.name not in bad_names])
 
@@ -2348,6 +2344,13 @@ class Node(AbstractNode):
                 modm_value = pytz.utc.localize(modm_value)
             setattr(django_obj, field, modm_value)
         django_obj._order = 0
+        from website.models import Guid as MODMGuid
+        from modularodm import Q as MODMQ
+
+        guids = MODMGuid.find(MODMQ('referent', 'eq', modm_obj._id))
+
+        setattr(django_obj, 'guid_string', guids.get_keys())
+        setattr(django_obj, 'content_type_pk', content_type_pk)
         return django_obj
 
     # /TODO DELETE ME POST MIGRATION

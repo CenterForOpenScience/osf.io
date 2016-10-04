@@ -9,15 +9,14 @@ from modularodm.query import query, QueryGroup
 
 
 class BaseQ(object):
-
     def __or__(self, other):
         return OrQ(self, other)
 
     def __and__(self, other):
         return AndQ(self, other)
 
-class CompoundQ(BaseQ, query.QueryGroup):
 
+class CompoundQ(BaseQ, query.QueryGroup):
     @property
     def nodes(self):
         return self.__queries
@@ -36,8 +35,8 @@ class CompoundQ(BaseQ, query.QueryGroup):
         op_function = and_ if query.operator == 'and' else or_
         return reduce(op_function, (Q.from_modm_query(node, model_cls) for node in query.nodes))
 
-class AndQ(CompoundQ):
 
+class AndQ(CompoundQ):
     operator = 'and'
 
     def __and__(self, other):
@@ -46,8 +45,8 @@ class AndQ(CompoundQ):
     def to_django_query(self):
         return reduce(lambda acc, val: acc & val, (q.to_django_query() for q in self.nodes))
 
-class OrQ(CompoundQ):
 
+class OrQ(CompoundQ):
     operator = 'or'
 
     def __or__(self, other):
@@ -56,16 +55,24 @@ class OrQ(CompoundQ):
     def to_django_query(self):
         return reduce(lambda acc, val: acc | val, (q.to_django_query() for q in self.nodes))
 
+
 class Q(BaseQ, query.RawQuery):
     QUERY_MAP = {'eq': 'exact'}
 
     @classmethod
     def from_modm_query(cls, query, model_cls=None):
+        from django.contrib.contenttypes.models import ContentType
+
         if isinstance(query, QueryGroup):
             compound_cls = AndQ if query.operator == 'and' else OrQ
             return compound_cls.from_modm_query(query, model_cls=model_cls)
         elif isinstance(query, MODMQ):
             attribute = query.attribute
+            if attribute == 'referent':
+                # if it's a referent they must have passed an instance
+                return cls('object_id', 'eq', query.argument.id) & cls('content_type', 'eq',
+                                                                       ContentType.objects.get_for_model(
+                                                                           query.argument))
             if model_cls:
                 field_aliases = getattr(model_cls, 'FIELD_ALIASES', {})
                 attribute = field_aliases.get(attribute, attribute)
@@ -85,6 +92,11 @@ class Q(BaseQ, query.RawQuery):
                     return cls(attribute, 'isnull', is_null)
             return cls(attribute, query.operator, query.argument)
         elif isinstance(query, cls):
+            if query.attribute == 'referent':
+                # if it's a referent they must have passed an instance
+                return cls('object_id', 'eq', query.argument.pk) & cls('content_type', 'eq',
+                                                                       ContentType.objects.get_for_model(
+                                                                           query.argument))
             if model_cls:
                 field_aliases = getattr(model_cls, 'FIELD_ALIASES', {})
                 if query.attribute in field_aliases:
@@ -116,8 +128,6 @@ class Q(BaseQ, query.RawQuery):
 
     @property
     def key(self):
-        if self.__key == '_id':
-            return 'pk'
         return self.__key
 
     @property
@@ -139,11 +149,8 @@ class Q(BaseQ, query.RawQuery):
     def __repr__(self):
         return '<Q({}, {}, {})>'.format(self.key, self.op, self.val)
 
+
 def _get_field(model_cls, field_name):
-    # Prevent circular import
-    from osf_models.models.base import BaseIDMixin
-    if issubclass(model_cls, BaseIDMixin) and field_name == '_id':
-        field_name = 'guid'
     try:
         return model_cls._meta.get_field(field_name)
     except FieldDoesNotExist:

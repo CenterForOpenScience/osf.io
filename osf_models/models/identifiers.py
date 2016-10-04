@@ -25,7 +25,7 @@ class Identifier(ObjectIDMixin, BaseModel):
         unique_together = ('object_id', 'content_type', 'category')
 
 
-class IdentifierMixin(object):
+class IdentifierMixin(models.Model):
     """Model mixin that adds methods for getting and setting Identifier objects
     for model objects.
     """
@@ -45,3 +45,6 @@ class IdentifierMixin(object):
         if not created:
             identifier.value = value
             identifier.save()
+
+    class Meta:
+        abstract = True

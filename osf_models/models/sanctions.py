@@ -923,7 +923,6 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
     embargoed_registration = models.ForeignKey('Registration', null=True, blank=True)
 
     def _get_registration(self):

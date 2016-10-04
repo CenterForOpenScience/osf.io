@@ -99,6 +99,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     modm_query = None
     # /TODO DELETE ME POST MIGRATION
 
+    FIELD_ALIASES = {
+        '_id': 'guids___id',
+        'system_tags': 'tags',
+    }
+
     USERNAME_FIELD = 'username'
 
     # Node fields that trigger an update to the search engine on save
@@ -1138,7 +1143,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         """
         query = self._projects_in_common_query(other_user)
         if primary_keys:
-            return set(query.values_list('guid__guid', flat=True))
+            return set(query.values_list('guids___id', flat=True))
         else:
             return set(query.all())
 

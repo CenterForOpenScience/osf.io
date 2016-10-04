@@ -10,6 +10,7 @@ from django.utils.deconstruct import deconstructible
 from website.notifications.constants import NOTIFICATION_TYPES
 from website import settings
 
+
 def string_required(value):
     if value is None or value.strip() == '':
         raise ValidationValueError('Value must not be empty.')
@@ -19,6 +20,7 @@ def string_required(value):
 def validate_subscription_type(value):
     if value not in NOTIFICATION_TYPES:
         raise ValidationValueError
+
 
 def validate_title(value):
     """Validator for Node#title. Makes sure that the value exists and is not
@@ -37,6 +39,7 @@ def validate_title(value):
 
     return True
 
+
 def validate_page_name(value):
     value = (value or '').strip()
 
@@ -46,7 +49,9 @@ def validate_page_name(value):
         raise ValidationError('Page name cannot contain forward slashes.')
     return True
 
+
 validate_url = URLValidator()
+
 
 def validate_profile_websites(profile_websites):
     for value in profile_websites or []:
@@ -56,14 +61,17 @@ def validate_profile_websites(profile_websites):
             # Reraise with a better message
             raise ValidationError('Invalid personal URL.')
 
+
 def validate_social(value):
     validate_profile_websites(value.get('profileWebsites'))
+
 
 def validate_email(value):
     with reraise_django_validation_errors():
         django_validate_email(value)
     if value.split('@')[1].lower() in settings.BLACKLISTED_DOMAINS:
         raise ValidationError('Invalid Email')
+
 
 @deconstructible
 class CommentMaxLength(object):

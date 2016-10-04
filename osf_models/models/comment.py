@@ -1,3 +1,4 @@
+
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.db.models import Q
@@ -22,6 +23,12 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
     modm_query = None
     # /TODO DELETE ME POST MIGRATION
     __guid_min_length__ = 12
+
+    FIELD_ALIASES = {
+        # TODO: Find a better way
+        'root_target': 'root_target___id',
+        'target': 'target___id'
+    }
 
     OVERVIEW = 'node'
     FILES = 'files'
@@ -249,3 +256,15 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
                 save=False,
             )
             self.node.save()
+
+    @classmethod
+    def migrate_from_modm(cls, modm_obj):
+        django_obj = super(Comment, cls).migrate_from_modm(modm_obj)
+
+        keys = ['category', 'text', 'date', 'retracted']
+
+        for uid, value in django_obj.reports.iteritems():
+            for key in keys:
+                django_obj.reports[uid].setdefault(key)
+
+        return django_obj
