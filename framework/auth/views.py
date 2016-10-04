@@ -226,6 +226,7 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
         'campaign': None,
         'must_login_warning': False,
     }
+    service_url = None
 
     if campaign:
         if validate_campaign(campaign):
