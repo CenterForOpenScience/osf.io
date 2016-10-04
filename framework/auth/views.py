@@ -2,6 +2,7 @@
 import datetime
 import furl
 import httplib as http
+import urllib
 
 import markupsafe
 from flask import request
@@ -358,6 +359,11 @@ def external_login_confirm_email_get(auth, uid, token):
     if not user:
         raise HTTPError(http.BAD_REQUEST)
 
+    next_url = request.args.get('next')
+    # next_url should always exist by design, set `dashboard` as default
+    if not next_url:
+        next_url = web_url_for('dashboard', _absolute=True)
+
     # if user is already logged in
     if auth and auth.user:
         # if it is the expected user
@@ -365,7 +371,7 @@ def external_login_confirm_email_get(auth, uid, token):
             new = request.args.get('new', None)
             if new:
                 status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True)
-            return redirect(web_url_for('index'))
+            return redirect(next_url)
         # if it is a wrong user
         return auth_logout(redirect_url=request.url)
 
@@ -409,7 +415,7 @@ def external_login_confirm_email_get(auth, uid, token):
             mimetype='html',
             user=user
         )
-        service_url = service_url + '?new=true'
+        service_url += '&{}'.format(urllib.urlencode({'new': 'true'}))
     elif external_status == 'LINK':
         mails.send_mail(
             user=user,
@@ -553,7 +559,7 @@ def unconfirmed_email_add(auth=None):
     }, 200
 
 
-def send_confirm_email(user, email, renew=False, external_id_provider=None, external_id=None):
+def send_confirm_email(user, email, renew=False, external_id_provider=None, external_id=None, service_url=None):
     """
     Sends `user` a confirmation to the given `email`.
 
@@ -563,6 +569,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
     :param renew: refresh the token
     :param external_id_provider: user's external id provider
     :param external_id: user's external id
+    :param service_url: the destination url after confirmation
     :return:
     :raises: KeyError if user does not have a confirmation token for the given email.
     """
@@ -572,7 +579,8 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         external=True,
         force=True,
         renew=renew,
-        external_id_provider=external_id_provider
+        external_id_provider=external_id_provider,
+        service_url=service_url
     )
 
     try:
@@ -785,6 +793,7 @@ def external_login_email_post():
     external_id_provider = session.data['auth_user_external_id_provider']
     external_id = session.data['auth_user_external_id']
     fullname = session.data['auth_user_fullname']
+    service_url = session.data['service_url']
 
     if form.validate():
         clean_email = form.email.data
@@ -808,7 +817,13 @@ def external_login_email_post():
             # 2. add unconfirmed email and send confirmation email
             user.add_unconfirmed_email(clean_email, external_identity=external_identity)
             user.save()
-            send_confirm_email(user, clean_email, external_id_provider=external_id_provider, external_id=external_id)
+            send_confirm_email(
+                user,
+                clean_email,
+                external_id_provider=external_id_provider,
+                external_id=external_id,
+                service_url=service_url
+            )
             # 3. notify user
             message = language.EXTERNAL_LOGIN_EMAIL_LINK_SUCCESS.format(
                 external_id_provider=external_id_provider,
@@ -830,7 +845,13 @@ def external_login_email_post():
             # TODO: [#OSF-6934] update social fields, verified social fields cannot be modified
             user.save()
             # 3. send confirmation email
-            send_confirm_email(user, user.username, external_id_provider=external_id_provider, external_id=external_id)
+            send_confirm_email(
+                user,
+                user.username,
+                external_id_provider=external_id_provider,
+                external_id=external_id,
+                service_url=service_url
+            )
             # 4. notify user
             message = language.EXTERNAL_LOGIN_EMAIL_CREATE_SUCCESS.format(
                 external_id_provider=external_id_provider,
