@@ -65,7 +65,7 @@ class TestReferent:
         guid.referent = obj1
         assert guid.referent == obj1
 
-    @pytest.skip('I don\'t actually think we do this anywhere')
+    @pytest.mark.skip('I don\'t actually think we do this anywhere')
     def test_swapping_guids(self):
         user = UserFactory()
         node = NodeFactory()
