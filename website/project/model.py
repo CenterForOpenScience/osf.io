@@ -3326,7 +3326,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         if save:
             self.save()
 
-    def add_unregistered_contributor(self, fullname, email, auth, send_email='default', visible=True, permissions=None, save=False):
+    def add_unregistered_contributor(self, fullname, email, auth, send_email='default', visible=True, permissions=None, save=False, user_created=None):
         """Add a non-registered contributor to the project.
 
         :param str fullname: The full name of the person.
@@ -3335,8 +3335,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         :returns: The added contributor
         :raises: DuplicateEmailError if user with given email is already in the database.
         """
-        # Create a new user record
-        contributor = User.create_unregistered(fullname=fullname, email=email)
+        # Create a new user record if the user haven't been created
+        contributor = user_created if user_created else User.create_unregistered(fullname=fullname, email=email)
 
         contributor.add_unclaimed_record(node=self, referrer=auth.user,
             given_name=fullname, email=email)

@@ -348,13 +348,21 @@ class NodeSerializer(JSONAPISerializer):
             parent = validated_data['parent']
             contributors = []
             for contributor in parent.contributors:
+                print(parent.contributors)
                 if contributor is not user:
                     contributors.append({
                         'user': contributor,
                         'permissions': parent.get_permissions(contributor),
                         'visible': parent.get_visible(contributor)
                     })
-            node.add_contributors(contributors, auth=auth, log=True, save=True)
+
+                if not contributor.is_registered:
+                    node.add_unregistered_contributor(
+                        fullname=contributor.fullname, email=contributor.email, auth=auth,
+                        permissions=parent.get_permissions(contributor), user_created=contributor
+                    )
+
+                node.add_contributors(contributors, auth=auth, log=True, save=True)
         return node
 
     def update(self, node, validated_data):
