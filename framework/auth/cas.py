@@ -283,6 +283,7 @@ def make_response_from_ticket(ticket, service_url):
                 'external_id': external_credential['id'],
                 'fullname': fullname,
                 'access_token': cas_resp.attributes['accessToken'],
+                'service_url': service_url,
             }
             return external_first_login_authenticate(
                 user,
