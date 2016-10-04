@@ -9,6 +9,7 @@
         "mendeley",
         "zotero",
         "osfstorage",
+        "sharelatex",
         "s3",
         "twofactor",
         "wiki",
@@ -23,6 +24,7 @@
         "forward": "full",
         "googledrive": "partial",
         "github": "partial",
+        "sharelatex": "partial",
         "s3": "partial",
         "wiki": "full"
     },

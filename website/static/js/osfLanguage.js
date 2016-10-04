@@ -76,6 +76,11 @@ module.exports = {
             userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +
                 'contact ' + SUPPORT_LINK + ' if the problem persists.',
         },
+        sharelatex: {
+            confirmDeauth: 'Are you sure you want to disconnect the ShareLatex account? ' +
+                'This will revoke access to ShareLatex for all projects you have ' +
+                'associated with this account.',
+        },
         googledrive: {
           // Shown on clicking "Delete Access Token" for googledrive
             confirmDeauth: 'Are you sure you want to disconnect the Google Drive account? ' +

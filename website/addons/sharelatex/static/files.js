@@ -1,0 +1,1 @@
+require('./sharelatexFangornConfig.js');
