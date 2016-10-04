@@ -175,25 +175,25 @@ def robots():
         mimetype='text/plain'
     )
 
-
-def external_ember_app(_=None):
+def ember_app(_=None):
     """Serve the contents of the ember application"""
-    external_app_url = None
-
+    ember_app_folder = None
+    validated_path = None
+    file = _ or 'index.html'
     for k in settings.EXTERNAL_EMBER_APPS.keys():
-        if request.path.startswith(k):
-            external_app_url = settings.EXTERNAL_EMBER_APPS[k]
+        if request.path.strip('/').startswith(k):
+            validated_path = settings.EXTERNAL_EMBER_APPS[k]['path'].strip('./')
+            ember_app_folder = os.path.abspath(os.path.join(os.getcwd(), settings.EXTERNAL_EMBER_APPS[k]['path']))
             break
 
-    if not external_app_url:
+    if not ember_app_folder:
         raise HTTPError(http.NOT_FOUND)
 
-    url = furl(external_app_url).add(path=request.path)
-    resp = requests.get(url, headers={'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'})
-    excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
-    headers = [(name, value) for (name, value) in resp.raw.headers.items() if name.lower() not in excluded_headers]
-    return Response(resp.content, resp.status_code, headers)
+    if validated_path not in ember_app_folder:
+        # Prevent accessing files outside of the ember build dir
+        raise HTTPError(http.NOT_FOUND)
 
+    return send_from_directory(ember_app_folder, file)
 
 def goodbye():
     # Redirect to dashboard if logged in
@@ -261,11 +261,11 @@ def make_url_map(app):
         rules = []
         for prefix in settings.EXTERNAL_EMBER_APPS.keys():
             rules += [
-                prefix,
-                '{}<path:_>'.format(prefix),
+                '/{}/'.format(prefix),
+                '/{}/<path:_>'.format(prefix),
             ]
         process_rules(app, [
-            Rule(rules, 'get', external_ember_app, json_renderer),
+            Rule(rules, 'get', ember_app, json_renderer),
         ])
 
     ### Base ###
