@@ -406,30 +406,6 @@ class TestCommentModel(OsfTestCase):
         n_unread = Comment.find_n_unread(user=user, node=project, page='node')
         assert_equal(n_unread, 1)
 
-    # Regression test for https://openscience.atlassian.net/browse/OSF-5193
-    def test_find_unread_includes_edited_comments(self):
-        project = ProjectFactory()
-        user = AuthUserFactory()
-        project.add_contributor(user)
-        project.save()
-        comment = CommentFactory(node=project, user=project.creator)
-
-        url = project.api_url_for('update_comments_timestamp')
-        payload = {'page': 'node', 'rootId': project._id}
-        res = self.app.put_json(url, payload, auth=user.auth)
-        user.reload()
-        n_unread = Comment.find_n_unread(user=user, node=project, page='node')
-        assert_equal(n_unread, 0)
-
-        # Edit previously read comment
-        comment.edit(
-            auth=Auth(project.creator),
-            content='edited',
-            save=True
-        )
-        n_unread = Comment.find_n_unread(user=user, node=project, page='node')
-        assert_equal(n_unread, 1)
-
     def test_find_unread_does_not_include_deleted_comments(self):
         project = ProjectFactory()
         user = AuthUserFactory()

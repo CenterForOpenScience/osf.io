@@ -17,6 +17,7 @@ from django.apps import apps
 
 from modularodm import Q
 from modularodm.exceptions import ValidationError
+from osf_models.models import Comment
 
 from framework import auth
 from framework.auth import User, Auth
@@ -63,6 +64,7 @@ from osf_models_tests.factories import (
     PrivateLinkFactory,
     ProjectFactory,
     NodeFactory,
+    CommentFactory,
     InstitutionFactory,
     RegistrationFactory,
     ApiOAuth2ApplicationFactory,
@@ -4358,6 +4360,36 @@ class TestUserConfirmSignal(OsfTestCase):
             assert_equal(res.status_code, 302)
 
         assert_equal(mock_signals.signals_sent(), set([auth.signals.user_confirmed]))
+
+
+class TestCommentsViews(OsfTestCase):
+
+    # Regression test for https://openscience.atlassian.net/browse/OSF-5193
+    # moved from tests/test_comments.py
+    def test_find_unread_includes_edited_comments(self):
+        project = ProjectFactory()
+        user = AuthUserFactory()
+        project.add_contributor(user, save=True)
+        comment = CommentFactory(node=project, user=project.creator)
+        n_unread = Comment.find_n_unread(user=user, node=project, page='node')
+        assert n_unread == 1
+
+        url = project.api_url_for('update_comments_timestamp')
+        payload = {'page': 'node', 'rootId': project._id}
+        self.app.put_json(url, payload, auth=user.auth)
+        user.reload()
+        n_unread = Comment.find_n_unread(user=user, node=project, page='node')
+        assert n_unread == 0
+
+        # Edit previously read comment
+        comment.edit(
+            auth=Auth(project.creator),
+            content='edited',
+            save=True
+        )
+        n_unread = Comment.find_n_unread(user=user, node=project, page='node')
+        assert n_unread == 1
+
 
 if __name__ == '__main__':
     unittest.main()
