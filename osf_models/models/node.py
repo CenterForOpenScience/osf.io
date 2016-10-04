@@ -732,7 +732,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def visible_contributor_ids(self):
         return self.contributor_set.filter(visible=True)\
             .order_by('_order')\
-            .values_list('user__guid__guid', flat=True)
+            .values_list('user__guids___id', flat=True)
 
     @property
     def system_tags(self):
