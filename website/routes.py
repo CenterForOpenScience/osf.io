@@ -2,12 +2,10 @@
 import os
 import httplib as http
 
-from flask import request, Response
+from flask import request
 from flask import send_from_directory
 
-import requests
 from geoip import geolite2
-from furl import furl
 
 from framework import status
 from framework import sentry
@@ -23,6 +21,7 @@ from framework.routing import process_rules
 from framework.auth import views as auth_views
 from framework.routing import render_mako_string
 from framework.auth.core import _get_current_user
+from framework.guid.model import Guid
 
 from modularodm import Q
 from modularodm.exceptions import QueryException, NoResultsFound
@@ -177,19 +176,20 @@ def robots():
 
 def ember_app(_=None):
     """Serve the contents of the ember application"""
+    if _ and Guid.load(_):
+        return redirect(_)
+
     ember_app_folder = None
-    validated_path = None
     file = _ or 'index.html'
     for k in settings.EXTERNAL_EMBER_APPS.keys():
         if request.path.strip('/').startswith(k):
-            validated_path = settings.EXTERNAL_EMBER_APPS[k]['path'].strip('./')
             ember_app_folder = os.path.abspath(os.path.join(os.getcwd(), settings.EXTERNAL_EMBER_APPS[k]['path']))
             break
 
     if not ember_app_folder:
         raise HTTPError(http.NOT_FOUND)
 
-    if validated_path not in ember_app_folder:
+    if not os.path.abspath(os.path.join(ember_app_folder, file)).startswith(ember_app_folder):
         # Prevent accessing files outside of the ember build dir
         raise HTTPError(http.NOT_FOUND)
 
