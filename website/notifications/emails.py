@@ -134,9 +134,10 @@ def check_node(node, event):
         subscription = NotificationSubscription.load(utils.to_subscription_key(node._id, event))
         for notification_type in node_subscriptions:
             users = getattr(subscription, notification_type, [])
-            for user in users.all():
-                if node.has_permission(user, 'read'):
-                    node_subscriptions[notification_type].append(user._id)
+            if users:
+                for user in users.all():
+                    if node.has_permission(user, 'read'):
+                        node_subscriptions[notification_type].append(user._id)
     return node_subscriptions
 
 
