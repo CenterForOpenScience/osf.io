@@ -474,10 +474,8 @@ def ensure_guid(sender, instance, created, **kwargs):
     if not issubclass(sender, GuidMixin):
         return False
     if not instance.guids.exists() and instance.guid_string is None:
-        print('Creating a guid for {} with a generated guid'.format(instance.__repr__()))
         Guid.objects.create(object_id=instance.pk, content_type=ContentType.objects.get_for_model(instance),
                             _id=generate_guid(instance.__guid_min_length__))
     elif not instance.guids.exists() and instance.guid_string is not None:
-        print('Creating a guid for {} with an existing guid'.format(instance.__repr__()))
         Guid.objects.create(object_id=instance.pk, content_type_id=instance.content_type_pk,
                             _id=instance.guid_string)
