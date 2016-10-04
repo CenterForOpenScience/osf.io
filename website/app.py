@@ -178,6 +178,7 @@ PATCHED_MODELS = (
     'Identifier',
     'Subject',
     'PreprintProvider',
+    'NotificationDigest',
     'StoredFileNode',
 )
 
