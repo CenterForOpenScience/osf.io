@@ -1227,7 +1227,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
 
     def remove_institution(self, inst_id):
         try:
-            inst = self.affiliated_institutions.get(guid__guid=inst_id)
+            inst = self.affiliated_institutions.get(_id=inst_id)
         except Institution.DoesNotExist:
             return False
         else:

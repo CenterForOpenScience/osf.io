@@ -57,7 +57,7 @@ class Sanction(ObjectIDMixin, BaseModel):
     mode = UNANIMOUS
 
     # Sanction subclasses must have an initiated_by field
-    # initiated_by = fields.ForeignField('user', backref='initiated')
+    # initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
 
     # Expanded: Dictionary field mapping admin IDs their approval status and relevant tokens:
     # {
