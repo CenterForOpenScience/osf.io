@@ -934,7 +934,7 @@ class NodeInstitutionsRelationshipSerializer(ser.Serializer):
         )
 
         for inst in remove:
-            if inst not in user.affiliated_institutions and not node.has_permission(user, 'admin'):
+            if not user.is_affiliated_with_institution(inst) and not node.has_permission(user, 'admin'):
                 raise exceptions.PermissionDenied(detail='User needs to be affiliated with {}'.format(inst.name))
             node.remove_affiliated_institution(inst, user)
 

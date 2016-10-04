@@ -2350,7 +2350,7 @@ class TestCollectionLinkedNodes(ApiTestCase):
         self.collection.save()
         self.url = '/{}collections/{}/linked_nodes/'.format(API_BASE, self.collection._id)
         self.reg_url = '/{}collections/{}/linked_registrations/'.format(API_BASE, self.collection._id)
-        self.node_ids = list(self.collection.linked_nodes.values_list('guid__guid', flat=True))
+        self.node_ids = list(self.collection.linked_nodes.values_list('_id', flat=True))
 
     def test_linked_nodes_returns_everything(self):
         res = self.app.get(self.url, auth=self.user.auth)

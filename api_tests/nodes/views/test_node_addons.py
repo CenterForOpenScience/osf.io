@@ -2,6 +2,7 @@
 import abc
 import mock
 from nose.tools import *  # flake8: noqa
+import pytest
 
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
@@ -18,6 +19,8 @@ from website.addons.googledrive.tests.factories import GoogleDriveAccountFactory
 from website.addons.mendeley.tests.factories import MendeleyAccountFactory, MendeleyNodeSettingsFactory
 from website.addons.s3.tests.factories import S3AccountFactory, S3NodeSettingsFactory
 from website.addons.zotero.tests.factories import ZoteroAccountFactory, ZoteroNodeSettingsFactory
+
+pytestmark = pytest.mark.skip
 
 # Varies between addons. Some need to make a call to get the root,
 # 'FAKEROOTID' should be the result of a mocked call in that case.

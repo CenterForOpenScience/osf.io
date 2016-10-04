@@ -150,7 +150,7 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
     def get_queryset(self):
         # For bulk requests, queryset is formed from request body.
         if is_bulk_request(self.request):
-            query = Q('guid__guid', 'in', [node['id'] for node in self.request.data])
+            query = Q('_id', 'in', [node['id'] for node in self.request.data])
 
             auth = get_user_auth(self.request)
             nodes = Node.find(query)

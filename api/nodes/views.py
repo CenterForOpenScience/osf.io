@@ -275,10 +275,8 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     def convert_key(self, *args, **kwargs):
         key = super(NodeList, self).convert_key(*args, **kwargs)
-        if key == '_id':
-            return 'guid__guid'
-        elif key == 'root':
-            return 'root__guid__guid'
+        if key == 'root':
+            return 'root___id'
         return key
 
     # overrides FilterMixin
@@ -303,7 +301,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     def get_queryset(self):
         # For bulk requests, queryset is formed from request body.
         if is_bulk_request(self.request):
-            query = Q('guid__guid', 'in', [node['id'] for node in self.request.data])
+            query = Q('_id', 'in', [node['id'] for node in self.request.data])
             auth = get_user_auth(self.request)
 
             nodes = Node.find(query)
@@ -703,7 +701,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
             except IndexError:
                 raise ValidationError('Contributor identifier incorrectly formatted.')
 
-        resource_object_list = User.find(Q('guid__guid', 'in', requested_ids))
+        resource_object_list = User.find(Q('_id', 'in', requested_ids))
         for resource in resource_object_list:
             if getattr(resource, 'is_deleted', None):
                 raise Gone

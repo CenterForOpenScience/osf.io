@@ -164,7 +164,7 @@ def before_request():
         if not util_time.throttle_period_expired(user_session.date_created, settings.OSF_SESSION_TIMEOUT):
             if user_session.data.get('auth_user_id') and 'api' not in request.url:
                 OSFUser = apps.get_model('osf_models.OSFUser')
-                OSFUser.objects.filter(guid__guid=user_session.data['auth_user_id']).update(date_last_login=timezone.now())
+                OSFUser.objects.filter(_id=user_session.data['auth_user_id']).update(date_last_login=timezone.now())
             set_session(user_session)
         else:
             remove_session(user_session)

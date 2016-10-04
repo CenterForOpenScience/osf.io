@@ -395,7 +395,7 @@ def project_reorder_components(node, **kwargs):
         each.split(':')[0]
         for each in request.get_json().get('new_list', [])
     ]
-    new_node_ids = list(Node.objects.filter(guid__guid__in=new_node_guids).values_list('pk', flat=True))
+    new_node_ids = list(Node.objects.filter(_id__in=new_node_guids).values_list('pk', flat=True))
     valid_node_ids = list(node.nodes.filter(is_deleted=False).values_list('pk', flat=True))
     deleted_node_ids = list(node.nodes.filter(is_deleted=True).values_list('pk', flat=True))
     if len(valid_node_ids) == len(new_node_ids) and set(valid_node_ids) == set(new_node_ids):
@@ -723,7 +723,7 @@ def _view_project(node, auth, primary=False):
             'institutions': get_affiliated_institutions(node) if node else [],
             'alternative_citations': [citation.to_json() for citation in node.alternative_citations.all()],
             'has_draft_registrations': node.has_active_draft_registrations,
-            'contributors': list(node.contributors.values_list('guid__guid', flat=True)),
+            'contributors': list(node.contributors.values_list('_id', flat=True)),
             'is_preprint': node.is_preprint,
             'is_preprint_orphan': node.is_preprint_orphan,
             'preprint_file_id': node.preprint_file._id if node.preprint_file else None
@@ -1182,7 +1182,7 @@ def move_pointers(auth):
 
     for pointer_to_move in pointers_to_move:
         try:
-            pointer_node = from_node.linked_nodes.get(guid__guid=pointer_to_move)
+            pointer_node = from_node.linked_nodes.get(_id=pointer_to_move)
         except Node.DoesNotExist:
             raise HTTPError(http.BAD_REQUEST)
 

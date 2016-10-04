@@ -355,7 +355,7 @@ class TestNodeLinkedNodes(ApiTestCase):
         self.linking_node.add_pointer(self.public_node, auth=self.auth)
         self.linking_node.save()
         self.url = '/{}nodes/{}/linked_nodes/'.format(API_BASE, self.linking_node._id)
-        self.node_ids = self.linking_node.linked_nodes.values_list('guid__guid', flat=True)
+        self.node_ids = self.linking_node.linked_nodes.values_list('guids___id', flat=True)
 
     def test_linked_nodes_returns_everything(self):
         res = self.app.get(self.url, auth=self.user.auth)
