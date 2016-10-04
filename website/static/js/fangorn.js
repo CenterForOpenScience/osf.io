@@ -1173,6 +1173,46 @@ function doCheckout(item, checkout, showError) {
     });
 }
 
+function doMultipleCheckout(items, checkout, showError) {
+
+    var checkoutData = [];
+    items.forEach( function(item) {
+        checkoutData.push({
+            id: item.data.path.replace('/', ''),
+            type: 'files',
+            attributes: {
+                checkout: checkout
+            }
+        });
+    });
+
+    return $osf.ajaxJSON(
+        'PUT',
+        $osf.apiV2Url('files/' + items[0].data.nodeUrl + 'list/osfstorage/', {}),
+        {
+            isCors: true,
+            data: {data: checkoutData},
+            bulk: true
+        }
+    ).done(function(xhr) {
+        if (showError) {
+            window.location.reload();
+        }
+    }).fail(function(xhr) {
+        if (showError) {
+            if (xhr.responseJSON.errors[0].meta) {
+                var error_object = xhr.responseJSON.errors[0].meta;
+                if (error_object.type === 'api_limit') {
+                    $osf.growl('Error', 'You have reached the check out selection limit of ' + error_object.bulk_limit +
+                    '. Please select fewer items to check out at once.');
+                }
+            } else {
+                $osf.growl('Error', 'Unable to check out one of the selected files. This is most likely due to one of the files being already checked-out' +
+                    ' by another user.');
+            }
+        }
+    });
+}
 
 /**
  * Resolves lazy load url for fetching children
@@ -1957,12 +1997,42 @@ var FGToolbar = {
         if(items.length > 1 && ctrl.tb.multiselected()[0].data.provider !== 'github' && ctrl.tb.options.placement !== 'fileview' && !(ctrl.tb.multiselected()[0].data.provider === 'dataverse' && ctrl.tb.multiselected()[0].parent().data.version === 'latest-published') ) {
             // Special cased to not show 'delete multiple' for github or published dataverses
             var showDelete = false;
+            var showCheckout = true;
+            var showCheckin = true;
             var each, i, len;
             // Only show delete button if user has edit permissions on at least one selected file
             for (i = 0, len = items.length; i < len; i++) {
                 each = items[i];
                 if (each.data.permissions.edit && !each.data.isAddonRoot && !each.data.nodeType) {
                     showDelete = true;
+                    break;
+                }
+            }
+            for (i = 0, len = items.length; i < len; i++) {
+                each = items[i];
+                if (!(each.data.permissions.edit && each.data.provider === 'osfstorage' && each.kind === 'file' && (!each.data.extra.checkout || each.data.extra.checkout === window.contextVars.currentUser.id))) {
+                    showCheckout = false;
+                    break;
+                }
+            }
+            //Additional check to not show the button if all the files are already checkedout by user
+            if (showCheckout) {
+                var allChecked = true;
+                for (i = 0, len = items.length; i < len; i++) {
+                    each = items[i];
+                    if (!each.data.extra.checkout) {
+                        allChecked = false;
+                        break;
+                    }
+                }
+                if (allChecked) {
+                    showCheckout = false;
+                }
+            }
+            for (i = 0, len = items.length; i < len; i++) {
+                each = items[i];
+                if (!(each.data.permissions.edit && each.data.provider === 'osfstorage' && each.kind === 'file' && each.data.extra.checkout === window.contextVars.currentUser.id)) {
+                    showCheckin = false;
                     break;
                 }
             }
@@ -1975,7 +2045,29 @@ var FGToolbar = {
                         },
                         icon: 'fa fa-trash',
                         className : 'text-danger'
-                    }, 'Delete Multiple')
+                    }, 'Delete multiple')
+                );
+            }
+            if (showCheckout) {
+                generalButtons.push(
+                    m.component(FGButton, {
+                        onclick: function () {
+                            doMultipleCheckout(items, window.contextVars.currentUser.id, true);
+                        },
+                        icon: 'fa fa-sign-out',
+                        className: 'text-warning'
+                    }, 'Check out multiple')
+                );
+            }
+            if (showCheckin) {
+                generalButtons.push(
+                    m.component(FGButton, {
+                        onclick: function () {
+                            doMultipleCheckout(items, null, true);
+                        },
+                        icon: 'fa fa-sign-in',
+                        className: 'text-warning'
+                    }, 'Check in multiple')
                 );
             }
         }

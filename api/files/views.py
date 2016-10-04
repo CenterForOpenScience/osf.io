@@ -1,6 +1,6 @@
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, PermissionDenied
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -13,11 +13,14 @@ from website.files.models import (
 
 from api.base.exceptions import Gone
 from api.base.permissions import PermissionWithGetter
-from api.base.utils import get_object_or_error
+from api.base.utils import get_object_or_error, is_bulk_request
 from api.base.views import JSONAPIBaseView
+from api.base.filters import ListFilterMixin
+from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
 from api.nodes.permissions import ContributorOrPublic
 from api.nodes.permissions import ReadOnlyIfRegistration
+from api.nodes.views import WaterButlerMixin, NodeMixin
 from api.files.permissions import CheckedOutOrAdmin
 from api.files.serializers import FileSerializer
 from api.files.serializers import FileDetailSerializer
@@ -327,6 +330,61 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     # overrides RetrieveAPIView
     def get_object(self):
         return self.get_file()
+
+
+class FileList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMixin, WaterButlerMixin, bulk_views.BulkUpdateJSONAPIView):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        CheckedOutOrAdmin,
+        base_permissions.TokenHasScope,
+        PermissionWithGetter(ContributorOrPublic, 'node'),
+        PermissionWithGetter(ReadOnlyIfRegistration, 'node'),
+    )
+
+    file_lookup_url_kwarg = 'file_id'
+
+    required_read_scopes = [CoreScopes.NODE_FILE_READ]
+    required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
+
+    serializer_class = FileDetailSerializer
+    view_category = 'files'
+    view_name = 'file-list'
+
+    def get_file(self, check_permissions=True):
+        obj = get_object_or_error(FileNode, self.kwargs[self.file_lookup_url_kwarg])
+
+        if check_permissions:
+            # May raise a permission denied
+            self.check_object_permissions(self.request, obj)
+        return obj.wrapped()
+
+    def get_default_queryset(self):
+        # Don't bother going to waterbutler for osfstorage
+        files_list = self.fetch_from_waterbutler()
+
+        if isinstance(files_list, list):
+            return [self.get_file_item(file) for file in files_list]
+
+        if isinstance(files_list, dict) or getattr(files_list, 'is_file', False):
+            # We should not have gotten a file here
+            raise NotFound
+
+        return list(files_list.children)
+
+    def get_queryset(self):
+        queryset = self.get_queryset_from_request()
+
+        if is_bulk_request(self.request):
+            file_ids = [item['id'] for item in self.request.data]
+            queryset = [file for file in queryset if file._id in file_ids]
+
+        return queryset
+
+    def bulk_update(self, request, *args, **kwargs):
+        if self.kwargs.get('provider') != 'osfstorage':
+            raise PermissionDenied(detail='Bulk file operations are only allowed on osfstorage')
+
+        return super(FileList, self).bulk_update(request, *args, **kwargs)
 
 
 class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):

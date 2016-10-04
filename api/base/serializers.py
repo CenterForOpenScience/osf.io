@@ -914,7 +914,8 @@ class JSONAPIListSerializer(ser.ListSerializer):
 
         if num_items > bulk_limit:
             raise JSONAPIException(source={'pointer': '/data'},
-                                   detail='Bulk operation limit is {}, got {}.'.format(bulk_limit, num_items))
+                                   detail='Bulk operation limit is {}, got {}.'.format(bulk_limit, num_items),
+                                   meta={'type': 'api_limit', 'bulk_limit': bulk_limit, 'num_items': num_items})
 
         return super(JSONAPIListSerializer, self).run_validation(data)
 

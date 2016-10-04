@@ -140,7 +140,7 @@ class OsfStorageFileNode(FileNode):
         action = NodeLog.CHECKED_OUT if checkout else NodeLog.CHECKED_IN
 
         if self.is_checked_out and action == NodeLog.CHECKED_IN or not self.is_checked_out and action == NodeLog.CHECKED_OUT:
-            self.checkout = checkout
+            self.checkout = checkout if checkout else None
 
             self.node.add_log(
                 action=action,
