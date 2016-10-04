@@ -1,7 +1,7 @@
 require('bootstrap');
-require('jquery');
 require('c3/c3.css');
 
+var $ = require('jquery');
 var c3 = require('c3/c3.js');
 var keen = require('keen-js');
 var ss = require('simple-statistics');
@@ -296,11 +296,43 @@ var SalesAnalytics = function() {
                                     'Users');
     };
 
+    self.getRepeatActionAgeMonthly = function(repeatActionUserMonthly) {
+        var chart = self.drawMetric('db-chart-repeat-action-age-monthly',
+                                    repeatActionUserMonthly.repeat_action_age,
+                                    '#b75c4c',
+                                    'Days');
+    };
+
     self.getTotalUserCount = function(userCount) {
         var chart = self.drawMetric('db-chart-total-user',
                                     userCount.total,
                                     '#005c66',
                                     'Users');
+    };
+
+    self.getAddedUserCount = function(userAdded) {
+        var chart = self.drawMetric('db-chart-user-added',
+                                    userAdded,
+                                    '#005c66',
+                                    'Users Added Yesterday');
+    };
+
+    self.getUserCountHistory = function(countHistoryMonthly, tag, id) {
+        var chart = c3.generate({
+            bindto: id,
+            data: {
+                x: 'x',
+                columns: countHistoryMonthly[tag]
+            },
+            axis: {
+                x: {
+                    type: 'timeseries',
+                    tick: {
+                        format: '%Y-%m-%d'
+                    }
+                }
+            }
+        });
     };
 
     self.prepareChart = function(elementId) {
@@ -332,10 +364,17 @@ var SalesAnalytics = function() {
 
     self.run = function() {
         console.log('run');
-        self.getOSFProductUsage();
-        self.getAverageUserSessionLength();
-        self.getAverageMAUSessionLength();
-        self.getAverageUserSessionHistory(true, 12, null, null, null);
+        // Hide keen stuff unless keen_ready is set to True in the settings.
+        if (keenProjectId) {
+            $(document).ready(function(){
+                $('.hidden').removeClass('hidden');
+            });
+            self.getOSFProductUsage();
+            self.getAverageUserSessionLength();
+            self.getAverageMAUSessionLength();
+            self.getAverageUserSessionHistory(true, 12, null, null, null);
+        }
+
         self.getUserCount(userCount);
         self.getUserPercentage(userCount);
         self.getMultiProductCountYearly(multiProductMetricsYearly);
@@ -345,7 +384,13 @@ var SalesAnalytics = function() {
         self.getMultiActionCountYearly(multiProductMetricsYearly);
         self.getMultiActionCountMonthly(multiProductMetricsMonthly);
         self.getRepeatActionCountMonthly(repeatActionUserMonthly);
+        self.getRepeatActionAgeMonthly(repeatActionUserMonthly);
         self.getTotalUserCount(userCount);
+        self.getAddedUserCount(userAdded);
+        self.getUserCountHistory(countHistoryMonthly, 'osf', '#db-chart-osf-count-history');
+        self.getUserCountHistory(countHistoryMonthly, 'osf4m', '#db-chart-osf4m-count-history');
+        self.getUserCountHistory(countHistoryMonthly, 'prereg', '#db-chart-prereg-count-history');
+        self.getUserCountHistory(countHistoryMonthly, 'institution', '#db-chart-institution-count-history');
     };
 
     self.extractDataSet = function(keenResult) {

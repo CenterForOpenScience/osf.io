@@ -5,9 +5,11 @@
 {% block top_analytics %}
     <script>
       var userCount = {{ user_count | jsonify | safe }};
+      var userAdded = {{ user_added | jsonify | safe }};
       var multiProductMetricsYearly = {{ multi_product_metrics_yearly | jsonify | safe }};
       var multiProductMetricsMonthly = {{ multi_product_metrics_monthly | jsonify | safe }};
-      var repeatActionUserMonthly = {{repeat_action_user_monthly | jsonify | safe}};
+      var repeatActionUserMonthly = {{ repeat_action_user_monthly | jsonify | safe }};
+      var countHistoryMonthly = {{ count_history_monthly | jsonify | safe }}
     </script>
 {% endblock top_analytics %}
 
@@ -29,8 +31,8 @@
 
     <div class="row">
       <div class="col-sm-12 col-md-6">
-        <div class="row", style="display: none;">
-          <div class="col-xs-12">
+        <div class="row hidden">
+          <div class="col-xs-12 keen-chart">
             <div class="chart-wrapper">
               <div class="chart-title">
                 Average User/MAU Session Length History of past 12 weeks
@@ -56,7 +58,7 @@
                 <div class="row">
                   <div class="col-xs-2">
                     <div class="tabbable tabs-left">
-                      <ul class="nav nav-tabs">
+                      <ul class="nav nav-stacked">
                         <li class="active"><a href="#db-chart-user-count" data-toggle="tab">Count</a></li>
                         <li><a href="#db-chart-user-percent" data-toggle="tab">Percentage</a></li>
                       </ul>
@@ -64,7 +66,7 @@
                   </div>
                   <div class="col-xs-10">
                     <div class="tab-content">
-                     <div class="tab-pane active" id="db-chart-user-count"></div>
+                     <div class="tab-pane in active" id="db-chart-user-count"></div>
                      <div class="tab-pane" id="db-chart-user-percent"></div>
                     </div>
                   </div>
@@ -76,54 +78,64 @@
             </div>
           </div>
         </div>
+        <div class="row">
+          <div class="col-xs-12">
+            <div class="chart-wrapper">
+              <div class="chart-title">
+                User Count History (Month)
+              </div>
+              <div class="chart-stage">
+                <div class="row">
+                  <div class="col-xs-2">
+                    <div class="tabbable tabs-left">
+                      <ul class="nav nav-stacked">
+                        <li class="active"><a href="#db-chart-osf-count-history" data-toggle="tab">OSF</a></li>
+                        <li><a href="#db-chart-osf4m-count-history" data-toggle="tab">OSF4M</a></li>
+                        <li><a href="#db-chart-prereg-count-history" data-toggle="tab">Prereg</a></li>
+                        <li><a href="#db-chart-institution-count-history" data-toggle="tab">Institution</a></li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div class="col-xs-10">
+                    <div class="tab-content">
+                     <div class="tab-pane in active" id="db-chart-osf-count-history"></div>
+                     <div class="tab-pane" id="db-chart-osf4m-count-history"></div>
+                     <div class="tab-pane" id="db-chart-prereg-count-history"></div>
+                     <div class="tab-pane" id="db-chart-institution-count-history"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="chart-notes">
+                User count history for each peroduct (osf, osf4m, prereg, institution)
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="col-sm-12 col-md-6">
         <div class="row">
-          <div class="col-sm-12 col-md-6", style="display: none;">
+          <div class="col-sm-12 col-md-6">
             <div class="chart-wrapper">
               <div class="chart-title">
-                OSF Products Users View in the Past Month
+                Total User Count
               </div>
               <div class="chart-stage">
-                <div id='keen-chart-osf-product-usage-mt2'>...</div>
-                <div id='keen-chart-osf-product-usage-mee'>...</div>
+                <div id='db-chart-total-user'></div>
               </div>
               <div class="chart-notes">
-                Notes about this chart
+                Total number of Users
               </div>
             </div>
-          </div>
-          <div class="col-sm-12 col-md-6", style="display: none;">
             <div class="chart-wrapper">
               <div class="chart-title">
-                OSF Products Users View in the Past Month
+                Users Added Yesterday
               </div>
               <div class="chart-stage">
-                <div class="img-responsive" id='keen-chart-osf-product-usage-pre'>...</div>
-                <div class="img-responsive" id='keen-chart-osf-product-usage-ins'>...</div>
+                <div id='db-chart-user-added'></div>
               </div>
               <div class="chart-notes">
-                Notes about this chart
-              </div>
-            </div>
-          </div>
-
-
-          <div class="col-sm-12 col-md-6", style="display: none;">
-            <div class="chart-wrapper">
-              <div class="chart-title">
-                Average User Session Length of Previous 7 days
-              </div>
-              <div class="chart-stage">
-                <div id='keen-chart-average-session-user'></div>
-              </div>
-            </div>
-            <div class="chart-wrapper">
-              <div class="chart-title">
-                Average MAU Session Length of Previous 7 days
-              </div>
-              <div class="chart-stage">
-                <div id='keen-chart-average-session-mau'>...</div>
+                Number of users added yesterday
               </div>
             </div>
           </div>
@@ -134,6 +146,9 @@
               </div>
               <div class="chart-stage">
                 <div id='db-chart-multi-product-yearly'></div>
+              </div>
+              <div class="chart-notes">
+                Number of users that use 2+ products
               </div>
             </div>
             <div class="chart-wrapper">
@@ -190,6 +205,54 @@
               </div>
             </div>
           </div>
+          <div class="col-sm-12 col-md-6 hidden">
+            <div class="chart-wrapper">
+              <div class="chart-title">
+                OSF Products Users View in the Past Month
+              </div>
+              <div class="chart-stage">
+                <div id='keen-chart-osf-product-usage-mt2'>...</div>
+                <div id='keen-chart-osf-product-usage-mee'>...</div>
+              </div>
+              <div class="chart-notes">
+                Notes about this chart
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-12 col-md-6 hidden">
+            <div class="chart-wrapper">
+              <div class="chart-title">
+                OSF Products Users View in the Past Month
+              </div>
+              <div class="chart-stage">
+                <div class="img-responsive" id='keen-chart-osf-product-usage-pre'>...</div>
+                <div class="img-responsive" id='keen-chart-osf-product-usage-ins'>...</div>
+              </div>
+              <div class="chart-notes">
+                Notes about this chart
+              </div>
+            </div>
+          </div>
+
+
+          <div class="col-sm-12 col-md-6 hidden">
+            <div class="chart-wrapper">
+              <div class="chart-title">
+                Average User Session Length of Previous 7 days
+              </div>
+              <div class="chart-stage">
+                <div id='keen-chart-average-session-user'></div>
+              </div>
+            </div>
+            <div class="chart-wrapper">
+              <div class="chart-title">
+                Average MAU Session Length of Previous 7 days
+              </div>
+              <div class="chart-stage">
+                <div id='keen-chart-average-session-mau'>...</div>
+              </div>
+            </div>
+          </div>
           <div class="col-sm-12 col-md-6">
             <div class="chart-wrapper">
               <div class="chart-title">
@@ -198,16 +261,19 @@
               <div class="chart-stage">
                 <div id='db-chart-repeat-action-monthly'></div>
               </div>
+              <div class="chart-notes">
+                Number of Users that repeat an action
+              </div>
             </div>
             <div class="chart-wrapper">
               <div class="chart-title">
-                Total User Count
+                Repetitive actions User Age (Month)
               </div>
               <div class="chart-stage">
-                <div id='db-chart-total-user'></div>
+                <div id='db-chart-repeat-action-age-monthly'></div>
               </div>
               <div class="chart-notes">
-                Total number of Users
+                Average age of users that repeat an action
               </div>
             </div>
           </div>
