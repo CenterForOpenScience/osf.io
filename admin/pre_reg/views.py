@@ -21,6 +21,7 @@ from admin.pre_reg.forms import DraftRegistrationForm
 from admin.pre_reg.utils import sort_drafts, SORT_BY
 from framework.exceptions import PermissionsError
 from framework.guid.model import Guid
+from framework.transactions.context import TokuTransaction
 from website.exceptions import NodeStateError
 from website.files.models import FileNode
 from website.project.model import DraftRegistration, Node
@@ -119,9 +120,10 @@ class DraftDetailView(PreregAdmin, DetailView):
 
     def checkout_files(self, draft):
         prereg_user = self.request.user.osf_user
-        for item in get_metadata_files(draft):
-            item.checkout = prereg_user
-            item.save()
+        with TokuTransaction():
+            for item in get_metadata_files(draft):
+                item.checkout = prereg_user
+                item.save()
 
 
 class DraftFormView(PreregAdmin, FormView):
@@ -182,9 +184,10 @@ class DraftFormView(PreregAdmin, FormView):
         return super(DraftFormView, self).form_valid(form)
 
     def checkin_files(self, draft):
-        for item in get_metadata_files(draft):
-            item.checkout = None
-            item.save()
+        with TokuTransaction():
+            for item in get_metadata_files(draft):
+                item.checkout = None
+                item.save()
 
     def get_success_url(self):
         return '{}?page={}'.format(reverse('pre_reg:prereg'),
