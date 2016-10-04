@@ -5,6 +5,8 @@ from __future__ import absolute_import
 import unittest
 import datetime as dt
 
+from django.utils import timezone
+
 from pytz import utc
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 from framework.auth import Auth
@@ -29,7 +31,7 @@ class TestWatching(OsfTestCase):
             'tag_added',
             params={'project': self.project._primary_key},
             auth=self.consolidate_auth,
-            log_date=dt.datetime.utcnow() - dt.timedelta(days=100),
+            log_date=timezone.now() - dt.timedelta(days=100),
             save=True,
         )
         # Set the ObjectId to correspond with the log date
@@ -37,7 +39,7 @@ class TestWatching(OsfTestCase):
         self.last_log = self.project.add_log(
             'tag_added',
             params={'project': self.project._primary_key},
-            auth=self.consolidate_auth, log_date=dt.datetime.utcnow(),
+            auth=self.consolidate_auth, log_date=timezone.now(),
             save=True,
         )
         # Clear watched list
@@ -75,7 +77,7 @@ class TestWatching(OsfTestCase):
 
     def test_get_recent_log_ids_since(self):
         self._watch_project(self.project)
-        since = dt.datetime.utcnow().replace(tzinfo=utc) - dt.timedelta(days=101)
+        since = timezone.now().replace(tzinfo=utc) - dt.timedelta(days=101)
         log_ids = list(self.user.get_recent_log_ids(since=since))
         assert_equal(len(log_ids), 3)
 

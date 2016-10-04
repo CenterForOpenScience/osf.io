@@ -2,7 +2,9 @@ from __future__ import unicode_literals
 
 import sys
 import logging
-import datetime
+
+from django.utils import timezone
+
 from modularodm import Q
 from modularodm.storage.base import KeyExistsException
 
@@ -14,7 +16,7 @@ from website.files import models
 from website.app import init_app
 from website.addons.osfstorage import model as osfstorage_model
 
-NOW = datetime.datetime.utcnow()
+NOW = timezone.now()
 logger = logging.getLogger(__name__)
 
 

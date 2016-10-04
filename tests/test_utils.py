@@ -5,6 +5,8 @@ import os
 import time
 import unittest
 
+from django.utils import timezone
+
 from flask import Flask
 from nose.tools import *  # noqa (PEP8 asserts)
 import blinker
@@ -37,7 +39,7 @@ class TestTimeUtils(unittest.TestCase):
         assert_true(is_expired)
 
     def test_throttle_period_expired_using_datetime(self):
-        timestamp = datetime.datetime.utcnow()
+        timestamp = timezone.now()
         is_expired = throttle_period_expired(timestamp=(timestamp + datetime.timedelta(seconds=29)),  throttle=30)
         assert_false(is_expired)
 

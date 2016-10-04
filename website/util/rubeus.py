@@ -3,7 +3,8 @@
 formatted hgrid list/folders.
 """
 import logging
-import datetime
+
+from django.utils import timezone
 
 import hurry.filesize
 
@@ -302,6 +303,6 @@ def collect_addon_css(node, visited=None):
 
 
 def delta_date(d):
-    diff = d - datetime.datetime.utcnow()
+    diff = d - timezone.now()
     s = diff.total_seconds()
     return s

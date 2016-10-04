@@ -4,6 +4,8 @@ import mock
 import unittest
 from nose.tools import *  # noqa (PEP8 asserts)
 
+from django.utils import timezone
+
 import pytz
 import datetime
 import urlparse
@@ -463,7 +465,7 @@ class TestUser(OsfTestCase):
     def test_get_confirmation_token_when_token_is_expired_raises_error(self):
         u = UserFactory()
         # Make sure token is already expired
-        expiration = datetime.datetime.utcnow() - datetime.timedelta(seconds=1)
+        expiration = timezone.now() - datetime.timedelta(seconds=1)
         u.add_unconfirmed_email('foo@bar.com', expiration=expiration)
 
         with assert_raises(ExpiredTokenError):
@@ -474,7 +476,7 @@ class TestUser(OsfTestCase):
         random_string.return_value = '12345'
         u = UserFactory()
         # Make sure token is already expired
-        expiration = datetime.datetime.utcnow() - datetime.timedelta(seconds=1)
+        expiration = timezone.now() - datetime.timedelta(seconds=1)
         u.add_unconfirmed_email('foo@bar.com', expiration=expiration)
 
         # sanity check
@@ -520,7 +522,7 @@ class TestUser(OsfTestCase):
     def test_get_confirmation_url_when_token_is_expired_raises_error(self):
         u = UserFactory()
         # Make sure token is already expired
-        expiration = datetime.datetime.utcnow() - datetime.timedelta(seconds=1)
+        expiration = timezone.now() - datetime.timedelta(seconds=1)
         u.add_unconfirmed_email('foo@bar.com', expiration=expiration)
 
         with assert_raises(ExpiredTokenError):
@@ -531,7 +533,7 @@ class TestUser(OsfTestCase):
         random_string.return_value = '12345'
         u = UserFactory()
         # Make sure token is already expired
-        expiration = datetime.datetime.utcnow() - datetime.timedelta(seconds=1)
+        expiration = timezone.now() - datetime.timedelta(seconds=1)
         u.add_unconfirmed_email('foo@bar.com', expiration=expiration)
 
         # sanity check
@@ -565,7 +567,7 @@ class TestUser(OsfTestCase):
 
         valid_token = u.get_confirmation_token('foo@bar.com')
         assert_true(u.get_unconfirmed_email_for_token(valid_token))
-        manual_expiration = datetime.datetime.utcnow() - datetime.timedelta(0, 10)
+        manual_expiration = timezone.now() - datetime.timedelta(0, 10)
         u._set_email_token_expiration(valid_token, expiration=manual_expiration)
 
         with assert_raises(auth_exc.ExpiredTokenError):
@@ -943,8 +945,8 @@ class TestDisablingUsers(OsfTestCase):
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_disable_account_and_remove_sessions(self, mock_mail):
-        session1 = SessionFactory(user=self.user, date_created=(datetime.datetime.utcnow() - datetime.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
-        session2 = SessionFactory(user=self.user, date_created=(datetime.datetime.utcnow() - datetime.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
+        session1 = SessionFactory(user=self.user, date_created=(timezone.now() - datetime.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
+        session2 = SessionFactory(user=self.user, date_created=(timezone.now() - datetime.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
 
         self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST] = True
         self.user.save()
@@ -1112,7 +1114,7 @@ class TestApiOAuth2Application(OsfTestCase):
 
     def test_cant_edit_creation_date(self):
         with assert_raises(AttributeError):
-            self.api_app.date_created = datetime.datetime.utcnow()
+            self.api_app.date_created = timezone.now()
 
     def test_invalid_home_url_raises_exception(self):
         with assert_raises(ValidationError):
@@ -2560,7 +2562,7 @@ class TestProject(OsfTestCase):
         assert_equal(node.category, 'project')
         assert_true(node._id)
         assert_almost_equal(
-            node.date_created, datetime.datetime.utcnow(),
+            node.date_created, timezone.now(),
             delta=datetime.timedelta(seconds=5),
         )
         assert_false(node.is_public)
@@ -3220,7 +3222,7 @@ class TestProject(OsfTestCase):
         registration = RegistrationFactory(project=self.project)
         registration.embargo_registration(
             self.user,
-            datetime.datetime.utcnow() + datetime.timedelta(days=10)
+            timezone.now() + datetime.timedelta(days=10)
         )
         assert_true(registration.is_pending_embargo)
 
@@ -3235,7 +3237,7 @@ class TestProject(OsfTestCase):
         registration = RegistrationFactory(project=self.project)
         registration.embargo_registration(
             self.user,
-            datetime.datetime.utcnow() + datetime.timedelta(days=10)
+            timezone.now() + datetime.timedelta(days=10)
         )
         assert_equal(len([a for a in registration.get_admin_contributors_recursive(unique_users=True)]), 4)
         with mock.patch('website.project.model.Node.is_embargoed', mock.PropertyMock(return_value=True)):
@@ -3287,7 +3289,7 @@ class TestProject(OsfTestCase):
     def test_check_spam_on_private_node_bans_new_spam_user(self, mock_send_mail):
         with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
             with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(return_value=True)):
-                self.project.creator.date_confirmed = datetime.datetime.utcnow()
+                self.project.creator.date_confirmed = timezone.now()
                 self.project.set_privacy('public')
                 user2 = UserFactory()
                 # project w/ one contributor
@@ -3313,7 +3315,7 @@ class TestProject(OsfTestCase):
     def test_check_spam_on_private_node_does_not_ban_existing_user(self, mock_send_mail):
         with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
             with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(return_value=True)):
-                self.project.creator.date_confirmed = datetime.datetime.utcnow() - datetime.timedelta(days=9001)
+                self.project.creator.date_confirmed = timezone.now() - datetime.timedelta(days=9001)
                 self.project.set_privacy('public')
                 assert_true(self.project.check_spam(self.user, None, None))
                 assert_true(self.project.is_public)
@@ -3894,7 +3896,7 @@ class TestForkNode(OsfTestCase):
         self.subproject.add_addon('github', self.auth)
 
         # Log time
-        fork_date = datetime.datetime.utcnow()
+        fork_date = timezone.now()
 
         # Fork node
         with mock.patch.object(Node, 'bulk_update_search'):
@@ -4013,7 +4015,7 @@ class TestForkNode(OsfTestCase):
         # Compare fork to original
         self._cmp_fork_original(
             self.user,
-            datetime.datetime.utcnow(),
+            timezone.now(),
             fork,
             self.registration,
         )
@@ -4212,7 +4214,7 @@ class TestRegisterNode(OsfTestCase):
     def test_registered_date(self):
         assert_almost_equal(
             self.registration.registered_date,
-            datetime.datetime.utcnow(),
+            timezone.now(),
             delta=datetime.timedelta(seconds=30),
         )
 

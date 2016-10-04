@@ -3,6 +3,8 @@
 import datetime
 import httplib as http
 
+from django.utils import timezone
+
 import mock
 from nose.tools import *  # noqa
 
@@ -100,7 +102,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         assert_equal(self.registration.retraction.initiated_by, self.user)
         assert_equal(
             self.registration.retraction.initiation_date.date(),
-            datetime.datetime.utcnow().date()
+            timezone.now().date()
         )
 
     def test_retract_component_raises_NodeStateError(self):
@@ -228,7 +230,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.registration.is_public = True
         self.registration.embargo_registration(
             self.user,
-            datetime.datetime.utcnow() + datetime.timedelta(days=10),
+            timezone.now() + datetime.timedelta(days=10),
             for_existing_registration=True
         )
         self.registration.save()
@@ -250,7 +252,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.registration.is_public = True
         self.registration.embargo_registration(
             self.user,
-            datetime.datetime.utcnow() + datetime.timedelta(days=10),
+            timezone.now() + datetime.timedelta(days=10),
             for_existing_registration=True
         )
         self.registration.save()
@@ -267,7 +269,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.registration.is_public = True
         self.registration.embargo_registration(
             self.user,
-            datetime.datetime.utcnow() + datetime.timedelta(days=10),
+            timezone.now() + datetime.timedelta(days=10),
             for_existing_registration=True
         )
         self.registration.save()
@@ -469,7 +471,7 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
         # Initiate embargo for registration
         self.registration.embargo_registration(
             self.user,
-            datetime.datetime.utcnow() + datetime.timedelta(days=10),
+            timezone.now() + datetime.timedelta(days=10),
             for_existing_registration=True
         )
         self.registration.save()
@@ -502,7 +504,7 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
         # Initiate embargo for registration
         self.registration.embargo_registration(
             self.user,
-            datetime.datetime.utcnow() + datetime.timedelta(days=10),
+            timezone.now() + datetime.timedelta(days=10),
             for_existing_registration=True
         )
         self.registration.save()
@@ -754,7 +756,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
     def test_POST_pending_embargo_returns_HTTPError_HTTPOK(self):
         self.registration.embargo_registration(
             self.user,
-            (datetime.datetime.utcnow() + datetime.timedelta(days=10)),
+            (timezone.now() + datetime.timedelta(days=10)),
             for_existing_registration=True
         )
         self.registration.save()
@@ -773,7 +775,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
     def test_POST_active_embargo_returns_HTTPOK(self):
         self.registration.embargo_registration(
             self.user,
-            (datetime.datetime.utcnow() + datetime.timedelta(days=10)),
+            (timezone.now() + datetime.timedelta(days=10)),
             for_existing_registration=True
         )
         self.registration.save()

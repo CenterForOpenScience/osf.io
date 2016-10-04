@@ -1,8 +1,8 @@
-import pytest
 
-import datetime as dt
+from django.utils import timezone
 
 from modularodm import StoredObject
+import pytest
 import pytz
 
 from framework.exceptions import PermissionsError
@@ -33,7 +33,6 @@ def test_factory(user):
     preprint = PreprintFactory(creator=user)
     assert preprint.is_preprint is True
     assert preprint.is_public
-
 
 class TestPreprintProviders:
 

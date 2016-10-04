@@ -3,7 +3,8 @@
 
 import logging
 import functools
-from datetime import datetime
+
+from django.utils import timezone
 
 from dateutil import parser
 
@@ -104,7 +105,7 @@ def update_counter(page, node_info=None, db=None):
         return
     collection = db['pagecounters']
 
-    date = datetime.utcnow()
+    date = timezone.now()
     date = date.strftime('%Y/%m/%d')
 
     page = clean_page(page)

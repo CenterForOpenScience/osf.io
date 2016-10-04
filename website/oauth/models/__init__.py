@@ -9,6 +9,8 @@ import time
 import urlparse
 import uuid
 
+from django.utils import timezone
+
 from flask import request
 from oauthlib.oauth2.rfc6749.errors import MissingTokenError
 from requests.exceptions import HTTPError as RequestsHTTPError
@@ -434,7 +436,7 @@ class ExternalProvider(object):
         return bool: True if needs_refresh
         """
         if self.refresh_time and self.account.expires_at:
-            return (self.account.expires_at - datetime.datetime.utcnow()).total_seconds() < self.refresh_time
+            return (self.account.expires_at - timezone.now()).total_seconds() < self.refresh_time
         return False
 
     @property
@@ -445,7 +447,7 @@ class ExternalProvider(object):
         return bool: True if cannot be refreshed
         """
         if self.expiry_time and self.account.expires_at:
-            return (datetime.datetime.utcnow() - self.account.expires_at).total_seconds() > self.expiry_time
+            return (timezone.now() - self.account.expires_at).total_seconds() > self.expiry_time
         return False
 
 

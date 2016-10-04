@@ -4,8 +4,9 @@ to the specified project.
 """
 
 import bson
-import datetime
 from cStringIO import StringIO
+
+from django.utils import timezone
 
 import pymongo
 
@@ -47,7 +48,7 @@ def run_map_reduce(**kwargs):
 def main():
     node = models.Node.load(settings.TABULATE_LOGS_NODE_ID)
     user = models.User.load(settings.TABULATE_LOGS_USER_ID)
-    cutoff = datetime.datetime.utcnow() - settings.TABULATE_LOGS_TIME_OFFSET
+    cutoff = timezone.now() - settings.TABULATE_LOGS_TIME_OFFSET
     result = run_map_reduce(query={'date': {'$gt': cutoff}})
     sio = StringIO()
     utils.make_csv(

@@ -2,6 +2,8 @@ import datetime
 import functools
 from dateutil.parser import parse as parse_date
 
+from django.utils import timezone
+
 from modularodm import (
     fields,
     Q,
@@ -696,7 +698,7 @@ class Retraction(EmailApprovableSanction):
             node.set_privacy('public', auth=None, save=True, log=False)
             node.update_search()
 
-        parent_registration.date_modified = datetime.datetime.utcnow()
+        parent_registration.date_modified = timezone.now()
         parent_registration.save()
 
     def approve_retraction(self, user, token):

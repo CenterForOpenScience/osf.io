@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 import httplib as http
 
+from django.utils import timezone
+
 import mock
-import datetime
 import unittest
 
 from nose.tools import *  # noqa (PEP8 asserts)
@@ -263,7 +264,7 @@ class TestGithubViews(OsfTestCase):
     @mock.patch('website.addons.github.views.verify_hook_signature')
     def test_hook_callback_add_file_not_thro_osf(self, mock_verify):
         url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
-        timestamp = str(datetime.datetime.utcnow())
+        timestamp = str(timezone.now())
         self.app.post_json(
             url,
             {
@@ -296,7 +297,7 @@ class TestGithubViews(OsfTestCase):
     @mock.patch('website.addons.github.views.verify_hook_signature')
     def test_hook_callback_modify_file_not_thro_osf(self, mock_verify):
         url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
-        timestamp = str(datetime.datetime.utcnow())
+        timestamp = str(timezone.now())
         self.app.post_json(
             url,
             {"test": True,
@@ -323,7 +324,7 @@ class TestGithubViews(OsfTestCase):
     @mock.patch('website.addons.github.views.verify_hook_signature')
     def test_hook_callback_remove_file_not_thro_osf(self, mock_verify):
         url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
-        timestamp = str(datetime.datetime.utcnow())
+        timestamp = str(timezone.now())
         self.app.post_json(
             url,
             {"test": True,

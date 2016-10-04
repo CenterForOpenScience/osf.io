@@ -1,7 +1,8 @@
 import sys
 import copy
 import json
-from datetime import datetime
+
+from django.utils import timezone
 
 from scripts.migrate_piwik import utils
 from scripts.migrate_piwik import settings
@@ -26,7 +27,7 @@ def main(force=False):
 
     history_file = utils.get_history_for('transform02', 'w')
     history_file.write('Run ID: {}\n'.format(complaints_run_id))
-    history_file.write('Beginning extraction at: {}Z\n'.format(datetime.utcnow()))
+    history_file.write('Beginning extraction at: {}Z\n'.format(timezone.now()))
 
     transform_dir = utils.get_dir_for('transform02')
     public_template = transform_dir + '/public-{0:04d}.data'

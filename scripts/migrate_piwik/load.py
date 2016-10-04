@@ -1,6 +1,7 @@
 import sys
 import json
-from datetime import datetime
+
+from django.utils import timezone
 
 from keen import KeenClient
 from elasticsearch import Elasticsearch
@@ -32,7 +33,7 @@ def main(dry_run=True, batch_count=None, force=False):
 
     history_file = utils.get_history_for('load', 'a')
     history_file.write(script_settings.RUN_HEADER + '{}\n'.format(complaints_run_id))
-    history_file.write('Beginning upload at: {}Z\n'.format(datetime.utcnow()))
+    history_file.write('Beginning upload at: {}Z\n'.format(timezone.now()))
 
     keen_clients = {'public': None, 'private': None}
     es_client = None
@@ -84,7 +85,7 @@ def main(dry_run=True, batch_count=None, force=False):
                 history_file.write('  ...finished\n')
 
     print("Finished Upload")
-    history_file.write('Finished upload at: {}Z\n'.format(datetime.utcnow()))
+    history_file.write('Finished upload at: {}Z\n'.format(timezone.now()))
     history_file.write('Tally was:\n')
     for k, v in sorted(tally.items()):
         history_file.write('  {}: {}\n'.format(k, v))

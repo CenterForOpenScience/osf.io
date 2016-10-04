@@ -144,9 +144,9 @@
         %>
 
         <%!
-            import datetime
+            from django.utils import timezone
             def create_timestamp():
-                return str(datetime.datetime.utcnow())
+                return str(timezone.now())
         %>
 
         % if settings.GOOGLE_ANALYTICS_ID:
