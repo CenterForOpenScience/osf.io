@@ -179,7 +179,13 @@ def project_new_node(auth, node, **kwargs):
         if form.inherit_contributors.data and node.has_permission(user, WRITE):
             for contributor in node.contributors:
                 perm = CREATOR_PERMISSIONS if contributor is user else node.get_permissions(contributor)
-                new_component.add_contributor(contributor, permissions=perm, auth=auth)
+                if contributor is user and not contributor.is_registered:
+                    new_component.add_unregistered_contributor(
+                        fullname=contributor.fullname, email=contributor.email,
+                        permissions=perm, auth=auth, existing_user=contributor
+                    )
+                else:
+                    new_component.add_contributor(contributor, permissions=perm, auth=auth)
 
             new_component.save()
             redirect_url = new_component.url + 'contributors/'
