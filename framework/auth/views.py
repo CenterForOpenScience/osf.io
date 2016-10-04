@@ -234,6 +234,7 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
             if campaign == 'institution':
                 data['status_code'] = http.FOUND
                 data['next_url'] = cas.get_login_url(next_url, campaign='institution')
+                service_url = next_url
             # For all other non-institution campaigns
             else:
                 # `GET /login?campaign=...`
@@ -243,13 +244,17 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
                 else:
                     data['campaign'] = campaign
                     data['next_url'] = campaigns.campaign_url_for(campaign)
+                service_url = campaigns.campaign_url_for(campaign)
         else:
             # invalid campaign
             raise HTTPError(http.BAD_REQUEST)
 
-    # if user is already logged in, redirect to data['next_url'] directly, bypassing cas-login or osf-register process
+    # if user is already logged in, override `data['next_url']` with `service_url` (if any)
+    # and redirect to it directly, bypassing cas-login or osf-register process
     if not logout and auth.logged_in:
         data['status_code'] = http.FOUND
+        if service_url:
+            data['next_url'] = service_url
 
     # handle `claim_user_registered`
     # TODO [#OSF-6998]: talk to product about the `must_login_warning`
