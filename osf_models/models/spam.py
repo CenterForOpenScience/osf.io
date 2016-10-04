@@ -1,8 +1,8 @@
 import abc
 import logging
-from datetime import datetime
 
 from django.db import models
+from django.utils import timezone
 from osf_models.exceptions import ValidationValueError, ValidationTypeError
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
@@ -110,7 +110,7 @@ class SpamMixin(models.Model):
         if user == self.user:
             raise ValueError('User cannot report self.')
         self.flag_spam()
-        date = datetime.utcnow()
+        date = timezone.now()
         report = {'date': date, 'retracted': False}
         report.update(kwargs)
         if 'text' not in report:

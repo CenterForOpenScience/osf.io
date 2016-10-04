@@ -775,7 +775,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         # Not all tokens are guaranteed to have expiration dates
         if (
             'expiration' in verification and
-            verification['expiration'] < dt.datetime.utcnow()
+            verification['expiration'] < timezone.now()
         ):
             raise ExpiredTokenError
 
@@ -918,7 +918,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
                 # Old records will not have an expiration key. If it's missing,
                 # assume the token is expired
                 expiration = info.get('expiration')
-                if not expiration or (expiration and expiration < dt.datetime.utcnow()):
+                if not expiration or (expiration and expiration < timezone.now()):
                     if not force:
                         raise ExpiredTokenError('Token for email "{0}" is expired'.format(email))
                     else:
@@ -1022,7 +1022,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
             used for testing purposes.
         """
         config = apps.get_app_config('osf_models')
-        expiration = expiration or (dt.datetime.utcnow() + dt.timedelta(hours=config.email_token_expiration))
+        expiration = expiration or (timezone.now() + dt.timedelta(hours=config.email_token_expiration))
         self.email_verifications[token]['expiration'] = expiration
         return expiration
 

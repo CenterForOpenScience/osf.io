@@ -2281,7 +2281,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # # there is no preprint file yet! This is the first time!
         # if not self.preprint_file:
         #     self.preprint_file = preprint_file
-        #     self.preprint_created = datetime.datetime.utcnow()
+        #     self.preprint_created = timezone.utcnow()
         #     self.add_log(action=NodeLog.PREPRINT_INITIATED, params={}, auth=auth, save=False)
         # elif preprint_file != self.preprint_file:
         #     # if there was one, check if it's a new file
