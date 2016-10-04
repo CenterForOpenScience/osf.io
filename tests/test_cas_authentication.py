@@ -13,7 +13,8 @@ from tests.factories import UserFactory
 
 def make_successful_response(user):
     return cas.CasResponse(
-        authenticated=True, user=user._primary_key,
+        authenticated=True,
+        user=user._primary_key,
         attributes={
             'accessToken': fake.md5()
         }
@@ -22,7 +23,8 @@ def make_successful_response(user):
 
 def make_failure_response():
     return cas.CasResponse(
-        authenticated=False, user=None,
+        authenticated=False,
+        user=None,
     )
 
 
@@ -209,38 +211,39 @@ class TestCASTicketAuthentication(OsfTestCase):
         OsfTestCase.setUp(self)
         self.user = UserFactory()
 
+    @mock.patch('framework.auth.cas.get_user_from_cas_resp')
     @mock.patch('framework.auth.cas.CasClient.service_validate')
-    def test_make_response_from_ticket_success(self, mock_service_validate):
-        mock_response = make_successful_response(self.user)
-        mock_service_validate.return_value = mock_response
+    def test_make_response_from_ticket_success(self, mock_service_validate, mock_get_user_from_cas_resp):
+        mock_service_validate.return_value = make_successful_response(self.user)
+        mock_get_user_from_cas_resp.return_value = (self.user, None, 'authenticate')
         ticket = fake.md5()
-        service_url = 'http://accounts.osf.io/?ticket=' + ticket
+        service_url = 'http://localhost:5000/'
         resp = cas.make_response_from_ticket(ticket, service_url)
         assert_equal(resp.status_code, 302)
         assert_equal(mock_service_validate.call_count, 1)
-        first_call_args = mock_service_validate.call_args[0]
-        assert_equal(first_call_args[0], ticket)
-        assert_equal(first_call_args[1], 'http://accounts.osf.io/')
+        assert_equal(mock_get_user_from_cas_resp.call_count, 1)
 
+    @mock.patch('framework.auth.cas.get_user_from_cas_resp')
     @mock.patch('framework.auth.cas.CasClient.service_validate')
-    def test_make_response_from_ticket_failure(self, mock_service_validate):
-        mock_response = make_failure_response()
-        mock_service_validate.return_value = mock_response
+    def test_make_response_from_ticket_failure(self, mock_service_validate, mock_get_user_from_cas_resp):
+        mock_service_validate.return_value = make_failure_response()
+        mock_get_user_from_cas_resp.return_value = (None, None, None)
         ticket = fake.md5()
-        service_url = 'http://accounts.osf.io/?ticket=' + ticket
+        service_url = 'http://localhost:5000/'
         resp = cas.make_response_from_ticket(ticket, service_url)
         assert_equal(resp.status_code, 302)
-        assert_equal(resp.location, 'http://accounts.osf.io/')
+        assert_equal(mock_service_validate.call_count, 1)
+        assert_equal(mock_get_user_from_cas_resp.call_count, 0)
 
     @mock.patch('framework.auth.cas.CasClient.service_validate')
     def test_make_response_from_ticket_invalidates_verification_key(self, mock_service_validate):
         self.user.verification_key = fake.md5()
         self.user.save()
-        mock_response = make_successful_response(self.user)
-        mock_service_validate.return_value = mock_response
+        mock_service_validate.return_value = make_successful_response(self.user)
         ticket = fake.md5()
-        service_url = 'http://accounts.osf.io/?ticket=' + ticket
+        service_url = 'http://localhost:5000/'
         resp = cas.make_response_from_ticket(ticket, service_url)
+        assert_true(self.user.verification_key is None)
 
 
 class TestCASExternalLogin(OsfTestCase):
@@ -258,17 +261,20 @@ class TestCASExternalLogin(OsfTestCase):
             }
         }
         self.user.save()
-        user, _, action = cas.get_user_from_cas_resp(mock_response)
+        user, external_credential, action = cas.get_user_from_cas_resp(mock_response)
         assert_equal(user._id, self.user._id)
+        assert_equal(external_credential, validated_creds)
         assert_equal(action, 'authenticate')
 
     def test_get_user_from_cas_resp_not_authorized(self):
-        user, _, action = cas.get_user_from_cas_resp(make_external_response())
+        user, external_credential, action = cas.get_user_from_cas_resp(make_external_response())
         assert_equal(user, None)
+        assert_true(external_credential is not None)
         assert_equal(action, 'external_first_login')
 
+    @mock.patch('framework.auth.cas.get_user_from_cas_resp')
     @mock.patch('framework.auth.cas.CasClient.service_validate')
-    def test_make_response_from_ticket_with_user(self, mock_service_validate):
+    def test_make_response_from_ticket_with_user(self, mock_service_validate, mock_get_user_from_cas_resp):
         mock_response = make_external_response()
         mock_service_validate.return_value = mock_response
         validated_creds = cas.validate_external_credential(mock_response.user)
@@ -278,27 +284,33 @@ class TestCASExternalLogin(OsfTestCase):
             }
         }
         self.user.save()
+        mock_get_user_from_cas_resp.return_value = (self.user, validated_creds, 'authenticate')
         ticket = fake.md5()
-        service_url = 'http://accounts.osf.io/?ticket=' + ticket
+        service_url = 'http://localhost:5000/'
         resp = cas.make_response_from_ticket(ticket, service_url)
-        assert_equal(resp.status_code, 302)
         assert_equal(mock_service_validate.call_count, 1)
-        first_call_args = mock_service_validate.call_args[0]
-        assert_equal(first_call_args[0], ticket)
-        assert_equal(first_call_args[1], 'http://accounts.osf.io/')
+        assert_true(mock_get_user_from_cas_resp.call_count, 1)
+        assert_equal(resp.status_code, 302)
+        assert_in('/logout?service=', resp.headers['Location'])
+        assert_in('/login?service=', resp.headers['Location'])
 
+    @mock.patch('framework.auth.cas.get_user_from_cas_resp')
     @mock.patch('framework.auth.cas.CasClient.service_validate')
-    def test_make_response_from_ticket_no_user(self, mock_service_validate):
+    def test_make_response_from_ticket_no_user(self, mock_service_validate, mock_get_user_from_cas_resp):
         mock_response = make_external_response()
         mock_service_validate.return_value = mock_response
+        validated_creds = cas.validate_external_credential(mock_response.user)
+        mock_get_user_from_cas_resp.return_value = (None, validated_creds, 'external_first_login')
         ticket = fake.md5()
-        service_url = 'http://accounts.osf.io/?ticket=' + ticket
+        service_url = 'http://localhost:5000/'
         resp = cas.make_response_from_ticket(ticket, service_url)
+        assert_equal(mock_service_validate.call_count, 1)
+        assert_true(mock_get_user_from_cas_resp.call_count, 1)
         assert_equal(resp.status_code, 302)
         assert_equal(resp.location, '/external-login/email')
 
     @mock.patch('framework.auth.cas.CasClient.service_validate')
-    def test_make_response_from_ticket_invalidates_verification_key(self, mock_service_validate):
+    def test_make_response_from_ticket_generates_new_verification_key(self, mock_service_validate):
         self.user.verification_key = fake.md5()
         self.user.save()
         mock_response = make_external_response()
@@ -311,5 +323,7 @@ class TestCASExternalLogin(OsfTestCase):
         self.user.save()
         mock_service_validate.return_value = mock_response
         ticket = fake.md5()
-        service_url = 'http://accounts.osf.io/?ticket=' + ticket
+        service_url = 'http://localhost:5000/'
+        verification_key = self.user.verification_key
         resp = cas.make_response_from_ticket(ticket, service_url)
+        assert_not_equal(self.user.verification_key, verification_key)
