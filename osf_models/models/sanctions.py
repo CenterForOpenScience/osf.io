@@ -57,7 +57,7 @@ class Sanction(ObjectIDMixin, BaseModel):
     mode = UNANIMOUS
 
     # Sanction subclasses must have an initiated_by field
-    # initiated_by = fields.ForeignField('user', backref='initiated')
+    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
 
     # Expanded: Dictionary field mapping admin IDs their approval status and relevant tokens:
     # {
@@ -396,7 +396,6 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
     for_existing_registration = models.BooleanField(default=False)
 
     @property
@@ -567,7 +566,6 @@ class Retraction(EmailApprovableSanction):
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
 
-    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
     justification = models.CharField(max_length=2048, null=True, blank=True)
 
     def _view_url_context(self, user_id, node):
@@ -700,8 +698,6 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'project/{node_id}/?token={token}'
-
-    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
 
     def _get_registration(self):
         return self.registrations.first()

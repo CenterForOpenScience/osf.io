@@ -12,7 +12,7 @@ def _get_current_user():
     # avoid cirdep
     from osf_models.models import OSFUser
     uid = session._get_current_object() and session.data.get('auth_user_id')
-    return OSFUser.objects.get(guid__guid=uid)
+    return OSFUser.load(uid)
 
 # TODO: This should be a class method of User?
 def get_user(email=None, password=None, verification_key=None):

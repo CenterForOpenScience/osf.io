@@ -657,8 +657,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 node=node,
                 user__is_active=True,
                 admin=True
-            ).values_list('user__guid__guid', flat=True)
-        contributor_ids = set(self.contributors.values_list('guid__guid', flat=True))
+            ).values_list('user__guids___id', flat=True)
+        contributor_ids = set(self.contributors.values_list('guids___id', flat=True))
         admin_ids = set()
         for parent in self.parents:
             admins = get_admin_contributor_ids(parent)
@@ -668,7 +668,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     @property
     def admin_contributors(self):
         return OSFUser.objects.filter(
-            guid__guid__in=self.admin_contributor_ids
+            guids___id__in=self.admin_contributor_ids
         ).order_by('family_name')
 
     def set_permissions(self, user, permissions, validate=True, save=False):
