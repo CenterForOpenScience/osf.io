@@ -182,7 +182,7 @@ def project_new_node(auth, node, **kwargs):
                 if contributor is user and not contributor.is_registered:
                     new_component.add_unregistered_contributor(
                         fullname=contributor.fullname, email=contributor.email,
-                        permissions=perm, auth=auth, user_created=contributor
+                        permissions=perm, auth=auth, existing_user=contributor
                     )
                 else:
                     new_component.add_contributor(contributor, permissions=perm, auth=auth)

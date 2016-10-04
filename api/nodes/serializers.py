@@ -358,7 +358,7 @@ class NodeSerializer(JSONAPISerializer):
                 if not contributor.is_registered:
                     node.add_unregistered_contributor(
                         fullname=contributor.fullname, email=contributor.email, auth=auth,
-                        permissions=parent.get_permissions(contributor), user_created=contributor
+                        permissions=parent.get_permissions(contributor), existing_user=contributor
                     )
 
                 node.add_contributors(contributors, auth=auth, log=True, save=True)
