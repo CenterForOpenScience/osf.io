@@ -348,7 +348,6 @@ class NodeSerializer(JSONAPISerializer):
             parent = validated_data['parent']
             contributors = []
             for contributor in parent.contributors:
-                print(parent.contributors)
                 if contributor is not user:
                     contributors.append({
                         'user': contributor,
