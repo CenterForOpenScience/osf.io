@@ -420,7 +420,7 @@ class GuidMixin(BaseIDMixin):
         try:
             # if referent doesn't exist it will return None
             return Guid.objects.get(_id=q).referent
-        except cls.DoesNotExist:
+        except Guid.DoesNotExist:
             # modm doesn't throw exceptions when loading things that don't exist
             return None
 
