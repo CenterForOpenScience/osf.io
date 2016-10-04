@@ -84,7 +84,7 @@ class TestReferent:
 
         assert user._id == user.guid.guid
 
-    @pytest.skip('I don\'t actually think we do this anywhere')
+    @pytest.mark.skip('I don\'t actually think we do this anywhere')
     @pytest.mark.parametrize('Factory',
      [
          UserFactory,
