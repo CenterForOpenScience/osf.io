@@ -433,6 +433,13 @@ class SubjectFactory(DjangoModelFactory):
     class Meta:
         model = models.Subject
 
+    @classmethod
+    def _create(cls, target_class, parents=None, *args, **kwargs):
+        ret = super(SubjectFactory, cls)._create(target_class, *args, **kwargs)
+        if parents:
+            ret.parents.add(*parents)
+        return ret
+
 
 class PreprintProviderFactory(DjangoModelFactory):
     name = factory.Faker('company')
@@ -457,7 +464,7 @@ class PreprintFactory(DjangoModelFactory):
     is_public = True
 
     class Meta:
-        model = models.Preprint
+        model = models.Node
 
     @classmethod
     def _create(cls, target_class, project=None, filename='preprint_file.txt', providers=None, doi=None, external_url=None, *args, **kwargs):
@@ -487,10 +494,11 @@ class PreprintFactory(DjangoModelFactory):
         # file.save()
         # project.set_preprint_file(file, auth=Auth(project.creator))
 
-        project.subjects = [SubjectFactory()._id]
+        project.preprint_subjects = [SubjectFactory()._id]
         if providers:
-            project.providers.add(*providers)
-        project.doi = doi
+            project.preprint_providers.add(*providers)
+        project.preprint_doi = doi
+        project.preprint_created = timezone.now()
         project.save()
 
         return project
@@ -577,3 +585,18 @@ class ForkFactory(DjangoModelFactory):
         fork = project.fork_node(auth=Auth(user), title=title)
         fork.save()
         return fork
+
+
+class IdentifierFactory(DjangoModelFactory):
+    class Meta:
+        model = models.Identifier
+
+    referent = factory.SubFactory(RegistrationFactory)
+    value = factory.Sequence(lambda n: 'carp:/2460{}'.format(n))
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        kwargs['category'] = kwargs.get('category', 'carpid')
+
+        return super(IdentifierFactory, cls)._create(*args, **kwargs)
+

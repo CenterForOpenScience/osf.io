@@ -149,6 +149,17 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
     view_category = 'preprints'
     view_name = 'preprint-list'
 
+    # overrides FilterMixin
+    def postprocess_query_param(self, key, field_name, operation):
+        # tag queries will usually be on Tag.name,
+        # ?filter[tags]=foo should be translated to Q('tags__name', 'eq', 'foo')
+        # But queries on lists should be tags, e.g.
+        # ?filter[tags]=foo,bar should be translated to Q('tags', 'isnull', True)
+        # ?filter[tags]=[] should be translated to Q('tags', 'isnull', True)
+        if field_name == 'tags':
+            if operation['value'] not in (list(), tuple()):
+                operation['source_field_name'] = 'tags__name'
+
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         return (
@@ -273,7 +284,7 @@ class PreprintPreprintProvidersList(JSONAPIBaseView, generics.ListAPIView, ODMFi
 
     def get_queryset(self):
         node = self.get_node()
-        return node.preprint_providers
+        return node.preprint_providers.all()
 
 
 class PreprintToPreprintProviderRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, PreprintMixin):
@@ -355,7 +366,7 @@ class PreprintToPreprintProviderRelationship(JSONAPIBaseView, generics.RetrieveU
     def get_object(self):
         preprint = self.get_node()
         obj = {
-            'data': preprint.preprint_providers,
+            'data': preprint.preprint_providers.all(),
             'self': preprint
         }
         return obj

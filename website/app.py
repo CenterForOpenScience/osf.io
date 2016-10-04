@@ -176,6 +176,8 @@ PATCHED_MODELS = (
     'MetaSchema',
     'NodeWikiPage',
     'Identifier',
+    'Subject',
+    'PreprintProvider',
 )
 
 # TODO: This won't work for modules that do e.g. `from website import models`. Rethink.

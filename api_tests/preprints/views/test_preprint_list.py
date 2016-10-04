@@ -8,7 +8,7 @@ from website.project import signals as project_signals
 
 
 from tests.base import ApiTestCase, capture_signals
-from tests.factories import (
+from osf_models_tests.factories import (
     ProjectFactory,
     PreprintFactory,
     AuthUserFactory,
@@ -51,10 +51,6 @@ class TestPreprintList(ApiTestCase):
 
         self.project = ProjectFactory(creator=self.user)
 
-    def tearDown(self):
-        super(TestPreprintList, self).tearDown()
-        Node.remove()
-
     def test_return_preprints_logged_out(self):
         res = self.app.get(self.url)
         assert_equal(len(res.json['data']), 1)
@@ -91,10 +87,6 @@ class TestPreprintFiltering(ApiTestCase):
         self.preprint_three.add_tag('stone', Auth(self.user), save=False)
         self.preprint_two.add_tag('cold', Auth(self.user), save=False)
         self.preprint_three.save()
-
-    def tearDown(self):
-        super(TestPreprintFiltering, self).tearDown()
-        Node.remove()
 
     def test_filtering_tags(self):
         # both preprint and preprint_two have nature boy
@@ -138,8 +130,8 @@ class TestPreprintCreate(ApiTestCase):
         self.user = AuthUserFactory()
         self.other_user = AuthUserFactory()
         self.private_project = ProjectFactory(creator=self.user)
-        self.public_project = ProjectFactory(creator=self.user, public=True)
-        self.public_project.add_contributor(self.other_user, permissions=[permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS], save=True)
+        self.public_project = ProjectFactory(creator=self.user, is_public=True)
+        self.public_project.add_contributor(self.other_user, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
         self.subject = SubjectFactory()
 
         self.user_two = AuthUserFactory()

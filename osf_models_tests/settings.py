@@ -10,6 +10,7 @@ DATABASES = {
         'PASSWORD': '',
         'PORT': '',
         'USER': '',
+        'ATOMIC_REQUESTS': True,
     }
 }
 SITE_ID = 1
