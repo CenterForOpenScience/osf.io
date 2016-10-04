@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-import mock
-import unittest
-from nose.tools import *  # flake8: noqa (PEP8 asserts)
-import httpretty
 import furl
+import httpretty
+import mock
+from nose.tools import *  # flake8: noqa (PEP8 asserts)
+import unittest
 
 from framework.auth import cas
 
@@ -42,10 +42,11 @@ def make_external_response(release=True):
     )
 
 
-def generate_external_user_with_resp(user=True, release=True):
+def generate_external_user_with_resp(service_url, user=True, release=True):
     """
     Generate mock user, external credential and cas response for tests.
 
+    :param service_url: the service url
     :param user: set to `False` if user does not exists
     :param release: set to `False` if attributes are not released due to privacy settings
     :return: existing user object or new user, valid external credential, valid cas response
@@ -67,6 +68,7 @@ def generate_external_user_with_resp(user=True, release=True):
             'external_id': validated_credentials['id'],
             'fullname': validated_credentials['id'],
             'access_token': cas_resp.attributes['accessToken'],
+            'service_url': service_url,
         }
         return user, validated_credentials, cas_resp
 
@@ -109,7 +111,6 @@ def test_parse_authorization_header():
         cas.parse_auth_header(missing_token)
 
 
-# TODO:
 class TestCASClient(OsfTestCase):
 
     def setUp(self):
