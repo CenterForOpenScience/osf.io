@@ -49,8 +49,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
     page = models.CharField(max_length=255, blank=True)
     content = models.TextField(
         validators=[validators.CommentMaxLength(settings.COMMENT_MAXLENGTH),
-                    validators.string_required],
-        blank=True
+                    validators.string_required]
     )
 
     # The mentioned users
