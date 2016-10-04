@@ -1,4 +1,5 @@
 
+import pytz
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.db.models import Q
@@ -133,6 +134,9 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
                 root_target = Guid.load(root_id)
             else:
                 raise ValueError('Invalid page')
+
+            if not view_timestamp.tzinfo:
+                view_timestamp = view_timestamp.replace(tzinfo=pytz.utc)
 
             return cls.objects.filter(
                 Q(node=node) & ~Q(user=user) & Q(is_deleted=False) &
