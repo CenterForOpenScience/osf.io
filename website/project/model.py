@@ -184,14 +184,10 @@ class MetaData(GuidStoredObject):
 
 
 def validate_contributor(guid, contributors):
-    user_id = User.load(guid).id
-    user = User.find(
-        Q('_id', 'eq', user_id) &
-        Q('is_claimed', 'eq', True)
-    )
-    if user.count() != 1:
+    user = User.load(guid)
+    if not user or not user.is_claimed:
         raise ValidationValueError('User does not exist or is not active.')
-    elif user[0] not in contributors:
+    elif user not in contributors:
         raise ValidationValueError('Mentioned user is not a contributor.')
     return True
 
