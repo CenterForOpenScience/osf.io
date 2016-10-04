@@ -152,7 +152,7 @@ class NodeFactory(BaseNodeFactory):
 
 class InstitutionFactory(DjangoModelFactory):
     name = factory.Faker('company')
-    auth_url = factory.Faker('url')
+    login_url = factory.Faker('url')
     logout_url = factory.Faker('url')
     domains = FakeList('url', n=3)
     email_domains = FakeList('domain_name', n=1)
@@ -494,7 +494,7 @@ class PreprintFactory(DjangoModelFactory):
         # file.save()
         # project.set_preprint_file(file, auth=Auth(project.creator))
 
-        project.preprint_subjects = [SubjectFactory()._id]
+        project.preprint_subjects.add(SubjectFactory())
         if providers:
             project.preprint_providers.add(*providers)
         project.preprint_doi = doi
