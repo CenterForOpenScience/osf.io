@@ -15,7 +15,7 @@ from dirtyfields import DirtyFieldsMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
-from django.db.models.signals import post_save, pre_save
+from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 from keen import scoped_keys
@@ -34,6 +34,7 @@ from osf_models.models.user import OSFUser
 from osf_models.models.spam import SpamMixin
 from osf_models.models.subject import Subject
 from osf_models.models.preprint_provider import PreprintProvider
+from osf_models.models.node_relation import NodeRelation
 from osf_models.models.validators import validate_title, validate_doi
 from osf_models.modm_compat import Q
 from osf_models.utils.auth import Auth, get_user
@@ -86,15 +87,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     modm_model_path = 'website.models.Node'
     modm_query = None
 
-    class Meta:
-        order_with_respect_to = 'parent_node'
-
     #: Whether this is a pointer or not
     primary = True
 
     FIELD_ALIASES = {
         # TODO: Find a better way
         '_id': 'guids___id',
+        'nodes': '_nodes',
         'contributors': '_contributors',
     }
 
@@ -192,10 +191,53 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     is_deleted = models.BooleanField(default=False, db_index=True)
     node_license = models.ForeignKey('NodeLicenseRecord', related_name='nodes',
                                      on_delete=models.SET_NULL, null=True, blank=True)
-    parent_node = models.ForeignKey('self',
-                                    related_name='nodes',
-                                    on_delete=models.SET_NULL,
-                                    null=True, blank=True)
+
+    _nodes = models.ManyToManyField('AbstractNode',
+                                   through=NodeRelation,
+                                   through_fields=('source', 'dest'),
+                                   related_name='parent_nodes')
+
+    @property
+    def nodes(self):
+        """Return ordered generator of nodes."""
+        return self.get_nodes()
+
+    @property
+    def linked_from(self):
+        """Return the nodes that have linked to this node."""
+        return self.parent_nodes.filter(node_relations__is_node_link=True)
+
+    @property
+    def linked_from_collections(self):
+        """Return the collections that have linked to this node."""
+        return self.linked_from.filter(type='osf_models.collection')
+
+    def get_nodes(self, **kwargs):
+        """Return ordered generator of nodes. ``kwargs`` are used to filter against
+        children.
+        """
+        # Prepend 'dest__' to kwargs for filtering
+        filter_kwargs = {'dest__{}'.format(key): val for key, val in kwargs.items()}
+        return (nr.dest for nr in NodeRelation.objects.filter(source=self,
+                                                              **filter_kwargs).select_related('dest'))
+
+    # TODO: This doesn't work for node links yet
+    @property
+    def parent_node(self):
+        node_rel = NodeRelation.objects.filter(
+            dest=self,
+            is_node_link=False
+        ).first()
+        return node_rel.source if node_rel else None
+
+    @property
+    def linked_nodes(self):
+        dest_pks = NodeRelation.objects.filter(
+            source=self,
+            is_node_link=True
+        ).values_list('dest', flat=True)
+        return self._nodes.filter(pk__in=dest_pks)
+
     # permissions = Permissions are now on contributors
     piwik_site_id = models.IntegerField(null=True, blank=True)
     public_comments = models.BooleanField(default=True)
@@ -402,10 +444,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def nodes_active(self):
-        linked_node_ids = list(self.linked_nodes.filter(is_deleted=False).values_list('pk', flat=True))
-        node_ids = list(self.nodes.filter(is_deleted=False).values_list('pk', flat=True))
+        node_ids = list(self._nodes.filter(is_deleted=False).values_list('pk', flat=True))
         return AbstractNode.objects.filter(
-            id__in=node_ids + linked_node_ids
+            id__in=node_ids
         )
 
     def web_url_for(self, view_name, _absolute=False, _guid=False, *args, **kwargs):
@@ -637,7 +678,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """
         if self.has_permission(user, permission):
             return True
-        for node in self.nodes.filter(is_deleted=False):
+        for node in self.nodes_primary.filter(is_deleted=False):
             if node.has_permission_on_children(user, permission):
                 return True
         return False
@@ -654,7 +695,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         in each descendant branch.
         """
         new_branches = []
-        for node in self.nodes.filter(is_deleted=False):
+        for node in self.nodes_primary.filter(is_deleted=False):
             if node.can_view(auth):
                 yield node
             else:
@@ -1035,7 +1076,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 messages.append(message)
 
         if recursive:
-            for child in self.nodes.filter(is_deleted=False):
+            for child in self._nodes.filter(is_deleted=False):
                 messages.extend(
                     child.callback(
                         callback, recursive, *args, **kwargs
@@ -1340,7 +1381,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             node.save()
 
         if parent:
-            registered.parent_node = parent
+            NodeRelation.objects.get_or_create(source=parent, dest=registered)
 
         # After register callback
         for addon in original.get_addons():
@@ -1348,20 +1389,23 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if message:
                 status.push_status_message(message, kind='info', trust=False)
 
-        child_pks = []
-        for node_contained in original.nodes.filter(is_deleted=False):
-            registered_child = node_contained.register_node(  # noqa
-                schema=schema,
-                auth=auth,
-                data=data,
-                parent=registered,
-            )
-            child_pks.append(registered_child.pk)
-        # Preserve ordering of children
-        registered.set_abstractnode_order(child_pks)
-
-        # Copy linked nodes
-        registered.linked_nodes.add(*original.linked_nodes.values_list('pk', flat=True))
+        for node_relation in original.node_relations.filter(dest__is_deleted=False):
+            node_contained = node_relation.dest
+            # Register child nodes
+            if not node_relation.is_node_link:
+                registered_child = node_contained.register_node(  # noqa
+                    schema=schema,
+                    auth=auth,
+                    data=data,
+                    parent=registered,
+                )
+            else:
+                # Copy linked nodes
+                NodeRelation.objects.get_or_create(
+                    is_node_link=True,
+                    source=registered,
+                    dest=node_contained
+                )
 
         registered.save()
 
@@ -1404,20 +1448,31 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             save=True,
         )
 
+    def get_primary(self, node):
+        return NodeRelation.objects.filter(source=self, dest=node, is_node_link=False).exists()
+
     # TODO optimize me
-    def get_descendants_recursive(self, include=lambda n: True):
-        for node in self.nodes.all():
-            if include(node):
-                yield node
-            if node.primary:
-                for descendant in node.get_descendants_recursive(include):
-                    if include(descendant):
+    def get_descendants_recursive(self, primary_only=False):
+        query = self.nodes_primary if primary_only else self._nodes
+        for node in query.all():
+            yield node
+            if not primary_only:
+                primary = self.get_primary(node)
+                if primary:
+                    for descendant in node.get_descendants_recursive(primary_only=primary_only):
                         yield descendant
+            else:
+                for descendant in node.get_descendants_recursive(primary_only=primary_only):
+                    yield descendant
 
     @property
     def nodes_primary(self):
         """For v1 compat."""
-        return self.nodes.all()
+        dest_pks = NodeRelation.objects.filter(
+            source=self,
+            is_node_link=False
+        ).values_list('dest', flat=True)
+        return self._nodes.filter(pk__in=dest_pks)
 
     @property
     def has_pointers_recursive(self):
@@ -1535,18 +1590,27 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         forked.tags.add(*self.tags.all())
 
-        # Recursively fork child nodes
-        for node_contained in original.nodes.filter(is_deleted=False).all():
-            forked_node = None
-            try:  # Catch the potential PermissionsError above
-                forked_node = node_contained.fork_node(auth=auth, title='')
-            except PermissionsError:
-                pass  # If this exception is thrown omit the node from the result set
-            if forked_node is not None:
-                forked.nodes.add(forked_node)
-
-        # Copy node links
-        forked.linked_nodes.add(*self.linked_nodes.values_list('pk', flat=True))
+        for node_relation in original.node_relations.filter(dest__is_deleted=False):
+            node_contained = node_relation.dest
+            # Register child nodes
+            if not node_relation.is_node_link:
+                try:  # Catch the potential PermissionsError above
+                    forked_node = node_contained.fork_node(auth=auth, title='')
+                except PermissionsError:
+                    pass  # If this exception is thrown omit the node from the result set
+                if forked_node is not None:
+                    NodeRelation.objects.get_or_create(
+                        is_node_link=False,
+                        source=forked,
+                        dest=forked_node
+                    )
+            else:
+                # Copy linked nodes
+                NodeRelation.objects.get_or_create(
+                    is_node_link=True,
+                    source=forked,
+                    dest=node_contained
+                )
 
         if title is None:
             forked.title = PREFIX + original.title
@@ -1696,7 +1760,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         returns a list of [(node, [children]), ...]
         """
         ret = []
-        for node in self.nodes.order_by('date_created').all():
+        for node in self._nodes.order_by('date_created').all():
             if condition(auth, node):
                 # base case
                 ret.append((node, []))
@@ -1710,7 +1774,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         :param node Node: target Node
         """
-        return itertools.chain([self], self.get_descendants_recursive(lambda n: n.primary))
+        return itertools.chain([self], self.get_descendants_recursive(primary_only=True))
 
     def active_contributors(self, include=lambda n: True):
         for contrib in self.contributors.filter(is_active=True):
@@ -2086,7 +2150,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 '{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node')
             )
 
-        if self.nodes.filter(is_deleted=False).exists():
+        if self.nodes_primary.filter(is_deleted=False).exists():
             raise NodeStateError('Any child components must be deleted prior to deleting this project.')
 
         # After delete callback
@@ -2468,8 +2532,12 @@ def send_osf_signal(sender, instance, created, **kwargs):
 
 # TODO: Add addons
 
-@receiver(pre_save, sender=Collection)
-@receiver(pre_save, sender=Node)
+@receiver(post_save, sender=Collection)
+@receiver(post_save, sender=Node)
 def set_parent(sender, instance, *args, **kwargs):
     if getattr(instance, '_parent', None):
-        instance.parent_node = instance._parent
+        NodeRelation.objects.get_or_create(
+            source=instance._parent,
+            dest=instance,
+            is_node_link=False
+        )

@@ -3,6 +3,7 @@ from django.db import models
 from django.apps import apps
 
 from osf_models.models.tag import Tag
+from osf_models.models.node_relation import NodeRelation
 from osf_models.models.nodelog import NodeLog
 from website.exceptions import (
     NodeStateError,
@@ -148,7 +149,6 @@ class AddonModelMixin(models.Model):
 
 
 class NodeLinkMixin(models.Model):
-    linked_nodes = models.ManyToManyField('AbstractNode')
 
     class Meta:
         abstract = True
@@ -164,13 +164,13 @@ class NodeLinkMixin(models.Model):
         # Fail if node already in nodes / pointers. Note: cast node and node
         # to primary keys to test for conflicts with both nodes and pointers
         # contained in `self.nodes`.
-        if self.linked_nodes.filter(id=node.id).exists():
+        if NodeRelation.objects.filter(source=self, dest=node, is_node_link=True).exists():
             raise ValueError(
                 'Link to node {0} already exists'.format(node._id)
             )
 
         if self.is_registration:
-            raise NodeStateError('Cannot add a pointer to a registration')
+            raise NodeStateError('Cannot add a node link to a registration')
 
         # If a folder, prevent more than one pointer to that folder.
         # This will prevent infinite loops on the project organizer.
@@ -185,7 +185,11 @@ class NodeLinkMixin(models.Model):
             )
 
         # Append node link
-        self.linked_nodes.add(node)
+        NodeRelation.objects.get_or_create(
+            source=self,
+            dest=node,
+            is_node_link=True
+        )
 
         # Add log
         if hasattr(self, 'add_log'):
@@ -222,7 +226,7 @@ class NodeLinkMixin(models.Model):
         if not self.linked_nodes.filter(id=node.id).exists():
             raise ValueError('Node link does not belong to the requested node.')
 
-        self.linked_nodes.remove(node)
+        self.node_relations.get(is_node_link=True, dest=node).delete()
 
         # Add log
         if hasattr(self, 'add_log'):
@@ -245,35 +249,20 @@ class NodeLinkMixin(models.Model):
     rm_pointer = rm_node_link  # For v1 compat
 
     @property
-    def linked_from(self):
-        """Return the nodes that have linked to this node."""
-        Node = apps.get_model('osf_models.Node')
-        return Node.objects.filter(linked_nodes=self)
-
-    @property
-    def linked_from_collections(self):
-        """Return the nodes that have linked to this node."""
-        Collection = apps.get_model('osf_models.Collection')
-        return Collection.objects.filter(linked_nodes=self)
-
-    @property
     def nodes_pointer(self):
         """For v1 compat"""
         return self.linked_nodes
 
     def get_points(self, folders=False, deleted=False):
-        if deleted:
-            query = self.linked_from.all()
-        else:
-            query = self.linked_from.filter(is_deleted=False).all()
-        ret = list(query)
-        if folders:
-            if deleted:
-                collection_query = self.linked_from_collections.all()
-            else:
-                collection_query = self.linked_from_collections.filter(is_deleted=False).all()
-            ret.extend(list(collection_query))
-        return ret
+        query = self.linked_from
+
+        if not folders:
+            query = query.exclude(type='osf_models.collection')
+
+        if not deleted:
+            query = query.exclude(is_deleted=True)
+
+        return list(query.all())
 
     def fork_node_link(self, node, auth, save=True):
         """Replace a linked node with a fork.
@@ -292,7 +281,11 @@ class NodeLinkMixin(models.Model):
         if forked is None:
             raise ValueError('Could not fork node')
 
-        self.nodes.add(forked)
+        NodeRelation.objects.get_or_create(
+            source=self,
+            dest=forked,
+            is_node_link=False
+        )
 
         if hasattr(self, 'add_log'):
             # Add log

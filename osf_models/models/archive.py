@@ -76,7 +76,7 @@ class ArchiveJob(ObjectIDMixin, BaseModel):
 
     @property
     def children(self):
-        return [node.archive_job for node in self.dst_node.nodes.all() if node.primary]
+        return [node.archive_job for node in self.dst_node.nodes_primary]
 
     @property
     def parent(self):
