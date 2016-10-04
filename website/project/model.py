@@ -1803,6 +1803,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
                 Node.bulk_update_search(batch)
                 children = children[99:]
 
+        # Send signal to notify that the node has been updated.
+        project_signals.node_updated.send(self)
+
         # Return expected value for StoredObject::save
         return saved_fields
 

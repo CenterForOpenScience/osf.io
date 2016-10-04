@@ -23,6 +23,7 @@ class InstitutionSerializer(JSONAPISerializer):
     logo_path = ser.CharField(read_only=True)
     description = ser.CharField(read_only=True)
     auth_url = ser.CharField(read_only=True)
+    date_modified = ser.DateTimeField(read_only=True)
     links = LinksField({'self': 'get_api_url', })
 
     nodes = RelationshipField(
