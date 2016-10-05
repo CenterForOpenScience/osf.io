@@ -410,7 +410,7 @@ class TestPublicNodes(SearchTestCase):
         with run_celery_tasks():
             self.project.save()        
         find = query('Green Flyer-Slow')['results']
-        assert_false(len(find), 1)      
+        assert_equal(len(find), 0)
 
     def test_public_parent_title(self):
         self.project.set_title('hello &amp; world', self.consolidate_auth)
