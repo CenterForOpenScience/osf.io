@@ -25,7 +25,7 @@ class MetaSchema(ObjectIDMixin, BaseModel):
     schema_version = models.IntegerField()
 
     class Meta:
-        unique_together = ('name', 'schema_version', '_id')
+        unique_together = ('name', 'schema_version')
 
     @property
     def _config(self):
