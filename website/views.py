@@ -20,7 +20,7 @@ from framework.routing import proxy_url
 from website.institutions.views import view_institution
 
 from website.models import Guid
-from website.models import Node, Institution, PreprintService
+from website.models import Node, Institution, PreprintService, StoredFileNode
 from website.project import new_bookmark_collection
 from website.settings import EXTERNAL_EMBER_APPS
 from website.util import permissions
@@ -184,6 +184,11 @@ def resolve_guid(guid, suffix=None):
         if isinstance(referent, PreprintService):
             return send_from_directory(
                 os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path'])),
+                'index.html'
+            )
+        if isinstance(referent, StoredFileNode):
+            return send_from_directory(
+                os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['project_file']['path'])),
                 'index.html'
             )
         url = _build_guid_url(urllib.unquote(referent.deep_url), suffix)

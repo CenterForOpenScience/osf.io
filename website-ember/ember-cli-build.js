@@ -7,7 +7,7 @@ module.exports = function(defaults) {
     var app = new EmberApp(defaults, {
         sassOptions: {
             includePaths: [
-                'tests/dummy/app/components'
+                // 'tests/dummy/app/components'
             ]
         },
     });
