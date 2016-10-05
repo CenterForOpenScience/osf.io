@@ -1,12 +1,13 @@
 from nose.tools import *
 
 from tests.base import ApiTestCase
-from tests.factories import InstitutionFactory, AuthUserFactory, ProjectFactory
+from tests.factories import InstitutionFactory, AuthUserFactory, ProjectFactory, NodeFactory
 
-from framework.auth import Auth
 from api.base.settings.defaults import API_BASE
 
+
 class TestInstitutionNodeList(ApiTestCase):
+
     def setUp(self):
         super(TestInstitutionNodeList, self).setUp()
         self.institution = InstitutionFactory()
@@ -42,3 +43,28 @@ class TestInstitutionNodeList(ApiTestCase):
         assert_in(self.node1._id, ids)
         assert_not_in(self.node2._id, ids)
         assert_not_in(self.node3._id, ids)
+
+    def test_affiliated_component_with_unaffiliated_parent_is_returned(self):
+        parent_node = ProjectFactory(is_public=True)
+        component_node = NodeFactory(is_public=True, parent=parent_node)
+        component_node.affiliated_institutions.append(self.institution)
+        component_node.save()
+
+        res = self.app.get(self.institution_node_url)
+        assert_equal(res.status_code, 200)
+        ids = [each['id'] for each in res.json['data']]
+
+        assert_in(component_node._id, ids)
+        assert_not_in(parent_node._id, ids)
+
+    def test_affiliated_component_with_affiliated_parent_is_returned(self):
+        component_node = NodeFactory(is_public=True, parent=self.node1)
+        component_node.affiliated_institutions.append(self.institution)
+        component_node.save()
+
+        res = self.app.get(self.institution_node_url)
+        assert_equal(res.status_code, 200)
+        ids = [each['id'] for each in res.json['data']]
+
+        assert_in(self.node1._id, ids)
+        assert_in(component_node._id, ids)

@@ -157,7 +157,6 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
         Q('is_deleted', 'ne', True) &
         Q('is_folder', 'ne', True) &
         Q('is_registration', 'eq', False) &
-        Q('parent_node', 'eq', None) &
         Q('is_public', 'eq', True)
     )
 
