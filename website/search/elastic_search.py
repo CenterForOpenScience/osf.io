@@ -30,7 +30,7 @@ from website.filters import gravatar
 from website.models import User, Node
 from website.project.licenses import serialize_node_license_record
 from website.search import exceptions
-from website.search.util import build_query, clean_splitters
+from website.search.util import build_query, clean_splitters 
 from website.util import sanitize
 from website.views import validate_page_num
 
@@ -399,7 +399,8 @@ def serialize_contributors(node):
                 'fullname': user.fullname,
                 'url': user.profile_url if user.is_active else None
             } for user in node.visible_contributors
-            if user is not None and user.is_active
+            if user is not None
+            and user.is_active
         ]
     }
 
