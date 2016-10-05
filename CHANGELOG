@@ -2,7 +2,7 @@
 Changelog
 *********
 
-0.95.0 (2016-09-22)
+0.95.0 (2016-10-05)
 ===================
 - Replace GPL-only django-queryset-csv library (the last of the GPL)
 - Allow domain with umlaut to be added to OSF social profile
@@ -12,7 +12,7 @@ Changelog
 - Add prereg banner to OSF dashboard
 - Pin MODM dependency
 - Surface analytics initialization script
-- Add error messaging on project page, files page, and prereg form "cannot uplaod folders"
+- Add error messaging on project page, files page, and prereg form "cannot upload folders"
 - Change preprint logs to say 'made' instead of 'initiated'
 - Fix raven-js calls on the OSF
 - Capitalize wiki's Home page on many of the logs
