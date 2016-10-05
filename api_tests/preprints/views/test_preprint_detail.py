@@ -48,71 +48,39 @@ class TestPreprintUpdate(ApiTestCase):
 
         self.subject = SubjectFactory()
 
-    def test_update_preprint_title(self):
-        update_title_payload = build_preprint_update_payload(self.preprint._id, attributes={'title': 'A new title'})
-
-        res = self.app.patch_json_api(self.url, update_title_payload, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-
-        self.preprint.reload()
-        assert_equal(self.preprint.title, 'A new title')
-
     def test_update_preprint_permission_denied(self):
-        update_title_payload = build_preprint_update_payload(self.preprint._id, attributes={'title': 'A new title'})
+        update_doi_payload = build_preprint_update_payload(self.preprint._id, attributes={'preprint_article_doi': '10.123/456/789'})
 
         noncontrib = AuthUserFactory()
 
-        res = self.app.patch_json_api(self.url, update_title_payload, auth=noncontrib.auth, expect_errors=True)
+        res = self.app.patch_json_api(self.url, update_doi_payload, auth=noncontrib.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-        res = self.app.patch_json_api(self.url, update_title_payload, expect_errors=True)
+        res = self.app.patch_json_api(self.url, update_doi_payload, expect_errors=True)
         assert_equal(res.status_code, 401)
 
-    def test_update_preprint_tags(self):
-        update_tags_payload = build_preprint_update_payload(self.preprint._id, attributes={'tags': ['newtag', 'bluetag']})
-
-        res = self.app.patch_json_api(self.url, update_tags_payload, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-
-        self.preprint.reload()
-        assert_in('newtag', self.preprint.tags)
-        assert_in('bluetag', self.preprint.tags)
-        assert_in('tag_added', [l.action for l in self.preprint.logs])
-
-    def test_update_preprint_tags_not_list(self):
-        update_tags_payload = build_preprint_update_payload(self.preprint._id, attributes={'tags': 'newtag'})
-
-        res = self.app.patch_json_api(self.url, update_tags_payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-
-    def test_update_preprint_none_tags(self):
-        update_tags_payload = build_preprint_update_payload(self.preprint._id, attributes={'tags': [None]})
-
-        res = self.app.patch_json_api(self.url, update_tags_payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-
-    def test_update_preprint_subjects(self):
-        assert_not_equal(self.preprint.preprint_subjects[0], self.subject._id)
-        update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"subjects": [self.subject._id]})
+    def test_update_subjects(self):
+        assert_not_equal(self.preprint.subjects[0], [self.subject._id])
+        update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"subjects": [[self.subject._id]]})
 
         res = self.app.patch_json_api(self.url, update_subjects_payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
         self.preprint.reload()
-        assert_equal(self.preprint.preprint_subjects[0], self.subject)
+        assert_equal(self.preprint.subjects[0], [self.subject._id])
 
     def test_update_invalid_subjects(self):
-        preprint_subjects = self.preprint.preprint_subjects
-        update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"subjects": ['wwe']})
+        subjects = self.preprint.subjects
+        update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"subjects": [['wwe']]})
 
         res = self.app.patch_json_api(self.url, update_subjects_payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
         self.preprint.reload()
-        assert_equal(self.preprint.preprint_subjects, preprint_subjects)
+        assert_equal(self.preprint.subjects, subjects)
 
     def test_update_primary_file(self):
-        new_file = test_utils.create_test_file(self.preprint, 'openupthatwindow.pdf')
+        new_file = test_utils.create_test_file(self.preprint.node, 'openupthatwindow.pdf')
         relationships = {
             "primary_file": {
                 "data": {
@@ -127,7 +95,7 @@ class TestPreprintUpdate(ApiTestCase):
         res = self.app.patch_json_api(self.url, update_file_payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
-        self.preprint.reload()
+        self.preprint.node.reload()
         assert_equal(self.preprint.preprint_file, new_file)
 
     def test_new_primary_not_in_node(self):
@@ -153,22 +121,22 @@ class TestPreprintUpdate(ApiTestCase):
 
     def test_update_doi(self):
         new_doi = '10.123/456/789'
-        assert_not_equal(self.preprint.preprint_doi, new_doi)
+        assert_not_equal(self.preprint.preprint_article_doi, new_doi)
         update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"doi": new_doi})
 
         res = self.app.patch_json_api(self.url, update_subjects_payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
-        self.preprint.reload()
-        assert_equal(self.preprint.preprint_doi, new_doi)
+        self.preprint.node.reload()
+        assert_equal(self.preprint.preprint_article_doi, new_doi)
 
         preprint_detail = self.app.get(self.url, auth=self.user.auth).json['data']
         assert_equal(preprint_detail['links']['doi'], 'https://dx.doi.org/{}'.format(new_doi))
 
     def test_write_contrib_cannot_set_preprint_file(self):
         user_two = AuthUserFactory()
-        self.preprint.add_contributor(user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
-        new_file = test_utils.create_test_file(self.preprint, 'openupthatwindow.pdf')
+        self.preprint.node.add_contributor(user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
+        new_file = test_utils.create_test_file(self.preprint.node, 'openupthatwindow.pdf')
 
         data = {
             'data':{
@@ -191,7 +159,7 @@ class TestPreprintUpdate(ApiTestCase):
 
     def test_noncontrib_cannot_set_preprint_file(self):
         user_two = AuthUserFactory()
-        new_file = test_utils.create_test_file(self.preprint, 'openupthatwindow.pdf')
+        new_file = test_utils.create_test_file(self.preprint.node, 'openupthatwindow.pdf')
 
         data = {
             'data':{
@@ -214,24 +182,24 @@ class TestPreprintUpdate(ApiTestCase):
 
     def test_write_contrib_cannot_set_subjects(self):
         user_two = AuthUserFactory()
-        self.preprint.add_contributor(user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
+        self.preprint.node.add_contributor(user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
         
-        assert_not_equal(self.preprint.preprint_subjects[0], self.subject._id)
-        update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"subjects": [self.subject._id]})
+        assert_not_equal(self.preprint.subjects[0], self.subject._id)
+        update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"subjects": [[self.subject._id]]})
 
         res = self.app.patch_json_api(self.url, update_subjects_payload, auth=user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-        assert_not_equal(self.preprint.preprint_subjects[0], self.subject._id)
+        assert_not_equal(self.preprint.subjects[0], self.subject._id)
 
     def test_noncontrib_cannot_set_subjects(self):
         user_two = AuthUserFactory()
-        self.preprint.add_contributor(user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
+        self.preprint.node.add_contributor(user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
         
-        assert_not_equal(self.preprint.preprint_subjects[0], self.subject._id)
-        update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"subjects": [self.subject._id]})
+        assert_not_equal(self.preprint.subjects[0], self.subject._id)
+        update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"subjects": [[self.subject._id]]})
 
         res = self.app.patch_json_api(self.url, update_subjects_payload, auth=user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-        assert_not_equal(self.preprint.preprint_subjects[0], self.subject._id)
+        assert_not_equal(self.preprint.subjects[0], self.subject._id)

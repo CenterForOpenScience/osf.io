@@ -5,7 +5,7 @@ from modularodm import Q
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from website.models import Node, PreprintProvider
+from website.models import Node, PreprintService, PreprintProvider
 
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin
@@ -173,17 +173,15 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFil
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
+        # TODO: this will return unpublished preprints so that users
+        # can find and resume the publishing workflow, but filtering
+        # public preprints should filter for `is_published`
         provider = PreprintProvider.find_one(Q('_id', 'eq', self.kwargs['provider_id']))
         return (
-            Q('preprint_file', 'ne', None) &
-            Q('is_deleted', 'ne', True) &
-            Q('is_public', 'eq', True) &
-            Q('preprint_providers', 'eq', provider)
+            Q('provider', 'eq', provider)
         )
 
     # overrides ListAPIView
     def get_queryset(self):
         query = self.get_query_from_request()
-        nodes = Node.find(query)
-
-        return (node for node in nodes if node.is_preprint)
+        return PreprintService.find(query)
