@@ -1,6 +1,7 @@
 import weakref
 from django.conf import settings as django_settings
 from django.http import JsonResponse
+from django.db import transaction
 from rest_framework.decorators import api_view, throttle_classes
 from rest_framework.response import Response
 from rest_framework import generics
@@ -105,7 +106,8 @@ class JSONAPIBaseView(generics.GenericAPIView):
                         view.paginator.request = request
                         ret = view.paginator.get_paginated_response(ret).data
             except Exception as e:
-                ret = view.handle_exception(e).data
+                with transaction.atomic():
+                    ret = view.handle_exception(e).data
 
             # Allow request to be gc'd
             ser._context = None
