@@ -35,9 +35,9 @@
                     % if not node["is_public"]:
                         <button class="btn btn-default disabled">Private</button>
                         % if 'admin' in user['permissions'] and not (node['is_pending_registration'] or node['is_pending_embargo']) and not (node['is_embargoed'] and parent_node['exists']):
-                        <a disabled data-bind="attr: {'disabled': false}, css: {'disabled': nodeIsPendingEmbargoTermination}" class="btn btn-default"  href="#nodesPrivacy" data-toggle="modal">
+                        <a disabled data-bind="attr: {'disabled': false}, css: {'disabled': nodeIsPendingEmbargoTermination}" class="btn btn-default" href="#nodesPrivacy" data-toggle="modal">
                           Make Public
-			  <!-- ko if: nodeIsPendingEmbargoTermination -->
+                          <!-- ko if: nodeIsPendingEmbargoTermination -->
                           <span class="fa fa-info-circle hidden" data-bind="css: {'hidden': false}, tooltip: {title: makePublicTooltip, placement: 'bottom', disabled: true}"></span>
                           <!-- /ko -->
                         </a>
@@ -49,6 +49,7 @@
                         <button class="btn btn-default disabled">Public</button>
                     % endif
                     </div>
+
                     <!-- ko if: canBeOrganized -->
                     <div class="btn-group" style="display: none;" data-bind="visible: true">
 
@@ -92,6 +93,9 @@
                                 <i class="fa fa-plus"></i> Award
                             </button>
                         </div>
+                    % endif
+                    % if node["is_public"]:
+                    <div class="btn-group" id="shareButtonsPopover"></div>
                     % endif
                 </div>
             </div>
@@ -175,10 +179,11 @@
                     % endif
                     </p>
                 <span data-bind="if: hasIdentifiers()" class="scripted">
-                  <br />
+                  <p>
                     Identifiers:
                   DOI <span data-bind="text: doi"></span> |
                   ARK <span data-bind="text: ark"></span>
+                  </p>
                 </span>
                 <span data-bind="if: canCreateIdentifiers()" class="scripted">
                   <!-- ko if: idCreationInProgress() -->
@@ -231,6 +236,27 @@
 
 % if user['can_comment'] or node['has_comments']:
     <%include file="include/comment_pane_template.mako"/>
+% endif
+
+% if node['is_preprint']:
+<div class="row">
+    <div class="col-xs-12">
+        <div class="pp-notice m-b-md p-md clearfix">
+            This project represents a preprint. <a href="http://help.osf.io/m/preprints">Learn more</a> about how to work with preprint files.
+            <a href="/preprints/${node['id']}/" class="btn btn-default btn-sm m-r-xs pull-right">View preprint</a>
+        </div>
+    </div>
+</div>
+% endif
+
+% if node['is_preprint_orphan'] and user['is_admin']:
+<div class="row">
+    <div class="col-xs-12">
+        <div class="pp-notice pp-warning m-b-md p-md clearfix">
+            This project used to represent a preprint, but the primary preprint file has been moved or deleted. <a href="/preprints/submit/" class="btn btn-default btn-sm m-r-xs pull-right">Create a new preprint</a>
+        </div> 
+    </div>
+</div>
 % endif
 
 <div class="row">
@@ -466,7 +492,13 @@ ${parent.javascript_bottom()}
             tags: ${ node['tags'] | sjson, n },
             institutions: ${node['institutions'] | sjson, n},
         },
-        nodeCategories: ${ node_categories | sjson, n }
+        nodeCategories: ${ node_categories | sjson, n },
+        analyticsMeta: {
+            pageMeta: {
+                title: 'Home',
+                public: true,
+            },
+        },
     });
 </script>
 

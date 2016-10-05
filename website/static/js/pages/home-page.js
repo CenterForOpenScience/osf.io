@@ -11,6 +11,8 @@ var lodashGet = require('lodash.get');
 var QuickSearchProject = require('js/home-page/quickProjectSearchPlugin');
 var NewAndNoteworthy = require('js/home-page/newAndNoteworthyPlugin');
 var MeetingsAndConferences = require('js/home-page/meetingsAndConferencesPlugin');
+var Preprints = require('js/home-page/preprintsPlugin');
+var Prereg = require('js/home-page/preregPlugin');
 var InstitutionsPanel = require('js/home-page/institutionsPanelPlugin');
 var ensureUserTimezone = require('js/ensureUserTimezone');
 
@@ -58,10 +60,26 @@ $(document).ready(function(){
 
                     ]
                 )),
+                m('.prereg', m('.container',
+                    [
+                        m('.row', [
+                            m(columnSizeClass,  m.component(Prereg, {}))
+                        ])
+
+                    ]
+                )),
                 m('.meetings', m('.container',
                     [
                         m('.row', [
                             m(columnSizeClass,  m.component(MeetingsAndConferences, {}))
+                        ])
+
+                    ]
+                )),
+                m('.preprints', m('.container',
+                    [
+                        m('.row', [
+                            m(columnSizeClass,  m.component(Preprints, {}))
                         ])
 
                     ]

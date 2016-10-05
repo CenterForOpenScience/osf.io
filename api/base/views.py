@@ -1,30 +1,33 @@
 import weakref
+from django.conf import settings as django_settings
 from django.http import JsonResponse
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, throttle_classes
 from rest_framework.response import Response
 from rest_framework import generics
 from rest_framework import status
 from rest_framework import permissions as drf_permissions
+from rest_framework.exceptions import ValidationError, NotFound
 
 from framework.auth.oauth_scopes import CoreScopes
 
 from rest_framework.mixins import ListModelMixin
 from api.base import permissions as base_permissions
 from api.base.exceptions import RelationshipPostMakesNoChanges
+from api.base.filters import ListFilterMixin
 
 from api.users.serializers import UserSerializer
 from api.base.parsers import JSONAPIRelationshipParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
+from api.base.requests import EmbeddedRequest
 from api.base.serializers import LinkedNodesRelationshipSerializer
+from api.base.serializers import LinkedRegistrationsRelationshipSerializer
+from api.base.throttling import RootAnonThrottle, UserRateThrottle
+from api.base import utils
 from api.nodes.permissions import ReadOnlyIfRegistration
+from api.nodes.permissions import ContributorOrPublic
 from api.nodes.permissions import ContributorOrPublicForRelationshipPointers
-
-from django.conf import settings as django_settings
-from .utils import absolute_reverse
-from .utils import is_truthy
-from .utils import get_user_auth
-
-from .requests import EmbeddedRequest
+from api.base.utils import is_bulk_request, get_user_auth
+from website.models import Pointer
 
 
 CACHE = weakref.WeakKeyDictionary()
@@ -141,7 +144,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
 
         context.update({
             'enable_esi': (
-                is_truthy(self.request.query_params.get('esi', django_settings.ENABLE_ESI)) and
+                utils.is_truthy(self.request.query_params.get('esi', django_settings.ENABLE_ESI)) and
                 self.request.accepted_renderer.media_type in django_settings.ESI_MEDIA_TYPES
             ),
             'embed': embeds_partials,
@@ -228,19 +231,21 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
 
     def get_object(self):
         object = self.get_node(check_object_permissions=False)
-        auth = get_user_auth(self.request)
+        auth = utils.get_user_auth(self.request)
         obj = {'data': [
             pointer for pointer in
             object.nodes_pointer
-            if not pointer.node.is_deleted and not pointer.node.is_collection and
-            pointer.node.can_view(auth)
+            if not pointer.node.is_deleted
+            and not pointer.node.is_collection
+            and not pointer.node.is_registration
+            and pointer.node.can_view(auth)
         ], 'self': object}
         self.check_object_permissions(self.request, obj)
         return obj
 
     def perform_destroy(self, instance):
         data = self.request.data['data']
-        auth = get_user_auth(self.request)
+        auth = utils.get_user_auth(self.request)
         current_pointers = {pointer.node._id: pointer for pointer in instance['data']}
         collection = instance['self']
         for val in data:
@@ -255,7 +260,115 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
         return ret
 
 
+class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView):
+    """ Relationship Endpoint for Linked Registrations relationships
+
+    Used to set, remove, update and retrieve the ids of the linked registrations attached to this collection. For each id, there
+    exists a node link that contains that registration.
+
+    ##Actions
+
+    ###Create
+
+        Method:        POST
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "linked_registrations",   # required
+                           "id": <node_id>   # required
+                         }]
+                       }
+        Success:       201
+
+    This requires both edit permission on the collection, and for the user that is
+    making the request to be able to read the registrations requested. Data can contain any number of
+    node identifiers. This will create a node_link for all node_ids in the request that
+    do not currently have a corresponding node_link in this collection.
+
+    ###Update
+
+        Method:        PUT || PATCH
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "linked_registrations",   # required
+                           "id": <node_id>   # required
+                         }]
+                       }
+        Success:       200
+
+    This requires both edit permission on the collection and for the user that is
+    making the request to be able to read the registrations requested. Data can contain any number of
+    node identifiers. This will replace the contents of the node_links for this collection with
+    the contents of the request. It will delete all node links that don't have a node_id in the data
+    array, create node links for the node_ids that don't currently have a node id, and do nothing
+    for node_ids that already have a corresponding node_link. This means a update request with
+    {"data": []} will remove all node_links in this collection
+
+    ###Destroy
+
+        Method:        DELETE
+        URL:           /links/self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": [{
+                           "type": "linked_registrations",   # required
+                           "id": <node_id>   # required
+                         }]
+                       }
+        Success:       204
+
+    This requires edit permission on the node. This will delete any node_links that have a
+    corresponding node_id in the request.
+    """
+    permission_classes = (
+        ContributorOrPublicForRelationshipPointers,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ReadOnlyIfRegistration,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_LINKS_READ]
+    required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
+
+    serializer_class = LinkedRegistrationsRelationshipSerializer
+    parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+
+    def get_object(self):
+        object = self.get_node(check_object_permissions=False)
+        auth = utils.get_user_auth(self.request)
+        obj = {'data': [
+            pointer for pointer in
+            object.nodes_pointer
+            if not pointer.node.is_deleted
+            and not pointer.node.is_collection
+            and pointer.node.is_registration
+            and pointer.node.can_view(auth)
+        ], 'self': object}
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+    def perform_destroy(self, instance):
+        data = self.request.data['data']
+        auth = utils.get_user_auth(self.request)
+        current_pointers = {pointer.node._id: pointer for pointer in instance['data']}
+        collection = instance['self']
+        for val in data:
+            if val['id'] in current_pointers:
+                collection.rm_pointer(current_pointers[val['id']], auth)
+
+    def create(self, *args, **kwargs):
+        try:
+            ret = super(LinkedRegistrationsRelationship, self).create(*args, **kwargs)
+        except RelationshipPostMakesNoChanges:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return ret
+
+
 @api_view(('GET',))
+@throttle_classes([RootAnonThrottle, UserRateThrottle])
 def root(request, format=None):
     """Welcome to the V2 Open Science Framework API. With this API you can access users, projects, components, logs, and files
     from the [Open Science Framework](https://osf.io/). The Open Science Framework (OSF) is a free, open-source service
@@ -557,7 +670,6 @@ def root(request, format=None):
         value        description
         ==========================================
         box          Box.com
-        cloudfiles   Rackspace Cloud Files
         dataverse    Dataverse
         dropbox      Dropbox
         figshare     figshare
@@ -580,15 +692,19 @@ def root(request, format=None):
             'current_user': current_user,
         },
         'links': {
-            'nodes': absolute_reverse('nodes:node-list'),
-            'users': absolute_reverse('users:user-list'),
-            'collections': absolute_reverse('collections:collection-list'),
-            'registrations': absolute_reverse('registrations:registration-list'),
-            'institutions': absolute_reverse('institutions:institution-list'),
-            'licenses': absolute_reverse('licenses:license-list'),
-            'metaschemas': absolute_reverse('metaschemas:metaschema-list'),
+            'nodes': utils.absolute_reverse('nodes:node-list'),
+            'users': utils.absolute_reverse('users:user-list'),
+            'collections': utils.absolute_reverse('collections:collection-list'),
+            'registrations': utils.absolute_reverse('registrations:registration-list'),
+            'institutions': utils.absolute_reverse('institutions:institution-list'),
+            'licenses': utils.absolute_reverse('licenses:license-list'),
+            'metaschemas': utils.absolute_reverse('metaschemas:metaschema-list'),
+            'addons': utils.absolute_reverse('addons:addon-list'),
         }
     }
+
+    if utils.has_admin_scope(request):
+        return_val['meta']['admin'] = True
 
     return Response(return_val)
 
@@ -599,3 +715,105 @@ def error_404(request, format=None, *args, **kwargs):
         status=404,
         content_type='application/vnd.api+json; application/json'
     )
+
+
+class BaseContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView):
+
+    # overrides RetrieveAPIView
+    def get_object(self):
+        node = self.get_node()
+        user = self.get_user()
+        # May raise a permission denied
+        self.check_object_permissions(self.request, user)
+        if user not in node.contributors:
+            raise NotFound('{} cannot be found in the list of contributors.'.format(user))
+        user.permission = node.get_permissions(user)[-1]
+        user.bibliographic = node.get_visible(user)
+        user.node_id = node._id
+        user.index = node.contributors.index(user)
+        return user
+
+class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
+
+    def get_default_queryset(self):
+        node = self.get_node()
+        visible_contributors = set(node.visible_contributor_ids)
+        contributors = []
+        index = 0
+        for contributor in node.contributors:
+            contributor.index = index
+            contributor.bibliographic = contributor._id in visible_contributors
+            contributor.permission = node.get_permissions(contributor)[-1]
+            contributor.node_id = node._id
+            contributors.append(contributor)
+            index += 1
+        return contributors
+
+    def get_queryset(self):
+        queryset = self.get_queryset_from_request()
+        # If bulk request, queryset only contains contributors in request
+        if is_bulk_request(self.request):
+            contrib_ids = []
+            for item in self.request.data:
+                try:
+                    contrib_ids.append(item['id'].split('-')[1])
+                except AttributeError:
+                    raise ValidationError('Contributor identifier not provided.')
+                except IndexError:
+                    raise ValidationError('Contributor identifier incorrectly formatted.')
+            queryset[:] = [contrib for contrib in queryset if contrib._id in contrib_ids]
+        return queryset
+
+class BaseNodeLinksDetail(JSONAPIBaseView, generics.RetrieveAPIView):
+
+    def get_queryset(self):
+        auth = get_user_auth(self.request)
+        return sorted([
+            pointer.node for pointer in
+            self.get_node().nodes_pointer
+            if not pointer.node.is_deleted and not pointer.node.is_collection and
+            pointer.node.can_view(auth) and not pointer.node.is_retracted
+        ], key=lambda n: n.date_modified, reverse=True)
+
+
+class BaseNodeLinksList(JSONAPIBaseView, generics.ListAPIView):
+
+    def get_queryset(self):
+        auth = get_user_auth(self.request)
+        return sorted([
+            pointer.node for pointer in
+            self.get_node().nodes_pointer
+            if not pointer.node.is_deleted and not pointer.node.is_collection and
+            pointer.node.can_view(auth) and not pointer.node.is_retracted
+        ], key=lambda n: n.date_modified, reverse=True)
+
+
+class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ContributorOrPublic,
+        ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_LINKS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    # subclass must set
+    serializer_class = None
+    view_category = None
+    view_name = None
+
+    model_class = Pointer
+
+    def get_queryset(self):
+        auth = get_user_auth(self.request)
+        return sorted([
+            pointer.node for pointer in
+            self.get_node().nodes_pointer
+            if not pointer.node.is_deleted
+            and not pointer.node.is_collection
+            # and pointer.node.is_registration
+            and pointer.node.can_view(auth)
+        ], key=lambda n: n.date_modified, reverse=True)

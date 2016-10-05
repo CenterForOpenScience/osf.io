@@ -10,6 +10,7 @@ from framework.auth import cas
 from tests.base import OsfTestCase, fake
 from tests.factories import UserFactory
 
+
 def make_successful_response(user):
     return cas.CasResponse(
         authenticated=True, user=user._primary_key,
@@ -18,10 +19,56 @@ def make_successful_response(user):
         }
     )
 
+
 def make_failure_response():
     return cas.CasResponse(
         authenticated=False, user=None,
     )
+
+
+def make_external_response(release=True):
+    attributes = {
+            'accessToken': fake.md5(),
+    }
+    if release:
+        attributes.update({
+            'given-names': fake.first_name(),
+            'family-name': fake.last_name(),
+        })
+    return cas.CasResponse(
+        authenticated=True,
+        user='OrcidProfile#{}'.format(fake.numerify('####-####-####-####')),
+        attributes=attributes
+    )
+
+
+def generate_external_user_with_resp(user=True, release=True):
+    """
+    Generate mock user, external credential and cas response for tests.
+
+    :param user: set to `False` if user does not exists
+    :param release: set to `False` if attributes are not released due to privacy settings
+    :return: existing user object or new user, valid external credential, valid cas response
+    """
+    cas_resp = make_external_response(release=release)
+    validated_credentials = cas.validate_external_credential(cas_resp.user)
+    if user:
+        user = UserFactory.build()
+        user.external_identity = {
+            validated_credentials['provider']: {
+                validated_credentials['id']: 'VERIFIED'
+            }
+        }
+        user.save()
+        return user, validated_credentials, cas_resp
+    else:
+        user = {
+            'external_id_provider': validated_credentials['provider'],
+            'external_id': validated_credentials['id'],
+            'fullname': validated_credentials['id'],
+            'access_token': cas_resp.attributes['accessToken'],
+        }
+        return user, validated_credentials, cas_resp
 
 RESPONSE_TEMPLATE = """
 <cas:serviceResponse xmlns:cas='http://www.yale.edu/tp/cas'>
@@ -39,6 +86,8 @@ RESPONSE_TEMPLATE = """
     </cas:authenticationSuccess>
 </cas:serviceResponse>
 """
+
+
 def make_service_validation_response_body(user, access_token=None):
     token = access_token or fake.md5()
     return RESPONSE_TEMPLATE.format(
@@ -187,6 +236,78 @@ class TestCASTicketAuthentication(OsfTestCase):
         self.user.verification_key = fake.md5()
         self.user.save()
         mock_response = make_successful_response(self.user)
+        mock_service_validate.return_value = mock_response
+        ticket = fake.md5()
+        service_url = 'http://accounts.osf.io/?ticket=' + ticket
+        resp = cas.make_response_from_ticket(ticket, service_url)
+
+
+class TestCASExternalLogin(OsfTestCase):
+
+    def setUp(self):
+        super(TestCASExternalLogin, self).setUp()
+        self.user = UserFactory()
+
+    def test_get_user_from_cas_resp_already_authorized(self):
+        mock_response = make_external_response()
+        validated_creds = cas.validate_external_credential(mock_response.user)
+        self.user.external_identity = {
+            validated_creds['provider']: {
+                validated_creds['id']: 'VERIFIED'
+            }
+        }
+        self.user.save()
+        user, _, action = cas.get_user_from_cas_resp(mock_response)
+        assert_equal(user._id, self.user._id)
+        assert_equal(action, 'authenticate')
+
+    def test_get_user_from_cas_resp_not_authorized(self):
+        user, _, action = cas.get_user_from_cas_resp(make_external_response())
+        assert_equal(user, None)
+        assert_equal(action, 'external_first_login')
+
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_make_response_from_ticket_with_user(self, mock_service_validate):
+        mock_response = make_external_response()
+        mock_service_validate.return_value = mock_response
+        validated_creds = cas.validate_external_credential(mock_response.user)
+        self.user.external_identity = {
+            validated_creds['provider']: {
+                validated_creds['id']: 'VERIFIED'
+            }
+        }
+        self.user.save()
+        ticket = fake.md5()
+        service_url = 'http://accounts.osf.io/?ticket=' + ticket
+        resp = cas.make_response_from_ticket(ticket, service_url)
+        assert_equal(resp.status_code, 302)
+        assert_equal(mock_service_validate.call_count, 1)
+        first_call_args = mock_service_validate.call_args[0]
+        assert_equal(first_call_args[0], ticket)
+        assert_equal(first_call_args[1], 'http://accounts.osf.io/')
+
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_make_response_from_ticket_no_user(self, mock_service_validate):
+        mock_response = make_external_response()
+        mock_service_validate.return_value = mock_response
+        ticket = fake.md5()
+        service_url = 'http://accounts.osf.io/?ticket=' + ticket
+        resp = cas.make_response_from_ticket(ticket, service_url)
+        assert_equal(resp.status_code, 302)
+        assert_equal(resp.location, '/external-login/email')
+
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_make_response_from_ticket_invalidates_verification_key(self, mock_service_validate):
+        self.user.verification_key = fake.md5()
+        self.user.save()
+        mock_response = make_external_response()
+        validated_creds = cas.validate_external_credential(mock_response.user)
+        self.user.external_identity = {
+            validated_creds['provider']: {
+                validated_creds['id']: 'VERIFIED'
+            }
+        }
+        self.user.save()
         mock_service_validate.return_value = mock_response
         ticket = fake.md5()
         service_url = 'http://accounts.osf.io/?ticket=' + ticket

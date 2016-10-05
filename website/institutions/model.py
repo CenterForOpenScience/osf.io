@@ -63,13 +63,14 @@ class Institution(object):
     attribute_map = {
         '_id': 'institution_id',
         'auth_url': 'institution_auth_url',
+        'logout_url': 'institution_logout_url',
         'domains': 'institution_domains',
         'name': 'title',
         'logo_name': 'institution_logo_name',
         'description': 'description',
         'email_domains': 'institution_email_domains',
         'banner_name': 'institution_banner_name',
-        'is_deleted': 'is_deleted'
+        'is_deleted': 'is_deleted',
     }
 
     def __init__(self, node=None):
@@ -161,13 +162,21 @@ class Institution(object):
     @property
     def logo_path(self):
         if self.logo_name:
-            return '/static/img/institutions/{}'.format(self.logo_name)
+            return '/static/img/institutions/shields/{}'.format(self.logo_name)
+        else:
+            return None
+
+    @property
+    def logo_path_rounded_corners(self):
+        logo_base = '/static/img/institutions/shields-rounded-corners/{}-rounded-corners.png'
+        if self.logo_name:
+            return logo_base.format(self.logo_name.replace('.png', ''))
         else:
             return None
 
     @property
     def banner_path(self):
         if self.banner_name:
-            return '/static/img/institutions/{}'.format(self.banner_name)
+            return '/static/img/institutions/banners/{}'.format(self.banner_name)
         else:
             return None

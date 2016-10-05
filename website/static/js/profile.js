@@ -11,6 +11,37 @@ var $osf = require('./osfHelpers');
 var koHelpers = require('./koHelpers');
 require('js/objectCreateShim');
 
+// Adapted from Django URLValidator
+function urlRegex() {
+    var ul = '\\u00a1-\\uffff'; // unicode character range
+    // IP patterns
+    var ipv4_re = '(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(?:\\.(?:25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}';
+    var ipv6_re = '\\[[0-9a-f:\\.]+\\]';  // (simple regex, validated later)
+
+    // Host patterns
+    var hostname_re = '[a-z' + ul + '0-9](?:[a-z' + ul + '0-9-]{0,61}[a-z' + ul + '0-9])?';
+    // Max length for domain name labels is 63 characters per RFC 1034 sec. 3.1
+    var domain_re = '(?:\\.(?!-)[a-z' + ul + '0-9-]{0,62}[a-z' + ul + '0-9])*';
+    var tld_re = (
+        '\\.' +                               // dot
+        '(?!-)' +                             // can't start with a dash
+        '(?:xn--[a-z0-9]{1,59}' +             // punycode labels (first for an eager regex match)
+        '|[a-z' + ul + '-]{1,62}' +           // or domain label
+        '[a-z' + ul + '])' +                  // can't end with a dash
+        '\\.?');                              // may have a trailing dot
+    var host_re = '(' + hostname_re + domain_re + tld_re + '|localhost)';
+
+    var regex = (
+        '^(?:[a-z0-9\\.\\-\\+]*):\\/\\/' +  // scheme is validated separately
+        '(?:\\S+(?::\\S*)?@)?' +  // user:pass authentication
+        '(?:' + ipv4_re + '|' + ipv6_re + '|' + host_re + ')' +
+        '(?::\\d{2,5})?' +  // port
+        '(?:[/?#][^\\s]*)?' +  // resource path
+        '$');
+
+    return new RegExp(regex, 'i');
+}
+
 var socialRules = {
     orcid: /orcid\.org\/([-\d]+)/i,
     researcherId: /researcherid\.com\/rid\/([-\w]+)/i,
@@ -22,12 +53,8 @@ var socialRules = {
     researchGate: /researchgate\.net\/profile\/(\w+)/i,
     academia: /(\w+)\.academia\.edu\/(\w+)/i,
     baiduScholar: /xueshu\.baidu\.com\/scholarID\/(\w+)/i,
-    url: '^(https?:\\/\\/)?'+ // protocol
-            '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // domain name
-            '((\\d{1,3}\\.){3}\\d{1,3}))'+ // OR ip (v4) address
-            '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // port and path
-            '(\\?[;&a-z\\d%_.~+=-]*)?'+ // query string
-            '(\\#[-a-z\\d_]*)?$'
+    ssrn: /papers\.ssrn\.com\/sol3\/cf\_dev\/AbsByAuth\.cfm\?per\_id=(\w+)/i,
+    url: urlRegex()
 };
 
 var cleanByRule = function(rule) {
@@ -521,12 +548,24 @@ var SocialViewModel = function(urls, modes) {
         return false;
     });
 
+    function urlIsValid(value) {
+        // First validate the scheme
+        var schemes = ['http', 'https', 'ftp', 'ftps'];
+        if (value.indexOf('://') === -1) {
+            value = 'http://' + value;
+        }
+        var scheme = value.split('://')[0].toLowerCase();
+        if (schemes.indexOf(scheme) === -1) {
+            return false;
+        }
+        return socialRules.url.test(value);
+    }
+
     self.hasValidWebsites = ko.pureComputed(function() {
         //Check to see if there are bad profile websites
         var profileWebsites = ko.toJS(self.profileWebsites());
-        var urlexp = new RegExp(socialRules.url,'i'); // fragment locator
         for (var i=0; i<profileWebsites.length; i++) {
-            if (profileWebsites[i] && !urlexp.test(profileWebsites[i])) {
+            if (profileWebsites[i] && !urlIsValid(profileWebsites[i])) {
                 return false;
             }
         }
@@ -578,6 +617,10 @@ var SocialViewModel = function(urls, modes) {
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.baiduScholar)}),
         self, 'baiduScholar', 'http://xueshu.baidu.com/scholarID/'
     );
+    self.ssrn = extendLink(
+        ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.ssrn)}),
+        self, 'ssrn', 'http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id='
+    );
 
     self.trackedProperties = [
         self.profileWebsites,
@@ -591,7 +634,8 @@ var SocialViewModel = function(urls, modes) {
         self.researchGate,
         self.academiaInstitution,
         self.academiaProfileID,
-        self.baiduScholar
+        self.baiduScholar,
+        self.ssrn,
     ];
 
     var validated = ko.validatedObservable(self);
@@ -611,7 +655,8 @@ var SocialViewModel = function(urls, modes) {
             {label: 'Google Scholar', text: self.scholar(), value: self.scholar.url()},
             {label: 'ResearchGate', text: self.researchGate(), value: self.researchGate.url()},
             {label: 'Academia', text: self.academiaInstitution() + '.academia.edu/' + self.academiaProfileID(), value: self.academiaInstitution.url() + self.academiaProfileID.url()},
-            {label: 'Baidu Scholar', text: self.baiduScholar(), value: self.baiduScholar.url()}
+            {label: 'Baidu Scholar', text: self.baiduScholar(), value: self.baiduScholar.url()},
+            {label: 'SSRN', text: self.ssrn(), value: self.ssrn.url()},
         ];
     });
 
@@ -714,6 +759,7 @@ SocialViewModel.prototype.submit = function() {
         );
     }
     else if (this.hasValidProperty() && this.isValid()) {
+        var self = this;
         this.saving(true);
         $osf.putJSON(
             this.urls.crud,
@@ -725,7 +771,7 @@ SocialViewModel.prototype.submit = function() {
         ).fail(
             this.handleError.bind(this)
         ).always(
-            function() { this.saving(false); }
+            function() { self.saving(false); }
         );
     } else {
         this.showMessages(true);
@@ -1066,4 +1112,3 @@ module.exports = {
     SocialViewModel: SocialViewModel,
     BaseViewModel: BaseViewModel
 };
-

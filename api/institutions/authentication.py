@@ -52,7 +52,7 @@ class InstitutionAuthentication(BaseAuthentication):
         username = provider['user']['username']
         fullname = provider['user']['fullname']
 
-        user, created = get_or_create_user(fullname, username)
+        user, created = get_or_create_user(fullname, username, reset_password=False)
 
         if created:
             user.given_name = provider['user'].get('givenName')

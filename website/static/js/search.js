@@ -88,6 +88,7 @@ var ViewModel = function(params) {
     self.currentPage = ko.observable(1);
     self.totalResults = ko.observable(0);
     self.results = ko.observableArray([]);
+    self.urlLists = ko.observableArray([]);
     self.searching = ko.observable(false);
     self.resultsPerPage = ko.observable(10);
     self.categories = ko.observableArray([]);
@@ -282,7 +283,9 @@ var ViewModel = function(params) {
         self.currentPage(1);
         self.category(alias);
         if (alias.name === 'SHARE') {
-            document.location = '/share/?' + $.param({q: self.query()});
+            var win = window.open(window.contextVars.shareUrl + 'discover?' + $.param({q: self.query()}), '_blank');
+            win.opener = null;
+            win.focus();
         } else {
             self.search();
         }
@@ -350,12 +353,21 @@ var ViewModel = function(params) {
         };
         var url = self.queryUrl + self.category().url();
 
+        var shareQuery = {
+            query: {
+                query_string: {
+                    query: self.query()
+                }
+            }
+        };
+
         $osf.postJSON(url, jsonData).success(function(data) {
 
             //Clear out our variables
             self.tags([]);
             self.tagMaxCount(1);
             self.results.removeAll();
+            self.urlLists.removeAll();
             self.categories.removeAll();
             self.shareCategory('');
 
@@ -384,7 +396,10 @@ var ViewModel = function(params) {
 
             data.results.forEach(function(result){
                 if(result.category === 'user'){
-                    self.results.push(new User(result));
+                    if ($.inArray(result.url, self.urlLists()) === -1) {
+                        self.results.push(new User(result));
+                        self.urlLists.push(result.url);
+                    }
                 }
                 else {
                     if(typeof result.url !== 'undefined'){
@@ -443,7 +458,7 @@ var ViewModel = function(params) {
                 self.pushState();
             }
 
-            $osf.postJSON('/api/v1/share/search/?count&v=1', jsonData).success(function(data) {
+            $osf.postJSON(window.contextVars.shareUrl + 'api/v2/search/abstractcreativework/_count', shareQuery).success(function(data) {
                 self.shareCategory(new Category('SHARE', data.count, 'SHARE'));
             });
 

@@ -17,10 +17,10 @@ var MESSAGES = {
     makeProjectPublicWarning:
     'Please review your projects, components, and add-ons for sensitive or restricted information before making them public.' +
     '<br><br>Once they are made public, you should assume they will always be public. You can ' +
-        'return them to private later, but search engines (including Google’s cache) or others may access files before you do.',
+        'return them to private later, but search engines (including Google’s cache) or others may access files, wiki pages, or analytics before you do.',
     makeProjectPrivateWarning:
     '<ul><li>Public forks and registrations of this project will remain public.</li>' +
-    '<li>Search engines (including Google\'s cache) or others may have accessed files while this project was public.</li></ul>',
+    '<li>Search engines (including Google\'s cache) or others may have accessed files, wiki pages, or analytics while this project was public.</li></ul>',
     makeEmbargoPublicWarning: 'By clicking confirm, an email will be sent to project administrator(s) to approve ending the embargo. If approved, this registration, including any components, will be made public immediately. This action is irreversible.',
     makeEmbargoPublicTitle: 'End embargo early',
     selectNodes: 'Adjust your privacy settings by checking the boxes below. ' +
@@ -30,7 +30,9 @@ var MESSAGES = {
         nodesPrivate: 'The following projects and components will be made <b>private</b>.',
         nodesNotChangedWarning: 'No privacy settings were changed. Go back to make a change.',
         tooManyNodesWarning: 'You can only change the privacy of 100 projects and components at a time.  Please go back and limit your selection.'
-    }
+    },
+    preprintPrivateWarning: 'The project you are attempting to make private currently represents a preprint.' +
+    '<p><strong>Making this project private will remove this preprint from circulation.</strong></p>'
 };
 
 function _flattenNodeTree(nodeTree) {
@@ -109,6 +111,7 @@ var NodesPrivacyViewModel = function(node, onSetPrivacy) {
     self.parentIsEmbargoed = node.is_embargoed;
     self.parentIsPublic = node.is_public;
     self.parentNodeType = node.node_type;
+    self.isPreprint = node.is_preprint;
     self.treebeardUrl = window.contextVars.node.urls.api  + 'tree/';
     self.nodesOriginal = {};
     self.nodesChanged = ko.observable();
@@ -157,6 +160,10 @@ var NodesPrivacyViewModel = function(node, onSetPrivacy) {
             return MESSAGES.makeEmbargoPublicWarning;
         }
 
+        if (self.page() === self.WARNING &&  self.isPreprint) {
+            return MESSAGES.preprintPrivateWarning + MESSAGES.makeProjectPrivateWarning;
+        }
+
         return {
             warning: self.parentIsPublic ?
                 MESSAGES.makeProjectPrivateWarning :
@@ -195,7 +202,9 @@ NodesPrivacyViewModel.prototype.fetchNodeTree = function() {
     }).fail(function(xhr, status, error) {
         $osf.growl('Error', 'Unable to retrieve project settings');
         Raven.captureMessage('Could not GET project settings.', {
-            url: self.treebeardUrl, status: status, error: error
+            extra: {
+                url: self.treebeardUrl, status: status, error: error
+            }
         });
     });
 };
@@ -235,17 +244,22 @@ NodesPrivacyViewModel.prototype.confirmChanges =  function() {
         patchNodesPrivacy(nodesChanged).then(function () {
             self.onSetPrivacy(nodesChanged);
 
-            $osf.unblock();
             self.nodesChangedPublic([]);
             self.nodesChangedPrivate([]);
             self.page(self.WARNING);
             window.location.reload();
-        }).fail(function () {
+        }).fail(function (xhr) {
             $osf.unblock();
-            $osf.growl('Error', 'Unable to update project privacy');
+            var errorMessage = 'Unable to update project privacy';
+            if (xhr.responseJSON && xhr.responseJSON.errors) {
+                errorMessage = xhr.responseJSON.errors[0].detail;
+            }
+            $osf.growl('Problem changing privacy', errorMessage);
             Raven.captureMessage('Could not PATCH project settings.');
             self.clear();
-            window.location.reload();
+            $('#nodesPrivacy').modal('hide');
+        }).always(function() {
+            $osf.unblock();
         });
     }
 };

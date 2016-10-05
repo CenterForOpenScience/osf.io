@@ -1,4 +1,5 @@
 <%inherit file="project/project_base.mako"/>
+
 <div id="alertBar"></div>
 
 ## Use full page width
@@ -15,6 +16,7 @@
     <h2 class="break-word">
       ## Split file name into two parts: with and without extension
       ${file_name_title | h}<span id="file-ext">${file_name_ext | h}</span>
+      <a id='versionLink' class='scripted'>(Version: ${ version_id | h})</a>
       % if file_revision:
         <small>&nbsp;${file_revision | h}</small>
       % endif
@@ -25,6 +27,18 @@
   </div>
 </div>
 <hr>
+
+%if file_id == node['preprint_file_id'] and node['is_public']:
+<div class="row">
+    <div class="col-xs-12">
+        <div class="preprint-notice m-b-md p-md clearfix">
+            This is the primary file for a preprint. <a href="http://help.osf.io/m/preprints">Learn more</a> about how to work with preprint files.
+            <a href="/preprints/${node['id']}/" class="btn btn-default btn-sm m-r-xs pull-right">View preprint</a>
+        </div>
+    </div>
+</div>
+% endif
+
 <div class="row">
 
   <div id="file-navigation" class="panel-toggle col-sm-3 file-tree">
@@ -209,12 +223,18 @@
         panelsUsed: ['edit', 'view'],
         currentUser: {
           canEdit: ${ int(user['can_edit']) | sjson, n }
-        }
+        },
+        analyticsMeta: {
+            pageMeta: {
+                title: 'File: ' + ${file_name | sjson, n},
+                public: true,
+            },
+        },
       });
       window.contextVars.file.urls.external = window.contextVars.file.extra.webView;
     </script>
 
-    <link href="/static/css/pages/file-view-page.css" rel="stylesheet">
+    <link href="/static/css/pages/file-view-page.css" rel="stylesheet" />
     <link href="${urls['mfr']}/static/css/mfr.css" media="all" rel="stylesheet" />
     <script src="${urls['mfr']}/static/js/mfr.js"></script>
 

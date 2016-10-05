@@ -185,7 +185,7 @@ $ cp api/base/settings/local-dist.py api/base/settings/local.py
 - On MacOSX with [homebrew](http://brew.sh/), there is a script that should automate much of the install process:
 
 ```bash
-$ pip install invoke==0.12.2
+$ pip install invoke==0.13.0
 $ invoke setup
 ```
 
@@ -283,6 +283,12 @@ $ apt-get update
 $ apt-get install tokumx
 ```
 
+##### Installing on REHL/CentOS
+
+```bash
+$ sudo yum install http://www.percona.com/downloads/percona-release/redhat/0.1-3/percona-release-0.1-3.noarch.rpm
+```
+
 ##### Migrating from MongoDB
 
 TokuMX and MongoDB use different binary formats. To migrate data from MongoDB to TokuMX:
@@ -345,6 +351,12 @@ _note: Oracle JDK 7 must be installed for elasticsearch to run_
 ```bash
 $ wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.2.1.deb
 $ sudo dpkg -i elasticsearch-1.2.1.deb
+```
+
+##### REHL/CentOS
+```bash
+$ wget https://download.elastic.co/elasticsearch/elasticsearch/elasticsearch-1.2.1.noarch.rpm
+$ sudo rpm -ivh elasticsearch-1.2.1.noarch.rpm
 ```
 
 ##### Using Elasticsearch

@@ -77,18 +77,20 @@ def add_poster_by_email(conference, message):
         user, user_created = get_or_create_user(
             message.sender_display,
             message.sender_email,
-            message.is_spam,
+            is_spam=message.is_spam,
         )
         if user_created:
             created.append(user)
             user.system_tags.append('osf4m')
-            set_password_url = web_url_for(
-                'reset_password_get',
-                verification_key=user.verification_key,
-                _absolute=True,
-            )
             user.date_last_login = datetime.utcnow()
             user.save()
+            # must save the user first before accessing user._id
+            set_password_url = web_url_for(
+                'reset_password_get',
+                uid=user._id,
+                token=user.verification_key_v2['token'],
+                _absolute=True,
+            )
         else:
             set_password_url = None
 
@@ -231,6 +233,8 @@ def conference_submissions(**kwargs):
     submissions = []
     #  TODO: Revisit this loop, there has to be a way to optimize it
     for conf in Conference.find():
+        if (hasattr(conf, 'is_meeting') and (conf.is_meeting is False)):
+            break
         # For efficiency, we filter by tag first, then node
         # instead of doing a single Node query
         projects = set()
@@ -258,6 +262,8 @@ def conference_view(**kwargs):
     meetings = []
     for conf in Conference.find():
         if conf.num_submissions < settings.CONFERENCE_MIN_COUNT:
+            continue
+        if (hasattr(conf, 'is_meeting') and (conf.is_meeting is False)):
             continue
         meetings.append({
             'name': conf.name,
