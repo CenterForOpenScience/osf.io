@@ -30,7 +30,7 @@ from website.filters import gravatar
 from website.models import User, Node
 from website.project.licenses import serialize_node_license_record
 from website.search import exceptions
-from website.search.util import build_query, clean_splitters 
+from website.search.util import build_query, clean_splitters
 from website.util import sanitize
 from website.views import validate_page_num
 
@@ -339,7 +339,6 @@ def serialize_node(node, category):
         'affiliated_institutions': [inst.name for inst in node.affiliated_institutions],
         'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         'extra_search_terms': clean_splitters(node.title),
-
     }
     if not node.is_retracted:
         for wiki in [
