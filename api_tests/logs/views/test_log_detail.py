@@ -5,7 +5,8 @@ from nose.tools import *  # noqa
 from tests.base import ApiTestCase
 from tests.factories import (
     ProjectFactory,
-    AuthUserFactory
+    AuthUserFactory,
+    NodeFactory,
 )
 
 from framework.auth.core import Auth
@@ -13,6 +14,7 @@ from framework.auth.core import Auth
 from website.models import NodeLog, Node
 from website.util import permissions as osf_permissions
 from api.base.settings.defaults import API_BASE
+from api_tests import utils as api_utils
 
 
 class LogsTestCase(ApiTestCase):
@@ -82,3 +84,62 @@ class TestLogDetail(LogsTestCase):
         assert_equal(res.status_code, 200)
         assert_in(self.public_log._id, unicode(res.body, 'utf-8'))
 
+
+class TestNodeFileLogDetail(ApiTestCase):
+
+    def setUp(self):
+        super(TestNodeFileLogDetail, self).setUp()
+
+        self.user_one = AuthUserFactory()
+        self.user_two = AuthUserFactory()
+
+        self.node = ProjectFactory(creator=self.user_one)
+        self.node.add_contributor(self.user_two)
+
+        self.component = NodeFactory(parent=self.node, creator=self.user_one)
+
+        self.file = api_utils.create_test_file(node=self.component, user=self.user_one)
+
+        self.node.add_log(
+            'osf_storage_file_moved',
+            auth=Auth(self.user_one),
+            params={
+                'node': self.node._id,
+                'project': self.node.parent_id,
+                'path': self.file.materialized_path,
+                'source': {
+                    'materialized': self.file.materialized_path,
+                    'addon': 'osfstorage',
+                    'node': {
+                        '_id': self.component._id,
+                        'url': self.component.url,
+                        'title': self.component.title,
+                    }
+                },
+                'destination': {
+                    'materialized': self.file.materialized_path,
+                    'addon': 'osfstorage',
+                    'node': {
+                        '_id': self.node._id,
+                        'url': self.node.url,
+                        'title': self.node.title,
+                    }
+                }
+            },
+        )
+
+        self.node.save()
+
+        self.node_logs_url = '/{}nodes/{}/logs/'.format(API_BASE, self.node._id)
+        self.component_logs_url = '/{}nodes/{}/logs/'.format(API_BASE, self.component._id)
+
+    def test_title_not_hidden_from_contributor_in_file_move(self):
+        res = self.app.get(self.node_logs_url, auth=self.user_two.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data'][0]['attributes']['params']['destination']['node_title'], self.node.title)
+
+    def test_title_hidden_from_non_contributor_in_file_move(self):
+        res = self.app.get(self.node_logs_url, auth=self.user_two.auth)
+        assert_equal(res.status_code, 200)
+        assert_not_in(self.component.title, res.json['data'])
+        assert_equal(res.json['data'][0]['attributes']['params']['source']['node_title'], 'Private Component')
