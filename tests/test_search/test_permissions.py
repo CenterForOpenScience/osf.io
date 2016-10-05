@@ -216,12 +216,12 @@ def possiblyExpectFailure(case):
             # decorator.
 
             try:
-                return case(*a, **kw)
+                case(*a, **kw)
             except Exception:
                 raise unittest.case._ExpectedFailure(sys.exc_info())
             raise unittest.case._UnexpectedSuccess
         else:
-            return case(*a, **kw)
+            case(*a, **kw)
     return test
 
 
