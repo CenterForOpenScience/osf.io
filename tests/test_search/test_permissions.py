@@ -139,7 +139,7 @@ def file_on(node):
     node.get_addon('osfstorage').get_root().append_file('Blim Blammity')
     return 'blim', 'file', 'name', 'Blim Blammity'
 
-def registration_of(node):
+def approved_registration_of(node):
     mock_archive(node, autocomplete=True, autoapprove=True).__enter__()  # ?!
     return 'flim', 'registration', 'title', 'Flim Flammity'
 
@@ -162,10 +162,10 @@ class TestVaryFuncs(DbIsolationMixin, OsfTestCase):
         assert_equal(File.find_one(Q('is_file', 'eq', True)).name, 'Blim Blammity')
 
 
-    # ro - registration_of
+    # aro - approved_registration_of
 
-    def test_ro_makes_a_registration_of_a_node(self):
-        registration_of(factories.ProjectFactory(title='Flim Flammity'))
+    def test_aro_makes_a_registration_of_a_node(self):
+        approved_registration_of(factories.ProjectFactory(title='Flim Flammity'))
         assert_equal(Node.find_one(Q('is_registration', 'eq', True)).title, 'Flim Flammity')
 
 
@@ -185,8 +185,8 @@ def generate_cases():
         for nodefunc in (proj, comp):
             for permfunc in (anon, auth, read):
                 included = permfunc is read if status is PRIVATE else True
-                for varyfunc in (base, file_on, registration_of):
-                    if status is PRIVATE and varyfunc is registration_of: continue
+                for varyfunc in (base, file_on, approved_registration_of):
+                    if status is PRIVATE and varyfunc is approved_registration_of: continue
                     yield namefunc(**locals()), varyfunc, nodefunc, status, permfunc, included
 
 
@@ -229,7 +229,7 @@ class TestSearchSearchAPI(SearchTestCase):
     """Exercises the website.search.views.search_search view.
     """
 
-    def results(self, query, category, auth):
+    def search(self, query, category, auth):
         url = api_url_for('search_search')
         data = {'q': 'category:{} AND {}'.format(category, query)}
         return self.app.get(url, data, auth=auth).json['results']
@@ -241,5 +241,5 @@ class TestSearchSearchAPI(SearchTestCase):
         auth = permfunc(node)
         query, type_, key, expected_name = varyfunc(node)
         expected = [(expected_name, type_)] if included else []
-        results = self.results(query, type_, auth)
+        results = self.search(query, type_, auth)
         assert_equal([(x[key], x['category']) for x in results], expected)
