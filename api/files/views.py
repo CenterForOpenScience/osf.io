@@ -75,29 +75,30 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
 
     ####File Entity
 
-        name          type       description
+        name            type              description
         =========================================================================
-        guid          string            OSF GUID for this file (if one has been assigned)
-        name          string            name of the file
-        path          string            unique identifier for this file entity for this
-                                        project and storage provider. may not end with '/'
-        materialized  string            the full path of the file relative to the storage
-                                        root.  may not end with '/'
-        kind          string            "file"
-        etag          string            etag - http caching identifier w/o wrapping quotes
-        modified      timestamp         last modified timestamp - format depends on provider
-        contentType   string            MIME-type when available
-        provider      string            id of provider e.g. "osfstorage", "s3", "googledrive".
-                                        equivalent to addon_short_name on the OSF
-        size          integer           size of file in bytes
-        tags          array of strings  list of tags that describes the file (osfstorage only)
-        extra         object            may contain additional data beyond what's described here,
-                                        depending on the provider
-          version     integer           version number of file. will be 1 on initial upload
-          downloads   integer           count of the number times the file has been downloaded
-          hashes      object
-            md5       string            md5 hash of file
-            sha256    string            SHA-256 hash of file
+        guid            string            OSF GUID for this file (if one has been assigned)
+        name            string            name of the file
+        path            string            unique identifier for this file entity for this
+                                          project and storage provider. may not end with '/'
+        materialized    string            the full path of the file relative to the storage
+                                          root.  may not end with '/'
+        kind            string            "file"
+        etag            string            etag - http caching identifier w/o wrapping quotes
+        modified        timestamp         last modified timestamp - format depends on provider
+        contentType     string            MIME-type when available
+        provider        string            id of provider e.g. "osfstorage", "s3", "googledrive".
+                                          equivalent to addon_short_name on the OSF
+        size            integer           size of file in bytes
+        current_version integer           current file version
+        tags            array of strings  list of tags that describes the file (osfstorage only)
+        extra           object            may contain additional data beyond what's described here,
+                                          depending on the provider
+          version       integer           version number of file. will be 1 on initial upload
+          downloads     integer           count of the number times the file has been downloaded
+          hashes        object
+            md5         string            md5 hash of file
+            sha256      string            SHA-256 hash of file
 
     ####Folder Entity
 

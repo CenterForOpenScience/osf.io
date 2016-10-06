@@ -141,6 +141,7 @@ class FileSerializer(JSONAPISerializer):
     extra = ser.SerializerMethodField(read_only=True, help_text='Additional metadata about this file')
     tags = JSONAPIListField(child=FileTagField(), required=False)
     current_user_can_comment = ser.SerializerMethodField(help_text='Whether the current user is allowed to post comments')
+    current_version = ser.SerializerMethodField(help_text='Latest file version')
 
     files = NodeFileHyperLinkField(
         related_view='nodes:node-files',
@@ -172,6 +173,11 @@ class FileSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'files'
+
+    def get_current_version(self, obj):
+        if obj.history:
+            return len(obj.history)
+        return 1
 
     def get_size(self, obj):
         if obj.versions:

@@ -71,6 +71,7 @@ class TestFileView(ApiTestCase):
         assert_equal(attributes['last_touched'], None)
         assert_equal(attributes['provider'], self.file.provider)
         assert_equal(attributes['size'], self.file.versions[-1].size)
+        assert_equal(attributes['current_version'], len(self.file.history))
         assert_equal(attributes['date_modified'], _dt_to_iso8601(self.file.versions[-1].date_created.replace(tzinfo=pytz.utc)))
         assert_equal(attributes['date_created'], _dt_to_iso8601(self.file.versions[0].date_created.replace(tzinfo=pytz.utc)))
         assert_equal(attributes['extra']['hashes']['md5'], None)
@@ -396,6 +397,20 @@ class TestFileView(ApiTestCase):
         url = '/{}files/{}/'.format(API_BASE, self.node._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
+
+    def test_current_version_is_equal_to_length_of_history(self):
+        res = self.app.get(self.file_url, auth=self.user.auth)
+        assert_equal(res.json['data']['attributes']['current_version'], 1)
+        for version in range(2, 4):
+            self.file.create_version(self.user, {
+                'object': '06d80e' + str(version),
+                'service': 'cloud',
+                osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+            }, {'size': 1337,
+                'contentType': 'img/png'
+            }).save()
+            res = self.app.get(self.file_url, auth=self.user.auth)
+            assert_equal(res.json['data']['attributes']['current_version'], version)
 
 
 class TestFileVersionView(ApiTestCase):

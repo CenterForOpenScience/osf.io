@@ -1635,6 +1635,8 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
         provider                    string            id of provider e.g. "osfstorage", "s3", "googledrive".
                                                         equivalent to addon_short_name on the OSF
         size                        integer           size of file in bytes
+        current_version             integer           current file version
+
         current_user_can_comment    boolean           Whether the current user is allowed to post comments
 
         tags                        array of strings  list of tags that describes the file (osfstorage only)
