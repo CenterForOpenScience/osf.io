@@ -115,12 +115,7 @@ class PreprintService(GuidStoredObject):
                 auth=auth,
                 save=False,
             )
-        if not self.node.is_public:
-            self.node.set_privacy(
-                self.node.PUBLIC,
-                auth=None,
-                log=True
-            )
+
         if save:
             self.save()
             self.node.save()
@@ -128,6 +123,8 @@ class PreprintService(GuidStoredObject):
     def set_published(self, published, auth, save=False):
         if not self.node.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can publish a preprint.')
+
+        self.is_published = published
 
         if published:
             if not self.node.is_preprint:
@@ -138,7 +135,12 @@ class PreprintService(GuidStoredObject):
                 raise ValueError('Preprint must have at least one subject to be published.')
             self.date_published = datetime.datetime.utcnow()
 
-        self.is_published = published
+            if not self.node.is_public:
+                self.node.set_privacy(
+                    self.node.PUBLIC,
+                    auth=None,
+                    log=True
+                )
 
         if save:
             self.save()
