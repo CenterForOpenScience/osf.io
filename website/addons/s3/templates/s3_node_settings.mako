@@ -53,7 +53,8 @@
                 <!-- Folder buttons -->
                 <div class="form-group" data-bind="visible: userIsOwner() && validCredentials()">
                     <button data-bind="click: togglePicker,
-                                   css: {active: currentDisplay() === PICKER}" class="btn btn-primary">Change</button>
+                                       css: {active: currentDisplay() === PICKER}" class="btn btn-primary">
+                                       <span data-bind="text: toggleChangeText"></span></button>
                     <button data-bind="visible: userIsOwner() && validCredentials(), click: openCreateBucket" class="btn btn-success" id="newBucket">Create bucket</button>
                 </div>
                 <!-- Folder picker -->
