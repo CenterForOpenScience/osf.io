@@ -179,9 +179,10 @@ class PreprintCreateSerializer(PreprintSerializer):
             raise exceptions.ValidationError(detail='You must specify a valid provider to create a preprint.')
 
         if PreprintService.find(Q('node', 'eq', node) & Q('provider', 'eq', provider)).count():
-            raise Conflict('Only one preprint per provider can be submitted for a node.')
+            conflict = PreprintService.find_one(Q('node', 'eq', node) & Q('provider', 'eq', provider))
+            raise Conflict('Only one preprint per provider can be submitted for a node. Check `meta[existing_resource_id]`.', meta={'existing_resource_id': conflict._id})
 
         preprint = PreprintService(node=node, provider=provider)
         self.set_field(preprint.set_preprint_file, primary_file, auth, save=True)
 
-        return preprint
+        return self.update(preprint, validated_data)
