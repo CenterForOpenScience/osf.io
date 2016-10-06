@@ -194,7 +194,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     _nodes = models.ManyToManyField('AbstractNode',
                                    through=NodeRelation,
-                                   through_fields=('source', 'dest'),
+                                   through_fields=('parent', 'child'),
                                    related_name='parent_nodes')
 
     @property
@@ -216,27 +216,27 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """Return ordered generator of nodes. ``kwargs`` are used to filter against
         children.
         """
-        # Prepend 'dest__' to kwargs for filtering
-        filter_kwargs = {'dest__{}'.format(key): val for key, val in kwargs.items()}
-        return (nr.dest for nr in NodeRelation.objects.filter(source=self,
-                                                              **filter_kwargs).select_related('dest'))
+        # Prepend 'child__' to kwargs for filtering
+        filter_kwargs = {'child__{}'.format(key): val for key, val in kwargs.items()}
+        return (nr.child for nr in NodeRelation.objects.filter(parent=self,
+                                                               **filter_kwargs).select_related('child'))
 
     # TODO: This doesn't work for node links yet
     @property
     def parent_node(self):
         node_rel = NodeRelation.objects.filter(
-            dest=self,
+            child=self,
             is_node_link=False
         ).first()
-        return node_rel.source if node_rel else None
+        return node_rel.parent if node_rel else None
 
     @property
     def linked_nodes(self):
-        dest_pks = NodeRelation.objects.filter(
-            source=self,
+        child_pks = NodeRelation.objects.filter(
+            parent=self,
             is_node_link=True
-        ).values_list('dest', flat=True)
-        return self._nodes.filter(pk__in=dest_pks)
+        ).values_list('child', flat=True)
+        return self._nodes.filter(pk__in=child_pks)
 
     # permissions = Permissions are now on contributors
     piwik_site_id = models.IntegerField(null=True, blank=True)
@@ -1381,7 +1381,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             node.save()
 
         if parent:
-            NodeRelation.objects.get_or_create(source=parent, dest=registered)
+            NodeRelation.objects.get_or_create(parent=parent, child=registered)
 
         # After register callback
         for addon in original.get_addons():
@@ -1389,8 +1389,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if message:
                 status.push_status_message(message, kind='info', trust=False)
 
-        for node_relation in original.node_relations.filter(dest__is_deleted=False):
-            node_contained = node_relation.dest
+        for node_relation in original.node_relations.filter(child__is_deleted=False):
+            node_contained = node_relation.child
             # Register child nodes
             if not node_relation.is_node_link:
                 registered_child = node_contained.register_node(  # noqa
@@ -1403,8 +1403,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 # Copy linked nodes
                 NodeRelation.objects.get_or_create(
                     is_node_link=True,
-                    source=registered,
-                    dest=node_contained
+                    parent=registered,
+                    child=node_contained
                 )
 
         registered.save()
@@ -1449,7 +1449,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         )
 
     def get_primary(self, node):
-        return NodeRelation.objects.filter(source=self, dest=node, is_node_link=False).exists()
+        return NodeRelation.objects.filter(parent=self, child=node, is_node_link=False).exists()
 
     # TODO optimize me
     def get_descendants_recursive(self, primary_only=False):
@@ -1468,11 +1468,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     @property
     def nodes_primary(self):
         """For v1 compat."""
-        dest_pks = NodeRelation.objects.filter(
-            source=self,
+        child_pks = NodeRelation.objects.filter(
+            parent=self,
             is_node_link=False
-        ).values_list('dest', flat=True)
-        return self._nodes.filter(pk__in=dest_pks)
+        ).values_list('child', flat=True)
+        return self._nodes.filter(pk__in=child_pks)
 
     @property
     def has_pointers_recursive(self):
@@ -1590,8 +1590,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         forked.tags.add(*self.tags.all())
 
-        for node_relation in original.node_relations.filter(dest__is_deleted=False):
-            node_contained = node_relation.dest
+        for node_relation in original.node_relations.filter(child__is_deleted=False):
+            node_contained = node_relation.child
             # Register child nodes
             if not node_relation.is_node_link:
                 try:  # Catch the potential PermissionsError above
@@ -1601,15 +1601,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 if forked_node is not None:
                     NodeRelation.objects.get_or_create(
                         is_node_link=False,
-                        source=forked,
-                        dest=forked_node
+                        parent=forked,
+                        child=forked_node
                     )
             else:
                 # Copy linked nodes
                 NodeRelation.objects.get_or_create(
                     is_node_link=True,
-                    source=forked,
-                    dest=node_contained
+                    parent=forked,
+                    child=node_contained
                 )
 
         if title is None:
@@ -2537,7 +2537,7 @@ def send_osf_signal(sender, instance, created, **kwargs):
 def set_parent(sender, instance, *args, **kwargs):
     if getattr(instance, '_parent', None):
         NodeRelation.objects.get_or_create(
-            source=instance._parent,
-            dest=instance,
+            parent=instance._parent,
+            child=instance,
             is_node_link=False
         )

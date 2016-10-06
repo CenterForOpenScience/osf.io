@@ -164,7 +164,7 @@ class NodeLinkMixin(models.Model):
         # Fail if node already in nodes / pointers. Note: cast node and node
         # to primary keys to test for conflicts with both nodes and pointers
         # contained in `self.nodes`.
-        if NodeRelation.objects.filter(source=self, dest=node, is_node_link=True).exists():
+        if NodeRelation.objects.filter(parent=self, child=node, is_node_link=True).exists():
             raise ValueError(
                 'Link to node {0} already exists'.format(node._id)
             )
@@ -186,8 +186,8 @@ class NodeLinkMixin(models.Model):
 
         # Append node link
         NodeRelation.objects.get_or_create(
-            source=self,
-            dest=node,
+            parent=self,
+            child=node,
             is_node_link=True
         )
 
@@ -226,7 +226,7 @@ class NodeLinkMixin(models.Model):
         if not self.linked_nodes.filter(id=node.id).exists():
             raise ValueError('Node link does not belong to the requested node.')
 
-        self.node_relations.get(is_node_link=True, dest=node).delete()
+        self.node_relations.get(is_node_link=True, child=node).delete()
 
         # Add log
         if hasattr(self, 'add_log'):
@@ -281,11 +281,13 @@ class NodeLinkMixin(models.Model):
         if forked is None:
             raise ValueError('Could not fork node')
 
-        NodeRelation.objects.get_or_create(
-            source=self,
-            dest=forked,
-            is_node_link=False
+        relation = NodeRelation.objects.get(
+            parent=self,
+            child=node,
+            is_node_link=True
         )
+        relation.child = forked
+        relation.save()
 
         if hasattr(self, 'add_log'):
             # Add log
@@ -293,7 +295,7 @@ class NodeLinkMixin(models.Model):
                 NodeLog.NODE_LINK_FORKED,
                 params={
                     'parent_node': self.parent_id,
-                    'node': self._primary_key,
+                    'node': self._id,
                     'pointer': {
                         'id': node._id,
                         'url': node.url,
