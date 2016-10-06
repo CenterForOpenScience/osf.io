@@ -6,6 +6,7 @@ var $osf = require('js/osfHelpers');
 var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
 var mdQuick = require('js/markdown').quick;
+var mdOld = require('js/markdown').old;
 var diffTool = require('js/diffTool');
 
 var THROTTLE = 500;
@@ -86,10 +87,10 @@ function ViewWidget(visible, version, viewText, rendered, contentURL, allowMathj
                     if(self.visible()) {
                         var $markdownElement = $('#wikiViewRender');
                         var rawContent = resp.wiki_content || '*No wiki content*';
-                        if (resp.wiki_rendered) {
-                            // Use pre-rendered python, if provided. Don't mathjaxify
+                        if (resp.rendered_before_update) {
+                            // Use old md renderer. Don't mathjaxify
                             self.allowMathjaxification(false);
-                            self.rendered(resp.wiki_rendered);
+                            self.rendered(mdOld.render(rawContent));
                             $markdownElement.css('display', 'inherit');
 
                         } else {

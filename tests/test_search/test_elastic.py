@@ -391,6 +391,27 @@ class TestPublicNodes(SearchTestCase):
         docs = query('category:component AND ' + self.title)['results']
         assert_equal(len(docs), 0)
 
+    def test_search_node_partial(self):
+        self.project.set_title('Blue Rider-Express', self.consolidate_auth)
+        with run_celery_tasks():
+            self.project.save()
+        find = query('Blue')['results']
+        assert_equal(len(find), 1)      
+
+    def test_search_node_partial_with_sep(self):
+        self.project.set_title('Blue Rider-Express', self.consolidate_auth)
+        with run_celery_tasks():
+            self.project.save()        
+        find = query('Express')['results']
+        assert_equal(len(find), 1)
+
+    def test_search_node_not_name(self):
+        self.project.set_title('Blue Rider-Express', self.consolidate_auth)
+        with run_celery_tasks():
+            self.project.save()        
+        find = query('Green Flyer-Slow')['results']
+        assert_equal(len(find), 0)
+
     def test_public_parent_title(self):
         self.project.set_title('hello &amp; world', self.consolidate_auth)
         with run_celery_tasks():
@@ -854,6 +875,11 @@ class TestSearchFiles(SearchTestCase):
     def test_search_file(self):
         self.root.append_file('Shake.wav')
         find = query_file('Shake.wav')['results']
+        assert_equal(len(find), 1)
+
+    def test_search_file_name_without_separator(self):
+        self.root.append_file('Shake.wav')
+        find = query_file('Shake')['results']
         assert_equal(len(find), 1)
 
     def test_delete_file(self):

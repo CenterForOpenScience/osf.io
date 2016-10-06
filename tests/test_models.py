@@ -566,7 +566,7 @@ class TestUser(OsfTestCase):
         valid_token = u.get_confirmation_token('foo@bar.com')
         assert_true(u.get_unconfirmed_email_for_token(valid_token))
         manual_expiration = datetime.datetime.utcnow() - datetime.timedelta(0, 10)
-        u._set_email_token_expiration(valid_token, expiration=manual_expiration)
+        u.email_verifications[valid_token]['expiration'] = manual_expiration
 
         with assert_raises(auth_exc.ExpiredTokenError):
             u.get_unconfirmed_email_for_token(valid_token)
