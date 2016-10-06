@@ -316,7 +316,8 @@
 <%def name="javascript_bottom()">
     <script type="text/javascript">
         window.contextVars = $.extend(true, {}, window.contextVars, {
-            search:true
+            search:true,
+            shareUrl: ${ shareUrl | sjson, n }
         });
     </script>
 
