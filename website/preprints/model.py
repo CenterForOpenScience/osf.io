@@ -4,11 +4,13 @@ import urlparse
 from modularodm import fields
 from modularodm.exceptions import ValidationValueError
 
+from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
 from framework.mongo import ObjectId, StoredObject
 from framework.mongo.utils import unique_on
 from website.files.models import StoredFileNode
+from website.preprints.tasks import on_preprint_updated
 from website.project.model import NodeLog
 from website.project.taxonomies import Subject
 from website.util import api_v2_url
@@ -64,7 +66,7 @@ class PreprintService(GuidStoredObject):
 
     def get_preprint_subjects(self):
         ret = []
-        for subj_list in set(self.subjects):
+        for subj_list in self.subjects:
             subj_hierarchy = []
             for subj_id in subj_list:
                 subj = Subject.load(subj_id)
@@ -144,6 +146,11 @@ class PreprintService(GuidStoredObject):
 
         if save:
             self.save()
+
+    def save(self, *args, **kwargs):
+        super(PreprintService, self).save(*args, **kwargs)
+        enqueue_task(on_preprint_updated.s(self._id))
+
 
 class PreprintProvider(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
