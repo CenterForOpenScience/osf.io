@@ -67,7 +67,9 @@ def create_preprint_service_from_node(document):
             database['preprintservice'].find_and_modify(
                 {'_id': document['_id']},
                 {'$set': {
-                    'date_created': document['preprint_created']
+                    'date_created': document['preprint_created'],
+                    'date_published': document['preprint_created'],
+                    'is_published': True
                 }}
             )
         except KeyExistsException:
