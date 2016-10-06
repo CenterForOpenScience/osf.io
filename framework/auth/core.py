@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
+
+from copy import deepcopy
 import datetime as dt
 import itertools
 import logging
 import re
 import urlparse
-from copy import deepcopy
 
 import bson
 import pytz
@@ -45,17 +46,25 @@ name_formatters = {
 logger = logging.getLogger(__name__)
 
 
-# Hide implementation of token generation
-def generate_confirm_token():
-    return security.random_string(30)
+# generate verification key
+def generate_verification_key(verification_type=None):
+    """
+    Generate a one-time verification key with an optional expiration time.
+    The type of the verification key determines the expiration time defined in `website.settings.EXPIRATION_TIME_DICT`.
 
-
-def generate_claim_token():
-    return security.random_string(30)
-
-
-def generate_verification_key():
-    return security.random_string(30)
+    :param verification_type: None, verify, confirm or claim
+    :return: a string or a dictionary
+    """
+    token = security.random_string(30)
+    # v1 with only the token
+    if not verification_type:
+        return token
+    # v2 with a token and the expiration time
+    expires = dt.datetime.utcnow() + dt.timedelta(minutes=settings.EXPIRATION_TIME_DICT[verification_type])
+    return {
+        'token': token,
+        'expires': expires,
+    }
 
 
 def validate_history_item(item):
@@ -109,21 +118,21 @@ def _get_current_user():
 
 
 # TODO: This should be a class method of User?
-def get_user(email=None, password=None, verification_key=None, external_id_provider=None, external_id=None):
+def get_user(email=None, password=None, token=None, external_id_provider=None, external_id=None):
     """
-    Get an instance of User matching the provided params.
+    Get an instance of `User` matching the provided params.
 
     1. email
     2. email and password
-    3. verification_key
-    4. oauth_provider and oauth_id
+    3  token
+    4. external_id_provider and external_id
 
+    :param token: the token in verification key
     :param email: user's email
     :param password: user's password
-    :param verification_key: the verification key
-    :param external_id_provider: the oauth provider
-    :param external_id: the oauth id
-    :rtype bool
+    :param external_id_provider: the external identity provider
+    :param external_id: the external id
+    :rtype User or None
     """
 
     if password and not email:
@@ -149,8 +158,8 @@ def get_user(email=None, password=None, verification_key=None, external_id_provi
             return False
         return user
 
-    if verification_key:
-        query_list.append(Q('verification_key', 'eq', verification_key))
+    if token:
+        query_list.append(Q('verification_key', 'eq', token))
 
     if external_id_provider and external_id:
         query_list.append(Q('external_identity.{}.{}'.format(external_id_provider, external_id), 'eq', 'VERIFIED'))
@@ -291,7 +300,8 @@ class User(GuidStoredObject, AddonModelMixin):
     #   <project_id>: {
     #       'name': <name that referrer provided>,
     #       'referrer_id': <user ID of referrer>,
-    #       'token': <token used for verification urls>,
+    #       'token': <verification token>,
+    #       'expires': <verification expiration time>,
     #       'email': <email the referrer provided or None>,
     #       'claimer_email': <email the claimer entered or None>,
     #       'last_sent': <timestamp of last email sent to referrer or None>
@@ -300,19 +310,28 @@ class User(GuidStoredObject, AddonModelMixin):
     # }
 
     # Time of last sent notification email to newly added contributors
+    contributor_added_email_records = fields.DictionaryField(default=dict)
     # Format : {
     #   <project_id>: {
     #       'last_sent': time.time()
     #   }
     #   ...
     # }
-    contributor_added_email_records = fields.DictionaryField(default=dict)
 
     # The user into which this account was merged
     merged_by = fields.ForeignField('user', default=None, index=True)
 
-    # verification key used for resetting password
+    # verification key v1: only the token string, no expiration time
+    # used for cas login with username and verification key
     verification_key = fields.StringField()
+
+    # verification key v2: token, and expiration time
+    # used for password reset, confirm account/email, claim account/contributor-ship
+    verification_key_v2 = fields.DictionaryField(default=dict)
+    # Format: {
+    #   'token': <verification token>
+    #   'expires': <verification expiration time>
+    # }
 
     email_last_sent = fields.DateTimeField()
 
@@ -326,8 +345,12 @@ class User(GuidStoredObject, AddonModelMixin):
     #   see also ``unconfirmed_emails``
     email_verifications = fields.DictionaryField(default=dict)
     # Format: {
-    #   <token> : {'email': <email address>,
-    #              'expiration': <datetime>}
+    #   <token> : {
+    #       'email': <email address>,
+    #       'expiration': <datetime>,
+    #       'confirmed': whether user is confirmed or not,
+    #       'external_identity': user's external identity,
+    #   }
     # }
 
     # TODO remove this field once migration (scripts/migration/migrate_mailing_lists_to_mailchimp_fields.py)
@@ -625,19 +648,23 @@ class User(GuidStoredObject, AddonModelMixin):
         :returns: The added record
         """
         if not node.can_edit(user=referrer):
-            raise PermissionsError('Referrer does not have permission to add a contributor '
-                'to project {0}'.format(node._primary_key))
+            raise PermissionsError(
+                'Referrer does not have permission to add a contributor to project {0}'.format(node._primary_key)
+            )
         project_id = node._primary_key
         referrer_id = referrer._primary_key
         if email:
             clean_email = email.lower().strip()
         else:
             clean_email = None
+
+        verification_key = generate_verification_key(verification_type='claim')
         record = {
             'name': given_name,
             'referrer_id': referrer_id,
-            'token': generate_confirm_token(),
-            'email': clean_email
+            'token': verification_key['token'],
+            'expires': verification_key['expires'],
+            'email': clean_email,
         }
         self.unclaimed_records[project_id] = record
         return record
@@ -668,32 +695,65 @@ class User(GuidStoredObject, AddonModelMixin):
                 self.is_confirmed)
 
     def get_unclaimed_record(self, project_id):
-        """Get an unclaimed record for a given project_id.
+        """
+        Get an unclaimed record for a given project_id. Return the one record if found. Otherwise, raise ValueError.
 
+        :param project_id, the project node id
         :raises: ValueError if there is no record for the given project.
         """
+
         try:
             return self.unclaimed_records[project_id]
-        except KeyError:  # reraise as ValueError
-            raise ValueError('No unclaimed record for user {self._id} on node {project_id}'
-                                .format(**locals()))
+        except KeyError:  # re-raise as ValueError
+            raise ValueError('No unclaimed record for user {self._id} on node {project_id}'.format(**locals()))
+
+    def verify_claim_token(self, token, project_id):
+        """
+        Verify the claim token for this user for a given node which she/he was added as a unregistered contributor for.
+        Return `True` if record found, token valid and not expired. Otherwise return False.
+
+        :param token: the claim token
+        :param project_id: the project node id
+        """
+
+        try:
+            record = self.get_unclaimed_record(project_id)
+        except ValueError:  # No unclaimed record for given pid
+            return False
+        return record['token'] == token and record['expires'] > dt.datetime.utcnow()
 
     def get_claim_url(self, project_id, external=False):
-        """Return the URL that an unclaimed user should use to claim their
-        account. Return ``None`` if there is no unclaimed_record for the given
-        project ID.
-
-        :param project_id: The project ID for the unclaimed record
-        :raises: ValueError if a record doesn't exist for the given project ID
-        :rtype: dict
-        :returns: The unclaimed record for the project
         """
+        Return the URL that an unclaimed user should use to claim their account.
+        Raise `ValueError` if there is no unclaimed_record for the given project ID.
+
+        :param project_id: the project id for the unclaimed record
+        :param external: absolute url or relative
+        :returns: the claim url
+        :raises: ValueError if there is no record for the given project.
+        """
+
+        unclaimed_record = self.get_unclaimed_record(project_id)
         uid = self._primary_key
         base_url = settings.DOMAIN if external else '/'
-        unclaimed_record = self.get_unclaimed_record(project_id)
         token = unclaimed_record['token']
-        return '{base_url}user/{uid}/{project_id}/claim/?token={token}'\
-                    .format(**locals())
+        return '{base_url}user/{uid}/{project_id}/claim/?token={token}'.format(**locals())
+
+    def verify_password_token(self, token):
+        """
+        Verify that the password reset token for this user is valid.
+
+        :param token: the token in verification key
+        :return `True` if valid, otherwise `False`
+        """
+
+        if token and self.verification_key_v2:
+            try:
+                return (self.verification_key_v2['token'] == token and
+                        self.verification_key_v2['expires'] > dt.datetime.utcnow())
+            except AttributeError:
+                return False
+        return False
 
     def set_password(self, raw_password, notify=True):
         """Set the password for this user to the hash of ``raw_password``.
@@ -763,8 +823,8 @@ class User(GuidStoredObject, AddonModelMixin):
             issues.append('Passwords cannot be blank')
         elif len(raw_new_password) < 8:
             issues.append('Password should be at least eight characters')
-        elif len(raw_new_password) > 256:
-            issues.append('Password should not be longer than 256 characters')
+        elif len(raw_new_password) > 255:
+            issues.append('Password should not be longer than 255 characters')
 
         if raw_new_password != raw_confirm_password:
             issues.append('Password does not match the confirmation')
@@ -773,26 +833,23 @@ class User(GuidStoredObject, AddonModelMixin):
             raise ChangePasswordError(issues)
         self.set_password(raw_new_password)
 
-    def _set_email_token_expiration(self, token, expiration=None):
-        """Set the expiration date for given email token.
-
-        :param str token: The email token to set the expiration for.
-        :param datetime expiration: Datetime at which to expire the token. If ``None``, the
-            token will expire after ``settings.EMAIL_TOKEN_EXPIRATION`` hours. This is only
-            used for testing purposes.
-        """
-        expiration = expiration or (dt.datetime.utcnow() + dt.timedelta(hours=settings.EMAIL_TOKEN_EXPIRATION))
-        self.email_verifications[token]['expiration'] = expiration
-        return expiration
-
     def add_unconfirmed_email(self, email, expiration=None, external_identity=None):
-        """Add an email verification token for a given email."""
+        """
+        Add an email verification token for a given email.
+
+        :param email: the email to confirm
+        :param email: overwrite default expiration time
+        :param external_identity: the user's external identity
+        :return: a token
+        :raises: ValueError if email already confirmed, except for login through external idp.
+        """
 
         # TODO: This is technically not compliant with RFC 822, which requires
         #       that case be preserved in the "local-part" of an address. From
         #       a practical standpoint, the vast majority of email servers do
         #       not preserve case.
         #       ref: https://tools.ietf.org/html/rfc822#section-6
+
         email = email.lower().strip()
 
         if not external_identity and email in self.emails:
@@ -800,24 +857,21 @@ class User(GuidStoredObject, AddonModelMixin):
 
         utils.validate_email(email)
 
-        # If the unconfirmed email is already present, refresh the token
+        # If the unconfirmed email is already present, remove it and generate a new one
         if email in self.unconfirmed_emails:
             self.remove_unconfirmed_email(email)
-
-        token = generate_confirm_token()
-
+        verification_key = generate_verification_key(verification_type='confirm')
         # handle when email_verifications is None
         if not self.email_verifications:
             self.email_verifications = {}
-
-        # confirmed used to check if link has been clicked
-        self.email_verifications[token] = {
+        self.email_verifications[verification_key['token']] = {
             'email': email,
             'confirmed': False,
-            'external_identity': external_identity
+            'expiration': expiration if expiration else verification_key['expires'],
+            'external_identity': external_identity,
         }
-        self._set_email_token_expiration(token, expiration=expiration)
-        return token
+
+        return verification_key['token']
 
     def remove_unconfirmed_email(self, email):
         """Remove an unconfirmed email addresses and their tokens."""
@@ -849,22 +903,27 @@ class User(GuidStoredObject, AddonModelMixin):
                         removed_email=email,
                         security_addr='primary email address ({})'.format(self.username))
 
-    def get_confirmation_token(self, email, force=False):
-        """Return the confirmation token for a given email.
+    def get_confirmation_token(self, email, force=False, renew=False):
+        """
+        Return the confirmation token for a given email.
 
-        :param str email: Email to get the token for.
-        :param bool force: If an expired token exists for the given email, generate a new
-            token and return that token.
-
+        :param str email: The email to get the token for.
+        :param bool force: If an expired token exists for the given email, generate a new one and return it.
+        :param bool renew: Generate a new token and return it.
+        :return Return the confirmation token.
         :raises: ExpiredTokenError if trying to access a token that is expired and force=False.
         :raises: KeyError if there no token for the email.
         """
+
         # TODO: Refactor "force" flag into User.get_or_add_confirmation_token
         for token, info in self.email_verifications.items():
             if info['email'].lower() == email.lower():
-                # Old records will not have an expiration key. If it's missing,
-                # assume the token is expired
+                # Old records will not have an expiration key. If it's missing, assume the token is expired.
                 expiration = info.get('expiration')
+                if renew:
+                    new_token = self.add_unconfirmed_email(email)
+                    self.save()
+                    return new_token
                 if not expiration or (expiration and expiration < dt.datetime.utcnow()):
                     if not force:
                         raise ExpiredTokenError('Token for email "{0}" is expired'.format(email))
@@ -875,14 +934,22 @@ class User(GuidStoredObject, AddonModelMixin):
                 return token
         raise KeyError('No confirmation token for email "{0}"'.format(email))
 
-    def get_confirmation_url(self, email, external=True, force=False, external_id_provider=None):
-        """Return the confirmation url for a given email.
+    def get_confirmation_url(self, email, external=True, force=False, renew=False, external_id_provider=None):
+        """
+        Return the confirmation url for a given email.
 
+        :param email: The email to confirm.
+        :param external: Use absolute or relative url.
+        :param force: If an expired token exists for the given email, generate a new one and return it.
+        :param renew: Generate a new token and return it.
+        :param external_id_provider: The external identity provider that authenticates the user.
+        :return: Return the confirmation url.
         :raises: ExpiredTokenError if trying to access a token that is expired.
         :raises: KeyError if there is no token for the email.
         """
+
         base = settings.DOMAIN if external else '/'
-        token = self.get_confirmation_token(email, force=force)
+        token = self.get_confirmation_token(email, force=force, renew=renew)
 
         if external_id_provider:
             return '{0}confirm/external/{1}/{2}/'.format(base, self._primary_key, token)
@@ -920,16 +987,6 @@ class User(GuidStoredObject, AddonModelMixin):
             if token == given_token:
                 email_verifications.pop(token)
         self.email_verifications = email_verifications
-
-    def verify_claim_token(self, token, project_id):
-        """Return whether or not a claim token is valid for this user for
-        a given node which they were added as a unregistered contributor for.
-        """
-        try:
-            record = self.get_unclaimed_record(project_id)
-        except ValueError:  # No unclaimed record for given pid
-            return False
-        return record['token'] == token
 
     def confirm_email(self, token, merge=False):
         """Confirm the email address associated with the token"""

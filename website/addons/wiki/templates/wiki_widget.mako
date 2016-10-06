@@ -17,7 +17,7 @@
 <script>
     window.contextVars = $.extend(true, {}, window.contextVars, {
         wikiWidget: true,
-        usePythonRender: ${ use_python_render | sjson, n },
+        renderedBeforeUpdate: ${ rendered_before_update | sjson, n },
         urls: {
             wikiContent: ${wiki_content_url | sjson, n }
         }

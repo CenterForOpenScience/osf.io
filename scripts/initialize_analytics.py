@@ -10,11 +10,15 @@ logger = logging.getLogger(__name__)
 
 
 if __name__ == '__main__':
+    """This script will set the analytics read keys for all public nodes. Requires a valid
+    keen master key in settings.KEEN['public']['master_key']. Generated keys are stable
+    between runs for the same master key.
+    """
+
     init_app(routes=False)
 
     public_nodes = Node.find(
         Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False)
-        & Q('keenio_read_key', 'in', ['', None])
     )
     total = len(public_nodes)
     logger.info('Adding keen.io read keys to {} public nodes'.format(total))

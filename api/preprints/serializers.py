@@ -87,7 +87,7 @@ class PreprintSerializer(JSONAPISerializer):
         type_ = 'preprints'
 
     def get_preprint_url(self, obj):
-        return absolute_reverse('preprints:preprint-detail', kwargs={'preprint_id': obj._id})
+        return absolute_reverse('preprints:preprint-detail', kwargs={'preprint_id': obj._id, 'version': self.context['request'].parser_context['kwargs']['version']})
 
     def get_absolute_url(self, obj):
         return self.get_preprint_url(obj)

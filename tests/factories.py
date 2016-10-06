@@ -23,7 +23,6 @@ from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
 from framework.auth import User, Auth
-from framework.auth.core import generate_verification_key
 from framework.auth.utils import impute_names_model, impute_names
 from framework.guid.model import Guid
 from framework.mongo import StoredObject
@@ -119,6 +118,7 @@ class UserFactory(ModularOdmFactory):
     merged_by = None
     email_verifications = {}
     verification_key = None
+    verification_key_v2 = {}
 
     @post_generation
     def set_names(self, create, extracted):
@@ -919,7 +919,6 @@ def create_fake_user():
         fullname=name,
         is_registered=True,
         is_claimed=True,
-        verification_key=generate_verification_key(),
         date_registered=fake.date_time(),
         emails=[email],
         **parsed
