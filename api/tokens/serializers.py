@@ -10,7 +10,7 @@ from api.base.serializers import JSONAPISerializer, LinksField, IDField, TypeFie
 class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
     """Serialize data about a registered personal access token"""
 
-    id = IDField(source='guid.object_id', read_only=True, help_text='The object ID for this token (automatically generated)')
+    id = IDField(source='_id', read_only=True, help_text='The object ID for this token (automatically generated)')
     type = TypeField()
 
     name = ser.CharField(help_text='A short, descriptive name for this token',

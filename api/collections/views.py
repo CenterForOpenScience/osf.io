@@ -28,7 +28,6 @@ from api.nodes.permissions import (
 )
 
 from website.exceptions import NodeStateError
-from website.models import Pointer
 from osf_models.models import Collection, Node
 from website.util.permissions import ADMIN
 
@@ -150,14 +149,14 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
     def get_queryset(self):
         # For bulk requests, queryset is formed from request body.
         if is_bulk_request(self.request):
-            query = Q('_id', 'in', [node['id'] for node in self.request.data])
+            query = Q('_id', 'in', [coll['id'] for coll in self.request.data])
 
             auth = get_user_auth(self.request)
-            nodes = Node.find(query)
-            for node in nodes:
-                if not node.can_edit(auth):
+            collections = Collection.find(query)
+            for collection in collections:
+                if not collection.can_edit(auth):
                     raise PermissionDenied
-            return nodes
+            return collections
         else:
             query = self.get_query_from_request()
             return Collection.find(query)

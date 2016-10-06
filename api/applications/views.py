@@ -55,10 +55,8 @@ class ApplicationList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixi
     renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
     def get_default_odm_query(self):
-
-        user_id = self.request.user._id
         return (
-            Q('owner', 'eq', user_id) &
+            Q('owner', 'eq', self.request.user) &
             Q('is_active', 'eq', True)
         )
 

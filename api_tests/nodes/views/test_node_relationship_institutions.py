@@ -161,7 +161,7 @@ class TestNodeRelationshipInstitutions(ApiTestCase):
 
         assert_equal(res.status_code, 200)
         self.node.reload()
-        assert_equal(self.node.affiliated_institutions, [])
+        assert_equal(self.node.affiliated_institutions.count(), 0)
 
     def test_using_post_making_no_changes_returns_204(self):
         self.node.affiliated_institutions.add(self.institution1)

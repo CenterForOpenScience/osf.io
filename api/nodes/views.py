@@ -2396,7 +2396,7 @@ class NodeAlternativeCitationDetail(JSONAPIBaseView, generics.RetrieveUpdateDest
 
     def get_object(self):
         try:
-            return self.get_node().alternative_citations.get(guid__object_id=str(self.kwargs['citation_id']))
+            return self.get_node().alternative_citations.get(_id=str(self.kwargs['citation_id']))
         except AlternativeCitation.DoesNotExist:
             raise NotFound
 
@@ -2800,7 +2800,7 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
     def get_object(self):
         node = self.get_node(check_object_permissions=False)
         obj = {
-            'data': node.affiliated_institutions,
+            'data': node.affiliated_institutions.all(),
             'self': node
         }
         self.check_object_permissions(self.request, obj)
@@ -2814,7 +2814,7 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
 
         for val in data:
             if val['id'] in current_insts:
-                if current_insts[val['id']] not in user.affiliated_institutions and not node.has_permission(user, 'admin'):
+                if not user.is_affiliated_with_institution(current_insts[val['id']]) and not node.has_permission(user, 'admin'):
                     raise PermissionDenied
                 node.remove_affiliated_institution(inst=current_insts[val['id']], user=user)
         node.save()
@@ -2894,7 +2894,7 @@ class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMi
     def get_default_odm_query(self):
         node = self.get_node()
         node_wiki_pages = node.wiki_pages_current.values() if node.wiki_pages_current else []
-        return Q('guid.guid', 'in', node_wiki_pages)
+        return Q('guids___id', 'in', node_wiki_pages)
 
     def get_queryset(self):
         return NodeWikiPage.find(self.get_query_from_request())
@@ -3182,7 +3182,7 @@ class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIV
 
     def get_object(self):
         try:
-            return self.get_node().private_links.get(guid__object_id=self.kwargs['link_id'])
+            return self.get_node().private_links.get(_id=self.kwargs['link_id'])
         except PrivateLink.DoesNotExist:
             raise NotFound
 

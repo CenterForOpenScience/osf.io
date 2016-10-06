@@ -98,7 +98,7 @@ class TestInstitutionRelationshipNodes(ApiTestCase):
 
         assert_equal(res.status_code, 403)
         node.reload()
-        assert_not_in(self.institution, node.affiliated_institutions)
+        assert_not_in(self.institution, node.affiliated_institutions.all())
 
     def test_user_is_admin(self):
         node = NodeFactory(creator=self.user)
@@ -143,7 +143,7 @@ class TestInstitutionRelationshipNodes(ApiTestCase):
 
         assert_equal(res.status_code, 403)
         node.reload()
-        assert_not_in(self.institution, node.affiliated_institutions)
+        assert_not_in(self.institution, node.affiliated_institutions.all())
 
     def test_user_is_admin_but_not_affiliated(self):
         user = AuthUserFactory()
@@ -157,7 +157,7 @@ class TestInstitutionRelationshipNodes(ApiTestCase):
 
         assert_equal(res.status_code, 403)
         node.reload()
-        assert_not_in(self.institution, node.affiliated_institutions)
+        assert_not_in(self.institution, node.affiliated_institutions.all())
 
     def test_add_some_with_permissions_others_without(self):
         node1 = NodeFactory(creator=self.user)
@@ -231,7 +231,7 @@ class TestInstitutionRelationshipNodes(ApiTestCase):
         )
         self.node1.reload()
         assert_equal(res.status_code, 204)
-        assert_not_in(self.institution, self.node1.affiliated_institutions)
+        assert_not_in(self.institution, self.node1.affiliated_institutions.all())
 
     def test_delete_user_is_read_write(self):
         self.node3.add_contributor(self.user)
@@ -245,7 +245,7 @@ class TestInstitutionRelationshipNodes(ApiTestCase):
         self.node3.reload()
 
         assert_equal(res.status_code, 204)
-        assert_not_in(self.institution, self.node3.affiliated_institutions)
+        assert_not_in(self.institution, self.node3.affiliated_institutions.all())
 
     def test_delete_user_is_read_only(self):
         self.node3.add_contributor(self.user, permissions='read')
@@ -273,7 +273,7 @@ class TestInstitutionRelationshipNodes(ApiTestCase):
 
         assert_equal(res.status_code, 204)
         self.node1.reload()
-        assert_not_in(self.institution, self.node1.affiliated_institutions)
+        assert_not_in(self.institution, self.node1.affiliated_institutions.all())
 
     def test_delete_user_is_admin_but_not_affiliated_with_inst(self):
         user = AuthUserFactory()
@@ -290,7 +290,7 @@ class TestInstitutionRelationshipNodes(ApiTestCase):
 
         assert_equal(res.status_code, 204)
         node.reload()
-        assert_not_in(self.institution, node.affiliated_institutions)
+        assert_not_in(self.institution, node.affiliated_institutions.all())
 
     def test_delete_user_is_affiliated_with_inst_and_mixed_permissions_on_nodes(self):
         res = self.app.delete_json_api(

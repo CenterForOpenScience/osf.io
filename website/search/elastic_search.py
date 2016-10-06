@@ -317,7 +317,7 @@ def serialize_node(node, category):
         'normalized_title': normalized_title,
         'category': category,
         'public': node.is_public,
-        'tags': [tag._id for tag in node.tags if tag],
+        'tags': list(node.tags.values_list('name', flat=True)),
         'description': node.description,
         'url': node.url,
         'is_registration': node.is_registration,
@@ -331,7 +331,7 @@ def serialize_node(node, category):
         'parent_id': parent_id,
         'date_created': node.date_created,
         'license': serialize_node_license_record(node.license),
-        'affiliated_institutions': [inst.name for inst in node.affiliated_institutions],
+        'affiliated_institutions': list(node.affiliated_institutions.values_list('name', flat=True)),
         'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
     }
     if not node.is_retracted:

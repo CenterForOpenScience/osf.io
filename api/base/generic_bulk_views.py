@@ -77,7 +77,7 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
         """
         model_cls = request.parser_context['view'].model_class
         requested_ids = [data['id'] for data in request_data]
-        column_name = 'guid__{}'.format(model_cls.primary_identifier_name)
+        column_name = 'guids___id'.format(model_cls.primary_identifier_name)
         resource_object_list = model_cls.find(Q(column_name, 'in', requested_ids))
 
         for resource in resource_object_list:

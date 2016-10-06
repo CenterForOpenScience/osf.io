@@ -14,7 +14,7 @@ class WikiSerializer(JSONAPISerializer):
         'date_modified'
     ])
 
-    id = IDField(source='guid.guid', read_only=True)
+    id = IDField(source='_id', read_only=True)
     type = TypeField()
     name = ser.CharField(source='page_name')
     kind = ser.SerializerMethodField()

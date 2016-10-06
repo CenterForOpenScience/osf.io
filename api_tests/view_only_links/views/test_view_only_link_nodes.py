@@ -250,7 +250,7 @@ class TestViewOnlyLinkNodesUpdate(TestViewOnlyLinkNodesSet):
         assert_in(self.component_two, self.view_only_link.nodes.all())
 
     def test_admin_can_update_nodes_single_node_to_remove(self):
-        self.view_only_link.nodes.add(self.component_one._id)
+        self.view_only_link.nodes.add(self.component_one)
         self.view_only_link.save()
         self.update_payload['data'].pop()
         res = self.app.put_json_api(self.url, self.update_payload, auth=self.user.auth)
@@ -261,8 +261,8 @@ class TestViewOnlyLinkNodesUpdate(TestViewOnlyLinkNodesSet):
         assert_not_in(self.component_one, self.view_only_link.nodes.all())
 
     def test_admin_can_update_nodes_multiple_nodes_to_remove(self):
-        self.view_only_link.nodes.add(self.component_one._id)
-        self.view_only_link.nodes.add(self.component_two._id)
+        self.view_only_link.nodes.add(self.component_one)
+        self.view_only_link.nodes.add(self.component_two)
         self.view_only_link.save()
         self.update_payload['data'].pop()
         res = self.app.put_json_api(self.url, self.update_payload, auth=self.user.auth)
@@ -275,7 +275,7 @@ class TestViewOnlyLinkNodesUpdate(TestViewOnlyLinkNodesSet):
 
 
     def test_admin_can_update_nodes_single_add_single_remove(self):
-        self.view_only_link.nodes.add(self.component_two._id)
+        self.view_only_link.nodes.add(self.component_two)
         self.view_only_link.save()
         res = self.app.put_json_api(self.url, self.update_payload, auth=self.user.auth)
         self.view_only_link.reload()
@@ -287,8 +287,8 @@ class TestViewOnlyLinkNodesUpdate(TestViewOnlyLinkNodesSet):
 
 
     def test_admin_can_update_nodes_multiple_add_multiple_remove(self):
-        self.view_only_link.nodes.add(self.component_one._id)
-        self.view_only_link.nodes.add(self.component_two._id)
+        self.view_only_link.nodes.add(self.component_one)
+        self.view_only_link.nodes.add(self.component_two)
         self.view_only_link.save()
 
         component_three = NodeFactory(creator=self.user, parent=self.public_project)

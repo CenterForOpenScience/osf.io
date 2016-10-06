@@ -313,7 +313,7 @@ class TestNodeLinkedNodes(ApiTestCase):
         self.linking_node = RegistrationFactory(project=self.linking_node_source, creator=self.user)
 
         self.url = '/{}registrations/{}/linked_nodes/'.format(API_BASE, self.linking_node._id)
-        self.node_ids = list(self.linking_node.nodes_pointer.values_list('_id', flat=True))
+        self.node_ids = list(self.linking_node.nodes_pointer.values_list('guids___id', flat=True))
 
     def test_linked_nodes_returns_everything(self):
         res = self.app.get(self.url, auth=self.user.auth)

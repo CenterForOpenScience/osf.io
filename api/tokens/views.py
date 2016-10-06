@@ -86,7 +86,7 @@ class TokenDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
     # overrides RetrieveAPIView
     def get_object(self):
         obj = get_object_or_error(ApiOAuth2PersonalToken,
-                                  Q('guid.object_id', 'eq', self.kwargs['_id']) &
+                                  Q('_id', 'eq', self.kwargs['_id']) &
                                   Q('is_active', 'eq', True))
 
         self.check_object_permissions(self.request, obj)

@@ -79,7 +79,7 @@ class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     ordering = ('name', )
 
     def get_default_odm_query(self):
-        return Q('guid.object_id', 'ne', None) & Q('is_deleted', 'ne', True)
+        return Q('_id', 'ne', None) & Q('is_deleted', 'ne', True)
 
     # overrides ListAPIView
     def get_queryset(self):

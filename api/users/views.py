@@ -654,11 +654,11 @@ class UserRegistrations(UserNodes):
         query = (
             Q('is_deleted', 'ne', True) &
             Q('type', 'eq', 'osf_models.registration') &
-            Q('contributors', 'eq', user._id)
+            Q('contributors', 'eq', user)
         )
         permission_query = Q('is_public', 'eq', True)
         if not current_user.is_anonymous():
-            permission_query = (permission_query | Q('contributors', 'eq', current_user._id))
+            permission_query = (permission_query | Q('contributors', 'eq', current_user))
         query = query & permission_query
         return query
 

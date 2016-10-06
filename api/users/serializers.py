@@ -22,7 +22,7 @@ class UserSerializer(JSONAPISerializer):
         'id'
     ])
     non_anonymized_fields = ['type']
-    id = IDField(source='guid.guid', read_only=True)
+    id = IDField(source='_id', read_only=True)
     type = TypeField()
     full_name = ser.CharField(source='fullname', required=True, label='Full name', help_text='Display name used in the general user interface')
     given_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')

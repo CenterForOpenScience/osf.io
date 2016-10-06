@@ -64,7 +64,7 @@ class TaxonomyList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
         # Queries on 'parents' should be by object_id
         if field_name == 'parents':
             if operation['value'] not in (list(), tuple()):
-                operation['source_field_name'] = 'parents__guid__object_id'
+                operation['source_field_name'] = 'parents___id'
 
 
 class TaxonomyDetail(JSONAPIBaseView, generics.RetrieveAPIView):

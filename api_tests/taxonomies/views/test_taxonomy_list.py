@@ -41,7 +41,7 @@ class TestTaxonomy(ApiTestCase):
             parents_ids = []
             for parent in self.data[index]['attributes']['parents']:
                 parents_ids.append(parent['id'])
-            for parent_id in subject.parents.values_list('guid__object_id', flat=True):
+            for parent_id in subject.parents.values_list('_id', flat=True):
                 assert parent_id in parents_ids
 
     def test_taxonomy_filter_top_level(self):

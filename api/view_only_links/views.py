@@ -14,7 +14,7 @@ from api.nodes.serializers import NodeSerializer, JSONAPISerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.view_only_links.serializers import ViewOnlyLinkDetailSerializer, ViewOnlyLinkNodesSerializer
 
-from website.models import Node, PrivateLink
+from website.models import PrivateLink
 
 
 class ViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveAPIView):
