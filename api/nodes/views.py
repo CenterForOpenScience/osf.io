@@ -29,8 +29,11 @@ from api.comments.permissions import CanCommentOrPublic
 from api.users.views import UserMixin
 from api.wikis.serializers import WikiSerializer
 from api.base.views import LinkedNodesRelationship, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList, BaseLinkedList
-from api.base.throttling import AddContributorThrottle
-
+from api.base.throttling import (
+    UserRateThrottle,
+    NonCookieAuthThrottle,
+    AddContributorThrottle,
+)
 from api.nodes.serializers import (
     NodeSerializer,
     ForwardNodeAddonSettingsSerializer,
@@ -625,7 +628,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
     required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
     model_class = User
 
-    throttle_classes = (AddContributorThrottle,)
+    throttle_classes = (AddContributorThrottle, UserRateThrottle, NonCookieAuthThrottle, )
 
     pagination_class = NodeContributorPagination
     serializer_class = NodeContributorsSerializer
