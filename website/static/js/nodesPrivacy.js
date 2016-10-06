@@ -202,7 +202,9 @@ NodesPrivacyViewModel.prototype.fetchNodeTree = function() {
     }).fail(function(xhr, status, error) {
         $osf.growl('Error', 'Unable to retrieve project settings');
         Raven.captureMessage('Could not GET project settings.', {
-            url: self.treebeardUrl, status: status, error: error
+            extra: {
+                url: self.treebeardUrl, status: status, error: error
+            }
         });
     });
 };

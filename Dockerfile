@@ -140,7 +140,7 @@ COPY ./website/addons/zotero/static/ /code/website/addons/zotero/static/
 RUN mkdir -p /code/website/static/built/ \
     && invoke build_js_config_files \
     && node ./node_modules/webpack/bin/webpack.js --config webpack.prod.config.js \
-    && rm -rf /code/node_modules \
+    # && rm -rf /code/node_modules \ (needed for sharejs)
     && npm install list-of-licenses \
     && rm -rf /root/.npm \
     npm cache clean
@@ -148,6 +148,9 @@ RUN mkdir -p /code/website/static/built/ \
 
 # Copy the rest of the code over
 COPY ./ /code/
+
+ARG GIT_COMMIT=
+ENV GIT_COMMIT ${GIT_COMMIT}
 
 RUN export DJANGO_SETTINGS_MODULE=api.base.settings && python manage.py collectstatic --noinput --no-init-app \
     && export DJANGO_SETTINGS_MODULE=admin.base.settings && python manage.py collectstatic --noinput --no-init-app

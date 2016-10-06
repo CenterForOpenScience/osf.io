@@ -72,8 +72,8 @@
     "osf_storage_folder_created" : "${user} created folder ${path} in OSF Storage in ${node}",
     "osf_storage_file_updated" : "${user} updated file ${path} in OSF Storage in ${node}",
     "osf_storage_file_removed" : "${user} removed ${path_type} ${path} from OSF Storage in ${node}",
-    "affiliated_institution_added": "${user} added ${institution} affiliation to ${node}.",
-    "affiliated_institution_removed": "${user} removed ${institution} affiliation from ${node}.",
-    "preprint_initiated": "${user} initiated a preprint of ${node}.",
-    "preprint_file_updated": "${user} updated the primary file of this preprint."
+    "affiliated_institution_added": "${user} added ${institution} affiliation to ${node}",
+    "affiliated_institution_removed": "${user} removed ${institution} affiliation from ${node}",
+    "preprint_initiated": "${user} made ${node} a preprint",
+    "preprint_file_updated": "${user} updated the primary file of this preprint"
 }

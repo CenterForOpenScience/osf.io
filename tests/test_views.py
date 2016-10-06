@@ -2254,7 +2254,7 @@ class TestUserInviteViews(OsfTestCase):
             auth=Auth(project.creator),
         )
         project.save()
-        send_claim_email(email=given_email, user=unreg_user, node=project)
+        send_claim_email(email=given_email, unclaimed_user=unreg_user, node=project)
 
         assert_true(send_mail.called)
         assert_true(send_mail.called_with(
@@ -2272,7 +2272,7 @@ class TestUserInviteViews(OsfTestCase):
                                                               referrer)
                                                           )
         project.save()
-        send_claim_email(email=real_email, user=unreg_user, node=project)
+        send_claim_email(email=real_email, unclaimed_user=unreg_user, node=project)
 
         assert_true(send_mail.called)
         # email was sent to referrer
@@ -2297,11 +2297,11 @@ class TestUserInviteViews(OsfTestCase):
             auth=Auth(project.creator),
         )
         project.save()
-        send_claim_email(email=fake.email(), user=unreg_user, node=project)
+        send_claim_email(email=fake.email(), unclaimed_user=unreg_user, node=project)
         send_mail.reset_mock()
         # 2nd call raises error because throttle hasn't expired
         with assert_raises(HTTPError):
-            send_claim_email(email=fake.email(), user=unreg_user, node=project)
+            send_claim_email(email=fake.email(), unclaimed_user=unreg_user, node=project)
         assert_false(send_mail.called)
 
 
@@ -2374,7 +2374,7 @@ class TestClaimViews(OsfTestCase):
         reg_user = UserFactory()
         send_claim_registered_email(
             claimer=reg_user,
-            unreg_user=self.user,
+            unclaimed_user=self.user,
             node=self.project
         )
         assert_equal(mock_send_mail.call_count, 2)
@@ -2388,7 +2388,7 @@ class TestClaimViews(OsfTestCase):
         reg_user = UserFactory()
         send_claim_registered_email(
             claimer=reg_user,
-            unreg_user=self.user,
+            unclaimed_user=self.user,
             node=self.project,
         )
         mock_send_mail.reset_mock()
@@ -2396,7 +2396,7 @@ class TestClaimViews(OsfTestCase):
         with assert_raises(HTTPError):
             send_claim_registered_email(
                 claimer=reg_user,
-                unreg_user=self.user,
+                unclaimed_user=self.user,
                 node=self.project,
             )
         assert_false(mock_send_mail.called)

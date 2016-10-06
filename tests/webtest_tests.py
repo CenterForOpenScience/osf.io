@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Functional tests using WebTest."""
+import datetime as dt
 import httplib as http
 import logging
 import unittest
@@ -897,9 +898,22 @@ class TestForgotPassword(OsfTestCase):
     def setUp(self):
         super(TestForgotPassword, self).setUp()
         self.user = UserFactory()
+        self.auth_user = AuthUserFactory()
         self.get_url = web_url_for('forgot_password_get')
         self.post_url = web_url_for('forgot_password_post')
-        self.user.verification_key = None
+        self.user.verification_key_v2 = {}
+        self.user.save()
+
+    # log users out before they land on forgot password page
+    def test_forgot_password_logs_out_user(self):
+        # visit forgot password link while another user is logged in
+        res = self.app.get(self.get_url, auth=self.auth_user.auth)
+        # check redirection to CAS logout
+        assert_equal(res.status_code, 302)
+        location = res.headers.get('Location')
+        assert_not_in('reauth', location)
+        assert_in('logout?service=', location)
+        assert_in('forgotpassword', location)
 
     # test that forgot password page is loaded correctly
     def test_get_forgot_password(self):
@@ -908,7 +922,6 @@ class TestForgotPassword(OsfTestCase):
         assert_in('Forgot Password', res.body)
         assert_in('forgotPasswordForm', res.forms)
 
-    # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1320
     # test that existing user can receive reset password email
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_can_receive_reset_password_email(self, mock_send_mail):
@@ -920,20 +933,17 @@ class TestForgotPassword(OsfTestCase):
 
         # check mail was sent
         assert_true(mock_send_mail.called)
-
         # check http 200 response
         assert_equal(res.status_code, 200)
-
         # check request URL is /forgotpassword
         assert_equal(res.request.path, self.post_url)
-
         # check push notification
         assert_in_html('If there is an OSF account', res)
         assert_not_in_html('Please wait', res)
 
-        # check verification_key(OSF) is set
+        # check verification_key_v2 is set
         self.user.reload()
-        assert_not_equal(self.user.verification_key, None)
+        assert_not_equal(self.user.verification_key_v2, {})
 
     # test that non-existing user cannot receive reset password email
     @mock.patch('framework.auth.views.mails.send_mail')
@@ -946,20 +956,17 @@ class TestForgotPassword(OsfTestCase):
 
         # check mail was not sent
         assert_false(mock_send_mail.called)
-
         # check http 200 response
         assert_equal(res.status_code, 200)
-
         # check request URL is /forgotpassword
         assert_equal(res.request.path, self.post_url)
-
         # check push notification
         assert_in_html('If there is an OSF account', res)
         assert_not_in_html('Please wait', res)
 
-        # check verification_key(OSF) is not set
+        # check verification_key_v2 is not set
         self.user.reload()
-        assert_equal(self.user.verification_key, None)
+        assert_equal(self.user.verification_key_v2, {})
 
     # test that user cannot submit forgot password request too quickly
     @mock.patch('framework.auth.views.mails.send_mail')
@@ -973,7 +980,6 @@ class TestForgotPassword(OsfTestCase):
 
         # check http 200 response
         assert_equal(res.status_code, 200)
-
         # check push notification
         assert_in_html('Please wait', res)
         assert_not_in_html('If there is an OSF account', res)
@@ -985,24 +991,45 @@ class TestResetPassword(OsfTestCase):
         super(TestResetPassword, self).setUp()
         self.user = AuthUserFactory()
         self.another_user = AuthUserFactory()
-        self.osf_key = generate_verification_key()
-        self.user.verification_key = self.osf_key
+        self.osf_key_v2 = generate_verification_key(verification_type='password')
+        self.user.verification_key_v2 = self.osf_key_v2
+        self.user.verification_key = None
         self.user.save()
-        self.cas_key = None
-        self.get_url = web_url_for('reset_password_get', verification_key=self.osf_key)
-        self.get_url_invalid_key = web_url_for('reset_password_get', verification_key=generate_verification_key())
+        self.get_url = web_url_for(
+            'reset_password_get',
+            uid=self.user._id,
+            token=self.osf_key_v2['token']
+        )
+        self.get_url_invalid_key = web_url_for(
+            'reset_password_get',
+            uid=self.user._id,
+            token=generate_verification_key()
+        )
+        self.get_url_invalid_user = web_url_for(
+            'reset_password_get',
+            uid=self.another_user._id,
+            token=self.osf_key_v2['token']
+        )
 
-    # load reset password page if verification_key is valid
+    # successfully load reset password page
     def test_reset_password_view_returns_200(self):
         res = self.app.get(self.get_url)
         assert_equal(res.status_code, 200)
 
-    # raise http 400 error if verification_key(OSF) is invalid
+    # raise http 400 error
     def test_reset_password_view_raises_400(self):
         res = self.app.get(self.get_url_invalid_key, expect_errors=True)
         assert_equal(res.status_code, 400)
 
-    # successfully reset password if osf verification_key(OSF) is valid and form is valid
+        res = self.app.get(self.get_url_invalid_user, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+        self.user.verification_key_v2['expires'] = dt.datetime.utcnow()
+        self.user.save()
+        res = self.app.get(self.get_url, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    # successfully reset password
     @mock.patch('framework.auth.cas.CasClient.service_validate')
     def test_can_reset_password_if_form_success(self, mock_service_validate):
         # load reset password page and submit email
@@ -1012,25 +1039,16 @@ class TestResetPassword(OsfTestCase):
         form['password2'] = 'newpassword'
         res = form.submit()
 
-    # successfully reset password if osf verification_key(OSF) is valid and form is valid
-    @mock.patch('framework.auth.cas.CasClient.service_validate')
-    def test_can_reset_password_if_form_success(self, mock_service_validate):
-        # load reset password page and submit email
-        res = self.app.get(self.get_url)
-        form = res.forms['resetPasswordForm']
-        form['password'] = 'newpassword'
-        form['password2'] = 'newpassword'
-        res = form.submit()
-
-        # check request URL is /resetpassword with verification_key(OSF)
+        # check request URL is /resetpassword with username and new verification_key_v2 token
         request_url_path = res.request.path
         assert_in('resetpassword', request_url_path)
-        assert_in(self.user.verification_key, request_url_path)
+        assert_in(self.user._id, request_url_path)
+        assert_not_in(self.user.verification_key_v2['token'], request_url_path)
 
-        # check verification_key(OSF) is destroyed and a new verification_key(CAS) is in place
+        # check verification_key_v2 for OSF is destroyed and verification_key for CAS is in place
         self.user.reload()
-        self.cas_key = self.user.verification_key
-        assert_not_equal(self.cas_key, self.osf_key)
+        assert_equal(self.user.verification_key_v2, {})
+        assert_not_equal(self.user.verification_key, None)
 
         # check redirection to CAS login with username and the new verification_key(CAS)
         assert_equal(res.status_code, 302)
@@ -1043,7 +1061,7 @@ class TestResetPassword(OsfTestCase):
         self.user.reload()
         assert_true(self.user.check_password('newpassword'))
 
-        # check if verification_key(CAS) is destroyed
+        # check if verification_key is destroyed after service validation
         mock_service_validate.return_value = cas.CasResponse(
             authenticated=True,
             user=self.user._primary_key,
@@ -1051,10 +1069,10 @@ class TestResetPassword(OsfTestCase):
         )
         ticket = fake.md5()
         service_url = 'http://accounts.osf.io/?ticket=' + ticket
-        resp = cas.make_response_from_ticket(ticket, service_url)
-        assert_not_equal(self.user.verification_key, self.cas_key)
+        cas.make_response_from_ticket(ticket, service_url)
+        assert_equal(self.user.verification_key, None)
 
-    #  logged-in user should be automatically logged out upon before reset password
+    #  log users out before they land on reset password page
     def test_reset_password_logs_out_user(self):
         # visit reset password link while another user is logged in
         res = self.app.get(self.get_url, auth=self.another_user.auth)

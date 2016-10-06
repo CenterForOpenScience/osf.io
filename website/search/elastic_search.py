@@ -25,6 +25,7 @@ from framework.celery_tasks import app as celery_app
 from framework.mongo.utils import paginated
 
 from website import settings
+from website.files.models import FileNode
 from website.filters import gravatar
 from website.models import User, Node
 from website.project.licenses import serialize_node_license_record
@@ -45,6 +46,14 @@ ALIASES = {
     'total': 'Total',
     'file': 'Files',
     'institution': 'Institutions',
+}
+
+DOC_TYPE_TO_MODEL = {
+    'component': Node,
+    'project': Node,
+    'registration': Node,
+    'user': User,
+    'file': FileNode,
 }
 
 # Prevent tokenizing and stop word removal.
@@ -155,7 +164,7 @@ def get_tags(query, index):
 
 
 @requires_search
-def search(query, index=None, doc_type='_all'):
+def search(query, index=None, doc_type='_all', raw=False):
     """Search for a query
 
     :param query: The substring of the username/project name/tag to search for
@@ -192,17 +201,16 @@ def search(query, index=None, doc_type='_all'):
 
     # Run the real query and get the results
     raw_results = es.search(index=index, doc_type=doc_type, body=query)
-
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
+
     return_value = {
-        'results': format_results(results),
+        'results': raw_results['hits']['hits'] if raw else format_results(results),
         'counts': counts,
         'aggs': aggregations,
         'tags': tags,
         'typeAliases': ALIASES
     }
     return return_value
-
 
 def format_results(results):
     ret = []
