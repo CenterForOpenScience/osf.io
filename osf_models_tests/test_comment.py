@@ -1,10 +1,21 @@
 import pytest
+from nose.tools import *  # noqa PEP8 asserts
+from nose_parameterized import parameterized
+from collections import OrderedDict
 
 from modularodm.exceptions import ValidationError
 
+
 from website import settings
 from website.util import permissions
+from website.project.views.comment import update_file_guid_referent
 from website.project.signals import comment_added, mention_added, contributor_added
+from website.files.models.box import BoxFile
+from website.files.models.dropbox import DropboxFile
+from website.files.models.github import GithubFile
+from website.files.models.googledrive import GoogleDriveFile
+from website.files.models.osfstorage import OsfStorageFile
+from website.files.models.s3 import S3File
 from framework.exceptions import PermissionsError
 from tests.base import capture_signals
 from osf_models.models import Comment, NodeLog, Guid
@@ -43,6 +54,7 @@ def test_comments_are_queryable_by_root_target():
     assert Comment.find(Q('root_target', 'eq', root_target._id))[0] == comment
 
 
+# copied from tests/test_comments.py
 class TestCommentModel:
 
     def test_create(self):
@@ -71,7 +83,7 @@ class TestCommentModel:
                 auth=auth,
                 user=user,
                 node=node,
-                target=node.guid,
+                target=node.guids.all()[0],
                 content=''.join(['c' for c in range(settings.COMMENT_MAXLENGTH + 3)])
             )
 
@@ -81,7 +93,7 @@ class TestCommentModel:
                 auth=auth,
                 user=user,
                 node=node,
-                target=node.guid,
+                target=node.guids.all()[0],
                 content=''.join(['c' for c in range(settings.COMMENT_MAXLENGTH - 8)]) + '[@George Ant](http://localhost:5000/' + user._id + '/)'
             )
 
@@ -90,7 +102,7 @@ class TestCommentModel:
             auth=auth,
             user=user,
             node=node,
-            target=node.guid,
+            target=node.guids.all()[0],
             content=''.join(['c' for c in range(settings.COMMENT_MAXLENGTH - 12)]) + '[@George Ant](http://localhost:5000/' + user._id + '/)'
         )
 
@@ -101,7 +113,7 @@ class TestCommentModel:
                 auth=auth,
                 user=user,
                 node=node,
-                target=node.guid,
+                target=node.guids.all()[0],
                 content=None
             )
         assert error.value.messages[0] == 'This field cannot be null.'
@@ -112,7 +124,7 @@ class TestCommentModel:
                 auth=auth,
                 user=user,
                 node=node,
-                target=node.guid,
+                target=node.guids.all()[0],
                 content=''
             )
         assert error.value.messages[0] == 'This field cannot be blank.'
@@ -123,7 +135,7 @@ class TestCommentModel:
                 auth=auth,
                 user=user,
                 node=node,
-                target=node.guid,
+                target=node.guids.all()[0],
                 content='    '
             )
         assert error.value.messages[0] == 'Value must not be empty.'
@@ -134,7 +146,7 @@ class TestCommentModel:
                 auth=auth,
                 user=user,
                 node=node,
-                target=node.guid,
+                target=node.guids.all()[0],
                 content='This is a comment.'
             )
         assert mock_signals.signals_sent() == ({comment_added})
@@ -145,7 +157,7 @@ class TestCommentModel:
                 auth=auth,
                 user=user,
                 node=node,
-                target=node.guid,
+                target=node.guids.all()[0],
                 content='This is a comment with a bad mention [@Unconfirmed User](http://localhost:5000/' + user._id + '/).'
             )
         assert mock_signals.signals_sent() == ({comment_added, mention_added})
@@ -163,7 +175,7 @@ class TestCommentModel:
                     auth=auth,
                     user=user,
                     node=node,
-                    target=node.guid,
+                    target=node.guids.all()[0],
                     content='This is a comment with a bad mention [@Unconfirmed User](http://localhost:5000/' + user._id + '/).'
                 )
         assert mock_signals.signals_sent() == ({contributor_added})
@@ -177,7 +189,7 @@ class TestCommentModel:
                     auth=auth,
                     user=user,
                     node=node,
-                    target=node.guid,
+                    target=node.guids.all()[0],
                     content='This is a comment with a bad mention [@Non-contributor User](http://localhost:5000/' + user._id + '/).'
                 )
         assert mock_signals.signals_sent() == set([])
@@ -190,7 +202,7 @@ class TestCommentModel:
                     auth=auth,
                     user=user,
                     node=node,
-                    target=node.guid,
+                    target=node.guids.all()[0],
                     content='This is a comment with a bad mention [@Not a User](http://localhost:5000/qwert/).'
                 )
         assert mock_signals.signals_sent() == set([])
