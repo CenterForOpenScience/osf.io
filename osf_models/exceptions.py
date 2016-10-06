@@ -96,12 +96,12 @@ def reraise_django_validation_errors():
     except DjangoValidationError as err:
         raise ValidationError(*err.args)
 
-class ValidationValueError(DjangoValidationError, MODMValidationValueError):
+class ValidationValueError(ValidationError, MODMValidationValueError):
     """ Raised during validation if the value of the input is unacceptable but
      the type is correct.
      """
     pass
 
-class ValidationTypeError(DjangoValidationError, MODMValidationTypeError):
+class ValidationTypeError(ValidationError, MODMValidationTypeError):
     """ Raised during validation if the value of the input is unacceptable and type is incorrect """
     pass
