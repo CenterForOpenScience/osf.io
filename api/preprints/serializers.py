@@ -51,10 +51,9 @@ class PreprintSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     subjects = JSONAPIListField(child=JSONAPIListField(child=TaxonomyField()), required=False)
-    provider = ser.CharField(required=False)
     date_created = ser.DateTimeField(read_only=True)
     date_published = ser.DateTimeField(read_only=True)
-    doi = ser.CharField(source='preprint_article_doi', required=False)
+    doi = ser.CharField(source='preprint_article_doi', required=False, blank=True, allow_null=True)
     is_published = ser.BooleanField(required=False)
 
     node = NodeRelationshipField(
