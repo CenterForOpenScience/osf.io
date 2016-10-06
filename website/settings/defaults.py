@@ -281,6 +281,7 @@ ALL_MY_REGISTRATIONS_NAME = 'All my registrations'
 
 # Most Popular and New and Noteworthy Nodes
 POPULAR_LINKS_NODE = None  # TODO Override in local.py in production.
+POPULAR_LINKS_NODE_REGISTRATIONS = None  # TODO Override in local.py in production.
 NEW_AND_NOTEWORTHY_LINKS_NODE = None  # TODO Override in local.py in production.
 
 NEW_AND_NOTEWORTHY_CONTRIBUTOR_BLACKLIST = []  # TODO Override in local.py in production.
