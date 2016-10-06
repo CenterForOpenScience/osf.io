@@ -139,10 +139,28 @@ def file_on(node):
     node.get_addon('osfstorage').get_root().append_file('Blim Blammity')
     return 'blim', 'file', 'name', 'Blim Blammity'
 
-def approved_registration_of(node):
-    mock_archive(node, autocomplete=True, autoapprove=True).__enter__()  # ?!
-    return 'flim', 'registration', 'title', 'Flim Flammity'
+_reg = 'flim', 'registration', 'title', 'Flim Flammity'
 
+def approved_unembargoed_registration_of(node):
+    mock_archive(node, autocomplete=True, autoapprove=True).__enter__()  # ?!
+    return _reg
+
+def unapproved_unembargoed_registration_of(node):
+    mock_archive(node, autocomplete=True, autoapprove=False).__enter__()  # ?!
+    return _reg
+
+REGFUNCS = (
+    approved_unembargoed_registration_of,
+    unapproved_unembargoed_registration_of,
+)
+VARYFUNCS = (
+    base,
+    file_on,
+) + REGFUNCS
+
+PRIVATE_REGISTRATIONS = (
+    unapproved_unembargoed_registration_of,
+)
 
 class TestVaryFuncs(DbIsolationMixin, OsfTestCase):
 
@@ -162,32 +180,45 @@ class TestVaryFuncs(DbIsolationMixin, OsfTestCase):
         assert_equal(File.find_one(Q('is_file', 'eq', True)).name, 'Blim Blammity')
 
 
-    # aro - approved_registration_of
+    # ro - *_registration_of
 
-    def test_aro_makes_a_registration_of_a_node(self):
-        approved_registration_of(factories.ProjectFactory(title='Flim Flammity'))
-        assert_equal(Node.find_one(Q('is_registration', 'eq', True)).title, 'Flim Flammity')
+    def test_ro_makes_an_approved_unembargoed_registration_of_a_node(self):
+        approved_unembargoed_registration_of(factories.ProjectFactory(title='Flim Flammity'))
+        reg = Node.find_one(Q('is_registration', 'eq', True))
+        assert_equal(reg.title, 'Flim Flammity')
+        ok_(reg.is_public)
+
+    def test_ro_makes_an_unapproved_unembargoed_registration_of_a_node(self):
+        unapproved_unembargoed_registration_of(factories.ProjectFactory(title='Flim Flammity'))
+        reg = Node.find_one(Q('is_registration', 'eq', True))
+        assert_equal(reg.title, 'Flim Flammity')
+        ok_(not reg.is_public)
 
 
 # gettin' it together
 
-def namefunc(varyfunc, status, nodefunc, included, permfunc, **_):
+def namefunc(varyfunc, status, nodefunc, should_see, permfunc, **_):
     return "{}{} {} {} {}".format(
         '' if varyfunc is base else varyfunc.__name__.replace('_', ' ') + ' ',
         'private' if status is PRIVATE else 'public',
         'project' if nodefunc is proj else 'component',
-        'shown to' if included else 'hidden from',
+        'shown to' if should_see else 'hidden from',
         permfunc.__name__
     )
+
+def seefunc(status, varyfunc, permfunc):
+    if status is PRIVATE or varyfunc in PRIVATE_REGISTRATIONS:
+        return permfunc is read
+    return True
 
 def generate_cases():
     for status in (PRIVATE, PUBLIC):
         for nodefunc in (proj, comp):
             for permfunc in (anon, auth, read):
-                included = permfunc is read if status is PRIVATE else True
-                for varyfunc in (base, file_on, approved_registration_of):
-                    if status is PRIVATE and varyfunc is approved_registration_of: continue
-                    yield namefunc(**locals()), varyfunc, nodefunc, status, permfunc, included
+                for varyfunc in VARYFUNCS:
+                    if status is PRIVATE and varyfunc in REGFUNCS: continue
+                    should_see = seefunc(status, varyfunc, permfunc)
+                    yield namefunc(**locals()), varyfunc, nodefunc, status, permfunc, should_see
 
 
 class TestGenerateCases(unittest.TestCase):
@@ -195,7 +226,7 @@ class TestGenerateCases(unittest.TestCase):
     # gc - generate_cases
 
     def test_gc_generates_cases(self):
-        assert_equal(len(list(generate_cases())), 30)
+        assert_equal(len(list(generate_cases())), 36)
 
     def test_gc_doesnt_create_any_nodes(self):
         list(generate_cases())
@@ -208,9 +239,14 @@ def possiblyExpectFailure(case):
     # of the cases we're feeding to node-parameterized. TODO It can be removed
     # when we write the code to unfail the tests.
 
+    def should_fail(status, varyfunc, permfunc):
+        if status is PRIVATE or varyfunc in PRIVATE_REGISTRATIONS:
+            return permfunc is read
+        return False
+
     def test(*a, **kw):  # name must start with test or it's ignored
-        _, _, _, _, status, permfunc, _ = a
-        if status is PRIVATE and permfunc is read:
+        _, _, varyfunc, _, status, permfunc, _ = a
+        if should_fail(status, varyfunc, permfunc):
 
             # This bit is copied from the unittest/case.py:expectedFailure
             # decorator.
@@ -236,10 +272,10 @@ class TestSearchSearchAPI(SearchTestCase):
 
     @parameterized.expand(generate_cases)
     @possiblyExpectFailure
-    def test(self, ignored, varyfunc, nodefunc, status, permfunc, included):
+    def test(self, ignored, varyfunc, nodefunc, status, permfunc, should_see):
         node = nodefunc(status)
         auth = permfunc(node)
         query, type_, key, expected_name = varyfunc(node)
-        expected = [(expected_name, type_)] if included else []
+        expected = [(expected_name, type_)] if should_see else []
         results = self.search(query, type_, auth)
         assert_equal([(x[key], x['category']) for x in results], expected)
