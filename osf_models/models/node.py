@@ -513,6 +513,26 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 auth=Auth(user)
             )
 
+    def remove_affiliated_institution(self, inst, user, save=False, log=True):
+        if self.is_affiliated_with_institution(inst):
+            self.affiliated_institutions.remove(inst)
+            if log:
+                self.add_log(
+                    action=NodeLog.AFFILIATED_INSTITUTION_REMOVED,
+                    params={
+                        'node': self._primary_key,
+                        'institution': {
+                            'id': inst._id,
+                            'name': inst.name
+                        }
+                    },
+                    auth=Auth(user)
+                )
+            if save:
+                self.save()
+            return True
+        return False
+
     def can_view(self, auth):
         if auth and getattr(auth.private_link, 'anonymous', False):
             return auth.private_link.nodes.filter(pk=self.pk).exists()
