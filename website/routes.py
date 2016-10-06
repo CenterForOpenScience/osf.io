@@ -59,15 +59,19 @@ def get_globals():
 
     user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in user.affiliated_institutions] if user else []
     all_institutions = [inst for inst in Institution.find().sort('name')]
-    # currently only checking for >= 5 public nodes of any type (project or registration)
     dashboard_institutions = [
         {'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners}
         for inst in all_institutions
         if len(
-            Node.find_by_institutions(inst, query=(Q('is_public', 'eq', True) & Q('is_registration', 'eq', False)))
+            Node.find_by_institutions(inst, query=(
+                Q('is_public', 'eq', True) &
+                Q('is_folder', 'ne', True) &
+                Q('is_deleted', 'ne', True) &
+                Q('parent_node', 'eq', None) &
+                Q('is_registration', 'eq', False)
+            ))
         ) >= settings.INSTITUTION_DISPLAY_NODE_THRESHOLD
     ]
-
     location = geolite2.lookup(request.remote_addr) if request.remote_addr else None
     if request.host_url != settings.DOMAIN:
         try:
