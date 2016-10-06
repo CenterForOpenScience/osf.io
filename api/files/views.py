@@ -13,7 +13,8 @@ from website.files.models import (
 
 from api.base.exceptions import Gone
 from api.base.permissions import PermissionWithGetter
-from api.base.utils import get_object_or_error
+from api.base.throttling import CreateGuidThrottle, NonCookieAuthThrottle, UserRateThrottle
+from api.base import utils
 from api.base.views import JSONAPIBaseView
 from api.base import permissions as base_permissions
 from api.nodes.permissions import ContributorOrPublic
@@ -34,9 +35,9 @@ class FileMixin(object):
 
     def get_file(self, check_permissions=True):
         try:
-            obj = get_object_or_error(FileNode, self.kwargs[self.file_lookup_url_kwarg])
+            obj = utils.get_object_or_error(FileNode, self.kwargs[self.file_lookup_url_kwarg])
         except (NotFound, Gone):
-            obj = get_object_or_error(Guid, self.kwargs[self.file_lookup_url_kwarg]).referent
+            obj = utils.get_object_or_error(Guid, self.kwargs[self.file_lookup_url_kwarg]).referent
             if not isinstance(obj, StoredFileNode):
                 raise NotFound
             obj = obj.wrapped()
@@ -319,6 +320,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
     serializer_class = FileDetailSerializer
+    throttle_classes = (CreateGuidThrottle, NonCookieAuthThrottle, UserRateThrottle, )
     view_category = 'files'
     view_name = 'file-detail'
 
@@ -327,8 +329,14 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
 
     # overrides RetrieveAPIView
     def get_object(self):
-        return self.get_file()
+        user = utils.get_user_auth(self.request).user
 
+        if (self.request.GET.get('create_guid', False) and
+                self.get_node().has_permission(user, 'admin') and
+                utils.has_admin_scope(self.request)):
+            self.get_file(check_permissions=True).get_guid(create=True)
+
+        return self.get_file()
 
 class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
     """List of versions for the requested file. *Read-only*.
@@ -456,4 +464,4 @@ class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
         # May raise a permission denied
         # Kinda hacky but versions have no reference to node or file
         self.check_object_permissions(self.request, file)
-        return get_object_or_error(FileVersion, getattr(maybe_version, '_id', ''))
+        return utils.get_object_or_error(FileVersion, getattr(maybe_version, '_id', ''))

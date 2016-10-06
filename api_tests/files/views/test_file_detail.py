@@ -1,11 +1,14 @@
 from __future__ import unicode_literals
 
-import pytz
+import itsdangerous
+import mock
 from nose.tools import *  # flake8: noqa
+import pytz
 
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils
 from framework.auth.core import Auth
+from framework.sessions.model import Session
 
 from tests.base import ApiTestCase, capture_signals
 from tests.factories import (
@@ -14,6 +17,7 @@ from tests.factories import (
     AuthUserFactory,
     CommentFactory
 )
+from website import settings as website_settings
 from website.addons.osfstorage import settings as osfstorage_settings
 from website.project.signals import contributor_removed
 from website.project.model import NodeLog
@@ -56,6 +60,33 @@ class TestFileView(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_is_not_none(guid)
         assert_equal(res.json['data']['attributes']['guid'], guid._id)
+
+    @mock.patch('api.base.throttling.CreateGuidThrottle.allow_request')
+    def test_file_guid_not_created_with_basic_auth(self, mock_allow):
+        res = self.app.get(self.file_url + '?create_guid=1', auth=self.user.auth)
+        guid = res.json['data']['attributes'].get('guid', None)
+        assert_equal(res.status_code, 200)
+        assert_equal(mock_allow.call_count, 1)
+        assert guid is None
+
+    @mock.patch('api.base.throttling.CreateGuidThrottle.allow_request')
+    def test_file_guid_created_with_cookie(self, mock_allow):
+        session = Session(data={'auth_user_id': self.user._id})
+        session.save()
+        cookie = itsdangerous.Signer(website_settings.SECRET_KEY).sign(session._id)
+        self.app.set_cookie(website_settings.COOKIE_NAME, str(cookie))
+
+        res = self.app.get(self.file_url + '?create_guid=1', auth=self.user.auth)
+
+        self.app.reset()  # clear cookie
+
+        assert_equal(res.status_code, 200)
+
+        guid = res.json['data']['attributes'].get('guid', None)
+        assert_is_not_none(guid)
+
+        assert_equal(guid, self.file.get_guid()._id)
+        assert_equal(mock_allow.call_count, 1)
 
     def test_get_file(self):
         res = self.app.get(self.file_url, auth=self.user.auth)
