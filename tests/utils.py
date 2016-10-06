@@ -165,6 +165,13 @@ def make_drf_request(*args, **kwargs):
     # A DRF Request wraps a Django HttpRequest
     return Request(http_request, *args, **kwargs)
 
+def make_drf_request_with_version(version=None, *args, **kwargs):
+    req = make_drf_request()
+    req.parser_context['kwargs'] = {'version': 'v2'}
+    if version:
+        req.version= version
+    return req
+
 class MockAuth(object):
 
     def __init__(self, user):

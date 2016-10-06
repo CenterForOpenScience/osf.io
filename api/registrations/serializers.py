@@ -15,7 +15,8 @@ from api.nodes.serializers import NodeSerializer, NodeProviderSerializer
 from api.nodes.serializers import NodeLinksSerializer, NodeLicenseSerializer
 from api.nodes.serializers import NodeContributorsSerializer, NodeTagField
 from api.base.serializers import (IDField, RelationshipField, LinksField, HideIfWithdrawal,
-                                  FileCommentRelationshipField, NodeFileHyperLinkField, HideIfRegistration, JSONAPIListField)
+                                  FileCommentRelationshipField, NodeFileHyperLinkField, HideIfRegistration,
+                                  JSONAPIListField, ShowIfVersion,)
 
 
 class BaseRegistrationSerializer(NodeSerializer):
@@ -127,11 +128,12 @@ class BaseRegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<pk>'}
     ))
 
-    node_links = HideIfWithdrawal(RelationshipField(
+    node_links = ShowIfVersion(HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-pointers',
         related_view_kwargs={'node_id': '<pk>'},
-        related_meta={'count': 'get_pointers_count'}
-    ))
+        related_meta={'count': 'get_pointers_count'},
+        help_text='This feature is deprecated as of version 2.1. Use linked_nodes instead.'
+    )), min_version='2.0', max_version='2.0')
 
     parent = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-detail',
@@ -191,7 +193,10 @@ class BaseRegistrationSerializer(NodeSerializer):
     links = LinksField({'self': 'get_registration_url', 'html': 'get_absolute_html_url'})
 
     def get_registration_url(self, obj):
-        return absolute_reverse('registrations:registration-detail', kwargs={'node_id': obj._id})
+        return absolute_reverse('registrations:registration-detail', kwargs={
+            'node_id': obj._id,
+            'version': self.context['request'].parser_context['kwargs']['version']
+        })
 
     def get_absolute_url(self, obj):
         return self.get_registration_url(obj)
@@ -296,24 +301,24 @@ class RegistrationDetailSerializer(BaseRegistrationSerializer):
 
 class RegistrationNodeLinksSerializer(NodeLinksSerializer):
     def get_absolute_url(self, obj):
-        node_id = self.context['request'].parser_context['kwargs']['node_id']
         return absolute_reverse(
             'registrations:registration-pointer-detail',
             kwargs={
-                'node_id': node_id,
-                'node_link_id': obj._id
+                'node_link_id': obj._id,
+                'node_id': self.context['request'].parser_context['kwargs']['node_id'],
+                'version': self.context['request'].parser_context['kwargs']['version']
             }
         )
 
 
 class RegistrationContributorsSerializer(NodeContributorsSerializer):
     def get_absolute_url(self, obj):
-        node_id = self.context['request'].parser_context['kwargs']['node_id']
         return absolute_reverse(
             'registrations:registration-contributor-detail',
             kwargs={
-                'node_id': node_id,
-                'user_id': obj._id
+                'user_id': obj._id,
+                'node_id': self.context['request'].parser_context['kwargs']['node_id'],
+                'version': self.context['request'].parser_context['kwargs']['version']
             }
         )
 

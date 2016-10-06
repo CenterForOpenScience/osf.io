@@ -35,4 +35,5 @@ class IdentifierSerializer(JSONAPISerializer):
     def self_url(self, obj):
         return absolute_reverse('identifiers:identifier-detail', kwargs={
             'identifier_id': obj._id,
+            'version': self.context['request'].parser_context['kwargs']['version']
         })

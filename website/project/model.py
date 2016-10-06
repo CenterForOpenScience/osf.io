@@ -2711,7 +2711,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
     @property
     def api_v2_url(self):
-        return reverse('nodes:node-detail', kwargs={'node_id': self._id})
+        return reverse('nodes:node-detail', kwargs={'node_id': self._id, 'version': 'v2'})
 
     @property
     def absolute_api_v2_url(self):

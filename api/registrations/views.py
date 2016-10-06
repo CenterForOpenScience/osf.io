@@ -20,7 +20,8 @@ from api.nodes.permissions import (
     ContributorOrPublic,
     ContributorOrPublicForRelationshipPointers,
     AdminOrPublic,
-    ExcludeWithdrawals
+    ExcludeWithdrawals,
+    NodeLinksShowIfVersion,
 )
 from api.registrations.serializers import (
     RegistrationSerializer,
@@ -748,7 +749,8 @@ class RegistrationNodeLinksList(BaseNodeLinksList, RegistrationMixin):
         ContributorOrPublic,
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
-        ExcludeWithdrawals
+        ExcludeWithdrawals,
+        NodeLinksShowIfVersion,
     )
 
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
@@ -803,7 +805,8 @@ class RegistrationNodeLinksDetail(BaseNodeLinksDetail, RegistrationMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        ExcludeWithdrawals
+        ExcludeWithdrawals,
+        NodeLinksShowIfVersion,
     )
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NULL]
