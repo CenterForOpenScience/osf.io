@@ -192,7 +192,7 @@ var FileRevisionsTable = {
         }
         options[revision.versionIdentifier] = revision.version;
 
-        revision.date = new $osf.FormattableDate(revision.modified);
+        revision.date = new $osf.FormattableDate(revision.modified_utc);
         revision.displayDate = revision.date.local !== 'Invalid date' ?
             revision.date.local :
             revision.date;
