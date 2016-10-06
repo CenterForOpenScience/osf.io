@@ -178,6 +178,7 @@ PATCHED_MODELS = (
     'Identifier',
     'Subject',
     'PreprintProvider',
+    'StoredFileNode',
 )
 
 # TODO: This won't work for modules that do e.g. `from website import models`. Rethink.
