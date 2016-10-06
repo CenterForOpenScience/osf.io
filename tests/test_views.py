@@ -2320,6 +2320,103 @@ class TestClaimViews(OsfTestCase):
         )
         self.project.save()
 
+    @mock.patch('website.project.views.contributor.send_claim_email')
+    def test_claim_user_already_registered_redirects_to_claim_user_registered(self, claim_email):
+        name = fake.name()
+        email = fake.email()
+
+        # project contributor adds an unregistered contributor (without an email) on public project
+        unregistered_user = self.project.add_unregistered_contributor(
+            fullname=name,
+            email=None,
+            auth=Auth(user=self.referrer)
+        )
+        assert_in(unregistered_user, self.project.contributors)
+
+        # unregistered user comes along and claims themselves on the public project, entering an email
+        invite_url = self.project.api_url_for('claim_user_post', uid='undefined')
+        self.app.post_json(invite_url, {
+            'pk': unregistered_user._primary_key,
+            'value': email
+        })
+        assert_equal(claim_email.call_count, 1)
+
+        # set unregistered record email since we are mocking send_claim_email()
+        unclaimed_record = unregistered_user.get_unclaimed_record(self.project._primary_key)
+        unclaimed_record.update({'email': email})
+        unregistered_user.save()
+
+        # unregistered user then goes and makes an account with same email, before claiming themselves as contributor
+        UserFactory(username=email, fullname=name)
+
+        # claim link for the now registered email is accessed while not logged in
+        token = unregistered_user.get_unclaimed_record(self.project._primary_key)['token']
+        claim_url = '/user/{uid}/{pid}/claim/?token={token}'.format(
+            uid=unregistered_user._id,
+            pid=self.project._id,
+            token=token
+        )
+        res = self.app.get(claim_url)
+
+        # should redirect to 'claim_user_registered' view
+        claim_registered_url = '/user/{uid}/{pid}/claim/verify/{token}/'.format(
+            uid=unregistered_user._id,
+            pid=self.project._id,
+            token=token
+        )
+        assert_equal(res.status_code, 302)
+        assert_in(claim_registered_url, res.headers.get('Location'))
+
+    @mock.patch('website.project.views.contributor.send_claim_email')
+    def test_claim_user_already_registered_secondary_email_redirects_to_claim_user_registered(self, claim_email):
+        name = fake.name()
+        email = fake.email()
+        secondary_email = fake.email()
+
+        # project contributor adds an unregistered contributor (without an email) on public project
+        unregistered_user = self.project.add_unregistered_contributor(
+            fullname=name,
+            email=None,
+            auth=Auth(user=self.referrer)
+        )
+        assert_in(unregistered_user, self.project.contributors)
+
+        # unregistered user comes along and claims themselves on the public project, entering an email
+        invite_url = self.project.api_url_for('claim_user_post', uid='undefined')
+        self.app.post_json(invite_url, {
+            'pk': unregistered_user._primary_key,
+            'value': secondary_email
+        })
+        assert_equal(claim_email.call_count, 1)
+
+        # set unregistered record email since we are mocking send_claim_email()
+        unclaimed_record = unregistered_user.get_unclaimed_record(self.project._primary_key)
+        unclaimed_record.update({'email': secondary_email})
+        unregistered_user.save()
+
+        # unregistered user then goes and makes an account with same email, before claiming themselves as contributor
+        registered_user = UserFactory(username=email, fullname=name)
+        registered_user.emails.append(secondary_email)
+        registered_user.save()
+
+        # claim link for the now registered email is accessed while not logged in
+        token = unregistered_user.get_unclaimed_record(self.project._primary_key)['token']
+        claim_url = '/user/{uid}/{pid}/claim/?token={token}'.format(
+            uid=unregistered_user._id,
+            pid=self.project._id,
+            token=token
+        )
+        res = self.app.get(claim_url)
+
+        # should redirect to 'claim_user_registered' view
+        claim_registered_url = '/user/{uid}/{pid}/claim/verify/{token}/'.format(
+            uid=unregistered_user._id,
+            pid=self.project._id,
+            token=token
+        )
+        assert_equal(res.status_code, 302)
+        assert_in(claim_registered_url, res.headers.get('Location'))
+
     def test_claim_user_invited_with_no_email_posts_to_claim_form(self):
         given_name = fake.name()
         invited_user = self.project.add_unregistered_contributor(

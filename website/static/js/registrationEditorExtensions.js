@@ -6,7 +6,6 @@ var bootbox = require('bootbox');  // TODO: Why is this required? Is it? See [#O
 var FilesWidget = require('js/filesWidget');
 var Fangorn = require('js/fangorn');
 var $osf = require('js/osfHelpers');
-var waterbutler = require('js/waterbutler');
 var ContribAdder = require('js/contribAdder');
 
 var node = window.contextVars.node;

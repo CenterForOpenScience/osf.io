@@ -20,8 +20,18 @@ REST_FRAMEWORK = {
     ),
     'EXCEPTION_HANDLER': 'api.base.exceptions.json_api_exception_handler',
     'DEFAULT_CONTENT_NEGOTIATION_CLASS': 'api.base.content_negotiation.JSONAPIContentNegotiation',
-    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.AcceptHeaderVersioning',
+    'DEFAULT_VERSIONING_CLASS': 'api.base.versioning.BaseVersioning',
     'DEFAULT_VERSION': '2.0',
+    # The versions below are specifically for testing purposes and do not reflect the actual versioning of the API.
+    # If changes are made to this list, or to DEFAULT_VERSION above, please reflect those changes in
+    # api_tests/base/test_versioning.py so that local tests will pass.
+    'ALLOWED_VERSIONS': (
+        '2.0',
+        '2.0.1',
+        '2.1',
+        '3.0',
+        '3.0.1',
+    ),
     'DEFAULT_FILTER_BACKENDS': ('api.base.filters.ODMOrderingFilter',),
     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',
     'ORDERING_PARAM': 'sort',
@@ -39,6 +49,7 @@ REST_FRAMEWORK = {
         'user': '1000000/hour',
         'non-cookie-auth': '1000000/hour',
         'add-contributor': '10/second',
+        'create-guid': '1000/hour',
         'root-anon-throttle': '1000/hour',
         'test-user': '2/hour',
         'test-anon': '1/hour',

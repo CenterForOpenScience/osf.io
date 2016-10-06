@@ -366,7 +366,7 @@ ${parent.javascript_bottom()}
     window.contextVars.wiki = {
         canEdit: canEditBody,
         canEditPageName: canEditPageName,
-        usePythonRender: ${ use_python_render | sjson, n },
+        renderedBeforeUpdate: ${ rendered_before_update | sjson, n },
         versionSettings: ${ version_settings | sjson, n },
         panelsUsed: ${ panels_used | sjson, n },
         wikiID: ${ wiki_id | sjson, n },
