@@ -360,17 +360,22 @@ def external_login_confirm_email_get(auth, uid, token):
         raise HTTPError(http.BAD_REQUEST)
 
     next_url = request.args.get('next')
+    redirect_to_campaign = False
     # next_url should always exist by design, set `dashboard` as default
     if not next_url:
         next_url = web_url_for('dashboard', _absolute=True)
-
+    for campaign in campaigns.CAMPAIGNS:
+        if next_url.startswith(campaigns.campaign_url_for(campaign)):
+            redirect_to_campaign = True
+            break
     # if user is already logged in
     if auth and auth.user:
         # if it is the expected user
         if auth.user._id == user._id:
             new = request.args.get('new', None)
-            if new:
+            if new and not redirect_to_campaign:
                 status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True)
+                return redirect(web_url_for('dashboard'))
             return redirect(next_url)
         # if it is a wrong user
         return auth_logout(redirect_url=request.url)
