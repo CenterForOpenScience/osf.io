@@ -139,21 +139,21 @@ def file_on(node):
     node.get_addon('osfstorage').get_root().append_file('Blim Blammity')
     return 'blim', 'file', 'name', 'Blim Blammity'
 
-_reg = 'flim', 'registration', 'title', 'Flim Flammity'
+def _register(*a, **kw):
+    mock_archive(*a, **kw).__enter__()  # gooooooofffyyyyyy
+    return 'flim', 'registration', 'title', 'Flim Flammity'
 
-def approved_unembargoed_registration_of(node):
-    mock_archive(node, autocomplete=True, autoapprove=True).__enter__()  # ?!
-    return _reg
+def unembargoed_unapproved_registration_of(node):  # ?!
+    return _register(node)
 
-def unapproved_unembargoed_registration_of(node):
-    mock_archive(node, autocomplete=True, autoapprove=False).__enter__()  # ?!
-    return _reg
+def unembargoed_approved_registration_of(node):
+    return _register(node, autoapprove=True)
 
 REGFUNCS_PRIVATE = (
-    unapproved_unembargoed_registration_of,
+    unembargoed_unapproved_registration_of,
 )
 REGFUNCS = (
-    approved_unembargoed_registration_of,
+    unembargoed_approved_registration_of,
 ) + REGFUNCS_PRIVATE
 VARYFUNCS = (
     base,
@@ -178,19 +178,19 @@ class TestVaryFuncs(DbIsolationMixin, OsfTestCase):
         assert_equal(File.find_one(Q('is_file', 'eq', True)).name, 'Blim Blammity')
 
 
-    # ro - *_registration_of
+    # _ro - *_registration_of
 
-    def test_ro_makes_an_approved_unembargoed_registration_of_a_node(self):
-        approved_unembargoed_registration_of(factories.ProjectFactory(title='Flim Flammity'))
+    def test__ro_makes_an_unembargoed_approved_registration_of_a_node(self):
+        unembargoed_approved_registration_of(factories.ProjectFactory(title='Flim Flammity'))
         reg = Node.find_one(Q('is_registration', 'eq', True))
-        assert_equal(reg.title, 'Flim Flammity')
-        ok_(reg.is_public)
+        assert_equal(reg.registration_approval.state, 'approved')
+        ok_(not reg.embargo)
 
-    def test_ro_makes_an_unapproved_unembargoed_registration_of_a_node(self):
-        unapproved_unembargoed_registration_of(factories.ProjectFactory(title='Flim Flammity'))
+    def test__ro_makes_an_unembargoed_unapproved_registration_of_a_node(self):
+        unembargoed_unapproved_registration_of(factories.ProjectFactory(title='Flim Flammity'))
         reg = Node.find_one(Q('is_registration', 'eq', True))
-        assert_equal(reg.title, 'Flim Flammity')
-        ok_(not reg.is_public)
+        assert_equal(reg.registration_approval.state, 'unapproved')
+        ok_(not reg.embargo)
 
 
 # gettin' it together
