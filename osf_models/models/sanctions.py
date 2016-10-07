@@ -766,7 +766,7 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
         return context
 
     def _add_success_logs(self, node, user):
-        from website.project.model import NodeLog
+        NodeLog = apps.get_model('osf_models.NodeLog')
 
         src = node.registered_from
         src.add_log(
@@ -782,7 +782,7 @@ class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
         src.save()
 
     def _on_complete(self, user):
-        from website.project.model import NodeLog
+        NodeLog = apps.get_model('osf_models.NodeLog')
 
         super(RegistrationApproval, self)._on_complete(user)
         self.state = Sanction.APPROVED
