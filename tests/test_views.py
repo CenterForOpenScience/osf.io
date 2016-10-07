@@ -4384,7 +4384,7 @@ class TestCommentViews(OsfTestCase):
         self.user.reload()
 
         user_timestamp = self.user.comments_viewed_timestamp[self.project._id]
-        view_timestamp = dt.datetime.utcnow()
+        view_timestamp = timezone.now()
         assert_datetime_equal(user_timestamp, view_timestamp)
 
     def test_confirm_non_contrib_viewers_dont_have_pid_in_comments_view_timestamp(self):
