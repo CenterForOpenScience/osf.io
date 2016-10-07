@@ -149,18 +149,16 @@ def unapproved_unembargoed_registration_of(node):
     mock_archive(node, autocomplete=True, autoapprove=False).__enter__()  # ?!
     return _reg
 
-REGFUNCS = (
-    approved_unembargoed_registration_of,
+REGFUNCS_PRIVATE = (
     unapproved_unembargoed_registration_of,
 )
+REGFUNCS = (
+    approved_unembargoed_registration_of,
+) + REGFUNCS_PRIVATE
 VARYFUNCS = (
     base,
     file_on,
 ) + REGFUNCS
-
-PRIVATE_REGISTRATIONS = (
-    unapproved_unembargoed_registration_of,
-)
 
 class TestVaryFuncs(DbIsolationMixin, OsfTestCase):
 
@@ -206,10 +204,10 @@ def namefunc(varyfunc, status, nodefunc, should_see, permfunc, **_):
         permfunc.__name__
     )
 
-def seefunc(status, varyfunc, permfunc):
-    if status is PRIVATE or varyfunc in PRIVATE_REGISTRATIONS:
+def seefunc(status, varyfunc, permfunc, default__TODO_remove_this_argument=True):
+    if status is PRIVATE or varyfunc in REGFUNCS_PRIVATE:
         return permfunc is read
-    return True
+    return default__TODO_remove_this_argument
 
 def generate_cases():
     for status in (PRIVATE, PUBLIC):
@@ -217,7 +215,7 @@ def generate_cases():
             for permfunc in (anon, auth, read):
                 for varyfunc in VARYFUNCS:
                     if status is PRIVATE and varyfunc in REGFUNCS: continue
-                    should_see = seefunc(status, varyfunc, permfunc)
+                    should_see = seefunc(status, varyfunc, permfunc)  # namefunc wants this
                     yield namefunc(**locals()), varyfunc, nodefunc, status, permfunc, should_see
 
 
@@ -239,14 +237,9 @@ def possiblyExpectFailure(case):
     # of the cases we're feeding to node-parameterized. TODO It can be removed
     # when we write the code to unfail the tests.
 
-    def should_fail(status, varyfunc, permfunc):
-        if status is PRIVATE or varyfunc in PRIVATE_REGISTRATIONS:
-            return permfunc is read
-        return False
-
     def test(*a, **kw):  # name must start with test or it's ignored
         _, _, varyfunc, _, status, permfunc, _ = a
-        if should_fail(status, varyfunc, permfunc):
+        if seefunc(status, varyfunc, permfunc, False):
 
             # This bit is copied from the unittest/case.py:expectedFailure
             # decorator.
