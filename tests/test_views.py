@@ -17,6 +17,7 @@ from django.apps import apps
 
 from modularodm import Q
 from modularodm.exceptions import ValidationError
+from osf_models.models import Comment
 
 from framework import auth
 from framework.auth import User, Auth
@@ -30,10 +31,12 @@ from tests.base import (
     fake,
     get_default_metaschema,
     OsfTestCase,
+    assert_datetime_equal,
 )
 from tests.factories import MockAddonNodeSettings
 from website import mailchimp_utils
 from website import mails, settings
+from website.addons.osfstorage import settings as osfstorage_settings
 from website.addons.github.tests.factories import GitHubAccountFactory
 from website.models import Node, NodeLog, Pointer
 from website.profile.utils import add_contributor_json, serialize_unregistered
@@ -63,6 +66,7 @@ from osf_models_tests.factories import (
     PrivateLinkFactory,
     ProjectFactory,
     NodeFactory,
+    CommentFactory,
     InstitutionFactory,
     RegistrationFactory,
     ApiOAuth2ApplicationFactory,
@@ -4358,6 +4362,93 @@ class TestUserConfirmSignal(OsfTestCase):
             assert_equal(res.status_code, 302)
 
         assert_equal(mock_signals.signals_sent(), set([auth.signals.user_confirmed]))
+
+
+# copied from tests/test_comments.py
+class TestCommentViews(OsfTestCase):
+
+    def setUp(self):
+        super(TestCommentViews, self).setUp()
+        self.project = ProjectFactory(is_public=True)
+        self.user = AuthUserFactory()
+        self.project.add_contributor(self.user)
+        self.project.save()
+        self.user.save()
+
+    def test_view_project_comments_updates_user_comments_view_timestamp(self):
+        url = self.project.api_url_for('update_comments_timestamp')
+        res = self.app.put_json(url, {
+            'page': 'node',
+            'rootId': self.project._id
+        }, auth=self.user.auth)
+        self.user.reload()
+
+        user_timestamp = self.user.comments_viewed_timestamp[self.project._id]
+        view_timestamp = timezone.now()
+        assert_datetime_equal(user_timestamp, view_timestamp)
+
+    def test_confirm_non_contrib_viewers_dont_have_pid_in_comments_view_timestamp(self):
+        non_contributor = AuthUserFactory()
+        url = self.project.api_url_for('update_comments_timestamp')
+        res = self.app.put_json(url, {
+            'page': 'node',
+            'rootId': self.project._id
+        }, auth=self.user.auth)
+
+        non_contributor.reload()
+        assert_not_in(self.project._id, non_contributor.comments_viewed_timestamp)
+
+    @pytest.skip('Unskip when get_addon is implemented for nodes')
+    def test_view_comments_updates_user_comments_view_timestamp_files(self):
+        osfstorage = self.project.get_addon('osfstorage')
+        root_node = osfstorage.get_root()
+        test_file = root_node.append_file('test_file')
+        test_file.create_version(self.user, {
+            'object': '06d80e',
+            'service': 'cloud',
+            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+        }, {
+            'size': 1337,
+            'contentType': 'img/png'
+        }).save()
+
+        url = self.project.api_url_for('update_comments_timestamp')
+        res = self.app.put_json(url, {
+            'page': 'files',
+            'rootId': test_file._id
+        }, auth=self.user.auth)
+        self.user.reload()
+
+        user_timestamp = self.user.comments_viewed_timestamp[test_file._id]
+        view_timestamp = dt.datetime.utcnow()
+        assert_datetime_equal(user_timestamp, view_timestamp)
+
+        # Regression test for https://openscience.atlassian.net/browse/OSF-5193
+        # moved from tests/test_comments.py
+        def test_find_unread_includes_edited_comments(self):
+            project = ProjectFactory()
+            user = AuthUserFactory()
+            project.add_contributor(user, save=True)
+            comment = CommentFactory(node=project, user=project.creator)
+            n_unread = Comment.find_n_unread(user=user, node=project, page='node')
+            assert n_unread == 1
+
+            url = project.api_url_for('update_comments_timestamp')
+            payload = {'page': 'node', 'rootId': project._id}
+            self.app.put_json(url, payload, auth=user.auth)
+            user.reload()
+            n_unread = Comment.find_n_unread(user=user, node=project, page='node')
+            assert n_unread == 0
+
+            # Edit previously read comment
+            comment.edit(
+                auth=Auth(project.creator),
+                content='edited',
+                save=True
+            )
+            n_unread = Comment.find_n_unread(user=user, node=project, page='node')
+            assert n_unread == 1
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,13 +1,11 @@
 from __future__ import absolute_import
-import datetime as dt
-import unittest
 from collections import OrderedDict
 from nose.tools import *  # noqa PEP8 asserts
 from nose_parameterized import parameterized
 from modularodm.exceptions import ValidationValueError, ValidationError
 from modularodm import Q
 
-from framework.auth import Auth, User
+from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from framework.guid.model import Guid
 from website.addons.osfstorage import settings as osfstorage_settings
@@ -27,70 +25,11 @@ from website import settings
 
 from tests.base import (
     OsfTestCase,
-    assert_datetime_equal,
     capture_signals
 )
 from tests.factories import (
     UserFactory, ProjectFactory, AuthUserFactory, CommentFactory, NodeFactory
 )
-
-
-class TestCommentViews(OsfTestCase):
-
-    def setUp(self):
-        super(TestCommentViews, self).setUp()
-        self.project = ProjectFactory(is_public=True)
-        self.user = AuthUserFactory()
-        self.project.add_contributor(self.user)
-        self.project.save()
-        self.user.save()
-
-    def test_view_project_comments_updates_user_comments_view_timestamp(self):
-        url = self.project.api_url_for('update_comments_timestamp')
-        res = self.app.put_json(url, {
-            'page': 'node',
-            'rootId': self.project._id
-        }, auth=self.user.auth)
-        self.user.reload()
-
-        user_timestamp = self.user.comments_viewed_timestamp[self.project._id]
-        view_timestamp = dt.datetime.utcnow()
-        assert_datetime_equal(user_timestamp, view_timestamp)
-
-    def test_confirm_non_contrib_viewers_dont_have_pid_in_comments_view_timestamp(self):
-        non_contributor = AuthUserFactory()
-        url = self.project.api_url_for('update_comments_timestamp')
-        res = self.app.put_json(url, {
-            'page': 'node',
-            'rootId': self.project._id
-        }, auth=self.user.auth)
-
-        non_contributor.reload()
-        assert_not_in(self.project._id, non_contributor.comments_viewed_timestamp)
-
-    def test_view_comments_updates_user_comments_view_timestamp_files(self):
-        osfstorage = self.project.get_addon('osfstorage')
-        root_node = osfstorage.get_root()
-        test_file = root_node.append_file('test_file')
-        test_file.create_version(self.user, {
-            'object': '06d80e',
-            'service': 'cloud',
-            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
-        }, {
-            'size': 1337,
-            'contentType': 'img/png'
-        }).save()
-
-        url = self.project.api_url_for('update_comments_timestamp')
-        res = self.app.put_json(url, {
-            'page': 'files',
-            'rootId': test_file._id
-        }, auth=self.user.auth)
-        self.user.reload()
-
-        user_timestamp = self.user.comments_viewed_timestamp[test_file._id]
-        view_timestamp = dt.datetime.utcnow()
-        assert_datetime_equal(user_timestamp, view_timestamp)
 
 
 class TestCommentModel(OsfTestCase):
@@ -403,30 +342,6 @@ class TestCommentModel(OsfTestCase):
         project.save()
         comment = CommentFactory(node=project, user=user)
         reply = CommentFactory(node=project, target=Guid.load(comment._id), user=project.creator)
-        n_unread = Comment.find_n_unread(user=user, node=project, page='node')
-        assert_equal(n_unread, 1)
-
-    # Regression test for https://openscience.atlassian.net/browse/OSF-5193
-    def test_find_unread_includes_edited_comments(self):
-        project = ProjectFactory()
-        user = AuthUserFactory()
-        project.add_contributor(user)
-        project.save()
-        comment = CommentFactory(node=project, user=project.creator)
-
-        url = project.api_url_for('update_comments_timestamp')
-        payload = {'page': 'node', 'rootId': project._id}
-        res = self.app.put_json(url, payload, auth=user.auth)
-        user.reload()
-        n_unread = Comment.find_n_unread(user=user, node=project, page='node')
-        assert_equal(n_unread, 0)
-
-        # Edit previously read comment
-        comment.edit(
-            auth=Auth(project.creator),
-            content='edited',
-            save=True
-        )
         n_unread = Comment.find_n_unread(user=user, node=project, page='node')
         assert_equal(n_unread, 1)
 
