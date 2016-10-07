@@ -14,6 +14,7 @@ from website.project.signals import contributor_added, contributor_removed
 from website.exceptions import NodeStateError
 from website.util import permissions, disconnected_from_listeners
 from website.citations.utils import datetime_to_csl
+from website import language
 
 from osf_models.models import (
     Node,
@@ -1996,3 +1997,213 @@ class TestRemoveNode:
 
         # target node shouldn't be deleted
         assert target.is_deleted is False
+
+
+class TestTemplateNode:
+
+    @pytest.fixture()
+    def project(self):
+        return ProjectFactory(creator=user)
+
+    def _verify_log(self, node):
+        """Tests to see that the "created from" log event is present (alone).
+
+        :param node: A node having been created from a template just prior
+        """
+        assert node.logs.count() == 1
+        assert node.logs.latest().action == NodeLog.CREATED_FROM
+
+    def test_simple_template(self, project, auth):
+        """Create a templated node, with no changes"""
+        # created templated node
+        new = project.use_as_template(
+            auth=auth
+        )
+
+        assert new.title == self._default_title(project)
+        assert new.date_created != project.date_created
+        self._verify_log(new)
+
+    def test_simple_template_title_changed(self, project, auth):
+        """Create a templated node, with the title changed"""
+        changed_title = 'Made from template'
+
+        # create templated node
+        new = project.use_as_template(
+            auth=auth,
+            changes={
+                project._primary_key: {
+                    'title': changed_title,
+                }
+            }
+        )
+
+        assert new.title == changed_title
+        assert new.date_created != project.date_created
+        self._verify_log(new)
+
+    def test_use_as_template_preserves_license(self, project, auth):
+        license = NodeLicenseRecordFactory()
+        project.node_license = license
+        project.save()
+        new = project.use_as_template(
+            auth=self.auth
+        )
+
+        assert new.license.node_license._id == license.node_license._id
+        self._verify_log(new)
+
+    @pytest.fixture()
+    def pointee(self, project, user, auth):
+        pointee = ProjectFactory(creator=user)
+        project.add_pointer(pointee, auth=auth)
+        return pointee
+
+    @pytest.fixture()
+    def component(self, user, project):
+        return NodeFactory(creator=user, parent=project)
+
+    @pytest.fixture()
+    def subproject(user, project):
+        return ProjectFactory(creator=user, parent=project)
+
+    # def _create_complex(self):
+    #     # create project connected via Pointer
+    #     self.pointee = ProjectFactory(creator=self.user)
+    #     self.project.add_pointer(self.pointee, auth=self.auth)
+    #
+    #     # create direct children
+    #     self.component = NodeFactory(creator=self.user, parent=self.project)
+    #     self.subproject = ProjectFactory(creator=self.user, parent=self.project)
+
+    @staticmethod
+    def _default_title(x):
+        if isinstance(x, Node):
+            return str(language.TEMPLATED_FROM_PREFIX + x.title)
+        return str(x.title)
+
+    def test_complex_template(self, auth, project, pointee, component, subproject):
+        """Create a templated node from a node with children"""
+
+        # create templated node
+        new = project.use_as_template(auth=auth)
+
+        assert new.title == self._default_title(project)
+        assert len(new.nodes) == len(project.nodes)
+        # check that all children were copied
+        assert (
+            [x.title for x in new.nodes],
+            [x.title for x in project.nodes],
+        )
+        # ensure all child nodes were actually copied, instead of moved
+        assert {x._primary_key for x in new.nodes}.isdisjoint(
+            {x._primary_key for x in project.nodes}
+        )
+
+    def test_complex_template_titles_changed(self, auth, project, pointee, component, subproject):
+
+        # build changes dict to change each node's title
+        changes = {
+            x._primary_key: {
+                'title': 'New Title ' + str(idx)
+            } for idx, x in enumerate(project.nodes)
+        }
+
+        # create templated node
+        new = project.use_as_template(
+            auth=auth,
+            changes=changes
+        )
+
+        for old_node, new_node in zip(project.nodes, new.nodes):
+            if isinstance(old_node, Node):
+                assert (
+                    changes[old_node._primary_key]['title'] ==
+                    new_node.title,
+                )
+            else:
+                assert (
+                    old_node.title ==
+                    new_node.title,
+                )
+
+    def test_template_wiki_pages_not_copied(self):
+        self.project.update_node_wiki(
+            'template', 'lol',
+            auth=self.auth
+        )
+        new = self.project.use_as_template(
+            auth=self.auth
+        )
+        assert_in('template', self.project.wiki_pages_current)
+        assert_in('template', self.project.wiki_pages_versions)
+        assert_equal(new.wiki_pages_current, {})
+        assert_equal(new.wiki_pages_versions, {})
+
+    def test_user_who_makes_node_from_template_has_creator_permission(self):
+        project = ProjectFactory(is_public=True)
+        user = UserFactory()
+        auth = Auth(user)
+
+        templated = project.use_as_template(auth)
+
+        assert_equal(templated.get_permissions(user), ['read', 'write', 'admin'])
+
+    def test_template_security(self):
+        """Create a templated node from a node with public and private children
+
+        Children for which the user has no access should not be copied
+        """
+        other_user = UserFactory()
+        other_user_auth = Auth(user=other_user)
+
+        self._create_complex()
+
+        # set two projects to public - leaving self.component as private
+        self.project.is_public = True
+        self.project.save()
+        self.subproject.is_public = True
+        self.subproject.save()
+
+        # add new children, for which the user has each level of access
+        self.read = NodeFactory(creator=self.user, parent=self.project)
+        self.read.add_contributor(other_user, permissions=['read', ])
+        self.read.save()
+
+        self.write = NodeFactory(creator=self.user, parent=self.project)
+        self.write.add_contributor(other_user, permissions=['read', 'write'])
+        self.write.save()
+
+        self.admin = NodeFactory(creator=self.user, parent=self.project)
+        self.admin.add_contributor(other_user)
+        self.admin.save()
+
+        # filter down self.nodes to only include projects the user can see
+        visible_nodes = filter(
+            lambda x: x.can_view(other_user_auth),
+            self.project.nodes
+        )
+
+        # create templated node
+        new = self.project.use_as_template(auth=other_user_auth)
+
+        assert_equal(new.title, self._default_title(self.project))
+
+        # check that all children were copied
+        assert_equal(
+            set(x.template_node._id for x in new.nodes),
+            set(x._id for x in visible_nodes),
+        )
+        # ensure all child nodes were actually copied, instead of moved
+        assert_true({x._primary_key for x in new.nodes}.isdisjoint(
+            {x._primary_key for x in self.project.nodes}
+        ))
+
+        # ensure that the creator is admin for each node copied
+        for node in new.nodes:
+            assert_equal(
+                node.permissions.get(other_user._id),
+                ['read', 'write', 'admin'],
+            )
+
+

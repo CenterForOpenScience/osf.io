@@ -2,6 +2,7 @@ import datetime
 import json
 
 import httpretty
+import pytest
 from nose.tools import *  # flake8: noqa
 
 from framework.auth.core import Auth
@@ -12,10 +13,13 @@ from website.util import waterbutler_api_url_for
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils
 from tests.base import ApiTestCase
-from tests.factories import (
+from osf_models_tests.factories import (
     ProjectFactory,
     AuthUserFactory
 )
+
+
+pytestmark = pytest.mark.skip('Unskip when addons are implemented')
 
 def prepare_mock_wb_response(
         node=None,

@@ -150,6 +150,7 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
     if autoapprove:
         sanction = registration.sanction
         sanction.state = Sanction.APPROVED
+        sanction.save()
         sanction._on_complete(project.creator)
         sanction.save()
 

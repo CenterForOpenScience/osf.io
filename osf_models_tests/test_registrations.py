@@ -160,14 +160,14 @@ class TestRegisterNode:
         registration.refresh_from_db()
 
         # Registration has the nodes
-        assert registration.nodes.count() == 2
+        assert registration._nodes.count() == 2
         assert(
-            list(registration.nodes.values_list('title', flat=True)) ==
-            list(project.nodes.values_list('title', flat=True))
+            list(registration._nodes.values_list('title', flat=True)) ==
+            list(project._nodes.values_list('title', flat=True))
         )
         # Nodes are copies and not the original versions
-        for node in registration.nodes.all():
-            assert node not in project.nodes.all()
+        for node in registration._nodes.all():
+            assert node not in project._nodes.all()
             assert node.is_registration
 
     def test_linked_nodes(self, project, user, auth):
@@ -214,7 +214,7 @@ class TestRegisterNode:
         registration = factories.RegistrationFactory(project=project, user=user2)
 
         # The correct subprojects were registered
-        for registered_node in registration.nodes.all():
+        for registered_node in registration._nodes.all():
             assert registered_node.root == registration
             assert registered_node.registered_from
             assert registered_node.parent_node == registration
@@ -331,7 +331,7 @@ class TestNodeSanctionStates:
         factories.NodeFactory(creator=user, parent=child)
         with mock_archive(node) as registration:
             approval = registration.registration_approval
-            sub_reg = registration.nodes.first().nodes.first()
+            sub_reg = registration._nodes.first()._nodes.first()
             assert sub_reg.sanction == approval
 
     def test_is_pending_registration(self):
@@ -346,7 +346,7 @@ class TestNodeSanctionStates:
         child = factories.NodeFactory(creator=user, parent=node)
         factories.NodeFactory(creator=user, parent=child)
         with mock_archive(node) as registration:
-            sub_reg = registration.nodes.first().nodes.first()
+            sub_reg = registration._nodes.first()._nodes.first()
             assert sub_reg.is_pending_registration
 
     def test_is_registration_approved(self):
@@ -362,7 +362,7 @@ class TestNodeSanctionStates:
         with mock_archive(node) as registration:
             registration.registration_approval.state = Sanction.APPROVED
             registration.registration_approval.save()
-            sub_reg = registration.nodes.first().nodes.first()
+            sub_reg = registration._nodes.first()._nodes.first()
             assert sub_reg.is_registration_approved is True
 
     def test_is_retracted(self):
@@ -377,7 +377,7 @@ class TestNodeSanctionStates:
         child = factories.NodeFactory(creator=user, parent=node)
         factories.NodeFactory(creator=user, parent=child)
         with mock_archive(node, autoapprove=True, retraction=True, autoapprove_retraction=True) as registration:
-            sub_reg = registration.nodes.first().nodes.first()
+            sub_reg = registration._nodes.first()._nodes.first()
             assert sub_reg.is_retracted is True
 
     def test_is_pending_retraction(self):
@@ -393,7 +393,7 @@ class TestNodeSanctionStates:
         child = factories.NodeFactory(creator=user, parent=node)
         factories.NodeFactory(creator=user, parent=child)
         with mock_archive(node, autoapprove=True, retraction=True) as registration:
-            sub_reg = registration.nodes.first().nodes.first()
+            sub_reg = registration._nodes.first()._nodes.first()
             assert sub_reg.is_pending_retraction is True
 
     def test_embargo_end_date(self):
@@ -407,7 +407,7 @@ class TestNodeSanctionStates:
         child = factories.NodeFactory(creator=user, parent=node)
         factories.NodeFactory(creator=user, parent=child)
         with mock_archive(node, embargo=True) as registration:
-            sub_reg = registration.nodes.first().nodes.first()
+            sub_reg = registration._nodes.first()._nodes.first()
             assert sub_reg.embargo_end_date == registration.embargo_end_date
 
     def test_is_pending_embargo(self):
@@ -422,7 +422,7 @@ class TestNodeSanctionStates:
         child = factories.NodeFactory(creator=user, parent=node)
         factories.NodeFactory(creator=user, parent=child)
         with mock_archive(node, embargo=True) as registration:
-            sub_reg = registration.nodes.first().nodes.first()
+            sub_reg = registration._nodes.first()._nodes.first()
             assert sub_reg.is_pending_embargo
 
     def test_is_embargoed(self):
@@ -438,7 +438,7 @@ class TestNodeSanctionStates:
         child = factories.NodeFactory(creator=user, parent=node)
         factories.NodeFactory(creator=user, parent=child)
         with mock_archive(node, embargo=True, autoapprove=True) as registration:
-            sub_reg = registration.nodes.first().nodes.first()
+            sub_reg = registration._nodes.first()._nodes.first()
             assert sub_reg.is_embargoed
 
 

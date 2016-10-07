@@ -781,12 +781,14 @@ class BaseNodeLinksList(JSONAPIBaseView, generics.ListAPIView):
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
+        query = self.get_node()\
+                .node_relations.select_related('child')\
+                .filter(is_node_link=True, child__is_deleted=False)\
+                .exclude(child__type='osf_models.collection')
         return sorted([
-            pointer.node for pointer in
-            self.get_node().nodes_pointer
-            if not pointer.node.is_deleted and not pointer.node.is_collection and
-            pointer.node.can_view(auth) and not pointer.node.is_retracted
-        ], key=lambda n: n.date_modified, reverse=True)
+            node_link for node_link in query
+            if node_link.child.can_view(auth) and not node_link.child.is_retracted
+        ], key=lambda node_link: node_link.child.date_modified, reverse=True)
 
 
 class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):

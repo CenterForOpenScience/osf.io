@@ -178,6 +178,7 @@ PATCHED_MODELS = (
     'Identifier',
     'Subject',
     'PreprintProvider',
+    'Pointer',
     'StoredFileNode',
 )
 
@@ -186,6 +187,7 @@ def patch_models(settings):
     model_map = {
         'User': 'OSFUser',
         'Node': 'AbstractNode',
+        'Pointer': 'NodeRelation',
     }
     if not settings.USE_POSTGRES:
         return
