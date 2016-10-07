@@ -51,7 +51,7 @@ def recent_public_registrations(n=10):
         yield reg
 
 
-def get_node_data():
+def get_popular_nodes():
     max_popular_projects = 20
 
     if settings.KEEN['public']['read_key']:
@@ -87,16 +87,32 @@ def get_node_data():
             ]
         )
 
-        node_data = [{'node': x['node.id'], 'views': x['result']} for x in node_pageviews[0:max_popular_projects]]
+        return node_pageviews, node_visits
 
-        for node_visit in node_visits[0:max_popular_projects]:
-            for node_result in node_data:
-                if node_visit['node.id'] == node_result['node']:
-                    node_result.update({'visits': node_visit['result']})
+    else:
+        # just return the previous public projects and registrations
+        popular_project_pointers = Node.find_one(Q('_id', 'eq', settings.POPULAR_LINKS_NODE)).nodes_pointer
+        popular_projects = [pointer.node for pointer in popular_project_pointers]
 
-        node_data.sort(key=lambda datum: datum['views'], reverse=True)
+        popular_registration_pointers = Node.find_one(Q('_id', 'eq', settings.POPULAR_LINKS_NODE_REGISTRATIONS)).nodes_pointer
+        popular_registrations = [pointer.node for pointer in popular_registration_pointers]
 
-        return node_data
+        return popular_projects, popular_registrations
+
+
+def format_node_data(nodes, views, node_pageviews):
+    max_popular_projects = 20
+
+    node_data = [{'node': x['node.id'], 'views': x['result']} for x in node_pageviews[0:max_popular_projects]]
+
+    for node_visit in node_visits[0:max_popular_projects]:
+        for node_result in node_data:
+            if node_visit['node.id'] == node_result['node']:
+                node_result.update({'visits': node_visit['result']})
+
+    node_data.sort(key=lambda datum: datum['views'], reverse=True)
+
+    return node_data
 
 
 def get_popular_projects_and_registrations(node_data):
