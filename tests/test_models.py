@@ -4564,12 +4564,22 @@ class TestUnregisteredUser(OsfTestCase):
         self.project = ProjectFactory(creator=self.referrer)
         self.user = UnregUserFactory()
 
-    def add_unclaimed_record(self):
+    def add_unclaimed_record(self, expires=True, expired=False):
         given_name = 'Fredd Merkury'
         email = fake.email()
-        self.user.add_unclaimed_record(node=self.project,
-            given_name=given_name, referrer=self.referrer,
-            email=email)
+        self.user.add_unclaimed_record(
+            node=self.project,
+            given_name=given_name,
+            referrer=self.referrer,
+            email=email
+        )
+        data = self.user.unclaimed_records[self.project._primary_key]
+        if expired:
+            data['expires'] = datetime.datetime.utcnow() - datetime.timedelta(seconds=5)
+            self.user.unclaimed_records[self.project._primary_key].update(data)
+        if not expires:
+            data.pop('expires', None)
+            self.user.unclaimed_records[self.project._primary_key] = data
         self.user.save()
         data = self.user.unclaimed_records[self.project._primary_key]
         return email, data
@@ -4636,6 +4646,16 @@ class TestUnregisteredUser(OsfTestCase):
         valid = self.user.get_unclaimed_record(self.project._primary_key)['token']
         assert_true(self.user.verify_claim_token(valid, project_id=self.project._primary_key))
         assert_false(self.user.verify_claim_token('invalidtoken', project_id=self.project._primary_key))
+
+    def test_verify_claim_token_without_expires(self):
+        self.add_unclaimed_record(expires=False)
+        valid = self.user.get_unclaimed_record(self.project._primary_key)['token']
+        assert_true(self.user.verify_claim_token(valid, project_id=self.project._primary_key))
+
+    def test_verify_claim_token_expired(self):
+        self.add_unclaimed_record(expired=True)
+        valid = self.user.get_unclaimed_record(self.project._primary_key)['token']
+        assert_false(self.user.verify_claim_token(valid, project_id=self.project._primary_key))
 
     def test_claim_contributor(self):
         self.add_unclaimed_record()
