@@ -15,7 +15,15 @@ from website.exceptions import NodeStateError
 from website.util import permissions, disconnected_from_listeners
 from website.citations.utils import datetime_to_csl
 
-from osf_models.models import Node, Tag, NodeLog, Contributor, Sanction, NodeWikiPage
+from osf_models.models import (
+    Node,
+    Tag,
+    NodeLog,
+    Contributor,
+    Sanction,
+    NodeWikiPage,
+    NodeRelation,
+)
 from osf_models.exceptions import ValidationError
 from osf_models.utils.auth import Auth
 
@@ -687,7 +695,7 @@ def test_parent_kwarg():
     parent = NodeFactory()
     child = NodeFactory(parent=parent)
     assert child.parent_node == parent
-    assert child in parent.nodes.all()
+    assert child in parent._nodes.all()
 
 
 class TestSetPrivacy:
@@ -1128,25 +1136,6 @@ class TestNodeTraversals:
         ids = {d._id for d in descendants}
         assert bool({node._id for node in [comp1, comp1a, comp1b, comp2, comp2a, comp2b]}.difference(ids)) is False
 
-    def test_get_descendants_recursive_filtered(self, user, root, viewer, auth):
-        comp1 = ProjectFactory(creator=user, parent=root)
-        comp1a = ProjectFactory(creator=user, parent=comp1)
-        comp1a.add_contributor(viewer, auth=auth, permissions='read')
-        ProjectFactory(creator=user, parent=comp1)
-        comp2 = ProjectFactory(creator=user)
-        comp2.add_contributor(viewer, auth=auth, permissions='read')
-        comp2a = ProjectFactory(creator=user, parent=comp2)
-        comp2a.add_contributor(viewer, auth=auth, permissions='read')
-        ProjectFactory(creator=user, parent=comp2)
-
-        descendants = root.get_descendants_recursive(
-            lambda n: n.is_contributor(viewer)
-        )
-        ids = {d._id for d in descendants}
-        nids = {node._id for node in [comp1a, comp2, comp2a]}
-        assert bool(ids.difference(nids)) is False
-
-    @pytest.mark.skip('Pointers not yet implemented')
     def test_get_descendants_recursive_cyclic(self, user, root, auth):
         point1 = ProjectFactory(creator=user, parent=root)
         point2 = ProjectFactory(creator=user, parent=root)
@@ -1156,14 +1145,12 @@ class TestNodeTraversals:
         descendants = list(point1.get_descendants_recursive())
         assert len(descendants) == 1
 
-def test_linked_from():
-    node = NodeFactory()
+def test_linked_from(node, auth):
     registration_to_link = RegistrationFactory()
     node_to_link = NodeFactory()
 
-    node.linked_nodes.add(node_to_link)
-    node.linked_nodes.add(node_to_link)
-    node.linked_nodes.add(registration_to_link)
+    node.add_pointer(node_to_link, auth=auth)
+    node.add_pointer(registration_to_link, auth=auth)
     node.save()
 
     assert node in node_to_link.linked_from.all()
@@ -1192,6 +1179,35 @@ class TestPointerMethods:
                 },
             }
         )
+
+    def test_add_linked_nodes_property(self, node, auth):
+        child = NodeFactory(parent=node)
+        node_link = ProjectFactory()
+        node.add_pointer(node_link, auth=auth, save=True)
+
+        assert node_link in node.linked_nodes.all()
+        assert child not in node.linked_nodes.all()
+
+    def test_nodes_primary_does_not_return_linked_nodes(self, node, auth):
+        child = NodeFactory(parent=node)
+        node_link = ProjectFactory()
+        node.add_pointer(node_link, auth=auth, save=True)
+
+        assert child in node.nodes_primary.all()
+        assert node_link not in node.nodes_primary.all()
+
+    def test_add_pointer_adds_to_end_of_nodes(self, node, user, auth):
+        child = NodeFactory(parent=node)
+        child2 = NodeFactory(parent=node)
+
+        node_link = ProjectFactory()
+
+        node.add_pointer(node_link, auth=auth, save=True)
+
+        nodes = list(node.nodes)
+        assert child == nodes[0]
+        assert child2 == nodes[1]
+        assert node_link == nodes[2]
 
     def test_add_pointer_fails_for_registrations(self, user, auth):
         node = ProjectFactory()
@@ -1268,19 +1284,20 @@ class TestPointerMethods:
         assert forked.is_fork is True
         assert forked.forked_from == content
         assert forked.primary is True
-        assert node.nodes.first() == forked
+        assert node._nodes.first() == forked
         assert(
             node.logs.latest().action == NodeLog.POINTER_FORKED
         )
+        assert content not in node._nodes.all()
         assert(
-            node.logs.latest().params, {
+            node.logs.latest().params == {
                 'parent_node': node.parent_id,
                 'node': node._primary_key,
                 'pointer': {
-                    'id': forked._id,
-                    'url': forked.url,
-                    'title': forked.title,
-                    'category': forked.category,
+                    'id': content._id,
+                    'url': content.url,
+                    'title': content.title,
+                    'category': content.category,
                 },
             }
         )
@@ -1345,7 +1362,7 @@ class TestForkNode:
 
         fork_user_auth = Auth(user=fork_user)
         # Recursively compare children
-        for idx, child in enumerate(original.nodes.all()):
+        for idx, child in enumerate(original._nodes.all()):
             if child.can_view(fork_user_auth):
                 self._cmp_fork_original(fork_user, fork_date, fork.nodes.all()[idx],
                                         child, title_prepend='')
@@ -1432,8 +1449,8 @@ class TestForkNode:
         fork = node.fork_node(user2_auth)
 
         # fork correct children
-        assert fork.nodes.count() == 2
-        assert 'Not Forked' not in fork.nodes.values_list('title', flat=True)
+        assert fork._nodes.count() == 2
+        assert 'Not Forked' not in fork._nodes.values_list('title', flat=True)
 
     def test_fork_not_public(self, node, auth):
         node.set_privacy('public')
@@ -1592,18 +1609,35 @@ class TestNodeOrdering:
 
     @pytest.fixture()
     def children(self, project):
-        child1 = NodeFactory(parent=project)
-        child2 = NodeFactory(parent=project)
-        child3 = NodeFactory(parent=project)
+        child1 = NodeFactory(parent=project, is_public=False)
+        child2 = NodeFactory(parent=project, is_public=False)
+        child3 = NodeFactory(parent=project, is_public=True)
+
+        rel1 = NodeRelation.objects.get(parent=project, child=child1)
+        rel2 = NodeRelation.objects.get(parent=project, child=child2)
+        rel3 = NodeRelation.objects.get(parent=project, child=child3)
+        project.set_noderelation_order([rel2.pk, rel3.pk, rel1.pk])
+
         return [child1, child2, child3]
 
-    def test_can_get_node_order(self, project, children):
-        assert list(project.get_abstractnode_order()) == [e.pk for e in children]
-        assert list(project.nodes.all())
+    def test_can_get_node_relation_order(self, project, children):
+        assert list(project.get_noderelation_order()) == [e.pk for e in project.node_relations.all()]
 
-    def test_can_set_node_order(self, project, children):
-        project.set_abstractnode_order([children[2].pk, children[1].pk, children[0].pk])
-        assert list(project.nodes.all()) == [children[2], children[1], children[0]]
+    def test_nodes_property_returns_ordered_nodes(self, project, children):
+        nodes = list(project.nodes)
+        assert len(nodes) == 3
+        assert nodes == [children[1], children[2], children[0]]
+
+    def test_get_nodes_no_filter(self, project, children):
+        nodes = list(project.get_nodes())
+        assert nodes == [children[1], children[2], children[0]]
+
+    def test_get_nodes_with_filter(self, project, children):
+        public_nodes = list(project.get_nodes(is_public=True))
+        assert public_nodes == [children[2]]
+
+        private_nodes = list(project.get_nodes(is_public=False))
+        assert private_nodes == [children[1], children[0]]
 
 
 def test_templated_list(node):
