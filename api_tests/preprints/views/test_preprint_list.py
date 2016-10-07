@@ -19,10 +19,10 @@ from tests.factories import (
 
 from api_tests import utils as test_utils
 
-def build_preprint_create_payload(node_id=None, provider_id=None, file_id=None):
+def build_preprint_create_payload(node_id=None, provider_id=None, file_id=None, attrs={}):
     payload = {
         "data": {
-            "attributes": {},
+            "attributes": attrs,
             "relationships": {},            
             "type": "preprints"
         }
@@ -134,7 +134,10 @@ class TestPreprintCreate(ApiTestCase):
         assert_equal(res.status_code, 201)
 
     def test_create_preprint_from_private_project(self):
-        private_project_payload = build_preprint_create_payload(self.private_project._id, self.provider._id, self.file_one_private_project._id)
+        private_project_payload = build_preprint_create_payload(self.private_project._id, self.provider._id, self.file_one_private_project._id, attrs={
+                'subjects': [[SubjectFactory()._id]],
+                'is_published': True
+            })
         res = self.app.post_json_api(self.url, private_project_payload, auth=self.user.auth)
 
         self.private_project.reload()
@@ -169,7 +172,7 @@ class TestPreprintCreate(ApiTestCase):
         res = self.app.post_json_api(self.url, already_preprint_payload, auth=self.user.auth, expect_errors=True)
 
         assert_equal(res.status_code, 409)
-        assert_equal(res.json['errors'][0]['detail'], 'Only one preprint per provider can be submitted for a node.')
+        assert_in('Only one preprint per provider can be submitted for a node.', res.json['errors'][0]['detail'])
 
     def test_read_write_user_already_a_preprint_with_conflicting_provider(self):
         assert_in(self.other_user, self.public_project.contributors)

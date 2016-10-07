@@ -47,6 +47,12 @@ class PreprintService(GuidStoredObject):
         return self.node.preprint_article_doi
 
     @property
+    def is_preprint_orphan(self):
+        if not self.node:
+            return
+        return self.node.is_preprint_orphan
+
+    @property
     def deep_url(self):
         # Required for GUID routing
         return '/preprints/{}/'.format(self._primary_key)
@@ -129,7 +135,7 @@ class PreprintService(GuidStoredObject):
         self.is_published = published
 
         if published:
-            if not self.node.is_preprint:
+            if not (self.node.preprint_file and self.node.preprint_file.node == self.node):
                 raise ValueError('Preprint node is not a valid preprint; cannot publish.')
             if not self.provider:
                 raise ValueError('Preprint provider not specified; cannot publish.')

@@ -1174,6 +1174,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         if not self.preprint_file or not self.is_public:
             return False
         if self.preprint_file.node == self:
+            self._is_preprint_orphan = False
             return True
         else:
             self._is_preprint_orphan = True

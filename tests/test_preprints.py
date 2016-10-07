@@ -24,7 +24,8 @@ from tests.factories import (
     AuthUserFactory,
     ProjectFactory,
     PreprintFactory,
-    PreprintProviderFactory
+    PreprintProviderFactory,
+    SubjectFactory
 )
 from tests.utils import assert_logs, assert_not_logs
 
@@ -79,15 +80,34 @@ class TestSetPreprintFile(OsfTestCase):
 
     @assert_logs(NodeLog.MADE_PUBLIC, 'project')
     @assert_logs(NodeLog.PREPRINT_INITIATED, 'project', -2)
-    def test_is_preprint_property_new_file(self):
+    def test_is_preprint_property_new_file_to_published(self):
         assert_false(self.project.is_preprint)
         self.preprint.set_preprint_file(self.file, auth=self.auth, save=True)
         self.project.reload()
+        assert_false(self.project.is_preprint)
+        with assert_raises(ValueError):
+            self.preprint.set_published(True, auth=self.auth, save=True)
+        self.preprint.provider = PreprintProviderFactory()
+        self.preprint.set_preprint_subjects([[SubjectFactory()._id]], auth=self.auth, save=True)
+        self.project.reload()
+        assert_false(self.project.is_preprint)
+        self.preprint.set_published(True, auth=self.auth, save=True)
+        self.project.reload()
         assert_true(self.project.is_preprint)
+
 
     def test_project_made_public(self):
         assert_false(self.project.is_public)
         self.preprint.set_preprint_file(self.file, auth=self.auth, save=True)
+        assert_false(self.project.is_public)
+        with assert_raises(ValueError):
+            self.preprint.set_published(True, auth=self.auth, save=True)
+        self.preprint.provider = PreprintProviderFactory()
+        self.preprint.set_preprint_subjects([[SubjectFactory()._id]], auth=self.auth, save=True)
+        self.project.reload()
+        assert_false(self.project.is_public)
+        self.preprint.set_published(True, auth=self.auth, save=True)
+        self.project.reload()
         assert_true(self.project.is_public)
 
     def test_add_primary_file(self):

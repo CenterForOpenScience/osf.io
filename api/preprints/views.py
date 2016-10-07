@@ -6,6 +6,7 @@ from rest_framework import permissions as drf_permissions
 from website.models import PreprintService
 from framework.auth.oauth_scopes import CoreScopes
 
+from api.base.exceptions import Conflict
 from api.base.views import JSONAPIBaseView
 from api.base.filters import ODMFilterMixin
 from api.base.utils import get_object_or_error
@@ -159,7 +160,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
     def get_queryset(self):
         return PreprintService.find(self.get_query_from_request())
 
-class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin, WaterButlerMixin):
+class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, PreprintMixin, WaterButlerMixin):
     """Preprint Detail  *Writeable*.
 
     ##Note
@@ -174,6 +175,7 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMi
         date_created                    iso8601 timestamp                   timestamp that the preprint was created
         date_published                  iso8601 timestamp                   timestamp when the preprint was published
         is_published                    boolean                             whether or not this preprint is published
+        is_preprint_orphan              boolean                             whether or not this preprint is orphaned
         subjects                        array of tuples of dictionaries     ids of Subject in the PLOS taxonomy. Dictrionary, containing the subject text and subject ID
         provider                        string                              original source of the preprint
         doi                             string                              bare DOI for the manuscript, as entered by the user
@@ -224,3 +226,8 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMi
 
     def get_object(self):
         return self.get_preprint()
+
+    def perform_destroy(self, instance):
+        if instance.is_published:
+            raise Conflict('Published preprints cannot be deleted.')
+        super(PreprintDetail, self).perform_destroy(instance)
