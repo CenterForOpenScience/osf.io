@@ -81,8 +81,9 @@ class TestReferent:
 
     def test_id_matches(self):
         user = UserFactory()
+        guid = Guid.objects.get(_id=user._id)
 
-        assert user._id == user.guid.guid
+        assert user._id == guid._id
 
     @pytest.mark.skip('I don\'t actually think we do this anywhere')
     @pytest.mark.parametrize('Factory',

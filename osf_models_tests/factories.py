@@ -343,7 +343,7 @@ class EmbargoTerminationApprovalFactory(DjangoModelFactory):
         else:
             user = user or UserFactory()
             if not embargo:
-                embargo = EmbargoFactory(initiated_by=user, state=models.Sanction.APPROVED, approve=True)
+                embargo = EmbargoFactory(state=models.Sanction.APPROVED, approve=True)
                 registration = embargo._get_registration()
             else:
                 registration = RegistrationFactory(creator=user, user=user, embargo=embargo)
@@ -494,7 +494,7 @@ class PreprintFactory(DjangoModelFactory):
         # file.save()
         # project.set_preprint_file(file, auth=Auth(project.creator))
 
-        project.preprint_subjects.add(SubjectFactory())
+        project.preprint_subjects.add(SubjectFactory()) # this is a m2m, you can't do that.
         if providers:
             project.preprint_providers.add(*providers)
         project.preprint_doi = doi
