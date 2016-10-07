@@ -105,7 +105,7 @@ def format_preprint(preprint):
         '@type': 'preprint',
         'title': preprint.node.title,
         'description': preprint.node.description,
-        'is_deleted': not preprint.is_published or not preprint.node.is_public
+        'is_deleted': not preprint.is_published or not preprint.node.is_public or preprint.node.is_preprint_orphan
     }, {
         '@id': '_:link-{}'.format(preprint._id),
         '@type': 'link',
