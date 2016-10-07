@@ -20,17 +20,6 @@ from website.settings import \
 
 logger = logging.getLogger(__name__)
 
-def popular_activity_json():
-    """ Return popular_public_projects node_ids """
-
-    activity_json = activity()
-    popular_projects = activity_json['popular_public_projects']
-    popular_registrations = activity_json['popular_public_registrations']
-
-    return {
-        'popular_public_projects': [proj._id for proj in popular_projects],
-        'popular_public_registrations': [reg._id for reg in popular_registrations]
-    }
 
 def unique_contributors(nodes, node):
     """ Projects in New and Noteworthy should not have common contributors """
@@ -109,33 +98,10 @@ def update_node_links(designated_node, target_node_ids, description):
 def main(dry_run=True):
     init_app(routes=False)
 
-    popular_activity = popular_activity_json()
-
-    popular_node_ids = popular_activity['popular_node_ids']
-    popular_links_node = models.Node.find_one(Q('_id', 'eq', POPULAR_LINKS_NODE))
-    popular_registration_ids = popular_activity_json()['popular_registration_ids']
-    popular_links_node_registrations = models.Node.find_one(Q('_id', 'eq', POPULAR_LINKS_NODE_REGISTRATIONS))
-
     new_and_noteworthy_links_node = models.Node.find_one(Q('_id', 'eq', NEW_AND_NOTEWORTHY_LINKS_NODE))
     new_and_noteworthy_node_ids = get_new_and_noteworthy_nodes()
 
-    update_node_links(popular_links_node, popular_node_ids, 'popular')
-    update_node_links(popular_links_node_registrations, popular_registration_ids, 'popular registrations')
     update_node_links(new_and_noteworthy_links_node, new_and_noteworthy_node_ids, 'new and noteworthy')
-
-    try:
-        popular_links_node.save()
-        logger.info('Node links on {} updated.'.format(popular_links_node._id))
-    except (KeyError, RuntimeError) as error:
-        logger.error('Could not migrate popular nodes due to error')
-        logger.exception(error)
-
-    try:
-        popular_links_node_registrations.save()
-        logger.info('Node links for registrations on {} updated.'.format(popular_links_node._id))
-    except (KeyError, RuntimeError) as error:
-        logger.error('Could not migrate popular nodes for registrations due to error')
-        logger.exception(error)
 
     try:
         new_and_noteworthy_links_node.save()
