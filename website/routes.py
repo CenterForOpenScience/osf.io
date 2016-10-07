@@ -192,6 +192,9 @@ def ember_app(_=None):
         # Prevent accessing files outside of the ember build dir
         raise HTTPError(http.NOT_FOUND)
 
+    if not os.path.isfile(os.path.join(ember_app_folder, file)):
+        file = 'index.html'
+
     return send_from_directory(ember_app_folder, file)
 
 def goodbye():
