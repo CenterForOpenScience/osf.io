@@ -4,8 +4,6 @@ import mock
 import unittest
 from nose.tools import *  # noqa
 
-from github3.repos import Repository
-
 from tests.base import OsfTestCase, get_default_metaschema
 from tests.factories import ExternalAccountFactory, ProjectFactory, UserFactory
 
@@ -43,7 +41,8 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase)
             'user_settings': self.user_settings,
             'repo': 'mock',
             'user': 'abc',
-            'owner': self.node
+            'owner': self.node,
+            'repo_id': 123
         }
 
     def test_set_folder(self):
@@ -52,10 +51,10 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase)
         pass
 
     def test_serialize_settings(self):
-        # GitLab's serialized_settings are a little different from 
+        # GitLab's serialized_settings are a little different from
         # common storage addons.
         settings = self.node_settings.serialize_waterbutler_settings()
-        expected = {'owner': self.node_settings.user, 'repo': self.node_settings.repo}
+        expected = {'host': 'https://abc', 'owner': 'abc', 'repo': 'mock', 'repo_id': 123}
         assert_equal(settings, expected)
 
     @mock.patch(
@@ -82,7 +81,7 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase)
         assert_equal(result['gitlab_user'], 'abc')
         assert_true(result['is_owner'])
         assert_true(result['valid_credentials'])
-        assert_equal(result.get('repo_names', None), [])
+        assert_equal(result.get('gitlab_repo', None), 'mock')
 
     @mock.patch('website.addons.gitlab.api.GitLabClient.repos')
     @mock.patch('website.addons.gitlab.api.GitLabClient.my_org_repos')
@@ -144,50 +143,6 @@ class TestCallbacks(OsfTestCase):
 
         result = self.node_settings.before_make_public(self.project)
         assert_is(result, None)
-
-    @mock.patch('website.addons.gitlab.api.GitLabClient.repo')
-    def test_before_page_load_osf_public_gh_public(self, mock_repo):
-        self.project.is_public = True
-        self.project.save()
-        mock_repo.return_value = Repository.from_json({'private': False})
-        message = self.node_settings.before_page_load(self.project, self.project.creator)
-        mock_repo.assert_called_with(
-            self.node_settings.user,
-            self.node_settings.repo,
-        )
-        assert_false(message)
-
-    @mock.patch('website.addons.gitlab.api.GitLabClient.repo')
-    def test_before_page_load_osf_public_gh_private(self, mock_repo):
-        self.project.is_public = True
-        self.project.save()
-        mock_repo.return_value = Repository.from_json({'private': True})
-        message = self.node_settings.before_page_load(self.project, self.project.creator)
-        mock_repo.assert_called_with(
-            self.node_settings.user,
-            self.node_settings.repo,
-        )
-        assert_true(message)
-
-    @mock.patch('website.addons.gitlab.api.GitLabClient.repo')
-    def test_before_page_load_osf_private_gh_public(self, mock_repo):
-        mock_repo.return_value = Repository.from_json({'private': False})
-        message = self.node_settings.before_page_load(self.project, self.project.creator)
-        mock_repo.assert_called_with(
-            self.node_settings.user,
-            self.node_settings.repo,
-        )
-        assert_true(message)
-
-    @mock.patch('website.addons.gitlab.api.GitLabClient.repo')
-    def test_before_page_load_osf_private_gh_private(self, mock_repo):
-        mock_repo.return_value = Repository.from_json({'private': True})
-        message = self.node_settings.before_page_load(self.project, self.project.creator)
-        mock_repo.assert_called_with(
-            self.node_settings.user,
-            self.node_settings.repo,
-        )
-        assert_false(message)
 
     def test_before_page_load_not_contributor(self):
         message = self.node_settings.before_page_load(self.project, UserFactory())
@@ -291,48 +246,7 @@ class TestGitLabNodeSettings(OsfTestCase):
         self.node_settings = GitLabNodeSettingsFactory(user_settings=self.user_settings)
 
     @mock.patch('website.addons.gitlab.api.GitLabClient.delete_hook')
-    def test_delete_hook(self, mock_delete_hook):
-        self.node_settings.hook_id = 'hook'
-        self.node_settings.save()
-        args = (
-            self.node_settings.user,
-            self.node_settings.repo,
-            self.node_settings.hook_id,
-        )
-        res = self.node_settings.delete_hook()
-        assert_true(res)
-        mock_delete_hook.assert_called_with(*args)
-
-    @mock.patch('website.addons.gitlab.api.GitLabClient.delete_hook')
     def test_delete_hook_no_hook(self, mock_delete_hook):
         res = self.node_settings.delete_hook()
         assert_false(res)
         assert_false(mock_delete_hook.called)
-
-    @mock.patch('website.addons.gitlab.api.GitLabClient.delete_hook')
-    def test_delete_hook_not_found(self, mock_delete_hook):
-        self.node_settings.hook_id = 'hook'
-        self.node_settings.save()
-        mock_delete_hook.side_effect = NotFoundError
-        args = (
-            self.node_settings.user,
-            self.node_settings.repo,
-            self.node_settings.hook_id,
-        )
-        res = self.node_settings.delete_hook()
-        assert_false(res)
-        mock_delete_hook.assert_called_with(*args)
-
-    @mock.patch('website.addons.gitlab.api.GitLabClient.delete_hook')
-    def test_delete_hook_error(self, mock_delete_hook):
-        self.node_settings.hook_id = 'hook'
-        self.node_settings.save()
-        mock_delete_hook.side_effect = GitLabError(mock.Mock())
-        args = (
-            self.node_settings.user,
-            self.node_settings.repo,
-            self.node_settings.hook_id,
-        )
-        res = self.node_settings.delete_hook()
-        assert_false(res)
-        mock_delete_hook.assert_called_with(*args)
