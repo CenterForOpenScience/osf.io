@@ -185,7 +185,7 @@ class NodeLinkMixin(models.Model):
             )
 
         # Append node link
-        NodeRelation.objects.get_or_create(
+        node_relation, created = NodeRelation.objects.get_or_create(
             parent=self,
             child=node,
             is_node_link=True
@@ -213,7 +213,7 @@ class NodeLinkMixin(models.Model):
         if save:
             self.save()
 
-        return node
+        return node_relation
 
     add_pointer = add_node_link  # For v1 compat
 

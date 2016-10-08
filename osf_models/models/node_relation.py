@@ -8,6 +8,11 @@ class NodeRelation(ObjectIDMixin, BaseModel):
     child = models.ForeignKey('AbstractNode')
     is_node_link = models.BooleanField(default=False, db_index=True)
 
+    @property
+    def node(self):
+        """For v1 compat."""
+        return self.child
+
     class Meta:
         order_with_respect_to = 'parent'
         unique_together = ('parent', 'child')
