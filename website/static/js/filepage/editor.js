@@ -114,8 +114,14 @@ var FileEditor = {
 
             return clean1 !== clean2;
         };
-
-        self.reloadFile();
+        
+        // Hack to prevent double downloads of files from controllers being called twice
+        // Double download is caused by treebeard and fileviewpage both being mounted by mithril        
+        if(model.firstCall){
+            self.reloadFile();
+        }else{
+            model.firstCall = true;
+        }
 
         return self;
     },
