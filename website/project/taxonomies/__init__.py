@@ -1,4 +1,5 @@
 from modularodm import fields
+from modularodm.exceptions import ValidationValueError
 
 from framework.mongo import (
     ObjectId,
@@ -7,6 +8,7 @@ from framework.mongo import (
 )
 
 from website.util import api_v2_url
+
 
 @mongo_utils.unique_on(['text'])
 class Subject(StoredObject):
@@ -25,3 +27,21 @@ class Subject(StoredObject):
 
     def get_absolute_url(self):
         return self.absolute_api_v2_url
+
+
+def validate_subject_hierarchy(subject_hierarchy):
+    grandparent = None
+    parent = None
+    child = None
+    for subject_id in subject_hierarchy:
+        subject = Subject.load(subject_id)
+        if not subject.parents:
+            grandparent = subject
+        elif not subject.children:
+            child = subject
+        else:
+            parent = subject
+    if not grandparent:
+        raise ValidationValueError('Unable to find root subject in {}'.format(subject_hierarchy))
+    if (parent and parent not in grandparent.children) or (child and (not parent or child not in parent.children)):
+        raise ValidationValueError('Invalid subject hierarchy: {}'.format(subject_hierarchy))

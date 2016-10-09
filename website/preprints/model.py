@@ -12,7 +12,7 @@ from framework.mongo.utils import unique_on
 from website.files.models import StoredFileNode
 from website.preprints.tasks import on_preprint_updated
 from website.project.model import NodeLog
-from website.project.taxonomies import Subject
+from website.project.taxonomies import Subject, validate_subject_hierarchy
 from website.util import api_v2_url
 from website.util.permissions import ADMIN
 from website import settings
@@ -22,9 +22,9 @@ class PreprintService(GuidStoredObject):
 
     _id = fields.StringField(primary=True)
     date_created = fields.DateTimeField(auto_now_add=True)
-    provider = fields.ForeignField('PreprintProvider')
-    node = fields.ForeignField('Node')
-    is_published = fields.BooleanField(default=False)
+    provider = fields.ForeignField('PreprintProvider', index=True)
+    node = fields.ForeignField('Node', index=True)
+    is_published = fields.BooleanField(default=False, index=True)
     date_published = fields.DateTimeField()
 
     # This is a list of tuples of Subject id's. MODM doesn't do schema
@@ -95,6 +95,7 @@ class PreprintService(GuidStoredObject):
                     raise ValidationValueError('Subject with id <{}> could not be found.'.format(s))
                 subj_hierarchy.append(s)
             if subj_hierarchy:
+                validate_subject_hierarchy(subj_hierarchy)
                 self.subjects.append(subj_hierarchy)
 
         if save:
