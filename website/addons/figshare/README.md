@@ -18,4 +18,3 @@ akin to *{"error": "You cannot request an access token for yourself!"}*
   1. Copy the *consumer_key* to **CLIENT_ID**
   2. Copy the *consumer_secret* to **CLIENT_SECRET**
 12. Open website/settings/local.py
-  3. Add *figshare* to ADDONS_REQUESTED

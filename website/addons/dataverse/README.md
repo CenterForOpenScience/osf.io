@@ -10,7 +10,6 @@ Enabling the addon for development
 ```sh
 $ invoke encryption
 ```
- - In `website/settings/local.py` add, `"dataverse"` to `ADDONS_REQUESTED`.
 
 Creating a Dataverse dataset on the test server
 
