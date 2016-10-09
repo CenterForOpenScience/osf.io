@@ -76,11 +76,13 @@ from api.nodes.permissions import (
     NodeLinksShowIfVersion,
 )
 from api.logs.serializers import NodeLogSerializer
+from api.preprints.parsers import PreprintsJSONAPIParser, PreprintsJSONAPIParserForRegularJSON
+from api.preprints.serializers import PreprintSerializer
 
 from website.addons.wiki.model import NodeWikiPage
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
-from website.models import Node, Pointer, Comment, NodeLog, Institution, DraftRegistration, PrivateLink
+from website.models import Node, Pointer, Comment, NodeLog, Institution, DraftRegistration, PrivateLink, PreprintService
 from website.files.models import FileNode
 from framework.auth.core import User
 from api.base.utils import default_node_list_query, default_node_permission_query
@@ -3222,3 +3224,77 @@ class NodeIdentifierList(NodeMixin, IdentifierList):
     """
 
     serializer_class = NodeIdentifierSerializer
+
+
+class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMixin):
+    """List of preprints for a node. *Read-only*.
+
+    ##Note
+    **This API endpoint is under active development, and is subject to change in the future.**
+
+    Paginated list of preprints ordered by their `date_created`.  Each resource contains a representation of the
+    preprint.
+
+    ##Preprint Attributes
+
+    OSF Preprint entities have the "preprint" `type`.
+
+        name                            type                                description
+        ====================================================================================
+        date_created                    iso8601 timestamp                   timestamp that the preprint was created
+        date_published                  iso8601 timestamp                   timestamp when the preprint was published
+        is_published                    boolean                             whether or not this preprint is published
+        is_preprint_orphan              boolean                             whether or not this preprint is orphaned
+        subjects                        list of lists of dictionaries       ids of Subject in the PLOS taxonomy. Dictrionary, containing the subject text and subject ID
+        provider                        string                              original source of the preprint
+        doi                             string                              bare DOI for the manuscript, as entered by the user
+
+    ##Relationships
+
+    ###Node
+    The node that this preprint was created for
+
+    ###Primary File
+    The file that is designated as the preprint's primary file, or the manuscript of the preprint.
+
+    ###Provider
+    Link to preprint_provider detail for this preprint
+
+    ##Links
+
+    - `self` -- Preprint detail page for the current preprint
+    - `html` -- Project on the OSF corresponding to the current preprint
+    - `doi` -- URL representation of the DOI entered by the user for the preprint manuscript
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    #This Request/Response
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ContributorOrPublic,
+    )
+    parser_classes = (PreprintsJSONAPIParser, PreprintsJSONAPIParserForRegularJSON,)
+
+    required_read_scopes = [CoreScopes.NODE_PREPRINTS_READ]
+    required_write_scopes = [CoreScopes.NODE_PREPRINTS_WRITE]
+
+    serializer_class = PreprintSerializer
+
+    view_category = 'nodes'
+    view_name = 'node-preprints'
+
+    # overrides ODMFilterMixin
+    def get_default_odm_query(self):
+        return (
+            Q('node', 'eq', self.get_node())
+        )
+
+    # overrides ListAPIView
+    def get_queryset(self):
+        return PreprintService.find(self.get_query_from_request())

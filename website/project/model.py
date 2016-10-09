@@ -1190,7 +1190,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
     def preprints(self):
         from website.preprints.model import PreprintService
         if not self.is_preprint:
-            return None
+            return []
         return PreprintService.find(Q('node', 'eq', self))
 
     def can_edit(self, auth=None, user=None):
