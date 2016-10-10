@@ -53,7 +53,7 @@ class PreprintSerializer(JSONAPISerializer):
     subjects = JSONAPIListField(child=JSONAPIListField(child=TaxonomyField()), allow_null=True, required=False)
     date_created = ser.DateTimeField(read_only=True)
     date_published = ser.DateTimeField(read_only=True)
-    doi = ser.CharField(source='preprint_article_doi', required=False, allow_null=True)
+    doi = ser.CharField(source='article_doi', required=False, allow_null=True)
     is_published = ser.BooleanField(required=False)
     is_preprint_orphan = ser.BooleanField(read_only=True)
 
@@ -71,7 +71,7 @@ class PreprintSerializer(JSONAPISerializer):
 
     primary_file = PrimaryFileRelationshipField(
         related_view='files:file-detail',
-        related_view_kwargs={'file_id': '<preprint_file._id>'},
+        related_view_kwargs={'file_id': '<primary_file._id>'},
         lookup_url_kwarg='file_id',
         read_only=False
     )
@@ -94,7 +94,7 @@ class PreprintSerializer(JSONAPISerializer):
         return self.get_preprint_url(obj)
 
     def get_doi_url(self, obj):
-        return 'https://dx.doi.org/{}'.format(obj.preprint_article_doi) if obj.preprint_article_doi else None
+        return 'https://dx.doi.org/{}'.format(obj.article_doi) if obj.article_doi else None
 
     def update(self, preprint, validated_data):
         assert isinstance(preprint, PreprintService), 'You must specify a valid preprint to be updated'
@@ -110,15 +110,15 @@ class PreprintSerializer(JSONAPISerializer):
 
         primary_file = validated_data.pop('primary_file', None)
         if primary_file:
-            self.set_field(preprint.set_preprint_file, primary_file, auth)
+            self.set_field(preprint.set_primary_file, primary_file, auth)
             save_node = True
         subjects = validated_data.pop('subjects', None)
         if subjects:
-            self.set_field(preprint.set_preprint_subjects, subjects, auth)
+            self.set_field(preprint.set_subjects, subjects, auth)
             save_preprint = True
 
-        if 'preprint_article_doi' in validated_data:
-            preprint.node.preprint_article_doi = validated_data['preprint_article_doi']
+        if 'article_doi' in validated_data:
+            preprint.node.preprint_article_doi = validated_data['article_doi']
             save_node = True
 
         published = validated_data.pop('is_published', None)
@@ -182,6 +182,6 @@ class PreprintCreateSerializer(PreprintSerializer):
             raise Conflict('Only one preprint per provider can be submitted for a node. Check `meta[existing_resource_id]`.', meta={'existing_resource_id': conflict._id})
 
         preprint = PreprintService(node=node, provider=provider)
-        self.set_field(preprint.set_preprint_file, primary_file, auth, save=True)
+        self.set_field(preprint.set_primary_file, primary_file, auth, save=True)
 
         return self.update(preprint, validated_data)

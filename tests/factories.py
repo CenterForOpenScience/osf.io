@@ -277,9 +277,9 @@ class PreprintFactory(ModularOdmFactory):
         auth = Auth(project.creator)
 
         if finish:
-            preprint.set_preprint_file(file, auth=auth)
-            subjects = subjects or [[SubjectFactory()._id, SubjectFactory()._id, SubjectFactory()._id]]
-            preprint.set_preprint_subjects(subjects, auth=auth)
+            preprint.set_primary_file(file, auth=auth)
+            subjects = subjects or [[SubjectFactory()._id]]
+            preprint.set_subjects(subjects, auth=auth)
             preprint.set_published(is_published, auth=auth)
 
         project.preprint_article_doi = doi

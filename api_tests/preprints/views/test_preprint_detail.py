@@ -49,7 +49,7 @@ class TestPreprintUpdate(ApiTestCase):
         self.subject = SubjectFactory()
 
     def test_update_preprint_permission_denied(self):
-        update_doi_payload = build_preprint_update_payload(self.preprint._id, attributes={'preprint_article_doi': '10.123/456/789'})
+        update_doi_payload = build_preprint_update_payload(self.preprint._id, attributes={'article_doi': '10.123/456/789'})
 
         noncontrib = AuthUserFactory()
 
@@ -89,14 +89,14 @@ class TestPreprintUpdate(ApiTestCase):
                 }
             }
         }
-        assert_not_equal(self.preprint.preprint_file, new_file)
+        assert_not_equal(self.preprint.primary_file, new_file)
         update_file_payload = build_preprint_update_payload(self.preprint._id, relationships=relationships)
 
         res = self.app.patch_json_api(self.url, update_file_payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
         self.preprint.node.reload()
-        assert_equal(self.preprint.preprint_file, new_file)
+        assert_equal(self.preprint.primary_file, new_file)
 
     def test_new_primary_not_in_node(self):
         project = ProjectFactory()
@@ -117,23 +117,23 @@ class TestPreprintUpdate(ApiTestCase):
         assert_equal(res.status_code, 400)
 
         self.preprint.reload()
-        assert_not_equal(self.preprint.preprint_file, file_for_project)
+        assert_not_equal(self.preprint.primary_file, file_for_project)
 
     def test_update_doi(self):
         new_doi = '10.123/456/789'
-        assert_not_equal(self.preprint.preprint_article_doi, new_doi)
+        assert_not_equal(self.preprint.article_doi, new_doi)
         update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"doi": new_doi})
 
         res = self.app.patch_json_api(self.url, update_subjects_payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
         self.preprint.node.reload()
-        assert_equal(self.preprint.preprint_article_doi, new_doi)
+        assert_equal(self.preprint.article_doi, new_doi)
 
         preprint_detail = self.app.get(self.url, auth=self.user.auth).json['data']
         assert_equal(preprint_detail['links']['doi'], 'https://dx.doi.org/{}'.format(new_doi))
 
-    def test_write_contrib_cannot_set_preprint_file(self):
+    def test_write_contrib_cannot_set_primary_file(self):
         user_two = AuthUserFactory()
         self.preprint.node.add_contributor(user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
         new_file = test_utils.create_test_file(self.preprint.node, 'openupthatwindow.pdf')
@@ -157,7 +157,7 @@ class TestPreprintUpdate(ApiTestCase):
         res = self.app.patch_json_api(self.url, data, auth=user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_noncontrib_cannot_set_preprint_file(self):
+    def test_noncontrib_cannot_set_primary_file(self):
         user_two = AuthUserFactory()
         new_file = test_utils.create_test_file(self.preprint.node, 'openupthatwindow.pdf')
 

@@ -82,13 +82,13 @@ class TestSetPreprintFile(OsfTestCase):
     @assert_logs(NodeLog.PREPRINT_INITIATED, 'project', -2)
     def test_is_preprint_property_new_file_to_published(self):
         assert_false(self.project.is_preprint)
-        self.preprint.set_preprint_file(self.file, auth=self.auth, save=True)
+        self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
         self.project.reload()
         assert_false(self.project.is_preprint)
         with assert_raises(ValueError):
             self.preprint.set_published(True, auth=self.auth, save=True)
         self.preprint.provider = PreprintProviderFactory()
-        self.preprint.set_preprint_subjects([[SubjectFactory()._id]], auth=self.auth, save=True)
+        self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth, save=True)
         self.project.reload()
         assert_false(self.project.is_preprint)
         self.preprint.set_published(True, auth=self.auth, save=True)
@@ -98,12 +98,12 @@ class TestSetPreprintFile(OsfTestCase):
 
     def test_project_made_public(self):
         assert_false(self.project.is_public)
-        self.preprint.set_preprint_file(self.file, auth=self.auth, save=True)
+        self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
         assert_false(self.project.is_public)
         with assert_raises(ValueError):
             self.preprint.set_published(True, auth=self.auth, save=True)
         self.preprint.provider = PreprintProviderFactory()
-        self.preprint.set_preprint_subjects([[SubjectFactory()._id]], auth=self.auth, save=True)
+        self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth, save=True)
         self.project.reload()
         assert_false(self.project.is_public)
         self.preprint.set_published(True, auth=self.auth, save=True)
@@ -111,35 +111,35 @@ class TestSetPreprintFile(OsfTestCase):
         assert_true(self.project.is_public)
 
     def test_add_primary_file(self):
-        self.preprint.set_preprint_file(self.file, auth=self.auth, save=True)
+        self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
         assert_equal(self.project.preprint_file, self.file)
         assert_equal(type(self.project.preprint_file), type(self.file.stored_object))
 
     @assert_logs(NodeLog.PREPRINT_FILE_UPDATED, 'project')
     def test_change_primary_file(self):
-        self.preprint.set_preprint_file(self.file, auth=self.auth, save=True)
+        self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
         assert_equal(self.project.preprint_file, self.file)
 
-        self.preprint.set_preprint_file(self.file_two, auth=self.auth, save=True)
+        self.preprint.set_primary_file(self.file_two, auth=self.auth, save=True)
         assert_equal(self.project.preprint_file._id, self.file_two._id)
 
     def test_add_invalid_file(self):
         with assert_raises(AttributeError):
-            self.preprint.set_preprint_file('inatlanta', auth=self.auth, save=True)
+            self.preprint.set_primary_file('inatlanta', auth=self.auth, save=True)
 
     def test_preprint_created_date(self):
-        self.preprint.set_preprint_file(self.file, auth=self.auth, save=True)
+        self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
         assert_equal(self.project.preprint_file._id, self.file._id)
 
         assert(self.preprint.date_created)
         assert_not_equal(self.project.date_created, self.preprint.date_created)
 
     def test_non_admin_update_file(self):
-        self.preprint.set_preprint_file(self.file, auth=self.auth, save=True)
+        self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
         assert_equal(self.project.preprint_file._id, self.file._id)
 
         with assert_raises(PermissionsError):
-            self.preprint.set_preprint_file(self.file_two, auth=self.read_write_user_auth, save=True)
+            self.preprint.set_primary_file(self.file_two, auth=self.read_write_user_auth, save=True)
         assert_equal(self.project.preprint_file._id, self.file._id)
 
 

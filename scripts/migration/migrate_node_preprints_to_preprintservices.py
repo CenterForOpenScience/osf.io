@@ -459,7 +459,7 @@ def enumerate_and_set_subject_hierarchies(preprint):
     preprint.save()
 
 def migrate(dry_run=True):
-    database['node'].update({'preprint_doi': {'$type': 2}}, {'$rename': { 'preprint_doi': 'preprint_article_doi'}}, multi=True)
+    database['node'].update({'preprint_doi': {'$type': 2}}, {'$rename': { 'preprint_doi': 'article_doi'}}, multi=True)
 
     target_documents = list(get_targets())
     target_ids = [d['_id'] for d in target_documents]

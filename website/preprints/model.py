@@ -35,13 +35,13 @@ class PreprintService(GuidStoredObject):
     subjects = fields.DictionaryField(list=True)
 
     @property
-    def preprint_file(self):
+    def primary_file(self):
         if not self.node:
             return
         return self.node.preprint_file
 
     @property
-    def preprint_article_doi(self):
+    def article_doi(self):
         if not self.node:
             return
         return self.node.preprint_article_doi
@@ -70,7 +70,7 @@ class PreprintService(GuidStoredObject):
         path = '/preprints/{}/'.format(self._id)
         return api_v2_url(path)
 
-    def get_preprint_subjects(self):
+    def get_subjects(self):
         ret = []
         for subj_list in self.subjects:
             subj_hierarchy = []
@@ -82,7 +82,7 @@ class PreprintService(GuidStoredObject):
                 ret.append(subj_hierarchy)
         return ret
 
-    def set_preprint_subjects(self, preprint_subjects, auth, save=False):
+    def set_subjects(self, preprint_subjects, auth, save=False):
         if not self.node.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can change a preprint\'s subjects.')
 
@@ -101,7 +101,7 @@ class PreprintService(GuidStoredObject):
         if save:
             self.save()
 
-    def set_preprint_file(self, preprint_file, auth, save=False):
+    def set_primary_file(self, preprint_file, auth, save=False):
         if not self.node.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can change a preprint\'s primary file.')
 

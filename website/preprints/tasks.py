@@ -93,7 +93,7 @@ def format_subjects(preprint):
             '@id': '_:{}'.format(preprint._id),
             '@type': 'preprint'
         }
-    }] for subject in subject_hier] for subject_hier in preprint.get_preprint_subjects()], []), [])
+    }] for subject in subject_hier] for subject_hier in preprint.get_subjects()], []), [])
     for s in summed_subjs:
         if s not in flat_subjs:
             flat_subjs.append(s)
