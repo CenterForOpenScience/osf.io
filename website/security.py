@@ -30,7 +30,7 @@ class Encryption(object):
         except OSError as error:
             if error.errno == 2:
                 raise RuntimeError(
-                    'Could not find GPG binary in PATH. Try setting GNUPGBINARY ' +
+                    'Could not find GPG binary in PATH. Try setting GNUPG_BINARY ' +
                     'as the full path to the binary in website/settings/local.py'
                 )
             elif error.errno == 13:
