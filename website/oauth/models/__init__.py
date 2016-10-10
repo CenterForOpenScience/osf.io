@@ -28,7 +28,7 @@ from framework.mongo.validators import string_required
 from framework.sessions import session
 from website import settings
 from website.oauth.utils import PROVIDER_LOOKUP
-from website.security import random_string, encrypt, decrypt
+from website.security import random_string
 from website.util import web_url_for, api_v2_url
 
 logger = logging.getLogger(__name__)
@@ -74,7 +74,7 @@ class ExternalAccount(StoredObject):
     provider_name = fields.StringField(required=True)
 
     # The unique, persistent ID on the remote service.
-    provider_id = fields.StringField()
+    provider_id = EncryptedStringField()
 
     # The user's name on the external service
     display_name = EncryptedStringField()
@@ -627,7 +627,7 @@ class BasicAuthProviderMixin(object):
         elif not account and host and password and username:
             self.account = ExternalAccount(
                 display_name=username,
-                oauth_key=encrypt(password),
+                oauth_key=password,
                 oauth_secret=host,
                 provider_id=username,
                 profile_url=host,
@@ -647,4 +647,4 @@ class BasicAuthProviderMixin(object):
 
     @property
     def password(self):
-        return decrypt(self.account.oauth_key)
+        return self.account.oauth_key
