@@ -149,8 +149,12 @@ def unembargoed_unapproved_registration_of(node):  # ?!
 def unembargoed_approved_registration_of(node):
     return _register(node, autoapprove=True)
 
+def embargoed_unapproved_registration_of(node):
+    return _register(node, embargo=True)
+
 REGFUNCS_PRIVATE = (
     unembargoed_unapproved_registration_of,
+    embargoed_unapproved_registration_of,
 )
 REGFUNCS = (
     unembargoed_approved_registration_of,
@@ -178,19 +182,25 @@ class TestVaryFuncs(DbIsolationMixin, OsfTestCase):
         assert_equal(File.find_one(Q('is_file', 'eq', True)).name, 'Blim Blammity')
 
 
-    # _ro - *_registration_of
+    # *ro - *_registration_of
 
-    def test__ro_makes_an_unembargoed_approved_registration_of_a_node(self):
+    def test_uaro_makes_an_unembargoed_approved_registration_of_a_node(self):
         unembargoed_approved_registration_of(factories.ProjectFactory(title='Flim Flammity'))
         reg = Node.find_one(Q('is_registration', 'eq', True))
-        assert_equal(reg.registration_approval.state, 'approved')
         ok_(not reg.embargo)
+        assert_equal(reg.registration_approval.state, 'approved')
 
-    def test__ro_makes_an_unembargoed_unapproved_registration_of_a_node(self):
+    def test_uuro_makes_an_unembargoed_unapproved_registration_of_a_node(self):
         unembargoed_unapproved_registration_of(factories.ProjectFactory(title='Flim Flammity'))
         reg = Node.find_one(Q('is_registration', 'eq', True))
-        assert_equal(reg.registration_approval.state, 'unapproved')
         ok_(not reg.embargo)
+        assert_equal(reg.registration_approval.state, 'unapproved')
+
+    def test_euro_makes_an_embargoed_aapproved_registration_of_a_node(self):
+        embargoed_unapproved_registration_of(factories.ProjectFactory(title='Flim Flammity'))
+        reg = Node.find_one(Q('is_registration', 'eq', True))
+        ok_(reg.embargo)
+        ok_(not reg.registration_approval)
 
 
 # gettin' it together
@@ -224,7 +234,7 @@ class TestGenerateCases(unittest.TestCase):
     # gc - generate_cases
 
     def test_gc_generates_cases(self):
-        assert_equal(len(list(generate_cases())), 36)
+        assert_equal(len(list(generate_cases())), 42)
 
     def test_gc_doesnt_create_any_nodes(self):
         list(generate_cases())
