@@ -505,6 +505,16 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         return csl
 
+    @classmethod
+    def bulk_update_search(cls, nodes, index=None):
+        from website import search
+        try:
+            serialize = functools.partial(search.search.update_node, index=index, bulk=True, async=False)
+            search.search.bulk_update_nodes(serialize, nodes, index=index)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+            log_exception()
+
     def update_search(self):
         from website import search
 
