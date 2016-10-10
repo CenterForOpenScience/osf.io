@@ -2,7 +2,6 @@ import datetime
 import urlparse
 
 from modularodm import fields
-from modularodm.exceptions import ValidationValueError
 
 from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import PermissionsError
@@ -90,9 +89,6 @@ class PreprintService(GuidStoredObject):
         for subj_list in preprint_subjects:
             subj_hierarchy = []
             for s in subj_list:
-                subject = Subject.load(s)
-                if not subject:
-                    raise ValidationValueError('Subject with id <{}> could not be found.'.format(s))
                 subj_hierarchy.append(s)
             if subj_hierarchy:
                 validate_subject_hierarchy(subj_hierarchy)

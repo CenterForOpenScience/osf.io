@@ -35,6 +35,8 @@ def validate_subject_hierarchy(subject_hierarchy):
     child = None
     for subject_id in subject_hierarchy:
         subject = Subject.load(subject_id)
+        if not subject:
+            raise ValidationValueError('Subject with id <{}> could not be found.'.format(subject_id))
         if not subject.parents:
             grandparent = subject
         elif not subject.children:
