@@ -30,7 +30,7 @@ from website.filters import gravatar
 from website.models import User, Node
 from website.project.licenses import serialize_node_license_record
 from website.search import exceptions
-from website.search.util import build_query
+from website.search.util import build_query, clean_splitters
 from website.util import sanitize
 from website.views import validate_page_num
 
@@ -308,7 +308,6 @@ def serialize_node(node, category):
     except TypeError:
         normalized_title = node.title
     normalized_title = unicodedata.normalize('NFKD', normalized_title).encode('ascii', 'ignore')
-
     elastic_document = {
         'id': node._id,
         'contributors': [
@@ -339,6 +338,7 @@ def serialize_node(node, category):
         'license': serialize_node_license_record(node.license),
         'affiliated_institutions': [inst.name for inst in node.affiliated_institutions],
         'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
+        'extra_search_terms': clean_splitters(node.title),
     }
     if not node.is_retracted:
         for wiki in [
@@ -491,7 +491,8 @@ def update_file(file_, index=None, delete=False):
         'node_title': file_.node.title,
         'parent_id': file_.node.parent_node._id if file_.node.parent_node else None,
         'is_registration': file_.node.is_registration,
-        'is_retracted': file_.node.is_retracted
+        'is_retracted': file_.node.is_retracted,
+        'extra_search_terms': clean_splitters(file_.name),
     }
 
     es.index(

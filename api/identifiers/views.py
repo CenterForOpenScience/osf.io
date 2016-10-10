@@ -1,15 +1,16 @@
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
-
+from rest_framework.exceptions import NotFound
 
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 from api.base.filters import ODMFilterMixin
+from api.base.serializers import JSONAPISerializer
+from api.base.utils import get_object_or_error
 
-from api.registrations.views import RegistrationMixin
-from api.identifiers.serializers import IdentifierSerializer
+from api.identifiers.serializers import NodeIdentifierSerializer, RegistrationIdentifierSerializer
 
 from api.nodes.permissions import (
     IsPublic,
@@ -17,9 +18,10 @@ from api.nodes.permissions import (
 )
 
 from website.identifiers.model import Identifier
+from website.project.model import Node
 
 
-class IdentifierList(JSONAPIBaseView, generics.ListAPIView, RegistrationMixin, ODMFilterMixin):
+class IdentifierList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     """List of identifiers for a specified node. *Read-only*.
 
     ##Identifier Attributes
@@ -63,11 +65,33 @@ class IdentifierList(JSONAPIBaseView, generics.ListAPIView, RegistrationMixin, O
     required_read_scopes = [CoreScopes.IDENTIFIERS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    serializer_class = IdentifierSerializer
+    serializer_class = RegistrationIdentifierSerializer
+    node_lookup_url_kwarg = 'node_id'
 
     view_category = 'identifiers'
     view_name = 'identifier-list'
-    node_lookup_url_kwarg = 'node_id'
+
+    def get_node(self, check_object_permissions=True):
+        node = get_object_or_error(
+            Node,
+            self.kwargs[self.node_lookup_url_kwarg],
+            display_name='node'
+        )
+        # Nodes that are folders/collections are treated as a separate resource, so if the client
+        # requests a collection through a node endpoint, we return a 404
+        if node.is_collection:
+            raise NotFound
+        # May raise a permission denied
+        if check_object_permissions:
+            self.check_object_permissions(self.request, node)
+        return node
+
+    def get_serializer_class(self):
+        if 'node_id' in self.kwargs:
+            if self.get_node().is_registration:
+                return RegistrationIdentifierSerializer
+            return NodeIdentifierSerializer
+        return JSONAPISerializer
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
@@ -113,9 +137,16 @@ class IdentifierDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     required_read_scopes = [CoreScopes.IDENTIFIERS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    serializer_class = IdentifierSerializer
+    serializer_class = RegistrationIdentifierSerializer
     view_category = 'identifiers'
     view_name = 'identifier-detail'
+
+    def get_serializer_class(self):
+        if 'identifier_id' in self.kwargs:
+            if self.get_object().referent.is_registration:
+                return RegistrationIdentifierSerializer
+            return NodeIdentifierSerializer
+        return JSONAPISerializer
 
     def get_object(self):
         return Identifier.load(self.kwargs['identifier_id'])

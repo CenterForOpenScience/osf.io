@@ -1,7 +1,7 @@
 {
     "name": "Replication Recipe (Brandt et al., 2013): Post-Completion",
     "version": 2,
-    "description": "Replication Recipe: Post-Completion: This template is intended for use upon completion of a replication study, as outlined by Brandt et al., \"The Replication Recipe: What Makes for a Convincing Replication?\" You will be asked to answer a series of questions about the outcomes of your replication and how they compare to the original study.",
+    "description": "Replication Recipe: Post-Completion: This registration form is intended for use upon completion of a replication study, as outlined by Brandt et al., \"The Replication Recipe: What Makes for a Convincing Replication?\" You will be asked to answer a series of questions about the outcomes of your replication and how they compare to the original study.",
     "pages": [{
         "id": "page1",
         "title": "Registering the Replication Attempt",
