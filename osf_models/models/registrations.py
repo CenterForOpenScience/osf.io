@@ -252,7 +252,6 @@ class Registration(AbstractNode):
             raise NodeStateError('Only the root of an embargoed registration can request termination')
 
         approval = EmbargoTerminationApproval(
-            initiated_by=auth.user,
             embargoed_registration=self,
         )
         admins = [admin for admin in self.root.get_admin_contributors_recursive(unique_users=True)]

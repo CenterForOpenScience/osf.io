@@ -267,17 +267,19 @@ class NodeLinkMixin(models.Model):
 
         return list(query.all())
 
-    def fork_node_link(self, node, auth, save=True):
+    def fork_node_link(self, node_relation, auth, save=True):
         """Replace a linked node with a fork.
 
-        :param Node node:
+        :param NodeRelation node_relation:
         :param Auth auth:
         :param bool save:
         :return: Forked node
         """
         # Fail if pointer not contained in `nodes`
-        if not self.linked_nodes.filter(id=node.id).exists():
-            raise ValueError('Node link {0} not in list'.format(node._id))
+        try:
+            node = self.node_relations.get(is_node_link=True, id=node_relation.id).child
+        except NodeRelation.DoesNotExist:
+            raise ValueError('Node link {0} not in list'.format(node_relation._id))
 
         # Fork into current node and replace pointer with forked component
         forked = node.fork_node(auth)

@@ -1757,7 +1757,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # deal with the children of the node, if any
         new.nodes = [
             x.use_as_template(auth, changes, top_level=False)
-            for x in self.nodes.filter(is_deleted=False)
+            for x in self.get_nodes(is_deleted=False)
             if x.can_view(auth)
         ]
         new.save()
