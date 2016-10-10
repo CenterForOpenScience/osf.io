@@ -217,17 +217,20 @@ class NodeLinkMixin(models.Model):
 
     add_pointer = add_node_link  # For v1 compat
 
-    def rm_node_link(self, node, auth):
+    def rm_node_link(self, node_relation, auth):
         """Remove a pointer.
 
         :param Pointer pointer: Pointer to remove
         :param Auth auth: Consolidated authorization
         """
-        if not self.linked_nodes.filter(id=node.id).exists():
+        try:
+            node_rel = self.node_relations.get(is_node_link=True, id=node_relation.id)
+        except NodeRelation.DoesNotExist:
             raise ValueError('Node link does not belong to the requested node.')
+        else:
+            node_rel.delete()
 
-        self.node_relations.get(is_node_link=True, child=node).delete()
-
+        node = node_relation.child
         # Add log
         if hasattr(self, 'add_log'):
             self.add_log(
