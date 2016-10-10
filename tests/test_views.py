@@ -55,6 +55,7 @@ import pytest
 
 pytestmark = pytest.mark.django_db
 
+from osf_models.models import NodeRelation
 from osf_models_tests.factories import (
     UserFactory,
     UnconfirmedUserFactory,
@@ -67,6 +68,7 @@ from osf_models_tests.factories import (
     RegistrationFactory,
     ApiOAuth2ApplicationFactory,
     ApiOAuth2PersonalTokenFactory,
+    NodeRelationFactory,
 )
 
 class Addon(MockAddonNodeSettings):
@@ -1050,21 +1052,13 @@ class TestChildrenViews(OsfTestCase):
         component9.add_contributor(userB, auth=Auth(self.user), permissions=['read'])
 
         project1.add_pointer(component2, Auth(self.user))
-        project1.nodes.add(component4)
-        project1.nodes.add(component7)
-        component2.nodes.add(component3)
-        component4.nodes.add(component5)
-        component5.nodes.add(component6)
-        component7.nodes.add(component8)
-        component7.nodes.add(component9)
-        project1.save()
-        component2.save()
-        component3.save()
-        component4.save()
-        component5.save()
-        component6.save()
-        component7.save()
-        component8.save()
+        NodeRelation.objects.create(parent=project1, child=component4)
+        NodeRelation.objects.create(parent=project1, child=component7)
+        NodeRelation.objects.create(parent=component2, child=component3)
+        NodeRelation.objects.create(parent=component4, child=component5)
+        NodeRelation.objects.create(parent=component5, child=component6)
+        NodeRelation.objects.create(parent=component7, child=component8)
+        NodeRelation.objects.create(parent=component7, child=component9)
 
         url = project1.api_url_for('get_readable_descendants')
 
@@ -1093,7 +1087,7 @@ class TestChildrenViews(OsfTestCase):
         # of project
         read_only = ProjectFactory()
         read_only_pointed.add_contributor(self.user, auth=Auth(read_only_creator), permissions=['read'])
-        project.nodes.add(read_only)
+        NodeRelation.objects.create(parent=project, child=read_only)
 
         # self.user adds a pointer to read_only
         project.add_pointer(read_only_pointed, Auth(self.user))
@@ -1964,8 +1958,8 @@ class TestAddingContributorViews(OsfTestCase):
         # Project has components
         comp1, comp2 = NodeFactory(
             creator=self.creator), NodeFactory(creator=self.creator)
-        self.project.nodes.add(comp1)
-        self.project.nodes.add(comp2)
+        NodeRelation.objects.create(parent=self.project, child=comp1)
+        NodeRelation.objects.create(parent=self.project, child=comp2)
         self.project.save()
 
         # An unreg user is added to the project AND its components
@@ -2965,7 +2959,7 @@ class TestPointerViews(OsfTestCase):
     def test_remove_pointer_not_in_nodes(self):
         url = self.project.api_url + 'pointer/'
         node = NodeFactory()
-        pointer = Pointer(node=node)
+        pointer = Pointer()
         res = self.app.delete_json(
             url,
             {'pointerId': pointer._id},
@@ -3609,7 +3603,7 @@ class TextExternalAuthViews(OsfTestCase):
     def test_external_login_confirm_email_get_duped_id(self, mock_confirm):
         dupe_user = UserFactory(external_identity={'service': {self.provider_id: 'CREATE'}})
         assert_equal(dupe_user.external_identity, self.user.external_identity)
-        
+
         url = self.user.get_confirmation_url(self.user.username, external_id_provider='service')
         res = self.app.get(url, auth=self.auth)
         assert_equal(res.status_code, 302, 'redirects to cas login')
@@ -3626,7 +3620,7 @@ class TextExternalAuthViews(OsfTestCase):
     @mock.patch('website.mails.send_mail')
     def test_external_login_confirm_email_get_duping_id(self, mock_confirm):
         dupe_user = UserFactory(external_identity={'service': {self.provider_id: 'VERIFIED'}})
-        
+
         url = self.user.get_confirmation_url(self.user.username, external_id_provider='service')
         res = self.app.get(url, auth=self.auth, expect_errors=True)
         assert_equal(res.status_code, 403, 'only allows one user to link an id')
@@ -3962,8 +3956,8 @@ class TestReorderComponents(OsfTestCase):
         # subcomponent that only creator can see
         self.public_component = NodeFactory(creator=self.creator, is_public=True)
         self.private_component = NodeFactory(creator=self.creator, is_public=False)
-        self.project.nodes.add(self.public_component)
-        self.project.nodes.add(self.private_component)
+        NodeRelation.objects.create(parent=self.project, child=self.public_component)
+        NodeRelation.objects.create(parent=self.project, child=self.private_component)
 
         self.project.save()
 

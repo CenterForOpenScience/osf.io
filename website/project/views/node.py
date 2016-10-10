@@ -1255,7 +1255,7 @@ def remove_pointer(auth, node, **kwargs):
     if pointer_id is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    pointer = Node.load(pointer_id)
+    pointer = Pointer.load(pointer_id)
     if pointer is None:
         raise HTTPError(http.BAD_REQUEST)
 
