@@ -267,38 +267,24 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
     return data
 
 
-def validate_campaign(campaign):
+@collect_auth
+def auth_login(auth):
     """
-    Non-view helper function that validates `campaign`.
+    View (no template) for OSF Login.
+    Redirect user based on `data` returned from `login_and_register_handler`.
 
-    :param campaign: the campaign to validate
-    :return: True if valid, False otherwise
-    """
-
-    return campaign and campaign in campaigns.CAMPAIGNS
-
-
-def validate_next_url(next_url):
-    """
-    Non-view helper function that checks `next_url`.
-    Only allow redirects which are relative root or full domain (CAS, OSF and MFR).
-    Disallows external redirects.
-
-    :param next_url: the next url to check
-    :return: True if valid, False otherwise
+    :param auth: the auth context
+    :return: redirects
     """
 
-    # disable external domain using `//`: the browser allows `//` as a shortcut for non-protocol specific requests
-    # like http:// or https:// depending on the use of SSL on the page already.
-    if next_url.startswith('//'):
-        return False
-    # only OSF, MFR and CAS domains are allowed
-    if not (next_url[0] == '/' or
-            next_url.startswith(settings.DOMAIN) or
-            next_url.startswith(settings.CAS_SERVER_URL) or
-            next_url.startswith(settings.MFR_SERVER_URL)):
-        return False
-    return True
+    campaign = request.args.get('campaign')
+    # `/login` only takes valid campaign or none query parameter, and `login_and_register_handler` builds the next url
+    # if campaign and logged in, go to campaign landing page
+    # if campaign and logged out, go to register page with campaign title
+    # if not campaign, go to `/dashboard` which is decorated by `@must_be_logged_in`
+    data = login_and_register_handler(auth, login=True, campaign=campaign)
+    if data['status_code'] == http.FOUND:
+        return redirect(data['next_url'])
 
 
 @collect_auth
@@ -338,26 +324,6 @@ def auth_register(auth):
         return auth_logout(redirect_url=data['next_url'])
 
     raise HTTPError(http.BAD_REQUEST)
-
-
-@collect_auth
-def auth_login(auth):
-    """
-    View (no template) for OSF Login.
-    Redirect user based on `data` returned from `login_and_register_handler`.
-
-    :param auth: the auth context
-    :return: redirects
-    """
-
-    campaign = request.args.get('campaign')
-    # `/login` only takes valid campaign or none query parameter, and `login_and_register_handler` builds the next url
-    # if campaign and logged in, go to campaign landing page
-    # if campaign and logged out, go to register page with campaign title
-    # if not campaign, go to `/dashboard` which is decorated by `@must_be_logged_in`
-    data = login_and_register_handler(auth, login=True, campaign=campaign)
-    if data['status_code'] == http.FOUND:
-        return redirect(data['next_url'])
 
 
 def auth_logout(redirect_url=None):
@@ -917,3 +883,37 @@ def external_login_email_post():
         'form': form,
         'external_id_provider': external_id_provider
     }
+
+
+def validate_campaign(campaign):
+    """
+    Non-view helper function that validates `campaign`.
+
+    :param campaign: the campaign to validate
+    :return: True if valid, False otherwise
+    """
+
+    return campaign and campaign in campaigns.CAMPAIGNS
+
+
+def validate_next_url(next_url):
+    """
+    Non-view helper function that checks `next_url`.
+    Only allow redirects which are relative root or full domain (CAS, OSF and MFR).
+    Disallows external redirects.
+
+    :param next_url: the next url to check
+    :return: True if valid, False otherwise
+    """
+
+    # disable external domain using `//`: the browser allows `//` as a shortcut for non-protocol specific requests
+    # like http:// or https:// depending on the use of SSL on the page already.
+    if next_url.startswith('//'):
+        return False
+    # only OSF, MFR and CAS domains are allowed
+    if not (next_url[0] == '/' or
+            next_url.startswith(settings.DOMAIN) or
+            next_url.startswith(settings.CAS_SERVER_URL) or
+            next_url.startswith(settings.MFR_SERVER_URL)):
+        return False
+    return True
