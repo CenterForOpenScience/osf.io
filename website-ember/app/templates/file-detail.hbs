@@ -2,10 +2,14 @@
 <br>
 <br>
 <br>
-<div class="container">
+{{eosf-project-nav node=model.node showContributorsTab=true}}
+<div class="container container-xxl">
     <div class='row'>
         <div class='col-sm-5'>
-            <h2>{{model.file.name}}</h2>
+            <h2 class="break-word">
+                {{model.file.name}}
+                <a class="scripted" style="display: inline;">(Version: {{activeVersion}})</a>
+            </h2>
         </div>
         <div class='col-sm-7'>
             {{#unless canEdit}}

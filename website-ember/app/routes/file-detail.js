@@ -7,11 +7,9 @@ export default Ember.Route.extend(AuthenticatedRouteMixin, {
     model(params) {
         return Ember.RSVP.hash({
             file: this.store.findRecord('file', params.guid),
-            node: this.store.findRecord('file', params.guid).then(function (file) {
-                return file.get('node');
-            })
+            node: this.store.findRecord('file', params.guid)
+                .then(file => file.get('node'))
         });
-
     },
     actions: {
         download(versionID) {

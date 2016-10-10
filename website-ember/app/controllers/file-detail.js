@@ -16,6 +16,24 @@ export default Ember.Controller.extend(CommentableMixin, TaggableMixin, {
         return checkoutID === userID;
     }),
     canEdit: Ember.computed.or('checkedIn', 'canCheckIn'),
+    queryParams: ['version'],//{version: {refreshModel: true}},
+    version: null,
+
+    sortProperties: ['id:desc'],
+    sortedVersions: Ember.computed.sort('model.file.versions', 'sortProperties'),
+
+    activeVersion: Ember.computed('sortedVersions', 'version', function() {
+        const defaultVersion = this.get('sortedVersions')[0];
+
+        return this.get('version') || (defaultVersion ? defaultVersion.id : null);
+    }),
+
+    dlV: Ember.computed('model.file.links.download', function() {
+
+        console.log('TEST');
+        // console.log(this.get('model.file.links.download'));
+        return 'test';
+    }),
 
     actions: {
         fileDetail(file) {

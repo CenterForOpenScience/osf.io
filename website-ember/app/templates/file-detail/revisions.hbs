@@ -1,15 +1,35 @@
-<h3>Revisions</h3>
-<table class='table table-bordered'>
-    <thead>
-        <tr>
-            <th>Version</th>
-            <th>Size</th>
-            <th>Download</th>
-        </tr>
-    </thead>
-    <tbody>
-        {{#each model as |version|}}
-            {{file-version version=version download='download'}}
-        {{/each}}
-    </tbody>
-</table>
+{{! TODO: i18n support }}
+<div id="revisionsPanel" class="panel panel-default">
+    <div class="panel-heading clearfix">
+        <h3 class="panel-title">Revisions</h3>
+    </div>
+    <div class="panel-body" style="padding-right: 0px; padding-left: 0px; padding-bottom: 0px; overflow: auto;">
+        <table class="table table-responsive" style="margin-bottom: 0px;">
+            <thead>
+                <tr>
+                    <th>Version ID</th>
+                    <th>Date</th>
+                    <th>User</th>
+                    <th colspan="2">Download</th>
+                    <th>
+                        <span>MD5</span>
+                        <span title="MD5 is an algorithm used to verify data integrity."
+                              class="fa fa-question-circle"
+                              style="cursor: help;"></span>
+                    </th>
+                    <th>
+                        <span>SHA2</span>
+                        <span title="SHA-2 is a cryptographic hash function designed by the NSA used to verify data integrity."
+                              class="fa fa-question-circle"
+                              style="cursor: help;"></span>
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="alternate">
+                {{#each sortedVersions as |version|}}
+                    {{file-version version=version download='download' activeVersion=activeVersion}}
+                {{/each}}
+            </tbody>
+        </table>
+    </div>
+</div>

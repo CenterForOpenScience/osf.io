@@ -354,6 +354,8 @@ class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
         =================================================================================
         size          integer  size of file in bytes
         content_type  string   MIME content-type for the file. May be null if unavailable.
+        date_modified date     date that the file was last modified.
+        date_created  date     date that the file was created
 
     ##Links
 

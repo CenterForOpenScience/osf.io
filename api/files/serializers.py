@@ -286,9 +286,20 @@ class FileVersionSerializer(JSONAPISerializer):
     id = ser.CharField(read_only=True, source='identifier')
     size = ser.IntegerField(read_only=True, help_text='The size of this file at this version')
     content_type = ser.CharField(read_only=True, help_text='The mime type of this file at this verison')
+
+    creator = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<creator._id>'},
+    )
+
+    date_modified = ser.SerializerMethodField(read_only=True, help_text='The last modified date')
+    date_created = ser.SerializerMethodField(read_only=True, help_text='The creation date')
+    extra = ser.SerializerMethodField(read_only=True, help_text='Additional metadata about this file')
     links = LinksField({
         'self': 'self_url',
-        'html': 'absolute_url'
+        'html': 'absolute_url',
+        #'download': WaterbutlerLink(must_be_file=True)
+        ### Need this to display version
     })
 
     class Meta:
@@ -309,3 +320,21 @@ class FileVersionSerializer(JSONAPISerializer):
 
     def get_absolute_url(self, obj):
         return self.self_url(obj)
+
+    def get_extra(self, obj):
+        fobj = self.context['view'].get_file()
+        metadata = obj.metadata
+        extras = {}
+        extras['hashes'] = {  # mimic waterbutler response
+            'md5': metadata.get('md5', None),
+            'sha256': metadata.get('sha256', None),
+        }
+        if fobj.provider == 'osfstorage' and fobj.is_file:
+            extras['downloads'] = self.context['view'].get_file().get_download_count(version=obj.identifier)
+        return extras
+
+    def get_date_modified(self, obj):
+        return obj.date_modified and obj.date_modified.replace(tzinfo=pytz.utc)
+
+    def get_date_created(self, obj):
+        return obj.date_created and obj.date_created.replace(tzinfo=pytz.utc)
