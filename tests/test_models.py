@@ -4576,10 +4576,8 @@ class TestUnregisteredUser(OsfTestCase):
         data = self.user.unclaimed_records[self.project._primary_key]
         if expired:
             data['expires'] = datetime.datetime.utcnow() - datetime.timedelta(seconds=5)
-            self.user.unclaimed_records[self.project._primary_key].update(data)
         if not expires:
-            data.pop('expires', None)
-            self.user.unclaimed_records[self.project._primary_key] = data
+            del data['expires']
         self.user.save()
         data = self.user.unclaimed_records[self.project._primary_key]
         return email, data
@@ -4648,11 +4646,13 @@ class TestUnregisteredUser(OsfTestCase):
         assert_false(self.user.verify_claim_token('invalidtoken', project_id=self.project._primary_key))
 
     def test_verify_claim_token_without_expires(self):
+        # Legacy records may not have an 'expires' key
         self.add_unclaimed_record(expires=False)
         valid = self.user.get_unclaimed_record(self.project._primary_key)['token']
         assert_true(self.user.verify_claim_token(valid, project_id=self.project._primary_key))
 
     def test_verify_claim_token_expired(self):
+        # Expired record fails to verify
         self.add_unclaimed_record(expired=True)
         valid = self.user.get_unclaimed_record(self.project._primary_key)['token']
         assert_false(self.user.verify_claim_token(valid, project_id=self.project._primary_key))

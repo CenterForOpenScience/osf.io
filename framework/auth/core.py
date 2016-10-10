@@ -720,6 +720,7 @@ class User(GuidStoredObject, AddonModelMixin):
             record = self.get_unclaimed_record(project_id)
         except ValueError:  # No unclaimed record for given pid
             return False
+        # Legacy records may not have an 'expires' key
         expires = record.get('expires')
         is_expired = (expires > dt.datetime.utcnow()) if expires else True
         return record['token'] == token and is_expired
