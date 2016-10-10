@@ -25,3 +25,4 @@ from osf_models.models.subject import Subject  # noqa
 from osf_models.models.preprint_provider import PreprintProvider  # noqa
 from osf_models.models.identifiers import Identifier  # noqa
 from osf_models.models.files import FileVersion, StoredFileNode, TrashedFileNode  # noqa
+from osf_models.models.node_relation import NodeRelation  # noqa
