@@ -97,7 +97,6 @@ class PreprintSerializer(JSONAPISerializer):
         return 'https://dx.doi.org/{}'.format(obj.preprint_article_doi) if obj.preprint_article_doi else None
 
     def update(self, preprint, validated_data):
-        from website.models import Node
         assert isinstance(preprint, PreprintService), 'You must specify a valid preprint to be updated'
         assert isinstance(preprint.node, Node), 'You must specify a preprint with a valid node to be updated.'
 

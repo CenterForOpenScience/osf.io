@@ -530,9 +530,9 @@ class UserPreprints(UserNodes):
     def get_queryset(self):
         nodes = Node.find(self.get_query_from_request())
         preprints = []
-        # TODO: Rearchitect how `.is_preprint` is determined,
+        # TODO [OSF-7090]: Rearchitect how `.is_preprint` is determined,
         # so that a query that is guaranteed to return only
-        # preprints can be contructed.
+        # preprints can be constructed.
         for node in nodes:
             for preprint in node.preprints:
                 preprints.append(preprint)
