@@ -22,7 +22,7 @@ def encrypt_key(document, key):
     database['externalaccount'].find_and_modify(
         {'_id': document['_id']},
         {'$set': {
-            key: encrypt(document[key])
+            key: encrypt(document[key].encode('utf-8'))
         }})
 
 def migrate(dry_run=True):
