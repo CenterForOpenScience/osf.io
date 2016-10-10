@@ -3,9 +3,9 @@ import functools
 import httplib as http
 import re
 
+from django.core.paginator import Paginator
 import markupsafe
 import pymongo
-from modularodm import Q
 from modularodm.query import QueryBase
 from modularodm.exceptions import ValidationValueError, NoResultsFound, MultipleResultsFound
 
@@ -145,6 +145,7 @@ def autoload(Model, extract_key, inject_key, func):
         return func(*args, **kwargs)
     return wrapper
 
+
 def paginated(model, query=None, increment=200, each=True):
     """Paginate a MODM query.
 
@@ -154,19 +155,12 @@ def paginated(model, query=None, increment=200, each=True):
     :param bool each: If True, each record is yielded. If False, pages
         are yielded.
     """
-    last_id = ''
-    pages = (model.find(query).count() / increment) + 1
-    for i in xrange(pages):
-        q = Q('_id', 'gt', last_id)
-        if query:
-            q &= query
-        page = list(model.find(q).sort('_id').limit(increment))
+    queryset = model.find(query)
+    paginator = Paginator(queryset, increment)
+    for page_num in paginator.page_range:
+        page = paginator.page(page_num)
         if each:
-            for item in page:
+            for item in page.object_list:
                 yield item
-            if page:
-                last_id = item._id
         else:
-            if page:
-                yield page
-                last_id = page[-1]._id
+            yield page.object_list
