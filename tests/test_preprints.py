@@ -1,13 +1,12 @@
-# -*- coding: utf-8 -*-
+    # -*- coding: utf-8 -*-
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import mock
 from modularodm import Q
-from modularodm.exceptions import NoResultsFound
+from modularodm.exceptions import NoResultsFound, ValidationValueError
 
 from website.addons.osfstorage import settings as osfstorage_settings
 from website.files.models.osfstorage import OsfStorageFile
 from website.util import permissions
-
 
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
@@ -17,7 +16,6 @@ from website.project.model import (
     NodeLog,
     NodeStateError
 )
-
 
 from tests.base import OsfTestCase
 from tests.factories import (
@@ -141,6 +139,82 @@ class TestSetPreprintFile(OsfTestCase):
         with assert_raises(PermissionsError):
             self.preprint.set_primary_file(self.file_two, auth=self.read_write_user_auth, save=True)
         assert_equal(self.project.preprint_file._id, self.file._id)
+
+
+class TestPreprintServicePermissions(OsfTestCase):
+    def setUp(self):
+        super(TestPreprintServicePermissions, self).setUp()
+        self.user = AuthUserFactory()
+        self.write_contrib = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
+        self.project.add_contributor(self.write_contrib, permissions=[permissions.WRITE])
+
+        self.preprint = PreprintFactory(project=self.project, is_published=False)
+
+
+    def test_nonadmin_cannot_set_subjects(self):
+        initial_subjects = self.preprint.subjects
+        with assert_raises(PermissionsError):
+            self.preprint.set_subjects([[SubjectFactory()._id]], auth=Auth(self.write_contrib), save=True)
+
+        self.preprint.reload()
+        assert_equal(initial_subjects, self.preprint.subjects)
+
+    def test_nonadmin_cannot_set_file(self):
+        initial_file = self.preprint.primary_file
+        file = OsfStorageFile.create(
+            is_file=True,
+            node=self.project,
+            path='/panda.txt',
+            name='panda.txt',
+            materialized_path='/panda.txt')
+        file.save()
+        
+        with assert_raises(PermissionsError):
+            self.preprint.set_primary_file(file, auth=Auth(self.write_contrib), save=True)
+
+        self.preprint.reload()
+        self.preprint.node.reload()
+        assert_equal(initial_file._id, self.preprint.primary_file._id)
+
+    def test_nonadmin_cannot_publish(self):
+        assert_false(self.preprint.is_published)
+
+        with assert_raises(PermissionsError):
+            self.preprint.set_published(True, auth=Auth(self.write_contrib), save=True)
+
+        assert_false(self.preprint.is_published)
+
+    def test_admin_can_set_subjects(self):
+        initial_subjects = self.preprint.subjects
+        self.preprint.set_subjects([[SubjectFactory()._id]], auth=Auth(self.user), save=True)
+
+        self.preprint.reload()
+        assert_not_equal(initial_subjects, self.preprint.subjects)
+
+    def test_admin_can_set_file(self):
+        initial_file = self.preprint.primary_file
+        file = OsfStorageFile.create(
+            is_file=True,
+            node=self.project,
+            path='/panda.txt',
+            name='panda.txt',
+            materialized_path='/panda.txt')
+        file.save()
+        
+        self.preprint.set_primary_file(file, auth=Auth(self.user), save=True)
+
+        self.preprint.reload()
+        self.preprint.node.reload()
+        assert_not_equal(initial_file._id, self.preprint.primary_file._id)
+        assert_equal(file._id, self.preprint.primary_file._id)
+
+    def test_admin_can_publish(self):
+        assert_false(self.preprint.is_published)
+
+        self.preprint.set_published(True, auth=Auth(self.user), save=True)
+
+        assert_true(self.preprint.is_published)
 
 
 class TestPreprintProviders(OsfTestCase):
