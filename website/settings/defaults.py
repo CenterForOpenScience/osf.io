@@ -74,9 +74,6 @@ LOG_PATH = os.path.join(APP_PATH, 'logs')
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
 ANALYTICS_PATH = os.path.join(BASE_PATH, 'analytics')
 
-GNUPG_HOME = os.path.join(BASE_PATH, 'gpg')
-GNUPG_BINARY = 'gpg'
-
 # User management & registration
 CONFIRM_REGISTRATIONS_BY_EMAIL = True
 ALLOW_REGISTRATION = True
@@ -146,9 +143,6 @@ MFR_TEMP_PATH = os.path.join(BASE_PATH, 'mfrtemp')
 
 # Use Celery for file rendering
 USE_CELERY = True
-
-# Use GnuPG for encryption
-USE_GNUPG = True
 
 # File rendering timeout (in ms)
 MFR_TIMEOUT = 30000
@@ -541,6 +535,24 @@ WATERBUTLER_JWE_SECRET = 'CirclesAre4Squares'
 WATERBUTLER_JWT_SECRET = 'ILiekTrianglesALot'
 WATERBUTLER_JWT_ALGORITHM = 'HS256'
 WATERBUTLER_JWT_EXPIRATION = 15
+
+SENSITIVE_DATA_JWE_SALT = 'yusaltydough'
+SENSITIVE_DATA_JWE_SECRET = 'TrainglesAre5Squares'
+
+try:
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+    from cryptography.hazmat.backends import default_backend
+except ImportError:
+    pass
+else:
+    SENSITIVE_DATA_JWE_KEY = PBKDF2HMAC(
+        salt=SENSITIVE_DATA_JWE_SALT,
+        length=32,
+        backend=default_backend(),
+        iterations=10000,
+        algorithm=hashes.SHA256(),
+    ).derive(SENSITIVE_DATA_JWE_SECRET)
 
 DRAFT_REGISTRATION_APPROVAL_PERIOD = datetime.timedelta(days=10)
 assert (DRAFT_REGISTRATION_APPROVAL_PERIOD > EMBARGO_END_DATE_MIN), 'The draft registration approval period should be more than the minimum embargo end date.'
