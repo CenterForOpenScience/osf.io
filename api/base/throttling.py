@@ -46,6 +46,15 @@ class AddContributorThrottle(BaseThrottle, UserRateThrottle):
             return False
         return True
 
+class CreateGuidThrottle(BaseThrottle, UserRateThrottle):
+
+    scope = 'create-guid'
+
+    def failure(self, request):
+        if request.query_params.get('create_guid'):
+            return False
+        return True
+
 
 class RootAnonThrottle(AnonRateThrottle):
 

@@ -4,7 +4,7 @@ from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
 
 from tests.base import DbTestCase
-from tests.utils import make_drf_request
+from tests.utils import make_drf_request_with_version
 from tests.factories import UserFactory, CollectionFactory
 
 from api.collections.serializers import CollectionSerializer
@@ -18,7 +18,7 @@ class TestNodeSerializer(DbTestCase):
 
     def test_collection_serialization(self):
         collection = CollectionFactory(creator=self.user)
-        req = make_drf_request()
+        req = make_drf_request_with_version()
         result = CollectionSerializer(collection, context={'request': req}).data
         data = result['data']
         assert_equal(data['id'], collection._id)

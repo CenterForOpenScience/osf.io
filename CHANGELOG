@@ -2,6 +2,26 @@
 Changelog
 *********
 
+0.95.0 (2016-10-05)
+===================
+- Replace GPL-only django-queryset-csv library (the last of the GPL)
+- Allow domain with umlaut to be added to OSF social profile
+- API v2 search
+- Fix bottom margin of Dashboard quick project search
+- Normalize OSF verification key
+- Add prereg banner to OSF dashboard
+- Pin MODM dependency
+- Surface analytics initialization script
+- Add error messaging on project page, files page, and prereg form "cannot upload folders"
+- Change preprint logs to say 'made' instead of 'initiated'
+- Fix raven-js calls on the OSF
+- Capitalize wiki's Home page on many of the logs
+- Remove legacy SHARE code
+
+0.94.4 (2016-10-05)
+===================
+- Allow components of projects with unconfirmed contributors to inherit contributors properly
+
 0.94.0 (2016-09-22)
 ===================
 - Remove GPLv3-only python-crontab library

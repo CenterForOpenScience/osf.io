@@ -85,6 +85,12 @@ class TestNodeLinksList(ApiTestCase):
         res_json = res.json['data']
         assert_equal(len(res_json), original_length - 1)
 
+    def test_node_links_bad_version(self):
+        url = '{}?version=2.1'.format(self.public_url)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+        assert_equal(res.json['errors'][0]['detail'], 'This feature is deprecated as of version 2.1')
+
 
 class TestNodeLinkCreate(ApiTestCase):
 

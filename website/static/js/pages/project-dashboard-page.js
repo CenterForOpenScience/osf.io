@@ -21,6 +21,7 @@ var CitationList = require('js/citationList');
 var CitationWidget = require('js/citationWidget');
 var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
+var oldMd = require('js/markdown').old;
 var AddProject = require('js/addProjectPlugin');
 var mHelpers = require('js/mithrilHelpers');
 var SocialShare = require('js/components/socialshare');
@@ -260,21 +261,17 @@ $(document).ready(function () {
         mathrender.mathjaxify(markdownElement);
 
         // Render the raw markdown of the wiki
-        if (!ctx.usePythonRender) {
-            var request = $.ajax({
-                url: ctx.urls.wikiContent
-            });
-            request.done(function(resp) {
-                var rawText = resp.wiki_content || '*No wiki content*';
-                var renderedText = md.render(rawText);
-                var truncatedText = $.truncate(renderedText, {length: 400});
-                markdownElement.html(truncatedText);
-                mathrender.mathjaxify(markdownElement);
-                markdownElement.show();
-            });
-        } else {
-            markdownElement.css('display', 'inherit');
-        }
+        var request = $.ajax({
+            url: ctx.urls.wikiContent
+        });
+        request.done(function(resp) {
+            var rawText = resp.wiki_content || '*No wiki content*';
+            var renderedText = ctx.renderedBeforeUpdate ? oldMd.render(rawText) : md.render(rawText);
+            var truncatedText = $.truncate(renderedText, {length: 400});
+            markdownElement.html(truncatedText);
+            mathrender.mathjaxify(markdownElement);
+            markdownElement.show();
+        });
     }
 
     // Remove delete UI if not contributor

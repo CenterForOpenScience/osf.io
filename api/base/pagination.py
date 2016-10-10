@@ -41,6 +41,10 @@ class JSONAPIPagination(pagination.PageNumberPagination):
 
         return paginated_url
 
+    def get_self_real_link(self, url):
+        page_number = self.page.number
+        return self.page_number_query(url, page_number)
+
     def get_first_real_link(self, url):
         if not self.page.has_previous():
             return None
@@ -64,7 +68,7 @@ class JSONAPIPagination(pagination.PageNumberPagination):
         page_number = self.page.next_page_number()
         return self.page_number_query(url, page_number)
 
-    def get_response_dict(self, data, url):
+    def get_response_dict_deprecated(self, data, url):
         return OrderedDict([
             ('data', data),
             ('links', OrderedDict([
@@ -79,9 +83,27 @@ class JSONAPIPagination(pagination.PageNumberPagination):
             ])),
         ])
 
+    def get_response_dict(self, data, url):
+        return OrderedDict([
+            ('data', data),
+            ('meta', OrderedDict([
+                ('total', self.page.paginator.count),
+                ('per_page', self.page.paginator.per_page),
+            ])),
+            ('links', OrderedDict([
+                ('self', self.get_self_real_link(url)),
+                ('first', self.get_first_real_link(url)),
+                ('last', self.get_last_real_link(url)),
+                ('prev', self.get_previous_real_link(url)),
+                ('next', self.get_next_real_link(url)),
+            ])),
+        ])
+
     def get_paginated_response(self, data):
         """
-        Formats paginated response in accordance with JSON API.
+        Formats paginated response in accordance with JSON API, as of version 2.1.
+        Version 2.0 uses the response_dict_deprecated function,
+        which does not return JSON API compliant pagination links.
 
         Creates pagination links from the view_name if embedded resource,
         rather than the location used in the request.
@@ -93,7 +115,10 @@ class JSONAPIPagination(pagination.PageNumberPagination):
         if embedded:
             reversed_url = reverse(view_name, kwargs=kwargs)
 
-        response_dict = self.get_response_dict(data, reversed_url)
+        if self.request.version < '2.1':
+            response_dict = self.get_response_dict_deprecated(data, reversed_url)
+        else:
+            response_dict = self.get_response_dict(data, reversed_url)
 
         if is_anonymized(self.request):
             if response_dict.get('meta', False):
@@ -260,6 +285,9 @@ class SearchPagination(JSONAPIPagination):
             view_name,
             query_kwargs={
                 'q': query
+            },
+            kwargs={
+                'version': self.request.parser_context['kwargs']['version']
             }
         )
 
@@ -279,6 +307,33 @@ class SearchPagination(JSONAPIPagination):
     def get_response_dict(self, data, url):
         if isinstance(self.paginator, SearchModelPaginator):
             return super(SearchPagination, self).get_response_dict(data, url)
+        else:
+            query = self.request.query_params.get('q', '*')
+            return OrderedDict([
+                ('data', data),
+                ('search_fields', OrderedDict([
+                    ('files', self.get_search_field('file', query)),
+                    ('projects', self.get_search_field('project', query)),
+                    ('components', self.get_search_field('component', query)),
+                    ('registrations', self.get_search_field('registration', query)),
+                    ('users', self.get_search_field('user', query)),
+                ])),
+                ('meta', OrderedDict([
+                    ('total', self.page.paginator.count),
+                    ('per_page', self.page.paginator.per_page),
+                ])),
+                ('links', OrderedDict([
+                    ('self', self.get_self_real_link(url)),
+                    ('first', self.get_first_real_link(url)),
+                    ('last', self.get_last_real_link(url)),
+                    ('prev', self.get_previous_real_link(url)),
+                    ('next', self.get_next_real_link(url)),
+                ])),
+            ])
+
+    def get_response_dict_deprecated(self, data, url):
+        if isinstance(self.paginator, SearchModelPaginator):
+            return super(SearchPagination, self).get_response_dict_deprecated(data, url)
         else:
             query = self.request.query_params.get('q', '*')
             return OrderedDict([
