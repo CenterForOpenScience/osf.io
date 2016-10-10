@@ -28,13 +28,6 @@ export default Ember.Controller.extend(CommentableMixin, TaggableMixin, {
         return this.get('version') || (defaultVersion ? defaultVersion.id : null);
     }),
 
-    dlV: Ember.computed('model.file.links.download', function() {
-
-        console.log('TEST');
-        // console.log(this.get('model.file.links.download'));
-        return 'test';
-    }),
-
     actions: {
         fileDetail(file) {
             this.transitionToRoute('file-detail', file.get('id'));
