@@ -87,9 +87,11 @@ var s3FolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
             }
             self.changeMessage(message, 'text-danger');
             Raven.captureMessage('Could not add S3 credentials', {
-                url: self.urls().importAuth,
-                textStatus: status,
-                error: error
+                extra: {
+                    url: self.urls().importAuth,
+                    textStatus: status,
+                    error: error
+                }
             });
         });
     },

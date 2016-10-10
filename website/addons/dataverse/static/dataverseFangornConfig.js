@@ -96,9 +96,11 @@ var _dataverseItemButtons = {
                     default:
                         message = 'Error: Something went wrong when attempting to publish your dataset.';
                         Raven.captureMessage('Could not publish dataset', {
-                            url: url,
-                            textStatus: status,
-                            error: error
+                            extra: {
+                                url: url,
+                                textStatus: status,
+                                error: error
+                            }
                         });
                     }
 

@@ -31,8 +31,13 @@ BCRYPT_LOG_ROUNDS = 12
 with open(os.path.join(APP_PATH, 'package.json'), 'r') as fobj:
     VERSION = json.load(fobj)['version']
 
-# Hours before email confirmation tokens expire
-EMAIL_TOKEN_EXPIRATION = 24
+# Expiration time for verification key
+EXPIRATION_TIME_DICT = {
+    'password': 30,         # 30 minutes for forgot and reset password
+    'confirm': 24 * 60,     # 24 hours in minutes for confirm account and email
+    'claim': 30 * 24 * 60   # 30 days in minutes for claim contributor-ship
+}
+
 CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_components', 'styles')
 
 # Minimum seconds between forgot password email attempts
@@ -81,10 +86,6 @@ SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
 ELASTIC_URI = 'localhost:9200'
 ELASTIC_TIMEOUT = 10
 ELASTIC_INDEX = 'website'
-SHARE_ELASTIC_URI = ELASTIC_URI
-SHARE_ELASTIC_INDEX = 'share'
-# For old indices
-SHARE_ELASTIC_INDEX_TEMPLATE = 'share_v{}'
 
 # Sessions
 COOKIE_NAME = 'osf'
@@ -312,10 +313,8 @@ EZID_PASSWORD = 'changeme'
 # Format for DOIs and ARKs
 EZID_FORMAT = '{namespace}osf.io/{guid}'
 
-
-USE_SHARE = True
 SHARE_REGISTRATION_URL = ''
-SHARE_API_DOCS_URL = ''
+SHARE_URL = 'https://share.osf.io/'
 
 CAS_SERVER_URL = 'http://localhost:8080'
 MFR_SERVER_URL = 'http://localhost:7778'
@@ -1749,5 +1748,4 @@ SPAM_ACCOUNT_SUSPENSION_THRESHOLD = timedelta(hours=24)
 SPAM_FLAGGED_MAKE_NODE_PRIVATE = False
 SPAM_FLAGGED_REMOVE_FROM_SEARCH = False
 
-SHARE_URL = 'http://localhost:8000/'
 SHARE_API_TOKEN = None
