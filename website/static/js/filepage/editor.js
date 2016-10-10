@@ -46,7 +46,7 @@ var FileEditor = {
                 model.editor.setValue(self.initialText);
             }
             m.endComputation();
-        }
+        };
 
         self.reloadFile = function() {
             self.loaded = false;
@@ -123,7 +123,7 @@ var FileEditor = {
         // Hack to prevent double downloads of files from controllers being called twice
         // Double download is caused by treebeard and fileviewpage both being mounted by mithril        
         if(model.loadedResponse){
-            self.handleResponse(model.loadedResponse)
+            self.handleResponse(model.loadedResponse);
         }else{
             self.reloadFile();
         }
