@@ -3,6 +3,7 @@
 import datetime as dt
 import urlparse
 
+from django.utils import timezone
 import mock
 import itsdangerous
 import pytest

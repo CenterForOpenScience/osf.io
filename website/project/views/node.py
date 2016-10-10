@@ -723,7 +723,7 @@ def _view_project(node, auth, primary=False):
             'institutions': get_affiliated_institutions(node) if node else [],
             'alternative_citations': [citation.to_json() for citation in node.alternative_citations.all()],
             'has_draft_registrations': node.has_active_draft_registrations,
-            'contributors': list(node.contributors.values_list('_id', flat=True)),
+            'contributors': list(node.contributors.values_list('guids___id', flat=True)),
             'is_preprint': node.is_preprint,
             'is_preprint_orphan': node.is_preprint_orphan,
             'preprint_file_id': node.preprint_file._id if node.preprint_file else None
@@ -960,10 +960,9 @@ def node_child_tree(user, node_ids):
         # user is contributor on a component of the project/node
         children.extend(node_child_tree(
             user,
-            [
-                n._id
-                for n in node.nodes.filter(is_deleted=False)
-            ]
+            list(node.node_relations.select_related('child')
+                 .exclude(child__is_deleted=False)
+                 .values_list('child__guid_string', flat=True))
         ))
         item = {
             'node': {
@@ -1256,7 +1255,7 @@ def remove_pointer(auth, node, **kwargs):
     if pointer_id is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    pointer = Node.load(pointer_id)
+    pointer = Pointer.load(pointer_id)
     if pointer is None:
         raise HTTPError(http.BAD_REQUEST)
 

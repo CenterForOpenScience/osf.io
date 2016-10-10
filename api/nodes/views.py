@@ -76,7 +76,7 @@ from website.addons.wiki.model import NodeWikiPage
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
 from website.models import Comment, NodeLog, Institution, DraftRegistration
-from osf_models.models import AlternativeCitation, Node, PrivateLink
+from osf_models.models import AlternativeCitation, Node, PrivateLink, NodeRelation
 from website.files.models import FileNode
 from framework.auth.core import User
 from api.base.utils import default_node_list_query, default_node_permission_query
@@ -276,7 +276,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     def convert_key(self, *args, **kwargs):
         key = super(NodeList, self).convert_key(*args, **kwargs)
         if key == 'root':
-            return 'root___id'
+            return 'root__guids___id'
         return key
 
     # overrides FilterMixin
@@ -1392,14 +1392,14 @@ class NodeLinksList(BaseNodeLinksList, bulk_views.BulkDestroyJSONAPIView, bulk_v
 
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]
     required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
-    model_class = Node
+    model_class = NodeRelation
 
     serializer_class = NodeLinksSerializer
     view_category = 'nodes'
     view_name = 'node-pointers'
 
     def get_queryset(self):
-        return self.get_node().linked_nodes.filter(is_deleted=False)
+        return self.get_node().node_relations.select_related('child').filter(child__is_deleted=False)
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
@@ -1485,7 +1485,7 @@ class NodeLinksDetail(BaseNodeLinksDetail, generics.RetrieveDestroyAPIView, Node
     # overrides RetrieveAPIView
     def get_object(self):
         node_link = get_object_or_error(
-            Node,
+            NodeRelation,
             self.kwargs[self.node_link_lookup_url_kwarg],
             'node link'
         )

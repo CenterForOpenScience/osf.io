@@ -27,10 +27,10 @@ def migrate_nodes(index):
     increment = 200
     total_pages = (total // increment) + 1
     pages = paginated(Node, query=query, increment=increment, each=False)
+
     for page_number, page in enumerate(pages):
         logger.info('Updating page {} / {}'.format(page_number + 1, total_pages))
         Node.bulk_update_search(page, index=index)
-        Node._clear_caches()
 
     logger.info('Nodes migrated: {}'.format(total))
 
@@ -39,7 +39,7 @@ def migrate_users(index):
     logger.info('Migrating users to index: {}'.format(index))
     n_migr = 0
     n_iter = 0
-    users = paginated(User, query=None, increment=1000, each=True)
+    users = paginated(User, query=None, each=True)
     for user in users:
         if user.is_active:
             search.update_user(user, index=index)

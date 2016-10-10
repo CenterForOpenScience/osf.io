@@ -14,8 +14,17 @@ from website.project.signals import contributor_added, contributor_removed
 from website.exceptions import NodeStateError
 from website.util import permissions, disconnected_from_listeners
 from website.citations.utils import datetime_to_csl
+from website import language
 
-from osf_models.models import Node, Tag, NodeLog, Contributor, Sanction, NodeWikiPage
+from osf_models.models import (
+    Node,
+    Tag,
+    NodeLog,
+    Contributor,
+    Sanction,
+    NodeWikiPage,
+    NodeRelation,
+)
 from osf_models.exceptions import ValidationError
 from osf_models.utils.auth import Auth
 
@@ -29,6 +38,7 @@ from .factories import (
     PrivateLinkFactory,
     CollectionFactory,
     NodeWikiFactory,
+    NodeRelationFactory,
 )
 from .utils import capture_signals, assert_datetime_equal, mock_archive
 
@@ -687,7 +697,7 @@ def test_parent_kwarg():
     parent = NodeFactory()
     child = NodeFactory(parent=parent)
     assert child.parent_node == parent
-    assert child in parent.nodes.all()
+    assert child in parent._nodes.all()
 
 
 class TestSetPrivacy:
@@ -1128,25 +1138,6 @@ class TestNodeTraversals:
         ids = {d._id for d in descendants}
         assert bool({node._id for node in [comp1, comp1a, comp1b, comp2, comp2a, comp2b]}.difference(ids)) is False
 
-    def test_get_descendants_recursive_filtered(self, user, root, viewer, auth):
-        comp1 = ProjectFactory(creator=user, parent=root)
-        comp1a = ProjectFactory(creator=user, parent=comp1)
-        comp1a.add_contributor(viewer, auth=auth, permissions='read')
-        ProjectFactory(creator=user, parent=comp1)
-        comp2 = ProjectFactory(creator=user)
-        comp2.add_contributor(viewer, auth=auth, permissions='read')
-        comp2a = ProjectFactory(creator=user, parent=comp2)
-        comp2a.add_contributor(viewer, auth=auth, permissions='read')
-        ProjectFactory(creator=user, parent=comp2)
-
-        descendants = root.get_descendants_recursive(
-            lambda n: n.is_contributor(viewer)
-        )
-        ids = {d._id for d in descendants}
-        nids = {node._id for node in [comp1a, comp2, comp2a]}
-        assert bool(ids.difference(nids)) is False
-
-    @pytest.mark.skip('Pointers not yet implemented')
     def test_get_descendants_recursive_cyclic(self, user, root, auth):
         point1 = ProjectFactory(creator=user, parent=root)
         point2 = ProjectFactory(creator=user, parent=root)
@@ -1156,14 +1147,12 @@ class TestNodeTraversals:
         descendants = list(point1.get_descendants_recursive())
         assert len(descendants) == 1
 
-def test_linked_from():
-    node = NodeFactory()
+def test_linked_from(node, auth):
     registration_to_link = RegistrationFactory()
     node_to_link = NodeFactory()
 
-    node.linked_nodes.add(node_to_link)
-    node.linked_nodes.add(node_to_link)
-    node.linked_nodes.add(registration_to_link)
+    node.add_pointer(node_to_link, auth=auth)
+    node.add_pointer(registration_to_link, auth=auth)
     node.save()
 
     assert node in node_to_link.linked_from.all()
@@ -1192,6 +1181,35 @@ class TestPointerMethods:
                 },
             }
         )
+
+    def test_add_linked_nodes_property(self, node, auth):
+        child = NodeFactory(parent=node)
+        node_link = ProjectFactory()
+        node.add_pointer(node_link, auth=auth, save=True)
+
+        assert node_link in node.linked_nodes.all()
+        assert child not in node.linked_nodes.all()
+
+    def test_nodes_primary_does_not_return_linked_nodes(self, node, auth):
+        child = NodeFactory(parent=node)
+        node_link = ProjectFactory()
+        node.add_pointer(node_link, auth=auth, save=True)
+
+        assert child in node.nodes_primary.all()
+        assert node_link not in node.nodes_primary.all()
+
+    def test_add_pointer_adds_to_end_of_nodes(self, node, user, auth):
+        child = NodeFactory(parent=node)
+        child2 = NodeFactory(parent=node)
+
+        node_link = ProjectFactory()
+
+        node.add_pointer(node_link, auth=auth, save=True)
+
+        nodes = list(node.nodes)
+        assert child == nodes[0]
+        assert child2 == nodes[1]
+        assert node_link == nodes[2]
 
     def test_add_pointer_fails_for_registrations(self, user, auth):
         node = ProjectFactory()
@@ -1231,8 +1249,8 @@ class TestPointerMethods:
 
     def test_rm_pointer(self, node, user, auth):
         node2 = NodeFactory(creator=user)
-        node.add_pointer(node2, auth=auth)
-        node.rm_pointer(node2, auth=auth)
+        node_relation = node.add_pointer(node2, auth=auth)
+        node.rm_pointer(node_relation, auth=auth)
         # assert Pointer.load(pointer._id) is None
         # assert len(node.nodes) == 0
         assert len(node2.get_points()) == 0
@@ -1253,14 +1271,14 @@ class TestPointerMethods:
         )
 
     def test_rm_pointer_not_present(self, user, node, auth):
-        node2 = NodeFactory(creator=user)
+        node_relation = NodeRelationFactory()
         with pytest.raises(ValueError):
-            node.rm_pointer(node2, auth=auth)
+            node.rm_pointer(node_relation, auth=auth)
 
     def test_fork_pointer_not_present(self, node, auth):
-        node2 = NodeFactory()
+        node_relation = NodeRelationFactory()
         with pytest.raises(ValueError):
-            node.fork_pointer(node2, auth=auth)
+            node.fork_pointer(node_relation, auth=auth)
 
     def _fork_pointer(self, node, content, auth):
         pointer = node.add_pointer(content, auth=auth)
@@ -1268,19 +1286,20 @@ class TestPointerMethods:
         assert forked.is_fork is True
         assert forked.forked_from == content
         assert forked.primary is True
-        assert node.nodes.first() == forked
+        assert node._nodes.first() == forked
         assert(
             node.logs.latest().action == NodeLog.POINTER_FORKED
         )
+        assert content not in node._nodes.all()
         assert(
-            node.logs.latest().params, {
+            node.logs.latest().params == {
                 'parent_node': node.parent_id,
                 'node': node._primary_key,
                 'pointer': {
-                    'id': forked._id,
-                    'url': forked.url,
-                    'title': forked.title,
-                    'category': forked.category,
+                    'id': content._id,
+                    'url': content.url,
+                    'title': content.title,
+                    'category': content.category,
                 },
             }
         )
@@ -1330,7 +1349,7 @@ class TestForkNode:
 
         # Test that pointers were copied correctly
         assert(
-            original.nodes_pointer.all() == fork.nodes_pointer.all(),
+            list(original.nodes_pointer.all()) == list(fork.nodes_pointer.all())
         )
 
         # Test that add-ons were copied correctly
@@ -1345,7 +1364,7 @@ class TestForkNode:
 
         fork_user_auth = Auth(user=fork_user)
         # Recursively compare children
-        for idx, child in enumerate(original.nodes.all()):
+        for idx, child in enumerate(original._nodes.all()):
             if child.can_view(fork_user_auth):
                 self._cmp_fork_original(fork_user, fork_date, fork.nodes.all()[idx],
                                         child, title_prepend='')
@@ -1432,8 +1451,8 @@ class TestForkNode:
         fork = node.fork_node(user2_auth)
 
         # fork correct children
-        assert fork.nodes.count() == 2
-        assert 'Not Forked' not in fork.nodes.values_list('title', flat=True)
+        assert fork._nodes.count() == 2
+        assert 'Not Forked' not in fork._nodes.values_list('title', flat=True)
 
     def test_fork_not_public(self, node, auth):
         node.set_privacy('public')
@@ -1592,18 +1611,35 @@ class TestNodeOrdering:
 
     @pytest.fixture()
     def children(self, project):
-        child1 = NodeFactory(parent=project)
-        child2 = NodeFactory(parent=project)
-        child3 = NodeFactory(parent=project)
+        child1 = NodeFactory(parent=project, is_public=False)
+        child2 = NodeFactory(parent=project, is_public=False)
+        child3 = NodeFactory(parent=project, is_public=True)
+
+        rel1 = NodeRelation.objects.get(parent=project, child=child1)
+        rel2 = NodeRelation.objects.get(parent=project, child=child2)
+        rel3 = NodeRelation.objects.get(parent=project, child=child3)
+        project.set_noderelation_order([rel2.pk, rel3.pk, rel1.pk])
+
         return [child1, child2, child3]
 
-    def test_can_get_node_order(self, project, children):
-        assert list(project.get_abstractnode_order()) == [e.pk for e in children]
-        assert list(project.nodes.all())
+    def test_can_get_node_relation_order(self, project, children):
+        assert list(project.get_noderelation_order()) == [e.pk for e in project.node_relations.all()]
 
-    def test_can_set_node_order(self, project, children):
-        project.set_abstractnode_order([children[2].pk, children[1].pk, children[0].pk])
-        assert list(project.nodes.all()) == [children[2], children[1], children[0]]
+    def test_nodes_property_returns_ordered_nodes(self, project, children):
+        nodes = list(project.nodes)
+        assert len(nodes) == 3
+        assert nodes == [children[1], children[2], children[0]]
+
+    def test_get_nodes_no_filter(self, project, children):
+        nodes = list(project.get_nodes())
+        assert nodes == [children[1], children[2], children[0]]
+
+    def test_get_nodes_with_filter(self, project, children):
+        public_nodes = list(project.get_nodes(is_public=True))
+        assert public_nodes == [children[2]]
+
+        private_nodes = list(project.get_nodes(is_public=False))
+        assert private_nodes == [children[1], children[0]]
 
 
 def test_templated_list(node):
@@ -1787,7 +1823,7 @@ class TestCitationsProperties:
                 'title': node.title,
                 'type': 'webpage',
                 'id': node._id,
-            },
+            }
         )
 
     def test_non_visible_contributors_arent_included_in_csl(self):
@@ -1962,3 +1998,207 @@ class TestRemoveNode:
 
         # target node shouldn't be deleted
         assert target.is_deleted is False
+
+
+@pytest.mark.skip('Unskip when use_as_template is fixed')
+class TestTemplateNode:
+
+    # Autouse the app fixture because we need init_app to set
+    # ADDONS_REQUESTED
+    @pytest.fixture(autouse=True)
+    def _app(self, app):
+        return app
+
+    @pytest.fixture()
+    def project(self, user):
+        return ProjectFactory(creator=user)
+
+    def _verify_log(self, node):
+        """Tests to see that the "created from" log event is present (alone).
+
+        :param node: A node having been created from a template just prior
+        """
+        assert node.logs.count() == 1
+        assert node.logs.latest().action == NodeLog.CREATED_FROM
+
+    def test_simple_template(self, project, auth):
+        """Create a templated node, with no changes"""
+        # created templated node
+        new = project.use_as_template(
+            auth=auth
+        )
+
+        assert new.title == self._default_title(project)
+        assert new.date_created != project.date_created
+        self._verify_log(new)
+
+    def test_simple_template_title_changed(self, project, auth):
+        """Create a templated node, with the title changed"""
+        changed_title = 'Made from template'
+
+        # create templated node
+        new = project.use_as_template(
+            auth=auth,
+            changes={
+                project._primary_key: {
+                    'title': changed_title,
+                }
+            }
+        )
+
+        assert new.title == changed_title
+        assert new.date_created != project.date_created
+        self._verify_log(new)
+
+    def test_use_as_template_preserves_license(self, project, auth):
+        license = NodeLicenseRecordFactory()
+        project.node_license = license
+        project.save()
+        new = project.use_as_template(
+            auth=auth
+        )
+
+        assert new.license.node_license._id == license.node_license._id
+        self._verify_log(new)
+
+    @pytest.fixture()
+    def pointee(self, project, user, auth):
+        pointee = ProjectFactory(creator=user)
+        project.add_pointer(pointee, auth=auth)
+        return pointee
+
+    @pytest.fixture()
+    def component(self, user, project):
+        return NodeFactory(creator=user, parent=project)
+
+    @pytest.fixture()
+    def subproject(self, user, project):
+        return ProjectFactory(creator=user, parent=project)
+
+    @staticmethod
+    def _default_title(x):
+        if isinstance(x, Node):
+            return str(language.TEMPLATED_FROM_PREFIX + x.title)
+        return str(x.title)
+
+    def test_complex_template(self, auth, project, pointee, component, subproject):
+        """Create a templated node from a node with children"""
+
+        # create templated node
+        new = project.use_as_template(auth=auth)
+
+        assert new.title == self._default_title(project)
+        assert len(new.nodes) == len(project.nodes)
+        # check that all children were copied
+        assert (
+            [x.title for x in new.nodes],
+            [x.title for x in project.nodes]
+        )
+        # ensure all child nodes were actually copied, instead of moved
+        assert {x._primary_key for x in new.nodes}.isdisjoint(
+            {x._primary_key for x in project.nodes}
+        )
+
+    def test_complex_template_titles_changed(self, auth, project, pointee, component, subproject):
+
+        # build changes dict to change each node's title
+        changes = {
+            x._primary_key: {
+                'title': 'New Title ' + str(idx)
+            } for idx, x in enumerate(project.nodes)
+        }
+
+        # create templated node
+        new = project.use_as_template(
+            auth=auth,
+            changes=changes
+        )
+
+        for old_node, new_node in zip(project.nodes, new.nodes):
+            if isinstance(old_node, Node):
+                assert (
+                    changes[old_node._primary_key]['title'] ==
+                    new_node.title
+                )
+            else:
+                assert (
+                    old_node.title ==
+                    new_node.title
+                )
+
+    def test_template_wiki_pages_not_copied(self, project, auth):
+        project.update_node_wiki(
+            'template', 'lol',
+            auth=auth
+        )
+        new = project.use_as_template(
+            auth=auth
+        )
+        assert 'template' in project.wiki_pages_current
+        assert 'template' in project.wiki_pages_versions
+        assert new.wiki_pages_current == {}
+        assert new.wiki_pages_versions == {}
+
+    def test_user_who_makes_node_from_template_has_creator_permission(self):
+        project = ProjectFactory(is_public=True)
+        user = UserFactory()
+        auth = Auth(user)
+
+        templated = project.use_as_template(auth)
+
+        assert templated.get_permissions(user) == ['read', 'write', 'admin']
+
+    def test_template_security(self, user, auth, project, pointee, component, subproject):
+        """Create a templated node from a node with public and private children
+
+        Children for which the user has no access should not be copied
+        """
+        other_user = UserFactory()
+        other_user_auth = Auth(user=other_user)
+
+        # set two projects to public - leaving self.component as private
+        project.is_public = True
+        project.save()
+        subproject.is_public = True
+        subproject.save()
+
+        # add new children, for which the user has each level of access
+        read = NodeFactory(creator=user, parent=project)
+        read.add_contributor(other_user, permissions=['read', ])
+        read.save()
+
+        write = NodeFactory(creator=user, parent=project)
+        write.add_contributor(other_user, permissions=['read', 'write'])
+        write.save()
+
+        admin = NodeFactory(creator=user, parent=project)
+        admin.add_contributor(other_user)
+        admin.save()
+
+        # filter down self.nodes to only include projects the user can see
+        visible_nodes = filter(
+            lambda x: x.can_view(other_user_auth),
+            project.nodes
+        )
+
+        # create templated node
+        new = project.use_as_template(auth=other_user_auth)
+
+        assert new.title == self._default_title(project)
+
+        # check that all children were copied
+        assert (
+            set(x.template_node._id for x in new.nodes) ==
+            set(x._id for x in visible_nodes)
+        )
+        # ensure all child nodes were actually copied, instead of moved
+        assert bool({x._primary_key for x in new.nodes}.isdisjoint(
+            {x._primary_key for x in project.nodes}
+        )) is True
+
+        # ensure that the creator is admin for each node copied
+        for node in new.nodes:
+            assert (
+                node.permissions.get(other_user._id) ==
+                ['read', 'write', 'admin']
+            )

@@ -426,7 +426,7 @@ class TestNodeFiltering(ApiTestCase):
         res = self.app.get(url, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
 
-        root_nodes = Node.find(Q('is_public', 'eq', True) & Q('root', 'eq', root._id))
+        root_nodes = Node.find(Q('is_public', 'eq', True) & Q('root', 'eq', root))
         assert_equal(len(res.json['data']), root_nodes.count())
 
     @pytest.mark.skip('Preprint undergoing implementation changes')

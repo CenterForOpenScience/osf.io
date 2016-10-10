@@ -797,7 +797,7 @@ class NodeLinksSerializer(JSONAPISerializer):
 
     target_node = RelationshipField(
         related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<_id>'},
+        related_view_kwargs={'node_id': '<child._id>'},
         always_embed=True
 
     )

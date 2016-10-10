@@ -494,7 +494,7 @@ class PreprintFactory(DjangoModelFactory):
         # file.save()
         # project.set_preprint_file(file, auth=Auth(project.creator))
 
-        project.preprint_subjects.add(SubjectFactory()) # this is a m2m, you can't do that.
+        project.preprint_subjects.add(SubjectFactory())  # this is a m2m, you can't do that.
         if providers:
             project.preprint_providers.add(*providers)
         project.preprint_doi = doi
@@ -600,3 +600,10 @@ class IdentifierFactory(DjangoModelFactory):
 
         return super(IdentifierFactory, cls)._create(*args, **kwargs)
 
+
+class NodeRelationFactory(DjangoModelFactory):
+    class Meta:
+        model = models.NodeRelation
+
+    child = factory.SubFactory(NodeFactory)
+    parent = factory.SubFactory(NodeFactory)
