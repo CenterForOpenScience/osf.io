@@ -20,6 +20,7 @@ from requests_oauthlib import OAuth1Session
 from requests_oauthlib import OAuth2Session
 
 from framework.auth import cas
+from framework.encryption import EncryptedStringField
 from framework.exceptions import HTTPError, PermissionsError
 from framework.mongo import ObjectId, StoredObject
 from framework.mongo.utils import unique_on
@@ -36,7 +37,6 @@ OAUTH1 = 1
 OAUTH2 = 2
 
 generate_client_secret = functools.partial(random_string, length=40)
-
 
 @unique_on(['provider', 'provider_id'])
 class ExternalAccount(StoredObject):
@@ -55,14 +55,14 @@ class ExternalAccount(StoredObject):
     # The OAuth credentials. One or both of these fields should be populated.
     # For OAuth1, this is usually the "oauth_token"
     # For OAuth2, this is usually the "access_token"
-    oauth_key = fields.StringField()
+    oauth_key = EncryptedStringField()
 
     # For OAuth1, this is usually the "oauth_token_secret"
     # For OAuth2, this is not used
-    oauth_secret = fields.StringField()
+    oauth_secret = EncryptedStringField()
 
     # Used for OAuth2 only
-    refresh_token = fields.StringField()
+    refresh_token = EncryptedStringField()
     expires_at = fields.DateTimeField()
     scopes = fields.StringField(list=True, default=lambda: list())
 
@@ -77,9 +77,9 @@ class ExternalAccount(StoredObject):
     provider_id = fields.StringField()
 
     # The user's name on the external service
-    display_name = fields.StringField()
+    display_name = EncryptedStringField()
     # A link to the user's profile on the external service
-    profile_url = fields.StringField()
+    profile_url = EncryptedStringField()
 
     def __repr__(self):
         return '<ExternalAccount: {}/{}>'.format(self.provider,
