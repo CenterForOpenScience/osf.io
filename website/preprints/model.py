@@ -155,8 +155,9 @@ class PreprintService(GuidStoredObject):
             self.save()
 
     def save(self, *args, **kwargs):
-        super(PreprintService, self).save(*args, **kwargs)
-        enqueue_task(on_preprint_updated.s(self._id))
+        saved_fields = super(PreprintService, self).save(*args, **kwargs)
+        if saved_fields:
+            enqueue_task(on_preprint_updated.s(self._id))
 
 
 class PreprintProvider(StoredObject):
