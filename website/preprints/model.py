@@ -129,6 +129,9 @@ class PreprintService(GuidStoredObject):
         if not self.node.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can publish a preprint.')
 
+        if self.is_published and not published:
+            raise ValueError('Cannot unpublish preprint.')
+
         self.is_published = published
 
         if published:

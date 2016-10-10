@@ -216,6 +216,18 @@ class TestPreprintServicePermissions(OsfTestCase):
 
         assert_true(self.preprint.is_published)
 
+    def test_admin_cannot_unpublish(self):
+        assert_false(self.preprint.is_published)
+
+        self.preprint.set_published(True, auth=Auth(self.user), save=True)
+
+        assert_true(self.preprint.is_published)
+
+        with assert_raises(ValueError) as e:
+            self.preprint.set_published(False, auth=Auth(self.user), save=True)
+
+        assert_in('Cannot unpublish', e.exception.message)
+
 
 class TestPreprintProviders(OsfTestCase):
     def setUp(self):
