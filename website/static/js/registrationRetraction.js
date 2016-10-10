@@ -26,7 +26,8 @@ var RegistrationRetractionViewModel = oop.extend(
             var self = this;
 
             self.submitUrl = submitUrl;
-            self.registrationTitle = $osf.htmlDecode(registrationTitle);
+            // Strips smart quotes and replaces them with typeable quotes
+            self.registrationTitle = $osf.htmlDecode(registrationTitle).replace(/[\u2018\u2019]/g, '\'').replace(/[\u201C\u201D]/g, '"');
             // Truncate title to around 50 chars
             var parts = self.registrationTitle.slice(0, 50).split(' ');
             if (parts.length > 1) {
