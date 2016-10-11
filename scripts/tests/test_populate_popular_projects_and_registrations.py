@@ -37,9 +37,9 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
         self.popular_links_node._id = POPULAR_LINKS_NODE
         self.popular_links_node.save()
 
-        self.popular_links_node_registrations = ProjectFactory()
-        self.popular_links_node_registrations._id = POPULAR_LINKS_REGISTRATIONS
-        self.popular_links_node_registrations.save()
+        self.popular_links_registrations = ProjectFactory()
+        self.popular_links_registrations._id = POPULAR_LINKS_REGISTRATIONS
+        self.popular_links_registrations.save()
 
         popular_nodes = [self.pop1, self.pop2]
         popular_node_registrations = [self.popreg1, self.popreg2]
@@ -87,15 +87,15 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
         mock_client.return_value = {'node_pageviews': node_pageviews, 'node_visits': node_visits}
 
         assert_equal(len(self.popular_links_node.nodes), 0)
-        assert_equal(len(self.popular_links_node_registrations.nodes), 0)
+        assert_equal(len(self.popular_links_registrations.nodes), 0)
 
         script.main(dry_run=False)
 
         self.popular_links_node.reload()
-        self.popular_links_node_registrations.reload()
+        self.popular_links_registrations.reload()
 
         assert_equal(len(self.popular_links_node.nodes), 2)
-        assert_equal(len(self.popular_links_node_registrations.nodes), 2)
+        assert_equal(len(self.popular_links_registrations.nodes), 2)
 
         assert_items_equal(
             popular_nodes,
@@ -103,5 +103,5 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
         )
         assert_items_equal(
             popular_node_registrations,
-            [pointer.node for pointer in self.popular_links_node_registrations.nodes]
+            [pointer.node for pointer in self.popular_links_registrations.nodes]
         )

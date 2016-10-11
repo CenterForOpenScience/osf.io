@@ -37,10 +37,10 @@ def main(dry_run=True):
     popular_nodes = popular_activity['popular_public_projects']
     popular_links_node = models.Node.find_one(Q('_id', 'eq', POPULAR_LINKS_NODE))
     popular_registrations = popular_activity['popular_public_registrations']
-    popular_links_node_registrations = models.Node.find_one(Q('_id', 'eq', POPULAR_LINKS_REGISTRATIONS))
+    popular_links_registrations = models.Node.find_one(Q('_id', 'eq', POPULAR_LINKS_REGISTRATIONS))
 
     update_node_links(popular_links_node, popular_nodes, 'popular')
-    update_node_links(popular_links_node_registrations, popular_registrations, 'popular registrations')
+    update_node_links(popular_links_registrations, popular_registrations, 'popular registrations')
     try:
         popular_links_node.save()
         logger.info('Node links on {} updated.'.format(popular_links_node._id))
@@ -49,7 +49,7 @@ def main(dry_run=True):
         logger.exception(error)
 
     try:
-        popular_links_node_registrations.save()
+        popular_links_registrations.save()
         logger.info('Node links for registrations on {} updated.'.format(popular_links_node._id))
     except (KeyError, RuntimeError) as error:
         logger.error('Could not migrate popular nodes for registrations due to error')
