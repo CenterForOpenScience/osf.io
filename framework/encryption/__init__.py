@@ -4,16 +4,15 @@ from modularodm.fields import StringField
 
 from website import settings
 
-SENSITIVE_DATA_JWE_KEY = jwe.kdf(settings.SENSITIVE_DATA_JWE_SECRET.encode('utf-8'), settings.SENSITIVE_DATA_JWE_SALT.encode('utf-8'))
 
 def encrypt(value):
     if value:
-        return jwe.encrypt(value.encode('utf-8'), SENSITIVE_DATA_JWE_KEY)
+        return jwe.encrypt(value.encode('utf-8'), settings.SENSITIVE_DATA_JWE_KEY)
     return None
 
 def decrypt(value):
     if value:
-        return jwe.decrypt(value.encode('utf-8'), SENSITIVE_DATA_JWE_KEY)
+        return jwe.decrypt(value.encode('utf-8'), settings.SENSITIVE_DATA_JWE_KEY)
     return None
 
 class EncryptedStringField(StringField):
