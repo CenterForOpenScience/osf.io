@@ -628,9 +628,9 @@ class BasicAuthProviderMixin(object):
             self.account = ExternalAccount(
                 display_name=username,
                 oauth_key=password,
-                oauth_secret=host,
-                provider_id='{}:{}'.format(host, username),
-                profile_url=host,
+                oauth_secret=host.lower(),
+                provider_id='{}:{}'.format(host.lower(), username),
+                profile_url=host.lower(),
                 provider=self.short_name,
                 provider_name=self.name
             )

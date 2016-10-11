@@ -23,6 +23,11 @@ class OwnCloudProvider(BasicAuthProviderMixin):
     name = 'ownCloud'
     short_name = 'owncloud'
 
+    def __init__(self, account=None, host=None, username=None, password=None):
+        if username:
+            username = username.lower()
+        return super(OwnCloudProvider, self).__init__(account=account, host=host, username=username, password=password)
+
     def __repr__(self):
         return '<{name}: {status}>'.format(
             name=self.__class__.__name__,
