@@ -11,7 +11,6 @@ from website.addons.base import (
 from website.addons.base import StorageAddonBase
 
 from website.addons.dmptool.serializer import DmptoolSerializer
-#from website.addons.dmptool.utils import DmptoolNodeLogger
 
 
 class DmptoolProvider(object):
@@ -55,8 +54,6 @@ class AddonDmptoolNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def set_folder(self, folder_id, auth):
 
         self.folder_id = str(folder_id)
-        # client = utils.get_evernote_client(self.external_account.oauth_key)
-        # _folder_data = utils.get_notebook(client, self.folder_id)
         self.folder_name = 'xxxxx'
         self.folder_path = 'xxxxx'
         self.save()
@@ -83,6 +80,9 @@ class AddonDmptoolNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         return self.folder_path
 
     def clear_settings(self):
+        """
+        TO DO: deal with this hack.  For the dmptool, there is no folder per se, just plans.
+        """
         self.folder_id = 'xxxxx'
         self.folder_name = 'xxxxx'
         self.folder_path = 'xxxxx'

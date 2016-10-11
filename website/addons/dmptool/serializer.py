@@ -53,7 +53,6 @@ class DmptoolSerializer(OAuthAddonSerializer):
             'set': node.api_url_for('dmptool_set_config'),
             'importAuth': node.api_url_for('dmptool_import_auth'),
             'deauthorize': node.api_url_for('dmptool_deauthorize_node'),
-            'getDatasets': node.api_url_for('dmptool_get_datasets'),
             'datasetPrefix': 'http://dx.doi.org/',
             'dmptoolPrefix': 'http://{0}/dmptool/'.format(host),
             'accounts': api_url_for('dmptool_account_list'),

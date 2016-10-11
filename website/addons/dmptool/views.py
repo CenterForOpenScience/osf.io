@@ -1,6 +1,5 @@
 """Views for the node settings page."""
 # -*- coding: utf-8 -*-
-import datetime
 import httplib as http
 
 from flask import request, send_file
@@ -20,7 +19,7 @@ from website.addons.dmptool.serializer import DmptoolSerializer
 from website.oauth.models import ExternalAccount
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
-    must_have_permission, must_not_be_registration,
+    must_have_permission,
     must_be_contributor_or_public
 )
 from website.util import api_url_for
@@ -156,59 +155,7 @@ def dmptool_set_config(node_addon, auth, **kwargs):
 
     return {'dmptool': dmptool.title, 'dataset': dataset.title}, http.OK
 
-
-@must_have_permission('write')
-@must_have_addon(SHORT_NAME, 'user')
-@must_have_addon(SHORT_NAME, 'node')
-def dmptool_get_datasets(node_addon, **kwargs):
-    """Get list of datasets from provided Dmptool alias"""
-    alias = request.json.get('alias')
-
-    connection = client.connect_from_settings(node_addon)
-    dmptool = client.get_dmptool(connection, alias)
-    datasets = client.get_datasets(dmptool)
-    ret = {
-        'alias': alias,  # include alias to verify dataset container
-        'datasets': [{'title': dataset.title, 'doi': dataset.doi} for dataset in datasets],
-    }
-    return ret, http.OK
-
 ## Crud ##
-
-
-@must_have_permission('write')
-@must_not_be_registration
-@must_have_addon(SHORT_NAME, 'node')
-@must_be_addon_authorizer(SHORT_NAME)
-def dmptool_publish_dataset(node_addon, auth, **kwargs):
-    node = node_addon.owner
-    publish_both = request.json.get('publish_both', False)
-
-    now = datetime.datetime.utcnow()
-
-    connection = client.connect_from_settings_or_401(node_addon)
-
-    dmptool = client.get_dmptool(connection, node_addon.dmptool_alias)
-    dataset = client.get_dataset(dmptool, node_addon.dataset_doi)
-
-    if publish_both:
-        client.publish_dmptool(dmptool)
-    client.publish_dataset(dataset)
-
-    # Add a log
-    node.add_log(
-        action='dmptool_dataset_published',
-        params={
-            'project': node.parent_id,
-            'node': node._id,
-            'dataset': dataset.title,
-        },
-        auth=auth,
-        log_date=now,
-    )
-
-    return {'dataset': dataset.title}, http.OK
-
 
 ## Widget ##
 

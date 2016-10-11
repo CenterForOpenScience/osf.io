@@ -61,29 +61,11 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/dmptool/list-datasets/',
-                '/project/<pid>/node/<nid>/dmptool/list-datasets/',
-            ],
-            'post',
-            views.dmptool_get_datasets,
-            json_renderer,
-        ),
-        Rule(
-            [
                 '/project/<pid>/dmptool/hgrid/root/',
                 '/project/<pid>/node/<nid>/dmptool/hgrid/root/',
             ],
             'get',
             views.dmptool_root_folder,
-            json_renderer,
-        ),
-        Rule(
-            [
-                '/project/<pid>/dmptool/publish/',
-                '/project/<pid>/node/<nid>/dmptool/publish/',
-            ],
-            'put',
-            views.dmptool_publish_dataset,
             json_renderer,
         ),
         Rule(

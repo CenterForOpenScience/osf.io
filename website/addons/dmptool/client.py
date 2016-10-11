@@ -29,7 +29,7 @@ def connect_from_settings(node_settings):
 
 def connect_or_error(host, token):
 
-    # TO DO -- actually do a check if possible
+    # TO DO -- actually do a check on validity of token if possible
     # https://github.com/CDLUC3/dmptool/issues/183
 
     # in the mean time return a DMPTool
