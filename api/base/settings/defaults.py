@@ -81,7 +81,13 @@ INSTALLED_APPS = (
     'corsheaders',
     'raven.contrib.django.raven_compat',
     'django_extensions',
-    'osf_models'
+
+    # OSF
+    'osf_models',
+
+    # Addons
+    'addons.osfstorage',
+    'addons.box',
 )
 
 # local development using https
