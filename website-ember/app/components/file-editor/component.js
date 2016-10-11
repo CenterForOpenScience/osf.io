@@ -20,14 +20,14 @@ export default Ember.Component.extend({
     fileManager: Ember.inject.service(),
     actions: {
         saveFile(file) {
-            var data = this.value;
-            this.get('fileManager').updateContents(file, data);
+            this.get('fileManager').updateContents(file, this.value);
+            return true; // bubble
         },
         revertFile(file) {
-            var _this = this;
-            _this.get('fileManager').getContents(file).then(function(contents) {
-                _this.set('value', contents);
-            });
+            this.get('fileManager')
+                .getContents(file)
+                .then(contents => this.set('value', contents));
+            return true; // bubble
         }
     },
 });

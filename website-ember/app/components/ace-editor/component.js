@@ -5,23 +5,27 @@ import Ember from 'ember';
 export default Ember.Component.extend({
     fileManager: Ember.inject.service(),
     didInsertElement: function() {
-        var _this = this;
-        _this.editor = window.ace.edit(_this.get('element'));
-        var file = _this.get('file');
-        _this.get('fileManager').getContents(file).then(function(contents) {
-            _this.set('value', contents);
-        });
-        _this.get('initializeAce')(this.editor);
-        _this.editor.on('change', function() {
-            _this.set('value', _this.editor.getSession().getValue());
-        }.bind(_this));
+        this.editor = window.ace.edit(this.get('element'));
+
+        const file = this.get('file');
+
+        this.get('fileManager')
+            .getContents(file)
+            .then(contents => this.set('value', contents));
+
+        this.get('initializeAce')(this.editor);
+
+        this.editor.on('change', () => this.set('value', this.editor.getSession().getValue()));
     },
-    valueChanged: function () {
-        if (!this.get('value')) {
-            this.editor.getSession().setValue('');
-        } else if (this.editor.getSession().getValue() !== this.get('value')) {
-            this.editor.getSession().setValue(this.get('value'));
+    valueChanged: Ember.observer('value', function () {
+        const session = this.editor.getSession();
+        const value = this.get('value');
+
+        if (!value) {
+            session.setValue('');
+        } else if (session.getValue() !== value) {
+            session.setValue(value);
         }
-    }.observes('value'),
+    }),
 
 });

@@ -19,7 +19,7 @@
                 </p>
             {{/unless}}
             <div class='pull-right'>
-                {{#if canEdit}}
+                {{#if (and canEdit (eq activeVersion defaultVersion.id))}}
                     {{#if canCheckIn}}
                         <button {{action 'checkIn'}} class='btn btn-sm btn-warning'>
                             Check in
@@ -34,11 +34,13 @@
                     {{/if}}
 
                 {{/if}}
-                <button {{action 'download'}} class='btn btn-sm btn-primary'>
+                <button {{action 'download' versionID=activeVersion}} class='btn btn-sm btn-primary'>
                     Download
                 </button>
                 {{link-to 'View' 'file-detail.index' class='btn btn-sm btn-primary'}}
-                {{link-to 'Edit' 'file-detail.edit' class='btn btn-sm btn-primary'}}
+                {{#if (and canEdit (eq activeVersion defaultVersion.id))}}
+                    {{link-to 'Edit' 'file-detail.edit' class='btn btn-sm btn-primary'}}
+                {{/if}}
                 {{link-to 'Revisions' 'file-detail.revisions' class='btn btn-sm btn-primary'}}
             </div>
         </div>

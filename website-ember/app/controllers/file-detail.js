@@ -19,13 +19,14 @@ export default Ember.Controller.extend(CommentableMixin, TaggableMixin, {
     queryParams: ['version'],//{version: {refreshModel: true}},
     version: null,
 
-    sortProperties: ['id:desc'],
-    sortedVersions: Ember.computed.sort('model.file.versions', 'sortProperties'),
+    sortedVersions: Ember.computed.sort('model.file.versions', (a, b) => (+a.id < +b.id ? 1 : -1)),
 
-    activeVersion: Ember.computed('sortedVersions', 'version', function() {
-        const defaultVersion = this.get('sortedVersions')[0];
+    defaultVersion: Ember.computed('sortedVersions', function() {
+        return this.get('sortedVersions')[0];
+    }),
 
-        return this.get('version') || (defaultVersion ? defaultVersion.id : null);
+    activeVersion: Ember.computed('defaultVersion', 'version', function() {
+        return this.get('version') || this.get('defaultVersion.id');
     }),
 
     actions: {
