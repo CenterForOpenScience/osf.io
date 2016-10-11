@@ -1,5 +1,5 @@
 """
-This will update node links on POPULAR_LINKS_NODE, POPULAR_LINKS_NODE_REGISTRATIONS and NEW_AND_NOTEWORTHY_LINKS_NODE.
+This will update node links on POPULAR_LINKS_NODE, POPULAR_LINKS_REGISTRATIONS and NEW_AND_NOTEWORTHY_LINKS_NODE.
 """
 import sys
 import logging
@@ -11,7 +11,7 @@ from scripts import utils as script_utils
 from framework.celery_tasks import app as celery_app
 from framework.transactions.context import TokuTransaction
 from website.project.utils import activity
-from website.settings import POPULAR_LINKS_NODE, POPULAR_LINKS_NODE_REGISTRATIONS
+from website.settings import POPULAR_LINKS_NODE, POPULAR_LINKS_REGISTRATIONS
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ def main(dry_run=True):
     popular_nodes = popular_activity['popular_public_projects']
     popular_links_node = models.Node.find_one(Q('_id', 'eq', POPULAR_LINKS_NODE))
     popular_registrations = popular_activity['popular_public_registrations']
-    popular_links_node_registrations = models.Node.find_one(Q('_id', 'eq', POPULAR_LINKS_NODE_REGISTRATIONS))
+    popular_links_node_registrations = models.Node.find_one(Q('_id', 'eq', POPULAR_LINKS_REGISTRATIONS))
 
     update_node_links(popular_links_node, popular_nodes, 'popular')
     update_node_links(popular_links_node_registrations, popular_registrations, 'popular registrations')

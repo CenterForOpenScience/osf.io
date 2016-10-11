@@ -16,7 +16,7 @@ from framework.transactions.context import TokuTransaction
 from website.project.utils import activity
 from website.settings import \
     POPULAR_LINKS_NODE, NEW_AND_NOTEWORTHY_LINKS_NODE,\
-    NEW_AND_NOTEWORTHY_CONTRIBUTOR_BLACKLIST, POPULAR_LINKS_NODE_REGISTRATIONS
+    NEW_AND_NOTEWORTHY_CONTRIBUTOR_BLACKLIST, POPULAR_LINKS_REGISTRATIONS
 
 logger = logging.getLogger(__name__)
 

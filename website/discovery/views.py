@@ -19,7 +19,7 @@ def activity():
     popular_public_projects = Node.find_one(Q('_id', 'eq', settings.POPULAR_LINKS_NODE)).nodes_pointer
 
     # Popular Registrations
-    popular_public_registrations = Node.find_one(Q('_id', 'eq', settings.POPULAR_LINKS_NODE_REGISTRATIONS)).nodes_pointer
+    popular_public_registrations = Node.find_one(Q('_id', 'eq', settings.POPULAR_LINKS_REGISTRATIONS)).nodes_pointer
 
     return {
         'new_and_noteworthy_projects': new_and_noteworthy_projects,

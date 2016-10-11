@@ -6,7 +6,7 @@ from tests.base import OsfTestCase
 from tests.factories import ProjectFactory, RegistrationFactory
 
 from website.project.model import Node
-from website.settings import POPULAR_LINKS_NODE, POPULAR_LINKS_NODE_REGISTRATIONS, NEW_AND_NOTEWORTHY_LINKS_NODE
+from website.settings import POPULAR_LINKS_NODE, POPULAR_LINKS_REGISTRATIONS, NEW_AND_NOTEWORTHY_LINKS_NODE
 
 from scripts import populate_popular_projects_and_registrations as script
 
@@ -38,7 +38,7 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
         self.popular_links_node.save()
 
         self.popular_links_node_registrations = ProjectFactory()
-        self.popular_links_node_registrations._id = POPULAR_LINKS_NODE_REGISTRATIONS
+        self.popular_links_node_registrations._id = POPULAR_LINKS_REGISTRATIONS
         self.popular_links_node_registrations.save()
 
         popular_nodes = [self.pop1, self.pop2]

@@ -786,7 +786,7 @@ class TestExplorePublicActivity(OsfTestCase):
         self.popular_links_node.add_pointer(self.popular_project, auth=Auth(self.popular_links_node.creator), save=True)
 
         self.popular_links_node_registrations = ProjectFactory()
-        self.popular_links_node_registrations._id = settings.POPULAR_LINKS_NODE_REGISTRATIONS
+        self.popular_links_node_registrations._id = settings.POPULAR_LINKS_REGISTRATIONS
         self.popular_links_node_registrations.add_pointer(self.popular_registration, auth=Auth(self.popular_links_node_registrations.creator), save=True)
 
     def test_new_and_noteworthy_and_popular_nodes_show_in_explore_activity(self):
