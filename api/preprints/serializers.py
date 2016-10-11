@@ -46,6 +46,7 @@ class PreprintSerializer(JSONAPISerializer):
     abstract = ser.CharField(source='description', required=False)
     tags = JSONAPIListField(child=NodeTagField(), required=False)
     doi = ser.CharField(source='preprint_doi', required=False)
+    csl = ser.DictField(read_only=True)
 
     primary_file = PrimaryFileRelationshipField(
         related_view='files:file-detail',
@@ -84,7 +85,11 @@ class PreprintSerializer(JSONAPISerializer):
         type_ = 'preprints'
 
     def get_preprint_url(self, obj):
-        return absolute_reverse('preprints:preprint-detail', kwargs={'node_id': obj._id})
+        kwargs = {
+            'node_id': obj._id,
+            'version': self.context['request'].parser_context['kwargs']['version']
+        }
+        return absolute_reverse('preprints:preprint-detail', kwargs=kwargs)
 
     def get_absolute_url(self, obj):
         return self.get_preprint_url(obj)

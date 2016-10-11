@@ -15,6 +15,9 @@ from admin.users.views import (
     User2FactorDeleteView,
     UserDeleteView,
     SpamUserDeleteView,
+    UserFlaggedSpamList,
+    UserKnownSpamList,
+    UserKnownHamList,
 )
 from admin.common_auth.logs import OSFLogEntry
 
@@ -133,6 +136,47 @@ class TestDisableSpamUser(AdminTestCase):
         with nt.assert_raises(Http404):
             view.delete(self.request)
 
+class SpamUserListMixin(AdminTestCase):
+    def setUp(self):
+        self.flagged_user = UserFactory(system_tags=['spam_flagged'])
+        self.spam_user = UserFactory(system_tags=['spam_confirmed'])
+        self.ham_user = UserFactory(system_tags=['ham_confirmed'])
+        self.request = RequestFactory().post('/fake_path')
+
+class TestFlaggedSpamUserList(SpamUserListMixin):
+    def setUp(self):
+        super(TestFlaggedSpamUserList, self).setUp()
+        self.view = UserFlaggedSpamList()
+        self.view = setup_log_view(self.view, self.request)
+
+    def test_get_queryset(self):
+        qs = self.view.get_queryset()
+        nt.assert_equal(qs.count(), 1)
+        nt.assert_equal(qs[0]._id, self.flagged_user._id)
+
+
+class TestConfirmedSpamUserList(SpamUserListMixin):
+    def setUp(self):
+        super(TestConfirmedSpamUserList, self).setUp()
+        self.view = UserKnownSpamList()
+        self.view = setup_log_view(self.view, self.request)
+
+    def test_get_queryset(self):
+        qs = self.view.get_queryset()
+        nt.assert_equal(qs.count(), 1)
+        nt.assert_equal(qs[0]._id, self.spam_user._id)
+
+
+class TestConfirmedHamUserList(SpamUserListMixin):
+    def setUp(self):
+        super(TestConfirmedHamUserList, self).setUp()
+        self.view = UserKnownHamList()
+        self.view = setup_log_view(self.view, self.request)
+
+    def test_get_queryset(self):
+        qs = self.view.get_queryset()
+        nt.assert_equal(qs.count(), 1)
+        nt.assert_equal(qs[0]._id, self.ham_user._id)
 
 class TestRemove2Factor(AdminTestCase):
     def setUp(self):

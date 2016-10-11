@@ -34,7 +34,7 @@ class HTTPError(FrameworkError):
         },
         http.GONE: {
             'message_short': 'Resource deleted',
-            'message_long': ('The requested resource has been deleted. If this should '
+            'message_long': ('User has deleted this content. If this should '
                 'not have occurred and the issue persists, please report it to '
                 '<a href="mailto:support@osf.io">support@osf.io</a>.'),
         },

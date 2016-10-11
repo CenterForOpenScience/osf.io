@@ -46,7 +46,6 @@ from modularodm.query.querydialect import DefaultQueryDialect as Q
 
 from framework.auth import Auth
 from framework.auth import utils
-from framework.auth.core import generate_verification_key
 from tests.factories import UserFactory, ProjectFactory, NodeFactory, RegistrationFactory, PreprintFactory, PreprintProviderFactory
 from website import models
 from website.app import init_app
@@ -267,7 +266,6 @@ def create_fake_user():
     parsed = utils.impute_names(name)
     user = UserFactory(username=email, fullname=name,
                        is_registered=True, is_claimed=True,
-                       verification_key=generate_verification_key(),
                        date_registered=fake.date_time(),
                        emails=[email],
                        **parsed

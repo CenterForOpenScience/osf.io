@@ -4,6 +4,8 @@ import mock
 import unittest
 from nose.tools import *  # noqa (PEP8 asserts)
 
+import os.path
+import json
 import pytz
 import datetime
 import urlparse
@@ -21,6 +23,7 @@ from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
 from framework.auth import User, Auth
 from framework.auth import cas
+from framework.sessions import set_session
 from framework.sessions.model import Session
 from framework.auth import exceptions as auth_exc
 from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
@@ -32,6 +35,8 @@ from website import filters, language, settings, mailchimp_utils
 from website.addons.wiki.model import NodeWikiPage
 from website.exceptions import NodeStateError, TagNotFoundError
 from website.profile.utils import serialize_user
+from website.project.tasks import on_node_updated
+from website.project.spam.model import SpamStatus
 from website.project.signals import contributor_added
 from website.project.model import (
     Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
@@ -62,8 +67,8 @@ from tests.factories import (
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, PrivateLinkFactory,
     AuthUserFactory, BookmarkCollectionFactory, CollectionFactory,
-    NodeLicenseRecordFactory, InstitutionFactory, CommentFactory
-)
+    NodeLicenseRecordFactory, InstitutionFactory, CommentFactory,
+    SessionFactory)
 from tests.utils import mock_archive
 
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
@@ -90,35 +95,32 @@ class TestUserValidation(OsfTestCase):
         self.user.save()
         assert_equal(self.user.social['profileWebsites'], [])
 
-    def test_validate_social_valid_website_simple(self):
-        self.user.social = {'profileWebsites': ['http://cos.io/']}
-        self.user.save()
-        assert_equal(self.user.social['profileWebsites'], ['http://cos.io/'])
+    def test_validate_social_profile_website_many_different(self):
+        basepath = os.path.dirname(__file__)
+        url_data_path = os.path.join(basepath, '../website/static/urlValidatorTest.json')
+        with open(url_data_path) as url_test_data:
+            data = json.load(url_test_data)
 
-    def test_validate_social_valid_website_protocol(self):
-        self.user.social = {'profileWebsites': ['https://definitelyawebsite.com']}
-        self.user.save()
-        assert_equal(self.user.social['profileWebsites'], ['https://definitelyawebsite.com'])
+        fails_at_end = False
+        for should_pass in data["testsPositive"]:
+            try:
+                self.user.social = {'profileWebsites': [should_pass]}
+                self.user.save()
+                assert_equal(self.user.social['profileWebsites'], [should_pass])
+            except ValidationError:
+                fails_at_end = True
+                print('\"' + should_pass + '\" failed but should have passed while testing that the validator ' + data['testsPositive'][should_pass])
 
-    def test_validate_social_valid_website_ipv4(self):
-        self.user.social = {'profileWebsites': ['http://127.0.0.1']}
-        self.user.save()
-        assert_equal(self.user.social['profileWebsites'], ['http://127.0.0.1'])
-
-    def test_validate_social_valid_website_path(self):
-        self.user.social = {'profileWebsites': ['http://definitelyawebsite.com/definitelyapage/']}
-        self.user.save()
-        assert_equal(self.user.social['profileWebsites'], ['http://definitelyawebsite.com/definitelyapage/'])
-
-    def test_validate_social_valid_website_portandpath(self):
-        self.user.social = {'profileWebsites': ['http://127.0.0.1:5000/hello/']}
-        self.user.save()
-        assert_equal(self.user.social['profileWebsites'], ['http://127.0.0.1:5000/hello/'])
-
-    def test_validate_social_valid_website_querystrings(self):
-        self.user.social = {'profileWebsites': ['http://definitelyawebsite.com?real=yes&page=definitely']}
-        self.user.save()
-        assert_equal(self.user.social['profileWebsites'], ['http://definitelyawebsite.com?real=yes&page=definitely'])
+        for should_fail in data["testsNegative"]:
+            self.user.social = {'profileWebsites': [should_fail]}
+            try:
+                with assert_raises(ValidationError):
+                    self.user.save()
+            except AssertionError:
+                fails_at_end = True
+                print('\"' + should_fail + '\" passed but should have failed while testing that the validator ' + data['testsNegative'][should_fail])
+        if fails_at_end:
+            raise
 
     def test_validate_multiple_profile_websites_valid(self):
         self.user.social = {'profileWebsites': ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com']}
@@ -564,7 +566,7 @@ class TestUser(OsfTestCase):
         valid_token = u.get_confirmation_token('foo@bar.com')
         assert_true(u.get_unconfirmed_email_for_token(valid_token))
         manual_expiration = datetime.datetime.utcnow() - datetime.timedelta(0, 10)
-        u._set_email_token_expiration(valid_token, expiration=manual_expiration)
+        u.email_verifications[valid_token]['expiration'] = manual_expiration
 
         with assert_raises(auth_exc.ExpiredTokenError):
             u.get_unconfirmed_email_for_token(valid_token)
@@ -986,7 +988,10 @@ class TestDisablingUsers(OsfTestCase):
         assert_equal(new_date_disabled, old_date_disabled)
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
-    def test_disable_account(self, mock_mail):
+    def test_disable_account_and_remove_sessions(self, mock_mail):
+        session1 = SessionFactory(user=self.user, date_created=(datetime.datetime.utcnow() - datetime.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
+        session2 = SessionFactory(user=self.user, date_created=(datetime.datetime.utcnow() - datetime.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
+
         self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST] = True
         self.user.save()
         self.user.disable_account()
@@ -994,6 +999,9 @@ class TestDisablingUsers(OsfTestCase):
         assert_true(self.user.is_disabled)
         assert_true(isinstance(self.user.date_disabled, datetime.datetime))
         assert_false(self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST])
+
+        assert_false(Session.load(session1._id))
+        assert_false(Session.load(session2._id))
 
     def test_disable_account_api(self):
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = True
@@ -3282,26 +3290,79 @@ class TestProject(OsfTestCase):
                     registration.set_privacy('public', auth=self.auth)
                     assert_equal(mock_request_embargo_termination.call_count, 1)
 
+    @mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', True)
     def test_set_privacy_on_spammy_node(self):
-        with mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', True):
-            with mock.patch.object(Node, 'is_spammy', mock.PropertyMock(return_value=True)):
-                with assert_raises(NodeStateError):
-                    self.project.set_privacy('public')
+        with mock.patch.object(Node, 'is_spammy', mock.PropertyMock(return_value=True)):
+            with assert_raises(NodeStateError):
+                self.project.set_privacy('public')
 
-    def test_check_only_public_node(self):
+    def test_check_spam_disabled_by_default(self):
+        # SPAM_CHECK_ENABLED is False by default
+        with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
+                self.project.set_privacy('public')
+                assert_false(self.project.check_spam(self.user, None, None))
+
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    def test_check_spam_only_public_node_by_default(self):
         # SPAM_CHECK_PUBLIC_ONLY is True by default
-        with mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True):
+        with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
             with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
                 self.project.set_privacy('private')
-                assert_false(self.project.check_spam(None, None))
+                assert_false(self.project.check_spam(self.user, None, None))
 
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    def test_check_spam_skips_ham_user(self):
+        with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
+                self.user.system_tags.extend(('ham_confirmed',))
+                self.project.set_privacy('public')
+                assert_false(self.project.check_spam(self.user, None, None))
+
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_CHECK_PUBLIC_ONLY', False)
     def test_check_spam_on_private_node(self):
-        with mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True):
-            with mock.patch.object(settings, 'SPAM_CHECK_PUBLIC_ONLY', False):
-                with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
-                    with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(return_value=True)):
-                        self.project.set_privacy('private')
-                        assert_true(self.project.check_spam(None, None))
+        with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(return_value=True)):
+                self.project.set_privacy('private')
+                assert_true(self.project.check_spam(self.user, None, None))
+
+    @mock.patch('website.project.model.mails.send_mail')
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
+    def test_check_spam_on_private_node_bans_new_spam_user(self, mock_send_mail):
+        with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(return_value=True)):
+                self.project.creator.date_confirmed = datetime.datetime.utcnow()
+                self.project.set_privacy('public')
+                user2 = UserFactory()
+                # project w/ one contributor
+                project2 = ProjectFactory(creator=self.user, description='foobar2', is_public=True)
+                project2.save()
+                # project with more than one contributor
+                project3 = ProjectFactory(creator=self.user, description='foobar3', is_public=True)
+                project3.add_contributor(user2)
+                project3.save()
+
+                assert_true(self.project.check_spam(self.user, None, None))
+
+                assert_true(self.user.is_disabled)
+                assert_false(self.project.is_public)
+                project2.reload()
+                assert_false(project2.is_public)
+                project3.reload()
+                assert_true(project3.is_public)
+
+    @mock.patch('website.project.model.mails.send_mail')
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
+    def test_check_spam_on_private_node_does_not_ban_existing_user(self, mock_send_mail):
+        with mock.patch('website.project.model.Node._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('website.project.model.Node.do_check_spam', mock.Mock(return_value=True)):
+                self.project.creator.date_confirmed = datetime.datetime.utcnow() - datetime.timedelta(days=9001)
+                self.project.set_privacy('public')
+                assert_true(self.project.check_spam(self.user, None, None))
+                assert_true(self.project.is_public)
 
     def test_set_description(self):
         old_desc = self.project.description
@@ -4576,6 +4637,15 @@ class TestUnregisteredUser(OsfTestCase):
         assert_true(self.user.verify_claim_token(valid, project_id=self.project._primary_key))
         assert_false(self.user.verify_claim_token('invalidtoken', project_id=self.project._primary_key))
 
+    def test_verify_claim_token_with_no_expiration_date(self):
+        # Legacy records may not have an 'expires' key
+        self.add_unclaimed_record()
+        record = self.user.get_unclaimed_record(self.project._primary_key)
+        del record['expires']
+        self.user.save()
+        token = record['token']
+        assert_true(self.user.verify_claim_token(token, project_id=self.project._primary_key))
+
     def test_claim_contributor(self):
         self.add_unclaimed_record()
         # sanity cheque
@@ -4797,6 +4867,89 @@ class TestNodeSpam(OsfTestCase):
         self.node.confirm_spam()
         assert_true(self.node.is_spammy)
         assert_false(self.node.is_public)
+
+
+class TestOnNodeUpdate(OsfTestCase):
+
+    def setUp(self):
+        super(TestOnNodeUpdate, self).setUp()
+        self.user = UserFactory()
+        self.session = SessionFactory(user=self.user)
+        set_session(self.session)
+        self.node = ProjectFactory(is_public=True)
+
+    def tearDown(self):
+        handlers.celery_before_request()
+        super(TestOnNodeUpdate, self).tearDown()
+
+    @mock.patch('website.project.model.enqueue_task')
+    def test_enqueue_called(self, enqueue_task):
+        self.node.title = 'A new title'
+        self.node.save()
+
+        (task, ) = enqueue_task.call_args[0]
+
+        assert_equals(task.task, 'website.project.tasks.on_node_updated')
+        assert_equals(task.args[0], self.node._id)
+        assert_equals(task.args[1], self.user._id)
+        assert_equals(task.args[2], False)
+        assert_equals(task.args[3], {'title'})
+
+    @mock.patch('website.project.tasks.requests')
+    def test_skips_no_settings(self, requests):
+        from website.project.tasks import settings
+        settings.SHARE_URL = None
+        settings.SHARE_API_TOKEN = None
+
+        on_node_updated(self.node._id, self.user._id, False, {'is_public'})
+        assert_false(requests.post.called)
+
+    @mock.patch('website.project.tasks.requests')
+    def test_updates_share(self, requests):
+        from website.project.tasks import settings
+        settings.SHARE_URL = 'https://share.osf.io'
+        settings.SHARE_API_TOKEN = 'Token'
+
+        on_node_updated(self.node._id, self.user._id, False, {'is_public'})
+
+        kwargs = requests.post.call_args[1]
+        graph = kwargs['json']['normalized_data']['@graph']
+
+        assert_true(requests.post.called)
+        assert_equals(kwargs['headers']['Authorization'], 'Bearer Token')
+        assert_equals(graph[0]['url'], '{}{}/'.format(settings.DOMAIN, self.node._id))
+
+    @mock.patch('website.project.tasks.requests')
+    def test_update_share_correctly(self, requests):
+        from website.project.tasks import settings
+        settings.SHARE_URL = 'https://share.osf.io'
+        settings.SHARE_API_TOKEN = 'Token'
+
+        cases = [{
+            'is_deleted': False,
+            'attrs': {'is_public': True, 'is_deleted': False, 'spam_status': SpamStatus.HAM}
+        }, {
+            'is_deleted': True,
+            'attrs': {'is_public': False, 'is_deleted': False, 'spam_status': SpamStatus.HAM}
+        }, {
+            'is_deleted': True,
+            'attrs': {'is_public': True, 'is_deleted': True, 'spam_status': SpamStatus.HAM}
+        }, {
+            'is_deleted': True,
+            'attrs': {'is_public': True, 'is_deleted': False, 'spam_status': SpamStatus.SPAM}
+        }]
+
+        for case in cases:
+            for attr, value in case['attrs'].items():
+                setattr(self.node, attr, value)
+            self.node.save()
+
+            on_node_updated(self.node._id, self.user._id, False, {'is_public'})
+
+            kwargs = requests.post.call_args[1]
+            graph = kwargs['json']['normalized_data']['@graph']
+            assert_equals(graph[2]['is_deleted'], case['is_deleted'])
+
 
 
 if __name__ == '__main__':

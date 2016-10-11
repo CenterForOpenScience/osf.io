@@ -25,11 +25,12 @@ from framework.celery_tasks import app as celery_app
 from framework.mongo.utils import paginated
 
 from website import settings
+from website.files.models import FileNode
 from website.filters import gravatar
 from website.models import User, Node
 from website.project.licenses import serialize_node_license_record
 from website.search import exceptions
-from website.search.util import build_query
+from website.search.util import build_query, clean_splitters
 from website.util import sanitize
 from website.views import validate_page_num
 
@@ -45,6 +46,14 @@ ALIASES = {
     'total': 'Total',
     'file': 'Files',
     'institution': 'Institutions',
+}
+
+DOC_TYPE_TO_MODEL = {
+    'component': Node,
+    'project': Node,
+    'registration': Node,
+    'user': User,
+    'file': FileNode,
 }
 
 # Prevent tokenizing and stop word removal.
@@ -155,7 +164,7 @@ def get_tags(query, index):
 
 
 @requires_search
-def search(query, index=None, doc_type='_all'):
+def search(query, index=None, doc_type='_all', raw=False):
     """Search for a query
 
     :param query: The substring of the username/project name/tag to search for
@@ -192,17 +201,16 @@ def search(query, index=None, doc_type='_all'):
 
     # Run the real query and get the results
     raw_results = es.search(index=index, doc_type=doc_type, body=query)
-
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
+
     return_value = {
-        'results': format_results(results),
+        'results': raw_results['hits']['hits'] if raw else format_results(results),
         'counts': counts,
         'aggs': aggregations,
         'tags': tags,
         'typeAliases': ALIASES
     }
     return return_value
-
 
 def format_results(results):
     ret = []
@@ -300,7 +308,6 @@ def serialize_node(node, category):
     except TypeError:
         normalized_title = node.title
     normalized_title = unicodedata.normalize('NFKD', normalized_title).encode('ascii', 'ignore')
-
     elastic_document = {
         'id': node._id,
         'contributors': [
@@ -331,6 +338,7 @@ def serialize_node(node, category):
         'license': serialize_node_license_record(node.license),
         'affiliated_institutions': [inst.name for inst in node.affiliated_institutions],
         'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
+        'extra_search_terms': clean_splitters(node.title),
     }
     if not node.is_retracted:
         for wiki in [
@@ -483,7 +491,8 @@ def update_file(file_, index=None, delete=False):
         'node_title': file_.node.title,
         'parent_id': file_.node.parent_node._id if file_.node.parent_node else None,
         'is_registration': file_.node.is_registration,
-        'is_retracted': file_.node.is_retracted
+        'is_retracted': file_.node.is_retracted,
+        'extra_search_terms': clean_splitters(file_.name),
     }
 
     es.index(

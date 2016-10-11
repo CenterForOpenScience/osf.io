@@ -39,7 +39,7 @@
     "folder_created":   "${user} created a folder in ${node}",
     "file_added":   "${user} added file ${path} to ${node}",
     "file_updated":     "${user} updated file in ${node}",
-    "file_removed":     "${user} removed file ${path} from ${node}",
+    "file_removed":     "${user} removed ${path_type} ${path} from ${node}",
     "file_restored":    "${user} restored file ${path} from ${node}",
     "checked_out":  "${user} checked out ${kind} ${path} from ${node}",
     "checked_in":   "${user} checked in ${kind} ${path} to ${node}",
@@ -71,9 +71,9 @@
     "osf_storage_file_added" : "${user} added file ${path} to OSF Storage in ${node}",
     "osf_storage_folder_created" : "${user} created folder ${path} in OSF Storage in ${node}",
     "osf_storage_file_updated" : "${user} updated file ${path} in OSF Storage in ${node}",
-    "osf_storage_file_removed" : "${user} removed file ${path} from OSF Storage in ${node}",
-    "affiliated_institution_added": "${user} added ${institution} affiliation to ${node}.",
-    "affiliated_institution_removed": "${user} removed ${institution} affiliation from ${node}.",
-    "preprint_initiated": "${user} initiated a preprint of ${node}.",
-    "preprint_file_updated": "${user} updated the primary file of this preprint."
+    "osf_storage_file_removed" : "${user} removed ${path_type} ${path} from OSF Storage in ${node}",
+    "affiliated_institution_added": "${user} added ${institution} affiliation to ${node}",
+    "affiliated_institution_removed": "${user} removed ${institution} affiliation from ${node}",
+    "preprint_initiated": "${user} made ${node} a preprint",
+    "preprint_file_updated": "${user} updated the primary file of this preprint"
 }

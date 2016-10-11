@@ -17,14 +17,13 @@ from django.core.validators import URLValidator
 from modularodm import Q
 from modularodm import fields
 from modularodm.validators import MaxLengthValidator
-from modularodm.exceptions import NoResultsFound
-from modularodm.exceptions import ValidationValueError
+from modularodm.exceptions import KeyExistsException, NoResultsFound, ValidationValueError
 
 from framework import status
 from framework.mongo import ObjectId, DummyRequest
 from framework.mongo import StoredObject
 from framework.mongo import validators
-from framework.mongo import get_cache_key as get_request
+from framework.mongo import get_request_and_user_id
 from framework.addons import AddonModelMixin
 from framework.auth import get_user, User, Auth
 from framework.exceptions import PermissionsError
@@ -40,17 +39,16 @@ from framework.utils import iso8601format
 from framework.celery_tasks.handlers import enqueue_task
 
 from website import language, settings
+from website.mails import mails
 from website.util import web_url_for
 from website.util import api_url_for
 from website.util import api_v2_url
 from website.util import sanitize
 from website.util import get_headers_from_request
-from website.util.time import throttle_period_expired
 from website.exceptions import (
     NodeStateError,
     InvalidTagError, TagNotFoundError,
     UserNotAffiliatedError,
-    TooManyRequests
 )
 from website.institutions.model import Institution, AffiliatedInstitutionsList
 from website.citations.utils import datetime_to_csl
@@ -90,7 +88,7 @@ def has_anonymous_link(node, auth):
         return auth.private_link.anonymous
     return False
 
-@unique_on(['name', 'schema_version', '_id'])
+@unique_on(['name', 'schema_version'])
 class MetaSchema(StoredObject):
 
     _id = fields.StringField(default=lambda: str(ObjectId()))
@@ -147,24 +145,21 @@ class MetaSchema(StoredObject):
             raise ValidationValueError(e.message)
         return
 
+
 def ensure_schema(schema, name, version=1):
-    schema_obj = None
     try:
+        MetaSchema(
+            name=name,
+            schema_version=version,
+            schema=schema
+        ).save()
+    except KeyExistsException:
         schema_obj = MetaSchema.find_one(
             Q('name', 'eq', name) &
             Q('schema_version', 'eq', version)
         )
-    except NoResultsFound:
-        meta_schema = {
-            'name': name,
-            'schema_version': version,
-            'schema': schema,
-        }
-        schema_obj = MetaSchema(**meta_schema)
-    else:
         schema_obj.schema = schema
-    schema_obj.save()
-    return schema_obj
+        schema_obj.save()
 
 
 def ensure_schemas():
@@ -2236,15 +2231,19 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         return None
 
     def on_update(self, first_save, saved_fields):
-        request = get_request()
-        request_headers = None
+        request, user_id = get_request_and_user_id()
+        request_headers = {}
         if not isinstance(request, DummyRequest):
             request_headers = {
                 k: v
                 for k, v in get_headers_from_request(request).items()
                 if isinstance(v, basestring)
             }
-        enqueue_task(node_tasks.on_node_updated.s(self._id, first_save, saved_fields, request_headers))
+        enqueue_task(node_tasks.on_node_updated.s(self._id, user_id, first_save, saved_fields, request_headers))
+        user = User.load(user_id)
+        if user and self.check_spam(user, saved_fields, request_headers):
+            # Specifically call the super class save method to avoid recursion into model save method.
+            super(Node, self).save()
 
     def update_search(self):
         from website import search
@@ -2712,7 +2711,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
     @property
     def api_v2_url(self):
-        return reverse('nodes:node-detail', kwargs={'node_id': self._id})
+        return reverse('nodes:node-detail', kwargs={'node_id': self._id, 'version': 'v2'})
 
     @property
     def absolute_api_v2_url(self):
@@ -2745,8 +2744,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         return self.absolute_api_v2_url + 'relationships/linked_nodes/'
 
     @property
+    def linked_registrations_self_url(self):
+        return self.absolute_api_v2_url + 'relationships/linked_registrations/'
+
+    @property
     def linked_nodes_related_url(self):
         return self.absolute_api_v2_url + 'linked_nodes/'
+
+    @property
+    def linked_registrations_related_url(self):
+        return self.absolute_api_v2_url + 'linked_registrations/'
 
     @property
     def csl(self):  # formats node information into CSL format for citation parsing
@@ -3319,17 +3326,18 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         if save:
             self.save()
 
-    def add_unregistered_contributor(self, fullname, email, auth, send_email='default', visible=True, permissions=None, save=False):
+    def add_unregistered_contributor(self, fullname, email, auth, send_email='default', visible=True, permissions=None, save=False, existing_user=None):
         """Add a non-registered contributor to the project.
 
         :param str fullname: The full name of the person.
         :param str email: The email address of the person.
         :param Auth auth: Auth object for the user adding the contributor.
+        :param User existing_user: the unregister_contributor if it is already created, otherwise None
         :returns: The added contributor
         :raises: DuplicateEmailError if user with given email is already in the database.
         """
-        # Create a new user record
-        contributor = User.create_unregistered(fullname=fullname, email=email)
+        # Create a new user record if you weren't passed an existing_user
+        contributor = existing_user if existing_user else User.create_unregistered(fullname=fullname, email=email)
 
         contributor.add_unclaimed_record(node=self, referrer=auth.user,
             given_name=fullname, email=email)
@@ -3354,9 +3362,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
     def add_contributor_registered_or_not(self, auth, user_id=None, full_name=None, email=None, send_email='false',
                                           permissions=None, bibliographic=True, index=None, save=False):
-
-        if send_email != 'false' and not throttle_period_expired(auth.user.email_last_sent, settings.API_SEND_EMAIL_THROTTLE):
-            raise TooManyRequests
 
         if user_id:
             contributor = User.load(user_id)
@@ -3414,28 +3419,52 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
                 content.append((getattr(self, field, None) or '').encode('utf-8'))
         if not content:
             return None
-        return '\n\n'.join(content)
+        return ' '.join(content)
 
-    def check_spam(self, saved_fields, request_headers, save=False):
+    def check_spam(self, user, saved_fields, request_headers):
         if not settings.SPAM_CHECK_ENABLED:
             return False
         if settings.SPAM_CHECK_PUBLIC_ONLY and not self.is_public:
             return False
+        if 'ham_confirmed' in user.system_tags:
+            return False
+
         content = self._get_spam_content(saved_fields)
         if not content:
             return
         is_spam = self.do_check_spam(
-            self.creator.fullname,
-            self.creator.username,
+            user.fullname,
+            user.username,
             content,
             request_headers
         )
         logger.info("Node ({}) '{}' smells like {} (tip: {})".format(
             self._id, self.title.encode('utf-8'), 'SPAM' if is_spam else 'HAM', self.spam_pro_tip
         ))
-        if save:
-            self.save()
+        if is_spam:
+            self._check_spam_user(user)
         return is_spam
+
+    def _check_spam_user(self, user):
+        if (
+            settings.SPAM_ACCOUNT_SUSPENSION_ENABLED
+            and (datetime.datetime.utcnow() - user.date_confirmed) <= settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD
+        ):
+            self.set_privacy('private', log=False, save=False)
+
+            # Suspend the flagged user for spam.
+            if 'spam_flagged' not in user.system_tags:
+                user.system_tags.append('spam_flagged')
+            if not user.is_disabled:
+                user.disable_account()
+                user.is_registered = False
+                mails.send_mail(to_addr=user.username, mail=mails.SPAM_USER_BANNED, user=user)
+            user.save()
+
+            # Make public nodes private from this contributor
+            for node in user.contributed:
+                if self._id != node._id and len(node.contributors) == 1 and node.is_public:
+                    node.set_privacy('private', log=False, save=True)
 
     def flag_spam(self):
         """ Overrides SpamMixin#flag_spam.

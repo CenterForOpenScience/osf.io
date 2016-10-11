@@ -1,3 +1,4 @@
+import re
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed
@@ -27,8 +28,12 @@ from api.comments.serializers import NodeCommentSerializer, CommentCreateSeriali
 from api.comments.permissions import CanCommentOrPublic
 from api.users.views import UserMixin
 from api.wikis.serializers import WikiSerializer
-from api.base.views import LinkedNodesRelationship, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList
-
+from api.base.views import LinkedNodesRelationship, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList, BaseLinkedList
+from api.base.throttling import (
+    UserRateThrottle,
+    NonCookieAuthThrottle,
+    AddContributorThrottle,
+)
 from api.nodes.serializers import (
     NodeSerializer,
     ForwardNodeAddonSettingsSerializer,
@@ -45,13 +50,18 @@ from api.nodes.serializers import (
     NodeAlternativeCitationSerializer,
     NodeContributorsCreateSerializer,
     NodeViewOnlyLinkSerializer,
-    NodeViewOnlyLinkUpdateSerializer
+    NodeViewOnlyLinkUpdateSerializer,
+    NodeCitationSerializer,
+    NodeCitationStyleSerializer
 )
 from api.nodes.utils import get_file_object
+from api.citations.utils import render_citation
 
 from api.addons.serializers import NodeAddonFolderSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.institutions.serializers import InstitutionSerializer
+from api.identifiers.serializers import NodeIdentifierSerializer
+from api.identifiers.views import IdentifierList
 from api.nodes.permissions import (
     IsAdmin,
     IsPublic,
@@ -63,6 +73,7 @@ from api.nodes.permissions import (
     IsAdminOrReviewer,
     WriteOrPublicForRelationshipInstitutions,
     ExcludeWithdrawals,
+    NodeLinksShowIfVersion,
 )
 from api.logs.serializers import NodeLogSerializer
 
@@ -619,6 +630,8 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
     required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
     required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
     model_class = User
+
+    throttle_classes = (AddContributorThrottle, UserRateThrottle, NonCookieAuthThrottle, )
 
     pagination_class = NodeContributorPagination
     serializer_class = NodeContributorsSerializer
@@ -1228,6 +1241,78 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
         serializer.save(creator=user, parent=self.get_node())
 
 
+class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
+    """ The node citation for a node in CSL format *read only*
+
+    ##Note
+    **This API endpoint is under active development, and is subject to change in the future**
+
+    ##NodeCitationDetail Attributes
+
+        name                     type                description
+        =================================================================================
+        id                       string               unique ID for the citation
+        title                    string               title of project or component
+        author                   list                 list of authors for the work
+        publisher                string               publisher - most always 'Open Science Framework'
+        type                     string               type of citation - web
+        doi                      string               doi of the resource
+
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = NodeCitationSerializer
+    view_category = 'nodes'
+    view_name = 'node-citation'
+
+    def get_object(self):
+        node = self.get_node()
+        return node.csl
+
+
+class NodeCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
+    """ The node citation for a node in a specific style's format t *read only*
+
+        ##Note
+        **This API endpoint is under active development, and is subject to change in the future**
+
+    ##NodeCitationDetail Attributes
+
+        name                     type                description
+        =================================================================================
+        citation                string               complete citation for a node in the given style
+
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = NodeCitationStyleSerializer
+    view_category = 'nodes'
+    view_name = 'node-citation'
+
+    def get_object(self):
+        node = self.get_node()
+        style = self.kwargs.get('style_id')
+        try:
+            citation = render_citation(node=node, style=style)
+        except ValueError as err:  # style requested could not be found
+            csl_name = re.findall('[a-zA-Z]+\.csl', err.message)[0]
+            raise NotFound('{} is not a known style.'.format(csl_name))
+
+        return {'citation': citation, 'id': style}
+
+
 # TODO: Make NodeLinks filterable. They currently aren't filterable because we have can't
 # currently query on a Pointer's node's attributes.
 # e.g. Pointer.find(Q('node.title', 'eq', ...)) doesn't work
@@ -1290,6 +1375,7 @@ class NodeLinksList(BaseNodeLinksList, bulk_views.BulkDestroyJSONAPIView, bulk_v
         ContributorOrPublic,
         base_permissions.TokenHasScope,
         ExcludeWithdrawals,
+        NodeLinksShowIfVersion,
     )
 
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]
@@ -1377,7 +1463,8 @@ class NodeLinksDetail(BaseNodeLinksDetail, generics.RetrieveDestroyAPIView, Node
         base_permissions.TokenHasScope,
         drf_permissions.IsAuthenticatedOrReadOnly,
         RegistrationAndPermissionCheckForPointers,
-        ExcludeWithdrawals
+        ExcludeWithdrawals,
+        NodeLinksShowIfVersion,
     )
 
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]
@@ -1548,6 +1635,8 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
         provider                    string            id of provider e.g. "osfstorage", "s3", "googledrive".
                                                         equivalent to addon_short_name on the OSF
         size                        integer           size of file in bytes
+        current_version             integer           current file version
+
         current_user_can_comment    boolean           Whether the current user is allowed to post comments
 
         tags                        array of strings  list of tags that describes the file (osfstorage only)
@@ -2869,7 +2958,7 @@ class NodeLinkedNodesRelationship(LinkedNodesRelationship, NodeMixin):
     view_name = 'node-pointer-relationship'
 
 
-class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
+class LinkedNodesList(BaseLinkedList, NodeMixin):
     """List of nodes linked to this node. *Read-only*.
 
     Linked nodes are the nodes pointed to by node links. This view will probably replace node_links in the near future.
@@ -2917,30 +3006,14 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
 
     #This Request/Response
     """
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublic,
-        ReadOnlyIfRegistration,
-        base_permissions.TokenHasScope,
-    )
-
-    required_read_scopes = [CoreScopes.NODE_LINKS_READ]
-    required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
-
     serializer_class = NodeSerializer
     view_category = 'nodes'
     view_name = 'linked-nodes'
 
-    model_class = Pointer
-
     def get_queryset(self):
-        auth = get_user_auth(self.request)
-        return sorted([
-            pointer.node for pointer in
-            self.get_node().nodes_pointer
-            if not pointer.node.is_deleted and not pointer.node.is_collection and
-            pointer.node.can_view(auth)
-        ], key=lambda n: n.date_modified, reverse=True)
+        return [node for node in
+            super(LinkedNodesList, self).get_queryset()
+            if not node.is_registration]
 
     # overrides APIView
     def get_parser_context(self, http_request):
@@ -3112,3 +3185,40 @@ class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIV
         link.is_deleted = True
         link.save()
         enqueue_postcommit_task(ban_url, (self.get_node(),), {}, celery=True, once_per_request=True)
+
+
+class NodeIdentifierList(NodeMixin, IdentifierList):
+    """List of identifiers for a specified node. *Read-only*.
+
+    ##Identifier Attributes
+
+    OSF Identifier entities have the "identifiers" `type`.
+
+        name           type                   description
+        ----------------------------------------------------------------------------
+        category       string                 e.g. 'ark', 'doi'
+        value          string                 the identifier value itself
+
+    ##Links
+
+        self: this identifier's detail page
+
+    ##Relationships
+
+    ###Referent
+
+    The identifier is refers to this node.
+
+    ##Actions
+
+    *None*.
+
+    ##Query Params
+
+     Identifiers may be filtered by their category.
+
+    #This Request/Response
+
+    """
+
+    serializer_class = NodeIdentifierSerializer

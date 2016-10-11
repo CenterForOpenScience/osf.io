@@ -23,7 +23,7 @@ import importlib
 
 URLS_MODULES = []
 for loader, name, _ in pkgutil.iter_modules(['api']):
-    if name != 'base':
+    if name != 'base' and name != 'test':
         try:
             URLS_MODULES.append(importlib.import_module('api.{}.urls'.format(name)))
         except ImportError:
