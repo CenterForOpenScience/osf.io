@@ -42,7 +42,7 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
         self.popular_links_registrations.save()
 
         popular_nodes = [self.pop1, self.pop2]
-        popular_node_registrations = [self.popreg1, self.popreg2]
+        popular_registrations = [self.popreg1, self.popreg2]
 
         # mock_client.count.return_value = {
 
@@ -102,6 +102,6 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
             [pointer.node for pointer in self.popular_links_node.nodes]
         )
         assert_items_equal(
-            popular_node_registrations,
+            popular_registrations,
             [pointer.node for pointer in self.popular_links_registrations.nodes]
         )
