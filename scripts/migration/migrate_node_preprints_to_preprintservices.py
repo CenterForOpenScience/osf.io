@@ -1,3 +1,4 @@
+from datetime import timedelta
 import logging
 import sys
 
@@ -50,7 +51,7 @@ def validate_node_preprint_subjects(node):
             break
 
 
-def create_preprint_service_from_node(document):
+def create_preprint_service_from_node(document, swap_cutoff):
     created = {}
     for provider_id in document['preprint_providers']:
         node = models.Node.load(document['_id'])
@@ -65,7 +66,7 @@ def create_preprint_service_from_node(document):
             preprint = models.PreprintService(node=node, provider=provider)
             preprint.save()
             database['preprintservice'].find_and_modify(
-                {'_id': document['_id']},
+                {'_id': preprint._id},
                 {'$set': {
                     'date_created': document['preprint_created'],
                     'date_published': document['preprint_created'],
@@ -79,7 +80,10 @@ def create_preprint_service_from_node(document):
             if preprint.provider._id == 'osf':
                 # Give Guid retention priotity to OSF-provider
                 # Probably won't matter; shouldn't be non-osf
-                swap_guids(node, preprint)
+                if should_swap_guids(node, preprint, swap_cutoff):
+                    swap_guids(node, preprint)
+                else:
+                    logger.info('* Not swapping guids for preprint {} and preexisting node {}'.format(preprint._id, node._id))
             node.reload()
             preprint.reload()
             validate_node_preprint_subjects(preprint.node)
@@ -88,6 +92,11 @@ def create_preprint_service_from_node(document):
             created.update({preprint._id: node._id})
 
     return created
+
+def should_swap_guids(node, preprint, swap_cutoff):
+    preprint.reload()
+    logger.info('Preprint {} - Node {} timedelta = {}'.format(preprint._id, node._id, preprint.date_created - node.date_created))
+    return preprint.date_created - node.date_created < swap_cutoff
 
 def swap_guids(node, preprint):
     logger.info('* Swapping guids for preprint {} and node {}'.format(preprint._id, node._id))    
@@ -458,7 +467,7 @@ def enumerate_and_set_subject_hierarchies(preprint):
     preprint.subjects = hierarchical_subjects
     preprint.save()
 
-def migrate(dry_run=True):
+def migrate(swap_cutoff):
     database['node'].update({'preprint_doi': {'$type': 2}}, {'$rename': { 'preprint_doi': 'article_doi'}}, multi=True)
 
     target_documents = list(get_targets())
@@ -469,11 +478,11 @@ def migrate(dry_run=True):
     created_preprints = []
 
     logger.info('Preparing to migrate {} preprint nodes.'.format(target_count))
-
+    logger.info('Cutoff delta for swapping guids is {} seconds'.format(swap_cutoff.total_seconds()))
     for node in target_documents:
         validate_node_document(node)
         node = database['node'].find({'_id': node['_id']})[0]  # .reload()
-        preprints = create_preprint_service_from_node(node)
+        preprints = create_preprint_service_from_node(node, swap_cutoff)
         if not preprints:
             failures.append(node['_id'])
             logger.error('({}-{}/{}) Failed to create any PreprintServices for node {}'.format(
@@ -494,7 +503,7 @@ def migrate(dry_run=True):
                 )
             )
 
-    logger.info('(Non-OSF) Preprints with new _ids: {}'.format(list(set(created_preprints)-set(target_ids))))
+    logger.info('Preprints with new _ids: {}'.format(list(set(created_preprints)-set(target_ids))))
     logger.info('Successes: {}'.format(successes))
     logger.info('Failures: {}'.format(failures))
     logger.info('Missed nodes: {}'.format(list(set(target_ids)-set(successes + failures))))
@@ -503,11 +512,18 @@ def migrate(dry_run=True):
 
 def main():
     dry_run = '--dry' in sys.argv
+    td = timedelta()
+    if '--minutes' in sys.argv:
+        td += timedelta(minutes=int(sys.argv[1 + sys.argv.index('--minutes')]))
+    if '--hours' in sys.argv:
+        td += timedelta(hours=int(sys.argv[1 + sys.argv.index('--hours')]))
+    if td.total_seconds() == 0:
+        td += timedelta(hours=1)
     if not dry_run:
         script_utils.add_file_logger(logger, __file__)
     init_app(set_backends=True, routes=False)
     with TokuTransaction():
-        migrate()
+        migrate(swap_cutoff=td)
         if dry_run:
             raise RuntimeError('Dry run, transaction rolled back.')
 
