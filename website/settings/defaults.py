@@ -488,7 +488,7 @@ else:
         },
         'update_popular_nodes': {
             'task': 'scripts.populate_popular_projects_and_registrations',
-            'schedule': crontab(minute=0, hour=2, day_of_week=6),  # Saturday 2:00 a.m.
+            'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m.
             'kwargs': {'dry_run': False}
         },
     }
