@@ -81,7 +81,7 @@ def owncloud_add_user_account(auth, **kwargs):
         # ... or get the old one
         provider.account = ExternalAccount.find_one(
             Q('provider', 'eq', provider.short_name) &
-            Q('provider_id', 'eq', username)
+            Q('provider_id', 'eq', '{}:{}'.format(host.url, username).lower())
         )
 
     user = auth.user
