@@ -10,7 +10,6 @@ var nodeData = {
     node: {
         id: '24601',
         api_url: '/api/v1/project/24601/',
-        watched_count: 0,
         identifiers: {doi: null, ark: null}
     },
     parent_node: {id: ''},

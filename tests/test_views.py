@@ -355,13 +355,11 @@ class TestProjectViews(OsfTestCase):
         assert_equal(data['node']['is_public'], self.project.is_public)
         assert_equal(data['node']['is_registration'], False)
         assert_equal(data['node']['id'], self.project._primary_key)
-        assert_equal(data['node']['watched_count'], 0)
         assert_true(data['user']['is_contributor'])
         assert_equal(data['node']['description'], self.project.description)
         assert_equal(data['node']['url'], self.project.url)
         assert_equal(data['node']['tags'], list(self.project.tags.values_list('name', flat=True)))
         assert_in('forked_date', data['node'])
-        assert_in('watched_count', data['node'])
         assert_in('registered_from_url', data['node'])
         # TODO: Test "parent" and "user" output
 
@@ -836,16 +834,6 @@ class TestProjectViews(OsfTestCase):
 
         assert_equal(res.status_code, http.FORBIDDEN)
         assert_false(node.is_deleted)
-
-    @pytest.mark.skip('Watching has been disabled')
-    def test_watch_and_unwatch(self):
-        url = self.project.api_url_for('togglewatch_post')
-        self.app.post_json(url, {}, auth=self.auth)
-        res = self.app.get(self.project.api_url, auth=self.auth)
-        assert_equal(res.json['node']['watched_count'], 1)
-        self.app.post_json(url, {}, auth=self.auth)
-        res = self.app.get(self.project.api_url, auth=self.auth)
-        assert_equal(res.json['node']['watched_count'], 0)
 
     def test_view_project_returns_whether_to_show_wiki_widget(self):
         user = AuthUserFactory()
