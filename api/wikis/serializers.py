@@ -7,7 +7,18 @@ from api.base.utils import absolute_reverse
 
 from framework.auth.core import Auth
 
+
 class WikiSerializer(JSONAPISerializer):
+
+    def to_representation(self, data, envelope='data'):
+        if data.node.is_registration:
+            serializer = RegistrationWikiSerializer(data, context=self.context)
+            return RegistrationWikiSerializer.to_representation(serializer, data)
+        serializer = NodeWikiSerializer(data, context=self.context)
+        return NodeWikiSerializer.to_representation(serializer, data)
+
+
+class NodeWikiSerializer(JSONAPISerializer):
 
     filterable_fields = frozenset([
         'name',
@@ -30,10 +41,12 @@ class WikiSerializer(JSONAPISerializer):
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<user._id>'}
     )
+
     node = RelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<node._id>'}
     )
+
     comments = RelationshipField(
         related_view='nodes:node-comments',
         related_view_kwargs={'node_id': '<node._id>'},
@@ -80,6 +93,21 @@ class WikiSerializer(JSONAPISerializer):
             'wiki_id': obj._id,
             'version': self.context['request'].parser_context['kwargs']['version']
         })
+
+
+class RegistrationWikiSerializer(NodeWikiSerializer):
+
+    node = RelationshipField(
+        related_view='registrations:registration-detail',
+        related_view_kwargs={'node_id': '<node._id>'}
+    )
+
+    comments = RelationshipField(
+        related_view='registrations:registration-comments',
+        related_view_kwargs={'node_id': '<node._id>'},
+        related_meta={'unread': 'get_unread_comments_count'},
+        filter={'target': '<pk>'}
+    )
 
 
 class WikiDetailSerializer(WikiSerializer):

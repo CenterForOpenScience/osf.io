@@ -40,11 +40,8 @@ from api.nodes.views import (
     NodeViewOnlyLinksList, NodeViewOnlyLinkDetail, NodeCitationDetail, NodeCitationStyleDetail
 )
 
-from api.registrations.serializers import (
-    RegistrationNodeLinksSerializer,
-    RegistrationFileSerializer,
-    RegistrationWikiSerializer,
-)
+from api.registrations.serializers import RegistrationNodeLinksSerializer, RegistrationFileSerializer
+from api.wikis.serializers import RegistrationWikiSerializer
 
 from api.base.utils import get_object_or_error
 

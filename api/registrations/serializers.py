@@ -17,7 +17,7 @@ from api.nodes.serializers import NodeContributorsSerializer, NodeTagField
 from api.base.serializers import (IDField, RelationshipField, LinksField, HideIfWithdrawal,
                                   FileCommentRelationshipField, NodeFileHyperLinkField, HideIfRegistration,
                                   JSONAPIListField, ShowIfVersion,)
-from api.wikis.serializers import WikiSerializer
+from api.wikis.serializers import NodeWikiSerializer
 
 
 class BaseRegistrationSerializer(NodeSerializer):
@@ -352,19 +352,4 @@ class RegistrationProviderSerializer(NodeProviderSerializer):
         related_view_kwargs={'node_id': '<node_id>', 'path': '<path>', 'provider': '<provider>'},
         kind='folder',
         never_embed=True
-    )
-
-
-class RegistrationWikiSerializer(WikiSerializer):
-
-    node = RelationshipField(
-        related_view='registrations:registration-detail',
-        related_view_kwargs={'node_id': '<node._id>'}
-    )
-
-    comments = RelationshipField(
-        related_view='registrations:registration-comments',
-        related_view_kwargs={'node_id': '<node._id>'},
-        related_meta={'unread': 'get_unread_comments_count'},
-        filter={'target': '<pk>'}
     )
