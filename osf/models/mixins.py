@@ -156,10 +156,13 @@ class AddonModelMixin(models.Model):
         return self.add_addon(name, *args, **kwargs)
 
     def get_addon(self, name, deleted=False):
+        settings_model = self._settings_model(name)
+        if not settings_model:
+            return None
         try:
-            settings = self._settings_model(name).objects.get(owner=self)
-            if not settings.deleted or deleted:
-                return settings
+            settings_obj = settings_model.objects.get(owner=self)
+            if not settings_obj.deleted or deleted:
+                return settings_obj
         except ObjectDoesNotExist:
             pass
         except LookupError:
