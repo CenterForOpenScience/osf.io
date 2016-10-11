@@ -349,6 +349,7 @@ LOW_PRI_MODULES = {
     'scripts.osfstorage.files_audit',
     'scripts.osfstorage.glacier_audit',
     'scripts.populate_new_and_noteworthy_projects',
+    'scripts.populate_popular_projects_and_registrations',
     'website.search.elastic_search',
 }
 
@@ -407,6 +408,7 @@ CELERY_IMPORTS = (
     'website.search.search',
     'website.project.tasks',
     'scripts.populate_new_and_noteworthy_projects',
+    'scripts.populate_popular_projects_and_registrations',
     'scripts.refresh_addon_tokens',
     'scripts.retract_registrations',
     'scripts.embargo_registrations',
@@ -481,6 +483,11 @@ else:
         },
         'new-and-noteworthy': {
             'task': 'scripts.populate_new_and_noteworthy_projects',
+            'schedule': crontab(minute=0, hour=2, day_of_week=6),  # Saturday 2:00 a.m.
+            'kwargs': {'dry_run': False}
+        },
+        'update_popular_nodes': {
+            'task': 'scripts.populate_popular_projects_and_registrations',
             'schedule': crontab(minute=0, hour=2, day_of_week=6),  # Saturday 2:00 a.m.
             'kwargs': {'dry_run': False}
         },
