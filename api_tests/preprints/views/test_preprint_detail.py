@@ -6,7 +6,7 @@ from tests.base import ApiTestCase
 from api.base.settings.defaults import API_BASE
 
 from website.files.models.osfstorage import OsfStorageFile
-from osf_models_tests.factories import PreprintFactory, AuthUserFactory, ProjectFactory, SubjectFactory
+from osf_tests.factories import PreprintFactory, AuthUserFactory, ProjectFactory, SubjectFactory
 from api_tests import utils as test_utils
 
 def build_preprint_update_payload(node_id, attributes=None, relationships=None):

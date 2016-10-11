@@ -17,7 +17,7 @@ from django.apps import apps
 
 from modularodm import Q
 from modularodm.exceptions import ValidationError
-from osf_models.models import Comment
+from osf.models import Comment
 
 from framework import auth
 from framework.auth import User, Auth
@@ -58,8 +58,8 @@ import pytest
 
 pytestmark = pytest.mark.django_db
 
-from osf_models.models import NodeRelation
-from osf_models_tests.factories import (
+from osf.models import NodeRelation
+from osf_tests.factories import (
     UserFactory,
     UnconfirmedUserFactory,
     UnregUserFactory,
@@ -2620,7 +2620,7 @@ class TestWatchViews(OsfTestCase):
             save=True,
         )
         # Clear watched list
-        WatchConfig = apps.get_model('osf_models.WatchConfig')
+        WatchConfig = apps.get_model('osf.WatchConfig')
         WatchConfig.objects.filter(user=self.user).delete()
 
     def test_watching_a_project_appends_to_users_watched_list(self):

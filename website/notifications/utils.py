@@ -79,7 +79,7 @@ def remove_subscription(node):
 @run_postcommit(once_per_request=False, celery=True)
 @app.task(max_retries=5, default_retry_delay=60)
 def remove_subscription_task(node_id):
-    AbstractNode = apps.get_model('osf_models.AbstractNode')
+    AbstractNode = apps.get_model('osf.AbstractNode')
     node = AbstractNode.load(node_id)
     model.NotificationSubscription.remove(Q('node', 'eq', node))
     parent = node.parent_node

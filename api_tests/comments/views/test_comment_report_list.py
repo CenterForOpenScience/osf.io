@@ -8,7 +8,7 @@ from framework.guid.model import Guid
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
 from tests.base import ApiTestCase
-from osf_models_tests.factories import ProjectFactory, AuthUserFactory, CommentFactory, NodeWikiFactory
+from osf_tests.factories import ProjectFactory, AuthUserFactory, CommentFactory, NodeWikiFactory
 
 
 class CommentReportsMixin(object):
@@ -278,7 +278,7 @@ class TestWikiCommentReportsView(CommentReportsMixin, ApiTestCase):
     def _set_up_private_project_comment_reports(self):
         self.private_project = ProjectFactory.create(is_public=False, creator=self.user)
         self.private_project.add_contributor(contributor=self.contributor, save=True)
-        with mock.patch('osf_models.models.AbstractNode.update_search'):
+        with mock.patch('osf.models.AbstractNode.update_search'):
             self.wiki = NodeWikiFactory(node=self.private_project, user=self.user)
         self.comment = CommentFactory.build(node=self.private_project, target=Guid.load(self.wiki._id), user=self.contributor)
         self.comment.reports = self.comment.reports or {}
@@ -294,7 +294,7 @@ class TestWikiCommentReportsView(CommentReportsMixin, ApiTestCase):
     def _set_up_public_project_comment_reports(self, comment_level='public'):
         self.public_project = ProjectFactory.create(is_public=True, creator=self.user, comment_level=comment_level)
         self.public_project.add_contributor(contributor=self.contributor, save=True)
-        with mock.patch('osf_models.models.AbstractNode.update_search'):
+        with mock.patch('osf.models.AbstractNode.update_search'):
             self.public_wiki = NodeWikiFactory(node=self.public_project, user=self.user)
         self.public_comment = CommentFactory.build(node=self.public_project, target=Guid.load(self.public_wiki._id), user=self.contributor)
         self.public_comment.reports = self.public_comment.reports or {}

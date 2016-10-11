@@ -8,7 +8,7 @@ from website.project import signals as project_signals
 
 
 from tests.base import ApiTestCase, capture_signals
-from osf_models_tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
     PreprintFactory,
     AuthUserFactory,

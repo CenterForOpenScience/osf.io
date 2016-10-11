@@ -48,7 +48,7 @@ def setup_tests(ctx, update=False, requirements=True, branch=POSTGRES_BRANCH):
         ctx.run('pip uninstall uritemplate.py --yes')
         ctx.run('pip install uritemplate.py==0.3.0')
         # Install osf-models test requirements
-        ctx.run('pip install -r {}'.format(os.path.join('osf_models_tests', 'requirements.txt')), echo=True)
+        ctx.run('pip install -r {}'.format(os.path.join('osf_tests', 'requirements.txt')), echo=True)
     os.chdir('..')
     print('Finished test setup.')
 
@@ -62,7 +62,7 @@ def test(ctx, setup=False, update=False, requirements=True, branch=POSTGRES_BRAN
     import pytest
     # Paths relative to osf.io/
     TEST_MODULES = [
-        'osf_models_tests',
+        'osf_tests',
         os.path.join('tests', 'test_views.py'),
     ]
     if setup or update:

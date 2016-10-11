@@ -16,7 +16,7 @@ from api.nodes.serializers import NodeContributorsCreateSerializer
 from framework.auth.core import Auth
 
 from tests.base import ApiTestCase, capture_signals, fake
-from osf_models_tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
     UserFactory

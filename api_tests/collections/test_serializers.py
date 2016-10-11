@@ -5,7 +5,7 @@ from nose.tools import *  # flake8: noqa
 
 from tests.base import ApiTestCase
 from tests.utils import make_drf_request
-from osf_models_tests.factories import UserFactory, CollectionFactory
+from osf_tests.factories import UserFactory, CollectionFactory
 
 from api.collections.serializers import CollectionSerializer
 

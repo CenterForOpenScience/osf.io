@@ -76,7 +76,7 @@ from website.addons.wiki.model import NodeWikiPage
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
 from website.models import Comment, NodeLog, Institution, DraftRegistration
-from osf_models.models import AlternativeCitation, Node, PrivateLink, NodeRelation
+from osf.models import AlternativeCitation, Node, PrivateLink, NodeRelation
 from website.files.models import FileNode
 from framework.auth.core import User
 from api.base.utils import default_node_list_query, default_node_permission_query
@@ -265,7 +265,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
-    model_class = apps.get_model('osf_models.AbstractNode')
+    model_class = apps.get_model('osf.AbstractNode')
 
     serializer_class = NodeSerializer
     view_category = 'nodes'

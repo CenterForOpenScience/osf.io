@@ -5,7 +5,7 @@ from dateutil.relativedelta import relativedelta
 from factory import SubFactory, Sequence
 from factory.django import DjangoModelFactory
 
-from osf_models_tests.factories import UserFactory, ProjectFactory, ExternalAccountFactory
+from osf_tests.factories import UserFactory, ProjectFactory, ExternalAccountFactory
 
 from addons.box.models import BoxNodeSettings
 from addons.box.models import BoxUserSettings

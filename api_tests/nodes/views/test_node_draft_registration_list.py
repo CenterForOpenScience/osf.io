@@ -11,7 +11,7 @@ from website.settings import PREREG_ADMIN_TAG
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiTestCase
-from osf_models_tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
     AuthUserFactory,

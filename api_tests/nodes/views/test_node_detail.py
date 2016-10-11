@@ -15,7 +15,7 @@ from website.util.sanitize import strip_html
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiTestCase, fake
-from osf_models_tests.factories import (
+from osf_tests.factories import (
     NodeFactory,
     ProjectFactory,
     RegistrationFactory,

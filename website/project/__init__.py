@@ -47,7 +47,7 @@ def new_node(category, title, user, description='', parent=None):
     """
     # We use apps.get_model rather than import .model.Node
     # because we want the concrete Node class, not AbstractNode
-    Node = apps.get_model('osf_models.Node')
+    Node = apps.get_model('osf.Node')
     category = category
     title = strip_html(title.strip())
     if description:
@@ -73,7 +73,7 @@ def new_bookmark_collection(user):
     :return Node: Created node
 
     """
-    Collection = apps.get_model('osf_models.Collection')
+    Collection = apps.get_model('osf.Collection')
     existing_bookmark_collection = Collection.find(
         Q('is_bookmark_collection', 'eq', True) &
         Q('creator', 'eq', user)

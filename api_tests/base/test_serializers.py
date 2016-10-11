@@ -8,7 +8,7 @@ from nose.tools import *  # flake8: noqa
 import re
 
 from tests.base import ApiTestCase, DbTestCase
-from osf_models_tests import factories
+from osf_tests import factories
 from tests.utils import make_drf_request
 
 from api.base.settings.defaults import API_BASE

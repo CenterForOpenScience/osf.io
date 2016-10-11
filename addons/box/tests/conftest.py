@@ -1,1 +1,1 @@
-from osf_models_tests.conftest import *  # noqa
+from osf_tests.conftest import *  # noqa

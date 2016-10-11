@@ -3,7 +3,7 @@
 from nose.tools import *  # noqa
 
 from tests.base import ApiTestCase
-from osf_models_tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory
 )

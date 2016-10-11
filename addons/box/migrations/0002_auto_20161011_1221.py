@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('osf_models', '0001_initial'),
+        ('osf', '0001_initial'),
         ('box', '0001_initial'),
     ]
 

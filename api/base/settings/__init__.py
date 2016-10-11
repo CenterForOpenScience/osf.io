@@ -26,7 +26,7 @@ if not DEBUG and os.environ.get('DJANGO_SETTINGS_MODULE') == 'api.base.settings'
 
 def load_institutions():
     global INSTITUTION_ORIGINS_WHITELIST
-    from osf_models import models
+    from osf import models
     INSTITUTION_ORIGINS_WHITELIST = tuple(domain.lower() for domain in itertools.chain(*[
         institution.domains
         for institution in models.Institution.find()

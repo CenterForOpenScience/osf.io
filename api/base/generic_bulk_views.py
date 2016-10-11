@@ -8,7 +8,7 @@ from website.project.model import Q
 from api.base.settings import BULK_SETTINGS
 from api.base.exceptions import Conflict, JSONAPIException, Gone
 from api.base.utils import is_bulk_request
-from osf_models.models.base import GuidMixin
+from osf.models.base import GuidMixin
 
 
 class ListBulkCreateJSONAPIView(bulk_generics.ListBulkCreateAPIView):

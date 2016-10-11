@@ -12,7 +12,7 @@ from website.util.sanitize import strip_html
 from api.base.settings.defaults import API_BASE, MAX_PAGE_SIZE
 
 from tests.base import ApiTestCase
-from osf_models_tests.factories import (
+from osf_tests.factories import (
     BookmarkCollectionFactory,
     CollectionFactory,
     ProjectFactory,

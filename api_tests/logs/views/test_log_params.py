@@ -4,7 +4,7 @@ from framework.auth.core import Auth
 
 from nose.tools import *  # noqa
 from test_log_detail import LogsTestCase
-from osf_models_tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
     PrivateLinkFactory
 )

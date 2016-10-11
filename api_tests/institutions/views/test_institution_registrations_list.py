@@ -1,7 +1,7 @@
 from nose.tools import *  # flake8: noqa
 
 from tests.base import ApiTestCase
-from osf_models_tests.factories import InstitutionFactory, AuthUserFactory, RegistrationFactory, WithdrawnRegistrationFactory
+from osf_tests.factories import InstitutionFactory, AuthUserFactory, RegistrationFactory, WithdrawnRegistrationFactory
 
 from framework.auth import Auth
 from api.base.settings.defaults import API_BASE

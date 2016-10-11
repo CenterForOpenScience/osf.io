@@ -6,7 +6,7 @@ from website.models import Node
 from website.util.sanitize import strip_html
 
 from tests.base import ApiTestCase
-from osf_models_tests.factories import AuthUserFactory, BookmarkCollectionFactory, CollectionFactory, ProjectFactory
+from osf_tests.factories import AuthUserFactory, BookmarkCollectionFactory, CollectionFactory, ProjectFactory
 
 from api.base.settings.defaults import API_BASE
 

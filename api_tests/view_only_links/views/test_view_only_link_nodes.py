@@ -4,7 +4,7 @@ from api.base.settings.defaults import API_BASE
 
 from api_tests.nodes.views.test_node_view_only_links_list import ViewOnlyLinkTestCase
 
-from osf_models_tests.factories import NodeFactory
+from osf_tests.factories import NodeFactory
 
 
 class TestViewOnlyLinksNodes(ViewOnlyLinkTestCase):

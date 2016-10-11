@@ -998,7 +998,7 @@ def get_node_tree(auth, **kwargs):
 
 @must_be_contributor_or_public
 def get_forks(auth, node, **kwargs):
-    fork_list = node.forks.exclude(type='osf_models.registration').sort('-forked_date')
+    fork_list = node.forks.exclude(type='osf.registration').sort('-forked_date')
     return _render_nodes(nodes=fork_list, auth=auth)
 
 

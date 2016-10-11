@@ -11,7 +11,7 @@ from website.project.signals import contributor_removed
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiTestCase, assert_datetime_equal
-from osf_models_tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
 )

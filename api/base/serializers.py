@@ -1256,7 +1256,7 @@ class LinkedNodesRelationshipSerializer(ser.Serializer):
         # Convenience method to format instance based on view's get_object
         return {'data': [
             pointer for pointer in
-            obj.linked_nodes.filter(is_deleted=False, type='osf_models.node')
+            obj.linked_nodes.filter(is_deleted=False, type='osf.node')
         ], 'self': obj}
 
     def update(self, instance, validated_data):
@@ -1322,7 +1322,7 @@ class LinkedRegistrationsRelationshipSerializer(ser.Serializer):
         # Convenience method to format instance based on view's get_object
         return {'data': [
             pointer for pointer in
-            obj.linked_nodes.filter(is_deleted=False, type='osf_models.registration')
+            obj.linked_nodes.filter(is_deleted=False, type='osf.registration')
         ], 'self': obj}
 
     def update(self, instance, validated_data):

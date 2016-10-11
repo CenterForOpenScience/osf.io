@@ -6,8 +6,8 @@ from website.files.models.osfstorage import OsfStorageFile
 from website.settings import API_DOMAIN
 
 from tests.base import ApiTestCase
-from osf_models_tests.factories import (AuthUserFactory, ProjectFactory, RegistrationFactory,
-                             CommentFactory, NodeWikiFactory, CollectionFactory, PrivateLinkFactory)
+from osf_tests.factories import (AuthUserFactory, ProjectFactory, RegistrationFactory,
+                                 CommentFactory, NodeWikiFactory, CollectionFactory, PrivateLinkFactory)
 
 
 class TestGuidDetail(ApiTestCase):

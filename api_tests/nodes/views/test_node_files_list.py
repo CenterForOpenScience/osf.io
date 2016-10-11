@@ -13,7 +13,7 @@ from website.util import waterbutler_api_url_for
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils
 from tests.base import ApiTestCase
-from osf_models_tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory
 )

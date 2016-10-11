@@ -11,7 +11,7 @@ from django.db import models
 from framework.auth import Auth
 from framework.exceptions import HTTPError
 from oauthlib.oauth2 import InvalidGrantError
-from osf_models.models.external import ExternalProvider
+from osf.models.external import ExternalProvider
 from urllib3.exceptions import MaxRetryError
 from website.addons.base import exceptions
 from website.addons.box import settings

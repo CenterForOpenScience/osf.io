@@ -8,7 +8,7 @@ import urlparse
 from modularodm import Q
 
 from tests.base import ApiTestCase
-from osf_models_tests.factories import AuthUserFactory, UserFactory, ProjectFactory, Auth
+from osf_tests.factories import AuthUserFactory, UserFactory, ProjectFactory, Auth
 
 from api.base.settings.defaults import API_BASE
 

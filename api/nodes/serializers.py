@@ -310,7 +310,7 @@ class NodeSerializer(JSONAPISerializer):
     def get_node_links_count(self, obj):
         count = 0
         auth = get_user_auth(self.context['request'])
-        for pointer in obj.linked_nodes.filter(is_deleted=False).exclude(type='osf_models.collection'):
+        for pointer in obj.linked_nodes.filter(is_deleted=False).exclude(type='osf.collection'):
             if pointer.can_view(auth):
                 count += 1
         return count
@@ -326,7 +326,7 @@ class NodeSerializer(JSONAPISerializer):
     def create(self, validated_data):
         request = self.context['request']
         user = request.user
-        Node = apps.get_model('osf_models.Node')
+        Node = apps.get_model('osf.Node')
         if 'template_from' in validated_data:
             template_from = validated_data.pop('template_from')
             template_node = Node.load(template_from)

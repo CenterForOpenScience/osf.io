@@ -9,12 +9,12 @@ from framework.auth import Auth
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError, PermissionsError
 from mako.lookup import TemplateLookup
-from osf_models.models.base import BaseModel, ObjectIDMixin
-from osf_models.models.external import ExternalAccount
-from osf_models.models.node import AbstractNode
-from osf_models.models.user import OSFUser
-from osf_models.modm_compat import Q
-from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.models.base import BaseModel, ObjectIDMixin
+from osf.models.external import ExternalAccount
+from osf.models.node import AbstractNode
+from osf.models.user import OSFUser
+from osf.modm_compat import Q
+from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from website import settings
 from website.addons.base import logger, serializer
 from website.oauth.signals import oauth_complete

@@ -8,7 +8,7 @@ from website.util import api_v2_url
 from website.util import sanitize
 
 from tests.base import ApiTestCase
-from osf_models_tests.factories import ApiOAuth2PersonalTokenFactory, AuthUserFactory
+from osf_tests.factories import ApiOAuth2PersonalTokenFactory, AuthUserFactory
 
 TOKEN_LIST_URL = api_v2_url('tokens/', base_route='/')
 

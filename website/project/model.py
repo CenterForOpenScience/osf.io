@@ -149,7 +149,7 @@ class MetaSchema(StoredObject):
 
 
 def ensure_schema(schema, name, version=1):
-    MetaSchema = apps.get_model('osf_models.MetaSchema')
+    MetaSchema = apps.get_model('osf.MetaSchema')
     try:
         MetaSchema(
             name=name,

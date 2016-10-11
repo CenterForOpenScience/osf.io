@@ -8,7 +8,7 @@ from modularodm import Q
 
 from tests.base import ApiTestCase
 from tests.base import capture_signals
-from osf_models_tests.factories import InstitutionFactory, UserFactory
+from osf_tests.factories import InstitutionFactory, UserFactory
 
 from api.base import settings
 from api.base.settings.defaults import API_BASE

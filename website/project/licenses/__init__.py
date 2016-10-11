@@ -5,7 +5,7 @@ import warnings
 
 from modularodm import fields, Q
 from modularodm.exceptions import KeyExistsException
-from osf_models.exceptions import ValidationError
+from osf.exceptions import ValidationError
 
 from framework.mongo import (
     ObjectId,

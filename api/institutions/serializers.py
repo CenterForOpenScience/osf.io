@@ -89,7 +89,7 @@ class InstitutionNodesRelationshipSerializer(ser.Serializer):
         if not changes_flag:
             raise RelationshipPostMakesNoChanges
 
-        ConcreteNode = apps.get_model('osf_models.Node')
+        ConcreteNode = apps.get_model('osf.Node')
         return {
             'data': list(ConcreteNode.find_by_institutions(inst, Q('is_deleted', 'ne', True))),
             'self': inst

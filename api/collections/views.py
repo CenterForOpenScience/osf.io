@@ -28,7 +28,7 @@ from api.nodes.permissions import (
 )
 
 from website.exceptions import NodeStateError
-from osf_models.models import Collection, Node
+from osf.models import Collection, Node
 from website.util.permissions import ADMIN
 
 
@@ -518,7 +518,7 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
             pointer for pointer in
             self.get_node().linked_nodes
                 .filter(is_deleted=False)
-                .exclude(type='osf_models.collection')
+                .exclude(type='osf.collection')
         ]
 
     # Overrides BulkDestroyJSONAPIView

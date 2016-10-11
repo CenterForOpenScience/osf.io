@@ -7,7 +7,7 @@ from website.models import User, ApiOAuth2PersonalToken
 from website.util import api_v2_url
 
 from tests.base import ApiTestCase
-from osf_models_tests.factories import ApiOAuth2PersonalTokenFactory, AuthUserFactory
+from osf_tests.factories import ApiOAuth2PersonalTokenFactory, AuthUserFactory
 
 TOKEN_LIST_URL = api_v2_url('tokens/', base_route='/')
 

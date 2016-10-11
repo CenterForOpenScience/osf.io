@@ -1,6 +1,6 @@
 import factory
 from factory.django import DjangoModelFactory
-from osf_models_tests.factories import UserFactory, ProjectFactory, ExternalAccountFactory
+from osf_tests.factories import UserFactory, ProjectFactory, ExternalAccountFactory
 
 from addons.dropbox.models import DropboxNodeSettings
 from addons.dropbox.models import DropboxUserSettings

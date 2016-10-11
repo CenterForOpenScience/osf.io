@@ -129,7 +129,7 @@ def get_globals():
 def is_private_link_anonymous_view():
     try:
         # Avoid circular import
-        from osf_models.models import PrivateLink
+        from osf.models import PrivateLink
         return PrivateLink.find_one(
             Q('key', 'eq', request.args.get('view_only'))
         ).anonymous

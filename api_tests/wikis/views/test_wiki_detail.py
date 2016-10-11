@@ -11,9 +11,9 @@ from framework.guid.model import Guid
 from website.addons.wiki.model import NodeWikiPage
 
 from tests.base import ApiWikiTestCase
-from osf_models_tests.factories import (ProjectFactory, RegistrationFactory,
-                             NodeWikiFactory, PrivateLinkFactory,
-                             CommentFactory)
+from osf_tests.factories import (ProjectFactory, RegistrationFactory,
+                                 NodeWikiFactory, PrivateLinkFactory,
+                                 CommentFactory)
 
 
 class TestWikiDetailView(ApiWikiTestCase):
@@ -123,7 +123,7 @@ class TestWikiDetailView(ApiWikiTestCase):
     def test_user_cannot_view_withdrawn_registration_wikis(self):
         self._set_up_public_registration_with_wiki_page()
         # TODO: Remove mocking when StoredFileNode is implemented
-        with mock.patch('osf_models.models.AbstractNode.update_search'):
+        with mock.patch('osf.models.AbstractNode.update_search'):
             withdrawal = self.public_registration.retract_registration(user=self.user, save=True)
             token = withdrawal.approval_state.values()[0]['approval_token']
             withdrawal.approve_retraction(self.user, token)
@@ -218,7 +218,7 @@ class TestWikiDetailView(ApiWikiTestCase):
     def test_old_wiki_versions_not_returned(self):
         self._set_up_public_project_with_wiki_page()
         # TODO: Remove mocking when StoredFileNode is implemented
-        with mock.patch('osf_models.models.AbstractNode.update_search'):
+        with mock.patch('osf.models.AbstractNode.update_search'):
             current_wiki = NodeWikiFactory(node=self.public_project, user=self.user)
         old_version_id = self.public_project.wiki_pages_versions[current_wiki.page_name][-2]
         old_version = NodeWikiPage.load(old_version_id)

@@ -653,7 +653,7 @@ class UserRegistrations(UserNodes):
 
         query = (
             Q('is_deleted', 'ne', True) &
-            Q('type', 'eq', 'osf_models.registration') &
+            Q('type', 'eq', 'osf.registration') &
             Q('contributors', 'eq', user)
         )
         permission_query = Q('is_public', 'eq', True)

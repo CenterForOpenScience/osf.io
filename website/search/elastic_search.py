@@ -284,7 +284,7 @@ def get_doctype_from_node(node):
 
 @celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
 def update_node_async(self, node_id, index=None, bulk=False):
-    AbstractNode = apps.get_model('osf_models.AbstractNode')
+    AbstractNode = apps.get_model('osf.AbstractNode')
     node = AbstractNode.load(node_id)
     try:
         update_node(node=node, index=index, bulk=bulk, async=True)

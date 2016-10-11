@@ -30,7 +30,7 @@ from api.nodes.permissions import ContributorOrPublicForRelationshipPointers
 from api.base.utils import is_bulk_request, get_user_auth
 from website.models import Pointer
 
-from osf_models.models.contributor import Contributor, get_contributor_permissions
+from osf.models.contributor import Contributor, get_contributor_permissions
 
 
 CACHE = weakref.WeakKeyDictionary()
@@ -238,7 +238,7 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
         auth = utils.get_user_auth(self.request)
         obj = {'data': [
             pointer for pointer in
-            object.linked_nodes.filter(is_deleted=False, type='osf_models.node')
+            object.linked_nodes.filter(is_deleted=False, type='osf.node')
             if pointer.can_view(auth)
         ], 'self': object}
         self.check_object_permissions(self.request, obj)
@@ -342,7 +342,7 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
         auth = utils.get_user_auth(self.request)
         obj = {'data': [
             pointer for pointer in
-            object.linked_nodes.filter(is_deleted=False, type='osf_models.registration')
+            object.linked_nodes.filter(is_deleted=False, type='osf.registration')
             if pointer.can_view(auth)
         ], 'self': object}
         self.check_object_permissions(self.request, obj)
@@ -784,7 +784,7 @@ class BaseNodeLinksList(JSONAPIBaseView, generics.ListAPIView):
         query = self.get_node()\
                 .node_relations.select_related('child')\
                 .filter(is_node_link=True, child__is_deleted=False)\
-                .exclude(child__type='osf_models.collection')
+                .exclude(child__type='osf.collection')
         return sorted([
             node_link for node_link in query
             if node_link.child.can_view(auth) and not node_link.child.is_retracted
@@ -815,7 +815,7 @@ class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
         return [
             each for each in self.get_node().linked_nodes
             .filter(is_deleted=False)
-            .exclude(type='osf_models.collection')
+            .exclude(type='osf.collection')
             .order_by('-date_modified')
             if each.can_view(auth)
         ]

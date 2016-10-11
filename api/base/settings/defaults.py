@@ -21,7 +21,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 DATABASES = {
     'default': {
         'CONN_MAX_AGE': 0,
-        'ENGINE': 'osf_models.db.backends.postgresql',  # django.db.backends.postgresql
+        'ENGINE': 'osf.db.backends.postgresql',  # django.db.backends.postgresql
         'NAME': os.environ.get('OSF_DB_NAME', 'osf'),
         'USER': os.environ.get('OSF_DB_USER', 'postgres'),
         'PASSWORD': os.environ.get('OSF_DB_PASSWORD', ''),
@@ -36,7 +36,7 @@ PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.BCryptPasswordHasher',
 ]
 
-AUTH_USER_MODEL = 'osf_models.OSFUser'
+AUTH_USER_MODEL = 'osf.OSFUser'
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = osf_settings.SECRET_KEY
@@ -83,7 +83,7 @@ INSTALLED_APPS = (
     'django_extensions',
 
     # OSF
-    'osf_models',
+    'osf',
 
     # Addons
     'addons.osfstorage',

@@ -11,7 +11,7 @@ from flask import request
 from framework.auth import Auth
 from framework.exceptions import HTTPError
 from framework.sessions import session
-from osf_models.models.external import ExternalProvider
+from osf.models.external import ExternalProvider
 from urllib3.exceptions import MaxRetryError
 from website.addons.base import exceptions
 from website.addons.dropbox import settings

@@ -166,7 +166,7 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
 
     # overrides RetrieveAPIView
     def get_queryset(self):
-        ConcreteNode = apps.get_model('osf_models.Node')
+        ConcreteNode = apps.get_model('osf.Node')
         inst = self.get_institution()
         query = self.get_query_from_request()
         return ConcreteNode.find_by_institutions(inst, query)
@@ -232,7 +232,7 @@ class InstitutionRegistrationList(InstitutionNodeList):
     ordering = ('-date_modified', )
 
     def get_queryset(self):
-        Registration = apps.get_model('osf_models.Registration')
+        Registration = apps.get_model('osf.Registration')
         inst = self.get_institution()
         query = self.get_query_from_request()
         nodes = Registration.find_by_institutions(inst, query)
@@ -290,7 +290,7 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
     view_name = 'institution-relationships-nodes'
 
     def get_object(self):
-        ConcreteNode = apps.get_model('osf_models.Node')
+        ConcreteNode = apps.get_model('osf.Node')
         inst = self.get_institution()
         auth = get_user_auth(self.request)
         nodes = [node for node in

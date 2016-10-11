@@ -435,16 +435,16 @@ class NotificationTestCase(OsfTestCase):
 class ApiWikiTestCase(ApiTestCase):
 
     def setUp(self):
-        from osf_models_tests.factories import AuthUserFactory
+        from osf_tests.factories import AuthUserFactory
         super(ApiWikiTestCase, self).setUp()
         self.user = AuthUserFactory()
         self.non_contributor = AuthUserFactory()
 
     def _add_project_wiki_page(self, node, user):
-        from osf_models_tests.factories import NodeWikiFactory
+        from osf_tests.factories import NodeWikiFactory
         # API will only return current wiki pages
         # Mock out update_search. TODO: Remove when StoredFileNode is implemented
-        with mock.patch('osf_models.models.AbstractNode.update_search'):
+        with mock.patch('osf.models.AbstractNode.update_search'):
             return NodeWikiFactory(node=node, user=user)
 
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py

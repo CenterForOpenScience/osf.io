@@ -5,8 +5,8 @@ from framework.exceptions import PermissionsError
 from website.exceptions import NodeStateError
 
 from website.models import Node
-from osf_models.models import Collection
-from osf_models.exceptions import ValidationError
+from osf.models import Collection
+from osf.exceptions import ValidationError
 from api.base.serializers import LinksField, RelationshipField
 from api.base.serializers import JSONAPISerializer, IDField, TypeField
 from api.base.exceptions import InvalidModelValueError
@@ -63,7 +63,7 @@ class CollectionSerializer(JSONAPISerializer):
     def get_node_links_count(self, obj):
         count = 0
         auth = get_user_auth(self.context['request'])
-        for pointer in obj.linked_nodes.filter(is_deleted=False, type='osf_models.node'):
+        for pointer in obj.linked_nodes.filter(is_deleted=False, type='osf.node'):
             if pointer.can_view(auth):
                 count += 1
         return count
@@ -71,7 +71,7 @@ class CollectionSerializer(JSONAPISerializer):
     def get_registration_links_count(self, obj):
         count = 0
         auth = get_user_auth(self.context['request'])
-        for pointer in obj.linked_nodes.filter(is_deleted=False, type='osf_models.registration'):
+        for pointer in obj.linked_nodes.filter(is_deleted=False, type='osf.registration'):
             if pointer.node.can_view(auth):
                 count += 1
         return count

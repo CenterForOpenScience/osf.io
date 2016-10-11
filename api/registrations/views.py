@@ -146,7 +146,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     def get_default_odm_query(self):
         base_query = (
             Q('is_deleted', 'ne', True) &
-            Q('type', 'eq', 'osf_models.registration')
+            Q('type', 'eq', 'osf.registration')
         )
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
@@ -531,7 +531,7 @@ class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ODMFilterM
     def get_default_odm_query(self):
         base_query = (
             Q('is_deleted', 'ne', True) &
-            Q('type', 'eq', 'osf_models.registration')
+            Q('type', 'eq', 'osf.registration')
         )
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
@@ -909,7 +909,7 @@ class RegistrationLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveAPIV
         auth = get_user_auth(self.request)
         obj = {'data': [
             linked_node for linked_node in
-            node.linked_nodes.filter(is_deleted=False).exclude(type='osf_models.collection')
+            node.linked_nodes.filter(is_deleted=False).exclude(type='osf.collection')
             if linked_node.can_view(auth)
         ], 'self': node}
         self.check_object_permissions(self.request, obj)

@@ -9,7 +9,7 @@ from website.util import permissions
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiTestCase
-from osf_models_tests.factories import (
+from osf_tests.factories import (
     NodeFactory,
     ProjectFactory,
     RegistrationFactory,
@@ -279,7 +279,7 @@ class TestRegistrationForkCreate(ApiTestCase):
         assert_equal(res.json['data']['embeds']['node_links']['links']['meta']['total'], 2)
 
     def test_cannot_fork_retractions(self):
-        with mock.patch('osf_models.models.AbstractNode.update_search'):
+        with mock.patch('osf.models.AbstractNode.update_search'):
             retraction = WithdrawnRegistrationFactory(registration=self.private_registration, user=self.user)
         url = '/{}registrations/{}/forks/'.format(API_BASE, self.private_registration._id) + '?embed=forked_from'
 

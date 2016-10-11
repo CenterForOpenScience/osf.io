@@ -11,7 +11,7 @@ from website.util import api_v2_url
 from api.base import settings
 from api.base.middleware import TokuTransactionMiddleware, CorsMiddleware
 from tests.base import ApiTestCase
-from osf_models_tests import factories
+from osf_tests import factories
 
 class MiddlewareTestCase(ApiTestCase):
     MIDDLEWARE = None

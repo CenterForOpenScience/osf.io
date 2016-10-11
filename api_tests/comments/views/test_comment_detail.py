@@ -11,7 +11,7 @@ from api.base.settings.defaults import API_BASE
 from api.base.settings import osf_settings
 from api_tests import utils as test_utils
 from tests.base import ApiTestCase
-from osf_models_tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
     CommentFactory,
@@ -607,7 +607,7 @@ class TestWikiCommentDetailView(CommentDetailMixin, ApiTestCase):
     def _set_up_private_project_with_comment(self):
         self.private_project = ProjectFactory.create(is_public=False, creator=self.user, comment_level='private')
         self.private_project.add_contributor(self.contributor, save=True)
-        with mock.patch('osf_models.models.AbstractNode.update_search'):
+        with mock.patch('osf.models.AbstractNode.update_search'):
             self.wiki = NodeWikiFactory(node=self.private_project, user=self.user)
         self.comment = CommentFactory(node=self.private_project, target=Guid.load(self.wiki._id), user=self.user)
         self.private_url = '/{}comments/{}/'.format(API_BASE, self.comment._id)
@@ -616,7 +616,7 @@ class TestWikiCommentDetailView(CommentDetailMixin, ApiTestCase):
     def _set_up_public_project_with_comment(self):
         self.public_project = ProjectFactory.create(is_public=True, creator=self.user, comment_level='private')
         self.public_project.add_contributor(self.contributor, save=True)
-        with mock.patch('osf_models.models.AbstractNode.update_search'):
+        with mock.patch('osf.models.AbstractNode.update_search'):
             self.public_wiki = NodeWikiFactory(node=self.public_project, user=self.user)
         self.public_comment = CommentFactory(node=self.public_project, target=Guid.load(self.public_wiki._id), user=self.user)
         self.public_url = '/{}comments/{}/'.format(API_BASE, self.public_comment._id)
@@ -624,7 +624,7 @@ class TestWikiCommentDetailView(CommentDetailMixin, ApiTestCase):
 
     def _set_up_registration_with_comment(self):
         self.registration = RegistrationFactory(creator=self.user, comment_level='private')
-        with mock.patch('osf_models.models.AbstractNode.update_search'):
+        with mock.patch('osf.models.AbstractNode.update_search'):
             self.registration_wiki = NodeWikiFactory(node=self.registration, user=self.user)
         self.registration_comment = CommentFactory(node=self.registration, target=Guid.load(self.registration_wiki._id), user=self.user)
         self.comment_url = '/{}comments/{}/'.format(API_BASE, self.registration_comment._id)

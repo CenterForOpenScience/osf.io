@@ -4,7 +4,7 @@ from framework.auth import Auth
 
 from django.conf import settings
 
-from osf_models_tests.factories import UserFactory, ProjectFactory
+from osf_tests.factories import UserFactory, ProjectFactory
 
 
 class AddonTestCase(object):

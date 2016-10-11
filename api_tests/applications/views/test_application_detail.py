@@ -6,7 +6,7 @@ from website.models import ApiOAuth2Application, User
 from website.util import api_v2_url
 
 from tests.base import ApiTestCase
-from osf_models_tests.factories import ApiOAuth2ApplicationFactory, AuthUserFactory
+from osf_tests.factories import ApiOAuth2ApplicationFactory, AuthUserFactory
 
 
 def _get_application_detail_route(app):

@@ -192,7 +192,7 @@ def patch_models(settings):
     }
     if not settings.USE_POSTGRES:
         return
-    from osf_models import models
+    from osf import models
     for module in sys.modules.values():
         if not module:
             continue

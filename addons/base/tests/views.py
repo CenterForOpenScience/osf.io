@@ -8,7 +8,7 @@ from framework.auth import Auth
 from framework.exceptions import HTTPError
 from nose.tools import (assert_equal, assert_false, assert_in, assert_is_none,
                         assert_not_equal, assert_raises, assert_true)
-from osf_models_tests.factories import ProjectFactory, UserFactory
+from osf_tests.factories import ProjectFactory, UserFactory
 from website.util import api_url_for, permissions, web_url_for
 
 

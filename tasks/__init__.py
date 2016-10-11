@@ -487,7 +487,7 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, metric
             )
 
             # TODO: remove when osf-models test are moved to osf-models repo
-            osf_models_req_file = os.path.join(HERE, 'osf_models_tests', 'requirements.txt')
+            osf_models_req_file = os.path.join(HERE, 'osf_tests', 'requirements.txt')
             ctx.run(
                 pip_install(osf_models_req_file, constraints_file=CONSTRAINTS_PATH),
                 echo=True
@@ -577,11 +577,11 @@ def test(ctx, all=False, syntax=False):
         test_addons(ctx)
         karma(ctx, single=True, browsers='PhantomJS')
 
-# TODO: Remove me when osf_models_tests are moved to osf-models repo
+# TODO: Remove me when osf_tests are moved to osf-models repo
 @task
 def test_osf_models(ctx):
     import pytest
-    retcode = pytest.main(['osf_models_tests'])
+    retcode = pytest.main(['osf_tests'])
     sys.exit(retcode)
 
 @task

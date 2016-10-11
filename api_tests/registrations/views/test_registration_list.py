@@ -14,7 +14,7 @@ from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistr
 
 
 from tests.base import ApiTestCase
-from osf_models_tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
     AuthUserFactory,

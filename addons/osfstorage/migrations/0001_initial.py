@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 
 from django.db import migrations, models
 import django.db.models.deletion
-import osf_models.utils.base
+import osf.utils.base
 
 
 class Migration(migrations.Migration):
@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('osf_models', '0001_initial'),
+        ('osf', '0001_initial'),
     ]
 
     operations = [
@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
             name='OsfStorageNodeSettings',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('_id', models.CharField(db_index=True, default=osf_models.utils.base.generate_object_id, max_length=24, unique=True)),
+                ('_id', models.CharField(db_index=True, default=osf.utils.base.generate_object_id, max_length=24, unique=True)),
                 ('deleted', models.BooleanField(default=False)),
                 ('owner', models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='osf_models.AbstractNode')),
             ],

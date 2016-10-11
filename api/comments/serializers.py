@@ -2,7 +2,7 @@ import bleach
 
 from rest_framework import serializers as ser
 from modularodm import Q
-from osf_models.exceptions import ValidationError as ModelValidationError
+from osf.exceptions import ValidationError as ModelValidationError
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 from framework.guid.model import Guid
