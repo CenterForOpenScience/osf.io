@@ -2407,7 +2407,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 action=NodeLog.ADDON_ADDED,
                 params={
                     'project': self.parent_id,
-                    'node': self.id,
+                    'node': self._id,
                     'addon': ret.__class__._meta.app_config.full_name,
                 },
                 auth=auth,

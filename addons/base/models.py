@@ -11,7 +11,7 @@ from framework.exceptions import HTTPError, PermissionsError
 from mako.lookup import TemplateLookup
 from osf_models.models.base import BaseModel, ObjectIDMixin
 from osf_models.models.external import ExternalAccount
-from osf_models.models.node import Node
+from osf_models.models.node import AbstractNode
 from osf_models.models.user import OSFUser
 from osf_models.modm_compat import Q
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
@@ -269,7 +269,7 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
     def get_nodes_with_oauth_grants(self, external_account):
         # Generator of nodes which have grants for this external account
         for node_id, grants in self.oauth_grants.iteritems():
-            node = Node.load(node_id)
+            node = AbstractNode.load(node_id)
             if external_account._id in grants.keys() and not node.is_deleted:
                 yield node
 
@@ -338,7 +338,7 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
         """When the user deactivates the addon, clear auth for connected nodes.
         """
         super(AddonOAuthUserSettingsBase, self).on_delete()
-        nodes = [Node.load(node_id) for node_id in self.oauth_grants.keys()]
+        nodes = [AbstractNode.load(node_id) for node_id in self.oauth_grants.keys()]
         for node in nodes:
             node_addon = node.get_addon(self.oauth_provider.short_name)
             if node_addon and node_addon.user_settings == self:
@@ -347,7 +347,7 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
 
 class AddonNodeSettingsBase(AddonSettingsBase):
 
-    owner = models.OneToOneField(Node, null=True, blank=True)
+    owner = models.OneToOneField(AbstractNode, null=True, blank=True)
 
     class Meta:
         abstract = True
