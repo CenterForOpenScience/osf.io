@@ -123,276 +123,299 @@ def update_foreign_fields(old_id, node):
         assert database['boxnodesettings'].find().count(), 'Unable to find collection boxnodesettings'    
     if database['boxnodesettings'].find({'owner': old_id}).count():
         logger.info('** Updating BoxNodeSettings {}'.format([d['_id'] for d in database['boxnodesettings'].find({'owner': old_id})]))
-        database['boxnodesettings'].update(
-            {'owner': old_id},
-            {'$set':{
-                'owner': node._id
-            }}
-        )
+        for doc in database['boxnodesettings'].find({'owner': old_id}):
+            database['boxnodesettings'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'owner': node._id
+                }}
+            )
 
     if dry_run:
         # Check iff dry for efficiency
         assert database['addondataversenodesettings'].find().count(), 'Unable to find collection addondataversenodesettings'
     if database['addondataversenodesettings'].find({'owner': old_id}).count():
         logger.info('** Updating AddonDataverseNodeSettings {}'.format([d['_id'] for d in database['addondataversenodesettings'].find({'owner': old_id})]))
-        database['addondataversenodesettings'].update(
-            {'owner': old_id},
-            {'$set':{
-                'owner': node._id
-            }}
-        )
+        for doc in database['addondataversenodesettings'].find({'owner': old_id}):
+            database['addondataversenodesettings'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'owner': node._id
+                }}
+            )
 
     if dry_run:
         # Check iff dry for efficiency
         assert database['dropboxnodesettings'].find().count(), 'Unable to find collection dropboxnodesettings'
     if database['dropboxnodesettings'].find({'owner': old_id}).count():
         logger.info('** Updating DropboxNodeSettings {}'.format([d['_id'] for d in database['dropboxnodesettings'].find({'owner': old_id})]))
-        database['dropboxnodesettings'].update(
-            {'owner': old_id},
-            {'$set':{
-                'owner': node._id
-            }}
-        )
+        for doc in database['dropboxnodesettings'].find({'owner': old_id}):
+            database['dropboxnodesettings'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'owner': node._id
+                }}
+            )
 
     if dry_run:
         # Check iff dry for efficiency
         assert database['addonfigsharenodesettings'].find().count(), 'Unable to find collection addonfigsharenodesettings'
     if database['addonfigsharenodesettings'].find({'owner': old_id}).count():
         logger.info('** Updating AddonFigShareNodeSettings {}'.format([d['_id'] for d in database['addonfigsharenodesettings'].find({'owner': old_id})]))
-        database['addonfigsharenodesettings'].update(
-            {'owner': old_id},
-            {'$set':{
-                'owner': node._id
-            }}
-        )
+        for doc in database['addonfigsharenodesettings'].find({'owner': old_id}):
+            database['addonfigsharenodesettings'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'owner': node._id
+                }}
+            )
 
     if dry_run:
         # Check iff dry for efficiency
         assert database['forwardnodesettings'].find().count(), 'Unable to find collection forwardnodesettings'
     if database['forwardnodesettings'].find({'owner': old_id}).count():
         logger.info('** Updating ForwardNodeSettings {}'.format([d['_id'] for d in database['forwardnodesettings'].find({'owner': old_id})]))
-        database['forwardnodesettings'].update(
-            {'owner': old_id},
-            {'$set':{
-                'owner': node._id
-            }}
-        )
+        for doc in database['forwardnodesettings'].find({'owner': old_id}):
+            database['forwardnodesettings'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'owner': node._id
+                }}
+            )
 
     if dry_run:
         # Check iff dry for efficiency
         assert database['githubnodesettings'].find().count(), 'Unable to find collection githubnodesettings'
     if database['githubnodesettings'].find({'owner': old_id}).count():
         logger.info('** Updating GithubNodeSettings {}'.format([d['_id'] for d in database['githubnodesettings'].find({'owner': old_id})]))
-        database['githubnodesettings'].update(
-            {'owner': old_id},
-            {'$set':{
-                'owner': node._id
-            }}
-        )
+        for doc in database['githubnodesettings'].find({'owner': old_id}):
+            database['githubnodesettings'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'owner': node._id
+                }}
+            )
 
     if dry_run:
         # Check iff dry for efficiency
         assert database['mendeleynodesettings'].find().count(), 'Unable to find collection mendeleynodesettings'
     if database['mendeleynodesettings'].find({'owner': old_id}).count():
         logger.info('** Updating MendeleyNodeSettings {}'.format([d['_id'] for d in database['mendeleynodesettings'].find({'owner': old_id})]))
-        database['mendeleynodesettings'].update(
-            {'owner': old_id},
-            {'$set':{
-                'owner': node._id
-            }}
-        )
+        for doc in database['mendeleynodesettings'].find({'owner': old_id}):
+            database['mendeleynodesettings'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'owner': node._id
+                }}
+            )
 
     if dry_run:
         # Check iff dry for efficiency
         assert database['osfstoragenodesettings'].find().count(), 'Unable to find collection osfstoragenodesettings'
     if database['osfstoragenodesettings'].find({'owner': old_id}).count():
         logger.info('** Updating OsfStorageNodeSettings {}'.format([d['_id'] for d in database['osfstoragenodesettings'].find({'owner': old_id})]))
-        database['osfstoragenodesettings'].update(
-            {'owner': old_id},
-            {'$set':{
-                'owner': node._id
-            }}
-        )
+        for doc in database['osfstoragenodesettings'].find({'owner': old_id}):
+            database['osfstoragenodesettings'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'owner': node._id
+                }}
+            )
 
     if dry_run:
         # Check iff dry for efficiency
         assert database['s3nodesettings'].find().count(), 'Unable to find collection s3nodesettings'
     if database['s3nodesettings'].find({'owner': old_id}).count():
         logger.info('** Updating s3NodeSettings {}'.format([d['_id'] for d in database['s3nodesettings'].find({'owner': old_id})]))
-        database['s3nodesettings'].update(
-            {'owner': old_id},
-            {'$set':{
-                'owner': node._id
-            }}
-        )
+        for doc in database['s3nodesettings'].find({'owner': old_id}):
+            database['s3nodesettings'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'owner': node._id
+                }}
+            )
 
     if dry_run:
         # Check iff dry for efficiency
         assert database['addonwikinodesettings'].find().count(), 'Unable to find collection addonwikinodesettings'
     if database['addonwikinodesettings'].find({'owner': old_id}).count():
         logger.info('** Updating AddonWikiNodeSettings {}'.format([d['_id'] for d in database['addonwikinodesettings'].find({'owner': old_id})]))
-        database['addonwikinodesettings'].update(
-            {'owner': old_id},
-            {'$set':{
-                'owner': node._id
-            }}
-        )
+        for doc in database['addonwikinodesettings'].find({'owner': old_id}):
+            database['addonwikinodesettings'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'owner': node._id
+                }}
+            )
 
     if dry_run:
         # Check iff dry for efficiency
         assert database['zoteronodesettings'].find().count(), 'Unable to find collection zoteronodesettings'
     if database['zoteronodesettings'].find({'owner': old_id}).count():
         logger.info('** Updating ZoteroNodeSettings {}'.format([d['_id'] for d in database['zoteronodesettings'].find({'owner': old_id})]))
-        database['zoteronodesettings'].update(
-            {'owner': old_id},
-            {'$set':{
-                'owner': node._id
-            }}
-        )
+        for doc in database['zoteronodesettings'].find({'owner': old_id}):
+            database['zoteronodesettings'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'owner': node._id
+                }}
+            )
 
     if dry_run:
         # Check iff dry for efficiency
         assert database['archivejob'].find().count(), 'Unable to find collection archivejob'
     if database['archivejob'].find({'src_node': old_id}).count():
         logger.info('** Updating ArchiveJobs {}'.format([d['_id'] for d in database['archivejob'].find({'src_node': old_id})]))
-        database['archivejob'].update(
-            {'src_node': old_id},
-            {'$set':{
-                'src_node': node._id
-            }}
-        )
+        for doc in database['archivejob'].find({'src_node': old_id}):
+            database['archivejob'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'src_node': node._id
+                }}
+            )
 
     if dry_run:
         # Check iff dry for efficiency
         assert database['trashedfilenode'].find().count(), 'Unable to find collection trashedfilenode'
     if database['trashedfilenode'].find({'node': old_id}).count():
         logger.info('** Updating TrashedFileNodes {}'.format([d['_id'] for d in database['trashedfilenode'].find({'node': old_id})]))
-        database['trashedfilenode'].update(
-            {'node': old_id},
-            {'$set':{
-                'node': node._id
-            }}
-        )
+        for doc in database['trashedfilenode'].find({'node': old_id}):
+            database['trashedfilenode'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'node': node._id
+                }}
+            )
 
     if dry_run:
         # Check iff dry for efficiency
         assert database['storedfilenode'].find().count(), 'Unable to find collection storedfilenode'
     if database['storedfilenode'].find({'node': old_id}).count():
         logger.info('** Updating StoredFileNodes {}'.format([d['_id'] for d in database['storedfilenode'].find({'node': old_id})]))
-        database['storedfilenode'].update(
-            {'node': old_id},
-            {'$set':{
-                'node': node._id
-            }}
-        )
+        for doc in database['storedfilenode'].find({'node': old_id}):
+            database['storedfilenode'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'node': node._id
+                }}
+            )
 
     if dry_run:
         # Check iff dry for efficiency
         assert database['comment'].find().count(), 'Unable to find collection comment'
     if database['comment'].find({'node': old_id}).count():
         logger.info('** Updating Comments {}'.format([d['_id'] for d in database['comment'].find({'node': old_id})]))
-        database['comment'].update(
-            {'node': old_id},
-            {'$set':{
-                'node': node._id
-            }}
-        )
+        for doc in database['comment'].find({'node': old_id}):
+            database['comment'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'node': node._id
+                }}
+            )
 
     if dry_run:
         # Check iff dry for efficiency
         assert database['nodelog'].find().count(), 'Unable to find collection nodelog'
     if database['nodelog'].find({'original_node': old_id}).count():
         logger.info('** Updating NodeLogs (original_node) {}'.format([d['_id'] for d in database['nodelog'].find({'original_node': old_id})]))
-        database['nodelog'].update(
-            {'original_node': old_id},
-            {'$set':{
-                'original_node': node._id
-            }}
-        )
+        for doc in database['nodelog'].find({'original_node': old_id}):
+            database['nodelog'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'original_node': node._id
+                }}
+            )
 
     if dry_run:
         # Check iff dry for efficiency
         assert database['nodelog'].find().count(), 'Unable to find collection nodelog'
     if database['nodelog'].find({'node': old_id}).count():
         logger.info('** Updating NodeLogs (node) {}'.format([d['_id'] for d in database['nodelog'].find({'node': old_id})]))
-        database['nodelog'].update(
-            {'node': old_id},
-            {'$set':{
-                'node': node._id
-            }}
-        )
+        for doc in database['nodelog'].find({'node': old_id}):
+            database['nodelog'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'node': node._id
+                }}
+            )
 
     if dry_run:
         # Check iff dry for efficiency
         assert database['pointer'].find().count(), 'Unable to find collection pointer'
     if database['pointer'].find({'node': old_id}).count():
         logger.info('** Updating Pointers {}'.format([d['_id'] for d in database['pointer'].find({'node': old_id})]))
-        database['pointer'].update(
-            {'node': old_id},
-            {'$set':{
-                'node': node._id
-            }}
-        )
+        for doc in database['pointer'].find({'node': old_id}):
+            database['pointer'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'node': node._id
+                }}
+            )
 
     if dry_run:
         # Check iff dry for efficiency
         assert database['node'].find().count(), 'Unable to find collection node'
     if database['node'].find({'forked_from': old_id}).count():
         logger.info('** Updating Nodes (forked_from) {}'.format([d['_id'] for d in database['node'].find({'forked_from': old_id})]))
-        database['node'].update(
-            {'forked_from': old_id},
-            {'$set':{
-                'forked_from': node._id
-            }}
-        )
+        for doc in database['node'].find({'forked_from': old_id}):
+            database['node'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'forked_from': node._id
+                }}
+            )
 
     if dry_run:
         # Check iff dry for efficiency
         assert database['node'].find().count(), 'Unable to find collection node'
     if database['node'].find({'registered_from': old_id}).count():
         logger.info('** Updating Nodes (registered_from) {}'.format([d['_id'] for d in database['node'].find({'registered_from': old_id})]))
-        database['node'].update(
-            {'registered_from': old_id},
-            {'$set':{
-                'registered_from': node._id
-            }}
-        )
+        for doc in database['node'].find({'registered_from': old_id}):
+            database['node'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'registered_from': node._id
+                }}
+            )
 
     if dry_run:
         # Check iff dry for efficiency
         assert database['node'].find().count(), 'Unable to find collection node'
     if database['node'].find({'root': old_id}).count():
         logger.info('** Updating Nodes (root) {}'.format([d['_id'] for d in database['node'].find({'root': old_id})]))
-        database['node'].update(
-            {'root': old_id},
-            {'$set':{
-                'root': node._id
-            }}
-        )
+        for doc in database['node'].find({'root': old_id}):
+            database['node'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'root': node._id
+                }}
+            )
 
     if dry_run:
         # Check iff dry for efficiency
         assert database['node'].find().count(), 'Unable to find collection node'
     if database['node'].find({'parent': old_id}).count():
         logger.info('** Updating Nodes (parent) {}'.format([d['_id'] for d in database['node'].find({'parent': old_id})]))
-        database['node'].update(
-            {'parent': old_id},
-            {'$set':{
-                'parent': node._id
-            }}
-        )
+        for doc in database['node'].find({'parent': old_id}):
+            database['node'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'parent': node._id
+                }}
+            )
 
     if dry_run:
         # Check iff dry for efficiency
         assert database['watchconfig'].find().count(), 'Unable to find collection watchconfig'
     if database['watchconfig'].find({'node': old_id}).count():
         logger.info('** Updating WatchConfigs {}'.format([d['_id'] for d in database['watchconfig'].find({'node': old_id})]))
-        database['watchconfig'].update(
-            {'node': old_id},
-            {'$set':{
-                'node': node._id
-            }}
-        )
+        for doc in database['watchconfig'].find({'node': old_id}):
+            database['watchconfig'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'node': node._id
+                }}
+            )
 
     if dry_run:
         # Check iff dry for efficiency
@@ -416,36 +439,39 @@ def update_foreign_fields(old_id, node):
         assert database['draftregistration'].find().count(), 'Unable to find collection draftregistration'
     if database['draftregistration'].find({'branched_from': old_id}).count():
         logger.info('** Updating DraftRegistrations {}'.format([d['_id'] for d in database['draftregistration'].find({'branched_from': old_id})]))
-        database['draftregistration'].update(
-            {'branched_from': old_id},
-            {'$set':{
-                'branched_from': node._id
-            }}
-        )
+        for doc in database['draftregistration'].find({'branched_from': old_id}):
+            database['draftregistration'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'branched_from': node._id
+                }}
+            )
 
     if dry_run:
         # Check iff dry for efficiency
         assert database['draftregistration'].find().count(), 'Unable to find collection draftregistration'
     if database['draftregistration'].find({'registered_node': old_id}).count():
         logger.info('** Updating DraftRegistrations {}'.format([d['_id'] for d in database['draftregistration'].find({'registered_node': old_id})]))
-        database['draftregistration'].update(
-            {'registered_node': old_id},
-            {'$set':{
-                'registered_node': node._id
-            }}
-        )
+        for doc in database['draftregistration'].find({'registered_node': old_id}):
+            database['draftregistration'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'registered_node': node._id
+                }}
+            )
 
     if dry_run:
         # Check iff dry for efficiency
         assert database['embargoterminationapproval'].find().count(), 'Unable to find collection embargoterminationapproval'
     if database['embargoterminationapproval'].find({'embargoed_registration': old_id}).count():
         logger.info('** Updating EmbargoTerminationApprovals {}'.format([d['_id'] for d in database['embargoterminationapproval'].find({'embargoed_registration': old_id})]))
-        database['embargoterminationapproval'].update(
-            {'embargoed_registration': old_id},
-            {'$set':{
-                'embargoed_registration': node._id
-            }}
-        )
+        for doc in database['embargoterminationapproval'].find({'embargoed_registration': old_id}):
+            database['embargoterminationapproval'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'embargoed_registration': node._id
+                }}
+            )
 
 def enumerate_and_set_subject_hierarchies(preprint):
     logger.info('* Migrating subjects for node {}'.format(preprint.node._id))
