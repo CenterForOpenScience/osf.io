@@ -74,7 +74,7 @@ class ExternalAccount(StoredObject):
     provider_name = fields.StringField(required=True)
 
     # The unique, persistent ID on the remote service.
-    provider_id = EncryptedStringField()
+    provider_id = fields.StringField()
 
     # The user's name on the external service
     display_name = EncryptedStringField()
@@ -629,7 +629,7 @@ class BasicAuthProviderMixin(object):
                 display_name=username,
                 oauth_key=password,
                 oauth_secret=host,
-                provider_id=username,
+                provider_id='{}:{}'.format(host, username),
                 profile_url=host,
                 provider=self.short_name,
                 provider_name=self.name
