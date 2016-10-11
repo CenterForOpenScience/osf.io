@@ -147,7 +147,7 @@ class AddonModelMixin(models.Model):
         return True
 
     def get_addon_names(self):
-        return [each.name for each in self.get_addons()]
+        return [each.short_name for each in self.get_addons()]
 
     def get_or_add_addon(self, name, *args, **kwargs):
         addon = self.get_addon(name)

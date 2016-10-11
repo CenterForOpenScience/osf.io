@@ -46,6 +46,10 @@ class AddonSettingsBase(ObjectIDMixin):
     class Meta:
         abstract = True
 
+    @property
+    def short_name(self):
+        return self._meta.app_config.label
+
     def delete(self, save=True):
         self.deleted = True
         self.on_delete()
