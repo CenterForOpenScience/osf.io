@@ -73,7 +73,6 @@ djangorestframework-bulk==0.2.1
 pyjwt==1.4.0
 pyjwe==1.0.0
 jsonschema==2.5.1
-git+https://github.com/CenterForOpenScience/osf-models.git@c718a73b309c42811307f0704047a0d4925cb45d
 django-sslserver==0.19
 django-debug-toolbar==1.5
 
@@ -90,7 +89,7 @@ keen==0.3.21
 python-geoip-geolite2==2015.0303
 
 # OSF models
-git+https://github.com/cwisecarver/django-typed-models/archive/0.5.2.zip#egg=django-typed-models-0.5.2
+git+https://github.com/cwisecarver/django-typed-models@0.5.2
 django-dirtyfields==1.2
 django-extensions==1.6.1
 psycopg2==2.6.2
