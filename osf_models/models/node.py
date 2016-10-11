@@ -1755,13 +1755,17 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if 'node' in addon.added_default:
                 new.add_addon(addon.short_name, auth=None, log=False)
 
-        # deal with the children of the node, if any
-        new.nodes = [
-            x.use_as_template(auth, changes, top_level=False)
-            for x in self.get_nodes(is_deleted=False)
-            if x.can_view(auth)
-        ]
         new.save()
+        # deal with the children of the node, if any
+        for node_relation in self.node_relations.select_related('child').filter(child__is_deleted=False):
+            child = node_relation.child
+            if child.can_view(auth):
+                templated_child = child.use_as_template(auth, changes, top_level=False)
+                NodeRelation.objects.get_or_create(
+                    parent=new, child=templated_child,
+                    is_node_link=node_relation.is_node_link
+                )
+
         return new
 
     def next_descendants(self, auth, condition=lambda auth, node: True):

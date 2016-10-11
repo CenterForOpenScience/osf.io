@@ -196,9 +196,13 @@ class Registration(AbstractNode):
         :param user: User who initiated the retraction
         :param end_date: Date when the registration should be made public
         """
+        end_date_midnight = datetime.datetime.combine(
+            end_date,
+            datetime.datetime.min.time()
+        ).replace(tzinfo=end_date.tzinfo)
         self.embargo = Embargo.objects.create(
             initiated_by=user,
-            end_date=datetime.datetime.combine(end_date, datetime.datetime.min.time()),
+            end_date=end_date_midnight,
             for_existing_registration=for_existing_registration,
             notify_initiator_on_complete=notify_initiator_on_complete
         )
