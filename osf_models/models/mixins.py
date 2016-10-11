@@ -1,6 +1,7 @@
 import pytz
 from django.apps import apps
 from django.db import models
+from django.core.exceptions import ObjectDoesNotExist
 from framework.analytics import increment_user_activity_counters
 from osf_models.models.node_relation import NodeRelation
 from osf_models.models.nodelog import NodeLog
@@ -159,7 +160,9 @@ class AddonModelMixin(models.Model):
             settings = self._settings_model(name).objects.get(owner=self)
             if not settings.deleted or deleted:
                 return settings
-        except self._settings_model(name).DoesNotExist:
+        except ObjectDoesNotExist:
+            pass
+        except LookupError:
             pass
         return None
 
