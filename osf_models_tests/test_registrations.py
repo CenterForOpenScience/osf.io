@@ -4,7 +4,7 @@ import datetime
 
 from django.utils import timezone
 from framework.auth.core import Auth
-from osf_models.models import Node, Registration, Sanction, MetaSchema
+from osf_models.models import Node, Registration, Sanction, MetaSchema, NodeWikiPage
 from osf_models.modm_compat import Q
 
 from website import settings

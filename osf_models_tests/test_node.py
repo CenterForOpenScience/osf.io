@@ -1795,7 +1795,7 @@ class TestCitationsProperties:
                 'title': node.title,
                 'type': 'webpage',
                 'id': node._id,
-            },
+            }
         )
 
     def test_csl_multiple_authors(self, node):
@@ -2000,7 +2000,6 @@ class TestRemoveNode:
         assert target.is_deleted is False
 
 
-@pytest.mark.skip('Unskip when use_as_template is fixed')
 class TestTemplateNode:
 
     # Autouse the app fixture because we need init_app to set
@@ -2088,10 +2087,10 @@ class TestTemplateNode:
         new = project.use_as_template(auth=auth)
 
         assert new.title == self._default_title(project)
-        assert len(new.nodes) == len(project.nodes)
+        assert len(list(new.nodes)) == len(list(project.nodes))
         # check that all children were copied
         assert (
-            [x.title for x in new.nodes],
+            [x.title for x in new.nodes] ==
             [x.title for x in project.nodes]
         )
         # ensure all child nodes were actually copied, instead of moved
@@ -2199,6 +2198,6 @@ class TestTemplateNode:
         # ensure that the creator is admin for each node copied
         for node in new.nodes:
             assert (
-                node.permissions.get(other_user._id) ==
+                node.get_permissions(other_user) ==
                 ['read', 'write', 'admin']
             )
