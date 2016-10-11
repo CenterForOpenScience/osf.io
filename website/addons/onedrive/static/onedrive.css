@@ -1,0 +1,39 @@
+.onedrive-confirm-selection {
+    padding-top: 10px;
+}
+.onedrive-folder-picker {
+    margin-top: 10px;
+}
+
+.selected-folder {
+    margin: 12px;
+    font-size: 1.3em;
+}
+
+.onedrive-loading-text {
+    padding-top: 20px;
+}
+
+
+.btn-onedrive {
+    color: #333;
+    background-color: #fff;
+    border-color: #ccc;
+}
+
+.btn-onedrive:hover,
+.btn-onedrive:focus,
+.btn-onedrive:active,
+.btn-onedrive.active,
+.open .dropdown-toggle.btn-onedrive {
+    color: #333;
+    background-color: #ebebeb;
+    border-color: #adadad;
+}
+
+.onedrive-folderpicker-odd {
+    background-color: #f5f5f5;
+}
+.onedrive-folderpicker-even {
+    background-color: #fff;
+}

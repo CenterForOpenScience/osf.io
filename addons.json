@@ -9,6 +9,7 @@
         "mendeley",
         "zotero",
         "osfstorage",
+        "onedrive",
         "s3",
         "twofactor",
         "wiki",
@@ -22,6 +23,7 @@
         "figshare": "partial",
         "forward": "full",
         "googledrive": "partial",
+        "onedrive": "partial",
         "github": "partial",
         "s3": "partial",
         "wiki": "full"
