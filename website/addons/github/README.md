@@ -9,7 +9,8 @@
 5. Submit the form.
 6. cp website/addons/github/settings/defaults.py website/addons/github/settings/local.py
 7. Copy your client ID and client secret from Github into the new local.py file.
-8. Restart your app server.
+8. Ensure `"github"` exists in the addons list in `"addons.json"`
+9. Restart your app server.
 
 ## Testing webhooks
 

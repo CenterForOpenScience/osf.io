@@ -11,6 +11,8 @@ Enabling the addon for development
 $ invoke encryption
 ```
 
+Ensure `"dataverse"` exists in the addons list in `"addons.json"`
+
 Creating a Dataverse dataset on the test server
 
 1. Go to https://demo.dataverse.org/ and create an account

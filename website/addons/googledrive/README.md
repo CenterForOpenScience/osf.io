@@ -11,3 +11,4 @@ Enabling the addon for development
   2. Click **Status** to turn the google drive API on.
 5. Add http://localhost:5000/oauth/callback/googledrive/ to your list of redirect URIs either while creating an application or by navigating to credentials page.
 6. Enter your key and secret in `website/addons/googledrive/settings/local.py`. 
+7. Ensure `"googledrive"` exists in the addons list in `"addons.json"`
