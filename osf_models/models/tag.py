@@ -16,7 +16,7 @@ class Tag(BaseModel):
         return u'{}'.format(self.name)
 
     def _natural_key(self):
-        return hash(self.name.lower() + str(self.system))
+        return hash(self.name + str(self.system))
 
     @property
     def _id(self):

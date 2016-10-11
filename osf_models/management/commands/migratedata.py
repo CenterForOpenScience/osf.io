@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import gc
 import importlib
 import sys
@@ -17,10 +19,13 @@ from osf_models.models import Tag
 from osf_models.models.base import GuidMixin, Guid, OptionalGuidMixin, BlackListGuid
 from osf_models.models.node import AbstractNode
 from osf_models.utils.order_apps import get_ordered_models
+from psycopg2._psycopg import AsIs
 from typedmodels.models import TypedModel
 from website.files.models import StoredFileNode as MODMStoredFileNode
 from website.models import Node as MODMNode
 from website.models import Guid as MODMGuid
+
+from scripts.register_oauth_scopes import set_backend
 
 
 def make_guids():
@@ -85,49 +90,82 @@ def make_guids():
                         import ipdb
                         ipdb.set_trace()
 
+
+
             guids = MODMGuid.find()
-            guid_keys = MODMGuid.find().get_keys()
-            orphaned_guids = [g._id for g in guids if g.to_storage()['referent'][1] in ['dropboxfile', 'osfstorageguidfile', 'osfguidfile', 'githubguidfile', 'nodefile', 'boxfile', 'figshareguidfile', 's3guidfile', 'dataversefile']]
+            guid_keys = guids.get_keys()
+            orphaned_guids = []
+            for g in guids:
+                try:
+                    # if it's one of the abandoned models add it to orphaned_guids
+                    if g.to_storage()['referent'][1] in ['dropboxfile', 'osfstorageguidfile', 'osfguidfile',
+                                                         'githubguidfile', 'nodefile', 'boxfile',
+                                                         'figshareguidfile', 's3guidfile', 'dataversefile']:
+                        orphaned_guids.append(unicode(g._id))
+                except TypeError:
+                    pass
+            # orphaned_guids = [unicode(g._id) for g in guids if g is not None and g.to_storage() is not None and len(g.to_storage['referent']) > 0 and g.to_storage()['referent'][1] in ['dropboxfile', 'osfstorageguidfile', 'osfguidfile', 'githubguidfile', 'nodefile', 'boxfile', 'figshareguidfile', 's3guidfile', 'dataversefile']]
+            # get all the guids in postgres
             existing_guids = Guid.objects.all().values_list('_id', flat=True)
-            guids_to_make = set(guid_keys) - set(orphaned_guids) - set(existing_guids)
+            # subtract the orphaned guids from the guids in modm and from that subtract existing guids
+            # that should give us the guids that are missing
+            guids_to_make = (set(guid_keys) - set(orphaned_guids)) - set(existing_guids)
             print('{} MODM Guids, {} Orphaned Guids, {} Guids to Make, {} Existing guids'.format(len(guid_keys), len(orphaned_guids), len(guids_to_make), len(existing_guids)))
             from django.apps import apps
             model_names = {m._meta.model.__name__.lower(): m._meta.model for m in apps.get_models()}
 
             with ipdb.launch_ipdb_on_exception():
+                # loop through missing guids
                 for guid in guids_to_make:
+                    # load them from modm
                     guid_dict = MODMGuid.load(guid).to_storage()
+                    # if they don't have a referent toss them
+                    if guid_dict['referent'] is None:
+                        print('{} has no referent.'.format(guid))
+                        continue
+                    # get the model string from the referent
                     modm_model_string = guid_dict['referent'][1]
                     if modm_model_string == 'user':
                         modm_model_string = 'osfuser'
-                    referent_model = model_names[modm_model_string]
+                    # if the model string is in our list of models load it up
+                    if modm_model_string in model_names:
+                        referent_model = model_names[modm_model_string]
+                    else:
+                        # this filters out bad models, like osfstorageguidfile
+                        # but these should already be gone
+                        print('Couldn\'t find model for {}'.format(modm_model_string))
+                        continue
+                    # get the id from the to_storage dictionary
                     modm_model_id = guid_dict['_id']
+                    # if it's something that should have a guid
                     if issubclass(referent_model, GuidMixin) or issubclass(referent_model, OptionalGuidMixin):
                         try:
+                            # find it's referent
                             referent_instance = referent_model.objects.get(guid_string__contains=[modm_model_id.lower()])
                         except referent_model.DoesNotExist:
-                            print('Couldn\'t find Guid for {}:{}'.format(referent_model._meta.model.__name__, modm_model_id))
+                            print('Couldn\'t find referent for {}:{}'.format(referent_model._meta.model.__name__, modm_model_id))
                             continue
                     else:
-                        referent_instance = referent_model.objects.get(_id__iexact=modm_model_id)
+                        # we shouldn't ever get here, bad data
+                        print('Found guid pointing at {} type, dropping it on the floor.'.format(modm_model_string))
+                        continue
 
+                    # if we got a referent instance create the guid
                     if referent_instance:
                         Guid.objects.create(referent=referent_instance)
                     else:
                         print('{} {} didn\'t create a Guid'.format(referent_model._meta.model.__name__, modm_model_id))
 
-            orphaned_guids = set(MODMGuid.find().get_keys()) - set(
-                Guid.objects.all().values_list('_id', flat=True))
-            guids_to_blacklist = []
-            for guid in orphaned_guids:
-                if not BlackListGuid.objects.filter(guid__iexact=guid).exists():
-                    guids_to_blacklist.append(BlackListGuid(guid=guid))
-                else:
-                    print('BlackListGuid {} already exists...'.format(guid))
-            print('Saving {} BlackListGuids'.format(len(guids_to_blacklist)))
-            results = BlackListGuid.objects.bulk_create(guids_to_blacklist)
-
-            print('Created {} BlackListGuids from orphaned Guids'.format(len(results)))
+            print('Started creating blacklist orphaned guids.')
+            with connection.cursor() as cursor:
+                sql = """
+                    INSERT INTO
+                      osf_models_blacklistguid
+                      (guid)
+                    VALUES %(guids)s ON CONFLICT DO NOTHING;
+                """
+                params = ''.join(['(\'{}\'), '.format(og) for og in orphaned_guids])[0:-2]
+                cursor.execute(sql, {'guids': AsIs(params)})
 
 
 def save_bare_models(modm_queryset, django_model, page_size=20000):
@@ -355,8 +393,7 @@ class Command(BaseCommand):
         parser.add_argument('--nodelogsguids', action='store_true', help='Run nodelog guid migrations')
 
     def handle(self, *args, **options):
-        # TODO Handle contributors, they're not a direct 1-to-1 they'll need some love
-
+        set_backend()
         # it's either this or catch the exception and put them in the blacklistguid table
         register_nonexistent_models_with_modm()
 

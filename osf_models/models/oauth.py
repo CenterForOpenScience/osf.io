@@ -21,8 +21,7 @@ class ApiOAuth2Scope(base.ObjectIDMixin, base.BaseModel):
         be requested by third parties.
     """
     # TODO DELETE ME POST MIGRATION
-    # disable this migration for now
-    # modm_model_path = 'website.oauth.models.ApiOAuth2Scope'
+    modm_model_path = 'website.oauth.models.ApiOAuth2Scope'
     modm_query = None
     # /TODO DELETE ME POST MIGRATION
 

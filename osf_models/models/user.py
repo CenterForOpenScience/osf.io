@@ -41,7 +41,6 @@ from osf_models.models.base import BaseModel, GuidMixin
 from osf_models.models.tag import Tag
 from osf_models.models.institution import Institution
 from osf_models.models.session import Session
-from osf_models.models.watch_config import WatchConfig
 from osf_models.models.mixins import AddonModelMixin
 from osf_models.models.contributor import RecentlyAddedContributor
 from osf_models.utils import security
@@ -245,10 +244,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     date_registered = models.DateTimeField(db_index=True, default=timezone.now,
                                            )  # auto_now_add=True)
 
-    # watched nodes are stored via a list of WatchConfigs
-    # watched = fields.ForeignField("WatchConfig", list=True)
-    # watched = models.ManyToManyField(WatchConfig)
-
     # list of collaborators that this user recently added to nodes as a contributor
     # recently_added = fields.ForeignField("user", list=True)
     recently_added = models.ManyToManyField('self',
@@ -348,8 +343,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     affiliated_institutions = models.ManyToManyField('Institution')
 
     notifications_configured = DateTimeAwareJSONField(default=dict, blank=True)
-
-    watched = models.ManyToManyField('AbstractNode', related_name='watches', through=WatchConfig)
 
     objects = OSFUserManager()
 
@@ -613,8 +606,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         user.external_identity = {}
 
         # FOREIGN FIELDS
-        WatchConfig.objects.filter(user=user).update(user=self)
-
         self.external_accounts.add(*user.external_accounts.values_list('pk', flat=True))
 
         # - addons

@@ -207,7 +207,7 @@ class StoredFileNode(CommentableMixin, OptionalGuidMixin, ObjectIDMixin, BaseMod
     provider = models.CharField(max_length=25, blank=False, null=False, db_index=True)
 
     name = models.CharField(max_length=1000, blank=True, null=True)
-    path = models.CharField(max_length=1000, blank=True, null=True)  # 270 on staging
+    path = models.CharField(max_length=2000, blank=True, null=True)  # 1950 on prod
     _materialized_path = models.CharField(max_length=1000, blank=True, null=True)  # 482 on staging
 
     # The User that has this file "checked out"
@@ -868,13 +868,13 @@ class FileVersion(ObjectIDMixin, BaseModel):
     # Date version record was created. This is the date displayed to the user.
     date_created = models.DateTimeField()  # auto_now_add=True)
 
-    size = models.PositiveIntegerField()
+    size = models.BigIntegerField(null=True)
 
-    content_type = models.CharField(max_length=50, blank=True, null=True)  # was 24 on staging
+    content_type = models.CharField(max_length=100, blank=True, null=True)  # was 24 on staging
     # Date file modified on third-party backend. Not displayed to user, since
     # this date may be earlier than the date of upload if the file already
     # exists on the backend
-    date_modified = models.DateTimeField()
+    date_modified = models.DateTimeField(null=True, blank=True)
 
     location = DateTimeAwareJSONField(default=dict, db_index=True, blank=True, null=True)
     metadata = DateTimeAwareJSONField(default=dict, db_index=True)

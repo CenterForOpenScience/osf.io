@@ -16,6 +16,7 @@ from django.utils import timezone
 from osf_models.exceptions import ValidationError
 from osf_models.modm_compat import to_django_query
 from osf_models.utils.base import generate_object_id
+from osf_models.utils.fields import LowercaseCharField
 
 ALPHABET = '23456789abcdefghjkmnpqrstuvwxyz'
 
@@ -178,7 +179,7 @@ class Guid(BaseModel):
     # /TODO DELETE ME POST MIGRATION
 
     id = models.AutoField(primary_key=True)
-    _id = models.CharField(max_length=255, null=False, blank=False, default=generate_guid, db_index=True,
+    _id = LowercaseCharField(max_length=255, null=False, blank=False, default=generate_guid, db_index=True,
                            unique=True)
     referent = GenericForeignKey()
     content_type = models.ForeignKey(ContentType, null=True, blank=True)
@@ -233,7 +234,7 @@ class BlackListGuid(BaseModel):
     migration_page_size = 500000
     # /TODO DELETE ME POST MIGRATION
     id = models.AutoField(primary_key=True)
-    guid = models.fields.CharField(max_length=255, unique=True, db_index=True)
+    guid = LowercaseCharField(max_length=255, unique=True, db_index=True)
 
     @property
     def _id(self):
@@ -461,7 +462,7 @@ class GuidMixin(BaseIDMixin):
 
         guids = MODMGuid.find(MODMQ('referent', 'eq', modm_obj._id))
 
-        setattr(django_obj, 'guid_string', [x.lower() for x in guids.get_keys()])
+        setattr(django_obj, 'guid_string', list(set([x.lower() for x in guids.get_keys()])))
         setattr(django_obj, 'content_type_pk', ContentType.objects.get_for_model(cls).pk)
 
         return django_obj

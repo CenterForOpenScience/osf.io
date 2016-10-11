@@ -3,6 +3,7 @@ import json
 from decimal import Decimal
 
 from django.test import TestCase
+from django.utils import timezone
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONEncoder, decode_datetime_objects
 
 
@@ -13,32 +14,32 @@ class DateTimeAwareJSONFieldTests(TestCase):
             sample_date=dt.date.today(),
             nested_data=dict(
                 sample_date=dt.date.today(),
-                sample_datetime=dt.datetime.utcnow(),
+                sample_datetime=timezone.now(),
                 sample_decimal=Decimal('10.259')
             ),
-            sample_datetime=dt.datetime.utcnow(),
+            sample_datetime=timezone.now(),
             sample_decimal=Decimal('10.259'),
             sample_text='wut wut',
             list_of_things=[
                 dict(
                     sample_date=dt.date.today(),
-                    sample_datetime=dt.datetime.utcnow(),
+                    sample_datetime=timezone.now(),
                     sample_decimal=Decimal('10.259')
                 ),
                 dict(
                     sample_date=dt.date.today(),
-                    sample_datetime=dt.datetime.utcnow(),
+                    sample_datetime=timezone.now(),
                     sample_decimal=Decimal('10.259')
                 ),
                 [
                     dict(
                         sample_date=dt.date.today(),
-                        sample_datetime=dt.datetime.utcnow(),
+                        sample_datetime=timezone.now(),
                         sample_decimal=Decimal('10.259')
                     ),
                     dict(
                         sample_date=dt.date.today(),
-                        sample_datetime=dt.datetime.utcnow(),
+                        sample_datetime=timezone.now(),
                         sample_decimal=Decimal('10.259')
                     ),
                 ]
@@ -47,12 +48,12 @@ class DateTimeAwareJSONFieldTests(TestCase):
         cls.json_list_data = [
             dict(
                 sample_date=dt.date.today(),
-                sample_datetime=dt.datetime.utcnow(),
+                sample_datetime=timezone.now(),
                 sample_decimal=Decimal('10.259')
             ),
             dict(
                 sample_date=dt.date.today(),
-                sample_datetime=dt.datetime.utcnow(),
+                sample_datetime=timezone.now(),
                 sample_decimal=Decimal('10.259')
             ),
         ]

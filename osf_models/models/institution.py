@@ -29,7 +29,7 @@ class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
     logout_url = models.URLField(null=True)
     name = models.CharField(max_length=255)
 
-    description = models.TextField(blank=True, default='')
+    description = models.TextField(blank=True, default='', null=True)
     is_deleted = models.BooleanField(default=False, db_index=True)
 
     def __init__(self, *args, **kwargs):
