@@ -4,7 +4,6 @@ import time
 
 import markupsafe
 import requests
-from django.conf import settings
 from django.db import models
 from framework.auth import Auth
 from framework.auth.decorators import must_be_logged_in
@@ -16,6 +15,7 @@ from osf_models.models.node import Node
 from osf_models.models.user import OSFUser
 from osf_models.modm_compat import Q
 from osf_models.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from website import settings
 from website.addons.base import logger, serializer
 from website.oauth.signals import oauth_complete
 from website.util import waterbutler_url_for
