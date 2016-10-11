@@ -88,3 +88,9 @@ sendgrid-django==2.0.0
 # Analytics requirements
 keen==0.3.21
 python-geoip-geolite2==2015.0303
+
+# OSF models
+git+https://github.com/cwisecarver/django-typed-models/archive/0.5.2.zip#egg=django-typed-models-0.5.2
+django-dirtyfields==1.2
+django-extensions==1.6.1
+psycopg2==2.6.2

@@ -1,1 +1,1 @@
-default_app_config = 'osf_models.apps.AppConfig'
+default_app_config = 'osf.apps.AppConfig'
