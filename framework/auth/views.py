@@ -233,6 +233,7 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
             # GET `/register` or '/login` with `campaign=institution`
             # unlike other campaigns, institution login serves as an alternative for authentication
             if campaign == 'institution':
+                next_url = web_url_for('dashboard', _absolute=True)
                 data['status_code'] = http.FOUND
                 data['next_url'] = cas.get_login_url(next_url, campaign='institution')
                 service_url = next_url
