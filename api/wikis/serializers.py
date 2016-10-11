@@ -17,6 +17,14 @@ class WikiSerializer(JSONAPISerializer):
         serializer = NodeWikiSerializer(data, context=self.context)
         return NodeWikiSerializer.to_representation(serializer, data)
 
+    def get_absolute_url(self, obj):
+        return absolute_reverse(
+            view_name='wikis:wiki-detail',
+            kwargs={
+                'version': self.context['request'].parser_context['kwargs']['version']
+            }
+        )
+
 
 class NodeWikiSerializer(JSONAPISerializer):
 

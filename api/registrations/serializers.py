@@ -17,7 +17,6 @@ from api.nodes.serializers import NodeContributorsSerializer, NodeTagField
 from api.base.serializers import (IDField, RelationshipField, LinksField, HideIfWithdrawal,
                                   FileCommentRelationshipField, NodeFileHyperLinkField, HideIfRegistration,
                                   JSONAPIListField, ShowIfVersion,)
-from api.wikis.serializers import NodeWikiSerializer
 
 
 class BaseRegistrationSerializer(NodeSerializer):
