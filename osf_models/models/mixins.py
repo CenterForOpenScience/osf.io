@@ -1,14 +1,11 @@
 import pytz
-from django.db import models
 from django.apps import apps
-
-from osf_models.models.tag import Tag
+from django.db import models
+from framework.analytics import increment_user_activity_counters
 from osf_models.models.node_relation import NodeRelation
 from osf_models.models.nodelog import NodeLog
-from website.exceptions import (
-    NodeStateError,
-)
-from framework.analytics import increment_user_activity_counters
+from osf_models.models.tag import Tag
+from website.exceptions import NodeStateError
 
 
 class Versioned(models.Model):
@@ -123,11 +120,27 @@ class Taggable(models.Model):
 # TODO: Implement me
 class AddonModelMixin(models.Model):
 
-    def add_addon(self, *args, **kwargs):
-        return None
+    # from addons.base.apps import BaseAddonConfig
+    settings_type = None
+    ADDONS_AVAILABLE = [config for config in apps.get_app_configs() if config.name.startswith('addons.') and
+        config.label != 'base']
+
+    class Meta:
+        abstract = True
+
+    @classmethod
+    def get_addon_key(cls, config):
+        return 2 << cls.ADDONS_AVAILABLE.index(config)
+
+    @property
+    def addons(self):
+        return self.get_addons()
 
     def get_addons(self):
-        return []
+        return filter(None, [
+            self.get_addon(config.label)
+            for config in self.ADDONS_AVAILABLE
+        ])
 
     def has_addon(self, name):
         return True
@@ -135,17 +148,55 @@ class AddonModelMixin(models.Model):
     def get_addon_names(self):
         return [each.name for each in self.get_addons()]
 
-    def get_or_add_addon(self, *args, **kwargs):
+    def get_or_add_addon(self, name, *args, **kwargs):
+        addon = self.get_addon(name)
+        if addon:
+            return addon
+        return self.add_addon(name, *args, **kwargs)
+
+    def get_addon(self, name, deleted=False):
+        try:
+            settings = self._settings_model(name).objects.get(owner=self)
+            if not settings.deleted or deleted:
+                return settings
+        except self._settings_model(name).DoesNotExist:
+            pass
         return None
 
-    def get_addon(self, *args, **kwargs):
-        return None
+    def add_addon(self, name):
+        addon = self.get_addon(name, deleted=True)
+        if addon:
+            if addon.deleted:
+                addon.undelete(save=True)
+                return addon
+
+        config = apps.get_app_config(name)
+        model = self._settings_model(name, config=config)
+        ret = model(owner=self)
+        ret.on_add()
+        ret.save()  # TODO This doesn't feel right
+        return ret
 
     def config_addons(self, config, auth=None, save=True):
         pass
 
-    class Meta:
-        abstract = True
+    def delete_addon(self, name, auth=None):
+        addon = self.get_addon(name)
+        if not addon:
+            return False
+        # TODO
+        # config = apps.get_app_config(name)
+        # if self._meta.model_name in config.added_mandatory:
+        #     raise ValueError('Cannot delete mandatory add-on.')
+        if getattr(addon, 'external_account', None):
+            addon.deauthorize(auth=auth)
+        addon.delete(save=True)
+        return True
+
+    def _settings_model(self, name, config=None):
+        if not config:
+            config = apps.get_app_config(name)
+        return getattr(config, '{}_settings'.format(self.settings_type))
 
 
 class NodeLinkMixin(models.Model):

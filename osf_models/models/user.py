@@ -102,7 +102,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         '_id': 'guids___id',
         'system_tags': 'tags',
     }
-
+    settings_type = 'user'  # Needed for addons
     USERNAME_FIELD = 'username'
 
     # Node fields that trigger an update to the search engine on save

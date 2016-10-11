@@ -89,6 +89,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     #: Whether this is a pointer or not
     primary = True
+    settings_type = 'node'  # Needed for addons
 
     FIELD_ALIASES = {
         # TODO: Find a better way
@@ -2394,6 +2395,22 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         #     )
         # if save:
         #     self.save()
+
+    def add_addon(self, name, auth, log=True):
+        ret = super(AbstractNode, self).add_addon(name)
+        if ret and log:
+            self.add_log(
+                action=NodeLog.ADDON_ADDED,
+                params={
+                    'project': self.parent_id,
+                    'node': self.id,
+                    'addon': ret.__class__._meta.app_config.full_name,
+                },
+                auth=auth,
+                save=False,
+            )
+            self.save()  # TODO Required?
+        return ret
 
 
 class Node(AbstractNode):

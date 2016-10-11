@@ -100,7 +100,7 @@ class BaseModel(models.Model):
             return cls.objects.filter(to_django_query(query, model_cls=cls))
 
     @classmethod
-    def remove(cls, query):
+    def remove(cls, query=None):
         return cls.find(query).delete()
 
     @classmethod
