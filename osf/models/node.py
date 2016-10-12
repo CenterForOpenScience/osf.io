@@ -15,7 +15,7 @@ from dirtyfields import DirtyFieldsMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
-from django.db.models.signals import post_save
+from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 from django.utils import timezone
 from keen import scoped_keys
@@ -198,6 +198,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                    through_fields=('parent', 'child'),
                                    related_name='parent_nodes')
 
+    # Cached parent of this node; gets set in a pre_save listener and on creation
+    parent_node = models.ForeignKey('AbstractNode', on_delete=models.SET_NULL,
+                                    blank=True, null=True, db_index=True)
+
     @property
     def nodes(self):
         """Return ordered generator of nodes."""
@@ -221,15 +225,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         filter_kwargs = {'child__{}'.format(key): val for key, val in kwargs.items()}
         return (nr.child for nr in NodeRelation.objects.filter(parent=self,
                                                                **filter_kwargs).select_related('child'))
-
-    # TODO: This doesn't work for node links yet
-    @property
-    def parent_node(self):
-        node_rel = NodeRelation.objects.filter(
-            child=self,
-            is_node_link=False
-        ).first()
-        return node_rel.parent if node_rel else None
 
     @property
     def linked_nodes(self):
@@ -2572,3 +2567,14 @@ def set_parent(sender, instance, *args, **kwargs):
             child=instance,
             is_node_link=False
         )
+        instance.parent_node = instance._parent
+
+@receiver(pre_save, sender=Collection)
+@receiver(pre_save, sender=Node)
+def update_parent_node(sender, instance, *args, **kwargs):
+    node_rel = NodeRelation.objects.filter(
+        child=instance,
+        is_node_link=False
+    ).first()
+    parent = node_rel.parent if node_rel else None
+    instance.parent_node = parent

@@ -1,7 +1,6 @@
 import urlparse
 import uuid
 
-import functools
 from django.db import models
 from django.utils import timezone
 from osf.models import base
@@ -12,7 +11,8 @@ from framework.auth import cas
 
 from website import settings
 
-generate_client_secret = functools.partial(random_string, length=40)
+def generate_client_secret():
+    return random_string(length=40)
 
 
 class ApiOAuth2Scope(base.ObjectIDMixin, base.BaseModel):
@@ -116,6 +116,8 @@ class ApiOAuth2Application(base.ObjectIDMixin, base.BaseModel):
     def get_absolute_url(self):
         return self.absolute_api_v2_url
 
+def generate_token_id():
+    return random_string(length=70)
 
 class ApiOAuth2PersonalToken(base.ObjectIDMixin, base.BaseModel):
     """Information for user-created personal access tokens
@@ -129,7 +131,7 @@ class ApiOAuth2PersonalToken(base.ObjectIDMixin, base.BaseModel):
     # /TODO DELETE ME POST MIGRATION
     # Name of the field being `token_id` is a CAS requirement.
     # This is the actual value of the token that's used to authenticate
-    token_id = models.CharField(max_length=70, default=functools.partial(random_string, length=70),
+    token_id = models.CharField(max_length=70, default=generate_token_id,
                                   unique=True)
 
     owner = models.ForeignKey('OSFUser', db_index=True, blank=True, null=True, on_delete=models.SET_NULL)
