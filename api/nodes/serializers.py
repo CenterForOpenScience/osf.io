@@ -299,8 +299,9 @@ class NodeSerializer(JSONAPISerializer):
 
     def get_node_count(self, obj):
         auth = get_user_auth(self.context['request'])
-        nodes = [node for node in obj.nodes.all() if node.can_view(auth) and node.primary and not node.is_deleted]
-        return len(nodes)
+        return len([node_relation
+                    for node_relation in obj.node_relations.filter(child__is_deleted=False, is_node_link=False)
+                    if node_relation.child.can_view(auth)])
 
     def get_contrib_count(self, obj):
         return len(obj.contributors)

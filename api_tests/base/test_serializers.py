@@ -333,14 +333,7 @@ class TestRelationshipField:
         field = data['relationships']['registered_from']['links']
         assert_in('/v2/nodes/{}/'.format(node._id), field['related']['href'])
 
-        registration_registration = factories.RegistrationFactory(project=registration)
-        data = self.BasicNodeSerializer(registration_registration, context={'request': req}).data['data']
-        field = data['relationships']['registered_from']['links']
-        assert_in('/v2/registrations/{}/'.format(registration._id), field['related']['href'])
-
-
-@pytest.mark.django_db
-class TestShowIfVersion:
+class TestShowIfVersion(ApiTestCase):
 
     def setUp(self):
         super(TestShowIfVersion, self).setUp()

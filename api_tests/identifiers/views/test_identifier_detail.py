@@ -33,10 +33,6 @@ class TestIdentifierDetail(ApiTestCase):
         self.node_res = self.app.get(self.node_url)
         self.node_data = self.node_res.json['data']
 
-    def test_identifier_detail_success(self):
-        assert_equal(self.res.status_code, 200)
-        assert_equal(self.res.content_type, 'application/vnd.api+json')
-
     def test_identifier_detail_success_registration(self):
         assert_equal(self.registration_res.status_code, 200)
         assert_equal(self.registration_res.content_type, 'application/vnd.api+json')
