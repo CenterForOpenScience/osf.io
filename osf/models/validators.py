@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 import re
+
 from django.core.validators import URLValidator, validate_email as django_validate_email
 from django.core.exceptions import ValidationError as DjangoValidationError
-from osf.exceptions import ValidationError, ValidationValueError, reraise_django_validation_errors
-
-from osf.utils.base import strip_html
 from django.utils.deconstruct import deconstructible
 
 from website.notifications.constants import NOTIFICATION_TYPES
+from website.util.sanitize import strip_html
 from website import settings
+
+from osf.exceptions import ValidationError, ValidationValueError, reraise_django_validation_errors
 
 
 def string_required(value):

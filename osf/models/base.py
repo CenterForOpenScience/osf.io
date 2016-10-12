@@ -15,7 +15,6 @@ from django.dispatch import receiver
 from django.utils import timezone
 from osf.exceptions import ValidationError
 from osf.modm_compat import to_django_query
-from osf.utils.base import generate_object_id
 from osf.utils.fields import LowercaseCharField
 
 ALPHABET = '23456789abcdefghjkmnpqrstuvwxyz'
@@ -38,6 +37,8 @@ def generate_guid(length=5):
                 # valid and unique guid
                 return guid_id
 
+def generate_object_id():
+    return str(bson.ObjectId())
 
 class MODMCompatibilityQuerySet(models.QuerySet):
     def sort(self, *fields):
