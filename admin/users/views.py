@@ -287,44 +287,47 @@ class UserWorkshopFormView(OSFAdmin, FormView):
         :param csv_file: Comma separated
         :return: A list
         """
-        final = []
-        for i, temp_line in enumerate(csv_file):
-            try:
-                line = temp_line.strip().split(',')[:-1]
-            except UnicodeDecodeError as e:  # catches unicode error
-                error = 'Unable to parse line: {}'.format(e)
-                line = [0] * 15
-                line[0] = error
-                final.append(line)
+        result = []
+        csv_reader = csv.reader(csv_file)
+
+        for index, line in enumerate(csv_reader):
+            if index == 0:
+                line.extend([
+                    'User ID', 'User Logs', 'User Nodes', 'Last Active Date'
+                ])
+                result.append(line)
                 continue
-            if i == 0:
-                line.extend(['osf id', 'number of logs', 'number of nodes',
-                             'last active'])
-                final.append(line)
-                continue
+
             email = line[5]
-            user_list_of_one = User.find_by_email(email)
-            if len(user_list_of_one) == 0:
+            user_list = User.find_by_email(email=email)
+            user = user_list[0] if user_list else None
+
+            if not user:
                 line.extend(['', 0, 0, ''])
-                final.append(line)
+                result.append(line)
                 continue
-            user = user_list_of_one[0]
-            date = datetime.strptime(line[1], '%m/%d/%y')
-            query = Q('user', 'eq', user.pk)
-            query &= Q('date', 'gt', date)
-            logs = list(NodeLog.find(query))
+
+            workshop_date = datetime.strptime(line[1], '%m/%d/%y')
+            # does this include the workshop date? >=?
+            query = Q('user', 'eq', user.pk) & Q('date', 'gt', workshop_date)
+            user_logs_since_workshop = list(NodeLog.find(query))
+
             try:
-                last_log_date = logs[-1].date.strftime('%m/%d/%Y')
+                last_log_date = user_logs_since_workshop[-1].date.strftime('%m/%d/%y')
                 nodes = []
-                for log in logs:
+                for log in user_logs_since_workshop:
                     if log.node.pk not in nodes:
                         nodes.append(log.node.pk)
             except IndexError:
                 last_log_date = ''
                 nodes = []
-            line.extend([user.pk, len(logs), len(nodes), last_log_date])
-            final.append(line)
-        return final
+
+            line.extend([
+                user.pk, len(user_logs_since_workshop), len(nodes), last_log_date
+            ])
+            result.append(line)
+
+        return result
 
     def form_invalid(self, form):
         super(UserWorkshopFormView, self).form_invalid(form)
