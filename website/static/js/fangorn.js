@@ -520,7 +520,7 @@ function doItemOp(operation, to, from, rename, conflict) {
             action: 'move',
             path: to.data.path || '/',
             conflict: conflict,
-            resource: to.data.resource,
+            resource: to.data.resource || to.data.nodeId,
             provider: to.data.provider
         };
     }
