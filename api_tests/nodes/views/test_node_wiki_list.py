@@ -137,6 +137,30 @@ class TestNodeWikiList(ApiWikiTestCase):
         assert_in(expected_nodes_relationship_url, res.json['data'][0]['relationships']['node']['links']['related']['href'])
         assert_in(expected_comments_relationship_url, res.json['data'][0]['relationships']['comments']['links']['related']['href'])
 
+    def test_registration_wikis_not_returned_from_nodes_endpoint(self):
+        self._set_up_public_project_with_wiki_page()
+        self._set_up_public_registration_with_wiki_page()
+        res = self.app.get(self.public_url)
+        node_relationships = [
+            node_wiki['relationships']['node']['links']['related']['href']
+            for node_wiki in res.json['data']
+        ]
+        assert_equal(res.status_code, 200)
+        assert_equal(len(node_relationships), 1)
+        assert_in(self.public_project._id, node_relationships[0])
+
+    def test_node_wikis_not_returned_from_registrations_endpoint(self):
+        self._set_up_public_project_with_wiki_page()
+        self._set_up_public_registration_with_wiki_page()
+        res = self.app.get(self.public_registration_url)
+        node_relationships = [
+            node_wiki['relationships']['node']['links']['related']['href']
+            for node_wiki in res.json['data']
+            ]
+        assert_equal(res.status_code, 200)
+        assert_equal(len(node_relationships), 1)
+        assert_in(self.public_registration._id, node_relationships[0])
+
 
 class TestFilterNodeWikiList(ApiTestCase):
 

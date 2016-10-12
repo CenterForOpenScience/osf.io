@@ -10,24 +10,6 @@ from framework.auth.core import Auth
 
 class WikiSerializer(JSONAPISerializer):
 
-    def to_representation(self, data, envelope='data'):
-        if data.node.is_registration:
-            serializer = RegistrationWikiSerializer(data, context=self.context)
-            return RegistrationWikiSerializer.to_representation(serializer, data)
-        serializer = NodeWikiSerializer(data, context=self.context)
-        return NodeWikiSerializer.to_representation(serializer, data)
-
-    def get_absolute_url(self, obj):
-        return absolute_reverse(
-            view_name='wikis:wiki-detail',
-            kwargs={
-                'version': self.context['request'].parser_context['kwargs']['version']
-            }
-        )
-
-
-class NodeWikiSerializer(JSONAPISerializer):
-
     filterable_fields = frozenset([
         'name',
         'date_modified'
@@ -48,18 +30,6 @@ class NodeWikiSerializer(JSONAPISerializer):
     user = RelationshipField(
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<user._id>'}
-    )
-
-    node = RelationshipField(
-        related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<node._id>'}
-    )
-
-    comments = RelationshipField(
-        related_view='nodes:node-comments',
-        related_view_kwargs={'node_id': '<node._id>'},
-        related_meta={'unread': 'get_unread_comments_count'},
-        filter={'target': '<pk>'}
     )
 
     # LinksField.to_representation adds link to "self"
@@ -103,7 +73,22 @@ class NodeWikiSerializer(JSONAPISerializer):
         })
 
 
-class RegistrationWikiSerializer(NodeWikiSerializer):
+class NodeWikiSerializer(WikiSerializer):
+
+    node = RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<node._id>'}
+    )
+
+    comments = RelationshipField(
+        related_view='nodes:node-comments',
+        related_view_kwargs={'node_id': '<node._id>'},
+        related_meta={'unread': 'get_unread_comments_count'},
+        filter={'target': '<pk>'}
+    )
+
+
+class RegistrationWikiSerializer(WikiSerializer):
 
     node = RelationshipField(
         related_view='registrations:registration-detail',
@@ -118,8 +103,15 @@ class RegistrationWikiSerializer(NodeWikiSerializer):
     )
 
 
-class WikiDetailSerializer(WikiSerializer):
+class NodeWikiDetailSerializer(NodeWikiSerializer):
     """
-    Overrides Wiki Serializer to make id required.
+    Overrides NodeWikiSerializer to make id required.
+    """
+    id = IDField(source='_id', required=True)
+
+
+class RegistrationWikiDetailSerializer(RegistrationWikiSerializer):
+    """
+    Overrides NodeWikiSerializer to make id required.
     """
     id = IDField(source='_id', required=True)
