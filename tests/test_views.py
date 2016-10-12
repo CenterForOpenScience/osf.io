@@ -2087,6 +2087,7 @@ class TestAddingContributorViews(OsfTestCase):
         project.fork_node(auth=Auth(project.creator))
         assert_false(send_mail.called)
 
+    @pytest.mark.skip('Unskip when wiki addon is implemented')
     @mock.patch('website.mails.send_mail')
     def test_templating_project_does_not_send_contributor_added_email(self, send_mail):
         project = ProjectFactory()
@@ -3026,7 +3027,7 @@ class TestPointerViews(OsfTestCase):
         )
         self.project.reload()
         assert_equal(
-            self.project.nodes.count(),
+            len(list(self.project.nodes)),
             0
         )
 
