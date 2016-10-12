@@ -965,8 +965,8 @@ def node_child_tree(user, node_ids):
         children.extend(node_child_tree(
             user,
             list(node.node_relations.select_related('child')
-                 .exclude(child__is_deleted=False)
-                 .values_list('child__guid_string', flat=True))
+                 .exclude(child__is_deleted=True)
+                 .values_list('child__guids___id', flat=True))
         ))
         item = {
             'node': {
