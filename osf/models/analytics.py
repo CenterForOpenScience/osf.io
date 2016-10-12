@@ -80,42 +80,42 @@ class PageCounter(BaseModel):
         visited_by_date = session.data.get('visited_by_date', {'date': date_string, 'pages': []})
 
         with transaction.atomic():
-            instance, created = cls.objects.get_or_create(_id=cleaned_page)
+            model_instance, created = cls.objects.select_for_update().get_or_create(_id=cleaned_page)
 
             # if they visited something today
             if date_string == visited_by_date['date']:
                 # if they haven't visited this page today
                 if cleaned_page not in visited_by_date['pages']:
-                    # if the instance has today in it
-                    if date_string in instance.date.keys():
+                    # if the model_instance has today in it
+                    if date_string in model_instance.date.keys():
                         # increment the number of unique visitors for today
-                        instance.date[date_string]['unique'] += 1
+                        model_instance.date[date_string]['unique'] += 1
                     else:
                         # set the number of unique visitors for today to 1
-                        instance.date[date_string] = dict(unique=1)
+                        model_instance.date[date_string] = dict(unique=1)
             # if they haven't visited something today
             else:
                 # set their visited by date to blank
                 visited_by_date['date'] = date_string
                 visited_by_date['pages'] = []
-                # if the instance has today in it
-                if date_string in instance.date.keys():
+                # if the model_instance has today in it
+                if date_string in model_instance.date.keys():
                     # increment the number of unique visitors for today
-                    instance.date[date_string]['unique'] += 1
+                    model_instance.date[date_string]['unique'] += 1
                 else:
                     # set the number of unique visitors to 1
-                    instance.date[date_string] = dict(unique=1)
+                    model_instance.date[date_string] = dict(unique=1)
 
             # update their sessions
             visited_by_date['pages'].append(cleaned_page)
             session.data['visited_by_date'] = visited_by_date
 
-            if date_string in instance.date.keys():
-                if 'total' not in instance.date[date_string].keys():
-                    instance.date[date_string].update(total=0)
-                instance.date[date_string]['total'] += 1
+            if date_string in model_instance.date.keys():
+                if 'total' not in model_instance.date[date_string].keys():
+                    model_instance.date[date_string].update(total=0)
+                model_instance.date[date_string]['total'] += 1
             else:
-                instance.date[date_string] = dict(total=1)
+                model_instance.date[date_string] = dict(total=1)
 
             # if a download counter is being updated, only perform the update
             # if the user who is downloading isn't a contributor to the project
@@ -124,17 +124,17 @@ class PageCounter(BaseModel):
                 contributors = node_info['contributors']
                 current_user = session.data.get('auth_user_id')
                 if current_user and current_user in contributors:
-                    instance.save()
+                    model_instance.save()
                     return
 
             visited = session.data.get('visited', [])
             if page not in visited:
-                instance.unique += 1
+                model_instance.unique += 1
                 visited.append(page)
                 session.data['visited'] = visited
-            instance.total += 1
+            model_instance.total += 1
 
-            instance.save()
+            model_instance.save()
 
     @classmethod
     def get_basic_counters(cls, page):
