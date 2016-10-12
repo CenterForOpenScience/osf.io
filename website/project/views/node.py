@@ -1304,8 +1304,10 @@ def fork_pointer(auth, node, **kwargs):
     or not present in `nodes`.
 
     """
+    from osf.models import NodeRelation
+
     pointer_id = request.json.get('pointerId')
-    pointer = Node.load(pointer_id)
+    pointer = NodeRelation.load(pointer_id)
 
     if pointer is None:
         # TODO: Change this to 404?
