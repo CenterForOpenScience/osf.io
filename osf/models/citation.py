@@ -25,7 +25,7 @@ class CitationStyle(BaseModel):
     These are parsed from .csl files, so that metadata fields can be indexed.
     """
 
-    primary_identifier_name = 'object_id'
+    primary_identifier_name = '_id'
 
     # TODO DELETE ME POST MIGRATION
     modm_model_path = 'website.citations.models.CitationStyle'
