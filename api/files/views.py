@@ -12,6 +12,7 @@ from website.files.models import (
 )
 
 from api.base.exceptions import Gone
+from api.base.settings import REST_FRAMEWORK, MAX_PAGE_SIZE
 from api.base.permissions import PermissionWithGetter
 from api.base.utils import get_object_or_error
 from api.base.views import JSONAPIBaseView
@@ -332,7 +333,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
 class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
     """List of versions for the requested file. *Read-only*.
 
-    Paginated list of file versions, ordered by the date each version was created/modified.
+    Paginated list of file versions, in descending order by the date each version was created.
 
     <!--- Copied Spiel from FileVersionDetail -->
 
@@ -356,6 +357,12 @@ class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
         content_type  string   MIME content-type for the file. May be null if unavailable.
         date_modified date     date that the file was last modified.
         date_created  date     date that the file was created
+        extra         object            may contain additional data beyond what's described here,
+                                        depending on the provider
+          downloads   integer           count of the number times the file has been downloaded
+          hashes      object
+            md5       string            md5 hash of file
+            sha256    string            SHA-256 hash of file
 
     ##Links
 
@@ -368,6 +375,8 @@ class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
     ##Query Params
 
     + `page=<Int>` -- page number of results to view, default 1
+
+    + `page[size]=<Int>` -- page size of the results, default 10
 
     + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
 
@@ -389,7 +398,10 @@ class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
     view_category = 'files'
     view_name = 'file-versions'
 
+    ordering = ('-date_created',)  # default ordering
+
     def get_queryset(self):
+        page_size = min(int(self.request.query_params.get('page[size]', REST_FRAMEWORK['PAGE_SIZE'])), MAX_PAGE_SIZE)
         return self.get_file().versions
 
 
