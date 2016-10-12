@@ -7,7 +7,7 @@ from website.models import Node, Pointer, User, Institution, DraftRegistration, 
 from website.project.metadata.utils import is_prereg_admin
 from website.util import permissions as osf_permissions
 
-from api.base.utils import get_user_auth
+from api.base.utils import get_user_auth, is_deprecated
 
 
 class ContributorOrPublic(permissions.BasePermission):
@@ -180,3 +180,26 @@ class ReadOnlyIfRegistration(permissions.BasePermission):
         if obj.is_registration:
             return request.method in permissions.SAFE_METHODS
         return True
+
+
+class ShowIfVersion(permissions.BasePermission):
+
+    def __init__(self, min_version, max_version, deprecated_message):
+        super(ShowIfVersion, self).__init__()
+        self.min_version = min_version
+        self.max_version = max_version
+        self.deprecated_message = deprecated_message
+
+    def has_object_permission(self, request, view, obj):
+        if is_deprecated(request.version, self.min_version, self.max_version):
+            raise exceptions.NotFound(detail=self.deprecated_message)
+        return True
+
+
+class NodeLinksShowIfVersion(ShowIfVersion):
+
+    def __init__(self):
+        min_version = '2.0'
+        max_version = '2.0'
+        deprecated_message = 'This feature is deprecated as of version 2.1'
+        super(NodeLinksShowIfVersion, self).__init__(min_version, max_version, deprecated_message)

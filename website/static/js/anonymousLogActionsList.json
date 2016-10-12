@@ -74,6 +74,6 @@
     "osf_storage_file_removed" : "A user removed a file from OSF Storage in a project",
     "affiliated_institution_added": "A user added an affiliation to a project",
     "affiliated_institution_removed": "A user removed an affiliation from a project",
-    "preprint_initiated": "A user initiated a preprint of a project.",
-    "preprint_file_updated": "A user updated the primary file of a preprint."
+    "preprint_initiated": "A user made a project a preprint",
+    "preprint_file_updated": "A user updated the primary file of a preprint"
 }

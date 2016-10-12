@@ -147,9 +147,11 @@ function confirmEmails(emailsToAdd) {
                             confirmEmails(emailsToAdd.slice(1));
                         }).fail(function (xhr, textStatus, error) {
                             Raven.captureMessage('Could not remove email', {
-                                url: confirmedEmailURL,
-                                textStatus: textStatus,
-                                error: error
+                                extra: {
+                                    url: confirmedEmailURL,
+                                    textStatus: textStatus,
+                                    error: error
+                                }
                             });
                             $osf.growl('Error',
                                 cancelFailMessage,
@@ -170,9 +172,11 @@ function confirmEmails(emailsToAdd) {
                             confirmEmails(emailsToAdd.slice(1));
                         }).fail(function (xhr, textStatus, error) {
                             Raven.captureMessage('Could not add email', {
-                                url: confirmedEmailURL,
-                                textStatus: textStatus,
-                                error: error
+                                extra: {
+                                    url: confirmedEmailURL,
+                                    textStatus: textStatus,
+                                    error: error
+                                }
                             });
                             $osf.growl('Error',
                                 confirmFailMessage,

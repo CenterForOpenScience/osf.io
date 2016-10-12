@@ -36,8 +36,14 @@ function _poTitleColumn(item) {
     };
     var node = item.data; // Where actual data of the node is
     var css = ''; // Keep for future expandability -- Remove: item.data.isSmartFolder ? 'project-smart-folder smart-folder' : '';
+    var preprintLinkPre = '/preprints/';
     if (item.data.archiving) { // TODO check if this variable will be available
         return  m('span', {'class': 'registration-archiving'}, node.attributes.title + ' [Archiving]');
+    } else if (node.attributes.preprint){
+        return [ m('a.fg-file-links', { 'class' : css, href : preprintLinkPre + node.id, 'data-nodeID' : node.id, 'data-nodeTitle': node.attributes.title,'data-nodeType': node.type, onclick : function(event) {
+            preventSelect.call(this, event);
+            $osf.trackClick('myProjects', 'projectOrganizer', 'navigate-to-preprint');
+        }}, node.attributes.title) ];
     } else if(node.links.html){
         return [ m('a.fg-file-links', { 'class' : css, href : node.links.html, 'data-nodeID' : node.id, 'data-nodeTitle': node.attributes.title, 'data-nodeType': node.type, onclick : function(event) {
             preventSelect.call(this, event);
@@ -127,7 +133,6 @@ function _poResolveRows(item) {
     var mobile = window.innerWidth < MOBILE_WIDTH; // true if mobile view
     var tb = this;
     var defaultColumns = [];
-
     if(this.isMultiselected(item.id)){
         item.css = 'fangorn-selected';
     } else {
@@ -333,7 +338,8 @@ var tbOptions = {
     },
     onmultiselect : _poMultiselect,
     resolveIcon : function _poIconView(item) { // Project Organizer doesn't use icons
-        return m('i.' + iconmap.projectComponentIcons[item.data.attributes.category]);
+        var iconType = item.data.attributes.preprint ? 'preprint' : item.data.attributes.category;
+        return m('i.' + iconmap.projectComponentIcons[iconType]);
     },
     resolveToggle : _poResolveToggle,
     resolveLazyloadUrl : function(item) {

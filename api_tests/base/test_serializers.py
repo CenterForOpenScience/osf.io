@@ -9,7 +9,7 @@ import re
 
 from tests.base import ApiTestCase, DbTestCase
 from osf_tests import factories
-from tests.utils import make_drf_request
+from tests.utils import make_drf_request_with_version
 
 from api.base.settings.defaults import API_BASE
 from api.base.serializers import JSONAPISerializer
@@ -84,7 +84,8 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
             reg_field = RegistrationSerializer._declared_fields[field]
 
             if field not in visible_on_withdrawals and field not in non_registration_fields:
-                assert_true(isinstance(reg_field, base_serializers.HideIfWithdrawal))
+                assert_true(isinstance(reg_field, base_serializers.HideIfWithdrawal)
+                            or isinstance(reg_field, base_serializers.ShowIfVersion))
 
     def test_hide_if_registration_fields(self):
 
@@ -104,14 +105,13 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
 class TestNullLinks(ApiTestCase):
 
     def test_null_links_are_omitted(self):
-        req = make_drf_request()
+        req = make_drf_request_with_version(version='2.0')
         rep = FakeSerializer(FakeModel, context={'request': req}).data['data']
 
         assert_not_in('null_field', rep['links'])
         assert_in('valued_field', rep['links'])
         assert_not_in('null_link_field', rep['relationships'])
         assert_in('valued_link_field', rep['relationships'])
-
 
 
 class TestApiBaseSerializers(ApiTestCase):
@@ -285,7 +285,7 @@ class TestRelationshipField:
 
     # Regression test for https://openscience.atlassian.net/browse/OSF-4832
     def test_serializing_meta(self):
-        req = make_drf_request()
+        req = make_drf_request_with_version(version='2.0')
         project = factories.ProjectFactory()
         node = factories.NodeFactory(parent=project)
         data = self.BasicNodeSerializer(node, context={'request': req}).data['data']
@@ -296,7 +296,7 @@ class TestRelationshipField:
         assert_equal(meta['extra'], 'foo')
 
     def test_self_and_related_fields(self):
-        req = make_drf_request()
+        req = make_drf_request_with_version(version='2.0')
         project = factories.ProjectFactory()
         node = factories.NodeFactory(parent=project)
         data = self.BasicNodeSerializer(node, context={'request': req}).data['data']
@@ -306,7 +306,7 @@ class TestRelationshipField:
         assert_in('/v2/nodes/{}/'.format(node._id), relationship_field['related']['href'])
 
     def test_field_with_two_kwargs(self):
-        req = make_drf_request()
+        req = make_drf_request_with_version(version='2.0')
         project = factories.ProjectFactory()
         node = factories.NodeFactory(parent=project)
         data = self.BasicNodeSerializer(node, context={'request': req}).data['data']
@@ -314,7 +314,7 @@ class TestRelationshipField:
         assert_in('/v2/nodes/{}/node_links/{}/'.format(node._id, node._id), field['related']['href'])
 
     def test_field_with_non_attribute(self):
-        req = make_drf_request()
+        req = make_drf_request_with_version(version='2.0')
         project = factories.ProjectFactory()
         node = factories.NodeFactory(parent=project)
         data = self.BasicNodeSerializer(node, context={'request': req}).data['data']
@@ -322,7 +322,7 @@ class TestRelationshipField:
         assert_in('/v2/nodes/{}/children/'.format('12345'), field['related']['href'])
 
     def test_field_with_callable_related_attrs(self):
-        req = make_drf_request()
+        req = make_drf_request_with_version(version='2.0')
         project = factories.ProjectFactory()
         node = factories.NodeFactory(parent=project)
         data = self.BasicNodeSerializer(node, context={'request': req}).data['data']
@@ -332,3 +332,37 @@ class TestRelationshipField:
         data = self.BasicNodeSerializer(registration, context={'request': req}).data['data']
         field = data['relationships']['registered_from']['links']
         assert_in('/v2/nodes/{}/'.format(node._id), field['related']['href'])
+
+        registration_registration = factories.RegistrationFactory(project=registration)
+        data = self.BasicNodeSerializer(registration_registration, context={'request': req}).data['data']
+        field = data['relationships']['registered_from']['links']
+        assert_in('/v2/registrations/{}/'.format(registration._id), field['related']['href'])
+
+
+@pytest.mark.django_db
+class TestShowIfVersion:
+
+    def setUp(self):
+        super(TestShowIfVersion, self).setUp()
+        self.node = factories.NodeFactory()
+        self.registration = factories.RegistrationFactory()
+
+    def test_node_links_allowed_version_node_serializer(self):
+        req = make_drf_request_with_version(version='2.0')
+        data = NodeSerializer(self.node, context={'request': req}).data['data']
+        assert_in('node_links', data['relationships'])
+
+    def test_node_links_bad_version_node_serializer(self):
+        req = make_drf_request_with_version(version='2.1')
+        data = NodeSerializer(self.node, context={'request': req}).data['data']
+        assert_not_in('node_links', data['relationships'])
+
+    def test_node_links_allowed_version_registration_serializer(self):
+        req = make_drf_request_with_version(version='2.0')
+        data = RegistrationSerializer(self.registration, context={'request': req}).data['data']
+        assert_in('node_links', data['attributes'])
+
+    def test_node_links_bad_version_registration_serializer(self):
+        req = make_drf_request_with_version(version='2.1')
+        data = RegistrationSerializer(self.registration, context={'request': req}).data['data']
+        assert_not_in('node_links', data['attributes'])

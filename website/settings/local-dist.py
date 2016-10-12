@@ -24,9 +24,6 @@ EXTERNAL_EMBER_APPS = {
 SEARCH_ENGINE = 'elastic'
 ELASTIC_TIMEOUT = 10
 
-# Comment out to use SHARE in development
-USE_SHARE = False
-
 # Comment out to use celery in development
 USE_CELERY = False
 

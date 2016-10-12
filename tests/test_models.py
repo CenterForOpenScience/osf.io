@@ -4,6 +4,8 @@ import mock
 import unittest
 from nose.tools import *  # noqa (PEP8 asserts)
 
+import os.path
+import json
 import pytz
 import datetime
 import urlparse
@@ -92,35 +94,32 @@ class TestUserValidation(OsfTestCase):
         self.user.save()
         assert_equal(self.user.social['profileWebsites'], [])
 
-    def test_validate_social_valid_website_simple(self):
-        self.user.social = {'profileWebsites': ['http://cos.io/']}
-        self.user.save()
-        assert_equal(self.user.social['profileWebsites'], ['http://cos.io/'])
+    def test_validate_social_profile_website_many_different(self):
+        basepath = os.path.dirname(__file__)
+        url_data_path = os.path.join(basepath, '../website/static/urlValidatorTest.json')
+        with open(url_data_path) as url_test_data:
+            data = json.load(url_test_data)
 
-    def test_validate_social_valid_website_protocol(self):
-        self.user.social = {'profileWebsites': ['https://definitelyawebsite.com']}
-        self.user.save()
-        assert_equal(self.user.social['profileWebsites'], ['https://definitelyawebsite.com'])
+        fails_at_end = False
+        for should_pass in data["testsPositive"]:
+            try:
+                self.user.social = {'profileWebsites': [should_pass]}
+                self.user.save()
+                assert_equal(self.user.social['profileWebsites'], [should_pass])
+            except ValidationError:
+                fails_at_end = True
+                print('\"' + should_pass + '\" failed but should have passed while testing that the validator ' + data['testsPositive'][should_pass])
 
-    def test_validate_social_valid_website_ipv4(self):
-        self.user.social = {'profileWebsites': ['http://127.0.0.1']}
-        self.user.save()
-        assert_equal(self.user.social['profileWebsites'], ['http://127.0.0.1'])
-
-    def test_validate_social_valid_website_path(self):
-        self.user.social = {'profileWebsites': ['http://definitelyawebsite.com/definitelyapage/']}
-        self.user.save()
-        assert_equal(self.user.social['profileWebsites'], ['http://definitelyawebsite.com/definitelyapage/'])
-
-    def test_validate_social_valid_website_portandpath(self):
-        self.user.social = {'profileWebsites': ['http://127.0.0.1:5000/hello/']}
-        self.user.save()
-        assert_equal(self.user.social['profileWebsites'], ['http://127.0.0.1:5000/hello/'])
-
-    def test_validate_social_valid_website_querystrings(self):
-        self.user.social = {'profileWebsites': ['http://definitelyawebsite.com?real=yes&page=definitely']}
-        self.user.save()
-        assert_equal(self.user.social['profileWebsites'], ['http://definitelyawebsite.com?real=yes&page=definitely'])
+        for should_fail in data["testsNegative"]:
+            self.user.social = {'profileWebsites': [should_fail]}
+            try:
+                with assert_raises(ValidationError):
+                    self.user.save()
+            except AssertionError:
+                fails_at_end = True
+                print('\"' + should_fail + '\" passed but should have failed while testing that the validator ' + data['testsNegative'][should_fail])
+        if fails_at_end:
+            raise
 
     def test_validate_multiple_profile_websites_valid(self):
         self.user.social = {'profileWebsites': ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com']}
@@ -566,7 +565,7 @@ class TestUser(OsfTestCase):
         valid_token = u.get_confirmation_token('foo@bar.com')
         assert_true(u.get_unconfirmed_email_for_token(valid_token))
         manual_expiration = datetime.datetime.utcnow() - datetime.timedelta(0, 10)
-        u._set_email_token_expiration(valid_token, expiration=manual_expiration)
+        u.email_verifications[valid_token]['expiration'] = manual_expiration
 
         with assert_raises(auth_exc.ExpiredTokenError):
             u.get_unconfirmed_email_for_token(valid_token)
@@ -4590,6 +4589,15 @@ class TestUnregisteredUser(OsfTestCase):
         valid = self.user.get_unclaimed_record(self.project._primary_key)['token']
         assert_true(self.user.verify_claim_token(valid, project_id=self.project._primary_key))
         assert_false(self.user.verify_claim_token('invalidtoken', project_id=self.project._primary_key))
+
+    def test_verify_claim_token_with_no_expiration_date(self):
+        # Legacy records may not have an 'expires' key
+        self.add_unclaimed_record()
+        record = self.user.get_unclaimed_record(self.project._primary_key)
+        del record['expires']
+        self.user.save()
+        token = record['token']
+        assert_true(self.user.verify_claim_token(token, project_id=self.project._primary_key))
 
     def test_claim_contributor(self):
         self.add_unclaimed_record()

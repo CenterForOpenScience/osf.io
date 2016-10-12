@@ -1,4 +1,4 @@
-
+from website.conferences.model import DEFAULT_FIELD_NAMES
 
 def serialize_meeting(meeting):
     is_meeting = True
@@ -8,7 +8,7 @@ def serialize_meeting(meeting):
         'endpoint': meeting.endpoint,
         'name': meeting.name,
         'info_url': meeting.info_url,
-        'homepage_link_text': meeting.field_names['homepage_link_text'],
+        'homepage_link_text': meeting.field_names.get('homepage_link_text', DEFAULT_FIELD_NAMES.get('homepage_link_text', '')),
         'logo_url': meeting.logo_url,
         'active': meeting.active,
         'admins': ', '.join([u.username for u in meeting.admins]),
@@ -19,14 +19,14 @@ def serialize_meeting(meeting):
         'location': meeting.location,
         'start_date': meeting.start_date,
         'end_date': meeting.end_date,
-        'submission1': meeting.field_names['submission1'],
-        'submission2': meeting.field_names['submission2'],
-        'submission1_plural': meeting.field_names['submission1_plural'],
-        'submission2_plural': meeting.field_names['submission2_plural'],
-        'meeting_title_type': meeting.field_names['meeting_title_type'],
-        'add_submission': meeting.field_names['add_submission'],
-        'mail_subject': meeting.field_names['mail_subject'],
-        'mail_message_body': meeting.field_names['mail_message_body'],
-        'mail_attachment': meeting.field_names['mail_attachment'],
+        'submission1': meeting.field_names.get('submission1', DEFAULT_FIELD_NAMES.get('submission1', '')),
+        'submission2': meeting.field_names.get('submission2', DEFAULT_FIELD_NAMES.get('submission2', '')),
+        'submission1_plural': meeting.field_names.get('submission1_plural', DEFAULT_FIELD_NAMES.get('submission1_plural', '')),
+        'submission2_plural': meeting.field_names.get('submission2_plural', DEFAULT_FIELD_NAMES.get('submission2_plural', '')),
+        'meeting_title_type': meeting.field_names.get('meeting_title_type', DEFAULT_FIELD_NAMES.get('meeting_title_type', '')),
+        'add_submission': meeting.field_names.get('add_submission', DEFAULT_FIELD_NAMES.get('add_submission', '')),
+        'mail_subject': meeting.field_names.get('mail_subject', DEFAULT_FIELD_NAMES.get('mail_subject', '')),
+        'mail_message_body': meeting.field_names.get('mail_message_body', DEFAULT_FIELD_NAMES.get('mail_message_body', '')),
+        'mail_attachment': meeting.field_names.get('mail_attachment', DEFAULT_FIELD_NAMES.get('mail_attachment', '')),
         'is_meeting': is_meeting,
     }

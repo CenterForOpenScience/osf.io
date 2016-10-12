@@ -2,8 +2,8 @@
 
 import httplib
 import logging
-from datetime import datetime
 
+from django.utils import timezone
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
@@ -78,18 +78,20 @@ def add_poster_by_email(conference, message):
         user, user_created = get_or_create_user(
             message.sender_display,
             message.sender_email,
-            message.is_spam,
+            is_spam=message.is_spam,
         )
         if user_created:
             users_created.append(user)
             user.add_system_tag('osf4m')
+            user.date_last_login = timezone.now()
+            user.save()
+            # must save the user first before accessing user._id
             set_password_url = web_url_for(
                 'reset_password_get',
-                verification_key=user.verification_key,
+                uid=user._id,
+                token=user.verification_key_v2['token'],
                 _absolute=True,
             )
-            user.date_last_login = datetime.utcnow()
-            user.save()
         else:
             set_password_url = None
 

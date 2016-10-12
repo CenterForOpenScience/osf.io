@@ -14,7 +14,18 @@ var $osf = require('js/osfHelpers');
 var commandKeys = [224, 17, 91, 93];
 
 function _uploadUrl(item, file) {
-    return waterbutler.buildTreeBeardUpload(item, file, {branch: item.data.branch});
+    // WB v1 update syntax is PUT <file_path>?kind=file
+    // WB v1 upload syntax is PUT <parent_path>/?kind=file&name=<filename>
+    // If upload target file name already exists don't pass file.name.  WB v1 rejects updates that
+    // include a filename.
+    var updateUrl;
+    $.each(item.children, function( index, value ) {
+        if (file.name === value.data.name) {
+            updateUrl = waterbutler.buildTreeBeardUpload(value, {branch: value.data.branch});
+            return false;
+        }
+    });
+    return updateUrl || waterbutler.buildTreeBeardUpload(item, {name: file.name, branch: item.data.branch});
 }
 
 function _removeEvent (event, items) {

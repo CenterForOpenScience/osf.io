@@ -1,17 +1,17 @@
-from django.conf import settings
+from django.conf import settings as drf_settings
 from django.conf.urls import include, url
 from django.conf.urls.static import static
 from django.views.generic.base import RedirectView
-from settings import API_BASE
 
 from . import views
+from . import settings
+from . import versioning
 
-base_pattern = '^{}'.format(API_BASE)
+default_version = versioning.decimal_version_to_url_path(settings.REST_FRAMEWORK['DEFAULT_VERSION'])
 
 # Please keep URLs alphabetized for auto-generated documentation
-
 urlpatterns = [
-    url(base_pattern,
+    url('^(?P<version>(v2))/',
         include(
             [
                 url(r'^$', views.root, name='root'),
@@ -32,6 +32,7 @@ urlpatterns = [
                 url(r'^preprints/', include('api.preprints.urls', namespace='preprints')),
                 url(r'^preprint_providers/', include('api.preprint_providers.urls', namespace='preprint_providers')),
                 url(r'^registrations/', include('api.registrations.urls', namespace='registrations')),
+                url(r'^search/', include('api.search.urls', namespace='search')),
                 url(r'^taxonomies/', include('api.taxonomies.urls', namespace='taxonomies')),
                 url(r'^test/', include('api.test.urls', namespace='test')),
                 url(r'^tokens/', include('api.tokens.urls', namespace='tokens')),
@@ -41,10 +42,10 @@ urlpatterns = [
             ],
         )
         ),
-    url(r'^$', RedirectView.as_view(pattern_name=views.root), name='redirect-to-root')
+    url(r'^$', RedirectView.as_view(pattern_name=views.root), name='redirect-to-root', kwargs={'version': default_version})
 ]
 
 
-urlpatterns += static('/static/', document_root=settings.STATIC_ROOT)
+urlpatterns += static('/static/', document_root=drf_settings.STATIC_ROOT)
 
 handler404 = views.error_404

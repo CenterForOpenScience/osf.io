@@ -72,17 +72,21 @@
                     else if (response.status === 403){
                         $alert.text('You do not have permission to perform this action.');
                         Raven.captureMessage('Unauthorized user can view wiki add button', {
-                            url: ${ urls['api']['base'] | sjson, n } + encodeURIComponent(wikiName) + '/validate/',
-                            textStatus: textStatus,
-                            error: error
+                            extra: {
+                                url: ${ urls['api']['base'] | sjson, n } + encodeURIComponent(wikiName) + '/validate/',
+                                textStatus: textStatus,
+                                error: error
+                            }
                         });
                     }
                     else {
                         $alert.text('Could not validate wiki page. Please try again.'+response.status);
                         Raven.captureMessage('Error occurred while validating page', {
-                            url: ${ urls['api']['base'] | sjson, n } + encodeURIComponent(wikiName) + '/validate/',
-                            textStatus: textStatus,
-                            error: error
+                            extra: {
+                                url: ${ urls['api']['base'] | sjson, n } + encodeURIComponent(wikiName) + '/validate/',
+                                textStatus: textStatus,
+                                error: error
+                            }
                         });
                     }
                     $submitForm

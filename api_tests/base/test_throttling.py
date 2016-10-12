@@ -105,3 +105,13 @@ class TestAddContributorEmailThrottle(ApiTestCase):
         res = self.app.post_json_api(self.public_url, self.data_user_two, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(mock_allow.call_count, 1)
+
+    @mock.patch('api.base.throttling.NonCookieAuthThrottle.allow_request')
+    @mock.patch('rest_framework.throttling.UserRateThrottle.allow_request')
+    @mock.patch('api.base.throttling.AddContributorThrottle.allow_request')
+    def test_add_contrib_throttle_rate_and_default_rates_called(self, mock_contrib_allow, mock_user_allow, mock_anon_allow):
+        res = self.app.get(self.public_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(mock_anon_allow.call_count, 1)
+        assert_equal(mock_user_allow.call_count, 1)
+        assert_equal(mock_contrib_allow.call_count, 1)

@@ -166,7 +166,7 @@ def main(env):
             {
                 '_id': 'uva',
                 'name': 'University of Virginia',
-                'description': 'Projects must abide by the University <a href="http://www.virginia.edu/informationpolicy/security.html">Security and Data Protection Policies</a>',
+                'description': 'In partnership with the <a href="http://www.virginia.edu/vpr/">Vice President for Research</a>, <a href="http://dsi.virginia.edu">Data Science Institute</a>, <a href="https://www.hsl.virginia.edu">Health Sciences Library</a>, and <a href="http://data.library.virginia.edu">University Library</a>. Learn more about <a href="http://cadre.virginia.edu">UVA resources for computational and data-driven research</a>. Projects must abide by the <a href="http://www.virginia.edu/informationpolicy/security.html">University Security and Data Protection Policies</a>.',
                 'banner_name': 'uva-banner.png',
                 'logo_name': 'uva-shield.png',
                 'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:virginia.edu')),
@@ -361,7 +361,7 @@ def main(env):
             {
                 '_id': 'uva',
                 'name': 'University of Virginia [Test]',
-                'description': 'Projects must abide by the University <a href="http://www.virginia.edu/informationpolicy/security.html">Security and Data Protection Policies</a>',
+                'description': 'In partnership with the <a href="http://www.virginia.edu/vpr/">Vice President for Research</a>, <a href="http://dsi.virginia.edu">Data Science Institute</a>, <a href="https://www.hsl.virginia.edu">Health Sciences Library</a>, and <a href="http://data.library.virginia.edu">University Library</a>. Learn more about <a href="http://cadre.virginia.edu">UVA resources for computational and data-driven research</a>. Projects must abide by the <a href="http://www.virginia.edu/informationpolicy/security.html">University Security and Data Protection Policies</a>.',
                 'banner_name': 'uva-banner.png',
                 'logo_name': 'uva-shield.png',
                 'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shibidp-test.its.virginia.edu/idp/shibboleth')),

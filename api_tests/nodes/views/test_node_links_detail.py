@@ -81,6 +81,12 @@ class TestNodeLinkDetail(ApiTestCase):
         url = res.json['data']['links']['self']
         assert_in(self.public_url, url)
 
+    def test_node_links_bad_version(self):
+        url = '{}?version=2.1'.format(self.public_url)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+        assert_equal(res.json['errors'][0]['detail'], 'This feature is deprecated as of version 2.1')
+
 
 class TestDeleteNodeLink(ApiTestCase):
 

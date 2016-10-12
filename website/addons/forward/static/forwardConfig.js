@@ -64,9 +64,11 @@ var ViewModel = function(url, nodeId) {
                 '<a href="mailto:support@osf.io">support@osf.io</a>.',
                 'text-danger');
             Raven.captureMessage('Could not GET get Forward addon settings.', {
-                url: url,
-                textStatus: textStatus,
-                error: error
+                extra: {
+                    url: url,
+                    textStatus: textStatus,
+                    error: error
+                }
             });
         });
     };

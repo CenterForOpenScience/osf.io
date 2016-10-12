@@ -30,8 +30,11 @@ from api.comments.permissions import CanCommentOrPublic
 from api.users.views import UserMixin
 from api.wikis.serializers import WikiSerializer
 from api.base.views import LinkedNodesRelationship, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList, BaseLinkedList
-from api.base.throttling import AddContributorThrottle
-
+from api.base.throttling import (
+    UserRateThrottle,
+    NonCookieAuthThrottle,
+    AddContributorThrottle,
+)
 from api.nodes.serializers import (
     NodeSerializer,
     ForwardNodeAddonSettingsSerializer,
@@ -58,6 +61,8 @@ from api.citations.utils import render_citation
 from api.addons.serializers import NodeAddonFolderSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.institutions.serializers import InstitutionSerializer
+from api.identifiers.serializers import NodeIdentifierSerializer
+from api.identifiers.views import IdentifierList
 from api.nodes.permissions import (
     IsAdmin,
     IsPublic,
@@ -69,6 +74,7 @@ from api.nodes.permissions import (
     IsAdminOrReviewer,
     WriteOrPublicForRelationshipInstitutions,
     ExcludeWithdrawals,
+    NodeLinksShowIfVersion,
 )
 from api.logs.serializers import NodeLogSerializer
 
@@ -644,7 +650,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
     required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
     model_class = User
 
-    throttle_classes = (AddContributorThrottle,)
+    throttle_classes = (AddContributorThrottle, UserRateThrottle, NonCookieAuthThrottle, )
 
     pagination_class = NodeContributorPagination
     serializer_class = NodeContributorsSerializer
@@ -1388,6 +1394,7 @@ class NodeLinksList(BaseNodeLinksList, bulk_views.BulkDestroyJSONAPIView, bulk_v
         ContributorOrPublic,
         base_permissions.TokenHasScope,
         ExcludeWithdrawals,
+        NodeLinksShowIfVersion,
     )
 
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]
@@ -1471,7 +1478,8 @@ class NodeLinksDetail(BaseNodeLinksDetail, generics.RetrieveDestroyAPIView, Node
         base_permissions.TokenHasScope,
         drf_permissions.IsAuthenticatedOrReadOnly,
         RegistrationAndPermissionCheckForPointers,
-        ExcludeWithdrawals
+        ExcludeWithdrawals,
+        NodeLinksShowIfVersion,
     )
 
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]
@@ -1642,6 +1650,8 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
         provider                    string            id of provider e.g. "osfstorage", "s3", "googledrive".
                                                         equivalent to addon_short_name on the OSF
         size                        integer           size of file in bytes
+        current_version             integer           current file version
+
         current_user_can_comment    boolean           Whether the current user is allowed to post comments
 
         tags                        array of strings  list of tags that describes the file (osfstorage only)
@@ -3191,3 +3201,40 @@ class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIV
         link.is_deleted = True
         link.save()
         enqueue_postcommit_task(ban_url, (self.get_node(),), {}, celery=True, once_per_request=True)
+
+
+class NodeIdentifierList(NodeMixin, IdentifierList):
+    """List of identifiers for a specified node. *Read-only*.
+
+    ##Identifier Attributes
+
+    OSF Identifier entities have the "identifiers" `type`.
+
+        name           type                   description
+        ----------------------------------------------------------------------------
+        category       string                 e.g. 'ark', 'doi'
+        value          string                 the identifier value itself
+
+    ##Links
+
+        self: this identifier's detail page
+
+    ##Relationships
+
+    ###Referent
+
+    The identifier is refers to this node.
+
+    ##Actions
+
+    *None*.
+
+    ##Query Params
+
+     Identifiers may be filtered by their category.
+
+    #This Request/Response
+
+    """
+
+    serializer_class = NodeIdentifierSerializer
