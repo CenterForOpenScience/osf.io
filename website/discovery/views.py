@@ -8,7 +8,7 @@ from modularodm.query.querydialect import DefaultQueryDialect as Q
 
 def activity():
     # Prevent circular import
-    from website.project import Node
+    from osf.models import AbstractNode as Node
 
     popular_public_projects = []
     popular_public_registrations = []
