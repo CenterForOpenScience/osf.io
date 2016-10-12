@@ -30,20 +30,30 @@ class Subject(StoredObject):
 
 
 def validate_subject_hierarchy(subject_hierarchy):
-    grandparent = None
-    parent = None
-    child = None
+    validated_hierarchy, raw_hierarchy = [], set(subject_hierarchy)
     for subject_id in subject_hierarchy:
         subject = Subject.load(subject_id)
         if not subject:
             raise ValidationValueError('Subject with id <{}> could not be found.'.format(subject_id))
-        if not subject.parents:
-            grandparent = subject
-        elif not subject.children:
-            child = subject
+
+        if subject.parents:
+            continue
+
+        raw_hierarchy.remove(subject_id)
+        validated_hierarchy.append(subject._id)
+
+        while raw_hierarchy:
+            if not set([c._id for c in subject.children]) & raw_hierarchy:
+                raise ValidationValueError('Invalid subject hierarchy: {}'.format(subject_hierarchy))
+            else:
+                for child in subject.children:
+                    if child._id in raw_hierarchy:
+                        subject = child
+                        validated_hierarchy.append(child._id)
+                        raw_hierarchy.remove(child._id)
+                        break
+        if set(validated_hierarchy) == set(subject_hierarchy):
+            return
         else:
-            parent = subject
-    if not grandparent:
-        raise ValidationValueError('Unable to find root subject in {}'.format(subject_hierarchy))
-    if (parent and parent not in grandparent.children) or (child and (not parent or child not in parent.children)):
-        raise ValidationValueError('Invalid subject hierarchy: {}'.format(subject_hierarchy))
+            raise ValidationValueError('Invalid subject hierarchy: {}'.format(subject_hierarchy))
+    raise ValidationValueError('Unable to find root subject in {}'.format(subject_hierarchy))

@@ -13,10 +13,13 @@ class TestSubjectValidation(OsfTestCase):
         super(TestSubjectValidation, self).setUp()
 
         self.root_subject = SubjectFactory()
+        self.one_level_root = SubjectFactory()
+        self.two_level_root = SubjectFactory()
         self.outside_root = SubjectFactory()
 
         self.parent_subj_0 = SubjectFactory(parents=[self.root_subject])
         self.parent_subj_1 = SubjectFactory(parents=[self.root_subject])
+        self.two_level_parent = SubjectFactory(parents=[self.two_level_root])
 
         self.outside_parent = SubjectFactory(parents=[self.outside_root])
 
@@ -32,6 +35,7 @@ class TestSubjectValidation(OsfTestCase):
 
         self.root_subject.children = [self.parent_subj_0, self.parent_subj_1]
         self.outside_root.children = [self.outside_parent]
+        self.two_level_root.children = [self.two_level_parent]
 
         self.child_subj_00.save()
         self.child_subj_01.save()
@@ -42,11 +46,16 @@ class TestSubjectValidation(OsfTestCase):
         self.parent_subj_0.save()
         self.parent_subj_1.save()
         self.outside_parent.save()
+        self.two_level_parent.save()
 
         self.root_subject.save()
         self.outside_root.save()
+        self.two_level_root.save()
+        self.one_level_root.save()
 
         self.valid_full_hierarchy = [self.root_subject._id, self.parent_subj_0._id, self.child_subj_00._id]
+        self.valid_two_level_hierarchy = [self.two_level_root._id, self.two_level_parent._id]
+        self.valid_one_level_hierarchy = [self.one_level_root._id]
         self.valid_partial_hierarchy = [self.root_subject._id, self.parent_subj_1._id]
         self.valid_root = [self.root_subject._id]
 
@@ -59,6 +68,12 @@ class TestSubjectValidation(OsfTestCase):
 
     def test_validation_full_hierarchy(self):
         assert_equal(validate_subject_hierarchy(self.valid_full_hierarchy), None)
+
+    def test_validation_two_level_hierarchy(self):
+        assert_equal(validate_subject_hierarchy(self.valid_two_level_hierarchy), None)
+
+    def test_validation_one_level_hierarchy(self):
+        assert_equal(validate_subject_hierarchy(self.valid_one_level_hierarchy), None)
 
     def test_validation_partial_hierarchy(self):
         assert_equal(validate_subject_hierarchy(self.valid_partial_hierarchy), None)
