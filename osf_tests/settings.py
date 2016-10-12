@@ -9,7 +9,7 @@ DATABASES = {
         'NAME': 'osf-models-test',
         'PASSWORD': '',
         'PORT': '',
-        'USER': '',
+        'USER': 'osf',
         'ATOMIC_REQUESTS': True,
     }
 }

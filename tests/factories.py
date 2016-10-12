@@ -27,6 +27,7 @@ from framework.auth.utils import impute_names_model, impute_names
 from framework.guid.model import Guid
 from framework.mongo import StoredObject
 from framework.sessions.model import Session
+from osf_tests.factories import NodeFactory
 from tests.base import fake
 from tests.base import get_default_metaschema
 from website.addons import base as addons_base
@@ -198,7 +199,7 @@ class AbstractNodeFactory(ModularOdmFactory):
     creator = SubFactory(AuthUserFactory)
 
 
-class ProjectFactory(AbstractNodeFactory):
+class ProjectFactory(NodeFactory):
     category = 'project'
 
 
