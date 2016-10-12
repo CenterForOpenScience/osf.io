@@ -12,6 +12,7 @@ from framework.auth import cas
 
 from website import settings
 
+
 def generate_client_secret():
     return random_string(length=40)
 
@@ -30,8 +31,10 @@ class ApiOAuth2Scope(base.ObjectIDMixin, base.BaseModel):
     description = models.CharField(max_length=255, null=False, blank=False)
     is_active = models.BooleanField(default=True, db_index=True)  # TODO: Add mechanism to deactivate a scope?
 
+
 def generate_client_id():
     return uuid.uuid4().hex
+
 
 class ApiOAuth2Application(base.ObjectIDMixin, base.BaseModel):
     """Registration and key for user-created OAuth API applications
@@ -117,8 +120,10 @@ class ApiOAuth2Application(base.ObjectIDMixin, base.BaseModel):
     def get_absolute_url(self):
         return self.absolute_api_v2_url
 
+
 def generate_token_id():
     return random_string(length=70)
+
 
 class ApiOAuth2PersonalToken(base.ObjectIDMixin, base.BaseModel):
     """Information for user-created personal access tokens
@@ -133,7 +138,7 @@ class ApiOAuth2PersonalToken(base.ObjectIDMixin, base.BaseModel):
     # Name of the field being `token_id` is a CAS requirement.
     # This is the actual value of the token that's used to authenticate
     token_id = models.CharField(max_length=70, default=generate_token_id,
-                                  unique=True)
+                                unique=True)
 
     owner = models.ForeignKey('OSFUser', db_index=True, blank=True, null=True, on_delete=models.SET_NULL)
     name = models.CharField(max_length=100, blank=False, null=False, db_index=True)

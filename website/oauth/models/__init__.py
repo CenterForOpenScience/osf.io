@@ -35,11 +35,7 @@ logger = logging.getLogger(__name__)
 OAUTH1 = 1
 OAUTH2 = 2
 
-def generate_client_secret(length=40):
-    return random_string(length)
-
-def get_object_id():
-    return str(ObjectId())
+generate_client_secret = functools.partial(random_string, length=40)
 
 
 @unique_on(['provider', 'provider_id'])
@@ -54,7 +50,7 @@ class ExternalAccount(StoredObject):
     The ``provider`` field is a de facto foreign key to an ``ExternalProvider``
     object, as providers are not stored in the database.
     """
-    _id = fields.StringField(default=get_object_id, primary=True)
+    _id = fields.StringField(default=lambda: str(ObjectId()), primary=True)
 
     # The OAuth credentials. One or both of these fields should be populated.
     # For OAuth1, this is usually the "oauth_token"
@@ -68,7 +64,7 @@ class ExternalAccount(StoredObject):
     # Used for OAuth2 only
     refresh_token = fields.StringField()
     expires_at = fields.DateTimeField()
-    scopes = fields.StringField(list=True, default=list)
+    scopes = fields.StringField(list=True, default=lambda: list())
 
     # The `name` of the service
     # This lets us query for only accounts on a particular provider
@@ -459,14 +455,11 @@ class ApiOAuth2Scope(StoredObject):
         be requested by third parties.
     """
     _id = fields.StringField(primary=True,
-                             default=get_object_id)
+                             default=lambda: str(ObjectId()))
     name = fields.StringField(unique=True, required=True, index=True)
     description = fields.StringField(required=True)
     is_active = fields.BooleanField(default=True, index=True)  # TODO: Add mechanism to deactivate a scope?
 
-
-def get_uuid_hex():
-    return uuid.uuid4().hex
 
 class ApiOAuth2Application(StoredObject):
     """Registration and key for user-created OAuth API applications
@@ -476,11 +469,11 @@ class ApiOAuth2Application(StoredObject):
     """
     _id = fields.StringField(
         primary=True,
-        default=get_object_id
+        default=lambda: str(ObjectId())
     )
 
     # Client ID and secret. Use separate ID field so ID format doesn't have to be restricted to database internals.
-    client_id = fields.StringField(default=get_uuid_hex,  # Not *guaranteed* unique, but very unlikely
+    client_id = fields.StringField(default=lambda: uuid.uuid4().hex,  # Not *guaranteed* unique, but very unlikely
                                    unique=True,
                                    index=True)
     client_secret = fields.StringField(default=generate_client_secret)
@@ -551,9 +544,6 @@ class ApiOAuth2Application(StoredObject):
     def get_absolute_url(self):
         return self.absolute_api_v2_url
 
-def get_random_string(length=70):
-    return random_string(length)
-
 class ApiOAuth2PersonalToken(StoredObject):
     """Information for user-created personal access tokens
 
@@ -561,11 +551,11 @@ class ApiOAuth2PersonalToken(StoredObject):
     Any changes made to field names in this model must be echoed in the CAS implementation.
     """
     _id = fields.StringField(primary=True,
-                             default=get_object_id)
+                             default=lambda: str(ObjectId()))
 
     # Name of the field being `token_id` is a CAS requirement.
     # This is the actual value of the token that's used to authenticate
-    token_id = fields.StringField(default=get_random_string,
+    token_id = fields.StringField(default=functools.partial(random_string, length=70),
                                   unique=True)
 
     owner = fields.ForeignField('User',
