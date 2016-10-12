@@ -1,13 +1,22 @@
 from django.test import RequestFactory
 from django.http import Http404
+from django.conf import settings
+from django.core.files.uploadedfile import SimpleUploadedFile
 from nose import tools as nt
 import mock
+import csv
+import os
+from datetime import datetime
 
 from tests.base import AdminTestCase
 from website import settings
-from framework.auth import User
-from tests.factories import UserFactory, AuthUserFactory, ProjectFactory
-from admin_tests.utilities import setup_view, setup_log_view
+from framework.auth import User, Auth
+from tests.factories import (
+    UserFactory,
+    AuthUserFactory,
+    ProjectFactory,
+)
+from admin_tests.utilities import setup_view, setup_log_view, setup_form_view
 
 from admin.users.views import (
     UserView,
@@ -18,7 +27,9 @@ from admin.users.views import (
     UserFlaggedSpamList,
     UserKnownSpamList,
     UserKnownHamList,
+    UserWorkshopFormView,
 )
+from admin.users.forms import WorkshopForm
 from admin.common_auth.logs import OSFLogEntry
 
 
@@ -136,12 +147,14 @@ class TestDisableSpamUser(AdminTestCase):
         with nt.assert_raises(Http404):
             view.delete(self.request)
 
+
 class SpamUserListMixin(AdminTestCase):
     def setUp(self):
         self.flagged_user = UserFactory(system_tags=['spam_flagged'])
         self.spam_user = UserFactory(system_tags=['spam_confirmed'])
         self.ham_user = UserFactory(system_tags=['ham_confirmed'])
         self.request = RequestFactory().post('/fake_path')
+
 
 class TestFlaggedSpamUserList(SpamUserListMixin):
     def setUp(self):
@@ -178,6 +191,7 @@ class TestConfirmedHamUserList(SpamUserListMixin):
         nt.assert_equal(qs.count(), 1)
         nt.assert_equal(qs[0]._id, self.ham_user._id)
 
+
 class TestRemove2Factor(AdminTestCase):
     def setUp(self):
         super(TestRemove2Factor, self).setUp()
@@ -201,3 +215,61 @@ class TestRemove2Factor(AdminTestCase):
         post_addon = self.user.get_addon('twofactor')
         nt.assert_equal(post_addon, None)
         nt.assert_equal(OSFLogEntry.objects.count(), count + 1)
+
+
+class TestUserWorkshopFormView(AdminTestCase):
+    def setUp(self):
+        self.user_1 = AuthUserFactory()
+        self.auth_1 = Auth(self.user_1)
+        self.user_2 = AuthUserFactory()
+        self.user_3 = AuthUserFactory()
+        self.data = [
+            ['none', 'date', 'thing', 'more', 'less', 'email', 'none'],
+            [None, '9/1/16', None, None, None, self.user_1.username, None],
+            [None, '9/1/16', None, None, None, self.user_2.username, None],
+            [None, '9/1/16', None, None, None, self.user_3.username, None],
+        ]
+        with open('test.csv', 'w') as fp:
+            writer = csv.writer(fp)
+            for row in self.data:
+                writer.writerow(row)
+        self.view = UserWorkshopFormView()
+
+    def test_no_extra_info(self):
+        with file('test.csv') as fp:
+            final = self.view.parse(fp)
+        nt.assert_equal(len(self.data[0]) + 3, len(final[0]))
+
+    def test_one_node(self):
+        node = ProjectFactory(creator=self.user_1)
+        node.add_log(
+            'log_added',
+            params={'project': node.pk},
+            auth=self.auth_1,
+            log_date=datetime.utcnow(),
+            save=True
+        )
+        with file('test.csv') as fp:
+            final = self.view.parse(fp)
+        nt.assert_equal(1, final[1][-2])
+        nt.assert_equal(2, final[1][-3])
+        nt.assert_equal(self.user_1.pk, final[1][-4])
+
+    def test_unicode_error(self):
+        path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), 'unicode.csv')
+        with file(path, mode='U') as fp:
+            final = self.view.parse(fp)
+        nt.assert_in('Unable to parse line:', final[1][0])
+
+    def test_form_valid(self):
+        request = RequestFactory().post('/fake_path')
+        with file('test.csv', mode='rb') as fp:
+            uploaded = SimpleUploadedFile(fp.name, fp.read(), content_type='text/csv')
+        form = WorkshopForm(data={'document': uploaded})
+        form.is_valid()
+        form.cleaned_data['document'] = uploaded
+        view = setup_form_view(self.view, request, form)
+
+    def tearDown(self):
+        os.remove('test.csv')
