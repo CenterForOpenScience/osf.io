@@ -38,7 +38,7 @@ OAUTH2 = 2
 def generate_client_secret(length=40):
     return random_string(length)
 
-def get_object_id()
+def get_object_id():
     return str(ObjectId())
 
 
