@@ -47,7 +47,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
 
     ##Preprint Attributes
 
-    OSF Preprint entities have the "preprint" `type`.
+    OSF Preprint entities have the "preprints" `type`.
 
         name                            type                                description
         ====================================================================================
@@ -101,19 +101,19 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
                             "relationships": {
                                 "node": {                           # required
                                     "data": {
-                                        "type": "node",
+                                        "type": "nodes",
                                         "id": {node_id}
                                     }
                                 },
                                 "primary_file": {                   # required
                                     "data": {
-                                        "type": "primary_file",
+                                        "type": "primary_files",
                                         "id": {file_id}
                                     }
                                 },
                                 "provider": {                       # required
                                     "data": {
-                                        "type": "provider",
+                                        "type": "providers",
                                         "id": {provider_id}
                                     }
                                 },
@@ -168,7 +168,7 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
 
     ##Preprint Attributes
 
-    OSF Preprint entities have the "preprint" `type`.
+    OSF Preprint entities have the "preprints" `type`.
 
         name                            type                                description
         ====================================================================================
@@ -198,7 +198,7 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
                             "relationships": {
                                 "primary_file": {                                               # optional
                                     "data": {
-                                        "type": "primary",
+                                        "type": "primary_files",
                                         "id": {file_id}
                                     }
                                 }

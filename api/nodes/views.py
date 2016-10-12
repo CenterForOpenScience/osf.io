@@ -3237,7 +3237,7 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFil
 
     ##Preprint Attributes
 
-    OSF Preprint entities have the "preprint" `type`.
+    OSF Preprint entities have the "preprints" `type`.
 
         name                            type                                description
         ====================================================================================
