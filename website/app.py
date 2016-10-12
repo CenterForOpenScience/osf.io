@@ -8,6 +8,7 @@ import thread
 from collections import OrderedDict
 
 import django
+from django.apps import apps
 import modularodm
 from werkzeug.contrib.fixers import ProxyFix
 
@@ -153,59 +154,31 @@ def apply_middlewares(flask_app, settings):
 
     return flask_app
 
-
-PATCHED_MODELS = (
-    'Node',
-    'User',
-    'Tag',
-    'QueuedMail',
-    'NodeLog',
-    'Session',
-    'NodeLicense',
-    'NodeLicenseRecord',
-    'NotificationSubscription',
-    'Guid',
-    'MetaSchema',
-    'ArchiveJob',
-    'ArchiveTarget',
-    'PrivateLink',
-    'Comment',
-    'ApiOAuth2Application',
-    'ApiOAuth2PersonalToken',
-    'DraftRegistration',
-    'MetaSchema',
-    'NodeWikiPage',
-    'Identifier',
-    'Subject',
-    'PreprintProvider',
-    'NotificationDigest',
-    'Pointer',
-    'StoredFileNode',
-)
+def _get_models_to_patch():
+    osf_app_config = apps.get_app_config('osf')
+    return osf_app_config.get_models(include_auto_created=False)
 
 # TODO: This won't work for modules that do e.g. `from website import models`. Rethink.
 def patch_models(settings):
-    model_map = {
-        'User': 'OSFUser',
-        'Node': 'AbstractNode',
-        'Pointer': 'NodeRelation',
-    }
     if not settings.USE_POSTGRES:
         return
     from osf import models
+    model_map = {
+        models.OSFUser: 'User',
+        models.AbstractNode: 'Node',
+        models.NodeRelation: 'Pointer',
+    }
     for module in sys.modules.values():
         if not module:
             continue
-        for model in PATCHED_MODELS:
+        for model_cls in _get_models_to_patch():
+            model_name = model_map.get(model_cls, model_cls._meta.model.__name__)
             if (
-                hasattr(module, model) and
-                isinstance(getattr(module, model), type) and
-                issubclass(getattr(module, model), modularodm.StoredObject)
+                hasattr(module, model_name) and
+                isinstance(getattr(module, model_name), type) and
+                issubclass(getattr(module, model_name), modularodm.StoredObject)
             ):
-                if model in model_map:
-                    setattr(module, model, getattr(models, model_map[model]))
-                else:
-                    setattr(module, model, getattr(models, model))
+                setattr(module, model_name, model_cls)
             # Institution is a special case because it isn't a StoredObject
             if hasattr(module, 'Institution') and getattr(module, 'Institution') is not models.Institution:
                 setattr(module, 'Institution', models.Institution)
