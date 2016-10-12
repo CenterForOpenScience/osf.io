@@ -11,6 +11,7 @@ from framework.mongo import database
 from framework.postcommit_tasks.handlers import run_postcommit
 from framework.sessions import session
 from framework.celery_tasks import app
+from osf.models import UserActivityCounter
 from website import settings
 
 from flask import request
@@ -29,41 +30,12 @@ collection = None
 @run_postcommit(once_per_request=False, celery=True)
 @app.task(max_retries=5, default_retry_delay=60)
 def increment_user_activity_counters(user_id, action, date_string, db=None):
-    db = db or database  # default to local proxy
-    if not db and settings.DEBUG_MODE:
-        logger.warn('Cannot connect to database. Analytics will be unavailable')
-        return
-    collection = database['useractivitycounters']
-    date = parser.parse(date_string).strftime('%Y/%m/%d')
-    query = {
-        '$inc': {
-            'total': 1,
-            'date.{0}.total'.format(date): 1,
-            'action.{0}.total'.format(action): 1,
-            'action.{0}.date.{1}'.format(action, date): 1,
-        }
-    }
-    collection.update(
-        {'_id': user_id},
-        query,
-        upsert=True,
-        manipulate=False,
-    )
-    return True
+    # NOTE maybe this should act differently in DEBUG_MODE, I disagree
+    return UserActivityCounter.increment(user_id, action, date_string)
 
 
 def get_total_activity_count(user_id, db=None):
-    db = db or database
-    if not db and settings.DEBUG_MODE:
-        logger.warn('Cannot connect to database. Analytics will be unavailable')
-        return
-    collection = database['useractivitycounters']
-    result = collection.find_one(
-        {'_id': user_id}, {'total': 1}
-    )
-    if result and 'total' in result:
-        return result['total']
-    return 0
+    return UserActivityCounter.get_total_activity_count(user_id)
 
 
 def clean_page(page):
