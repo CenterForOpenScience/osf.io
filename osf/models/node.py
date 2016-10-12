@@ -20,7 +20,6 @@ from django.dispatch import receiver
 from django.utils import timezone
 from keen import scoped_keys
 from modularodm import Q as MQ
-from osf.apps import AppConfig as app_config
 from osf.models.citation import AlternativeCitation
 from osf.models.contributor import Contributor, RecentlyAddedContributor, get_contributor_permissions
 from osf.models.identifiers import Identifier
@@ -38,7 +37,6 @@ from osf.models.node_relation import NodeRelation
 from osf.models.validators import validate_title, validate_doi
 from osf.modm_compat import Q
 from osf.utils.auth import Auth, get_user
-from osf.utils.base import api_v2_url
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.exceptions import ValidationValueError
 from typedmodels.models import TypedModel
@@ -57,7 +55,7 @@ from website.exceptions import (
 )
 from website.project import signals as project_signals
 from website.citations.utils import datetime_to_csl
-from website.util import api_url_for
+from website.util import api_url_for, api_v2_url
 from website.util import web_url_for
 from website.util import sanitize
 from website.util.permissions import (
@@ -324,7 +322,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def absolute_url(self):
         if not self.url:
             return None
-        return urlparse.urljoin(app_config.domain, self.url)
+        return urlparse.urljoin(settings.DOMAIN, self.url)
 
     @property
     def deep_url(self):

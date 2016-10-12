@@ -1,10 +1,11 @@
 import urlparse
 import uuid
 
+from website.util import api_v2_url
+
 from django.db import models
 from django.utils import timezone
 from osf.models import base
-from osf.utils.base import api_v2_url
 from osf.utils.security import random_string
 
 from framework.auth import cas

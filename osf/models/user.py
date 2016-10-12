@@ -6,7 +6,6 @@ import logging
 import re
 
 from dirtyfields import DirtyFieldsMixin
-from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
@@ -54,6 +53,24 @@ logger = logging.getLogger(__name__)
 def generate_confirm_token():
     return security.random_string(30)
 
+def generate_verification_key(verification_type=None):
+    """
+    Generate a one-time verification key with an optional expiration time.
+    The type of the verification key determines the expiration time defined in `website.settings.EXPIRATION_TIME_DICT`.
+
+    :param verification_type: None, verify, confirm or claim
+    :return: a string or a dictionary
+    """
+    token = security.random_string(30)
+    # v1 with only the token
+    if not verification_type:
+        return token
+    # v2 with a token and the expiration time
+    expires = timezone.now() + dt.timedelta(minutes=website_settings.EXPIRATION_TIME_DICT[verification_type])
+    return {
+        'token': token,
+        'expires': expires,
+    }
 
 def get_default_mailing_lists():
     return {'Open Science Framework Help': True}
@@ -360,8 +377,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
 
     @property
     def absolute_url(self):
-        config = apps.get_app_config('osf')
-        return urlparse.urljoin(config.domain, self.url)
+        return urlparse.urljoin(website_settings.DOMAIN, self.url)
 
     @property
     def absolute_api_v2_url(self):
@@ -842,7 +858,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         self.suffix = parsed['suffix']
 
     def add_unconfirmed_email(self, email, expiration=None, external_identity=None):
-        """Add an email verification token for a given email."""
+        """
+        Add an email verification token for a given email.
+
+        :param email: the email to confirm
+        :param email: overwrite default expiration time
+        :param external_identity: the user's external identity
+        :return: a token
+        :raises: ValueError if email already confirmed, except for login through external idp.
+        """
 
         # TODO: This is technically not compliant with RFC 822, which requires
         #       that case be preserved in the "local-part" of an address. From
@@ -861,20 +885,20 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         if email in self.unconfirmed_emails:
             self.remove_unconfirmed_email(email)
 
-        token = generate_confirm_token()
+        verification_key = generate_verification_key(verification_type='confirm')
 
         # handle when email_verifications is None
         if not self.email_verifications:
             self.email_verifications = {}
 
-        # confirmed used to check if link has been clicked
-        self.email_verifications[token] = {
+        self.email_verifications[verification_key['token']] = {
             'email': email,
             'confirmed': False,
-            'external_identity': external_identity
+            'expiration': expiration if expiration else verification_key['expires'],
+            'external_identity': external_identity,
         }
-        self._set_email_token_expiration(token, expiration=expiration)
-        return token
+
+        return verification_key['token']
 
     def remove_unconfirmed_email(self, email):
         """Remove an unconfirmed email addresses and their tokens."""
@@ -925,8 +949,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         :raises: ExpiredTokenError if trying to access a token that is expired.
         :raises: KeyError if there is no token for the email.
         """
-        config = apps.get_app_config('osf')
-        base = config.domain if external else '/'
+        base = website_settings.DOMAIN if external else '/'
         token = self.get_confirmation_token(email, force=force)
         if external_id_provider:
             return '{0}confirm/external/{1}/{2}/'.format(base, self._id, token)
@@ -1003,19 +1026,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         self.update_search_nodes()
 
         return True
-
-    def _set_email_token_expiration(self, token, expiration=None):
-        """Set the expiration date for given email token.
-
-        :param str token: The email token to set the expiration for.
-        :param datetime expiration: Datetime at which to expire the token. If ``None``, the
-            token will expire after ``settings.EMAIL_TOKEN_EXPIRATION`` hours. This is only
-            used for testing purposes.
-        """
-        config = apps.get_app_config('osf')
-        expiration = expiration or (timezone.now() + dt.timedelta(hours=config.email_token_expiration))
-        self.email_verifications[token]['expiration'] = expiration
-        return expiration
 
     def update_search(self):
         from website.search.search import update_user
@@ -1190,9 +1200,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         :rtype: dict
         :returns: The unclaimed record for the project
         """
-        config = apps.get_app_config('osf')
         uid = self._primary_key
-        base_url = config.domain if external else '/'
+        base_url = website_settings.DOMAIN if external else '/'
         unclaimed_record = self.get_unclaimed_record(project_id)
         token = unclaimed_record['token']
         return '{base_url}user/{uid}/{project_id}/claim/?token={token}'\

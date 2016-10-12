@@ -17,7 +17,6 @@ from framework.celery_tasks import handlers
 from website import settings
 from website import filters
 from website import mailchimp_utils
-from django.utils import timezone
 
 from osf.models import OSFUser as User, Tag, Node, Contributor, Session
 from osf.utils.auth import Auth
@@ -402,7 +401,7 @@ class TestOSFUser:
         token = 'blahblahblah'
         user.email_verifications[token] = {'expiration': (timezone.now() + dt.timedelta(days=1)),
                                                 'email': email,
-                                                'confirmed': False }
+                                                'confirmed': False}
         user.save()
         assert user.email_verifications[token]['email'] == email
         user.clean_email_verifications(given_token=token)
@@ -966,8 +965,7 @@ class TestMergingUsers:
         project.reload()
         assert project.is_contributor(master)
         assert project.is_contributor(dupe) is False
-        assert len(project.contributors) == 2   # creator and master
-                                                # are the only contribs
+        assert len(project.contributors) == 2   # creator and master are the only contribs
         assert project.contributor_set.get(user=master).visible is True
 
     def test_merging_dupe_who_has_different_visibility_from_master(self, master, dupe, merge_dupe):

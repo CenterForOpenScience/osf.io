@@ -7,13 +7,13 @@ from django.utils import timezone
 from osf.models import Node
 from osf.models import NodeLog
 from osf.models.base import GuidMixin, Guid, BaseModel
-from osf.utils.base import api_v2_url
 from osf.models.mixins import CommentableMixin
 from osf.models.spam import SpamMixin
 from osf.models import validators
 
 from framework.exceptions import PermissionsError
 from website import settings
+from website.util import api_v2_url
 from website.project import signals as project_signals
 from website.project.model import get_valid_mentioned_users_guids
 

@@ -7,6 +7,7 @@ from django.db import models
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from website.exceptions import NodeStateError
+from website.util import api_v2_url
 from website import settings
 
 from osf.models import (
@@ -22,7 +23,6 @@ from osf.exceptions import ValidationValueError
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.node import AbstractNode
 from osf.models.nodelog import NodeLog
-from osf.utils.base import api_v2_url
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 

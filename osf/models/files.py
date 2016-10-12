@@ -12,7 +12,7 @@ from modularodm.exceptions import NoResultsFound
 from osf.models.base import BaseModel, Guid, OptionalGuidMixin, ObjectIDMixin
 from osf.models.comment import CommentableMixin
 from osf.modm_compat import Q
-from osf.utils.base import api_v2_url
+from website.util import api_v2_url
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from psycopg2._psycopg import AsIs
 from website import util

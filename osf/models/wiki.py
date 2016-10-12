@@ -10,9 +10,9 @@ from django.db import models
 from django.utils import timezone
 
 from website.addons.wiki import utils as wiki_utils
+from website.util import api_v2_url
 from osf.models.base import GuidMixin, BaseModel
 from osf.models.validators import validate_page_name
-from osf.utils.base import api_v2_url
 from osf.models import Node
 import logging
 
