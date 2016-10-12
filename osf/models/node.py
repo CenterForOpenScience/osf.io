@@ -206,6 +206,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return self.get_nodes()
 
     @property
+    def node_ids(self):
+        return list(self._nodes.all().values_list('guids___id', flat=True))
+
+    @property
     def linked_from(self):
         """Return the nodes that have linked to this node."""
         return self.parent_nodes.filter(node_relations__is_node_link=True)

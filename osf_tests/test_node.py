@@ -1642,6 +1642,13 @@ class TestNodeOrdering:
         assert private_nodes == [children[1], children[0]]
 
 
+def test_node_ids(node):
+    child1, child2 = NodeFactory(parent=node), NodeFactory(parent=node)
+
+    assert child1._id in node.node_ids
+    assert child2._id in node.node_ids
+
+
 def test_templated_list(node):
     templated1, templated2 = ProjectFactory(template_node=node), NodeFactory(template_node=node)
     deleted = ProjectFactory(template_node=node, is_deleted=True)

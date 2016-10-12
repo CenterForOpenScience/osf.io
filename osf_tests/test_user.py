@@ -301,7 +301,7 @@ class TestOSFUser:
         valid_token = u.get_confirmation_token('foo@bar.com')
         assert bool(u.get_unconfirmed_email_for_token(valid_token)) is True
         manual_expiration = timezone.now() - dt.timedelta(0, 10)
-        u._set_email_token_expiration(valid_token, expiration=manual_expiration)
+        u.email_verifications[valid_token]['expiration'] = manual_expiration
 
         with pytest.raises(ExpiredTokenError):
             u.get_unconfirmed_email_for_token(valid_token)
