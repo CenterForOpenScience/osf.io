@@ -10,7 +10,6 @@ from website import util
 from website import settings
 from website.project import new_node
 from website.models import Node, MailRecord
-# from osf_models.models.conference import MailRecord
 
 
 def record_message(message, nodes_created, users_created):
