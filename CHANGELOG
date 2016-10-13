@@ -2,6 +2,11 @@
 Changelog
 *********
 
+0.96.0 (2016-10-12)
+===================
+- Add ownCloud addon
+- Encrypt addon credentials
+
 0.95.0 (2016-10-05)
 ===================
 - Replace GPL-only django-queryset-csv library (the last of the GPL)
