@@ -782,7 +782,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         # Not all tokens are guaranteed to have expiration dates
         if (
             'expiration' in verification and
-            verification['expiration'] < timezone.now()
+            verification['expiration'].replace(tzinfo=pytz.utc) < timezone.now()
         ):
             raise ExpiredTokenError
 
