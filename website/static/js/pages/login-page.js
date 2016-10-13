@@ -5,7 +5,6 @@
 var $ = require('jquery');
 
 var passwordForms = require('js/passwordForms');
-var InstitutionSignIn = require('js/institutionSignIn');
 
 var activateToggleBox = function () {
     var el = $(this);
@@ -18,11 +17,7 @@ var activateToggleBox = function () {
 
 $(document).ready(function() {
     var campaign = window.contextVars.campaign;
-    if (campaign === 'institution'){
-        new InstitutionSignIn('#inst');
-    } else {
-        new passwordForms.SignUp('#signUpScope', campaign);
-    }
+    new passwordForms.SignUp('#signUpScope', campaign);
 });
 
 $('.toggle-box').on('click', activateToggleBox);
