@@ -1,6 +1,6 @@
-from .common import *
-from .users import *
-from .topics import *
+from .common import DiscourseException, request
+from .users import get_username
+from .topics import get_or_create_topic_id
 
 def create_comment(node, comment_text, user=None, reply_to_post_number=None):
     if user is None or user == 'system':

@@ -1,4 +1,4 @@
-from . import *
+from . import sync_project, create_group, sync_group, delete_group, get_group_user_info, create_topic, get_topic, get_topics, delete_topic, delete_user, create_comment, edit_comment, delete_comment, undelete_comment
 import common
 
 import time
@@ -7,7 +7,7 @@ import unittest
 import random
 
 from tests.base import DbTestCase
-from tests.factories import UserFactory, ProjectFactory
+from tests.factories import UserFactory
 
 # http://stackoverflow.com/questions/3335268/are-object-literals-pythonic
 class literal(object):
@@ -131,7 +131,8 @@ class TestDiscourse(DbTestCase):
         self.assertEquals(topic_json['parent_names'], [self.component_node.label, self.project_node.label])
         self.assertEquals(topic_json['project_is_public'], False)
 
-        topics_json = get_topics(self.project_node)
+        topic_json = get_topics(self.project_node)
+        self.assertEquals(topic_json['topic_guid'], self.project_node._id)
 
     def test_recover_lost_group(self):
         create_group(self.project_node)
@@ -193,7 +194,7 @@ def stress_test():
         create_topic(project_node)
 
         for j in range(0, 50):
-            file_node = literal(_id='longstressfileid%d_%d' % (i, j) , label='stressFile%d_%d' % (i, j), node=project_node,
+            file_node = literal(_id='longstressfileid%d_%d' % (i, j), label='stressFile%d_%d' % (i, j), node=project_node,
                                     discourse_topic_id=None, discourse_post_id=None,
                                     discourse_topic_title=None, discourse_topic_parent_guids=None,
                                     date_created=datetime.today())

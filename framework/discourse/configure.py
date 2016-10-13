@@ -1,4 +1,4 @@
-from .common import *
+from .common import request
 
 from website import settings
 import time

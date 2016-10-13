@@ -1,6 +1,6 @@
-from .common import *
-from .users import *
+from .common import DiscourseException, request
 
+import requests
 import logging
 from website import settings
 
@@ -33,7 +33,7 @@ try:
     wiki_category = _get_or_create_category('Wikis', settings.DISCOURSE_CATEGORY_COLORS[1])
     project_category = _get_or_create_category('Projects', settings.DISCOURSE_CATEGORY_COLORS[2])
 except (DiscourseException, requests.exceptions.ConnectionError):
-    logger.exception("Discourse is either not running, or is malfunctioning. For correct Discourse functionality, please configure Discourse, make sure it is running, and restart the OSF.")
+    logger.exception('Discourse is either not running, or is malfunctioning. For correct Discourse functionality, please configure Discourse, make sure it is running, and restart the OSF.')
 
     file_category = None
     wiki_category = None

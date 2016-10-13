@@ -1,6 +1,5 @@
 from website import settings
 import requests
-from simplejson.scanner import JSONDecodeError
 
 # print out all API requests to discourse
 log_requests = False
@@ -32,5 +31,5 @@ def request(method, path, data={}, user_name=None):
 
     try:
         return result.json()
-    except JSONDecodeError:
+    except ValueError:
         return None

@@ -1,7 +1,7 @@
 import common
-from .common import *
-from .categories import *
-from .groups import *
+from .common import DiscourseException, request
+from .categories import file_category, wiki_category, project_category
+from .groups import get_or_create_group_id
 
 from website import settings
 
@@ -60,7 +60,7 @@ def create_topic(node):
     # privacy is completely relegated to the group with the corresponding project_guid
     data['archetype'] = 'regular'
 
-    get_or_create_group_id(project_node) # ensure existance of the group
+    get_or_create_group_id(project_node)  # ensure existance of the group
     data['title'] = node.label
     data['raw'] = make_topic_content(node)
     data['parent_guids[]'] = get_parent_guids(node)

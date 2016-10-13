@@ -1,5 +1,5 @@
-from .common import *
-from .users import *
+from .common import DiscourseException, request
+from .users import get_username
 
 from collections import Counter
 
@@ -8,7 +8,7 @@ def _create_group(project_node):
     data['name'] = project_node._id
     # We use this visible attribute to control the privacy of the project
     data['visible'] = 'true' if project_node.is_public else 'false'
-    data['alias_level'] = '3' # allows us to message this group directly
+    data['alias_level'] = '3'  # allows us to message this group directly
     try:
         result = request('post', '/admin/groups', data)
     except DiscourseException as e:
@@ -101,16 +101,16 @@ def sync_group(project_node):
     users = [get_username(user) for user in project_node.contributors if user.username]
     users = [u for u in users if u]
 
-    if project_node.discourse_group_users == None:
+    if project_node.discourse_group_users is None:
         get_group_user_info(project_node)
 
     current_users = project_node.discourse_group_users
 
-    users_to_add = list((Counter(users) - Counter(current_users)).elements())#[u for u in users if u not in current_users]
+    users_to_add = list((Counter(users) - Counter(current_users)).elements())
     if users_to_add:
         add_group_users(project_node, users_to_add)
 
-    users_to_remove = list((Counter(current_users) - Counter(users)).elements())#[u for u in current_users if u not in users]
+    users_to_remove = list((Counter(current_users) - Counter(users)).elements())
     if users_to_remove:
         remove_group_users(project_node, users_to_remove)
 
