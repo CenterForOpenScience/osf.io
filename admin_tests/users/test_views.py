@@ -1,12 +1,12 @@
+# -*- coding: utf-8 -*-
 from django.test import RequestFactory
 from django.http import Http404
-from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from nose import tools as nt
 import mock
 import csv
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from tests.base import AdminTestCase
 from website import settings
@@ -223,53 +223,166 @@ class TestUserWorkshopFormView(AdminTestCase):
         self.auth_1 = Auth(self.user_1)
         self.user_2 = AuthUserFactory()
         self.user_3 = AuthUserFactory()
+        self.view = UserWorkshopFormView()
+        self.workshop_date = datetime.now()
         self.data = [
-            ['none', 'date', 'thing', 'more', 'less', 'email', 'none'],
-            [None, '9/1/16', None, None, None, self.user_1.username, None],
-            [None, '9/1/16', None, None, None, self.user_2.username, None],
-            [None, '9/1/16', None, None, None, self.user_3.username, None],
+            ['none', 'date', 'none', 'none', 'none', 'email', 'none'],
+            [None, self.workshop_date.strftime('%m/%d/%y'), None, None, None, self.user_1.username, None],
         ]
+
+        self.unicode_data = [
+            ['none', 'date', 'none', 'none', 'none', 'email', 'none'],
+            ['óç', self.workshop_date.strftime('%m/%d/%y'), 'in’©a', None, 'Õa', self.user_1.username, None],
+        ]
+
+        self.user_not_found_data = [
+            ['none', 'date', 'none', 'none', 'none', 'email', 'none'],
+            [None, self.workshop_date.strftime('%m/%d/%y'), None, None, None, 'user@example.com', None],
+        ]
+
+    def _create_and_parse_test_file(self, data):
         with open('test.csv', 'w') as fp:
             writer = csv.writer(fp)
-            for row in self.data:
+            for row in data:
                 writer.writerow(row)
-        self.view = UserWorkshopFormView()
 
-    def test_no_extra_info(self):
         with file('test.csv') as fp:
-            final = self.view.parse(fp)
-        nt.assert_equal(len(self.data[0]) + 3, len(final[0]))
+            result_csv = self.view.parse(fp)
 
-    def test_one_node(self):
-        node = ProjectFactory(creator=self.user_1)
-        node.add_log(
-            'log_added',
-            params={'project': node.pk},
-            auth=self.auth_1,
-            log_date=datetime.utcnow(),
-            save=True
+        return result_csv
+
+    def _create_nodes_and_add_logs(self, first_activity_date, second_activity_date=None):
+        node_one = ProjectFactory(creator=self.user_1, date_created=first_activity_date)
+        node_one.add_log(
+            'log_added', params={'project': node_one._id}, auth=self.auth_1, log_date=first_activity_date, save=True
         )
-        with file('test.csv') as fp:
-            final = self.view.parse(fp)
-        nt.assert_equal(1, final[1][-2])
-        nt.assert_equal(2, final[1][-3])
-        nt.assert_equal(self.user_1.pk, final[1][-4])
 
-    def test_unicode_error(self):
-        path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), 'unicode.csv')
-        with file(path, mode='U') as fp:
-            final = self.view.parse(fp)
-        nt.assert_in('Unable to parse line:', final[1][0])
+        if second_activity_date:
+            node_two = ProjectFactory(creator=self.user_1, date_created=second_activity_date)
+            node_two.add_log(
+                'log_added', params={'project': node_two._id}, auth=self.auth_1, log_date=second_activity_date, save=True
+            )
+
+    def test_correct_number_of_columns_added(self):
+        added_columns = ['OSF ID', 'Logs Since Workshop', 'Nodes Created Since Workshop', 'Last Log Data']
+        result_csv = self._create_and_parse_test_file(self.data)
+        nt.assert_equal(len(self.data[0]) + len(added_columns), len(result_csv[0]))
+
+    def test_user_activity_day_of_workshop_only(self):
+        self._create_nodes_and_add_logs(first_activity_date=self.workshop_date)
+
+        result_csv = self._create_and_parse_test_file(self.data)
+        user_logs_since_workshop = result_csv[1][-3]
+        user_nodes_created_since_workshop = result_csv[1][-2]
+
+        nt.assert_equal(user_logs_since_workshop, 2)
+        nt.assert_equal(user_nodes_created_since_workshop, 1)
+
+    def test_user_activity_before_workshop_only(self):
+        activity_date = datetime.now() - timedelta(days=1)
+        self._create_nodes_and_add_logs(first_activity_date=activity_date)
+
+        result_csv = self._create_and_parse_test_file(self.data)
+        user_logs_since_workshop = result_csv[1][-3]
+        user_nodes_created_since_workshop = result_csv[1][-2]
+
+        nt.assert_equal(user_logs_since_workshop, 0)
+        nt.assert_equal(user_nodes_created_since_workshop, 0)
+
+    def test_user_activity_after_workshop_only(self):
+        activity_date = datetime.now() + timedelta(days=1)
+        self._create_nodes_and_add_logs(first_activity_date=activity_date)
+
+        result_csv = self._create_and_parse_test_file(self.data)
+        user_logs_since_workshop = result_csv[1][-3]
+        user_nodes_created_since_workshop = result_csv[1][-2]
+
+        nt.assert_equal(user_logs_since_workshop, 2)
+        nt.assert_equal(user_nodes_created_since_workshop, 1)
+
+    def test_user_activity_day_of_workshop_and_before(self):
+        activity_date = datetime.now() - timedelta(days=1)
+        self._create_nodes_and_add_logs(
+            first_activity_date=self.workshop_date,
+            second_activity_date=activity_date
+        )
+
+        result_csv = self._create_and_parse_test_file(self.data)
+        user_logs_since_workshop = result_csv[1][-3]
+        user_nodes_created_since_workshop = result_csv[1][-2]
+
+        nt.assert_equal(user_logs_since_workshop, 2)
+        nt.assert_equal(user_nodes_created_since_workshop, 1)
+
+    def test_user_activity_day_of_workshop_and_after(self):
+        activity_date = datetime.now() + timedelta(days=1)
+        self._create_nodes_and_add_logs(
+            first_activity_date=self.workshop_date,
+            second_activity_date=activity_date
+        )
+
+        result_csv = self._create_and_parse_test_file(self.data)
+        user_logs_since_workshop = result_csv[1][-3]
+        user_nodes_created_since_workshop = result_csv[1][-2]
+
+        nt.assert_equal(user_logs_since_workshop, 4)
+        nt.assert_equal(user_nodes_created_since_workshop, 2)
+
+    def test_user_activity_before_workshop_and_after(self):
+        before_activity_date = datetime.now() - timedelta(days=1)
+        after_activity_date = datetime.now() + timedelta(days=1)
+        self._create_nodes_and_add_logs(
+            first_activity_date=before_activity_date,
+            second_activity_date=after_activity_date
+        )
+
+        result_csv = self._create_and_parse_test_file(self.data)
+        user_logs_since_workshop = result_csv[1][-3]
+        user_nodes_created_since_workshop = result_csv[1][-2]
+
+        nt.assert_equal(user_logs_since_workshop, 2)
+        nt.assert_equal(user_nodes_created_since_workshop, 1)
+
+    def test_user_osf_account_not_found(self):
+        result_csv = self._create_and_parse_test_file(self.user_not_found_data)
+        user_guid = result_csv[1][-4]
+        last_log_date = result_csv[1][-1]
+        user_logs_since_workshop = result_csv[1][-3]
+        user_nodes_created_since_workshop = result_csv[1][-2]
+
+        nt.assert_equal(user_guid, '')
+        nt.assert_equal(last_log_date, '')
+        nt.assert_equal(user_logs_since_workshop, 0)
+        nt.assert_equal(user_nodes_created_since_workshop, 0)
+
+    def test_csv_file_with_unicode_doesnt_error(self):
+        result_csv = self._create_and_parse_test_file(self.unicode_data)
+        user_logs_since_workshop = result_csv[1][-3]
+        user_nodes_created_since_workshop = result_csv[1][-2]
+
+        nt.assert_equal(user_logs_since_workshop, 0)
+        nt.assert_equal(user_nodes_created_since_workshop, 0)
 
     def test_form_valid(self):
         request = RequestFactory().post('/fake_path')
+        data = [
+            ['none', 'date', 'none', 'none', 'none', 'email', 'none'],
+            [None, '9/1/16', None, None, None, self.user_1.username, None],
+        ]
+
+        with open('test.csv', 'w') as fp:
+            writer = csv.writer(fp)
+            for row in data:
+                writer.writerow(row)
+
         with file('test.csv', mode='rb') as fp:
             uploaded = SimpleUploadedFile(fp.name, fp.read(), content_type='text/csv')
+
         form = WorkshopForm(data={'document': uploaded})
         form.is_valid()
         form.cleaned_data['document'] = uploaded
-        view = setup_form_view(self.view, request, form)
+        setup_form_view(self.view, request, form)
 
     def tearDown(self):
-        os.remove('test.csv')
+        if os.path.isfile('test.csv'):
+            os.remove('test.csv')
