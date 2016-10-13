@@ -407,26 +407,22 @@ def external_login_confirm_email_get(auth, uid, token):
     if not user:
         raise HTTPError(http.BAD_REQUEST)
 
-    next_url = request.args.get('next')
-    redirect_to_campaign = False
-    # next_url should always exist by design, set `dashboard` as default
-    if not next_url:
-        next_url = web_url_for('dashboard', _absolute=True)
-    for campaign in campaigns.CAMPAIGNS:
-        if next_url.startswith(campaigns.campaign_url_for(campaign)):
-            redirect_to_campaign = True
-            break
+    destination = request.args.get('destination')
+    if not destination:
+        raise HTTPError(http.BAD_REQUEST)
+
     # if user is already logged in
     if auth and auth.user:
-        # if it is the expected user
-        if auth.user._id == user._id:
-            new = request.args.get('new', None)
-            if new and not redirect_to_campaign:
-                status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True)
-                return redirect(web_url_for('dashboard'))
-            return redirect(next_url)
         # if it is a wrong user
-        return auth_logout(redirect_url=request.url)
+        if auth.user._id != user._id:
+            return auth_logout(redirect_url=request.url)
+        # if it is the expected user
+        new = request.args.get('new', None)
+        if destination in campaigns.CAMPAIGNS:
+            return redirect(campaigns.campaign_url_for(destination))
+        if new:
+            status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True)
+        return redirect(web_url_for('dashboard'))
 
     # token is invalid
     if token not in user.email_verifications:
@@ -612,7 +608,7 @@ def unconfirmed_email_add(auth=None):
     }, 200
 
 
-def send_confirm_email(user, email, renew=False, external_id_provider=None, external_id=None, service_url=None):
+def send_confirm_email(user, email, renew=False, external_id_provider=None, external_id=None, destination=None):
     """
     Sends `user` a confirmation to the given `email`.
 
@@ -622,7 +618,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
     :param renew: refresh the token
     :param external_id_provider: user's external id provider
     :param external_id: user's external id
-    :param service_url: the destination url after confirmation
+    :param destination: the destination page to redirect after confirmation
     :return:
     :raises: KeyError if user does not have a confirmation token for the given email.
     """
@@ -633,7 +629,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         force=True,
         renew=renew,
         external_id_provider=external_id_provider,
-        service_url=service_url
+        destination=destination
     )
 
     try:
@@ -836,6 +832,13 @@ def external_login_email_post():
     fullname = session.data['auth_user_fullname']
     service_url = session.data['service_url']
 
+    destination = 'dashboard'
+    for campaign in campaigns.CAMPAIGNS:
+        if campaign != 'institution':
+            if service_url.startswith(campaigns.campaign_url_for(campaign)):
+                destination = campaign
+                break
+
     if form.validate():
         clean_email = form.email.data
         user = get_user(email=clean_email)
@@ -863,7 +866,7 @@ def external_login_email_post():
                 clean_email,
                 external_id_provider=external_id_provider,
                 external_id=external_id,
-                service_url=service_url
+                destination=destination
             )
             # 3. notify user
             message = language.EXTERNAL_LOGIN_EMAIL_LINK_SUCCESS.format(
@@ -891,7 +894,7 @@ def external_login_email_post():
                 user.username,
                 external_id_provider=external_id_provider,
                 external_id=external_id,
-                service_url=service_url
+                destination=destination
             )
             # 4. notify user
             message = language.EXTERNAL_LOGIN_EMAIL_CREATE_SUCCESS.format(
