@@ -14,7 +14,7 @@ from website.settings import SUPPORT_EMAIL, DOMAIN
 from website.security import random_string
 from framework.auth import get_user
 
-from website.project.model import User, NodeLog
+from website.project.model import User, NodeLog, Node
 from website.mailchimp_utils import subscribe_on_confirm
 
 from admin.base.views import GuidFormView, GuidView
@@ -274,14 +274,28 @@ class UserWorkshopFormView(OSFAdmin, FormView):
         csv_file = form.cleaned_data['document']
         final = self.parse(csv_file)
         response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="workshop.csv"'
+        response['Content-Disposition'] = 'attachment; filename="workshop_user_stats.csv"'
         writer = csv.writer(response)
         for row in final:
             writer.writerow(row)
         return response
 
     @staticmethod
-    def parse(csv_file):
+    def find_user_by_email(email):
+        user_list = User.find_by_email(email=email)
+        return user_list[0] if user_list else None
+
+    @staticmethod
+    def get_user_logs_since_workshop(user, workshop_date):
+        query = Q('user', 'eq', user._id) & Q('date', 'gte', workshop_date)
+        return list(NodeLog.find(query=query))
+
+    @staticmethod
+    def get_user_nodes_since_workshop(user, workshop_date):
+        query = Q('creator', 'eq', user._id) & Q('date_created', 'gte', workshop_date)
+        return list(Node.find(query=query))
+
+    def parse(self, csv_file):
         """ Parse and add to csv file.
 
         :param csv_file: Comma separated
@@ -290,42 +304,35 @@ class UserWorkshopFormView(OSFAdmin, FormView):
         result = []
         csv_reader = csv.reader(csv_file)
 
-        for index, line in enumerate(csv_reader):
+        for index, row in enumerate(csv_reader):
             if index == 0:
-                line.extend([
-                    'User ID', 'User Logs', 'User Nodes', 'Last Active Date'
+                row.extend([
+                    'OSF ID', 'Logs Since Workshop', 'Nodes Created Since Workshop', 'Last Log Date'
                 ])
-                result.append(line)
+                result.append(row)
                 continue
 
-            email = line[5]
-            user_list = User.find_by_email(email=email)
-            user = user_list[0] if user_list else None
+            email = row[5]
+            user = self.find_user_by_email(email)
 
             if not user:
-                line.extend(['', 0, 0, ''])
-                result.append(line)
+                row.extend(['', 0, 0, ''])
+                result.append(row)
                 continue
 
-            workshop_date = datetime.strptime(line[1], '%m/%d/%y')
-            # does this include the workshop date? >=?
-            query = Q('user', 'eq', user.pk) & Q('date', 'gt', workshop_date)
-            user_logs_since_workshop = list(NodeLog.find(query))
+            workshop_date = datetime.strptime(row[1], '%m/%d/%y')
+            nodes = self.get_user_nodes_since_workshop(user, workshop_date)
+            user_logs = self.get_user_logs_since_workshop(user, workshop_date)
 
             try:
-                last_log_date = user_logs_since_workshop[-1].date.strftime('%m/%d/%y')
-                nodes = []
-                for log in user_logs_since_workshop:
-                    if log.node.pk not in nodes:
-                        nodes.append(log.node.pk)
+                last_log_date = user_logs[-1].date.strftime('%m/%d/%y')
             except IndexError:
                 last_log_date = ''
-                nodes = []
 
-            line.extend([
-                user.pk, len(user_logs_since_workshop), len(nodes), last_log_date
+            row.extend([
+                user.pk, len(user_logs), len(nodes), last_log_date
             ])
-            result.append(line)
+            result.append(row)
 
         return result
 
