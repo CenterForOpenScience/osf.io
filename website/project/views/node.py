@@ -1152,12 +1152,12 @@ def _add_pointers(node, pointers, auth):
     """
 
     :param Node node: Node to which pointers will be added
-    :param list pointers: Nodes to add as pointers
+    :param list pointers: NodeRelations to add as pointers
 
     """
     added = False
     for pointer in pointers:
-        node.add_pointer(pointer, auth, save=False)
+        node.add_pointer(pointer.node, auth, save=False)
         added = True
 
     if added:
@@ -1169,6 +1169,7 @@ def move_pointers(auth):
     """Move pointer from one node to another node.
 
     """
+    from osf.models import NodeRelation
 
     from_node_id = request.json.get('fromNodeId')
     to_node_id = request.json.get('toNodeId')
@@ -1185,18 +1186,18 @@ def move_pointers(auth):
 
     for pointer_to_move in pointers_to_move:
         try:
-            pointer_node = from_node.linked_nodes.get(_id=pointer_to_move)
+            node_relation = NodeRelation.objects.get(_id=pointer_to_move)
         except Node.DoesNotExist:
             raise HTTPError(http.BAD_REQUEST)
 
         try:
-            from_node.rm_pointer(pointer_node, auth=auth)
+            from_node.rm_pointer(node_relation, auth=auth)
         except ValueError:
             raise HTTPError(http.BAD_REQUEST)
 
         from_node.save()
         try:
-            _add_pointers(to_node, [pointer_node], auth)
+            _add_pointers(to_node, [node_relation], auth)
         except ValueError:
             raise HTTPError(http.BAD_REQUEST)
 
