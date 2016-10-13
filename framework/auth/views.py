@@ -571,7 +571,6 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         email,
         external=True,
         force=True,
-        renew=renew,
         external_id_provider=external_id_provider
     )
 
