@@ -31,6 +31,7 @@ def get_or_create_node(title, user):
         node = Node.find_one(
             Q('title', 'iexact', title)
             & Q('contributors', 'eq', user._id)
+            & Q('is_deleted', 'ne', True)
         )
         return node, False
     except ModularOdmException:
