@@ -3,7 +3,7 @@
 var assert = require('chai').assert;
 var utils = require('tests/utils');
 var faker = require('faker');
-
+var $3 = window.$3;
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
