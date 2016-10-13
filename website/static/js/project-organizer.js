@@ -40,7 +40,7 @@ function _poTitleColumn(item) {
     if (item.data.archiving) { // TODO check if this variable will be available
         return  m('span', {'class': 'registration-archiving'}, node.attributes.title + ' [Archiving]');
     } else if (node.attributes.preprint){
-        return [ m('a.fg-file-links', { 'class' : css, href : preprintLinkPre + node.id, 'data-nodeID' : node.id, 'data-nodeTitle': node.attributes.title, onclick : function(event) {
+        return [ m('a.fg-file-links', { 'class' : css, href : preprintLinkPre + node.id, 'data-nodeID' : node.id, 'data-nodeTitle': node.attributes.title,'data-nodeType': node.type, onclick : function(event) {
             preventSelect.call(this, event);
             $osf.trackClick('myProjects', 'projectOrganizer', 'navigate-to-preprint');
         }}, node.attributes.title) ];
