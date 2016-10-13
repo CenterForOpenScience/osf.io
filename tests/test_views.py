@@ -8,6 +8,7 @@ import datetime as dt
 import httplib as http
 import json
 import time
+import pytz
 import unittest
 
 import mock
@@ -4170,7 +4171,7 @@ class TestProjectCreation(OsfTestCase):
         post_data = {'title': '<b>New <blink>Component</blink> Title</b>', 'category': ''}
         request = self.app.post(url, post_data, auth=user.auth).follow()
         project.reload()
-        child = project.nodes.first()
+        child = project.nodes.next()
         # HTML has been stripped
         assert_equal(child.title, 'New Component Title')
 
@@ -4229,7 +4230,7 @@ class TestProjectCreation(OsfTestCase):
         post_data = {'title': 'New Component With Contributors Title', 'category': '', 'inherit_contributors': True}
         res = self.app.post(url, post_data, auth=self.user1.auth)
         self.project.reload()
-        child = self.project.nodes.first()
+        child = self.project.nodes.next()
         assert_equal(child.title, 'New Component With Contributors Title')
         assert_in(self.user1, child.contributors)
         assert_in(self.user2, child.contributors)
@@ -4244,7 +4245,7 @@ class TestProjectCreation(OsfTestCase):
         post_data = {'title': 'New Component With Contributors Title', 'category': '', 'inherit_contributors': True}
         res = self.app.post(url, post_data, auth=non_admin.auth)
         self.project.reload()
-        child = self.project.nodes.first()
+        child = self.project.nodes.next()
         assert_equal(child.title, 'New Component With Contributors Title')
         assert_in(non_admin, child.contributors)
         assert_in(self.user1, child.contributors)
@@ -4267,7 +4268,7 @@ class TestProjectCreation(OsfTestCase):
         post_data = {'title': 'New Component With Contributors Title', 'category': ''}
         res = self.app.post(url, post_data, auth=self.user1.auth)
         self.project.reload()
-        child = self.project.nodes.first()
+        child = self.project.nodes.next()
         assert_equal(child.title, 'New Component With Contributors Title')
         assert_in(self.user1, child.contributors)
         assert_not_in(self.user2, child.contributors)
@@ -4295,6 +4296,7 @@ class TestProjectCreation(OsfTestCase):
         assert_true(node)
         assert_true(node.description, 'I describe things!')
 
+    @pytest.mark.skip('wiki addon not yet implemented')
     def test_can_template(self):
         other_node = ProjectFactory(creator=self.creator)
         payload = {
@@ -4327,6 +4329,7 @@ class TestProjectCreation(OsfTestCase):
         assert_equal(res2.status_code, 301)
         assert_equal(res2.request.path, '/login')
 
+    @pytest.mark.skip('wiki addon not yet implemented')
     def test_project_new_from_template_public_non_contributor(self):
         non_contributor = AuthUserFactory()
         project = ProjectFactory(is_public=True)
@@ -4334,6 +4337,7 @@ class TestProjectCreation(OsfTestCase):
         res = self.app.post(url, auth=non_contributor.auth)
         assert_equal(res.status_code, 201)
 
+    @pytest.mark.skip('wiki addon not yet implemented')
     def test_project_new_from_template_contributor(self):
         contributor = AuthUserFactory()
         project = ProjectFactory(is_public=False)
@@ -4463,7 +4467,7 @@ class TestCommentViews(OsfTestCase):
         }, auth=self.user.auth)
         self.user.reload()
 
-        user_timestamp = self.user.comments_viewed_timestamp[self.project._id]
+        user_timestamp = self.user.comments_viewed_timestamp[self.project._id].replace(tzinfo=pytz.utc)
         view_timestamp = timezone.now()
         assert_datetime_equal(user_timestamp, view_timestamp)
 
