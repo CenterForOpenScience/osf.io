@@ -4477,7 +4477,7 @@ class TestCommentViews(OsfTestCase):
         non_contributor.reload()
         assert_not_in(self.project._id, non_contributor.comments_viewed_timestamp)
 
-    @pytest.skip('Unskip when get_addon is implemented for nodes')
+    @pytest.mark.skip('Unskip when get_addon is implemented for nodes')
     def test_view_comments_updates_user_comments_view_timestamp_files(self):
         osfstorage = self.project.get_addon('osfstorage')
         root_node = osfstorage.get_root()

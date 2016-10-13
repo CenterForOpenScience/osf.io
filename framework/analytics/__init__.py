@@ -24,7 +24,6 @@ collection = None
 @app.task(max_retries=5, default_retry_delay=60)
 def increment_user_activity_counters(user_id, action, date_string, db=None):
     from osf.models import UserActivityCounter
-    # NOTE maybe this should act differently in DEBUG_MODE, I disagree
     return UserActivityCounter.increment(user_id, action, date_string)
 
 

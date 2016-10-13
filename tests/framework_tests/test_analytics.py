@@ -16,7 +16,7 @@ from framework.sessions import session
 from osf.models import PageCounter
 
 from tests.base import OsfTestCase
-from tests.factories import UserFactory, ProjectFactory
+from osf_tests.factories import UserFactory, ProjectFactory
 
 pytestmark = pytest.mark.django_db
 

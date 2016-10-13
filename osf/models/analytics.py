@@ -132,6 +132,8 @@ class PageCounter(BaseModel):
                 model_instance.unique += 1
                 visited.append(page)
                 session.data['visited'] = visited
+
+            session.save()
             model_instance.total += 1
 
             model_instance.save()
