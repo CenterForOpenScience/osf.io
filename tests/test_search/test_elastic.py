@@ -11,18 +11,21 @@ import mock
 from modularodm import Q
 
 from framework.auth.core import Auth
+
 from website import settings
 import website.search.search as search
 from website.search import elastic_search
 from website.search.util import build_query
 from website.search_migration.migrate import migrate
 from website.models import Retraction, NodeLicense, Tag
+from website.files.models.osfstorage import OsfStorageFile
 
 from tests import factories
 from tests.base import OsfTestCase
 from tests.test_search import SearchTestCase
 from tests.test_features import requires_search
 from tests.utils import mock_archive, run_celery_tasks
+
 
 TEST_INDEX = 'test'
 
@@ -931,8 +934,10 @@ class TestSearchFiles(SearchTestCase):
 
     def test_file_download_url_no_guid(self):
         file_ = self.root.append_file('Timber.mp3')
-        deep_url = '/' + file_.node._id + '/files/osfstorage' + file_.path + '/'
-        find = query_file('Timber.mp3')['results']        
-        assert_equal(len(file_.path), 25)
+        path = OsfStorageFile.find_one( Q('node', 'eq', file_.node_id)).wrapped().path
+        deep_url = '/' + file_.node._id + '/files/osfstorage' + path + '/'
+        find = query_file('Timber.mp3')['results']
+        assert_not_equal(file_.path, '')
+        assert_equal(file_.path, path)
         assert_equal(find[0]['guid_url'], None)
         assert_equal(find[0]['deep_url'], deep_url)
