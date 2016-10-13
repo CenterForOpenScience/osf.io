@@ -74,7 +74,7 @@ var ProjectSettings = oop.extend(
                     url: self.updateUrl,
                     type: 'PATCH',
                     dataType: 'json',
-                    contentType: 'application/json',
+                    contentType: 'application/vnd.api+json',
                     crossOrigin: true,
                     xhrFields: {withCredentials: true},
                     processData: false,
