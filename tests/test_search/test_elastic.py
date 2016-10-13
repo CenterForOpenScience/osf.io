@@ -920,3 +920,19 @@ class TestSearchFiles(SearchTestCase):
             node.save()
         find = query_file('The Dock of the Bay.mp3')['results']
         assert_equal(len(find), 0)
+
+    def test_file_download_url_guid(self):
+        file_ = self.root.append_file('Timber.mp3')
+        file_guid = file_.get_guid(create=True)
+        file_.save()
+        find = query_file('Timber.mp3')['results']
+        assert_equal(find[0]['guid_url'], '/' + file_guid._id + '/')
+
+
+    def test_file_download_url_no_guid(self):
+        file_ = self.root.append_file('Timber.mp3')
+        deep_url = '/' + file_.node._id + '/files/osfstorage' + file_.path + '/'
+        find = query_file('Timber.mp3')['results']        
+        assert_equal(len(file_.path), 25)
+        assert_equal(find[0]['guid_url'], None)
+        assert_equal(find[0]['deep_url'], deep_url)
