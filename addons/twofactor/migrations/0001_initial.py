@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
-import osf.utils.base
+import osf.models.base
 
 
 class Migration(migrations.Migration):
@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
             name='TwoFactorUserSettings',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('_id', models.CharField(db_index=True, default=osf.utils.base.generate_object_id, max_length=24, unique=True)),
+                ('_id', models.CharField(db_index=True, default=osf.models.base.generate_object_id, max_length=24, unique=True)),
                 ('deleted', models.BooleanField(default=False)),
                 ('totp_secret', models.TextField(blank=True, null=True)),
                 ('totp_drift', models.IntegerField()),
