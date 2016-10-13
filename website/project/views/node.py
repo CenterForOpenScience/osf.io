@@ -1152,12 +1152,12 @@ def _add_pointers(node, pointers, auth):
     """
 
     :param Node node: Node to which pointers will be added
-    :param list pointers: NodeRelations to add as pointers
+    :param list pointers: Nodes to add as pointers
 
     """
     added = False
     for pointer in pointers:
-        node.add_pointer(pointer.node, auth, save=False)
+        node.add_pointer(pointer, auth, save=False)
         added = True
 
     if added:
@@ -1197,7 +1197,7 @@ def move_pointers(auth):
 
         from_node.save()
         try:
-            _add_pointers(to_node, [node_relation], auth)
+            _add_pointers(to_node, [node_relation.node], auth)
         except ValueError:
             raise HTTPError(http.BAD_REQUEST)
 
