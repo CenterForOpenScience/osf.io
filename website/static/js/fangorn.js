@@ -2098,13 +2098,13 @@ function openParentFolders (item) {
  function _fangornMultiselect (event, row) {
     var tb = this;
     var scrollToItem = false;
-    dismissToolbar.call(tb);
-    filterRowsNotInParent.call(tb, tb.multiselected());
     if (tb.toolbarMode() === 'filter') {
         scrollToItem = true;
         // recursively open parents of the selected item but do not lazyload;
         openParentFolders.call(tb, row);
-    }
+    }    
+    dismissToolbar.call(tb);
+    filterRowsNotInParent.call(tb, tb.multiselected());
 
     if (tb.multiselected().length === 1){
         tb.select('#tb-tbody').removeClass('unselectable');
