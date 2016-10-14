@@ -4,7 +4,8 @@ import datetime
 
 from django.utils import timezone
 from framework.auth.core import Auth
-from osf.models import Node, Registration, Sanction, MetaSchema, NodeWikiPage
+from osf.models import Node, Registration, Sanction, MetaSchema
+from addons.wiki.models import NodeWikiPage
 from osf.modm_compat import Q
 
 from website import settings
@@ -14,6 +15,7 @@ from website.util.permissions import READ, WRITE, ADMIN
 from . import factories
 from .utils import assert_datetime_equal, mock_archive
 from .factories import get_default_metaschema
+from addons.wiki.tests.factories import NodeWikiFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -274,13 +276,12 @@ class TestRegisterNode:
         assert registration.wiki_pages_current == {}
         assert registration.wiki_private_uuids == {}
 
-    @pytest.mark.skip('NodeWikiPage not yet implemented')
     @mock.patch('website.project.signals.after_create_registration')
-    def test_registration_clones_project_wiki_pages(self, mock_signal):
-        project = factories.ProjectFactory(creator=self.user, is_public=True)
-        wiki = factories.NodeWikiFactory(node=project)
+    def test_registration_clones_project_wiki_pages(self, project, user, mock_signal):
+        project = factories.ProjectFactory(creator=user, is_public=True)
+        wiki = NodeWikiFactory(node=project)
         current_wiki = factories.NodeWikiFactory(node=project, version=2)
-        registration = project.register_node(get_default_metaschema(), Auth(self.user), '', None)
+        registration = project.register_node(get_default_metaschema(), Auth(user), '', None)
         assert self.registration.wiki_private_uuids == {}
 
         registration_wiki_current = NodeWikiPage.load(registration.wiki_pages_current[current_wiki.page_name])
