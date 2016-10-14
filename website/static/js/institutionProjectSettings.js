@@ -173,10 +173,10 @@ var ViewModel = function(data) {
 
     self._modifyInst = function(item) {
         self.loadingBootbox = bootbox.dialog({
-                backdrop: true,
-                closeButton: false,
-                message: '<div class="spinner-loading-wrapper"><div class="logo-spin logo-lg"></div><p class="m-t-sm fg-load-message"> Making changes...  </p></div>',
-            })        
+            backdrop: true,
+            closeButton: false,
+            message: '<div class="spinner-loading-wrapper"><div class="logo-spin logo-lg"></div><p class="m-t-sm fg-load-message"> Making changes...  </p></div>',
+        });
         var index;
         var url = data.apiV2Prefix + 'institutions/' + item.id + '/relationships/nodes/';
         var ajaxJSONType = self.isAddInstitution() ? 'POST': 'DELETE';
