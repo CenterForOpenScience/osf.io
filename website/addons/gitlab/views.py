@@ -300,10 +300,6 @@ def gitlab_hgrid_data(node_settings, auth, **kwargs):
         ref = None
         can_edit = False
 
-    name_tpl = '{user}/{repo}'.format(
-        user=node_settings.user, repo=node_settings.repo
-    )
-
     permissions = {
         'edit': can_edit,
         'view': True,
@@ -323,11 +319,11 @@ def gitlab_hgrid_data(node_settings, auth, **kwargs):
 
     return [rubeus.build_addon_root(
         node_settings,
-        name_tpl,
+        repo['path_with_namespace'],
         urls=urls,
         permissions=permissions,
         branches=branch_names,
-        defaultBranch=branch,
+        defaultBranch=repo['default_branch'],
         private_key=kwargs.get('view_only', None),
     )]
 
