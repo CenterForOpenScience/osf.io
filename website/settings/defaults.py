@@ -1806,7 +1806,7 @@ SITEMAP_PREPRINT_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefre
 SITEMAP_PREPRINT_FILE_CONFIG = OrderedDict([('loc', ''), ('lastmod', ''), ('changefreq', 'yearly'), ('priority', '0.5')])
 
 DISCOURSE_SSO_SECRET = 'changeme'
-DISCOURSE_SERVER_URL = 'http://192.168.99.100'
+DISCOURSE_SERVER_URL = 'http://192.168.99.100/'
 DISCOURSE_API_KEY = 'changeme'
 DISCOURSE_API_ADMIN_USER = 'system'
 
@@ -1815,7 +1815,11 @@ DISCOURSE_CATEGORY_COLORS = ['BF1E2E', '3AB54A', '652D90']
 DISCOURSE_SERVER_SETTINGS = {'title': 'Open Science Framework',
                              'site_description': 'A scholarly commons to connect the entire research cycle',
                              'contact_email': 'changeme',
-                             'contact_url': '',
+                             'contact_url': 'https://cos.io/contact/',
+                             'company_short_name': 'COS',
+                             'company_full_name': 'Center for Open Science',
+                             'company_domain': 'osf.io',
+                             'exclude_rel_nofollow_domains': 'osf.io|cos.io',
                              'notification_email': 'noreply@osf.io',
                              'site_contact_username': 'system',
                              'logo_url': DOMAIN + 'static/img/cos-white2.png',

@@ -15,7 +15,7 @@ Use `docker-machine ls` to determine the ip address of the virtual machine.
 Use `docker-machine ssh` to ssh into the default machine.
 
 Boot2Docker is by default missing some important utilities.
-Run `tce-load -wi bash`, `tce-load -wi nano` (or make sure an editor you like is installed). If nano gives an error about the terminal starting up, you may also need to run `export TERM=xterm` and add this to the ~/.bashrc file.
+Run `tce-load -wi bash nano`, (bash is necessary but nano is optional if an editor you like is already installed). If nano gives an error about the terminal starting up, you may also need to run `export TERM=xterm` and add this to the ~/.bashrc file.
 
 ###Install Discourse
 <pre>sudo -s
@@ -46,7 +46,7 @@ Now logged in, click on the triple bar drop down in the top right corner and nav
 
 Open up your OSF website/settings/local.py file. Enter the API key we just created as the value for `DISCOURSE_API_KEY`. Also generate a random ~128 bit entropy string, for example with https://www.random.org/bytes/ and use this for `DISCOURSE_SSO_SECRET`. Also make sure that `DISCOURSE_SERVER_URL` points to your Discourse instance. Locally, this will be the ip address of virtual machine. You will also need to set the `contact_email` in the list of Discourse settings. This large list of settings can all be later changed from the admin interface in Discourse.
 
-From the osf.io root directory run `python -m framework.discourse.configure`. This will set all the settings listed in local.py on the Discourse instance and perform a allow embedding of Discourse from the OSF. This is merely for convenience because all of these settings can be changed from within Discourse as well. Because these include SSO login settings, further sign-ons will occur through the OSF.
+From the osf.io root directory run `python -m framework.discourse.configure`. This will set all the settings listed in local.py on the Discourse instance and allow embedding of Discourse from the OSF. This is merely for convenience because all of these settings can be changed from within Discourse as well. Because these include SSO login settings, further sign-ons will occur through the OSF.
 
 ###Migrating Comments
 The migration process consists of three scripts to run in sequence.

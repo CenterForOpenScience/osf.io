@@ -1741,7 +1741,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
                 Node.bulk_update_search(batch)
                 children = children[99:]
 
-        # For project public/private and contributors
+        # For project public/private and contributors, no-op if everything is already synced
         try:
             discourse.sync_project(self)
         except (discourse.DiscourseException, requests.exceptions.ConnectionError):
