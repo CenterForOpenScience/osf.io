@@ -669,10 +669,9 @@ def claim_user_form(auth, **kwargs):
     user.update_guessed_names()
     # The email can be the original referrer email if no claimer email has been specified.
     claimer_email = unclaimed_record.get('claimer_email') or unclaimed_record.get('email')
-
     # If there is a registered user with this email, redirect to 're-enter password' page
     try:
-        user_from_email = User.objects.get(username=claimer_email)
+        user_from_email = User.objects.get(emails__icontains=claimer_email)
     except User.DoesNotExist:
         user_from_email = None
     if user_from_email and user_from_email.is_registered:
