@@ -6,6 +6,7 @@ from addons.base.apps import BaseAddonConfig
 class DropboxAddonConfig(BaseAddonConfig):
 
     name = 'addons.dropbox'
+    label = 'addons_dropbox'
     full_name = 'DropBox'
 
     FOLDER_SELECTED = 'dropbox_folder_selected'

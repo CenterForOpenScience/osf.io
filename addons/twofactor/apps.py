@@ -4,6 +4,7 @@ from addons.base.apps import BaseAddonConfig
 class TwoFactorAddonConfig(BaseAddonConfig):
 
     name = 'addons.twofactor'
+    label = 'addons_twofactor'
     full_name = 'Two-factor Authentication'
 
     # FOLDER_SELECTED = 'dropbox_folder_selected'
