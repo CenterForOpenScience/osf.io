@@ -15,7 +15,7 @@ from dirtyfields import DirtyFieldsMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
-from django.db.models.signals import pre_save, post_save
+from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 from keen import scoped_keys
@@ -196,9 +196,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                    through_fields=('parent', 'child'),
                                    related_name='parent_nodes')
 
-    # Cached parent of this node; gets set in a pre_save listener and on creation
-    parent_node = models.ForeignKey('AbstractNode', on_delete=models.SET_NULL,
-                                    blank=True, null=True, db_index=True)
+    @property
+    def parent_node(self):
+        node_rel = NodeRelation.objects.filter(
+            child=self,
+            is_node_link=False
+        ).first()
+        return node_rel.parent if node_rel else None
 
     @property
     def nodes(self):
@@ -694,8 +698,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def is_admin_parent(self, user):
         if self.has_permission(user, 'admin', check_parent=False):
             return True
-        if self.parent_node:
-            return self.parent_node.is_admin_parent(user)
+        parent = self.parent_node
+        if parent:
+            return parent.is_admin_parent(user)
         return False
 
     def find_readable_descendants(self, auth):
@@ -2562,6 +2567,7 @@ def send_osf_signal(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
+@receiver(post_save, sender='osf.Registration')
 def set_parent(sender, instance, *args, **kwargs):
     if getattr(instance, '_parent', None):
         NodeRelation.objects.get_or_create(
@@ -2569,14 +2575,3 @@ def set_parent(sender, instance, *args, **kwargs):
             child=instance,
             is_node_link=False
         )
-        instance.parent_node = instance._parent
-
-@receiver(pre_save, sender=Collection)
-@receiver(pre_save, sender=Node)
-def update_parent_node(sender, instance, *args, **kwargs):
-    node_rel = NodeRelation.objects.filter(
-        child=instance,
-        is_node_link=False
-    ).first()
-    parent = node_rel.parent if node_rel else None
-    instance.parent_node = parent

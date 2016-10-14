@@ -1,6 +1,7 @@
 """
 Metrics scripts
 """
+from django.db.models import F
 from datetime import datetime, timedelta
 from modularodm import Q
 from website.project.model import User, Node
@@ -70,7 +71,7 @@ def get_days_statistics(time, latest=None):
 
 def get_projects(time=None, public=False, registered=False):
     query = (
-        Q('parent_node', 'eq', None) &
+        Q('root_id', 'eq', F('id')) &
         CONTENT_NODE_QUERY
     )
     if time:

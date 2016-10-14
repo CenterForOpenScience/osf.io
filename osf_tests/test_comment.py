@@ -1,6 +1,4 @@
 import pytest
-# from nose.tools import *  # noqa PEP8 asserts
-# from nose_parameterized import parameterized
 from collections import OrderedDict
 
 from modularodm.exceptions import ValidationError
@@ -61,7 +59,7 @@ def test_comments_have_longer_guid():
 def test_comments_are_queryable_by_root_target():
     root_target = ProjectFactory()
     comment = CommentFactory(node=root_target)
-    assert Comment.find(Q('root_target', 'eq', root_target._id))[0] == comment
+    assert Comment.find(Q('root_target', 'eq', root_target.guids.first()))[0] == comment
 
 
 # copied from tests/test_comments.py
@@ -179,7 +177,7 @@ class TestCommentModel:
                 user.is_registered = False
                 user.is_claimed = False
                 user.save()
-                node.add_contributor(user, visible=False,permissions=[permissions.READ], save=True)
+                node.add_contributor(user, visible=False, permissions=[permissions.READ], save=True)
 
                 Comment.create(
                     auth=auth,
@@ -293,7 +291,7 @@ class TestCommentModel:
         comment = CommentFactory()
         auth = Auth(comment.user)
         with capture_signals() as mock_signals:
-            comment.ever_mentioned=[comment.user._id]
+            comment.ever_mentioned = [comment.user._id]
             comment.edit(
                 auth=auth,
                 content='This is a comment with a bad mention [@Already Mentioned User](http://localhost:5000/' + comment.user._id + '/).',

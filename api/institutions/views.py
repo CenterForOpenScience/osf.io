@@ -1,3 +1,4 @@
+from django.db.models import F
 from django.apps import apps
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
@@ -156,7 +157,8 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
 
     base_node_query = (
         Q('is_deleted', 'ne', True) &
-        Q('parent_node', 'eq', None) &
+        # Top-level projects as root id equal to themselves
+        Q('root_id', 'eq', F('id')) &
         Q('is_public', 'eq', True)
     )
 

@@ -1,3 +1,4 @@
+from django.db.models import F
 from modularodm import Q
 
 from website.app import init_app
@@ -24,8 +25,8 @@ def get_count_by_institutions():
 
         registration_query = node_query & Q('is_registration', 'eq', True)
         non_registration_query = node_query & Q('is_registration', 'eq', False)
-        project_query = non_registration_query & Q('parent_node', 'eq', None)
-        registered_project_query = registration_query & Q('parent_node', 'eq', None)
+        project_query = non_registration_query & Q('root_id', 'eq', F('id'))  # top-level
+        registered_project_query = registration_query & Q('root_id', 'eq', F('id'))  # top-level
         public_query = Q('is_public', 'eq', True)
         private_query = Q('is_public', 'eq', False)
         node_public_query = non_registration_query & public_query

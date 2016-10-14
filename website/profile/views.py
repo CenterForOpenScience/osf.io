@@ -4,9 +4,9 @@ import datetime
 import logging
 import httplib
 import httplib as http  # TODO: Inconsistent usage of aliased import
-import uuid
 from dateutil.parser import parse as parse_date
 
+from django.db.models import F
 from flask import request
 import markupsafe
 from modularodm.exceptions import ValidationError, NoResultsFound, MultipleResultsFound
@@ -64,7 +64,8 @@ def get_public_components(uid=None, user=None):
             user,
             subquery=(
                 PROJECT_QUERY &
-                Q('parent_node', 'ne', None) &
+                # A project is top-level if its root is equal to itself
+                Q('root_id', 'ne', F('id')) &
                 Q('is_public', 'eq', True)
             )
         )

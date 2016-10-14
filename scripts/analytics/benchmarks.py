@@ -6,8 +6,9 @@ import datetime
 import collections
 
 import tabulate
-from modularodm import Q
+from django.db.models import F
 from dateutil.relativedelta import relativedelta
+from modularodm import Q
 
 from framework.analytics import get_basic_counters
 from framework.mongo.utils import paginated
@@ -150,14 +151,16 @@ def get_log_counts(users):
 def get_projects():
     # This count includes projects, forks, and registrations
     projects = Node.find(
-        Q('parent_node', 'eq', None) &
+        # Top-level project have root equal to themselves
+        Q('root_id', 'eq', F('id')) &
         CONTENT_NODE_QUERY
     )
     return projects
 
 def get_projects_forked():
     projects_forked = Node.find(
-        Q('parent_node', 'eq', None) &
+        # Top-level project have root equal to themselves
+        Q('root_id', 'eq', F('id')) &
         Q('is_fork', 'eq', True) &
         CONTENT_NODE_QUERY
     )
@@ -165,7 +168,8 @@ def get_projects_forked():
 
 def get_projects_registered():
     projects_registered = Node.find(
-        Q('parent_node', 'eq', None) &
+        # Top-level project have root equal to themselves
+        Q('root_id', 'eq', F('id')) &
         Q('is_registration', 'eq', True) &
         CONTENT_NODE_QUERY
     )
@@ -173,7 +177,8 @@ def get_projects_registered():
 
 def get_projects_public():
     projects_public = Node.find(
-        Q('parent_node', 'eq', None) &
+        # Top-level project have root equal to themselves
+        Q('root_id', 'eq', F('id')) &
         Q('is_public', 'eq', True) &
         CONTENT_NODE_QUERY
     )

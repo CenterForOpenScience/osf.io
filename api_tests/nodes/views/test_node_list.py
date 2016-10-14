@@ -2,6 +2,7 @@
 from nose.tools import *  # flake8: noqa
 import pytest
 
+from django.db.models import F
 from modularodm import Q
 from framework.auth.core import Auth
 
@@ -429,7 +430,6 @@ class TestNodeFiltering(ApiTestCase):
         root_nodes = Node.find(Q('is_public', 'eq', True) & Q('root', 'eq', root))
         assert_equal(len(res.json['data']), root_nodes.count())
 
-    @pytest.mark.skip('Preprint undergoing implementation changes')
     def test_filtering_on_null_parent(self):
         # add some nodes TO be included
         new_user = AuthUserFactory()
@@ -445,10 +445,9 @@ class TestNodeFiltering(ApiTestCase):
         res = self.app.get(url, auth=new_user.auth)
         assert_equal(res.status_code, 200)
 
-        public_root_nodes = Node.find(Q('is_public', 'eq', True) & Q('parent_node', 'eq', None))
+        public_root_nodes = Node.find(Q('is_public', 'eq', True) & Q('root_id', 'eq', F('id')))
         assert_equal(len(res.json['data']), public_root_nodes.count())
 
-    @pytest.mark.skip('Preprint undergoing implementation changes')
     def test_filtering_on_title_not_equal(self):
         url = '/{}nodes/?filter[title][ne]=Project%20One'.format(API_BASE)
         res = self.app.get(url, auth=self.user_one.auth)
@@ -463,7 +462,6 @@ class TestNodeFiltering(ApiTestCase):
         assert_in(self.project_three.title, titles)
         assert_in(self.private_project_user_one.title, titles)
 
-    @pytest.mark.skip('Preprint undergoing implementation changes')
     def test_filtering_on_description_not_equal(self):
         url = '/{}nodes/?filter[description][ne]=One%20Three'.format(API_BASE)
         res = self.app.get(url, auth=self.user_one.auth)

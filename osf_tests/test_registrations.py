@@ -184,12 +184,12 @@ class TestRegisterNode:
 
         # Create some nodes
         # component
-        factories.NodeFactory(
+        comp1 = factories.NodeFactory(  # noqa
             creator=user,
             parent=project,
         )
         # subproject
-        factories.ProjectFactory(
+        comp2 = factories.ProjectFactory(  # noqa
             creator=user,
             parent=project,
         )

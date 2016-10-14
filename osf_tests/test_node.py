@@ -507,6 +507,10 @@ class TestContributorAddedSignal:
 
 class TestPermissionMethods:
 
+    @pytest.fixture()
+    def project(self, user):
+        return ProjectFactory(creator=user)
+
     def test_has_permission(self, node):
         user = UserFactory()
         contributor = Contributor.objects.create(
@@ -617,6 +621,200 @@ class TestPermissionMethods:
         node = NodeFactory(is_public=True)
         # Noncontributor can't edit
         assert bool(node.can_edit(user1_auth)) is False
+
+    def test_can_view_private(self, project, auth):
+        # Create contributor and noncontributor
+        link = PrivateLinkFactory()
+        link.nodes.add(project)
+        link.save()
+        contributor = UserFactory()
+        contributor_auth = Auth(user=contributor)
+        other_guy = UserFactory()
+        other_guy_auth = Auth(user=other_guy)
+        project.add_contributor(
+            contributor=contributor, auth=auth)
+        project.save()
+        # Only creator and contributor can view
+        assert project.can_view(auth)
+        assert project.can_view(contributor_auth)
+        assert project.can_view(other_guy_auth) is False
+        other_guy_auth.private_key = link.key
+        assert project.can_view(other_guy_auth)
+
+    def test_is_admin_parent_target_admin(self, project):
+        assert project.is_admin_parent(project.creator)
+
+    def test_is_admin_parent_parent_admin(self, project):
+        user = UserFactory()
+        node = NodeFactory(parent=project, creator=user)
+        assert node.is_admin_parent(project.creator)
+
+    def test_is_admin_parent_grandparent_admin(self, project):
+        user = UserFactory()
+        parent_node = NodeFactory(
+            parent=project,
+            category='project',
+            creator=user
+        )
+        child_node = NodeFactory(parent=parent_node, creator=user)
+        assert child_node.is_admin_parent(project.creator)
+        assert parent_node.is_admin_parent(project.creator)
+
+    def test_is_admin_parent_parent_write(self, project):
+        user = UserFactory()
+        node = NodeFactory(parent=project, creator=user)
+        contrib = UserFactory()
+        project.add_contributor(contrib, auth=Auth(project.creator), permissions=[READ, WRITE])
+        assert node.is_admin_parent(contrib) is False
+
+    def test_has_permission_read_parent_admin(self, project):
+        user = UserFactory()
+        node = NodeFactory(parent=project, creator=user)
+        assert node.has_permission(project.creator, READ)
+        assert node.has_permission(project.creator, ADMIN) is False
+
+    def test_has_permission_read_grandparent_admin(self, project):
+        user = UserFactory()
+        parent_node = NodeFactory(
+            parent=project,
+            category='project',
+            creator=user
+        )
+        child_node = NodeFactory(
+            parent=parent_node,
+            creator=user
+        )
+        assert child_node.has_permission(project.creator, READ)
+        assert child_node.has_permission(project.creator, ADMIN) is False
+        assert parent_node.has_permission(project.creator, READ)
+        assert parent_node.has_permission(project.creator, ADMIN) is False
+
+    def test_can_view_parent_admin(self, project):
+        user = UserFactory()
+        node = NodeFactory(parent=project, creator=user)
+        assert node.can_view(Auth(user=project.creator))
+        assert node.can_edit(Auth(user=project.creator)) is False
+
+    def test_can_view_grandparent_admin(self, project):
+        user = UserFactory()
+        parent_node = NodeFactory(
+            parent=project,
+            creator=user,
+            category='project'
+        )
+        child_node = NodeFactory(
+            parent=parent_node,
+            creator=user
+        )
+        assert parent_node.can_view(Auth(user=project.creator))
+        assert parent_node.can_edit(Auth(user=project.creator)) is False
+        assert child_node.can_view(Auth(user=project.creator)) is True
+        assert child_node.can_edit(Auth(user=project.creator)) is False
+
+    def test_can_view_parent_write(self, project):
+        user = UserFactory()
+        node = NodeFactory(parent=project, creator=user)
+        contrib = UserFactory()
+        project.add_contributor(contrib, auth=Auth(project.creator), permissions=['read', 'write'])
+        assert node.can_view(Auth(user=contrib)) is False
+        assert node.can_edit(Auth(user=contrib)) is False
+
+    def test_creator_cannot_edit_project_if_they_are_removed(self):
+        creator = UserFactory()
+        project = ProjectFactory(creator=creator)
+        contrib = UserFactory()
+        project.add_contributor(contrib, permissions=['read', 'write', 'admin'], auth=Auth(user=creator))
+        project.save()
+        assert creator in project.contributors.all()
+        # Creator is removed from project
+        project.remove_contributor(creator, auth=Auth(user=contrib))
+        assert project.can_view(Auth(user=creator)) is False
+        assert project.can_edit(Auth(user=creator)) is False
+        assert project.is_contributor(creator) is False
+    #
+    # def test_can_view_public(self):
+    #     # Create contributor and noncontributor
+    #     contributor = UserFactory()
+    #     contributor_auth = Auth(user=contributor)
+    #     other_guy = UserFactory()
+    #     other_guy_auth = Auth(user=other_guy)
+    #     self.project.add_contributor(
+    #         contributor=contributor, auth=self.auth)
+    #     # Change project to public
+    #     self.project.set_privacy('public')
+    #     self.project.save()
+    #     # Creator, contributor, and noncontributor can view
+    #     assert self.project.can_view(self.auth)
+    #     assert self.project.can_view(contributor_auth)
+    #     assert self.project.can_view(other_guy_auth)
+    #
+    # def test_is_fork_of(self):
+    #     project = ProjectFactory()
+    #     fork1 = project.fork_node(auth=Auth(user=project.creator))
+    #     fork2 = fork1.fork_node(auth=Auth(user=project.creator))
+    #     assert_true(fork1.is_fork_of(project))
+    #     assert_true(fork2.is_fork_of(project))
+    #
+    # def test_is_fork_of_false(self):
+    #     project = ProjectFactory()
+    #     to_fork = ProjectFactory()
+    #     fork = to_fork.fork_node(auth=Auth(user=to_fork.creator))
+    #     assert_false(fork.is_fork_of(project))
+    #
+    # def test_is_fork_of_no_forked_from(self):
+    #     project = ProjectFactory()
+    #     assert_false(project.is_fork_of(self.project))
+    #
+    # def test_is_registration_of(self):
+    #     project = ProjectFactory()
+    #     with mock_archive(project) as reg1:
+    #         with mock_archive(reg1) as reg2:
+    #             assert_true(reg1.is_registration_of(project))
+    #             assert_true(reg2.is_registration_of(project))
+    #
+    # def test_is_registration_of_false(self):
+    #     project = ProjectFactory()
+    #     to_reg = ProjectFactory()
+    #     with mock_archive(to_reg) as reg:
+    #         assert_false(reg.is_registration_of(project))
+    #
+    # def test_raises_permissions_error_if_not_a_contributor(self):
+    #     project = ProjectFactory()
+    #     user = UserFactory()
+    #     with assert_raises(PermissionsError):
+    #         project.register_node(None, Auth(user=user), '', None)
+    #
+    # def test_admin_can_register_private_children(self):
+    #     user = UserFactory()
+    #     project = ProjectFactory(creator=user)
+    #     project.set_permissions(user, ['admin', 'write', 'read'])
+    #     child = NodeFactory(parent=project, is_public=False)
+    #     assert_false(child.can_edit(auth=Auth(user=user)))  # sanity check
+    #     with mock_archive(project, None, Auth(user=user), '', None) as registration:
+    #         # child was registered
+    #         child_registration = registration.nodes[0]
+    #         assert_equal(child_registration.registered_from, child)
+    #
+    # def test_is_registration_of_no_registered_from(self):
+    #     project = ProjectFactory()
+    #     assert_false(project.is_registration_of(self.project))
+    #
+    # def test_registration_preserves_license(self):
+    #     license = NodeLicenseRecordFactory()
+    #     self.project.node_license = license
+    #     self.project.save()
+    #     with mock_archive(self.project, autocomplete=True) as registration:
+    #         assert_equal(registration.node_license.id, license.id)
+    #
+    # def test_is_contributor_unregistered(self):
+    #     unreg = UnregUserFactory()
+    #     self.project.add_unregistered_contributor(
+    #         fullname=fake.name(),
+    #         email=unreg.username,
+    #         auth=self.auth
+    #     )
+    #     self.project.save()
+    #     assert_true(self.project.is_contributor(unreg))
 
 # Copied from tests/test_models.py
 class TestAddUnregisteredContributor:

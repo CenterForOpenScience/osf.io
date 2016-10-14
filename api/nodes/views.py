@@ -1,5 +1,6 @@
 import re
 from modularodm import Q
+from django.db.models import F
 from django.apps import apps
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed
@@ -295,6 +296,12 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         if field_name == 'tags':
             if operation['value'] not in (list(), tuple()):
                 operation['source_field_name'] = 'tags__name'
+
+        # Handle filter[parent]=null
+        if field_name == 'parent':
+            if not operation['value']:
+                operation['source_field_name'] = 'root_id'
+                operation['value'] = F('id')
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
@@ -1246,8 +1253,10 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
         node = self.get_node()
         req_query = self.get_query_from_request()
 
+        node_pks = node.node_relations.select_related('child')\
+                .values_list('child__pk', flat=True)
         query = (
-            Q('pk', 'in', node.nodes.values_list('pk', flat=True)) &
+            Q('pk', 'in', node_pks) &
             req_query
         )
         nodes = Node.find(query).order_by('-date_modified')
