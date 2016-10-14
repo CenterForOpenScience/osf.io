@@ -7,8 +7,8 @@ from factory.django import DjangoModelFactory
 
 from osf_tests.factories import UserFactory, ProjectFactory, ExternalAccountFactory
 
-from addons.box.models import BoxNodeSettings
-from addons.box.models import BoxUserSettings
+from addons.box.models import NodeSettings
+from addons.box.models import UserSettings
 
 
 class BoxAccountFactory(ExternalAccountFactory):
@@ -20,14 +20,14 @@ class BoxAccountFactory(ExternalAccountFactory):
 
 class BoxUserSettingsFactory(DjangoModelFactory):
     class Meta:
-        model = BoxUserSettings
+        model = UserSettings
 
     owner = SubFactory(UserFactory)
 
 
 class BoxNodeSettingsFactory(DjangoModelFactory):
     class Meta:
-        model = BoxNodeSettings
+        model = NodeSettings
 
     owner = SubFactory(ProjectFactory)
     user_settings = SubFactory(BoxUserSettingsFactory)

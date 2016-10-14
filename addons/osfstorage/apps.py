@@ -14,8 +14,8 @@ class OSFStorageAddonConfig(BaseAddonConfig):
 
     @property
     def user_settings(self):
-        return self.get_model('OSFStorageUserSettings')
+        return self.get_model('UserSettings')
 
     @property
     def node_settings(self):
-        return self.get_model('OSFStorageNodeSettings')
+        return self.get_model('NodeSettings')

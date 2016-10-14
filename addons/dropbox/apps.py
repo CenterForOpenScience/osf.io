@@ -1,6 +1,6 @@
 from addons.base.apps import BaseAddonConfig
-# from addons.dropbox.models import DropboxUserSettings
-# from addons.dropbox.models import DropboxNodeSettings
+# from addons.dropbox.models import UserSettings
+# from addons.dropbox.models import NodeSettings
 
 
 class DropboxAddonConfig(BaseAddonConfig):
@@ -16,8 +16,8 @@ class DropboxAddonConfig(BaseAddonConfig):
 
     @property
     def user_settings(self):
-        return self.get_model('DropboxUserSettings')
+        return self.get_model('UserSettings')
 
     @property
     def node_settings(self):
-        return self.get_model('DropboxNodeSettings')
+        return self.get_model('NodeSettings')

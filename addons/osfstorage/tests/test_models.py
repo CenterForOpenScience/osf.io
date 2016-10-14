@@ -35,7 +35,7 @@ class TestDropboxNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.Tes
         assert node_settings.folder is None
 
     @mock.patch(
-        'addons.dropbox.models.DropboxUserSettings.revoke_remote_oauth_access',
+        'addons.dropbox.models.UserSettings.revoke_remote_oauth_access',
         mock.PropertyMock()
     )
     def test_complete_has_auth_not_verified(self):
