@@ -12,6 +12,8 @@ logger = logging.getLogger(__name__)
 
 
 class UserActivityCounter(BaseModel):
+    primary_identifier_name = '_id'
+
     _id = models.CharField(max_length=255, null=False, blank=False, db_index=True,
                            unique=True)
     action = DateTimeAwareJSONField(default=dict)
@@ -52,6 +54,8 @@ class UserActivityCounter(BaseModel):
 
 
 class PageCounter(BaseModel):
+    primary_identifier_name = '_id'
+
     _id = models.CharField(max_length=255, null=False, blank=False, db_index=True,
                            unique=True)
     date = DateTimeAwareJSONField(default=dict)

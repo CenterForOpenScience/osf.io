@@ -8,15 +8,14 @@ from django.apps import apps
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.core.management import BaseCommand
 from django.db import transaction
-from django.utils import timezone
 from osf import models
 from osf.models import ApiOAuth2Scope
 from osf.models import BlackListGuid
 from osf.models import CitationStyle
 from osf.models import Guid
 from osf.models import Institution
+from osf.models import NodeRelation
 from osf.models import NotificationSubscription
-from osf.models import OSFUser
 from osf.models import RecentlyAddedContributor
 from osf.models import StoredFileNode
 from osf.models import Tag
@@ -27,6 +26,7 @@ from osf.utils.order_apps import get_ordered_models
 from website.models import Guid as MODMGuid
 from website.models import Institution as MODMInstitution
 from website.models import Node as MODMNode
+from website.models import Pointer as MODMPointer
 from website.models import NodeLog as MODMNodeLog
 from website.models import NotificationSubscription as MODMNotificationSubscription
 from website.models import User as MODMUser
@@ -82,14 +82,18 @@ def build_toku_django_lookup_table_cache(with_guids=False):
     lookups.update(
         {u'{}:system'.format(x['name']): x['pk'] for x in
          Tag.objects.filter(system=True).values('name', 'pk')})
-    lookups.update({unicode(x['_id']): x['pk'] for x in CitationStyle.objects.all().values('_id', 'pk')})
-    lookups.update({unicode(x['_id']): x['pk'] for x in NotificationSubscription.objects.all().values('_id', 'pk')})
+
+    lookups.update({unicode(x['_id']): x['pk']
+                    for x in CitationStyle.objects.all().values('_id', 'pk')})
+    lookups.update({unicode(x['_id']): x['pk']
+                    for x in NotificationSubscription.objects.all().values('_id', 'pk')})
     lookups.update({u'guid:{}'.format(x['_id']): x['pk'] for x in Guid.objects.all().values('_id', 'pk')})
     # institutions used to be nodes but their _id wasn't the 5-str guid it was their assigned institution_id
     # in django their _id is their institution_id which is already added to the list by line 46-68
     institution_guid_mapping = {unicode(x._id): x.node._id for x in MODMInstitution.find(deleted=True)}
     lookups.update(
-        {institution_guid_mapping[unicode(x['_id'])]: x['pk'] for x in Institution.objects.all().values('_id', 'pk')})
+        {institution_guid_mapping[unicode(x['_id'])]: x['pk']
+         for x in Institution.objects.all().values('_id', 'pk')})
     return lookups
 
 
@@ -138,30 +142,34 @@ class Command(BaseCommand):
         with ipdb.launch_ipdb_on_exception():
             self.modm_to_django = build_toku_django_lookup_table_cache(with_guids=True)
 
-        with transaction.atomic():
-            for django_model in models:
-                if issubclass(django_model, AbstractBaseContributor) \
-                        or django_model is ApiOAuth2Scope or \
-                        (issubclass(django_model, AbstractNode) and django_model is not AbstractNode) or \
-                        not hasattr(django_model, 'modm_model_path'):
-                    # if django_model is not NotificationSubscription:
-                    continue
+        for migration_type in ['fk', 'm2m']:
+            with transaction.atomic():
+                for django_model in models:
+                    if issubclass(django_model, AbstractBaseContributor) \
+                            or django_model is ApiOAuth2Scope or \
+                            (issubclass(django_model, AbstractNode) and django_model is not AbstractNode) or \
+                            not hasattr(django_model, 'modm_model_path'):
+                        # if django_model is not NotificationSubscription:
+                        continue
 
-                module_path, model_name = django_model.modm_model_path.rsplit('.', 1)
-                modm_module = importlib.import_module(module_path)
-                modm_model = getattr(modm_module, model_name)
-                if isinstance(django_model.modm_query, dict):
-                    modm_queryset = modm_model.find(**django_model.modm_query)
-                else:
-                    modm_queryset = modm_model.find(django_model.modm_query)
+                    module_path, model_name = django_model.modm_model_path.rsplit('.', 1)
+                    modm_module = importlib.import_module(module_path)
+                    modm_model = getattr(modm_module, model_name)
+                    if isinstance(django_model.modm_query, dict):
+                        modm_queryset = modm_model.find(**django_model.modm_query)
+                    else:
+                        modm_queryset = modm_model.find(django_model.modm_query)
 
-                page_size = django_model.migration_page_size
+                    page_size = django_model.migration_page_size
 
-                with ipdb.launch_ipdb_on_exception():
-                    with transaction.atomic():
-                        self.save_fk_relationships(modm_queryset, django_model, page_size)
-                        self.save_m2m_relationships(modm_queryset, django_model, page_size)
-            self.migrate_contributors()
+                    with ipdb.launch_ipdb_on_exception():
+                        with transaction.atomic():
+                            if migration_type == 'fk':
+                                self.save_fk_relationships(modm_queryset, django_model, page_size)
+                            elif migration_type == 'm2m':
+                                self.save_m2m_relationships(modm_queryset, django_model, page_size)
+                self.migrate_contributors()
+
 
     def save_fk_relationships(self, modm_queryset, django_model, page_size):
         print(
@@ -257,8 +265,8 @@ class Command(BaseCommand):
                                 except AttributeError:
                                     print('|||||||||||||||||||||||||||||||||||||||||||||||||||||||\n'
                                           '||| Couldn\'t find {} adding to bad_fields\n'
-                                          '|||||||||||||||||||||||||||||||||||||||||||||||||||||||'.format(
-                                        field_name.replace('_id', '')))
+                                          '|||||||||||||||||||||||||||||||||||||||||||||||||||||||'
+                                          .format(field_name.replace('_id', '')))
                                     bad_fields.append(field_name)
                                     value = None
                                 if value is None:
@@ -327,7 +335,9 @@ class Command(BaseCommand):
 
                     if django_model is Institution:
                         # If it's an institution look it up by it's institution_id
-                        django_obj = django_model.objects.get(pk=self.modm_to_django[unicode(modm_obj.institution_id)])
+                        django_obj = django_model.objects.get(
+                            pk=self.modm_to_django[unicode(modm_obj.institution_id)]
+                        )
                     else:
                         django_obj = django_model.objects.get(pk=self.modm_to_django[unicode(modm_obj._id)])
 
@@ -355,8 +365,8 @@ class Command(BaseCommand):
                         except AttributeError:
                             print('|||||||||||||||||||||||||||||||||||||||||||||||||||||||\n'
                                   '||| Couldn\'t find {} adding to bad_fields\n'
-                                  '|||||||||||||||||||||||||||||||||||||||||||||||||||||||'.format(
-                                field_name))
+                                  '|||||||||||||||||||||||||||||||||||||||||||||||||||||||'
+                                  .format(field_name))
                             # if we get an attribute error print debugging and mark the field to skip
                             bad_fields.append(field_name)
                             value = []
@@ -370,7 +380,7 @@ class Command(BaseCommand):
                             # if it's a string, probably guid
                             if isinstance(item, basestring):
                                 # append the pk to the list of pks
-                                if field_name == 'system_tags' and not 'system_tags' in field_aliases.keys():
+                                if field_name == 'system_tags' and 'system_tags' not in field_aliases.keys():
                                     remote_pks.add(self.modm_to_django['{}:system'.format(item)])
                                 elif field_name == 'tags' and 'system_tags' in field_aliases.keys():
                                     remote_pks.add(self.modm_to_django['{}:system'.format(item)])
@@ -383,7 +393,7 @@ class Command(BaseCommand):
                                 # grab it's id if it has one.
                                 str_value = unicode(item._id)
                                 # append the pk to the list of pks
-                                if field_name == 'system_tags' and not 'system_tags' in field_aliases.keys():
+                                if field_name == 'system_tags' and 'system_tags' not in field_aliases.keys():
                                     remote_pks.add(self.modm_to_django['{}:system'.format(str_value)])
                                 elif field_name == 'tags' and 'system_tags' in field_aliases.keys():
                                     remote_pks.add(self.modm_to_django['{}:system'.format(str_value)])
@@ -420,15 +430,14 @@ class Command(BaseCommand):
                             'Through {} {}s and {} m2m'.format(model_count, django_model._meta.model.__name__,
                                                                m2m_count))
 
-
-
-    def migrate_contributors(self):
+    def migrate_node_through_models(self):
         print('Starting {}...'.format(sys._getframe().f_code.co_name))
         if not self.modm_to_django.keys():
             self.modm_to_django = build_toku_django_lookup_table_cache()
         total = MODMNode.find().count()
         count = 0
         contributor_count = 0
+        node_relation_count = 0
         page_size = Node.migration_page_size
         contributors = []
 
@@ -467,11 +476,42 @@ class Command(BaseCommand):
                         count += 1
 
                         if count % page_size == 0 or count == total:
-                            django_objs = Contributor.objects.bulk_create(contributors)
-                            print('Through {} nodes and {} contributors, saved {} contributors'.format(count,
-                                                                                                       contributor_count,
-                                                                                                       len(
-                                                                                                           contributors)))
+                            Contributor.objects.bulk_create(contributors)
+                            print('Through {} nodes and {} contributors, '
+                                  'saved {} contributors'.format(count, contributor_count, len(contributors)))
+                            contributors = []
+                            modm_obj._cache.clear()
+                            modm_obj._object_cache.clear()
+                            print('Took out {} trashes'.format(gc.collect()))
+
+                        node_relations = []
+                        for modm_node in modm_obj.nodes:
+                            parent_id = self.modm_to_django[unicode(modm_obj._id)]
+                            child_id = self.modm_to_django[unicode(modm_obj._id)]
+                            if isinstance(modm_node, MODMPointer):
+                                node_relations.append(
+                                    NodeRelation(
+                                        _id=modm_node._id,  # preserve GUID on pointers
+                                        is_node_link=True,
+                                        parent_id=parent_id,
+                                        child_id=child_id
+                                    )
+                                )
+                            else:
+                                node_relations.append(
+                                    NodeRelation(
+                                        is_node_link=False,
+                                        parent_id=parent_id,
+                                        child_id=child_id
+                                    )
+                                )
+                            node_relation_count += 1
+
+                        if count % page_size == 0 or count == total:
+                            NodeRelation.objects.bulk_create(node_relations)
+                            print('Through {} nodes and {} node relations, '
+                                  'saved {} NodeRelations'
+                                  .format(count, node_relation_count, len(node_relations)))
                             contributors = []
                             modm_obj._cache.clear()
                             modm_obj._object_cache.clear()

@@ -1421,7 +1421,11 @@ class User(GuidStoredObject, AddonModelMixin):
             raise MergeConflictError('Users cannot be merged')
         # Move over the other user's attributes
         # TODO: confirm
-        for system_tag in user.system_tags.all():
+        if isinstance(user.system_tags, list):
+            system_tags = user.system_tags
+        else:
+            system_tags = use.system_tag.all()
+        for system_tag in system_tags:
             self.add_system_tag(system_tag)
 
         self.is_claimed = self.is_claimed or user.is_claimed

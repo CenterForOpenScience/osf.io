@@ -41,7 +41,7 @@ def make_guids():
                     content_type = ContentType.objects.get_for_model(model)
                     if issubclass(model, TypedModel):
                         sql = """
-                                INSERT INTO osf_models_guid
+                                INSERT INTO osf_guid
                                     (
                                         _id,
                                         object_id,
@@ -64,7 +64,7 @@ def make_guids():
                               """.format(content_type.app_label, content_type.model)
                     else:
                         sql = """
-                                INSERT INTO osf_models_guid
+                                INSERT INTO osf_guid
                                     (
                                         _id,
                                         object_id,
@@ -160,7 +160,7 @@ def make_guids():
             with connection.cursor() as cursor:
                 sql = """
                     INSERT INTO
-                      osf_models_blacklistguid
+                      osf_blacklistguid
                       (guid)
                     VALUES %(guids)s ON CONFLICT DO NOTHING;
                 """
