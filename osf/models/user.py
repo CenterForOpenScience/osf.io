@@ -917,13 +917,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
             self.emails.remove(email)
             signals.user_email_removed.send(self, email=email)
 
-    def get_confirmation_token(self, email, force=False):
+    def get_confirmation_token(self, email, force=False, renew=False):
         """Return the confirmation token for a given email.
 
-        :param str email: Email to get the token for.
-        :param bool force: If an expired token exists for the given email, generate a new
-            token and return that token.
-
+        :param str email: The email to get the token for.
+        :param bool force: If an expired token exists for the given email, generate a new one and return it.
+        :param bool renew: Generate a new token and return it.
+        :return Return the confirmation token.
         :raises: ExpiredTokenError if trying to access a token that is expired and force=False.
         :raises: KeyError if there no token for the email.
         """
@@ -933,6 +933,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
                 # Old records will not have an expiration key. If it's missing,
                 # assume the token is expired
                 expiration = info.get('expiration')
+                if renew:
+                    new_token = self.add_unconfirmed_email(email)
+                    self.save()
+                    return new_token
                 if not expiration or (expiration and expiration < timezone.now()):
                     if not force:
                         raise ExpiredTokenError('Token for email "{0}" is expired'.format(email))
@@ -943,14 +947,20 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
                 return token
         raise KeyError('No confirmation token for email "{0}"'.format(email))
 
-    def get_confirmation_url(self, email, external=True, force=False, external_id_provider=None):
+    def get_confirmation_url(self, email, external=True, force=False, renew=False, external_id_provider=None):
         """Return the confirmation url for a given email.
 
+        :param email: The email to confirm.
+        :param external: Use absolute or relative url.
+        :param force: If an expired token exists for the given email, generate a new one and return it.
+        :param renew: Generate a new token and return it.
+        :param external_id_provider: The external identity provider that authenticates the user.
+        :return: Return the confirmation url.
         :raises: ExpiredTokenError if trying to access a token that is expired.
         :raises: KeyError if there is no token for the email.
         """
         base = website_settings.DOMAIN if external else '/'
-        token = self.get_confirmation_token(email, force=force)
+        token = self.get_confirmation_token(email, force=force, renew=renew)
         if external_id_provider:
             return '{0}confirm/external/{1}/{2}/'.format(base, self._id, token)
         else:
