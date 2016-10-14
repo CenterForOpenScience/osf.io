@@ -19,7 +19,6 @@ describe('registrationRetraction', () => {
 
         describe('RegistrationRetractionViewModel', () => {
             var vm;
-            var confirmationString = $osf.getConfirmationString();
             var invalidJustification = faker.lorem.paragraphs(50);
             var invalidConfirmationText = 'abcd';
             var submitUrl = '/project/abcdef/withdraw/';
@@ -65,7 +64,7 @@ describe('registrationRetraction', () => {
             });
 
             it('matching registration title is valid', () => {
-                 vm.confirmationText(confirmationString);
+                vm.confirmationText(vm.confirmationString);
                 assert.isTrue(vm.confirmationText.isValid());
             });
 
@@ -90,14 +89,14 @@ describe('registrationRetraction', () => {
                     assert.notCalled(postSpy);
                 });
                 it('calls changeMessage if justification is too long', () => {
-                    vm.confirmationText(confirmationString);
+                    vm.confirmationText(vm.confirmationString);
                     vm.justification(invalidJustification);
                     vm.submit();
                     assert.calledOnce(changeMessageSpy);
                     assert.notCalled(postSpy);
                 });
                 it('submits successfully with valid confirmation text', (done) => {
-                    vm.confirmationText(confirmationString);
+                    vm.confirmationText(vm.confirmationString);
                     vm.submit().always(() => {
                         assert.equal(response.redirectUrl, redirectUrl);
                         assert.called(onSubmitSuccessStub);
@@ -113,7 +112,7 @@ describe('registrationRetraction', () => {
                     var onSubmitErrorSpy = new sinon.spy(vm, 'onSubmitError');
                     var ravenStub = new sinon.stub(Raven, 'captureMessage');
 
-                    vm.confirmationText(confirmationString);
+                    vm.confirmationText(vm.confirmationString);
                     vm.submit().always((xhr) => {
                         assert.equal(xhr.status, 500);
                         assert.equal(response.redirectUrl, redirectUrl);
