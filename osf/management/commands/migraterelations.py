@@ -246,9 +246,9 @@ class Command(BaseCommand):
                                     continue
                                 if value.__class__.__name__ in ['Node', 'Registration', 'Collection',
                                                                 'Preprint']:
-                                    gfk_model = apps.get_model('osf_models', 'AbstractNode')
+                                    gfk_model = apps.get_model('osf', 'AbstractNode')
                                 else:
-                                    gfk_model = apps.get_model('osf_models', value.__class__.__name__)
+                                    gfk_model = apps.get_model('osf', value.__class__.__name__)
                                 # TODO in theory, if I saved the content_type_pk in the lookup table this
                                 # query
                                 # could go away
