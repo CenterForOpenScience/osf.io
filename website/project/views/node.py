@@ -7,6 +7,7 @@ from itertools import islice
 from flask import request
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException, ValidationError
+from django.apps import apps
 
 from framework import status
 from framework.utils import iso8601format
@@ -1174,7 +1175,7 @@ def move_pointers(auth):
     """Move pointer from one node to another node.
 
     """
-    from osf.models import NodeRelation
+    NodeRelation = apps.get_model('osf.NodeRelation')
 
     from_node_id = request.json.get('fromNodeId')
     to_node_id = request.json.get('toNodeId')
@@ -1310,7 +1311,7 @@ def fork_pointer(auth, node, **kwargs):
     or not present in `nodes`.
 
     """
-    from osf.models import NodeRelation
+    NodeRelation = apps.get_model('osf.NodeRelation')
 
     pointer_id = request.json.get('pointerId')
     pointer = NodeRelation.load(pointer_id)
