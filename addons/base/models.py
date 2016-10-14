@@ -40,7 +40,6 @@ lookup = TemplateLookup(
 
 
 class BaseAddonSettings(ObjectIDMixin):
-
     deleted = models.BooleanField(default=False)
 
     class Meta:
@@ -82,8 +81,7 @@ class BaseAddonSettings(ObjectIDMixin):
 
 
 class BaseUserSettings(BaseAddonSettings):
-
-    owner = models.OneToOneField(OSFUser, blank=True, null=True)
+    owner = models.OneToOneField(OSFUser, blank=True, null=True, related_name='%(app_label)s_user_settings')
 
     class Meta:
         abstract = True
@@ -125,7 +123,7 @@ class BaseUserSettings(BaseAddonSettings):
                     'api_url': node.api_url
                 }
                 for node in self.nodes_authorized
-            ]
+                ]
         })
         return ret
 
@@ -350,8 +348,7 @@ class BaseOAuthUserSettings(BaseUserSettings):
 
 
 class BaseNodeSettings(BaseAddonSettings):
-
-    owner = models.OneToOneField(AbstractNode, null=True, blank=True)
+    owner = models.OneToOneField(AbstractNode, null=True, blank=True, related_name='%(app_label)s_node_settings')
 
     class Meta:
         abstract = True
@@ -544,6 +541,7 @@ class BaseNodeSettings(BaseAddonSettings):
         """
         pass
 
+
 ############
 # Archiver #
 ############
@@ -612,13 +610,15 @@ class BaseStorageAddon(BaseModel):
         filenode['children'] = [
             self._get_file_tree(child, user, cookie=cookie)
             for child in self._get_fileobj_child_metadata(filenode, user, **kwargs)
-        ]
+            ]
         return filenode
+
 
 class BaseOAuthNodeSettings(BaseNodeSettings):
     # TODO: Validate this field to be sure it matches the provider's short_name
     # NOTE: Do not set this field directly. Use ``set_auth()``
-    external_account = models.ForeignKey(ExternalAccount, null=True, blank=True)
+    external_account = models.ForeignKey(ExternalAccount, null=True, blank=True,
+                                         related_name='%(app_label)s_node_settings')
 
     # NOTE: Do not set this field directly. Use ``set_auth()``
     # user_settings = fields.AbstractForeignField()
@@ -659,7 +659,7 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
             '_logger_class',
             type(
                 '{0}NodeLogger'.format(self._meta.app_config.label.capitalize()),
-                (logger.AddonNodeLogger, ),
+                (logger.AddonNodeLogger,),
                 {'addon_short_name': self._meta.app_config.label}
             )
         )
