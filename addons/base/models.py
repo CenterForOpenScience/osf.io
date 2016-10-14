@@ -39,8 +39,7 @@ lookup = TemplateLookup(
 )
 
 
-class AddonSettingsBase(ObjectIDMixin):
-
+class BaseAddonSettings(ObjectIDMixin):
     deleted = models.BooleanField(default=False)
 
     class Meta:
@@ -81,9 +80,8 @@ class AddonSettingsBase(ObjectIDMixin):
         pass
 
 
-class AddonUserSettingsBase(AddonSettingsBase):
-
-    owner = models.OneToOneField(OSFUser, blank=True, null=True)
+class BaseUserSettings(BaseAddonSettings):
+    owner = models.OneToOneField(OSFUser, blank=True, null=True, related_name='%(app_label)s_user_settings')
 
     class Meta:
         abstract = True
@@ -113,7 +111,7 @@ class AddonUserSettingsBase(AddonSettingsBase):
         return hasattr(self, 'merge')
 
     def to_json(self, user):
-        ret = super(AddonUserSettingsBase, self).to_json(user)
+        ret = super(BaseUserSettings, self).to_json(user)
         ret['has_auth'] = self.has_auth
         ret.update({
             'nodes': [
@@ -125,7 +123,7 @@ class AddonUserSettingsBase(AddonSettingsBase):
                     'api_url': node.api_url
                 }
                 for node in self.nodes_authorized
-            ]
+                ]
         })
         return ret
 
@@ -143,7 +141,7 @@ def oauth_complete(provider, account, user):
     user.save()
 
 
-class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
+class BaseOAuthUserSettings(BaseUserSettings):
     # Keeps track of what nodes have been given permission to use external
     #   accounts belonging to the user.
     oauth_grants = DateTimeAwareJSONField(default=dict, blank=True)
@@ -180,7 +178,7 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
     def delete(self, save=True):
         for account in self.external_accounts:
             self.revoke_oauth_access(account, save=False)
-        super(AddonOAuthUserSettingsBase, self).delete(save=save)
+        super(BaseOAuthUserSettings, self).delete(save=save)
 
     def grant_oauth_access(self, node, external_account, metadata=None):
         """Give a node permission to use an ``ExternalAccount`` instance."""
@@ -326,7 +324,7 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
         self.save()
 
     def to_json(self, user):
-        ret = super(AddonOAuthUserSettingsBase, self).to_json(user)
+        ret = super(BaseOAuthUserSettings, self).to_json(user)
 
         ret['accounts'] = self.serializer(
             user_settings=self
@@ -341,7 +339,7 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
     def on_delete(self):
         """When the user deactivates the addon, clear auth for connected nodes.
         """
-        super(AddonOAuthUserSettingsBase, self).on_delete()
+        super(BaseOAuthUserSettings, self).on_delete()
         nodes = [AbstractNode.load(node_id) for node_id in self.oauth_grants.keys()]
         for node in nodes:
             node_addon = node.get_addon(self.oauth_provider.short_name)
@@ -349,9 +347,8 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
                 node_addon.clear_auth()
 
 
-class AddonNodeSettingsBase(AddonSettingsBase):
-
-    owner = models.OneToOneField(AbstractNode, null=True, blank=True)
+class BaseNodeSettings(BaseAddonSettings):
+    owner = models.OneToOneField(AbstractNode, null=True, blank=True, related_name='%(app_label)s_node_settings')
 
     class Meta:
         abstract = True
@@ -376,7 +373,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         return False
 
     def to_json(self, user):
-        ret = super(AddonNodeSettingsBase, self).to_json(user)
+        ret = super(BaseNodeSettings, self).to_json(user)
         ret.update({
             'user': {
                 'permissions': self.owner.get_permissions(user)
@@ -544,6 +541,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         """
         pass
 
+
 ############
 # Archiver #
 ############
@@ -553,7 +551,7 @@ class GenericRootNode(object):
     name = ''
 
 
-class StorageAddonBase(BaseModel):
+class BaseStorageAddon(BaseModel):
     """
     Mixin class for traversing file trees of addons with files
     """
@@ -612,13 +610,15 @@ class StorageAddonBase(BaseModel):
         filenode['children'] = [
             self._get_file_tree(child, user, cookie=cookie)
             for child in self._get_fileobj_child_metadata(filenode, user, **kwargs)
-        ]
+            ]
         return filenode
 
-class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
+
+class BaseOAuthNodeSettings(BaseNodeSettings):
     # TODO: Validate this field to be sure it matches the provider's short_name
     # NOTE: Do not set this field directly. Use ``set_auth()``
-    external_account = models.ForeignKey(ExternalAccount, null=True, blank=True)
+    external_account = models.ForeignKey(ExternalAccount, null=True, blank=True,
+                                         related_name='%(app_label)s_node_settings')
 
     # NOTE: Do not set this field directly. Use ``set_auth()``
     # user_settings = fields.AbstractForeignField()
@@ -634,19 +634,19 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
     @abc.abstractproperty
     def folder_id(self):
         raise NotImplementedError(
-            "AddonOAuthNodeSettingsBase subclasses must expose a 'folder_id' property."
+            "BaseOAuthNodeSettings subclasses must expose a 'folder_id' property."
         )
 
     @abc.abstractproperty
     def folder_name(self):
         raise NotImplementedError(
-            "AddonOAuthNodeSettingsBase subclasses must expose a 'folder_name' property."
+            "BaseOAuthNodeSettings subclasses must expose a 'folder_name' property."
         )
 
     @abc.abstractproperty
     def folder_path(self):
         raise NotImplementedError(
-            "AddonOAuthNodeSettingsBase subclasses must expose a 'folder_path' property."
+            "BaseOAuthNodeSettings subclasses must expose a 'folder_path' property."
         )
 
     @property
@@ -659,7 +659,7 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
             '_logger_class',
             type(
                 '{0}NodeLogger'.format(self._meta.app_config.label.capitalize()),
-                (logger.AddonNodeLogger, ),
+                (logger.AddonNodeLogger,),
                 {'addon_short_name': self._meta.app_config.label}
             )
         )
@@ -700,7 +700,7 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
 
     def clear_settings(self):
         raise NotImplementedError(
-            "AddonOAuthNodeSettingsBase subclasses must expose a 'clear_settings' method."
+            "BaseOAuthNodeSettings subclasses must expose a 'clear_settings' method."
         )
 
     def set_auth(self, external_account, user, metadata=None, log=True):
@@ -795,7 +795,7 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
 
         :return: A tuple of the form (cloned_settings, message)
         """
-        clone, _ = super(AddonOAuthNodeSettingsBase, self).after_fork(
+        clone, _ = super(BaseOAuthNodeSettings, self).after_fork(
             node=node,
             fork=fork,
             user=user,
@@ -845,9 +845,9 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
     before_register = before_register_message
 
     def serialize_waterbutler_credentials(self):
-        raise NotImplementedError("AddonOAuthNodeSettingsBase subclasses must implement a \
+        raise NotImplementedError("BaseOAuthNodeSettings subclasses must implement a \
             'serialize_waterbutler_credentials' method.")
 
     def serialize_waterbutler_settings(self):
-        raise NotImplementedError("AddonOAuthNodeSettingsBase subclasses must implement a \
+        raise NotImplementedError("BaseOAuthNodeSettings subclasses must implement a \
             'serialize_waterbutler_settings' method.")

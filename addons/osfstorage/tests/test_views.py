@@ -23,13 +23,13 @@ pytestmark = pytest.mark.django_db
 class TestAuthViews(DropboxAddonTestCase, views_testing.OAuthAddonAuthViewsTestCaseMixin, OsfTestCase):
 
     @mock.patch(
-        'addons.dropbox.models.DropboxProvider.auth_url',
+        'addons.dropbox.models.Provider.auth_url',
         mock.PropertyMock(return_value='http://api.foo.com')
     )
     def test_oauth_start(self):
         super(TestAuthViews, self).test_oauth_start()
 
-    @mock.patch('addons.dropbox.model.DropboxUserSettings.revoke_remote_oauth_access', mock.PropertyMock())
+    @mock.patch('addons.dropbox.model.UserSettings.revoke_remote_oauth_access', mock.PropertyMock())
     def test_delete_external_account(self):
         super(TestAuthViews, self).test_delete_external_account()
 

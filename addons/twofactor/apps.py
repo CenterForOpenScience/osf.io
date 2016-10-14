@@ -15,4 +15,4 @@ class TwoFactorAddonConfig(BaseAddonConfig):
 
     @property
     def user_settings(self):
-        return self.get_model('TwoFactorUserSettings')
+        return self.get_model('UserSettings')

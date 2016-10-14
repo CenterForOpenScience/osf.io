@@ -6,10 +6,10 @@ from oath import accept_totp
 
 from django.db import models
 
-from addons.base.models import AddonUserSettingsBase
+from addons.base.models import BaseUserSettings
 
 
-class TwoFactorUserSettings(AddonUserSettingsBase):
+class UserSettings(BaseUserSettings):
     totp_secret = models.TextField(null=True, blank=True)  # hexadecimal
     totp_drift = models.IntegerField()
     is_confirmed = models.BooleanField(default=False)
@@ -24,7 +24,7 @@ class TwoFactorUserSettings(AddonUserSettingsBase):
                                                         self.totp_secret_b32)
 
     def to_json(self, user):
-        rv = super(TwoFactorUserSettings, self).to_json(user)
+        rv = super(UserSettings, self).to_json(user)
         rv.update({
             'is_enabled': True,
             'is_confirmed': self.is_confirmed,
@@ -51,13 +51,13 @@ class TwoFactorUserSettings(AddonUserSettingsBase):
     #############
 
     def on_add(self):
-        super(TwoFactorUserSettings, self).on_add()
+        super(UserSettings, self).on_add()
         self.totp_secret = _generate_seed()
         self.totp_drift = 0
         self.is_confirmed = False
 
     def on_delete(self):
-        super(TwoFactorUserSettings, self).on_delete()
+        super(UserSettings, self).on_delete()
         self.totp_secret = None
         self.totp_drift = 0
         self.is_confirmed = False

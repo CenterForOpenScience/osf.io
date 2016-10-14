@@ -2,8 +2,8 @@ import httplib as http
 import logging
 import os
 
-from addons.base.models import (AddonOAuthNodeSettingsBase,
-                                AddonOAuthUserSettingsBase, StorageAddonBase)
+from addons.base.models import (BaseOAuthNodeSettings,
+                                BaseOAuthUserSettings, BaseStorageAddon)
 from django.db import models
 from dropbox.client import DropboxClient, DropboxOAuth2Flow
 from dropbox.rest import ErrorResponse
@@ -21,7 +21,7 @@ from website.util import api_v2_url, web_url_for
 logger = logging.getLogger(__name__)
 
 
-class DropboxProvider(ExternalProvider):
+class Provider(ExternalProvider):
 
     name = 'DropBox'
     short_name = 'dropbox'
@@ -85,12 +85,12 @@ class DropboxProvider(ExternalProvider):
         )
 
 
-class DropboxUserSettings(AddonOAuthUserSettingsBase):
+class UserSettings(BaseOAuthUserSettings):
     """Stores user-specific dropbox information.
     token.
     """
 
-    oauth_provider = DropboxProvider
+    oauth_provider = Provider
     serializer = DropboxSerializer
 
     def revoke_remote_oauth_access(self, external_account):
@@ -104,13 +104,13 @@ class DropboxUserSettings(AddonOAuthUserSettingsBase):
         except ErrorResponse:
             pass
 
-class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
+class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
 
-    oauth_provider = DropboxProvider
+    oauth_provider = Provider
     serializer = DropboxSerializer
 
     folder = models.TextField(null=True, blank=True)
-    user_settings = models.ForeignKey(DropboxUserSettings, null=True, blank=True)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
 
     _api = None
 
@@ -118,7 +118,7 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def api(self):
         """authenticated ExternalProvider instance"""
         if self._api is None:
-            self._api = DropboxProvider(self.external_account)
+            self._api = Provider(self.external_account)
         return self._api
 
     @property
@@ -245,7 +245,7 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         )
 
     def __repr__(self):
-        return u'<DropboxNodeSettings(node_id={self.owner._primary_key!r})>'.format(self=self)
+        return u'<NodeSettings(node_id={self.owner._primary_key!r})>'.format(self=self)
 
     ##### Callback overrides #####
     def after_delete(self, node, user):

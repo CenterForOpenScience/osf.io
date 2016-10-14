@@ -3,8 +3,8 @@ import logging
 import os
 
 import requests
-from addons.base.models import (AddonOAuthNodeSettingsBase,
-                                AddonOAuthUserSettingsBase, StorageAddonBase)
+from addons.base.models import (BaseOAuthNodeSettings,
+                                BaseOAuthUserSettings, BaseStorageAddon)
 from box import BoxClient, CredentialsV2
 from box.client import BoxClientException
 from django.db import models
@@ -21,7 +21,7 @@ from website.util import api_v2_url
 logger = logging.getLogger(__name__)
 
 
-class Box(ExternalProvider):
+class Provider(ExternalProvider):
     name = 'Box'
     short_name = 'box'
 
@@ -36,7 +36,7 @@ class Box(ExternalProvider):
     default_scopes = ['root_readwrite']
 
     def handle_callback(self, response):
-        """View called when the Oauth flow is completed. Adds a new BoxUserSettings
+        """View called when the Oauth flow is completed. Adds a new UserSettings
         record to the user and saves the user's access token and account info.
         """
 
@@ -56,10 +56,10 @@ class Box(ExternalProvider):
         }
 
 
-class BoxUserSettings(AddonOAuthUserSettingsBase):
+class UserSettings(BaseOAuthUserSettings):
     """Stores user-specific box information
     """
-    oauth_provider = Box
+    oauth_provider = Provider
     serializer = BoxSerializer
 
     def revoke_remote_oauth_access(self, external_account):
@@ -78,14 +78,14 @@ class BoxUserSettings(AddonOAuthUserSettingsBase):
             pass
 
 
-class BoxNodeSettings(AddonOAuthNodeSettingsBase, StorageAddonBase):
-    oauth_provider = Box
+class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
+    oauth_provider = Provider
     serializer = BoxSerializer
 
     folder_id = models.TextField(default=None, null=True, blank=True)
     folder_name = models.TextField(null=True, blank=True)
     folder_path = models.TextField(null=True, blank=True)
-    user_settings = models.ForeignKey(BoxUserSettings, null=True, blank=True)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
 
     _api = None
 
@@ -93,7 +93,7 @@ class BoxNodeSettings(AddonOAuthNodeSettingsBase, StorageAddonBase):
     def api(self):
         """authenticated ExternalProvider instance"""
         if self._api is None:
-            self._api = Box(self.external_account)
+            self._api = Provider(self.external_account)
         return self._api
 
     @property
@@ -124,7 +124,7 @@ class BoxNodeSettings(AddonOAuthNodeSettingsBase, StorageAddonBase):
             }]
 
         try:
-            Box(self.external_account).refresh_oauth_key()
+            Provider(self.external_account).refresh_oauth_key()
             client = BoxClient(self.external_account.oauth_key)
         except BoxClientException:
             raise HTTPError(http.FORBIDDEN)
@@ -173,7 +173,7 @@ class BoxNodeSettings(AddonOAuthNodeSettingsBase, StorageAddonBase):
         # Split out from set_folder for ease of testing, due to
         # outgoing requests. Should only be called by set_folder
         try:
-            Box(self.external_account).refresh_oauth_key(force=True)
+            Provider(self.external_account).refresh_oauth_key(force=True)
         except InvalidGrantError:
             raise exceptions.InvalidAuthError()
         try:
@@ -210,7 +210,7 @@ class BoxNodeSettings(AddonOAuthNodeSettingsBase, StorageAddonBase):
         if not self.has_auth:
             raise exceptions.AddonError('Addon is not authorized')
         try:
-            Box(self.external_account).refresh_oauth_key()
+            Provider(self.external_account).refresh_oauth_key()
             return {'token': self.external_account.oauth_key}
         except BoxClientException as error:
             raise HTTPError(error.status_code, data={'message_long': error.message})

@@ -14,8 +14,8 @@ class BoxAddonConfig(BaseAddonConfig):
 
     @property
     def user_settings(self):
-        return self.get_model('BoxUserSettings')
+        return self.get_model('UserSettings')
 
     @property
     def node_settings(self):
-        return self.get_model('BoxNodeSettings')
+        return self.get_model('NodeSettings')

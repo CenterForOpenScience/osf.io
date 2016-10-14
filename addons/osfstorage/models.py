@@ -1,8 +1,8 @@
 import logging
 
-from addons.base.models import AddonNodeSettingsBase, StorageAddonBase
+from addons.base.models import BaseNodeSettings, BaseStorageAddon
 
 logger = logging.getLogger(__name__)
 
-class OsfStorageNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
+class NodeSettings(BaseStorageAddon, BaseNodeSettings):
     pass
