@@ -671,7 +671,7 @@ def claim_user_form(auth, **kwargs):
     claimer_email = unclaimed_record.get('claimer_email') or unclaimed_record.get('email')
     # If there is a registered user with this email, redirect to 're-enter password' page
     try:
-        user_from_email = User.objects.get(emails__icontains=claimer_email)
+        user_from_email = User.objects.get(emails__icontains=claimer_email) if claimer_email else None
     except User.DoesNotExist:
         user_from_email = None
     if user_from_email and user_from_email.is_registered:
