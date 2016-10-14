@@ -4,6 +4,7 @@ from addons.base.apps import BaseAddonConfig
 class BoxAddonConfig(BaseAddonConfig):
 
     name = 'addons.box'
+    label = 'addons_box'
     full_name = 'Box'
 
     FOLDER_SELECTED = 'box_folder_selected'

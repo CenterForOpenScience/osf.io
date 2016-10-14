@@ -4,6 +4,7 @@ from addons.base.apps import BaseAddonConfig
 class OSFStorageAddonConfig(BaseAddonConfig):
 
     name = 'addons.osfstorage'
+    label = 'addons_osfstorage'
     full_name = 'OSFStorage'
 
     FOLDER_SELECTED = 'osfstorage_folder_selected'

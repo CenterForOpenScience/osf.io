@@ -3,6 +3,7 @@ from django.apps import AppConfig
 
 class BaseAddonConfig(AppConfig):
     name = 'addons.base'
+    label = 'addons_base'
 
     actions = tuple()
     user_settings = None
