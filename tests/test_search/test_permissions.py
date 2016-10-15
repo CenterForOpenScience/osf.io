@@ -143,26 +143,49 @@ def _register(*a, **kw):
     mock_archive(*a, **kw).__enter__()  # gooooooofffyyyyyy
     return 'flim', 'registration', 'title', 'Flim Flammity'
 
-def unembargoed_unapproved_registration_of(node):  # ?!
-    return _register(node)
+def name_regfunc(embargo, autoapprove, **_):
+    return '{}_{}_registration_of'.format(
+        'embargoed' if embargo else 'unembargoed',
+        'approved' if autoapprove else 'unapproved',
+    ).encode('ascii')
 
-def unembargoed_approved_registration_of(node):
-    return _register(node, autoapprove=True)
+def create_regfunc(**kw):
+    def regfunc(node):
+        return _register(node, **kw)
+    regfunc.__name__ = name_regfunc(**kw)
+    return regfunc
 
-def embargoed_unapproved_registration_of(node):
-    return _register(node, embargo=True)
+def create_regfuncs():
+    public = set()
+    private = set()
+    for embargo in (False, True):
+        for autoapprove in (False, True):
+            if embargo and autoapprove: continue        # TODO
+            for autocomplete in (True,):                # TODO
+                for autoapprove_retraction in (None,):  # TODO
+                    retraction = autoapprove_retraction is not None
+                    regfunc = create_regfunc(
+                        embargo=embargo,
+                        retraction=retraction,
+                        autoapprove_retraction=autoapprove_retraction,
+                        autocomplete=autocomplete,
+                        autoapprove=autoapprove,
+                    )
+                    should_be_public = (not embargo) and autoapprove and autocomplete
+                    (public if should_be_public else private).add(regfunc)
+    return public, private
 
-REGFUNCS_PRIVATE = (
-    unembargoed_unapproved_registration_of,
-    embargoed_unapproved_registration_of,
-)
-REGFUNCS = (
-    unembargoed_approved_registration_of,
-) + REGFUNCS_PRIVATE
+REGFUNCS_PUBLIC, REGFUNCS_PRIVATE = create_regfuncs()
+REGFUNCS = REGFUNCS_PUBLIC | REGFUNCS_PRIVATE
+
+locals_dict = locals()
+for regfunc in REGFUNCS:
+    locals_dict[regfunc.__name__] = regfunc
+
 VARYFUNCS = (
     base,
     file_on,
-) + REGFUNCS
+) + tuple(REGFUNCS)
 
 class TestVaryFuncs(DbIsolationMixin, OsfTestCase):
 
@@ -182,7 +205,7 @@ class TestVaryFuncs(DbIsolationMixin, OsfTestCase):
         assert_equal(File.find_one(Q('is_file', 'eq', True)).name, 'Blim Blammity')
 
 
-    # *ro - *_registration_of
+    # regfuncs
 
     def test_uaro_makes_an_unembargoed_approved_registration_of_a_node(self):
         unembargoed_approved_registration_of(factories.ProjectFactory(title='Flim Flammity'))
