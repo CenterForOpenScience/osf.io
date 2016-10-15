@@ -160,7 +160,6 @@ def create_regfuncs():
     private = set()
     for embargo in (False, True):
         for autoapprove in (False, True):
-            if embargo and autoapprove: continue        # TODO
             for autocomplete in (True,):                # TODO
                 for autoapprove_retraction in (None,):  # TODO
                     retraction = autoapprove_retraction is not None
@@ -219,11 +218,17 @@ class TestVaryFuncs(DbIsolationMixin, OsfTestCase):
         ok_(not reg.embargo)
         assert_equal(reg.registration_approval.state, 'unapproved')
 
-    def test_euro_makes_an_embargoed_aapproved_registration_of_a_node(self):
+    def test_earo_makes_an_embargoed_approved_registration_of_a_node(self):
+        embargoed_approved_registration_of(factories.ProjectFactory(title='Flim Flammity'))
+        reg = Node.find_one(Q('is_registration', 'eq', True))
+        ok_(reg.embargo)
+        assert_equal(reg.embargo.state, 'approved')
+
+    def test_euro_makes_an_embargoed_unapproved_registration_of_a_node(self):
         embargoed_unapproved_registration_of(factories.ProjectFactory(title='Flim Flammity'))
         reg = Node.find_one(Q('is_registration', 'eq', True))
         ok_(reg.embargo)
-        ok_(not reg.registration_approval)
+        assert_equal(reg.embargo.state, 'unapproved')
 
 
 # gettin' it together
@@ -257,7 +262,7 @@ class TestGenerateCases(unittest.TestCase):
     # gc - generate_cases
 
     def test_gc_generates_cases(self):
-        assert_equal(len(list(generate_cases())), 42)
+        assert_equal(len(list(generate_cases())), 48)
 
     def test_gc_doesnt_create_any_nodes(self):
         list(generate_cases())
