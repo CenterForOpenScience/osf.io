@@ -334,6 +334,8 @@ class AuthorizedCharField(ser.CharField):
     def get_attribute(self, obj):
         user = self.context['request'].user
         auth = auth_core.Auth(user)
+        if 'view_only' in self.context['request'].query_params:
+            auth.private_key = self.context['request'].query_params['view_only']
         field_source_method = getattr(obj, self.source)
         return field_source_method(auth=auth)
 
