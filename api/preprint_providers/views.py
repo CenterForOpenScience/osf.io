@@ -12,6 +12,7 @@ from api.base.filters import ODMFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.pagination import MaxSizePagination
 
+from api.taxonomies.serializers import TaxonomySerializer
 from api.preprint_providers.serializers import PreprintProviderSerializer
 from api.preprints.serializers import PreprintSerializer
 
@@ -185,3 +186,16 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFil
     def get_queryset(self):
         query = self.get_query_from_request()
         return PreprintService.find(query)
+
+
+class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    serializer_class = TaxonomySerializer
+
+    def get_queryset(self):
+        pass
+

@@ -166,6 +166,15 @@ class PreprintProvider(StoredObject):
     description = fields.StringField()
     banner_name = fields.StringField()
     external_url = fields.StringField()
+    advisory_board = fields.StringField()
+    email_contact = fields.StringField()
+    email_support = fields.StringField()
+    social_twitter = fields.StringField()
+    social_facebook = fields.StringField()
+    social_instagram = fields.StringField()
+    header_text = fields.StringField()
+    subjects_acceptable = fields.DictionaryField(list=True)
+    licenses_acceptable = fields.ForeignField('NodeLicense', list=True)
 
     def get_absolute_url(self):
         return '{}preprint_providers/{}'.format(self.absolute_api_v2_url, self._id)
