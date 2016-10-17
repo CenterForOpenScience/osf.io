@@ -9,14 +9,16 @@ PREREG_CAMPAIGNS = {
 def drafts_for_user(user, campaign):
     from website import models  # noqa
 
-    user_projects = models.Node.objects.filter(is_deleted=False, contributor__admin=True, contributor__user=user)
     PREREG_CHALLENGE_METASCHEMA = get_prereg_schema(campaign)
     return models.DraftRegistration.objects.filter(
         registration_schema=PREREG_CHALLENGE_METASCHEMA,
         approval=None,
         registered_node=None,
-        branched_from__in=[p.id for p in user_projects]
-    )
+        branched_from__in=models.Node.objects.filter(
+            is_deleted=False,
+            contributor__admin=True,
+            contributor__user=user).values_list('id', flat=True))
+
 
 def get_prereg_schema(campaign='prereg'):
     from website.models import MetaSchema  # noqa
