@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from nose import tools as nt
 
-from website.models import StoredFileNode
 from framework.auth.core import Auth
 
 from api.base.settings.defaults import API_BASE
