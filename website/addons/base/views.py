@@ -404,7 +404,7 @@ def create_waterbutler_log(payload, **kwargs):
                     destination_addon=payload['destination']['addon'],
                 )
 
-            if payload.get('error'):
+            if payload.get('errors'):
                 # Action failed but our function succeeded
                 # Bail out to avoid file_signals
                 return {'status': 'success'}
