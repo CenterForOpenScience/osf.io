@@ -23,6 +23,7 @@ env:
     - LIBJEMALLOC_DEB="libjemalloc1_3.5.1-2_amd64.deb"
     - LIBPCRE_DEB="libpcre3_8.31-2ubuntu2.3_amd64.deb"
     - VARNISH_DEB="varnish_4.1.0-1~trusty_amd64.deb"
+    - GIT_SSL_NO_VERIFY=true
   matrix:
     - TEST_BUILD="osf"
     - TEST_BUILD="else"
@@ -130,3 +131,10 @@ before_cache:
 
 notifications:
   flowdock: 0221882cdda034c0e9ac2a0e766053dd
+
+after_script:
+  - cat $HOME/build/CenterForOpenScience/osf.io/npm-debug.log 
+  - ls /tmp/npm*/github.com/CenterForOpenScience/list-of-licenses.git-unpack
+
+after_failure: 
+  - cat $HOME/build/CenterForOpenScience/osf.io/npm-debug.log
