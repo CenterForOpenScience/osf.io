@@ -194,6 +194,9 @@ class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
         base_permissions.TokenHasScope,
     )
 
+    view_category = 'taxonomies'
+    view_name = 'subjects-list'
+
     serializer_class = TaxonomySerializer
 
     def get_queryset(self):
