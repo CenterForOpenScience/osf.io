@@ -1,4 +1,5 @@
 import datetime
+import logging
 import urlparse
 
 import requests
@@ -7,6 +8,7 @@ from framework.celery_tasks import app as celery_app
 
 from website import settings
 
+logger = logging.getLogger(__name__)
 
 @celery_app.task(ignore_results=True)
 def on_preprint_updated(preprint_id):
@@ -16,12 +18,14 @@ def on_preprint_updated(preprint_id):
     preprint = PreprintService.load(preprint_id)
 
     if settings.SHARE_URL and settings.SHARE_API_TOKEN:
-        requests.post('{}api/normalizeddata/'.format(settings.SHARE_URL), json={
+        resp = requests.post('{}api/normalizeddata/'.format(settings.SHARE_URL), json={
             'created_at': datetime.datetime.utcnow().isoformat(),
             'normalized_data': {
                 '@graph': format_preprint(preprint)
             },
-        }, headers={'Authorization': 'Bearer {}'.format(settings.SHARE_API_TOKEN)}).raise_for_status()
+        }, headers={'Authorization': 'Bearer {}'.format(settings.SHARE_API_TOKEN)})
+        logger.debug(resp.content)
+        resp.raise_for_status()
 
 def format_institution(institution):
     return [{
@@ -104,7 +108,7 @@ def format_preprint(preprint):
         '@id': '_:{}'.format(preprint._id),
         '@type': 'preprint',
         'title': preprint.node.title,
-        'description': preprint.node.description,
+        'description': preprint.node.description or '',
         'is_deleted': not preprint.is_published or not preprint.node.is_public or preprint.node.is_preprint_orphan
     }, {
         '@id': '_:link-{}'.format(preprint._id),
@@ -118,7 +122,7 @@ def format_preprint(preprint):
     ] + [[{
         '@id': '_:{}-{}'.format(preprint._id, institution._id),
         '@type': 'association',
-        'institution': {
+        'entity': {
             '@id': '_:{}'.format(institution._id),
             '@type': 'institution',
         },
