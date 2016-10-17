@@ -274,6 +274,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     preprint_subjects = models.ManyToManyField(Subject, related_name='preprints')
     preprint_providers = models.ManyToManyField(PreprintProvider, related_name='preprints')
     preprint_doi = models.CharField(max_length=128, null=True, blank=True, validators=[validate_doi])
+
+    keenio_read_key = models.CharField(max_length=1000, null=True, blank=True)
     _is_preprint_orphan = models.NullBooleanField(default=False)
 
     def __init__(self, *args, **kwargs):
