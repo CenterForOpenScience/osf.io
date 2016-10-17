@@ -1,7 +1,5 @@
 from modularodm import Q
 
-from website.util import permissions
-
 
 PREREG_CAMPAIGNS = {
     'prereg': 'Prereg Challenge',
@@ -11,10 +9,8 @@ PREREG_CAMPAIGNS = {
 def drafts_for_user(user, campaign):
     from website import models  # noqa
 
-    user_projects = models.Node.find(
-        Q('is_deleted', 'eq', False) &
-        Q('permissions.{0}'.format(user._id), 'in', [permissions.ADMIN])
-    )
+    all_user_projects = models.Node.objects.filter(is_deleted=False, _contributors=user)
+    user_projects = [node for node in all_user_projects if node.has_permission(user, 'admin')]
     PREREG_CHALLENGE_METASCHEMA = get_prereg_schema(campaign)
     return models.DraftRegistration.find(
         Q('registration_schema', 'eq', PREREG_CHALLENGE_METASCHEMA) &
