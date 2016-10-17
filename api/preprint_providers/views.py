@@ -5,7 +5,7 @@ from modularodm import Q
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from website.models import Node, PreprintService, PreprintProvider
+from website.models import Node, Subject, PreprintService, PreprintProvider
 
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin
@@ -194,11 +194,31 @@ class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
         base_permissions.TokenHasScope,
     )
 
-    view_category = 'taxonomies'
-    view_name = 'subjects-list'
+    view_category = 'preprint-providers'
+    view_name = 'taxonomy-list'
 
     serializer_class = TaxonomySerializer
 
+    def is_valid_subject(self, allows_children, allowed_parents, sub):
+        if sub in allowed_parents:
+            return True
+        for parent in sub.parents:
+            if parent._id in allows_children:
+                return True
+            for grandpa in parent.parents:
+                if grandpa._id in allows_children:
+                    return True
+        return False
+
     def get_queryset(self):
-        pass
+        parent = self.request.query_params.get('filter[parent]', None)
+        provider = PreprintProvider.load(self.kwargs['provider_id'])
+        if parent:
+            if parent[0] == 'null':
+                return provider.top_level_subjects
+            #  Calculate this here to only have to do it once.
+            allowed_parents = [id_ for sublist in provider.acceptable_subjects for id_ in sublist[0]]
+            allows_children = [subs[0][-1] for subs in provider.acceptable_subjects if subs[1]]
+            return (sub for sub in Subject.find('parents', 'eq', parent[0]) if self.is_valid_subject(allows_children=allows_children, allowed_parents=allowed_parents, sub=sub))
+        return provider.all_subjects
 
