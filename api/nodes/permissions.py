@@ -3,7 +3,7 @@ from rest_framework import permissions
 from rest_framework import exceptions
 
 from website.addons.base import AddonSettingsBase
-from website.models import Node, Pointer, User, Institution, DraftRegistration, PrivateLink
+from website.models import Node, Pointer, User, Institution, DraftRegistration, PrivateLink, PreprintService
 from website.project.metadata.utils import is_prereg_admin
 from website.util import permissions as osf_permissions
 
@@ -15,7 +15,9 @@ class ContributorOrPublic(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         if isinstance(obj, AddonSettingsBase):
             obj = obj.owner
-        assert isinstance(obj, (Node, Pointer)), 'obj must be a Node, Pointer, or AddonSettings; got {}'.format(obj)
+        if isinstance(obj, PreprintService):
+            obj = obj.node
+        assert isinstance(obj, (Node, Pointer)), 'obj must be a Node, Pointer, PreprintService, or AddonSettings; got {}'.format(obj)
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
             return obj.is_public or obj.can_view(auth)
