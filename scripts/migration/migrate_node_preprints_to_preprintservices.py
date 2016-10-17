@@ -10,6 +10,7 @@ from framework.transactions.context import TokuTransaction
 from scripts import utils as script_utils
 from website.app import init_app
 from website import models 
+from website import settings
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +80,6 @@ def create_preprint_service_from_node(document, swap_cutoff):
         else:
             if preprint.provider._id == 'osf':
                 # Give Guid retention priotity to OSF-provider
-                # Probably won't matter; shouldn't be non-osf
                 if should_swap_guids(node, preprint, swap_cutoff):
                     swap_guids(node, preprint)
                 else:
@@ -473,6 +473,19 @@ def update_foreign_fields(old_id, node):
                 }}
             )
 
+    if dry_run:
+        # Check iff dry for efficiency
+        assert database['preprintservice'].find().count(), 'Unable to find collection preprintservice'
+    if database['preprintservice'].find({'node': old_id}).count():
+        logger.info('** Updating PreprintServices {}'.format([d['_id'] for d in database['preprintservice'].find({'node': old_id})]))
+        for doc in database['preprintservice'].find({'node': old_id}):
+            database['preprintservice'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'node': node._id
+                }}
+            )
+
 def enumerate_and_set_subject_hierarchies(preprint):
     logger.info('* Migrating subjects for node {}'.format(preprint.node._id))
     hierarchical_subjects, flat_subjects = [], set(preprint.node.preprint_subjects)
@@ -548,6 +561,7 @@ def main():
     if not dry_run:
         script_utils.add_file_logger(logger, __file__)
     init_app(set_backends=True, routes=False)
+    settings.SHARE_API_TOKEN = None
     with TokuTransaction():
         migrate(swap_cutoff=td)
         if dry_run:
