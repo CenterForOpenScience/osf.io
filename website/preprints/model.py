@@ -193,6 +193,7 @@ class PreprintProvider(StoredObject):
                 q.append(Q('_id', 'eq', sub))
         return Subject.find(reduce(lambda x, y: x | y, q))
 
+
     def get_absolute_url(self):
         return '{}preprint_providers/{}'.format(self.absolute_api_v2_url, self._id)
 
