@@ -1,0 +1,2 @@
+# Requirements for the owncloud add-on
+pyocclient==0.2

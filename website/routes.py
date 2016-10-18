@@ -580,15 +580,7 @@ def make_url_map(app):
             '/register/',
             'get',
             auth_views.auth_register,
-            OsfWebRenderer('public/login.mako', trust=False)
-        ),
-
-        # create user account via api
-        Rule(
-            '/api/v1/register/',
-            'post',
-            auth_views.register_user,
-            json_renderer
+            OsfWebRenderer('public/register.mako', trust=False)
         ),
 
         # osf login and campaign login
@@ -599,7 +591,15 @@ def make_url_map(app):
             ],
             'get',
             auth_views.auth_login,
-            OsfWebRenderer('public/login.mako', trust=False)
+            notemplate
+        ),
+
+        # create user account via api
+        Rule(
+            '/api/v1/register/',
+            'post',
+            auth_views.register_user,
+            json_renderer
         ),
 
         # osf logout and cas logout

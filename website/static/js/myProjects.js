@@ -366,9 +366,9 @@ var MyProjects = {
           self.fetchers[self.systemCollections[1].id] = new NodeFetcher('registrations');
           self.fetchers[self.systemCollections[2].id] = new NodeFetcher('preprints', self.systemCollections[2].data.link);
         } else {
+            // TODO: This assumes that there are two systemcolelctiosn passes and what they are. It should ideally loop through passed collections. 
           self.fetchers[self.systemCollections[0].id] = new NodeFetcher('nodes', self.systemCollections[0].data.link);
           self.fetchers[self.systemCollections[1].id] = new NodeFetcher('registrations', self.systemCollections[1].data.link);
-          self.fetchers[self.systemCollections[2].id] = new NodeFetcher('preprints', self.systemCollections[2].data.link);
         }
 
         // Initial Breadcrumb for All my projects
@@ -886,7 +886,9 @@ var MyProjects = {
             self.loadCategories().then(function(){
                 self.fetchers[self.systemCollections[0].id].on(['page', 'done'], self.onPageLoad);
                 self.fetchers[self.systemCollections[1].id].on(['page', 'done'], self.onPageLoad);
-                self.fetchers[self.systemCollections[2].id].on(['page', 'done'], self.onPageLoad);
+                if(self.systemCollections[2]){
+                    self.fetchers[self.systemCollections[2].id].on(['page', 'done'], self.onPageLoad);
+                }
             });
             if (!self.viewOnly){
                 var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : 'linked_registrations,linked_nodes', 'page[size]' : self.collectionsPageSize(), 'sort' : 'date_created', 'embed' : 'linked_nodes'}});
@@ -1287,7 +1289,7 @@ var Collections = {
             for (var i = begin; i < end; i++) {
                 item = ctrl.collections()[i];
                 index = i;
-                dropAcceptClass = index > 1 ? 'acceptDrop' : '';
+                dropAcceptClass = index > 2 ? 'acceptDrop' : '';
                 childCount = item.data.count ? ' (' + item.data.count() + ')' : '';
                 if (args.currentView().collection === item) {
                     selectedCSS = 'active';

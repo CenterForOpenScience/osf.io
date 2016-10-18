@@ -9,6 +9,7 @@
         "mendeley",
         "zotero",
         "osfstorage",
+        "owncloud",
         "s3",
         "twofactor",
         "wiki",
@@ -23,6 +24,7 @@
         "forward": "full",
         "googledrive": "partial",
         "github": "partial",
+        "owncloud": "partial",
         "s3": "partial",
         "wiki": "full"
     },
@@ -34,6 +36,7 @@
         "figshare",
         "github",
         "googledrive",
+        "owncloud",
         "s3"
     ],
     "addons_based_on_ids": [
@@ -50,6 +53,7 @@
         "mendeley": "Mendeley is a reference management tool. Connecting Mendeley folders to OSF projects allows you and others to view, copy, and download citations that are relevant to your project from the Project Overview page.",
         "zotero": "Zotero is a reference management tool. Connecting Zotero folders to OSF projects allows you and others to view, copy, and download citations that are relevant to your project from the Project Overview page.",
         "osfstorage": "OSF Storage is the default storage provider for OSF projects.",
+        "owncloud": "ownCloud is an open source, self-hosted file sync and share app platform. Connect your ownCloud account to an OSF project to interact with files hosted on ownCloud via the OSF.",
         "s3": "Amazon S3 is a file storage add-on. Connect your S3 account to an OSF project to interact with files hosted on S3 via the OSF.",
         "twofactor": "Two-factor authentication is a security add-on. By using two-factor authentication, you'll protect your OSF account with both your password and your mobile phone.",
         "wiki": "The wiki is a versatile communication tool. Wikis can be used to explain the main points of your project and can contain information like lab notes or contact information.",
@@ -62,6 +66,7 @@
         "figshare": "http://www.figshare.com",
         "github": "http://www.github.com",
         "mendeley": "http://www.mendeley.com",
+        "owncloud": "https://owncloud.org/",
         "zotero": "http://www.zotero.org",
         "s3": "https://aws.amazon.com/s3/",
         "googledrive": "https://drive.google.com"
