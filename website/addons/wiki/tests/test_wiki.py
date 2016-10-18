@@ -3,18 +3,20 @@
 # PEP8 asserts
 from copy import deepcopy
 import httplib as http
+import time
 
 import mock
-import time
+import pytest
 
 from nose.tools import *  # noqa
 from modularodm.exceptions import ValidationValueError
 
 from tests.base import OsfTestCase, fake
-from tests.factories import (
+from osf_tests.factories import (
     UserFactory, NodeFactory, ProjectFactory,
-    AuthUserFactory, NodeWikiFactory,
+    AuthUserFactory
 )
+from addons.wiki.tests.factories import NodeWikiFactory
 
 from website.exceptions import NodeStateError
 from website.addons.wiki import settings
@@ -29,47 +31,11 @@ from website.addons.wiki.tests.config import EXAMPLE_DOCS, EXAMPLE_OPS
 from framework.auth import Auth
 from framework.mongo.utils import to_mongo_key
 
+pytestmark = pytest.mark.django_db
+
 # forward slashes are not allowed, typically they would be replaced with spaces
 SPECIAL_CHARACTERS_ALL = u'`~!@#$%^*()-=_+ []{}\|/?.df,;:''"'
 SPECIAL_CHARACTERS_ALLOWED = u'`~!@#$%^*()-=_+ []{}\|?.df,;:''"'
-
-
-class TestNodeWikiPageModel(OsfTestCase):
-
-    def test_page_name_cannot_be_greater_than_100_characters(self):
-        bad_name = 'a' * 101
-        page = NodeWikiPage(page_name=bad_name)
-        with assert_raises(ValidationValueError):
-            page.save()
-
-    def test_is_current_with_single_version(self):
-        node = NodeFactory()
-        page = NodeWikiPage(page_name='foo', node=node)
-        page.save()
-        node.wiki_pages_current['foo'] = page._id
-        node.wiki_pages_versions['foo'] = [page._id]
-        node.save()
-        assert_true(page.is_current)
-
-    def test_is_current_with_multiple_versions(self):
-        node = NodeFactory()
-        ver1 = NodeWikiPage(page_name='foo', node=node)
-        ver2 = NodeWikiPage(page_name='foo', node=node)
-        ver1.save()
-        ver2.save()
-        node.wiki_pages_current['foo'] = ver2._id
-        node.wiki_pages_versions['foo'] = [ver1._id, ver2._id]
-        node.save()
-        assert_false(ver1.is_current)
-        assert_true(ver2.is_current)
-
-    def test_is_current_deleted_page(self):
-        node = NodeFactory()
-        ver = NodeWikiPage(page_name='foo', node=node)
-        ver.save()
-        # Simulate a deleted page by not adding ver to
-        # node.wiki_pages_current and node.wiki_pages_versions
-        assert_false(ver.is_current)
 
 class TestWikiViews(OsfTestCase):
 
@@ -179,7 +145,7 @@ class TestWikiViews(OsfTestCase):
         assert_false(res.json['rendered_before_update'])
 
     def test_wiki_url_for_component_returns_200(self):
-        component = NodeFactory(project=self.project, is_public=True)
+        component = NodeFactory(parent=self.project, is_public=True)
         url = component.web_url_for('project_wiki_view', wname='home')
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
