@@ -108,7 +108,7 @@ class BaseUserSettings(BaseAddonSettings):
         model = self.config.node_settings
         if not model:
             return []
-        return [obj.owner for obj in model.objects.filter(user_settings=self, owner__is_deleted=False)]
+        return [obj.owner for obj in model.objects.filter(user_settings=self, owner__is_deleted=False).select_related('owner')]
 
     @property
     def can_be_merged(self):

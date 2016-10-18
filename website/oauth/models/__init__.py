@@ -491,7 +491,7 @@ class ApiOAuth2Application(StoredObject):
     name = fields.StringField(index=True, required=True, validate=[string_required, MaxLengthValidator(200)])
     description = fields.StringField(required=False, validate=MaxLengthValidator(1000))
 
-    date_created = fields.DateTimeField(auto_now_add=timezone.now,
+    date_created = fields.DateTimeField(auto_now_add=True,
                                         editable=False)
 
     home_url = fields.StringField(required=True,
