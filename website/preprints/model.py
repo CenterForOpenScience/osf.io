@@ -174,7 +174,7 @@ class PreprintProvider(StoredObject):
     social_facebook = fields.StringField()
     social_instagram = fields.StringField()
     subjects_acceptable = fields.DictionaryField(list=True, default=lambda: [])
-    licenses_acceptable = fields.ForeignField('NodeLicense', list=True)
+    licenses_acceptable = fields.ForeignField('NodeLicense', list=True, default=lambda: [])
 
     @property
     def top_level_subjects(self):
@@ -192,7 +192,6 @@ class PreprintProvider(StoredObject):
             for sub in rule[0]:
                 q.append(Q('_id', 'eq', sub))
         return Subject.find(reduce(lambda x, y: x | y, q)) if len(q) > 1 else (Subject.find(q[0]) if len(q) else Subject.find())
-
 
     def get_absolute_url(self):
         return '{}preprint_providers/{}'.format(self.absolute_api_v2_url, self._id)

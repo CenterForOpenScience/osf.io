@@ -170,7 +170,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFil
     required_read_scopes = [CoreScopes.NODE_PREPRINTS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    view_category = 'preprints'
+    view_category = 'preprint_providers'
     view_name = 'preprints-list'
 
     # overrides ODMFilterMixin
@@ -195,7 +195,7 @@ class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
         base_permissions.TokenHasScope,
     )
 
-    view_category = 'preprint-providers'
+    view_category = 'preprint_providers'
     view_name = 'taxonomy-list'
 
     serializer_class = TaxonomySerializer
@@ -229,4 +229,4 @@ class PreprintProviderLicenseList(LicenseList):
 
     def get_queryset(self):
         provider = PreprintProvider.load(self.kwargs['provider_id'])
-        return provider.licenses_acceptable if len(provider.licenses_acceptable) else super(PreprintProviderPreprintList, self).get_queryset()
+        return provider.licenses_acceptable if len(provider.licenses_acceptable) else super(PreprintProviderLicenseList, self).get_queryset()
