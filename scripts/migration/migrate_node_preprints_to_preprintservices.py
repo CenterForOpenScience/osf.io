@@ -55,6 +55,7 @@ def validate_node_preprint_subjects(node):
 def create_preprint_service_from_node(document, swap_cutoff):
     created = {}
     for provider_id in document['preprint_providers']:
+        non_osf_provider = False
         node = models.Node.load(document['_id'])
         provider = models.PreprintProvider.load(provider_id)
         # primary_file already set correctly* on node
@@ -84,12 +85,15 @@ def create_preprint_service_from_node(document, swap_cutoff):
                     swap_guids(node, preprint)
                 else:
                     logger.info('* Not swapping guids for preprint {} and preexisting node {}'.format(preprint._id, node._id))
+            else:
+                logger.info('* Not swapping guids for preprint {} for provider {}'.format(preprint._id, preprint.provider))
+                non_osf_provider = True
             node.reload()
             preprint.reload()
             validate_node_preprint_subjects(preprint.node)
             preprint.node.reload()
             enumerate_and_set_subject_hierarchies(preprint)
-            created.update({preprint._id: node._id})
+            created.update({preprint._id: (node._id, non_osf_provider)})
 
     return created
 
@@ -515,6 +519,8 @@ def migrate(swap_cutoff):
     successes = []
     failures = []
     created_preprints = []
+    external_preprints = []
+    preprint_node_mapping = {}
 
     logger.info('Preparing to migrate {} preprint nodes.'.format(target_count))
     logger.info('Cutoff delta for swapping guids is {} seconds'.format(swap_cutoff.total_seconds()))
@@ -533,6 +539,9 @@ def migrate(swap_cutoff):
         else:
             for preprint_id in preprints:
                 created_preprints.append(preprint_id)
+                if preprints[preprint_id][1]:
+                    external_preprints.append(preprint_id)
+            preprint_node_mapping.update(preprints)
             successes.append(node['_id'])
             logger.info('({}-{}/{}) Successfully migrated {}'.format(
                 len(successes),
@@ -542,7 +551,15 @@ def migrate(swap_cutoff):
                 )
             )
 
-    logger.info('Preprints with new _ids: {}'.format(list(set(created_preprints)-set(target_ids))))
+    new_osf_preprints = list(set(created_preprints)-set(target_ids + external_preprints))
+    logger.info('OSF Preprints with new _ids (older than {} minutes): {}'.format(
+        swap_cutoff.seconds/60,  # timedeltas have .days, .seconds, and .microseonds but not .minutes
+        new_osf_preprints))
+    logger.info('OSF Preprint-Node map: {}'.format(
+        ''.join(['{}-{}, '.format(preprint_id, preprint_node_mapping[preprint_id][0]) for preprint_id in new_osf_preprints])))
+    logger.info('External Preprints with new _ids: {}'.format(list(external_preprints)))
+    logger.info('External Preprint-Node map: {}'.format(
+        ''.join(['{}-{}, '.format(preprint_id, preprint_node_mapping[preprint_id][0]) for preprint_id in external_preprints])))
     logger.info('Successes: {}'.format(successes))
     logger.info('Failures: {}'.format(failures))
     logger.info('Missed nodes: {}'.format(list(set(target_ids)-set(successes + failures))))
