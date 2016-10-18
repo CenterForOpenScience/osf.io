@@ -5,10 +5,10 @@ import httplib as http
 import logging
 
 from django.contrib.postgres.fields import ArrayField
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from flask import request
-from modularodm.exceptions import KeyExistsException
 from oauthlib.oauth2 import MissingTokenError
 from osf.models import base
 from osf.modm_compat import Q
@@ -285,7 +285,7 @@ class ExternalProvider(object):
                 provider_name=self.name,
             )
             self.account.save()
-        except KeyExistsException:
+        except ValidationError:
             # ... or get the old one
             self.account = ExternalAccount.find_one(
                 Q('provider', 'eq', self.short_name) &
@@ -312,8 +312,8 @@ class ExternalProvider(object):
         self.account.save()
 
         # add it to the user's list of ``ExternalAccounts``
-        if self.account not in user.external_accounts:
-            user.external_accounts.append(self.account)
+        if not user.external_accounts.filter(id=self.account.id).exists():
+            user.external_accounts.add(self.account)
             user.save()
 
         return True
@@ -406,7 +406,7 @@ class ExternalProvider(object):
             return False
 
         resp_expiry_fn = resp_expiry_fn or (
-            lambda x: dt.datetime.utcfromtimestamp(dt.time.time() + float(x['expires_in']))
+            lambda x: timezone.now() + timezone.timedelta(seconds=float(x['expires_in']))
         )
 
         client = OAuth2Session(

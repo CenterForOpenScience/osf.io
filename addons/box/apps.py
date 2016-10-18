@@ -1,11 +1,20 @@
 from addons.base.apps import BaseAddonConfig
 
+from website.addons.box.views import box_root_folder
 
 class BoxAddonConfig(BaseAddonConfig):
 
     name = 'addons.box'
     label = 'addons_box'
     full_name = 'Box'
+    short_name = 'box'
+    configs = ['accounts', 'node']
+    has_hgrid_files = True
+    max_file_size = 250  # MB
+
+    @property
+    def get_hgrid_data(self):
+        return box_root_folder
 
     FOLDER_SELECTED = 'box_folder_selected'
     NODE_AUTHORIZED = 'box_node_authorized'

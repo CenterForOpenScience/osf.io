@@ -139,9 +139,18 @@ class AddonModelMixin(models.Model):
 
     def get_addons(self):
         return filter(None, [
-            self.get_addon(config.label)
+            self.get_addon(config.short_name)
             for config in self.ADDONS_AVAILABLE
         ])
+
+    def get_oauth_addons(self):
+        # TODO: Using hasattr is a dirty hack - we should be using issubclass().
+        #       We can't, because importing the parent classes here causes a
+        #       circular import error.
+        return [
+            addon for addon in self.get_addons()
+            if hasattr(addon, 'oauth_provider')
+        ]
 
     def has_addon(self, name):
         return True
@@ -170,14 +179,14 @@ class AddonModelMixin(models.Model):
             pass
         return None
 
-    def add_addon(self, name):
+    def add_addon(self, name, auth):
         addon = self.get_addon(name, deleted=True)
         if addon:
             if addon.deleted:
                 addon.undelete(save=True)
-                return addon
+            return addon
 
-        config = apps.get_app_config(name)
+        config = apps.get_app_config('addons_{}'.format(name))
         model = self._settings_model(name, config=config)
         ret = model(owner=self)
         ret.on_add()
@@ -185,7 +194,18 @@ class AddonModelMixin(models.Model):
         return ret
 
     def config_addons(self, config, auth=None, save=True):
-        pass
+        """Enable or disable a set of add-ons.
+
+        :param dict config: Mapping between add-on names and enabled / disabled
+            statuses
+        """
+        for addon_name, enabled in config.iteritems():
+            if enabled:
+                self.add_addon(addon_name, auth)
+            else:
+                self.delete_addon(addon_name, auth)
+        if save:
+            self.save()
 
     def delete_addon(self, name, auth=None):
         addon = self.get_addon(name)
@@ -202,7 +222,7 @@ class AddonModelMixin(models.Model):
 
     def _settings_model(self, name, config=None):
         if not config:
-            config = apps.get_app_config(name)
+            config = apps.get_app_config('addons_{}'.format(name))
         return getattr(config, '{}_settings'.format(self.settings_type))
 
 

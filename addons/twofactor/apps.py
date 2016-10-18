@@ -6,6 +6,8 @@ class TwoFactorAddonConfig(BaseAddonConfig):
     name = 'addons.twofactor'
     label = 'addons_twofactor'
     full_name = 'Two-factor Authentication'
+    short_name = 'twofactor'
+    configs = ['user']
 
     # FOLDER_SELECTED = 'dropbox_folder_selected'
     # NODE_AUTHORIZED = 'dropbox_node_authorized'
