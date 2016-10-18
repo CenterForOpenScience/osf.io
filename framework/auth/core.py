@@ -1424,7 +1424,7 @@ class User(GuidStoredObject, AddonModelMixin):
         if isinstance(user.system_tags, list):
             system_tags = user.system_tags
         else:
-            system_tags = use.system_tag.all()
+            system_tags = user.system_tag.all()
         for system_tag in system_tags:
             self.add_system_tag(system_tag)
 
@@ -1503,10 +1503,10 @@ class User(GuidStoredObject, AddonModelMixin):
                 self.watched.append(watched)
         user.watched = []
 
-        for account in user.external_accounts:
-            if account not in self.external_accounts:
-                self.external_accounts.append(account)
-        user.external_accounts = []
+        for account in user.external_accounts.all():
+            if not self.external_accounts.filter(id=account.id).exists():
+                self.external_accounts.add(account)
+        user.external_accounts.clear()
 
         # - addons
         # Note: This must occur before the merged user is removed as a

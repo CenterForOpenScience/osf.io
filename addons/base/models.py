@@ -46,8 +46,12 @@ class BaseAddonSettings(ObjectIDMixin):
         abstract = True
 
     @property
+    def config(self):
+        return self._meta.app_config
+
+    @property
     def short_name(self):
-        return self._meta.app_config.label
+        return self.config.short_name
 
     def delete(self, save=True):
         self.deleted = True
@@ -63,8 +67,8 @@ class BaseAddonSettings(ObjectIDMixin):
 
     def to_json(self, user):
         return {
-            'addon_short_name': self._meta.app_config.label,
-            'addon_full_name': self._meta.app_config.full_name,
+            'addon_short_name': self.config.short_name,
+            'addon_full_name': self.config.full_name,
         }
 
     #############
@@ -101,10 +105,10 @@ class BaseUserSettings(BaseAddonSettings):
         """Get authorized, non-deleted nodes. Returns an empty list if the
         attached add-on does not include a node model.
         """
-        model = self._meta.app_config.node_settings
+        model = self.config.node_settings
         if not model:
             return []
-        return model.objects.filter(user_settings=self, owner__is_deleted=False)
+        return [obj.owner for obj in model.objects.filter(user_settings=self, owner__is_deleted=False)]
 
     @property
     def can_be_merged(self):
@@ -123,7 +127,7 @@ class BaseUserSettings(BaseAddonSettings):
                     'api_url': node.api_url
                 }
                 for node in self.nodes_authorized
-                ]
+            ]
         })
         return ret
 
@@ -176,14 +180,14 @@ class BaseOAuthUserSettings(BaseUserSettings):
         return self.owner.external_accounts.filter(provider=self.oauth_provider.short_name)
 
     def delete(self, save=True):
-        for account in self.external_accounts:
+        for account in self.external_accounts.filter(provider=self.config.short_name):
             self.revoke_oauth_access(account, save=False)
         super(BaseOAuthUserSettings, self).delete(save=save)
 
     def grant_oauth_access(self, node, external_account, metadata=None):
         """Give a node permission to use an ``ExternalAccount`` instance."""
         # ensure the user owns the external_account
-        if external_account not in self.owner.external_accounts.all():
+        if not self.owner.external_accounts.filter(id=external_account.id).exists():
             raise PermissionsError()
 
         metadata = metadata or {}
@@ -219,7 +223,8 @@ class BaseOAuthUserSettings(BaseUserSettings):
             else:
                 addon_settings.deauthorize(auth=auth)
 
-        if OSFUser.objects.filter(external_accounts__external_count=external_account).count() == 1:
+        if external_account.osfuser_set().count() == 1 and \
+                external_account.osfuser_set.filter(osfuser=auth.user).count() == 1:
             # Only this user is using the account, so revoke remote access as well.
             self.revoke_remote_oauth_access(external_account)
 
@@ -384,7 +389,7 @@ class BaseNodeSettings(BaseAddonSettings):
                 'url': self.owner.url,
                 'is_registration': self.owner.is_registration,
             },
-            'node_settings_template': os.path.basename(self._meta.app_config.node_settings_template),
+            'node_settings_template': os.path.basename(self.config.node_settings_template),
         })
         return ret
 
@@ -395,8 +400,8 @@ class BaseNodeSettings(BaseAddonSettings):
         # Note: `config` is added to `self` in `AddonConfig::__init__`.
         template = lookup.get_template('project/addon/config_error.mako')
         return template.get_def('config_error').render(
-            title=self._meta.app_config.full_name,
-            name=self._meta.app_config.short_name,
+            title=self.config.full_name,
+            name=self.config.short_name,
             **data
         )
 
@@ -469,7 +474,7 @@ class BaseNodeSettings(BaseAddonSettings):
                     u'{category} will not transfer your authentication to '
                     u'the forked {category}.'
                 ).format(
-                    addon=self._meta.app_config.full_name,
+                    addon=self.config.full_name,
                     category=node.project_or_component,
                 )
 
@@ -479,7 +484,7 @@ class BaseNodeSettings(BaseAddonSettings):
                     u'{category}, forking it will also transfer your authentication to '
                     u'the forked {category}.'
                 ).format(
-                    addon=self._meta.app_config.full_name,
+                    addon=self.config.full_name,
                     category=node.project_or_component,
                 )
             else:
@@ -488,7 +493,7 @@ class BaseNodeSettings(BaseAddonSettings):
                     u'user, forking it will not transfer authentication to the forked '
                     u'{category}.'
                 ).format(
-                    addon=self._meta.app_config.full_name,
+                    addon=self.config.full_name,
                     category=node.project_or_component,
                 )
 
@@ -563,7 +568,7 @@ class BaseStorageAddon(BaseModel):
 
     @property
     def archive_folder_name(self):
-        name = 'Archive of {addon}'.format(addon=self._meta.app_config.full_name)
+        name = 'Archive of {addon}'.format(addon=self.config.full_name)
         folder_name = getattr(self, 'folder_name', '').lstrip('/').strip()
         if folder_name:
             name = name + ': {folder}'.format(folder=folder_name)
@@ -610,7 +615,7 @@ class BaseStorageAddon(BaseModel):
         filenode['children'] = [
             self._get_file_tree(child, user, cookie=cookie)
             for child in self._get_fileobj_child_metadata(filenode, user, **kwargs)
-            ]
+        ]
         return filenode
 
 
@@ -658,9 +663,9 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
             self,
             '_logger_class',
             type(
-                '{0}NodeLogger'.format(self._meta.app_config.label.capitalize()),
+                '{0}NodeLogger'.format(self.config.short_name.capitalize()),
                 (logger.AddonNodeLogger,),
-                {'addon_short_name': self._meta.app_config.label}
+                {'addon_short_name': self.config.short_name}
             )
         )
         return self._logger_class(
@@ -754,7 +759,7 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
                 u'Removing this user will also remove write access to {addon} '
                 u'unless another contributor re-authenticates the add-on.'
             ).format(
-                addon=self._meta.app_config.full_name,
+                addon=self.config.full_name,
                 category=node.project_or_component,
                 name=removed.fullname,
             )
@@ -775,7 +780,7 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
                 u'Because the {addon} add-on for {category} "{title}" was authenticated '
                 u'by {user}, authentication information has been deleted.'
             ).format(
-                addon=self._meta.app_config.full_name,
+                addon=self.config.full_name,
                 category=markupsafe.escape(node.category_display),
                 title=markupsafe.escape(node.title),
                 user=markupsafe.escape(removed.fullname)
@@ -810,7 +815,7 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
                     pass
             clone.set_auth(self.external_account, user, metadata=metadata, log=False)
             message = '{addon} authorization copied to forked {category}.'.format(
-                addon=self._meta.app_config.full_name,
+                addon=self.config.full_name,
                 category=fork.project_or_component,
             )
         else:
@@ -819,7 +824,7 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
                 u'authorize this fork on the <u><a href="{url}">Settings</a></u> '
                 u'page.'
             ).format(
-                addon=self._meta.app_config.full_name,
+                addon=self.config.full_name,
                 url=fork.web_url_for('node_setting'),
                 category=fork.project_or_component,
             )
@@ -837,7 +842,7 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
                 u'the {addon} add-on linked to this {category} will not be included '
                 u'as part of this registration.'
             ).format(
-                addon=self._meta.app_config.full_name,
+                addon=self.config.full_name,
                 category=node.project_or_component,
             )
 

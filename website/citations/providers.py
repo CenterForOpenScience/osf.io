@@ -105,7 +105,7 @@ class CitationsProvider(object):
                 self.serializer(
                     user_settings=user.get_addon(self.provider_name) if user else None
                 ).serialize_account(each)
-                for each in user.external_accounts
+                for each in user.external_accounts.all()
                 if each.provider == self.provider_name
             ]
         }
@@ -141,7 +141,7 @@ class CitationsProvider(object):
         if the user has authorization to grant"""
         external_account = ExternalAccount.load(external_account_id)
 
-        if external_account not in user.external_accounts:
+        if not user.external_accounts.filter(id=external_account.id).all():
             raise HTTPError(http.FORBIDDEN)
 
         try:
@@ -205,7 +205,7 @@ class CitationsProvider(object):
 
         node_account = node_addon.external_account
         user_accounts = [
-            account for account in user.external_accounts
+            account for account in user.external_accounts.all()
             if account.provider == self.provider_name
         ] if user else []
         user_is_owner = node_account in user_accounts

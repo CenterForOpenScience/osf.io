@@ -77,7 +77,7 @@ class GitHubUserSettings(AddonOAuthUserSettingsBase):
     @property
     def public_id(self):
         gh_accounts = [
-            a for a in self.owner.external_accounts
+            a for a in self.owner.external_accounts.all()
             if a.provider == self.oauth_provider.short_name
         ]
         if gh_accounts:

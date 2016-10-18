@@ -35,7 +35,7 @@ class S3Serializer(StorageAddonSerializer):
 
     def credentials_are_valid(self, user_settings, client=None):
         if user_settings:
-            for account in user_settings.external_accounts:
+            for account in user_settings.external_accounts.all():
                 if utils.can_list(account.oauth_key, account.oauth_secret):
                     return True
         return False

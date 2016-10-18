@@ -6,6 +6,7 @@ class OSFStorageAddonConfig(BaseAddonConfig):
     name = 'addons.osfstorage'
     label = 'addons_osfstorage'
     full_name = 'OSFStorage'
+    short_name = 'osfstorage'
 
     FOLDER_SELECTED = 'osfstorage_folder_selected'
     NODE_AUTHORIZED = 'osfstorage_node_authorized'

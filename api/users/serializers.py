@@ -188,7 +188,7 @@ class UserAddonSettingsSerializer(JSONAPISerializer):
                     }),
                     'nodes_connected': [n.absolute_api_v2_url for n in obj.get_attached_nodes(account)]
                 }
-                for account in obj.external_accounts
+                for account in obj.external_accounts.all()
             }
         return {}
 
