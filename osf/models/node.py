@@ -2252,7 +2252,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         :param content: A string, the posted content.
         :param auth: All the auth information including user, API key.
         """
-        NodeWikiPage = apps.get_model('osf.NodeWikiPage')
+        NodeWikiPage = apps.get_model('addons_wiki.NodeWikiPage')
         Comment = apps.get_model('osf.Comment')
 
         name = (name or '').strip()
@@ -2269,7 +2269,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             current = NodeWikiPage.load(self.wiki_pages_current[key])
             version = current.version + 1
             current.save()
-            if Comment.find(Q('root_target', 'eq', current._id)).count() > 0:
+            if Comment.find(Q('root_target', 'eq', current.guids.first())).count() > 0:
                 has_comments = True
 
         new_page = NodeWikiPage(
@@ -2282,8 +2282,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new_page.save()
 
         if has_comments:
-            Comment.update(Q('root_target', 'eq', current._id), data={'root_target': Guid.load(new_page._id)})
-            Comment.update(Q('target', 'eq', current._id), data={'target': Guid.load(new_page._id)})
+            Comment.update(Q('root_target', 'eq', current), data={'root_target': Guid.load(new_page._id)})
+            Comment.update(Q('target', 'eq', current), data={'target': Guid.load(new_page._id)})
 
         if current:
             for contrib in self.contributors:
