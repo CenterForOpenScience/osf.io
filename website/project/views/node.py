@@ -1093,7 +1093,7 @@ def _serialize_node_search(node):
         data['dateModified'] = node.date_modified.isoformat()
 
     first_author = node.visible_contributors[0]
-    data['firstAuthor'] = first_author.family_name or first_author.given_name or first_author.full_name
+    data['firstAuthor'] = first_author.family_name or first_author.given_name or first_author.fullname
 
     return data
 
@@ -1118,20 +1118,14 @@ def search_node(auth, **kwargs):
     title_query = Q('title', 'icontains', query)
     not_deleted_query = Q('is_deleted', 'eq', False)
     visibility_query = Q('contributors', 'eq', auth.user)
-    no_folders_query = Q('is_collection', 'eq', False)
     if include_public:
         visibility_query = visibility_query | Q('is_public', 'eq', True)
-    odm_query = title_query & not_deleted_query & visibility_query & no_folders_query
+    odm_query = title_query & not_deleted_query & visibility_query
 
     # Exclude current node from query if provided
-    if node:
-        nin = [node._id] + node.node_ids
-        odm_query = (
-            odm_query &
-            Q('_id', 'nin', nin)
-        )
+    nin = [node.id] + node.node_ids if node else []
 
-    nodes = Node.find(odm_query)
+    nodes = Node.find(odm_query).exclude(id__in=nin).exclude(type='osf.collection')
     count = nodes.count()
     pages = math.ceil(count / size)
     validate_page_num(page, pages)
