@@ -18,7 +18,7 @@ def on_preprint_updated(preprint_id):
     preprint = PreprintService.load(preprint_id)
 
     if settings.SHARE_URL and settings.SHARE_API_TOKEN:
-        resp = requests.post('{}api/normalizeddata/'.format(settings.SHARE_URL), json={
+        resp = requests.post('{}api/v2/normalizeddata/'.format(settings.SHARE_URL), json={
             'created_at': datetime.datetime.utcnow().isoformat(),
             'normalized_data': {
                 '@graph': format_preprint(preprint)
