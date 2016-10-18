@@ -180,8 +180,8 @@ class PreprintProvider(StoredObject):
     def top_level_subjects(self):
         if len(self.subjects_acceptable) == 0:
             return Subject.find(Q('parents', 'eq', []))
-        tops = [sub[0][0] for sub in self.subjects_acceptable]
-        return (Subject.load(sub) for sub in tops)
+        tops = set([sub[0][0] for sub in self.subjects_acceptable])
+        return [Subject.load(sub) for sub in tops]
 
     @property
     def all_subjects(self):
@@ -191,7 +191,7 @@ class PreprintProvider(StoredObject):
                 q.append(Q('parents', 'eq', Subject.load(rule[0][-1])))
             for sub in rule[0]:
                 q.append(Q('_id', 'eq', sub))
-        return Subject.find(reduce(lambda x, y: x | y, q))
+        return Subject.find(reduce(lambda x, y: x | y, q)) if len(q) > 1 else (Subject.find(q[0]) if len(q) else Subject.find())
 
 
     def get_absolute_url(self):
