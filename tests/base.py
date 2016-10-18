@@ -390,7 +390,7 @@ class ApiAddonTestCase(ApiTestCase):
 
     def setUp(self):
         super(ApiAddonTestCase, self).setUp()
-        from tests.factories import (
+        from osf_tests.factories import (
             ProjectFactory,
             AuthUserFactory,
         )
@@ -409,7 +409,7 @@ class ApiAddonTestCase(ApiTestCase):
         if self.addon_type not in ('UNMANAGEABLE', 'INVALID'):
             if self.addon_type in ('OAUTH', 'CONFIGURABLE'):
                 self.account = self.AccountFactory()
-                self.user.external_accounts.append(self.account)
+                self.user.external_accounts.add(self.account)
                 self.user.save()
 
             self.user_settings = self.user.get_or_add_addon(self.short_name)

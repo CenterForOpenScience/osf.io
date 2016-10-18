@@ -1,9 +1,8 @@
 from nose.tools import *  # flake8: noqa
 
-from framework.auth.core import Auth, Q
+from framework.auth.core import Auth
 from api.base.settings.defaults import API_BASE
 from website.util import permissions
-from website.models import Node
 from website.project import signals as project_signals
 
 

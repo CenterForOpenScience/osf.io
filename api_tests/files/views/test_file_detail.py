@@ -11,7 +11,7 @@ from framework.auth.core import Auth
 from framework.sessions.model import Session
 
 from tests.base import ApiTestCase, capture_signals
-from tests.factories import (
+from osf_tests.factories import (
     ProjectFactory,
     UserFactory,
     AuthUserFactory,
