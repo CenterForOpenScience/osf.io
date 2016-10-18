@@ -2228,7 +2228,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         )
 
     def get_wiki_page(self, name=None, version=None, id=None):
-        NodeWikiPage = apps.get_model('osf.NodeWikiPage')
+        NodeWikiPage = apps.get_model('addons_wiki.NodeWikiPage')
         if name:
             name = (name or '').strip()
             key = to_mongo_key(name)
