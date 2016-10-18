@@ -16,7 +16,7 @@ from website.addons.wiki import utils as wiki_utils
 from website import settings
 
 from osf.models.base import GuidMixin, BaseModel
-from osf.models.validators import validate_page_name
+from website.addons.wiki.model import validate_page_name
 from website.util import api_v2_url
 from osf.models import AbstractNode, NodeLog
 
@@ -90,7 +90,7 @@ class NodeWikiPage(GuidMixin, BaseModel):
     # /TODO DELETE ME POST MIGRATION
 
     page_name = models.CharField(max_length=200, validators=[validate_page_name, ])
-    version = models.IntegerField()
+    version = models.IntegerField(default=1)
     date = models.DateTimeField(default=timezone.now)  # auto_now_add=True)
     content = models.TextField(default='', blank=True)
     user = models.ForeignKey('osf.OSFUser', null=True, blank=True)
