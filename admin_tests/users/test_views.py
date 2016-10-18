@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from django.test import RequestFactory
 from django.http import Http404
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -218,11 +217,10 @@ class TestRemove2Factor(AdminTestCase):
 
 
 class TestUserWorkshopFormView(AdminTestCase):
+
     def setUp(self):
         self.user_1 = AuthUserFactory()
         self.auth_1 = Auth(self.user_1)
-        self.user_2 = AuthUserFactory()
-        self.user_3 = AuthUserFactory()
         self.view = UserWorkshopFormView()
         self.workshop_date = datetime.now()
         self.data = [
@@ -230,14 +228,14 @@ class TestUserWorkshopFormView(AdminTestCase):
             [None, self.workshop_date.strftime('%m/%d/%y'), None, None, None, self.user_1.username, None],
         ]
 
-        self.unicode_data = [
-            ['none', 'date', 'none', 'none', 'none', 'email', 'none'],
-            ['óç', self.workshop_date.strftime('%m/%d/%y'), 'in’©a', None, 'Õa', self.user_1.username, None],
+        self.user_exists_by_name_data = [
+            ['number', 'date', 'location', 'topic', 'name', 'email', 'other'],
+            [None, self.workshop_date.strftime('%m/%d/%y'), None, None, self.user_1.fullname, 'unknown@example.com', None],
         ]
 
         self.user_not_found_data = [
             ['none', 'date', 'none', 'none', 'none', 'email', 'none'],
-            [None, self.workshop_date.strftime('%m/%d/%y'), None, None, None, 'user@example.com', None],
+            [None, self.workshop_date.strftime('%m/%d/%y'), None, None, None, 'fake@example.com', None],
         ]
 
     def _create_and_parse_test_file(self, data):
@@ -275,8 +273,8 @@ class TestUserWorkshopFormView(AdminTestCase):
         user_logs_since_workshop = result_csv[1][-3]
         user_nodes_created_since_workshop = result_csv[1][-2]
 
-        nt.assert_equal(user_logs_since_workshop, 2)
-        nt.assert_equal(user_nodes_created_since_workshop, 1)
+        nt.assert_equal(user_logs_since_workshop, 0)
+        nt.assert_equal(user_nodes_created_since_workshop, 0)
 
     def test_user_activity_before_workshop_only(self):
         activity_date = datetime.now() - timedelta(days=1)
@@ -311,8 +309,8 @@ class TestUserWorkshopFormView(AdminTestCase):
         user_logs_since_workshop = result_csv[1][-3]
         user_nodes_created_since_workshop = result_csv[1][-2]
 
-        nt.assert_equal(user_logs_since_workshop, 2)
-        nt.assert_equal(user_nodes_created_since_workshop, 1)
+        nt.assert_equal(user_logs_since_workshop, 0)
+        nt.assert_equal(user_nodes_created_since_workshop, 0)
 
     def test_user_activity_day_of_workshop_and_after(self):
         activity_date = datetime.now() + timedelta(days=1)
@@ -325,8 +323,8 @@ class TestUserWorkshopFormView(AdminTestCase):
         user_logs_since_workshop = result_csv[1][-3]
         user_nodes_created_since_workshop = result_csv[1][-2]
 
-        nt.assert_equal(user_logs_since_workshop, 4)
-        nt.assert_equal(user_nodes_created_since_workshop, 2)
+        nt.assert_equal(user_logs_since_workshop, 2)
+        nt.assert_equal(user_nodes_created_since_workshop, 1)
 
     def test_user_activity_before_workshop_and_after(self):
         before_activity_date = datetime.now() - timedelta(days=1)
@@ -355,11 +353,15 @@ class TestUserWorkshopFormView(AdminTestCase):
         nt.assert_equal(user_logs_since_workshop, 0)
         nt.assert_equal(user_nodes_created_since_workshop, 0)
 
-    def test_csv_file_with_unicode_doesnt_error(self):
-        result_csv = self._create_and_parse_test_file(self.unicode_data)
+    def test_user_found_by_name(self):
+        result_csv = self._create_and_parse_test_file(self.user_exists_by_name_data)
+        user_guid = result_csv[1][-4]
+        last_log_date = result_csv[1][-1]
         user_logs_since_workshop = result_csv[1][-3]
         user_nodes_created_since_workshop = result_csv[1][-2]
 
+        nt.assert_equal(user_guid, self.user_1._id)
+        nt.assert_equal(last_log_date, '')
         nt.assert_equal(user_logs_since_workshop, 0)
         nt.assert_equal(user_nodes_created_since_workshop, 0)
 

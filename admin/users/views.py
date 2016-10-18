@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 from furl import furl
 import csv
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.views.generic import FormView, DeleteView, ListView
 from django.core.mail import send_mail
 from django.shortcuts import redirect
@@ -13,6 +13,7 @@ from website.project.spam.model import SpamStatus
 from website.settings import SUPPORT_EMAIL, DOMAIN
 from website.security import random_string
 from framework.auth import get_user
+from framework.auth.utils import impute_names
 
 from website.project.model import User, NodeLog, Node
 from website.mailchimp_utils import subscribe_on_confirm
@@ -286,13 +287,25 @@ class UserWorkshopFormView(OSFAdmin, FormView):
         return user_list[0] if user_list else None
 
     @staticmethod
+    def find_user_by_full_name(full_name):
+        user_list = User.find(Q('fullname', 'eq', full_name))
+        return user_list[0] if user_list.count() == 1 else None
+
+    @staticmethod
+    def find_user_by_family_name(family_name):
+        user_list = User.find(Q('family_name', 'eq', family_name))
+        return user_list[0] if user_list.count() == 1 else None
+
+    @staticmethod
     def get_user_logs_since_workshop(user, workshop_date):
-        query = Q('user', 'eq', user._id) & Q('date', 'gte', workshop_date)
+        query_date = workshop_date + timedelta(days=1)
+        query = Q('user', 'eq', user._id) & Q('date', 'gt', query_date)
         return list(NodeLog.find(query=query))
 
     @staticmethod
     def get_user_nodes_since_workshop(user, workshop_date):
-        query = Q('creator', 'eq', user._id) & Q('date_created', 'gte', workshop_date)
+        query_date = workshop_date + timedelta(days=1)
+        query = Q('creator', 'eq', user._id) & Q('date_created', 'gt', query_date)
         return list(Node.find(query=query))
 
     def parse(self, csv_file):
@@ -313,12 +326,27 @@ class UserWorkshopFormView(OSFAdmin, FormView):
                 continue
 
             email = row[5]
-            user = self.find_user_by_email(email)
+            user_by_email = self.find_user_by_email(email)
 
-            if not user:
-                row.extend(['', 0, 0, ''])
-                result.append(row)
-                continue
+            if not user_by_email:
+                full_name = row[4]
+                try:
+                    family_name = impute_names(full_name)['family']
+                except UnicodeDecodeError:
+                    row.extend(['Unable to parse name'])
+                    result.append(row)
+                    continue
+
+                user_by_name = self.find_user_by_full_name(full_name) or self.find_user_by_family_name(family_name)
+                if not user_by_name:
+                    row.extend(['', 0, 0, ''])
+                    result.append(row)
+                    continue
+                else:
+                    user = user_by_name
+
+            else:
+                user = user_by_email
 
             workshop_date = datetime.strptime(row[1], '%m/%d/%y')
             nodes = self.get_user_nodes_since_workshop(user, workshop_date)
