@@ -105,8 +105,7 @@ class CitationsProvider(object):
                 self.serializer(
                     user_settings=user.get_addon(self.provider_name) if user else None
                 ).serialize_account(each)
-                for each in user.external_accounts.all()
-                if each.provider == self.provider_name
+                for each in user.external_accounts.filter(provider=self.provider_name)
             ]
         }
 
