@@ -12,6 +12,7 @@ from api.base.filters import ODMFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.pagination import MaxSizePagination
 
+from api.licenses.views import LicenseList
 from api.taxonomies.serializers import TaxonomySerializer
 from api.preprint_providers.serializers import PreprintProviderSerializer
 from api.preprints.serializers import PreprintSerializer
@@ -222,3 +223,10 @@ class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
             return [sub for sub in Subject.find(Q('parents', 'eq', parent)) if provider.subjects_acceptable == [] or self.is_valid_subject(allows_children=allows_children, allowed_parents=allowed_parents, sub=sub)]
         return provider.all_subjects
 
+
+class PreprintProviderLicenseList(LicenseList):
+    view_category = 'preprint_providers'
+
+    def get_queryset(self):
+        provider = PreprintProvider.load(self.kwargs['provider_id'])
+        return provider.licenses_acceptable if len(provider.licenses_acceptable) else super(PreprintProviderPreprintList, self).get_queryset()

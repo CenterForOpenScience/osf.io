@@ -35,7 +35,11 @@ class PreprintProviderSerializer(JSONAPISerializer):
         related_view='preprint_providers:taxonomy-list',
         related_view_kwargs={'provider_id': '<_id>'}
     )
-    # licenses_acceptable = RelationshipField()
+
+    licenses_acceptable = RelationshipField(
+        related_view='preprint_providers:license-list',
+        related_view_kwargs={'provider_id': '<_id>'}
+    )
 
     links = LinksField({
         'self': 'get_absolute_url',
