@@ -2565,7 +2565,15 @@ def send_osf_signal(sender, instance, created, **kwargs):
         project_signals.project_created.send(instance)
 
 
-# TODO: Add addons
+@receiver(post_save, sender=Collection)
+@receiver(post_save, sender=Node)
+def add_default_node_addons(sender, instance, created, **kwargs):
+    if created and not instance.is_fork and not instance._suppress_log:
+        # TODO: This logic also exists in self.use_as_template()
+        for addon in settings.ADDONS_AVAILABLE:
+            if 'node' in addon.added_default:
+                instance.add_addon(addon.short_name, auth=None, log=False)
+
 
 @receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
