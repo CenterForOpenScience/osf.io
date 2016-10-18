@@ -2483,6 +2483,34 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.save()  # TODO Required?
         return ret
 
+    def has_addon_on_children(self, addon):
+        """Checks if a given node has a specific addon on child nodes
+            that are not registrations or deleted
+        """
+        if self.has_addon(addon):
+            return True
+
+        for node_relation in self.node_relations.filter(is_node_link=False, child__is_deleted=False).select_related('child'):
+            node = node_relation.child
+            if node.has_addon_on_children(addon):
+                return True
+        return False
+
+    def is_derived_from(self, other, attr):
+        derived_from = getattr(self, attr)
+        while True:
+            if derived_from is None:
+                return False
+            if derived_from == other:
+                return True
+            derived_from = getattr(derived_from, attr)
+
+    def is_fork_of(self, other):
+        return self.is_derived_from(other, 'forked_from')
+
+    def is_registration_of(self, other):
+        return self.is_derived_from(other, 'registered_from')
+
 
 class Node(AbstractNode):
     """
