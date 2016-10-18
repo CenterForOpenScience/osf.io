@@ -110,6 +110,31 @@ var ajaxJSON = function(method, url, options) {
 };
 
 /**
+ * Returns a promise of an array of ajaxJSON response objects
+ */
+function getAllPagesAjaxJSON(method, url, options) {
+    var responses = [];
+    var fetch = function(method, url, options) {
+        var request = ajaxJSON(method, url, options);
+        request.done(function(response) {
+            deferred.notify(response);
+            responses.push(response);
+            if (response.links.next !== null) {
+                fetch(method, response.links.next, options);
+            } else {
+                deferred.resolve(responses);
+            }
+        });
+        request.fail(function(xhr, status, error) {
+            deferred.reject(error);
+        });
+    };
+  var deferred = new $.Deferred();
+  fetch(method, url, options);
+  return deferred.promise();
+}
+
+/**
 * Posts JSON data.
 *
 * NOTE: The `success` and `error` callbacks are deprecated. Prefer the Promise
@@ -950,6 +975,7 @@ module.exports = window.$.osf = {
     postJSON: postJSON,
     putJSON: putJSON,
     ajaxJSON: ajaxJSON,
+    getAllPagesAjaxJSON: getAllPagesAjaxJSON,
     squashAPIAttributes: squashAPIAttributes,
     setXHRAuthorization: setXHRAuthorization,
     handleAddonApiHTTPError: handleAddonApiHTTPError,
