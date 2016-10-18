@@ -37,7 +37,7 @@ function _poTitleColumn(item) {
     var node = item.data; // Where actual data of the node is
     var css = ''; // Keep for future expandability -- Remove: item.data.isSmartFolder ? 'project-smart-folder smart-folder' : '';
     var preprintLinkPre = '/preprints/';
-    var isMypreprintsCollection = tb.options.currentView().collection.data.nodeType === 'preprints'
+    var isMypreprintsCollection = tb.options.currentView().collection.data.nodeType === 'preprints';
     if (item.data.archiving) { // TODO check if this variable will be available
         return  m('span', {'class': 'registration-archiving'}, node.attributes.title + ' [Archiving]');
     } else if (node.attributes.preprint && isMypreprintsCollection){
