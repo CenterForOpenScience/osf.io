@@ -225,6 +225,11 @@ class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
 
 
 class PreprintProviderLicenseList(LicenseList):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
     view_category = 'preprint_providers'
 
     def get_queryset(self):
