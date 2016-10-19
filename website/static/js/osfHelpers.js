@@ -112,13 +112,13 @@ var ajaxJSON = function(method, url, options) {
 /**
  * Returns a promise of an array of ajaxJSON response objects
  */
-function getAllPagesAjaxJSON(method, url, options) {
+var getAllPagesAjaxJSON = function(method, url, options) {
     var responses = [];
     var fetch = function(method, url, options) {
         var request = ajaxJSON(method, url, options);
         request.done(function(response) {
             deferred.notify(response);
-            responses.push(response);
+            responses = responses.concat(response);
             if (response.links.next !== null) {
                 fetch(method, response.links.next, options);
             } else {
@@ -132,7 +132,23 @@ function getAllPagesAjaxJSON(method, url, options) {
   var deferred = new $.Deferred();
   fetch(method, url, options);
   return deferred.promise();
-}
+};
+
+/**
+ * Takes an array of response objects and returns a single object
+ * @param {Array of Objects}
+ * @return {Object data}
+ */
+var mergePagesAjaxJSON = function(pages){
+    var map = {};
+    $.each(pages, function(page) {
+        $.each(pages[page].data, function(n){
+            var node = pages[page].data[n]
+            map[node.id] = node;
+        });
+    });
+    return map;
+};
 
 /**
 * Posts JSON data.
@@ -976,6 +992,7 @@ module.exports = window.$.osf = {
     putJSON: putJSON,
     ajaxJSON: ajaxJSON,
     getAllPagesAjaxJSON: getAllPagesAjaxJSON,
+    mergePagesAjaxJSON: mergePagesAjaxJSON,
     squashAPIAttributes: squashAPIAttributes,
     setXHRAuthorization: setXHRAuthorization,
     handleAddonApiHTTPError: handleAddonApiHTTPError,
