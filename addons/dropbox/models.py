@@ -12,6 +12,7 @@ from framework.auth import Auth
 from framework.exceptions import HTTPError
 from framework.sessions import session
 from osf.models.external import ExternalProvider
+from osf.models.files import FileNode, Folder, File
 from urllib3.exceptions import MaxRetryError
 from website.addons.base import exceptions
 from website.addons.dropbox import settings
@@ -20,6 +21,15 @@ from website.util import api_v2_url, web_url_for
 
 logger = logging.getLogger(__name__)
 
+
+class DropboxFileNode(FileNode):
+    provider = 'dropbox'
+
+class DropboxFolder(DropboxFileNode, Folder):
+    pass
+
+class DropboxFile(DropboxFileNode, File):
+    pass
 
 class Provider(ExternalProvider):
 
