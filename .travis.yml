@@ -9,7 +9,7 @@ sudo: false
 
 branches:
   except:
-    - feature/django-osf
+    - /django-osf/
 
 cache:
   directories:
