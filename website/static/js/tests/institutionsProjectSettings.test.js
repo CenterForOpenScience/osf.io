@@ -84,14 +84,14 @@ describe('InstitutionSettings', () => {
     });
 
     it('shows a dialog if the Node has children', () => {
-        viewModel.hasChildren(true);
+        viewModel.childExists(true);
         viewModel.submitInst(item);
         assert(modifyStub.called);
     });
 
     it('does not show dialog if the Node has no children', () => {
 
-        viewModel.hasChildren(false);
+        viewModel.childExists(false);
         viewModel.submitInst(item);
         assert.isFalse(modifyStub.called);
     });
