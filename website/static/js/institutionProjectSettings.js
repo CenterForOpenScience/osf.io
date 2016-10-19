@@ -9,7 +9,7 @@ var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
 var ViewModel = function(data) {
     var self = this;
-    self.url = $osf.apiV2Url('/nodes/', {'query': 'filter[root]=' + data.node.rootId + '&format=json&embed=affiliated_institutions&version=2.1&embed=parent'});
+    self.url = $osf.apiV2Url('/nodes/', {'query': 'filter[root]=' + data.node.rootId + '&format=json&embed=affiliated_institutions&version=2.1'});
     self.loading = ko.observable(false);
     self.showAdd = ko.observable(false);
     self.institutionHref = ko.observable('');
@@ -263,10 +263,9 @@ ViewModel.prototype.fetchNodes = function(url) {
         return;
     }
     var responseArray = new $osf.getAllPagesAjaxJSON('GET', url, {isCors: true});
-
     responseArray.done(function(data) {
         var rd = $osf.mergePagesAjaxJSON(data);
-        var rawNodes = self.nodeId() === self.rootId() ? rd : $osf.getAllChildren(self.nodeId(), rd);
+        var rawNodes = self.nodeId() === self.rootId() ? rd : $osf.getAllNodeChildrenFromNodeList(self.nodeId(), rd);
         self.formatNodes(rawNodes);
 
     }).fail(function (xhr, status, error) {
