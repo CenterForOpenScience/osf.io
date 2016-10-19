@@ -102,7 +102,10 @@ class UserSerializer(JSONAPISerializer):
         return None
 
     def get_absolute_url(self, obj):
-        return absolute_reverse('users:user-detail', kwargs={'user_id': obj._id})
+        return absolute_reverse('users:user-detail', kwargs={
+            'user_id': obj._id,
+            'version': self.context['request'].parser_context['kwargs']['version']
+        })
 
     def profile_image_url(self, user):
         size = self.context['request'].query_params.get('profile_image_size')
@@ -163,12 +166,12 @@ class UserAddonSettingsSerializer(JSONAPISerializer):
         type_ = 'user_addons'
 
     def get_absolute_url(self, obj):
-        user_id = self.context['request'].parser_context['kwargs']['user_id']
         return absolute_reverse(
             'users:user-addon-detail',
             kwargs={
-                'user_id': user_id,
-                'provider': obj.config.short_name
+                'provider': obj.config.short_name,
+                'user_id': self.context['request'].parser_context['kwargs']['user_id'],
+                'version': self.context['request'].parser_context['kwargs']['version']
             }
         )
 
@@ -177,7 +180,12 @@ class UserAddonSettingsSerializer(JSONAPISerializer):
         if hasattr(obj, 'external_accounts'):
             return {
                 account._id: {
-                    'account': absolute_reverse('users:user-external_account-detail', kwargs={'user_id': obj.owner._id, 'provider': obj.config.short_name, 'account_id': account._id}),
+                    'account': absolute_reverse('users:user-external_account-detail', kwargs={
+                        'user_id': obj.owner._id,
+                        'provider': obj.config.short_name,
+                        'account_id': account._id,
+                        'version': self.context['request'].parser_context['kwargs']['version']
+                    }),
                     'nodes_connected': [n.absolute_api_v2_url for n in obj.get_attached_nodes(account)]
                 }
                 for account in obj.external_accounts
@@ -207,10 +215,16 @@ class UserInstitutionsRelationshipSerializer(ser.Serializer):
                         'html': 'get_related_url'})
 
     def get_self_url(self, obj):
-        return absolute_reverse('users:user-institutions-relationship', kwargs={'user_id': obj['self']._id})
+        return absolute_reverse('users:user-institutions-relationship', kwargs={
+            'user_id': obj['self']._id,
+            'version': self.context['request'].parser_context['kwargs']['version']
+        })
 
     def get_related_url(self, obj):
-        return absolute_reverse('users:user-institutions', kwargs={'user_id': obj['self']._id})
+        return absolute_reverse('users:user-institutions', kwargs={
+            'user_id': obj['self']._id,
+            'version': self.context['request'].parser_context['kwargs']['version']
+        })
 
     def get_absolute_url(self, obj):
         return obj.absolute_api_v2_url

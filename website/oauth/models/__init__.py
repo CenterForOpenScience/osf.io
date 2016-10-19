@@ -20,6 +20,7 @@ from requests_oauthlib import OAuth1Session
 from requests_oauthlib import OAuth2Session
 
 from framework.auth import cas
+from framework.encryption import EncryptedStringField
 from framework.exceptions import HTTPError, PermissionsError
 from framework.mongo import ObjectId, StoredObject
 from framework.mongo.utils import unique_on
@@ -36,7 +37,6 @@ OAUTH1 = 1
 OAUTH2 = 2
 
 generate_client_secret = functools.partial(random_string, length=40)
-
 
 @unique_on(['provider', 'provider_id'])
 class ExternalAccount(StoredObject):
@@ -55,14 +55,14 @@ class ExternalAccount(StoredObject):
     # The OAuth credentials. One or both of these fields should be populated.
     # For OAuth1, this is usually the "oauth_token"
     # For OAuth2, this is usually the "access_token"
-    oauth_key = fields.StringField()
+    oauth_key = EncryptedStringField()
 
     # For OAuth1, this is usually the "oauth_token_secret"
     # For OAuth2, this is not used
-    oauth_secret = fields.StringField()
+    oauth_secret = EncryptedStringField()
 
     # Used for OAuth2 only
-    refresh_token = fields.StringField()
+    refresh_token = EncryptedStringField()
     expires_at = fields.DateTimeField()
     scopes = fields.StringField(list=True, default=lambda: list())
 
@@ -77,9 +77,9 @@ class ExternalAccount(StoredObject):
     provider_id = fields.StringField()
 
     # The user's name on the external service
-    display_name = fields.StringField()
+    display_name = EncryptedStringField()
     # A link to the user's profile on the external service
-    profile_url = fields.StringField()
+    profile_url = EncryptedStringField()
 
     def __repr__(self):
         return '<ExternalAccount: {}/{}>'.format(self.provider,
@@ -609,3 +609,42 @@ class ApiOAuth2PersonalToken(StoredObject):
     # used by django and DRF
     def get_absolute_url(self):
         return self.absolute_api_v2_url
+
+
+class BasicAuthProviderMixin(object):
+    """
+        Providers utilizing BasicAuth can utilize this class to implement the
+        storage providers framework by subclassing this mixin. This provides
+        a translation between the oauth parameters and the BasicAuth parameters.
+
+        The password here is kept decrypted by default.
+    """
+
+    def __init__(self, account=None, host=None, username=None, password=None):
+        super(BasicAuthProviderMixin, self).__init__()
+        if account:
+            self.account = account
+        elif not account and host and password and username:
+            self.account = ExternalAccount(
+                display_name=username,
+                oauth_key=password,
+                oauth_secret=host.lower(),
+                provider_id='{}:{}'.format(host.lower(), username),
+                profile_url=host.lower(),
+                provider=self.short_name,
+                provider_name=self.name
+            )
+        else:
+            self.account = None
+
+    @property
+    def host(self):
+        return self.account.profile_url
+
+    @property
+    def username(self):
+        return self.account.display_name
+
+    @property
+    def password(self):
+        return self.account.oauth_key

@@ -2,14 +2,13 @@
 <%def name="title()">Reset Password</%def>
 <%def name="content()">
 <h1 class="page-header text-center">Reset Password</h1>
-
 <div>
     <div class="row">
         <form class="form col-md-8 col-md-offset-2 m-t-xl"
                 id="resetPasswordForm"
                 name="resetPasswordForm"
                 method="POST"
-                action="/resetpassword/${verification_key}/"
+                action="/resetpassword/${uid}/${token}/"
                 >
 
             <div class="help-block" >
@@ -100,7 +99,7 @@
 <%def name="javascript_bottom()">
     <script type="text/javascript">
         window.contextVars = $.extend(true, {}, window.contextVars, {
-            verification_key: ${verification_key | sjson, n}
+            token: ${token | sjson, n}
         });
     </script>
     ${parent.javascript_bottom()}

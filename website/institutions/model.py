@@ -144,12 +144,12 @@ class Institution(object):
 
     @property
     def api_v2_url(self):
-        return reverse('institutions:institution-detail', kwargs={'institution_id': self._id})
+        return reverse('institutions:institution-detail', kwargs={'institution_id': self._id, 'version': 'v2'})
 
     @property
     def absolute_api_v2_url(self):
         from api.base.utils import absolute_reverse
-        return absolute_reverse('institutions:institution-detail', kwargs={'institution_id': self._id})
+        return absolute_reverse('institutions:institution-detail', kwargs={'institution_id': self._id, 'version': 'v2'})
 
     @property
     def nodes_url(self):

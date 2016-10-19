@@ -34,7 +34,8 @@ class ViewOnlyLinkDetailSerializer(JSONAPISerializer):
         return absolute_reverse(
             'nodes:node-view-only-link-detail',
             kwargs={
-                'link_id': obj._id
+                'link_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version']
             }
         )
 
@@ -59,7 +60,8 @@ class ViewOnlyLinkNodesSerializer(ser.Serializer):
         return absolute_reverse(
             'view-only-links:view-only-link-nodes',
             kwargs={
-                'link_id': obj['self']._id
+                'link_id': obj['self']._id,
+                'version': self.context['request'].parser_context['kwargs']['version']
             }
         )
 

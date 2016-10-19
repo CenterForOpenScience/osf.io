@@ -79,6 +79,7 @@ COPY ./website/addons/dataverse/requirements.txt /code/website/addons/dataverse/
 COPY ./website/addons/dropbox/requirements.txt /code/website/addons/dropbox/
 COPY ./website/addons/github/requirements.txt /code/website/addons/github/
 COPY ./website/addons/mendeley/requirements.txt /code/website/addons/mendeley/
+COPY ./website/addons/owncloud/requirements.txt /code/website/addons/owncloud/
 COPY ./website/addons/s3/requirements.txt /code/website/addons/s3/
 COPY ./website/addons/twofactor/requirements.txt /code/website/addons/twofactor/
 COPY ./website/addons/zotero/requirements.txt /code/website/addons/zotero/
@@ -93,6 +94,7 @@ RUN pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/we
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/dropbox/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/github/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/mendeley/requirements.txt \
+    && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/owncloud/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/s3/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/twofactor/requirements.txt \
     && pip install --no-cache-dir -c /code/requirements/constraints.txt -r /code/website/addons/zotero/requirements.txt
@@ -133,6 +135,7 @@ COPY ./website/addons/github/static/ /code/website/addons/github/static/
 COPY ./website/addons/googledrive/static/ /code/website/addons/googledrive/static/
 COPY ./website/addons/mendeley/static/ /code/website/addons/mendeley/static/
 COPY ./website/addons/osfstorage/static/ /code/website/addons/osfstorage/static/
+COPY ./website/addons/owncloud/static/ /code/website/addons/owncloud/static/
 COPY ./website/addons/s3/static/ /code/website/addons/s3/static/
 COPY ./website/addons/twofactor/static/ /code/website/addons/twofactor/static/
 COPY ./website/addons/wiki/static/ /code/website/addons/wiki/static/
@@ -140,7 +143,7 @@ COPY ./website/addons/zotero/static/ /code/website/addons/zotero/static/
 RUN mkdir -p /code/website/static/built/ \
     && invoke build_js_config_files \
     && node ./node_modules/webpack/bin/webpack.js --config webpack.prod.config.js \
-    && rm -rf /code/node_modules \
+    # && rm -rf /code/node_modules \ (needed for sharejs)
     && npm install list-of-licenses \
     && rm -rf /root/.npm \
     npm cache clean
@@ -148,6 +151,9 @@ RUN mkdir -p /code/website/static/built/ \
 
 # Copy the rest of the code over
 COPY ./ /code/
+
+ARG GIT_COMMIT=
+ENV GIT_COMMIT ${GIT_COMMIT}
 
 RUN export DJANGO_SETTINGS_MODULE=api.base.settings && python manage.py collectstatic --noinput --no-init-app \
     && export DJANGO_SETTINGS_MODULE=admin.base.settings && python manage.py collectstatic --noinput --no-init-app
