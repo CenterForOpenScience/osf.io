@@ -20,6 +20,7 @@ import osf.models.validators
 import osf.utils.datetime_aware_jsonfield
 import osf.utils.fields
 import osf.utils.security
+import website.addons.wiki.model
 
 
 class Migration(migrations.Migration):
@@ -754,7 +755,7 @@ class Migration(migrations.Migration):
                     size=None)),
                 ('content_type_pk', models.PositiveIntegerField(blank=True, null=True)),
                 ('page_name',
-                 models.CharField(max_length=200, validators=[osf.models.validators.validate_page_name])),
+                 models.CharField(max_length=200, validators=[website.addons.wiki.model.validate_page_name])),
                 ('version', models.IntegerField()),
                 ('date', models.DateTimeField(default=django.utils.timezone.now)),
                 ('content', models.TextField(blank=True, default=b'')),

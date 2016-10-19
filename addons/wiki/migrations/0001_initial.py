@@ -9,6 +9,7 @@ import django.db.models.deletion
 import django.utils.timezone
 import osf.models.base
 import osf.models.validators
+import website.addons.wiki.model
 
 
 class Migration(migrations.Migration):
@@ -40,7 +41,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('guid_string', django.contrib.postgres.fields.ArrayField(base_field=models.CharField(blank=True, max_length=255, null=True), blank=True, null=True, size=None)),
                 ('content_type_pk', models.PositiveIntegerField(blank=True, null=True)),
-                ('page_name', models.CharField(max_length=200, validators=[osf.models.validators.validate_page_name])),
+                ('page_name', models.CharField(max_length=200, validators=[website.addons.wiki.model.validate_page_name])),
                 ('version', models.IntegerField()),
                 ('date', models.DateTimeField(default=django.utils.timezone.now)),
                 ('content', models.TextField(blank=True, default=b'')),

@@ -281,12 +281,12 @@ class TestRegisterNode:
         assert registration.wiki_private_uuids == {}
 
     @mock.patch('website.project.signals.after_create_registration')
-    def test_registration_clones_project_wiki_pages(self, project, user, mock_signal):
+    def test_registration_clones_project_wiki_pages(self, mock_signal, project, user):
         project = factories.ProjectFactory(creator=user, is_public=True)
         wiki = NodeWikiFactory(node=project)
-        current_wiki = factories.NodeWikiFactory(node=project, version=2)
+        current_wiki = NodeWikiFactory(node=project, version=2)
         registration = project.register_node(get_default_metaschema(), Auth(user), '', None)
-        assert self.registration.wiki_private_uuids == {}
+        assert registration.wiki_private_uuids == {}
 
         registration_wiki_current = NodeWikiPage.load(registration.wiki_pages_current[current_wiki.page_name])
         assert registration_wiki_current.node == registration
