@@ -15,8 +15,8 @@ from osf_tests.factories import (
     RegistrationFactory,
     AuthUserFactory,
     CommentFactory,
-    NodeWikiFactory
 )
+from addons.wiki.tests.factories import NodeWikiFactory
 
 
 class NodeCommentsListMixin(object):

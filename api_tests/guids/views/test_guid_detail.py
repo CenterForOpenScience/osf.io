@@ -7,7 +7,8 @@ from website.settings import API_DOMAIN
 
 from tests.base import ApiTestCase
 from osf_tests.factories import (AuthUserFactory, ProjectFactory, RegistrationFactory,
-                                 CommentFactory, NodeWikiFactory, CollectionFactory, PrivateLinkFactory)
+                                 CommentFactory, CollectionFactory, PrivateLinkFactory)
+from addons.wiki.tests.factories import NodeWikiFactory
 
 
 class TestGuidDetail(ApiTestCase):

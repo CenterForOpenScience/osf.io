@@ -12,8 +12,8 @@ from website.addons.wiki.model import NodeWikiPage
 
 from tests.base import ApiWikiTestCase
 from osf_tests.factories import (ProjectFactory, RegistrationFactory,
-                                 NodeWikiFactory, PrivateLinkFactory,
-                                 CommentFactory)
+                                 PrivateLinkFactory, CommentFactory)
+from addons.wiki.tests.factories import NodeWikiFactory
 
 
 class TestWikiDetailView(ApiWikiTestCase):

@@ -5,7 +5,8 @@ from nose.tools import *  # flake8: noqa
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiWikiTestCase, ApiTestCase
-from osf_tests.factories import AuthUserFactory, ProjectFactory, NodeWikiFactory, RegistrationFactory
+from osf_tests.factories import AuthUserFactory, ProjectFactory, RegistrationFactory
+from addons.wiki.tests.factories import NodeWikiFactory
 
 
 class TestNodeWikiList(ApiWikiTestCase):
