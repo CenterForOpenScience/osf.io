@@ -1564,12 +1564,11 @@ class TestForkNode:
         # Recursively compare children
         for idx, child in enumerate(original._nodes.all()):
             if child.can_view(fork_user_auth):
-                self._cmp_fork_original(fork_user, fork_date, fork.nodes.all()[idx],
+                self._cmp_fork_original(fork_user, fork_date, fork._nodes.all()[idx],
                                         child, title_prepend='')
 
-    @pytest.mark.skip('pointers/node links not yet implemented')
     @mock.patch('framework.status.push_status_message')
-    def test_fork_recursion(self, mock_push_status_message, node, user, auth):
+    def test_fork_recursion(self, mock_push_status_message, node, user, auth, request_context):
         """Omnibus test for forking.
         """
         # Make some children
@@ -1583,9 +1582,9 @@ class TestForkNode:
         subproject.add_pointer(pointee, auth=auth)
 
         # Add add-on to test copying
-        node.add_addon('github', auth)
-        component.add_addon('github', auth)
-        subproject.add_addon('github', auth)
+        node.add_addon('dropbox', auth)
+        component.add_addon('dropbox', auth)
+        subproject.add_addon('dropbox', auth)
 
         # Log time
         fork_date = timezone.now()
@@ -1596,6 +1595,12 @@ class TestForkNode:
 
         # Compare fork to original
         self._cmp_fork_original(user, fork_date, fork, node)
+
+    def test_forked_component_has_parent_node(self, node, auth):
+        assert node.parent_node
+
+        fork = node.fork_node(auth=auth)
+        assert fork.parent_node == node.parent_node
 
     def test_fork_private_children(self, node, user, auth):
         """Tests that only public components are created
@@ -1725,7 +1730,6 @@ class TestForkNode:
         assert fork.wiki_pages_current == {}
         assert fork.wiki_private_uuids == {}
 
-    @pytest.mark.skip('Unskip when addons and hooks (i.e. after_fork) are implemented')
     def test_forking_clones_project_wiki_pages(self, user, auth):
         project = ProjectFactory(creator=user, is_public=True)
         # TODO: Unmock when StoredFileNode is implemented
