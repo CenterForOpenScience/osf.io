@@ -2404,3 +2404,69 @@ class TestTemplateNode:
                 node.get_permissions(other_user) ==
                 ['read', 'write', 'admin']
             )
+
+
+# copied from tests/test_models.py
+class TestAddonMethods:
+
+    def test_add_addon(self, node, auth):
+        addon_count = len(node.get_addon_names())
+        addon_record_count = len(node.addons)
+        added = node.add_addon('dropbox', auth)
+        assert bool(added) is True
+        node.reload()
+        assert (
+            len(node.get_addon_names()) ==
+            addon_count + 1
+        )
+        assert (
+            len(node.addons) ==
+            addon_record_count + 1
+        )
+        assert (
+            node.logs.latest().action ==
+            NodeLog.ADDON_ADDED
+        )
+
+    def test_add_existing_addon(self, node, auth):
+        addon_count = len(node.get_addon_names())
+        addon_record_count = len(node.addons)
+        added = node.add_addon('wiki', auth)
+        assert bool(added) is False
+        assert (
+            len(node.get_addon_names()) ==
+            addon_count
+        )
+        assert (
+            len(node.addons) ==
+            addon_record_count
+        )
+
+    def test_delete_addon(self, node, auth):
+        addon_count = len(node.get_addon_names())
+        deleted = node.delete_addon('wiki', auth)
+        assert deleted is True
+        assert (
+            len(node.get_addon_names()) ==
+            addon_count - 1
+        )
+        assert (
+            node.logs.latest().action ==
+            NodeLog.ADDON_REMOVED
+        )
+
+    @mock.patch('addons.dropbox.models.NodeSettings.config')
+    def test_delete_mandatory_addon(self, mock_config, node, auth):
+        mock_config.added_mandatory = ['node']
+        node.add_addon('dropbox', auth)
+        with pytest.raises(ValueError):
+            node.delete_addon('dropbox', auth)
+
+    def test_delete_nonexistent_addon(self, node, auth):
+        addon_count = len(node.get_addon_names())
+        deleted = node.delete_addon('dropbox', auth)
+        assert bool(deleted) is False
+        assert (
+            len(node.get_addon_names()) ==
+            addon_count
+        )
