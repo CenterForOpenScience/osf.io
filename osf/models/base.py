@@ -355,7 +355,7 @@ class OptionalGuidMixin(BaseIDMixin):
             try:
                 guid, created = Guid.objects.get_or_create(
                     object_id=self.pk,
-                    content_type_pk=ContentType.objects.get_for_model(self).pk
+                    content_type_id=ContentType.objects.get_for_model(self).pk
                 )
             except MultipleObjectsReturned:
                 # lol, hacks

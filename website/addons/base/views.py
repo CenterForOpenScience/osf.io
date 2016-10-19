@@ -15,6 +15,7 @@ import jwt
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
+from addons.base.models import BaseStorageAddon
 from framework import sentry
 from framework.auth import Auth
 from framework.auth import cas
@@ -27,10 +28,9 @@ from framework.transactions.context import TokuTransaction
 from framework.transactions.handlers import no_auto_transaction
 from website import mails
 from website import settings
-from website.addons.base import StorageAddonBase
 from website.addons.base import exceptions
 from website.addons.base import signals as file_signals
-from website.files.models import FileNode, StoredFileNode, TrashedFileNode
+from osf.models import FileNode, StoredFileNode, TrashedFileNode
 from website.models import Node, NodeLog, User
 from website.profile.utils import get_gravatar
 from website.project import decorators
@@ -577,7 +577,7 @@ def addon_deleted_file(auth, node, error_type='BLAME_PROVIDER', **kwargs):
         'provider': file_node.provider,
         'materialized_path': file_node.materialized_path or file_path,
         'private': getattr(node.get_addon(file_node.provider), 'is_private', False),
-        'file_tags': [tag._id for tag in file_node.tags],
+        'file_tags': file_node.tags.filter(system=False).values_list('name', flat=True),
         'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
     })
 
@@ -601,7 +601,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     if not path:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    if not isinstance(node_addon, StorageAddonBase):
+    if not isinstance(node_addon, BaseStorageAddon):
         raise HTTPError(httplib.BAD_REQUEST, data={
             'message_short': 'Bad Request',
             'message_long': 'The {} add-on containing {} is no longer connected to {}.'.format(provider_safe, path_safe, project_safe)
@@ -715,7 +715,7 @@ def addon_view_file(auth, node, file_node, version):
         'extra': version.metadata.get('extra', {}),
         'size': version.size if version.size is not None else 9966699,
         'private': getattr(node.get_addon(file_node.provider), 'is_private', False),
-        'file_tags': [tag._id for tag in file_node.tags],
+        'file_tags': file_node.tags.filter(system=False).values_list('name', flat=True),
         'file_guid': file_node.get_guid()._id,
         'file_id': file_node._id,
         'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE
