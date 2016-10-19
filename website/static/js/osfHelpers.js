@@ -139,15 +139,48 @@ var getAllPagesAjaxJSON = function(method, url, options) {
  * @param {Array of Objects}
  * @return {Object data}
  */
-var mergePagesAjaxJSON = function(pages){
+var mergePagesAjaxJSON = function(pages) {
     var map = {};
     $.each(pages, function(page) {
-        $.each(pages[page].data, function(n){
-            var node = pages[page].data[n]
+        $.each(pages[page].data, function(n) {
+            var node = pages[page].data[n];
             map[node.id] = node;
         });
     });
     return map;
+};
+
+/**
+ * Takes an array of response objects and returns a single object
+ * @param {Array of Objects}
+ * @return {Object data}
+ */
+var getAllChildren = function(parent, nodeList) {
+    var remaining = [parent];
+    var retval = {};
+    retval[parent] = nodeList[parent];
+    delete nodeList[parent];
+
+    // remove root
+    $.each(nodeList, function(key){
+        if(!('parent' in nodeList[key].embeds)) {
+            delete nodeList[key];
+            return false;
+        }
+    });
+    
+    while(remaining.length > 0) {
+        var currentParent = remaining.pop();
+        for(var node in nodeList) {
+            var nodeParent = nodeList[node].embeds.parent.data.id;
+            if(nodeParent === currentParent){
+                remaining.push(node);
+                retval[node] = nodeList[node];
+                delete nodeList[node];
+            }
+        }
+    }
+    return retval;
 };
 
 /**
@@ -993,6 +1026,7 @@ module.exports = window.$.osf = {
     ajaxJSON: ajaxJSON,
     getAllPagesAjaxJSON: getAllPagesAjaxJSON,
     mergePagesAjaxJSON: mergePagesAjaxJSON,
+    getAllChildren: getAllChildren,
     squashAPIAttributes: squashAPIAttributes,
     setXHRAuthorization: setXHRAuthorization,
     handleAddonApiHTTPError: handleAddonApiHTTPError,
