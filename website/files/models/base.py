@@ -648,6 +648,8 @@ class File(FileNode):
         :param str or None auth_header: If truthy it will set as the Authorization header
         :returns: None if the file is not found otherwise FileVersion or (version, Error HTML)
         """
+        # Resvolve primary key on first touch
+        self.save()
         # For backwards compatability
         revision = revision or kwargs.get(self.version_identifier)
 

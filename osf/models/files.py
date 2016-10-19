@@ -5,6 +5,7 @@ import os
 import requests
 from dateutil.parser import parse as parse_date
 from django.contrib.contenttypes.fields import GenericForeignKey
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models, connection
 from django.utils import timezone
 from framework.analytics import get_basic_counters
@@ -108,6 +109,10 @@ class TrashedFileNode(CommentableMixin, OptionalGuidMixin, ObjectIDMixin, BaseMo
         else:
             return self._materialized_path
 
+    @materialized_path.setter
+    def materialized_path(self, val):
+        self._materialized_path = val
+
     @property
     def deep_url(self):
         """Allows deleted files to resolve to a view
@@ -164,15 +169,6 @@ class TrashedFileNode(CommentableMixin, OptionalGuidMixin, ObjectIDMixin, BaseMo
                 child.restore(recursive=recursive, parent=restored)
         TrashedFileNode.remove_one(self)
         return restored
-
-    def get_guid(self):
-        """Attempt to find a Guid that points to this object.
-
-        :rtype: Guid or None
-        """
-        if self.guid.guid:
-            return self.guid
-        return None
 
 
 class StoredFileNode(CommentableMixin, OptionalGuidMixin, ObjectIDMixin, BaseModel):
@@ -261,6 +257,10 @@ class StoredFileNode(CommentableMixin, OptionalGuidMixin, ObjectIDMixin, BaseMod
         else:
             return self._materialized_path
 
+    @materialized_path.setter
+    def materialized_path(self, val):
+        self._materialized_path = val
+
     @property
     def deep_url(self):
         return self.wrapped().deep_url
@@ -301,18 +301,6 @@ class StoredFileNode(CommentableMixin, OptionalGuidMixin, ObjectIDMixin, BaseMod
         """Wrap self in a FileNode subclass
         """
         return FileNode.resolve_class(self.provider, int(self.is_file))(self)
-
-    def get_guid(self, create=False):
-        """Attempt to find a Guid that points to this object.
-        One will be created if requested.
-
-        :param Boolean create: Should we generate a GUID if there isn't one?  Default: False
-        :rtype: Guid or None
-        """
-        # TODO This is broken
-        if create and not self.guid.guid:
-            self.guid.mint()
-        return self.guid
 
     class Meta:
         unique_together = [
@@ -675,14 +663,17 @@ class File(FileNode):
         :returns: FileVersion or None
         :raises: VersionNotFoundError if required is True
         """
-        for version in reversed(self.versions):
-            if version.identifier == revision:
-                break
-        else:
+        if not self.pk:
+            # Prevent issue where django accesses M2M before saving
+            return None
+        try:
+            version = self.versions.get(identifier=revision)
+        except ObjectDoesNotExist:
             if required:
                 raise exceptions.VersionNotFoundError(revision)
             return None
-        return version
+        else:
+            return version
 
     def update_version_metadata(self, location, metadata):
         for version in reversed(self.versions):
