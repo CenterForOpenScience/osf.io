@@ -28,7 +28,7 @@ var ViewModel = function(data) {
         return self.availableInstitutions().map(function(item){return item.id;});
     });
     
-    self.nodes = ko.observable({});
+    self.childNodes = ko.observable({});
     self.nodeId = ko.observable(data.node.id);
     self.rootId = ko.observable(data.node.rootId);
     self.childExists = ko.observable(data.node.childExists);
@@ -126,24 +126,20 @@ var ViewModel = function(data) {
     });
 
     self.institutionInNoChildren = function(institutionID) {
-        for (var node in self.nodes()) {
-            if (self.nodes()[node].isChild) {
-                if (self.nodes()[node].institutions.indexOf(institutionID) > -1 &&
-                    self.nodes()[node].hasPermissions) {
-                    return false;
-                }
+        for (var node in self.childNodes()) {
+            if (self.childNodes()[node].institutions.indexOf(institutionID) > -1 &&
+                self.childNodes()[node].hasPermissions) {
+                return false;
             }
         }
         return true;
     };
 
     self.institutionInAllChildren = function(institutionID) {
-        for (var node in self.nodes()) {
-            if (self.nodes()[node].isChild) {
-                if (self.nodes()[node].institutions.indexOf(institutionID) === -1 &&
-                    self.nodes()[node].hasPermissions) {
-                    return false;
-                }
+        for (var node in self.childNodes()) {
+            if (self.childNodes()[node].institutions.indexOf(institutionID) === -1 &&
+                self.childNodes()[node].hasPermissions) {
+                return false;
             }
         }
         return true;
@@ -179,8 +175,8 @@ var ViewModel = function(data) {
         var nodesToModify = [];
         self.loading(true);
         if (self.modifyChildren()) {
-            for (var node in self.nodes()) {
-                if (self.nodes()[node].hasPermissions) {
+            for (var node in self.childNodes()) {
+                if (self.childNodes()[node].hasPermissions) {
                     nodesToModify.push({'type': 'nodes', 'id': node});
                 }
             }
@@ -223,7 +219,7 @@ var ViewModel = function(data) {
         }).always(function() {
             self.modifyChildren(false);
             self.loading(false);
-            //fetchNodeTree is called to refresh self.nodesOriginal after a state change.  This is the simplest way to
+            //fetchNodes is called to refresh self.nodesOriginal after a state change.  This is the simplest way to
             //update state to check if the modal is necessary.
             self.fetchNodes(self.url);
         });
@@ -236,10 +232,12 @@ var ViewModel = function(data) {
 ViewModel.prototype.formatNodes = function(rawNodes) {
     var self = this;
     var nodes = {};
+
+    // if parent is root it will still be included, prune it
+    delete rawNodes[self.nodeId()];
     $.each(rawNodes, function(n) {
         var id = rawNodes[n].id;
         var branch = {};
-        branch.isChild = id !== self.nodeId();
         branch.hasPermissions = rawNodes[n].attributes.current_user_permissions.indexOf('write') > -1;
         branch.institutions = [];
 
@@ -250,7 +248,7 @@ ViewModel.prototype.formatNodes = function(rawNodes) {
         });
         nodes[id] = branch;
     });
-    self.nodes(nodes);
+    self.childNodes(nodes);
 };
 
 /**
@@ -258,7 +256,6 @@ ViewModel.prototype.formatNodes = function(rawNodes) {
  */
 ViewModel.prototype.fetchNodes = function(url) {
     var self = this;
-
     if(!self.childExists()){
         return;
     }

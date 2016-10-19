@@ -171,17 +171,17 @@ var getAllNodeChildrenFromNodeList = function(parent, nodeList) {
             tree[parent] = [];
         }
         tree[parent].push(n);
-    })
+    });
 
-    var children = {}
+    var children = {};
     var remaining = [parent];
     while (remaining.length > 0) {
         var node = remaining.pop();
-        $.each(tree[node], function(c) {
+        for (var c in tree[node]){
             var child = tree[node][c];
             remaining.push(tree[child]);
             children[child] = nodeList[child];    
-        })
+        }
     }
     return children;
 };
