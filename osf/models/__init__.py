@@ -22,6 +22,9 @@ from osf.models.notifications import NotificationDigest, NotificationSubscriptio
 from osf.models.subject import Subject  # noqa
 from osf.models.preprint_provider import PreprintProvider  # noqa
 from osf.models.identifiers import Identifier  # noqa
-from osf.models.files import FileVersion, StoredFileNode, TrashedFileNode  # noqa
+from osf.models.files import (  # noqa
+    File, Folder, FileNode, FileNodeMeta,  # noqa
+    FileVersion, StoredFileNode, TrashedFileNode  # noqa
+)  # noqa
 from osf.models.node_relation import NodeRelation  # noqa
 from osf.models.analytics import UserActivityCounter, PageCounter  # noqa
