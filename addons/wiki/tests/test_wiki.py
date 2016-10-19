@@ -1,20 +1,22 @@
 # -*- coding: utf-8 -*-
+# TODO: Port to pytest
 
 # PEP8 asserts
 from copy import deepcopy
 import httplib as http
-
-import mock
 import time
 
+import mock
+import pytest
+
 from nose.tools import *  # noqa
-from modularodm.exceptions import ValidationValueError
 
 from tests.base import OsfTestCase, fake
-from tests.factories import (
+from osf_tests.factories import (
     UserFactory, NodeFactory, ProjectFactory,
-    AuthUserFactory, NodeWikiFactory,
+    AuthUserFactory
 )
+from addons.wiki.tests.factories import NodeWikiFactory
 
 from website.exceptions import NodeStateError
 from website.addons.wiki import settings
@@ -29,47 +31,11 @@ from website.addons.wiki.tests.config import EXAMPLE_DOCS, EXAMPLE_OPS
 from framework.auth import Auth
 from framework.mongo.utils import to_mongo_key
 
+pytestmark = pytest.mark.django_db
+
 # forward slashes are not allowed, typically they would be replaced with spaces
 SPECIAL_CHARACTERS_ALL = u'`~!@#$%^*()-=_+ []{}\|/?.df,;:''"'
 SPECIAL_CHARACTERS_ALLOWED = u'`~!@#$%^*()-=_+ []{}\|?.df,;:''"'
-
-
-class TestNodeWikiPageModel(OsfTestCase):
-
-    def test_page_name_cannot_be_greater_than_100_characters(self):
-        bad_name = 'a' * 101
-        page = NodeWikiPage(page_name=bad_name)
-        with assert_raises(ValidationValueError):
-            page.save()
-
-    def test_is_current_with_single_version(self):
-        node = NodeFactory()
-        page = NodeWikiPage(page_name='foo', node=node)
-        page.save()
-        node.wiki_pages_current['foo'] = page._id
-        node.wiki_pages_versions['foo'] = [page._id]
-        node.save()
-        assert_true(page.is_current)
-
-    def test_is_current_with_multiple_versions(self):
-        node = NodeFactory()
-        ver1 = NodeWikiPage(page_name='foo', node=node)
-        ver2 = NodeWikiPage(page_name='foo', node=node)
-        ver1.save()
-        ver2.save()
-        node.wiki_pages_current['foo'] = ver2._id
-        node.wiki_pages_versions['foo'] = [ver1._id, ver2._id]
-        node.save()
-        assert_false(ver1.is_current)
-        assert_true(ver2.is_current)
-
-    def test_is_current_deleted_page(self):
-        node = NodeFactory()
-        ver = NodeWikiPage(page_name='foo', node=node)
-        ver.save()
-        # Simulate a deleted page by not adding ver to
-        # node.wiki_pages_current and node.wiki_pages_versions
-        assert_false(ver.is_current)
 
 class TestWikiViews(OsfTestCase):
 
@@ -84,7 +50,7 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
 
-    def test_wiki_url_404_with_no_write_permission(self): # and not public
+    def test_wiki_url_404_with_no_write_permission(self):  # and not public
         url = self.project.web_url_for('project_wiki_view', wname='somerandomid')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -179,11 +145,10 @@ class TestWikiViews(OsfTestCase):
         assert_false(res.json['rendered_before_update'])
 
     def test_wiki_url_for_component_returns_200(self):
-        component = NodeFactory(project=self.project, is_public=True)
+        component = NodeFactory(parent=self.project, is_public=True)
         url = component.web_url_for('project_wiki_view', wname='home')
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
-
 
     def test_project_wiki_edit_post(self):
         self.project.update_node_wiki(
@@ -220,7 +185,7 @@ class TestWikiViews(OsfTestCase):
 
     def test_project_wiki_edit_post_with_new_wname_and_content(self):
         # note: forward slashes not allowed in page_name
-        page_name = fake.catch_phrase().replace('/' , ' ')
+        page_name = fake.catch_phrase().replace('/', ' ')
         page_content = fake.bs()
 
         old_wiki_page_count = NodeWikiPage.find().count()
@@ -326,7 +291,7 @@ class TestWikiViews(OsfTestCase):
 
     def test_wiki_validate_name_creates_blank_page(self):
         url = self.project.api_url_for('project_wiki_validate_name', wname='newpage', auth=self.consolidate_auth)
-        res = self.app.get(url, auth=self.user.auth)
+        self.app.get(url, auth=self.user.auth)
         self.project.reload()
         assert_in('newpage', self.project.wiki_pages_current)
 
@@ -571,17 +536,17 @@ class TestWikiDelete(OsfTestCase):
         # Creates a wiki page
         self.project.update_node_wiki('Hippos', 'Hello hippos', self.consolidate_auth)
         # Edits it two times
-        assert_equal(len(self.project.wiki_pages_versions['hippos']),1)
+        assert_equal(len(self.project.wiki_pages_versions['hippos']), 1)
         self.project.update_node_wiki('Hippos', 'Hello hippopotamus', self.consolidate_auth)
-        assert_equal(len(self.project.wiki_pages_versions['hippos']),2)
+        assert_equal(len(self.project.wiki_pages_versions['hippos']), 2)
         # Deletes the wiki page
         self.project.delete_node_wiki('Hippos', self.consolidate_auth)
         assert_true('hippos' not in self.project.wiki_pages_versions)
         # Creates new wiki with same name
         self.project.update_node_wiki('Hippos', 'Hello again hippos', self.consolidate_auth)
-        assert_equal(len(self.project.wiki_pages_versions['hippos']),1)
+        assert_equal(len(self.project.wiki_pages_versions['hippos']), 1)
         self.project.update_node_wiki('Hippos', 'Hello again hippopotamus', self.consolidate_auth)
-        assert_equal(len(self.project.wiki_pages_versions['hippos']),2)
+        assert_equal(len(self.project.wiki_pages_versions['hippos']), 2)
 
 class TestWikiRename(OsfTestCase):
 
@@ -707,7 +672,7 @@ class TestWikiRename(OsfTestCase):
         self.project.save()
 
         # Creates a new page
-        self.project.update_node_wiki('page3' ,'moarcontent', self.consolidate_auth)
+        self.project.update_node_wiki('page3', 'moarcontent', self.consolidate_auth)
         self.project.save()
 
         # Renames the wiki to the deleted page
@@ -1005,7 +970,6 @@ class TestWikiShareJSMongo(OsfTestCase):
         sharejs_uuid = get_sharejs_uuid(self.project, wname)
 
         self.project.update_node_wiki(wname, 'Hello world', Auth(self.user))
-        wiki_page = self.project.get_wiki_page(wname)
         migrate_uuid(self.project, wname)
 
         assert_not_equal(share_uuid, self.project.wiki_private_uuids.get(wkey))
@@ -1047,7 +1011,6 @@ class TestWikiShareJSMongo(OsfTestCase):
             save=True,
         )
         assert_not_equal(self.private_uuid, self.project.wiki_private_uuids[self.wkey])
-
 
     @mock.patch('website.addons.wiki.utils.broadcast_to_sharejs')
     def test_delete_share_doc(self, mock_sharejs):
@@ -1179,7 +1142,7 @@ class TestPublicWiki(OsfTestCase):
         node.delete_addon('wiki', self.consolidate_auth)
         sub_component.delete_addon('wiki', self.consolidate_auth)
 
-        sub_component2 = NodeFactory(parent=node)
+        NodeFactory(parent=node)
 
         has_addon_on_child_node =\
             node.has_addon_on_children('wiki')
@@ -1205,14 +1168,14 @@ class TestPublicWiki(OsfTestCase):
         # Set as publicly editable
         wiki.set_editing(permissions=True, auth=self.consolidate_auth, log=True)
         assert_true(wiki.is_publicly_editable)
-        assert_equal(node.logs[-1].action, 'made_wiki_public')
+        assert_equal(node.logs.latest().action, 'made_wiki_public')
         # Try to set public when the wiki is already public
         with assert_raises(NodeStateError):
             wiki.set_editing(permissions=True, auth=self.consolidate_auth, log=False)
         # Turn off public editing
         wiki.set_editing(permissions=False, auth=self.consolidate_auth, log=True)
         assert_false(wiki.is_publicly_editable)
-        assert_equal(node.logs[-1].action, 'made_wiki_private')
+        assert_equal(node.logs.latest().action, 'made_wiki_private')
 
         node = NodeFactory(parent=parent, category='project')
         wiki = node.get_addon('wiki')
@@ -1328,7 +1291,7 @@ class TestWikiMenu(OsfTestCase):
         expected = [
             {
                 'page': {
-                    'name': 'The meaning of life',
+                    'name': self.component.title,
                     'url': self.component.web_url_for('project_wiki_view', wname='home', _guid=True),
                 },
                 'children': [

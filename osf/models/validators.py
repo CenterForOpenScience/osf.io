@@ -41,18 +41,7 @@ def validate_title(value):
     return True
 
 
-def validate_page_name(value):
-    value = (value or '').strip()
-
-    if not value:
-        raise ValidationError('Page name cannot be blank.')
-    if value.find('/') != -1:
-        raise ValidationError('Page name cannot contain forward slashes.')
-    return True
-
-
 validate_url = URLValidator()
-
 
 def validate_profile_websites(profile_websites):
     for value in profile_websites or []:

@@ -291,6 +291,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return False
 
     @property
+    def is_original(self):
+        return not self.is_registration and not self.is_fork
+
+    @property
     def is_preprint(self):
         # TODO: This is a temporary implementation.
         # Uncomment when StoredFileNode is implemented
@@ -2228,7 +2232,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         )
 
     def get_wiki_page(self, name=None, version=None, id=None):
-        NodeWikiPage = apps.get_model('osf.NodeWikiPage')
+        NodeWikiPage = apps.get_model('addons_wiki.NodeWikiPage')
         if name:
             name = (name or '').strip()
             key = to_mongo_key(name)
@@ -2252,7 +2256,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         :param content: A string, the posted content.
         :param auth: All the auth information including user, API key.
         """
-        NodeWikiPage = apps.get_model('osf.NodeWikiPage')
+        NodeWikiPage = apps.get_model('addons_wiki.NodeWikiPage')
         Comment = apps.get_model('osf.Comment')
 
         name = (name or '').strip()
@@ -2269,7 +2273,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             current = NodeWikiPage.load(self.wiki_pages_current[key])
             version = current.version + 1
             current.save()
-            if Comment.find(Q('root_target', 'eq', current._id)).count() > 0:
+            if Comment.find(Q('root_target', 'eq', current.guids.first())).count() > 0:
                 has_comments = True
 
         new_page = NodeWikiPage(
@@ -2282,8 +2286,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new_page.save()
 
         if has_comments:
-            Comment.update(Q('root_target', 'eq', current._id), data={'root_target': Guid.load(new_page._id)})
-            Comment.update(Q('target', 'eq', current._id), data={'target': Guid.load(new_page._id)})
+            Comment.update(Q('root_target', 'eq', current), data={'root_target': Guid.load(new_page._id)})
+            Comment.update(Q('target', 'eq', current), data={'target': Guid.load(new_page._id)})
 
         if current:
             for contrib in self.contributors:
@@ -2313,6 +2317,68 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             save=False,
         )
         self.save()
+
+    # TODO: Move to wiki add-on
+    def rename_node_wiki(self, name, new_name, auth):
+        """Rename the node's wiki page with new name.
+
+        :param name: A string, the page's name, e.g. ``"My Page"``.
+        :param new_name: A string, the new page's name, e.g. ``"My Renamed Page"``.
+        :param auth: All the auth information including user, API key.
+
+        """
+        # TODO: Fix circular imports
+        from website.addons.wiki.exceptions import (
+            PageCannotRenameError,
+            PageConflictError,
+            PageNotFoundError,
+        )
+
+        name = (name or '').strip()
+        key = to_mongo_key(name)
+        new_name = (new_name or '').strip()
+        new_key = to_mongo_key(new_name)
+        page = self.get_wiki_page(name)
+
+        if key == 'home':
+            raise PageCannotRenameError('Cannot rename wiki home page')
+        if not page:
+            raise PageNotFoundError('Wiki page not found')
+        if (new_key in self.wiki_pages_current and key != new_key) or new_key == 'home':
+            raise PageConflictError(
+                'Page already exists with name {0}'.format(
+                    new_name,
+                )
+            )
+
+        # rename the page first in case we hit a validation exception.
+        old_name = page.page_name
+        page.rename(new_name)
+
+        # TODO: merge historical records like update (prevents log breaks)
+        # transfer the old page versions/current keys to the new name.
+        if key != new_key:
+            self.wiki_pages_versions[new_key] = self.wiki_pages_versions[key]
+            del self.wiki_pages_versions[key]
+            self.wiki_pages_current[new_key] = self.wiki_pages_current[key]
+            del self.wiki_pages_current[key]
+            if key in self.wiki_private_uuids:
+                self.wiki_private_uuids[new_key] = self.wiki_private_uuids[key]
+                del self.wiki_private_uuids[key]
+
+        self.add_log(
+            action=NodeLog.WIKI_RENAMED,
+            params={
+                'project': self.parent_id,
+                'node': self._primary_key,
+                'page': page.page_name,
+                'page_id': page._primary_key,
+                'old_page': old_name,
+                'version': page.version,
+            },
+            auth=auth,
+            save=True,
+        )
 
     def delete_node_wiki(self, name, auth):
         name = (name or '').strip()
@@ -2419,6 +2485,35 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             )
             self.save()  # TODO Required?
         return ret
+
+    def has_addon_on_children(self, addon):
+        """Checks if a given node has a specific addon on child nodes
+            that are not registrations or deleted
+        """
+        if self.has_addon(addon):
+            return True
+
+        # TODO: Optimize me into one query
+        for node_relation in self.node_relations.filter(is_node_link=False, child__is_deleted=False).select_related('child'):
+            node = node_relation.child
+            if node.has_addon_on_children(addon):
+                return True
+        return False
+
+    def is_derived_from(self, other, attr):
+        derived_from = getattr(self, attr)
+        while True:
+            if derived_from is None:
+                return False
+            if derived_from == other:
+                return True
+            derived_from = getattr(derived_from, attr)
+
+    def is_fork_of(self, other):
+        return self.is_derived_from(other, 'forked_from')
+
+    def is_registration_of(self, other):
+        return self.is_derived_from(other, 'registered_from')
 
 
 class Node(AbstractNode):
@@ -2539,7 +2634,7 @@ def add_creator_as_contributor(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 def add_project_created_log(sender, instance, created, **kwargs):
-    if created and not instance.is_fork and not instance._suppress_log:
+    if created and instance.is_original and not instance._suppress_log:
         # Define log fields for non-component project
         log_action = NodeLog.PROJECT_CREATED
         log_params = {
@@ -2561,19 +2656,28 @@ def add_project_created_log(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 def send_osf_signal(sender, instance, created, **kwargs):
-    if created and not instance._suppress_log:
+    if created and instance.is_original and not instance._suppress_log:
         project_signals.project_created.send(instance)
 
 
-# TODO: Add addons
+@receiver(post_save, sender=Collection)
+@receiver(post_save, sender=Node)
+def add_default_node_addons(sender, instance, created, **kwargs):
+    if created and instance.is_original and not instance._suppress_log:
+        # TODO: This logic also exists in self.use_as_template()
+        for addon in settings.ADDONS_AVAILABLE:
+            if 'node' in addon.added_default:
+                instance.add_addon(addon.short_name, auth=None, log=False)
+
 
 @receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 @receiver(post_save, sender='osf.Registration')
-def set_parent(sender, instance, *args, **kwargs):
-    if getattr(instance, '_parent', None):
-        NodeRelation.objects.get_or_create(
-            parent=instance._parent,
-            child=instance,
-            is_node_link=False
-        )
+def set_parent(sender, instance, created, *args, **kwargs):
+    if created and instance.is_original and not instance._suppress_log:
+        if getattr(instance, '_parent', None):
+            NodeRelation.objects.get_or_create(
+                parent=instance._parent,
+                child=instance,
+                is_node_link=False
+            )

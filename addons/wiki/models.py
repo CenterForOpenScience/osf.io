@@ -1,22 +1,27 @@
+# -*- coding: utf-8 -*-
+import logging
 import urllib
-
 import datetime
-
 import functools
+
 import markdown
+import pytz
 from bleach.callbacks import nofollow
 from markdown.extensions import codehilite, fenced_code, wikilinks
 from django.db import models
 from django.utils import timezone
 
+from website.exceptions import NodeStateError
 from website.addons.wiki import utils as wiki_utils
-from website.util import api_v2_url
-from osf.models.base import GuidMixin, BaseModel
-from osf.models.validators import validate_page_name
-from osf.models import Node
-import logging
-
 from website import settings
+
+from osf.models.base import GuidMixin, BaseModel
+from website.addons.wiki.model import validate_page_name
+from website.util import api_v2_url
+from osf.models import AbstractNode, NodeLog
+
+from addons.base.models import BaseNodeSettings
+
 from framework.forms.utils import sanitize
 
 logger = logging.getLogger(__name__)
@@ -29,7 +34,7 @@ SHAREJS_DB_NAME = 'sharejs'
 SHAREJS_DB_URL = 'mongodb://{}:{}/{}'.format(settings.DB_HOST, settings.DB_PORT, SHAREJS_DB_NAME)
 
 # TODO: Change to release date for wiki change
-WIKI_CHANGE_DATE = datetime.datetime.utcfromtimestamp(1423760098)
+WIKI_CHANGE_DATE = datetime.datetime.utcfromtimestamp(1423760098).replace(tzinfo=pytz.utc)
 
 # MongoDB forbids field names that begin with "$" or contain ".". These
 # utilities map to and from Mongo field names.
@@ -85,11 +90,11 @@ class NodeWikiPage(GuidMixin, BaseModel):
     # /TODO DELETE ME POST MIGRATION
 
     page_name = models.CharField(max_length=200, validators=[validate_page_name, ])
-    version = models.IntegerField()
+    version = models.IntegerField(default=1)
     date = models.DateTimeField(default=timezone.now)  # auto_now_add=True)
     content = models.TextField(default='', blank=True)
-    user = models.ForeignKey('OSFUser', null=True, blank=True)
-    node = models.ForeignKey('AbstractNode', null=True, blank=True)
+    user = models.ForeignKey('osf.OSFUser', null=True, blank=True)
+    node = models.ForeignKey('osf.AbstractNode', null=True, blank=True)
 
     @property
     def is_current(self):
@@ -176,7 +181,7 @@ class NodeWikiPage(GuidMixin, BaseModel):
             sharejs_version = doc_item['_v']
             sharejs_timestamp = doc_item['_m']['mtime']
             sharejs_timestamp /= 1000  # Convert to appropriate units
-            sharejs_date = datetime.datetime.utcfromtimestamp(sharejs_timestamp)
+            sharejs_date = datetime.datetime.utcfromtimestamp(sharejs_timestamp).replace(tzinfo=pytz.utc)
 
             if sharejs_version > 1 and sharejs_date > self.date:
                 return doc_item['_data']
@@ -219,7 +224,7 @@ class NodeWikiPage(GuidMixin, BaseModel):
         :param node: The Node of the cloned wiki page
         :return: The cloned wiki page
         """
-        node = Node.load(node_id)
+        node = AbstractNode.load(node_id)
         if not node:
             raise ValueError('Invalid node')
         clone = self.clone()
@@ -251,3 +256,79 @@ class NodeWikiPage(GuidMixin, BaseModel):
         if save:
             copy.save()
         return copy
+
+
+class NodeSettings(BaseNodeSettings):
+    complete = True
+    has_auth = True
+    is_publicly_editable = models.BooleanField(default=False, db_index=True)
+
+    def set_editing(self, permissions, auth=None, log=False):
+        """Set the editing permissions for this node.
+
+        :param auth: All the auth information including user, API key
+        :param bool permissions: True = publicly editable
+        :param bool save: Whether to save the privacy change
+        :param bool log: Whether to add a NodeLog for the privacy change
+            if true the node object is also saved
+        """
+        node = self.owner
+
+        if permissions and not self.is_publicly_editable:
+            if node.is_public:
+                self.is_publicly_editable = True
+            else:
+                raise NodeStateError('Private components cannot be made publicly editable.')
+        elif not permissions and self.is_publicly_editable:
+            self.is_publicly_editable = False
+        else:
+            raise NodeStateError('Desired permission change is the same as current setting.')
+
+        if log:
+            node.add_log(
+                action=(NodeLog.MADE_WIKI_PUBLIC
+                        if self.is_publicly_editable
+                        else NodeLog.MADE_WIKI_PRIVATE),
+                params={
+                    'project': node.parent_id,
+                    'node': node._primary_key,
+                },
+                auth=auth,
+                save=True,
+            )
+
+        self.save()
+
+    def after_fork(self, node, fork, user, save=True):
+        """Copy wiki settings and wiki pages to forks."""
+        NodeWikiPage.clone_wiki_versions(node, fork, user, save)
+        return super(NodeSettings, self).after_fork(node, fork, user, save)
+
+    def after_register(self, node, registration, user, save=True):
+        """Copy wiki settings and wiki pages to registrations."""
+        NodeWikiPage.clone_wiki_versions(node, registration, user, save)
+        clone = self.clone()
+        clone.owner = registration
+        if save:
+            clone.save()
+        return clone, None
+
+    def after_set_privacy(self, node, permissions):
+        """
+
+        :param Node node:
+        :param str permissions:
+        :return str: Alert message
+
+        """
+        if permissions == 'private':
+            if self.is_publicly_editable:
+                self.set_editing(permissions=False, log=False)
+                return (
+                    'The wiki of {name} is now only editable by write contributors.'.format(
+                        name=node.title,
+                    )
+                )
+
+    def to_json(self, user):
+        return {}

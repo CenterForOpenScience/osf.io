@@ -30,7 +30,8 @@ def patched_models():
     patch_models(settings)
 
 
-@pytest.fixture()
+# NOTE: autouse so that ADDONS_REQUESTED gets set on website.settings
+@pytest.fixture(autouse=True, scope='session')
 def app():
     try:
         test_app = init_app(routes=True, set_backends=False)

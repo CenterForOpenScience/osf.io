@@ -4,7 +4,8 @@ import datetime
 
 from django.utils import timezone
 from framework.auth.core import Auth
-from osf.models import Node, Registration, Sanction, MetaSchema, NodeWikiPage
+from osf.models import Node, Registration, Sanction, MetaSchema, NodeLog
+from addons.wiki.models import NodeWikiPage
 from osf.modm_compat import Q
 
 from website import settings
@@ -14,6 +15,7 @@ from website.util.permissions import READ, WRITE, ADMIN
 from . import factories
 from .utils import assert_datetime_equal, mock_archive
 from .factories import get_default_metaschema
+from addons.wiki.tests.factories import NodeWikiFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -79,6 +81,10 @@ class TestRegisterNode:
         private_link.nodes.add(reg)
         private_link.save()
         return reg
+
+    def test_does_not_have_addon_added_log(self, registration):
+        # should not have addon_added log from wiki addon being added
+        assert NodeLog.ADDON_ADDED not in list(registration.logs.values_list('action', flat=True))
 
     def test_title(self, registration, project):
         assert registration.title == project.title
@@ -274,14 +280,13 @@ class TestRegisterNode:
         assert registration.wiki_pages_current == {}
         assert registration.wiki_private_uuids == {}
 
-    @pytest.mark.skip('NodeWikiPage not yet implemented')
     @mock.patch('website.project.signals.after_create_registration')
-    def test_registration_clones_project_wiki_pages(self, mock_signal):
-        project = factories.ProjectFactory(creator=self.user, is_public=True)
-        wiki = factories.NodeWikiFactory(node=project)
-        current_wiki = factories.NodeWikiFactory(node=project, version=2)
-        registration = project.register_node(get_default_metaschema(), Auth(self.user), '', None)
-        assert self.registration.wiki_private_uuids == {}
+    def test_registration_clones_project_wiki_pages(self, mock_signal, project, user):
+        project = factories.ProjectFactory(creator=user, is_public=True)
+        wiki = NodeWikiFactory(node=project)
+        current_wiki = NodeWikiFactory(node=project, version=2)
+        registration = project.register_node(get_default_metaschema(), Auth(user), '', None)
+        assert registration.wiki_private_uuids == {}
 
         registration_wiki_current = NodeWikiPage.load(registration.wiki_pages_current[current_wiki.page_name])
         assert registration_wiki_current.node == registration

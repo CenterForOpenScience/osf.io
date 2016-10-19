@@ -39,7 +39,7 @@ lookup = TemplateLookup(
 )
 
 
-class BaseAddonSettings(ObjectIDMixin):
+class BaseAddonSettings(ObjectIDMixin, BaseModel):
     deleted = models.BooleanField(default=False)
 
     class Meta:

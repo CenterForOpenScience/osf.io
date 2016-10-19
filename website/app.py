@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-
 import importlib
+import itertools
 import json
 import os
 import sys
@@ -155,8 +155,16 @@ def apply_middlewares(flask_app, settings):
     return flask_app
 
 def _get_models_to_patch():
-    osf_app_config = apps.get_app_config('osf')
-    return osf_app_config.get_models(include_auto_created=False)
+    """Return all models from OSF and addons."""
+    return list(
+        itertools.chain(
+            *[
+                app_config.get_models(include_auto_created=False)
+                for app_config in apps.get_app_configs()
+                if app_config.label == 'osf' or app_config.label.startswith('addons_')
+            ]
+        )
+    )
 
 # TODO: This won't work for modules that do e.g. `from website import models`. Rethink.
 def patch_models(settings):

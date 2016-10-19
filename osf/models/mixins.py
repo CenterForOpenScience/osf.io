@@ -152,8 +152,8 @@ class AddonModelMixin(models.Model):
             if hasattr(addon, 'oauth_provider')
         ]
 
-    def has_addon(self, name):
-        return True
+    def has_addon(self, addon_name, deleted=False):
+        return bool(self.get_addon(addon_name, deleted=deleted))
 
     def get_addon_names(self):
         return [each.short_name for each in self.get_addons()]

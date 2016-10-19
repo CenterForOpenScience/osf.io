@@ -22,9 +22,9 @@ from osf.models import (
     NodeLog,
     Contributor,
     Sanction,
-    NodeWikiPage,
     NodeRelation,
 )
+from addons.wiki.models import NodeWikiPage
 from osf.exceptions import ValidationError
 from osf.utils.auth import Auth
 
@@ -37,9 +37,9 @@ from .factories import (
     NodeLicenseRecordFactory,
     PrivateLinkFactory,
     CollectionFactory,
-    NodeWikiFactory,
     NodeRelationFactory,
 )
+from addons.wiki.tests.factories import NodeWikiFactory
 from .utils import capture_signals, assert_datetime_equal, mock_archive
 
 pytestmark = pytest.mark.django_db
@@ -2206,12 +2206,6 @@ class TestRemoveNode:
 
 
 class TestTemplateNode:
-
-    # Autouse the app fixture because we need init_app to set
-    # ADDONS_REQUESTED
-    @pytest.fixture(autouse=True)
-    def _app(self, app):
-        return app
 
     @pytest.fixture()
     def project(self, user):
