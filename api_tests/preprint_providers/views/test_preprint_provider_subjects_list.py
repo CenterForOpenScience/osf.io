@@ -82,14 +82,13 @@ class TestPreprintProviderSubjects(ApiTestCase):
         res = self.app.get(self.ruled_url)
 
         assert_equal(res.status_code, 200)
-        import ipdb; ipdb.set_trace()
         assert_equal(res.json['links']['meta']['total'], 11)
 
     def test_rules_enforced_with_null_parent_filter(self):
         res = self.app.get(self.ruled_url + 'filter[parents]=null')
 
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['links']['meta']['total'], 2)
+        assert_equal(res.json['links']['meta']['total'], 3)
 
     def test_rules_enforced_with_parent_filter(self):
         res = self.app.get(self.ruled_url + 'filter[parents]=' + self.subB._id)
@@ -98,6 +97,11 @@ class TestPreprintProviderSubjects(ApiTestCase):
         assert_equal(res.json['links']['meta']['total'], 1)
 
         res = self.app.get(self.ruled_url + 'filter[parents]=' + self.subI._id)
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['links']['meta']['total'], 1)
+
+        res = self.app.get(self.ruled_url + 'filter[parents]=' + self.subM._id)
 
         assert_equal(res.status_code, 200)
         assert_equal(res.json['links']['meta']['total'], 2)

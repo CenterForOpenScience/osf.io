@@ -189,6 +189,10 @@ class PreprintProvider(StoredObject):
         for rule in self.subjects_acceptable:
             if rule[1]:
                 q.append(Q('parents', 'eq', Subject.load(rule[0][-1])))
+                if len(rule[0]) == 1:
+                    potential_parents = Subject.find(Q('parents', 'eq', Subject.load(rule[0][-1])))
+                    for parent in potential_parents:
+                        q.append(Q('parents', 'eq', parent))
             for sub in rule[0]:
                 q.append(Q('_id', 'eq', sub))
         return Subject.find(reduce(lambda x, y: x | y, q)) if len(q) > 1 else (Subject.find(q[0]) if len(q) else Subject.find())
