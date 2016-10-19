@@ -9,11 +9,6 @@ pytestmark = pytest.mark.django_db
 # from website/addons/wiki/tests/test_wiki.py
 class TestNodeWikiPageModel:
 
-    # Autouse app fixture so that settings.ADDONS_AVAILABLE is set
-    @pytest.fixture(autouse=True)
-    def _app(self, app):
-        return app
-
     def test_page_name_cannot_be_greater_than_100_characters(self):
         bad_name = 'a' * 101
         page = NodeWikiPage(page_name=bad_name)

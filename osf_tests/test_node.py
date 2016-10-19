@@ -2207,12 +2207,6 @@ class TestRemoveNode:
 
 class TestTemplateNode:
 
-    # Autouse the app fixture because we need init_app to set
-    # ADDONS_REQUESTED
-    @pytest.fixture(autouse=True)
-    def _app(self, app):
-        return app
-
     @pytest.fixture()
     def project(self, user):
         return ProjectFactory(creator=user)
