@@ -1171,14 +1171,14 @@ class TestPublicWiki(OsfTestCase):
         # Set as publicly editable
         wiki.set_editing(permissions=True, auth=self.consolidate_auth, log=True)
         assert_true(wiki.is_publicly_editable)
-        assert_equal(node.logs[-1].action, 'made_wiki_public')
+        assert_equal(node.logs.latest().action, 'made_wiki_public')
         # Try to set public when the wiki is already public
         with assert_raises(NodeStateError):
             wiki.set_editing(permissions=True, auth=self.consolidate_auth, log=False)
         # Turn off public editing
         wiki.set_editing(permissions=False, auth=self.consolidate_auth, log=True)
         assert_false(wiki.is_publicly_editable)
-        assert_equal(node.logs[-1].action, 'made_wiki_private')
+        assert_equal(node.logs.latest().action, 'made_wiki_private')
 
         node = NodeFactory(parent=parent, category='project')
         wiki = node.get_addon('wiki')
@@ -1294,7 +1294,7 @@ class TestWikiMenu(OsfTestCase):
         expected = [
             {
                 'page': {
-                    'name': 'The meaning of life',
+                    'name': self.component.title,
                     'url': self.component.web_url_for('project_wiki_view', wname='home', _guid=True),
                 },
                 'children': [
