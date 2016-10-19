@@ -27,9 +27,10 @@ from website.addons.wiki.utils import (
     get_sharejs_uuid, generate_private_uuid, share_db, delete_share_doc,
     migrate_uuid, format_wiki_version, serialize_wiki_settings,
 )
-from website.addons.wiki.tests.config import EXAMPLE_DOCS, EXAMPLE_OPS
 from framework.auth import Auth
 from framework.mongo.utils import to_mongo_key
+
+from .config import EXAMPLE_DOCS, EXAMPLE_OPS
 
 pytestmark = pytest.mark.django_db
 
