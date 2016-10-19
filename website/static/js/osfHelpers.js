@@ -129,9 +129,9 @@ var getAllPagesAjaxJSON = function(method, url, options) {
             deferred.reject(error);
         });
     };
-  var deferred = new $.Deferred();
-  fetch(method, url, options);
-  return deferred.promise();
+    var deferred = new $.Deferred();
+    fetch(method, url, options);
+    return deferred.promise();
 };
 
 /**
@@ -140,46 +140,50 @@ var getAllPagesAjaxJSON = function(method, url, options) {
  * @return {Object data}
  */
 var mergePagesAjaxJSON = function(pages) {
-    var map = {};
+    var nodeList = {};
     $.each(pages, function(page) {
         $.each(pages[page].data, function(n) {
             var node = pages[page].data[n];
-            map[node.id] = node;
+            nodeList[node.id] = node;
         });
     });
-    return map;
+    return nodeList;
 };
 
 /**
  * Takes an array of response objects and returns just the children from the parent
- * @param {Array of Objects}
+ * @param {Array of Objects}, requires that api v2 call contained ``embed=parent``
  * @return {Object data}
  */
-var getAllChildren = function(parent, nodeList) {
-    var remaining = [parent];
-    var retval = {};
-    retval[parent] = nodeList[parent];
-    delete nodeList[parent];
+var getAllNodeChildrenFromNodeList = function(parent, nodeList) {
+    var tree = {};
+    var re = /\/v2\/nodes\/(.*)\//;
 
-    $.each(nodeList, function(key){
-        if(!('parent' in nodeList[key].embeds)) {
-            delete nodeList[key];
-            return false;
+    $.each(nodeList, function(n) {
+        var parent = 'root';
+        if ('parent' in nodeList[n].relationships) {
+            parent = nodeList[n].relationships.parent.links.related.href.match(re)[1];
         }
-    });
-    
+        if (!(n in tree)) {
+            tree[n] = [];
+        }
+        if (!(parent in tree)) {
+            tree[parent] = [];
+        }
+        tree[parent].push(n);
+    })
+
+    var children = {}
+    var remaining = [parent];
     while(remaining.length > 0) {
-        var currentParent = remaining.pop();
-        for(var node in nodeList) {
-            var nodeParent = nodeList[node].embeds.parent.data.id;
-            if(nodeParent === currentParent){
-                remaining.push(node);
-                retval[node] = nodeList[node];
-                delete nodeList[node];
-            }
-        }
+        var node = remaining.pop();
+        $.each(tree[node], function(c){
+            var child = tree[node][c];
+            remaining.push(tree[child]);
+            children[child] = nodeList[child];    
+        })
     }
-    return retval;
+    return children;
 };
 
 /**
@@ -1025,7 +1029,7 @@ module.exports = window.$.osf = {
     ajaxJSON: ajaxJSON,
     getAllPagesAjaxJSON: getAllPagesAjaxJSON,
     mergePagesAjaxJSON: mergePagesAjaxJSON,
-    getAllChildren: getAllChildren,
+    getAllNodeChildrenFromNodeList: getAllNodeChildrenFromNodeList,
     squashAPIAttributes: squashAPIAttributes,
     setXHRAuthorization: setXHRAuthorization,
     handleAddonApiHTTPError: handleAddonApiHTTPError,
