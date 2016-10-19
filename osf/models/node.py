@@ -202,7 +202,16 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             child=self,
             is_node_link=False
         ).first()
-        return node_rel.parent if node_rel else None
+        if node_rel:
+            parent = node_rel.parent
+            if parent:
+                return parent
+        # for v1 compat: self is a forked component (the parent was not forked).
+        # In this case, the parent node is the same as the parent of the
+        # copied node
+        if self.is_fork:
+            return self.forked_from.parent_node
+        return None
 
     @property
     def nodes(self):
@@ -1611,7 +1620,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         for node_relation in original.node_relations.filter(child__is_deleted=False):
             node_contained = node_relation.child
-            # Register child nodes
+            # Fork child nodes
             if not node_relation.is_node_link:
                 try:  # Catch the potential PermissionsError above
                     forked_node = node_contained.fork_node(auth=auth, title='')
@@ -2674,10 +2683,9 @@ def add_default_node_addons(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Node)
 @receiver(post_save, sender='osf.Registration')
 def set_parent(sender, instance, created, *args, **kwargs):
-    if created and instance.is_original and not instance._suppress_log:
-        if getattr(instance, '_parent', None):
-            NodeRelation.objects.get_or_create(
-                parent=instance._parent,
-                child=instance,
-                is_node_link=False
-            )
+    if getattr(instance, '_parent', None):
+        NodeRelation.objects.get_or_create(
+            parent=instance._parent,
+            child=instance,
+            is_node_link=False
+        )
