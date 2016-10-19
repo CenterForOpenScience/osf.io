@@ -1,18 +1,9 @@
 from nose.tools import *  # flake8: noqa
 
-from tests.base import ApiTestCase
-
 from api.base.settings.defaults import API_BASE
-from website.preprints.model import PreprintService
-from website.project import signals as project_signals
 
-from tests.factories import (
-    ProjectFactory,
-    PreprintFactory,
-    AuthUserFactory,
-    SubjectFactory,
-    PreprintProviderFactory
-)
+from tests.base import ApiTestCase
+from tests.factories import SubjectFactory, PreprintProviderFactory
 
 
 class TestPreprintProviderSubjects(ApiTestCase):
@@ -84,31 +75,77 @@ class TestPreprintProviderSubjects(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.json['links']['meta']['total'], 11)
 
+    def test_no_rules_with_null_parent_filter(self):
+        res = self.app.get(self.lawless_url + 'filter[parents]=null')
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['links']['meta']['total'], 4)
+
     def test_rules_enforced_with_null_parent_filter(self):
         res = self.app.get(self.ruled_url + 'filter[parents]=null')
 
         assert_equal(res.status_code, 200)
         assert_equal(res.json['links']['meta']['total'], 3)
+        texts = [item['attributes']['text'] for item in res.json['data']]
+        assert_in('A', texts)
+        assert_in('H', texts)
+        assert_in('L', texts)
+        assert_not_in('O', texts)
+
+    def test_no_rules_with_parent_filter(self):
+        res = self.app.get(self.lawless_url + 'filter[parents]=' + self.subB._id)
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['links']['meta']['total'], 2)
+
+        res = self.app.get(self.lawless_url + 'filter[parents]=' + self.subI._id)
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['links']['meta']['total'], 2)
+
+        res = self.app.get(self.lawless_url + 'filter[parents]=' + self.subM._id)
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['links']['meta']['total'], 2)
 
     def test_rules_enforced_with_parent_filter(self):
         res = self.app.get(self.ruled_url + 'filter[parents]=' + self.subB._id)
 
         assert_equal(res.status_code, 200)
         assert_equal(res.json['links']['meta']['total'], 1)
+        texts = [item['attributes']['text'] for item in res.json['data']]
+        assert_in('E', texts)
+        assert_not_in('F', texts)
 
         res = self.app.get(self.ruled_url + 'filter[parents]=' + self.subI._id)
 
         assert_equal(res.status_code, 200)
         assert_equal(res.json['links']['meta']['total'], 1)
+        texts = [item['attributes']['text'] for item in res.json['data']]
+        assert_in('J', texts)
+        assert_not_in('K', texts)
 
         res = self.app.get(self.ruled_url + 'filter[parents]=' + self.subM._id)
 
         assert_equal(res.status_code, 200)
         assert_equal(res.json['links']['meta']['total'], 2)
+        texts = [item['attributes']['text'] for item in res.json['data']]
+        assert_in('N', texts)
+        assert_in('E', texts)
+
+    def test_no_rules_with_grandparent_filter(self):
+        res = self.app.get(self.lawless_url + 'filter[parents]=' + self.subA._id)
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['links']['meta']['total'], 3)
 
     def test_rules_enforced_with_grandparent_filter(self):
         res = self.app.get(self.ruled_url + 'filter[parents]=' + self.subA._id)
 
         assert_equal(res.status_code, 200)
         assert_equal(res.json['links']['meta']['total'], 2)
+        texts = [item['attributes']['text'] for item in res.json['data']]
+        assert_in('B', texts)
+        assert_in('D', texts)
+        assert_not_in('C', texts)
 
