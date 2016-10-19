@@ -9,7 +9,7 @@ var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
 var ViewModel = function(data) {
     var self = this;
-    self.treebeardUrl = data.node.urls.api + 'tree/';
+    self.url = $osf.apiV2Url('/nodes/', {'query': 'filter[root]=' + data.node.rootId + '&format=json&embed=affiliated_institutions&version=2.1&embed=parent'});
     self.loading = ko.observable(false);
     self.showAdd = ko.observable(false);
     self.institutionHref = ko.observable('');
@@ -27,13 +27,14 @@ var ViewModel = function(data) {
     self.availableInstitutionsIds = ko.computed(function() {
         return self.availableInstitutions().map(function(item){return item.id;});
     });
-
-    //Has child nodes
-    self.hasChildren = ko.observable(false);
+    
+    self.nodes = ko.observable({});
+    self.nodeId = ko.observable(data.node.id);
+    self.rootId = ko.observable(data.node.rootId);
+    self.childExists = ko.observable(data.node.childExists);
 
     //user chooses to delete all nodes
     self.modifyChildren = ko.observable(false);
-    self.nodesOriginal = ko.observable();
     self.isAddInstitution = ko.observable(false);
     self.needsWarning = ko.observable(false);
 
@@ -67,7 +68,7 @@ var ViewModel = function(data) {
                     '</b>.  If you remove it from your project, you cannot add it back.</div></br>';
         }
         //If the Institution has children, give the choice to select.  If not, that means a warning is necessary.
-        if (self.hasChildren()) {
+        if (self.childExists()) {
             htmlMessage = '<div class="row">  ' +
                         '<div class="col-md-12"> ' +
                         '<span>' + message + '</span> ' +
@@ -125,10 +126,10 @@ var ViewModel = function(data) {
     });
 
     self.institutionInNoChildren = function(institutionID) {
-        for (var key in self.nodesOriginal()) {
-            if (self.nodesOriginal()[self.nodeParent].id !== key) {
-                if (self.nodesOriginal()[key].institutions.indexOf(institutionID) > -1 &&
-                    self.nodesOriginal()[key].isAdmin) {
+        for (var node in self.nodes()) {
+            if (self.nodes()[node].isChild) {
+                if (self.nodes()[node].institutions.indexOf(institutionID) > -1 &&
+                    self.nodes()[node].hasPermissions) {
                     return false;
                 }
             }
@@ -137,10 +138,10 @@ var ViewModel = function(data) {
     };
 
     self.institutionInAllChildren = function(institutionID) {
-        for (var key in self.nodesOriginal()) {
-            if (self.nodesOriginal()[self.nodeParent].id !== key) {
-                if (self.nodesOriginal()[key].institutions.indexOf(institutionID) === -1 &&
-                    self.nodesOriginal()[key].isAdmin) {
+        for (var node in self.nodes()) {
+            if (self.nodes()[node].isChild) {
+                if (self.nodes()[node].institutions.indexOf(institutionID) === -1 &&
+                    self.nodes()[node].hasPermissions) {
                     return false;
                 }
             }
@@ -151,7 +152,7 @@ var ViewModel = function(data) {
     self.submitInst = function (item) {
         self.isAddInstitution(true);
         self.needsWarning(false);
-        if ((self.hasChildren() && !self.institutionInAllChildren(item.id))) {
+        if ((self.childExists() && !self.institutionInAllChildren(item.id))) {
             self.modifyDialog(item);
         }
         else {
@@ -163,7 +164,7 @@ var ViewModel = function(data) {
     self.clearInst = function(item) {
         self.needsWarning((self.userInstitutionsIds.indexOf(item.id) === -1));
         self.isAddInstitution(false);
-        if ((self.hasChildren() && !self.institutionInNoChildren(item.id)) || self.needsWarning()) {
+        if ((self.childExists() && !self.institutionInNoChildren(item.id)) || self.needsWarning()) {
             self.modifyDialog(item);
         }
         else {
@@ -178,14 +179,14 @@ var ViewModel = function(data) {
         var nodesToModify = [];
         self.loading(true);
         if (self.modifyChildren()) {
-            for (var node in self.nodesOriginal()) {
-                if (self.nodesOriginal()[node].isAdmin) {
-                    nodesToModify.push({'type': 'nodes', 'id': self.nodesOriginal()[node].id});
+            for (var node in self.nodes()) {
+                if (self.nodes()[node].hasPermissions) {
+                    nodesToModify.push({'type': 'nodes', 'id': node});
                 }
             }
         }
         else {
-            nodesToModify.push({'type': 'nodes', 'id': self.nodeParent});
+            nodesToModify.push({'type': 'nodes', 'id': self.nodeId()});
         }
         return $osf.ajaxJSON(
             ajaxJSONType,
@@ -224,40 +225,64 @@ var ViewModel = function(data) {
             self.loading(false);
             //fetchNodeTree is called to refresh self.nodesOriginal after a state change.  This is the simplest way to
             //update state to check if the modal is necessary.
-            self.fetchNodeTree(self.treebeardUrl);
+            self.fetchNodes(self.url);
         });
     };
 };
 
 /**
- * get node tree for treebeard from API V1
+ * takes raw nodes from fetch and formats data for self.nodes
  */
-ViewModel.prototype.fetchNodeTree = function(treebeardUrl) {
-        var nodesOriginal = {};
-        var self = this;
-        return $.ajax({
-            url: treebeardUrl,
-            type: 'GET',
-            dataType: 'json'
-        }).done(function (response) {
-            nodesOriginal = projectSettingsTreebeardBase.getNodesOriginal(response[0], nodesOriginal);
-            self.nodeParent = response[0].node.id;
-            self.hasChildren(Object.keys(nodesOriginal).length > 1);
-            self.nodesOriginal(nodesOriginal);
-        }).fail(function (xhr, status, error) {
-            $osf.growl('Error', 'Unable to retrieve project settings');
-            Raven.captureMessage('Could not GET project settings.', {
-                extra: {
-                    url: treebeardUrl, status: status, error: error
-                }
-            });
+ViewModel.prototype.formatNodes = function(rawNodes) {
+    var self = this;
+    var nodes = {};
+    $.each(rawNodes, function(n) {
+        var id = rawNodes[n].id;
+        var branch = {};
+        branch.isChild = id !== self.nodeId();
+        branch.hasPermissions = rawNodes[n].attributes.current_user_permissions.indexOf('write') > -1;
+        branch.institutions = [];
+
+        // This does not handle pagination for institutions. Is there a situation where someone can have 10 institutions?
+        var institutionData = rawNodes[n].embeds.affiliated_institutions.data;
+        $.each(institutionData, function(i){
+            branch.institutions.push(institutionData[i].id);
         });
+        nodes[id] = branch;
+    });
+    self.nodes(nodes);
+};
+
+/**
+ * get nodes off root from API V2
+ */
+ViewModel.prototype.fetchNodes = function(url) {
+    var self = this;
+
+    if(!self.childExists()){
+        return;
+    }
+    var responseArray = new $osf.getAllPagesAjaxJSON('GET', url, {isCors: true});
+
+    responseArray.done(function(data) {
+        var rd = $osf.mergePagesAjaxJSON(data);
+        var rawNodes = self.nodeId() === self.rootId() ? rd : $osf.getAllChildren(self.nodeId(), rd);
+        self.formatNodes(rawNodes);
+
+    }).fail(function (xhr, status, error) {
+        $osf.growl('Error', 'Unable to retrieve project settings');
+        Raven.captureMessage('Could not GET project settings.', {
+            extra: {
+                url: url, status: status, error: error
+            }
+        });
+    });
 };
 
 var InstitutionProjectSettings = function(selector, data)  {
     this.viewModel = new ViewModel(data);
     var self = this;
-    self.viewModel.fetchNodeTree(self.viewModel.treebeardUrl);
+    self.viewModel.fetchNodes(self.viewModel.url);
     $osf.applyBindings(this.viewModel, selector);
 
 };
