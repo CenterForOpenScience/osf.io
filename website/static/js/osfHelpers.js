@@ -151,7 +151,7 @@ var mergePagesAjaxJSON = function(pages) {
 };
 
 /**
- * Takes an array of response objects and returns a single object
+ * Takes an array of response objects and returns just the children from the parent
  * @param {Array of Objects}
  * @return {Object data}
  */
@@ -161,7 +161,6 @@ var getAllChildren = function(parent, nodeList) {
     retval[parent] = nodeList[parent];
     delete nodeList[parent];
 
-    // remove root
     $.each(nodeList, function(key){
         if(!('parent' in nodeList[key].embeds)) {
             delete nodeList[key];

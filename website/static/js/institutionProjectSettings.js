@@ -243,7 +243,7 @@ ViewModel.prototype.formatNodes = function(rawNodes) {
         branch.hasPermissions = rawNodes[n].attributes.current_user_permissions.indexOf('write') > -1;
         branch.institutions = [];
 
-        // This does not handle pagination for institutions. Is there a situation where someone can have 10 institutions?
+        // This does not handle pagination for institutions.
         var institutionData = rawNodes[n].embeds.affiliated_institutions.data;
         $.each(institutionData, function(i){
             branch.institutions.push(institutionData[i].id);
