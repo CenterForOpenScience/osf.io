@@ -7,6 +7,7 @@ from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
 from osf.models.tag import Tag
 from website.exceptions import NodeStateError
+from website import settings
 
 
 class Versioned(models.Model):
@@ -179,15 +180,32 @@ class AddonModelMixin(models.Model):
             pass
         return None
 
-    def add_addon(self, name, auth):
-        addon = self.get_addon(name, deleted=True)
+    def add_addon(self, addon_name, auth=None, override=False, _force=False):
+        """Add an add-on to the node.
+
+        :param str addon_name: Name of add-on
+        :param Auth auth: Consolidated authorization object
+        :param bool override: For shell use only, Allows adding of system addons
+        :param bool _force: For migration testing ONLY. Do not set to True
+            in the application, or else projects will be allowed to have
+            duplicate addons!
+        :return bool: Add-on was added
+
+        """
+        if not override and addon_name in settings.SYSTEM_ADDED_ADDONS[self.settings_type]:
+            return False
+
+        # Reactivate deleted add-on if present
+        addon = self.get_addon(addon_name, deleted=True)
         if addon:
             if addon.deleted:
                 addon.undelete(save=True)
-            return addon
+                return addon
+            if not _force:
+                return False
 
-        config = apps.get_app_config('addons_{}'.format(name))
-        model = self._settings_model(name, config=config)
+        config = apps.get_app_config('addons_{}'.format(addon_name))
+        model = self._settings_model(addon_name, config=config)
         ret = model(owner=self)
         ret.on_add()
         ret.save()  # TODO This doesn't feel right
@@ -207,22 +225,29 @@ class AddonModelMixin(models.Model):
         if save:
             self.save()
 
-    def delete_addon(self, name, auth=None):
-        addon = self.get_addon(name)
+    def delete_addon(self, addon_name, auth=None, _force=False):
+        """Delete an add-on from the node.
+
+        :param str addon_name: Name of add-on
+        :param Auth auth: Consolidated authorization object
+        :param bool _force: For migration testing ONLY. Do not set to True
+            in the application, or else projects will be allowed to delete
+            mandatory add-ons!
+        :return bool: Add-on was deleted
+        """
+        addon = self.get_addon(addon_name)
         if not addon:
             return False
-        # TODO
-        # config = apps.get_app_config(name)
-        # if self._meta.model_name in config.added_mandatory:
-        #     raise ValueError('Cannot delete mandatory add-on.')
+        if self.settings_type in addon.config.added_mandatory and not _force:
+            raise ValueError('Cannot delete mandatory add-on.')
         if getattr(addon, 'external_account', None):
             addon.deauthorize(auth=auth)
         addon.delete(save=True)
         return True
 
-    def _settings_model(self, name, config=None):
+    def _settings_model(self, addon_model, config=None):
         if not config:
-            config = apps.get_app_config('addons_{}'.format(name))
+            config = apps.get_app_config('addons_{}'.format(addon_model))
         return getattr(config, '{}_settings'.format(self.settings_type))
 
 
