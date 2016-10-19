@@ -274,8 +274,10 @@ class UserWorkshopFormView(OSFAdmin, FormView):
     def form_valid(self, form):
         csv_file = form.cleaned_data['document']
         final = self.parse(csv_file)
+        file_name = csv_file.name
+        results_file_name = '{}_user_stats.csv'.format(file_name.replace(' ', '_').strip('.csv'))
         response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="workshop_user_stats.csv"'
+        response['Content-Disposition'] = 'attachment; filename="{}"'.format(results_file_name)
         writer = csv.writer(response)
         for row in final:
             writer.writerow(row)
