@@ -4,7 +4,7 @@ import datetime
 
 from django.utils import timezone
 from framework.auth.core import Auth
-from osf.models import Node, Registration, Sanction, MetaSchema
+from osf.models import Node, Registration, Sanction, MetaSchema, NodeLog
 from addons.wiki.models import NodeWikiPage
 from osf.modm_compat import Q
 
@@ -81,6 +81,10 @@ class TestRegisterNode:
         private_link.nodes.add(reg)
         private_link.save()
         return reg
+
+    def test_does_not_have_addon_added_log(self, registration):
+        # should not have addon_added log from wiki addon being added
+        assert NodeLog.ADDON_ADDED not in list(registration.logs.values_list('action', flat=True))
 
     def test_title(self, registration, project):
         assert registration.title == project.title

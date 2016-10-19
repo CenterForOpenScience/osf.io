@@ -128,7 +128,7 @@ def link_archive_provider(node, user):
     :param user: target user (currently unused, but left in for future-proofing
     the code for use with archive providers other than OSF Storage)
     """
-    addon = node.get_or_add_addon(settings.ARCHIVE_PROVIDER, auth=Auth(user))
+    addon = node.get_or_add_addon(settings.ARCHIVE_PROVIDER, auth=Auth(user), log=False)
     if hasattr(addon, 'on_add'):
         addon.on_add()
     node.save()

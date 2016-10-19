@@ -291,6 +291,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return False
 
     @property
+    def is_original(self):
+        return not self.is_registration and not self.is_fork
+
+    @property
     def is_preprint(self):
         # TODO: This is a temporary implementation.
         # Uncomment when StoredFileNode is implemented
@@ -2630,7 +2634,7 @@ def add_creator_as_contributor(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 def add_project_created_log(sender, instance, created, **kwargs):
-    if created and not instance.is_fork and not instance._suppress_log:
+    if created and instance.is_original and not instance._suppress_log:
         # Define log fields for non-component project
         log_action = NodeLog.PROJECT_CREATED
         log_params = {
@@ -2652,14 +2656,14 @@ def add_project_created_log(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 def send_osf_signal(sender, instance, created, **kwargs):
-    if created and not instance._suppress_log:
+    if created and instance.is_original and not instance._suppress_log:
         project_signals.project_created.send(instance)
 
 
 @receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 def add_default_node_addons(sender, instance, created, **kwargs):
-    if created and not instance.is_fork and not instance._suppress_log:
+    if created and instance.is_original and not instance._suppress_log:
         # TODO: This logic also exists in self.use_as_template()
         for addon in settings.ADDONS_AVAILABLE:
             if 'node' in addon.added_default:
@@ -2669,10 +2673,11 @@ def add_default_node_addons(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 @receiver(post_save, sender='osf.Registration')
-def set_parent(sender, instance, *args, **kwargs):
-    if getattr(instance, '_parent', None):
-        NodeRelation.objects.get_or_create(
-            parent=instance._parent,
-            child=instance,
-            is_node_link=False
-        )
+def set_parent(sender, instance, created, *args, **kwargs):
+    if created and instance.is_original and not instance._suppress_log:
+        if getattr(instance, '_parent', None):
+            NodeRelation.objects.get_or_create(
+                parent=instance._parent,
+                child=instance,
+                is_node_link=False
+            )
