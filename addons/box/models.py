@@ -12,6 +12,7 @@ from framework.auth import Auth
 from framework.exceptions import HTTPError
 from oauthlib.oauth2 import InvalidGrantError
 from osf.models.external import ExternalProvider
+from osf.models.files import FileNode, Folder, File
 from urllib3.exceptions import MaxRetryError
 from website.addons.base import exceptions
 from website.addons.box import settings
@@ -20,6 +21,15 @@ from website.util import api_v2_url
 
 logger = logging.getLogger(__name__)
 
+
+class BoxFileNode(FileNode):
+    provider = 'box'
+
+class BoxFolder(BoxFileNode, Folder):
+    pass
+
+class BoxFile(BoxFileNode, File):
+    pass
 
 class Provider(ExternalProvider):
     name = 'Box'
