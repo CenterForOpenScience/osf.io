@@ -294,9 +294,8 @@ class NodeSettings(BaseNodeSettings):
                     'node': node._primary_key,
                 },
                 auth=auth,
-                save=False,
+                save=True,
             )
-            node.save()
 
         self.save()
 

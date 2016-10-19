@@ -2373,9 +2373,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 'version': page.version,
             },
             auth=auth,
-            save=False,
+            save=True,
         )
-        self.save()
 
     def delete_node_wiki(self, name, auth):
         name = (name or '').strip()
@@ -2490,6 +2489,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if self.has_addon(addon):
             return True
 
+        # TODO: Optimize me into one query
         for node_relation in self.node_relations.filter(is_node_link=False, child__is_deleted=False).select_related('child'):
             node = node_relation.child
             if node.has_addon_on_children(addon):
