@@ -248,7 +248,7 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
                 else:
                     # `GET /register?campaign=...`
                     data['campaign'] = campaign
-                    if campaign == 'osf-preprints':
+                    if campaigns.is_proxy_login(campaign):
                         data['next_url'] = web_url_for(
                             'auth_login',
                             next=campaigns.campaign_url_for(campaign),
