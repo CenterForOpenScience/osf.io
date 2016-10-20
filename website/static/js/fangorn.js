@@ -10,7 +10,7 @@
 // This hack forces a reload if this occurs on a fangorn page.
 $(window).bind("pageshow", function(event) {
     if (event.originalEvent.persisted) {
-        window.location.reload() 
+        window.location.reload();
     }
 });
 
