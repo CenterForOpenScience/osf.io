@@ -242,6 +242,9 @@ class InstitutionRegistrationList(InstitutionNodeList):
 
     ordering = ('-date_modified', )
 
+    def get_default_odm_query(self):
+        return self.base_node_query
+
     def get_queryset(self):
         inst = self.get_institution()
         query = self.get_query_from_request()
