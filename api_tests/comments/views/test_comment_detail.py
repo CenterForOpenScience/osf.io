@@ -92,7 +92,8 @@ class CommentDetailMixin(object):
 
     def test_private_node_user_with_anonymous_link_cannot_see_mention_info(self):
         self._set_up_private_project_with_comment()
-        self.payload['data']['attributes']['content'] = 'test with [@username](userlink) and @mention'
+        self.comment.content = 'test with [@username](userlink) and @mention'
+        self.comment.save()
         private_link = PrivateLinkFactory(anonymous=True)
         private_link.nodes.append(self.private_project)
         private_link.save()
