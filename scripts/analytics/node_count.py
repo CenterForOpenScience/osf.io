@@ -18,14 +18,17 @@ def get_node_count():
     registered_project_query = registration_query & Q('parent_node', 'eq', None)
     public_query = Q('is_public', 'eq', True)
     private_query = Q('is_public', 'eq', False)
+    retracted_query = Q('retraction', 'ne', None)
     node_public_query = non_registration_query & public_query
     node_private_query = non_registration_query & private_query
     project_public_query = project_query & public_query
     project_private_query = project_query & private_query
     registered_node_public_query = registration_query & public_query
     registered_node_private_query = registration_query & private_query
+    registered_node_retracted_query = registration_query & retracted_query
     registered_project_public_query = registered_project_query & public_query
     registered_project_private_query = registered_project_query & private_query
+    registered_project_retracted_query = registered_project_query & retracted_query
 
     return {
         'nodes': {
@@ -42,11 +45,13 @@ def get_node_count():
             'total': Node.find(registration_query).count(),
             'public': Node.find(registered_node_public_query).count(),
             'embargoed': Node.find(registered_node_private_query).count(),
+            'withdrawn': Node.find(registered_node_retracted_query),
         },
         'registered_projects': {
             'total': Node.find(registered_project_query).count(),
             'public': Node.find(registered_project_public_query).count(),
             'embargoed': Node.find(registered_project_private_query).count(),
+            'withdrawn': Node.find(registered_project_retracted_query),
         },
     }
 
