@@ -103,19 +103,39 @@ def format_subjects(preprint):
             flat_subjs.append(s)
     return flat_subjs
 
-def format_preprint(preprint):
-    return sum([[{
-        '@id': '_:{}'.format(preprint._id),
-        '@type': 'preprint',
-        'title': preprint.node.title,
-        'description': preprint.node.description or '',
-        'is_deleted': not preprint.is_published or not preprint.node.is_public or preprint.node.is_preprint_orphan
-    }, {
-        '@id': '_:link-{}'.format(preprint._id),
+def format_doi(preprint):
+    """
+    * All DOIs will be valid URIs
+    * All DOIs will use http
+    * All DOI paths will be uppercased
+    """
+    return {
+        '@id': '_:doi-{}'.format(preprint._id),
         '@type': 'link',
-        'url': urlparse.urljoin(settings.DOMAIN, preprint.url),
-        'type': 'provider'
-    }]] + [
+        'url': 'http://dx.doi.org/{}'.format(preprint.article_doi.upper().strip('/')),
+        'type': 'doi'
+    }
+
+def format_preprint(preprint):
+    preprint_parts = [
+        {
+            '@id': '_:{}'.format(preprint._id),
+            '@type': 'preprint',
+            'title': preprint.node.title,
+            'description': preprint.node.description or '',
+            'is_deleted': not preprint.is_published or not preprint.node.is_public or preprint.node.is_preprint_orphan
+        }, {
+            '@id': '_:link-{}'.format(preprint._id),
+            '@type': 'link',
+            'url': urlparse.urljoin(settings.DOMAIN, preprint.url),
+            'type': 'provider'
+        }
+    ]
+
+    if preprint.article_doi:
+        preprint_parts.append(format_doi(preprint))
+
+    return sum([preprint_parts] + [
         format_contributor(preprint, user) for user in preprint.node.contributors
     ] + [
         format_subjects(preprint)
