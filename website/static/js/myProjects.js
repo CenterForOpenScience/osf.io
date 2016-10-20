@@ -71,9 +71,9 @@ function NodeFetcher(type, link, handleOrphans, regType, regLink) {
     children: [],
     fetch : []
   };
-  this.nextLink = link
-    ? link + '&version=2.2'
-    : $osf.apiV2Url('users/me/' + this.type + '/', { query: {'related_counts' : 'children', 'embed' : 'contributors', 'version': '2.2'}});
+  this.nextLink = link ?
+    link + '&version=2.2' :
+    $osf.apiV2Url('users/me/' + this.type + '/', { query: {'related_counts' : 'children', 'embed' : 'contributors', 'version': '2.2'}});
 }
 
 NodeFetcher.prototype = {
