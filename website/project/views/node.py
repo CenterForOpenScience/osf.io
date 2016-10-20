@@ -43,8 +43,6 @@ from website.project.licenses import serialize_node_license_record
 from website.util.sanitize import strip_html
 from website.util import rapply
 
-from osf.models.base import Guid
-
 
 r_strip_html = lambda collection: rapply(collection, strip_html)
 logger = logging.getLogger(__name__)
@@ -404,14 +402,14 @@ def project_reorder_components(node, **kwargs):
         each.split(':')[0]
         for each in request.get_json().get('new_list', [])
     ]
-    guids = Guid.objects.filter(_id__in=new_node_guids)
+    new_node_relation_ids = list(node.node_relations.filter(child__guids___id__in=new_node_guids).values_list('pk', flat=True))
 
-    new_node_ids = [guid.referent.id for guid in guids]
-    valid_node_ids = [link.id for link in node.nodes if not node.is_deleted]
-    deleted_node_ids = [link.id for link in node.nodes if node.is_deleted]
+    node_relations = node.node_relations.select_related('child').all()
+    valid_node_relation_ids = [each.id for each in node_relations if not each.child.is_deleted]
+    deleted_node_relation_ids = [each.id for each in node_relations if each.child.is_deleted]
 
-    if len(valid_node_ids) == len(new_node_ids) and set(valid_node_ids) == set(new_node_ids):
-        node.set_noderelation_order(new_node_ids + deleted_node_ids)
+    if len(valid_node_relation_ids) == len(new_node_guids) and set(valid_node_relation_ids) == set(new_node_relation_ids):
+        node.set_noderelation_order(new_node_relation_ids + deleted_node_relation_ids)
         node.save()
         return {}
 
@@ -1187,7 +1185,7 @@ def move_pointers(auth):
     for pointer_to_move in pointers_to_move:
         try:
             node_relation = NodeRelation.objects.get(_id=pointer_to_move)
-        except Node.DoesNotExist:
+        except NodeRelation.DoesNotExist:
             raise HTTPError(http.BAD_REQUEST)
 
         try:

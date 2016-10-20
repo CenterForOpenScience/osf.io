@@ -3,6 +3,7 @@
 from datetime import datetime
 
 import markdown
+from django.utils import timezone
 import pytz
 from flask import request
 
@@ -184,7 +185,7 @@ def _update_comments_timestamp(auth, node, page=Comment.OVERVIEW, root_id=None):
         # update node timestamp
         if page == Comment.OVERVIEW:
             root_id = node._id
-        auth.user.comments_viewed_timestamp[root_id] = datetime.utcnow()
+        auth.user.comments_viewed_timestamp[root_id] = timezone.now()
         auth.user.save()
         return {root_id: auth.user.comments_viewed_timestamp[root_id].isoformat()}
     else:

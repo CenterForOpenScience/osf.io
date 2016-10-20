@@ -1137,7 +1137,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if self._primary_key in contributor.unclaimed_records:
             del contributor.unclaimed_records[self._primary_key]
 
-        if not self.visible_contributor_ids:
+        # If user is the only visible contributor, return False
+        if not self.contributor_set.exclude(user=contributor).filter(visible=True).exists():
             return False
 
         # Node must have at least one registered admin user

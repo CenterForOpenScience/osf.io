@@ -74,6 +74,7 @@ from osf_tests.factories import (
     ApiOAuth2ApplicationFactory,
     ApiOAuth2PersonalTokenFactory,
     NodeRelationFactory,
+    ProjectWithAddonFactory,
 )
 
 class Addon(MockAddonNodeSettings):
@@ -307,7 +308,6 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res.json['message_long'], 'Must have at least one bibliographic contributor')
         assert_true(self.project.is_contributor(self.user2))
 
-    @pytest.mark.skip('Triggers listeners that relies on StoredFileNode, which is not implemented')
     def test_remove_only_visible_contributor_return_false(self):
         user1_contrib = self.project.contributor_set.get(user=self.user1)
         user1_contrib.visible = False
@@ -507,7 +507,6 @@ class TestProjectViews(OsfTestCase):
             [project.creator, unregistered_user, reg_user1]
         )
 
-    @pytest.mark.skip('Signal listener requires StoredFileNode')
     def test_project_remove_contributor(self):
         url = self.project.api_url_for('project_remove_contributor')
         # User 1 removes user2
@@ -521,7 +520,6 @@ class TestProjectViews(OsfTestCase):
         # A log event was added
         assert_equal(self.project.logs.latest().action, 'contributor_removed')
 
-    @pytest.mark.skip('Signal listener requires StoredFileNode')
     def test_multiple_project_remove_contributor(self):
         url = self.project.api_url_for('project_remove_contributor')
         # User 1 removes user2
@@ -539,7 +537,6 @@ class TestProjectViews(OsfTestCase):
         # A log event was added
         assert_equal(self.project.logs.latest().action, 'contributor_removed')
 
-    @pytest.mark.skip('Signal listener requires StoredFileNode')
     def test_private_project_remove_self_not_admin(self):
         url = self.project.api_url_for('project_remove_contributor')
         # user2 removes self
@@ -553,7 +550,6 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res.json['redirectUrl'], '/dashboard/')
         assert_not_in(self.user2._id, self.project.contributors)
 
-    @pytest.mark.skip('Signal listener requires StoredFileNode')
     def test_public_project_remove_self_not_admin(self):
         url = self.project.api_url_for('project_remove_contributor')
         # user2 removes self
@@ -2088,7 +2084,6 @@ class TestAddingContributorViews(OsfTestCase):
         project.fork_node(auth=Auth(project.creator))
         assert_false(send_mail.called)
 
-    @pytest.mark.skip('Unskip when wiki addon is implemented')
     @mock.patch('website.mails.send_mail')
     def test_templating_project_does_not_send_contributor_added_email(self, send_mail):
         project = ProjectFactory()
@@ -2521,7 +2516,6 @@ class TestClaimViews(OsfTestCase):
         self.app.post_json(url, payload)
         assert_true(send_claim_registered_email.called)
 
-    @pytest.mark.skip('Unskip this when StoredFileNodes are implemented')
     def test_user_with_removed_unclaimed_url_claiming(self):
         """ Tests that when an unclaimed user is removed from a project, the
         unregistered user object does not retain the token.
@@ -4067,7 +4061,6 @@ class TestReorderComponents(OsfTestCase):
         assert_equal(res.status_code, 200)
 
 
-@pytest.mark.skip('Addons not yet implemented')
 class TestWikiWidgetViews(OsfTestCase):
 
     def setUp(self):
@@ -4296,7 +4289,6 @@ class TestProjectCreation(OsfTestCase):
         assert_true(node)
         assert_true(node.description, 'I describe things!')
 
-    @pytest.mark.skip('wiki addon not yet implemented')
     def test_can_template(self):
         other_node = ProjectFactory(creator=self.creator)
         payload = {
@@ -4314,11 +4306,10 @@ class TestProjectCreation(OsfTestCase):
         res = self.app.get(project.api_url_for('project_before_template'), auth=project.creator.auth)
         assert_equal(res.json['prompts'], [])
 
-    @pytest.mark.skip('Addons not yet implemented')
     def test_project_before_template_with_addons(self):
-        project = ProjectWithAddonFactory(addon='github')
+        project = ProjectWithAddonFactory(addon='box')
         res = self.app.get(project.api_url_for('project_before_template'), auth=project.creator.auth)
-        assert_in('GitHub', res.json['prompts'])
+        assert_in('Box', res.json['prompts'])
 
     def test_project_new_from_template_non_user(self):
         project = ProjectFactory()
@@ -4329,7 +4320,6 @@ class TestProjectCreation(OsfTestCase):
         assert_equal(res2.status_code, 301)
         assert_equal(res2.request.path, '/login')
 
-    @pytest.mark.skip('wiki addon not yet implemented')
     def test_project_new_from_template_public_non_contributor(self):
         non_contributor = AuthUserFactory()
         project = ProjectFactory(is_public=True)
@@ -4337,7 +4327,6 @@ class TestProjectCreation(OsfTestCase):
         res = self.app.post(url, auth=non_contributor.auth)
         assert_equal(res.status_code, 201)
 
-    @pytest.mark.skip('wiki addon not yet implemented')
     def test_project_new_from_template_contributor(self):
         contributor = AuthUserFactory()
         project = ProjectFactory(is_public=False)
@@ -4467,7 +4456,7 @@ class TestCommentViews(OsfTestCase):
         }, auth=self.user.auth)
         self.user.reload()
 
-        user_timestamp = self.user.comments_viewed_timestamp[self.project._id].replace(tzinfo=pytz.utc)
+        user_timestamp = self.user.comments_viewed_timestamp[self.project._id]
         view_timestamp = timezone.now()
         assert_datetime_equal(user_timestamp, view_timestamp)
 

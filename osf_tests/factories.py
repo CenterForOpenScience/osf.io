@@ -145,6 +145,36 @@ class ProjectFactory(BaseNodeFactory):
     category = 'project'
 
 
+class ProjectWithAddonFactory(ProjectFactory):
+    """Factory for a project that has an addon. The addon will be added to
+    both the Node and the creator records. ::
+
+        p = ProjectWithAddonFactory(addon='github')
+        p.get_addon('github') # => github node settings object
+        p.creator.get_addon('github') # => github user settings object
+
+    """
+
+    # TODO: Should use mock addon objects
+    @classmethod
+    def _build(cls, target_class, addon='s3', *args, **kwargs):
+        '''Build an object without saving it.'''
+        instance = ProjectFactory._build(target_class, *args, **kwargs)
+        auth = Auth(user=instance.creator)
+        instance.add_addon(addon, auth)
+        instance.creator.add_addon(addon)
+        return instance
+
+    @classmethod
+    def _create(cls, target_class, addon='s3', *args, **kwargs):
+        instance = ProjectFactory._create(target_class, *args, **kwargs)
+        auth = Auth(user=instance.creator)
+        instance.add_addon(addon, auth)
+        instance.creator.add_addon(addon)
+        instance.save()
+        return instance
+
+
 class NodeFactory(BaseNodeFactory):
     category = 'hypothesis'
     parent = factory.SubFactory(ProjectFactory)
