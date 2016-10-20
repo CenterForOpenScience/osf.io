@@ -8,7 +8,7 @@
 // Safari does not properly clear events from bfcache and forward cache, which causes treebeard
 // to lock up when navigating to a treebeard page from the forward/back button.
 // This hack forces a reload if this occurs on a fangorn page.
-$(window).bind("pageshow", function(event) {
+$(window).bind('pageshow', function(event) {
     if (event.originalEvent.persisted) {
         window.location.reload();
     }
