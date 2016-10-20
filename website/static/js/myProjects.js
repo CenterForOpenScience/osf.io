@@ -71,7 +71,10 @@ function NodeFetcher(type, link, handleOrphans, regType, regLink) {
     children: [],
     fetch : []
   };
-  this.nextLink = link || $osf.apiV2Url('users/me/' + this.type + '/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
+  console.log('link: ' + link);
+  this.nextLink = link
+      ? link + '&version=2.2'
+      : $osf.apiV2Url('users/me/' + this.type + '/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'version': '2.2' }});
 }
 
 NodeFetcher.prototype = {
@@ -151,7 +154,7 @@ NodeFetcher.prototype = {
   },
   fetch: function(id) {
     // TODO This method is currently untested
-    var url =  $osf.apiV2Url(this.type + '/' + id + '/', {query: {related_counts: 'children', embed: 'contributors' }});
+    var url =  $osf.apiV2Url(this.type + '/' + id + '/', {query: {related_counts: 'children', embed: 'contributors', 'version': '2.2' }});
     return m.request({method: 'GET', url: url, config: mHelpers.apiV2Config({withCredentials: window.contextVars.isOnRootDomain}), background: true})
       .then((function(result) {
         this.add(result.data);
@@ -165,8 +168,8 @@ NodeFetcher.prototype = {
   },
   _success: function(results) {
     // Only reset if we're lower as loading children will increment this number
-    if (this.total < results.links.meta.total)
-        this.total = results.links.meta.total;
+    if (this.total < results.meta.total)
+        this.total = results.meta.total;
 
     this.nextLink = results.links.next;
     this.loaded += results.data.length;
@@ -206,7 +209,7 @@ NodeFetcher.prototype = {
   },
   _childrenSuccess: function(parent, results) {
     if (!results.links.prev)
-      this.total += results.links.meta.total;
+      this.total += results.meta.total;
 
     this.loaded += results.data.length;
     var finder = function(id, item) {return item.id === id;};
@@ -357,7 +360,7 @@ var MyProjects = {
         self.systemCollections = options.systemCollections || [
             new LinkObject('collection', { nodeType : 'projects'}, 'All my projects'),
             new LinkObject('collection', { nodeType : 'registrations'}, 'All my registrations'),
-            new LinkObject('collection', { nodeType : 'preprints', link: $osf.apiV2Url('users/me/nodes/', { query : { 'filter[preprint]': true, 'related_counts' : 'children', 'embed' : 'contributors'}})}, 'All my preprints')
+            new LinkObject('collection', { nodeType : 'preprints', link: $osf.apiV2Url('users/me/nodes/', { query : { 'filter[preprint]': true, 'related_counts' : 'children', 'embed' : 'contributors', 'version': '2.2'}})}, 'All my preprints')
         ];
 
         self.fetchers = {};
@@ -825,8 +828,8 @@ var MyProjects = {
                     var count = node.relationships.linked_registrations.links.related.meta.count + node.relationships.linked_nodes.links.related.meta.count;
                     self.collections().push(new LinkObject('collection', {nodeType : 'collection', node : node, count : m.prop(count), loaded: 1 }, node.attributes.title));
 
-                    var regLink = $osf.apiV2Url('collections/' + node.id + '/linked_registrations/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
-                    var link = $osf.apiV2Url('collections/' + node.id + '/linked_nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
+                    var regLink = $osf.apiV2Url('collections/' + node.id + '/linked_registrations/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'version': '2.2' }});
+                    var link = $osf.apiV2Url('collections/' + node.id + '/linked_nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'version': '2.2' }});
                     self.fetchers[self.collections()[self.collections().length-1].id] = new NodeFetcher('nodes', link, false, 'registraions', regLink);
                     self.fetchers[self.collections()[self.collections().length-1].id].on(['page'], self.onPageLoad);
                 });
@@ -891,7 +894,7 @@ var MyProjects = {
                 }
             });
             if (!self.viewOnly){
-                var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : 'linked_registrations,linked_nodes', 'page[size]' : self.collectionsPageSize(), 'sort' : 'date_created', 'embed' : 'linked_nodes'}});
+                var collectionsUrl = $osf.apiV2Url('collections/', { query : {'related_counts' : 'linked_registrations,linked_nodes', 'page[size]' : self.collectionsPageSize(), 'sort' : 'date_created', 'embed' : 'linked_nodes', 'version': '2.2'}});
                 self.loadCollections(collectionsUrl);
             }
             // Add linkObject to the currentView
@@ -1061,7 +1064,7 @@ var Collections = {
         self.totalPages = m.prop(1);
         self.calculateTotalPages = function _calculateTotalPages(result){
             if(result){ // If this calculation comes after GET call to collections
-                self.totalPages(Math.ceil((result.links.meta.total + args.systemCollections.length)/self.pageSize()));
+                self.totalPages(Math.ceil((result.meta.total + args.systemCollections.length)/self.pageSize()));
             } else {
                 self.totalPages(Math.ceil((self.collections().length)/self.pageSize()));
             }
@@ -1116,8 +1119,8 @@ var Collections = {
             promise.then(function(result){
                 var node = result.data;
                 var count = node.relationships.linked_nodes.links.related.meta.count || 0;
-                self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children' }, node : node, count : m.prop(count), nodeType : 'collection' }, node.attributes.title));
-                var link = $osf.apiV2Url('collections/' + node.id + '/linked_nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors' }});
+                self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children', 'version': '2.2' }, node : node, count : m.prop(count), nodeType : 'collection' }, node.attributes.title));
+                var link = $osf.apiV2Url('collections/' + node.id + '/linked_nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors', 'version': '2.2' }});
                 args.fetchers[self.collections()[self.collections().length-1].id] = new NodeFetcher('nodes', link);
                 args.fetchers[self.collections()[self.collections().length-1].id].on(['page', 'done'], args.onPageLoad);
 

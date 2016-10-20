@@ -26,7 +26,7 @@ $(document).ready(function() {
         wrapperSelector : '#fileBrowser',
         systemCollections:[
             new LinkObject('collection', { link : instNodes, query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors'}, nodeType : 'nodes'}, 'All Projects'),
-            new LinkObject('collection', { link : instRegs, query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors', 'filter[parent]' : 'null'}, nodeType : 'registrations'}, 'All Registrations'),
+            new LinkObject('collection', { link : instRegs, query : { 'related_counts' : true, 'page[size]'  : 12, 'embed' : 'contributors'}, nodeType : 'registrations'}, 'All Registrations'),
         ],
         viewOnly: true,
         projectOrganizerOptions: {

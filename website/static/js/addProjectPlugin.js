@@ -87,9 +87,9 @@ var AddProject = {
             var data;
             self.viewState('processing');
             if(self.options.parentID) {
-                url = $osf.apiV2Url('nodes/' + self.options.parentID + '/children/', { query : {'inherit_contributors' : self.newProjectInheritContribs()}});
+                url = $osf.apiV2Url('nodes/' + self.options.parentID + '/children/', { query : {'inherit_contributors' : self.newProjectInheritContribs(), 'version': '2.2'}});
             } else {
-                url = $osf.apiV2Url('nodes/', { query : {}});
+                url = $osf.apiV2Url('nodes/', { query : {'version': '2.2'}});
             }
             data = {
                     'data' : {
@@ -119,7 +119,7 @@ var AddProject = {
             var request = m.request({method : 'POST', url : url, data : data, config : xhrconfig});
             if (self.institutions.length > 0) {
                 request.then(function (result) {
-                    var newNodeApiUrl = $osf.apiV2Url('nodes/' + result.data.id + '/relationships/institutions/');
+                    var newNodeApiUrl = $osf.apiV2Url('nodes/' + result.data.id + '/relationships/institutions/', {query: {'version': '2.2'}});
                     var data = {
                         data: self.institutions.filter(
                             function (inst) {

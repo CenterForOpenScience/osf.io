@@ -153,6 +153,14 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
 
     ordering = ('-date_modified', )
 
+    base_node_query_deprecated = (
+        Q('is_deleted', 'ne', True) &
+        Q('is_folder', 'ne', True) &
+        Q('is_registration', 'eq', False) &
+        Q('parent_node', 'eq', None) &
+        Q('is_public', 'eq', True)
+    )
+
     base_node_query = (
         Q('is_deleted', 'ne', True) &
         Q('is_collection', 'ne', True) &
@@ -162,6 +170,8 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
+        if self.request.version < '2.2':
+            return self.base_node_query_deprecated
         return self.base_node_query
 
     # overrides RetrieveAPIView
