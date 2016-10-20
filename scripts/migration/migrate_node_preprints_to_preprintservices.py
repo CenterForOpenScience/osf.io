@@ -79,6 +79,20 @@ def create_preprint_service_from_node(document, swap_cutoff):
             logger.warn('Duplicate PreprintService found for provider {} on node {}, skipping'.format(provider._id, node._id))
             continue
         else:
+            if node.preprint_doi:
+                database['node'].find_and_modify(
+                    {'_id': node._id},
+                    {'$set': {
+                        'preprint_article_doi': document['preprint_doi']
+                    }}
+                )
+            database['node'].find_and_modify(
+                {'_id': node._id},
+                {'$unset': {
+                    'preprint_doi': '',
+                    'preprint_created': ''
+                }}
+            )
             if preprint.provider._id == 'osf':
                 # Give Guid retention priotity to OSF-provider
                 if should_swap_guids(node, preprint, swap_cutoff):
@@ -760,8 +774,6 @@ def enumerate_and_set_subject_hierarchies(preprint):
     preprint.save()
 
 def migrate(swap_cutoff):
-    database['node'].update({'preprint_doi': {'$type': 2}}, {'$rename': { 'preprint_doi': 'article_doi'}}, multi=True)
-
     target_documents = list(get_targets())
     target_ids = [d['_id'] for d in target_documents]
     target_count = len(target_documents)
