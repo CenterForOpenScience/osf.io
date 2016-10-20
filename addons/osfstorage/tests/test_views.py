@@ -3,6 +3,8 @@ from __future__ import unicode_literals
 
 import mock
 import datetime
+
+import pytest
 from nose.tools import *  # noqa
 
 from framework.auth.core import Auth
@@ -31,6 +33,7 @@ def create_record_with_version(path, node_settings, **kwargs):
     return record
 
 
+@pytest.mark.django_db
 class HookTestCase(StorageTestCase):
 
     def send_hook(self, view_name, view_kwargs, payload, method='get', **kwargs):
@@ -42,6 +45,7 @@ class HookTestCase(StorageTestCase):
         )
 
 
+@pytest.mark.django_db
 class TestGetMetadataHook(HookTestCase):
 
     def test_file_metdata(self):
@@ -112,6 +116,8 @@ class TestGetMetadataHook(HookTestCase):
         )
         assert_equal(res.status_code, 404)
 
+
+@pytest.mark.django_db
 class TestUploadFileHook(HookTestCase):
 
     def setUp(self):
@@ -345,6 +351,7 @@ class TestUploadFileHook(HookTestCase):
     #     pass
 
 
+@pytest.mark.django_db
 class TestUpdateMetadataHook(HookTestCase):
 
     def setUp(self):
@@ -416,6 +423,7 @@ class TestUpdateMetadataHook(HookTestCase):
         assert_not_in('archive', self.version.metadata)
 
 
+@pytest.mark.django_db
 class TestGetRevisions(StorageTestCase):
 
     def setUp(self):
@@ -458,6 +466,7 @@ class TestGetRevisions(StorageTestCase):
         assert_equal(res.status_code, 404)
 
 
+@pytest.mark.django_db
 class TestCreateFolder(HookTestCase):
 
     def setUp(self):
@@ -515,6 +524,7 @@ class TestCreateFolder(HookTestCase):
         assert_equal(self.root_node.children[0].children[0].serialize(), resp.json['data'])
 
 
+@pytest.mark.django_db
 class TestDeleteHook(HookTestCase):
 
     def setUp(self):
@@ -577,6 +587,8 @@ class TestDeleteHook(HookTestCase):
         res = self.delete(file_checked, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+
+@pytest.mark.django_db
 class TestMoveHook(HookTestCase):
 
     def setUp(self):
@@ -627,6 +639,8 @@ class TestMoveHook(HookTestCase):
         )
         assert_equal(res.status_code, 405)
 
+
+@pytest.mark.django_db
 class TestFileTags(StorageTestCase):
 
     def test_file_add_tag(self):

@@ -4,7 +4,7 @@ import os
 
 import requests
 from dateutil.parser import parse as parse_date
-from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models, connection
 from django.utils import timezone
@@ -50,6 +50,8 @@ class TrashedFileNode(CommentableMixin, OptionalGuidMixin, ObjectIDMixin, BaseMo
     content_type = models.ForeignKey('contenttypes.ContentType', null=True, blank=True)
     parent = GenericForeignKey()
 
+    trashed_children = GenericRelation('self')
+
     is_file = models.BooleanField(default=True)
     provider = models.CharField(max_length=25, blank=True, null=True)  # max_length in staging was 11
 
@@ -59,7 +61,7 @@ class TrashedFileNode(CommentableMixin, OptionalGuidMixin, ObjectIDMixin, BaseMo
     _materialized_path = models.CharField(max_length=300, blank=True, null=True)
     checkout = models.ForeignKey('OSFUser', related_name='trashed_files_checked_out', null=True, blank=True)
     deleted_by = models.ForeignKey('OSFUser', related_name='files_deleted_by', null=True, blank=True)
-    deleted_on = models.DateTimeField()  # auto_now_add=True)
+    deleted_on = models.DateTimeField(default=timezone.now)  # auto_now_add=True)
     tags = models.ManyToManyField('Tag')
     suspended = models.BooleanField(default=False)
 
@@ -198,6 +200,8 @@ class StoredFileNode(CommentableMixin, OptionalGuidMixin, ObjectIDMixin, BaseMod
     parent = models.ForeignKey('StoredFileNode', blank=True, null=True, default=None, related_name='child')
     copied_from = models.ForeignKey('StoredFileNode', blank=True, null=True, default=None,
                                     related_name='copy_of')
+
+    trashed_children = GenericRelation('TrashedFileNode')
 
     is_file = models.BooleanField(default=True)
     provider = models.CharField(max_length=25, blank=False, null=False, db_index=True)
@@ -588,7 +592,9 @@ class FileNode(object):
             self.save()
 
     def _create_trashed(self, save=True, user=None, parent=None):
-        trashed = TrashedFileNode(
+        if save is False:
+            logger.warning('Asked to create a TrashedFileNode without saving.')
+        trashed = TrashedFileNode.objects.create(
             _id=self._id,
             name=self.name,
             path=self.path,
@@ -598,14 +604,13 @@ class FileNode(object):
             is_file=self.is_file,
             checkout=self.checkout,
             provider=self.provider,
-            versions=self.versions,
             last_touched=self.last_touched,
             materialized_path=self.materialized_path,
 
             deleted_by=user
         )
-        if save:
-            trashed.save()
+        if self.versions.exists():
+            trashed.versions.add(*self.versions.all())
         return trashed
 
     def _repoint_guids(self, updated):
@@ -770,7 +775,7 @@ class File(FileNode):
         return count or 0
 
     def serialize(self):
-        if not self.versions:
+        if not self.versions.exists():
             return dict(
                 super(File, self).serialize(),
                 size=None,
@@ -781,14 +786,14 @@ class File(FileNode):
                 checkout=self.checkout._id if self.checkout else None,
             )
 
-        version = self.versions[-1]
+        version = self.versions.last()
         return dict(
             super(File, self).serialize(),
             size=version.size,
             downloads=self.get_download_count(),
             checkout=self.checkout._id if self.checkout else None,
-            version=version.identifier if self.versions else None,
-            contentType=version.content_type if self.versions else None,
+            version=version.identifier if self.versions.exists() else None,
+            contentType=version.content_type if self.versions.exists() else None,
             modified=version.date_modified.isoformat() if version.date_modified else None,
         )
 
@@ -837,7 +842,7 @@ class Folder(FileNode):
     def find_child_by_name(self, name, kind=2):
         return FileNode.resolve_class(self.provider, kind).find_one(
             Q('name', 'eq', name) &
-            Q('parent', 'eq', self)
+            Q('parent', 'eq', self.id)
         )
 
 
@@ -857,9 +862,9 @@ class FileVersion(ObjectIDMixin, BaseModel):
     identifier = models.CharField(max_length=100, blank=False, null=False)  # max length on staging was 51
 
     # Date version record was created. This is the date displayed to the user.
-    date_created = models.DateTimeField()  # auto_now_add=True)
+    date_created = models.DateTimeField(default=timezone.now)  # auto_now_add=True)
 
-    size = models.BigIntegerField(null=True)
+    size = models.BigIntegerField(default=-1, blank=True)
 
     content_type = models.CharField(max_length=100, blank=True, null=True)  # was 24 on staging
     # Date file modified on third-party backend. Not displayed to user, since
@@ -868,7 +873,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
     date_modified = models.DateTimeField(null=True, blank=True)
 
     location = DateTimeAwareJSONField(default=dict, db_index=True, blank=True, null=True)
-    metadata = DateTimeAwareJSONField(default=dict, db_index=True)
+    metadata = DateTimeAwareJSONField(blank=True, default=dict, db_index=True)
 
     @property
     def location_hash(self):

@@ -83,7 +83,7 @@ def osfstorage_get_revisions(file_node, node_addon, payload, **kwargs):
     return {
         'revisions': [
             utils.serialize_revision(node_addon.owner, file_node, version, index=len(file_node.versions) - idx - 1, anon=is_anon)
-            for idx, version in enumerate(reversed(file_node.versions))
+            for idx, version in enumerate(file_node.versions.all().order('-date_created'))
         ]
     }
 
@@ -133,7 +133,7 @@ def osfstorage_get_metadata(file_node, **kwargs):
 def osfstorage_get_children(file_node, **kwargs):
     return [
         child.serialize()
-        for child in file_node.children
+        for child in file_node.children.all()
     ]
 
 

@@ -59,7 +59,7 @@ class OsfStorageFileNode(FileNode):
         if not file_obj.is_file:
             children = []
             if isinstance(file_obj, TrashedFileNode):
-                children = TrashedFileNode.find(Q('parent', 'eq', file_obj._id))
+                children = file_obj.trashed_children.all()
             else:
                 children = file_obj.children
 
@@ -187,7 +187,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
     @property
     def history(self):
-        return [v.metadata for v in self.versions]
+        return self.versions.all().values_list('metadata', flat=True)
 
     def serialize(self, include_full=None, version=None):
         ret = super(OsfStorageFile, self).serialize()
@@ -197,14 +197,14 @@ class OsfStorageFile(OsfStorageFileNode, File):
         version = self.get_version(version)
         return dict(
             ret,
-            version=len(self.versions),
+            version=self.versions.count(),
             md5=version.metadata.get('md5') if version else None,
             sha256=version.metadata.get('sha256') if version else None,
         )
 
     def create_version(self, creator, location, metadata=None):
         latest_version = self.get_version()
-        version = FileVersion(identifier=len(self.versions) + 1, creator=creator, location=location)
+        version = FileVersion(identifier=self.versions.count() + 1, creator=creator, location=location)
 
         if latest_version and latest_version.is_duplicate(version):
             return latest_version
@@ -215,19 +215,19 @@ class OsfStorageFile(OsfStorageFileNode, File):
         version._find_matching_archive(save=False)
 
         version.save()
-        self.versions.append(version)
+        self.versions.add(version)
         self.save()
 
         return version
 
     def get_version(self, version=None, required=False):
         if version is None:
-            if self.versions:
-                return self.versions[-1]
+            if self.versions.exists():
+                return self.versions.last()
             return None
 
         try:
-            return self.versions[int(version) - 1]
+            return self.versions.all()[int(version) - 1]
         except (IndexError, ValueError):
             if required:
                 raise exceptions.VersionNotFoundError(version)
@@ -252,12 +252,12 @@ class OsfStorageFile(OsfStorageFileNode, File):
     def add_tag(self, tag, auth, save=True, log=True):
         from osf.models import Tag, NodeLog  # Prevent import error
 
-        if tag not in self.tags and not self.node.is_registration:
+        if not self.tags.filter(name=tag).exists() and not self.node.is_registration:
             new_tag = Tag.load(tag)
             if not new_tag:
                 new_tag = Tag(_id=tag)
             new_tag.save()
-            self.tags.append(new_tag)
+            self.tags.add(new_tag)
             if log:
                 self.add_tag_log(NodeLog.FILE_TAG_ADDED, tag, auth)
             if save:
@@ -272,10 +272,10 @@ class OsfStorageFile(OsfStorageFileNode, File):
             # Can't perform edits on a registration
             raise NodeStateError
 
-        tag = Tag.load(tag)
+        tag = Tag.objects.filter(name=tag).first()
         if not tag:
             raise InvalidTagError
-        elif tag not in self.tags:
+        elif not self.tags.filter(id=tag.id).exists():
             raise TagNotFoundError
         else:
             self.tags.remove(tag)
@@ -305,7 +305,7 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
     def is_checked_out(self):
         if self.checkout:
             return True
-        for child in self.children:
+        for child in self.children.all():
             if child.is_checked_out:
                 return True
         return False

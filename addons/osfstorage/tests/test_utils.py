@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-
+import pytest
 from nose.tools import *  # noqa
 
 
@@ -14,6 +14,7 @@ from website.addons.osfstorage import utils
 from website.addons.osfstorage.tests.utils import StorageTestCase
 
 
+@pytest.mark.django_db
 class TestSerializeRevision(StorageTestCase):
 
     def setUp(self):
