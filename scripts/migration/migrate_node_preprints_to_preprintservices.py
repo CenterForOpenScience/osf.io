@@ -122,9 +122,6 @@ def update_foreign_fields(old_id, node):
     dry_run = '--dry' in sys.argv
     logger.info('* Updating ForeignFields for node {}->{}'.format(old_id, node))
 
-    if dry_run:
-        # Check iff dry for efficiency
-        assert database['boxnodesettings'].find().count(), 'Unable to find collection boxnodesettings'    
     if database['boxnodesettings'].find({'owner': old_id}).count():
         logger.info('** Updating BoxNodeSettings {}'.format([d['_id'] for d in database['boxnodesettings'].find({'owner': old_id})]))
         for doc in database['boxnodesettings'].find({'owner': old_id}):
@@ -135,9 +132,18 @@ def update_foreign_fields(old_id, node):
                 }}
             )
 
-    if dry_run:
-        # Check iff dry for efficiency
-        assert database['addondataversenodesettings'].find().count(), 'Unable to find collection addondataversenodesettings'
+    if database['boxusersettings'].find({'oauth_grants.{}'.format(old_id): {'$ne': None}}).count():
+        logger.info('** Updating BoxUserSettings {}'.format([d['_id'] for d in database['boxusersettings'].find({'oauth_grants.{}'.format(old_id): {'$ne': None}})]))
+        for doc in database['boxusersettings'].find({'oauth_grants.{}'.format(old_id): {'$ne': None}}):
+            og = doc['oauth_grants']
+            og[node._id] = og.pop(old_id)
+            database['boxusersettings'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'oauth_grants': og
+                }}
+            )
+
     if database['addondataversenodesettings'].find({'owner': old_id}).count():
         logger.info('** Updating AddonDataverseNodeSettings {}'.format([d['_id'] for d in database['addondataversenodesettings'].find({'owner': old_id})]))
         for doc in database['addondataversenodesettings'].find({'owner': old_id}):
@@ -148,9 +154,18 @@ def update_foreign_fields(old_id, node):
                 }}
             )
 
-    if dry_run:
-        # Check iff dry for efficiency
-        assert database['dropboxnodesettings'].find().count(), 'Unable to find collection dropboxnodesettings'
+    if database['addondataverseusersettings'].find({'oauth_grants.{}'.format(old_id): {'$ne': None}}).count():
+        logger.info('** Updating AddonDataverseUserSettings {}'.format([d['_id'] for d in database['addondataverseusersettings'].find({'oauth_grants.{}'.format(old_id): {'$ne': None}})]))
+        for doc in database['addondataverseusersettings'].find({'oauth_grants.{}'.format(old_id): {'$ne': None}}):
+            og = doc['oauth_grants']
+            og[node._id] = og.pop(old_id)
+            database['addondataverseusersettings'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'oauth_grants': og
+                }}
+            )
+
     if database['dropboxnodesettings'].find({'owner': old_id}).count():
         logger.info('** Updating DropboxNodeSettings {}'.format([d['_id'] for d in database['dropboxnodesettings'].find({'owner': old_id})]))
         for doc in database['dropboxnodesettings'].find({'owner': old_id}):
@@ -161,9 +176,18 @@ def update_foreign_fields(old_id, node):
                 }}
             )
 
-    if dry_run:
-        # Check iff dry for efficiency
-        assert database['addonfigsharenodesettings'].find().count(), 'Unable to find collection addonfigsharenodesettings'
+    if database['dropboxusersettings'].find({'oauth_grants.{}'.format(old_id): {'$ne': None}}).count():
+        logger.info('** Updating DropboxUserSettings {}'.format([d['_id'] for d in database['dropboxusersettings'].find({'oauth_grants.{}'.format(old_id): {'$ne': None}})]))
+        for doc in database['dropboxusersettings'].find({'oauth_grants.{}'.format(old_id): {'$ne': None}}):
+            og = doc['oauth_grants']
+            og[node._id] = og.pop(old_id)
+            database['dropboxusersettings'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'oauth_grants': og
+                }}
+            )
+
     if database['addonfigsharenodesettings'].find({'owner': old_id}).count():
         logger.info('** Updating AddonFigShareNodeSettings {}'.format([d['_id'] for d in database['addonfigsharenodesettings'].find({'owner': old_id})]))
         for doc in database['addonfigsharenodesettings'].find({'owner': old_id}):
@@ -174,9 +198,8 @@ def update_foreign_fields(old_id, node):
                 }}
             )
 
-    if dry_run:
-        # Check iff dry for efficiency
-        assert database['forwardnodesettings'].find().count(), 'Unable to find collection forwardnodesettings'
+    ## Figshare has no oauth_grants
+
     if database['forwardnodesettings'].find({'owner': old_id}).count():
         logger.info('** Updating ForwardNodeSettings {}'.format([d['_id'] for d in database['forwardnodesettings'].find({'owner': old_id})]))
         for doc in database['forwardnodesettings'].find({'owner': old_id}):
@@ -187,9 +210,6 @@ def update_foreign_fields(old_id, node):
                 }}
             )
 
-    if dry_run:
-        # Check iff dry for efficiency
-        assert database['githubnodesettings'].find().count(), 'Unable to find collection githubnodesettings'
     if database['githubnodesettings'].find({'owner': old_id}).count():
         logger.info('** Updating GithubNodeSettings {}'.format([d['_id'] for d in database['githubnodesettings'].find({'owner': old_id})]))
         for doc in database['githubnodesettings'].find({'owner': old_id}):
@@ -200,9 +220,40 @@ def update_foreign_fields(old_id, node):
                 }}
             )
 
-    if dry_run:
-        # Check iff dry for efficiency
-        assert database['mendeleynodesettings'].find().count(), 'Unable to find collection mendeleynodesettings'
+    if database['githubusersettings'].find({'oauth_grants.{}'.format(old_id): {'$ne': None}}).count():
+        logger.info('** Updating GithubUserSettings {}'.format([d['_id'] for d in database['githubusersettings'].find({'oauth_grants.{}'.format(old_id): {'$ne': None}})]))
+        for doc in database['githubusersettings'].find({'oauth_grants.{}'.format(old_id): {'$ne': None}}):
+            og = doc['oauth_grants']
+            og[node._id] = og.pop(old_id)
+            database['githubusersettings'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'oauth_grants': og
+                }}
+            )
+
+    if database['googledrivenodesettings'].find({'owner': old_id}).count():
+        logger.info('** Updating GoogleDriveNodeSettings {}'.format([d['_id'] for d in database['googledrivenodesettings'].find({'owner': old_id})]))
+        for doc in database['googledrivenodesettings'].find({'owner': old_id}):
+            database['googledrivenodesettings'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'owner': node._id
+                }}
+            )
+
+    if database['googledriveusersettings'].find({'oauth_grants.{}'.format(old_id): {'$ne': None}}).count():
+        logger.info('** Updating GoogleDriveUserSettings {}'.format([d['_id'] for d in database['googledriveusersettings'].find({'oauth_grants.{}'.format(old_id): {'$ne': None}})]))
+        for doc in database['googledriveusersettings'].find({'oauth_grants.{}'.format(old_id): {'$ne': None}}):
+            og = doc['oauth_grants']
+            og[node._id] = og.pop(old_id)
+            database['googledriveusersettings'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'oauth_grants': og
+                }}
+            )
+
     if database['mendeleynodesettings'].find({'owner': old_id}).count():
         logger.info('** Updating MendeleyNodeSettings {}'.format([d['_id'] for d in database['mendeleynodesettings'].find({'owner': old_id})]))
         for doc in database['mendeleynodesettings'].find({'owner': old_id}):
@@ -213,9 +264,18 @@ def update_foreign_fields(old_id, node):
                 }}
             )
 
-    if dry_run:
-        # Check iff dry for efficiency
-        assert database['osfstoragenodesettings'].find().count(), 'Unable to find collection osfstoragenodesettings'
+    if database['mendeleyusersettings'].find({'oauth_grants.{}'.format(old_id): {'$ne': None}}).count():
+        logger.info('** Updating MendeleyUserSettings {}'.format([d['_id'] for d in database['mendeleyusersettings'].find({'oauth_grants.{}'.format(old_id): {'$ne': None}})]))
+        for doc in database['mendeleyusersettings'].find({'oauth_grants.{}'.format(old_id): {'$ne': None}}):
+            og = doc['oauth_grants']
+            og[node._id] = og.pop(old_id)
+            database['mendeleyusersettings'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'oauth_grants': og
+                }}
+            )
+
     if database['osfstoragenodesettings'].find({'owner': old_id}).count():
         logger.info('** Updating OsfStorageNodeSettings {}'.format([d['_id'] for d in database['osfstoragenodesettings'].find({'owner': old_id})]))
         for doc in database['osfstoragenodesettings'].find({'owner': old_id}):
@@ -226,9 +286,6 @@ def update_foreign_fields(old_id, node):
                 }}
             )
 
-    if dry_run:
-        # Check iff dry for efficiency
-        assert database['s3nodesettings'].find().count(), 'Unable to find collection s3nodesettings'
     if database['s3nodesettings'].find({'owner': old_id}).count():
         logger.info('** Updating s3NodeSettings {}'.format([d['_id'] for d in database['s3nodesettings'].find({'owner': old_id})]))
         for doc in database['s3nodesettings'].find({'owner': old_id}):
@@ -239,9 +296,18 @@ def update_foreign_fields(old_id, node):
                 }}
             )
 
-    if dry_run:
-        # Check iff dry for efficiency
-        assert database['addonwikinodesettings'].find().count(), 'Unable to find collection addonwikinodesettings'
+    if database['s3usersettings'].find({'oauth_grants.{}'.format(old_id): {'$ne': None}}).count():
+        logger.info('** Updating S3UserSettings {}'.format([d['_id'] for d in database['s3usersettings'].find({'oauth_grants.{}'.format(old_id): {'$ne': None}})]))
+        for doc in database['s3usersettings'].find({'oauth_grants.{}'.format(old_id): {'$ne': None}}):
+            og = doc['oauth_grants']
+            og[node._id] = og.pop(old_id)
+            database['s3usersettings'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'oauth_grants': og
+                }}
+            )
+
     if database['addonwikinodesettings'].find({'owner': old_id}).count():
         logger.info('** Updating AddonWikiNodeSettings {}'.format([d['_id'] for d in database['addonwikinodesettings'].find({'owner': old_id})]))
         for doc in database['addonwikinodesettings'].find({'owner': old_id}):
@@ -252,9 +318,6 @@ def update_foreign_fields(old_id, node):
                 }}
             )
 
-    if dry_run:
-        # Check iff dry for efficiency
-        assert database['zoteronodesettings'].find().count(), 'Unable to find collection zoteronodesettings'
     if database['zoteronodesettings'].find({'owner': old_id}).count():
         logger.info('** Updating ZoteroNodeSettings {}'.format([d['_id'] for d in database['zoteronodesettings'].find({'owner': old_id})]))
         for doc in database['zoteronodesettings'].find({'owner': old_id}):
@@ -265,9 +328,18 @@ def update_foreign_fields(old_id, node):
                 }}
             )
 
-    if dry_run:
-        # Check iff dry for efficiency
-        assert database['archivejob'].find().count(), 'Unable to find collection archivejob'
+    if database['zoterousersettings'].find({'oauth_grants.{}'.format(old_id): {'$ne': None}}).count():
+        logger.info('** Updating ZoteroUserSettings {}'.format([d['_id'] for d in database['zoterousersettings'].find({'oauth_grants.{}'.format(old_id): {'$ne': None}})]))
+        for doc in database['zoterousersettings'].find({'oauth_grants.{}'.format(old_id): {'$ne': None}}):
+            og = doc['oauth_grants']
+            og[node._id] = og.pop(old_id)
+            database['zoterousersettings'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'oauth_grants': og
+                }}
+            )
+
     if database['archivejob'].find({'src_node': old_id}).count():
         logger.info('** Updating ArchiveJobs {}'.format([d['_id'] for d in database['archivejob'].find({'src_node': old_id})]))
         for doc in database['archivejob'].find({'src_node': old_id}):
@@ -278,9 +350,6 @@ def update_foreign_fields(old_id, node):
                 }}
             )
 
-    if dry_run:
-        # Check iff dry for efficiency
-        assert database['trashedfilenode'].find().count(), 'Unable to find collection trashedfilenode'
     if database['trashedfilenode'].find({'node': old_id}).count():
         logger.info('** Updating TrashedFileNodes {}'.format([d['_id'] for d in database['trashedfilenode'].find({'node': old_id})]))
         for doc in database['trashedfilenode'].find({'node': old_id}):
@@ -291,9 +360,6 @@ def update_foreign_fields(old_id, node):
                 }}
             )
 
-    if dry_run:
-        # Check iff dry for efficiency
-        assert database['storedfilenode'].find().count(), 'Unable to find collection storedfilenode'
     if database['storedfilenode'].find({'node': old_id}).count():
         logger.info('** Updating StoredFileNodes {}'.format([d['_id'] for d in database['storedfilenode'].find({'node': old_id})]))
         for doc in database['storedfilenode'].find({'node': old_id}):
@@ -304,9 +370,6 @@ def update_foreign_fields(old_id, node):
                 }}
             )
 
-    if dry_run:
-        # Check iff dry for efficiency
-        assert database['comment'].find().count(), 'Unable to find collection comment'
     if database['comment'].find({'node': old_id}).count():
         logger.info('** Updating Comments {}'.format([d['_id'] for d in database['comment'].find({'node': old_id})]))
         for doc in database['comment'].find({'node': old_id}):
@@ -317,9 +380,6 @@ def update_foreign_fields(old_id, node):
                 }}
             )
 
-    if dry_run:
-        # Check iff dry for efficiency
-        assert database['nodelog'].find().count(), 'Unable to find collection nodelog'
     if database['nodelog'].find({'original_node': old_id}).count():
         logger.info('** Updating NodeLogs (original_node) {}'.format([d['_id'] for d in database['nodelog'].find({'original_node': old_id})]))
         for doc in database['nodelog'].find({'original_node': old_id}):
@@ -329,10 +389,6 @@ def update_foreign_fields(old_id, node):
                     'original_node': node._id
                 }}
             )
-
-    if dry_run:
-        # Check iff dry for efficiency
-        assert database['nodelog'].find().count(), 'Unable to find collection nodelog'
     if database['nodelog'].find({'node': old_id}).count():
         logger.info('** Updating NodeLogs (node) {}'.format([d['_id'] for d in database['nodelog'].find({'node': old_id})]))
         for doc in database['nodelog'].find({'node': old_id}):
@@ -342,10 +398,143 @@ def update_foreign_fields(old_id, node):
                     'node': node._id
                 }}
             )
+    if database['nodelog'].find({'params.node': old_id}).count():
+        logger.info('** Updating NodeLogs (params.node) {}'.format([d['_id'] for d in database['nodelog'].find({'params.node': old_id})]))
+        for doc in database['nodelog'].find({'params.node': old_id}):
+            params = doc['params']
+            params['node'] = node._id
+            database['nodelog'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'params': params
+                }}
+            )
+    if database['nodelog'].find({'params.parent': old_id}).count():
+        logger.info('** Updating NodeLogs (params.parent) {}'.format([d['_id'] for d in database['nodelog'].find({'params.parent': old_id})]))
+        for doc in database['nodelog'].find({'parent': old_id}):
+            params = doc['params']
+            params['parent'] = node._id
+            database['nodelog'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'params': params
+                }}
+            )
+    if database['nodelog'].find({'params.project': old_id}).count():
+        logger.info('** Updating NodeLogs (params.project) {}'.format([d['_id'] for d in database['nodelog'].find({'params.project': old_id})]))
+        for doc in database['nodelog'].find({'project': old_id}):
+            params = doc['params']
+            params['project'] = node._id
+            database['nodelog'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'params': params
+                }}
+            )
+    if database['nodelog'].find({'params.parent_node': old_id}).count():
+        logger.info('** Updating NodeLogs (params.parent_node) {}'.format([d['_id'] for d in database['nodelog'].find({'params.parent_node': old_id})]))
+        for doc in database['nodelog'].find({'params.parent_node': old_id}):
+            params = doc['params']
+            params['parent_node'] = node._id
+            database['nodelog'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'params': params
+                }}
+            )
+    if database['nodelog'].find({'params.destination.nid': old_id}).count():
+        logger.info('** Updating NodeLogs (params.destination.nid) {}'.format([d['_id'] for d in database['nodelog'].find({'params.destination.nid': old_id})]))
+        for doc in database['nodelog'].find({'params.destination.nid': old_id}):
+            params = doc['params']
+            params['destination']['nid'] = node._id
+            if params['destination'].get('url', None):
+                params['destination']['url'] = params['destination']['url'].replace('{}/'.format(old_id), '{}/'.format(node._id))
+            database['nodelog'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'params': params
+                }}
+            )
+    if database['nodelog'].find({'params.destination.node._id': old_id}).count():
+        logger.info('** Updating NodeLogs (params.destination.node._id) {}'.format([d['_id'] for d in database['nodelog'].find({'params.destination.node._id': old_id})]))
+        for doc in database['nodelog'].find({'params.destination.node._id': old_id}):
+            params = doc['params']
+            params['destination']['node']['_id'] = node._id
+            if params['destination']['node'].get('url', None):
+                params['destination']['node']['url'] = params['destination']['node']['url'].replace('{}/'.format(old_id), '{}/'.format(node._id))
+            database['nodelog'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'params': params
+                }}
+            )
+    if database['nodelog'].find({'params.pointer._id': old_id}).count():
+        logger.info('** Updating NodeLogs (params.pointer._id) {}'.format([d['_id'] for d in database['nodelog'].find({'params.pointer._id': old_id})]))
+        for doc in database['nodelog'].find({'params.pointer._id': old_id}):
+            params = doc['params']
+            params['pointer']['_id'] = node._id
+            if params['pointer'].get('url', None):
+                params['pointer']['url'] = params['pointer']['url'].replace('{}/'.format(old_id), '{}/'.format(node._id))
+            database['nodelog'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'params': params
+                }}
+            )
+    if database['nodelog'].find({'params.source.nid': old_id}).count():
+        logger.info('** Updating NodeLogs (params.source.nid) {}'.format([d['_id'] for d in database['nodelog'].find({'params.source.nid': old_id})]))
+        for doc in database['nodelog'].find({'params.source.nid': old_id}):
+            params = doc['params']
+            params['source']['nid'] = node._id
+            if params['source'].get('url', None):
+                params['source']['url'] = params['source']['url'].replace('{}/'.format(old_id), '{}/'.format(node._id))
+            database['nodelog'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'params': params
+                }}
+            )
+    if database['nodelog'].find({'params.source.node._id': old_id}).count():
+        logger.info('** Updating NodeLogs (params.source.node._id) {}'.format([d['_id'] for d in database['nodelog'].find({'params.source.node._id': old_id})]))
+        for doc in database['nodelog'].find({'params.source.node._id': old_id}):
+            params = doc['params']
+            params['source']['node']['_id'] = node._id
+            if params['source']['node'].get('url', None):
+                params['source']['node']['url'] = params['source']['node']['url'].replace('{}/'.format(old_id), '{}/'.format(node._id))
+            database['nodelog'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'params': params
+                }}
+            )
+    if database['nodelog'].find({'params.template_node._id': old_id}).count():
+        logger.info('** Updating NodeLogs (params.template_node._id) {}'.format([d['_id'] for d in database['nodelog'].find({'params.template_node._id': old_id})]))
+        for doc in database['nodelog'].find({'params.template_node._id': old_id}):
+            params = doc['params']
+            params['template_node']['_id'] = node._id
+            if params['template_node'].get('url', None):
+                params['template_node']['url'] = params['template_node']['url'].replace('{}/'.format(old_id), '{}/'.format(node._id))
+            database['nodelog'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'params': params
+                }}
+            )
+    if database['nodelog'].find({'params.urls.download': {'$regex': '/{}/'.format(old_id)}}).count():
+        docs = list(database['nodelog'].find({'params.urls.download': {'$regex': '/{}/'.format(old_id)}}))
+        logger.info('** Updating NodeLogs (params.source.node._id) {}'.format([d['_id'] for d in docs]))
+        for doc in docs:
+            params = doc['params']
+            params['urls']['download'] = params['urls']['download'].replace('{}/'.format(old_id), '{}/'.format(node._id))
+            if params['urls'].get('view', None):
+                params['urls']['view'] = params['urls']['view'].replace('{}/'.format(old_id), '{}/'.format(node._id))
+            database['nodelog'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'params': params
+                }}
+            )
 
-    if dry_run:
-        # Check iff dry for efficiency
-        assert database['pointer'].find().count(), 'Unable to find collection pointer'
     if database['pointer'].find({'node': old_id}).count():
         logger.info('** Updating Pointers {}'.format([d['_id'] for d in database['pointer'].find({'node': old_id})]))
         for doc in database['pointer'].find({'node': old_id}):
@@ -356,9 +545,6 @@ def update_foreign_fields(old_id, node):
                 }}
             )
 
-    if dry_run:
-        # Check iff dry for efficiency
-        assert database['node'].find().count(), 'Unable to find collection node'
     if database['node'].find({'forked_from': old_id}).count():
         logger.info('** Updating Nodes (forked_from) {}'.format([d['_id'] for d in database['node'].find({'forked_from': old_id})]))
         for doc in database['node'].find({'forked_from': old_id}):
@@ -369,9 +555,6 @@ def update_foreign_fields(old_id, node):
                 }}
             )
 
-    if dry_run:
-        # Check iff dry for efficiency
-        assert database['node'].find().count(), 'Unable to find collection node'
     if database['node'].find({'registered_from': old_id}).count():
         logger.info('** Updating Nodes (registered_from) {}'.format([d['_id'] for d in database['node'].find({'registered_from': old_id})]))
         for doc in database['node'].find({'registered_from': old_id}):
@@ -382,9 +565,6 @@ def update_foreign_fields(old_id, node):
                 }}
             )
 
-    if dry_run:
-        # Check iff dry for efficiency
-        assert database['node'].find().count(), 'Unable to find collection node'
     if database['node'].find({'root': old_id}).count():
         logger.info('** Updating Nodes (root) {}'.format([d['_id'] for d in database['node'].find({'root': old_id})]))
         for doc in database['node'].find({'root': old_id}):
@@ -395,9 +575,6 @@ def update_foreign_fields(old_id, node):
                 }}
             )
 
-    if dry_run:
-        # Check iff dry for efficiency
-        assert database['node'].find().count(), 'Unable to find collection node'
     if database['node'].find({'parent': old_id}).count():
         logger.info('** Updating Nodes (parent) {}'.format([d['_id'] for d in database['node'].find({'parent': old_id})]))
         for doc in database['node'].find({'parent': old_id}):
@@ -408,9 +585,96 @@ def update_foreign_fields(old_id, node):
                 }}
             )
 
-    if dry_run:
-        # Check iff dry for efficiency
-        assert database['watchconfig'].find().count(), 'Unable to find collection watchconfig'
+    if database['node'].find({'$where': 'var keys=Object.keys(this.child_node_subscriptions);for(var i=0;i<keys.length;i+=1){{if(this.child_node_subscriptions[keys[i]].indexOf("{}")!==-1){{return true}}}}return false;'.format(old_id)}).count():
+        docs = list(database['node'].find({'$where': 'var keys=Object.keys(this.child_node_subscriptions);for(var i=0;i<keys.length;i+=1){{if(this.child_node_subscriptions[keys[i]].indexOf("{}")!==-1){{return true}}}}return false;'.format(old_id)}))
+        logger.info('** Updating Nodes (child_node_subscriptions) {}'.format([d['_id'] for d in docs]))
+        for doc in docs:
+            cns = doc['child_node_subscriptions']
+            for uid in cns:
+                if old_id in cns[uid]:
+                    cns[uid].insert(cns[uid].index(old_id), node._id)
+                    cns[uid].remove(old_id)
+            database['node'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'child_node_subscriptions': cns
+                }}
+            )
+
+
+    if database['notificationdigest'].find({'node_lineage': {'$in': [old_id]}}).count():
+        logger.info('** Updating NotificationDigest {}'.format([d['_id'] for d in database['notificationdigest'].find({'node_lineage': {'$in': [old_id]}})]))
+        for doc in database['notificationdigest'].find({'node_lineage': {'$in': [old_id]}}):
+            nl = doc['node_lineage']
+            nl.insert(nl.index(old_id), node._id)
+            nl.remove(old_id)
+            database['node'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'node_lineage': nl
+                }}
+            )
+
+    if database['notificationsubscription'].find({'owner': {'$in': [old_id]}}).count():
+        logger.info('** Updating NotificationSubscription (owner) {}'.format([d['_id'] for d in database['notificationsubscription'].find({'node_lineage': {'$in': [old_id]}})]))
+        for doc in database['notificationsubscription'].find({'owner': {'$in': [old_id]}}):
+            owner = doc['owner']
+            owner.insert(owner.index(old_id), node._id)
+            owner.remove(old_id)
+            database['node'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'owner': owner
+                }}
+            )
+
+    if database['notificationsubscription'].find({'_id': {'$regex': old_id}}).count():
+        docs = list(database['notificationsubscription'].find({'_id': {'$regex': old_id}}))
+        logger.info('** Updating NotificationSubscription (_id) {}'.format([d['_id'] for d in docs]))
+        for doc in docs:
+            _id = doc['_id']
+            _id.replace(old_id, node._id)
+            database['node'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    '_id': _id
+                }}
+            )
+
+    if database['user'].find({'unclaimed_records.{}'.format(old_id): {'$ne': None}}).count():
+        logger.info('** Updating Users (unclaimed_records) {}'.format([d['_id'] for d in database['user'].find({'unclaimed_records.{}'.format(old_id): {'$ne': None}})]))
+        for doc in database['user'].find({'unclaimed_records.{}'.format(old_id): {'$ne': None}}):
+            ucr = doc['unclaimed_records']
+            ucr[node._id] = ucr.pop(old_id)
+            database['user'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'unclaimed_records': ucr
+                }}
+            )
+    if database['user'].find({'contributor_added_email_records.{}'.format(old_id): {'$ne': None}}).count():
+        logger.info('** Updating Users (contributor_added_email_records) {}'.format([d['_id'] for d in database['user'].find({'contributor_added_email_records.{}'.format(old_id): {'$ne': None}})]))
+        for doc in database['user'].find({'contributor_added_email_records.{}'.format(old_id): {'$ne': None}}):
+            caer = doc['contributor_added_email_records']
+            caer[node._id] = caer.pop(old_id)
+            database['user'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'contributor_added_email_records': caer
+                }}
+            )
+    if database['user'].find({'notifications_configured.{}'.format(old_id): {'$ne': None}}).count():
+        logger.info('** Updating Users (notifications_configured) {}'.format([d['_id'] for d in database['user'].find({'notifications_configured.{}'.format(old_id): {'$ne': None}})]))
+        for doc in database['user'].find({'notifications_configured.{}'.format(old_id): {'$ne': None}}):
+            nc = doc['notifications_configured']
+            nc[node._id] = nc.pop(old_id)
+            database['user'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'notifications_configured': nc
+                }}
+            )
+
     if database['watchconfig'].find({'node': old_id}).count():
         logger.info('** Updating WatchConfigs {}'.format([d['_id'] for d in database['watchconfig'].find({'node': old_id})]))
         for doc in database['watchconfig'].find({'node': old_id}):
@@ -421,9 +685,6 @@ def update_foreign_fields(old_id, node):
                 }}
             )
 
-    if dry_run:
-        # Check iff dry for efficiency
-        assert database['privatelink'].find().count(), 'Unable to find collection privatelink'
     if database['privatelink'].find({'nodes': old_id}).count():
         pls = database['privatelink'].find({'nodes': old_id})
         logger.info('** Updating PrivateLinks {}'.format([d['_id'] for d in pls]))
@@ -438,9 +699,6 @@ def update_foreign_fields(old_id, node):
                 }}
             )
 
-    if dry_run:
-        # Check iff dry for efficiency
-        assert database['draftregistration'].find().count(), 'Unable to find collection draftregistration'
     if database['draftregistration'].find({'branched_from': old_id}).count():
         logger.info('** Updating DraftRegistrations {}'.format([d['_id'] for d in database['draftregistration'].find({'branched_from': old_id})]))
         for doc in database['draftregistration'].find({'branched_from': old_id}):
@@ -451,9 +709,6 @@ def update_foreign_fields(old_id, node):
                 }}
             )
 
-    if dry_run:
-        # Check iff dry for efficiency
-        assert database['draftregistration'].find().count(), 'Unable to find collection draftregistration'
     if database['draftregistration'].find({'registered_node': old_id}).count():
         logger.info('** Updating DraftRegistrations {}'.format([d['_id'] for d in database['draftregistration'].find({'registered_node': old_id})]))
         for doc in database['draftregistration'].find({'registered_node': old_id}):
@@ -464,9 +719,6 @@ def update_foreign_fields(old_id, node):
                 }}
             )
 
-    if dry_run:
-        # Check iff dry for efficiency
-        assert database['embargoterminationapproval'].find().count(), 'Unable to find collection embargoterminationapproval'
     if database['embargoterminationapproval'].find({'embargoed_registration': old_id}).count():
         logger.info('** Updating EmbargoTerminationApprovals {}'.format([d['_id'] for d in database['embargoterminationapproval'].find({'embargoed_registration': old_id})]))
         for doc in database['embargoterminationapproval'].find({'embargoed_registration': old_id}):
@@ -477,9 +729,6 @@ def update_foreign_fields(old_id, node):
                 }}
             )
 
-    if dry_run:
-        # Check iff dry for efficiency
-        assert database['preprintservice'].find().count(), 'Unable to find collection preprintservice'
     if database['preprintservice'].find({'node': old_id}).count():
         logger.info('** Updating PreprintServices {}'.format([d['_id'] for d in database['preprintservice'].find({'node': old_id})]))
         for doc in database['preprintservice'].find({'node': old_id}):
