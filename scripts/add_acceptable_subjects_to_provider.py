@@ -32,7 +32,7 @@ def create_subject_rules():
     return rules
 
 def main():
-    provider = PreprintProvider.find()
+    provider = PreprintProvider.find()[0]
     provider.subjects_acceptable = create_subject_rules()
     provider.save()
 
