@@ -212,6 +212,9 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
     :raises: http.BAD_REQUEST
     """
 
+    # special case for preprints
+    maybe_preprints = next_url
+
     # set target page to `dashboard` if no service url is specified
     if not next_url:
         next_url = web_url_for('dashboard', _absolute=True)
@@ -259,7 +262,7 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
             data['next_url'] = service_url
 
     # special case for preprints campaign url
-    if not logout and not campaign and not login and not auth.logged_in:
+    if not logout and not campaign and not login and not auth.logged_in and maybe_preprints:
         data['status_code'] = http.FOUND
         data['next_url'] = cas.get_login_url(request.url)
 
