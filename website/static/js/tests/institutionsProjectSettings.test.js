@@ -56,10 +56,6 @@ describe('InstitutionSettings', () => {
 
     var viewModel = new InstitutionProjectSettings.ViewModel(data);
 
-    viewModel.institutionInAllChildren = function() {
-        return false;
-    };
-
     it('user variables set', () => {
         assert.equal(viewModel.userInstitutions, data.currentUser.institutions);
         assert.equal(viewModel.userInstitutionsIds.length, 2);

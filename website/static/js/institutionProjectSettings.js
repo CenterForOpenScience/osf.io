@@ -9,7 +9,7 @@ var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
 var ViewModel = function(data) {
     var self = this;
-    self.url = $osf.apiV2Url('/nodes/', {'query': 'filter[root]=' + data.node.rootId + '&format=json&embed=affiliated_institutions&version=2.1'});
+    self.url = $osf.apiV2Url('/nodes/', {'query': 'filter[root]=' + data.node.rootId + '&format=json&version=2.1'});
     self.loading = ko.observable(false);
     self.showAdd = ko.observable(false);
     self.institutionHref = ko.observable('');
@@ -125,30 +125,10 @@ var ViewModel = function(data) {
         return self.isAddInstitution() ? 'Add institution' : 'Remove institution';
     });
 
-    self.institutionInNoChildren = function(institutionID) {
-        for (var node in self.childNodes()) {
-            if (self.childNodes()[node].institutions.indexOf(institutionID) > -1 &&
-                self.childNodes()[node].hasPermissions) {
-                return false;
-            }
-        }
-        return true;
-    };
-
-    self.institutionInAllChildren = function(institutionID) {
-        for (var node in self.childNodes()) {
-            if (self.childNodes()[node].institutions.indexOf(institutionID) === -1 &&
-                self.childNodes()[node].hasPermissions) {
-                return false;
-            }
-        }
-        return true;
-    };
-
     self.submitInst = function (item) {
         self.isAddInstitution(true);
         self.needsWarning(false);
-        if ((self.childExists() && !self.institutionInAllChildren(item.id))) {
+        if (self.childExists()) {
             self.modifyDialog(item);
         }
         else {
@@ -160,7 +140,7 @@ var ViewModel = function(data) {
     self.clearInst = function(item) {
         self.needsWarning((self.userInstitutionsIds.indexOf(item.id) === -1));
         self.isAddInstitution(false);
-        if ((self.childExists() && !self.institutionInNoChildren(item.id)) || self.needsWarning()) {
+        if (self.childExists() || self.needsWarning()) {
             self.modifyDialog(item);
         }
         else {
@@ -172,7 +152,7 @@ var ViewModel = function(data) {
         var index;
         var url = data.apiV2Prefix + 'institutions/' + item.id + '/relationships/nodes/';
         var ajaxJSONType = self.isAddInstitution() ? 'POST': 'DELETE';
-        var nodesToModify = [];
+        var nodesToModify = [{'type': 'nodes', 'id': self.nodeId()}];
         self.loading(true);
         if (self.modifyChildren()) {
             for (var node in self.childNodes()) {
@@ -180,9 +160,6 @@ var ViewModel = function(data) {
                     nodesToModify.push({'type': 'nodes', 'id': node});
                 }
             }
-        }
-        else {
-            nodesToModify.push({'type': 'nodes', 'id': self.nodeId()});
         }
         return $osf.ajaxJSON(
             ajaxJSONType,
@@ -239,13 +216,6 @@ ViewModel.prototype.formatNodes = function(rawNodes) {
         var id = rawNodes[n].id;
         var branch = {};
         branch.hasPermissions = rawNodes[n].attributes.current_user_permissions.indexOf('write') > -1;
-        branch.institutions = [];
-
-        // This does not handle pagination for institutions.
-        var institutionData = rawNodes[n].embeds.affiliated_institutions.data;
-        $.each(institutionData, function(i){
-            branch.institutions.push(institutionData[i].id);
-        });
         nodes[id] = branch;
     });
     self.childNodes(nodes);
