@@ -33,7 +33,6 @@ class DeskCaseList(OSFAdmin, ListView):
         email = customer.emails[0]
         desk = DeskClient(self.request.user)
         params = {
-            'status': 'new,open,closed',
             'email': email,
         }
         queryset = desk.cases(params)
