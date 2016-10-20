@@ -277,7 +277,7 @@ def format_data(user, node_ids):
                 'title': node.title if can_read else 'Private Project',
             },
             'children': children,
-            'kind': 'folder' if not node.node__parent or not node.parent_node.has_permission(user, 'read') else 'node',
+            'kind': 'folder' if not node.parent_node or not node.parent_node.has_permission(user, 'read') else 'node',
             'nodeType': node.project_or_component,
             'category': node.category,
             'permissions': {
@@ -333,7 +333,7 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
                 event_type = sub_type
     else:
         event_type = event_description
-    if node and node.node__parent:
+    if node and node.parent_node:
         notification_type = 'adopt_parent'
     elif event_type.startswith('global_'):
         notification_type = 'email_transactional'
@@ -341,7 +341,7 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
         notification_type = 'none'
     if subscription:
         for n_type in constants.NOTIFICATION_TYPES:
-            if user in getattr(subscription, n_type):
+            if user in getattr(subscription, n_type).all():
                 notification_type = n_type
     return {
         'event': {
@@ -364,19 +364,19 @@ def get_parent_notification_type(node, event, user):
     :param obj user: modular odm User object
     :return: str notification type (e.g. 'email_transactional')
     """
-    if node and isinstance(node, Node) and node.node__parent and node.parent_node.has_permission(user, 'read'):
-        for parent in node.node__parent:
-            key = to_subscription_key(parent._id, event)
-            try:
-                subscription = model.NotificationSubscription.find_one(Q('_id', 'eq', key))
-            except NoResultsFound:
-                return get_parent_notification_type(parent, event, user)
+    parent = node.parent_node
+    if node and isinstance(node, Node) and parent and parent.has_permission(user, 'read'):
+        key = to_subscription_key(parent._id, event)
+        try:
+            subscription = model.NotificationSubscription.find_one(Q('_id', 'eq', key))
+        except NoResultsFound:
+            return get_parent_notification_type(parent, event, user)
 
-            for notification_type in constants.NOTIFICATION_TYPES:
-                if user in getattr(subscription, notification_type):
-                    return notification_type
-            else:
-                return get_parent_notification_type(parent, event, user)
+        for notification_type in constants.NOTIFICATION_TYPES:
+            if user in getattr(subscription, notification_type):
+                return notification_type
+        else:
+            return get_parent_notification_type(parent, event, user)
     else:
         return None
 

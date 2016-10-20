@@ -6,8 +6,7 @@ import re
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiAddonTestCase
-from tests.factories import AuthUserFactory
-from tests.utils import mock_auth
+from osf_tests.factories import AuthUserFactory
 
 from website.addons.box.tests.factories import BoxAccountFactory
 from website.addons.dataverse.tests.factories import DataverseAccountFactory
@@ -40,8 +39,8 @@ class UserAddonListMixin(object):
 
     def test_settings_list_GET_returns_none_if_absent(self):
         try:
-            if self.user.external_accounts:
-                self.user.external_accounts.pop()
+            if self.user.external_accounts.count():
+                self.user.external_accounts.clear()
             self.user.delete_addon(self.short_name, auth=self.auth)
         except ValueError:
             # If addon was mandatory -- OSFStorage
@@ -115,8 +114,8 @@ class UserAddonDetailMixin(object):
     def test_settings_detail_GET_raises_error_if_absent(self):
         wrong_type = self.should_expect_errors()
         try:
-            if self.user.external_accounts:
-                self.user.external_accounts.pop()
+            if self.user.external_accounts.count():
+                self.user.external_accounts.clear()
             self.user.delete_addon(self.short_name, auth=self.auth)
         except ValueError:
             # If addon was mandatory -- OSFStorage
@@ -196,8 +195,8 @@ class UserAddonAccountListMixin(object):
     def test_account_list_raises_error_if_absent(self):
         wrong_type = self.should_expect_errors()
         try:
-            if self.user.external_accounts:
-                self.user.external_accounts.pop()
+            if self.user.external_accounts.count():
+                self.user.external_accounts.clear()
             self.user.delete_addon(self.short_name, auth=self.auth)
         except ValueError:
             # If addon was mandatory -- OSFStorage
@@ -277,8 +276,8 @@ class UserAddonAccountDetailMixin(object):
     def test_account_detail_raises_error_if_not_found(self):
         wrong_type = self.should_expect_errors()
         try:
-            if self.user.external_accounts:
-                self.user.external_accounts.pop()
+            if self.user.external_accounts.count():
+                self.user.external_accounts.clear()
             self.user.delete_addon(self.short_name, auth=self.auth)
         except ValueError:
             # If addon was mandatory -- OSFStorage

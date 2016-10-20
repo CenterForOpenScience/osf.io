@@ -76,10 +76,7 @@ class GitHubUserSettings(AddonOAuthUserSettingsBase):
     # Assumes oldest connected account is primary.
     @property
     def public_id(self):
-        gh_accounts = [
-            a for a in self.owner.external_accounts
-            if a.provider == self.oauth_provider.short_name
-        ]
+        gh_accounts = self.owner.external_accounts.filter(provider=self.oauth_provider.short_name)
         if gh_accounts:
             return gh_accounts[0].display_name
         return None

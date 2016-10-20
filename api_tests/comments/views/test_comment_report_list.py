@@ -8,7 +8,8 @@ from framework.guid.model import Guid
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
 from tests.base import ApiTestCase
-from osf_tests.factories import ProjectFactory, AuthUserFactory, CommentFactory, NodeWikiFactory
+from osf_tests.factories import ProjectFactory, AuthUserFactory, CommentFactory
+from addons.wiki.tests.factories import NodeWikiFactory
 
 
 class CommentReportsMixin(object):

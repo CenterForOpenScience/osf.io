@@ -17,8 +17,8 @@ from osf_tests.factories import (
     CommentFactory,
     RegistrationFactory,
     PrivateLinkFactory,
-    NodeWikiFactory
 )
+from addons.wiki.tests.factories import NodeWikiFactory
 
 
 class CommentDetailMixin(object):

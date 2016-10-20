@@ -419,7 +419,7 @@ class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixi
         account_id = self.kwargs['account_id']
 
         account = ExternalAccount.load(account_id)
-        if not (account and account in user_settings.external_accounts):
+        if not (account and user_settings.external_accounts.filter(id=account.id).exists()):
             raise NotFound('Requested addon unavailable')
         return account
 

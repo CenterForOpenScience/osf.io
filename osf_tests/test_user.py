@@ -378,10 +378,9 @@ class TestOSFUser:
         size = urlparse.parse_qs(urlparse.urlparse(user.profile_image_url()).query).get('size')
         assert size is None
 
-    @pytest.mark.skip('activity points not yet implemented')
     def test_activity_points(self, user):
         assert(
-            user.get_activity_points(db=self.db) == get_total_activity_count(self.user._primary_key)
+            user.get_activity_points() == get_total_activity_count(user._primary_key)
         )
 
     def test_contributed_property(self):

@@ -19,14 +19,14 @@ class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
 
     # TODO Remove null=True for things that shouldn't be nullable
     banner_name = models.CharField(max_length=255, null=True, blank=True)
-    login_url = models.URLField(null=True)
+    login_url = models.URLField(null=True, blank=True)
     contributors = models.ManyToManyField(settings.AUTH_USER_MODEL,
                                           through=InstitutionalContributor,
                                           related_name='institutions')
-    domains = fields.ArrayField(models.CharField(max_length=255), db_index=True, null=True)
-    email_domains = fields.ArrayField(models.CharField(max_length=255), db_index=True, null=True)
+    domains = fields.ArrayField(models.CharField(max_length=255), db_index=True, null=True, blank=True)
+    email_domains = fields.ArrayField(models.CharField(max_length=255), db_index=True, null=True, blank=True)
     logo_name = models.CharField(max_length=255, null=True)  # TODO: Could this be a FilePathField?
-    logout_url = models.URLField(null=True)
+    logout_url = models.URLField(null=True, blank=True)
     name = models.CharField(max_length=255)
 
     description = models.TextField(blank=True, default='', null=True)
@@ -56,12 +56,12 @@ class Institution(Loggable, base.ObjectIDMixin, base.BaseModel):
 
     @property
     def api_v2_url(self):
-        return reverse('institutions:institution-detail', kwargs={'institution_id': self._id})
+        return reverse('institutions:institution-detail', kwargs={'institution_id': self._id, 'version': 'v2'})
 
     @property
     def absolute_api_v2_url(self):
         from api.base.utils import absolute_reverse
-        return absolute_reverse('institutions:institution-detail', kwargs={'institution_id': self._id})
+        return absolute_reverse('institutions:institution-detail', kwargs={'institution_id': self._id, 'version': 'v2'})
 
     @property
     def nodes_url(self):

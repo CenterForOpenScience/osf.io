@@ -88,7 +88,9 @@ INSTALLED_APPS = (
     # Addons
     'addons.osfstorage',
     'addons.box',
+    'addons.dropbox',
     'addons.twofactor',
+    'addons.wiki',
 )
 
 # local development using https

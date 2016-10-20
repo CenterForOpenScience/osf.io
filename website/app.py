@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-
 import importlib
+import itertools
 import json
 import os
 import sys
@@ -23,10 +23,8 @@ from framework.postcommit_tasks import handlers as postcommit_handlers
 from framework.sentry import sentry
 from framework.celery_tasks import handlers as celery_task_handlers
 from framework.transactions import handlers as transaction_handlers
-from website.addons.base import init_addon
 from website.project.licenses import ensure_licenses
 from website.project.model import ensure_schemas
-from website.routes import make_url_map
 from website import maintenance
 
 # This import is necessary to set up the archiver signal listeners
@@ -42,6 +40,7 @@ def init_addons(settings, routes=True):
     :param module settings: The settings module.
     :param bool routes: Add each addon's routing rules to the URL map.
     """
+    from website.addons.base import init_addon
     settings.ADDONS_AVAILABLE = getattr(settings, 'ADDONS_AVAILABLE', [])
     settings.ADDONS_AVAILABLE_DICT = getattr(settings, 'ADDONS_AVAILABLE_DICT', OrderedDict())
     for addon_name in settings.ADDONS_REQUESTED:
@@ -103,15 +102,16 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
         os.getpid(), thread.get_ident()
     ))
 
+    # Django App config
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.base.settings')
+    django.setup()
+
     # The settings module
     settings = importlib.import_module(settings_module)
 
     init_addons(settings, routes)
     with open(os.path.join(settings.STATIC_FOLDER, 'built', 'nodeCategories.json'), 'wb') as fp:
         json.dump(settings.NODE_CATEGORY_MAP, fp)
-
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.base.settings')
-    django.setup()
 
     patch_models(settings)
 
@@ -125,6 +125,7 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
         do_set_backends(settings)
     if routes:
         try:
+            from website.routes import make_url_map
             make_url_map(app)
         except AssertionError:  # Route map has already been created
             pass
@@ -155,8 +156,16 @@ def apply_middlewares(flask_app, settings):
     return flask_app
 
 def _get_models_to_patch():
-    osf_app_config = apps.get_app_config('osf')
-    return osf_app_config.get_models(include_auto_created=False)
+    """Return all models from OSF and addons."""
+    return list(
+        itertools.chain(
+            *[
+                app_config.get_models(include_auto_created=False)
+                for app_config in apps.get_app_configs()
+                if app_config.label == 'osf' or app_config.label.startswith('addons_')
+            ]
+        )
+    )
 
 # TODO: This won't work for modules that do e.g. `from website import models`. Rethink.
 def patch_models(settings):

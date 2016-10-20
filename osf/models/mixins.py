@@ -7,6 +7,7 @@ from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
 from osf.models.tag import Tag
 from website.exceptions import NodeStateError
+from website import settings
 
 
 class Versioned(models.Model):
@@ -139,12 +140,21 @@ class AddonModelMixin(models.Model):
 
     def get_addons(self):
         return filter(None, [
-            self.get_addon(config.label)
+            self.get_addon(config.short_name)
             for config in self.ADDONS_AVAILABLE
         ])
 
-    def has_addon(self, name):
-        return True
+    def get_oauth_addons(self):
+        # TODO: Using hasattr is a dirty hack - we should be using issubclass().
+        #       We can't, because importing the parent classes here causes a
+        #       circular import error.
+        return [
+            addon for addon in self.get_addons()
+            if hasattr(addon, 'oauth_provider')
+        ]
+
+    def has_addon(self, addon_name, deleted=False):
+        return bool(self.get_addon(addon_name, deleted=deleted))
 
     def get_addon_names(self):
         return [each.short_name for each in self.get_addons()]
@@ -170,39 +180,74 @@ class AddonModelMixin(models.Model):
             pass
         return None
 
-    def add_addon(self, name):
-        addon = self.get_addon(name, deleted=True)
+    def add_addon(self, addon_name, auth=None, override=False, _force=False):
+        """Add an add-on to the node.
+
+        :param str addon_name: Name of add-on
+        :param Auth auth: Consolidated authorization object
+        :param bool override: For shell use only, Allows adding of system addons
+        :param bool _force: For migration testing ONLY. Do not set to True
+            in the application, or else projects will be allowed to have
+            duplicate addons!
+        :return bool: Add-on was added
+
+        """
+        if not override and addon_name in settings.SYSTEM_ADDED_ADDONS[self.settings_type]:
+            return False
+
+        # Reactivate deleted add-on if present
+        addon = self.get_addon(addon_name, deleted=True)
         if addon:
             if addon.deleted:
                 addon.undelete(save=True)
                 return addon
+            if not _force:
+                return False
 
-        config = apps.get_app_config(name)
-        model = self._settings_model(name, config=config)
+        config = apps.get_app_config('addons_{}'.format(addon_name))
+        model = self._settings_model(addon_name, config=config)
         ret = model(owner=self)
         ret.on_add()
         ret.save()  # TODO This doesn't feel right
         return ret
 
     def config_addons(self, config, auth=None, save=True):
-        pass
+        """Enable or disable a set of add-ons.
 
-    def delete_addon(self, name, auth=None):
-        addon = self.get_addon(name)
+        :param dict config: Mapping between add-on names and enabled / disabled
+            statuses
+        """
+        for addon_name, enabled in config.iteritems():
+            if enabled:
+                self.add_addon(addon_name, auth)
+            else:
+                self.delete_addon(addon_name, auth)
+        if save:
+            self.save()
+
+    def delete_addon(self, addon_name, auth=None, _force=False):
+        """Delete an add-on from the node.
+
+        :param str addon_name: Name of add-on
+        :param Auth auth: Consolidated authorization object
+        :param bool _force: For migration testing ONLY. Do not set to True
+            in the application, or else projects will be allowed to delete
+            mandatory add-ons!
+        :return bool: Add-on was deleted
+        """
+        addon = self.get_addon(addon_name)
         if not addon:
             return False
-        # TODO
-        # config = apps.get_app_config(name)
-        # if self._meta.model_name in config.added_mandatory:
-        #     raise ValueError('Cannot delete mandatory add-on.')
+        if self.settings_type in addon.config.added_mandatory and not _force:
+            raise ValueError('Cannot delete mandatory add-on.')
         if getattr(addon, 'external_account', None):
             addon.deauthorize(auth=auth)
         addon.delete(save=True)
         return True
 
-    def _settings_model(self, name, config=None):
+    def _settings_model(self, addon_model, config=None):
         if not config:
-            config = apps.get_app_config(name)
+            config = apps.get_app_config('addons_{}'.format(addon_model))
         return getattr(config, '{}_settings'.format(self.settings_type))
 
 

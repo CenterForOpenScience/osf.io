@@ -22,9 +22,9 @@ from osf.models import (
     NodeLog,
     Contributor,
     Sanction,
-    NodeWikiPage,
     NodeRelation,
 )
+from addons.wiki.models import NodeWikiPage
 from osf.exceptions import ValidationError
 from osf.utils.auth import Auth
 
@@ -37,9 +37,9 @@ from .factories import (
     NodeLicenseRecordFactory,
     PrivateLinkFactory,
     CollectionFactory,
-    NodeWikiFactory,
     NodeRelationFactory,
 )
+from addons.wiki.tests.factories import NodeWikiFactory
 from .utils import capture_signals, assert_datetime_equal, mock_archive
 
 pytestmark = pytest.mark.django_db
@@ -1564,12 +1564,11 @@ class TestForkNode:
         # Recursively compare children
         for idx, child in enumerate(original._nodes.all()):
             if child.can_view(fork_user_auth):
-                self._cmp_fork_original(fork_user, fork_date, fork.nodes.all()[idx],
+                self._cmp_fork_original(fork_user, fork_date, fork._nodes.all()[idx],
                                         child, title_prepend='')
 
-    @pytest.mark.skip('pointers/node links not yet implemented')
     @mock.patch('framework.status.push_status_message')
-    def test_fork_recursion(self, mock_push_status_message, node, user, auth):
+    def test_fork_recursion(self, mock_push_status_message, node, user, auth, request_context):
         """Omnibus test for forking.
         """
         # Make some children
@@ -1583,9 +1582,9 @@ class TestForkNode:
         subproject.add_pointer(pointee, auth=auth)
 
         # Add add-on to test copying
-        node.add_addon('github', auth)
-        component.add_addon('github', auth)
-        subproject.add_addon('github', auth)
+        node.add_addon('dropbox', auth)
+        component.add_addon('dropbox', auth)
+        subproject.add_addon('dropbox', auth)
 
         # Log time
         fork_date = timezone.now()
@@ -1596,6 +1595,12 @@ class TestForkNode:
 
         # Compare fork to original
         self._cmp_fork_original(user, fork_date, fork, node)
+
+    def test_forked_component_has_parent_node(self, node, auth):
+        assert node.parent_node
+
+        fork = node.fork_node(auth=auth)
+        assert fork.parent_node == node.parent_node
 
     def test_fork_private_children(self, node, user, auth):
         """Tests that only public components are created
@@ -1725,7 +1730,6 @@ class TestForkNode:
         assert fork.wiki_pages_current == {}
         assert fork.wiki_private_uuids == {}
 
-    @pytest.mark.skip('Unskip when addons and hooks (i.e. after_fork) are implemented')
     def test_forking_clones_project_wiki_pages(self, user, auth):
         project = ProjectFactory(creator=user, is_public=True)
         # TODO: Unmock when StoredFileNode is implemented
@@ -2207,12 +2211,6 @@ class TestRemoveNode:
 
 class TestTemplateNode:
 
-    # Autouse the app fixture because we need init_app to set
-    # ADDONS_REQUESTED
-    @pytest.fixture(autouse=True)
-    def _app(self, app):
-        return app
-
     @pytest.fixture()
     def project(self, user):
         return ProjectFactory(creator=user)
@@ -2406,3 +2404,69 @@ class TestTemplateNode:
                 node.get_permissions(other_user) ==
                 ['read', 'write', 'admin']
             )
+
+
+# copied from tests/test_models.py
+class TestAddonMethods:
+
+    def test_add_addon(self, node, auth):
+        addon_count = len(node.get_addon_names())
+        addon_record_count = len(node.addons)
+        added = node.add_addon('dropbox', auth)
+        assert bool(added) is True
+        node.reload()
+        assert (
+            len(node.get_addon_names()) ==
+            addon_count + 1
+        )
+        assert (
+            len(node.addons) ==
+            addon_record_count + 1
+        )
+        assert (
+            node.logs.latest().action ==
+            NodeLog.ADDON_ADDED
+        )
+
+    def test_add_existing_addon(self, node, auth):
+        addon_count = len(node.get_addon_names())
+        addon_record_count = len(node.addons)
+        added = node.add_addon('wiki', auth)
+        assert bool(added) is False
+        assert (
+            len(node.get_addon_names()) ==
+            addon_count
+        )
+        assert (
+            len(node.addons) ==
+            addon_record_count
+        )
+
+    def test_delete_addon(self, node, auth):
+        addon_count = len(node.get_addon_names())
+        deleted = node.delete_addon('wiki', auth)
+        assert deleted is True
+        assert (
+            len(node.get_addon_names()) ==
+            addon_count - 1
+        )
+        assert (
+            node.logs.latest().action ==
+            NodeLog.ADDON_REMOVED
+        )
+
+    @mock.patch('addons.dropbox.models.NodeSettings.config')
+    def test_delete_mandatory_addon(self, mock_config, node, auth):
+        mock_config.added_mandatory = ['node']
+        node.add_addon('dropbox', auth)
+        with pytest.raises(ValueError):
+            node.delete_addon('dropbox', auth)
+
+    def test_delete_nonexistent_addon(self, node, auth):
+        addon_count = len(node.get_addon_names())
+        deleted = node.delete_addon('dropbox', auth)
+        assert bool(deleted) is False
+        assert (
+            len(node.get_addon_names()) ==
+            addon_count
+        )
