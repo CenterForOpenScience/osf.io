@@ -26,7 +26,7 @@ CAMPAIGNS = ImmutableDict({
     # Each preprint service will offer their own campaign with appropriate distinct branding
     'osf-preprints': {
         'system_tag': 'osf_preprints',
-        'redirect_url': lambda: furl.furl(DOMAIN).add(path='preprints/').url,
+        'redirect_url': lambda: furl.furl(DOMAIN).add(path='register/').url + '?' + urllib.urlencode({'next': furl.furl(DOMAIN).add(path='preprints/').url}),
         'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS_OSF
     }
 })
