@@ -186,7 +186,10 @@ class CommentPagination(JSONAPIPagination):
                             unread = 0
                         else:
                             unread = Comment.find_n_unread(user=user, node=node, page=page, root_id=target_id)
-                        response_dict['links']['meta']['unread'] = unread
+                        if self.request.version < '2.1':
+                            response_dict['links']['meta']['unread'] = unread
+                        else:
+                            response_dict['meta']['unread'] = unread
         return Response(response_dict)
 
 
@@ -200,7 +203,10 @@ class NodeContributorPagination(JSONAPIPagination):
         node_id = kwargs.get('node_id', None)
         node = Node.load(node_id)
         total_bibliographic = len(node.visible_contributor_ids)
-        response_dict['links']['meta']['total_bibliographic'] = total_bibliographic
+        if self.request.version < '2.1':
+            response_dict['links']['meta']['total_bibliographic'] = total_bibliographic
+        else:
+            response_dict['meta']['total_bibliographic'] = total_bibliographic
         return Response(response_dict)
 
 
