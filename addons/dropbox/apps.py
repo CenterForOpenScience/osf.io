@@ -7,7 +7,7 @@ class DropboxAddonConfig(BaseAddonConfig):
 
     name = 'addons.dropbox'
     label = 'addons_dropbox'
-    full_name = 'DropBox'
+    full_name = 'Dropbox'
     short_name = 'dropbox'
     configs = ['accounts', 'node']
     has_hgrid_files = True

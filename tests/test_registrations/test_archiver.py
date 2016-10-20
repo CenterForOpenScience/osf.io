@@ -517,7 +517,7 @@ class TestArchiverTasks(ArchiverTestCase):
                     provider=settings.ARCHIVE_PROVIDER,
                     path='/',
                 ),
-                rename='Archive of DropBox',
+                rename='Archive of Dropbox',
             )
         ))
 
