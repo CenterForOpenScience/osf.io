@@ -258,6 +258,11 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
         if service_url:
             data['next_url'] = service_url
 
+    # special case for preprints campaign url
+    if not logout and not campaign and not login and not auth.logged_in:
+        data['status_code'] = http.FOUND
+        data['next_url'] = cas.get_login_url(request.url)
+
     # handle `claim_user_registered`
     # TODO [#OSF-6998]: talk to product about the `must_login_warning`
     if logout and auth.logged_in:
