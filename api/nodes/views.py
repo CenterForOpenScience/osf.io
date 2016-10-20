@@ -83,7 +83,7 @@ from website.addons.wiki.model import NodeWikiPage
 from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
 from website.models import Comment, NodeLog, Institution, DraftRegistration
-from osf.models import AlternativeCitation, Node, PrivateLink, NodeRelation
+from osf.models import AlternativeCitation, Node, PrivateLink, NodeRelation, Guid
 from website.files.models import FileNode
 from framework.auth.core import User
 from api.base.utils import default_node_list_query, default_node_permission_query
@@ -2670,10 +2670,10 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMix
     def get_default_odm_query(self):
         return Q('node', 'eq', self.get_node()) & Q('root_target', 'ne', None)
 
-    def convert_key(self, key, field):
-        if key == 'target':
-            return 'target__guid'
-        return super(NodeCommentsList, self).convert_key(key, field)
+    # Hook to make filtering on 'target' work
+    def postprocess_query_param(self, key, field_name, operation):
+        if field_name == 'target':
+            operation['value'] = Guid.load(operation['value'])
 
     def get_queryset(self):
         comments = Comment.find(self.get_query_from_request())
