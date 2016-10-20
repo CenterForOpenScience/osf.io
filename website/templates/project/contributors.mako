@@ -193,7 +193,7 @@
             <div class="header" data-bind="visible: $root.collapsed() && expanded()"></div>
             <div class="td-content" data-bind="visible: !$root.collapsed() || expanded()">
                 <ul class="private-link-list narrow-list" data-bind="foreach: nodesList">
-                    <li data-bind="style:{marginLeft: $data.scale}">
+                    <li class="private-link-list-node">
                         <span data-bind="getIcon: $data.category"></span>
                         <a data-bind="text:$data.title, attr: {href: $data.url}"></a>
                     </li>
