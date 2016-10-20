@@ -1,4 +1,5 @@
 import httplib as http
+import urllib
 
 import furl
 from werkzeug.datastructures import ImmutableDict
