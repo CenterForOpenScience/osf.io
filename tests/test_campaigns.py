@@ -62,19 +62,15 @@ class TestCampaignsAuthViews(OsfTestCase):
     def test_campaign_landing_logged_in(self):
         ensure_schemas()
         for key, value in self.campaigns.items():
-            resp = self.app.get(value['url_landing'], auth=self.user.auth)
+            resp = self.app.get(value['url_landing'], auth=self.user.auth).maybe_follow()
             assert_equal(resp.status_code, http.OK)
             assert_in(value['title_landing'], resp)
 
-    def test_auth_prereg_landing_page_logged_out(self):
+    def test_auth_campaign_landing_page_logged_out(self):
         for key, value in self.campaigns.items():
             resp = self.app.get(value['url_landing'])
-            if key == 'osf-preprints':
-                assert_equal(resp.status_code, http.OK)
-                assert_in(value['title_landing'], resp)
-            else:
-                assert_equal(resp.status_code, http.FOUND)
-                assert_in(cas.get_login_url(value['url_landing']), resp.headers['Location'])
+            assert_equal(resp.status_code, http.FOUND)
+            assert_in(cas.get_login_url(value['url_landing']), resp.headers['Location'])
 
 
 # test for registration through campaigns
