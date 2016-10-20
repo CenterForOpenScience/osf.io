@@ -8,12 +8,12 @@ SENSITIVE_DATA_KEY = jwe.kdf(settings.SENSITIVE_DATA_SECRET.encode('utf-8'), set
 
 def encrypt(value):
     if value:
-        return jwe.encrypt(value.encode('utf-8'), SENSITIVE_DATA_KEY)
+        return jwe.encrypt(bytes(value), SENSITIVE_DATA_KEY)
     return None
 
 def decrypt(value):
     if value:
-        return jwe.decrypt(value.encode('utf-8'), SENSITIVE_DATA_KEY)
+        return jwe.decrypt(bytes(value), SENSITIVE_DATA_KEY)
     return None
 
 class EncryptedStringField(StringField):
