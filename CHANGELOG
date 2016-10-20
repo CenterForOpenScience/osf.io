@@ -9,7 +9,7 @@ Changelog
 - Fix wiki formatting for legacy wiki pages
 - Ensure bad file moves don't delete files
 - API v2 Make private nodes private in inter-node file moves
-- Don't send user registration twice
+- Don't create user twice in claim edge case
 - Retain formatting in preregistration
 - Render wiki on project summary widget properly in all cases
 - Fixes for throttling
