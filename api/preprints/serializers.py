@@ -44,6 +44,7 @@ class PreprintSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'id',
         'date_created',
+        'date_modified',
         'date_published',
         'provider',
         'is_published',
@@ -52,6 +53,7 @@ class PreprintSerializer(JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
     subjects = JSONAPIListField(child=JSONAPIListField(child=TaxonomyField()), allow_null=True, required=False)
     date_created = ser.DateTimeField(read_only=True)
+    date_modified = ser.DateTimeField(read_only=True)
     date_published = ser.DateTimeField(read_only=True)
     doi = ser.CharField(source='article_doi', required=False, allow_null=True)
     is_published = ser.BooleanField(required=False)

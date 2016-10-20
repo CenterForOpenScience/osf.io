@@ -52,6 +52,7 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
         name                            type                                description
         ====================================================================================
         date_created                    iso8601 timestamp                   timestamp that the preprint was created
+        date_modified                   iso8601 timestamp                   timestamp that the preprint was last modified
         date_published                  iso8601 timestamp                   timestamp when the preprint was published
         is_published                    boolean                             whether or not this preprint is published
         subjects                        list of lists of dictionaries       ids of Subject in the PLOS taxonomy. Dictrionary, containing the subject text and subject ID
@@ -173,6 +174,7 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
         name                            type                                description
         ====================================================================================
         date_created                    iso8601 timestamp                   timestamp that the preprint was created
+        date_modified                   iso8601 timestamp                   timestamp that the preprint was last modified
         date_published                  iso8601 timestamp                   timestamp when the preprint was published
         is_published                    boolean                             whether or not this preprint is published
         is_preprint_orphan              boolean                             whether or not this preprint is orphaned

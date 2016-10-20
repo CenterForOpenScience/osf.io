@@ -21,6 +21,7 @@ class PreprintService(GuidStoredObject):
 
     _id = fields.StringField(primary=True)
     date_created = fields.DateTimeField(auto_now_add=True)
+    date_modified = fields.DateTimeField(auto_now=True)
     provider = fields.ForeignField('PreprintProvider', index=True)
     node = fields.ForeignField('Node', index=True)
     is_published = fields.BooleanField(default=False, index=True)

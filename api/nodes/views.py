@@ -3242,6 +3242,7 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFil
         name                            type                                description
         ====================================================================================
         date_created                    iso8601 timestamp                   timestamp that the preprint was created
+        date_modified                   iso8601 timestamp                   timestamp that the preprint was last modified
         date_published                  iso8601 timestamp                   timestamp when the preprint was published
         is_published                    boolean                             whether or not this preprint is published
         is_preprint_orphan              boolean                             whether or not this preprint is orphaned
