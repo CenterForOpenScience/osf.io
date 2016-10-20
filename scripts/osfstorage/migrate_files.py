@@ -88,7 +88,7 @@ def migrate_version(idx, node_file, node_settings, node=None, dry_run=True):
 
     :param int idx: Version index (zero-based)
     :param NodeFile node_file: Legacy file record
-    :param OsfStorageNodeSettings node_settings: Node settings
+    :param NodeSettings node_settings: Node settings
     :param Node node: Optional source node
     """
     node = node or node_settings.owner

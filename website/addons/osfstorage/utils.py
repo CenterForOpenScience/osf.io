@@ -113,7 +113,7 @@ def must_be(_type):
 def copy_files(src, target_settings, parent=None, name=None):
     """Copy the files from src to the target nodesettings
     :param OsfStorageFileNode src: The source to copy children from
-    :param OsfStorageNodeSettings target_settings: The node settings of the project to copy files to
+    :param NodeSettings target_settings: The node settings of the project to copy files to
     :param OsfStorageFileNode parent: The parent of to attach the clone of src to, if applicable
     """
     cloned = src.clone()

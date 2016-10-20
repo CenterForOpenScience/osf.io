@@ -437,7 +437,7 @@ class FileNode(object):
         MongoQuerySet to return wrapped objects
         :rtype: GenWrapper<MongoQuerySet<cls>>
         """
-        return utils.GenWrapper(StoredFileNode.find(cls._filter(qs)))
+        return utils.GenWrapper(StoredFileNode.find(cls._filter(qs)).order_by('id'))
 
     @classmethod
     def find_one(cls, qs):
@@ -802,7 +802,7 @@ class Folder(FileNode):
         :returns: A GenWrapper for all children
         :rtype: GenWrapper<MongoQuerySet<cls>>
         """
-        return FileNode.find(Q('parent', 'eq', self._id))
+        return FileNode.find(Q('parent_id', 'eq', self.id))
 
     def delete(self, recurse=True, user=None, parent=None):
         trashed = self._create_trashed(user=user, parent=parent)

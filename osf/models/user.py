@@ -199,7 +199,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
 
     # verification key v2: token, and expiration time
     # used for password reset, confirm account/email, claim account/contributor-ship
-    verification_key_v2 = DateTimeAwareJSONField(default=dict, blank=True)
+    verification_key_v2 = DateTimeAwareJSONField(default=dict, blank=True, null=True)
     # Format: {
     #   'token': <verification token>
     #   'expires': <verification expiration time>
@@ -701,6 +701,22 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         user.update_guessed_names()
         user.set_password(password)
         return user
+
+    def verify_password_token(self, token):
+        """
+        Verify that the password reset token for this user is valid.
+
+        :param token: the token in verification key
+        :return `True` if valid, otherwise `False`
+        """
+
+        if token and self.verification_key_v2:
+            try:
+                return (self.verification_key_v2['token'] == token and
+                        self.verification_key_v2['expires'] > timezone.utcnow())
+            except AttributeError:
+                return False
+        return False
 
     def set_password(self, raw_password, notify=True):
         """Set the password for this user to the hash of ``raw_password``.

@@ -199,6 +199,7 @@ class AbstractNodeFactory(ModularOdmFactory):
 
 
 class ProjectFactory(AbstractNodeFactory):
+    type = 'osf.node'
     category = 'project'
 
 
