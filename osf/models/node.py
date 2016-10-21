@@ -32,7 +32,6 @@ from osf.models.sanctions import RegistrationApproval
 from osf.models.user import OSFUser
 from osf.models.spam import SpamMixin
 from osf.models.subject import Subject
-from osf.models.files import StoredFileNode
 from osf.models.preprint_provider import PreprintProvider
 from osf.models.node_relation import NodeRelation
 from osf.models.validators import validate_title, validate_doi
@@ -2439,6 +2438,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.save()
 
     def set_preprint_file(self, preprint_file, auth, save=False):
+        StoredFileNode = apps.get_model('osf.StoredFileNode')
         if not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can change a preprint\'s primary file.')
 
