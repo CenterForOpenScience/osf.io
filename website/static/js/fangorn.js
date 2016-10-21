@@ -1300,15 +1300,13 @@ function gotoFileEvent (item, toUrl) {
     redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
     var fileurl  = redir.toString() + toUrl;
 
+    // construct view only link into file url as it gets removed from url params in IE
     if ($osf.isIE()) {
-        console.log('msie');
         var viewOnly = $osf.urlParams().view_only;
         var options = {};
-        console.log(viewOnly);
         if (viewOnly) {
             options.view_only = viewOnly;
             fileurl += $.param($.extend(options, ''));
-            console.log(fileurl);
         }
     }
 
