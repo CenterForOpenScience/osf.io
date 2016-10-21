@@ -1299,7 +1299,20 @@ function gotoFileEvent (item, toUrl) {
     var redir = new URI(item.data.nodeUrl);
     redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
     var fileurl  = redir.toString() + toUrl;
-    if(COMMAND_KEYS.indexOf(tb.pressedKey) !== -1) {
+
+    if ($osf.isIE()) {
+        console.log('msie');
+        var viewOnly = $osf.urlParams().view_only;
+        var options = {};
+        console.log(viewOnly);
+        if (viewOnly) {
+            options.view_only = viewOnly;
+            fileurl += $.param($.extend(options, ''));
+            console.log(fileurl);
+        }
+    }
+
+    if (COMMAND_KEYS.indexOf(tb.pressedKey) !== -1) {
         window.open(fileurl, '_blank');
     } else {
         window.open(fileurl, '_self');
