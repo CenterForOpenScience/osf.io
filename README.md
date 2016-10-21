@@ -365,12 +365,11 @@ $ sudo rpm -ivh elasticsearch-1.2.1.noarch.rpm
 ```python
 SEARCH_ENGINE = 'elastic'
 ```
-- Start the Elasticsearch server and migrate the models. Migrating search must include the production enviorment, to run 
-- locally use 'test'.
+- Start the Elasticsearch server and migrate the models.
 
 ```bash
 $ invoke elasticsearch
-$ invoke migrate_search 'test'
+$ invoke migrate_search
 ```
 ##### Starting a local Elasticsearch server
 

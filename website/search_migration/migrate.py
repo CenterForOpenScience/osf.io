@@ -53,7 +53,6 @@ def migrate_institutions(index):
     for inst in Institution.find(Q('is_deleted', 'ne', True)):
         update_institution(inst, index)
 
-
 def migrate(delete, index=None, app=None):
     index = index or settings.ELASTIC_INDEX
     app = app or init_app('website.settings', set_backends=True, routes=True)
@@ -67,7 +66,8 @@ def migrate(delete, index=None, app=None):
 
     new_index = set_up_index(index)
 
-    migrate_institutions(new_index)
+    if settings.ENABLE_INSTITUTIONS:
+        migrate_institutions(new_index)
     migrate_nodes(new_index)
     migrate_users(new_index)
 
@@ -118,3 +118,7 @@ def delete_old(index):
         old_index = index.split('_v')[0] + '_v' + str(old_version)
         logger.info('Deleting {}'.format(old_index))
         es.indices.delete(index=old_index, ignore=404)
+
+
+if __name__ == '__main__':
+    migrate(False)
