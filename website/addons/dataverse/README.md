@@ -2,16 +2,7 @@
 
 Enabling the addon for development
 
- - Install gpg.
- ```sh
- $ brew install gpg
- ```
- - Import a private key into your GnuPG keyring.
-```sh
-$ invoke encryption
-```
-
-Ensure `"dataverse"` exists in the addons list in `"addons.json"`
+ - In `website/settings/local.py` add, `"dataverse"` to `ADDONS_REQUESTED`.
 
 Creating a Dataverse dataset on the test server
 

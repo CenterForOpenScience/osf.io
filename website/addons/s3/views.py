@@ -104,8 +104,8 @@ def s3_add_user_account(auth, **kwargs):
     except KeyExistsException:
         # ... or get the old one
         account = ExternalAccount.find_one(
-            Q('oauth_key', 'eq', access_key) &
-            Q('oauth_secret', 'eq', secret_key)
+            Q('provider', 'eq', SHORT_NAME) &
+            Q('provider_id', 'eq', user_info.id)
         )
     assert account is not None
 
