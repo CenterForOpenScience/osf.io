@@ -956,8 +956,8 @@ class User(GuidStoredObject, AddonModelMixin):
         base = settings.DOMAIN if external else '/'
         token = self.get_confirmation_token(email, force=force, renew=renew)
         external = 'external/' if external_id_provider else ''
-        dest = '?{}'.format(urllib.urlencode({'destination': destination})) if destination else ''
-        return '{0}confirm/{1}{2}/{3}/{4}'.format(base, external, self._primary_key, token, dest)
+        destination = '?{}'.format(urllib.urlencode({'destination': destination})) if destination else ''
+        return '{0}confirm/{1}{2}/{3}/{4}'.format(base, external, self._primary_key, token, destination)
 
     def get_unconfirmed_email_for_token(self, token):
         """Return email if valid.

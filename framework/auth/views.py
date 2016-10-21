@@ -869,7 +869,10 @@ def external_login_email_post():
     destination = 'dashboard'
     for campaign in campaigns.CAMPAIGNS:
         if campaign != 'institution':
-            if service_url.startswith(campaigns.campaign_url_for(campaign)):
+            campaign_url = furl.furl(campaigns.campaign_url_for(campaign)).url
+            if campaigns.is_proxy_login(campaign):
+                campaign_url = furl.furl(web_url_for('auth_login', next=campaign_url, _absolute=True)).url
+            if service_url.startswith(campaign_url):
                 destination = campaign
                 break
 
