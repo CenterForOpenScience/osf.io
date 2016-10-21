@@ -188,7 +188,7 @@
                     emailsToAdd: ${ user_email_verifications | sjson, n },
                     anon: ${ anon | sjson, n },
                 },
-                allInstitutions: ${ all_institutions | sjson, n},
+                dashboardInstitutions: ${ dashboard_institutions | sjson, n},
                 popular: ${ popular_links_node | sjson, n },
                 newAndNoteworthy: ${ noteworthy_links_node | sjson, n },
                 maintenance: ${ maintenance | sjson, n},

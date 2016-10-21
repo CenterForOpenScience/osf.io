@@ -431,11 +431,11 @@ function checkConflicts(tb, item, folder, cb) {
     for(var i = 0; i < folder.children.length; i++) {
         var child = folder.children[i];
         if (child.data.name === item.data.name && child.id !== item.id) {
-            messageArray.push(m('p', 'An item named "' + item.data.name + '" already exists in this location.'));
+            messageArray.push(m('p', 'An item named "' + child.data.name + '" already exists in this location.'));
 
             if (window.contextVars.node.preprintFileId === child.data.path.replace('/', '')) {
                 messageArray = messageArray.concat([
-                    m('p', 'The file "' + item.data.name + '" is the primary file for a preprint, so it should not be replaced.'),
+                    m('p', 'The file "' + child.data.name + '" is the primary file for a preprint, so it should not be replaced.'),
                     m('strong', 'Replacing this file will remove this preprint from circulation.')
                 ]);
             }
@@ -445,7 +445,7 @@ function checkConflicts(tb, item, folder, cb) {
                     m('span.btn.btn-primary', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
                     m('span.btn.btn-primary', {onclick: cb.bind(tb, 'replace')},'Replace')
                 ],
-                m('h3.break-word.modal-title', 'Replace "' + item.data.name + '"?')
+                m('h3.break-word.modal-title', 'Replace "' + child.data.name + '"?')
             );
             return;
         }
@@ -459,11 +459,11 @@ function checkConflictsRename(tb, item, name, cb) {
     for(var i = 0; i < parent.children.length; i++) {
         var child = parent.children[i];
         if (child.data.name === name && child.id !== item.id) {
-            messageArray.push(m('p', 'An item named "' + item.data.name + '" already exists in this location.'));
+            messageArray.push(m('p', 'An item named "' + child.data.name + '" already exists in this location.'));
 
             if (window.contextVars.node.preprintFileId === child.data.path.replace('/', '')) {
                 messageArray = messageArray.concat([
-                    m('p', 'The file "' + item.data.name + '" is the primary file for a preprint, so it should not be replaced.'),
+                    m('p', 'The file "' + child.data.name + '" is the primary file for a preprint, so it should not be replaced.'),
                     m('strong', 'Replacing this file will remove this preprint from circulation.')
                 ]);
             }
@@ -473,7 +473,7 @@ function checkConflictsRename(tb, item, name, cb) {
                     m('span.btn.btn-primary', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
                     m('span.btn.btn-primary', {onclick: cb.bind(tb, 'replace')},'Replace')
                 ],
-                m('h3.break-word.modal-title', 'Replace "' + item.data.name + '"?')
+                m('h3.break-word.modal-title', 'Replace "' + child.data.name + '"?')
             );
             return;
         }
@@ -1269,14 +1269,9 @@ function _fangornLazyLoadOnLoad (tree, event) {
  * @private
  */
 function orderFolder(tree) {
-    // Checking if this column does in fact have sorting
-    var sortDirection = '';
-    if (this.isSorted[0]) {
-        sortDirection = this.isSorted[0].desc ? 'desc' : 'asc';
-    } else {
-        sortDirection = 'asc';
-    }
-    tree.sortChildren(this, sortDirection, 'text', 0, 1);
+    var sortColumn = this.isSorted[1].asc || this.isSorted[1].desc ? 1 : 0; 
+    var sortDirection = this.isSorted[sortColumn].desc ? 'desc' : 'asc';
+    tree.sortChildren(this, sortDirection, 'text', sortColumn, 1);
     this.redraw();
 }
 
@@ -1865,7 +1860,9 @@ var dismissToolbar = function(helpText){
     }
     tb.toolbarMode(toolbarModes.DEFAULT);
     tb.filterText('');
-    helpText('');
+    if(typeof helpText === 'function'){
+        helpText('');
+    }
     m.redraw();
 };
 
@@ -1873,7 +1870,6 @@ var FGToolbar = {
     controller : function(args) {
         var self = this;
         self.tb = args.treebeard;
-        self.tb.inputValue = m.prop('');
         self.tb.toolbarMode = m.prop(toolbarModes.DEFAULT);
         self.items = args.treebeard.multiselected;
         self.mode = self.tb.toolbarMode;
@@ -1911,7 +1907,7 @@ var FGToolbar = {
                     m.component(FGInput, {
                         onkeypress: function (event) {
                             if (ctrl.tb.pressedKey === ENTER_KEY) {
-                                _createFolder.call(ctrl.tb, event, ctrl.dismissToolbar);
+                                ctrl.createFolder.call(ctrl.tb, event, ctrl.dismissToolbar);
                             }
                         },
                         id: 'createFolderInput',
@@ -1936,15 +1932,13 @@ var FGToolbar = {
                 m('.col-xs-9',
                     m.component(FGInput, {
                         onkeypress: function (event) {
-                            ctrl.tb.inputValue($(event.target).val());
                             if (ctrl.tb.pressedKey === ENTER_KEY) {
                                 _renameEvent.call(ctrl.tb);
                             }
                         },
                         id: 'renameInput',
                         helpTextId: 'renameHelpText',
-                        placeholder: null,
-                        value: ctrl.tb.inputValue()
+                        placeholder: 'Enter name',
                     }, ctrl.helpText())
                 ),
                 m('.col-xs-3.tb-buttons-col',
@@ -2130,13 +2124,13 @@ function openParentFolders (item) {
  function _fangornMultiselect (event, row) {
     var tb = this;
     var scrollToItem = false;
-    filterRowsNotInParent.call(tb, tb.multiselected());
     if (tb.toolbarMode() === 'filter') {
-        dismissToolbar.call(tb);
         scrollToItem = true;
         // recursively open parents of the selected item but do not lazyload;
         openParentFolders.call(tb, row);
-    }
+    }    
+    dismissToolbar.call(tb);
+    filterRowsNotInParent.call(tb, tb.multiselected());
 
     if (tb.multiselected().length === 1){
         tb.select('#tb-tbody').removeClass('unselectable');
@@ -2146,7 +2140,6 @@ function openParentFolders (item) {
     } else if (tb.multiselected().length > 1) {
         tb.select('#tb-tbody').addClass('unselectable');
     }
-    tb.inputValue(tb.multiselected()[0].data.name);
     m.redraw();
     reapplyTooltips();
 }
