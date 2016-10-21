@@ -277,8 +277,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     identifiers = GenericRelation(Identifier, related_query_name='nodes')
 
     # Preprint fields
-    # TODO: Uncomment when StoredFileNode is implemented
-    # preprint_file = fields.ForeignField('StoredFileNode')
+    preprint_file = models.ForeignKey('osf.StoredFileNode',
+                                      on_delete=models.SET_NULL,
+                                      null=True, blank=True)
     preprint_created = models.DateTimeField(null=True, blank=True)
     preprint_subjects = models.ManyToManyField(Subject, related_name='preprints')
     preprint_providers = models.ManyToManyField(PreprintProvider, related_name='preprints')
@@ -315,10 +316,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         #     self._is_preprint_orphan = True
         #     return False
         return bool(self.preprint_created)
-
-    @property
-    def preprint_file(self):
-        return None
 
     @property
     def is_preprint_orphan(self):
