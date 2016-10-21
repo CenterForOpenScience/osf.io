@@ -561,7 +561,7 @@ def claim_user_registered(auth, node, **kwargs):
 
     current_user = auth.user
 
-    sign_out_url = web_url_for('auth_login', logout=True, next=request.url)
+    sign_out_url = web_url_for('auth_register', logout=True, next=request.url)
     if not current_user:
         return redirect(sign_out_url)
 
@@ -669,6 +669,13 @@ def claim_user_form(auth, **kwargs):
     user.update_guessed_names()
     # The email can be the original referrer email if no claimer email has been specified.
     claimer_email = unclaimed_record.get('claimer_email') or unclaimed_record.get('email')
+
+    # If there is a registered user with this email, redirect to 're-enter password' page
+    found_by_email = User.find_by_email(claimer_email)
+    user_from_email = found_by_email[0] if found_by_email else None
+    if user_from_email and user_from_email.is_registered:
+        return redirect(web_url_for('claim_user_registered', uid=uid, pid=pid, token=token))
+
     form = SetEmailAndPasswordForm(request.form, token=token)
     if request.method == 'POST':
         if not form.validate():

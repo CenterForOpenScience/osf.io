@@ -10,7 +10,7 @@ from tests.factories import (
     NodeFactory,
     ProjectFactory,
 )
-from tests.utils import make_drf_request, mock_archive
+from tests.utils import make_drf_request_with_version, mock_archive
 
 from website.models import MetaSchema
 from website.project.model import ensure_schemas
@@ -42,26 +42,26 @@ class TestSearchSerializer(DbTestCase):
         search.delete_all()
 
     def test_search_serializer_mixed_model_project(self):
-        req = make_drf_request()
+        req = make_drf_request_with_version(version='2.0')
         result = SearchSerializer(self.project, context={'request': req}).data
         assert_equal(result['data']['type'], 'nodes')
 
     def test_search_serializer_mixed_model_component(self):
-        req = make_drf_request()
+        req = make_drf_request_with_version(version='2.0')
         result = SearchSerializer(self.component, context={'request': req}).data
         assert_equal(result['data']['type'], 'nodes')
 
     def test_search_serializer_mixed_model_registration(self):
-        req = make_drf_request()
+        req = make_drf_request_with_version(version='2.0')
         result = SearchSerializer(self.registration, context={'request': req}).data
         assert_equal(result['data']['type'], 'registrations')
 
     def test_search_serializer_mixed_model_file(self):
-        req = make_drf_request()
+        req = make_drf_request_with_version(version='2.0')
         result = SearchSerializer(self.file, context={'request': req}).data
         assert_equal(result['data']['type'], 'files')
 
     def test_search_serializer_mixed_model_user(self):
-        req = make_drf_request()
+        req = make_drf_request_with_version(version='2.0')
         result = SearchSerializer(self.user, context={'request': req}).data
         assert_equal(result['data']['type'], 'users')

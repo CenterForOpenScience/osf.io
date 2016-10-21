@@ -143,6 +143,7 @@
 <script type="text/html" id="commentable">
   <div class="registration-editor-comments">
     <h4> Comments </h4>
+    <p class="text-muted">(Comments are not included in your preregistration and are not made public)</p>
     <ul class="list-group" id="commentList" data-bind="foreach: {data: comments, as: 'comment'}">
         <li class="list-group-item">
           <div class="row" data-bind="visible: comment.isDeleted">

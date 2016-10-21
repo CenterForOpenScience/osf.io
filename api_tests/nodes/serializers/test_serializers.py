@@ -5,7 +5,7 @@ from nose.tools import *  # flake8: noqa
 from dateutil.parser import parse as parse_date
 
 from tests.base import DbTestCase, assert_datetime_equal
-from tests.utils import make_drf_request
+from tests.utils import make_drf_request_with_version
 from tests.factories import UserFactory, NodeFactory, RegistrationFactory, ProjectFactory
 
 from framework.auth import Auth
@@ -23,7 +23,7 @@ class TestNodeSerializer(DbTestCase):
     def test_node_serialization(self):
         parent = ProjectFactory(creator=self.user)
         node = NodeFactory(creator=self.user, parent=parent)
-        req = make_drf_request()
+        req = make_drf_request_with_version(version='2.0')
         result = NodeSerializer(node, context={'request': req}).data
         data = result['data']
         assert_equal(data['id'], node._id)
@@ -60,7 +60,8 @@ class TestNodeSerializer(DbTestCase):
     def test_fork_serialization(self):
         node = NodeFactory(creator=self.user)
         fork = node.fork_node(auth=Auth(user=node.creator))
-        result = NodeSerializer(fork, context={'request': make_drf_request()}).data
+        req = make_drf_request_with_version(version='2.0')
+        result = NodeSerializer(fork, context={'request': req}).data
         data = result['data']
 
         # Relationships
@@ -74,7 +75,8 @@ class TestNodeSerializer(DbTestCase):
     def test_template_serialization(self):
         node = NodeFactory(creator=self.user)
         fork = node.use_as_template(auth=Auth(user=node.creator))
-        result = NodeSerializer(fork, context={'request': make_drf_request()}).data
+        req = make_drf_request_with_version(version='2.0')
+        result = NodeSerializer(fork, context={'request': req}).data
         data = result['data']
 
         # Relationships
@@ -89,7 +91,7 @@ class TestNodeRegistrationSerializer(DbTestCase):
 
     def test_serialization(self):
         user = UserFactory()
-        req = make_drf_request()
+        req = make_drf_request_with_version(version='2.0')
         reg = RegistrationFactory(creator=user)
         result = RegistrationSerializer(reg, context={'request': req}).data
         data = result['data']
