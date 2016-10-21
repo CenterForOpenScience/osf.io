@@ -73,7 +73,8 @@ def get_node_count(end_date=None):
             'withdrawn': Node.find(registered_project_retracted_query).count(),
         })
 
-    totals['keen'] = {'timestamp': end_date.isoformat()}
+    if end_date:
+        totals['keen'] = {'timestamp': end_date.isoformat()}
     return totals
 
 

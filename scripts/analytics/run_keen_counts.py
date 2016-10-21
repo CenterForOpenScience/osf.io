@@ -6,16 +6,15 @@ from website.app import init_app
 from website.settings import KEEN as keen_settings
 from keen.client import KeenClient
 
-from scripts.analytics.user_count import count as user_count
-from scripts.analytics.addon_count import count as addon_count
-from scripts.analytics.node_count import get_node_count as node_count
-from scripts.analytics.node_count import parse_args
 
 def get_events_for_day(day):
+    from scripts.analytics.user_count import count as user_count
+    from scripts.analytics.addon_count import count as addon_count
+    from scripts.analytics.node_count import get_node_count as node_count
     keen_events = {}
     keen_events.update(user_count(day))
     keen_events.update(addon_count(day))
-    keen_events.update({'node_analytics': node_count(day)})
+    keen_events.update({'node_analytics': [node_count(day)]})
     return keen_events
 
 def main(start_date, end_date):
@@ -35,7 +34,7 @@ def main(start_date, end_date):
 def parse_args():
     parser = argparse.ArgumentParser(description='Populate keen counts!')
     parser.add_argument('-e', '--end', dest='end_date', required=False)
-    parser.add_argument('-e', '--end', dest='start_date', required=True)
+    parser.add_argument('-s', '--start', dest='start_date', required=True)
     return parser.parse_args()
 
 if __name__ == '__main__':
