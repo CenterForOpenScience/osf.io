@@ -62,7 +62,7 @@
     "raw-loader": "^0.5.1",
     "share": "0.7.27",
     "style-loader": "^0.8.3",
-    "treebeard": "git://github.com/CenterForOpenScience/treebeard.git#87eb491dbe4adec3802fb5c592579f0b2588cf8b",
+    "treebeard": "git://github.com/CenterForOpenScience/treebeard.git#d2bb8f6f8104fcac040402727f431c26722b269e",
     "typeahead.js": "^0.10.5",
     "url-loader": "^0.5.5",
     "uuid": "^2.0.1",
