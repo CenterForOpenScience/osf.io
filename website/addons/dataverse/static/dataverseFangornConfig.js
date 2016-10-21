@@ -16,7 +16,7 @@ function changeState(grid, item, version) {
 
 function _downloadEvent(event, item, col) {
     event.stopPropagation();
-    window.location = waterbutler.buildTreeBeardDownload(item, {path: item.data.extra.fileId});
+    window.location = waterbutler.buildTreeBeardDownload(item);
 }
 
 // Define Fangorn Button Actions

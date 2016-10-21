@@ -236,6 +236,36 @@
                 "text": "Mendeley content will not be registered."
             }
         },
+        "ownCloud": {
+            "Permissions": {
+                "status": "partial",
+                "text": "Making an OSF project public or private is independent of ownCloud privacy. The OSF does not alter the permissions of linked ownCloud folders."
+            },
+            "View / download file versions": {
+                "status": "partial",
+                "text": "ownCloud files can be viewed/downloaded via OSF, but version history is not supported by the ownCloud WebDAV API."
+            },
+            "Add / update files": {
+                "status": "full",
+                "text": "Adding/updating files in the project via OSF will be reflected in ownCloud."
+            },
+            "Delete files": {
+                "status": "full",
+                "text": "Files deleted via OSF will be deleted in ownCloud."
+            },
+            "Logs": {
+                "status": "partial",
+                "text": "OSF keeps track of changes you make to your ownCloud content through OSF, but not for changes made using ownCloud directly."
+            },
+            "Forking": {
+                "status": "partial",
+                "text": "Forking a project or component does not copy ownCloud authorization unless the user forking the project is the same user who authorized the ownCloud add-on in the source project being forked."
+            },
+            "Registering": {
+                "status": "partial",
+                "text": "ownCloud content will be registered, but version history will not be copied to the registration."
+            }
+        },
         "Zotero": {
             "Permissions": {
                 "status": "partial",

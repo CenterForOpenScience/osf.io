@@ -4637,6 +4637,15 @@ class TestUnregisteredUser(OsfTestCase):
         assert_true(self.user.verify_claim_token(valid, project_id=self.project._primary_key))
         assert_false(self.user.verify_claim_token('invalidtoken', project_id=self.project._primary_key))
 
+    def test_verify_claim_token_with_no_expiration_date(self):
+        # Legacy records may not have an 'expires' key
+        self.add_unclaimed_record()
+        record = self.user.get_unclaimed_record(self.project._primary_key)
+        del record['expires']
+        self.user.save()
+        token = record['token']
+        assert_true(self.user.verify_claim_token(token, project_id=self.project._primary_key))
+
     def test_claim_contributor(self):
         self.add_unclaimed_record()
         # sanity cheque
