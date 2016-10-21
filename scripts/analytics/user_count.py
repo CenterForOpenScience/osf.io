@@ -11,6 +11,9 @@ from keen.client import KeenClient
 
 def count(today):
     counts = {
+        'keen': {
+            'timestamp': today.isoformat()
+        },
         'active_users': User.find(
             Q('is_registered', 'eq', True) &
             Q('password', 'ne', None) &
@@ -49,5 +52,5 @@ if __name__ == '__main__':
     try:
         date = parse(sys.argv[1])
     except IndexError:
-        date = datetime.today()
+        date = datetime.now()
     main(date)

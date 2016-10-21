@@ -1,5 +1,5 @@
 import sys
-from datetime import date
+from datetime import datetime
 from dateutil.parser import parse
 
 from website.settings import ADDONS_AVAILABLE
@@ -11,6 +11,9 @@ def count(today):
     counts = []
     for addon in ADDONS_AVAILABLE:
         counts.append({
+            'keen': {
+                'timestamp': today.isoformat()
+            },
             'provider': addon.short_name,
             'user_count': addon.settings_models['user'].find().count() if addon.settings_models.get('user') else 0,
             'node_count': addon.settings_models['node'].find().count() if addon.settings_models.get('node') else 0
@@ -36,5 +39,5 @@ if __name__ == '__main__':
     try:
         date = parse(sys.argv[1])
     except IndexError:
-        date = date.today()
+        date = datetime.now()
     main(date)
