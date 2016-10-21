@@ -525,10 +525,15 @@ function doItemOp(operation, to, from, rename, conflict) {
         };
     }
 
+    var options = {};
+    if (from.data.provider === 'github'){
+        options['branch'] = from.data.branch;
+    }
+
     $.ajax({
         type: 'POST',
         beforeSend: $osf.setXHRAuthorization,
-        url: waterbutler.buildTreeBeardFileOp(from),
+        url: waterbutler.buildTreeBeardFileOp(from, options),
         headers: {
             'Content-Type': 'Application/json'
         },
