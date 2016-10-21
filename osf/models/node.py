@@ -32,6 +32,7 @@ from osf.models.sanctions import RegistrationApproval
 from osf.models.user import OSFUser
 from osf.models.spam import SpamMixin
 from osf.models.subject import Subject
+from osf.models.files import StoredFileNode
 from osf.models.preprint_provider import PreprintProvider
 from osf.models.node_relation import NodeRelation
 from osf.models.validators import validate_title, validate_doi
@@ -306,16 +307,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def is_preprint(self):
-        # TODO: This is a temporary implementation.
-        # Uncomment when StoredFileNode is implemented
-        # if not self.preprint_file or not self.is_public:
-        #     return False
-        # if self.preprint_file.node == self:
-        #     return True
-        # else:
-        #     self._is_preprint_orphan = True
-        #     return False
-        return bool(self.preprint_created)
+        if not self.preprint_file or not self.is_public:
+            return False
+        if self.preprint_file.node == self:
+            return True
+        else:
+            self._is_preprint_orphan = True
+            return False
 
     @property
     def is_preprint_orphan(self):
@@ -2444,35 +2442,34 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can change a preprint\'s primary file.')
 
-        # TODO: Uncomment when StoredFileNode is implemented
-        # if not isinstance(preprint_file, StoredFileNode):
-        #     preprint_file = preprint_file.stored_object
-        #
-        # if preprint_file.node != self or preprint_file.provider != 'osfstorage':
-        #     raise ValueError('This file is not a valid primary file for this preprint.')
-        #
-        # # there is no preprint file yet! This is the first time!
-        # if not self.preprint_file:
-        #     self.preprint_file = preprint_file
-        #     self.preprint_created = timezone.now()
-        #     self.add_log(action=NodeLog.PREPRINT_INITIATED, params={}, auth=auth, save=False)
-        # elif preprint_file != self.preprint_file:
-        #     # if there was one, check if it's a new file
-        #     self.preprint_file = preprint_file
-        #     self.add_log(
-        #         action=NodeLog.PREPRINT_FILE_UPDATED,
-        #         params={},
-        #         auth=auth,
-        #         save=False,
-        #     )
-        # if not self.is_public:
-        #     self.set_privacy(
-        #         Node.PUBLIC,
-        #         auth=None,
-        #         log=True
-        #     )
-        # if save:
-        #     self.save()
+        if not isinstance(preprint_file, StoredFileNode):
+            preprint_file = preprint_file.stored_object
+
+        if preprint_file.node != self or preprint_file.provider != 'osfstorage':
+            raise ValueError('This file is not a valid primary file for this preprint.')
+
+        # there is no preprint file yet! This is the first time!
+        if not self.preprint_file:
+            self.preprint_file = preprint_file
+            self.preprint_created = timezone.now()
+            self.add_log(action=NodeLog.PREPRINT_INITIATED, params={}, auth=auth, save=False)
+        elif preprint_file != self.preprint_file:
+            # if there was one, check if it's a new file
+            self.preprint_file = preprint_file
+            self.add_log(
+                action=NodeLog.PREPRINT_FILE_UPDATED,
+                params={},
+                auth=auth,
+                save=False,
+            )
+        if not self.is_public:
+            self.set_privacy(
+                Node.PUBLIC,
+                auth=None,
+                log=True
+            )
+        if save:
+            self.save()
 
     def add_addon(self, name, auth, log=True):
         ret = super(AbstractNode, self).add_addon(name, auth)
