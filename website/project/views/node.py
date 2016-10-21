@@ -392,6 +392,7 @@ def project_reorder_components(node, **kwargs):
         node type delimited by ':'.
 
     """
+    NodeRelation = apps.get_model('osf.NodeRelation')
     # TODO(sloria): Change new_list parameter to be an array of objects
     # {
     #   'newList': {
@@ -399,10 +400,15 @@ def project_reorder_components(node, **kwargs):
     #   }
     # }
     new_node_guids = [
-        each.split(':')[0]
+        each.split(':')
         for each in request.get_json().get('new_list', [])
     ]
-    new_node_relation_ids = list(node.node_relations.filter(child__guids___id__in=new_node_guids).values_list('pk', flat=True))
+    # TODO: Optimize me. This is doing n queries. Ew.
+    new_node_relation_ids = [
+        NodeRelation.load(id_).id if type_ == 'pointer'
+        else NodeRelation.objects.get(child__guids___id=id_).id
+        for id_, type_ in new_node_guids
+    ]
 
     node_relations = node.node_relations.select_related('child').all()
     valid_node_relation_ids = [each.id for each in node_relations if not each.child.is_deleted]
@@ -919,7 +925,7 @@ def get_summary(auth, node, **kwargs):
 @must_be_contributor_or_public
 def get_readable_descendants(auth, node, **kwargs):
     descendants = []
-    for child in node.nodes_active:
+    for child in node.get_nodes(is_deleted=False):
         if request.args.get('permissions'):
             perm = request.args['permissions'].lower().strip()
             if perm not in child.get_permissions(auth.user):
