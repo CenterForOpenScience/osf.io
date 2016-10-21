@@ -129,7 +129,7 @@ def users_to_remove(source_event, source_node, new_node):
     if not old_sub and not old_node_sub:
         return removed_users
     for notification_type in constants.NOTIFICATION_TYPES:
-        users = getattr(old_sub, notification_type, []) + getattr(old_node_sub, notification_type, [])
+        users = list(getattr(old_sub, notification_type).all()) + list(getattr(old_node_sub, notification_type).all())
         subbed, removed_users[notification_type] = separate_users(new_node, users)
     return removed_users
 
@@ -157,7 +157,9 @@ def move_subscription(remove_users, source_event, source_node, new_event, new_no
     for notification_type in constants.NOTIFICATION_TYPES:
         if new_sub:
             for user_id in remove_users[notification_type]:
-                if user_id in getattr(new_sub, notification_type, []):
+                related_manager = getattr(new_sub, notification_type, None)
+                subscriptions = related_manager.all() if related_manager else []
+                if user_id in subscriptions:
                     user = User.load(user_id)
                     new_sub.remove_user_from_subscription(user)
 
@@ -341,7 +343,7 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
         notification_type = 'none'
     if subscription:
         for n_type in constants.NOTIFICATION_TYPES:
-            if user in getattr(subscription, n_type).all():
+            if getattr(subscription, n_type).filter(id=user.id).exists():
                 notification_type = n_type
     return {
         'event': {
@@ -373,7 +375,7 @@ def get_parent_notification_type(node, event, user):
             return get_parent_notification_type(parent, event, user)
 
         for notification_type in constants.NOTIFICATION_TYPES:
-            if user in getattr(subscription, notification_type):
+            if getattr(subscription, notification_type).filter(id=user.id).exists():
                 return notification_type
         else:
             return get_parent_notification_type(parent, event, user)
@@ -391,7 +393,7 @@ def get_global_notification_type(global_subscription, user):
     """
     for notification_type in constants.NOTIFICATION_TYPES:
         # TODO Optimize me
-        if user in getattr(global_subscription, notification_type).all():
+        if getattr(global_subscription, notification_type).filter(id=user.id).exists():
             return notification_type
 
 
