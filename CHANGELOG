@@ -2,14 +2,14 @@
 Changelog
 *********
 
-0.97.0 (2016-10-19)
+0.97.0 (2016-10-20)
 ===================
 - API v2 Versioning
 - API v2 Redirect swagger docs to Browseable API
 - Fix wiki formatting for legacy wiki pages
 - Ensure bad file moves don't delete files
 - API v2 Make private nodes private in inter-node file moves
-- Don't send user registration twice
+- Don't create user twice in claim edge case
 - Retain formatting in preregistration
 - Render wiki on project summary widget properly in all cases
 - Fixes for throttling
@@ -28,10 +28,20 @@ Changelog
 - Improvements to invoke tasks for dockerization
 - Support test-level database isolation
 
+Migrations
+-----------
+
+- python -m scripts.encrypt_external_accounts_unicode
+
 0.96.0 (2016-10-12)
 ===================
 - Add ownCloud addon
 - Encrypt addon credentials
+
+Migrations
+-----------
+
+- python -m scripts.encrypt_external_accounts
 
 0.95.0 (2016-10-05)
 ===================
