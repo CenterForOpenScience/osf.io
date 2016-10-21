@@ -1,5 +1,5 @@
 import sys
-from datetime import date
+from datetime import datetime
 from dateutil.parser import parse
 
 from modularodm import Q
@@ -20,7 +20,7 @@ def count(today):
             Q('date_confirmed', 'lt', today)
         ).count(),
         'unconfirmed_users': User.find(
-            Q('date_created', 'lt', today) &
+            Q('date_registered', 'lt', today) &
             Q('date_confirmed', 'eq', None)
         ).count(),
         'deactivated_users': User.find(
@@ -49,5 +49,5 @@ if __name__ == '__main__':
     try:
         date = parse(sys.argv[1])
     except IndexError:
-        date = date.today()
+        date = datetime.today()
     main(date)
