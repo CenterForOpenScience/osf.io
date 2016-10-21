@@ -140,14 +140,14 @@ var getAllPagesAjaxJSON = function(method, url, options) {
  * @return {Object data}
  */
 var mergePagesAjaxJSON = function(pages) {
-    var nodeList = {};
+    var mergedData = {};
     $.each(pages, function(page) {
         $.each(pages[page].data, function(n) {
             var node = pages[page].data[n];
-            nodeList[node.id] = node;
+            mergedData[node.id] = node;
         });
     });
-    return nodeList;
+    return mergedData;
 };
 
 /**
