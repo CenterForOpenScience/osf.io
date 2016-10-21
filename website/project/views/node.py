@@ -1127,7 +1127,7 @@ def search_node(auth, **kwargs):
     odm_query = title_query & not_deleted_query & visibility_query
 
     # Exclude current node from query if provided
-    nin = [node.id] + node.node_ids if node else []
+    nin = [node.id] + list(node._nodes.values_list('pk', flat=True)) if node else []
 
     nodes = Node.find(odm_query).exclude(id__in=nin).exclude(type='osf.collection')
     count = nodes.count()
