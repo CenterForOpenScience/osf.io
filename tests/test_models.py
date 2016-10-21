@@ -1620,7 +1620,7 @@ class TestNode(OsfTestCase):
             Node(preprint_article_doi='doi:10.10.1038/nwooo1170').save()  # should save without doi: prefix
 
     def test_validate_good_doi(self):
-        doi = '10.10.1038/nwooo1170'
+        doi = '10.11038/nwooo1170'
         self.node.preprint_article_doi = doi
         self.node.save()
         assert_equal(self.node.preprint_article_doi, doi)

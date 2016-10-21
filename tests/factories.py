@@ -236,7 +236,7 @@ class PreprintProviderFactory(ModularOdmFactory):
 class PreprintFactory(ModularOdmFactory):
     creator = None
     category = 'project'
-    doi = Sequence(lambda n: '10.123/{}'.format(n))
+    doi = Sequence(lambda n: '10.12345/0{}'.format(n))
     provider = SubFactory(PreprintProviderFactory)
     external_url = 'http://hello.org'
 

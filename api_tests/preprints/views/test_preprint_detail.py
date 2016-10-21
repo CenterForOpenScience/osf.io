@@ -120,7 +120,7 @@ class TestPreprintUpdate(ApiTestCase):
         assert_not_equal(self.preprint.primary_file, file_for_project)
 
     def test_update_doi(self):
-        new_doi = '10.123/456/789'
+        new_doi = '10.1234/ASDFASDF'
         assert_not_equal(self.preprint.article_doi, new_doi)
         update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"doi": new_doi})
 
