@@ -370,8 +370,8 @@ var FileViewPage = {
                 return;
             }
             var fileType = mime.lookup(self.file.name.toLowerCase());
-            // Only allow files < 1MB to be editable
-            if (self.file.size < 1048576 && fileType) { //May return false
+            // Only allow files < 64k to be editable
+            if (self.file.size < 65536 && fileType) { //May return false
                 var editor = EDITORS[fileType.split('/')[0]];
                 if (editor) {
                     self.editor = new Panel('Edit', self.editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.shareJSObservables], false);
