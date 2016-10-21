@@ -461,10 +461,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def nodes_active(self):
-        node_ids = list(self._nodes.filter(is_deleted=False).values_list('pk', flat=True))
-        return AbstractNode.objects.filter(
-            id__in=node_ids
-        )
+        return self._nodes.filter(is_deleted=False)
 
     def web_url_for(self, view_name, _absolute=False, _guid=False, *args, **kwargs):
         return web_url_for(view_name, pid=self._primary_key,
