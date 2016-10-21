@@ -12,8 +12,8 @@ def count(today):
     for addon in ADDONS_AVAILABLE:
         counts.append({
             'provider': addon.short_name,
-            'user_count': addon.settings_models['user'].find().count(),
-            'node_count': addon.settings_models['node'].find().count()
+            'user_count': addon.settings_models['user'].find().count() if addon.settings_models.get('user') else 0,
+            'node_count': addon.settings_models['node'].find().count() if addon.settings_models.get('node') else 0
         })
     return {'addon_count_analytics': counts}
 
