@@ -67,7 +67,11 @@ var SharePopover =  {
                         m('.tab-pane#embed', [
                             m('p', 'Dynamically render iframe with JavaScript'),
                             m('textarea.form-control[readonly][type="text"][value="' +
-                                '<script>window.jQuery || document.write(\'<script src="//code.jquery.com/jquery-1.11.2.min.js">\\x3C/script>\') </script>'+
+                                '<style>' +
+                                '.embed-responsive{position:relative;height:100%;}' +
+                                '.embed-responsive iframe{position:absolute;height:100%;}' +
+                                '</style>' +
+                                '<script>window.jQuery || document.write(\'<script src="//code.jquery.com/jquery-1.11.2.min.js">\\x3C/script>\') </script>' +
                                 '<link href="' + mfrHost + 'static/css/mfr.css" media="all" rel="stylesheet">' +
                                 '<div id="mfrIframe" class="mfr mfr-file"></div>' +
                                 '<script src="' + mfrHost + 'static/js/mfr.js">' +
