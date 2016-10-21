@@ -60,11 +60,26 @@ class CasClient(object):
     def __init__(self, base_url):
         self.BASE_URL = base_url
 
-    def get_login_url(self, service_url, username=None, verification_key=None):
+    def get_login_url(self, service_url, campaign=None, username=None, verification_key=None):
+        """
+        Get CAS login url with `service_url` as redirect location. There are three options:
+        1. no additional parameters provided -> go to CAS login page
+        2. `campaign=institution` -> go to CAS institution login page
+        3. `(username, verification_key)` -> CAS will verify this request automatically in background
+
+        :param service_url: redirect url after successful login
+        :param campaign: the campaign name, currently 'institution' only
+        :param username: the username
+        :param verification_key: the verification key
+        :return: dedicated CAS login url
+        """
+
         url = furl.furl(self.BASE_URL)
         url.path.segments.append('login')
         url.args['service'] = service_url
-        if username and verification_key:
+        if campaign:
+            url.args['campaign'] = campaign
+        elif username and verification_key:
             url.args['username'] = username
             url.args['verification_key'] = verification_key
         return url.url
