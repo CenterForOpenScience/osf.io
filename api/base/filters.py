@@ -218,24 +218,19 @@ class FilterMixin(object):
                                 'source_field_name': source_field_name
                             }
                         })
-                    elif source_field_name == 'is_preprint':
-                        # TODO: Make this also include _is_preprint_orphan when value is false [#PREP-129]
+                    elif field_name == 'preprint':
                         op = 'ne' if utils.is_truthy(value) else 'eq'
                         query.get(key).update({
-                            field_name: {
+                            field_name: [{
                                 'op': op,
                                 'value': None,
                                 'source_field_name': 'preprint_file'
-                            }
+                            }, {
+                                'op': op,
+                                'value': True,
+                                'source_field_name': '_is_preprint_orphan'
+                            }]
                         })
-                        if utils.is_truthy(value):
-                            query['_is_preprint_orphan'] = {
-                                field_name: {
-                                    'op': 'ne',
-                                    'value': True,
-                                    'source_field_name': '_is_preprint_orphan'
-                                }
-                            }
                     else:
                         query.get(key).update({
                             field_name: {
@@ -354,10 +349,17 @@ class ODMFilterMixin(FilterMixin):
                 for field_name, data in field_names.iteritems():
                     # Query based on the DB field, not the name of the serializer parameter
                     if isinstance(data, list):
-                        sub_query = functools.reduce(operator.and_, [
-                            Q(item['source_field_name'], item['op'], item['value'])
-                            for item in data
-                        ])
+                        if field_name == 'preprint' and utils.is_falsy(query_params[key]):
+                            # Use `or` when looking for not-preprints, to include both no file and is_orphaned
+                            sub_query = functools.reduce(operator.or_, [
+                                Q(item['source_field_name'], item['op'], item['value'])
+                                for item in data
+                            ])
+                        else:
+                            sub_query = functools.reduce(operator.and_, [
+                                Q(item['source_field_name'], item['op'], item['value'])
+                                for item in data
+                            ])
                     else:
                         sub_query = Q(data['source_field_name'], data['op'], data['value'])
 
