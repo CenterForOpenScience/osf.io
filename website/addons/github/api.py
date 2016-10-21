@@ -49,7 +49,11 @@ class GitHubClient(object):
         :return: Dict of repo information
             See http://developer.github.com/v3/repos/#get
         """
-        rv = self.gh3.repository(user, repo)
+        try:
+            rv = self.gh3.repository(user, repo)
+        except:
+            raise NotFoundError
+
         if rv:
             return rv
         raise NotFoundError
