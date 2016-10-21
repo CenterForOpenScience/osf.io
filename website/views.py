@@ -41,12 +41,19 @@ def _render_node(node, auth=None, parent_node=None):
         perm_list = node.get_permissions(auth.user)
         perm = permissions.reduce_permissions(perm_list)
 
+    if parent_node:
+        node_relation = parent_node.node_relations.get(child__id=node.id)
+        primary = not node_relation.is_node_link
+        _id = node._id if primary else node_relation._id
+    else:
+        _id = node._id
+        primary = True
     return {
         'title': node.title,
-        'id': node._primary_key,
+        'id': _id,
         'url': node.url,
         'api_url': node.api_url,
-        'primary': not parent_node.linked_nodes.filter(id=node.id).exists() if parent_node else False,
+        'primary': primary,
         'date_modified': utils.iso8601format(node.date_modified),
         'category': node.category,
         'permissions': perm,  # A string, e.g. 'admin', or None,
