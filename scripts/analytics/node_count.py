@@ -85,8 +85,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-
-    end_date = parse(args['end_date']).date() if args.get('end_date') else None
+    end_date = parse(args.end_date) if args.end_date else None
 
     node_count = get_node_count(end_date)
     keen_project = keen_settings['private']['project_id']
