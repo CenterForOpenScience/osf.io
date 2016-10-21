@@ -125,6 +125,8 @@ class TestJSONAPIBaseView(ApiTestCase):
 
 
 class TestSwaggerDocs(ApiTestCase):
-    def test_swagger_doc_json_route(self):
-        res = self.app.get('/v2/docs/api-docs/v2')
-        assert_equal(res.status_code, 200)
+
+    def test_swagger_docs_redirect_to_root(self):
+        res = self.app.get('/v2/docs/')
+        assert_equal(res.status_code, 302)
+        assert_equal(res.location, '/v2/')
