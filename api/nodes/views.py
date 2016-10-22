@@ -34,6 +34,7 @@ from api.base.throttling import (
     NonCookieAuthThrottle,
     AddContributorThrottle,
 )
+from api.nodes.filters import NodePreprintsFilterMixin
 from api.nodes.serializers import (
     NodeSerializer,
     ForwardNodeAddonSettingsSerializer,
@@ -174,7 +175,7 @@ class WaterButlerMixin(object):
         return obj
 
 
-class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ODMFilterMixin, WaterButlerMixin):
+class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodePreprintsFilterMixin, WaterButlerMixin):
     """Nodes that represent projects and components. *Writeable*.
 
     Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
@@ -279,7 +280,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     ordering = ('-date_modified', )  # default ordering
 
-    # overrides ODMFilterMixin
+    # overrides NodePreprintsFilterMixin
     def get_default_odm_query(self):
         user = self.request.user
         base_query = default_node_list_query()
@@ -1130,7 +1131,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
         serializer.save(draft=draft)
 
 
-class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin, ODMFilterMixin):
+class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin, NodePreprintsFilterMixin):
     """Children of the current node. *Writeable*.
 
     This will get the next level of child nodes for the selected node if the current user has read access for those
@@ -1220,7 +1221,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
     view_category = 'nodes'
     view_name = 'node-children'
 
-    # overrides ODMFilterMixin
+    # overrides NodePreprintsFilterMixin
     def get_default_odm_query(self):
         return default_node_list_query()
 
@@ -1499,7 +1500,7 @@ class NodeLinksDetail(BaseNodeLinksDetail, generics.RetrieveDestroyAPIView, Node
         node.save()
 
 
-class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
+class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, NodePreprintsFilterMixin):
     """Forks of the current node. *Writeable*.
 
     Paginated list of the current node's forks ordered by their `forked_date`. Forks are copies of projects that you can
@@ -3226,7 +3227,7 @@ class NodeIdentifierList(NodeMixin, IdentifierList):
     serializer_class = NodeIdentifierSerializer
 
 
-class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMixin):
+class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, NodePreprintsFilterMixin):
     """List of preprints for a node. *Read-only*.
 
     ##Note
