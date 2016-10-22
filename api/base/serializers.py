@@ -1099,7 +1099,6 @@ class JSONAPISerializer(ser.Serializer):
             'relationships': {},
             'embeds': {},
             'links': {},
-            'social': {},
         }
 
         embeds = self.context.get('embed', {})
@@ -1172,8 +1171,6 @@ class JSONAPISerializer(ser.Serializer):
                     data['id'] = representation
                 elif field.field_name == 'links':
                     data['links'] = representation
-                elif field.field_name == 'social':
-                    data['social'] = representation
                 else:
                     data['attributes'][field.field_name] = representation
 
@@ -1209,12 +1206,6 @@ class JSONAPISerializer(ser.Serializer):
 
         if clean_html is True:
             self._validated_data = self.sanitize_data()
-            try:
-                social = self.context['request']._full_data['social']
-            except KeyError:
-                social = None
-            if social:
-                self._validated_data.update({'social': social})
 
         self._validated_data.pop('type', None)
         self._validated_data.pop('target_type', None)
