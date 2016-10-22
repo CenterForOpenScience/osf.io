@@ -24,7 +24,7 @@ class SSOView(JSONAPIBaseView):
     # NOTE: directing a user to DISCOURSE/session/sso should trigger the sso process
     # for automatic sso login.
 
-    def get(self, request):
+    def get(self, request, **kwargs):
         auth = get_user_auth(request)
         user = request.user
         sso_secret = settings.DISCOURSE_SSO_SECRET

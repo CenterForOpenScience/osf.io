@@ -50,7 +50,7 @@ def get_parent_guids(node):
     return parent_guids
 
 # Safe to call multiple times, but will make a new topic each time!
-def create_topic(node):
+def create_topic(node, should_save=True):
     data = {}
     project_node = _get_project_node(node)
 
@@ -60,7 +60,7 @@ def create_topic(node):
     # privacy is completely relegated to the group with the corresponding project_guid
     data['archetype'] = 'regular'
 
-    get_or_create_group_id(project_node)  # ensure existance of the group
+    get_or_create_group_id(project_node, should_save = node != project_node)  # ensure existance of the group
     data['title'] = node.label
     data['raw'] = make_topic_content(node)
     data['parent_guids[]'] = get_parent_guids(node)
@@ -73,7 +73,8 @@ def create_topic(node):
     node.discourse_topic_title = data['title']
     node.discourse_topic_parent_guids = data['parent_guids[]']
     node.discourse_post_id = result['id']
-    node.save()
+    if should_save:
+        node.save()
 
     return result
 
@@ -96,12 +97,12 @@ def _update_topic_metadata(node):
     #data['category_id'] = {'wiki': wiki_category, 'files': file_category, 'nodes': project_category}[node.target_type]
     return request('put', '/t/' + node.guid_id + '/' + str(node.discourse_topic_id), data)
 
-def sync_topic(node):
+def sync_topic(node, should_save=True):
     if common.in_migration:
         return
 
     if node.discourse_topic_id is None:
-        create_topic(node)
+        create_topic(node, should_save)
         return
 
     parent_guids = get_parent_guids(node)
@@ -116,36 +117,39 @@ def sync_topic(node):
 
         node.discourse_topic_title = node.label
         node.discourse_topic_parent_guids = parent_guids
-        node.save()
+        if should_save:
+            node.save()
 
-def get_or_create_topic_id(node):
+def get_or_create_topic_id(node, should_save=True):
     if node is None:
         return None
     if node.discourse_topic_id is None:
-        create_topic(node)
+        create_topic(node, should_save)
     return node.discourse_topic_id
 
 def get_topic(node):
     return request('get', '/t/' + str(node.discourse_topic_id) + '.json')
 
-def delete_topic(node):
+def delete_topic(node, should_save=True):
     if node.discourse_topic_id is None or node.discourse_topic_deleted:
         return
 
     result = request('delete', '/t/' + str(node.discourse_topic_id) + '.json')
 
     node.discourse_topic_deleted = True
-    node.save()
+    if should_save:
+        node.save()
 
     return result
 
-def undelete_topic(node):
+def undelete_topic(node, should_save=True):
     if node.discourse_topic_id is None or not node.discourse_topic_deleted:
         return
 
     result = request('put', '/t/' + str(node.discourse_topic_id) + '/recover')
 
     node.discourse_topic_deleted = False
-    node.save()
+    if should_save:
+        node.save()
 
     return result

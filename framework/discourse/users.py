@@ -86,4 +86,4 @@ def logout():
     username = get_username()
     if username is None:
         return
-    return request('delete', '/session/' + username)
+    return request('delete', '/session/' + username, username=username)

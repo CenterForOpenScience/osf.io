@@ -2,7 +2,7 @@ from website import settings
 import requests
 
 # print out all API requests to discourse
-log_requests = False
+log_requests = True
 
 # Prevent unnecessary syncing to discourse from spurious differences during a migration
 in_migration = False
@@ -12,16 +12,16 @@ class DiscourseException(Exception):
         super(DiscourseException, self).__init__(message)
         self.result = result
 
-def request(method, path, data={}, user_name=None):
+def request(method, path, data={}, username=None):
     params = {}
     params['api_key'] = settings.DISCOURSE_API_KEY
-    params['api_username'] = user_name if user_name else settings.DISCOURSE_API_ADMIN_USER
+    params['api_username'] = username if username else settings.DISCOURSE_API_ADMIN_USER
 
     url = requests.compat.urljoin(settings.DISCOURSE_SERVER_URL, path)
-    result = getattr(requests, method)(url, data=data, params=params)
+    result = getattr(requests, method)(url, data=data, params=params, allow_redirects=False, headers={'X-Requested-With': 'XMLHttpRequest'})
 
     if log_requests:
-        print(method + ' \t' + result.url + ' with ' + str(data))
+        print(method + ' \t' + result.request.url + ' with data: ' + str(data) + ' and params: ' + str(params))
 
     if result.status_code < 200 or result.status_code > 299:
         raise DiscourseException('Discourse server responded to ' + method + ' request ' + result.url + ' with '

@@ -38,11 +38,13 @@ If you get a complaint that port 80 is already in use, determine the PID of the 
 ###More Configuration
 Make sure that an SMTP server is setup, even if it is just with `sudo python -m smtpd -n -c DebuggingServer localhost:387`.
 
-Discourse should be accessible at port 80 of the ip address of the virtual machine. Navigate to the new Discourse instance and proceed to setup a new account using the email address previously specified in `DISCOURSE_DEVELOPER_EMAILS`. The password used doesn't really matter because we will configure Discourse for Single Sign On through the OSF.
+Discourse should be accessible at port 80 of the ip address of the virtual machine. Navigate to the new Discourse instance, and you will be presented with a start-up/installation wizard. Proceed to setup a new account using the email address previously specified in `DISCOURSE_DEVELOPER_EMAILS`. The password used doesn't really matter because we will configure Discourse for Single Sign On through the OSF.
 
 Confirm the new account by navigating to the confirmation link which should appear in the python smtpd output. If the email setup doesn't work right away for you, it might be easier to use a script instead. From within the virtual machine run `./launcher enter app`, navigate to /var/www/discourse and then run `rake admin:create`. If it gives you trouble, you might need to prepend that with `RAILS_ENV=production bundle exec`. The script should leave you with a confirmed admin user.
 
-Now logged in, click on the triple bar drop down in the top right corner and navigate to settings. Navigate to API settings and then generate the Master API key.
+After confirming your account you will be taken back to the wizard. Skip it by clicking "Maybe Later," because these settings will be set automatically for you.
+
+Now logged in, click on the triple bar drop down menu in the top right corner and navigate to settings. Navigate to API settings and then generate the Master API key.
 
 Open up your OSF website/settings/local.py file. Enter the API key we just created as the value for `DISCOURSE_API_KEY`. Also generate a random ~128 bit entropy string, for example with https://www.random.org/bytes/ and use this for `DISCOURSE_SSO_SECRET`. Also make sure that `DISCOURSE_SERVER_URL` points to your Discourse instance. Locally, this will be the ip address of virtual machine. You will also need to set the `contact_email` in the list of Discourse settings. This large list of settings can all be later changed from the admin interface in Discourse.
 
@@ -125,13 +127,13 @@ In website/static/js/pages/project-dashboard-page.js we mount the forum-feed Mit
 In website/templates/project/project.mako we take the Discourse url and API key passed to the mako template and save them in window.contextVars so they can be accessed by javascript.
 
 ##Further Work/Bugs to Fix
-Apparently there is a better way to hook onto project changes that would be more targeted.
+Apparently there is a better way to hook onto project changes that would be more targeted? (the hook on save seems to be the most comprehensive, actually, and foolproof, especially now that it shouldn't end up calling save again itself)
 
-It seems that there are performance implications in calling save() more than absolutely necessary. The hooks around changes and in framework.discourse could be reworked to ensure that only one call to save() is ever made.
+If the OSF rollsback a project creation, then Discourse should too.
 
 Log Discourse errors correctly.
 
-It seems that the hook for logging out of the OSF also logging you out of Discourse is not currently working.
+It seems that interaction is not working very well with the OSF and production discourse.
 
 Since we seem to be using docstrings with Sphinx conventions, these could also be added to OSF code.
 

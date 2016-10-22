@@ -6,16 +6,19 @@ from .groups import create_group, update_group_privacy, sync_group, delete_group
 from .topics import get_or_create_topic_id, create_topic, sync_topic, delete_topic, undelete_topic  # noqa
 from .users import get_username, get_user_apikey, logout  # noqa
 
-def sync_project(project_node):
+def sync_project(project_node, should_save=True):
     if common.in_migration:
         return
 
-    sync_group(project_node)
+    sync_group(project_node, False)
 
     if project_node.discourse_topic_id:
-        sync_topic(project_node)
+        sync_topic(project_node, False)
     else:
-        create_topic(project_node)
+        create_topic(project_node, False)
 
-def delete_project(project_node):
-    delete_group(project_node)
+    if should_save:
+        project_node.save()
+
+def delete_project(project_node, should_save=True):
+    delete_group(project_node, should_save)

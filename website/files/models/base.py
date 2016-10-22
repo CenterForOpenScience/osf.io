@@ -313,13 +313,14 @@ class StoredFileNode(StoredObject, Commentable):
         return self.name
 
     def save(self):
-        value = super(StoredFileNode, self).save()
-        # keep discourse up to date. It will be a NOP if everything is synced already.
+        # keep discourse up to date with changed filename. It will be a NOP if everything is synced already.
         if self.discourse_topic_id:
             try:
-                discourse.sync_topic(self)
+                discourse.sync_topic(self, should_save=False)
             except (discourse.DiscourseException, requests.exceptions.ConnectionError):
                 logger.exception('Error syncing/creating Discourse topic')
+
+        value = super(StoredFileNode, self).save()
         return value
 
 

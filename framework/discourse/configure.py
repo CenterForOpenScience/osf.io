@@ -25,6 +25,15 @@ def configure_server_settings():
 
         time.sleep(0.1)
 
+def configure_intro_topic():
+    post_id = request('get', '/t/welcome-to-discourse.json')['post_stream']['posts'][0]['id']
+
+    data = {}
+    data['post[raw]'] = settings.DISCOURSE_WELCOME_TOPIC
+    request('put', '/posts/' + str(post_id), data)
+
 if __name__ == '__main__':
     configure_server_settings()
     configure_embeddable_host()
+    configure_intro_topic()
+    print("Configuration complete!")

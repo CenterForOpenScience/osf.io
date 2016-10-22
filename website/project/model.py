@@ -1675,6 +1675,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
         first_save = not self._is_loaded
 
+        if not first_save:
+            # For project public/private, contributors, project name, etc... no-op if everything is already synced
+            try:
+                # We are already in the save function! no need to save again...
+                discourse.sync_project(self, should_save=False)
+            except (discourse.DiscourseException, requests.exceptions.ConnectionError):
+                logger.exception('Error syncing/creating Discourse project')
+
         if first_save and self.is_bookmark_collection:
             existing_bookmark_collections = Node.find(
                 Q('is_bookmark_collection', 'eq', True) & Q('contributors', 'eq', self.creator._id) & Q('is_deleted', 'eq', False)
@@ -1741,11 +1749,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
                 Node.bulk_update_search(batch)
                 children = children[99:]
 
-        # For project public/private and contributors, no-op if everything is already synced
-        try:
-            discourse.sync_project(self)
-        except (discourse.DiscourseException, requests.exceptions.ConnectionError):
-            logger.exception('Error syncing/creating Discourse project')
+        # We have to wait until now to save, and then save again, because we won't have a guid until after the first save
+        if first_save:
+            # For project public/private, contributors, project name, etc... no-op if everything is already synced
+            try:
+                # We are already in the save function! no need to save again...
+                discourse.sync_project(self, should_save=False)
+                saved_fields |= set(super(Node, self).save(*args, **kwargs))
+            except (discourse.DiscourseException, requests.exceptions.ConnectionError):
+                logger.exception('Error syncing/creating Discourse project')
 
         # Return expected value for StoredObject::save
         return saved_fields

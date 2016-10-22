@@ -1851,3 +1851,5 @@ DISCOURSE_SERVER_SETTINGS = {'title': 'Open Science Framework',
                              'osf_domain': DOMAIN,
                              'mfr_domain': MFR_SERVER_URL,
  }
+
+DISCOURSE_WELCOME_TOPIC = 'This forum is a place for your project team to have open discussions your research. Topics are automatically made for the project, components, wiki pages, and files. Whenever you see the discussion bubble in the top right corner of an OSF page, you can click it to reveal the linked forum topic. You can also start new topics in the forum about other aspects of the project. We hope you will use this area to promote your research and keep record of the discussions behind it.'
