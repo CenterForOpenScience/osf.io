@@ -1986,7 +1986,9 @@ var FGToolbar = {
             // Only show delete button if user has edit permissions on at least one selected file
             for (i = 0, len = items.length; i < len; i++) {
                 each = items[i];
-                if (each.data.permissions.edit && !each.data.isAddonRoot && !each.data.nodeType) {
+                // Check typeof each.data.permissions !== 'undefined' to prevent a rare probabalistic fangorn breaking issue
+                // where moving many files at once, one fails to get permissions for an unknown reason
+                if (typeof each.data.permissions !== 'undefined' && each.data.permissions.edit && !each.data.isAddonRoot && !each.data.nodeType) {
                     showDelete = true;
                     break;
                 }
