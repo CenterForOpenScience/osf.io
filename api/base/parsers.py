@@ -75,11 +75,8 @@ class JSONAPIParser(JSONParser):
                 raise JSONAPIException(source={'pointer': '/data/type'}, detail=NO_TYPE_ERROR)
 
         attributes = resource_object.get('attributes')
-        social = resource_object.get('social')
-        parsed = {'id': object_id, 'type': object_type}
 
-        if social:
-            parsed.update({'social': social})
+        parsed = {'id': object_id, 'type': object_type}
 
         if attributes:
             parsed.update(attributes)
