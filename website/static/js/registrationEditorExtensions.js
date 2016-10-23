@@ -85,7 +85,8 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
                 Fangorn.DefaultOptions.dropzoneEvents,
                 {
                     complete: function(tb, file, response) {
-                        var fileMeta = JSON.parse(file.xhr.response);
+                        var fileResponse = JSON.parse(file.xhr.response);
+                        var fileMeta = fileResponse.data.attributes;
                         fileMeta.nodeId = file.treebeardParent.data.nodeId;
                         onSelectRow({
                             kind: 'file',
