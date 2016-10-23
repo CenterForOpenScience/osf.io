@@ -1246,7 +1246,7 @@ function orderFolder(tree) {
         for (var column in this.isSorted){
             sortColumn = this.isSorted[column].asc || this.isSorted[column].desc ? column : sortColumn; 
         }
-        var sortDirection = this.isSorted[sortColumn].desc ? 'desc' : 'asc'; // default to ascending
+        sortDirection = this.isSorted[sortColumn].desc ? 'desc' : 'asc'; // default to ascending
     }else{
         sortColumn = 0;
         sortDirection = 'asc';
