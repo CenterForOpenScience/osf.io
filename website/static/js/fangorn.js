@@ -1303,10 +1303,8 @@ function gotoFileEvent (item, toUrl) {
     // construct view only link into file url as it gets removed from url params in IE
     if ($osf.isIE()) {
         var viewOnly = $osf.urlParams().view_only;
-        var options = {};
         if (viewOnly) {
-            options.view_only = viewOnly;
-            fileurl += $.param($.extend(options, ''));
+            fileurl += '?view_only=' + viewOnly;
         }
     }
 
