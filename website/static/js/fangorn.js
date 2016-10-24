@@ -1002,7 +1002,7 @@ function _createFolder(event, dismissCallback, helpText) {
     var options = {name: val, kind: 'folder'};
     if (parent.data.provider === 'github') {
         extra.branch = parent.data.branch;
-        options['branch'] = parent.data.branch;
+        options.branch = parent.data.branch;
     }
 
     m.request({
