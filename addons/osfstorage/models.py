@@ -28,6 +28,27 @@ class OsfStorageFileNode(FileNode):
     def get(cls, _id, node):
         return cls.find_one(Q('_id', 'eq', _id) & Q('node', 'eq', node))
 
+    def _create_trashed(self, save=True, user=None, parent=None):
+        if save is False:
+            logger.warning('Asked to create a TrashedFileNode without saving.')
+        trashed = TrashedFileNode.objects.create(
+            _id=self._id,
+            name=self.name,
+            path=self.path,
+            node=self.node,
+            parent=parent or self.parent,
+            history=self.history,
+            is_file=self.is_file,
+            checkout=self.checkout,
+            provider=self.provider,
+            last_touched=self.last_touched,
+            materialized_path=self.materialized_path,
+            deleted_by=user
+        )
+        if self.versions.exists():
+            trashed.versions.add(*self.versions.all())
+        return trashed
+
     @classmethod
     def get_or_create(cls, node, path):
         """Override get or create for osfstorage
@@ -73,7 +94,7 @@ class OsfStorageFileNode(FileNode):
             if guid:
                 guids.append(guid._id)
 
-        return guids
+        return sorted(guids)
 
     @property
     def kind(self):
@@ -187,7 +208,10 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
     @property
     def history(self):
-        return self.versions.all().values_list('metadata', flat=True)
+        metadata = []
+        for meta in self.versions.values_list('metadata', flat=True):
+            metadata.append(meta)
+        return metadata
 
     def serialize(self, include_full=None, version=None):
         ret = super(OsfStorageFile, self).serialize()
@@ -271,7 +295,6 @@ class OsfStorageFile(OsfStorageFileNode, File):
         if self.node.is_registration:
             # Can't perform edits on a registration
             raise NodeStateError
-
         tag_instance = Tag.objects.filter(name=tag).first()
         if not tag_instance:
             raise InvalidTagError
@@ -303,11 +326,18 @@ class OsfStorageFile(OsfStorageFileNode, File):
 class OsfStorageFolder(OsfStorageFileNode, Folder):
     @property
     def is_checked_out(self):
-        if self.checkout:
-            return True
-        for child in self.children.all():
-            if child.is_checked_out:
+        try:
+            if self.checkout:
                 return True
+        except AttributeError:
+            return False
+        # TODO this should be one query
+        for child in self.children.all():
+            try:
+                if child.is_checked_out:
+                    return True
+            except AttributeError:
+                pass
         return False
 
     def serialize(self, include_full=False, version=None):

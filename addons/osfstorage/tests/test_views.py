@@ -7,6 +7,7 @@ import datetime
 import pytest
 from nose.tools import *  # noqa
 
+from addons.osfstorage.models import OsfStorageFileNode
 from framework.auth.core import Auth
 from website.addons.osfstorage.tests.utils import (
     StorageTestCase, Delta, AssertDeltas,
@@ -52,7 +53,7 @@ class TestGetMetadataHook(HookTestCase):
         path = u'kind/of/magíc.mp3'
         record = recursively_create_file(self.node_settings, path)
         version = factories.FileVersionFactory()
-        record.versions.append(version)
+        record.versions.add(version)
         record.save()
         res = self.send_hook(
             'osfstorage_get_metadata',
@@ -66,7 +67,7 @@ class TestGetMetadataHook(HookTestCase):
         path = u'kind/of/magíc.mp3'
         record = recursively_create_file(self.node_settings, path)
         version = factories.FileVersionFactory()
-        record.versions.append(version)
+        record.versions.add(version)
         record.save()
         res = self.send_hook(
             'osfstorage_get_children',
@@ -187,13 +188,13 @@ class TestUploadFileHook(HookTestCase):
         })
 
         assert_is_not(version, None)
-        assert_equal([version], list(record.versions))
-        assert_not_in(version, self.record.versions)
+        assert_equal([version], list(record.versions.all()))
+        assert_not_in(version, self.record.versions.all())
         assert_equal(record.serialize(), res.json['data'])
         assert_equal(res.json['data']['downloads'], self.record.get_download_count())
 
     def test_upload_update(self):
-        delta = Delta(lambda: len(self.record.versions), lambda value: value + 1)
+        delta = Delta(lambda: self.record.versions.count(), lambda value: value + 1)
         with AssertDeltas(delta):
             res = self.send_upload_hook(self.node_settings.get_root(), self.make_payload())
             self.record.reload()
@@ -201,7 +202,7 @@ class TestUploadFileHook(HookTestCase):
         assert_equal(res.json['status'], 'success')
         version = models.FileVersion.load(res.json['version'])
         assert_is_not(version, None)
-        assert_in(version, self.record.versions)
+        assert_in(version, self.record.versions.all())
 
     def test_upload_duplicate(self):
         location = {
@@ -210,14 +211,14 @@ class TestUploadFileHook(HookTestCase):
             'object': 'file',
         }
         version = self.record.create_version(self.user, location)
-        with AssertDeltas(Delta(lambda: len(self.record.versions))):
+        with AssertDeltas(Delta(lambda: self.record.versions.count())):
             res = self.send_upload_hook(self.node_settings.get_root(), self.make_payload())
             self.record.reload()
         assert_equal(res.status_code, 200)
         assert_equal(res.json['status'], 'success')
         version = models.FileVersion.load(res.json['version'])
         assert_is_not(version, None)
-        assert_in(version, self.record.versions)
+        assert_in(version, self.record.versions.all())
 
     def test_upload_create_child(self):
         name = 'ლ(ಠ益ಠლ).unicode'
@@ -231,10 +232,10 @@ class TestUploadFileHook(HookTestCase):
         version = models.FileVersion.load(res.json['version'])
 
         assert_is_not(version, None)
-        assert_not_in(version, self.record.versions)
+        assert_not_in(version, self.record.versions.all())
 
         record = parent.find_child_by_name(name)
-        assert_in(version, record.versions)
+        assert_in(version, record.versions.all())
         assert_equals(record.name, name)
         assert_equals(record.parent, parent)
 
@@ -251,10 +252,10 @@ class TestUploadFileHook(HookTestCase):
         version = models.FileVersion.load(res.json['version'])
 
         assert_is_not(version, None)
-        assert_not_in(version, self.record.versions)
+        assert_not_in(version, self.record.versions.all())
 
         record = parent.find_child_by_name(name)
-        assert_in(version, record.versions)
+        assert_in(version, record.versions.all())
         assert_equals(record.name, name)
         assert_equals(record.parent, parent)
 
@@ -289,9 +290,9 @@ class TestUploadFileHook(HookTestCase):
         version = models.FileVersion.load(res.json['version'])
 
         assert_is_not(version, None)
-        assert_in(version, new_node.versions)
+        assert_in(version, new_node.versions.all())
 
-        assert_in(version, new_node.versions)
+        assert_in(version, new_node.versions.all())
         assert_equals(new_node.name, name)
         assert_equals(new_node.parent, parent)
 
@@ -451,9 +452,9 @@ class TestGetRevisions(StorageTestCase):
                 self.project,
                 self.record,
                 version,
-                index=len(self.record.versions) - 1 - idx
+                index=self.record.versions.count() - 1 - idx
             )
-            for idx, version in enumerate(reversed(self.record.versions))
+            for idx, version in enumerate(reversed(self.record.versions.all()))
         ]
 
         assert_equal(len(res.json['revisions']), 15)
@@ -511,17 +512,17 @@ class TestCreateFolder(HookTestCase):
         resp = self.create_folder('name')
 
         assert_equal(resp.status_code, 201)
-        assert_equal(len(self.root_node.children), 1)
-        assert_equal(self.root_node.children[0].serialize(), resp.json['data'])
+        assert_equal(self.root_node.children.count(), 1)
+        assert_equal(self.root_node.children.all()[0].serialize(), resp.json['data'])
 
-        resp = self.create_folder('name', parent=models.OsfStorageFileNode.load(resp.json['data']['id']))
+        resp = self.create_folder('name', parent=OsfStorageFileNode.load(resp.json['data']['id']))
 
         assert_equal(resp.status_code, 201)
-        assert_equal(len(self.root_node.children), 1)
-        assert_false(self.root_node.children[0].is_file)
-        assert_equal(len(self.root_node.children[0].children), 1)
-        assert_false(self.root_node.children[0].children[0].is_file)
-        assert_equal(self.root_node.children[0].children[0].serialize(), resp.json['data'])
+        assert_equal(self.root_node.children.count(), 1)
+        assert_false(self.root_node.children.all()[0].is_file)
+        assert_equal(self.root_node.children.all()[0].children.count(), 1)
+        assert_false(self.root_node.children.all()[0].children.all()[0].is_file)
+        assert_equal(self.root_node.children.all()[0].children.all()[0].serialize(), resp.json['data'])
 
 
 @pytest.mark.django_db
@@ -561,7 +562,7 @@ class TestDeleteHook(HookTestCase):
         assert_equal(resp.json, {'status': 'success'})
         fid = file._id
         del file
-        models.StoredFileNode._clear_object_cache()
+        # models.StoredFileNode._clear_object_cache()
         assert_is(models.OsfStorageFileNode.load(fid), None)
         assert_true(models.TrashedFileNode.load(fid))
 
@@ -650,20 +651,20 @@ class TestFileTags(StorageTestCase):
         url = self.project.api_url_for('osfstorage_add_tag', fid=file._id)
         self.app.post_json(url, {'tag': 'Kanye_West'}, auth=self.user.auth)
         file.reload()
-        assert_in('Kanye_West', file.tags)
+        assert_in('Kanye_West', file.tags.values_list('name', flat=True))
 
     def test_file_add_non_ascii_tag(self):
         file = self.node_settings.get_root().append_file('JapaneseCharacters.txt')
-        assert_not_in('コンサート', file.tags)
+        assert_not_in('コンサート', file.tags.values_list('name', flat=True))
 
         url = self.project.api_url_for('osfstorage_add_tag', fid=file._id)
         self.app.post_json(url, {'tag': 'コンサート'}, auth=self.user.auth)
         file.reload()
-        assert_in('コンサート', file.tags)
+        assert_in('コンサート', file.tags.values_list('name', flat=True))
 
     def test_file_remove_tag(self):
         file = self.node_settings.get_root().append_file('Champion.mp3')
-        tag = Tag(_id='Graduation')
+        tag = Tag(name='Graduation')
         tag.save()
         file.tags.append(tag)
         file.save()
@@ -675,7 +676,7 @@ class TestFileTags(StorageTestCase):
 
     def test_tag_the_same_tag(self):
         file = self.node_settings.get_root().append_file('Lie,Cheat,Steal.mp3')
-        tag = Tag(_id='Run_the_Jewels')
+        tag = Tag(name='Run_the_Jewels')
         tag.save()
         file.tags.append(tag)
         file.save()
@@ -700,13 +701,13 @@ class TestFileTags(StorageTestCase):
 
         assert_equal(res.status_code, 200)
         self.node.reload()
-        assert_equal(self.node.logs[-1].action, 'file_tag_added')
+        assert_equal(self.node.logs.all()[-1].action, 'file_tag_added')
 
 
-    @mock.patch('website.files.models.osfstorage.OsfStorageFile.add_tag_log')
+    @mock.patch('addons.osfstorage.OsfStorageFile.add_tag_log')
     def test_file_add_tag_fail_doesnt_create_log(self, mock_log):
         file = self.node_settings.get_root().append_file('UltraLightBeam.mp3')
-        tag = Tag(_id='The Life of Pablo')
+        tag = Tag(name='The Life of Pablo')
         tag.save()
         file.tags.append(tag)
         file.save()
@@ -718,7 +719,7 @@ class TestFileTags(StorageTestCase):
 
     def test_file_remove_tag_creates_log(self):
         file = self.node_settings.get_root().append_file('Formation.flac')
-        tag = Tag(_id='You that when you cause all this conversation')
+        tag = Tag(name='You that when you cause all this conversation')
         tag.save()
         file.tags.append(tag)
         file.save()
@@ -729,7 +730,7 @@ class TestFileTags(StorageTestCase):
         self.node.reload()
         assert_equal(self.node.logs[-1].action, 'file_tag_removed')
 
-    @mock.patch('website.files.models.osfstorage.OsfStorageFile.add_tag_log')
+    @mock.patch('addons.osfstorage.OsfStorageFile.add_tag_log')
     def test_file_remove_tag_fail_doesnt_create_log(self, mock_log):
         file = self.node_settings.get_root().append_file('For-once-in-my-life.mp3')
         url = self.project.api_url_for('osfstorage_remove_tag', fid=file._id)

@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import httplib
 import logging
 
+from django.core.exceptions import ValidationError
 from modularodm import Q
 from modularodm.storage.base import KeyExistsException
 
@@ -82,7 +83,7 @@ def osfstorage_get_revisions(file_node, node_addon, payload, **kwargs):
     # Return revisions in descending order
     return {
         'revisions': [
-            utils.serialize_revision(node_addon.owner, file_node, version, index=len(file_node.versions) - idx - 1, anon=is_anon)
+            utils.serialize_revision(node_addon.owner, file_node, version, index=file_node.versions.count() - idx - 1, anon=is_anon)
             for idx, version in enumerate(file_node.versions.all().order_by('-date_created'))
         ]
     }
@@ -154,7 +155,7 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
             created, file_node = True, parent.append_folder(name)
         else:
             created, file_node = True, parent.append_file(name)
-    except KeyExistsException:
+    except (KeyExistsException, ValidationError):
         created, file_node = False, parent.find_child_by_name(name, kind=int(not is_folder))
 
     if not created and is_folder:

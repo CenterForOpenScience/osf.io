@@ -23,9 +23,6 @@ class DateTimeAwareJSONEncoder(DjangoJSONEncoder):
             return dict(type='encoded_time', value=o.isoformat())
         elif isinstance(o, Decimal):
             return dict(type='encoded_decimal', value=str(o))
-        elif isinstance(o, QuerySet):
-            # fix for django querysets being unserializable by default
-            return super(DateTimeAwareJSONEncoder, self).default(list(o))
         return super(DateTimeAwareJSONEncoder, self).default(o)
 
 
