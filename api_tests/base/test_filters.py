@@ -28,9 +28,11 @@ from api.base.exceptions import (
     InvalidFilterMatchType,
 )
 
+from api.base.serializers import RelationshipField
+
 class FakeSerializer(ser.Serializer):
 
-    filterable_fields = ('id', 'string_field', 'second_string_field','list_field', 'date_field', 'int_field', 'bool_field')
+    filterable_fields = ('id', 'string_field', 'second_string_field','list_field', 'date_field', 'int_field', 'bool_field', 'relationship_field')
 
     id = ser.CharField()
     string_field = ser.CharField()
@@ -41,6 +43,7 @@ class FakeSerializer(ser.Serializer):
     int_field = ser.IntegerField()
     float_field = ser.FloatField()
     bool_field = ser.BooleanField(source='foobar')
+    relationship_field = RelationshipField(related_view='fake', related_view_kwargs={})
 
 class FakeRecord(object):
 
@@ -266,6 +269,12 @@ class TestFilterMixin(ApiTestCase):
         value = self.view.convert_value(value, field)
         assert_equal(value, 42.0)
 
+    def test_convert_value_null_for_list(self):
+        value = 'null'
+        field = FakeSerializer._declared_fields['list_field']
+        value = self.view.convert_value(value, field)
+        assert_equal(value, [])
+
     def test_multiple_filter_params(self):
         query_params = {
             'filter[string_field, second_string_field]': 'foobar'
@@ -385,6 +394,26 @@ class TestFilterMixin(ApiTestCase):
         }
         with assert_raises(InvalidFilterError):
             self.view.parse_query_params(query_params)
+
+    def test_bad_filter_operator(self):
+        query_params = {
+            'filter[relationship_field][invalid]': 'false',
+        }
+        with assert_raises(InvalidFilterOperator):
+            self.view.parse_query_params(query_params)
+
+    def test_simplified_date_filter(self):
+        query_params = {
+            'filter[date_field]': '2016-08-24'
+        }
+        query = self.view.query_params_to_odm_query(query_params)
+        assert_equals(
+            repr(query),
+            repr(functools.reduce(operator.and_, [
+                Q('date_field', 'gte', datetime.datetime(2016, 8, 24)),
+                Q('date_field', 'lt', datetime.datetime(2016, 8, 25)),
+            ]))
+        )
 
 
 class TestListFilterMixin(ApiTestCase):

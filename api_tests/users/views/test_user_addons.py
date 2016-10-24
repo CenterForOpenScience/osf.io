@@ -18,6 +18,7 @@ from website.addons.googledrive.tests.factories import GoogleDriveAccountFactory
 from website.addons.mendeley.tests.factories import MendeleyAccountFactory
 from website.addons.s3.tests.factories import S3AccountFactory
 from website.addons.zotero.tests.factories import ZoteroAccountFactory
+from website.addons.owncloud.tests.factories import OwnCloudAccountFactory
 
 class UserAddonListMixin(object):
     def set_setting_list_url(self):
@@ -413,6 +414,10 @@ class TestUserS3Addon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
 class TestUserZoteroAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'zotero'
     AccountFactory = ZoteroAccountFactory
+
+class TestUserOwnCloudAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
+    short_name = 'owncloud'
+    AccountFactory = OwnCloudAccountFactory
 
 
 class TestUserFigshareAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):

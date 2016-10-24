@@ -39,6 +39,10 @@ class NodeAddonFolderSerializer(JSONAPISerializer):
         )
 
 class AddonSerializer(JSONAPISerializer):
+    filterable_fields = frozenset([
+        'categories',
+    ])
+
     class Meta:
         type_ = 'addon'
 

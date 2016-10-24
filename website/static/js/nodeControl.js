@@ -42,7 +42,7 @@ var ProjectViewModel = function(data, options) {
     self.userCanEdit = data.user.can_edit;
     self.userPermissions = data.user.permissions;
     self.node = data.node;
-    self.description = ko.observable(data.node.description);
+    self.description = ko.observable(data.node.description ? data.node.description : '');
     self.title = data.node.title;
     self.categoryValue = ko.observable(data.node.category_short);
     self.isRegistration = data.node.is_registration;
@@ -144,8 +144,9 @@ var ProjectViewModel = function(data, options) {
                 return {newValue: newValue};
             }
         }));
+    } else {
+      $('#nodeDescriptionEditable').html($osf.linkifyText(self.description()));
     }
-
     /**
      * Add project to the Project Organizer.
      */
@@ -217,7 +218,6 @@ var ProjectViewModel = function(data, options) {
 
     self.canCreateIdentifiers = ko.pureComputed(function() {
         return !self.hasIdentifiers() &&
-            self.isRegistration &&
             self.nodeIsPublic &&
             self.userPermissions.indexOf('admin') !== -1;
     });
@@ -236,7 +236,8 @@ var ProjectViewModel = function(data, options) {
             title: 'Create identifiers',
             message: '<p class="overflow">' +
                 'Are you sure you want to create a DOI and ARK for this ' +
-                $osf.htmlEscape(self.nodeType) + '?',
+                $osf.htmlEscape(self.nodeType) + '? DOI and ARK identifiers' +
+                ' are persistent and will always resolve to this page.',
             callback: function(confirmed) {
                 if (confirmed) {
                     self.createIdentifiers();

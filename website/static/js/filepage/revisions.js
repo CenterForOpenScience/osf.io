@@ -45,6 +45,7 @@ var FileRevisionsTable = {
                 url: self.file.urls.revisions,
                 beforeSend: $osf.setXHRAuthorization
             }).done(function(response) {
+                response = waterbutler.wbLazyLoadPreprocess.call(this, response);
                 m.startComputation();
                 var urlParmas = $osf.urlParams();
                 model.revisions = response.data.map(function(rev, index) {
@@ -82,6 +83,7 @@ var FileRevisionsTable = {
                         url: self.file.urls.metadata,
                         beforeSend: $osf.setXHRAuthorization
                     }).done(function(resp) {
+                        resp = waterbutler.wbLazyLoadPreprocess.call(this, resp);
                         self.canEdit(self.canEdit() && resp.data.extra.canDelete);
                         m.redraw();
                     }).fail(function(xhr) {
@@ -192,7 +194,7 @@ var FileRevisionsTable = {
         }
         options[revision.versionIdentifier] = revision.version;
 
-        revision.date = new $osf.FormattableDate(revision.modified);
+        revision.date = new $osf.FormattableDate(revision.modified_utc);
         revision.displayDate = revision.date.local !== 'Invalid date' ?
             revision.date.local :
             revision.date;

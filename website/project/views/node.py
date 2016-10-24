@@ -179,7 +179,13 @@ def project_new_node(auth, node, **kwargs):
         if form.inherit_contributors.data and node.has_permission(user, WRITE):
             for contributor in node.contributors:
                 perm = CREATOR_PERMISSIONS if contributor is user else node.get_permissions(contributor)
-                new_component.add_contributor(contributor, permissions=perm, auth=auth)
+                if contributor is user and not contributor.is_registered:
+                    new_component.add_unregistered_contributor(
+                        fullname=contributor.fullname, email=contributor.email,
+                        permissions=perm, auth=auth, existing_user=contributor
+                    )
+                else:
+                    new_component.add_contributor(contributor, permissions=perm, auth=auth)
 
             new_component.save()
             redirect_url = new_component.url + 'contributors/'
@@ -734,7 +740,10 @@ def _view_project(node, auth, primary=False):
             'institutions': get_affiliated_institutions(node) if node else [],
             'alternative_citations': [citation.to_json() for citation in node.alternative_citations],
             'has_draft_registrations': node.has_active_draft_registrations,
-            'contributors': [contributor._id for contributor in node.contributors]
+            'contributors': [contributor._id for contributor in node.contributors],
+            'is_preprint': node.is_preprint,
+            'is_preprint_orphan': node.is_preprint_orphan,
+            'preprint_file_id': node.preprint_file._id if node.preprint_file else None
         },
         'parent_node': {
             'exists': parent is not None,

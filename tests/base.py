@@ -157,6 +157,34 @@ class DbTestCase(unittest.TestCase):
         settings.BCRYPT_LOG_ROUNDS = cls._original_bcrypt_log_rounds
 
 
+class DbIsolationMixin(object):
+    """Use this mixin when test-level database isolation is desired.
+
+    DbTestCase only wipes the database during *class* setup and teardown. This
+    leaks database state across test cases, which smells pretty bad. Place this
+    mixin before DbTestCase (or derivatives, such as OsfTestCase) in your test
+    class definition to empty your database during *test* setup and teardown.
+
+    This removes all documents from all collections on tearDown. It doesn't
+    drop collections and it doesn't touch indexes.
+
+    """
+
+    def tearDown(self):
+        super(DbIsolationMixin, self).tearDown()
+        # eval is deprecated in Mongo 3, and may be removed in the future. It's
+        # nice here because it saves us collections.length database calls.
+        self.db.eval('''
+
+            var collections = db.getCollectionNames();
+            for (var collection, i=0; collection = collections[i]; i++) {
+                if (collection.indexOf('system.') === 0) continue
+                db[collection].remove();
+            }
+
+        ''')
+
+
 class AppTestCase(unittest.TestCase):
     """Base `TestCase` for OSF tests that require the WSGI app (but no database).
     """
@@ -172,7 +200,10 @@ class AppTestCase(unittest.TestCase):
         self.app = TestApp(test_app)
         if not self.PUSH_CONTEXT:
             return
-        self.context = test_app.test_request_context()
+        self.context = test_app.test_request_context(headers={
+            'Remote-Addr': '146.9.219.56',
+            'User-Agent': 'Mozilla/5.0 (X11; U; SunOS sun4u; en-US; rv:0.9.4.1) Gecko/20020518 Netscape6/6.2.3'
+        })
         self.context.push()
         with self.context:
             celery_before_request()

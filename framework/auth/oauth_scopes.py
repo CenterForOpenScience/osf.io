@@ -57,6 +57,9 @@ class CoreScopes(object):
     NODE_VIEW_ONLY_LINKS_READ = 'node.view_only_links_read'
     NODE_VIEW_ONLY_LINKS_WRITE = 'node.view_only_links_write'
 
+    NODE_PREPRINTS_READ = 'node.preprints_read'
+    NODE_PREPRINTS_WRITE = 'node.preprints_write'
+
     REGISTRATION_VIEW_ONLY_LINKS_READ = 'registration.view_only_links_read'
     REGISTRATION_VIEW_ONLY_LINKS_WRITE = 'registration.view_only_links_write'
 
@@ -87,6 +90,8 @@ class CoreScopes(object):
     TOKENS_WRITE = 'tokens_write'
 
     INSTITUTION_READ = 'institutions_read'
+
+    SEARCH = 'search_read'
 
     NULL = 'null'
 
@@ -145,13 +150,15 @@ class ComposedScopes(object):
     COMMENT_REPORTS_WRITE = COMMENT_REPORTS_READ + (CoreScopes.COMMENT_REPORTS_WRITE,)
 
     # Nodes collection.
-    # Base node data includes node metadata, links, and children.
+    # Base node data includes node metadata, links, children, and preprints.
     NODE_METADATA_READ = (CoreScopes.NODE_BASE_READ, CoreScopes.NODE_CHILDREN_READ, CoreScopes.NODE_LINKS_READ,
                           CoreScopes.NODE_CITATIONS_READ, CoreScopes.NODE_COMMENTS_READ, CoreScopes.NODE_LOG_READ,
-                          CoreScopes.NODE_FORKS_READ, CoreScopes.WIKI_BASE_READ, CoreScopes.LICENSE_READ, CoreScopes.IDENTIFIERS_READ)
+                          CoreScopes.NODE_FORKS_READ, CoreScopes.WIKI_BASE_READ, CoreScopes.LICENSE_READ,
+                          CoreScopes.IDENTIFIERS_READ, CoreScopes.NODE_PREPRINTS_READ)
     NODE_METADATA_WRITE = NODE_METADATA_READ + \
                     (CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_CHILDREN_WRITE, CoreScopes.NODE_LINKS_WRITE,
-                     CoreScopes.NODE_CITATIONS_WRITE, CoreScopes.NODE_COMMENTS_WRITE, CoreScopes.NODE_FORKS_WRITE)
+                     CoreScopes.NODE_CITATIONS_WRITE, CoreScopes.NODE_COMMENTS_WRITE, CoreScopes.NODE_FORKS_WRITE,
+                     CoreScopes.NODE_PREPRINTS_WRITE)
 
     # Organizer Collections collection
     # Using Organizer Collections and the node links they collect. Reads Node Metadata.
@@ -175,7 +182,7 @@ class ComposedScopes(object):
     NODE_ALL_WRITE = NODE_ALL_READ + NODE_METADATA_WRITE + NODE_DATA_WRITE + NODE_ACCESS_WRITE
 
     # Full permissions: all routes intended to be exposed to third party API users
-    FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ + GUIDS_READ + METASCHEMAS_READ + DRAFT_READ + (CoreScopes.INSTITUTION_READ, )
+    FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ + GUIDS_READ + METASCHEMAS_READ + DRAFT_READ + (CoreScopes.INSTITUTION_READ, CoreScopes.SEARCH, )
     FULL_WRITE = FULL_READ + NODE_ALL_WRITE + USERS_WRITE + ORGANIZER_WRITE + DRAFT_WRITE
 
     # Admin permissions- includes functionality not intended for third-party use

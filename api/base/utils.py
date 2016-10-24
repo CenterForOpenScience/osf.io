@@ -142,6 +142,11 @@ def default_node_permission_query(user):
 def extend_querystring_params(url, params):
     return furl.furl(url).add(args=params).url
 
+def extend_querystring_if_key_exists(url, request, key):
+    if key in request.query_params.keys():
+        return extend_querystring_params(url, {key: request.query_params.get(key)})
+    return url
+
 def has_admin_scope(request):
     """ Helper function to determine if a request should be treated
         as though it has the `osf.admin` scope. This includes both
@@ -157,3 +162,8 @@ def has_admin_scope(request):
         return False
 
     return set(ComposedScopes.ADMIN_LEVEL).issubset(normalize_scopes(token.attributes['accessTokenScope']))
+
+def is_deprecated(request_version, min_version, max_version):
+    if request_version < min_version or request_version > max_version:
+        return True
+    return False

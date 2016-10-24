@@ -154,11 +154,12 @@ class CommentDetailMixin(object):
     def test_comment_has_replies_link(self):
         self._set_up_public_project_with_comment()
         res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
         url = res.json['data']['relationships']['replies']['links']['related']['href']
         uri = test_utils.urlparse_drop_netloc(url)
-        expected_url = '/{}nodes/{}/comments/?filter[target]={}'.format(API_BASE, self.public_project._id, self.public_comment._id)
+        res = self.app.get(uri)
         assert_equal(res.status_code, 200)
-        assert_in(expected_url, uri)
+        assert_equal(res.json['data'][0]['type'], 'comments')
 
     def test_comment_has_reports_link(self):
         self._set_up_public_project_with_comment()
@@ -230,6 +231,27 @@ class CommentDetailMixin(object):
         self._set_up_private_project_with_comment()
         res = self.app.delete_json_api(self.private_url, auth=self.user.auth)
         assert_equal(res.status_code, 204)
+
+    def test_private_node_only_logged_in_contributor_commenter_can_delete_own_reply(self):
+        self._set_up_private_project_with_comment()
+        reply_target = Guid.load(self.comment._id)
+        reply = CommentFactory(node=self.private_project, target=reply_target, user=self.user)
+        reply_url = '/{}comments/{}/'.format(API_BASE, reply)
+        res = self.app.delete_json_api(reply_url, auth=self.user.auth)
+        assert_equal(res.status_code, 204)        
+
+    def test_private_node_only_logged_in_contributor_commenter_can_undelete_own_reply(self):
+        self._set_up_private_project_with_comment()
+        reply_target = Guid.load(self.comment._id)
+        reply = CommentFactory(node=self.private_project, target=reply_target, user=self.user)
+        reply_url = '/{}comments/{}/'.format(API_BASE, reply)
+        reply.is_deleted = True
+        reply.save()
+        payload = self._set_up_payload(reply._id, has_content=False)
+        res = self.app.patch_json_api(reply_url, payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_false(res.json['data']['attributes']['deleted'])
+        assert_equal(res.json['data']['attributes']['content'], reply.content)
 
     def test_private_node_contributor_cannot_delete_other_users_comment(self):
         self._set_up_private_project_with_comment()

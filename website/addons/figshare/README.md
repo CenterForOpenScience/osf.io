@@ -19,11 +19,11 @@ has instructions for use with ngrok, but there are other methods.
 3. Copy website/addons/figshare/settings/defaults.py to website/addons/figshare/settings/local.py
 4. Go to [figshare](http://figshare.com), create an account, and login 
 5. Click the dropdown with your name and select **Applications** and click **Create application**
-8. Add https://openscience.ngrok.io:5000/api/v1/oauth/callback/figshare/ as the **Callback URL**
-9. Open website/addons/figshare/settings/local.py
+6. Add https://openscience.ngrok.io:5000/api/v1/oauth/callback/figshare/ as the **Callback URL**
+7. Open website/addons/figshare/settings/local.py
   * Copy the *consumer_key* to **CLIENT_ID**
   * Copy the *consumer_secret* to **CLIENT_SECRET**
-10. Open website/settings/local.py, add *figshare* to ADDONS_REQUESTED
+8. Open website/settings/local.py, add *figshare* to ADDONS_REQUESTED
 
 ### B) Manual generation of auth token and ExternalAccount
 

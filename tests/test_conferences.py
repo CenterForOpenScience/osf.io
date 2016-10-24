@@ -69,7 +69,7 @@ class TestConferenceUtils(OsfTestCase):
 
     def test_get_or_create_user_exists(self):
         user = UserFactory()
-        fetched, created = get_or_create_user(user.fullname, user.username, True)
+        fetched, created = get_or_create_user(user.fullname, user.username, is_spam=True)
         assert_false(created)
         assert_equal(user._id, fetched._id)
         assert_false('is_spam' in fetched.system_tags)
@@ -77,7 +77,7 @@ class TestConferenceUtils(OsfTestCase):
     def test_get_or_create_user_not_exists(self):
         fullname = 'Roger Taylor'
         username = 'roger@queen.com'
-        fetched, created = get_or_create_user(fullname, username, False)
+        fetched, created = get_or_create_user(fullname, username, is_spam=False)
         assert_true(created)
         assert_equal(fetched.fullname, fullname)
         assert_equal(fetched.username, username)
@@ -86,7 +86,7 @@ class TestConferenceUtils(OsfTestCase):
     def test_get_or_create_user_is_spam(self):
         fullname = 'John Deacon'
         username = 'deacon@queen.com'
-        fetched, created = get_or_create_user(fullname, username, True)
+        fetched, created = get_or_create_user(fullname, username, is_spam=True)
         assert_true(created)
         assert_equal(fetched.fullname, fullname)
         assert_equal(fetched.username, username)
@@ -113,6 +113,13 @@ class TestConferenceUtils(OsfTestCase):
         fetched, created = utils.get_or_create_node(title, creator)
         assert_true(created)
         assert_not_equal(node._id, fetched._id)
+
+    def test_get_or_create_user_with_blacklisted_domain(self):
+        fullname = 'Kanye West'
+        username = 'kanye@mailinator.com'
+        with assert_raises(ValidationError) as e:
+            get_or_create_user(fullname, username, is_spam=True)
+        assert_equal(e.exception.message, 'Invalid Email')
 
 
 class ContextTestCase(OsfTestCase):
@@ -540,6 +547,7 @@ class TestConferenceModel(OsfTestCase):
         assert_equal(conf.field_names['submission1'], 'poster')
         assert_equal(conf.field_names['mail_subject'], 'Presentation title')
 
+
 class TestConferenceIntegration(ContextTestCase):
 
     @mock.patch('website.conferences.views.send_mail')
@@ -635,7 +643,7 @@ class TestConferenceIntegration(ContextTestCase):
     @mock.patch('website.conferences.views.send_mail')
     @mock.patch('website.conferences.utils.upload_attachments')
     def test_integration_wo_full_name(self, mock_upload, mock_send_mail):
-        username = 'no_full_name@test.com'
+        username = 'no_full_name@mail.com'
         title = 'no full name only email'
         conference = ConferenceFactory()
         body = 'dragon on my back'

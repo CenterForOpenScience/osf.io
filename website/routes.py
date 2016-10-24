@@ -17,7 +17,6 @@ from framework.flask import redirect
 from framework.routing import WebRenderer
 from framework.exceptions import HTTPError
 from framework.auth import get_display_name
-from framework.routing import xml_renderer
 from framework.routing import json_renderer
 from framework.routing import process_rules
 from framework.auth import views as auth_views
@@ -35,7 +34,7 @@ from website.util import metrics
 from website.util import paths
 from website.util import sanitize
 from website import maintenance
-from website.models import Institution
+from website.models import Institution, Node
 from website import landing_pages as landing_page_views
 from website import views as website_views
 from website.citations import views as citation_views
@@ -56,8 +55,22 @@ def get_globals():
     OSFWebRenderer.
     """
     user = _get_current_user()
-    user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path} for inst in user.affiliated_institutions] if user else []
-    all_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path} for inst in Institution.find().sort('name')]
+
+    user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in user.affiliated_institutions] if user else []
+    all_institutions = [inst for inst in Institution.find().sort('name')]
+    dashboard_institutions = [
+        {'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners}
+        for inst in all_institutions
+        if len(
+            Node.find_by_institutions(inst, query=(
+                Q('is_public', 'eq', True) &
+                Q('is_folder', 'ne', True) &
+                Q('is_deleted', 'ne', True) &
+                Q('parent_node', 'eq', None) &
+                Q('is_registration', 'eq', False)
+            ))
+        ) >= settings.INSTITUTION_DISPLAY_NODE_THRESHOLD
+    ]
     location = geolite2.lookup(request.remote_addr) if request.remote_addr else None
     if request.host_url != settings.DOMAIN:
         try:
@@ -80,7 +93,7 @@ def get_globals():
         'user_api_url': user.api_url if user else '',
         'user_entry_point': metrics.get_entry_point(user) if user else '',
         'user_institutions': user_institutions if user else None,
-        'all_institutions': all_institutions,
+        'dashboard_institutions': dashboard_institutions,
         'display_name': get_display_name(user.fullname) if user else '',
         'anon': {
             'continent': getattr(location, 'continent', None),
@@ -122,6 +135,7 @@ def get_globals():
             },
         },
         'maintenance': maintenance.get_maintenance(),
+        'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY
     }
 
 
@@ -514,9 +528,17 @@ def make_url_map(app):
             notemplate
         ),
 
+        # confirm email for login through external identity provider
+        Rule(
+            '/confirm/external/<uid>/<token>/',
+            'get',
+            auth_views.external_login_confirm_email_get,
+            notemplate
+        ),
+
         # reset password get
         Rule(
-            '/resetpassword/<verification_key>/',
+            '/resetpassword/<uid>/<token>/',
             'get',
             auth_views.reset_password_get,
             OsfWebRenderer('public/resetpassword.mako', render_mako_string, trust=False)
@@ -524,7 +546,7 @@ def make_url_map(app):
 
         # reset password post
         Rule(
-            '/resetpassword/<verification_key>/',
+            '/resetpassword/<uid>/<token>/',
             'post',
             auth_views.reset_password_post,
             OsfWebRenderer('public/resetpassword.mako', render_mako_string, trust=False)
@@ -547,20 +569,28 @@ def make_url_map(app):
 
         ),
 
+        # oauth user email get
+        Rule(
+            '/external-login/email',
+            'get',
+            auth_views.external_login_email_get,
+            OsfWebRenderer('external_login_email.mako', render_mako_string, trust=False)
+        ),
+
+        # oauth user email post
+        Rule(
+            '/external-login/email',
+            'post',
+            auth_views.external_login_email_post,
+            OsfWebRenderer('external_login_email.mako', render_mako_string, trust=False)
+        ),
+
         # user sign up page
         Rule(
             '/register/',
             'get',
             auth_views.auth_register,
-            OsfWebRenderer('public/login.mako', trust=False)
-        ),
-
-        # create user account via api
-        Rule(
-            '/api/v1/register/',
-            'post',
-            auth_views.register_user,
-            json_renderer
+            OsfWebRenderer('public/register.mako', trust=False)
         ),
 
         # osf login and campaign login
@@ -571,7 +601,15 @@ def make_url_map(app):
             ],
             'get',
             auth_views.auth_login,
-            OsfWebRenderer('public/login.mako', trust=False)
+            notemplate
+        ),
+
+        # create user account via api
+        Rule(
+            '/api/v1/register/',
+            'post',
+            auth_views.register_user,
+            json_renderer
         ),
 
         # osf logout and cas logout
@@ -633,8 +671,9 @@ def make_url_map(app):
             OsfWebRenderer('profile.mako', trust=False)
         ),
 
-        # Route for claiming and setting email and password.
-        # Verification token must be querystring argument
+        # unregistered user claim account (contributor-ship of a project)
+        # user will be required to set email and password
+        # claim token must be present in query parameter
         Rule(
             ['/user/<uid>/<pid>/claim/'],
             ['get', 'post'],
@@ -642,6 +681,9 @@ def make_url_map(app):
             OsfWebRenderer('claim_account.mako', trust=False)
         ),
 
+        # registered user claim account (contributor-ship of a project)
+        # user will be required to verify password
+        # claim token must be present in query parameter
         Rule(
             ['/user/<uid>/<pid>/claim/verify/<token>/'],
             ['get', 'post'],
@@ -726,7 +768,6 @@ def make_url_map(app):
             OsfWebRenderer('profile/personal_tokens_detail.mako', trust=False)
         ),
 
-
         # TODO: Uncomment once outstanding issues with this feature are addressed
         # Rule(
         #     '/@<twitter_handle>/',
@@ -768,6 +809,13 @@ def make_url_map(app):
             '/profile/deactivate/',
             'post',
             profile_views.request_deactivation,
+            json_renderer,
+        ),
+
+        Rule(
+            '/profile/logins/',
+            'patch',
+            profile_views.delete_external_identity,
             json_renderer,
         ),
 
@@ -872,14 +920,8 @@ def make_url_map(app):
         Rule(
             '/search/',
             'get',
-            {},
+            {'shareUrl': settings.SHARE_URL},
             OsfWebRenderer('search.mako', trust=False)
-        ),
-        Rule(
-            '/share/',
-            'get',
-            {},
-            OsfWebRenderer('share_search.mako', trust=False)
         ),
         Rule(
             '/share/registration/',
@@ -888,25 +930,10 @@ def make_url_map(app):
             OsfWebRenderer('share_registration.mako', trust=False)
         ),
         Rule(
-            '/share/help/',
-            'get',
-            {'help': settings.SHARE_API_DOCS_URL},
-            OsfWebRenderer('share_api_docs.mako', trust=False)
+            '/api/v1/user/search/',
+            'get', search_views.search_contributor,
+            json_renderer
         ),
-        Rule(  # FIXME: Dead route; possible that template never existed; confirm deletion candidate with ErinB
-            '/share_dashboard/',
-            'get',
-            {},
-            OsfWebRenderer('share_dashboard.mako', trust=False)
-        ),
-        Rule(
-            '/share/atom/',
-            'get',
-            search_views.search_share_atom,
-            xml_renderer
-        ),
-        Rule('/api/v1/user/search/', 'get', search_views.search_contributor, json_renderer),
-
         Rule(
             '/api/v1/search/node/',
             'post',
@@ -922,9 +949,6 @@ def make_url_map(app):
 
         Rule(['/search/', '/search/<type>/'], ['get', 'post'], search_views.search_search, json_renderer),
         Rule('/search/projects/', 'get', search_views.search_projects_by_title, json_renderer),
-        Rule('/share/search/', ['get', 'post'], search_views.search_share, json_renderer),
-        Rule('/share/stats/', 'get', search_views.search_share_stats, json_renderer),
-        Rule('/share/providers/', 'get', search_views.search_share_providers, json_renderer),
 
     ], prefix='/api/v1')
 
@@ -1652,12 +1676,7 @@ def make_url_map(app):
             notification_views.configure_subscription,
             json_renderer,
         ),
-        Rule(
-            '/resetpassword/<verification_key>/',
-            'post',
-            auth_views.reset_password_post,
-            json_renderer,
-        ),
+
         Rule(
             [
                 '/project/<pid>/settings/addons/',

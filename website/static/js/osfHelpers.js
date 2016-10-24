@@ -8,6 +8,7 @@ var URI = require('URIjs');
 var bootbox = require('bootbox');
 var lodashGet = require('lodash.get');
 var KeenTracker = require('js/keen');
+var linkify = require('linkifyjs/html');
 
 
 // TODO: For some reason, this require is necessary for custom ko validators to work
@@ -574,7 +575,7 @@ function humanFileSize(bytes, si) {
 /**
 *  returns a random name from this list to use as a confirmation string
 */
-var _confirmationString = function() {
+var getConfirmationString = function() {
     // TODO: Generate a random string here instead of using pre-set values
     //       per Jeff, use ~10 characters
     var scientists = [
@@ -653,7 +654,7 @@ var confirmDangerousAction = function (options) {
     //       sustained attention and will prevent the user from copy/pasting a
     //       random string.
 
-    var confirmationString = _confirmationString();
+    var confirmationString = getConfirmationString();
 
     // keep the users' callback for re-use; we'll pass ours to bootbox
     var callback = options.callback;
@@ -898,6 +899,7 @@ function onScrollToBottom(element, callback) {
     });
 }
 
+
 /**
  * Return the current domain as a string, e.g. 'http://localhost:5000'
  */
@@ -912,6 +914,34 @@ function getDomain(location) {
         ret += ':' + port;
     }
     return ret;
+}
+
+/**
+ * Utility function to convert absolute URLs to relative urls
+ * See:
+ *      http://stackoverflow.com/questions/736513/how-do-i-parse-a-url-into-hostname-and-path-in-javascript
+ * This method have no effect on external urls.
+ * @param url {string} url to be converted
+ * @returns {string} converted relative url
+ */
+function toRelativeUrl(url, window) {
+    var parser = document.createElement('a');
+    parser.href = url;
+    var relative_url = url;
+    if (window.location.hostname === parser.hostname){
+        relative_url = parser.pathname + parser.search + parser.hash;
+    }
+    return relative_url;
+}
+
+/**
+ * Utility function to render links in plain text to HTML a tags
+ * @param content {string} text to be converted
+ * @returns {string} linkified text
+ */
+function linkifyText(content) {
+    var linkifyOpts = { target: function (href, type) { return type === 'url' ? '_top' : null; } };
+    return linkify(content);
 }
 
 // Also export these to the global namespace so that these can be used in inline
@@ -955,5 +985,8 @@ module.exports = window.$.osf = {
     findContribName: findContribName,
     extractContributorNamesFromAPIData: extractContributorNamesFromAPIData,
     onScrollToBottom: onScrollToBottom,
-    getDomain: getDomain
+    getDomain: getDomain,
+    toRelativeUrl: toRelativeUrl,
+    linkifyText: linkifyText,
+    getConfirmationString: getConfirmationString
 };
