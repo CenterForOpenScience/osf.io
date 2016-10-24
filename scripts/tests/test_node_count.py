@@ -5,7 +5,7 @@ from tests.factories import UserFactory, RegistrationFactory, ProjectFactory, Wi
 from nose.tools import *  # PEP8 asserts
 from website.project.model import Node
 
-from scripts.analytics.node_count import get_node_count
+from scripts.analytics.node_count import count
 
 
 class TestNodeCount(OsfTestCase):
@@ -45,7 +45,7 @@ class TestNodeCount(OsfTestCase):
         self.deleted_node2 = ProjectFactory(is_deleted=True)
 
         # Get results of get_node_count
-        self.results = get_node_count()
+        self.results = count()
 
 
     def tearDown(self):
