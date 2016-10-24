@@ -1,3 +1,4 @@
+import logging
 import argparse
 from dateutil.parser import parse
 from datetime import datetime, timedelta
@@ -5,6 +6,9 @@ from datetime import datetime, timedelta
 from website.app import init_app
 from website.settings import KEEN as keen_settings
 from keen.client import KeenClient
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
 def get_events_for_day(day):
@@ -15,6 +19,7 @@ def get_events_for_day(day):
     keen_events.update(user_count(day))
     keen_events.update(addon_count(day))
     keen_events.update({'node_analytics': [node_count(day)]})
+    logger.info('<---- Keen Counts for {} ---->'.format(day.isoformat()))
     return keen_events
 
 def main(start_date, end_date):

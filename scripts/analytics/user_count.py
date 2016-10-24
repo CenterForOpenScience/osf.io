@@ -1,4 +1,5 @@
 import sys
+import logging
 from datetime import datetime
 from dateutil.parser import parse
 
@@ -8,6 +9,10 @@ from website.app import init_app
 from website.models import User
 from website.settings import KEEN as keen_settings
 from keen.client import KeenClient
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
 
 def count(today):
     counts = {
@@ -31,6 +36,7 @@ def count(today):
             Q('date_disabled', 'lt', today)
         ).count()
     }
+    logger.info('Users counted. Active: {}, Unconfirmed: {}, Deactivated: {}'.format(counts['active_users'], counts['unconfirmed_users'], counts['deactivated_users']))
     return {'user_count_analytics': [counts]}
 
 def main(today):

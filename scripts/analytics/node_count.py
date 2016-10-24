@@ -1,3 +1,4 @@
+import logging
 import argparse
 from modularodm import Q
 from dateutil.parser import parse
@@ -6,6 +7,9 @@ from website.app import init_app
 from website.models import Node
 from website.settings import KEEN as keen_settings
 from keen.client import KeenClient
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
 def get_node_count(end_date=None):
@@ -75,6 +79,8 @@ def get_node_count(end_date=None):
 
     if end_date:
         totals['keen'] = {'timestamp': end_date.isoformat()}
+
+    logger.info('Nodes counted. Nodes: {}, Projects: {}, Registered Nodes: {}, Registered Projects: {}'.format(totals['nodes']['total'], totals['projects']['total'], totals['registered_nodes']['total'], totals['registered_projects']['total']))
     return totals
 
 
