@@ -185,5 +185,7 @@ class PreprintCreateSerializer(PreprintSerializer):
 
         preprint = PreprintService(node=node, provider=provider)
         self.set_field(preprint.set_primary_file, primary_file, auth, save=True)
+        preprint.node._has_abandoned_preprint = True
+        preprint.node.save()
 
         return self.update(preprint, validated_data)

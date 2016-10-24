@@ -886,6 +886,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
     preprint_file = fields.ForeignField('StoredFileNode')
     preprint_article_doi = fields.StringField(validate=validate_doi)
     _is_preprint_orphan = fields.BooleanField(default=False)
+    _has_abandoned_preprint = fields.BooleanField(default=False)
 
     # A list of all MetaSchemas for which this Node has registered_meta
     registered_schema = fields.ForeignField('metaschema', list=True, default=list)

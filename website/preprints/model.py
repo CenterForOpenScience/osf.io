@@ -143,6 +143,7 @@ class PreprintService(GuidStoredObject):
             if not self.subjects:
                 raise ValueError('Preprint must have at least one subject to be published.')
             self.date_published = datetime.datetime.utcnow()
+            self.node._has_abandoned_preprint = False
 
             if not self.node.is_public:
                 self.node.set_privacy(
@@ -152,6 +153,7 @@ class PreprintService(GuidStoredObject):
                 )
 
         if save:
+            self.node.save()
             self.save()
 
     def save(self, *args, **kwargs):

@@ -281,6 +281,9 @@ class PreprintFactory(ModularOdmFactory):
             subjects = subjects or [[SubjectFactory()._id]]
             preprint.set_subjects(subjects, auth=auth)
             preprint.set_published(is_published, auth=auth)
+        
+        if not preprint.is_published:
+            project._has_abandoned_preprint = True
 
         project.preprint_article_doi = doi
         project.save()

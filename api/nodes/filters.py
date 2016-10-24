@@ -24,6 +24,10 @@ class NodePreprintsFilterMixin(ODMFilterMixin):
                 'op': op,
                 'value': True,
                 'source_field_name': '_is_preprint_orphan'
+            }, {
+                'op': op,
+                'value': True,
+                'source_field_name': '_has_abandoned_preprint'
             }]
         })
         return query
