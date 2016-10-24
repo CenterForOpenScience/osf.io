@@ -3,24 +3,32 @@ import argparse
 from dateutil.parser import parse
 from datetime import datetime, timedelta
 
+from keen.client import KeenClient
+
 from website.app import init_app
 from website.settings import KEEN as keen_settings
-from keen.client import KeenClient
+from scripts.analytics.user_count import count as user_count
+from scripts.analytics.addon_count import count as addon_count
+from scripts.analytics.node_count import count as node_count
+from scripts.analytics.node_log_count import get_node_log_events as node_log_count
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
 def get_events_for_day(day):
-    from scripts.analytics.user_count import count as user_count
-    from scripts.analytics.addon_count import count as addon_count
-    from scripts.analytics.node_count import get_node_count as node_count
+    logger.info('<---- Keen Counts for {} ---->'.format(day.isoformat()))
+
     keen_events = {}
     keen_events.update(user_count(day))
     keen_events.update(addon_count(day))
     keen_events.update({'node_analytics': [node_count(day)]})
-    logger.info('<---- Keen Counts for {} ---->'.format(day.isoformat()))
     return keen_events
+
+def get_node_log_events(start, end):
+    events = node_log_count(start, end)
+    for i in range(0, len(events), 5000):
+        yield events[i:i + 5000]
 
 def main(start_date, end_date):
     keen_project = keen_settings['private']['project_id']
@@ -35,6 +43,9 @@ def main(start_date, end_date):
     while day < end_date:
         client.add_events(get_events_for_day(day))
         day = day + timedelta(1)
+    for chunk in get_node_log_events(start_date, end_date):
+        logger.info('NodeLogs counted. {} NodeLogs.'.format(len(chunk)))
+        client.add_events({'node_log_analytics': chunk})
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Populate keen counts!')
