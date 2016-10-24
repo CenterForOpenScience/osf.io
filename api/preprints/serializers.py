@@ -114,8 +114,9 @@ class PreprintSerializer(JSONAPISerializer):
         if primary_file:
             self.set_field(preprint.set_primary_file, primary_file, auth)
             save_node = True
-        subjects = validated_data.pop('subjects', None)
-        if subjects:
+
+        if 'subjects' in validated_data:
+            subjects = validated_data.pop('subjects', None)
             self.set_field(preprint.set_subjects, subjects, auth)
             save_preprint = True
 
