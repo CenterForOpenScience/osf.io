@@ -991,7 +991,6 @@ function _createFolder(event, dismissCallback, helpText) {
         helpText('Please enter a folder name.');
         return;
     }
-
     if (val.indexOf('/') !== -1) {
         helpText('Folder name contains illegal characters.');
         return;
@@ -1000,6 +999,7 @@ function _createFolder(event, dismissCallback, helpText) {
     var extra = {};
     var path = parent.data.path || '/';
     var options = {name: val, kind: 'folder'};
+    
     if (parent.data.provider === 'github') {
         extra.branch = parent.data.branch;
         options.branch = parent.data.branch;
