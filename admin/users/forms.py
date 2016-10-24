@@ -8,3 +8,9 @@ class EmailResetForm(forms.Form):
         choices = kwargs.get('initial', {}).get('emails', [])
         self.base_fields['emails'] = forms.ChoiceField(choices=choices)
         super(EmailResetForm, self).__init__(*args, **kwargs)
+
+
+class WorkshopForm(forms.Form):
+    document = forms.FileField(
+        label='Select a file'
+    )
