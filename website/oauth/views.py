@@ -47,7 +47,7 @@ def oauth_callback(service_name, auth):
     if not provider.auth_callback(user=user):
         return {}
 
-    if not user.external_accounts.filter(id=provider.account.id).exists():
+    if provider.account and not user.external_accounts.filter(id=provider.account.id).exists():
         user.external_accounts.add(provider.account)
         user.save()
 

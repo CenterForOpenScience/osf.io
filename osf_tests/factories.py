@@ -617,3 +617,13 @@ class NodeRelationFactory(DjangoModelFactory):
 
     child = factory.SubFactory(NodeFactory)
     parent = factory.SubFactory(NodeFactory)
+
+
+class ExternalAccountFactory(DjangoModelFactory):
+    class Meta:
+        model = models.ExternalAccount
+
+    provider = 'mock2'
+    provider_id = factory.Sequence(lambda n: 'user-{0}'.format(n))
+    provider_name = 'Fake Provider'
+    display_name = factory.Sequence(lambda n: 'user-{0}'.format(n))

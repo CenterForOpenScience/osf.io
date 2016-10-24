@@ -4,8 +4,8 @@ import mock
 from framework.auth import Auth
 from nose.tools import (assert_equal, assert_false, assert_in,
                         assert_is_not_none, assert_raises, assert_true)
-from osf_tests.factories import ProjectFactory, UserFactory
-from osf_tests.utils import mock_auth
+from osf_tests.factories import ProjectFactory, AuthUserFactory
+from tests.utils import mock_auth
 from website.util import web_url_for
 
 
@@ -39,7 +39,7 @@ class AddonSerializerTestSuiteMixin(object):
 
     def setUp(self):
         super(AddonSerializerTestSuiteMixin, self).setUp()
-        self.user = UserFactory()
+        self.user = AuthUserFactory()
         self.node = ProjectFactory(creator=self.user)
         self.set_user_settings(self.user)
         assert_is_not_none(
@@ -109,7 +109,7 @@ class OAuthAddonSerializerTestSuiteMixin(AddonSerializerTestSuiteMixin):
 
     def test_user_is_owner_node_authorized_user_is_not_owner(self):
         self.node_settings.external_account = self.ExternalAccountFactory()
-        with mock.patch('website.addons.base.BaseOAuthUserSettings.verify_oauth_access',
+        with mock.patch('addons.base.models.BaseOAuthUserSettings.verify_oauth_access',
                 return_value=True):
             self.user.external_accounts = []
             assert_false(self.ser.user_is_owner)
@@ -129,7 +129,7 @@ class OAuthAddonSerializerTestSuiteMixin(AddonSerializerTestSuiteMixin):
         with mock.patch.object(type(self.ser), 'serialize_account') as mock_serialize_account:
             mock_serialize_account.return_value = {}
             serialized = self.ser.serialized_accounts
-        assert_equal(len(serialized), len(self.user.external_accounts))
+        assert_equal(len(serialized), self.user.external_accounts.count())
         assert_equal(mock_serialize_account.call_count, len(serialized))
 
     def test_serialize_acccount(self):

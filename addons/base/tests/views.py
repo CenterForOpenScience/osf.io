@@ -8,7 +8,7 @@ from framework.auth import Auth
 from framework.exceptions import HTTPError
 from nose.tools import (assert_equal, assert_false, assert_in, assert_is_none,
                         assert_not_equal, assert_raises, assert_true)
-from osf_tests.factories import ProjectFactory, UserFactory
+from osf_tests.factories import ProjectFactory, AuthUserFactory
 from website.util import api_url_for, permissions, web_url_for
 
 
@@ -54,12 +54,12 @@ class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         res = self.app.delete(url, auth=self.user.auth)
         assert_equal(res.status_code, http.OK)
         self.user.reload()
-        for account in self.user.external_accounts:
+        for account in self.user.external_accounts.all():
             assert_not_equal(account._id, self.external_account._id)
-        assert_false(self.user.external_accounts)
+        assert_false(self.user.external_accounts.exists())
 
     def test_delete_external_account_not_owner(self):
-        other_user = UserFactory()
+        other_user = AuthUserFactory()
         url = api_url_for(
             'oauth_disconnect',
             external_account_id=self.external_account._id
@@ -83,7 +83,7 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
 
     def test_import_auth(self):
         ea = self.ExternalAccountFactory()
-        self.user.external_accounts.append(ea)
+        self.user.external_accounts.add(ea)
         self.user.save()
 
         node = ProjectFactory(creator=self.user)
@@ -99,7 +99,7 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         assert_equal(node_settings.external_account._id, ea._id)
 
         node.reload()
-        last_log = node.logs[-1]
+        last_log = node.logs.latest()
         assert_equal(last_log.action, '{0}_node_authorized'.format(self.ADDON_SHORT_NAME))
 
     def test_import_auth_invalid_account(self):
@@ -116,9 +116,9 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
 
     def test_import_auth_cant_write_node(self):
         ea = self.ExternalAccountFactory()
-        user = UserFactory()
+        user = AuthUserFactory()
         user.add_addon(self.ADDON_SHORT_NAME, auth=Auth(user))
-        user.external_accounts.append(ea)
+        user.external_accounts.add(ea)
         user.save()
 
         node = ProjectFactory(creator=self.user)
@@ -140,7 +140,7 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         assert_equal(res.status_code, http.OK)
         self.project.reload()
         assert_equal(
-            self.project.logs[-1].action,
+            self.project.logs.latest().action,
             '{0}_folder_selected'.format(self.ADDON_SHORT_NAME)
         )
         assert_equal(res.json['result']['folder']['path'], self.folder['path'])
@@ -160,7 +160,7 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
 
     def test_get_config_unauthorized(self):
         url = self.project.api_url_for('{0}_get_config'.format(self.ADDON_SHORT_NAME))
-        user = UserFactory()
+        user = AuthUserFactory()
         self.project.add_contributor(user, permissions=[permissions.READ], auth=self.auth, save=True)
         res = self.app.get(url, auth=user.auth, expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
@@ -179,7 +179,7 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
 
     def test_account_list_multiple(self):
         ea = self.ExternalAccountFactory()
-        self.user.external_accounts.append(ea)
+        self.user.external_accounts.add(ea)
         self.user.save()
 
         url = api_url_for('{0}_account_list'.format(self.ADDON_SHORT_NAME))
@@ -214,7 +214,7 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
 
         # A log event was saved
         self.project.reload()
-        last_log = self.project.logs[-1]
+        last_log = self.project.logs.latest()
         assert_equal(last_log.action, '{0}_node_deauthorized'.format(self.ADDON_SHORT_NAME))
 
 class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMixin):
@@ -376,7 +376,7 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
 
     @httpretty.activate
     def test_citation_list_non_linked_or_child_non_authorizer(self):
-        non_authorizing_user = UserFactory()
+        non_authorizing_user = AuthUserFactory()
         self.project.add_contributor(non_authorizing_user, save=True)
 
         self.node_settings.list_id = 'e843da05-8818-47c2-8c37-41eebfc4fe3f'

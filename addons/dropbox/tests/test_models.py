@@ -4,7 +4,7 @@ import mock
 import pytest
 from addons.base.tests.models import (OAuthAddonNodeSettingsTestSuiteMixin,
                                       OAuthAddonUserSettingTestSuiteMixin)
-from addons.dropbox.models import DropboxNodeSettings
+from addons.dropbox.models import NodeSettings
 from addons.dropbox.tests import factories
 
 pytestmark = pytest.mark.django_db
@@ -15,7 +15,7 @@ class TestDropboxNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.Tes
     short_name = 'dropbox'
 
     ExternalAccountFactory = factories.DropboxAccountFactory
-    NodeSettingsClass = DropboxNodeSettings
+    NodeSettingsClass = NodeSettings
     NodeSettingsFactory = factories.DropboxNodeSettingsFactory
     UserSettingsFactory = factories.DropboxUserSettingsFactory
 
@@ -27,7 +27,7 @@ class TestDropboxNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.Tes
         }
 
     def test_folder_defaults_to_none(self):
-        node_settings = DropboxNodeSettings(
+        node_settings = NodeSettings(
             owner=factories.ProjectFactory(),
             user_settings=self.user_settings
         )

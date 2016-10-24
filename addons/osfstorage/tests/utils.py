@@ -2,7 +2,7 @@ from contextlib import contextmanager
 
 import mock
 from addons.base.tests.base import AddonTestCase, OAuthAddonTestCaseMixin
-from addons.dropbox.models import DropboxProvider
+from addons.dropbox.models import Provider
 from addons.dropbox.tests.factories import DropboxAccountFactory
 
 
@@ -10,7 +10,7 @@ class DropboxAddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
 
     ADDON_SHORT_NAME = 'dropbox'
     ExternalAccountFactory = DropboxAccountFactory
-    Provider = DropboxProvider
+    Provider = Provider
 
     def set_node_settings(self, settings):
         super(DropboxAddonTestCase, self).set_node_settings(settings)

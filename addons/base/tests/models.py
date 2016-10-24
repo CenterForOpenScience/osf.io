@@ -10,7 +10,7 @@ from nose.tools import (assert_equal, assert_false, assert_in, assert_is,
                         assert_is_none, assert_not_in, assert_raises,
                         assert_true)
 from osf_tests.factories import ProjectFactory, UserFactory
-from osf_tests.utils import mock_auth
+from tests.utils import mock_auth
 from website.addons.base import exceptions
 
 pytestmark = pytest.mark.django_db
@@ -115,6 +115,16 @@ class OAuthAddonUserSettingTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         )
 
 class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
+
+    @pytest.yield_fixture(autouse=True)
+    def _request_context(self, app):
+        context = app.test_request_context(headers={
+            'Remote-Addr': '146.9.219.56',
+            'User-Agent': 'Mozilla/5.0 (X11; U; SunOS sun4u; en-US; rv:0.9.4.1) Gecko/20020518 Netscape6/6.2.3'
+        })
+        context.push()
+        yield context
+        context.pop()
 
     @abc.abstractproperty
     def NodeSettingsFactory(self):
@@ -341,11 +351,11 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         self.node.reload()
         assert_equal(self.node.logs.count(), nlog + 1)
         assert_equal(
-            self.node.logs[-1].action,
+            self.node.logs.latest().action,
             '{0}_{1}'.format(self.short_name, action),
         )
         assert_equal(
-            self.node.logs[-1].params['path'],
+            self.node.logs.latest().params['path'],
             path
         )
 

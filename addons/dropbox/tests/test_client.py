@@ -3,7 +3,7 @@ import unittest
 import pytest
 from nose.tools import assert_true  # noqa (PEP8 asserts)
 from tests.factories import UserFactory
-from website.addons.dropbox.model import DropboxUserSettings
+from addons.dropbox.models import UserSettings
 
 pytestmark = pytest.mark.django_db
 
@@ -24,4 +24,4 @@ class TestCore(unittest.TestCase):
 
     def test_get_addon_returns_dropbox_user_settings(self):
         result = self.user.get_addon('dropbox')
-        assert_true(isinstance(result, DropboxUserSettings))
+        assert_true(isinstance(result, UserSettings))

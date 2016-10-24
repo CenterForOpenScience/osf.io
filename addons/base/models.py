@@ -223,7 +223,7 @@ class BaseOAuthUserSettings(BaseUserSettings):
             else:
                 addon_settings.deauthorize(auth=auth)
 
-        if external_account.osfuser_set().count() == 1 and \
+        if external_account.osfuser_set.count() == 1 and \
                 external_account.osfuser_set.filter(osfuser=auth.user).count() == 1:
             # Only this user is using the account, so revoke remote access as well.
             self.revoke_remote_oauth_access(external_account)
@@ -508,6 +508,7 @@ class BaseNodeSettings(BaseAddonSettings):
 
         """
         clone = self.clone()
+        clone.user_settings = None
         clone.owner = fork
 
         if save:

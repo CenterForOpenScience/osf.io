@@ -2,17 +2,19 @@
 import httplib as http
 import unittest
 
-import mock
-import pytest
-from addons.base.tests import views as views_testing
-from addons.dropbox.tests import factories
-from addons.dropbox.tests.utils import (DropboxAddonTestCase, MockDropbox,
-                                        mock_responses, patch_client)
 from dropbox.rest import ErrorResponse
-from framework.auth import Auth
 from nose.tools import assert_equal
 from tests.base import OsfTestCase
 from urllib3.exceptions import MaxRetryError
+
+import mock
+import pytest
+from addons.base.tests import views as views_testing
+from addons.dropbox.tests.utils import (DropboxAddonTestCase, MockDropbox,
+                                        mock_responses, patch_client)
+from osf_tests.factories import AuthUserFactory
+
+from framework.auth import Auth
 from website.addons.dropbox.serializer import DropboxSerializer
 from website.addons.dropbox.views import dropbox_root_folder
 
@@ -29,7 +31,7 @@ class TestAuthViews(DropboxAddonTestCase, views_testing.OAuthAddonAuthViewsTestC
     def test_oauth_start(self):
         super(TestAuthViews, self).test_oauth_start()
 
-    @mock.patch('addons.dropbox.model.UserSettings.revoke_remote_oauth_access', mock.PropertyMock())
+    @mock.patch('addons.dropbox.models.UserSettings.revoke_remote_oauth_access', mock.PropertyMock())
     def test_delete_external_account(self):
         super(TestAuthViews, self).test_delete_external_account()
 
@@ -47,6 +49,10 @@ class TestConfigViews(DropboxAddonTestCase, views_testing.OAuthAddonConfigViewsT
     def test_folder_list(self, *args):
         super(TestConfigViews, self).test_folder_list()
 
+    @mock.patch.object(DropboxSerializer, 'credentials_are_valid', return_value=True)
+    def test_import_auth(self, *args):
+        super(TestConfigViews, self).test_import_auth()
+
 
 class TestFilebrowserViews(DropboxAddonTestCase, OsfTestCase):
 
@@ -57,7 +63,7 @@ class TestFilebrowserViews(DropboxAddonTestCase, OsfTestCase):
         self.node_settings.save()
 
     def test_dropbox_folder_list(self):
-        with patch_client('website.addons.dropbox.model.DropboxClient'):
+        with patch_client('addons.dropbox.models.DropboxClient'):
             url = self.project.api_url_for(
                 'dropbox_folder_list',
                 folder_id='/',
@@ -168,7 +174,7 @@ class TestRestrictions(DropboxAddonTestCase, OsfTestCase):
 
         # Nasty contributor who will try to access folders that he shouldn't have
         # access to
-        self.contrib = factories.UserFactory()
+        self.contrib = AuthUserFactory()
         self.project.add_contributor(self.contrib, auth=Auth(self.user))
         self.project.save()
 

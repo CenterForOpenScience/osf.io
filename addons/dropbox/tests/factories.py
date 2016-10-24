@@ -2,13 +2,13 @@ import factory
 from factory.django import DjangoModelFactory
 from osf_tests.factories import UserFactory, ProjectFactory, ExternalAccountFactory
 
-from addons.dropbox.models import DropboxNodeSettings
-from addons.dropbox.models import DropboxUserSettings
+from addons.dropbox.models import NodeSettings
+from addons.dropbox.models import UserSettings
 
 
 class DropboxUserSettingsFactory(DjangoModelFactory):
     class Meta:
-        model = DropboxUserSettings
+        model = UserSettings
 
     owner = factory.SubFactory(UserFactory)
     # access_token = factory.Sequence(lambda n: 'abcdef{0}'.format(n))
@@ -16,7 +16,7 @@ class DropboxUserSettingsFactory(DjangoModelFactory):
 
 class DropboxNodeSettingsFactory(DjangoModelFactory):
     class Meta:
-        model = DropboxNodeSettings
+        model = NodeSettings
 
     folder = 'Camera Uploads'
     owner = factory.SubFactory(ProjectFactory)

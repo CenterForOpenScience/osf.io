@@ -4,7 +4,7 @@ from framework.auth import Auth
 
 from django.conf import settings
 
-from osf_tests.factories import UserFactory, ProjectFactory
+from osf_tests.factories import AuthUserFactory, ProjectFactory
 
 
 class AddonTestCase(object):
@@ -34,7 +34,7 @@ class AddonTestCase(object):
 
     # Optional overrides
     def create_user(self):
-        return UserFactory.build()
+        return AuthUserFactory.build()
 
     def create_project(self):
         return ProjectFactory(creator=self.user)
