@@ -4,6 +4,7 @@ import itertools
 import github3
 import cachecontrol
 from requests.adapters import HTTPAdapter
+from requests.exceptions import ConnectionError
 
 from website.addons.github import settings as github_settings
 from website.addons.github.exceptions import NotFoundError
@@ -49,7 +50,11 @@ class GitHubClient(object):
         :return: Dict of repo information
             See http://developer.github.com/v3/repos/#get
         """
-        rv = self.gh3.repository(user, repo)
+        try:
+            rv = self.gh3.repository(user, repo)
+        except ConnectionError:
+            raise NotFoundError
+
         if rv:
             return rv
         raise NotFoundError

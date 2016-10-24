@@ -2,7 +2,7 @@
 
 Enabling the addon for development
 
- - In `website/settings/local.py` add, `"dataverse"` to `ADDONS_REQUESTED`.
+Ensure `"dataverse"` exists in the addons list in `"addons.json"`
 
 Creating a Dataverse dataset on the test server
 
