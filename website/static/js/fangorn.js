@@ -525,10 +525,8 @@ function doItemOp(operation, to, from, rename, conflict) {
         };
     }
 
-    var options = {};
-    if (from.data.provider === 'github'){
-        options['branch'] = from.data.branch;
-    }
+    var options = _build_options(from);
+
 
     $.ajax({
         type: 'POST',
@@ -963,7 +961,8 @@ function _downloadEvent (event, item, col) {
     } catch (e) {
         window.event.cancelBubble = true;
     }
-    window.location = waterbutler.buildTreeBeardDownload(item);
+    var options = _build_options(item);
+    window.location = waterbutler.buildTreeBeardDownload(item, options);
 }
 
 function _downloadZipEvent (event, item, col) {
@@ -972,7 +971,13 @@ function _downloadZipEvent (event, item, col) {
     } catch (e) {
         window.event.cancelBubble = true;
     }
-    window.location = waterbutler.buildTreeBeardDownloadZip(item);
+    var options = _build_options(item);
+    window.location = waterbutler.buildTreeBeardDownloadZip(item, options);
+}
+
+function _build_options(item){
+    var options = _build_options(item);
+    return options;
 }
 
 function _createFolder(event, dismissCallback, helpText) {
