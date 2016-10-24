@@ -13,10 +13,14 @@ from keen.client import KeenClient
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-def get_node_log_events(end_date):
+def get_node_log_events(end_date, start_date=None):
 
-    node_logs = NodeLog.find(Q('date', 'lt', end_date))
+    node_log_query = Q('date', 'lt', end_date)
 
+    if start_date:
+        node_log_query = node_log_query & Q('date', 'gt', start_date)
+
+    node_logs = NodeLog.find(node_log_query)
     node_log_events = []
     for node_log in node_logs:
         event = {
@@ -43,8 +47,9 @@ def parse_args():
 def main():
     args = parse_args()
     end_date = parse(args.end_date) if args.end_date else datetime.today()
+    start_date = parse(args.start_date) if args.start_date else None
 
-    node_log_events = get_node_log_events(end_date)
+    node_log_events = get_node_log_events(end_date, start_date)
     keen_project = keen_settings['private']['project_id']
     write_key = keen_settings['private']['write_key']
     if keen_project and write_key:
@@ -53,14 +58,13 @@ def main():
             write_key=write_key,
         )
 
-        start, stop, total_sent = 0, 5000, 0  # Keen API Docs suggest sending in batches of no more than 5K
-        while total_sent <= len(node_log_events):
+        start, stop = 0, 5000  # Keen API Docs suggest sending in batches of no more than 5K
+        while start <= len(node_log_events):
             keen_payload = {'node_log_analytics': node_log_events[start:stop]}
             client.add_events(keen_payload)
             start += 5000
             stop += 5000
-            total_sent += 5000
-            time.sleep(10)
+            time.sleep(1)
     else:
         print(node_log_events)
 
