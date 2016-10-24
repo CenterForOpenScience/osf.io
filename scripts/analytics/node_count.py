@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def get_node_count(end_date=None):
+def count(end_date=None):
     node_query = (
         Q('is_deleted', 'ne', True) &
         Q('is_folder', 'ne', True)
@@ -95,7 +95,7 @@ def main():
     args = parse_args()
     end_date = parse(args.end_date) if args.end_date else None
 
-    node_count = get_node_count(end_date)
+    node_count = count(end_date)
     keen_project = keen_settings['private']['project_id']
     write_key = keen_settings['private']['write_key']
     if keen_project and write_key:

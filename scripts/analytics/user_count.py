@@ -36,11 +36,17 @@ def count(today):
             Q('date_disabled', 'lt', today)
         ).count()
     }
-    logger.info('Users counted. Active: {}, Unconfirmed: {}, Deactivated: {}'.format(counts['active_users'], counts['unconfirmed_users'], counts['deactivated_users']))
-    return {'user_count_analytics': [counts]}
+    logger.info(
+        'Users counted. Active: {}, Unconfirmed: {}, Deactivated: {}'.format(
+            counts['active_users'],
+            counts['unconfirmed_users'],
+            counts['deactivated_users']
+        )
+    )
+    return counts
 
 def main(today):
-    keen_payload = count(today)
+    user_counts = count(today)
     keen_project = keen_settings['private']['project_id']
     write_key = keen_settings['private']['write_key']
     if keen_project and write_key:
@@ -48,9 +54,9 @@ def main(today):
             project_id=keen_project,
             write_key=write_key,
         )
-        client.add_events(keen_payload)
+        client.add_event('user_count_analytics', user_counts)
     else:
-        print(keen_payload)
+        print(user_counts)
 
 
 if __name__ == '__main__':

@@ -38,15 +38,13 @@ class TestUserCount(OsfTestCase):
         User.remove()
 
     def test_gets_users(self):
-        res = count(self.today + timedelta(1))
-        data = res['user_count_analytics'][0]
+        data = count(self.today + timedelta(1))
         assert_equal(data['active_users'], 4)
         assert_equal(data['unconfirmed_users'], 2)
         assert_equal(data['deactivated_users'], 2)
 
     def test_gets_only_users_from_given_date(self):
-        res = count(self.today - timedelta(1))
-        data = res['user_count_analytics'][0]
+        data = count(self.today - timedelta(1))
         assert_equal(data['active_users'], 1)
         assert_equal(data['unconfirmed_users'], 0)
         assert_equal(data['deactivated_users'], 1)
