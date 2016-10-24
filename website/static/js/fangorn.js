@@ -1304,7 +1304,11 @@ function gotoFileEvent (item, toUrl) {
     if ($osf.isIE()) {
         var viewOnly = $osf.urlParams().view_only;
         if (viewOnly) {
-            fileurl += '?view_only=' + viewOnly;
+            if (fileurl.indexof('?') !== -1)
+                fileurl += '&view_only=' + viewOnly;
+            else
+                fileurl += '?view_only=' + viewOnly;
+
         }
     }
 
