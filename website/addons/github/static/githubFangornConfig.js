@@ -226,7 +226,7 @@ var _githubItemButtons = {
                     buttons.push(
                         m.component(Fangorn.Components.button, {
                             onclick: function (event) {
-                                window.location = waterbutler.buildTreeBeardDownloadZip(item, {'branch':item.data.branch});
+                                window.location = waterbutler.buildTreeBeardDownloadZip(item, {'branch': item.data.branch});
                             },
                             icon: 'fa fa-download',
                             className: 'text-primary'

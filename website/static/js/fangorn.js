@@ -375,7 +375,6 @@ function inheritFromParent(item, parent, fields) {
         item.data[field] = item.data[field] || parent.data[field];
     });
 
-    // If from github inherit branch as well
     if(item.data.provider === 'github'){
         item.data.branch = parent.data.branch;
     }
@@ -992,6 +991,7 @@ function _createFolder(event, dismissCallback, helpText) {
         helpText('Please enter a folder name.');
         return;
     }
+
     if (val.indexOf('/') !== -1) {
         helpText('Folder name contains illegal characters.');
         return;
