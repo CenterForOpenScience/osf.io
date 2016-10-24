@@ -406,7 +406,7 @@ def project_reorder_components(node, **kwargs):
     # TODO: Optimize me. This is doing n queries. Ew.
     new_node_relation_ids = [
         NodeRelation.load(id_).id if type_ == 'pointer'
-        else NodeRelation.objects.get(child__guids___id=id_).id
+        else node.node_relations.get(child__guids___id=id_).id
         for id_, type_ in new_node_guids
     ]
 

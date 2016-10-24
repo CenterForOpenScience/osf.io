@@ -979,7 +979,7 @@ class TestChildrenViews(OsfTestCase):
     def test_get_readable_descendants_includes_pointers(self):
         project = ProjectFactory(creator=self.user)
         pointed = ProjectFactory()
-        project.add_pointer(pointed, auth=Auth(self.user))
+        node_relation = project.add_pointer(pointed, auth=Auth(self.user))
         project.save()
 
         url = project.api_url_for('get_readable_descendants')
@@ -988,7 +988,7 @@ class TestChildrenViews(OsfTestCase):
         nodes = res.json['nodes']
         assert_equal(len(nodes), 1)
         assert_equal(nodes[0]['title'], pointed.title)
-        assert_equal(nodes[0]['id'], pointed._id)
+        assert_equal(nodes[0]['id'], node_relation._id)
 
     def test_readable_descendants_masked_by_permissions(self):
         # Users should be able to see through components they do not have
@@ -1009,8 +1009,8 @@ class TestChildrenViews(OsfTestCase):
         #                   6(A)
         #
         #
-        userA = AuthUserFactory()
-        userB = AuthUserFactory()
+        userA = AuthUserFactory(fullname='User A')
+        userB = AuthUserFactory(fullname='User B')
 
         project1 = ProjectFactory(creator=self.user, title='One')
         project1.add_contributor(userA, auth=Auth(self.user), permissions=['read'])

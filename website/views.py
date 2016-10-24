@@ -34,6 +34,7 @@ def _render_node(node, auth=None, parent_node=None):
     :return:
 
     """
+    NodeRelation = apps.get_model('osf.NodeRelation')
     perm = None
     # NOTE: auth.user may be None if viewing public project while not
     # logged in
@@ -42,9 +43,14 @@ def _render_node(node, auth=None, parent_node=None):
         perm = permissions.reduce_permissions(perm_list)
 
     if parent_node:
-        node_relation = parent_node.node_relations.get(child__id=node.id)
-        primary = not node_relation.is_node_link
-        _id = node._id if primary else node_relation._id
+        try:
+            node_relation = parent_node.node_relations.get(child__id=node.id)
+        except NodeRelation.DoesNotExist:
+            primary = False
+            _id = node._id
+        else:
+            primary = not node_relation.is_node_link
+            _id = node._id if primary else node_relation._id
     else:
         _id = node._id
         primary = True
