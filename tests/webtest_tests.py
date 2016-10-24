@@ -791,6 +791,15 @@ class TestExplorePublicActivity(OsfTestCase):
         self.popular_links_registrations._id = settings.POPULAR_LINKS_REGISTRATIONS
         self.popular_links_registrations.add_pointer(self.popular_registration, auth=Auth(self.popular_links_registrations.creator), save=True)
 
+    def test_explore_page_loads_when_settings_not_configured(self):
+        settings.POPULAR_LINKS_NODE = 'notanode'
+        settings.NEW_AND_NOTEWORTHY_LINKS_NODE = 'alsototallywrong'
+        settings.POPULAR_LINKS_REGISTRATIONS = 'nopenope'
+
+        url = self.project.web_url_for('activity')
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+
     def test_new_and_noteworthy_and_popular_nodes_show_in_explore_activity(self):
 
         url = self.project.web_url_for('activity')
