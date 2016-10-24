@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def count(today):
+def count():
     counts = []
     for addon in ADDONS_AVAILABLE:
         user_count = addon.settings_models['user'].find().count() if addon.settings_models.get('user') else 0
@@ -22,15 +22,12 @@ def count(today):
             'user_count': user_count,
             'node_count': node_count
         })
-        if today:
-            counts.update({
-                'keen': {'timestamp': today.isoformat()}
-            })
+
         logger.info('{} counted. Users: {}, Nodes: {}'.format(addon.short_name, user_count, node_count))
     return counts
 
-def main(today):
-    addon_count = count(today)
+def main():
+    addon_count = count()
     keen_project = keen_settings['private']['project_id']
     write_key = keen_settings['private']['write_key']
     if keen_project and write_key:
