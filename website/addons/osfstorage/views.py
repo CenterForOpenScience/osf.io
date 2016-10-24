@@ -83,7 +83,7 @@ def osfstorage_get_revisions(file_node, node_addon, payload, **kwargs):
     return {
         'revisions': [
             utils.serialize_revision(node_addon.owner, file_node, version, index=len(file_node.versions) - idx - 1, anon=is_anon)
-            for idx, version in enumerate(file_node.versions.all().order('-date_created'))
+            for idx, version in enumerate(file_node.versions.all().order_by('-date_created'))
         ]
     }
 

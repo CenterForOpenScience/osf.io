@@ -554,8 +554,7 @@ class TestNodeSettingsModel(StorageTestCase):
 
         for _ in range(num_versions):
             version = factories.FileVersionFactory()
-            record.versions.append(version)
-        record.save()
+            record.versions.add(version)
 
         fork = self.project.fork_node(self.auth_obj)
         fork_node_settings = fork.get_addon('osfstorage')
@@ -584,7 +583,8 @@ class TestOsfStorageFileVersion(StorageTestCase):
         assert_true(retrieved.creator)
         assert_true(retrieved.location)
         assert_true(retrieved.size)
-        assert_is(retrieved.identifier, 0)
+        # sometimes identifiers are strings, so this always has to be a string, sql is funny about that.
+        assert_is(retrieved.identifier, "0")
         assert_true(retrieved.content_type)
         assert_true(retrieved.date_modified)
 

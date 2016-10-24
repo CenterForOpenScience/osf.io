@@ -255,7 +255,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
         if not self.tags.filter(name=tag).exists() and not self.node.is_registration:
             new_tag = Tag.load(tag)
             if not new_tag:
-                new_tag = Tag(_id=tag)
+                new_tag = Tag(name=tag)
             new_tag.save()
             self.tags.add(new_tag)
             if log:
@@ -272,15 +272,15 @@ class OsfStorageFile(OsfStorageFileNode, File):
             # Can't perform edits on a registration
             raise NodeStateError
 
-        tag = Tag.objects.filter(name=tag).first()
-        if not tag:
+        tag_instance = Tag.objects.filter(name=tag).first()
+        if not tag_instance:
             raise InvalidTagError
-        elif not self.tags.filter(id=tag.id).exists():
+        elif not self.tags.filter(id=tag_instance.id).exists():
             raise TagNotFoundError
         else:
-            self.tags.remove(tag)
+            self.tags.remove(tag_instance)
             if log:
-                self.add_tag_log(NodeLog.FILE_TAG_REMOVED, tag._id, auth)
+                self.add_tag_log(NodeLog.FILE_TAG_REMOVED, tag_instance._id, auth)
             if save:
                 self.save()
             return True

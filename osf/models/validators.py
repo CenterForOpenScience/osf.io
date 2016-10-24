@@ -83,8 +83,19 @@ class CommentMaxLength(object):
 
         return True
 
+
 def validate_doi(value):
     # DOI must start with 10 and have a slash in it - avoided getting too complicated
     if not re.match('10\\.\\S*\\/', value):
         raise ValidationValueError('"{}" is not a valid DOI'.format(value))
     return True
+
+
+def validate_location(value):
+    if value is None:
+        return  # Allow for None locations but not broken dicts
+    from website.addons.osfstorage import settings
+
+    for key in ('service', settings.WATERBUTLER_RESOURCE, 'object'):
+        if key not in value:
+            raise ValidationValueError('Location {} missing key "{}"'.format(value, key))

@@ -7,6 +7,8 @@ from dateutil import parser
 from django.contrib.postgres import lookups
 from django.contrib.postgres.fields.jsonb import JSONField
 from django.core.serializers.json import DjangoJSONEncoder
+from django.db.models import QuerySet
+
 from osf.exceptions import ValidationError
 from psycopg2.extras import Json
 
@@ -21,11 +23,13 @@ class DateTimeAwareJSONEncoder(DjangoJSONEncoder):
             return dict(type='encoded_time', value=o.isoformat())
         elif isinstance(o, Decimal):
             return dict(type='encoded_decimal', value=str(o))
+        elif isinstance(o, QuerySet):
+            # fix for django querysets being unserializable by default
+            return super(DateTimeAwareJSONEncoder, self).default(list(o))
         return super(DateTimeAwareJSONEncoder, self).default(o)
 
 
 def decode_datetime_objects(nested_value):
-
     if isinstance(nested_value, list):
         return [decode_datetime_objects(item) for item in nested_value]
     elif isinstance(nested_value, dict):

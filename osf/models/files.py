@@ -12,6 +12,7 @@ from framework.analytics import get_basic_counters
 from modularodm.exceptions import NoResultsFound
 from osf.models.base import BaseModel, Guid, OptionalGuidMixin, ObjectIDMixin
 from osf.models.comment import CommentableMixin
+from osf.models.validators import validate_location
 from osf.modm_compat import Q
 from website.util import api_v2_url
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
@@ -45,7 +46,7 @@ class TrashedFileNode(CommentableMixin, OptionalGuidMixin, ObjectIDMixin, BaseMo
     history = DateTimeAwareJSONField(default=list, blank=True)
     versions = models.ManyToManyField('FileVersion')
 
-    node = models.ForeignKey('AbstractNode', null=True, blank=True)
+    node = models.ForeignKey('osf.AbstractNode', null=True, blank=True)
     object_id = models.PositiveIntegerField(null=True, blank=True)
     content_type = models.ForeignKey('contenttypes.ContentType', null=True, blank=True)
     parent = GenericForeignKey()
@@ -59,13 +60,13 @@ class TrashedFileNode(CommentableMixin, OptionalGuidMixin, ObjectIDMixin, BaseMo
     path = models.CharField(max_length=200, blank=True, null=True)  # max_length in staging was 140
     # max_length in staging was 265
     _materialized_path = models.CharField(max_length=300, blank=True, null=True)
-    checkout = models.ForeignKey('OSFUser', related_name='trashed_files_checked_out', null=True, blank=True)
-    deleted_by = models.ForeignKey('OSFUser', related_name='files_deleted_by', null=True, blank=True)
+    checkout = models.ForeignKey('osf.OSFUser', related_name='trashed_files_checked_out', null=True, blank=True)
+    deleted_by = models.ForeignKey('osf.OSFUser', related_name='files_deleted_by', null=True, blank=True)
     deleted_on = models.DateTimeField(default=timezone.now)  # auto_now_add=True)
-    tags = models.ManyToManyField('Tag')
+    tags = models.ManyToManyField('osf.Tag')
     suspended = models.BooleanField(default=False)
 
-    copied_from = models.ForeignKey('StoredFileNode', default=None, null=True, blank=True)
+    copied_from = models.ForeignKey('osf.StoredFileNode', default=None, null=True, blank=True)
 
     @property
     def materialized_path(self):
@@ -606,7 +607,6 @@ class FileNode(object):
             provider=self.provider,
             last_touched=self.last_touched,
             materialized_path=self.materialized_path,
-
             deleted_by=user
         )
         if self.versions.exists():
@@ -872,7 +872,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
     # exists on the backend
     date_modified = models.DateTimeField(null=True, blank=True)
 
-    location = DateTimeAwareJSONField(default=dict, db_index=True, blank=True, null=True)
+    location = DateTimeAwareJSONField(default=dict, db_index=True, blank=True, null=True, validators=[validate_location])
     metadata = DateTimeAwareJSONField(blank=True, default=dict, db_index=True)
 
     @property
