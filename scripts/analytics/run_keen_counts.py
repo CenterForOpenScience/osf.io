@@ -21,7 +21,6 @@ def get_events_for_day(day):
 
     keen_events = {}
     keen_events.update({'user_count_analytics': user_count(day)})
-    keen_events.update({'addon_count_analytics': addon_count()})
     keen_events.update({'node_analytics': [node_count(day)]})
     return keen_events
 
@@ -39,6 +38,7 @@ def main(start_date, end_date):
             write_key=write_key,
         )
     assert(client)
+    client.add_events({'addon_count_analytics': addon_count()})
     day = start_date
     while day < end_date:
         client.add_events(get_events_for_day(day))
