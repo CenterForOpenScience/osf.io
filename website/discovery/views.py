@@ -12,8 +12,11 @@ def activity():
     """
 
     # New and Noreworthy Projects
-    new_and_noteworthy_pointers = Node.find_one(Q('_id', 'eq', settings.NEW_AND_NOTEWORTHY_LINKS_NODE)).nodes_pointer
-    new_and_noteworthy_projects = [pointer.node for pointer in new_and_noteworthy_pointers]
+    try:
+        new_and_noteworthy_pointers = Node.load(Q('_id', 'eq', settings.NEW_AND_NOTEWORTHY_LINKS_NODE)).nodes_pointer
+        new_and_noteworthy_projects = [pointer.node for pointer in new_and_noteworthy_pointers]
+    except AttributeError:
+        new_and_noteworthy_projects = []
 
     # Popular Projects
     try:
