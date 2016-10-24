@@ -525,8 +525,10 @@ function doItemOp(operation, to, from, rename, conflict) {
         };
     }
 
-    var options = _build_options(from);
-
+    var options = {};
+    if(from.data.provider === 'github'){
+        options['branch'] = from.data.branch;
+    }
 
     $.ajax({
         type: 'POST',
@@ -961,8 +963,7 @@ function _downloadEvent (event, item, col) {
     } catch (e) {
         window.event.cancelBubble = true;
     }
-    var options = _build_options(item);
-    window.location = waterbutler.buildTreeBeardDownload(item, options);
+    window.location = waterbutler.buildTreeBeardDownload(item);
 }
 
 function _downloadZipEvent (event, item, col) {
@@ -971,13 +972,7 @@ function _downloadZipEvent (event, item, col) {
     } catch (e) {
         window.event.cancelBubble = true;
     }
-    var options = _build_options(item);
-    window.location = waterbutler.buildTreeBeardDownloadZip(item, options);
-}
-
-function _build_options(item){
-    var options = _build_options(item);
-    return options;
+    window.location = waterbutler.buildTreeBeardDownloadZip(item);
 }
 
 function _createFolder(event, dismissCallback, helpText) {
@@ -1000,9 +995,9 @@ function _createFolder(event, dismissCallback, helpText) {
     var extra = {};
     var path = parent.data.path || '/';
     var options = {name: val, kind: 'folder'};
-
     if (parent.data.provider === 'github') {
         extra.branch = parent.data.branch;
+        options['branch'] = parent.data.branch;
     }
 
     m.request({
