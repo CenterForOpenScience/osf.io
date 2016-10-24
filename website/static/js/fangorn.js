@@ -505,7 +505,8 @@ function doItemOp(operation, to, from, rename, conflict) {
     if (operation === OPERATIONS.RENAME) {
         moveSpec = {
             action: 'rename',
-            rename: rename
+            rename: rename,
+            conflict: conflict
         };
     } else if (operation === OPERATIONS.COPY) {
         moveSpec = {
