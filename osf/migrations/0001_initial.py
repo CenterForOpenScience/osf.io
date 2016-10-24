@@ -19,7 +19,7 @@ import osf.models.user
 import osf.models.validators
 import osf.utils.datetime_aware_jsonfield
 import osf.utils.fields
-import osf.utils.security
+import website.security
 import website.addons.wiki.model
 
 
@@ -204,7 +204,7 @@ class Migration(migrations.Migration):
                  models.CharField(db_index=True, default=osf.models.oauth.generate_client_id, max_length=50,
                                   unique=True)),
                 ('client_secret', models.CharField(
-                    default=functools.partial(osf.utils.security.random_string, *(), **{b'length': 40}),
+                    default=functools.partial(website.security.random_string, *(), **{b'length': 40}),
                     max_length=40)),
                 ('is_active', models.BooleanField(db_index=True, default=True)),
                 ('name', models.CharField(db_index=True, max_length=200)),
@@ -229,7 +229,7 @@ class Migration(migrations.Migration):
                  models.CharField(db_index=True, default=osf.models.base.generate_object_id, max_length=24,
                                   unique=True)),
                 ('token_id', models.CharField(
-                    default=functools.partial(osf.utils.security.random_string, *(), **{b'length': 70}),
+                    default=functools.partial(website.security.random_string, *(), **{b'length': 70}),
                     max_length=70, unique=True)),
                 ('name', models.CharField(db_index=True, max_length=100)),
                 ('scopes', models.CharField(max_length=300)),

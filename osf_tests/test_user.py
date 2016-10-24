@@ -171,7 +171,7 @@ class TestOSFUser:
         with pytest.raises(ValidationError):
             u.save()
 
-    @mock.patch('osf.utils.security.random_string')
+    @mock.patch('website.security.random_string')
     def test_get_confirmation_token(self, random_string):
         random_string.return_value = '12345'
         u = UserFactory.build()
@@ -189,7 +189,7 @@ class TestOSFUser:
         with pytest.raises(ExpiredTokenError):
             u.get_confirmation_token('foo@bar.com')
 
-    @mock.patch('osf.utils.security.random_string')
+    @mock.patch('website.security.random_string')
     def test_get_confirmation_token_when_token_is_expired_force(self, random_string):
         random_string.return_value = '12345'
         u = UserFactory()
@@ -221,7 +221,7 @@ class TestOSFUser:
         with pytest.raises(ExpiredTokenError):
             u.get_confirmation_token(email)
 
-    @mock.patch('osf.utils.security.random_string')
+    @mock.patch('website.security.random_string')
     def test_get_confirmation_url(self, random_string):
         random_string.return_value = 'abcde'
         u = UserFactory()
@@ -240,7 +240,7 @@ class TestOSFUser:
         with pytest.raises(ExpiredTokenError):
             u.get_confirmation_url('foo@bar.com')
 
-    @mock.patch('osf.utils.security.random_string')
+    @mock.patch('website.security.random_string')
     def test_get_confirmation_url_when_token_is_expired_force(self, random_string):
         random_string.return_value = '12345'
         u = UserFactory()
