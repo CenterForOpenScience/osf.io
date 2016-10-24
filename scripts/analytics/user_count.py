@@ -64,5 +64,5 @@ if __name__ == '__main__':
     try:
         date = parse(sys.argv[1])
     except IndexError:
-        date = datetime.now()
+        date = datetime.utcnow()
     main(date)
