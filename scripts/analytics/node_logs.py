@@ -1,4 +1,5 @@
 import time
+import logging
 import argparse
 from modularodm import Q
 from datetime import datetime
@@ -9,6 +10,8 @@ from website.project.model import NodeLog
 from website.settings import KEEN as keen_settings
 from keen.client import KeenClient
 
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 def get_node_log_events(end_date):
 
@@ -61,6 +64,7 @@ def main():
     else:
         print(node_log_events)
 
+    logger.info('NodeLogs counted. {} NodeLogs.'.format(len(node_log_events)))
 
 if __name__ == '__main__':
     init_app()
