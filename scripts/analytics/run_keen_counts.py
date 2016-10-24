@@ -9,7 +9,7 @@ from website.app import init_app
 from website.settings import KEEN as keen_settings
 from scripts.analytics.user_count import count as user_count
 from scripts.analytics.addon_count import count as addon_count
-from scripts.analytics.node_count import get_node_count as node_count
+from scripts.analytics.node_count import count as node_count
 from scripts.analytics.node_log_count import get_node_log_events as node_log_count
 
 logger = logging.getLogger(__name__)
@@ -44,6 +44,7 @@ def main(start_date, end_date):
         client.add_events(get_events_for_day(day))
         day = day + timedelta(1)
     for chunk in get_node_log_events(start_date, end_date):
+        logger.info('NodeLogs counted. {} NodeLogs.'.format(len(chunk)))
         client.add_events({'node_log_analytics': chunk})
 
 def parse_args():
