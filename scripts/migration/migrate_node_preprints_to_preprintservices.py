@@ -21,6 +21,10 @@ logger = logging.getLogger(__name__)
 # Cache the intended value instead, updating it here before writing.
 cns_dict_to_update = {}
 
+# Dictionary containing {<preprint._id>: <node._id>} mapping for pairs that swapped guids
+preprint_node_swapped_ids_map = {}
+
+
 def get_targets():
     return database.node.find({'preprint_file': {'$ne': None}})
 
@@ -123,7 +127,8 @@ def should_swap_guids(node, preprint, swap_cutoff):
     return preprint.date_created - node.date_created < swap_cutoff
 
 def swap_guids(node, preprint):
-    logger.info('* Swapping guids for preprint {} and node {}'.format(preprint._id, node._id))    
+    logger.info('* Swapping guids for preprint {} and node {}'.format(preprint._id, node._id))
+    preprint_node_swapped_ids_map[node._id] = preprint._id  # node._id is about to become preprint._id, reverse here
     old_guid = models.Guid.load(node._id)
     new_guid = models.Guid.load(preprint._id)
     node._id = new_guid._id
@@ -761,7 +766,7 @@ def update_foreign_fields(old_id, node):
                 }}
             )
 
-    n_cns = list(database['node'].find({'$where': 'var keys=Object.keys(this.child_node_subscriptions);for(var i=0;i<keys.length;i+=1){{if(this.child_node_subscriptions[keys[i]].indexOf("{}")!==-1){{return true}}}}return false;'.format(old_id)}))
+    n_cns = list(database['node'].find({'$where': 'if (this.child_node_subscriptions!==undefined){{var keys=Object.keys(this.child_node_subscriptions);for(var i=0;i<keys.length;i+=1){{if(this.child_node_subscriptions[keys[i]].indexOf("{}")!==-1){{return true}}}}}}return false;'.format(old_id)}))
     if n_cns:
         docs = list(n_cns)
         logger.info('** Updating {} Nodes (child_node_subscriptions) {}'.format(old_id, [d['_id'] for d in docs]))
@@ -1028,6 +1033,8 @@ def migrate(swap_cutoff):
     logger.info('External Preprints with new _ids: {}'.format(list(external_preprints)))
     logger.info('External Preprint-Node map: {}'.format(
         ''.join(['{}-{}, '.format(preprint_id, preprint_node_mapping[preprint_id][0]) for preprint_id in external_preprints])))
+    logger.info('Swapped Preprint-Node map: {}'.format(
+        ''.join(['{}-{}, '.format(preprint_id, preprint_node_swapped_ids_map[preprint_id]) for preprint_id in preprint_node_swapped_ids_map])))
     logger.info('Successes: {}'.format(successes))
     logger.info('Failures: {}'.format(failures))
     logger.info('Missed nodes: {}'.format(list(set(target_ids)-set(successes + failures))))
