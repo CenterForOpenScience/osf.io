@@ -488,10 +488,6 @@ else:
         'send_analytics_to_keen': {
             'task': 'scripts.analytics.run_keen_counts',
             'schedule': crontab(minute=0, hour=3),  # Daily 3:00 a.m.
-            'kwargs': {
-                'start_date': datetime.datetime.utcnow() - datetime.timedelta(1),
-                'end_date': datetime.datetime.utcnow()
-            }
         }
     }
 
