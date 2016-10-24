@@ -374,6 +374,11 @@ function inheritFromParent(item, parent, fields) {
     inheritedFields.concat(fields || []).forEach(function(field) {
         item.data[field] = item.data[field] || parent.data[field];
     });
+
+    // If from github inherit branch as well
+    if(item.data.provider === 'github'){
+        item.data.branch = parent.data.branch;
+    }
 }
 
 /**
@@ -527,9 +532,9 @@ function doItemOp(operation, to, from, rename, conflict) {
 
     var options = {};
     if(from.data.provider === 'github'){
-        options['branch'] = from.data.branch;
+        options.branch = from.data.branch;
+        moveSpec.branch = from.data.branch;
     }
-
     $.ajax({
         type: 'POST',
         beforeSend: $osf.setXHRAuthorization,
