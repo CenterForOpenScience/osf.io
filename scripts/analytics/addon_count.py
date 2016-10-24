@@ -1,7 +1,4 @@
-import sys
 import logging
-from datetime import datetime
-from dateutil.parser import parse
 
 from website.settings import ADDONS_AVAILABLE
 from website.app import init_app
@@ -42,8 +39,4 @@ def main():
 
 if __name__ == '__main__':
     init_app()
-    try:
-        date = parse(sys.argv[1])
-    except IndexError:
-        date = datetime.now()
-    main(date)
+    main()
