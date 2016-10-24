@@ -13,12 +13,10 @@ from keen.client import KeenClient
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-def get_node_log_events(end_date, start_date=None):
 
-    node_log_query = Q('date', 'lt', end_date)
+def get_node_log_events(start_date, end_date):
 
-    if start_date:
-        node_log_query = node_log_query & Q('date', 'gt', start_date)
+    node_log_query = Q('date', 'lt', end_date) & Q('date', 'gt', start_date)
 
     node_logs = NodeLog.find(node_log_query)
     node_log_events = []
@@ -45,11 +43,12 @@ def parse_args():
 
 
 def main():
+    now = datetime.datetime.utcnow()
     args = parse_args()
-    end_date = parse(args.end_date) if args.end_date else datetime.today()
-    start_date = parse(args.start_date) if args.start_date else None
+    end_date = parse(args.end_date) if args.end_date else now
+    start_date = parse(args.start_date) if args.start_date else now - datetime.timedelta(1)
 
-    node_log_events = get_node_log_events(end_date, start_date)
+    node_log_events = get_node_log_events(start_date, end_date)
     keen_project = keen_settings['private']['project_id']
     write_key = keen_settings['private']['write_key']
     if keen_project and write_key:
