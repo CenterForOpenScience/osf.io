@@ -27,6 +27,7 @@ from framework.auth.exceptions import (
     MergeConflictError,
     MergeConfirmedRequiredError
 )
+from framework.auth.core import generate_verification_key
 from framework.sessions.utils import remove_sessions_for_user
 from framework.exceptions import PermissionsError
 from framework.sentry import log_exception
@@ -42,35 +43,11 @@ from osf.models.institution import Institution
 from osf.models.session import Session
 from osf.models.mixins import AddonModelMixin
 from osf.models.contributor import RecentlyAddedContributor
-from osf.utils import security
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.names import impute_names
 from osf.modm_compat import Q
 
 logger = logging.getLogger(__name__)
-
-# Hide implementation of token generation
-def generate_confirm_token():
-    return security.random_string(30)
-
-def generate_verification_key(verification_type=None):
-    """
-    Generate a one-time verification key with an optional expiration time.
-    The type of the verification key determines the expiration time defined in `website.settings.EXPIRATION_TIME_DICT`.
-
-    :param verification_type: None, verify, confirm or claim
-    :return: a string or a dictionary
-    """
-    token = security.random_string(30)
-    # v1 with only the token
-    if not verification_type:
-        return token
-    # v2 with a token and the expiration time
-    expires = timezone.now() + dt.timedelta(minutes=website_settings.EXPIRATION_TIME_DICT[verification_type])
-    return {
-        'token': token,
-        'expires': expires,
-    }
 
 def get_default_mailing_lists():
     return {'Open Science Framework Help': True}
@@ -216,8 +193,17 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     # The user into which this account was merged
     merged_by = models.ForeignKey('self', null=True, blank=True, related_name='merger')
 
-    # verification key used for resetting password
+    # verification key v1: only the token string, no expiration time
+    # used for cas login with username and verification key
     verification_key = models.CharField(max_length=255, null=True, blank=True)
+
+    # verification key v2: token, and expiration time
+    # used for password reset, confirm account/email, claim account/contributor-ship
+    verification_key_v2 = DateTimeAwareJSONField(default=dict, blank=True)
+    # Format: {
+    #   'token': <verification token>
+    #   'expires': <verification expiration time>
+    # }
 
     email_last_sent = models.DateTimeField(null=True, blank=True)
 
@@ -822,6 +808,22 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
                 email_verifications.pop(token)
         self.email_verifications = email_verifications
 
+    def verify_password_token(self, token):
+        """
+        Verify that the password reset token for this user is valid.
+
+        :param token: the token in verification key
+        :return `True` if valid, otherwise `False`
+        """
+
+        if token and self.verification_key_v2:
+            try:
+                return (self.verification_key_v2['token'] == token and
+                        self.verification_key_v2['expires'] > timezone.now())
+            except AttributeError:
+                return False
+        return False
+
     def verify_claim_token(self, token, project_id):
         """Return whether or not a claim token is valid for this user for
         a given node which they were added as a unregistered contributor for.
@@ -1172,19 +1174,22 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         :returns: The added record
         """
         if not node.can_edit(user=referrer):
-            raise PermissionsError('Referrer does not have permission to add a contributor '
-                'to project {0}'.format(node._primary_key))
+            raise PermissionsError(
+                'Referrer does not have permission to add a contributor to project {0}'.format(node._primary_key)
+            )
         project_id = str(node._id)
         referrer_id = str(referrer._id)
         if email:
             clean_email = email.lower().strip()
         else:
             clean_email = None
+        verification_key = generate_verification_key(verification_type='claim')
         record = {
             'name': given_name,
             'referrer_id': referrer_id,
-            'token': generate_confirm_token(),
-            'email': clean_email
+            'token': verification_key['token'],
+            'expires': verification_key['expires'],
+            'email': clean_email,
         }
         self.unclaimed_records[project_id] = record
         return record

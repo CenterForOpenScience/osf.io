@@ -13,6 +13,7 @@ import itsdangerous
 
 from flask import Request as FlaskRequest
 
+from django.utils import timezone
 from modularodm import fields, Q
 from modularodm.exceptions import NoResultsFound, ValidationError, ValidationValueError, QueryException
 from modularodm.validators import URLValidator
@@ -46,7 +47,6 @@ name_formatters = {
 logger = logging.getLogger(__name__)
 
 
-# generate verification key
 def generate_verification_key(verification_type=None):
     """
     Generate a one-time verification key with an optional expiration time.
@@ -60,7 +60,7 @@ def generate_verification_key(verification_type=None):
     if not verification_type:
         return token
     # v2 with a token and the expiration time
-    expires = dt.datetime.utcnow() + dt.timedelta(minutes=settings.EXPIRATION_TIME_DICT[verification_type])
+    expires = timezone.now() + dt.timedelta(minutes=settings.EXPIRATION_TIME_DICT[verification_type])
     return {
         'token': token,
         'expires': expires,

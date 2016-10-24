@@ -650,7 +650,7 @@ class TestIsActive:
 
 class TestAddUnconfirmedEmail:
 
-    @mock.patch('osf.utils.security.random_string')
+    @mock.patch('website.security.random_string')
     def test_add_unconfirmed_email(self, random_string):
         token = fake.lexify('???????')
         random_string.return_value = token
@@ -660,7 +660,7 @@ class TestAddUnconfirmedEmail:
         assert len(u.email_verifications.keys()) == 1
         assert u.email_verifications[token]['email'] == 'foo@bar.com'
 
-    @mock.patch('osf.utils.security.random_string')
+    @mock.patch('website.security.random_string')
     def test_add_unconfirmed_email_adds_expiration_date(self, random_string):
         token = fake.lexify('???????')
         random_string.return_value = token
