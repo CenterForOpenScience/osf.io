@@ -20,6 +20,8 @@ from modularodm import Q
 from modularodm.exceptions import ValidationError
 from osf.models import Comment
 
+from framework.auth import cas
+from framework.auth.core import generate_verification_key
 from framework import auth
 from framework.auth import User, Auth
 from framework.auth.exceptions import InvalidTokenError
@@ -4521,6 +4523,106 @@ class TestCommentViews(OsfTestCase):
             )
             n_unread = Comment.find_n_unread(user=user, node=project, page='node')
             assert n_unread == 1
+
+
+class TestResetPassword(OsfTestCase):
+
+    def setUp(self):
+        super(TestResetPassword, self).setUp()
+        self.user = AuthUserFactory()
+        self.another_user = AuthUserFactory()
+        self.osf_key_v2 = generate_verification_key(verification_type='password')
+        self.user.verification_key_v2 = self.osf_key_v2
+        self.user.verification_key = None
+        self.user.save()
+        self.get_url = web_url_for(
+            'reset_password_get',
+            uid=self.user._id,
+            token=self.osf_key_v2['token']
+        )
+        self.get_url_invalid_key = web_url_for(
+            'reset_password_get',
+            uid=self.user._id,
+            token=generate_verification_key()
+        )
+        self.get_url_invalid_user = web_url_for(
+            'reset_password_get',
+            uid=self.another_user._id,
+            token=self.osf_key_v2['token']
+        )
+
+    # successfully load reset password page
+    def test_reset_password_view_returns_200(self):
+        res = self.app.get(self.get_url)
+        assert_equal(res.status_code, 200)
+
+    # raise http 400 error
+    def test_reset_password_view_raises_400(self):
+        res = self.app.get(self.get_url_invalid_key, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+        res = self.app.get(self.get_url_invalid_user, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+        self.user.verification_key_v2['expires'] = timezone.now()
+        self.user.save()
+        res = self.app.get(self.get_url, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    # successfully reset password
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_can_reset_password_if_form_success(self, mock_service_validate):
+        # load reset password page and submit email
+        res = self.app.get(self.get_url)
+        form = res.forms['resetPasswordForm']
+        form['password'] = 'newpassword'
+        form['password2'] = 'newpassword'
+        res = form.submit()
+
+        # check request URL is /resetpassword with username and new verification_key_v2 token
+        request_url_path = res.request.path
+        assert_in('resetpassword', request_url_path)
+        assert_in(self.user._id, request_url_path)
+        assert_not_in(self.user.verification_key_v2['token'], request_url_path)
+
+        # check verification_key_v2 for OSF is destroyed and verification_key for CAS is in place
+        self.user.reload()
+        assert_equal(self.user.verification_key_v2, {})
+        assert_not_equal(self.user.verification_key, None)
+
+        # check redirection to CAS login with username and the new verification_key(CAS)
+        assert_equal(res.status_code, 302)
+        location = res.headers.get('Location')
+        assert_true('login?service=' in location)
+        assert_true('username={}'.format(self.user.username) in location)
+        assert_true('verification_key={}'.format(self.user.verification_key) in location)
+
+        # check if password was updated
+        self.user.reload()
+        assert_true(self.user.check_password('newpassword'))
+
+        # check if verification_key is destroyed after service validation
+        mock_service_validate.return_value = cas.CasResponse(
+            authenticated=True,
+            user=self.user.pk,
+            attributes={'accessToken': fake.md5()}
+        )
+        ticket = fake.md5()
+        service_url = 'http://accounts.osf.io/?ticket=' + ticket
+        cas.make_response_from_ticket(ticket, service_url)
+        self.user.reload()
+        assert_equal(self.user.verification_key, None)
+
+    #  log users out before they land on reset password page
+    def test_reset_password_logs_out_user(self):
+        # visit reset password link while another user is logged in
+        res = self.app.get(self.get_url, auth=self.another_user.auth)
+        # check redirection to CAS logout
+        assert_equal(res.status_code, 302)
+        location = res.headers.get('Location')
+        assert_not_in('reauth', location)
+        assert_in('logout?service=', location)
+        assert_in('resetpassword', location)
 
 
 if __name__ == '__main__':
