@@ -53,7 +53,7 @@ def main():
             write_key=write_key,
         )
 
-        start, stop, total_sent = 0, 5000, 0
+        start, stop, total_sent = 0, 5000, 0  # Keen API Docs suggest sending in batches of no more than 5K
         while total_sent <= len(node_log_events):
             keen_payload = {'node_log_analytics': node_log_events[start:stop]}
             client.add_events(keen_payload)
