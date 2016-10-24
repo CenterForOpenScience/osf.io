@@ -39,13 +39,15 @@ def main(start_date, end_date):
 def parse_args():
     parser = argparse.ArgumentParser(description='Populate keen counts!')
     parser.add_argument('-e', '--end', dest='end_date', required=False)
-    parser.add_argument('-s', '--start', dest='start_date', required=True)
+    parser.add_argument('-s', '--start', dest='start_date', required=False)
     return parser.parse_args()
 
 if __name__ == '__main__':
+    now = datetime.utcnow()
+
     init_app()
     args = parse_args()
-    end_date = parse(args.end_date) if args.end_date else datetime.now()
-    start_date = parse(args.start_date)
+    end_date = parse(args.end_date) if args.end_date else now
+    start_date = parse(args.start_date) if args.end_date else now - datetime.timedelta(1)
 
     main(start_date, end_date)
