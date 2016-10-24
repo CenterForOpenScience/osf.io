@@ -16,10 +16,16 @@ def activity():
     new_and_noteworthy_projects = [pointer.node for pointer in new_and_noteworthy_pointers]
 
     # Popular Projects
-    popular_public_projects = Node.find_one(Q('_id', 'eq', settings.POPULAR_LINKS_NODE)).nodes_pointer
+    try:
+        popular_public_projects = Node.load(Q('_id', 'eq', settings.POPULAR_LINKS_NODE)).nodes_pointer
+    except AttributeError:
+        popular_public_projects = []
 
     # Popular Registrations
-    popular_public_registrations = Node.find_one(Q('_id', 'eq', settings.POPULAR_LINKS_REGISTRATIONS)).nodes_pointer
+    try:
+        popular_public_registrations = Node.load(Q('_id', 'eq', settings.POPULAR_LINKS_REGISTRATIONS)).nodes_pointer
+    except AttributeError:
+        popular_public_registrations = []
 
     return {
         'new_and_noteworthy_projects': new_and_noteworthy_projects,
