@@ -384,6 +384,17 @@ def update_foreign_fields(old_id, node):
                 }}
             )
 
+    nwp_n = list(database['nodewikipage'].find({'node': old_id}))
+    if nwp_n:
+        logger.info('** Updating {} NodeWikiPage (node) {}'.format(old_id, [d['_id'] for d in nwp_n]))
+        for doc in nwp_n:
+            database['nodewikipage'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'node': node._id
+                }}
+            )
+
     zns_o = list(database['zoteronodesettings'].find({'owner': old_id}))
     if zns_o:
         logger.info('** Updating {} ZoteroNodeSettings (owner) {}'.format(old_id, [d['_id'] for d in zns_o]))
@@ -884,6 +895,18 @@ def update_foreign_fields(old_id, node):
             )
             database['pagecounters'].remove({'_id': doc['_id']})
 
+    ss_dv = list(database['session'].find({'data.visited': {'$regex': ':{}:'.format(old_id)}}))
+    if ss_dv:
+        logger.info('** Updating {} Session (data) {}'.format(old_id, [d['_id'] for d in ss_dv]))
+        for doc in ss_dv:
+            repl_data = json.loads(re.sub(r'\b{}\b'.format(old_id), node._id, json.dumps(doc['data'])))
+            database['session'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'data': repl_data
+                }}
+            )
+
     wc_n = list(database['watchconfig'].find({'node': old_id}))
     if wc_n:
         logger.info('** Updating {} WatchConfigs (node) {}'.format(old_id, [d['_id'] for d in wc_n]))
@@ -951,6 +974,31 @@ def update_foreign_fields(old_id, node):
                 {'_id': doc['_id']},
                 {'$set':{
                     'stashed_urls': updated_stash
+                }}
+            )
+
+    idf_r = list(database['identifier'].find({'referent': old_id}))
+    if idf_r:
+        logger.info('** Updating {} Identifiers (referent) {}'.format(old_id, [d['_id'] for d in idf_r]))
+        for doc in idf_r:
+            ref = doc['referent']
+            ref[1] = 'preprintservice'
+            database['identifier'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'referent': ref
+                }}
+            )
+
+    qm_dn = list(database['queuedmail'].find({'data.nid': old_id}))
+    if qm_dn:
+        logger.info('** Updating {} QueuedMails (data.nid) {}'.format(old_id, [d['_id'] for d in qm_dn]))
+        for doc in qm_dn:
+            repl_data = json.loads(re.sub(r'\b{}\b'.format(old_id), node._id, json.dumps(doc['data'])))
+            database['queuedmail'].find_and_modify(
+                {'_id': doc['_id']},
+                {'$set':{
+                    'data': repl_data
                 }}
             )
 
