@@ -4,6 +4,7 @@ import httplib as http
 
 from flask import request, Response
 from flask import send_from_directory
+from django.db.models import F
 
 import requests
 from geoip import geolite2
@@ -56,16 +57,16 @@ def get_globals():
     """
     user = _get_current_user()
     user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in user.affiliated_institutions.all()] if user else []
-    all_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in Institution.find().sort('name')]
+    institutions = Institution.find().sort('name')
     dashboard_institutions = [
         {'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners}
-        for inst in all_institutions
+        for inst in institutions
         if Node.find_by_institutions(inst, query=(
             Q('is_public', 'eq', True) &
-            Q('is_folder', 'ne', True) &
             Q('is_deleted', 'ne', True) &
-            Q('parent_node', 'eq', None) &
-            Q('is_registration', 'eq', False)
+            Q('root_id', 'eq', F('id')) &
+            Q('type', 'ne', 'osf.registration') &
+            Q('type', 'ne', 'osf.collection')
         )).count() >= settings.INSTITUTION_DISPLAY_NODE_THRESHOLD
     ]
     location = geolite2.lookup(request.remote_addr) if request.remote_addr else None

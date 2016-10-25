@@ -38,6 +38,7 @@ from .factories import (
     PrivateLinkFactory,
     CollectionFactory,
     NodeRelationFactory,
+    InstitutionFactory,
 )
 from addons.wiki.tests.factories import NodeWikiFactory
 from .utils import capture_signals, assert_datetime_equal, mock_archive
@@ -874,6 +875,21 @@ def test_find_for_user():
 
     assert node1 in Node.find_for_user(contrib, Q('is_public', 'eq', False))
     assert node2 not in Node.find_for_user(contrib, Q('is_public', 'eq', False))
+
+
+def test_find_by_institutions():
+    inst1, inst2 = InstitutionFactory(), InstitutionFactory()
+    project = ProjectFactory(is_public=True)
+    user = project.creator
+    user.affiliated_institutions.add(inst1, inst2)
+    project.add_affiliated_institution(inst1, user=user)
+    project.save()
+
+    inst1_result = Node.find_by_institutions(inst1)
+    assert project in inst1_result.all()
+
+    inst2_result = Node.find_by_institutions(inst2)
+    assert project not in inst2_result.all()
 
 
 def test_can_comment():
