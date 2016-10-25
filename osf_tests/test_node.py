@@ -62,9 +62,18 @@ def test_top_level_node_has_parent_node_none():
     assert project.parent_node is None
 
 def test_component_has_parent_node():
-    node = NodeFactory()
-    assert type(node.parent_node) is Node
+    project = ProjectFactory()
+    node = NodeFactory(parent=project)
+    assert node.parent_node == project
 
+def test_components_have_root():
+    root = ProjectFactory()
+    child = NodeFactory(parent=root)
+    grandchild = NodeFactory(parent=child)
+    child.reload()
+    grandchild.reload()
+    assert child.root == root
+    assert grandchild.root == root
 
 def test_license_searches_parent_nodes():
     license_record = NodeLicenseRecordFactory()
@@ -143,6 +152,10 @@ class TestProject:
 
     def test_parent_id(self, project):
         assert not project.parent_id
+
+    def test_root_id_is_same_as_own_id_for_top_level_nodes(self, project):
+        project.reload()
+        assert project.root_id == project.id
 
     def test_nodes_active(self, project, auth):
         node = NodeFactory(parent=project)
