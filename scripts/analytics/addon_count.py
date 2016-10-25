@@ -11,16 +11,18 @@ logging.basicConfig(level=logging.INFO)
 
 def count():
     counts = []
-    for addon in ADDONS_AVAILABLE:
+    addons_available = {k: v for k, v in [(addon.short_name, addon) for addon in ADDONS_AVAILABLE]}
+    for short_name, addon in addons_available.iteritems():
         user_count = addon.settings_models['user'].find().count() if addon.settings_models.get('user') else 0
         node_count = addon.settings_models['node'].find().count() if addon.settings_models.get('node') else 0
         counts.append({
-            'provider': addon.short_name,
+            'provider': short_name,
             'user_count': user_count,
             'node_count': node_count
         })
 
         logger.info('{} counted. Users: {}, Nodes: {}'.format(addon.short_name, user_count, node_count))
+
     return counts
 
 def main():
