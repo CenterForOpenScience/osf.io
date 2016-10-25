@@ -11,18 +11,21 @@ import mock
 from modularodm import Q
 
 from framework.auth.core import Auth
+
 from website import settings
 import website.search.search as search
 from website.search import elastic_search
 from website.search.util import build_query
 from website.search_migration.migrate import migrate
 from website.models import Retraction, NodeLicense, Tag
+from website.files.models.osfstorage import OsfStorageFile
 
 from tests import factories
 from tests.base import OsfTestCase
 from tests.test_search import SearchTestCase
 from tests.test_features import requires_search
 from tests.utils import mock_archive, run_celery_tasks
+
 
 TEST_INDEX = 'test'
 
@@ -390,6 +393,27 @@ class TestPublicNodes(SearchTestCase):
             self.component.set_privacy('private')
         docs = query('category:component AND ' + self.title)['results']
         assert_equal(len(docs), 0)
+
+    def test_search_node_partial(self):
+        self.project.set_title('Blue Rider-Express', self.consolidate_auth)
+        with run_celery_tasks():
+            self.project.save()
+        find = query('Blue')['results']
+        assert_equal(len(find), 1)      
+
+    def test_search_node_partial_with_sep(self):
+        self.project.set_title('Blue Rider-Express', self.consolidate_auth)
+        with run_celery_tasks():
+            self.project.save()        
+        find = query('Express')['results']
+        assert_equal(len(find), 1)
+
+    def test_search_node_not_name(self):
+        self.project.set_title('Blue Rider-Express', self.consolidate_auth)
+        with run_celery_tasks():
+            self.project.save()        
+        find = query('Green Flyer-Slow')['results']
+        assert_equal(len(find), 0)
 
     def test_public_parent_title(self):
         self.project.set_title('hello &amp; world', self.consolidate_auth)
@@ -856,6 +880,11 @@ class TestSearchFiles(SearchTestCase):
         find = query_file('Shake.wav')['results']
         assert_equal(len(find), 1)
 
+    def test_search_file_name_without_separator(self):
+        self.root.append_file('Shake.wav')
+        find = query_file('Shake')['results']
+        assert_equal(len(find), 1)
+
     def test_delete_file(self):
         file_ = self.root.append_file('I\'ve Got Dreams To Remember.wav')
         find = query_file('I\'ve Got Dreams To Remember.wav')['results']
@@ -920,3 +949,21 @@ class TestSearchFiles(SearchTestCase):
             node.save()
         find = query_file('The Dock of the Bay.mp3')['results']
         assert_equal(len(find), 0)
+
+    def test_file_download_url_guid(self):
+        file_ = self.root.append_file('Timber.mp3')
+        file_guid = file_.get_guid(create=True)
+        file_.save()
+        find = query_file('Timber.mp3')['results']
+        assert_equal(find[0]['guid_url'], '/' + file_guid._id + '/')
+
+
+    def test_file_download_url_no_guid(self):
+        file_ = self.root.append_file('Timber.mp3')
+        path = OsfStorageFile.find_one( Q('node', 'eq', file_.node_id)).wrapped().path
+        deep_url = '/' + file_.node._id + '/files/osfstorage' + path + '/'
+        find = query_file('Timber.mp3')['results']
+        assert_not_equal(file_.path, '')
+        assert_equal(file_.path, path)
+        assert_equal(find[0]['guid_url'], None)
+        assert_equal(find[0]['deep_url'], deep_url)

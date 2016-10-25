@@ -86,7 +86,7 @@ def git_logs(ctx, branch=None):
 
 
 @task
-def apiserver(ctx, port=8000, wait=True, autoreload=True, host='127.0.0.1'):
+def apiserver(ctx, port=8000, wait=True, autoreload=True, host='127.0.0.1', pty=True):
     """Run the API server."""
     env = os.environ.copy()
     cmd = 'DJANGO_SETTINGS_MODULE=api.base.settings {} manage.py runserver {}:{} --nothreading'\
@@ -98,21 +98,21 @@ def apiserver(ctx, port=8000, wait=True, autoreload=True, host='127.0.0.1'):
         cmd += ' --certificate {} --key {}'.format(settings.OSF_SERVER_CERT, settings.OSF_SERVER_KEY)
 
     if wait:
-        return ctx.run(cmd, echo=True, pty=True)
+        return ctx.run(cmd, echo=True, pty=pty)
     from subprocess import Popen
 
     return Popen(cmd, shell=True, env=env)
 
 
 @task
-def adminserver(ctx, port=8001, host='127.0.0.1'):
+def adminserver(ctx, port=8001, host='127.0.0.1', pty=True):
     """Run the Admin server."""
     env = 'DJANGO_SETTINGS_MODULE="admin.base.settings"'
     cmd = '{} python manage.py runserver {}:{} --nothreading'.format(env, host, port)
     if settings.SECURE_MODE:
         cmd = cmd.replace('runserver', 'runsslserver')
         cmd += ' --certificate {} --key {}'.format(settings.OSF_SERVER_CERT, settings.OSF_SERVER_KEY)
-    ctx.run(cmd, echo=True, pty=True)
+    ctx.run(cmd, echo=True, pty=pty)
 
 
 SHELL_BANNER = """
@@ -628,7 +628,7 @@ def karma(ctx, single=False, sauce=False, browsers=None):
 
 
 @task
-def wheelhouse(ctx, addons=False, release=False, dev=False, metrics=False):
+def wheelhouse(ctx, addons=False, release=False, dev=False, metrics=False, pty=True):
     """Build wheels for python dependencies.
 
     Examples:
@@ -647,7 +647,7 @@ def wheelhouse(ctx, addons=False, release=False, dev=False, metrics=False):
                     cmd = 'pip wheel --find-links={} -r {} --wheel-dir={} -c {}'.format(
                         WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH, CONSTRAINTS_PATH,
                     )
-                    ctx.run(cmd, pty=True)
+                    ctx.run(cmd, pty=pty)
     if release:
         req_file = os.path.join(HERE, 'requirements', 'release.txt')
     elif dev:
@@ -659,7 +659,7 @@ def wheelhouse(ctx, addons=False, release=False, dev=False, metrics=False):
     cmd = 'pip wheel --find-links={} -r {} --wheel-dir={} -c {}'.format(
         WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH, CONSTRAINTS_PATH,
     )
-    ctx.run(cmd, pty=True)
+    ctx.run(cmd, pty=pty)
 
 
 @task
@@ -677,33 +677,6 @@ def addon_requirements(ctx):
             )
 
     print('Finished installing addon requirements')
-
-
-@task
-def encryption(ctx, owner=None):
-    """Generate GnuPG key.
-
-    For local development:
-    > invoke encryption
-    On Linode:
-    > sudo env/bin/invoke encryption --owner www-data
-
-    """
-    if not settings.USE_GNUPG:
-        print('GnuPG is not enabled. No GnuPG key will be generated.')
-        return
-
-    import gnupg
-    gpg = gnupg.GPG(gnupghome=settings.GNUPG_HOME, gpgbinary=settings.GNUPG_BINARY)
-    keys = gpg.list_keys()
-    if keys:
-        print('Existing GnuPG key found')
-        return
-    print('Generating GnuPG key')
-    input_data = gpg.gen_key_input(name_real='OSF Generated Key')
-    gpg.gen_key(input_data)
-    if owner:
-        ctx.run('sudo chown -R {0} {1}'.format(owner, settings.GNUPG_HOME))
 
 
 @task
@@ -751,7 +724,6 @@ def packages(ctx):
         'install libxslt',
         'install elasticsearch',
         'install rabbitmq',
-        'install gpg',
         'install node',
         'tap tokutek/tokumx',
         'install tokumx-bin',
@@ -777,11 +749,10 @@ def bower_install(ctx):
 
 @task
 def setup(ctx):
-    """Creates local settings, installs requirements, and generates encryption key"""
+    """Creates local settings, and installs requirements"""
     copy_settings(ctx, addons=True)
     packages(ctx)
     requirements(ctx, addons=True, dev=True)
-    encryption(ctx)
     # Build nodeCategories.json before building assets
     build_js_config_files(ctx)
     assets(ctx, dev=True, watch=False)

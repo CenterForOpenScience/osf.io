@@ -1,7 +1,7 @@
 from api.base.serializers import (
     JSONAPISerializer
 )
-
+from api.base.utils import absolute_reverse
 from api.files.serializers import FileSerializer
 from api.nodes.serializers import NodeSerializer
 from api.registrations.serializers import RegistrationSerializer
@@ -35,7 +35,12 @@ class SearchSerializer(JSONAPISerializer):
         return None
 
     def get_absolute_url(self, obj):
-        raise NotImplementedError
+        return absolute_reverse(
+            view_name='search:search-search',
+            kwargs={
+                'version': self.context['request'].parser_context['kwargs']['version']
+            }
+        )
 
     class Meta:
         type_ = 'search'

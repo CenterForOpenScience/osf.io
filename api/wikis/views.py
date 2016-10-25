@@ -7,7 +7,11 @@ from api.base.exceptions import Gone
 from api.base.views import JSONAPIBaseView
 from api.base.renderers import PlainTextRenderer
 from api.wikis.permissions import ContributorOrPublic, ExcludeWithdrawals
-from api.wikis.serializers import WikiSerializer, WikiDetailSerializer
+from api.wikis.serializers import (
+    WikiSerializer,
+    NodeWikiDetailSerializer,
+    RegistrationWikiDetailSerializer,
+)
 
 from framework.auth.oauth_scopes import CoreScopes
 from website.addons.wiki.model import NodeWikiPage
@@ -103,9 +107,14 @@ class WikiDetail(JSONAPIBaseView, generics.RetrieveAPIView, WikiMixin):
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    serializer_class = WikiDetailSerializer
+    serializer_class = NodeWikiDetailSerializer
     view_category = 'wikis'
     view_name = 'wiki-detail'
+
+    def get_serializer_class(self):
+        if self.get_wiki().node.is_registration:
+            return RegistrationWikiDetailSerializer
+        return NodeWikiDetailSerializer
 
     # overrides RetrieveAPIView
     def get_object(self):

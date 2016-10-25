@@ -37,7 +37,10 @@ class PreprintProviderSerializer(JSONAPISerializer):
         return obj.absolute_api_v2_url
 
     def get_preprints_url(self, obj):
-        return absolute_reverse('preprint_providers:preprints-list', kwargs={'provider_id': obj._id})
+        return absolute_reverse('preprint_providers:preprints-list', kwargs={
+            'provider_id': obj._id,
+            'version': self.context['request'].parser_context['kwargs']['version']
+        })
 
     def get_external_url(self, obj):
         return obj.external_url

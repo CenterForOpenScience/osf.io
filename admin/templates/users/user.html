@@ -19,12 +19,28 @@
                 Associated spam
             </a>
             </span>
-            <span class="col-md-2">
-            <a href=""
-               class="btn btn-primary disabled">
-                User notes
-            </a>
-            </span>
+            <div class="btn-group" role="group">
+                <a href="{% url 'desk:customer' user.id %}"
+                   data-toggle="modal" data-target="#deskModal"
+                   class="btn btn-primary">
+                    Desk Profile
+                </a>
+                <a href="{% url 'desk:user_cases' user.id %}"
+                   data-toggle="modal" data-target="#caseModal"
+                   class="btn btn-primary">
+                    Desk Cases
+                </a>
+            </div>
+            <div class="modal" id="deskModal">
+                <div class="modal-dialog">
+                    <div class="modal-content"></div>
+                </div>
+            </div>
+            <div class="modal" id="caseModal">
+                <div class="modal-dialog">
+                    <div class="modal-content"></div>
+                </div>
+            </div>
             <span class="col-md-2">
             <a href="{% url 'users:reset_password' user.id %}"
                data-toggle="modal" data-target="#resetModal"
@@ -104,7 +120,7 @@
                 <tr>
                     <td>OSF account</td>
                     <td>
-                        <a href="">{{ user.id }}</a>
+                        <a href="{{ user.osf_link }}">{{ user.id }}</a>
                     </td>
                 </tr>
                 <tr>

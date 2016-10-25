@@ -164,7 +164,7 @@ class TestWikiViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
     @mock.patch('website.addons.wiki.model.NodeWikiPage.rendered_before_update', new_callable=mock.PropertyMock)
-    def test_wiki_content_use_python_render(self, mock_rendered_before_update):
+    def test_wiki_content_rendered_before_update(self, mock_rendered_before_update):
         content = 'Some content'
         self.project.update_node_wiki('somerandomid', content, Auth(self.user))
         self.project.save()
@@ -172,14 +172,11 @@ class TestWikiViews(OsfTestCase):
         mock_rendered_before_update.return_value = True
         url = self.project.api_url_for('wiki_page_content', wname='somerandomid')
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(content, res.json['wiki_content'])
-        assert_in(content, res.json['wiki_rendered'])
+        assert_true(res.json['rendered_before_update'])
 
         mock_rendered_before_update.return_value = False
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(content, res.json['wiki_content'])
-        assert_equal('', res.json['wiki_rendered'])
-
+        assert_false(res.json['rendered_before_update'])
 
     def test_wiki_url_for_component_returns_200(self):
         component = NodeFactory(project=self.project, is_public=True)
@@ -462,18 +459,18 @@ class TestWikiViews(OsfTestCase):
         assert_true(res.json['more'])
 
     @mock.patch('website.addons.wiki.model.NodeWikiPage.rendered_before_update', new_callable=mock.PropertyMock)
-    def test_wiki_widget_use_python_render(self, mock_rendered_before_update):
+    def test_wiki_widget_rendered_before_update(self, mock_rendered_before_update):
         # New pages use js renderer
         mock_rendered_before_update.return_value = False
         self.project.update_node_wiki('home', 'updated content', Auth(self.user))
         url = self.project.api_url_for('wiki_widget', wid='home')
         res = self.app.get(url, auth=self.user.auth)
-        assert_false(res.json['use_python_render'])
+        assert_false(res.json['rendered_before_update'])
 
-        # Old pages use python renderer
+        # Old pages use a different version of js render
         mock_rendered_before_update.return_value = True
         res = self.app.get(url, auth=self.user.auth)
-        assert_true(res.json['use_python_render'])
+        assert_true(res.json['rendered_before_update'])
 
     def test_read_only_users_cannot_view_edit_pane(self):
         url = self.project.web_url_for('project_wiki_view', wname='home')

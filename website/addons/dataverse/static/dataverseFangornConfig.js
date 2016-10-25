@@ -16,7 +16,7 @@ function changeState(grid, item, version) {
 
 function _downloadEvent(event, item, col) {
     event.stopPropagation();
-    window.location = waterbutler.buildTreeBeardDownload(item, {path: item.data.extra.fileId});
+    window.location = waterbutler.buildTreeBeardDownload(item);
 }
 
 // Define Fangorn Button Actions
@@ -310,10 +310,6 @@ function _fangornFolderIcons(item) {
     return undefined;
 }
 
-function _fangornDeleteUrl(item) {
-    return waterbutler.buildTreeBeardDelete(item, {full_path: item.data.path + '?' + $.param({name: item.data.name})});
-}
-
 function _fangornLazyLoad(item) {
     return waterbutler.buildTreeBeardMetadata(item, {version: item.data.version});
 }
@@ -327,7 +323,6 @@ function _canDrop(item) {
 
 Fangorn.config.dataverse = {
     folderIcon: _fangornFolderIcons,
-    resolveDeleteUrl: _fangornDeleteUrl,
     resolveRows: _fangornColumns,
     lazyload:_fangornLazyLoad,
     canDrop: _canDrop,

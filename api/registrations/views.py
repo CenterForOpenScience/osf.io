@@ -12,6 +12,8 @@ from api.base.parsers import JSONAPIRelationshipParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON
 from api.base.utils import get_user_auth
 from api.comments.serializers import RegistrationCommentSerializer, CommentCreateSerializer
+from api.identifiers.serializers import RegistrationIdentifierSerializer
+from api.identifiers.views import IdentifierList
 from api.users.views import UserMixin
 
 from api.nodes.permissions import (
@@ -20,7 +22,8 @@ from api.nodes.permissions import (
     ContributorOrPublic,
     ContributorOrPublicForRelationshipPointers,
     AdminOrPublic,
-    ExcludeWithdrawals
+    ExcludeWithdrawals,
+    NodeLinksShowIfVersion,
 )
 from api.registrations.serializers import (
     RegistrationSerializer,
@@ -38,6 +41,7 @@ from api.nodes.views import (
 )
 
 from api.registrations.serializers import RegistrationNodeLinksSerializer, RegistrationFileSerializer
+from api.wikis.serializers import RegistrationWikiSerializer
 
 from api.base.utils import get_object_or_error
 
@@ -748,7 +752,8 @@ class RegistrationNodeLinksList(BaseNodeLinksList, RegistrationMixin):
         ContributorOrPublic,
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
-        ExcludeWithdrawals
+        ExcludeWithdrawals,
+        NodeLinksShowIfVersion,
     )
 
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
@@ -803,7 +808,8 @@ class RegistrationNodeLinksDetail(BaseNodeLinksDetail, RegistrationMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        ExcludeWithdrawals
+        ExcludeWithdrawals,
+        NodeLinksShowIfVersion,
     )
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NULL]
@@ -860,6 +866,8 @@ class RegistrationWikiList(NodeWikiList, RegistrationMixin):
     """List of wikis for a registration."""
     view_category = 'registrations'
     view_name = 'registration-wikis'
+
+    serializer_class = RegistrationWikiSerializer
 
 
 class RegistrationLinkedNodesList(LinkedNodesList, RegistrationMixin):
@@ -947,3 +955,40 @@ class RegistrationViewOnlyLinkDetail(NodeViewOnlyLinkDetail, RegistrationMixin):
 
     view_category = 'registrations'
     view_name = 'registration-view-only-link-detail'
+
+
+class RegistrationIdentifierList(RegistrationMixin, IdentifierList):
+    """List of identifiers for a specified node. *Read-only*.
+
+    ##Identifier Attributes
+
+    OSF Identifier entities have the "identifiers" `type`.
+
+        name           type                   description
+        ----------------------------------------------------------------------------
+        category       string                 e.g. 'ark', 'doi'
+        value          string                 the identifier value itself
+
+    ##Links
+
+        self: this identifier's detail page
+
+    ##Relationships
+
+    ###Referent
+
+    The identifier is refers to this node.
+
+    ##Actions
+
+    *None*.
+
+    ##Query Params
+
+     Identifiers may be filtered by their category.
+
+    #This Request/Response
+
+    """
+
+    serializer_class = RegistrationIdentifierSerializer
