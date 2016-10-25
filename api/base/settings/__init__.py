@@ -11,7 +11,7 @@ import warnings
 import itertools
 
 from .defaults import *  # noqa
-from website import settings
+from website.settings import DEV_MODE
 
 try:
     from .local import *  # noqa
@@ -19,18 +19,11 @@ except ImportError as error:
     warnings.warn('No api/base/settings/local.py settings file found. Did you remember to '
                   'copy local-dist.py to local.py?', ImportWarning)
 
-if not settings.DEV_MODE:
-    if not local.BYPASS_THROTTLE_TOKEN:
-        warnings.warn('Local throttle token should be set.')
-    else:
-        assert local.BYPASS_THROTTLE_TOKEN != defaults.BYPASS_THROTTLE_TOKEN, 'Local throttle token should be changed from the default value.'
-
-if not DEBUG and os.environ.get('DJANGO_SETTINGS_MODULE') == 'api.base.settings':
+if not DEV_MODE and os.environ.get('DJANGO_SETTINGS_MODULE') == 'api.base.settings':
     from . import local
     from . import defaults
-    for setting in ('JWE_SECRET', 'JWT_SECRET'):
+    for setting in ('JWE_SECRET', 'JWT_SECRET', 'BYPASS_THROTTLE_TOKEN'):
         assert getattr(local, setting, None) and getattr(local, setting, None) != getattr(defaults, setting, None), '{} must be specified in local.py when DEV_MODE is False'.format(setting)
-
 
 def load_institutions():
     global INSTITUTION_ORIGINS_WHITELIST

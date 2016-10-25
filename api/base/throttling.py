@@ -1,4 +1,3 @@
-from rest_framework.settings import api_settings as drf_settings
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle, SimpleRateThrottle
 
 from api.base import settings
@@ -10,29 +9,15 @@ class BaseThrottle(SimpleRateThrottle):
         return False
 
     def get_ident(self, request):
-        xff = request.META.get('HTTP_X_FORWARDED_FOR')
-        remote_addr = request.META.get('REMOTE_ADDR')
-        throttle_token = request.META.get('HTTP_X_THROTTLE_TOKEN')
-        num_proxies = drf_settings.NUM_PROXIES
-
-        if throttle_token:
-            return throttle_token
-
-        if num_proxies is not None:
-            if num_proxies == 0 or xff is None:
-                return remote_addr
-            addrs = xff.split(',')
-            client_addr = addrs[-min(num_proxies, len(addrs))]
-            return client_addr.strip()
-
-        return ''.join(xff.split()) if xff else remote_addr
+        if request.META.get('HTTP_X_THROTTLE_TOKEN'):
+            return request.META['HTTP_X_THROTTLE_TOKEN']
+        return super(BaseThrottle, self).get_ident(request)
 
     def allow_request(self, request, view):
         """
         Implement the check to see if the request should be throttled.
         """
-        throttle_token = settings.BYPASS_THROTTLE_TOKEN
-        if throttle_token and self.get_ident(request) == throttle_token:
+        if self.get_ident(request) == settings.BYPASS_THROTTLE_TOKEN:
             return True
 
         if self.rate is None:
