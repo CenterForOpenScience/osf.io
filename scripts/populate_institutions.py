@@ -317,7 +317,7 @@ def main(env):
                 'banner_name': 'ucsd-banner.png',
                 'logo_name': 'ucsd-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:ucsd.edu')),
-                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-ucsd.cos.io'],
                 'email_domains': [],
             }, 
