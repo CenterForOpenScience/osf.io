@@ -21,6 +21,7 @@ from tests.base import fake
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory, WatchConfigFactory, NodeFactory,
                              NodeWikiFactory, RegistrationFactory,  UnregUserFactory, UnconfirmedUserFactory,
                              PrivateLinkFactory)
+from website.project import Node
 from website import settings, language
 from website.util import web_url_for, api_url_for
 
@@ -790,6 +791,10 @@ class TestExplorePublicActivity(OsfTestCase):
         self.popular_links_registrations = ProjectFactory()
         self.popular_links_registrations._id = settings.POPULAR_LINKS_REGISTRATIONS
         self.popular_links_registrations.add_pointer(self.popular_registration, auth=Auth(self.popular_links_registrations.creator), save=True)
+
+    def tearDown(self):
+        super(TestExplorePublicActivity, self).tearDown()
+        Node.remove()
 
     def test_explore_page_loads_when_settings_not_configured(self):
 
