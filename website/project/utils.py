@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """Various node-related utilities."""
+from django.apps import apps
 from django.db.models import F
 from modularodm import Q
 
 from website import settings
-from website.project import Node
 
 from keen import KeenClient
 
@@ -29,6 +29,7 @@ TOP_LEVEL_PROJECT_QUERY = (
 
 
 def recent_public_registrations(n=10):
+    Node = apps.get_model('osf.AbstractNode')
     registrations = Node.find(
         CONTENT_NODE_QUERY &
         Q('root_id', 'eq', F('id')) &
@@ -87,6 +88,7 @@ def activity():
     """Generate analytics for most popular public projects and registrations.
     Called by `scripts/update_populate_projects_and_registrations`
     """
+    Node = apps.get_model('osf.AbstractNode')
     popular_public_projects = []
     popular_public_registrations = []
     max_popular_projects = 20
