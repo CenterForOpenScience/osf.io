@@ -561,7 +561,7 @@ def claim_user_registered(auth, node, **kwargs):
 
     current_user = auth.user
 
-    sign_out_url = web_url_for('auth_login', logout=True, next=request.url)
+    sign_out_url = web_url_for('auth_register', logout=True, next=request.url)
     if not current_user:
         return redirect(sign_out_url)
 

@@ -29,7 +29,7 @@ from api.files.serializers import FileSerializer
 from api.comments.serializers import NodeCommentSerializer, CommentCreateSerializer
 from api.comments.permissions import CanCommentOrPublic
 from api.users.views import UserMixin
-from api.wikis.serializers import WikiSerializer
+from api.wikis.serializers import NodeWikiSerializer
 from api.base.views import LinkedNodesRelationship, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList, BaseLinkedList
 from api.base.throttling import (
     UserRateThrottle,
@@ -2902,7 +2902,7 @@ class NodeWikiList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ODMFilterMi
 
     required_read_scopes = [CoreScopes.WIKI_BASE_READ]
     required_write_scopes = [CoreScopes.NULL]
-    serializer_class = WikiSerializer
+    serializer_class = NodeWikiSerializer
 
     view_category = 'nodes'
     view_name = 'node-wikis'

@@ -169,6 +169,7 @@ class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Comm
     # overrides RetrieveAPIView
     def get_object(self):
         comment = self.get_comment()
+        comment_node = None
 
         if isinstance(comment.target.referent, Node):
             comment_node = comment.target.referent
@@ -176,7 +177,7 @@ class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Comm
                                                   StoredFileNode)):
             comment_node = comment.target.referent.node
 
-        if comment_node.is_registration:
+        if comment_node and comment_node.is_registration:
             self.serializer_class = RegistrationCommentDetailSerializer
 
         return comment

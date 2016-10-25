@@ -76,9 +76,6 @@ LOG_PATH = os.path.join(APP_PATH, 'logs')
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
 ANALYTICS_PATH = os.path.join(BASE_PATH, 'analytics')
 
-GNUPG_HOME = os.path.join(BASE_PATH, 'gpg')
-GNUPG_BINARY = 'gpg'
-
 # User management & registration
 CONFIRM_REGISTRATIONS_BY_EMAIL = True
 ALLOW_REGISTRATION = True
@@ -148,9 +145,6 @@ MFR_TEMP_PATH = os.path.join(BASE_PATH, 'mfrtemp')
 
 # Use Celery for file rendering
 USE_CELERY = True
-
-# Use GnuPG for encryption
-USE_GNUPG = True
 
 # File rendering timeout (in ms)
 MFR_TIMEOUT = 30000
@@ -283,6 +277,7 @@ ALL_MY_REGISTRATIONS_NAME = 'All my registrations'
 
 # Most Popular and New and Noteworthy Nodes
 POPULAR_LINKS_NODE = None  # TODO Override in local.py in production.
+POPULAR_LINKS_REGISTRATIONS = None  # TODO Override in local.py in production.
 NEW_AND_NOTEWORTHY_LINKS_NODE = None  # TODO Override in local.py in production.
 
 NEW_AND_NOTEWORTHY_CONTRIBUTOR_BLACKLIST = []  # TODO Override in local.py in production.
@@ -350,6 +345,7 @@ LOW_PRI_MODULES = {
     'scripts.osfstorage.files_audit',
     'scripts.osfstorage.glacier_audit',
     'scripts.populate_new_and_noteworthy_projects',
+    'scripts.populate_popular_projects_and_registrations',
     'website.search.elastic_search',
 }
 
@@ -408,6 +404,7 @@ CELERY_IMPORTS = (
     'website.search.search',
     'website.project.tasks',
     'scripts.populate_new_and_noteworthy_projects',
+    'scripts.populate_popular_projects_and_registrations',
     'scripts.refresh_addon_tokens',
     'scripts.retract_registrations',
     'scripts.embargo_registrations',
@@ -485,6 +482,11 @@ else:
             'schedule': crontab(minute=0, hour=2, day_of_week=6),  # Saturday 2:00 a.m.
             'kwargs': {'dry_run': False}
         },
+        'update_popular_nodes': {
+            'task': 'scripts.populate_popular_projects_and_registrations',
+            'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m.
+            'kwargs': {'dry_run': False}
+        },
     }
 
     # Tasks that need metrics and release requirements
@@ -543,6 +545,9 @@ WATERBUTLER_JWE_SECRET = 'CirclesAre4Squares'
 WATERBUTLER_JWT_SECRET = 'ILiekTrianglesALot'
 WATERBUTLER_JWT_ALGORITHM = 'HS256'
 WATERBUTLER_JWT_EXPIRATION = 15
+
+SENSITIVE_DATA_SALT = 'yusaltydough'
+SENSITIVE_DATA_SECRET = 'TrainglesAre5Squares'
 
 DRAFT_REGISTRATION_APPROVAL_PERIOD = datetime.timedelta(days=10)
 assert (DRAFT_REGISTRATION_APPROVAL_PERIOD > EMBARGO_END_DATE_MIN), 'The draft registration approval period should be more than the minimum embargo end date.'
@@ -1755,3 +1760,6 @@ SPAM_FLAGGED_MAKE_NODE_PRIVATE = False
 SPAM_FLAGGED_REMOVE_FROM_SEARCH = False
 
 SHARE_API_TOKEN = None
+
+# number of nodes that need to be affiliated with an institution before the institution logo is shown on the dashboard
+INSTITUTION_DISPLAY_NODE_THRESHOLD = 5

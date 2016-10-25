@@ -27,9 +27,6 @@ ELASTIC_TIMEOUT = 10
 # Comment out to use celery in development
 USE_CELERY = False
 
-# Comment out to use GnuPG in development
-USE_GNUPG = False  # Changing this may require you to re-enter encrypted fields
-
 # Email
 USE_EMAIL = False
 MAIL_SERVER = 'localhost:1025'  # For local testing
@@ -46,9 +43,6 @@ SECRET_KEY = 'CHANGEME'
 SESSION_COOKIE_SECURE = SECURE_MODE
 OSF_SERVER_KEY = None
 OSF_SERVER_CERT = None
-
-# Uncomment if GPG was installed with homebrew
-# GNUPG_BINARY = '/usr/local/bin/gpg'
 
 ##### Celery #####
 ## Default RabbitMQ broker

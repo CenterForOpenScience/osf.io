@@ -7,6 +7,7 @@ from api.base.utils import absolute_reverse
 
 from framework.auth.core import Auth
 
+
 class WikiSerializer(JSONAPISerializer):
 
     filterable_fields = frozenset([
@@ -29,16 +30,6 @@ class WikiSerializer(JSONAPISerializer):
     user = RelationshipField(
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<user._id>'}
-    )
-    node = RelationshipField(
-        related_view='nodes:node-detail',
-        related_view_kwargs={'node_id': '<node._id>'}
-    )
-    comments = RelationshipField(
-        related_view='nodes:node-comments',
-        related_view_kwargs={'node_id': '<node._id>'},
-        related_meta={'unread': 'get_unread_comments_count'},
-        filter={'target': '<_id>'}
     )
 
     # LinksField.to_representation adds link to "self"
@@ -82,8 +73,45 @@ class WikiSerializer(JSONAPISerializer):
         })
 
 
-class WikiDetailSerializer(WikiSerializer):
+class NodeWikiSerializer(WikiSerializer):
+
+    node = RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<node._id>'}
+    )
+
+    comments = RelationshipField(
+        related_view='nodes:node-comments',
+        related_view_kwargs={'node_id': '<node._id>'},
+        related_meta={'unread': 'get_unread_comments_count'},
+        filter={'target': '<pk>'}
+    )
+
+
+class RegistrationWikiSerializer(WikiSerializer):
+
+    node = RelationshipField(
+        related_view='registrations:registration-detail',
+        related_view_kwargs={'node_id': '<node._id>'}
+    )
+
+    comments = RelationshipField(
+        related_view='registrations:registration-comments',
+        related_view_kwargs={'node_id': '<node._id>'},
+        related_meta={'unread': 'get_unread_comments_count'},
+        filter={'target': '<pk>'}
+    )
+
+
+class NodeWikiDetailSerializer(NodeWikiSerializer):
     """
-    Overrides Wiki Serializer to make id required.
+    Overrides NodeWikiSerializer to make id required.
+    """
+    id = IDField(source='_id', required=True)
+
+
+class RegistrationWikiDetailSerializer(RegistrationWikiSerializer):
+    """
+    Overrides NodeWikiSerializer to make id required.
     """
     id = IDField(source='_id', required=True)
