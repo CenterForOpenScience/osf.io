@@ -20,7 +20,7 @@
             <table class="table table-hover">
                 <thead>
                     <tr class="user-settings-addon-auth">
-                        <th class="text-muted default-authorized-by">Authorized by <em><span data-bind="text: name"></span></em> on <a data-bind="attr: {href: profileUrl}"><em data-bind="text: profileUrl"></em></a></th>
+                        <th class="text-muted default-authorized-by">Authorized by <em><span data-bind="text: name"></span></em> on <a data-bind="attr: {href: profileUrl}"><em data-bind="text: profileUrl"></em></a></th><th></th>
                     </tr>
                 </thead>
                 <!-- ko if: connectedNodes().length > 0 -->
