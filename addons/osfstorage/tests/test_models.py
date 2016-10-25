@@ -562,7 +562,7 @@ class TestNodeSettingsModel(StorageTestCase):
         fork_node_settings.reload()
 
         cloned_record = fork_node_settings.get_root().find_child_by_name(path)
-        assert_equal(cloned_record.versions, record.versions)
+        assert_equal(list(cloned_record.versions.all()), list(record.versions.all()))
         assert_true(fork_node_settings.root_node)
 
 

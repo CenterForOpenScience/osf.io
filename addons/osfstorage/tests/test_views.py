@@ -704,12 +704,12 @@ class TestFileTags(StorageTestCase):
         assert_equal(self.node.logs.latest().action, 'file_tag_added')
 
 
-    @mock.patch('addons.osfstorage.OsfStorageFile.add_tag_log')
+    @mock.patch('addons.osfstorage.models.OsfStorageFile.add_tag_log')
     def test_file_add_tag_fail_doesnt_create_log(self, mock_log):
         file = self.node_settings.get_root().append_file('UltraLightBeam.mp3')
         tag = Tag(name='The Life of Pablo')
         tag.save()
-        file.tags.append(tag)
+        file.tags.add(tag)
         file.save()
         url = self.project.api_url_for('osfstorage_add_tag', fid=file._id)
         res = self.app.post_json(url, {'tag': 'The Life of Pablo'}, auth=self.user.auth, expect_errors=True)
@@ -730,7 +730,7 @@ class TestFileTags(StorageTestCase):
         self.node.reload()
         assert_equal(self.node.logs.latest().action, 'file_tag_removed')
 
-    @mock.patch('addons.osfstorage.OsfStorageFile.add_tag_log')
+    @mock.patch('addons.osfstorage.models.OsfStorageFile.add_tag_log')
     def test_file_remove_tag_fail_doesnt_create_log(self, mock_log):
         file = self.node_settings.get_root().append_file('For-once-in-my-life.mp3')
         url = self.project.api_url_for('osfstorage_remove_tag', fid=file._id)

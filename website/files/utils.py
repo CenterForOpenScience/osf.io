@@ -15,10 +15,11 @@ def copy_files(src, target_node, parent=None, name=None):
     cloned.name = name or cloned.name
     cloned.copied_from = src
 
+    cloned.save()
+
     if src.is_file and src.versions.exists():
         cloned.versions.add(*src.versions.all())
 
-    cloned.save()
 
     if not src.is_file:
         for child in src.children:
