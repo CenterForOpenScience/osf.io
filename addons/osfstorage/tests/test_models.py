@@ -62,6 +62,7 @@ class TestOsfstorageFileNode(StorageTestCase):
 
     def test_serialize(self):
         file = OsfStorageFile(name='MOAR PYLONS', node=self.node_settings.owner)
+        file.save()
 
         assert_equals(file.serialize(), {
             u'id': file._id,
@@ -171,7 +172,7 @@ class TestOsfstorageFileNode(StorageTestCase):
         child = self.node_settings.get_root().append_file('Test')
         assert_equals(child.get_download_count(), 0)
 
-    @mock.patch('framework.analytics.session')
+    @mock.patch('framework.sessions.session')
     def test_download_count_file(self, mock_session):
         mock_session.data = {}
         child = self.node_settings.get_root().append_file('Test')

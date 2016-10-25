@@ -893,9 +893,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
         self.size = self.metadata.get('size', self.size)
         self.content_type = self.metadata.get('contentType', self.content_type)
         if self.metadata.get('modified'):
-            # TODO handle the timezone here the user that updates the file may see an
-            # Incorrect version
-            self.date_modified = parse_date(self.metadata['modified'], ignoretz=True)
+            self.date_modified = parse_date(self.metadata['modified'], ignoretz=False)
 
         if save:
             self.save()
