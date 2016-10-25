@@ -10,6 +10,7 @@ from django.utils import timezone
 from nose.tools import *  # noqa
 
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFileNode, OsfStorageFolder
+from osf.exceptions import ValidationError
 from osf.models import Contributor
 from tests.factories import ProjectFactory, NodeFactory, CommentFactory
 
@@ -171,7 +172,6 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equals(child.get_download_count(), 0)
 
     @mock.patch('framework.analytics.session')
-    @mock.patch('framework.session')
     def test_download_count_file(self, mock_session):
         mock_session.data = {}
         child = self.node_settings.get_root().append_file('Test')
@@ -411,7 +411,7 @@ class TestOsfstorageFileNode(StorageTestCase):
 
         all_guids = OsfStorageFileNode.get_file_guids(
             '/' + folder._id, provider='osfstorage', node=node)
-        assert guids == all_guids
+        assert sorted(guids) == sorted(all_guids)
 
     def test_get_file_guids_live_file_wo_guid(self):
         node = self.node_settings.owner
@@ -583,7 +583,7 @@ class TestOsfStorageFileVersion(StorageTestCase):
         assert_true(retrieved.location)
         assert_true(retrieved.size)
         # sometimes identifiers are strings, so this always has to be a string, sql is funny about that.
-        assert_is(retrieved.identifier, "0")
+        assert_equal(retrieved.identifier, u"0")
         assert_true(retrieved.content_type)
         assert_true(retrieved.date_modified)
 
@@ -612,8 +612,8 @@ class TestOsfStorageFileVersion(StorageTestCase):
         assert_false(version2.is_duplicate(version1))
 
     def test_validate_location(self):
-        version = factories.FileVersionFactory.build(location={})
-        with assert_raises(modm_errors.ValidationValueError):
+        version = factories.FileVersionFactory.build(location={'invalid': True})
+        with assert_raises(ValidationError):
             version.save()
         version.location = {
             'service': 'cloud',
@@ -717,22 +717,22 @@ class TestOsfStorageCheckout(StorageTestCase):
         self.file.reload()
         self.node.reload()
         assert_equal(self.file.checkout, non_admin)
-        assert_equal(self.node.logs.last().action, 'checked_out')
-        assert_equal(self.node.logs.last().user, non_admin)
+        assert_equal(self.node.logs.latest().action, 'checked_out')
+        assert_equal(self.node.logs.latest().user, non_admin)
 
         self.file.check_in_or_out(self.user, None, save=True)
         self.file.reload()
         self.node.reload()
         assert_equal(self.file.checkout, None)
-        assert_equal(self.node.logs.last().action, 'checked_in')
-        assert_equal(self.node.logs.last().user, self.user)
+        assert_equal(self.node.logs.latest().action, 'checked_in')
+        assert_equal(self.node.logs.latest().user, self.user)
 
         self.file.check_in_or_out(self.user, self.user, save=True)
         self.file.reload()
         self.node.reload()
         assert_equal(self.file.checkout, self.user)
-        assert_equal(self.node.logs.last().action, 'checked_out')
-        assert_equal(self.node.logs.last().user, self.user)
+        assert_equal(self.node.logs.latest().action, 'checked_out')
+        assert_equal(self.node.logs.latest().user, self.user)
 
         with assert_raises(FileNodeCheckedOutError):
             self.file.check_in_or_out(non_admin, None, save=True)

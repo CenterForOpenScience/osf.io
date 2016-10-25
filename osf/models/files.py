@@ -872,7 +872,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
     # exists on the backend
     date_modified = models.DateTimeField(null=True, blank=True)
 
-    location = DateTimeAwareJSONField(default=dict, db_index=True, blank=True, null=True, validators=[validate_location])
+    location = DateTimeAwareJSONField(default=dict, db_index=True, null=True, validators=[validate_location])
     metadata = DateTimeAwareJSONField(blank=True, default=dict, db_index=True)
 
     @property
@@ -933,3 +933,4 @@ class FileVersion(ObjectIDMixin, BaseModel):
 
     class Meta:
         index_together = [('_id', 'metadata')]
+        ordering = ('date_created',)

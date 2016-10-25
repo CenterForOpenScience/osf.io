@@ -41,6 +41,22 @@ def generate_object_id():
     return str(bson.ObjectId())
 
 class MODMCompatibilityQuerySet(models.QuerySet):
+    def __getitem__(self, k):
+        item = super(MODMCompatibilityQuerySet, self).__getitem__(k)
+        if hasattr(item, 'wrapped'):
+            return item.wrapped()
+        else:
+            return item
+
+    def __iter__(self):
+        items = super(MODMCompatibilityQuerySet, self).__iter__()
+        for item in items:
+            if hasattr(item, 'wrapped'):
+                yield item.wrapped()
+            else:
+                yield  item
+
+
     def sort(self, *fields):
         # Fields are passed in as e.g. [('title', 1), ('date_created', -1)]
         if isinstance(fields[0], list):

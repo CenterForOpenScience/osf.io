@@ -646,11 +646,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         user.created.update(creator=self)
 
         # - file that the user has checked_out, import done here to prevent import error
-        # TODO: Uncoment when StoredFileNode is implemented
-        # from website.files.models.base import FileNode
-        # for file_node in FileNode.files_checked_out(user=user):
-        #     file_node.checkout = self
-        #     file_node.save()
+        from osf.models import FileNode
+        for file_node in FileNode.files_checked_out(user=user):
+            file_node.checkout = self
+            file_node.save()
 
         # finalize the merge
 

@@ -14,7 +14,7 @@ from framework.sessions import get_session
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_signed
 
-from website.exceptions import InvalidTagError, TagNotFoundError
+from osf.exceptions import InvalidTagError, TagNotFoundError
 from website.models import User
 from website.project.decorators import (
     must_not_be_registration, must_have_addon, must_have_permission

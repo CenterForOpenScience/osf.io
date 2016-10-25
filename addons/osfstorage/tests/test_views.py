@@ -646,7 +646,7 @@ class TestFileTags(StorageTestCase):
 
     def test_file_add_tag(self):
         file = self.node_settings.get_root().append_file('Good Morning.mp3')
-        assert_not_in('Kanye_West', file.tags)
+        assert_not_in('Kanye_West', file.tags.values_list('name', flat=True))
 
         url = self.project.api_url_for('osfstorage_add_tag', fid=file._id)
         self.app.post_json(url, {'tag': 'Kanye_West'}, auth=self.user.auth)
@@ -666,21 +666,21 @@ class TestFileTags(StorageTestCase):
         file = self.node_settings.get_root().append_file('Champion.mp3')
         tag = Tag(name='Graduation')
         tag.save()
-        file.tags.append(tag)
+        file.tags.add(tag)
         file.save()
-        assert_in('Graduation', file.tags)
+        assert_in('Graduation', file.tags.values_list('name', flat=True))
         url = self.project.api_url_for('osfstorage_remove_tag', fid=file._id)
         self.app.delete_json(url, {'tag': 'Graduation'}, auth=self.user.auth)
         file.reload()
-        assert_not_in('Graduation', file.tags)
+        assert_not_in('Graduation', file.tags.values_list('name', flat=True))
 
     def test_tag_the_same_tag(self):
         file = self.node_settings.get_root().append_file('Lie,Cheat,Steal.mp3')
         tag = Tag(name='Run_the_Jewels')
         tag.save()
-        file.tags.append(tag)
+        file.tags.add(tag)
         file.save()
-        assert_in('Run_the_Jewels', file.tags)
+        assert_in('Run_the_Jewels', file.tags.values_list('name', flat=True))
         url = self.project.api_url_for('osfstorage_add_tag', fid=file._id)
         res = self.app.post_json(url, {'tag': 'Run_the_Jewels'}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
@@ -688,7 +688,7 @@ class TestFileTags(StorageTestCase):
 
     def test_remove_nonexistent_tag(self):
         file = self.node_settings.get_root().append_file('WonderfulEveryday.mp3')
-        assert_not_in('Chance', file.tags)
+        assert_not_in('Chance', file.tags.values_list('name', flat=True))
         url = self.project.api_url_for('osfstorage_remove_tag', fid=file._id)
         res = self.app.delete_json(url, {'tag': 'Chance'}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
@@ -701,7 +701,7 @@ class TestFileTags(StorageTestCase):
 
         assert_equal(res.status_code, 200)
         self.node.reload()
-        assert_equal(self.node.logs.all()[-1].action, 'file_tag_added')
+        assert_equal(self.node.logs.latest().action, 'file_tag_added')
 
 
     @mock.patch('addons.osfstorage.OsfStorageFile.add_tag_log')
@@ -721,14 +721,14 @@ class TestFileTags(StorageTestCase):
         file = self.node_settings.get_root().append_file('Formation.flac')
         tag = Tag(name='You that when you cause all this conversation')
         tag.save()
-        file.tags.append(tag)
+        file.tags.add(tag)
         file.save()
         url = self.project.api_url_for('osfstorage_remove_tag', fid=file._id)
         res = self.app.delete_json(url, {'tag': 'You that when you cause all this conversation'}, auth=self.user.auth)
 
         assert_equal(res.status_code, 200)
         self.node.reload()
-        assert_equal(self.node.logs[-1].action, 'file_tag_removed')
+        assert_equal(self.node.logs.latest().action, 'file_tag_removed')
 
     @mock.patch('addons.osfstorage.OsfStorageFile.add_tag_log')
     def test_file_remove_tag_fail_doesnt_create_log(self, mock_log):

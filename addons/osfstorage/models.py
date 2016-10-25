@@ -163,8 +163,8 @@ class OsfStorageFileNode(FileNode):
         from osf.models import NodeLog  # Avoid circular import
 
         if (
-                self.is_checked_out and self.checkout != user and permissions.ADMIN not in self.node.permissions.get(
-                user._id, [])) \
+                self.is_checked_out and self.checkout != user and permissions.ADMIN not in self.node.get_permissions(
+                user)) \
                 or permissions.WRITE not in self.node.get_permissions(user):
             raise exceptions.FileNodeCheckedOutError()
 
@@ -291,7 +291,6 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
     def remove_tag(self, tag, auth, save=True, log=True):
         from osf.models import Tag, NodeLog  # Prevent import error
-
         if self.node.is_registration:
             # Can't perform edits on a registration
             raise NodeStateError

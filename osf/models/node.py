@@ -20,6 +20,7 @@ from django.dispatch import receiver
 from django.utils import timezone
 from keen import scoped_keys
 from modularodm import Q as MQ
+
 from osf.models.citation import AlternativeCitation
 from osf.models.contributor import Contributor, RecentlyAddedContributor, get_contributor_permissions
 from osf.models.identifiers import Identifier
@@ -306,6 +307,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def is_preprint(self):
+        # TODO: This is a temporary implementation.
         if not self.preprint_file or not self.is_public:
             return False
         if self.preprint_file.node == self:
@@ -2438,7 +2440,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.save()
 
     def set_preprint_file(self, preprint_file, auth, save=False):
-        StoredFileNode = apps.get_model('osf.StoredFileNode')
+        from osf.models import StoredFileNode
+
         if not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can change a preprint\'s primary file.')
 

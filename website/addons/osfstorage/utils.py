@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 
 import os
 import httplib
@@ -30,8 +31,8 @@ def update_analytics(node, file_id, version_idx):
     node_info = {
         'contributors': contributors
     }
-    update_counter(u'download:{0}:{1}'.format(node._id, file_id), node_info=node_info)
-    update_counter(u'download:{0}:{1}:{2}'.format(node._id, file_id, version_idx), node_info=node_info)
+    update_counter('download:{0}:{1}'.format(node._id, file_id), node_info=node_info)
+    update_counter('download:{0}:{1}:{2}'.format(node._id, file_id, version_idx), node_info=node_info)
 
 
 def serialize_revision(node, record, version, index, anon=False):

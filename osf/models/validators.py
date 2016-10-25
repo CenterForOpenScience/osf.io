@@ -99,3 +99,4 @@ def validate_location(value):
     for key in ('service', settings.WATERBUTLER_RESOURCE, 'object'):
         if key not in value:
             raise ValidationValueError('Location {} missing key "{}"'.format(value, key))
+    return True
