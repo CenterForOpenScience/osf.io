@@ -33,7 +33,7 @@ var TestSubclassVM = oop.extend(FolderPickerNodeConfigVM, {
     }
 });
 
-describe('FolderPickerNodeConfigViewModel', () => {
+describe.skip('FolderPickerNodeConfigViewModel', () => {
 
     var settingsUrl = '/api/v1/12345/addon/config/';
     var endpoints = [{
