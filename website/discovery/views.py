@@ -2,8 +2,6 @@ from website import settings
 from website.project import Node
 from website.project import utils
 
-from modularodm.query.querydialect import DefaultQueryDialect as Q
-
 
 def activity():
     """Reads node activity from pre-generated popular projects and registrations.
