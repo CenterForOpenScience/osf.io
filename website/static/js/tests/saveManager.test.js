@@ -6,7 +6,7 @@ var SaveManager = require('js/saveManager');
 var url = 'http://foo.com';
 var sm = new SaveManager(url);
 
-describe('SaveManager', () => {
+describe.skip('SaveManager', () => {
     var server;
     beforeEach(() => {
         server = sinon.fakeServer.create();

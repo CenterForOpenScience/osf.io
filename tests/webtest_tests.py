@@ -21,6 +21,7 @@ from tests.base import fake
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory, WatchConfigFactory, NodeFactory,
                              NodeWikiFactory, RegistrationFactory,  UnregUserFactory, UnconfirmedUserFactory,
                              PrivateLinkFactory)
+from website.project import Node
 from website import settings, language
 from website.util import web_url_for, api_url_for
 
@@ -774,49 +775,58 @@ class TestExplorePublicActivity(OsfTestCase):
         self.project = ProjectFactory(is_public=True)
         self.registration = RegistrationFactory(project=self.project)
         self.private_project = ProjectFactory(title="Test private project")
+        self.popular_project = ProjectFactory(is_public=True)
+        self.popular_registration = RegistrationFactory(project=self.project)
 
         # Add project to new and noteworthy projects
         self.new_and_noteworthy_links_node = ProjectFactory()
         self.new_and_noteworthy_links_node._id = settings.NEW_AND_NOTEWORTHY_LINKS_NODE
         self.new_and_noteworthy_links_node.add_pointer(self.project, auth=Auth(self.new_and_noteworthy_links_node.creator), save=True)
 
-    @mock.patch('website.discovery.views.KeenClient')
-    def test_new_and_noteworthy_and_registrations_show_in_explore_activity(self, mock_client):
+        # Set up popular projects and registrations
+        self.popular_links_node = ProjectFactory()
+        self.popular_links_node._id = settings.POPULAR_LINKS_NODE
+        self.popular_links_node.add_pointer(self.popular_project, auth=Auth(self.popular_links_node.creator), save=True)
 
-        mock_client.count.return_value = {
-            'result': [
-                {
-                    'result': 5,
-                    'node.id': self.project._id
-                },
-                {
-                    'result': 5,
-                    'node.id': self.registration._id
-                }
-            ]
-        }
+        self.popular_links_registrations = ProjectFactory()
+        self.popular_links_registrations._id = settings.POPULAR_LINKS_REGISTRATIONS
+        self.popular_links_registrations.add_pointer(self.popular_registration, auth=Auth(self.popular_links_registrations.creator), save=True)
 
-        mock_client.count_unique.return_value = {
-            'result': [
-                {
-                    'result': 2,
-                    'node.id': self.project._id
-                },
-                {
-                    'result': 2,
-                    'node.id': self.registration._id
-                }
-            ]
-        }
+    def tearDown(self):
+        super(TestExplorePublicActivity, self).tearDown()
+        Node.remove()
+
+    def test_explore_page_loads_when_settings_not_configured(self):
+
+        old_settings_values = settings.POPULAR_LINKS_NODE, settings.NEW_AND_NOTEWORTHY_LINKS_NODE, settings.POPULAR_LINKS_REGISTRATIONS
+
+        settings.POPULAR_LINKS_NODE = 'notanode'
+        settings.NEW_AND_NOTEWORTHY_LINKS_NODE = 'alsototallywrong'
+        settings.POPULAR_LINKS_REGISTRATIONS = 'nopenope'
+
+        url = self.project.web_url_for('activity')
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+
+        settings.POPULAR_LINKS_NODE, settings.NEW_AND_NOTEWORTHY_LINKS_NODE, settings.POPULAR_LINKS_REGISTRATIONS = old_settings_values
+
+    def test_new_and_noteworthy_and_popular_nodes_show_in_explore_activity(self):
 
         url = self.project.web_url_for('activity')
         res = self.app.get(url)
 
+        # New and Noteworthy
         assert_in(str(self.project.title), res)
         assert_in(str(self.project.date_created.date()), res)
         assert_in(str(self.registration.title), res)
         assert_in(str(self.registration.registered_date.date()), res)
         assert_not_in(str(self.private_project.title), res)
+
+        # Popular Projects and Registrations
+        assert_in(str(self.popular_project.title), res)
+        assert_in(str(self.popular_project.date_created.date()), res)
+        assert_in(str(self.popular_registration.title), res)
+        assert_in(str(self.popular_registration.registered_date.date()), res)
 
 
 class TestResendConfirmation(OsfTestCase):

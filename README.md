@@ -496,6 +496,8 @@ $ inv assets -dw
 The -w option puts you in "watch" mode: the script will continue running so that assets will be 
 built when a file changes.
 
+### Setting up the Admin Module
+- See `admin/README.md` for information on how to set up the OSF Admin module
 
 ### Getting application credentials
 

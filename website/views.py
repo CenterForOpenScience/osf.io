@@ -22,7 +22,7 @@ from website.institutions.views import view_institution
 from website.models import Guid
 from website.models import Node, Institution, PreprintService
 from website.project import new_bookmark_collection
-from website.settings import EXTERNAL_EMBER_APPS
+from website.settings import EXTERNAL_EMBER_APPS, INSTITUTION_DISPLAY_NODE_THRESHOLD
 from website.util import permissions
 
 logger = logging.getLogger(__name__)
@@ -76,17 +76,37 @@ def _render_nodes(nodes, auth=None, show_path=False):
 def index():
     try:
         #TODO : make this way more robust
-        inst = Institution.find_one(Q('domains', 'eq', request.host.lower()))
-        inst_dict = view_institution(inst._id)
+        institution = Institution.find_one(Q('domains', 'eq', request.host.lower()))
+        inst_dict = view_institution(institution._id)
         inst_dict.update({
             'home': False,
             'institution': True,
-            'redirect_url': '/institutions/{}/'.format(inst._id)
+            'redirect_url': '/institutions/{}/'.format(institution._id)
         })
+
         return inst_dict
     except NoResultsFound:
         pass
-    return {'home': True}
+
+    all_institutions = [inst for inst in Institution.find().sort('name')]
+    dashboard_institutions = [
+        {'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners}
+        for inst in all_institutions
+        if len(
+            Node.find_by_institutions(inst, query=(
+                Q('is_public', 'eq', True) &
+                Q('is_folder', 'ne', True) &
+                Q('is_deleted', 'ne', True) &
+                Q('parent_node', 'eq', None) &
+                Q('is_registration', 'eq', False)
+            ))
+        ) >= INSTITUTION_DISPLAY_NODE_THRESHOLD
+    ]
+
+    return {
+        'home': True,
+        'dashboard_institutions': dashboard_institutions
+    }
 
 
 def find_bookmark_collection(user):
