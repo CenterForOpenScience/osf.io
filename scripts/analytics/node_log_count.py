@@ -14,15 +14,17 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def get_node_log_events(start_date, end_date):
-
-    node_log_query = Q('date', 'lt', end_date) & Q('date', 'gt', start_date)
+def get_node_log_events(date):
+    """ Get all node logs from a given date. Defaults to starting yesterday
+    to today (both in UTC).
+    """
+    node_log_query = Q('date', 'lte', date) & Q('date', 'gt', date - datetime.timedelta(1))
 
     node_logs = NodeLog.find(node_log_query)
     node_log_events = []
     for node_log in node_logs:
         event = {
-            'keen': {'timestamp': end_date.isoformat()},
+            'keen': {'timestamp': date.isoformat()},
             'date': node_log.date.isoformat(),
             'action': node_log.action
         }
@@ -37,18 +39,20 @@ def get_node_log_events(start_date, end_date):
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Get node log counts!')
-    parser.add_argument('-e', '--end', dest='end_date', required=False)
+    parser.add_argument('-d', '--date', dest='date', required=False)
 
     return parser.parse_args()
 
 
 def main():
-    now = datetime.datetime.utcnow()
+    """ Run when the script is accessed individually to send all results to keen.
+    Gathers data and sends events in 5000 piece chunks.
+    """
+    today = datetime.datetime.utcnow().date()
     args = parse_args()
-    end_date = parse(args.end_date) if args.end_date else now
-    start_date = parse(args.start_date) if args.start_date else now - datetime.timedelta(1)
+    date = parse(args.end_date).date() if args.date else today
 
-    node_log_events = get_node_log_events(start_date, end_date)
+    node_log_events = get_node_log_events(date)
     keen_project = keen_settings['private']['project_id']
     write_key = keen_settings['private']['write_key']
     if keen_project and write_key:
