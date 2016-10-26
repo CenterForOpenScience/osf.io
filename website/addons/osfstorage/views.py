@@ -32,7 +32,7 @@ from website.addons.osfstorage import settings as osf_storage_settings
 logger = logging.getLogger(__name__)
 
 
-def osf_storage_root(node_settings, auth, **kwargs):
+def osf_storage_root(addon_config, node_settings, auth, **kwargs):
     """Build HGrid JSON for root node. Note: include node URLs for client-side
     URL creation for uploaded files.
     """

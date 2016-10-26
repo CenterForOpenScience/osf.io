@@ -8,17 +8,17 @@ import pytz
 from flask import request
 
 from api.caching.tasks import ban_url
-from framework.guid.model import Guid
+from osf.models import Guid
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from modularodm import Q
 from website import settings
 from website.addons.base.signals import file_updated
-from website.files.models import FileNode, TrashedFileNode
-from website.models import Comment
+from osf.models import FileNode, TrashedFileNode
+from osf.models import Comment
 from website.notifications.constants import PROVIDERS
 from website.notifications.emails import notify, notify_mentions
 from website.project.decorators import must_be_contributor_or_public
-from website.project.model import Node
+from osf.models import Node
 from website.project.signals import comment_added, mention_added
 
 

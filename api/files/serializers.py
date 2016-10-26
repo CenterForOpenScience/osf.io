@@ -8,7 +8,7 @@ from modularodm import Q
 from framework.auth.core import Auth, User
 from website import settings
 
-from website.files.models import FileNode
+from osf.models import FileNode
 from website.project.model import Comment
 from website.util import api_v2_url
 
@@ -92,7 +92,7 @@ class CheckoutField(ser.HyperlinkedRelatedField):
         url = super(CheckoutField, self).to_representation(value)
 
         rel_meta = None
-        if value:
+        if value and hasattr(value, '_id'):
             rel_meta = {'id': value._id}
 
         ret = format_relationship_links(related_link=url, rel_meta=rel_meta)
@@ -181,7 +181,8 @@ class FileSerializer(JSONAPISerializer):
 
     def get_size(self, obj):
         if obj.versions:
-            return obj.versions[-1].size
+            self.size = obj.versions.last().size
+            return self.size
         return None
 
     def get_date_modified(self, obj):
@@ -191,7 +192,7 @@ class FileSerializer(JSONAPISerializer):
             # date_created equal to the time of the update.  The date_modified is the modified date
             # from the backend the file is stored on.  This field refers to the modified date on osfstorage,
             # so prefer to use the date_created of the latest version.
-            mod_dt = obj.versions[-1].date_created
+            mod_dt = obj.versions.last().date_created
         elif obj.provider != 'osfstorage' and obj.history:
             mod_dt = obj.history[-1].get('modified', None)
 
@@ -200,7 +201,7 @@ class FileSerializer(JSONAPISerializer):
     def get_date_created(self, obj):
         creat_dt = None
         if obj.provider == 'osfstorage' and obj.versions:
-            creat_dt = obj.versions[0].date_created
+            creat_dt = obj.versions.first().date_created
         elif obj.provider != 'osfstorage' and obj.history:
             # Non-osfstorage files don't store a created date, so instead get the modified date of the
             # earliest entry in the file history.
@@ -211,7 +212,7 @@ class FileSerializer(JSONAPISerializer):
     def get_extra(self, obj):
         metadata = {}
         if obj.provider == 'osfstorage' and obj.versions:
-            metadata = obj.versions[-1].metadata
+            metadata = obj.versions.last().metadata
         elif obj.provider != 'osfstorage' and obj.history:
             metadata = obj.history[-1].get('extra', {})
 

@@ -2,12 +2,18 @@ import os
 
 from addons.base.apps import BaseAddonConfig
 from website import settings
+from website.addons.osfstorage import views
+
 
 class OSFStorageAddonConfig(BaseAddonConfig):
     name = 'addons.osfstorage'
     label = 'addons_osfstorage'
     full_name = 'OSFStorage'
     short_name = 'osfstorage'
+
+    has_hgrid_files = True
+
+    get_hgrid_data = views.osf_storage_root
 
     OWNERS = ['node']
 
