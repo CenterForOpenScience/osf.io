@@ -82,7 +82,7 @@ class TestGetMetadataHook(HookTestCase):
 
     def test_osf_storage_root(self):
         auth = Auth(self.project.creator)
-        result = views.osf_storage_root(self.node_settings, auth=auth)
+        result = views.osf_storage_root(self.node_settings.config, self.node_settings, auth)
         node = self.project
         expected = rubeus.build_addon_root(
             node_settings=self.node_settings,
