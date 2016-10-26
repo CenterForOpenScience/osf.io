@@ -26,11 +26,11 @@ var FileFetcher = {
                 url: url,
                 dataType: 'text',
                 beforeSend: $osf.setXHRAuthorization,
-            })
+            });
         }
         return self.promise;
     }
-}
+};
 
 var FileEditor = {
     controller: function(contentUrl, shareWSUrl, editorMeta, observables) {
@@ -67,7 +67,7 @@ var FileEditor = {
                     model.editor.setValue(self.initialText);
                 }
                 m.endComputation();
-            })
+            });
 
             response.fail(function (xhr, textStatus, error) {
                 $osf.growl('Error','The file content could not be loaded.');
