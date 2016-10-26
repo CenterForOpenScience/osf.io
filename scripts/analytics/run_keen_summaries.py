@@ -1,3 +1,4 @@
+import time
 import logging
 import argparse
 from dateutil.parser import parse
@@ -53,6 +54,7 @@ def main(start_date, end_date):
         for key, value in events_for_day.iteritems():
             for chunk in yield_chunked_events(value):
                 client.add_events({key: chunk})
+                time.sleep(1)
         day = day + timedelta(1)
 
 def parse_args():

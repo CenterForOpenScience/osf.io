@@ -44,6 +44,14 @@ def parse_args():
     return parser.parse_args()
 
 
+def yield_chunked_events(events):
+    """ The keen API likes events in chunks no bigger than 5000 -
+    Only yield that many at a time.
+    """
+    for i in range(0, len(events), 5000):
+        yield events[i:i + 5000]
+
+
 def main():
     """ Run when the script is accessed individually to send all results to keen.
     Gathers data and sends events in 5000 piece chunks.
@@ -61,12 +69,8 @@ def main():
             write_key=write_key,
         )
 
-        start, stop = 0, 5000  # Keen API Docs suggest sending in batches of no more than 5K
-        while start <= len(node_log_events):
-            keen_payload = {'node_log_analytics': node_log_events[start:stop]}
-            client.add_events(keen_payload)
-            start += 5000
-            stop += 5000
+        for chunk in yield_chunked_events(node_log_events):
+            client.add_events({'node_log_analytics': chunk})
             time.sleep(1)
     else:
         print(node_log_events)
