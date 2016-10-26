@@ -12,14 +12,12 @@ from nose.tools import *  # noqa
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFileNode, OsfStorageFolder
 from osf.exceptions import ValidationError
 from osf.models import Contributor
-from tests.factories import ProjectFactory, NodeFactory, CommentFactory
+from tests.factories import ProjectFactory
 
 from addons.osfstorage.tests import factories
 from addons.osfstorage.tests.utils import StorageTestCase
 
 import datetime
-
-from modularodm import exceptions as modm_errors
 
 from osf import models
 from website.addons.osfstorage import utils
@@ -164,9 +162,9 @@ class TestOsfstorageFileNode(StorageTestCase):
 
     def test_children(self):
         assert_equals([
-                          self.node_settings.get_root().append_file('Foo{}Bar'.format(x))
-                          for x in xrange(100)
-                          ], list(self.node_settings.get_root().children))
+                      self.node_settings.get_root().append_file('Foo{}Bar'.format(x))
+                      for x in xrange(100)
+                      ], list(self.node_settings.get_root().children))
 
     def test_download_count_file_defaults(self):
         child = self.node_settings.get_root().append_file('Test')
@@ -235,7 +233,7 @@ class TestOsfstorageFileNode(StorageTestCase):
 
     def test_delete_file(self):
         child = self.node_settings.get_root().append_file('Test')
-        field_names = [f.name for f in child._meta.get_fields() if not f.is_relation and not f.name in ['id', 'guid_string', 'content_type_pk']]
+        field_names = [f.name for f in child._meta.get_fields() if not f.is_relation and f.name not in ['id', 'guid_string', 'content_type_pk']]
         child_data = {f: getattr(child, f) for f in field_names}
         child.delete()
         assert_raises(ObjectDoesNotExist, child.reload)
@@ -247,7 +245,7 @@ class TestOsfstorageFileNode(StorageTestCase):
         child_storage['materialized_path'] = child.materialized_path
         assert_equal(trashed.path, '/' + child._id)
         trashed_field_names = [f.name for f in trashed._meta.get_fields() if not f.is_relation and
-                               not f.name in ['id', 'guid_string', 'path', '_materialized_path', 'content_type_pk']]
+                               f.name not in ['id', 'guid_string', 'path', '_materialized_path', 'content_type_pk']]
         for f, value in child_data.iteritems():
             if f in trashed_field_names:
                 assert_equal(getattr(trashed, f), value)
@@ -781,7 +779,7 @@ class TestOsfStorageCheckout(StorageTestCase):
 
     def test_remove_contributor_with_checked_file(self):
         user = factories.AuthUserFactory()
-        c = Contributor.objects.create(
+        Contributor.objects.create(
             node=self.node,
             user=user,
             admin=True,

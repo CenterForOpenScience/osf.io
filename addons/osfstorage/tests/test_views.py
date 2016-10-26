@@ -703,7 +703,6 @@ class TestFileTags(StorageTestCase):
         self.node.reload()
         assert_equal(self.node.logs.latest().action, 'file_tag_added')
 
-
     @mock.patch('addons.osfstorage.models.OsfStorageFile.add_tag_log')
     def test_file_add_tag_fail_doesnt_create_log(self, mock_log):
         file = self.node_settings.get_root().append_file('UltraLightBeam.mp3')
