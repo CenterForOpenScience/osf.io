@@ -320,7 +320,7 @@ def main(env):
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-ucsd.cos.io'],
                 'email_domains': [],
-            }, 
+            },
             {
                 '_id': 'ucr',
                 'name': 'University of California Riverside [Test]',
