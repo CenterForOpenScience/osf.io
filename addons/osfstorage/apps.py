@@ -38,10 +38,6 @@ class OSFStorageAddonConfig(BaseAddonConfig):
 
     actions = (FOLDER_SELECTED, NODE_AUTHORIZED, NODE_DEAUTHORIZED, )
 
-    # @property
-    # def user_settings(self):
-    #     return self.get_model('UserSettings')
-
     @property
     def node_settings(self):
         return self.get_model('NodeSettings')
