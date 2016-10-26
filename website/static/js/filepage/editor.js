@@ -17,8 +17,8 @@ var model = {};
 
 // This stops the FileEditor Ajax from being called twice on load when
 // Mithril reloads the controller twice
-var FileHandler = {
-    fetchUrl: function(url, reload){
+var FileFetcher = {
+    fetch: function(url, reload){
         self = this;
         if(typeof self.promise === 'undefined' || reload){
             self.promise = $.ajax({
@@ -57,7 +57,7 @@ var FileEditor = {
 
         self.loadFile = function(reload) {
             self.loaded = false;
-            var response = FileHandler.fetchUrl(self.url, reload);
+            var response = FileFetcher.fetch(self.url, reload);
 
             response.done(function (parsed, status, response) {
                 m.startComputation();
@@ -79,7 +79,7 @@ var FileEditor = {
                     }
                 });
             });
-        }
+        };
 
         self.saveFile = $osf.throttle(function() {
             var oldstatus = self.observables.status();
