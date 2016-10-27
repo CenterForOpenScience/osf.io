@@ -274,8 +274,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             cursor.execute(sql, [node_relation_table, node_relation_table, node_relation_table, self.pk])
             row = cursor.fetchone()
             if not row:
-                return row
+                return self
             return AbstractNode.objects.get(id=row[0])
+
+    @property
+    def root_id(self):
+        return self.root.id
 
     @property
     def nodes(self):
