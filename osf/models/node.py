@@ -68,9 +68,41 @@ from website.util.permissions import (
     WRITE,
     ADMIN,
 )
-from .base import BaseModel, GuidMixin, Guid
+from .base import BaseModel, GuidMixin, Guid, MODMCompatibilityQuerySet
 
 logger = logging.getLogger(__name__)
+
+class AbstractNodeQueryset(MODMCompatibilityQuerySet):
+    def get_children(self, root):
+        sql = """
+            WITH RECURSIVE
+                descendants AS (
+                SELECT
+                  parent_id,
+                  child_id AS descendant,
+                  1        AS LEVEL
+                FROM %s
+                UNION ALL
+                SELECT
+                  d.parent_id,
+                  s.child_id,
+                  d.level + 1
+                FROM descendants AS d
+                  JOIN %s AS s
+                    ON d.descendant = s.parent_id
+              ) SELECT array_agg(DISTINCT descendant)
+                FROM descendants
+                WHERE parent_id = %s;
+        """
+
+        with connection.cursor() as cursor:
+            node_relation_table = AsIs(NodeRelation._meta.db_table)
+            cursor.execute(sql, [node_relation_table, node_relation_table, root.pk])
+            row = cursor.fetchone()
+            # import ipdb; ipdb.set_trace()
+            if not row:
+                return row
+            return AbstractNode.objects.filter(id__in=row[0])
 
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,
@@ -197,6 +229,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                    through_fields=('parent', 'child'),
                                    related_name='parent_nodes')
 
+    objects = AbstractNodeQueryset.as_manager()
+
     @property
     def parent_node(self):
         node_rel = NodeRelation.objects.filter(
@@ -216,7 +250,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def root(self):
-
         sql = """
             WITH RECURSIVE
                 parents_cte AS (

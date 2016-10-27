@@ -110,6 +110,31 @@ def test_components_have_root():
     assert greatgrandchild3.root == root
     assert greatgrandchild_1.root == root
 
+def test_get_children():
+    root = ProjectFactory()
+    child = NodeFactory(parent=root)
+    child1 = NodeFactory(parent=root)
+    child2 = NodeFactory(parent=root)
+    grandchild = NodeFactory(parent=child)
+    grandchild1 = NodeFactory(parent=child)
+    grandchild2 = NodeFactory(parent=child)
+    grandchild3 = NodeFactory(parent=child)
+    grandchild_1 = NodeFactory(parent=child1)
+    grandchild1_1 = NodeFactory(parent=child1)
+    grandchild2_1 = NodeFactory(parent=child1)
+    grandchild3_1 = NodeFactory(parent=child1)
+    grandchild_2 = NodeFactory(parent=child2)
+    grandchild1_2 = NodeFactory(parent=child2)
+    grandchild2_2 = NodeFactory(parent=child2)
+    grandchild3_2 = NodeFactory(parent=child2)
+    greatgrandchild = NodeFactory(parent=grandchild)
+    greatgrandchild1 = NodeFactory(parent=grandchild1)
+    greatgrandchild2 = NodeFactory(parent=grandchild2)
+    greatgrandchild3 = NodeFactory(parent=grandchild3)
+    greatgrandchild_1 = NodeFactory(parent=grandchild_1)
+
+    assert 20 == Node.objects.get_children(root).count()
+
 def test_license_searches_parent_nodes():
     license_record = NodeLicenseRecordFactory()
     project = ProjectFactory(node_license=license_record)
