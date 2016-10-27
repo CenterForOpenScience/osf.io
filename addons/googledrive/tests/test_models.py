@@ -107,7 +107,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         # Folder was set
         assert_equal(self.node_settings.folder_id, folder['id'])
         # Log was saved
-        last_log = self.node.logs.first()  # Django RelatedManagers prepend new objects
+        last_log = self.node.logs.latest()
         assert_equal(last_log.action, '{0}_folder_selected'.format(self.short_name))
 
     def test_serialize_settings(self):
