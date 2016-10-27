@@ -77,7 +77,7 @@ class NodeSettings(BaseStorageAddon, BaseOAuthNodeSettings):
     oauth_provider = GoogleDriveProvider
     provider_name = 'googledrive'
 
-    folder_id = models.TextField(default=None, null=True, blank=True)
+    folder_id = models.TextField(null=True, blank=True)
     folder_path = models.TextField(null=True, blank=True)
     serializer = GoogleDriveSerializer
     user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
