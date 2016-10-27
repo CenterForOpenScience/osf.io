@@ -1,6 +1,5 @@
 from rest_framework import serializers as ser
 from rest_framework import exceptions
-from modularodm.exceptions import ValidationValueError
 from framework.exceptions import PermissionsError
 from website.exceptions import NodeStateError
 

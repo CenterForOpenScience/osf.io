@@ -54,8 +54,7 @@ class MODMCompatibilityQuerySet(models.QuerySet):
             if hasattr(item, 'wrapped'):
                 yield item.wrapped()
             else:
-                yield  item
-
+                yield item
 
     def sort(self, *fields):
         # Fields are passed in as e.g. [('title', 1), ('date_created', -1)]

@@ -91,28 +91,6 @@ def new_bookmark_collection(user):
     return collection
 
 
-def new_collection(title, user):
-    """Create a new folder project.
-
-    :param str title: Node title
-    :param User user: User object
-    :return Node: Created node
-
-    """
-    title = strip_html(title.strip())
-
-    node = Node(
-        title=title,
-        creator=user,
-        category='project',
-        is_collection=True
-    )
-
-    node.save()
-
-    return node
-
-
 def new_private_link(name, user, nodes, anonymous):
     """Create a new private link.
 
