@@ -105,7 +105,6 @@ class AbstractNodeQueryset(MODMCompatibilityQuerySet):
             node_relation_table = AsIs(NodeRelation._meta.db_table)
             cursor.execute(sql, [node_relation_table, node_relation_table, root.pk])
             row = cursor.fetchone()
-            # import ipdb; ipdb.set_trace()
             if not row:
                 return row
             return AbstractNode.objects.filter(id__in=row[0])
