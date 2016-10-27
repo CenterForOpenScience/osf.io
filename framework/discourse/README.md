@@ -131,13 +131,11 @@ Apparently there is a better way to hook onto project changes that would be more
 
 If the OSF rollsback a project creation, then Discourse should too.
 
-Log Discourse errors correctly.
-
-It seems that interaction is not working very well with the OSF and production discourse.
+Log Discourse errors correctly. (is this happening? hard to tell... we should get an error if discourse is not started up before the OSF.)
 
 Since we seem to be using docstrings with Sphinx conventions, these could also be added to OSF code.
 
 ##Other Issues
 Apparently the first page loads of Discourse in Development mode are only supposed to take 5-10 seconds (http://blog.discourse.org/2013/04/discourse-as-your-first-rails-app/), so I wonder why I have gotten so used to minute-long page loads. Funnily enough, it seems that during the majority of this time the rails server is idle.
 
-It looks like after renaming a project, the Discourse /posts/:post_id end point is called ~6 times in a row...  
+It looks like after renaming a project, the Discourse /posts/:post_id end point is called ~6 times in a row... (I think this was fixed by preventing save from being called much in the OSF. probably should verify.)
