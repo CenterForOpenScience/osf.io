@@ -18,7 +18,7 @@ def request(method, path, data={}, username=None):
     params['api_username'] = username if username else settings.DISCOURSE_API_ADMIN_USER
 
     url = requests.compat.urljoin(settings.DISCOURSE_SERVER_URL, path)
-    result = getattr(requests, method)(url, data=data, params=params, allow_redirects=False, headers={'X-Requested-With': 'XMLHttpRequest'})
+    result = getattr(requests, method)(url, data=data, params=params, allow_redirects=False, headers={'X-Requested-With': 'XMLHttpRequest'}, timeout=0.25)
 
     if log_requests:
         print(method + ' \t' + result.request.url + ' with data: ' + str(data) + ' and params: ' + str(params))

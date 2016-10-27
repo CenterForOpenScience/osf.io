@@ -131,8 +131,6 @@ Apparently there is a better way to hook onto project changes that would be more
 
 If the OSF rollsback a project creation, then Discourse should too.
 
-Log Discourse errors correctly. (is this happening? hard to tell... we should get an error if discourse is not started up before the OSF.)
-
 Since we seem to be using docstrings with Sphinx conventions, these could also be added to OSF code.
 
 ##Other Issues
