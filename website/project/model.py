@@ -282,11 +282,7 @@ class Comment(GuidStoredObject, SpamMixin, Commentable):
                                 or (auth and not auth.user.is_anonymous() and self.user._id != auth.user._id)):
             return None
 
-        content = self.content
-        if has_anonymous_link(self.node, auth):
-            content = re.sub('\[@[^\]]*\]\([^\) ]*\)', '@A User', content)
-
-        return content
+        return self.content
 
     def get_comment_page_title(self):
         if self.page == Comment.FILES:
