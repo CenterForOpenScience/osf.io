@@ -16,7 +16,7 @@ import invoke
 from invoke import Collection
 
 from website import settings
-from utils import pip_install, bin_prefix
+from .utils import pip_install, bin_prefix
 
 logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
@@ -24,13 +24,6 @@ logging.getLogger('invoke').setLevel(logging.CRITICAL)
 HERE = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 WHEELHOUSE_PATH = os.environ.get('WHEELHOUSE')
 CONSTRAINTS_PATH = os.path.join(HERE, 'requirements', 'constraints.txt')
-
-try:
-    __import__('rednose')
-except ImportError:
-    TEST_CMD = 'nosetests'
-else:
-    TEST_CMD = 'nosetests --rednose'
 
 ns = Collection()
 
@@ -507,26 +500,33 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, metric
 
 
 @task
-def test_module(ctx, module=None, verbosity=2):
+def test_module(ctx, module=None):
     """Helper for running tests.
     """
-    # Allow selecting specific submodule
-    module_fmt = ' '.join(module) if isinstance(module, list) else module
-    args = ' --verbosity={0} -s {1}'.format(verbosity, module_fmt)
-    # Use pty so the process buffers "correctly"
-    ctx.run(bin_prefix(TEST_CMD) + args, pty=True)
+    import pytest
+    args = ['-s']
+    modules = [module] if isinstance(module, basestring) else module
+    args.extend(modules)
+    retcode = pytest.main(args)
+    sys.exit(retcode)
 
-
+# TODO: Add to this list when more modules are ported for djangosf compat
+CORE_TESTS = [
+    'tests/test_views.py',
+]
 @task
 def test_osf(ctx):
     """Run the OSF test suite."""
-    test_module(ctx, module='tests/')
+    test_module(ctx, module=CORE_TESTS)
 
 
+API_TESTS = [
+    'api_tests',
+]
 @task
 def test_api(ctx):
     """Run the API test suite."""
-    test_module(ctx, module='api_tests/')
+    test_module(ctx, module=API_TESTS)
 
 
 @task
@@ -549,15 +549,14 @@ def test_varnish(ctx):
         proc.kill()
 
 
+ADDON_TESTS = [
+    'addons/',
+]
 @task
 def test_addons(ctx):
     """Run all the tests in the addons directory.
     """
-    modules = []
-    for addon in settings.ADDONS_REQUESTED:
-        module = os.path.join(settings.BASE_PATH, 'addons', addon)
-        modules.append(module)
-    test_module(ctx, module=modules)
+    test_module(ctx, module=ADDON_TESTS)
 
 
 @task
@@ -571,18 +570,19 @@ def test(ctx, all=False, syntax=False):
 
     test_osf(ctx)
     test_api(ctx)
-    test_admin(ctx)
+    # TODO: Enable admin tests
+    # test_admin(ctx)
 
     if all:
         test_addons(ctx)
         karma(ctx, single=True, browsers='PhantomJS')
 
-# TODO: Remove me when osf_tests are moved to osf-models repo
+OSF_MODELS_TESTS = [
+    'osf_tests',
+]
 @task
 def test_osf_models(ctx):
-    import pytest
-    retcode = pytest.main(['osf_tests'])
-    sys.exit(retcode)
+    test_module(ctx, OSF_MODELS_TESTS)
 
 @task
 def test_js(ctx):
@@ -610,7 +610,8 @@ def test_travis_else(ctx):
     flake(ctx)
     jshint(ctx)
     test_api(ctx)
-    test_admin(ctx)
+    # TODO: Enable admin tests
+    # test_admin(ctx)
 
 
 @task

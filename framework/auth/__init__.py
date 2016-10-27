@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-
-from django.utils import timezone
 import uuid
 
 from django.utils import timezone

@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-
-from datetime import datetime
 import httplib as http
 import urllib
 import urlparse
@@ -15,7 +13,6 @@ from weakref import WeakKeyDictionary
 from werkzeug.local import LocalProxy
 
 from framework.flask import redirect
-from framework.mongo import database
 from framework.sessions.model import Session
 from framework.sessions.utils import remove_session
 from website import settings

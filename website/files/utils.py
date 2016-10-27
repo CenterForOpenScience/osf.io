@@ -20,7 +20,6 @@ def copy_files(src, target_node, parent=None, name=None):
     if src.is_file and src.versions.exists():
         cloned.versions.add(*src.versions.all())
 
-
     if not src.is_file:
         for child in src.children:
             copy_files(child, target_node, parent=cloned)
