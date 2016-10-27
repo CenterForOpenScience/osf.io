@@ -220,30 +220,32 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             return self.forked_from.parent_node
         return None
 
-    def get_root(self):
+    @property
+    def root(self):
+
         sql = """
             WITH RECURSIVE
-                node_relation_cte(id, parent_id, child_id, path) AS (
+                parents_cte AS (
                 SELECT
-                    node_relation.id,
-                    node_relation.parent_id,
-                    node_relation.child_id,
-                    (node_relation.parent_id || '->' || node_relation.child_id :: TEXT) as path
-                FROM "%s" AS node_relation
+                  t.parent_id AS top_parent,
+                  t.child_id
+                FROM %s AS t
+                  LEFT JOIN %s AS p ON p.child_id = t.parent_id
+                WHERE p.child_id IS NULL
                 UNION ALL
                 SELECT
-                    c.id,
-                    c.parent_id,
-                    c.child_id,
-                    (p.path || '->' || c.child_id::TEXT) as path
-                FROM node_relation_cte AS p, "%s" AS c
-                WHERE c.parent_id = p.child_id
-            )
-            SELECT path FROM node_relation_cte AS n WHERE n.child_id = %s;
+                  top_parent,
+                  c.child_id
+                FROM parents_cte AS t
+                  JOIN %s AS c ON t.child_id = c.parent_id)
+            SELECT top_parent
+            FROM parents_cte AS h
+            WHERE h.child_id = %s;
         """
+
         with connection.cursor() as cursor:
             node_relation_table = AsIs(NodeRelation._meta.db_table)
-            cursor.execute(sql, [node_relation_table, node_relation_table, self.pk])
+            cursor.execute(sql, [node_relation_table, node_relation_table, node_relation_table, self.pk])
             row = cursor.fetchone()
             if not row:
                 return row
@@ -288,10 +290,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     # permissions = Permissions are now on contributors
     piwik_site_id = models.IntegerField(null=True, blank=True)
     public_comments = models.BooleanField(default=True)
-    root = models.ForeignKey('self',
-                             related_name='absolute_parent',
-                             on_delete=models.SET_NULL,
-                             null=True, blank=True)
     suspended = models.BooleanField(default=False, db_index=True)
 
     # The node (if any) used as a template for this node's creation
@@ -2866,6 +2864,3 @@ def set_parent(sender, instance, created, *args, **kwargs):
             child=instance,
             is_node_link=False
         )
-
-    # Update root. Use .filter().update() to avoid sending signals
-    sender.objects.filter(id=instance.id).update(root=instance._root)
