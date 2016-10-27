@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """Factory boy factories for the Google Drive addon."""
-import datetime
 import factory
 
+from django.utils import timezone
 from dateutil.relativedelta import relativedelta
 
 from factory.django import DjangoModelFactory
@@ -17,7 +17,7 @@ class GoogleDriveAccountFactory(ExternalAccountFactory):
     provider_id = factory.Sequence(lambda n: 'id-{0}'.format(n))
     oauth_key = factory.Sequence(lambda n: 'key-{0}'.format(n))
     oauth_secret = factory.Sequence(lambda n: 'secret-{0}'.format(n))
-    expires_at = datetime.datetime.now() + relativedelta(days=1)
+    expires_at = timezone.now() + relativedelta(days=1)
 
 class GoogleDriveUserSettingsFactory(DjangoModelFactory):
     class Meta:
