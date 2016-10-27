@@ -1,203 +1,739 @@
-"""Views tests for the Dropbox addon."""
-import httplib as http
-import unittest
+# encoding: utf-8
+from __future__ import unicode_literals
 
 import mock
+import datetime
+
 import pytest
-from addons.base.tests import views as views_testing
-from addons.dropbox.tests import factories
-from addons.dropbox.tests.utils import (DropboxAddonTestCase, MockDropbox,
-                                        mock_responses, patch_client)
-from dropbox.rest import ErrorResponse
-from framework.auth import Auth
-from nose.tools import assert_equal
-from tests.base import OsfTestCase
-from urllib3.exceptions import MaxRetryError
-from website.addons.dropbox.serializer import DropboxSerializer
-from website.addons.dropbox.views import dropbox_root_folder
+from nose.tools import *  # noqa
 
-mock_client = MockDropbox()
-pytestmark = pytest.mark.django_db
+from addons.osfstorage.models import OsfStorageFileNode
+from framework.auth.core import Auth
+from website.addons.osfstorage.tests.utils import (
+    StorageTestCase, Delta, AssertDeltas,
+    recursively_create_file,
+)
+from website.addons.osfstorage.tests import factories
 
+from framework.auth import signing
+from website.util import rubeus
 
-class TestAuthViews(DropboxAddonTestCase, views_testing.OAuthAddonAuthViewsTestCaseMixin, OsfTestCase):
-
-    @mock.patch(
-        'addons.dropbox.models.Provider.auth_url',
-        mock.PropertyMock(return_value='http://api.foo.com')
-    )
-    def test_oauth_start(self):
-        super(TestAuthViews, self).test_oauth_start()
-
-    @mock.patch('addons.dropbox.model.UserSettings.revoke_remote_oauth_access', mock.PropertyMock())
-    def test_delete_external_account(self):
-        super(TestAuthViews, self).test_delete_external_account()
+from website.models import Tag
+from website.files import models
+from website.addons.osfstorage import utils
+from website.addons.osfstorage import views
+from website.addons.base.views import make_auth
+from website.addons.osfstorage import settings as storage_settings
 
 
-class TestConfigViews(DropboxAddonTestCase, views_testing.OAuthAddonConfigViewsTestCaseMixin, OsfTestCase):
-
-    folder = {
-        'path': '12234',
-        'id': '12234'
-    }
-    Serializer = DropboxSerializer
-    client = mock_client
-
-    @mock.patch('website.addons.dropbox.model.DropboxClient', return_value=mock_client)
-    def test_folder_list(self, *args):
-        super(TestConfigViews, self).test_folder_list()
+def create_record_with_version(path, node_settings, **kwargs):
+    version = factories.FileVersionFactory(**kwargs)
+    node_settings.get_root().append_file(path)
+    record.versions.append(version)
+    record.save()
+    return record
 
 
-class TestFilebrowserViews(DropboxAddonTestCase, OsfTestCase):
+@pytest.mark.django_db
+class HookTestCase(StorageTestCase):
+
+    def send_hook(self, view_name, view_kwargs, payload, method='get', **kwargs):
+        method = getattr(self.app, method)
+        return method(
+            self.project.api_url_for(view_name, **view_kwargs),
+            signing.sign_data(signing.default_signer, payload),
+            **kwargs
+        )
+
+
+@pytest.mark.django_db
+class TestGetMetadataHook(HookTestCase):
+
+    def test_file_metdata(self):
+        path = u'kind/of/magíc.mp3'
+        record = recursively_create_file(self.node_settings, path)
+        version = factories.FileVersionFactory()
+        record.versions.add(version)
+        record.save()
+        res = self.send_hook(
+            'osfstorage_get_metadata',
+            {'fid': record.parent._id},
+            {},
+        )
+        assert_true(isinstance(res.json, dict))
+        assert_equal(res.json, record.parent.serialize(True))
+
+    def test_children_metadata(self):
+        path = u'kind/of/magíc.mp3'
+        record = recursively_create_file(self.node_settings, path)
+        version = factories.FileVersionFactory()
+        record.versions.add(version)
+        record.save()
+        res = self.send_hook(
+            'osfstorage_get_children',
+            {'fid': record.parent._id},
+            {},
+        )
+        assert_equal(len(res.json), 1)
+        assert_equal(
+            res.json[0],
+            record.serialize()
+        )
+
+    def test_osf_storage_root(self):
+        auth = Auth(self.project.creator)
+        result = views.osf_storage_root(self.node_settings.config, self.node_settings, auth)
+        node = self.project
+        expected = rubeus.build_addon_root(
+            node_settings=self.node_settings,
+            name='',
+            permissions=auth,
+            user=auth.user,
+            nodeUrl=node.url,
+            nodeApiUrl=node.api_url,
+        )
+        root = result[0]
+        assert_equal(root, expected)
+
+    def test_root_default(self):
+        res = self.send_hook('osfstorage_get_metadata', {}, {})
+
+        assert_equal(res.json['fullPath'], '/')
+        assert_equal(res.json['id'], self.node_settings.get_root()._id)
+
+    def test_metadata_not_found(self):
+        res = self.send_hook(
+            'osfstorage_get_metadata',
+            {'fid': 'somebogusid'}, {},
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 404)
+
+    def test_metadata_not_found_lots_of_slashes(self):
+        res = self.send_hook(
+            'osfstorage_get_metadata',
+            {'fid': '/not/fo/u/nd/'}, {},
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 404)
+
+
+@pytest.mark.django_db
+class TestUploadFileHook(HookTestCase):
 
     def setUp(self):
-        super(TestFilebrowserViews, self).setUp()
-        self.user.add_addon('dropbox')
-        self.node_settings.external_account = self.user_settings.external_accounts[0]
-        self.node_settings.save()
+        super(TestUploadFileHook, self).setUp()
+        self.name = 'pízza.png'
+        self.record = recursively_create_file(self.node_settings, self.name)
+        self.auth = make_auth(self.user)
 
-    def test_dropbox_folder_list(self):
-        with patch_client('website.addons.dropbox.model.DropboxClient'):
-            url = self.project.api_url_for(
-                'dropbox_folder_list',
-                folder_id='/',
-            )
-            res = self.app.get(url, auth=self.user.auth)
-            contents = [x for x in mock_client.metadata('', list=True)['contents'] if x['is_dir']]
-            first = res.json[0]
+    def send_upload_hook(self, parent, payload=None, **kwargs):
+        return self.send_hook(
+            'osfstorage_create_child',
+            {'fid': parent._id},
+            payload=payload or {},
+            method='post_json',
+            **kwargs
+        )
 
-            assert len(res.json) == len(contents)
-            assert 'kind' in first
-            assert first['path'] == contents[0]['path']
-
-    def test_dropbox_folder_list_if_folder_is_none_and_folders_only(self):
-        with patch_client('website.addons.dropbox.model.DropboxClient'):
-            self.node_settings.folder = None
-            self.node_settings.save()
-            url = self.project.api_url_for('dropbox_folder_list')
-            res = self.app.get(url, auth=self.user.auth)
-            contents = mock_client.metadata('', list=True)['contents']
-            expected = [each for each in contents if each['is_dir']]
-            assert len(res.json) == len(expected)
-
-    def test_dropbox_folder_list_folders_only(self):
-        with patch_client('website.addons.dropbox.model.DropboxClient'):
-            url = self.project.api_url_for('dropbox_folder_list')
-            res = self.app.get(url, auth=self.user.auth)
-            contents = mock_client.metadata('', list=True)['contents']
-            expected = [each for each in contents if each['is_dir']]
-            assert len(res.json) == len(expected)
-
-    @mock.patch('website.addons.dropbox.model.DropboxClient.metadata')
-    def test_dropbox_folder_list_include_root(self, mock_metadata):
-        with patch_client('website.addons.dropbox.model.DropboxClient'):
-            url = self.project.api_url_for('dropbox_folder_list')
-
-            res = self.app.get(url, auth=self.user.auth)
-            contents = mock_client.metadata('', list=True)['contents']
-            assert len(res.json) == 1
-            assert len(res.json) != len(contents)
-            assert res.json[0]['path'] == '/'
-
-    @unittest.skip('finish this')
-    def test_dropbox_root_folder(self):
-        assert 0, 'finish me'
-
-    def test_dropbox_root_folder_if_folder_is_none(self):
-        # Something is returned on normal circumstances
-        with mock.patch.object(type(self.node_settings), 'has_auth', True):
-            root = dropbox_root_folder(node_settings=self.node_settings, auth=self.user.auth)
-
-        assert root is not None
-
-        # Nothing is returned when there is no folder linked
-        self.node_settings.folder = None
-        self.node_settings.save()
-        with mock.patch.object(type(self.node_settings), 'has_auth', True):
-            root = dropbox_root_folder(node_settings=self.node_settings, auth=self.user.auth)
-
-        assert root is None
-
-    @mock.patch('website.addons.dropbox.model.DropboxClient.metadata')
-    def test_dropbox_folder_list_deleted(self, mock_metadata):
-        # Example metadata for a deleted folder
-        mock_metadata.return_value = {
-            u'bytes': 0,
-            u'contents': [],
-            u'hash': u'e3c62eb85bc50dfa1107b4ca8047812b',
-            u'icon': u'folder_gray',
-            u'is_deleted': True,
-            u'is_dir': True,
-            u'modified': u'Sat, 29 Mar 2014 20:11:49 +0000',
-            u'path': u'/tests',
-            u'rev': u'3fed844002c12fc',
-            u'revision': 67033156,
-            u'root': u'dropbox',
-            u'size': u'0 bytes',
-            u'thumb_exists': False
+    def make_payload(self, **kwargs):
+        payload = {
+            'user': self.user._id,
+            'name': self.name,
+            'hashes': {'base64': '=='},
+            'worker': {
+                'uname': 'testmachine'
+            },
+            'settings': {
+                'provider': 'filesystem',
+                storage_settings.WATERBUTLER_RESOURCE: 'blah',
+            },
+            'metadata': {
+                'size': 123,
+                'name': 'file',
+                'provider': 'filesystem',
+                'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'
+            },
         }
-        url = self.project.api_url_for('dropbox_folder_list', folder_id='/tests')
-        with mock.patch.object(type(self.node_settings), 'has_auth', True):
-            res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        payload.update(kwargs)
+        return payload
 
-        assert res.status_code == http.NOT_FOUND
+    def test_upload_create(self):
+        name = 'slightly-mad'
 
-    @mock.patch('addons.dropbox.models.DropboxClient.metadata')
-    def test_dropbox_folder_list_returns_error_if_invalid_path(self, mock_metadata):
-        mock_response = mock.Mock()
-        mock_metadata.side_effect = ErrorResponse(mock_response, body='File not found')
-        url = self.project.api_url_for('dropbox_folder_list', folder_id='/fake_path')
-        with mock.patch.object(type(self.node_settings), 'has_auth', True):
-            res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert res.status_code == http.NOT_FOUND
+        res = self.send_upload_hook(self.node_settings.get_root(), self.make_payload(name=name))
 
-    @mock.patch('addons.dropbox.models.DropboxClient.metadata')
-    def test_dropbox_folder_list_handles_max_retry_error(self, mock_metadata):
-        mock_response = mock.Mock()
-        url = self.project.api_url_for('dropbox_folder_list', folder_id='/')
-        mock_metadata.side_effect = MaxRetryError(mock_response, url)
-        with mock.patch.object(type(self.node_settings), 'has_auth', True):
-            res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert res.status_code == http.REQUEST_TIMEOUT
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['status'], 'success')
+
+        record = self.node_settings.get_root().find_child_by_name(name)
+        version = models.FileVersion.load(res.json['version'])
+
+        assert_equal(version.size, 123)
+        assert_equal(version.location_hash, 'file')
+
+        assert_equal(version.location, {
+            'object': 'file',
+            'uname': 'testmachine',
+            'service': 'filesystem',
+            'provider': 'filesystem',
+            storage_settings.WATERBUTLER_RESOURCE: 'blah',
+        })
+        assert_equal(version.metadata, {
+            'size': 123,
+            'name': 'file',
+            'base64': '==',
+            'provider': 'filesystem',
+            'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'
+        })
+
+        assert_is_not(version, None)
+        assert_equal([version], list(record.versions.all()))
+        assert_not_in(version, self.record.versions.all())
+        assert_equal(record.serialize(), res.json['data'])
+        assert_equal(res.json['data']['downloads'], self.record.get_download_count())
+
+    def test_upload_update(self):
+        delta = Delta(lambda: self.record.versions.count(), lambda value: value + 1)
+        with AssertDeltas(delta):
+            res = self.send_upload_hook(self.node_settings.get_root(), self.make_payload())
+            self.record.reload()
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['status'], 'success')
+        version = models.FileVersion.load(res.json['version'])
+        assert_is_not(version, None)
+        assert_in(version, self.record.versions.all())
+
+    def test_upload_duplicate(self):
+        location = {
+            'service': 'cloud',
+            storage_settings.WATERBUTLER_RESOURCE: 'osf',
+            'object': 'file',
+        }
+        version = self.record.create_version(self.user, location)
+        with AssertDeltas(Delta(lambda: self.record.versions.count())):
+            res = self.send_upload_hook(self.node_settings.get_root(), self.make_payload())
+            self.record.reload()
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['status'], 'success')
+        version = models.FileVersion.load(res.json['version'])
+        assert_is_not(version, None)
+        assert_in(version, self.record.versions.all())
+
+    def test_upload_create_child(self):
+        name = 'ლ(ಠ益ಠლ).unicode'
+        parent = self.node_settings.get_root().append_folder('cheesey')
+        res = self.send_upload_hook(parent, self.make_payload(name=name))
+
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['status'], 'success')
+        assert_equal(res.json['data']['downloads'], self.record.get_download_count())
+
+        version = models.FileVersion.load(res.json['version'])
+
+        assert_is_not(version, None)
+        assert_not_in(version, self.record.versions.all())
+
+        record = parent.find_child_by_name(name)
+        assert_in(version, record.versions.all())
+        assert_equals(record.name, name)
+        assert_equals(record.parent, parent)
+
+    def test_upload_create_child_with_same_name(self):
+        name = 'ლ(ಠ益ಠლ).unicode'
+        self.node_settings.get_root().append_file(name)
+        parent = self.node_settings.get_root().append_folder('cheesey')
+        res = self.send_upload_hook(parent, self.make_payload(name=name))
+
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['status'], 'success')
+        assert_equal(res.json['data']['downloads'], self.record.get_download_count())
+
+        version = models.FileVersion.load(res.json['version'])
+
+        assert_is_not(version, None)
+        assert_not_in(version, self.record.versions.all())
+
+        record = parent.find_child_by_name(name)
+        assert_in(version, record.versions.all())
+        assert_equals(record.name, name)
+        assert_equals(record.parent, parent)
+
+    def test_upload_fail_to_create_version_due_to_checkout(self):
+        user = factories.AuthUserFactory()
+        name = 'Gunter\'s noise.mp3'
+        self.node_settings.get_root().append_file(name)
+        root = self.node_settings.get_root()
+        file = root.find_child_by_name(name)
+        file.checkout = user
+        file.save()
+        res = self.send_upload_hook(root, self.make_payload(name=name), expect_errors=True)
+
+        assert_equal(res.status_code, 403)
+
+    def test_update_nested_child(self):
+        name = 'ლ(ಠ益ಠლ).unicode'
+        parent = self.node_settings.get_root().append_folder('cheesey')
+        old_node = parent.append_file(name)
+
+        res = self.send_upload_hook(parent, self.make_payload(name=name))
+
+        old_node.reload()
+        new_node = parent.find_child_by_name(name)
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['status'], 'success')
+        assert_equal(res.json['data']['downloads'], new_node.get_download_count())
+
+        assert_equal(old_node, new_node)
+
+        version = models.FileVersion.load(res.json['version'])
+
+        assert_is_not(version, None)
+        assert_in(version, new_node.versions.all())
+
+        assert_in(version, new_node.versions.all())
+        assert_equals(new_node.name, name)
+        assert_equals(new_node.parent, parent)
+
+    def test_upload_weird_name(self):
+        name = 'another/dir/carpe.png'
+        parent = self.node_settings.get_root().append_folder('cheesey')
+        res = self.send_upload_hook(parent, self.make_payload(name=name), expect_errors=True)
+
+        assert_equal(res.status_code, 400)
+        assert_equal(len(parent.children), 0)
+
+    def test_upload_to_file(self):
+        name = 'carpe.png'
+        parent = self.node_settings.get_root().append_file('cheesey')
+        res = self.send_upload_hook(parent, self.make_payload(name=name), expect_errors=True)
+
+        assert_true(parent.is_file)
+        assert_equal(res.status_code, 400)
+
+    def test_upload_no_data(self):
+        res = self.send_upload_hook(self.node_settings.get_root(), expect_errors=True)
+
+        assert_equal(res.status_code, 400)
+
+    def test_archive(self):
+        name = 'ლ(ಠ益ಠლ).unicode'
+        parent = self.node_settings.get_root().append_folder('cheesey')
+        res = self.send_upload_hook(parent, self.make_payload(name=name, hashes={'sha256': 'foo'}))
+
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['status'], 'success')
+        assert_is(res.json['archive'], True)
+
+        self.send_hook(
+            'osfstorage_update_metadata',
+            {},
+            payload={'metadata': {
+                'vault': 'Vault 101',
+                'archive': '101 tluaV',
+            }, 'version': res.json['version']},
+            method='put_json',
+        )
+
+        res = self.send_upload_hook(parent, self.make_payload(
+            name=name,
+            hashes={'sha256': 'foo'},
+            metadata={
+                'name': 'lakdjf',
+                'provider': 'testing',
+            }))
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['status'], 'success')
+        assert_is(res.json['archive'], False)
+
+    # def test_upload_update_deleted(self):
+    #     pass
 
 
-class TestRestrictions(DropboxAddonTestCase, OsfTestCase):
+@pytest.mark.django_db
+class TestUpdateMetadataHook(HookTestCase):
 
     def setUp(self):
-        super(DropboxAddonTestCase, self).setUp()
+        super(TestUpdateMetadataHook, self).setUp()
+        self.path = 'greasy/pízza.png'
+        self.record = recursively_create_file(self.node_settings, self.path)
+        self.version = factories.FileVersionFactory()
+        self.record.versions = [self.version]
+        self.record.save()
+        self.payload = {
+            'metadata': {
+                'size': 123,
+                'modified': 'Mon, 16 Feb 2015 18:45:34 GMT',
+                'md5': 'askjasdlk;jsadlkjsadf',
+                'sha256': 'sahduashduahdushaushda',
+            },
+            'version': self.version._id,
+            'size': 321,  # Just to make sure the field is ignored
+        }
 
-        # Nasty contributor who will try to access folders that he shouldn't have
-        # access to
-        self.contrib = factories.UserFactory()
-        self.project.add_contributor(self.contrib, auth=Auth(self.user))
-        self.project.save()
+    def send_metadata_hook(self, payload=None, **kwargs):
+        return self.send_hook(
+            'osfstorage_update_metadata',
+            {},
+            payload=payload or self.payload,
+            method='put_json',
+            **kwargs
+        )
 
-        # Set shared folder
-        self.node_settings.folder = 'foo bar/bar'
-        self.node_settings.save()
+    def test_callback(self):
+        self.version.date_modified = None
+        self.version.save()
+        self.send_metadata_hook()
+        self.version.reload()
+        #Test fields are added
+        assert_equal(self.version.metadata['size'], 123)
+        assert_equal(self.version.metadata['md5'], 'askjasdlk;jsadlkjsadf')
+        assert_equal(self.version.metadata['modified'], 'Mon, 16 Feb 2015 18:45:34 GMT')
 
-    @mock.patch('website.addons.dropbox.model.DropboxClient.metadata')
-    def test_restricted_folder_list(self, mock_metadata):
-        mock_metadata.return_value = mock_responses['metadata_list']
+        #Test attributes are populated
+        assert_equal(self.version.size, 123)
+        assert_true(isinstance(self.version.date_modified, datetime.datetime))
 
-        # tries to access a parent folder
-        url = self.project.api_url_for('dropbox_folder_list',
-            path='foo bar')
-        res = self.app.get(url, auth=self.contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, http.FORBIDDEN)
+    def test_archived(self):
+        self.send_metadata_hook({
+            'version': self.version._id,
+            'metadata': {
+                'vault': 'osf_storage_prod',
+                'archive': 'Some really long glacier object id here'
+            }
+        })
+        self.version.reload()
 
-    def test_restricted_config_contrib_no_addon(self):
-        url = self.project.api_url_for('dropbox_set_config')
-        res = self.app.put_json(url, {'selected': {'path': 'foo'}},
-            auth=self.contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(self.version.metadata['vault'], 'osf_storage_prod')
+        assert_equal(self.version.metadata['archive'], 'Some really long glacier object id here')
 
-    def test_restricted_config_contrib_not_owner(self):
-        # Contributor has dropbox auth, but is not the node authorizer
-        self.contrib.add_addon('dropbox')
-        self.contrib.save()
+    def test_archived_record_not_found(self):
+        res = self.send_metadata_hook(
+            payload={
+                'metadata': {'archive': 'glacier'},
+                'version': self.version._id[::-1],
+                'size': 123,
+                'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'
+            },
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 404)
+        self.version.reload()
+        assert_not_in('archive', self.version.metadata)
 
-        url = self.project.api_url_for('dropbox_set_config')
-        res = self.app.put_json(url, {'selected': {'path': 'foo'}},
-            auth=self.contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, http.FORBIDDEN)
+
+@pytest.mark.django_db
+class TestGetRevisions(StorageTestCase):
+
+    def setUp(self):
+        super(TestGetRevisions, self).setUp()
+        self.path = 'tie/your/mother/down.mp3'
+        self.record = recursively_create_file(self.node_settings, self.path)
+        self.record.versions = [factories.FileVersionFactory() for __ in range(15)]
+        self.record.save()
+
+    def get_revisions(self, fid=None, **kwargs):
+        return self.app.get(
+            self.project.api_url_for(
+                'osfstorage_get_revisions',
+                fid=fid or self.record._id,
+                **signing.sign_data(signing.default_signer, {})
+            ),
+            auth=self.user.auth,
+            **kwargs
+        )
+
+    def test_get_revisions(self):
+        res = self.get_revisions()
+        expected = [
+            utils.serialize_revision(
+                self.project,
+                self.record,
+                version,
+                index=self.record.versions.count() - 1 - idx
+            )
+            for idx, version in enumerate(reversed(self.record.versions.all()))
+        ]
+
+        assert_equal(len(res.json['revisions']), 15)
+        assert_equal(res.json['revisions'], [x for x in expected])
+        assert_equal(res.json['revisions'][0]['index'], 15)
+        assert_equal(res.json['revisions'][-1]['index'], 1)
+
+    def test_get_revisions_path_not_found(self):
+        res = self.get_revisions(fid='missing', expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+
+@pytest.mark.django_db
+class TestCreateFolder(HookTestCase):
+
+    def setUp(self):
+        super(TestCreateFolder, self).setUp()
+        self.root_node = self.node_settings.get_root()
+
+    def create_folder(self, name, parent=None, **kwargs):
+        parent = parent or self.node_settings.get_root()
+
+        return self.send_hook(
+            'osfstorage_create_child',
+            {'fid': parent._id},
+            payload={
+                'name': name,
+                'user': self.user._id,
+                'kind': 'folder'
+            },
+            method='post_json',
+            **kwargs
+        )
+
+    def test_create_folder(self):
+        resp = self.create_folder('name')
+
+        self.root_node.reload()
+
+        assert_equal(resp.status_code, 201)
+        assert_equal(len(self.root_node.children), 1)
+        assert_equal(self.root_node.children[0].serialize(), resp.json['data'])
+
+    def test_no_data(self):
+        resp = self.send_hook(
+            'osfstorage_create_child',
+            {'fid': self.root_node._id},
+            payload={},
+            method='post_json',
+            expect_errors=True
+        )
+        assert_equal(resp.status_code, 400)
+
+    def test_create_with_parent(self):
+        resp = self.create_folder('name')
+
+        assert_equal(resp.status_code, 201)
+        assert_equal(self.root_node.children.count(), 1)
+        assert_equal(self.root_node.children.all()[0].serialize(), resp.json['data'])
+
+        resp = self.create_folder('name', parent=OsfStorageFileNode.load(resp.json['data']['id']))
+
+        assert_equal(resp.status_code, 201)
+        assert_equal(self.root_node.children.count(), 1)
+        assert_false(self.root_node.children.all()[0].is_file)
+        assert_equal(self.root_node.children.all()[0].children.count(), 1)
+        assert_false(self.root_node.children.all()[0].children.all()[0].is_file)
+        assert_equal(self.root_node.children.all()[0].children.all()[0].serialize(), resp.json['data'])
+
+
+@pytest.mark.django_db
+class TestDeleteHook(HookTestCase):
+
+    def setUp(self):
+        super(TestDeleteHook, self).setUp()
+        self.root_node = self.node_settings.get_root()
+
+    def send_hook(self, view_name, view_kwargs, payload, method='get', **kwargs):
+        method = getattr(self.app, method)
+        return method(
+            '{url}?payload={payload}&signature={signature}'.format(
+                url=self.project.api_url_for(view_name, **view_kwargs),
+                **signing.sign_data(signing.default_signer, payload)
+            ),
+            **kwargs
+        )
+
+    def delete(self, file_node, **kwargs):
+        return self.send_hook(
+            'osfstorage_delete',
+            {'fid': file_node._id},
+            payload={
+                'user': self.user._id
+            },
+            method='delete',
+            **kwargs
+        )
+
+    def test_delete(self):
+        file = self.root_node.append_file('Newfile')
+
+        resp = self.delete(file)
+
+        assert_equal(resp.status_code, 200)
+        assert_equal(resp.json, {'status': 'success'})
+        fid = file._id
+        del file
+        # models.StoredFileNode._clear_object_cache()
+        assert_is(models.OsfStorageFileNode.load(fid), None)
+        assert_true(models.TrashedFileNode.load(fid))
+
+    def test_delete_deleted(self):
+        file = self.root_node.append_file('Newfile')
+        file.delete()
+
+        resp = self.delete(file, expect_errors=True)
+
+        assert_equal(resp.status_code, 404)
+
+    def test_cannot_delete_root(self):
+        resp = self.delete(self.root_node, expect_errors=True)
+
+        assert_equal(resp.status_code, 400)
+
+    def test_attempt_delete_rented_file(self):
+        user = factories.AuthUserFactory()
+        file_checked = self.root_node.append_file('Newfile')
+        file_checked.checkout = user
+        file_checked.save()
+
+        res = self.delete(file_checked, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+
+@pytest.mark.django_db
+class TestMoveHook(HookTestCase):
+
+    def setUp(self):
+        super(TestMoveHook, self).setUp()
+        self.root_node = self.node_settings.get_root()
+
+    def test_move_hook(self):
+
+        file = self.root_node.append_file('Ain\'t_got_no,_I_got_life')
+        folder = self.root_node.append_folder('Nina Simone')
+        res = self.send_hook(
+            'osfstorage_move_hook',
+            {'nid': self.root_node.node._id},
+            payload={
+                'source': file._id,
+                'node': self.root_node._id,
+                'user': self.user._id,
+                'destination': {
+                    'parent': folder._id,
+                    'node': folder.node._id,
+                    'name': folder.name,
+                }
+            },
+            method='post_json',)
+        assert_equal(res.status_code, 200)
+
+    def test_move_checkedout_file(self):
+
+        file = self.root_node.append_file('Ain\'t_got_no,_I_got_life')
+        file.checkout = self.user
+        file.save()
+        folder = self.root_node.append_folder('Nina Simone')
+        res = self.send_hook(
+            'osfstorage_move_hook',
+            {'nid': self.root_node.node._id},
+            payload={
+                'source': file._id,
+                'node': self.root_node._id,
+                'user': self.user._id,
+                'destination': {
+                    'parent': folder._id,
+                    'node': folder.node._id,
+                    'name': folder.name,
+                }
+            },
+            method='post_json',
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 405)
+
+
+@pytest.mark.django_db
+class TestFileTags(StorageTestCase):
+
+    def test_file_add_tag(self):
+        file = self.node_settings.get_root().append_file('Good Morning.mp3')
+        assert_not_in('Kanye_West', file.tags.values_list('name', flat=True))
+
+        url = self.project.api_url_for('osfstorage_add_tag', fid=file._id)
+        self.app.post_json(url, {'tag': 'Kanye_West'}, auth=self.user.auth)
+        file.reload()
+        assert_in('Kanye_West', file.tags.values_list('name', flat=True))
+
+    def test_file_add_non_ascii_tag(self):
+        file = self.node_settings.get_root().append_file('JapaneseCharacters.txt')
+        assert_not_in('コンサート', file.tags.values_list('name', flat=True))
+
+        url = self.project.api_url_for('osfstorage_add_tag', fid=file._id)
+        self.app.post_json(url, {'tag': 'コンサート'}, auth=self.user.auth)
+        file.reload()
+        assert_in('コンサート', file.tags.values_list('name', flat=True))
+
+    def test_file_remove_tag(self):
+        file = self.node_settings.get_root().append_file('Champion.mp3')
+        tag = Tag(name='Graduation')
+        tag.save()
+        file.tags.add(tag)
+        file.save()
+        assert_in('Graduation', file.tags.values_list('name', flat=True))
+        url = self.project.api_url_for('osfstorage_remove_tag', fid=file._id)
+        self.app.delete_json(url, {'tag': 'Graduation'}, auth=self.user.auth)
+        file.reload()
+        assert_not_in('Graduation', file.tags.values_list('name', flat=True))
+
+    def test_tag_the_same_tag(self):
+        file = self.node_settings.get_root().append_file('Lie,Cheat,Steal.mp3')
+        tag = Tag(name='Run_the_Jewels')
+        tag.save()
+        file.tags.add(tag)
+        file.save()
+        assert_in('Run_the_Jewels', file.tags.values_list('name', flat=True))
+        url = self.project.api_url_for('osfstorage_add_tag', fid=file._id)
+        res = self.app.post_json(url, {'tag': 'Run_the_Jewels'}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['status'], 'failure')
+
+    def test_remove_nonexistent_tag(self):
+        file = self.node_settings.get_root().append_file('WonderfulEveryday.mp3')
+        assert_not_in('Chance', file.tags.values_list('name', flat=True))
+        url = self.project.api_url_for('osfstorage_remove_tag', fid=file._id)
+        res = self.app.delete_json(url, {'tag': 'Chance'}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['status'], 'failure')
+
+    def test_file_add_tag_creates_log(self):
+        file = self.node_settings.get_root().append_file('Yeezy Season 3.mp4')
+        url = self.project.api_url_for('osfstorage_add_tag', fid=file._id)
+        res = self.app.post_json(url, {'tag': 'Kanye_West'}, auth=self.user.auth)
+
+        assert_equal(res.status_code, 200)
+        self.node.reload()
+        assert_equal(self.node.logs.latest().action, 'file_tag_added')
+
+    @mock.patch('addons.osfstorage.models.OsfStorageFile.add_tag_log')
+    def test_file_add_tag_fail_doesnt_create_log(self, mock_log):
+        file = self.node_settings.get_root().append_file('UltraLightBeam.mp3')
+        tag = Tag(name='The Life of Pablo')
+        tag.save()
+        file.tags.add(tag)
+        file.save()
+        url = self.project.api_url_for('osfstorage_add_tag', fid=file._id)
+        res = self.app.post_json(url, {'tag': 'The Life of Pablo'}, auth=self.user.auth, expect_errors=True)
+
+        assert_equal(res.status_code, 400)
+        mock_log.assert_not_called()
+
+    def test_file_remove_tag_creates_log(self):
+        file = self.node_settings.get_root().append_file('Formation.flac')
+        tag = Tag(name='You that when you cause all this conversation')
+        tag.save()
+        file.tags.add(tag)
+        file.save()
+        url = self.project.api_url_for('osfstorage_remove_tag', fid=file._id)
+        res = self.app.delete_json(url, {'tag': 'You that when you cause all this conversation'}, auth=self.user.auth)
+
+        assert_equal(res.status_code, 200)
+        self.node.reload()
+        assert_equal(self.node.logs.latest().action, 'file_tag_removed')
+
+    @mock.patch('addons.osfstorage.models.OsfStorageFile.add_tag_log')
+    def test_file_remove_tag_fail_doesnt_create_log(self, mock_log):
+        file = self.node_settings.get_root().append_file('For-once-in-my-life.mp3')
+        url = self.project.api_url_for('osfstorage_remove_tag', fid=file._id)
+        res = self.app.delete_json(url, {'tag': 'wonder'}, auth=self.user.auth, expect_errors=True)
+
+        assert_equal(res.status_code, 400)
+        mock_log.assert_not_called()

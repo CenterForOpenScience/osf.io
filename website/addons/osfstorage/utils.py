@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 
 import os
 import httplib
@@ -30,8 +31,8 @@ def update_analytics(node, file_id, version_idx):
     node_info = {
         'contributors': contributors
     }
-    update_counter(u'download:{0}:{1}'.format(node._id, file_id), node_info=node_info)
-    update_counter(u'download:{0}:{1}:{2}'.format(node._id, file_id, version_idx), node_info=node_info)
+    update_counter('download:{0}:{1}'.format(node._id, file_id), node_info=node_info)
+    update_counter('download:{0}:{1}:{2}'.format(node._id, file_id, version_idx), node_info=node_info)
 
 
 def serialize_revision(node, record, version, index, anon=False):
@@ -113,7 +114,7 @@ def must_be(_type):
 def copy_files(src, target_settings, parent=None, name=None):
     """Copy the files from src to the target nodesettings
     :param OsfStorageFileNode src: The source to copy children from
-    :param OsfStorageNodeSettings target_settings: The node settings of the project to copy files to
+    :param NodeSettings target_settings: The node settings of the project to copy files to
     :param OsfStorageFileNode parent: The parent of to attach the clone of src to, if applicable
     """
     cloned = src.clone()

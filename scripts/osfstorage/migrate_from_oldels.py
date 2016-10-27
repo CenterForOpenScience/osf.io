@@ -159,7 +159,7 @@ def migrate_guids(node_settings, children, dry=True):
                     # e.g. /blah/{{ urls.revisions }}
                     # which created OsfStorageGuidFile records
                     # that are not included in the file_tree for
-                    # a node's OsfStorageNodeSettings
+                    # a node's NodeSettings
                     # Any file Guid whose path contains a '/' should
                     # be considered invalid, and we skip over those and mark them so that
                     # the rest of the migration can occur

@@ -4,7 +4,7 @@ import os
 
 import requests
 from dateutil.parser import parse as parse_date
-from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models, connection
 from django.utils import timezone
@@ -12,6 +12,7 @@ from framework.analytics import get_basic_counters
 from modularodm.exceptions import NoResultsFound
 from osf.models.base import BaseModel, Guid, OptionalGuidMixin, ObjectIDMixin
 from osf.models.comment import CommentableMixin
+from osf.models.validators import validate_location
 from osf.modm_compat import Q
 from website.util import api_v2_url
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
@@ -45,10 +46,12 @@ class TrashedFileNode(CommentableMixin, OptionalGuidMixin, ObjectIDMixin, BaseMo
     history = DateTimeAwareJSONField(default=list, blank=True)
     versions = models.ManyToManyField('FileVersion')
 
-    node = models.ForeignKey('AbstractNode', null=True, blank=True)
+    node = models.ForeignKey('osf.AbstractNode', null=True, blank=True)
     object_id = models.PositiveIntegerField(null=True, blank=True)
     content_type = models.ForeignKey('contenttypes.ContentType', null=True, blank=True)
     parent = GenericForeignKey()
+
+    trashed_children = GenericRelation('self')
 
     is_file = models.BooleanField(default=True)
     provider = models.CharField(max_length=25, blank=True, null=True)  # max_length in staging was 11
@@ -57,13 +60,13 @@ class TrashedFileNode(CommentableMixin, OptionalGuidMixin, ObjectIDMixin, BaseMo
     path = models.CharField(max_length=200, blank=True, null=True)  # max_length in staging was 140
     # max_length in staging was 265
     _materialized_path = models.CharField(max_length=300, blank=True, null=True)
-    checkout = models.ForeignKey('OSFUser', related_name='trashed_files_checked_out', null=True, blank=True)
-    deleted_by = models.ForeignKey('OSFUser', related_name='files_deleted_by', null=True, blank=True)
-    deleted_on = models.DateTimeField()  # auto_now_add=True)
-    tags = models.ManyToManyField('Tag')
+    checkout = models.ForeignKey('osf.OSFUser', related_name='trashed_files_checked_out', null=True, blank=True)
+    deleted_by = models.ForeignKey('osf.OSFUser', related_name='files_deleted_by', null=True, blank=True)
+    deleted_on = models.DateTimeField(default=timezone.now)  # auto_now_add=True)
+    tags = models.ManyToManyField('osf.Tag')
     suspended = models.BooleanField(default=False)
 
-    copied_from = models.ForeignKey('StoredFileNode', default=None, null=True, blank=True)
+    copied_from = models.ForeignKey('osf.StoredFileNode', default=None, null=True, blank=True)
 
     @property
     def materialized_path(self):
@@ -198,6 +201,8 @@ class StoredFileNode(CommentableMixin, OptionalGuidMixin, ObjectIDMixin, BaseMod
     parent = models.ForeignKey('StoredFileNode', blank=True, null=True, default=None, related_name='child')
     copied_from = models.ForeignKey('StoredFileNode', blank=True, null=True, default=None,
                                     related_name='copy_of')
+
+    trashed_children = GenericRelation('TrashedFileNode')
 
     is_file = models.BooleanField(default=True)
     provider = models.CharField(max_length=25, blank=False, null=False, db_index=True)
@@ -437,7 +442,7 @@ class FileNode(object):
         MongoQuerySet to return wrapped objects
         :rtype: GenWrapper<MongoQuerySet<cls>>
         """
-        return utils.GenWrapper(StoredFileNode.find(cls._filter(qs)))
+        return utils.GenWrapper(StoredFileNode.find(cls._filter(qs)).order_by('id'))
 
     @classmethod
     def find_one(cls, qs):
@@ -588,7 +593,9 @@ class FileNode(object):
             self.save()
 
     def _create_trashed(self, save=True, user=None, parent=None):
-        trashed = TrashedFileNode(
+        if save is False:
+            logger.warning('Asked to create a TrashedFileNode without saving.')
+        trashed = TrashedFileNode.objects.create(
             _id=self._id,
             name=self.name,
             path=self.path,
@@ -598,14 +605,12 @@ class FileNode(object):
             is_file=self.is_file,
             checkout=self.checkout,
             provider=self.provider,
-            versions=self.versions,
             last_touched=self.last_touched,
             materialized_path=self.materialized_path,
-
             deleted_by=user
         )
-        if save:
-            trashed.save()
+        if self.versions.exists():
+            trashed.versions.add(*self.versions.all())
         return trashed
 
     def _repoint_guids(self, updated):
@@ -770,7 +775,7 @@ class File(FileNode):
         return count or 0
 
     def serialize(self):
-        if not self.versions:
+        if not self.versions.exists():
             return dict(
                 super(File, self).serialize(),
                 size=None,
@@ -781,14 +786,14 @@ class File(FileNode):
                 checkout=self.checkout._id if self.checkout else None,
             )
 
-        version = self.versions[-1]
+        version = self.versions.last()
         return dict(
             super(File, self).serialize(),
             size=version.size,
             downloads=self.get_download_count(),
             checkout=self.checkout._id if self.checkout else None,
-            version=version.identifier if self.versions else None,
-            contentType=version.content_type if self.versions else None,
+            version=version.identifier if self.versions.exists() else None,
+            contentType=version.content_type if self.versions.exists() else None,
             modified=version.date_modified.isoformat() if version.date_modified else None,
         )
 
@@ -802,7 +807,7 @@ class Folder(FileNode):
         :returns: A GenWrapper for all children
         :rtype: GenWrapper<MongoQuerySet<cls>>
         """
-        return FileNode.find(Q('parent', 'eq', self._id))
+        return FileNode.find(Q('parent_id', 'eq', self.id))
 
     def delete(self, recurse=True, user=None, parent=None):
         trashed = self._create_trashed(user=user, parent=parent)
@@ -837,7 +842,7 @@ class Folder(FileNode):
     def find_child_by_name(self, name, kind=2):
         return FileNode.resolve_class(self.provider, kind).find_one(
             Q('name', 'eq', name) &
-            Q('parent', 'eq', self)
+            Q('parent', 'eq', self.id)
         )
 
 
@@ -857,9 +862,9 @@ class FileVersion(ObjectIDMixin, BaseModel):
     identifier = models.CharField(max_length=100, blank=False, null=False)  # max length on staging was 51
 
     # Date version record was created. This is the date displayed to the user.
-    date_created = models.DateTimeField()  # auto_now_add=True)
+    date_created = models.DateTimeField(default=timezone.now)  # auto_now_add=True)
 
-    size = models.BigIntegerField(null=True)
+    size = models.BigIntegerField(default=-1, blank=True)
 
     content_type = models.CharField(max_length=100, blank=True, null=True)  # was 24 on staging
     # Date file modified on third-party backend. Not displayed to user, since
@@ -867,8 +872,8 @@ class FileVersion(ObjectIDMixin, BaseModel):
     # exists on the backend
     date_modified = models.DateTimeField(null=True, blank=True)
 
-    location = DateTimeAwareJSONField(default=dict, db_index=True, blank=True, null=True)
-    metadata = DateTimeAwareJSONField(default=dict, db_index=True)
+    location = DateTimeAwareJSONField(default=dict, db_index=True, null=True, validators=[validate_location])
+    metadata = DateTimeAwareJSONField(blank=True, default=dict, db_index=True)
 
     @property
     def location_hash(self):
@@ -888,9 +893,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
         self.size = self.metadata.get('size', self.size)
         self.content_type = self.metadata.get('contentType', self.content_type)
         if self.metadata.get('modified'):
-            # TODO handle the timezone here the user that updates the file may see an
-            # Incorrect version
-            self.date_modified = parse_date(self.metadata['modified'], ignoretz=True)
+            self.date_modified = parse_date(self.metadata['modified'], ignoretz=False)
 
         if save:
             self.save()
@@ -928,3 +931,4 @@ class FileVersion(ObjectIDMixin, BaseModel):
 
     class Meta:
         index_together = [('_id', 'metadata')]
+        ordering = ('date_created',)

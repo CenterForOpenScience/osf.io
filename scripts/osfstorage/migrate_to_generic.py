@@ -86,7 +86,7 @@ def migrate_trashedfilenodes():
 def migrate_filenodes():
     for node_settings in paginated(osfstorage_model.OsfStorageNodeSettings):
         if node_settings.owner is None:
-            logger.warning('OsfStorageNodeSettings {} has no parent; skipping'.format(node_settings._id))
+            logger.warning('NodeSettings {} has no parent; skipping'.format(node_settings._id))
             continue
         logger.info('Migrating files for {!r}'.format(node_settings.owner))
 

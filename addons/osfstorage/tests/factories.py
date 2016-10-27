@@ -1,29 +1,35 @@
-import factory
-from factory.django import DjangoModelFactory
-from osf_tests.factories import UserFactory, ProjectFactory, ExternalAccountFactory
+#!/usr/bin/env python
+# encoding: utf-8
+from django.utils import timezone
+from factory import SubFactory, post_generation
 
-from addons.dropbox.models import DropboxNodeSettings
-from addons.dropbox.models import DropboxUserSettings
+from tests.factories import ModularOdmFactory, AuthUserFactory
+
+from osf import models
+
+from django.apps import apps
+
+settings = apps.get_app_config('addons_osfstorage')
 
 
-class DropboxUserSettingsFactory(DjangoModelFactory):
+generic_location = {
+    'service': 'cloud',
+    settings.WATERBUTLER_RESOURCE: 'resource',
+    'object': '1615307',
+}
+
+
+class FileVersionFactory(ModularOdmFactory):
     class Meta:
-        model = DropboxUserSettings
+        model = models.FileVersion
 
-    owner = factory.SubFactory(UserFactory)
-    # access_token = factory.Sequence(lambda n: 'abcdef{0}'.format(n))
+    creator = SubFactory(AuthUserFactory)
+    date_modified = timezone.now()
+    location = generic_location
+    identifier = 0
 
-
-class DropboxNodeSettingsFactory(DjangoModelFactory):
-    class Meta:
-        model = DropboxNodeSettings
-
-    folder = 'Camera Uploads'
-    owner = factory.SubFactory(ProjectFactory)
-    user_settings = factory.SubFactory(DropboxUserSettingsFactory)
-    external_account = factory.SubFactory(ExternalAccountFactory)
-
-class DropboxAccountFactory(ExternalAccountFactory):
-    provider = 'dropbox'
-    provider_id = factory.Sequence(lambda n: 'id-{0}'.format(n))
-    oauth_key = factory.Sequence(lambda n: 'key-{0}'.format(n))
+    @post_generation
+    def refresh(self, create, extracted, **kwargs):
+        if not create:
+            return
+        self.reload()
