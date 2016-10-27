@@ -38,6 +38,16 @@ var FileEditor = {
             new ShareJSDoc(shareWSUrl, self.editorMeta, model.editor, self.observables);
         };
 
+        self.handleResponse = function(response) {
+            m.startComputation();
+            self.loaded = true;
+            self.initialText = response;
+            if (model.editor) {
+                model.editor.setValue(self.initialText);
+            }
+            m.endComputation();
+        };
+
         self.reloadFile = function() {
             self.loaded = false;
             $.ajax({
@@ -46,13 +56,8 @@ var FileEditor = {
                 dataType: 'text',
                 beforeSend: $osf.setXHRAuthorization,
             }).done(function (parsed, status, response) {
-                m.startComputation();
-                self.loaded = true;
-                self.initialText = response.responseText;
-                if (model.editor) {
-                    model.editor.setValue(self.initialText);
-                }
-                m.endComputation();
+                model.loadedResponse = response.responseText;
+                self.handleResponse(response.responseText);
             }).fail(function (xhr, textStatus, error) {
                 $osf.growl('Error','The file content could not be loaded.');
                 Raven.captureMessage('Could not GET file contents.', {
@@ -114,8 +119,14 @@ var FileEditor = {
 
             return clean1 !== clean2;
         };
-
-        self.reloadFile();
+        
+        // Hack to prevent double downloads of files from controllers being called twice
+        // Double download is caused by treebeard and fileviewpage both being mounted by mithril        
+        if(model.loadedResponse){
+            self.handleResponse(model.loadedResponse);
+        }else{
+            self.reloadFile();
+        }
 
         return self;
     },

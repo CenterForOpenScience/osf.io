@@ -901,7 +901,7 @@ def update_foreign_fields(old_id, node):
         for doc in ss_dv:
             repl_data = json.loads(re.sub(r'\b{}\b'.format(old_id), node._id, json.dumps(doc['data'])))
             database['session'].find_and_modify(
-                {'_id': new_id},
+                {'_id': doc['_id']},
                 {'$set':{
                     'data': repl_data
                 }}
