@@ -2,7 +2,7 @@ import time
 import logging
 import argparse
 from modularodm import Q
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil.parser import parse
 
 from website.app import init_app
@@ -18,7 +18,7 @@ def get_events(date):
     """ Get all node logs from a given date. Defaults to starting yesterday
     to today (both in UTC).
     """
-    node_log_query = Q('date', 'lte', date) & Q('date', 'gt', date - datetime.timedelta(1))
+    node_log_query = Q('date', 'lte', date) & Q('date', 'gt', date - timedelta(1))
 
     node_logs = NodeLog.find(node_log_query)
     node_log_events = []
