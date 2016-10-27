@@ -1,4 +1,3 @@
-from django.conf import settings as drf_settings
 from django.conf.urls import include, url
 from django.conf.urls.static import static
 from django.views.generic.base import RedirectView
@@ -6,12 +5,13 @@ from django.views.generic.base import RedirectView
 from . import views
 from . import settings
 from . import versioning
+from api.base.swagger import get_swagger_view
 
 default_version = versioning.decimal_version_to_url_path(settings.REST_FRAMEWORK['DEFAULT_VERSION'])
 
 # Please keep URLs alphabetized for auto-generated documentation
 urlpatterns = [
-    url('^(?P<version>(v2))/',
+    url(r'^(?P<version>(v2))/',
         include(
             [
                 url(r'^$', views.root, name='root'),
@@ -20,7 +20,7 @@ urlpatterns = [
                 url(r'^citations/', include('api.citations.urls', namespace='citations')),
                 url(r'^collections/', include('api.collections.urls', namespace='collections')),
                 url(r'^comments/', include('api.comments.urls', namespace='comments')),
-                url(r'^docs/', RedirectView.as_view(pattern_name=views.root), name='redirect-to-root', kwargs={'version': default_version}),
+                url(r'^docs/', get_swagger_view(title='OSF API Documentation')),
                 url(r'^files/', include('api.files.urls', namespace='files')),
                 url(r'^guids/', include('api.guids.urls', namespace='guids')),
                 url(r'^identifiers/', include('api.identifiers.urls', namespace='identifiers')),
@@ -46,6 +46,6 @@ urlpatterns = [
 ]
 
 
-urlpatterns += static('/static/', document_root=drf_settings.STATIC_ROOT)
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 handler404 = views.error_404
