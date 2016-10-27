@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def get_node_log_events(date):
+def get_events(date):
     """ Get all node logs from a given date. Defaults to starting yesterday
     to today (both in UTC).
     """
@@ -60,7 +60,7 @@ def main():
     args = parse_args()
     date = parse(args.end_date).date() if args.date else today
 
-    node_log_events = get_node_log_events(date)
+    node_log_events = get_events(date)
     keen_project = keen_settings['private']['project_id']
     write_key = keen_settings['private']['write_key']
     if keen_project and write_key:

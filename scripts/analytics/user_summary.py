@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def count(today):
+def get_events(today):
     counts = {
         'keen': {
             'timestamp': today.isoformat()
@@ -46,7 +46,7 @@ def count(today):
     return counts
 
 def main(today):
-    user_counts = count(today)
+    user_counts = get_events(today)
     keen_project = keen_settings['private']['project_id']
     write_key = keen_settings['private']['write_key']
     if keen_project and write_key:

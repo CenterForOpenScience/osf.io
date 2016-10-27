@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def count():
+def get_events():
     counts = []
     addons_available = {k: v for k, v in [(addon.short_name, addon) for addon in ADDONS_AVAILABLE]}
     for short_name, addon in addons_available.iteritems():
@@ -39,7 +39,7 @@ def count():
     return counts
 
 def main():
-    addon_count = count()
+    addon_count = get_events()
     keen_project = keen_settings['private']['project_id']
     write_key = keen_settings['private']['write_key']
     if keen_project and write_key:
