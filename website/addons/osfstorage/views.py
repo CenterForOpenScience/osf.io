@@ -224,7 +224,7 @@ def osfstorage_delete(file_node, payload, node_addon, **kwargs):
         raise HTTPError(httplib.FORBIDDEN)
     except exceptions.FileNodeIsPrimaryFile:
         raise HTTPError(httplib.FORBIDDEN, data={
-            'message_long': 'Cannot move file as it is the primary file of preprint.'
+            'message_long': 'Cannot delete file as it is the primary file of preprint.'
         })
 
     return {'status': 'success'}

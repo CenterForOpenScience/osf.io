@@ -29,6 +29,3 @@ class IsPreprintFile(permissions.BasePermission):
             return False
 
         return True
-
-        
-
