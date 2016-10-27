@@ -18,7 +18,10 @@ logger = logging.getLogger(__name__)
 
 def update_node_links(designated_node, target_nodes, description):
     """ Takes designated node, removes current node links and replaces them with node links to target nodes """
-    logger.info('Repopulating {} with latest {} nodes.'.format(designated_node._id, description))
+    if len(target_nodes) == 0:
+        logger.info('No target nodes specified - no node links will be added!')
+    else:
+        logger.info('Repopulating {} with latest {} nodes.'.format(designated_node._id, description))
     user = designated_node.creator
     auth = Auth(user)
 
@@ -50,7 +53,7 @@ def main(dry_run=True):
 
     try:
         popular_links_registrations.save()
-        logger.info('Node links for registrations on {} updated.'.format(popular_links_node._id))
+        logger.info('Node links for registrations on {} updated.'.format(popular_links_registrations._id))
     except (KeyError, RuntimeError) as error:
         logger.error('Could not migrate popular nodes for registrations due to error')
         logger.exception(error)
