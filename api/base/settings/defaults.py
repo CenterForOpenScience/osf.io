@@ -174,12 +174,7 @@ CORS_ALLOW_CREDENTIALS = True
 INSTITUTION_ORIGINS_WHITELIST = ()
 
 MIDDLEWARE_CLASSES = (
-    # TokuMX transaction support
-    # Needs to go before CommonMiddleware, so that transactions are always started,
-    # even in the event of a redirect. CommonMiddleware may cause other middlewares'
-    # process_request to be skipped, e.g. when a trailing slash is omitted
     'api.base.middleware.DjangoGlobalMiddleware',
-    'api.base.middleware.MongoConnectionMiddleware',
     'api.base.middleware.CeleryTaskMiddleware',
     'api.base.middleware.PostcommitTaskMiddleware',
 
