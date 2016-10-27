@@ -71,10 +71,15 @@ def test_components_have_root():
     root = ProjectFactory()
     child = NodeFactory(parent=root)
     grandchild = NodeFactory(parent=child)
+    greatgrandchild = NodeFactory(parent=grandchild)
     child.reload()
     grandchild.reload()
     assert child.root == root
     assert grandchild.root == root
+
+    # assert child.get_root() == root
+    # assert grandchild.get_root() == rooo
+    assert greatgrandchild.get_root() == root
 
 def test_license_searches_parent_nodes():
     license_record = NodeLicenseRecordFactory()
