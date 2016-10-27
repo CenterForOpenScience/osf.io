@@ -67,7 +67,6 @@ def test_component_has_parent_node():
     assert node.parent_node == project
 
 def test_components_have_root():
-    import ipdb; ipdb.set_trace()
     root = ProjectFactory()
     child = NodeFactory(parent=root)
     child1 = NodeFactory(parent=root)
