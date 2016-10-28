@@ -1997,8 +1997,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.set_visible(user, visible, auth=auth)
 
     def save(self, *args, **kwargs):
-        if self.pk:
-            self.root = self._root
         if 'suppress_log' in kwargs.keys():
             self._suppress_log = kwargs['suppress_log']
             del kwargs['suppress_log']
@@ -2711,3 +2709,6 @@ def set_parent(sender, instance, created, *args, **kwargs):
             child=instance,
             is_node_link=False
         )
+
+    # Update root. Use .filter().update() to avoid sending signals
+    sender.objects.filter(id=instance.id).update(root=instance._root)
