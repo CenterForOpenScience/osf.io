@@ -622,8 +622,12 @@ class NodeRelationFactory(DjangoModelFactory):
 class ExternalAccountFactory(DjangoModelFactory):
     class Meta:
         model = models.ExternalAccount
-
+    oauth_key = 'some-silly-key'
+    oauth_secret = 'some-super-secret'
     provider = 'mock2'
     provider_id = factory.Sequence(lambda n: 'user-{0}'.format(n))
     provider_name = 'Fake Provider'
     display_name = factory.Sequence(lambda n: 'user-{0}'.format(n))
+    profile_url = 'http://wutwut.com/'
+    refresh_token = 'some-sillier-key'
+
