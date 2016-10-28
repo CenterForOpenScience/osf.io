@@ -23,6 +23,7 @@ env:
     - LIBJEMALLOC_DEB="libjemalloc1_3.5.1-2_amd64.deb"
     - LIBPCRE_DEB="libpcre3_8.31-2ubuntu2.3_amd64.deb"
     - VARNISH_DEB="varnish_4.1.0-1~trusty_amd64.deb"
+    - OSF_DB_PORT="54321"
   matrix:
     - TEST_BUILD="osf"
     - TEST_BUILD="else"
