@@ -12,13 +12,14 @@ import pytz
 import unittest
 
 import mock
+import pytest
 from nose.tools import *  # noqa PEP8 asserts
 from django.utils import timezone
 from django.apps import apps
 
+
 from modularodm import Q
 from modularodm.exceptions import ValidationError
-from osf.models import Comment
 
 from framework.auth import cas
 from framework.auth.core import generate_verification_key
@@ -28,14 +29,7 @@ from framework.auth.exceptions import InvalidTokenError
 from framework.auth.utils import impute_names_model, ensure_external_identity_uniqueness
 from framework.celery_tasks import handlers
 from framework.exceptions import HTTPError
-from tests.base import (
-    assert_is_redirect,
-    capture_signals,
-    fake,
-    get_default_metaschema,
-    OsfTestCase,
-    assert_datetime_equal,
-)
+from framework.transactions.handlers import no_auto_transaction
 from tests.factories import MockAddonNodeSettings
 from website import mailchimp_utils
 from website import mails, settings
@@ -57,8 +51,18 @@ from website.project.views.node import _should_show_wiki_widget, _view_project, 
 from website.util import api_url_for, web_url_for
 from website.util import permissions, rubeus
 from website.views import index
+from osf.models import Comment
+from osf.models import OSFUser as User
+from tests.base import (
+    assert_is_redirect,
+    capture_signals,
+    fake,
+    get_default_metaschema,
+    OsfTestCase,
+    assert_datetime_equal,
+    test_app,
+)
 
-import pytest
 
 pytestmark = pytest.mark.django_db
 
@@ -96,6 +100,43 @@ class Addon2(MockAddonNodeSettings):
 
     def archive_errors(self):
         return 'Error'
+
+
+class TestViewsAreAtomic(OsfTestCase):
+
+    def test_error_response_rolls_back_transaction(self):
+        @test_app.route('/errorexc')
+        def error_exc():
+            u = UserFactory()
+            raise RuntimeError
+
+        @test_app.route('/error500')
+        def error500():
+            u = UserFactory()
+            return 'error', 500
+
+        @test_app.route('/noautotransact')
+        @no_auto_transaction
+        def no_auto_transact():
+            u = UserFactory()
+            return 'error', 500
+
+        assert_equal(User.objects.count(), 0)
+        self.app.get('/error500', expect_errors=True)
+        assert_equal(User.objects.count(), 0)
+
+        # Need to set debug = False in order to rollback transactions in transaction_teardown_request
+        test_app.debug = False
+        try:
+            self.app.get('/errorexc', expect_errors=True)
+        except RuntimeError:
+            pass
+        test_app.debug = True
+
+        assert_equal(User.objects.count(), 0)
+
+        self.app.get('/noautotransact', expect_errors=True)
+        assert_equal(User.objects.count(), 1)
 
 
 class TestViewingProjectWithPrivateLink(OsfTestCase):
