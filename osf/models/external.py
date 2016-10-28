@@ -18,7 +18,7 @@ from requests_oauthlib import OAuth2Session
 
 from framework.exceptions import HTTPError, PermissionsError
 from framework.sessions import session
-from osf.utils.fields import EncryptedStringField
+from osf.utils.fields import EncryptedTextField
 from website.oauth.utils import PROVIDER_LOOKUP
 from website.security import random_string
 from website.util import web_url_for
@@ -50,14 +50,14 @@ class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
     # The OAuth credentials. One or both of these fields should be populated.
     # For OAuth1, this is usually the "oauth_token"
     # For OAuth2, this is usually the "access_token"
-    oauth_key = EncryptedStringField(max_length=255, blank=True, null=True)
+    oauth_key = EncryptedTextField(max_length=255, blank=True, null=True)
 
     # For OAuth1, this is usually the "oauth_token_secret"
     # For OAuth2, this is not used
-    oauth_secret = EncryptedStringField(max_length=255, blank=True, null=True)
+    oauth_secret = EncryptedTextField(max_length=255, blank=True, null=True)
 
     # Used for OAuth2 only
-    refresh_token = EncryptedStringField(max_length=255, blank=True, null=True)
+    refresh_token = EncryptedTextField(max_length=255, blank=True, null=True)
     expires_at = models.DateTimeField(blank=True, null=True)
     scopes = ArrayField(models.CharField(max_length=128), default=list, blank=True)
 
@@ -73,9 +73,9 @@ class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
     provider_id = models.CharField(max_length=255, blank=False, null=False)
 
     # The user's name on the external service
-    display_name = EncryptedStringField(max_length=255, blank=True, null=True)
+    display_name = EncryptedTextField(max_length=255, blank=True, null=True)
     # A link to the user's profile on the external service
-    profile_url = EncryptedStringField(blank=True, null=True, max_length=512)
+    profile_url = EncryptedTextField(blank=True, null=True, max_length=512)
 
     def __repr__(self):
         return '<ExternalAccount: {}/{}>'.format(self.provider,
