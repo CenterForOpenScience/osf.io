@@ -590,8 +590,8 @@ function doItemOp(operation, to, from, rename, conflict) {
 
         var message;
 
-        if (xhr.status !== 500 && xhr.responseJSON && xhr.responseJSON.message) {
-            message = xhr.responseJSON.message;
+        if (xhr.status !== 500 && xhr.responseJSON && (xhr.responseJSON.message || xhr.responseJSON.message_long)) {
+            message = xhr.responseJSON.message || xhr.responseJSON.message_long;
         } else if (xhr.status === 503) {
             message = textStatus;
         } else {
@@ -1055,6 +1055,9 @@ function _removeEvent (event, items, col) {
         .fail(function(data){
             tb.modal.dismiss();
             tb.clearMultiselect();
+            if (data.responseJSON.message_long.indexOf('preprint') !== -1) {
+                $osf.growl('Delete failed', data.responseJSON.message_long);
+            }
             item.notify.update('Delete failed.', 'danger', undefined, 3000);
         });
     }
@@ -1084,13 +1087,6 @@ function _removeEvent (event, items, col) {
     // If there is only one item being deleted, don't complicate the issue:
     if(items.length === 1) {
         var detail = 'This action is irreversible.';
-        if (window.contextVars.node.preprintFileId === items[0].data.path.replace('/', '')) {
-            // title = 'Delete the primary preprint file "' + items[0].data.name + '"?';
-            detail = [
-                m('p', 'This is the primary file for a preprint.'),
-                m('p', m('strong', 'Deleting this file will remove this preprint from circulation.'))
-            ];
-        }
         if(items[0].kind !== 'folder'){
             var mithrilContentSingle = m('div', [
                 m('p', detail)
@@ -1128,12 +1124,6 @@ function _removeEvent (event, items, col) {
             }
             if(item.kind === 'folder' && deleteMessage.length === 1) {
                 deleteMessage.push(m('p.text-danger', 'Some of the selected items are folders. This will delete the folder(s) and ALL of their content.'));
-            }
-            if (window.contextVars.node.preprintFileId === item.data.path.replace('/', '')) {
-                deleteMessage.push([
-                    m('p', 'One of the files you have selected is the primary file for a preprint.'),
-                    m('p', m('strong', 'Deleting this file will remove this preprint from circulation.'))
-                ]);
             }
         });
         // If all items can be deleted
@@ -2311,27 +2301,6 @@ function _dropLogic(event, items, folder) {
     }
 
     $.each(items, function(index, item) {
-        // Check all the ways that the primary preprint file could be moved out of its current node
-        // TODO: this will break when preprints can be created from existing projects -- it relies on
-        //     the fact that the current node is the preprint, not and node in the component tree. [#PREP-132]
-        if (
-            window.contextVars.node.preprintFileId === item.data.path.replace('/', '') &&
-            item.data.nodeId === window.contextVars.node.id &&
-            (folder.data.nodeId !== window.contextVars.node.id || folder.data.provider !== 'osfstorage')
-        ) {
-            tb.modal.update(m('', [
-                m('p', 'The file "' + item.data.name + '" is the primary file for a preprint and so should not be moved.'),
-                m('strong', 'Moving this file will remove this preprint from circulation.')
-            ]), m('', [
-                m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), // jshint ignore:line
-                m('span.btn.btn-default', {onclick: function() {
-                        checkConflicts(tb, item, folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, folder, item, undefined));
-                }}, 'Move anyway'), // jshint ignore:line
-
-            ]), m('h3.break-word.modal-title', 'Move "' + item.data.name + '"?'));
-            return;
-        }
-
         checkConflicts(tb, item, folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, folder, item, undefined));
     });
 }
