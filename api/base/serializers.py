@@ -245,6 +245,17 @@ def _url_val(val, obj, serializer, request, **kwargs):
         return url
 
 
+class DateByVersion(ser.DateTimeField):
+    """
+    Document me pls.
+    """
+    def to_representation(self, value):
+        request = self.context.get('request')
+        if request and request.version >= '2.3':
+            self.format = '%Y-%m-%dT%H:%M:%S.%fZ'
+        return super(DateByVersion, self).to_representation(value)
+
+
 class IDField(ser.CharField):
     """
     ID field that validates that 'id' in the request body is the same as the instance 'id' for single requests.
