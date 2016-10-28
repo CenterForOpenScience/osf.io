@@ -7,7 +7,7 @@ from django.db import connection
 from psycopg2._psycopg import AsIs
 
 from osf.models import ExternalAccount
-from osf.utils.fields import EncryptedTextField
+from osf.utils.fields import EncryptedTextField, SENSITIVE_DATA_KEY
 from .factories import ExternalAccountFactory
 
 @pytest.mark.django_db
@@ -38,5 +38,4 @@ class TestEncryptedStringField(object):
             cursor.execute(sql, [AsIs(', '.join(self.encrypted_field_dict.keys())), ea.id])
             row = cursor.fetchone()
             for blicky in row:
-                assert jwe.decrypt(bytes(blicky[len(EncryptedTextField.prefix):]), EncryptedTextField.SENSITIVE_DATA_KEY) == self.magic_string
-
+                assert jwe.decrypt(bytes(blicky[len(EncryptedTextField.prefix):]), SENSITIVE_DATA_KEY) == self.magic_string
