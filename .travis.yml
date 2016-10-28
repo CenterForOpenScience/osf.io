@@ -7,10 +7,6 @@ python:
 
 sudo: false
 
-branches:
-  except:
-    - /django-osf/
-
 cache:
   directories:
     - $HOME/.cache
