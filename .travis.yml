@@ -21,7 +21,7 @@ env:
     - LIBSTDC_DEB="libstdc++6_4.6.3-1ubuntu5_amd64.deb"
     - LIBICU_DEB="libicu48_4.8.1.1-3ubuntu0.6_amd64.deb"
     - LIBXML2_DEB="libxml2_2.7.8.dfsg-5.1ubuntu4.15_amd64.deb"
-    - LIBPQ_DEB="libpq5_9.5.4-1_amd64.deb"
+    - LIBPQ_DEB="libpq5_9.5.5-1.pgdg12.4%2b1_amd64.deb"
     - POSTGRES_DEB="postgresql-9.5_9.5.4-3_amd64.deb"
     - ELASTICSEARCH_ARCHIVE="elasticsearch-1.5.0.tar.gz"
     - LIBJEMALLOC_DEB="libjemalloc1_3.5.1-2_amd64.deb"
@@ -59,7 +59,7 @@ before_install:
       fi
 
       if [ ! -f "$LIBPQ_DEB" ]; then
-        curl -SLO http://security.ubuntu.com/ubuntu/pool/main/p/postgresql-9.5/$LIBPQ_DEB
+        curl -SLO http://apt.postgresql.org/pub/repos/apt/pool/9.5/p/postgresql-9.5/$LIBPQ_DEB
       fi
 
       if [ ! -f "$POSTGRES_DEB" ]; then
