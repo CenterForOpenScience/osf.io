@@ -81,7 +81,7 @@ def get_events(end_date=None):
         totals['keen'] = {'timestamp': end_date.isoformat()}
 
     logger.info('Nodes counted. Nodes: {}, Projects: {}, Registered Nodes: {}, Registered Projects: {}'.format(totals['nodes']['total'], totals['projects']['total'], totals['registered_nodes']['total'], totals['registered_projects']['total']))
-    return totals
+    return [totals]
 
 
 def parse_args():
@@ -103,7 +103,7 @@ def main():
             project_id=keen_project,
             write_key=write_key,
         )
-        client.add_event('node_analytics', node_count)
+        client.add_events({'node_analytics': node_count})
     else:
         print(node_count)
 

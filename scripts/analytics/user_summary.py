@@ -43,7 +43,7 @@ def get_events(today):
             counts['deactivated_users']
         )
     )
-    return counts
+    return [counts]
 
 def main(today):
     user_counts = get_events(today)
@@ -54,7 +54,7 @@ def main(today):
             project_id=keen_project,
             write_key=write_key,
         )
-        client.add_event('user_count_analytics', user_counts)
+        client.add_events({'user_count_analytics': user_counts})
     else:
         print(user_counts)
 
