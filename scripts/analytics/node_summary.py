@@ -2,6 +2,7 @@ import logging
 import argparse
 from modularodm import Q
 from dateutil.parser import parse
+from datetime import timedelta, datetime
 
 from website.app import init_app
 from website.models import Node
@@ -12,14 +13,24 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def get_events(end_date=None):
+def get_events(date=None):
+    """Count how many nodes exist.
+    If no end_datetime is given, include all nodes up until the point when the script was called.
+    If an end_datetime is given, include all nodes that were created up through the end of that date.
+    """
+    log_date = datetime.utcnow()
+    if date:
+        log_date = date + timedelta(1)
+
+    logger.info('Gathering a count of nodes up until (but not including) {}'.format(log_date.isoformat()))
+
     node_query = (
         Q('is_deleted', 'ne', True) &
         Q('is_folder', 'ne', True)
     )
 
-    if end_date:
-        node_query = node_query & Q('date_created', 'lt', end_date)
+    if date:
+        node_query = node_query & Q('date_created', 'lt', date + timedelta(1))
 
     registration_query = node_query & Q('is_registration', 'eq', True)
     non_registration_query = node_query & Q('is_registration', 'eq', False)
@@ -54,7 +65,7 @@ def get_events(end_date=None):
         }
     }
 
-    if not end_date:
+    if not date:
         totals['nodes'].update({
             'public': Node.find(node_public_query).count(),
             'private': Node.find(node_private_query).count()
@@ -77,8 +88,8 @@ def get_events(end_date=None):
             'withdrawn': Node.find(registered_project_retracted_query).count(),
         })
 
-    if end_date:
-        totals['keen'] = {'timestamp': end_date.isoformat()}
+    if date:
+        totals['keen'] = {'timestamp': date.isoformat()}
 
     logger.info('Nodes counted. Nodes: {}, Projects: {}, Registered Nodes: {}, Registered Projects: {}'.format(totals['nodes']['total'], totals['projects']['total'], totals['registered_nodes']['total'], totals['registered_projects']['total']))
     return [totals]
@@ -86,16 +97,18 @@ def get_events(end_date=None):
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Get node counts!.')
-    parser.add_argument('-e', '--end', dest='end_date', required=False)
+    parser.add_argument('-d', '--date', dest='date', required=False)
 
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
-    end_date = parse(args.end_date) if args.end_date else None
+    date = parse(args.date).date() if args.date else None
+    if date:
+        date = datetime(date.year, date.month, date.day)  # make sure the day starts at midnight
 
-    node_count = get_events(end_date)
+    node_count = get_events(date)
     keen_project = keen_settings['private']['project_id']
     write_key = keen_settings['private']['write_key']
     if keen_project and write_key:
