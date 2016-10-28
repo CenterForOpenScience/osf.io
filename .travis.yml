@@ -21,8 +21,10 @@ env:
   global:
     - PROJECT_DIR="$PWD"
     - WHEELHOUSE="$HOME/.cache/wheelhouse"
-    - TOKU_HUGE_PAGES_OK=1
-    - TOKUMX_ARCHIVE="tokumx-2.0.0-linux-x86_64-main.tar.gz"
+    - LIBICU_DEB="libicu57_57.1-4_amd64.deb"
+    - LIBXML2_DEB="libxml2_2.9.4+dfsg1-2_amd64.deb"
+    - LIBPQ_DEB="libpq5_9.5.4-1_amd64.deb"
+    - POSTGRES_DEB="postgresql-9.5_9.5.4-3_amd64.deb"
     - ELASTICSEARCH_ARCHIVE="elasticsearch-1.5.0.tar.gz"
     - LIBJEMALLOC_DEB="libjemalloc1_3.5.1-2_amd64.deb"
     - LIBPCRE_DEB="libpcre3_8.31-2ubuntu2.3_amd64.deb"
@@ -38,23 +40,35 @@ before_install:
       mkdir -p $HOME/.cache/downloads
       mkdir -p $HOME/.cache/pip
       mkdir -p $HOME/.cache/wheelhouse
-    # tokumx
+    # postgres
     - |
       cd $HOME/.cache/downloads
 
-      if [ ! -f "$TOKUMX_ARCHIVE" ]; then
-        curl -SLO https://s3.amazonaws.com/tokumx-2.0.0/$TOKUMX_ARCHIVE
+      if [ ! -f "$LIBICU_DEB" ]; then
+        curl -SLO http://security.ubuntu.com/ubuntu/pool/main/i/icu/$LIBICU_DEB
       fi
 
-      if [ ! -f "$TOKUMX_ARCHIVE.md5" ]; then
-        curl -SLO https://s3.amazonaws.com/tokumx-2.0.0/$TOKUMX_ARCHIVE.md5
+      if [ ! -f "$LIBXML2_DEB" ]; then
+        curl -SLO http://security.ubuntu.com/ubuntu/pool/main/libx/libxml2/$LIBXML2_DEB
       fi
 
-      md5sum --check $TOKUMX_ARCHIVE.md5
+      if [ ! -f "$LIBPQ_DEB" ]; then
+        curl -SLO http://security.ubuntu.com/ubuntu/pool/main/p/postgresql-9.5/$LIBPQ_DEB
+      fi
 
-      mkdir -p /tmp/tokumx/data
-      tar xzf $TOKUMX_ARCHIVE -C /tmp/tokumx --strip-components=1
-    - /tmp/tokumx/bin/mongod --dbpath=/tmp/tokumx/data > /dev/null &
+      if [ ! -f "$POSTGRES_DEB" ]; then
+        curl -SLO http://security.ubuntu.com/ubuntu/pool/main/p/postgresql-9.5/$POSTGRES_DEB
+      fi
+
+      dpkg -x $LIBICU_DEB /tmp/libicu
+      dpkg -x $LIBXML2_DEB /tmp/libxml2
+      dpkg -x $LIBPQ_DEB /tmp/libpq
+      dpkg -x $POSTGRES_DEB /tmp/postgres
+    - |
+      export LD_LIBRARY_PATH=/tmp/libxml2/usr/lib/x86_64-linux-gnu:/tmp/libicu/usr/lib/x86_64-linux-gnu:/tmp/libpq/usr/lib/x86_64-linux-gnu:/tmp/postgres/usr/lib/postgresql/9.5/lib
+      mkdir -p /var/run/postgresql
+      /tmp/postgres/usr/lib/postgresql/9.5/bin/initdb /tmp/postgres/data --nosync
+      /tmp/postgres/usr/lib/postgresql/9.5/bin/postgres -k /tmp -D /tmp/postgres/data > /dev/null &
     # elasticsearch
     - |
       cd $HOME/.cache/downloads
