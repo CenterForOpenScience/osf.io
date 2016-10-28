@@ -1,10 +1,13 @@
 from nose.tools import *  # flake8: noqa
 
 from framework.auth.core import Auth
+from framework.mongo import database as db
 from tests.base import ApiTestCase
 from api.base.settings.defaults import API_BASE
+from api.base.exceptions import Conflict
 
 from website.files.models.osfstorage import OsfStorageFile
+from website.preprints.model import PreprintService
 from tests.factories import PreprintFactory, AuthUserFactory, ProjectFactory, SubjectFactory
 from api_tests import utils as test_utils
 
@@ -36,6 +39,40 @@ class TestPreprintDetail(ApiTestCase):
     def test_preprint_top_level(self):
         assert_equal(self.data['type'], 'preprints')
         assert_equal(self.data['id'], self.preprint._id)
+
+class TestPreprintDelete(ApiTestCase):
+    def setUp(self):
+        super(TestPreprintDelete, self).setUp()
+        self.user = AuthUserFactory()
+        self.unpublished_preprint = PreprintFactory(creator=self.user, is_published=False)
+        self.published_preprint = PreprintFactory(creator=self.user)
+        self.url = '/{}preprints/{{}}/'.format(API_BASE)
+    
+    def test_can_delete_unpublished(self):
+        previous_ids = [doc['_id'] for doc in db['preprintservice'].find({}, {'_id':1})]
+        self.app.delete(self.url.format(self.unpublished_preprint._id), auth=self.user.auth)
+        remaining_ids = [doc['_id'] for doc in db['preprintservice'].find({}, {'_id':1})]
+        assert_in(self.unpublished_preprint._id, previous_ids)
+        assert_not_in(self.unpublished_preprint._id, remaining_ids)
+
+    def test_cannot_delete_published(self):
+        previous_ids = [doc['_id'] for doc in db['preprintservice'].find({}, {'_id':1})]
+        res = self.app.delete(self.url.format(self.published_preprint._id), auth=self.user.auth, expect_errors=True)
+        remaining_ids = [doc['_id'] for doc in db['preprintservice'].find({}, {'_id':1})]
+        assert_equal(res.status_code, 409)
+        assert_equal(previous_ids, remaining_ids)
+        assert_in(self.published_preprint._id, remaining_ids)
+
+    def test_deletes_only_requested_document(self):
+        previous_ids = [doc['_id'] for doc in db['preprintservice'].find({}, {'_id':1})]
+        res = self.app.delete(self.url.format(self.unpublished_preprint._id), auth=self.user.auth)
+        remaining_ids = [doc['_id'] for doc in db['preprintservice'].find({}, {'_id':1})]
+
+        assert_in(self.unpublished_preprint._id, previous_ids)
+        assert_in(self.published_preprint._id, previous_ids)
+
+        assert_not_in(self.unpublished_preprint._id, remaining_ids)
+        assert_in(self.published_preprint._id, remaining_ids)
 
 
 class TestPreprintUpdate(ApiTestCase):
@@ -120,7 +157,7 @@ class TestPreprintUpdate(ApiTestCase):
         assert_not_equal(self.preprint.primary_file, file_for_project)
 
     def test_update_doi(self):
-        new_doi = '10.123/456/789'
+        new_doi = '10.1234/ASDFASDF'
         assert_not_equal(self.preprint.article_doi, new_doi)
         update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"doi": new_doi})
 

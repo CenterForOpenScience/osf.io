@@ -1620,7 +1620,7 @@ class TestNode(OsfTestCase):
             Node(preprint_article_doi='doi:10.10.1038/nwooo1170').save()  # should save without doi: prefix
 
     def test_validate_good_doi(self):
-        doi = '10.10.1038/nwooo1170'
+        doi = '10.11038/nwooo1170'
         self.node.preprint_article_doi = doi
         self.node.save()
         assert_equal(self.node.preprint_article_doi, doi)
@@ -4636,6 +4636,15 @@ class TestUnregisteredUser(OsfTestCase):
         valid = self.user.get_unclaimed_record(self.project._primary_key)['token']
         assert_true(self.user.verify_claim_token(valid, project_id=self.project._primary_key))
         assert_false(self.user.verify_claim_token('invalidtoken', project_id=self.project._primary_key))
+
+    def test_verify_claim_token_with_no_expiration_date(self):
+        # Legacy records may not have an 'expires' key
+        self.add_unclaimed_record()
+        record = self.user.get_unclaimed_record(self.project._primary_key)
+        del record['expires']
+        self.user.save()
+        token = record['token']
+        assert_true(self.user.verify_claim_token(token, project_id=self.project._primary_key))
 
     def test_claim_contributor(self):
         self.add_unclaimed_record()

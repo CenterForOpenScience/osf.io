@@ -56,7 +56,6 @@ def get_globals():
     user = _get_current_user()
 
     user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in user.affiliated_institutions] if user else []
-    all_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in Institution.find().sort('name')]
     location = geolite2.lookup(request.remote_addr) if request.remote_addr else None
     if request.host_url != settings.DOMAIN:
         try:
@@ -79,7 +78,6 @@ def get_globals():
         'user_api_url': user.api_url if user else '',
         'user_entry_point': metrics.get_entry_point(user) if user else '',
         'user_institutions': user_institutions if user else None,
-        'all_institutions': all_institutions,
         'display_name': get_display_name(user.fullname) if user else '',
         'anon': {
             'continent': getattr(location, 'continent', None),
@@ -580,15 +578,7 @@ def make_url_map(app):
             '/register/',
             'get',
             auth_views.auth_register,
-            OsfWebRenderer('public/login.mako', trust=False)
-        ),
-
-        # create user account via api
-        Rule(
-            '/api/v1/register/',
-            'post',
-            auth_views.register_user,
-            json_renderer
+            OsfWebRenderer('public/register.mako', trust=False)
         ),
 
         # osf login and campaign login
@@ -599,7 +589,15 @@ def make_url_map(app):
             ],
             'get',
             auth_views.auth_login,
-            OsfWebRenderer('public/login.mako', trust=False)
+            notemplate
+        ),
+
+        # create user account via api
+        Rule(
+            '/api/v1/register/',
+            'post',
+            auth_views.register_user,
+            json_renderer
         ),
 
         # osf logout and cas logout

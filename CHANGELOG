@@ -2,6 +2,47 @@
 Changelog
 *********
 
+0.97.0 (2016-10-20)
+===================
+- API v2 Versioning
+- API v2 Redirect swagger docs to Browseable API
+- Fix wiki formatting for legacy wiki pages
+- Ensure bad file moves don't delete files
+- API v2 Make private nodes private in inter-node file moves
+- Don't create user twice in claim edge case
+- Retain formatting in preregistration
+- Render wiki on project summary widget properly in all cases
+- Fixes for throttling
+- Allow search to find words separated by things that aren't spaces
+- API v2.1 Make pagination meta match JSON API Spec
+- Move institution login to CAS
+- API v2 Create file GUIDs
+- Standardize terminology: registration form
+- Clarify that prereg comments are not registered
+- Decouple identifiers from registrations
+- API Expose latest file version
+- Update Fangorn to use WB V1 API
+- Add My Preprints to My Projects
+- Update "this project" box at the top of registration overview page
+- Add change folder toggle button
+- Improvements to invoke tasks for dockerization
+- Support test-level database isolation
+
+Migrations
+-----------
+
+- python -m scripts.encrypt_external_accounts_unicode
+
+0.96.0 (2016-10-12)
+===================
+- Add ownCloud addon
+- Encrypt addon credentials
+
+Migrations
+-----------
+
+- python -m scripts.encrypt_external_accounts
+
 0.95.0 (2016-10-05)
 ===================
 - Replace GPL-only django-queryset-csv library (the last of the GPL)

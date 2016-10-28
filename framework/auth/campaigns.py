@@ -27,7 +27,8 @@ CAMPAIGNS = ImmutableDict({
     'osf-preprints': {
         'system_tag': 'osf_preprints',
         'redirect_url': lambda: furl.furl(DOMAIN).add(path='preprints/').url,
-        'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS_OSF
+        'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS_OSF,
+        'proxy_login': True,
     }
 })
 
@@ -51,6 +52,13 @@ def campaign_for_user(user):
         # campagin tag in their system_tags.
         if config['system_tag'] in user.system_tags:
             return campaign
+
+
+def is_proxy_login(campaign):
+    if campaign not in CAMPAIGNS:
+        raise HTTPError(http.BAD_REQUEST)
+    else:
+        return CAMPAIGNS[campaign].get('proxy_login')
 
 
 def campaign_url_for(campaign):

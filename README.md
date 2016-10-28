@@ -227,9 +227,7 @@ On Mac OS, we recommend using Homebrew to install external dependencies.
 - Install libxml2 and libxslt (required for installing python lxml)
 - Install Java (if not already installed)
 - Install elasticsearch
-- Install GPG
 - Install python requirements (`invoke requirements --dev --addons`)
-- Create a GPG key (`invoke encryption`)
 - Install npm
 - Install node and bower packages
 - Build assets (`invoke assets --dev`)
@@ -498,6 +496,8 @@ $ inv assets -dw
 The -w option puts you in "watch" mode: the script will continue running so that assets will be 
 built when a file changes.
 
+### Setting up the Admin Module
+- See `admin/README.md` for information on how to set up the OSF Admin module
 
 ### Getting application credentials
 

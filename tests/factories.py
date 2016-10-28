@@ -236,7 +236,7 @@ class PreprintProviderFactory(ModularOdmFactory):
 class PreprintFactory(ModularOdmFactory):
     creator = None
     category = 'project'
-    doi = Sequence(lambda n: '10.123/{}'.format(n))
+    doi = Sequence(lambda n: '10.12345/0{}'.format(n))
     provider = SubFactory(PreprintProviderFactory)
     external_url = 'http://hello.org'
 
@@ -281,6 +281,9 @@ class PreprintFactory(ModularOdmFactory):
             subjects = subjects or [[SubjectFactory()._id]]
             preprint.set_subjects(subjects, auth=auth)
             preprint.set_published(is_published, auth=auth)
+        
+        if not preprint.is_published:
+            project._has_abandoned_preprint = True
 
         project.preprint_article_doi = doi
         project.save()
