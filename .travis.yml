@@ -51,10 +51,7 @@ before_install:
     - |
       export LD_LIBRARY_PATH=/tmp/libxml2/usr/lib/x86_64-linux-gnu
       /tmp/postgres/usr/lib/postgresql/9.5/bin/initdb /tmp/postgres/data --nosync
-      sleep 5
-      /tmp/postgres/usr/lib/postgresql/9.5/bin/postgres -k /tmp -D /tmp/postgres/data
-      sleep 5
-      /tmp/postgres/usr/lib/postgresql/9.5/bin/postgres -k /tmp -D /tmp/postgres/data -p 54322
+      /tmp/postgres/usr/lib/postgresql/9.5/bin/postgres -k /tmp -D /tmp/postgres/data -p 54321 > /dev/null &
     # elasticsearch
     - |
       cd $HOME/.cache/downloads
