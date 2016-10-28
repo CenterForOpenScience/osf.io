@@ -4,7 +4,7 @@ from website.app import init_app
 from website.models import Subject, PreprintProvider
 
 def find_child_and_grandchild(grandpa, childIndex=0):
-    parent = Subject.find('parents', 'eq', grandpa)[childIndex]
+    parent = Subject.find(Q('parents', 'eq', grandpa))[childIndex]
     try:
         child = Subject.find(Q('parents', 'eq', parent))[0]
     except IndexError:
@@ -32,7 +32,7 @@ def create_subject_rules():
     return rules
 
 def main():
-    provider = PreprintProvider.find()
+    provider = PreprintProvider.find()[0]
     provider.subjects_acceptable = create_subject_rules()
     provider.save()
 
