@@ -362,3 +362,12 @@ class TestShowIfVersion(DbTestCase):
         req = make_drf_request_with_version(version='2.1')
         data = RegistrationSerializer(self.registration, context={'request': req}).data['data']
         assert_not_in('node_links', data['attributes'])
+
+
+class TestDateByVersion(DbTestCase):
+
+    # possible date formats:
+    #     YYYY-mm-ddTHH:MM:SS
+    #     YYYY-mm-ddTHH:MM:SS.ffffff
+
+    pass

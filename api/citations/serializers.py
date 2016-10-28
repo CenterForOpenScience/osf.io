@@ -1,6 +1,6 @@
 from rest_framework import serializers as ser
 
-from api.base.serializers import JSONAPISerializer
+from api.base.serializers import JSONAPISerializer, DateByVersion
 
 
 class CitationSerializer(JSONAPISerializer):
@@ -12,7 +12,7 @@ class CitationSerializer(JSONAPISerializer):
     ])
     id = ser.CharField(source='_id', required=True)
     title = ser.CharField(max_length=200)
-    date_parsed = ser.DateTimeField(read_only=True, help_text='Datetime the csl file was last parsed')
+    date_parsed = DateByVersion(read_only=True, help_text='Datetime the csl file was last parsed')
 
     short_title = ser.CharField(max_length=500)
     summary = ser.CharField(max_length=200)

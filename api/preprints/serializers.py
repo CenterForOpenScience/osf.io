@@ -4,7 +4,8 @@ from rest_framework import serializers as ser
 
 from api.base.serializers import (
     JSONAPISerializer, IDField, JSONAPIListField, LinksField,
-    RelationshipField, JSONAPIRelationshipSerializer, relationship_diff
+    RelationshipField, JSONAPIRelationshipSerializer, relationship_diff,
+    DateByVersion,
 )
 from api.base.exceptions import Conflict, RelationshipPostMakesNoChanges
 from api.base.utils import absolute_reverse, get_user_auth
@@ -40,8 +41,8 @@ class PreprintSerializer(JSONAPISerializer):
     title = ser.CharField(required=False)
     subjects = JSONAPIListField(child=TaxonomyField(), required=False, source='preprint_subjects')
     provider = ser.CharField(source='preprint_provider', required=False)
-    date_created = ser.DateTimeField(read_only=True, source='preprint_created')
-    date_modified = ser.DateTimeField(read_only=True)
+    date_created = DateByVersion(read_only=True, source='preprint_created')
+    date_modified = DateByVersion(read_only=True)
     id = IDField(source='_id', required=False)
     abstract = ser.CharField(source='description', required=False)
     tags = JSONAPIListField(child=NodeTagField(), required=False)
