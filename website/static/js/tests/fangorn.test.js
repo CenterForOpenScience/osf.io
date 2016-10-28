@@ -17,7 +17,6 @@ describe('fangorn', () => {
         // folder setup
         var folder;
         var item;
-        var children;
         var getItem = function(kind, id){
             if(typeof id === 'undefined'){
                 id = 2;
@@ -88,6 +87,12 @@ describe('fangorn', () => {
                 folder.parentID = 0;
                 assert.equal(Fangorn.isInvalidDropFolder(folder), true);
             });
+
+            it('invalid drop if inProgress', () => {
+                folder = getItem('folder');
+                folder.inProgress = true;
+                assert.equal(Fangorn.isInvalidDropFolder(folder), true);
+            });            
 
             it('invalid drop if not folder', () => {
                 assert.equal(Fangorn.isInvalidDropFolder(getItem()), true);
@@ -183,6 +188,13 @@ describe('fangorn', () => {
                 assert.equal(Fangorn.isInvalidDropItem(folder, item, false, false), true);
             });
 
+            it('invalid drop if inProgress', () => {
+                folder = getItem('folder', 2);
+                item = getItem('file', 3);
+                item.inProgress = true;
+                assert.equal(Fangorn.isInvalidDropItem(folder, item, false, false), true);
+            });            
+
             it('valid drop if can be folder and is folder', () => {
                 folder = getItem('folder', 2);
                 item = getItem('folder', 3);
@@ -223,7 +235,7 @@ describe('fangorn', () => {
                 item = getItem('folder', 3);
                 item.data.provider = 'figshare';
                 item.data.extra = {'status' : 'public'};
-                assert.equal(Fangorn.isInvalidDropItem(folder, item, false, false), true)
+                assert.equal(Fangorn.isInvalidDropItem(folder, item, false, false), true);
             });            
 
         });
@@ -273,31 +285,28 @@ describe('fangorn', () => {
             });
         });
 
-        describe('getAllChildren', () => {
-            it('no children returns empty array', () => {
-                children = Fangorn.getAllChildren(getItem('folder'));
-                assert.equal(children.length, 0);
+        describe('hasInvalidChildren', () => {
+            it('valid drop if no children', () => {
+                folder = getItem('folder', 2);
+                item = getItem('file', 3);
+                assert.equal(Fangorn.hasInvalidChildren(folder, item), false);
             });
 
-            it('One child returns correct array', () => {
-                folder = getItem('folder');
-                folder.children = [getItem('file', 3)]
-                children = Fangorn.getAllChildren(folder);
-                assert.equal(children.length, 1);
-                assert.include(children, 3);
+            it('invalid drop if item is parent', () => {
+                folder = getItem('folder', 2);
+                item = getItem('file', 3);
+                item.children = [folder];
+                assert.equal(Fangorn.hasInvalidChildren(folder, item), true);
             });
 
-            it('Two nested child returns correct array', () => {
-                folder = getItem('folder');
-                item = getItem('folder', 3);
-                item.children = [getItem('file', 4)];
-                folder.children = [item];
-                children = Fangorn.getAllChildren(folder);
-                assert.equal(children.length, 2);
-                assert.include(children, 3);
-                assert.include(children, 4);
-            });                
-
+            it('invalid drop if child inProgess', () => {
+                folder = getItem('folder', 2);
+                item = getItem('file', 3);
+                var item2 = getItem('file', 4);
+                item2.inProgress = true;
+                item.children = [item2];
+                assert.equal(Fangorn.hasInvalidChildren(folder, item), true);
+            });              
         });
     });
 });
