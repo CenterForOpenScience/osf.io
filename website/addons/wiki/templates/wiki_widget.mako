@@ -1,6 +1,6 @@
 <%inherit file="project/addon/widget.mako"/>
 
-<div id="markdownRender" class="break-word scripted">
+<div id="markdownRender" class="break-word scripted preview">
     % if wiki_content:
         ${wiki_content}
     % else:
@@ -23,3 +23,11 @@
         }
     })
 </script>
+
+<style>
+.preview {
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+</style>
