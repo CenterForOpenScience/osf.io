@@ -1,11 +1,11 @@
 import datetime
 from framework.auth.core import User
 from tests.base import OsfTestCase
-from tests.factories import UserFactory, NodeLogFactory, RegistrationFactory, ProjectFactory, WithdrawnRegistrationFactory, NodeFactory
+from tests.factories import UserFactory, NodeLogFactory
 from nose.tools import *  # PEP8 asserts
 from website.project.model import Node
 
-from scripts.analytics.node_logs import get_node_log_events
+from scripts.analytics.node_log_events import get_events
 
 
 class TestNodeLogAnalytics(OsfTestCase):
@@ -30,7 +30,7 @@ class TestNodeLogAnalytics(OsfTestCase):
 
         self.end_date = datetime.datetime.utcnow()
 
-        self.results = get_node_log_events(self.end_date)
+        self.results = get_events(self.end_date)
 
     def tearDown(self):
         super(TestNodeLogAnalytics, self).tearDown()
