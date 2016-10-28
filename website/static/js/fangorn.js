@@ -2381,9 +2381,9 @@ function getAllChildren(item){
 }
 
 function isInvalidDropFolder(folder) {
-    return (
+    if (
         // cannot drop on root line
-        folder.parentId === 0 ||
+        folder.parentID === 0 ||
         // cannot drop on files
         folder.data.kind !== 'folder' ||
         // must have permission
@@ -2394,16 +2394,19 @@ function isInvalidDropFolder(folder) {
         folder.data.status ||
         // cannot add to dataverse
         folder.data.provider === 'dataverse'
-    );
+    ) {
+        return true;
+    }
+    return false;
 }
 
 // Disallow moving INTO a public figshare folder
-function isInvalidFigshareDropFolder(folder) {
+function isInvalidFigshareDrop(item) {
     return (
-        folder.data.provider === 'figshare' &&
-        folder.data.extra &&
-        folder.data.extra.status &&
-        folder.data.extra.status === 'public'
+        item.data.provider === 'figshare' &&
+        typeof item.data.extra !== 'undefined' &&
+        typeof item.data.extra.status !== 'undefined' &&
+        item.data.extra.status === 'public'
     );
 }
 
@@ -2422,7 +2425,7 @@ function isInvalidDropItem(folder, item, cannotBeFolder, mustBeIntra) {
         (cannotBeFolder && item.data.kind === 'folder') ||
         (mustBeIntra && item.data.provider !== folder.data.provider) ||
         //Disallow moving OUT of a public figshare folder
-        (item.data.provider === 'figshare' && item.data.extra && item.data.status && item.data.status !== 'public')
+        isInvalidFigshareDrop(item)
     ) {
         return true;
     }
@@ -2444,7 +2447,7 @@ function getCopyMode(folder, items) {
     var mustBeIntra = (folder.data.provider === 'github');
     var cannotBeFolder = (folder.data.provider === 'figshare' || folder.data.provider === 'dataverse');
 
-    if (isInvalidDropFolder(folder) || isInvalidFigshareDropFolder(folder)){
+    if (isInvalidDropFolder(folder) || isInvalidFigshareDrop(folder)){
         return 'forbidden';
     }
 
@@ -2453,14 +2456,14 @@ function getCopyMode(folder, items) {
         if(isInvalidDropItem(folder, item, cannotBeFolder, mustBeIntra)){
             return 'forbidden';
         }
-        if(canMove){
-            mustBeIntra = mustBeIntra || item.data.provider === 'github';
-            canMove = allowedToMove(folder, item, mustBeIntra);
-        }
         // prevent dragging parent into child
         var children = getAllChildren(item);
         if(children.indexOf(folder.id) > -1){
             return 'forbidden';
+        }
+        if(canMove){
+            mustBeIntra = mustBeIntra || item.data.provider === 'github';
+            canMove = allowedToMove(folder, item, mustBeIntra);
         }
     }
 
@@ -2730,8 +2733,10 @@ Fangorn.DefaultOptions = tbOptions;
 
 module.exports = {
     Fangorn : Fangorn,
+    allowedToMove : allowedToMove,
     isInvalidDropFolder : isInvalidDropFolder,
-    isInvalidFigshareDropFolder : isInvalidFigshareDropFolder,
     isInvalidDropItem : isInvalidDropItem,
-    allowedToMove : allowedToMove
+    isInvalidFigshareDrop : isInvalidFigshareDrop,
+    getAllChildren : getAllChildren,
+    getCopyMode : getCopyMode
 };
