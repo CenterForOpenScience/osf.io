@@ -34,6 +34,7 @@ def get_events(date):
 
         node_log_events.append(event)
 
+    logger.info('NodeLogs counted. {} NodeLogs.'.format(len(node_log_events)))
     return node_log_events
 
 
@@ -74,8 +75,6 @@ def main():
             time.sleep(1)
     else:
         print(node_log_events)
-
-    logger.info('NodeLogs counted. {} NodeLogs.'.format(len(node_log_events)))
 
 if __name__ == '__main__':
     init_app()
