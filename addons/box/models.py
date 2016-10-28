@@ -92,7 +92,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     oauth_provider = Provider
     serializer = BoxSerializer
 
-    folder_id = models.TextField(default=None, null=True, blank=True)
+    folder_id = models.TextField(null=True, blank=True)
     folder_name = models.TextField(null=True, blank=True)
     folder_path = models.TextField(null=True, blank=True)
     user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
