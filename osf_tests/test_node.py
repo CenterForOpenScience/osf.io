@@ -11,12 +11,14 @@ import pytz
 from framework.exceptions import PermissionsError
 from website.util.permissions import READ, WRITE, ADMIN, expand_permissions
 from website.project.signals import contributor_added, contributor_removed
+from website.project.utils import TOP_LEVEL_PROJECT_QUERY
 from website.exceptions import NodeStateError
 from website.util import permissions, disconnected_from_listeners
 from website.citations.utils import datetime_to_csl
 from website import language
 
 from osf.models import (
+    AbstractNode,
     Node,
     Tag,
     NodeLog,
@@ -135,6 +137,22 @@ def test_get_children():
     greatgrandchild_1 = NodeFactory(parent=grandchild_1)
 
     assert 20 == Node.objects.get_children(root).count()
+
+def test_top_level_project_query():
+    top_level1 = ProjectFactory(is_public=True)
+    top_level2 = ProjectFactory(is_public=True)
+    child1 = NodeFactory(parent=top_level1)
+    child2 = NodeFactory(parent=top_level2)
+
+    # top_level2 is linked to by another node
+    node = NodeFactory(is_public=True)
+    node.add_node_link(top_level2, auth=Auth(node.creator))
+
+    results = AbstractNode.find(TOP_LEVEL_PROJECT_QUERY)
+    assert top_level1 in results
+    assert top_level2 in results
+    assert child1 not in results
+    assert child2 not in results
 
 def test_license_searches_parent_nodes():
     license_record = NodeLicenseRecordFactory()
