@@ -1,6 +1,7 @@
 import datetime as dt
 import logging
 import re
+import urllib
 import urlparse
 import uuid
 from copy import deepcopy
@@ -966,10 +967,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
 
         base = website_settings.DOMAIN if external else '/'
         token = self.get_confirmation_token(email, force=force, renew=renew)
-        if external_id_provider:
-            return '{0}confirm/external/{1}/{2}/'.format(base, self._id, token)
-        else:
-            return '{0}confirm/{1}/{2}/'.format(base, self._id, token)
+        external = 'external/' if external_id_provider else ''
+        destination = '?{}'.format(urllib.urlencode({'destination': destination})) if destination else ''
+        return '{0}confirm/{1}{2}/{3}/{4}'.format(base, external, self._primary_key, token, destination)
 
     def register(self, username, password=None):
         """Registers the user.

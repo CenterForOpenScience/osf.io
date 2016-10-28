@@ -1900,6 +1900,17 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             return OsfStorageFileSerializer
         return FileSerializer
 
+    # overrides FilterMixin
+    def postprocess_query_param(self, key, field_name, operation):
+        # tag queries will usually be on Tag.name,
+        # ?filter[tags]=foo should be translated to Q('tags__name', 'eq', 'foo')
+        # But queries on lists should be tags, e.g.
+        # ?filter[tags]=foo,bar should be translated to Q('tags', 'isnull', True)
+        # ?filter[tags]=[] should be translated to Q('tags', 'isnull', True)
+        if field_name == 'tags':
+            if operation['value'] not in (list(), tuple()):
+                operation['source_field_name'] = 'tags__name'
+
     def get_default_queryset(self):
         # Don't bother going to waterbutler for osfstorage
         files_list = self.fetch_from_waterbutler()

@@ -10,7 +10,7 @@ from rest_framework.test import APIRequestFactory
 
 from website.util import api_v2_url
 from api.base import settings
-from api.base.middleware import TokuTransactionMiddleware, CorsMiddleware
+from api.base.middleware import CorsMiddleware
 from tests.base import ApiTestCase
 from osf_tests import factories
 
@@ -99,7 +99,7 @@ class TestCorsMiddleware(MiddlewareTestCase):
             processed = self.middleware.process_response(request, response)
         assert_not_in('Access-Control-Allow-Origin', response)
 
-    def test_non_institution_preflight_request_requesting_authorization_header_gets_cors_headers(self):        
+    def test_non_institution_preflight_request_requesting_authorization_header_gets_cors_headers(self):
         url = api_v2_url('users/me/')
         domain = urlparse("https://dinosaurs.sexy")
         request = self.request_factory.options(

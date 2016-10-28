@@ -76,7 +76,8 @@ def format_user(user):
         }))
     ]
 
-    person.attrs['affiliations'] = [GraphNode('affiliation', person=person, entity=GraphNode('institution', name=institution.name)) for institution in user.affiliated_institutions]
+    person.attrs['affiliations'] = [GraphNode('affiliation', person=person, entity=GraphNode('institution', name=institution))
+                                    for institution in user.affiliated_institutions.values_list('name', flat=True)]
 
     return person
 
@@ -119,8 +120,8 @@ def format_preprint(preprint):
         )
 
     preprint_graph.attrs['tags'] = [
-        GraphNode('throughtags', creative_work=preprint_graph, tag=GraphNode('tag', name=tag._id))
-        for tag in preprint.node.tags
+        GraphNode('throughtags', creative_work=preprint_graph, tag=GraphNode('tag', name=tag))
+        for tag in preprint.node.tags.values_list('name', flat=True)
     ]
 
     preprint_graph.attrs['subjects'] = [
@@ -128,8 +129,10 @@ def format_preprint(preprint):
         for subject in set(x['text'] for hier in preprint.get_subjects() for x in hier)
     ]
 
-    preprint_graph.attrs['contributors'] = [format_contributor(preprint_graph, user, bool(user._id in preprint.node.visible_contributor_ids), i) for i, user in enumerate(preprint.node.contributors)]
-    preprint_graph.attrs['institutions'] = [GraphNode('association', creative_work=preprint_graph, entity=GraphNode('institution', name=institution.name)) for institution in preprint.node.affiliated_institutions]
+    preprint_graph.attrs['contributors'] = [format_contributor(preprint_graph, user, bool(user._id in preprint.node.visible_contributor_ids), i)
+                                            for i, user in enumerate(preprint.node.contributors)]
+    preprint_graph.attrs['institutions'] = [GraphNode('association', creative_work=preprint_graph, entity=GraphNode('institution', name=institution))
+                                            for institution in preprint.node.affiliated_institutions.values_list('name', flat=True)]
 
     visited = set()
     to_visit = list(preprint_graph.get_related())

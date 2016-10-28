@@ -10,7 +10,7 @@ import pytz
 
 from framework.exceptions import PermissionsError
 from website.util.permissions import READ, WRITE, ADMIN, expand_permissions
-from website.project.signals import contributor_added, contributor_removed
+from website.project.signals import contributor_added, contributor_removed, after_create_registration
 from website.exceptions import NodeStateError
 from website.util import permissions, disconnected_from_listeners
 from website.citations.utils import datetime_to_csl
@@ -943,9 +943,10 @@ class TestPermissionMethods:
 class TestRegisterNode:
 
     def test_register_node_creates_new_registration(self, node, auth):
-        registration = node.register_node(get_default_metaschema(), auth, '', None)
-        assert type(registration) is Registration
-        assert node._id != registration._id
+        with disconnected_from_listeners(after_create_registration):
+            registration = node.register_node(get_default_metaschema(), auth, '', None)
+            assert type(registration) is Registration
+            assert node._id != registration._id
 
 # Copied from tests/test_models.py
 class TestAddUnregisteredContributor:
@@ -1371,9 +1372,10 @@ class TestNodeTraversals:
         NodeFactory(parent=comp2)
         reg = RegistrationFactory(project=proj)
         reg_ids = [reg._id] + [r._id for r in reg.get_descendants_recursive()]
+        orig_call_count = mock_update_search.call_count
         reg.delete_registration_tree(save=True)
         assert Node.find(Q('_id', 'in', reg_ids) & Q('is_deleted', 'eq', False)).count() == 0
-        assert mock_update_search.call_count == len(reg_ids)
+        assert mock_update_search.call_count == orig_call_count + len(reg_ids)
 
     @mock.patch('osf.models.node.AbstractNode.update_search')
     def test_delete_registration_tree_deletes_backrefs(self, mock_update_search):

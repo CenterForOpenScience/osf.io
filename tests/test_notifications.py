@@ -1214,7 +1214,7 @@ class TestMoveSubscription(NotificationTestCase):
             node=self.project,
             event_name='file_updated'
         )
-        self.sub.email_transactional.extend([self.user_1])
+        self.sub.email_transactional.add(self.user_1)
         self.sub.save()
         self.file_sub = factories.NotificationSubscriptionFactory(
             _id=self.project._id + '_xyz42_file_updated',
@@ -1299,11 +1299,11 @@ class TestMoveSubscription(NotificationTestCase):
         self.project.save()
         self.sub.email_digest.add(self.user_3)
         self.sub.save()
-        self.file_sub.email_transactional.extend([self.user_2])
+        self.file_sub.email_transactional.add(self.user_2)
         results = utils.users_to_remove('xyz42_file_updated', self.project, self.private_node)
         utils.move_subscription(results, 'xyz42_file_updated', self.project, 'abc42_file_updated', self.private_node)
         assert_equal({'email_transactional': [], 'email_digest': [self.user_3._id], 'none': []}, results)
-        assert_in(self.user_3, self.sub.email_digest)  # Is not removed from the project subscription.
+        assert_in(self.user_3, self.sub.email_digest.all())  # Is not removed from the project subscription.
 
     def test_user_node_subbed_and_not_removed(self):
         self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
@@ -1339,10 +1339,11 @@ class TestSendEmails(NotificationTestCase):
         self.node_subscription.save()
         self.user_subscription = factories.NotificationSubscriptionFactory(
             _id=self.user._id + '_' + 'global_comment_replies',
-            node=self.user,
-            event_name='global_comment_replies',
-            email_transactional=[self.user._id]
+            node=self.node,
+            event_name='global_comment_replies'
         )
+        self.user_subscription.email_transactional.add(self.user)
+        self.user_subscription.save()
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_no_subscription(self, mock_store):
@@ -1620,8 +1621,8 @@ class TestSendDigest(OsfTestCase):
     def test_group_notifications_by_user_digest(self):
         send_type = 'email_digest'
         d = factories.NotificationDigestFactory(
-            user_id=self.user_1._id,
             send_type=send_type,
+            event='comment_replies',
             timestamp=self.timestamp,
             message='Hello',
             node_lineage=[self.project._id]
@@ -1672,8 +1673,8 @@ class TestSendDigest(OsfTestCase):
     def test_send_users_email_called_with_correct_args(self, mock_send_mail):
         send_type = 'email_transactional'
         d = factories.NotificationDigestFactory(
-            user_id=factories.UserFactory()._id,
             send_type=send_type,
+            event='comment_replies',
             timestamp=timezone.now(),
             message='Hello',
             node_lineage=[factories.ProjectFactory()._id]
@@ -1700,7 +1701,7 @@ class TestSendDigest(OsfTestCase):
 
     def test_remove_sent_digest_notifications(self):
         d = factories.NotificationDigestFactory(
-            user_id=factories.UserFactory()._id,
+            event='comment_replies',
             timestamp=timezone.now(),
             message='Hello',
             node_lineage=[factories.ProjectFactory()._id]

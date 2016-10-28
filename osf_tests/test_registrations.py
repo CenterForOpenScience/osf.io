@@ -168,8 +168,8 @@ class TestRegisterNode:
         # Registration has the nodes
         assert registration._nodes.count() == 2
         assert(
-            list(registration._nodes.values_list('title', flat=True)) ==
-            list(project._nodes.values_list('title', flat=True))
+            set(registration._nodes.values_list('title', flat=True)) ==
+            set(project._nodes.values_list('title', flat=True))
         )
         # Nodes are copies and not the original versions
         for node in registration._nodes.all():
@@ -404,7 +404,7 @@ class TestNodeSanctionStates:
     def test_embargo_end_date(self):
         embargo = factories.EmbargoFactory()
         registration = Registration.find_one(Q('embargo', 'eq', embargo))
-        assert registration.embargo_end_date == embargo.end_date
+        assert registration.embargo_end_date == embargo.embargo_end_date
 
     def test_embargo_end_date_searches_parents(self):
         user = factories.UserFactory()
