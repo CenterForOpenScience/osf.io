@@ -2,6 +2,7 @@ import os
 
 from addons.base.apps import BaseAddonConfig
 from website import settings
+from website.addons.osfstorage import settings as addon_settings
 from website.addons.osfstorage import views
 
 
@@ -17,18 +18,11 @@ class OSFStorageAddonConfig(BaseAddonConfig):
 
     OWNERS = ['node']
 
-    WATERBUTLER_CREDENTIALS = {
-        'storage': {}
-    }
+    WATERBUTLER_CREDENTIALS = addon_settings.WATERBUTLER_CREDENTIALS
 
-    WATERBUTLER_SETTINGS = {
-        'storage': {
-            'provider': 'filesystem',
-            'folder': os.path.join(settings.BASE_PATH, 'osfstoragecache'),
-        }
-    }
+    WATERBUTLER_SETTINGS = addon_settings.WATERBUTLER_SETTINGS
 
-    WATERBUTLER_RESOURCE = 'folder'
+    WATERBUTLER_RESOURCE = addon_settings.WATERBUTLER_RESOURCE
 
     DISK_SAVING_MODE = settings.DISK_SAVING_MODE
 
