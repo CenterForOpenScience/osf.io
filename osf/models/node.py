@@ -79,7 +79,7 @@ from .base import BaseModel, GuidMixin, Guid, MODMCompatibilityQuerySet
 logger = logging.getLogger(__name__)
 
 class AbstractNodeQueryset(MODMCompatibilityQuerySet):
-    def get_children(self, root):
+    def get_children(self, root, primary_keys=False):
         sql = """
             WITH RECURSIVE
                 descendants AS (
@@ -107,7 +107,10 @@ class AbstractNodeQueryset(MODMCompatibilityQuerySet):
             row = cursor.fetchone()
             if not row:
                 return row
-            return AbstractNode.objects.filter(id__in=row[0])
+            if primary_keys:
+                return row[0]
+            else:
+                return AbstractNode.objects.filter(id__in=row[0])
 
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,

@@ -1,6 +1,5 @@
 import re
 from modularodm import Q
-from django.db.models import F
 from django.apps import apps
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed
@@ -280,11 +279,25 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
     ordering = ('-date_modified', )  # default ordering
 
-    def convert_key(self, *args, **kwargs):
-        key = super(NodeList, self).convert_key(*args, **kwargs)
-        if key == 'root':
-            return 'root__guids___id'
-        return key
+    # overrides ODMFilterMixin
+    def _operation_to_query(self, operation):
+        # We special case filters on root because root isn't a field; to get the children
+        # of a root, we use a custom manager method, Node.objects.get_children, and build
+        # a query from that
+        if operation['source_field_name'] == 'root':
+            child_pks = []
+            for root_guid in operation['value']:
+                root = get_object_or_error(Node, root_guid, display_name='root')
+                child_pks.extend(Node.objects.get_children(root=root, primary_keys=True))
+            return Q('id', 'in', child_pks)
+        elif operation['source_field_name'] == 'parent_node':
+            if operation['value']:
+                parent = get_object_or_error(Node, operation['value'], display_name='parent')
+                return Q('parent_nodes', 'eq', parent.id)
+            else:
+                return Q('parent_nodes', 'isnull', True)
+        else:
+            return super(NodeList, self)._operation_to_query(operation)
 
     # overrides FilterMixin
     def postprocess_query_param(self, key, field_name, operation):
@@ -297,11 +310,11 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
             if operation['value'] not in (list(), tuple()):
                 operation['source_field_name'] = 'tags__name'
 
-        # Handle filter[parent]=null
-        if field_name == 'parent':
-            if not operation['value']:
-                operation['source_field_name'] = 'root_id'
-                operation['value'] = F('id')
+        # # Handle filter[parent]=null
+        # if field_name == 'parent':
+        #     if not operation['value']:
+        #         operation['source_field_name'] = 'root_id'
+        #         operation['value'] = F('id')
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):

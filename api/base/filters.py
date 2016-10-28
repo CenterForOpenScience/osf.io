@@ -359,6 +359,9 @@ class ODMFilterMixin(FilterMixin):
 
         return query
 
+    def _operation_to_query(self, operation):
+        return Q(operation['source_field_name'], operation['op'], operation['value'])
+
     def query_params_to_odm_query(self, query_params):
         """Convert query params to a modularodm Query object."""
         filters = self.parse_query_params(query_params)
@@ -370,11 +373,11 @@ class ODMFilterMixin(FilterMixin):
                     # Query based on the DB field, not the name of the serializer parameter
                     if isinstance(data, list):
                         sub_query = functools.reduce(operator.and_, [
-                            Q(item['source_field_name'], item['op'], item['value'])
+                            self._operation_to_query(item)
                             for item in data
                         ])
                     else:
-                        sub_query = Q(data['source_field_name'], data['op'], data['value'])
+                        sub_query = self._operation_to_query(data)
 
                     sub_query_parts.append(sub_query)
 

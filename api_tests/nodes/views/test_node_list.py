@@ -17,6 +17,7 @@ from osf_tests.factories import (
     BookmarkCollectionFactory,
     CollectionFactory,
     ProjectFactory,
+    NodeFactory,
     RegistrationFactory,
     AuthUserFactory,
     UserFactory,
@@ -427,26 +428,50 @@ class TestNodeFiltering(ApiTestCase):
         res = self.app.get(url, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
 
-        root_nodes = Node.find(Q('is_public', 'eq', True) & Q('root', 'eq', root))
+        root_nodes = Node.objects.get_children(root=root).filter(is_public=True)
         assert_equal(len(res.json['data']), root_nodes.count())
+
+    def test_filtering_on_parent(self):
+        root = ProjectFactory(is_public=True)
+        parent = NodeFactory(parent=root, is_public=True)
+        parent2 = NodeFactory(is_public=True, parent=root)
+        child = NodeFactory(parent=parent, is_public=True)
+        child2 = NodeFactory(parent=parent, is_public=True)
+
+        url = '/{}nodes/?filter[parent]={}'.format(API_BASE, parent._id)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+
+        guids = [each['id'] for each in res.json['data']]
+        assert_in(child._id, guids)
+        assert_in(child2._id, guids)
+        assert_not_in(parent._id, guids)
+        assert_not_in(parent2._id, guids)
 
     def test_filtering_on_null_parent(self):
         # add some nodes TO be included
         new_user = AuthUserFactory()
         root = ProjectFactory(is_public=True)
-        ProjectFactory(is_public=True)
+        root2 = ProjectFactory(is_public=True)
         # Build up a some of nodes not to be included
         child = ProjectFactory(parent=root, is_public=True)
-        ProjectFactory(parent=root, is_public=True)
-        ProjectFactory(parent=child, is_public=True)
+        child2 = ProjectFactory(parent=root, is_public=True)
+        grandchild = ProjectFactory(parent=child, is_public=True)
 
         url = '/{}nodes/?filter[parent]=null'.format(API_BASE)
 
         res = self.app.get(url, auth=new_user.auth)
         assert_equal(res.status_code, 200)
 
-        public_root_nodes = Node.find(Q('is_public', 'eq', True) & Q('root_id', 'eq', F('id')))
+        public_root_nodes = Node.find(Q('is_public', 'eq', True) & Q('parent_nodes', 'isnull', True))
         assert_equal(len(res.json['data']), public_root_nodes.count())
+
+        guids = [each['id'] for each in res.json['data']]
+        assert_in(root._id, guids)
+        assert_in(root2._id, guids)
+        assert_not_in(child._id, guids)
+        assert_not_in(child2._id, guids)
+        assert_not_in(grandchild._id, guids)
 
     def test_filtering_on_title_not_equal(self):
         url = '/{}nodes/?filter[title][ne]=Project%20One'.format(API_BASE)
