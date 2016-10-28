@@ -525,7 +525,7 @@ function doItemOp(operation, to, from, rename, conflict) {
             provider: to.data.provider
         };
     }
-
+    from.inProgress = true;
     $.ajax({
         type: 'POST',
         beforeSend: $osf.setXHRAuthorization,
@@ -555,6 +555,7 @@ function doItemOp(operation, to, from, rename, conflict) {
         from.notify.update('Successfully ' + operation.passed + '.', 'success', null, 1000);
 
         if (xhr.status === 200) {
+            from.inProgress = false;
             to.children.forEach(function(child) {
                 if (child.data.name === from.data.name && child.id !== from.id) {
                     child.removeSelf();
@@ -2070,11 +2071,11 @@ var FGToolbar = {
 };
 
 /**
- * When multiple rows are selected remove those that are not in the parent
+ * When multiple rows are selected remove those that are not valid
  * @param {Array} rows List of item objects
  * @returns {Array} newRows Returns the revised list of rows
  */
-function filterRowsNotInParent(rows) {
+function filterRows(rows) {
     var tb = this;
     if (tb.multiselected().length < 2) {
         return tb.multiselected();
@@ -2088,8 +2089,16 @@ function filterRowsNotInParent(rows) {
         originalParent = originalRow.parentID;
         for (i = 0; i < rows.length; i++) {
             currentItem = rows[i];
+            // Filter rows that are no in the parent
             if (currentItem.parentID === originalParent && currentItem.id !== -1) {
-                newRows.push(rows[i]);
+                // Filter rows that have a rename/move/copy action in progress
+                if (typeof currentItem.inProgress === 'undefined' || currentItem.inProgress === false) {
+                    newRows.push(rows[i]);
+                } else {
+                    $osf.growl('Error', 'Please wait for current action to complete or refresh the page');
+                    $('.tb-row[data-id="' + rows[i].id + '"]').stop().css('background-color', '#D18C93')
+                        .animate({ backgroundColor: '#fff'}, 500, changeColor);
+                }
             } else {
                 $('.tb-row[data-id="' + rows[i].id + '"]').stop().css('background-color', '#D18C93')
                     .animate({ backgroundColor: '#fff'}, 500, changeColor);
@@ -2100,6 +2109,7 @@ function filterRowsNotInParent(rows) {
     tb.highlightMultiselect();
     return newRows;
 }
+
 
 /**
  * Helper function that turns parent open values to true to respective redraws can open the folder
@@ -2137,7 +2147,7 @@ function openParentFolders (item) {
         openParentFolders.call(tb, row);
     }    
     dismissToolbar.call(tb);
-    filterRowsNotInParent.call(tb, tb.multiselected());
+    filterRows.call(tb, tb.multiselected());
 
     if (tb.multiselected().length === 1){
         tb.select('#tb-tbody').removeClass('unselectable');
@@ -2446,7 +2456,6 @@ function getCopyMode(folder, items) {
     var canMove = true;
     var mustBeIntra = (folder.data.provider === 'github');
     var cannotBeFolder = (folder.data.provider === 'figshare' || folder.data.provider === 'dataverse');
-
     if (isInvalidDropFolder(folder) || isInvalidFigshareDrop(folder)){
         return 'forbidden';
     }
