@@ -1,4 +1,6 @@
 import logging
+import argparse
+import importlib
 from datetime import datetime
 
 from keen.client import KeenClient
@@ -11,18 +13,35 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-
-def gather_snapshot_events():
+def gather_snapshot_events(scripts=None):
     today = datetime.datetime.utcnow().date()
     logger.info('<---- Gatheirng snapshot data for right now: {} ---->'.format(today.isoformat()))
 
     keen_events = {}
-    keen_events.update({'addon_analytics': addon_events()})
+    if scripts:
+        for script in scripts:
+            try:
+                script_events = importlib.import_module('scripts.analytics.{}'.format(script))
+                keen_events.update({script: script_events.get_events()})
+            except ImportError as e:
+                logger.error(e)
+                logger.error('Error importing script - make sure the script specified is inside of scripts/analytics')
+
+    keen_events.update({'addon_snapshot': addon_events()})
 
     return keen_events
 
 
-def main():
+def parse_args():
+    parser = argparse.ArgumentParser(description='Populate keen counts!')
+    parser.add_argument(
+        '-as', '--analytics_scripts', nargs='+', dest='analytics_scripts', required=False,
+        help='Enter the names of scripts inside scripts/analytics you would like to run separated by spaces (ex: -as user_summary node_summary)'
+    )
+    return parser.parse_args()
+
+
+def main(scripts=None):
     """ Gathers a snapshot of analytics at the time the script was run,
     and only for that time. Cannot be back-dated.
     """
@@ -35,7 +54,7 @@ def main():
         )
     assert(client)
 
-    keen_events = gather_snapshot_events()
+    keen_events = gather_snapshot_events(scripts=None)
     client.add_events(keen_events)
 
 
