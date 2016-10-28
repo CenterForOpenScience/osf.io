@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from datetime import datetime
-
 import markdown
 from django.utils import timezone
-import pytz
 from flask import request
 
 from api.caching.tasks import ban_url
@@ -124,7 +121,7 @@ def send_comment_added_notification(comment, auth):
         parent_comment=target.referent.content if is_reply(target) else '',
         url=comment.get_comment_page_url()
     )
-    time_now = datetime.utcnow().replace(tzinfo=pytz.utc)
+    time_now = timezone.now()
     sent_subscribers = notify(
         event='comments',
         user=auth.user,
@@ -160,7 +157,7 @@ def send_mention_added_notification(comment, new_mentions, auth):
         new_mentions=new_mentions,
         url=comment.get_comment_page_url()
     )
-    time_now = datetime.utcnow().replace(tzinfo=pytz.utc)
+    time_now = timezone.now()
     notify_mentions(
         event='global_mentions',
         user=auth.user,
