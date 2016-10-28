@@ -17,6 +17,8 @@ env:
   global:
     - PROJECT_DIR="$PWD"
     - WHEELHOUSE="$HOME/.cache/wheelhouse"
+    - LIBC_DEB="libc6_2.24-3ubuntu1_amd64.deb"
+    - LIBSTDC_DEB="libstdc++6_6.2.0-10ubuntu1_amd64.deb"
     - LIBICU_DEB="libicu57_57.1-4_amd64.deb"
     - LIBXML2_DEB="libxml2_2.9.4+dfsg1-2_amd64.deb"
     - LIBPQ_DEB="libpq5_9.5.4-1_amd64.deb"
@@ -40,6 +42,14 @@ before_install:
     - |
       cd $HOME/.cache/downloads
 
+      if [ ! -f "$LIBC_DEB" ]; then
+        curl -SLO http://security.ubuntu.com/ubuntu/pool/main/g/glibc/$LIBC_DEB
+      fi
+
+      if [ ! -f "$LIBSTDC_DEB" ]; then
+        curl -SLO http://security.ubuntu.com/ubuntu/pool/main/g/gcc-6/$LIBSTDC_DEB
+      fi
+
       if [ ! -f "$LIBICU_DEB" ]; then
         curl -SLO http://security.ubuntu.com/ubuntu/pool/main/i/icu/$LIBICU_DEB
       fi
@@ -56,13 +66,14 @@ before_install:
         curl -SLO http://security.ubuntu.com/ubuntu/pool/main/p/postgresql-9.5/$POSTGRES_DEB
       fi
 
+      dpkg -x $LIBC_DEB /tmp/libc
+      dpkg -x $LIBSTDC_DEB /tmp/libstdc
       dpkg -x $LIBICU_DEB /tmp/libicu
       dpkg -x $LIBXML2_DEB /tmp/libxml2
       dpkg -x $LIBPQ_DEB /tmp/libpq
       dpkg -x $POSTGRES_DEB /tmp/postgres
     - |
-      export LD_LIBRARY_PATH=/tmp/libxml2/usr/lib/x86_64-linux-gnu:/tmp/libicu/usr/lib/x86_64-linux-gnu:/tmp/libpq/usr/lib/x86_64-linux-gnu:/tmp/postgres/usr/lib/postgresql/9.5/lib
-      mkdir -p /var/run/postgresql
+      export LD_LIBRARY_PATH=/tmp/libc/lib/x86_64-linux-gnu:/tmp/libstdc/usr/lib/x86_64-linux-gnu:/tmp/libxml2/usr/lib/x86_64-linux-gnu:/tmp/libicu/usr/lib/x86_64-linux-gnu:/tmp/libpq/usr/lib/x86_64-linux-gnu:/tmp/postgres/usr/lib/postgresql/9.5/lib
       /tmp/postgres/usr/lib/postgresql/9.5/bin/initdb /tmp/postgres/data --nosync
       /tmp/postgres/usr/lib/postgresql/9.5/bin/postgres -k /tmp -D /tmp/postgres/data > /dev/null &
     # elasticsearch
