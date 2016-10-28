@@ -479,12 +479,6 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, metric
                 echo=True
             )
 
-            # TODO: remove when osf-models test are moved to osf-models repo
-            osf_models_req_file = os.path.join(HERE, 'osf_tests', 'requirements.txt')
-            ctx.run(
-                pip_install(osf_models_req_file, constraints_file=CONSTRAINTS_PATH),
-                echo=True
-            )
         if metrics:  # then dev requirements
             req_file = os.path.join(HERE, 'requirements', 'metrics.txt')
             ctx.run(
