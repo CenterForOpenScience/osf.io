@@ -25,7 +25,7 @@ class IsPreprintFile(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         assert isinstance(obj, FileNode), 'obj must be a FileNode, got {}'.format(obj)
 
-        if request.method not in permissions.SAFE_METHODS and len(Node.find(Q('preprint_file', 'eq', obj))):
+        if request.method not in permissions.SAFE_METHODS and len(Node.find(Q('preprint_file', 'eq', obj) & Q('_has_abandoned_preprint', 'eq', False))):
             return False
 
         return True
