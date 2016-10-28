@@ -12,13 +12,23 @@ from osf.exceptions import ValidationError
 from psycopg2.extras import Json
 
 
+class NaiveDatetimeException(BaseException):
+    pass
+
+
 class DateTimeAwareJSONEncoder(DjangoJSONEncoder):
     def default(self, o):
         if isinstance(o, dt.datetime):
+            if o.tzinfo is None or o.tzinfo.utcoffset(o) is None:
+                raise NaiveDatetimeException('Tried to encode a naive datetime.')
             return dict(type='encoded_datetime', value=o.isoformat())
         elif isinstance(o, dt.date):
+            if o.tzinfo is None or o.tzinfo.utcoffset(o) is None:
+                raise NaiveDatetimeException('Tried to encode a naive date.')
             return dict(type='encoded_date', value=o.isoformat())
         elif isinstance(o, dt.time):
+            if o.tzinfo is None or o.tzinfo.utcoffset(o) is None:
+                raise NaiveDatetimeException('Tried to encode a naive time.')
             return dict(type='encoded_time', value=o.isoformat())
         elif isinstance(o, Decimal):
             return dict(type='encoded_decimal', value=str(o))
