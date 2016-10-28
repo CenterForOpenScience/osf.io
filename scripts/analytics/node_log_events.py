@@ -57,9 +57,10 @@ def main():
     """ Run when the script is accessed individually to send all results to keen.
     Gathers data and sends events in 5000 piece chunks.
     """
-    today = datetime.datetime.utcnow().date()
+    today = datetime.utcnow().date()
     args = parse_args()
     date = parse(args.end_date).date() if args.date else today
+    date = datetime(date.year, date.month, date.day)  # make sure the day starts at midnight
 
     node_log_events = get_events(date)
     keen_project = keen_settings['private']['project_id']
