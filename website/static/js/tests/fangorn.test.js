@@ -46,7 +46,14 @@ describe('fangorn', () => {
                 item = getItem('file', 3);
                 item.data.provider = 'github';
                 assert.equal(Fangorn.getCopyMode(folder, [item]), 'copy');
-            });            
+            });
+
+            it('invalid drop if folder.data undefined', () => {
+                folder = getItem('file', 2);
+                delete folder.data;
+                item = getItem('file', 3);
+                assert.equal(Fangorn.getCopyMode(folder, [item]), 'forbidden');
+            });                        
 
             it('invalid drop in isInvalidDropFolder', () => {
                 folder = getItem('file', 2);

@@ -558,7 +558,6 @@ function doItemOp(operation, to, from, rename, conflict) {
         from.notify.update('Successfully ' + operation.passed + '.', 'success', null, 1000);
 
         if (xhr.status === 200) {
-            from.inProgress = false;
             to.children.forEach(function(child) {
                 if (child.data.name === from.data.name && child.id !== from.id) {
                     child.removeSelf();
@@ -614,6 +613,8 @@ function doItemOp(operation, to, from, rename, conflict) {
         });
 
         orderFolder.call(tb, from.parent());
+    }).always(function(){
+        from.inProgress = false;
     });
 }
 
@@ -2458,6 +2459,10 @@ function allowedToMove(folder, item, mustBeIntra) {
 
 function getCopyMode(folder, items) {
     var tb = this;
+    // Prevents side effects from rare instance where folders not fully populated
+    if (typeof folder.data === 'undefined'){
+        return 'forbidden';
+    }
     var canMove = true;
     var mustBeIntra = (folder.data.provider === 'github');
     var cannotBeFolder = (folder.data.provider === 'figshare' || folder.data.provider === 'dataverse');
