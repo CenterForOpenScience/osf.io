@@ -2467,7 +2467,6 @@ function getCopyMode(folder, items) {
 
     for(var i = 0; i < items.length; i++) {
         var item = items[i];
-        if (typeof item.inProgress !== 'undefined' && item.inProgress)
         if(isInvalidDropItem(folder, item, cannotBeFolder, mustBeIntra)){
             return 'forbidden';
         }
