@@ -359,12 +359,13 @@ class AnonymizedRegexField(AuthorizedCharField):
     def get_attribute(self, obj):
         value = super(AnonymizedRegexField, self).get_attribute(obj)
 
-        user = self.context['request'].user
-        auth = auth_core.Auth(user)
-        if 'view_only' in self.context['request'].query_params:
-            auth.private_key = self.context['request'].query_params['view_only']
-            if has_anonymous_link(obj.node, auth):
-                value = re.sub(self.regex, self.replace, value)
+        if value:
+            user = self.context['request'].user
+            auth = auth_core.Auth(user)
+            if 'view_only' in self.context['request'].query_params:
+                auth.private_key = self.context['request'].query_params['view_only']
+                if has_anonymous_link(obj.node, auth):
+                    value = re.sub(self.regex, self.replace, value)
 
         return value
 
