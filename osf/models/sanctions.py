@@ -5,6 +5,8 @@ from dateutil.parser import parse as parse_date
 from django.apps import apps
 from django.conf import settings
 from django.db import models
+
+from osf.utils.fields import NonNaiveDatetimeField
 from website.prereg import utils as prereg_utils
 
 from framework.auth import Auth
@@ -71,8 +73,8 @@ class Sanction(ObjectIDMixin, BaseModel):
     # Expiration date-- Sanctions in the UNAPPROVED state that are older than their end_date
     # are automatically made ACTIVE by a daily cron job
     # Use end_date=None for a non-expiring Sanction
-    end_date = models.DateTimeField(null=True, blank=True, default=None)
-    initiation_date = models.DateTimeField(null=True, blank=True)  # auto_now=True)
+    end_date = NonNaiveDatetimeField(null=True, blank=True, default=None)
+    initiation_date = NonNaiveDatetimeField(null=True, blank=True)  # auto_now=True)
 
     state = models.CharField(choices=STATE_CHOICES,
                              default=UNAPPROVED,

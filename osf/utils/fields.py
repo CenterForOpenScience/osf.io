@@ -2,6 +2,11 @@ import jwe
 from django.db import models
 from website import settings
 
+from osf.utils.datetime_aware_jsonfield import NaiveDatetimeException
+
+SENSITIVE_DATA_KEY = jwe.kdf(settings.SENSITIVE_DATA_SECRET.encode('utf-8'),
+                             settings.SENSITIVE_DATA_SALT.encode('utf-8'))
+
 
 class LowercaseCharField(models.CharField):
     def get_prep_value(self, value):
@@ -9,9 +14,6 @@ class LowercaseCharField(models.CharField):
         if value is not None:
             value = value.lower()
         return value
-
-
-SENSITIVE_DATA_KEY = jwe.kdf(settings.SENSITIVE_DATA_SECRET.encode('utf-8'), settings.SENSITIVE_DATA_SALT.encode('utf-8'))
 
 
 class EncryptedTextField(models.TextField):
@@ -33,3 +35,11 @@ class EncryptedTextField(models.TextField):
 
     def from_db_value(self, value, expression, connection, context):
         return self.to_python(value)
+
+
+class NonNaiveDatetimeField(models.DateTimeField):
+    def get_prep_value(self, value):
+        value = super(NonNaiveDatetimeField, self).get_prep_value(value)
+        if value is not None and (value.tzinfo is None or value.tzinfo.utcoffset(value) is None):
+            raise NaiveDatetimeException('Tried to encode a naive datetime.')
+        return value

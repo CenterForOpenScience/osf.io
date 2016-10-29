@@ -31,6 +31,7 @@ from framework.auth.core import generate_verification_key
 from framework.sessions.utils import remove_sessions_for_user
 from framework.exceptions import PermissionsError
 from framework.sentry import log_exception
+from osf.utils.fields import NonNaiveDatetimeField
 from website import filters
 from website import mails
 from website import settings as website_settings
@@ -205,7 +206,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     #   'expires': <verification expiration time>
     # }
 
-    email_last_sent = models.DateTimeField(null=True, blank=True)
+    email_last_sent = NonNaiveDatetimeField(null=True, blank=True)
 
     # confirmed emails
     #   emails should be stripped of whitespace and lower-cased before appending
@@ -244,7 +245,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     # }
 
     # the date this user was registered
-    date_registered = models.DateTimeField(db_index=True, default=timezone.now,
+    date_registered = NonNaiveDatetimeField(db_index=True, default=timezone.now,
                                            )  # auto_now_add=True)
 
     # list of collaborators that this user recently added to nodes as a contributor
@@ -319,13 +320,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
     piwik_token = models.CharField(max_length=255, blank=True)
 
     # date the user last sent a request
-    date_last_login = models.DateTimeField(null=True, blank=True)
+    date_last_login = NonNaiveDatetimeField(null=True, blank=True)
 
     # date the user first successfully confirmed an email address
-    date_confirmed = models.DateTimeField(db_index=True, null=True, blank=True)
+    date_confirmed = NonNaiveDatetimeField(db_index=True, null=True, blank=True)
 
     # When the user was disabled.
-    date_disabled = models.DateTimeField(db_index=True, null=True, blank=True)
+    date_disabled = NonNaiveDatetimeField(db_index=True, null=True, blank=True)
 
     # when comments were last viewed
     comments_viewed_timestamp = DateTimeAwareJSONField(default=dict, blank=True)
