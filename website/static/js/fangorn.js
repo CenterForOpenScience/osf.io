@@ -2091,18 +2091,16 @@ function filterRows(rows) {
         for (i = 0; i < rows.length; i++) {
             currentItem = rows[i];
             // Filter rows that are no in the parent
-            if (currentItem.parentID === originalParent && currentItem.id !== -1) {
-                // Filter rows that have a rename/move/copy action in progress
-                if (typeof currentItem.inProgress === 'undefined' || currentItem.inProgress === false) {
-                    newRows.push(rows[i]);
-                } else {
-                    $osf.growl('Error', 'Please wait for current action to complete or refresh the page');
-                    $('.tb-row[data-id="' + rows[i].id + '"]').stop().css('background-color', '#D18C93')
-                        .animate({ backgroundColor: '#fff'}, 500, changeColor);
-                }
+            var inParent = currentItem.parentID === originalParent && currentItem.id !== -1;
+            var inProgress = typeof currentItem.inProgress !== 'undefined' && currentItem.inProgress;
+            if (inParent && !inProgress) {
+                newRows.push(rows[i]);
             } else {
                 $('.tb-row[data-id="' + rows[i].id + '"]').stop().css('background-color', '#D18C93')
                     .animate({ backgroundColor: '#fff'}, 500, changeColor);
+                if (inProgress) {
+                    $osf.growl('Error', 'Please wait for current action to complete');
+                }
             }
         }
     }
@@ -2427,9 +2425,9 @@ function isInvalidFigshareDrop(item) {
 
 function isInvalidDropItem(folder, item, cannotBeFolder, mustBeIntra) {
     if (
-        // improper node type?
+        // not a valid drop if is a node
         item.data.nodeType ||
-        // no roots
+        // cannot drop on roots
         item.data.isAddonRoot ||
         // no self drops
         item.id === folder.id ||
@@ -2437,6 +2435,7 @@ function isInvalidDropItem(folder, item, cannotBeFolder, mustBeIntra) {
         item.parentID === folder.id ||
         // no moving items from dataverse
         item.data.provider === 'dataverse' ||
+        // no dropping if waiting on waterbutler ajax
         item.inProgress ||
         (cannotBeFolder && item.data.kind === 'folder') ||
         (mustBeIntra && item.data.provider !== folder.data.provider) ||
