@@ -720,7 +720,10 @@ class User(GuidStoredObject, AddonModelMixin):
             record = self.get_unclaimed_record(project_id)
         except ValueError:  # No unclaimed record for given pid
             return False
-        return record['token'] == token and record['expires'] > dt.datetime.utcnow()
+        valid = record['token'] == token
+        if 'expires' in record:
+            valid = valid and record['expires'] > dt.datetime.utcnow()
+        return valid
 
     def get_claim_url(self, project_id, external=False):
         """
@@ -766,7 +769,7 @@ class User(GuidStoredObject, AddonModelMixin):
         :rtype: list
         :returns: Changed fields from the user save
         """
-        had_existing_password = bool(self.password)
+        had_existing_password = bool(self.password and self.is_confirmed)
         self.password = generate_password_hash(raw_password)
         if self.username == raw_password:
             raise ChangePasswordError(['Password cannot be the same as your email address'])
