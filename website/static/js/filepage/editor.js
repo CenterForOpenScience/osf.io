@@ -18,6 +18,10 @@ var model = {};
 // This stops the FileEditor Ajax from being called twice on load when
 // Mithril reloads the controller twice
 var FileFetcher = {
+    clear: function(){
+        self = this;
+        delete self.promise;
+    },
     fetch: function(url, reload){
         self = this;
         if(typeof self.promise === 'undefined' || reload){
@@ -92,6 +96,7 @@ var FileEditor = {
                 data: model.editor.getValue(),
                 beforeSend: $osf.setXHRAuthorization
             }).done(function () {
+                FileFetcher.clear();
                 model.editor.setReadOnly(false);
                 self.unthrottledStatus(oldstatus);
                 $(document).trigger('fileviewpage:reload');
