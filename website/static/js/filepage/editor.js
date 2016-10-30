@@ -82,6 +82,7 @@ var FileEditor = {
         };
 
         self.saveFile = $osf.throttle(function() {
+            delete FileFetcher.promise;
             var oldstatus = self.observables.status();
             model.editor.setReadOnly(true);
             self.unthrottledStatus('saving');
