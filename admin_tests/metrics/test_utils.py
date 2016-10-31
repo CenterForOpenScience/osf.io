@@ -1,3 +1,4 @@
+from django.utils import timezone
 from nose import tools as nt
 from datetime import timedelta, datetime
 
@@ -59,16 +60,16 @@ class TestMetricsGetDaysStatistics(AdminTestCase):
         NodeFactory(category='data')
 
     def test_time_now(self):
-        get_days_statistics(datetime.utcnow())
+        get_days_statistics(timezone.now())
         nt.assert_equal(OSFWebsiteStatistics.objects.count(), 1)
         nt.assert_equal(OSFWebsiteStatistics.objects.latest('date').projects, 2)
 
     def test_delta(self):
-        get_days_statistics(datetime.utcnow())
+        get_days_statistics(timezone.now())
         ProjectFactory()
         ProjectFactory()
         latest = OSFWebsiteStatistics.objects.latest('date')
-        get_days_statistics(datetime.utcnow(), latest)
+        get_days_statistics(timezone.now(), latest)
         even_later = OSFWebsiteStatistics.objects.latest('date')
         nt.assert_equal(even_later.delta_projects, 2)
 
@@ -102,14 +103,14 @@ class TestMetricsGetOSFStatistics(AdminTestCase):
 
 class TestMetricListDays(AdminTestCase):
     def test_five_days(self):
-        time_now = datetime.utcnow()
+        time_now = timezone.now()
         time_past = time_now - timedelta(days=5)
         dates = get_list_of_dates(time_past, time_now)
         nt.assert_equal(len(dates), 5)
         nt.assert_in(time_now, dates)
 
     def test_month_transition(self):
-        time_now = datetime.utcnow()
+        time_now = timezone.now()
         time_end = time_now - timedelta(
             days=(time_now.day - 2)
         )
@@ -118,7 +119,7 @@ class TestMetricListDays(AdminTestCase):
         nt.assert_equal(len(dates), 5)
 
     def test_off_by_seconds(self):
-        time_now = datetime.utcnow()
+        time_now = timezone.now()
         time_start = time_now - timedelta(
             seconds=DAY_LEEWAY + 1
         )
@@ -126,7 +127,7 @@ class TestMetricListDays(AdminTestCase):
         nt.assert_equal(len(dates), 1)
 
     def test_on_exact_time(self):
-        time_now = datetime.utcnow()
+        time_now = timezone.now()
         time_start = time_now - timedelta(
             seconds=DAY_LEEWAY
         )
@@ -134,7 +135,7 @@ class TestMetricListDays(AdminTestCase):
         nt.assert_equal(len(dates), 0)
 
     def test_just_missed_time(self):
-        time_now = datetime.utcnow()
+        time_now = timezone.now()
         time_start = time_now - timedelta(
             seconds=DAY_LEEWAY - 1
         )
@@ -144,7 +145,7 @@ class TestMetricListDays(AdminTestCase):
 
 class TestMetricPreviousMidnight(AdminTestCase):
     def test_midnight(self):
-        time_now = datetime.utcnow()
+        time_now = timezone.now()
         midnight = get_previous_midnight(time_now)
         nt.assert_equal(midnight.date(), time_now.date())
         nt.assert_equal(midnight.hour, 0)
@@ -153,7 +154,7 @@ class TestMetricPreviousMidnight(AdminTestCase):
         nt.assert_equal(midnight.microsecond, 1)
 
     def test_no_time_given(self):
-        time_now = datetime.utcnow()
+        time_now = timezone.now()
         midnight = get_previous_midnight()
         nt.assert_equal(midnight.date(), time_now.date())
 
@@ -176,7 +177,7 @@ class TestUserGet(AdminTestCase):
         self.user_4 = AuthUserFactory()
 
     def test_get_all_user_count(self):
-        time_now = datetime.utcnow()
+        time_now = timezone.now()
         count = get_active_user_count(time_now)
         nt.assert_equal(count, 2)
 

@@ -6,6 +6,7 @@ import itertools
 from operator import itemgetter
 
 from dateutil.parser import parse as parse_date
+from django.utils import timezone
 from flask import request, redirect
 
 from modularodm import Q
@@ -68,7 +69,7 @@ def validate_embargo_end_date(end_date_string, node):
     max embargo end date
     """
     end_date = parse_date(end_date_string, ignoretz=True)
-    today = datetime.datetime.utcnow()
+    today = timezone.now()
     if (end_date - today) <= settings.DRAFT_REGISTRATION_APPROVAL_PERIOD:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Invalid embargo end date',

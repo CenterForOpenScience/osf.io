@@ -5,6 +5,7 @@ import mock
 import datetime
 import unittest
 
+from django.utils import timezone
 from nose.tools import *  # noqa (PEP8 asserts)
 from tests.base import OsfTestCase, get_default_metaschema
 from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
@@ -28,7 +29,7 @@ from website.addons.github.tests.factories import GitHubAccountFactory
 
 
 class TestGitHubAuthViews(GitHubAddonTestCase, OAuthAddonAuthViewsTestCaseMixin):
-    
+
     @mock.patch(
         'website.addons.github.model.GitHubUserSettings.revoke_remote_oauth_access',
         mock.PropertyMock()
@@ -180,7 +181,7 @@ class TestGithubViews(OsfTestCase):
         url = self.project.api_url + 'beforeregister/'
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
         assert_true('GitHub' in res.json['prompts'][1])
-        
+
     def test_get_refs_sha_no_branch(self):
         with assert_raises(HTTPError):
             utils.get_refs(self.node_settings, sha='12345')
@@ -263,7 +264,7 @@ class TestGithubViews(OsfTestCase):
     @mock.patch('website.addons.github.views.verify_hook_signature')
     def test_hook_callback_add_file_not_thro_osf(self, mock_verify):
         url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
-        timestamp = str(datetime.datetime.utcnow())
+        timestamp = str(timezone.now())
         self.app.post_json(
             url,
             {
@@ -296,7 +297,7 @@ class TestGithubViews(OsfTestCase):
     @mock.patch('website.addons.github.views.verify_hook_signature')
     def test_hook_callback_modify_file_not_thro_osf(self, mock_verify):
         url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
-        timestamp = str(datetime.datetime.utcnow())
+        timestamp = str(timezone.now())
         self.app.post_json(
             url,
             {"test": True,
@@ -323,7 +324,7 @@ class TestGithubViews(OsfTestCase):
     @mock.patch('website.addons.github.views.verify_hook_signature')
     def test_hook_callback_remove_file_not_thro_osf(self, mock_verify):
         url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
-        timestamp = str(datetime.datetime.utcnow())
+        timestamp = str(timezone.now())
         self.app.post_json(
             url,
             {"test": True,

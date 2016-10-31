@@ -4,6 +4,7 @@ import mock
 import datetime
 
 from django.http import HttpRequest
+from django.utils import timezone
 from nose import SkipTest
 from nose.tools import assert_equal, assert_not_equal
 
@@ -118,7 +119,7 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
         )
     if embargo:
         embargo_end_date = embargo_end_date or (
-            datetime.datetime.now() + datetime.timedelta(days=20)
+            timezone.now() + datetime.timedelta(days=20)
         )
         registration.root.embargo_registration(
             project.creator,

@@ -11,6 +11,8 @@ import re
 import celery
 import mock  # noqa
 from contextlib import nested
+
+from django.utils import timezone
 from mock import call
 from nose.tools import *  # noqa PEP8 asserts
 import httpretty
@@ -1022,7 +1024,7 @@ class TestArchiverListeners(ArchiverTestCase):
     @mock.patch('website.mails.send_mail')
     @mock.patch('website.archiver.tasks.archive_success.delay')
     def test_archive_callback_done_embargoed(self, mock_send, mock_archive_success):
-        end_date = datetime.datetime.now() + datetime.timedelta(days=30)
+        end_date = timezone.now() + datetime.timedelta(days=30)
         self.dst.archive_job.meta = {
             'embargo_urls': {
                 contrib._id: None
@@ -1138,7 +1140,7 @@ class TestArchiverScripts(ArchiverTestCase):
             reg = factories.RegistrationFactory()
             reg.archive_job._fields['datetime_initiated'].__set__(
                 reg.archive_job,
-                datetime.datetime.now() - delta,
+                timezone.now() - delta,
                 safe=True
             )
             reg.save()
@@ -1148,7 +1150,7 @@ class TestArchiverScripts(ArchiverTestCase):
             reg = factories.RegistrationFactory()
             reg.archive_job._fields['datetime_initiated'].__set__(
                 reg.archive_job,
-                datetime.datetime.now() - delta,
+                timezone.now() - delta,
                 safe=True
             )
             reg.archive_job.status = ARCHIVER_INITIATED

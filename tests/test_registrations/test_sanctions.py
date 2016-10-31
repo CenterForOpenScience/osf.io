@@ -2,6 +2,8 @@
 import httplib as http
 import mock
 import unittest  # noqa
+
+from django.utils import timezone
 from nose.tools import *  # noqa (PEP8 asserts)
 
 import datetime
@@ -60,7 +62,7 @@ class TestSanction(SanctionsTestCase):
         self.invalid_user = factories.UserFactory()
         self.sanction = SanctionTestClass(
             initiated_by=self.user,
-            end_date=datetime.datetime.now() + datetime.timedelta(days=2)
+            end_date=timezone.now() + datetime.timedelta(days=2)
         )
         self.registration = factories.RegistrationFactory()
         self.sanction.add_authorizer(self.user, self.registration, save=True)
@@ -164,7 +166,7 @@ class TestEmailApprovableSanction(SanctionsTestCase):
         self.user = factories.UserFactory()
         self.sanction = EmailApprovableSanctionTestClass(
             initiated_by=self.user,
-            end_date=datetime.datetime.now() + datetime.timedelta(days=2)
+            end_date=timezone.now() + datetime.timedelta(days=2)
         )
         self.sanction.add_authorizer(self.user, self.sanction._get_registration())
 
@@ -248,7 +250,7 @@ class TestEmailApprovableSanction(SanctionsTestCase):
     def test_on_complete_notify_initiator(self):
         sanction = EmailApprovableSanctionTestClass(
             initiated_by=self.user,
-            end_date=datetime.datetime.now() + datetime.timedelta(days=2),
+            end_date=timezone.now() + datetime.timedelta(days=2),
             notify_initiator_on_complete=True
         )
         sanction.add_authorizer(self.user, sanction._get_registration())
@@ -260,7 +262,7 @@ class TestEmailApprovableSanction(SanctionsTestCase):
     def test_on_complete_errors_if_registration_is_spam(self):
         sanction = EmailApprovableSanctionTestClass(
             initiated_by=self.user,
-            end_date=datetime.datetime.now() + datetime.timedelta(days=2),
+            end_date=timezone.now() + datetime.timedelta(days=2),
             notify_initiator_on_complete=True
         )
         sanction.add_authorizer(self.user, sanction._get_registration())

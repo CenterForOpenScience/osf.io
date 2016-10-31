@@ -6,6 +6,7 @@ import datetime
 import unittest
 from nose.tools import *  # noqa
 import httplib as http
+from django.utils import timezone
 
 import jwe
 import jwt
@@ -111,7 +112,7 @@ class TestAddonAuth(OsfTestCase):
             nid=self.node._id,
             provider=self.node_addon.config.short_name,
             ), **kwargs),
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
+            'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
         }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), self.JWE_KEY)}
         return api_url_for('get_auth', **options)
 
@@ -181,7 +182,7 @@ class TestAddonLogs(OsfTestCase):
         self.oauth_settings = GitHubAccountFactory(display_name='john')
         self.oauth_settings.save()
         self.user.external_accounts.append(self.oauth_settings)
-        self.user.save()        
+        self.user.save()
         self.node.add_addon('github', self.auth_obj)
         self.node_addon = self.node.get_addon('github')
         self.node_addon.user = 'john'

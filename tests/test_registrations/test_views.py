@@ -6,6 +6,7 @@ import datetime as dt
 import mock
 import httplib as http
 from dateutil.parser import parse as parse_date
+from django.utils import timezone
 
 from nose.tools import *  # noqa PEP8 asserts
 
@@ -190,7 +191,7 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_register_draft_registration_with_embargo_creates_embargo(self, mock_enqueue):
         url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
-        end_date = dt.datetime.utcnow() + dt.timedelta(days=3)
+        end_date = timezone.now() + dt.timedelta(days=3)
         res = self.app.post_json(
             url,
             {

@@ -6,6 +6,7 @@ import re
 
 import pytz
 from dateutil import parser
+from django.utils import timezone
 
 from modularodm import Q
 
@@ -54,8 +55,8 @@ class FakeRecord(object):
             string_field='foo',
             second_string_field='bar',
             list_field=None,
-            date_field=datetime.datetime.now(),
-            datetime_field=datetime.datetime.now(),
+            date_field=timezone.now(),
+            datetime_field=timezone.now(),
             int_field=42,
             float_field=41.99999,
             foobar=True

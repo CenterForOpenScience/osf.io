@@ -6,6 +6,7 @@ import logging
 import datetime
 
 import hurry.filesize
+from django.utils import timezone
 
 from framework import sentry
 from framework.auth.decorators import Auth
@@ -302,6 +303,6 @@ def collect_addon_css(node, visited=None):
 
 
 def delta_date(d):
-    diff = d - datetime.datetime.utcnow()
+    diff = d - timezone.now()
     s = diff.total_seconds()
     return s

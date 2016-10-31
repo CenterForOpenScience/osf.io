@@ -1,6 +1,7 @@
 import mock
 import datetime
 
+from django.utils import timezone
 from modularodm import Q
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 
@@ -292,7 +293,7 @@ class TestUserMerging(base.OsfTestCase):
         other_user.save()
 
         # define values for users' fields
-        today = datetime.datetime.now()
+        today = timezone.now()
         yesterday = today - datetime.timedelta(days=1)
 
         self.user.comments_viewed_timestamp['shared_gt'] = today
@@ -506,7 +507,7 @@ class TestUserMerging(base.OsfTestCase):
         assert_equal(linking_user.external_identity, {'ORCID': {'1234-1234-1234-1234': 'VERIFIED'}})
         linking_user.merge_user(different_id_user)
         assert_equal(linking_user.external_identity,
-            {'ORCID': 
+            {'ORCID':
                 {
                     '1234-1234-1234-1234': 'VERIFIED',
                     '4321-4321-4321-4321': 'VERIFIED'
@@ -521,7 +522,7 @@ class TestUserMerging(base.OsfTestCase):
         no_provider_user.merge_user(linking_user)
         assert_equal(linking_user.external_identity, {})
         assert_equal(no_provider_user.external_identity,
-            {'ORCID': 
+            {'ORCID':
                 {
                     '1234-1234-1234-1234': 'VERIFIED',
                     '4321-4321-4321-4321': 'VERIFIED'

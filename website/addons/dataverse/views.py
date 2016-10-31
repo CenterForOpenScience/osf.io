@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 import datetime
 import httplib as http
+
+from django.utils import timezone
 from requests.exceptions import SSLError
 
 from flask import request
@@ -180,7 +182,7 @@ def dataverse_publish_dataset(node_addon, auth, **kwargs):
     node = node_addon.owner
     publish_both = request.json.get('publish_both', False)
 
-    now = datetime.datetime.utcnow()
+    now = timezone.now()
 
     connection = client.connect_from_settings_or_401(node_addon)
 

@@ -2,6 +2,8 @@ from __future__ import unicode_literals
 
 import mock
 import unittest
+
+from django.utils import timezone
 from nose.tools import *  # noqa
 
 from tests.factories import ProjectFactory, NodeFactory, CommentFactory
@@ -97,7 +99,7 @@ class TestOsfstorageFileNode(StorageTestCase):
             'sha256': None,
         })
 
-        date = datetime.datetime.now()
+        date = timezone.now()
         version.update_metadata({
             'modified': date.isoformat()
         })
@@ -551,7 +553,7 @@ class TestOsfStorageFileVersion(StorageTestCase):
         version = factories.FileVersionFactory(
             size=1024,
             content_type='application/json',
-            date_modified=datetime.datetime.now(),
+            date_modified=timezone.now(),
         )
         retrieved = models.FileVersion.load(version._id)
         assert_true(retrieved.creator)

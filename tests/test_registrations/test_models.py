@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Unit tests for models and their factories."""
+from django.utils import timezone
 from nose.tools import *  # noqa (PEP8 asserts)
 import mock
 
@@ -158,7 +159,7 @@ class TestDraftRegistrationApprovals(RegistrationsTestBase):
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_on_complete_embargo_creates_registration_for_draft_initiator(self, mock_enquque):
-        end_date = dt.datetime.now() + dt.timedelta(days=366)  # <- leap year
+        end_date = timezone.now() + dt.timedelta(days=366)  # <- leap year
         self.approval = DraftRegistrationApproval(
             initiated_by=self.user,
             meta={

@@ -5,6 +5,7 @@ elapsed the pending approval time..
 import logging
 import datetime
 
+from django.utils import timezone
 from modularodm import Q
 
 from framework.celery_tasks import app as celery_app
@@ -51,7 +52,7 @@ def main(dry_run=True):
 
 def should_be_approved(pending_registration):
     """Returns true if pending_registration has surpassed its pending time."""
-    return (datetime.datetime.utcnow() - pending_registration.initiation_date) >= settings.REGISTRATION_APPROVAL_TIME
+    return (timezone.now() - pending_registration.initiation_date) >= settings.REGISTRATION_APPROVAL_TIME
 
 
 @celery_app.task(name='scripts.approve_registrations')
