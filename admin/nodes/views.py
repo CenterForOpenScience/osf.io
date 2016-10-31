@@ -243,6 +243,7 @@ class NodeFlaggedSpamList(NodeSpamList, DeleteView):
         ]
         for nid in node_ids:
             node = Node.load(nid)
+            osf_admin_change_status_identifier(node, 'unavailable | spam')
             node.confirm_spam(save=True)
             update_admin_log(
                 user_id=self.request.user.id,
