@@ -67,7 +67,11 @@ var SharePopover =  {
                         m('.tab-pane#embed', [
                             m('p', 'Dynamically render iframe with JavaScript'),
                             m('textarea.form-control[readonly][type="text"][value="' +
-                                '<script>window.jQuery || document.write(\'<script src="//code.jquery.com/jquery-1.11.2.min.js">\\x3C/script>\') </script>'+
+                                '<style>' +
+                                '.embed-responsive{position:relative;height:100%;}' +
+                                '.embed-responsive iframe{position:absolute;height:100%;}' +
+                                '</style>' +
+                                '<script>window.jQuery || document.write(\'<script src="//code.jquery.com/jquery-1.11.2.min.js">\\x3C/script>\') </script>' +
                                 '<link href="' + mfrHost + 'static/css/mfr.css" media="all" rel="stylesheet">' +
                                 '<div id="mfrIframe" class="mfr mfr-file"></div>' +
                                 '<script src="' + mfrHost + 'static/js/mfr.js">' +
@@ -370,8 +374,8 @@ var FileViewPage = {
                 return;
             }
             var fileType = mime.lookup(self.file.name.toLowerCase());
-            // Only allow files < 1MB to be editable
-            if (self.file.size < 1048576 && fileType) { //May return false
+            // Only allow files < 64k to be editable
+            if (self.file.size < 65536 && fileType) { //May return false
                 var editor = EDITORS[fileType.split('/')[0]];
                 if (editor) {
                     self.editor = new Panel('Edit', self.editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.shareJSObservables], false);
