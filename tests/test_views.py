@@ -4678,38 +4678,38 @@ class TestIndexView(OsfTestCase):
         self.inst_five = InstitutionFactory()
 
         self.user = AuthUserFactory()
-        self.user.affiliated_institutions.append(self.inst_one)
-        self.user.affiliated_institutions.append(self.inst_two)
+        self.user.affiliated_institutions.add(self.inst_one)
+        self.user.affiliated_institutions.add(self.inst_two)
         self.user.save()
 
         # tests 5 affiliated, non-registered, public projects
         for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
             node = ProjectFactory(creator=self.user, is_public=True)
-            node.affiliated_institutions.append(self.inst_one)
+            node.affiliated_institutions.add(self.inst_one)
             node.save()
 
         # tests 4 affiliated, non-registered, public projects
         for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD - 1):
             node = ProjectFactory(creator=self.user, is_public=True)
-            node.affiliated_institutions.append(self.inst_two)
+            node.affiliated_institutions.add(self.inst_two)
             node.save()
 
         # tests 5 affiliated, registered, public projects
         for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
             registration = RegistrationFactory(creator=self.user, is_public=True)
-            registration.affiliated_institutions.append(self.inst_three)
+            registration.affiliated_institutions.add(self.inst_three)
             registration.save()
 
         # tests 5 affiliated, non-registered public components
         for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
             node = NodeFactory(creator=self.user, is_public=True)
-            node.affiliated_institutions.append(self.inst_four)
+            node.affiliated_institutions.add(self.inst_four)
             node.save()
 
         # tests 5 affiliated, non-registered, private projects
         for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
             node = ProjectFactory(creator=self.user)
-            node.affiliated_institutions.append(self.inst_five)
+            node.affiliated_institutions.add(self.inst_five)
             node.save()
 
     def test_dashboard_institutions(self):
