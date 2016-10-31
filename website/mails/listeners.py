@@ -1,7 +1,6 @@
 """Functions that listen for event signals and queue up emails.
 All triggered emails live here.
 """
-from datetime import datetime
 
 from django.utils import timezone
 from modularodm import Q

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from dateutil.parser import parse
 from django.utils import timezone

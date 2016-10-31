@@ -1,7 +1,5 @@
 from __future__ import unicode_literals
 
-from datetime import datetime
-
 from django.utils import timezone
 from django.views.generic import ListView, DeleteView
 from django.shortcuts import redirect

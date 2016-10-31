@@ -2,7 +2,7 @@
 from django.utils import timezone
 
 from admin.base.settings import ENTRY_POINTS
-from datetime import datetime, timedelta
+from datetime import timedelta
 from framework.mongo import database as db
 
 

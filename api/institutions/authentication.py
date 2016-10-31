@@ -3,8 +3,6 @@ import json
 import jwe
 import jwt
 
-from datetime import datetime
-
 from django.utils import timezone
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.authentication import BaseAuthentication

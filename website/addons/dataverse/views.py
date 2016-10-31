@@ -1,6 +1,5 @@
 """Views for the node settings page."""
 # -*- coding: utf-8 -*-
-import datetime
 import httplib as http
 
 from django.utils import timezone

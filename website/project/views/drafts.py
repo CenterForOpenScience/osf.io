@@ -1,6 +1,5 @@
 import functools
 import httplib as http
-import datetime
 import itertools
 
 from operator import itemgetter

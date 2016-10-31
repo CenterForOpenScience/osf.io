@@ -1,5 +1,4 @@
 import bson
-from datetime import datetime
 
 from django.utils import timezone
 from modularodm import fields, Q

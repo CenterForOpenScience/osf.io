@@ -1,4 +1,3 @@
-import datetime
 import functools
 from dateutil.parser import parse as parse_date
 from django.utils import timezone

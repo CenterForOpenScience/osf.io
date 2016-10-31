@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import abc
-import datetime
 
 import mock
 from django.utils import timezone

@@ -4,7 +4,6 @@ import os
 import bson
 import logging
 import pymongo
-import datetime
 import requests
 import functools
 

@@ -3,7 +3,7 @@ from django.test import RequestFactory
 from django.http import Http404
 from django.utils import timezone
 from nose import tools as nt
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from website.project.model import Comment
 

@@ -1,6 +1,6 @@
 from django.utils import timezone
 from nose import tools as nt
-from datetime import timedelta, datetime
+from datetime import timedelta
 
 from tests.base import AdminTestCase
 from tests.factories import (

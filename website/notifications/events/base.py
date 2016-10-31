@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Basic Event handling for events that need subscriptions"""
 
-from datetime import datetime
-
 from django.utils import timezone
 
 from website.notifications import emails

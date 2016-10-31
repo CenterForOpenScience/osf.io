@@ -2,7 +2,7 @@
 Metrics scripts
 """
 from django.db.models import F, timezone
-from datetime import datetime, timedelta
+from datetime import timedelta
 from modularodm import Q
 from website.project.model import User, Node
 from website.project.utils import CONTENT_NODE_QUERY

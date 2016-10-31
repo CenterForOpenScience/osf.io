@@ -3,7 +3,6 @@
 formatted hgrid list/folders.
 """
 import logging
-import datetime
 
 import hurry.filesize
 from django.utils import timezone
