@@ -1,4 +1,4 @@
-import sys
+import argparse
 import logging
 from datetime import datetime, timedelta
 from dateutil.parser import parse
@@ -57,6 +57,12 @@ def get_events(date):
     )
     return [counts]
 
+def parse_args():
+    parser = argparse.ArgumentParser(description='Get user counts!.')
+    parser.add_argument('-d', '--date', dest='date', required=False)
+
+    return parser.parse_args()
+
 def main(date):
     user_counts = get_events(date)
     keen_project = keen_settings['private']['project_id']
@@ -73,9 +79,10 @@ def main(date):
 
 if __name__ == '__main__':
     init_app()
-    try:
-        date = parse(sys.argv[1])
+    args = parse_args()
+    date = parse(args.date) if args.date else None
+    if date:
         date = datetime(date.year, date.month, date.day)  # make sure the day starts at midnight
-    except IndexError:
+    else:
         date = datetime.utcnow()
     main(date)
