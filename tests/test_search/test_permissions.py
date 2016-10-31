@@ -143,10 +143,11 @@ def _register(*a, **kw):
     mock_archive(*a, **kw).__enter__()  # gooooooofffyyyyyy
     return 'flim', 'registration', 'title', 'Flim Flammity'
 
-def name_regfunc(embargo, autoapprove, **_):
-    return '{}_{}_registration_of'.format(
+def name_regfunc(embargo, autoapprove, autocomplete, **_):
+    return '{}_{}_{}_registration_of'.format(
         'embargoed' if embargo else 'unembargoed',
         'approved' if autoapprove else 'unapproved',
+        'complete' if autocomplete else 'incomplete',
     ).encode('ascii')
 
 def create_regfunc(**kw):
@@ -160,7 +161,7 @@ def create_regfuncs():
     private = set()
     for embargo in (False, True):
         for autoapprove in (False, True):
-            for autocomplete in (True,):                # TODO
+            for autocomplete in (True, False):
                 for autoapprove_retraction in (None,):  # TODO
                     retraction = autoapprove_retraction is not None
                     regfunc = create_regfunc(
@@ -206,26 +207,43 @@ class TestVaryFuncs(DbIsolationMixin, OsfTestCase):
 
     # regfuncs
 
-    def test_uaro_makes_an_unembargoed_approved_registration_of_a_node(self):
-        unembargoed_approved_registration_of(factories.ProjectFactory(title='Flim Flammity'))
+    def F(self):
+        return factories.ProjectFactory(title='Flim Flammity')
+
+    def test_number_of_regfuncs(self):
+        assert_equal(len(REGFUNCS), 8)
+
+    def test_uacro_makes_an_unembargoed_approved_complete_registration_of_a_node(self):
+        unembargoed_approved_complete_registration_of(self.F())
         reg = Node.find_one(Q('is_registration', 'eq', True))
+
         ok_(not reg.embargo)
         assert_equal(reg.registration_approval.state, 'approved')
+        ok_(reg.archive_job.done)
 
-    def test_uuro_makes_an_unembargoed_unapproved_registration_of_a_node(self):
-        unembargoed_unapproved_registration_of(factories.ProjectFactory(title='Flim Flammity'))
+    def test_uairo_makes_an_unembargoed_approved_incomplete_registration_of_a_node(self):
+        unembargoed_approved_incomplete_registration_of(self.F())
         reg = Node.find_one(Q('is_registration', 'eq', True))
+
+        ok_(not reg.embargo)
+        assert_equal(reg.registration_approval.state, 'approved')
+        ok_(not reg.archive_job.done)
+
+    def test_uuro_makes_an_unembargoed_unapproved_complete_registration_of_a_node(self):
+        unembargoed_unapproved_complete_registration_of(self.F())
+        reg = Node.find_one(Q('is_registration', 'eq', True))
+
         ok_(not reg.embargo)
         assert_equal(reg.registration_approval.state, 'unapproved')
 
-    def test_earo_makes_an_embargoed_approved_registration_of_a_node(self):
-        embargoed_approved_registration_of(factories.ProjectFactory(title='Flim Flammity'))
+    def test_earo_makes_an_embargoed_approved_complete_registration_of_a_node(self):
+        embargoed_approved_complete_registration_of(factories.ProjectFactory(title='Flim Flammity'))
         reg = Node.find_one(Q('is_registration', 'eq', True))
         ok_(reg.embargo)
         assert_equal(reg.embargo.state, 'approved')
 
-    def test_euro_makes_an_embargoed_unapproved_registration_of_a_node(self):
-        embargoed_unapproved_registration_of(factories.ProjectFactory(title='Flim Flammity'))
+    def test_euro_makes_an_embargoed_unapproved_complete_registration_of_a_node(self):
+        embargoed_unapproved_complete_registration_of(factories.ProjectFactory(title='Flim Flammity'))
         reg = Node.find_one(Q('is_registration', 'eq', True))
         ok_(reg.embargo)
         assert_equal(reg.embargo.state, 'unapproved')
@@ -262,7 +280,7 @@ class TestGenerateCases(unittest.TestCase):
     # gc - generate_cases
 
     def test_gc_generates_cases(self):
-        assert_equal(len(list(generate_cases())), 48)
+        assert_equal(len(list(generate_cases())), 72)
 
     def test_gc_doesnt_create_any_nodes(self):
         list(generate_cases())
