@@ -68,7 +68,7 @@ def main():
     """
     today = datetime.utcnow().date()
     args = parse_args()
-    date = parse(args.end_date).date() if args.date else today - timedelta(1)
+    date = parse(args.date).date() if args.date else today - timedelta(1)
 
     date = datetime(date.year, date.month, date.day)  # make sure the day starts at midnight
 

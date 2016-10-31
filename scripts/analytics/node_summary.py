@@ -13,27 +13,28 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def get_events(date=None):
+def get_events(date):
     """Count how many nodes exist.
 
-    If no date is given, include all nodes up until the point when the script was called.
+    If the date is today, include all nodes up until the point when the script was called.
     Also include counts for public and private projects, and embargoed and withdrawn registrations
     with a date provided. These numbers are only accurate for the current time, since we can't know
     the public/private status on a given date in the past.
 
-    If a date is given, include all nodes that were created up through the end of that date.
+    If a date is given that isn't right now, include all nodes that were created up through the end of that date.
     Do not include counts for public and private projects, or embargoed and withdrawn registrations.
     """
-    log_date = datetime.utcnow()
-    if date:
-        log_date = date + timedelta(1)
+    right_now = datetime.utcnow()
+    is_today = True if right_now.day == date.day and right_now.month == date.month else False
+    if not is_today:
+        date = date + timedelta(1)
 
-    logger.info('Gathering a count of nodes up until (but not including) {}'.format(log_date.isoformat()))
+    logger.info('Gathering a count of nodes up until {}'.format(date.isoformat()))
 
     node_query = (
         Q('is_deleted', 'ne', True) &
         Q('is_folder', 'ne', True) &
-        Q('date_created', 'lt', log_date)
+        Q('date_created', 'lt', date)
     )
 
     registration_query = node_query & Q('is_registration', 'eq', True)
@@ -69,7 +70,7 @@ def get_events(date=None):
         }
     }
 
-    if not date:
+    if is_today:
         totals['nodes'].update({
             'public': Node.find(node_public_query).count(),
             'private': Node.find(node_private_query).count()
@@ -92,7 +93,7 @@ def get_events(date=None):
             'withdrawn': Node.find(registered_project_retracted_query).count(),
         })
 
-    if date:
+    if not is_today:
         totals['keen'] = {'timestamp': date.isoformat()}
 
     logger.info('Nodes counted. Nodes: {}, Projects: {}, Registered Nodes: {}, Registered Projects: {}'.format(totals['nodes']['total'], totals['projects']['total'], totals['registered_nodes']['total'], totals['registered_projects']['total']))
@@ -110,8 +111,9 @@ def main():
     args = parse_args()
     date = parse(args.date).date() if args.date else None
     if date:
-        date = datetime(date.year, date.month, date.day)  # make sure the day starts at midnight
-
+        date = datetime(date.year, date.month, date.day)  # make sure the given day starts at midnight
+    else:
+        date = datetime.utcnow()
     node_count = get_events(date)
     keen_project = keen_settings['private']['project_id']
     write_key = keen_settings['private']['write_key']

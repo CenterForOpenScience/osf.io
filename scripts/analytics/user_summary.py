@@ -14,20 +14,22 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def get_events(date=None):
+def get_events(date):
     """Count how many nodes exist.
     If no date is given, include all users up until the point when the script was called.
     If a date is given, include all users that were created up through the end of that date.
     """
-    log_date = datetime.utcnow()
-    if date:
-        log_date = date + timedelta(1)
+    right_now = datetime.utcnow()
+    is_today = True if right_now.day == date.day and right_now.month == date.month else False
+    if not is_today:
+        date = date + timedelta(1)
 
-    logger.info('Gathering a count of users up until (but not including) {}'.format(log_date.isoformat()))
+    logger.info('Gathering a count of users up until {}'.format(date.isoformat()))
+
 
     counts = {
         'keen': {
-            'timestamp': log_date.isoformat()
+            'timestamp': date.isoformat()
         },
         'active_users': User.find(
             Q('is_registered', 'eq', True) &
@@ -35,15 +37,15 @@ def get_events(date=None):
             Q('merged_by', 'eq', None) &
             Q('date_disabled', 'eq', None) &
             Q('date_confirmed', 'ne', None) &
-            Q('date_confirmed', 'lt', log_date)
+            Q('date_confirmed', 'lt', date)
         ).count(),
         'unconfirmed_users': User.find(
-            Q('date_registered', 'lt', log_date) &
+            Q('date_registered', 'lt', date) &
             Q('date_confirmed', 'eq', None)
         ).count(),
         'deactivated_users': User.find(
             Q('date_disabled', 'ne', None) &
-            Q('date_disabled', 'lt', log_date)
+            Q('date_disabled', 'lt', date)
         ).count()
     }
     logger.info(
@@ -55,8 +57,8 @@ def get_events(date=None):
     )
     return [counts]
 
-def main(today):
-    user_counts = get_events(today)
+def main(date):
+    user_counts = get_events(date)
     keen_project = keen_settings['private']['project_id']
     write_key = keen_settings['private']['write_key']
     if keen_project and write_key:
