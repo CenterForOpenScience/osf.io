@@ -15,9 +15,14 @@ logging.basicConfig(level=logging.INFO)
 
 
 def get_events(date):
-    """ Get all node logs from a given date. Defaults to starting yesterday
-    to today (both in UTC).
+    """ Get all node logs from a given date for a 24 hour period.
+    Defaults to starting yesterday and gathering through today (both in UTC).
     """
+
+    # Make sure default is yesterday and not today
+    if date.day == datetime.utcnow().day:
+        date = date - timedelta(1)
+
     logger.info('Gathering node logs between {} and {}'.format(
         date.isoformat(), (date + timedelta(1)).isoformat())
     )
