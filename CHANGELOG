@@ -5,7 +5,7 @@ Changelog
 0.98.0 (2016-10-31)
 ===================
 - Keep the file editor widget on file view page from sometimes being created twice
-- Make public activity page loading much more quickly
+- Make public activity page load much more quickly
 - Update Wiki preview Length
 - Hide OSF for Institutions Logos from Dashboard Until 5 Projects Affiliated
 - On the files widget, handle renaming a file when sort-by-date is selected
