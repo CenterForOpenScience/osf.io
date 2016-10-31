@@ -15,8 +15,8 @@ logging.basicConfig(level=logging.INFO)
 
 def get_events(date=None):
     """Count how many nodes exist.
-    If no end_datetime is given, include all nodes up until the point when the script was called.
-    If an end_datetime is given, include all nodes that were created up through the end of that date.
+    If no date is given, include all nodes up until the point when the script was called.
+    If a date is given, include all nodes that were created up through the end of that date.
     """
     log_date = datetime.utcnow()
     if date:
@@ -26,11 +26,9 @@ def get_events(date=None):
 
     node_query = (
         Q('is_deleted', 'ne', True) &
-        Q('is_folder', 'ne', True)
+        Q('is_folder', 'ne', True) &
+        Q('date_created', 'lt', log_date)
     )
-
-    if date:
-        node_query = node_query & Q('date_created', 'lt', date + timedelta(1))
 
     registration_query = node_query & Q('is_registration', 'eq', True)
     non_registration_query = node_query & Q('is_registration', 'eq', False)
