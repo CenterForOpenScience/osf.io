@@ -18,6 +18,8 @@ from website.search.util import build_query
 from website.search_migration.migrate import migrate
 from website.models import Retraction, NodeLicense, Tag
 
+from scripts.populate_institutions import main as populate_institutions
+
 from tests import factories
 from tests.base import OsfTestCase
 from tests.test_search import SearchTestCase
@@ -827,6 +829,7 @@ class TestSearchMigration(SearchTestCase):
 
     def setUp(self):
         super(TestSearchMigration, self).setUp()
+        populate_institutions('test')
         self.es = search.search_engine.es
         search.delete_index(settings.ELASTIC_INDEX)
         search.create_index(settings.ELASTIC_INDEX)
@@ -863,6 +866,24 @@ class TestSearchMigration(SearchTestCase):
             var = self.es.indices.get_aliases()
             assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n + 1)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
             assert not var.get(settings.ELASTIC_INDEX + '_v{}'.format(n))
+
+    def test_migration_institutions(self):
+        migrate(delete=True, index=settings.ELASTIC_INDEX, app=self.app.app)
+        count_query = {}
+        count_query['aggregations'] = {
+            'counts': {
+                'terms': {
+                    'field': '_type',
+                }
+            }
+        }
+        institution_bucket_found = False
+        res = self.es.search(index=settings.ELASTIC_INDEX, doc_type=None, search_type='count', body=count_query)
+        for bucket in res['aggregations']['counts']['buckets']:
+            if bucket['key'] == u'institution':
+                institution_bucket_found = True
+
+        assert_equal(institution_bucket_found, True)
 
 class TestSearchFiles(SearchTestCase):
 
