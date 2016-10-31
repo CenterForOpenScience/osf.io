@@ -1,0 +1,296 @@
+# Install the Docker Client
+#
+# OSX: https://www.docker.com/products/docker#/mac
+# Windows: https://www.docker.com/products/docker#/windows
+
+# Setup the Operation System
+#
+# OSX
+# - Alias the loopback interface
+#   sudo ifconfig lo0 alias 192.168.168.167
+#
+# Windows
+# - Install Microsoft Loopback Adapter (Windows 10 follow community comments as the driver was renamed)
+#   https://technet.microsoft.com/en-us/library/cc708322(v=ws.10).aspx
+# - Rename the new Loopback Interface (typically called 'Ethernet 2')
+#   - List interfaces
+#     netsh interface show interface
+#   - Rename the interface
+#     netsh inteface set interface "Ethernet 2" newname="Loopback"
+# - Assign the Loopback interface an IP address
+#   netsh interface ip add address "Loopback" 192.168.168.167 255.255.255.255
+# - Allow Docker to access to Drive your project is stored on
+#   Open the Docker Client -> Settings -> Shared Drives -> e.g. C -> Apply
+
+# Application Settings
+#
+# e.g. OSF default local.py
+# cp ./website/settings/local-dist.py ./website/settings/local.py
+#
+# Environment variables (incl. remote debugging)
+# e.g. .docker-compose.env
+# WEB_REMOTE_DEBUG=192.168.168.167:11000
+# API_REMOTE_DEBUG=192.168.168.167:12000
+# WORKER_REMOTE_DEBUG=192.168.168.167:13000
+
+# Application Environment Setup
+#
+# docker-compose up requirements assets requirements_mfr requirements_wb
+# (requirements containers exit when complete)
+
+# Run Application Services
+#
+# docker-compose up elasticsearch tokumx
+
+# Run the OSF
+#
+# docker-compose up mfr wb fakecas web api
+
+# Resetting the Environment
+#
+# ALL volumes and containers
+# docker-compose down -v
+#
+# Delete a persistent storage volume
+# docker-compose stop -t 0 tokumx
+# docker-compose rm tokumx
+# docker volume rm [projectname]_tokumx_vol
+
+# Using IPDB
+#
+# docker attach [projectname]_web_1
+# (you can detach from a container and leave it running using the CTRL-p CTRL-q key sequence.)
+
+# Using PyCharm
+#
+# Add a Python Remote Debugger per container
+# - Name: Remote Debug (web)
+#   - Local host name: 192.168.168.167
+#   - Port: 11000
+#   - Path mappings:
+#     - /Users/<whoami>/Projects/cos/osf : /code
+#     - /Users/<whoami>/.virtualenvs/osf/lib/python2.7/site-packages : /usr/local/lib/python2.7/site-packages
+#   - Single Instance only
+# - Configure .docker-compose.env REMOTE_DEBUG environment variables to match settings.
+
+version: '2'
+
+volumes:
+  tokumx_vol:
+    external: false
+  elasticsearch_vol:
+    external: false
+  requirements_osf_vol:
+    external: false
+  requirements_mfr_vol:
+    external: false
+  requirements_wb_vol:
+    external: false
+
+services:
+
+  ###################
+  # Shared Services #
+  ###################
+
+  elasticsearch:
+    image: elasticsearch:2
+    ports:
+      - 9200:9200
+    volumes:
+      - elasticsearch_vol:/usr/share/elasticsearch/data
+
+#  postgres:
+#    image: postgres
+#    command: /bin/bash -c "sed -i -e 's/max_connections.*/max_connections = 5000/' /var/lib/postgresql/data/postgresql.conf || true && sed -i -e 's/#log_min_duration_statement = .*/log_min_duration_statement = 0/' /var/lib/postgresql/data/postgresql.conf || true && /docker-entrypoint.sh postgres"
+#    ports:
+#      - 5432:5432
+#    environment:
+#      POSTGRES_DB: osf
+
+  tokumx:
+    image: quay.io/centerforopenscience/tokumx:latest
+    command: mongod --ipv6
+    ports:
+      - 27017:27017
+    environment:
+      TOKU_HUGE_PAGES_OK: 1
+    volumes:
+      - tokumx_vol:/data/db
+
+
+  #########################
+  # Modular File Renderer #
+  #########################
+
+  requirements_mfr:
+    image: quay.io/centerforopenscience/mfr:feature-docker-compose
+    command: /bin/bash -c "invoke install --develop && cp -Rf /usr/local/lib/python3.5/site-packages /"
+    restart: 'no'
+    volumes:
+      - requirements_mfr_vol:/site-packages
+
+  mfr:
+    image: quay.io/centerforopenscience/mfr:feature-docker-compose
+    command: invoke server
+    restart: unless-stopped
+    ports:
+      - 7778:7778
+    env_file:
+      - .docker-compose.mfr.env
+    stdin_open: true
+    tty: true
+    volumes:
+      - requirements_mfr_vol:/usr/local/lib/python3.5/site-packages
+
+
+  ###############
+  # WaterButler #
+  ###############
+
+  requirements_wb:
+    image: quay.io/centerforopenscience/waterbutler:feature-docker-compose
+    command: /bin/bash -c "invoke install --develop && cp -Rf /usr/local/lib/python3.5/site-packages /"
+    restart: 'no'
+    volumes:
+      - requirements_wb_vol:/site-packages
+
+  wb:
+    image: quay.io/centerforopenscience/waterbutler:feature-docker-compose
+    command: invoke server
+    restart: unless-stopped
+    ports:
+      - 7777:7777
+    env_file:
+      - .docker-compose.wb.env
+    stdin_open: true
+    tty: true
+    volumes:
+      - requirements_wb_vol:/usr/local/lib/python3.5/site-packages
+
+
+  ##################################
+  # Central Authentication Service #
+  ##################################
+
+  fakecas:
+    image: quay.io/centerforopenscience/fakecas:latest
+    command: fakecas -host=0.0.0.0:8080 -osfhost=192.168.168.167:5000 -dbaddress=192.168.168.167:27017
+    restart: unless-stopped
+    ports:
+      - 8080:8080
+    depends_on:
+      - tokumx
+
+
+  #######
+  # OSF #
+  #######
+
+#  rabbitmq:
+#    image: rabbitmq:management
+#    ports:
+#      - 5672:5672
+#      - 15672:15672
+
+#  flower:
+#    image: quay.io/centerforopenscience/osf:develop
+#    command: python manage.py celery flower
+#    depends_on:
+#      - rabbitmq
+#    ports:
+#      - 5555:5555
+#    environment:
+#      BROKER_URL: amqp://guest:guest@rabbitmq:5672/
+
+#  beat:
+#    image: quay.io/centerforopenscience/osf:develop
+#    command: invoke celery_beat
+#    depends_on:
+#      - tokumx
+#      - rabbitmq
+#      - elasticsearch
+#    volumes:
+#      - requirements_osf_vol:/usr/local/lib/python2.7/site-packages
+#      - ./:/code
+#    environment:
+#      DB_HOST: tokumx
+#      ELASTIC_URI: elasticsearch:9200
+#      BROKER_URL: amqp://guest:guest@rabbitmq:5672/
+
+#  worker:
+#    image: quay.io/centerforopenscience/osf:develop
+#    command: invoke celery_worker
+#    restart: unless-stopped
+#    depends_on:
+#      - tokumx
+#      - rabbitmq
+#      - elasticsearch
+#    volumes:
+#      - requirements_osf_vol:/usr/local/lib/python2.7/site-packages
+#      - ./:/code
+#    environment:
+#      C_FORCE_ROOT: 1
+#      DB_HOST: tokumx
+#      ELASTIC_URI: elasticsearch:9200
+#      BROKER_URL: amqp://guest:guest@rabbitmq:5672/
+
+  requirements:
+    image: quay.io/centerforopenscience/osf:develop
+    command: /bin/bash -c "invoke requirements --quick && cp -Rf /usr/local/lib/python2.7/site-packages /"
+    restart: 'no'
+    volumes:
+      - requirements_osf_vol:/site-packages
+      - ./:/code
+
+  assets:
+    image: quay.io/centerforopenscience/osf:develop
+    command: invoke assets -dw
+    restart: unless-stopped
+    volumes:
+      - requirements_osf_vol:/site-packages
+      - ./:/code
+
+  web:
+    image: quay.io/centerforopenscience/osf:develop
+    command: invoke server -h 0.0.0.0
+    restart: unless-stopped
+    ports:
+      - 5000:5000
+    depends_on:
+      - tokumx
+#      - rabbitmq
+      - elasticsearch
+      - fakecas
+#      - cas
+      - mfr
+      - wb
+    env_file:
+      - .docker-compose.env
+    stdin_open: true
+    tty: true
+    volumes:
+      - requirements_osf_vol:/usr/local/lib/python2.7/site-packages
+      - ./:/code
+
+  api:
+    image: quay.io/centerforopenscience/osf:develop
+    command: invoke apiserver -h 0.0.0.0
+    restart: unless-stopped
+    ports:
+      - 8000:8000
+    depends_on:
+      - tokumx
+#      - rabbitmq
+      - elasticsearch
+      - fakecas
+#      - cas
+      - mfr
+      - wb
+    env_file:
+      - .docker-compose.env
+    stdin_open: true
+    tty: true
+    volumes:
+      - requirements_osf_vol:/usr/local/lib/python2.7/site-packages
+      - ./:/code
