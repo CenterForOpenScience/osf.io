@@ -7,7 +7,15 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.authentication import BaseAuthentication
 
 from api.base import settings
+
+from framework.auth import register_unconfirmed
+from framework.auth import campaigns, signals
 from framework.auth.core import get_user
+from framework.auth.exceptions import DuplicateEmailError
+from framework.auth.views import send_confirm_email
+
+from website import language
+from website import settings as osf_settings
 
 
 class CasAuthentication(BaseAuthentication):
@@ -18,48 +26,45 @@ class CasAuthentication(BaseAuthentication):
 
         payload = decrypt_payload(request.body)
         data = payload.get('data')
-        # The JWT `data` payload is expected in the following structures
+        #The JWT `data` payload is expected in the following structures
         # {
-        #     "type": "LOGIN" | "REGISTER" | "INSTITUTION" | "EXTERNAL",
-        #     "institutionProvider": {
-        #         "idp": "",
-        #         "id": "",
-        #     },
-        #     "externalIdentityProvider": {
-        #         "idp": "",
-        #         "id": "",
-        #     },
+        #     "type": "LOGIN",
         #     "user": {
-        #         "username": "",
         #         "email": "",
         #         "passwordHash": "",
         #         "verificationKey": "",
-        #         "middleNames": "",
-        #         "familyName": "",
-        #         "givenName": "",
+        #     },
+        # },
+        # {
+        #     "type": "REGISTER",
+        #     "user": {
         #         "fullname": "",
-        #         "suffix": "",
-        #     }
-        # }
+        #         "email": "",
+        #         "password": "",
+        #         "campaign": "",
+        #     },
+        # },
+        # coming soon for `type == "INSTITUTION" | "EXTERNAL"
 
         if data.get('type') == "LOGIN":
             user, error_message = handle_login(data.get('user'))
             if user and not error_message:
                 return user, None
             raise AuthenticationFailed(detail=error_message)
-        elif data.get('REGISTER'):
-            pass
-        elif data.get('INSTITUTION'):
-            pass
-        elif data.get('EXTERNAL'):
-            pass
+        elif data.get('type') == "REGISTER":
+            user, message = handle_register(data.get('user'))
+            if not user:
+                raise AuthenticationFailed(detail=message)
+            return user, None
+
+        return AuthenticationFailed
 
 
-def handle_login(data_user):
+def handle_login(user):
 
-    email = data_user.get('email')
-    verification_key = data_user.get('verificationKey')
-    password_hash = data_user.get('passwordHash')
+    email = user.get('email')
+    verification_key = user.get('verificationKey')
+    password_hash = user.get('passwordHash')
     if not email or not (verification_key or password_hash):
         return None, 'MISSING_CREDENTIAL'
 
@@ -76,6 +81,31 @@ def handle_login(data_user):
         if password_hash == user.password:
             return user, None
         return None, 'INVALID_PASSWORD'
+
+
+def handle_register(user):
+
+    fullname = user.get('fullname')
+    email = user.get('email')
+    password = user.get('password')
+    if not (fullname and email and password):
+        return None, 'MISSING_CREDENTIAL'
+
+    campaign = user.get('campaign')
+    if campaign and campaign not in campaigns.CAMPAIGNS:
+        campaign = None
+    try:
+        user = register_unconfirmed(
+            email,
+            password,
+            fullname,
+            campaign=campaign,
+        )
+    except DuplicateEmailError:
+        return None, 'ALREADY_REGISTERED'
+
+    send_confirm_email(user, email=user.username)
+    return user, 'REGISTRATION_SUCCESS'
 
 
 def decrypt_payload(body):
