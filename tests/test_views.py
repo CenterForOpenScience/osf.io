@@ -54,6 +54,7 @@ from website.project.views.contributor import (
 from website.project.views.node import _should_show_wiki_widget, _view_project, abbrev_authors
 from website.util import api_url_for, web_url_for
 from website.util import permissions, rubeus
+from website.views import index
 
 
 class Addon(MockAddonNodeSettings):
@@ -2254,7 +2255,7 @@ class TestUserInviteViews(OsfTestCase):
             auth=Auth(project.creator),
         )
         project.save()
-        send_claim_email(email=given_email, user=unreg_user, node=project)
+        send_claim_email(email=given_email, unclaimed_user=unreg_user, node=project)
 
         assert_true(send_mail.called)
         assert_true(send_mail.called_with(
@@ -2272,7 +2273,7 @@ class TestUserInviteViews(OsfTestCase):
                                                               referrer)
                                                           )
         project.save()
-        send_claim_email(email=real_email, user=unreg_user, node=project)
+        send_claim_email(email=real_email, unclaimed_user=unreg_user, node=project)
 
         assert_true(send_mail.called)
         # email was sent to referrer
@@ -2297,11 +2298,11 @@ class TestUserInviteViews(OsfTestCase):
             auth=Auth(project.creator),
         )
         project.save()
-        send_claim_email(email=fake.email(), user=unreg_user, node=project)
+        send_claim_email(email=fake.email(), unclaimed_user=unreg_user, node=project)
         send_mail.reset_mock()
         # 2nd call raises error because throttle hasn't expired
         with assert_raises(HTTPError):
-            send_claim_email(email=fake.email(), user=unreg_user, node=project)
+            send_claim_email(email=fake.email(), unclaimed_user=unreg_user, node=project)
         assert_false(send_mail.called)
 
 
@@ -2319,6 +2320,119 @@ class TestClaimViews(OsfTestCase):
             auth=Auth(user=self.referrer)
         )
         self.project.save()
+
+    @mock.patch('website.project.views.contributor.send_claim_email')
+    def test_claim_user_already_registered_redirects_to_claim_user_registered(self, claim_email):
+        name = fake.name()
+        email = fake.email()
+
+        # project contributor adds an unregistered contributor (without an email) on public project
+        unregistered_user = self.project.add_unregistered_contributor(
+            fullname=name,
+            email=None,
+            auth=Auth(user=self.referrer)
+        )
+        assert_in(unregistered_user, self.project.contributors)
+
+        # unregistered user comes along and claims themselves on the public project, entering an email
+        invite_url = self.project.api_url_for('claim_user_post', uid='undefined')
+        self.app.post_json(invite_url, {
+            'pk': unregistered_user._primary_key,
+            'value': email
+        })
+        assert_equal(claim_email.call_count, 1)
+
+        # set unregistered record email since we are mocking send_claim_email()
+        unclaimed_record = unregistered_user.get_unclaimed_record(self.project._primary_key)
+        unclaimed_record.update({'email': email})
+        unregistered_user.save()
+
+        # unregistered user then goes and makes an account with same email, before claiming themselves as contributor
+        UserFactory(username=email, fullname=name)
+
+        # claim link for the now registered email is accessed while not logged in
+        token = unregistered_user.get_unclaimed_record(self.project._primary_key)['token']
+        claim_url = '/user/{uid}/{pid}/claim/?token={token}'.format(
+            uid=unregistered_user._id,
+            pid=self.project._id,
+            token=token
+        )
+        res = self.app.get(claim_url)
+
+        # should redirect to 'claim_user_registered' view
+        claim_registered_url = '/user/{uid}/{pid}/claim/verify/{token}/'.format(
+            uid=unregistered_user._id,
+            pid=self.project._id,
+            token=token
+        )
+        assert_equal(res.status_code, 302)
+        assert_in(claim_registered_url, res.headers.get('Location'))
+
+    @mock.patch('website.project.views.contributor.send_claim_email')
+    def test_claim_user_already_registered_secondary_email_redirects_to_claim_user_registered(self, claim_email):
+        name = fake.name()
+        email = fake.email()
+        secondary_email = fake.email()
+
+        # project contributor adds an unregistered contributor (without an email) on public project
+        unregistered_user = self.project.add_unregistered_contributor(
+            fullname=name,
+            email=None,
+            auth=Auth(user=self.referrer)
+        )
+        assert_in(unregistered_user, self.project.contributors)
+
+        # unregistered user comes along and claims themselves on the public project, entering an email
+        invite_url = self.project.api_url_for('claim_user_post', uid='undefined')
+        self.app.post_json(invite_url, {
+            'pk': unregistered_user._primary_key,
+            'value': secondary_email
+        })
+        assert_equal(claim_email.call_count, 1)
+
+        # set unregistered record email since we are mocking send_claim_email()
+        unclaimed_record = unregistered_user.get_unclaimed_record(self.project._primary_key)
+        unclaimed_record.update({'email': secondary_email})
+        unregistered_user.save()
+
+        # unregistered user then goes and makes an account with same email, before claiming themselves as contributor
+        registered_user = UserFactory(username=email, fullname=name)
+        registered_user.emails.append(secondary_email)
+        registered_user.save()
+
+        # claim link for the now registered email is accessed while not logged in
+        token = unregistered_user.get_unclaimed_record(self.project._primary_key)['token']
+        claim_url = '/user/{uid}/{pid}/claim/?token={token}'.format(
+            uid=unregistered_user._id,
+            pid=self.project._id,
+            token=token
+        )
+        res = self.app.get(claim_url)
+
+        # should redirect to 'claim_user_registered' view
+        claim_registered_url = '/user/{uid}/{pid}/claim/verify/{token}/'.format(
+            uid=unregistered_user._id,
+            pid=self.project._id,
+            token=token
+        )
+        assert_equal(res.status_code, 302)
+        assert_in(claim_registered_url, res.headers.get('Location'))
+
+    def test_claim_user_invited_with_no_email_posts_to_claim_form(self):
+        given_name = fake.name()
+        invited_user = self.project.add_unregistered_contributor(
+            fullname=given_name,
+            email=None,
+            auth=Auth(user=self.referrer)
+        )
+        self.project.save()
+
+        url = invited_user.get_claim_url(self.project._primary_key)
+        res = self.app.post(url, {
+            'password': 'bohemianrhap',
+            'password2': 'bohemianrhap'
+        }, expect_errors=True)
+        assert_equal(res.status_code, 400)
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
     def test_claim_user_post_with_registered_user_id(self, send_mail):
@@ -2358,7 +2472,7 @@ class TestClaimViews(OsfTestCase):
         reg_user = UserFactory()
         send_claim_registered_email(
             claimer=reg_user,
-            unreg_user=self.user,
+            unclaimed_user=self.user,
             node=self.project
         )
         assert_equal(mock_send_mail.call_count, 2)
@@ -2372,7 +2486,7 @@ class TestClaimViews(OsfTestCase):
         reg_user = UserFactory()
         send_claim_registered_email(
             claimer=reg_user,
-            unreg_user=self.user,
+            unclaimed_user=self.user,
             node=self.project,
         )
         mock_send_mail.reset_mock()
@@ -2380,7 +2494,7 @@ class TestClaimViews(OsfTestCase):
         with assert_raises(HTTPError):
             send_claim_registered_email(
                 claimer=reg_user,
-                unreg_user=self.user,
+                unclaimed_user=self.user,
                 node=self.project,
             )
         assert_false(mock_send_mail.called)
@@ -3516,6 +3630,14 @@ class TextExternalAuthViews(OsfTestCase):
         resp = self.app.get(url, expect_errors=True)
         assert_equal(resp.status_code, 401)
 
+    def test_external_login_email_get_with_another_user_logged_in(self):
+        another_user = AuthUserFactory()
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service')
+        res = self.app.get(url, auth=another_user.auth)
+        assert_equal(res.status_code, 302, 'redirects to cas logout')
+        assert_in('/logout?service=', res.location)
+        assert_in(url, res.location)
+
     @mock.patch('website.mails.send_mail')
     def test_external_login_confirm_email_get_create(self, mock_welcome):
         assert_false(self.user.is_registered)
@@ -4272,7 +4394,7 @@ class TestUserConfirmSignal(OsfTestCase):
         # unclaimed user has been invited to a project.
         referrer = UserFactory()
         project = ProjectFactory(creator=referrer)
-        unclaimed_user.add_unclaimed_record(project, referrer, 'foo')
+        unclaimed_user.add_unclaimed_record(project, referrer, 'foo', email=fake.email())
         unclaimed_user.save()
 
         token = unclaimed_user.get_unclaimed_record(project._primary_key)['token']
@@ -4298,6 +4420,62 @@ class TestUserConfirmSignal(OsfTestCase):
             assert_equal(res.status_code, 302)
 
         assert_equal(mock_signals.signals_sent(), set([auth.signals.user_confirmed]))
+
+
+class TestIndexView(OsfTestCase):
+
+    def setUp(self):
+        super(TestIndexView, self).setUp()
+
+        self.inst_one = InstitutionFactory()
+        self.inst_two = InstitutionFactory()
+        self.inst_three = InstitutionFactory()
+        self.inst_four = InstitutionFactory()
+        self.inst_five = InstitutionFactory()
+
+        self.user = AuthUserFactory()
+        self.user.affiliated_institutions.append(self.inst_one)
+        self.user.affiliated_institutions.append(self.inst_two)
+        self.user.save()
+
+        # tests 5 affiliated, non-registered, public projects
+        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
+            node = ProjectFactory(creator=self.user, is_public=True)
+            node.affiliated_institutions.append(self.inst_one)
+            node.save()
+
+        # tests 4 affiliated, non-registered, public projects
+        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD - 1):
+            node = ProjectFactory(creator=self.user, is_public=True)
+            node.affiliated_institutions.append(self.inst_two)
+            node.save()
+
+        # tests 5 affiliated, registered, public projects
+        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
+            registration = RegistrationFactory(creator=self.user, is_public=True)
+            registration.affiliated_institutions.append(self.inst_three)
+            registration.save()
+
+        # tests 5 affiliated, non-registered public components
+        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
+            node = NodeFactory(creator=self.user, is_public=True)
+            node.affiliated_institutions.append(self.inst_four)
+            node.save()
+
+        # tests 5 affiliated, non-registered, private projects
+        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
+            node = ProjectFactory(creator=self.user)
+            node.affiliated_institutions.append(self.inst_five)
+            node.save()
+
+    def test_dashboard_institutions(self):
+        dashboard_institutions = index()['dashboard_institutions']
+        assert_equal(len(dashboard_institutions), 1)
+        assert_equal(dashboard_institutions[0]['id'], self.inst_one._id)
+        assert_not_equal(dashboard_institutions[0]['id'], self.inst_two._id)
+        assert_not_equal(dashboard_institutions[0]['id'], self.inst_three._id)
+        assert_not_equal(dashboard_institutions[0]['id'], self.inst_four._id)
+        assert_not_equal(dashboard_institutions[0]['id'], self.inst_five._id)
 
 if __name__ == '__main__':
     unittest.main()

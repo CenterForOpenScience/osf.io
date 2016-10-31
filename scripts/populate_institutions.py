@@ -120,6 +120,17 @@ def main(env):
                 'email_domains': [],
             },
             {
+                '_id': 'ucsd',
+                'name': 'University of California San Diego',
+                'description': 'This service is supported on campus by the UC San Diego Library for our research community. Do not use this service to store or transfer personally identifiable information, personal health information, or any other controlled unclassified information. For assistance please contact the Library\'s Research Data Curation Program at <a href="mailto:research-data-curation@ucsd.edu">research-data-curation@ucsd.edu</a>.',
+                'banner_name': 'ucsd-banner.png',
+                'logo_name': 'ucsd-shield.png',
+                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:ucsd.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': ['osf.ucsd.edu'],
+                'email_domains': [],
+            },
+            {
                 '_id': 'ucr',
                 'name': 'University of California Riverside',
                 'description': 'Policy prohibits storing PII or HIPAA data on this site, please see C&amp;C\'s <a href="http://cnc.ucr.edu/security/researchers.html">security site</a> for more information.',
@@ -155,7 +166,7 @@ def main(env):
             {
                 '_id': 'uva',
                 'name': 'University of Virginia',
-                'description': 'Projects must abide by the University <a href="http://www.virginia.edu/informationpolicy/security.html">Security and Data Protection Policies</a>',
+                'description': 'In partnership with the <a href="http://www.virginia.edu/vpr/">Vice President for Research</a>, <a href="http://dsi.virginia.edu">Data Science Institute</a>, <a href="https://www.hsl.virginia.edu">Health Sciences Library</a>, and <a href="http://data.library.virginia.edu">University Library</a>. Learn more about <a href="http://cadre.virginia.edu">UVA resources for computational and data-driven research</a>. Projects must abide by the <a href="http://www.virginia.edu/informationpolicy/security.html">University Security and Data Protection Policies</a>.',
                 'banner_name': 'uva-banner.png',
                 'logo_name': 'uva-shield.png',
                 'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:virginia.edu')),
@@ -304,6 +315,17 @@ def main(env):
                 'email_domains': [],
             },
             {
+                '_id': 'ucsd',
+                'name': 'University of California San Diego [Test]',
+                'description': 'This service is supported on campus by the UC San Diego Library for our research community. Do not use this service to store or transfer personally identifiable information, personal health information, or any other controlled unclassified information. For assistance please contact the Library\'s Research Data Curation Program at <a href="mailto:research-data-curation@ucsd.edu">research-data-curation@ucsd.edu</a>.',
+                'banner_name': 'ucsd-banner.png',
+                'logo_name': 'ucsd-shield.png',
+                'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:ucsd.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['test-osf-ucsd.cos.io'],
+                'email_domains': [],
+            }, 
+            {
                 '_id': 'ucr',
                 'name': 'University of California Riverside [Test]',
                 'description': 'Policy prohibits storing PII or HIPAA data on this site, please see C&amp;C\'s <a href="http://cnc.ucr.edu/security/researchers.html">security site</a> for more information.',
@@ -339,7 +361,7 @@ def main(env):
             {
                 '_id': 'uva',
                 'name': 'University of Virginia [Test]',
-                'description': 'Projects must abide by the University <a href="http://www.virginia.edu/informationpolicy/security.html">Security and Data Protection Policies</a>',
+                'description': 'In partnership with the <a href="http://www.virginia.edu/vpr/">Vice President for Research</a>, <a href="http://dsi.virginia.edu">Data Science Institute</a>, <a href="https://www.hsl.virginia.edu">Health Sciences Library</a>, and <a href="http://data.library.virginia.edu">University Library</a>. Learn more about <a href="http://cadre.virginia.edu">UVA resources for computational and data-driven research</a>. Projects must abide by the <a href="http://www.virginia.edu/informationpolicy/security.html">University Security and Data Protection Policies</a>.',
                 'banner_name': 'uva-banner.png',
                 'logo_name': 'uva-shield.png',
                 'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shibidp-test.its.virginia.edu/idp/shibboleth')),

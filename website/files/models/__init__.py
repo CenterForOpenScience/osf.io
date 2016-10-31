@@ -9,4 +9,5 @@ from website.files.models.dmptool import *  # noqa
 from website.files.models.figshare import *  # noqa
 from website.files.models.dataverse import *  # noqa
 from website.files.models.osfstorage import *  # noqa
+from website.files.models.owncloud import *  # noqa
 from website.files.models.googledrive import *  # noqa

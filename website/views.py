@@ -74,17 +74,28 @@ def _render_nodes(nodes, auth=None, show_path=False):
 def index():
     try:
         #TODO : make this way more robust
-        inst = Institution.find_one(Q('domains', 'eq', request.host.lower()))
-        inst_dict = view_institution(inst._id)
+        institution = Institution.find_one(Q('domains', 'eq', request.host.lower()))
+        inst_dict = view_institution(institution._id)
         inst_dict.update({
             'home': False,
             'institution': True,
-            'redirect_url': '/institutions/{}/'.format(inst._id)
+            'redirect_url': '/institutions/{}/'.format(institution._id)
         })
+
         return inst_dict
     except NoResultsFound:
         pass
-    return {'home': True}
+
+    all_institutions = Institution.find().sort('name')
+    dashboard_institutions = [
+        {'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners}
+        for inst in all_institutions
+    ]
+
+    return {
+        'home': True,
+        'dashboard_institutions': dashboard_institutions
+    }
 
 
 def find_bookmark_collection(user):

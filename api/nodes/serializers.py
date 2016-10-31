@@ -22,7 +22,7 @@ from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse,
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField,
                                   HideIfRegistration, RestrictedDictSerializer,
-                                  JSONAPIRelationshipSerializer, relationship_diff, )
+                                  JSONAPIRelationshipSerializer, relationship_diff, ShowIfVersion,)
 from api.base.exceptions import (InvalidModelValueError,
                                  RelationshipPostMakesNoChanges, Conflict,
                                  EndpointNotImplementedError)
@@ -45,6 +45,34 @@ class NodeLicenseSerializer(RestrictedDictSerializer):
 
     copyright_holders = ser.ListField(allow_empty=True, read_only=True)
     year = ser.CharField(allow_blank=True, read_only=True)
+
+
+class NodeCitationSerializer(JSONAPISerializer):
+    id = IDField(read_only=True)
+    title = ser.CharField(allow_blank=True, read_only=True)
+    author = ser.ListField(read_only=True)
+    publisher = ser.CharField(allow_blank=True, read_only=True)
+    type = ser.CharField(allow_blank=True, read_only=True)
+    doi = ser.CharField(allow_blank=True, read_only=True)
+
+    links = LinksField({'self': 'get_absolute_url'})
+
+    def get_absolute_url(self, obj):
+        return obj['URL']
+
+    class Meta:
+        type_ = 'node-citation'
+
+class NodeCitationStyleSerializer(JSONAPISerializer):
+
+    id = ser.CharField(read_only=True)
+    citation = ser.CharField(allow_blank=True, read_only=True)
+
+    def get_absolute_url(self, obj):
+        return obj['URL']
+
+    class Meta:
+        type_ = 'styled-citations'
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -178,16 +206,22 @@ class NodeSerializer(JSONAPISerializer):
         related_view_kwargs={'node_id': '<pk>'}
     )
 
-    node_links = RelationshipField(
+    node_links = ShowIfVersion(RelationshipField(
         related_view='nodes:node-pointers',
         related_view_kwargs={'node_id': '<pk>'},
         related_meta={'count': 'get_pointers_count'},
-    )
+        help_text='This feature is deprecated as of version 2.1. Use linked_nodes instead.'
+    ), min_version='2.0', max_version='2.0')
 
     parent = RelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<parent_node._id>'},
         filter_key='parent_node'
+    )
+
+    identifiers = RelationshipField(
+        related_view='nodes:identifier-list',
+        related_view_kwargs={'node_id': '<pk>'}
     )
 
     draft_registrations = HideIfRegistration(RelationshipField(
@@ -231,6 +265,11 @@ class NodeSerializer(JSONAPISerializer):
     view_only_links = RelationshipField(
         related_view='nodes:node-view-only-links',
         related_view_kwargs={'node_id': '<pk>'},
+    )
+
+    citation = RelationshipField(
+        related_view='nodes:node-citation',
+        related_view_kwargs={'node_id': '<pk>'}
     )
 
     def get_current_user_permissions(self, obj):
@@ -321,7 +360,14 @@ class NodeSerializer(JSONAPISerializer):
                         'permissions': parent.get_permissions(contributor),
                         'visible': parent.get_visible(contributor)
                     })
-            node.add_contributors(contributors, auth=auth, log=True, save=True)
+
+                if not contributor.is_registered:
+                    node.add_unregistered_contributor(
+                        fullname=contributor.fullname, email=contributor.email, auth=auth,
+                        permissions=parent.get_permissions(contributor), existing_user=contributor
+                    )
+
+                node.add_contributors(contributors, auth=auth, log=True, save=True)
         return node
 
     def update(self, node, validated_data):
@@ -643,12 +689,12 @@ class NodeContributorsSerializer(JSONAPISerializer):
         type_ = 'contributors'
 
     def get_absolute_url(self, obj):
-        node_id = self.context['request'].parser_context['kwargs']['node_id']
         return absolute_reverse(
             'nodes:node-contributor-detail',
             kwargs={
-                'node_id': node_id,
-                'user_id': obj._id
+                'user_id': obj._id,
+                'node_id': self.context['request'].parser_context['kwargs']['node_id'],
+                'version': self.context['request'].parser_context['kwargs']['version']
             }
         )
 
@@ -776,12 +822,12 @@ class NodeLinksSerializer(JSONAPISerializer):
     })
 
     def get_absolute_url(self, obj):
-        node_id = self.context['request'].parser_context['kwargs']['node_id']
         return absolute_reverse(
             'nodes:node-pointer-detail',
             kwargs={
-                'node_id': node_id,
-                'node_link_id': obj._id
+                'node_link_id': obj._id,
+                'node_id': self.context['request'].parser_context['kwargs']['node_id'],
+                'version': self.context['request'].parser_context['kwargs']['version']
             }
         )
 
@@ -841,14 +887,20 @@ class NodeProviderSerializer(JSONAPISerializer):
             'nodes:node-provider-detail',
             kwargs={
                 'node_id': obj.node._id,
-                'provider': obj.provider
+                'provider': obj.provider,
+                'version': self.context['request'].parser_context['kwargs']['version']
             }
         )
 
     def get_storage_addons_url(self, obj):
         return absolute_reverse(
             'addons:addon-list',
-            query_kwargs={'filter[categories]': 'storage'}
+            kwargs={
+                'version': self.context['request'].parser_context['kwargs']['version']
+            },
+            query_kwargs={
+                'filter[categories]': 'storage'
+            }
         )
 
 class InstitutionRelated(JSONAPIRelationshipSerializer):
@@ -1128,12 +1180,12 @@ class NodeViewOnlyLinkSerializer(JSONAPISerializer):
         return view_only_link
 
     def get_absolute_url(self, obj):
-        node_id = self.context['request'].parser_context['kwargs']['node_id']
         return absolute_reverse(
             'nodes:node-view-only-link-detail',
             kwargs={
                 'link_id': obj._id,
-                'node_id': node_id
+                'node_id': self.context['request'].parser_context['kwargs']['node_id'],
+                'version': self.context['request'].parser_context['kwargs']['version']
             }
         )
 

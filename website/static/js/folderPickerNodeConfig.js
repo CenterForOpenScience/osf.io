@@ -77,6 +77,8 @@ var FolderPickerViewModel = oop.defclass({
         self.currentDisplay = ko.observable(null);
         // Whether the folders have been loaded from the API
         self.loadedFolders = ko.observable(false);
+        // Button text for changing folders
+        self.toggleChangeText = ko.observable('Change');
 
         var addonSafeName = $osf.htmlEscape(self.addonName);
         self.messages = {
@@ -432,14 +434,17 @@ var FolderPickerViewModel = oop.defclass({
         this.selected(null);
     },
     /**
-     *  Toggles the visibility of the folder picker.
+     *  Toggles the visibility of the folder picker and toggles
+     *  Change button text between 'Change' and 'Close'
      */
     togglePicker: function() {
         var shown = this.currentDisplay() === this.PICKER;
         if (!shown) {
             this.currentDisplay(this.PICKER);
+            this.toggleChangeText('Close');
             this.activatePicker();
         } else {
+            this.toggleChangeText('Change');
             this.currentDisplay(null);
             // Clear selection
             this.cancelSelection();

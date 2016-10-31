@@ -27,9 +27,6 @@ var FilesWidget = function(divID, filesUrl, opts) {
         filterFullWidth: true, // Make the filter span the entire row for this view
         xhrconfig: $osf.setXHRAuthorization,
         hScroll: null,
-        lazyLoadPreprocess: function(data) {
-            return data.data;
-        },
         columnTitles: function() {
             return [{
                 title: 'Name',

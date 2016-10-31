@@ -2,6 +2,105 @@
 Changelog
 *********
 
+0.98.0 (2016-10-31)
+===================
+- Keep the file editor widget on file view page from sometimes being created twice
+- Make public activity page load much more quickly
+- Update Wiki preview Length
+- Hide OSF for Institutions Logos from Dashboard Until 5 Projects Affiliated
+- On the files widget, handle renaming a file when sort-by-date is selected
+- Don't break addons when adding addons to ADDONS_REQUESTED in local.py
+- Remove reliance on Object.remove to increase IE support
+- Fix broken retraction due to incompatible text entry
+- Capitalize home wiki in wiki commenting logs
+- Ensure files in search could be visited even if they didn't have GUIDs
+- Fix Node relationship on NodeWiki for Registrations
+- Keep signing Up w/ an existing non-registered User from issuing password reset email
+- Allow deleting of replies to comments on files
+- Allow restoring deleted replies to a comment
+- Prevent renaming of files with ']' from causing problems
+- Allow IE to update project category from the settings page
+- Allow admin app to pull statistics for users from workshops and webinars
+- Allow admin app to link users to desk.com tickets
+- Allow IE to update project title and description from settings page
+- Fix shortened iframe for PDF files in MFR
+
+0.97.0 (2016-10-20)
+===================
+- API v2 Versioning
+- API v2 Redirect swagger docs to Browseable API
+- Fix wiki formatting for legacy wiki pages
+- Ensure bad file moves don't delete files
+- API v2 Make private nodes private in inter-node file moves
+- Don't create user twice in claim edge case
+- Retain formatting in preregistration
+- Render wiki on project summary widget properly in all cases
+- Fixes for throttling
+- Allow search to find words separated by things that aren't spaces
+- API v2.1 Make pagination meta match JSON API Spec
+- Move institution login to CAS
+- API v2 Create file GUIDs
+- Standardize terminology: registration form
+- Clarify that prereg comments are not registered
+- Decouple identifiers from registrations
+- API Expose latest file version
+- Update Fangorn to use WB V1 API
+- Add My Preprints to My Projects
+- Update "this project" box at the top of registration overview page
+- Add change folder toggle button
+- Improvements to invoke tasks for dockerization
+- Support test-level database isolation
+
+Migrations
+-----------
+
+- python -m scripts.encrypt_external_accounts_unicode
+
+0.96.0 (2016-10-12)
+===================
+- Add ownCloud addon
+- Encrypt addon credentials
+
+Migrations
+-----------
+
+- python -m scripts.encrypt_external_accounts
+
+0.95.0 (2016-10-05)
+===================
+- Replace GPL-only django-queryset-csv library (the last of the GPL)
+- Allow domain with umlaut to be added to OSF social profile
+- API v2 search
+- Fix bottom margin of Dashboard quick project search
+- Normalize OSF verification key
+- Add prereg banner to OSF dashboard
+- Pin MODM dependency
+- Surface analytics initialization script
+- Add error messaging on project page, files page, and prereg form "cannot upload folders"
+- Change preprint logs to say 'made' instead of 'initiated'
+- Fix raven-js calls on the OSF
+- Capitalize wiki's Home page on many of the logs
+- Remove legacy SHARE code
+
+0.94.4 (2016-10-05)
+===================
+- Allow components of projects with unconfirmed contributors to inherit contributors properly
+
+0.94.0 (2016-09-22)
+===================
+- Remove GPLv3-only python-crontab library
+- API Put index on on contributor detail
+- Make analytics for OSF4I differentiate properly between nodes and projects
+- Fix My Projects registrations that aren't yours have blank contributor names and throw 404 error when expanded
+- Fix filtering by Name and Modified Date on Files page
+- Improve look of Institution logos on project pages
+- API Add citations for projects
+- Add unit tests for ORCiD login
+- Auto-link bare URLs in node descriptions
+- Alert when you cannot delete a project when they click the delete button
+- Add social icons to user profile
+- Change download count to not include contributors' downloads
+
 0.93.0 (2016-09-14)
 ===================
 

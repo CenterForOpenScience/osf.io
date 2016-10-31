@@ -31,8 +31,13 @@ BCRYPT_LOG_ROUNDS = 12
 with open(os.path.join(APP_PATH, 'package.json'), 'r') as fobj:
     VERSION = json.load(fobj)['version']
 
-# Hours before email confirmation tokens expire
-EMAIL_TOKEN_EXPIRATION = 24
+# Expiration time for verification key
+EXPIRATION_TIME_DICT = {
+    'password': 30,         # 30 minutes for forgot and reset password
+    'confirm': 24 * 60,     # 24 hours in minutes for confirm account and email
+    'claim': 30 * 24 * 60   # 30 days in minutes for claim contributor-ship
+}
+
 CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_components', 'styles')
 
 # Minimum seconds between forgot password email attempts
@@ -69,9 +74,6 @@ LOG_PATH = os.path.join(APP_PATH, 'logs')
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
 ANALYTICS_PATH = os.path.join(BASE_PATH, 'analytics')
 
-GNUPG_HOME = os.path.join(BASE_PATH, 'gpg')
-GNUPG_BINARY = 'gpg'
-
 # User management & registration
 CONFIRM_REGISTRATIONS_BY_EMAIL = True
 ALLOW_REGISTRATION = True
@@ -81,10 +83,6 @@ SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
 ELASTIC_URI = 'localhost:9200'
 ELASTIC_TIMEOUT = 10
 ELASTIC_INDEX = 'website'
-SHARE_ELASTIC_URI = ELASTIC_URI
-SHARE_ELASTIC_INDEX = 'share'
-# For old indices
-SHARE_ELASTIC_INDEX_TEMPLATE = 'share_v{}'
 
 # Sessions
 COOKIE_NAME = 'osf'
@@ -145,9 +143,6 @@ MFR_TEMP_PATH = os.path.join(BASE_PATH, 'mfrtemp')
 
 # Use Celery for file rendering
 USE_CELERY = True
-
-# Use GnuPG for encryption
-USE_GNUPG = True
 
 # File rendering timeout (in ms)
 MFR_TIMEOUT = 30000
@@ -280,7 +275,10 @@ ALL_MY_REGISTRATIONS_NAME = 'All my registrations'
 
 # Most Popular and New and Noteworthy Nodes
 POPULAR_LINKS_NODE = None  # TODO Override in local.py in production.
+POPULAR_LINKS_REGISTRATIONS = None  # TODO Override in local.py in production.
 NEW_AND_NOTEWORTHY_LINKS_NODE = None  # TODO Override in local.py in production.
+
+MAX_POPULAR_PROJECTS = 10
 
 NEW_AND_NOTEWORTHY_CONTRIBUTOR_BLACKLIST = []  # TODO Override in local.py in production.
 
@@ -312,10 +310,8 @@ EZID_PASSWORD = 'changeme'
 # Format for DOIs and ARKs
 EZID_FORMAT = '{namespace}osf.io/{guid}'
 
-
-USE_SHARE = True
 SHARE_REGISTRATION_URL = ''
-SHARE_API_DOCS_URL = ''
+SHARE_URL = 'https://share.osf.io/'
 
 CAS_SERVER_URL = 'http://localhost:8080'
 MFR_SERVER_URL = 'http://localhost:7778'
@@ -349,6 +345,7 @@ LOW_PRI_MODULES = {
     'scripts.osfstorage.files_audit',
     'scripts.osfstorage.glacier_audit',
     'scripts.populate_new_and_noteworthy_projects',
+    'scripts.populate_popular_projects_and_registrations',
     'website.search.elastic_search',
 }
 
@@ -407,6 +404,7 @@ CELERY_IMPORTS = (
     'website.search.search',
     'website.project.tasks',
     'scripts.populate_new_and_noteworthy_projects',
+    'scripts.populate_popular_projects_and_registrations',
     'scripts.refresh_addon_tokens',
     'scripts.retract_registrations',
     'scripts.embargo_registrations',
@@ -484,6 +482,11 @@ else:
             'schedule': crontab(minute=0, hour=2, day_of_week=6),  # Saturday 2:00 a.m.
             'kwargs': {'dry_run': False}
         },
+        'update_popular_nodes': {
+            'task': 'scripts.populate_popular_projects_and_registrations',
+            'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m.
+            'kwargs': {'dry_run': False}
+        },
     }
 
     # Tasks that need metrics and release requirements
@@ -542,6 +545,9 @@ WATERBUTLER_JWE_SECRET = 'CirclesAre4Squares'
 WATERBUTLER_JWT_SECRET = 'ILiekTrianglesALot'
 WATERBUTLER_JWT_ALGORITHM = 'HS256'
 WATERBUTLER_JWT_EXPIRATION = 15
+
+SENSITIVE_DATA_SALT = 'yusaltydough'
+SENSITIVE_DATA_SECRET = 'TrainglesAre5Squares'
 
 DRAFT_REGISTRATION_APPROVAL_PERIOD = datetime.timedelta(days=10)
 assert (DRAFT_REGISTRATION_APPROVAL_PERIOD > EMBARGO_END_DATE_MIN), 'The draft registration approval period should be more than the minimum embargo end date.'
@@ -1744,8 +1750,12 @@ RECAPTCHA_VERIFY_URL = 'https://www.google.com/recaptcha/api/siteverify'
 AKISMET_APIKEY = None
 SPAM_CHECK_ENABLED = False
 SPAM_CHECK_PUBLIC_ONLY = True
+SPAM_ACCOUNT_SUSPENSION_ENABLED = False
+SPAM_ACCOUNT_SUSPENSION_THRESHOLD = timedelta(hours=24)
 SPAM_FLAGGED_MAKE_NODE_PRIVATE = False
 SPAM_FLAGGED_REMOVE_FROM_SEARCH = False
 
-SHARE_URL = 'http://localhost:8000/'
 SHARE_API_TOKEN = None
+
+# number of nodes that need to be affiliated with an institution before the institution logo is shown on the dashboard
+INSTITUTION_DISPLAY_NODE_THRESHOLD = 5

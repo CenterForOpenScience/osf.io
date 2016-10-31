@@ -431,11 +431,11 @@ function checkConflicts(tb, item, folder, cb) {
     for(var i = 0; i < folder.children.length; i++) {
         var child = folder.children[i];
         if (child.data.name === item.data.name && child.id !== item.id) {
-            messageArray.push(m('p', 'An item named "' + item.data.name + '" already exists in this location.'));
+            messageArray.push(m('p', 'An item named "' + child.data.name + '" already exists in this location.'));
 
             if (window.contextVars.node.preprintFileId === child.data.path.replace('/', '')) {
                 messageArray = messageArray.concat([
-                    m('p', 'The file "' + item.data.name + '" is the primary file for a preprint, so it should not be replaced.'),
+                    m('p', 'The file "' + child.data.name + '" is the primary file for a preprint, so it should not be replaced.'),
                     m('strong', 'Replacing this file will remove this preprint from circulation.')
                 ]);
             }
@@ -445,7 +445,7 @@ function checkConflicts(tb, item, folder, cb) {
                     m('span.btn.btn-primary', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
                     m('span.btn.btn-primary', {onclick: cb.bind(tb, 'replace')},'Replace')
                 ],
-                m('h3.break-word.modal-title', 'Replace "' + item.data.name + '"?')
+                m('h3.break-word.modal-title', 'Replace "' + child.data.name + '"?')
             );
             return;
         }
@@ -459,11 +459,11 @@ function checkConflictsRename(tb, item, name, cb) {
     for(var i = 0; i < parent.children.length; i++) {
         var child = parent.children[i];
         if (child.data.name === name && child.id !== item.id) {
-            messageArray.push(m('p', 'An item named "' + item.data.name + '" already exists in this location.'));
+            messageArray.push(m('p', 'An item named "' + child.data.name + '" already exists in this location.'));
 
             if (window.contextVars.node.preprintFileId === child.data.path.replace('/', '')) {
                 messageArray = messageArray.concat([
-                    m('p', 'The file "' + item.data.name + '" is the primary file for a preprint, so it should not be replaced.'),
+                    m('p', 'The file "' + child.data.name + '" is the primary file for a preprint, so it should not be replaced.'),
                     m('strong', 'Replacing this file will remove this preprint from circulation.')
                 ]);
             }
@@ -473,7 +473,7 @@ function checkConflictsRename(tb, item, name, cb) {
                     m('span.btn.btn-primary', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
                     m('span.btn.btn-primary', {onclick: cb.bind(tb, 'replace')},'Replace')
                 ],
-                m('h3.break-word.modal-title', 'Replace "' + item.data.name + '"?')
+                m('h3.break-word.modal-title', 'Replace "' + child.data.name + '"?')
             );
             return;
         }
@@ -501,26 +501,46 @@ function doItemOp(operation, to, from, rename, conflict) {
     }
     orderFolder.call(tb, from.parent());
 
+    var moveSpec;
+    if (operation === OPERATIONS.RENAME) {
+        moveSpec = {
+            action: 'rename',
+            rename: rename,
+            conflict: conflict
+        };
+    } else if (operation === OPERATIONS.COPY) {
+        moveSpec = {
+            action: 'copy',
+            path: to.data.path || '/',
+            conflict: conflict,
+            resource: to.data.nodeId,
+            provider: to.data.provider
+        };
+    } else if (operation === OPERATIONS.MOVE) {
+        moveSpec = {
+            action: 'move',
+            path: to.data.path || '/',
+            conflict: conflict,
+            resource: to.data.nodeId,
+            provider: to.data.provider
+        };
+    }
+
     $.ajax({
         type: 'POST',
         beforeSend: $osf.setXHRAuthorization,
-        url: operation === OPERATIONS.COPY ? waterbutler.copyUrl() : waterbutler.moveUrl(),
+        url: waterbutler.buildTreeBeardFileOp(from),
         headers: {
             'Content-Type': 'Application/json'
         },
-        data: JSON.stringify({
-            'rename': rename,
-            'conflict': conflict,
-            'source': waterbutler.toJsonBlob(from),
-            'destination': waterbutler.toJsonBlob(to),
-        })
+        data: JSON.stringify(moveSpec)
     }).done(function(resp, _, xhr) {
         if (to.data.provider === from.provider) {
             tb.pendingFileOps.pop();
         }
         if (xhr.status === 202) {
             var mithrilContent = m('div', [
-                m('h3.break-word', operation.action + ' "' + from.data.materialized + '" to "' + (to.data.materialized || '/') + '" is taking a bit longer than expected.'),
+                m('h3.break-word', operation.action + ' "' + (from.data.materialized || '/') + '" to "' + (to.data.materialized || '/') + '" is taking a bit longer than expected.'),
                 m('p', 'We\'ll send you an email when it has finished.'),
                 m('p', 'In the mean time you can leave this page; your ' + operation.status + ' will still be completed.')
             ]);
@@ -530,7 +550,7 @@ function doItemOp(operation, to, from, rename, conflict) {
             tb.modal.update(mithrilContent, mithrilButtons);
             return;
         }
-        from.data = resp;
+        from.data = tb.options.lazyLoadPreprocess.call(this, resp).data;
         from.data.status = undefined;
         from.notify.update('Successfully ' + operation.passed + '.', 'success', null, 1000);
 
@@ -585,12 +605,7 @@ function doItemOp(operation, to, from, rename, conflict) {
         Raven.captureMessage('Failed to move or copy file', {
             extra: {
                 xhr: xhr,
-                requestData: {
-                    rename: rename,
-                    conflict: conflict,
-                    source: waterbutler.toJsonBlob(from),
-                    destination: waterbutler.toJsonBlob(to),
-                }
+                requestData: moveSpec
             }
         });
 
@@ -607,8 +622,23 @@ function doItemOp(operation, to, from, rename, conflict) {
  * @private
  */
 function _fangornResolveUploadUrl(item, file) {
+    // WB v1 update syntax is PUT <file_path>?kind=file
+    // WB v1 upload syntax is PUT <parent_path>/?kind=file&name=<filename>
+    // If upload target file name already exists don't pass file.name.  WB v1 rejects updates that
+    // include a filename.
     var configOption = resolveconfigOption.call(this, item, 'uploadUrl', [item, file]); // jshint ignore:line
-    return configOption || waterbutler.buildTreeBeardUpload(item, file);
+    if (configOption) {
+        return configOption;
+    }
+    var updateUrl;
+    $.each(item.children, function( index, value ) {
+        if (file.name === value.data.name) {
+            updateUrl = waterbutler.buildTreeBeardUpload(value);
+            return false;
+        }
+    });
+
+    return updateUrl || waterbutler.buildTreeBeardUpload(item, {name: file.name});
 }
 
 /**
@@ -808,7 +838,7 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
     // Dataverse : Object, actionTaken : file_uploaded
     revisedItem = resolveconfigOption.call(treebeard, item.parent(), 'uploadSuccess', [file, item, response]);
     if (!revisedItem && response) {
-        item.data = response;
+        item.data = treebeard.options.lazyLoadPreprocess.call(this, response).data;
         inheritFromParent(item, item.parent());
     }
     if (item.data.tmpID) {
@@ -892,6 +922,7 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
     if (msgText !== 'Upload canceled.') {
         addFileStatus(treebeard, file, false, msgText, '');
     }
+    treebeard.dropzone.options.queuecomplete(file);
 }
 
 /**
@@ -958,18 +989,20 @@ function _createFolder(event, dismissCallback, helpText) {
     }
 
     var extra = {};
-    var path = (parent.data.path || '/') + val + '/';
+    var path = parent.data.path || '/';
+    var options = {name: val, kind: 'folder'};
 
     if (parent.data.provider === 'github') {
         extra.branch = parent.data.branch;
     }
 
     m.request({
-        method: 'POST',
+        method: 'PUT',
         background: true,
         config: $osf.setXHRAuthorization,
-        url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId)
+        url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId, options)
     }).then(function(item) {
+        item = tb.options.lazyLoadPreprocess.call(this, item).data;
         inheritFromParent({data: item}, parent, ['branch']);
         item = tb.createItem(item, parent.id);
         orderFolder.call(tb, parent);
@@ -1237,14 +1270,20 @@ function _fangornLazyLoadOnLoad (tree, event) {
  * @private
  */
 function orderFolder(tree) {
-    // Checking if this column does in fact have sorting
-    var sortDirection = '';
-    if (this.isSorted[0]) {
-        sortDirection = this.isSorted[0].desc ? 'desc' : 'asc';
-    } else {
+    var sortColumn;
+    var sortDirection;
+
+    if(typeof this.isSorted !== 'undefined' && typeof this.isSorted[0] !== 'undefined'){
+        sortColumn = Object.keys(this.isSorted)[0]; // default to whatever column is first
+        for (var column in this.isSorted){
+            sortColumn = this.isSorted[column].asc || this.isSorted[column].desc ? column : sortColumn; 
+        }
+        sortDirection = this.isSorted[sortColumn].desc ? 'desc' : 'asc'; // default to ascending
+    }else{
+        sortColumn = 0;
         sortDirection = 'asc';
     }
-    tree.sortChildren(this, sortDirection, 'text', 0, 1);
+    tree.sortChildren(this, sortDirection, 'text', sortColumn, 1);
     this.redraw();
 }
 
@@ -1431,7 +1470,7 @@ function _fangornResolveRows(item) {
     });
     defaultColumns.push({
         data: 'version',
-        filter: true,
+        filter: false,
         sortInclude : false,
         custom: _fangornVersionColumn
     });
@@ -1833,7 +1872,9 @@ var dismissToolbar = function(helpText){
     }
     tb.toolbarMode(toolbarModes.DEFAULT);
     tb.filterText('');
-    helpText('');
+    if(typeof helpText === 'function'){
+        helpText('');
+    }
     m.redraw();
 };
 
@@ -1841,7 +1882,6 @@ var FGToolbar = {
     controller : function(args) {
         var self = this;
         self.tb = args.treebeard;
-        self.tb.inputValue = m.prop('');
         self.tb.toolbarMode = m.prop(toolbarModes.DEFAULT);
         self.items = args.treebeard.multiselected;
         self.mode = self.tb.toolbarMode;
@@ -1879,7 +1919,7 @@ var FGToolbar = {
                     m.component(FGInput, {
                         onkeypress: function (event) {
                             if (ctrl.tb.pressedKey === ENTER_KEY) {
-                                _createFolder.call(ctrl.tb, event, ctrl.dismissToolbar);
+                                ctrl.createFolder.call(ctrl.tb, event, ctrl.dismissToolbar);
                             }
                         },
                         id: 'createFolderInput',
@@ -1904,15 +1944,13 @@ var FGToolbar = {
                 m('.col-xs-9',
                     m.component(FGInput, {
                         onkeypress: function (event) {
-                            ctrl.tb.inputValue($(event.target).val());
                             if (ctrl.tb.pressedKey === ENTER_KEY) {
                                 _renameEvent.call(ctrl.tb);
                             }
                         },
                         id: 'renameInput',
                         helpTextId: 'renameHelpText',
-                        placeholder: null,
-                        value: ctrl.tb.inputValue()
+                        placeholder: 'Enter name',
                     }, ctrl.helpText())
                 ),
                 m('.col-xs-3.tb-buttons-col',
@@ -2098,13 +2136,13 @@ function openParentFolders (item) {
  function _fangornMultiselect (event, row) {
     var tb = this;
     var scrollToItem = false;
-    filterRowsNotInParent.call(tb, tb.multiselected());
     if (tb.toolbarMode() === 'filter') {
-        dismissToolbar.call(tb);
         scrollToItem = true;
         // recursively open parents of the selected item but do not lazyload;
         openParentFolders.call(tb, row);
-    }
+    }    
+    dismissToolbar.call(tb);
+    filterRowsNotInParent.call(tb, tb.multiselected());
 
     if (tb.multiselected().length === 1){
         tb.select('#tb-tbody').removeClass('unselectable');
@@ -2114,7 +2152,6 @@ function openParentFolders (item) {
     } else if (tb.multiselected().length > 1) {
         tb.select('#tb-tbody').addClass('unselectable');
     }
-    tb.inputValue(tb.multiselected()[0].data.name);
     m.redraw();
     reapplyTooltips();
 }
@@ -2421,6 +2458,7 @@ tbOptions = {
     uploads : true,         // Turns dropzone on/off.
     columnTitles : _fangornColumnTitles,
     resolveRows : _fangornResolveRows,
+    lazyLoadPreprocess: waterbutler.wbLazyLoadPreprocess,
     hoverClassMultiselect : 'fangorn-selected',
     multiselect : true,
     placement : 'files',
