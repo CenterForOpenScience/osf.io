@@ -18,7 +18,11 @@ def get_events(date):
     """ Get all node logs from a given date. Defaults to starting yesterday
     to today (both in UTC).
     """
-    node_log_query = Q('date', 'lte', date) & Q('date', 'gt', date - timedelta(1))
+    logger.info('Gathering node logs between {} and {}'.format(
+        date.isoformat(), (date + timedelta(1)).isoformat())
+    )
+
+    node_log_query = Q('date', 'lt', date + timedelta(1)) & Q('date', 'gte', date)
 
     node_logs = NodeLog.find(node_log_query)
     node_log_events = []
@@ -39,7 +43,7 @@ def get_events(date):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Get node log counts!')
+    parser = argparse.ArgumentParser(description='Get node logs!')
     parser.add_argument('-d', '--date', dest='date', required=False)
 
     return parser.parse_args()
@@ -59,7 +63,8 @@ def main():
     """
     today = datetime.utcnow().date()
     args = parse_args()
-    date = parse(args.end_date).date() if args.date else today
+    date = parse(args.end_date).date() if args.date else today - timedelta(1)
+
     date = datetime(date.year, date.month, date.day)  # make sure the day starts at midnight
 
     node_log_events = get_events(date)
