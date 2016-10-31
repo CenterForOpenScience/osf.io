@@ -18,6 +18,7 @@ SECURE_MODE = not DEBUG_MODE  # Disable osf secure cookie
 PROTOCOL = 'https://' if SECURE_MODE else 'http://'
 DOMAIN = PROTOCOL + 'localhost:5000/'
 API_DOMAIN = PROTOCOL + 'localhost:8000/'
+ENABLE_INSTITUTIONS = True
 
 SEARCH_ENGINE = 'elastic'
 
