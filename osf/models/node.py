@@ -44,9 +44,12 @@ from typedmodels.models import TypedModel
 
 from framework import status
 from framework.mongo.utils import to_mongo_key
+from framework.mongo import get_request_and_user_id, DummyRequest
 from framework.exceptions import PermissionsError
 from framework.sentry import log_exception
+from framework.celery_tasks.handlers import enqueue_task
 from website import settings, language
+from website.mails import mails
 from website.project.model import NodeUpdateError
 from website.exceptions import (
     UserNotAffiliatedError,
@@ -55,8 +58,10 @@ from website.exceptions import (
     TagNotFoundError,
 )
 from website.project import signals as project_signals
+from website.project import tasks as node_tasks
 from website.citations.utils import datetime_to_csl
 from website.util import api_url_for, api_v2_url
+from website.util import get_headers_from_request
 from website.util import web_url_for
 from website.util import sanitize
 from website.util.permissions import (
@@ -1998,13 +2003,137 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def save(self, *args, **kwargs):
         if self.pk:
+            first_save = False
             self.root = self._root
+        else:
+            first_save = True
         if 'suppress_log' in kwargs.keys():
             self._suppress_log = kwargs['suppress_log']
             del kwargs['suppress_log']
         else:
             self._suppress_log = False
-        return super(AbstractNode, self).save(*args, **kwargs)
+        saved_fields = self.get_dirty_fields() or []
+        ret = super(AbstractNode, self).save(*args, **kwargs)
+        if saved_fields:
+            self.on_update(first_save, saved_fields)
+        return ret
+
+    def on_update(self, first_save, saved_fields):
+        User = apps.get_model('osf.OSFUser')
+        request, user_id = get_request_and_user_id()
+        request_headers = {}
+        if not isinstance(request, DummyRequest):
+            request_headers = {
+                k: v
+                for k, v in get_headers_from_request(request).items()
+                if isinstance(v, basestring)
+            }
+        enqueue_task(node_tasks.on_node_updated.s(self._id, user_id, first_save, saved_fields, request_headers))
+        user = User.load(user_id)
+        if user and self.check_spam(user, saved_fields, request_headers):
+            # Specifically call the super class save method to avoid recursion into model save method.
+            super(Node, self).save()
+
+    def _get_spam_content(self, saved_fields):
+        NodeWikiPage = apps.get_model('addons_wiki.NodeWikiPage')
+        spam_fields = self.SPAM_CHECK_FIELDS if self.is_public and 'is_public' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(saved_fields)
+        content = []
+        for field in spam_fields:
+            if field == 'wiki_pages_current':
+                newest_wiki_page = None
+                for wiki_page_id in self.wiki_pages_current.values():
+                    wiki_page = NodeWikiPage.load(wiki_page_id)
+                    if not newest_wiki_page:
+                        newest_wiki_page = wiki_page
+                    elif wiki_page.date > newest_wiki_page.date:
+                        newest_wiki_page = wiki_page
+                if newest_wiki_page:
+                    content.append(newest_wiki_page.raw_text(self).encode('utf-8'))
+            else:
+                content.append((getattr(self, field, None) or '').encode('utf-8'))
+        if not content:
+            return None
+        return ' '.join(content)
+
+    def check_spam(self, user, saved_fields, request_headers):
+        if not settings.SPAM_CHECK_ENABLED:
+            return False
+        if settings.SPAM_CHECK_PUBLIC_ONLY and not self.is_public:
+            return False
+        if 'ham_confirmed' in user.system_tags:
+            return False
+
+        content = self._get_spam_content(saved_fields)
+        if not content:
+            return
+        is_spam = self.do_check_spam(
+            user.fullname,
+            user.username,
+            content,
+            request_headers
+        )
+        logger.info("Node ({}) '{}' smells like {} (tip: {})".format(
+            self._id, self.title.encode('utf-8'), 'SPAM' if is_spam else 'HAM', self.spam_pro_tip
+        ))
+        if is_spam:
+            self._check_spam_user(user)
+        return is_spam
+
+    def _check_spam_user(self, user):
+        if (
+            settings.SPAM_ACCOUNT_SUSPENSION_ENABLED
+            and (datetime.datetime.utcnow() - user.date_confirmed) <= settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD
+        ):
+            self.set_privacy('private', log=False, save=False)
+
+            # Suspend the flagged user for spam.
+            if 'spam_flagged' not in user.system_tags:
+                user.system_tags.append('spam_flagged')
+            if not user.is_disabled:
+                user.disable_account()
+                user.is_registered = False
+                mails.send_mail(to_addr=user.username, mail=mails.SPAM_USER_BANNED, user=user)
+            user.save()
+
+            # Make public nodes private from this contributor
+            for node in user.contributed:
+                if self._id != node._id and len(node.contributors) == 1 and node.is_public:
+                    node.set_privacy('private', log=False, save=True)
+
+    def flag_spam(self):
+        """ Overrides SpamMixin#flag_spam.
+        """
+        super(Node, self).flag_spam()
+        if settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE:
+            self.set_privacy(Node.PRIVATE, auth=None, log=False, save=False, check_addons=False)
+            log = self.add_log(
+                action=NodeLog.MADE_PRIVATE,
+                params={
+                    'project': self.parent_id,
+                    'node': self._primary_key,
+                },
+                auth=None,
+                save=False
+            )
+            log.should_hide = True
+            log.save()
+
+    def confirm_spam(self, save=False):
+        super(Node, self).confirm_spam(save=False)
+        self.set_privacy(Node.PRIVATE, auth=None, log=False, save=False, check_addons=False)
+        log = self.add_log(
+            action=NodeLog.MADE_PRIVATE,
+            params={
+                'project': self.parent_id,
+                'node': self._primary_key,
+            },
+            auth=None,
+            save=False
+        )
+        log.should_hide = True
+        log.save()
+        if save:
+            self.save()
 
     @classmethod
     def migrate_from_modm(cls, modm_obj):

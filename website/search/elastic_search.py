@@ -26,9 +26,8 @@ from framework.celery_tasks import app as celery_app
 from framework.mongo.utils import paginated
 
 from website import settings
-from website.files.models import FileNode
 from website.filters import gravatar
-from website.models import User, Node
+from osf.models import OSFUser as User, FileNode, AbstractNode as Node
 from website.project.licenses import serialize_node_license_record
 from website.search import exceptions
 from website.search.util import build_query, clean_splitters
@@ -300,7 +299,7 @@ def update_node_async(self, node_id, index=None, bulk=False):
         self.retry(exc=exc)
 
 def serialize_node(node, category):
-    from website.addons.wiki.model import NodeWikiPage
+    NodeWikiPage = apps.get_model('addons_wiki.NodeWikiPage')
 
     elastic_document = {}
     parent_id = node.parent_id
@@ -353,9 +352,8 @@ def serialize_node(node, category):
 
 @requires_search
 def update_node(node, index=None, bulk=False, async=False):
+    from addons.osfstorage.models import OsfStorageFile
     index = index or INDEX
-
-    from website.files.models.osfstorage import OsfStorageFile
     for file_ in paginated(OsfStorageFile, Q('node', 'eq', node)):
         update_file(file_.wrapped(), index=index)
 
@@ -486,7 +484,7 @@ def update_file(file_, index=None, delete=False):
         'id': file_._id,
         'deep_url': file_deep_url,
         'guid_url': guid_url,
-        'tags': [tag._id for tag in file_.tags],
+        'tags': list(file_.tags.values_list('name', flat=True)),
         'name': file_.name,
         'category': 'file',
         'node_url': node_url,
