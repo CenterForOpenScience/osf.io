@@ -11,7 +11,7 @@ from website.app import init_app
 from website.settings import KEEN as keen_settings
 from scripts.analytics.user_summary import get_events as user_events
 from scripts.analytics.node_summary import get_events as node_events
-from scripts.analytics.node_log_count import get_events as node_log_events
+from scripts.analytics.node_log_events import get_events as node_log_events
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -24,7 +24,7 @@ def get_events_for_day(day, scripts=None):
      Default to explicitly imported and run analytic summary scripts,
      but optionally pass in the names of specific scripts to run.
      """
-    logger.info('<---- Keen Counts for {} ---->'.format(day.isoformat()))
+    logger.info('<---- Keen Summary Counts for {} ---->'.format(day.isoformat()))
 
     keen_events = {}
     if scripts:
@@ -88,5 +88,7 @@ if __name__ == '__main__':
     end_date = parse(args.end_date) if args.end_date else now
     start_date = parse(args.start_date) if args.end_date else now - timedelta(1)
     scripts = args.analytics_scripts
+
+    start_date = datetime(start_date.year, start_date.month, start_date.day)  # make sure the day starts at midnight
 
     main(start_date, end_date, scripts)
