@@ -3,19 +3,22 @@ import json
 import jwe
 import jwt
 
+from modularodm import Q
+from modularodm.exceptions import ModularOdmException
+
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.authentication import BaseAuthentication
 
 from api.base import settings
 
 from framework.auth import register_unconfirmed
-from framework.auth import campaigns, signals
+from framework.auth import campaigns
 from framework.auth.core import get_user
 from framework.auth.exceptions import DuplicateEmailError
 from framework.auth.views import send_confirm_email
 
-from website import language
-from website import settings as osf_settings
+from website.addons.twofactor.models import TwoFactorUserSettings
+
 
 
 class CasAuthentication(BaseAuthentication):
@@ -36,6 +39,13 @@ class CasAuthentication(BaseAuthentication):
         #     },
         # },
         # {
+        #     "type": "TWO_FACTOR",
+        #     "user": {
+        #         "username": "",
+        #         "oneTimePassword": "",
+        #     },
+        # },
+        # {
         #     "type": "REGISTER",
         #     "user": {
         #         "fullname": "",
@@ -51,11 +61,16 @@ class CasAuthentication(BaseAuthentication):
             if user and not error_message:
                 return user, None
             raise AuthenticationFailed(detail=error_message)
+        elif data.get('type') == "TWO_FACTOR":
+            user, error_message = handle_two_factor(data.get('user'))
+            if user and not error_message:
+                return user, None
+            raise AuthenticationFailed(detail=error_message)
         elif data.get('type') == "REGISTER":
-            user, message = handle_register(data.get('user'))
-            if not user:
-                raise AuthenticationFailed(detail=message)
-            return user, None
+            user, error_message = handle_register(data.get('user'))
+            if user and not error_message:
+                return user, None
+            raise AuthenticationFailed(detail=error_message)
 
         return AuthenticationFailed
 
@@ -66,7 +81,7 @@ def handle_login(user):
     verification_key = user.get('verificationKey')
     password_hash = user.get('passwordHash')
     if not email or not (verification_key or password_hash):
-        return None, 'MISSING_CREDENTIAL'
+        return None, 'MISSING_CREDENTIALS'
 
     user = get_user(email)
     if not user:
@@ -83,13 +98,29 @@ def handle_login(user):
         return None, 'INVALID_PASSWORD'
 
 
+def handle_two_factor(user):
+    username = user.get('username')
+    one_time_password = user.get('oneTimePassword')
+    if not username or not one_time_password:
+        return None, 'MISSING_CREDENTIALS'
+
+    user = get_user(username)
+    if not user:
+        return None, 'ACCOUNT_NOT_FOUND'
+
+    two_factor = get_user_with_two_factor(user)
+    if two_factor and two_factor.verify_code(one_time_password):
+        return user, None
+    return None, 'INVALID_ONE_TIME_PASSWORD'
+
+
 def handle_register(user):
 
     fullname = user.get('fullname')
     email = user.get('email')
     password = user.get('password')
     if not (fullname and email and password):
-        return None, 'MISSING_CREDENTIAL'
+        return None, 'MISSING_CREDENTIALS'
 
     campaign = user.get('campaign')
     if campaign and campaign not in campaigns.CAMPAIGNS:
@@ -105,7 +136,7 @@ def handle_register(user):
         return None, 'ALREADY_REGISTERED'
 
     send_confirm_email(user, email=user.username)
-    return user, 'REGISTRATION_SUCCESS'
+    return user, None
 
 
 def decrypt_payload(body):
@@ -124,3 +155,10 @@ def decrypt_payload(body):
     except (jwt.InvalidTokenError, TypeError):
         raise AuthenticationFailed
     return payload
+
+
+def get_user_with_two_factor(user):
+    try:
+        return TwoFactorUserSettings.find_one(Q('owner', 'eq', user._id))
+    except ModularOdmException:
+        return None
