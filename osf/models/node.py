@@ -14,7 +14,8 @@ import pytz
 from dirtyfields import DirtyFieldsMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.db import models, transaction
+from django.db import models, transaction, connection
+from psycopg2._psycopg import AsIs
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -213,6 +214,35 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if self.is_fork:
             return self.forked_from.parent_node
         return None
+
+    def get_root(self):
+        sql = """
+            WITH RECURSIVE
+                node_relation_cte(id, parent_id, child_id, path) AS (
+                SELECT
+                    node_relation.id,
+                    node_relation.parent_id,
+                    node_relation.child_id,
+                    (node_relation.parent_id || '->' || node_relation.child_id :: TEXT) as path
+                FROM "%s" AS node_relation
+                UNION ALL
+                SELECT
+                    c.id,
+                    c.parent_id,
+                    c.child_id,
+                    (p.path || '->' || c.child_id::TEXT) as path
+                FROM node_relation_cte AS p, "%s" AS c
+                WHERE c.parent_id = p.child_id
+            )
+            SELECT path FROM node_relation_cte AS n WHERE n.child_id = %s;
+        """
+        with connection.cursor() as cursor:
+            node_relation_table = AsIs(NodeRelation._meta.db_table)
+            cursor.execute(sql, [node_relation_table, node_relation_table, self.pk])
+            row = cursor.fetchone()
+            if not row:
+                return row
+            return AbstractNode.objects.get(id=row[0])
 
     @property
     def nodes(self):
@@ -1997,8 +2027,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.set_visible(user, visible, auth=auth)
 
     def save(self, *args, **kwargs):
-        if self.pk:
-            self.root = self._root
         if 'suppress_log' in kwargs.keys():
             self._suppress_log = kwargs['suppress_log']
             del kwargs['suppress_log']
@@ -2711,3 +2739,6 @@ def set_parent(sender, instance, created, *args, **kwargs):
             child=instance,
             is_node_link=False
         )
+
+    # Update root. Use .filter().update() to avoid sending signals
+    sender.objects.filter(id=instance.id).update(root=instance._root)
