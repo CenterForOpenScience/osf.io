@@ -14,7 +14,8 @@ import pytz
 from dirtyfields import DirtyFieldsMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.db import models, transaction
+from django.db import models, transaction, connection
+from psycopg2._psycopg import AsIs
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -68,9 +69,40 @@ from website.util.permissions import (
     WRITE,
     ADMIN,
 )
-from .base import BaseModel, GuidMixin, Guid
+from .base import BaseModel, GuidMixin, Guid, MODMCompatibilityQuerySet
 
 logger = logging.getLogger(__name__)
+
+class AbstractNodeQueryset(MODMCompatibilityQuerySet):
+    def get_children(self, root):
+        sql = """
+            WITH RECURSIVE
+                descendants AS (
+                SELECT
+                  parent_id,
+                  child_id AS descendant,
+                  1        AS LEVEL
+                FROM %s
+                UNION ALL
+                SELECT
+                  d.parent_id,
+                  s.child_id,
+                  d.level + 1
+                FROM descendants AS d
+                  JOIN %s AS s
+                    ON d.descendant = s.parent_id
+              ) SELECT array_agg(DISTINCT descendant)
+                FROM descendants
+                WHERE parent_id = %s;
+        """
+
+        with connection.cursor() as cursor:
+            node_relation_table = AsIs(NodeRelation._meta.db_table)
+            cursor.execute(sql, [node_relation_table, node_relation_table, root.pk])
+            row = cursor.fetchone()
+            if not row:
+                return row
+            return AbstractNode.objects.filter(id__in=row[0])
 
 
 class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixin,
@@ -197,6 +229,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                    through_fields=('parent', 'child'),
                                    related_name='parent_nodes')
 
+    objects = AbstractNodeQueryset.as_manager()
+
     @property
     def parent_node(self):
         node_rel = NodeRelation.objects.filter(
@@ -213,6 +247,40 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if self.is_fork:
             return self.forked_from.parent_node
         return None
+
+    @property
+    def root(self):
+        sql = """
+            WITH RECURSIVE
+                parents_cte AS (
+                SELECT
+                  t.parent_id AS top_parent,
+                  t.child_id
+                FROM %s AS t
+                  LEFT JOIN %s AS p ON p.child_id = t.parent_id
+                WHERE p.child_id IS NULL
+                UNION ALL
+                SELECT
+                  top_parent,
+                  c.child_id
+                FROM parents_cte AS t
+                  JOIN %s AS c ON t.child_id = c.parent_id)
+            SELECT top_parent
+            FROM parents_cte AS h
+            WHERE h.child_id = %s;
+        """
+
+        with connection.cursor() as cursor:
+            node_relation_table = AsIs(NodeRelation._meta.db_table)
+            cursor.execute(sql, [node_relation_table, node_relation_table, node_relation_table, self.pk])
+            row = cursor.fetchone()
+            if not row:
+                return self
+            return AbstractNode.objects.get(id=row[0])
+
+    @property
+    def root_id(self):
+        return self.root.id
 
     @property
     def nodes(self):
@@ -253,10 +321,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     # permissions = Permissions are now on contributors
     piwik_site_id = models.IntegerField(null=True, blank=True)
     public_comments = models.BooleanField(default=True)
-    root = models.ForeignKey('self',
-                             related_name='absolute_parent',
-                             on_delete=models.SET_NULL,
-                             null=True, blank=True)
     suspended = models.BooleanField(default=False, db_index=True)
 
     # The node (if any) used as a template for this node's creation
@@ -1997,8 +2061,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.set_visible(user, visible, auth=auth)
 
     def save(self, *args, **kwargs):
-        if self.pk:
-            self.root = self._root
         if 'suppress_log' in kwargs.keys():
             self._suppress_log = kwargs['suppress_log']
             del kwargs['suppress_log']

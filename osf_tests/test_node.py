@@ -63,9 +63,78 @@ def test_top_level_node_has_parent_node_none():
     assert project.parent_node is None
 
 def test_component_has_parent_node():
-    node = NodeFactory()
-    assert type(node.parent_node) is Node
+    project = ProjectFactory()
+    node = NodeFactory(parent=project)
+    assert node.parent_node == project
 
+def test_components_have_root():
+    root = ProjectFactory()
+    child = NodeFactory(parent=root)
+    child1 = NodeFactory(parent=root)
+    child2 = NodeFactory(parent=root)
+    grandchild = NodeFactory(parent=child)
+    grandchild1 = NodeFactory(parent=child)
+    grandchild2 = NodeFactory(parent=child)
+    grandchild3 = NodeFactory(parent=child)
+    grandchild_1 = NodeFactory(parent=child1)
+    grandchild1_1 = NodeFactory(parent=child1)
+    grandchild2_1 = NodeFactory(parent=child1)
+    grandchild3_1 = NodeFactory(parent=child1)
+    grandchild_2 = NodeFactory(parent=child2)
+    grandchild1_2 = NodeFactory(parent=child2)
+    grandchild2_2 = NodeFactory(parent=child2)
+    grandchild3_2 = NodeFactory(parent=child2)
+    greatgrandchild = NodeFactory(parent=grandchild)
+    greatgrandchild1 = NodeFactory(parent=grandchild1)
+    greatgrandchild2 = NodeFactory(parent=grandchild2)
+    greatgrandchild3 = NodeFactory(parent=grandchild3)
+    greatgrandchild_1 = NodeFactory(parent=grandchild_1)
+
+    assert child.root == root
+    assert child1.root == root
+    assert child2.root == root
+    assert grandchild.root == root
+    assert grandchild1.root == root
+    assert grandchild2.root == root
+    assert grandchild3.root == root
+    assert grandchild_1.root == root
+    assert grandchild1_1.root == root
+    assert grandchild2_1.root == root
+    assert grandchild3_1.root == root
+    assert grandchild_2.root == root
+    assert grandchild1_2.root == root
+    assert grandchild2_2.root == root
+    assert grandchild3_2.root == root
+    assert greatgrandchild.root == root
+    assert greatgrandchild1.root == root
+    assert greatgrandchild2.root == root
+    assert greatgrandchild3.root == root
+    assert greatgrandchild_1.root == root
+
+def test_get_children():
+    root = ProjectFactory()
+    child = NodeFactory(parent=root)
+    child1 = NodeFactory(parent=root)
+    child2 = NodeFactory(parent=root)
+    grandchild = NodeFactory(parent=child)
+    grandchild1 = NodeFactory(parent=child)
+    grandchild2 = NodeFactory(parent=child)
+    grandchild3 = NodeFactory(parent=child)
+    grandchild_1 = NodeFactory(parent=child1)
+    grandchild1_1 = NodeFactory(parent=child1)
+    grandchild2_1 = NodeFactory(parent=child1)
+    grandchild3_1 = NodeFactory(parent=child1)
+    grandchild_2 = NodeFactory(parent=child2)
+    grandchild1_2 = NodeFactory(parent=child2)
+    grandchild2_2 = NodeFactory(parent=child2)
+    grandchild3_2 = NodeFactory(parent=child2)
+    greatgrandchild = NodeFactory(parent=grandchild)
+    greatgrandchild1 = NodeFactory(parent=grandchild1)
+    greatgrandchild2 = NodeFactory(parent=grandchild2)
+    greatgrandchild3 = NodeFactory(parent=grandchild3)
+    greatgrandchild_1 = NodeFactory(parent=grandchild_1)
+
+    assert 20 == Node.objects.get_children(root).count()
 
 def test_license_searches_parent_nodes():
     license_record = NodeLicenseRecordFactory()
@@ -144,6 +213,10 @@ class TestProject:
 
     def test_parent_id(self, project):
         assert not project.parent_id
+
+    def test_root_id_is_same_as_own_id_for_top_level_nodes(self, project):
+        project.reload()
+        assert project.root_id == project.id
 
     def test_nodes_active(self, project, auth):
         node = NodeFactory(parent=project)

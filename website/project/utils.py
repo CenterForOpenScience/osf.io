@@ -16,7 +16,8 @@ serialize_node = _view_project  # Not recommended practice
 CONTENT_NODE_QUERY = (
     # Can encompass accessible projects, registrations, or forks
     # Note: is_bookmark collection(s) are implicitly assumed to also be collections; that flag intentionally omitted
-    Q('is_deleted', 'eq', False)
+    Q('is_deleted', 'eq', False) &
+    Q('type', 'ne', 'osf.collection')
 )
 
 PROJECT_QUERY = CONTENT_NODE_QUERY
