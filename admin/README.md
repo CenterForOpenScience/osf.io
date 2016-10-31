@@ -41,6 +41,8 @@ If you'd like to manually set up a user to be a part of different groups using t
 - Set your user's group relationship by filtering for the appropriate group by name and adding it to your user's group.
     - Choices for name are `prereg_group`, `osf_admin`, and `osf_group`
     - To make your user a part of the `osf_admin` group:
-        user = MyUser.objects.filter(email='your@email.com')
-        user.groups.add(Groups.objects.filter(name='osf_admin'))
-        user.save()
+        - `user = MyUser.objects.filter(email='your@email.com')[0]`
+        - `osf_admin = Group.objects.filter(name='osf_admin')[0]`
+        - `user.groups.add(osf_admin)`
+        - `user.save()`
+    - Then navigate to localhost:8001 to view the admin interface
