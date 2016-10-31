@@ -159,6 +159,7 @@ def create_regfunc(**kw):
 def create_regfuncs():
     public = set()
     private = set()
+    # Default values are listed first for all of these ...
     for embargo in (False, True):
         for autoapprove in (False, True):
             for autocomplete in (True, False):
@@ -229,24 +230,53 @@ class TestVaryFuncs(DbIsolationMixin, OsfTestCase):
         assert_equal(reg.registration_approval.state, 'approved')
         ok_(not reg.archive_job.done)
 
-    def test_uuro_makes_an_unembargoed_unapproved_complete_registration_of_a_node(self):
+    def test_uucro_makes_an_unembargoed_unapproved_complete_registration_of_a_node(self):
         unembargoed_unapproved_complete_registration_of(self.F())
         reg = Node.find_one(Q('is_registration', 'eq', True))
 
         ok_(not reg.embargo)
         assert_equal(reg.registration_approval.state, 'unapproved')
+        ok_(reg.archive_job.done)
 
-    def test_earo_makes_an_embargoed_approved_complete_registration_of_a_node(self):
-        embargoed_approved_complete_registration_of(factories.ProjectFactory(title='Flim Flammity'))
+    def test_uuiro_makes_an_unembargoed_unapproved_incomplete_registration_of_a_node(self):
+        unembargoed_unapproved_incomplete_registration_of(self.F())
         reg = Node.find_one(Q('is_registration', 'eq', True))
+
+        ok_(not reg.embargo)
+        assert_equal(reg.registration_approval.state, 'unapproved')
+        ok_(not reg.archive_job.done)
+
+    def test_eacro_makes_an_embargoed_approved_complete_registration_of_a_node(self):
+        embargoed_approved_complete_registration_of(self.F())
+        reg = Node.find_one(Q('is_registration', 'eq', True))
+
         ok_(reg.embargo)
         assert_equal(reg.embargo.state, 'approved')
+        ok_(reg.archive_job.done)
 
-    def test_euro_makes_an_embargoed_unapproved_complete_registration_of_a_node(self):
-        embargoed_unapproved_complete_registration_of(factories.ProjectFactory(title='Flim Flammity'))
+    def test_eairo_makes_an_embargoed_approved_incomplete_registration_of_a_node(self):
+        embargoed_approved_incomplete_registration_of(self.F())
         reg = Node.find_one(Q('is_registration', 'eq', True))
+
+        ok_(reg.embargo)
+        assert_equal(reg.embargo.state, 'approved')
+        ok_(not reg.archive_job.done)
+
+    def test_eucro_makes_an_embargoed_unapproved_complete_registration_of_a_node(self):
+        embargoed_unapproved_complete_registration_of(self.F())
+        reg = Node.find_one(Q('is_registration', 'eq', True))
+
         ok_(reg.embargo)
         assert_equal(reg.embargo.state, 'unapproved')
+        ok_(reg.archive_job.done)
+
+    def test_euiro_makes_an_embargoed_unapproved_incomplete_registration_of_a_node(self):
+        embargoed_unapproved_incomplete_registration_of(self.F())
+        reg = Node.find_one(Q('is_registration', 'eq', True))
+
+        ok_(reg.embargo)
+        assert_equal(reg.embargo.state, 'unapproved')
+        ok_(not reg.archive_job.done)
 
 
 # gettin' it together
