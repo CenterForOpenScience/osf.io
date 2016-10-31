@@ -15,8 +15,14 @@ logging.basicConfig(level=logging.INFO)
 
 def get_events(date=None):
     """Count how many nodes exist.
+
     If no date is given, include all nodes up until the point when the script was called.
+    Also include counts for public and private projects, and embargoed and withdrawn registrations
+    with a date provided. These numbers are only accurate for the current time, since we can't know
+    the public/private status on a given date in the past.
+
     If a date is given, include all nodes that were created up through the end of that date.
+    Do not include counts for public and private projects, or embargoed and withdrawn registrations.
     """
     log_date = datetime.utcnow()
     if date:
