@@ -86,9 +86,13 @@ if __name__ == '__main__':
     init_app()
     args = parse_args()
     end_date = parse(args.end_date) if args.end_date else now
-    start_date = parse(args.start_date) if args.end_date else now - timedelta(1)
+    start_date = parse(args.start_date) if args.start_date else now
     scripts = args.analytics_scripts
 
-    start_date = datetime(start_date.year, start_date.month, start_date.day)  # make sure the day starts at midnight
+    if start_date > end_date:
+        raise ValueError(
+            'The start date cannot be after the end date - please enter a start date along with a valid end date, or leave blank to run for today'
+        )
 
+    start_date = datetime(start_date.year, start_date.month, start_date.day)  # make sure the day starts at midnight
     main(start_date, end_date, scripts)
