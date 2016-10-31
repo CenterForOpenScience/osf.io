@@ -1,6 +1,6 @@
 import sys
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil.parser import parse
 
 from modularodm import Q
@@ -14,10 +14,20 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def get_events(today):
+def get_events(date=None):
+    """Count how many nodes exist.
+    If no date is given, include all users up until the point when the script was called.
+    If a date is given, include all users that were created up through the end of that date.
+    """
+    log_date = datetime.utcnow()
+    if date:
+        log_date = date + timedelta(1)
+
+    logger.info('Gathering a count of users up until (but not including) {}'.format(log_date.isoformat()))
+
     counts = {
         'keen': {
-            'timestamp': today.isoformat()
+            'timestamp': log_date.isoformat()
         },
         'active_users': User.find(
             Q('is_registered', 'eq', True) &
@@ -25,15 +35,15 @@ def get_events(today):
             Q('merged_by', 'eq', None) &
             Q('date_disabled', 'eq', None) &
             Q('date_confirmed', 'ne', None) &
-            Q('date_confirmed', 'lt', today)
+            Q('date_confirmed', 'lt', log_date)
         ).count(),
         'unconfirmed_users': User.find(
-            Q('date_registered', 'lt', today) &
+            Q('date_registered', 'lt', log_date) &
             Q('date_confirmed', 'eq', None)
         ).count(),
         'deactivated_users': User.find(
             Q('date_disabled', 'ne', None) &
-            Q('date_disabled', 'lt', today)
+            Q('date_disabled', 'lt', log_date)
         ).count()
     }
     logger.info(
@@ -63,6 +73,7 @@ if __name__ == '__main__':
     init_app()
     try:
         date = parse(sys.argv[1])
+        date = datetime(date.year, date.month, date.day)  # make sure the day starts at midnight
     except IndexError:
         date = datetime.utcnow()
     main(date)
