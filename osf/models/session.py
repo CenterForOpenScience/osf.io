@@ -1,5 +1,3 @@
-from django.db import models
-
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.fields import NonNaiveDatetimeField
