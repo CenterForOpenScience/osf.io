@@ -3,9 +3,6 @@ import httplib
 from boto import exception
 from django.core.exceptions import ValidationError
 from flask import request
-from modularodm import Q
-from modularodm.storage.base import KeyExistsException
-
 
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
