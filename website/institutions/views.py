@@ -6,7 +6,7 @@ from framework.exceptions import HTTPError
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
-from website.project.tasks import institution_dashboard_display
+from website.project import tasks
 
 
 def view_institution(inst_id, **kwargs):
@@ -16,7 +16,7 @@ def view_institution(inst_id, **kwargs):
         raise HTTPError(http.NOT_FOUND)
 
     if not inst.dashboard_display:
-        institution_dashboard_display(inst)
+        tasks.institution_set_dashboard_display(inst)
 
     return {
         'id': inst._id,

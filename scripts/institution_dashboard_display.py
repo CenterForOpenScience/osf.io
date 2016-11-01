@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 def set_institution_dashboard_display():
     for inst in Institution.find():
-        tasks.institution_dashboard_display(inst)
+        tasks.institution_set_dashboard_display(inst)
         logger.info('Dashboard display updated for Institution with id <{}> and name <{}>'.format(inst._id, inst.name))
 
 

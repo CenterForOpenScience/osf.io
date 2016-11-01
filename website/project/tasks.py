@@ -54,7 +54,7 @@ def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=
 
 
 @celery_app.task(ignore_results=True)
-def institution_dashboard_display(inst):
+def institution_set_dashboard_display(inst):
     from website.models import Node
     if not inst.dashboard_display:
         num_nodes = len(Node.find_by_institutions(inst, query=(
