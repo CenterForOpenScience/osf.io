@@ -4422,6 +4422,7 @@ class TestUserConfirmSignal(OsfTestCase):
         assert_equal(mock_signals.signals_sent(), set([auth.signals.user_confirmed]))
 
 
+@unittest.skip('Unskip when institution hiding code is reimplemented')
 class TestIndexView(OsfTestCase):
 
     def setUp(self):
