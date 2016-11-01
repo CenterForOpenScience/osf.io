@@ -1551,7 +1551,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
                     auth=auth,
                     save=False,
                 )
-                node.save()
 
         if save:
             self.save()

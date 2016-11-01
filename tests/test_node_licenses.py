@@ -29,6 +29,7 @@ from tests.base import OsfTestCase
 from tests.factories import (
     AuthUserFactory,
     ProjectFactory,
+    NodeFactory,
     NodeLicenseRecordFactory
 )
 from tests.utils import assert_logs, assert_not_logs
@@ -153,3 +154,19 @@ class TestNodeLicenses(OsfTestCase):
         }
         with assert_raises(NodeStateError):
             self.node.set_node_license(invalid_license['id'], 'foo', [], auth=Auth(self.user))
+
+    @assert_logs(NodeLog.CHANGED_LICENSE, 'node')
+    def test_component_logged_when_parent_set_license(self):
+        GPL3 = NodeLicense.find_one(
+            Q('id', 'eq', 'GPL3')
+        )
+        NEW_YEAR = '2014'
+        COPYLEFT_HOLDERS = ['Richard Stallman']
+        component = NodeFactory(parent=self.node, creator=self.user)
+        component.save()
+        self.node.set_node_license('GPL3', NEW_YEAR, COPYLEFT_HOLDERS, auth=Auth(self.user), save=True)
+        assert_equal(self.node.node_license.id, GPL3.id)
+        assert_equal(self.node.node_license.name, GPL3.name)
+        assert_equal(self.node.node_license.copyright_holders, COPYLEFT_HOLDERS)
+        assert_equal(len(component.logs), 2)
+        assert_equal(component.logs[1].action, NodeLog.CHANGED_LICENSE)
