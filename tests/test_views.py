@@ -4468,6 +4468,10 @@ class TestIndexView(OsfTestCase):
             node.affiliated_institutions.append(self.inst_five)
             node.save()
 
+        for inst in [self.inst_one, self.inst_two, self.inst_three, self.inst_four, self.inst_five]:
+            url = web_url_for('view_institution', inst_id=inst._id)
+            self.app.get(url)
+
     def test_dashboard_institutions(self):
         dashboard_institutions = index()['dashboard_institutions']
         assert_equal(len(dashboard_institutions), 1)
