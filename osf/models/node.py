@@ -79,6 +79,11 @@ from .base import BaseModel, GuidMixin, Guid, MODMCompatibilityQuerySet
 logger = logging.getLogger(__name__)
 
 class AbstractNodeQueryset(MODMCompatibilityQuerySet):
+
+    def get_roots(self):
+        return self.extra(where=['id in (SELECT id FROM osf_abstractnode WHERE id NOT IN (SELECT child_id FROM '
+                          'osf_noderelation WHERE is_node_link IS false))'])
+
     def get_children(self, root, primary_keys=False):
         sql = """
             WITH RECURSIVE

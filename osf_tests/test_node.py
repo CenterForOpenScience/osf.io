@@ -138,9 +138,10 @@ def test_get_children():
 
     assert 20 == Node.objects.get_children(root).count()
 
-def test_top_level_project_query():
+def test_get_roots():
     top_level1 = ProjectFactory(is_public=True)
     top_level2 = ProjectFactory(is_public=True)
+    top_level_private = ProjectFactory(is_public=False)
     child1 = NodeFactory(parent=top_level1)
     child2 = NodeFactory(parent=top_level2)
 
@@ -148,11 +149,26 @@ def test_top_level_project_query():
     node = NodeFactory(is_public=True)
     node.add_node_link(top_level2, auth=Auth(node.creator))
 
-    results = AbstractNode.find(TOP_LEVEL_PROJECT_QUERY)
+    results = AbstractNode.objects.get_roots()
     assert top_level1 in results
     assert top_level2 in results
+    assert top_level_private in results
     assert child1 not in results
     assert child2 not in results
+
+    public_results = AbstractNode.objects.filter(is_public=True).get_roots()
+    assert top_level1 in public_results
+    assert top_level2 in public_results
+    assert top_level_private not in public_results
+    assert child1 not in public_results
+    assert child2 not in public_results
+
+    public_results2 = AbstractNode.objects.get_roots().filter(is_public=True)
+    assert top_level1 in public_results2
+    assert top_level2 in public_results2
+    assert top_level_private not in public_results2
+    assert child1 not in public_results2
+    assert child2 not in public_results2
 
 def test_license_searches_parent_nodes():
     license_record = NodeLicenseRecordFactory()
