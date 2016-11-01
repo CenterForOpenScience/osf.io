@@ -20,7 +20,6 @@ from framework.routing import process_rules
 from framework.auth import views as auth_views
 from framework.routing import render_mako_string
 from framework.auth.core import _get_current_user
-from framework.guid.model import Guid
 
 from modularodm import Q
 from modularodm.exceptions import QueryException, NoResultsFound
