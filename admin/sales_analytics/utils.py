@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
+from django.utils import timezone
+
 from admin.base.settings import ENTRY_POINTS
-from datetime import datetime, timedelta
+from datetime import timedelta
 from framework.mongo import database as db
 
 
@@ -56,7 +58,7 @@ def get_multi_product_metrics(db=db, timedelta=timedelta(days=365)):
     """
     Get the number of users using 2+ products within a period of time
     """
-    start_date = datetime.now() - timedelta
+    start_date = timezone.now() - timedelta
     pipeline = [
         {'$match': {'date': {'$gt': start_date}}},
         {'$group': {'_id': '$user', 'node_id': {'$addToSet': '$params.node'},
@@ -100,7 +102,7 @@ def get_repeat_action_user_count(db=db, timedelta=timedelta(days=30)):
     Get the number of users that have repetitive actions (with a 3 second difference)
     during the last month.
     """
-    start_date = datetime.now() - timedelta
+    start_date = timezone.now() - timedelta
     pipeline = [
         {'$match': {'date': {'$gt': start_date}}},
         {'$group': {'_id': '$user', 'nodelog_id': {'$addToSet': '$_id'}}},

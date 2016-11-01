@@ -7,6 +7,7 @@ import collections
 
 import tabulate
 from django.db.models import F
+from django.utils import timezone
 from dateutil.relativedelta import relativedelta
 from modularodm import Q
 
@@ -134,7 +135,7 @@ def get_log_counts(users):
         counts = count_users_logs(
             users,
             (
-                Q('date', 'gte', datetime.datetime.utcnow() - counter.delta)
+                Q('date', 'gte', timezone.now() - counter.delta)
                 if counter.delta
                 else None
             ),

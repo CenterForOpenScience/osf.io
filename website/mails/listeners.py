@@ -1,8 +1,8 @@
 """Functions that listen for event signals and queue up emails.
 All triggered emails live here.
 """
-from datetime import datetime
 
+from django.utils import timezone
 from modularodm import Q
 
 from website import mails, settings
@@ -19,7 +19,7 @@ def queue_no_addon_email(user):
     mails.queue_mail(
         to_addr=user.username,
         mail=mails.NO_ADDON,
-        send_at=datetime.utcnow() + settings.NO_ADDON_WAIT_TIME,
+        send_at=timezone.now() + settings.NO_ADDON_WAIT_TIME,
         user=user,
         fullname=user.fullname
     )
@@ -36,7 +36,7 @@ def queue_first_public_project_email(user, node, meeting_creation):
             mails.queue_mail(
                 to_addr=user.username,
                 mail=mails.NEW_PUBLIC_PROJECT,
-                send_at=datetime.utcnow() + settings.NEW_PUBLIC_PROJECT_WAIT_TIME,
+                send_at=timezone.now() + settings.NEW_PUBLIC_PROJECT_WAIT_TIME,
                 user=user,
                 nid=node._id,
                 fullname=user.fullname,
@@ -51,7 +51,7 @@ def queue_osf4m_welcome_email(user, conference, node):
     mails.queue_mail(
         to_addr=user.username,
         mail=mails.WELCOME_OSF4M,
-        send_at=datetime.utcnow() + settings.WELCOME_OSF4M_WAIT_TIME,
+        send_at=timezone.now() + settings.WELCOME_OSF4M_WAIT_TIME,
         user=user,
         conference=conference.name,
         fullname=user.fullname,

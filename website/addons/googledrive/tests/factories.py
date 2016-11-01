@@ -3,6 +3,7 @@
 import datetime
 
 from dateutil.relativedelta import relativedelta
+from django.utils import timezone
 
 from factory import SubFactory, Sequence
 from tests.factories import (
@@ -22,7 +23,7 @@ class GoogleDriveAccountFactory(ExternalAccountFactory):
     provider_id = Sequence(lambda n: 'id-{0}'.format(n))
     oauth_key = Sequence(lambda n: 'key-{0}'.format(n))
     oauth_secret = Sequence(lambda n: 'secret-{0}'.format(n))
-    expires_at = datetime.datetime.now() + relativedelta(days=1)
+    expires_at = timezone.now() + relativedelta(days=1)
 
 # TODO(sloria): make an abstract UserSettingsFactory that just includes the owner field
 class GoogleDriveUserSettingsFactory(ModularOdmFactory):

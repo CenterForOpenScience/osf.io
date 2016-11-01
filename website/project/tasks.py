@@ -1,7 +1,7 @@
-import datetime
 from django.apps import apps
 
 import requests
+from django.utils import timezone
 
 from framework.celery_tasks import app as celery_app
 
@@ -30,7 +30,7 @@ def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=
 
         if settings.SHARE_URL and settings.SHARE_API_TOKEN:
             requests.post('{}api/normalizeddata/'.format(settings.SHARE_URL), json={
-                'created_at': datetime.datetime.utcnow().isoformat(),
+                'created_at': timezone.now().isoformat(),
                 'normalized_data': {
                     '@graph': [{
                         '@id': '_:123',

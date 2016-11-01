@@ -1,5 +1,6 @@
 import datetime as dt
 
+from django.utils import timezone
 from modularodm import Q
 
 from framework.auth import Auth
@@ -42,10 +43,10 @@ class RegistrationsTestBase(OsfTestCase):
             }
         )
 
-        current_month = dt.datetime.now().strftime("%B")
-        current_year = dt.datetime.now().strftime("%Y")
+        current_month = timezone.now().strftime("%B")
+        current_year = timezone.now().strftime("%Y")
 
-        valid_date = dt.datetime.now() + dt.timedelta(days=180)
+        valid_date = timezone.now() + dt.timedelta(days=180)
         self.embargo_payload = {
             u'embargoEndDate': unicode(valid_date.strftime('%a, %d, %B %Y %H:%M:%S')) + u' GMT',
             u'registrationChoice': 'embargo'

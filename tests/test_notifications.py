@@ -4,6 +4,7 @@ import mock
 import pytz
 from babel import dates, Locale
 from schema import Schema, And, Use, Or
+from django.utils import timezone
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
@@ -1049,11 +1050,11 @@ class TestNotificationsDict(OsfTestCase):
         d = utils.NotificationsDict()
         message = {
             'message': 'Freddie commented on your project',
-            'timestamp': datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
+            'timestamp': timezone.now()
         }
         message2 = {
             'message': 'Mercury commented on your component',
-            'timestamp': datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
+            'timestamp': timezone.now()
         }
 
         d.add_message(['project'], message)
@@ -1347,7 +1348,7 @@ class TestSendEmails(NotificationTestCase):
     def test_notify_no_subscription(self, mock_store):
         node = factories.ProjectFactory()
         user = factories.AuthUserFactory()
-        emails.notify('comments', user=user, node=node, timestamp=datetime.datetime.utcnow())
+        emails.notify('comments', user=user, node=node, timestamp=timezone.now())
         assert_false(mock_store.called)
 
     @mock.patch('website.notifications.emails.store_emails')
@@ -1359,12 +1360,12 @@ class TestSendEmails(NotificationTestCase):
             event_name='comments'
         )
         node_subscription.save()
-        emails.notify('comments', user=self.user, node=node, timestamp=datetime.datetime.utcnow())
+        emails.notify('comments', user=self.user, node=node, timestamp=timezone.now())
         assert_false(mock_store.called)
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_sends_with_correct_args(self, mock_store):
-        time_now = datetime.datetime.utcnow()
+        time_now = timezone.now()
         emails.notify('comments', user=self.user, node=self.node, timestamp=time_now)
         assert_true(mock_store.called)
         mock_store.assert_called_with([self.project.creator._id], 'email_transactional', 'comments', self.user,
@@ -1382,7 +1383,7 @@ class TestSendEmails(NotificationTestCase):
         node_subscription.save()
         node_subscription.none.append(user)
         node_subscription.save()
-        sent = emails.notify('comments', user=user, node=node, timestamp=datetime.datetime.utcnow())
+        sent = emails.notify('comments', user=user, node=node, timestamp=timezone.now())
         assert_false(mock_store.called)
         assert_equal(sent, [])
 
@@ -1395,7 +1396,7 @@ class TestSendEmails(NotificationTestCase):
             owner=user,
             event_name='global_mentions'
         ).add_user_to_subscription(user, 'none')
-        time_now = datetime.datetime.utcnow()
+        time_now = timezone.now()
         sent = emails.notify_mentions('global_mentions', user=user, node=node, timestamp=time_now, new_mentions=[user._id])
         assert_false(mock_store.called)
         assert_equal(sent, [])
@@ -1409,7 +1410,7 @@ class TestSendEmails(NotificationTestCase):
             event_name='global_mentions'
         ).add_user_to_subscription(user, 'email_transactional')
         node = factories.ProjectFactory(creator=user)
-        time_now = datetime.datetime.utcnow()
+        time_now = timezone.now()
         emails.notify_mentions('global_mentions', user=user, node=node, timestamp=time_now, new_mentions=[user._id])
         assert_true(mock_store.called)
         mock_store.assert_called_with([node.creator._id], 'email_transactional', 'mentions', user,
@@ -1417,14 +1418,14 @@ class TestSendEmails(NotificationTestCase):
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_sends_comment_reply_event_if_comment_is_direct_reply(self, mock_store):
-        time_now = datetime.datetime.utcnow()
+        time_now = timezone.now()
         emails.notify('comments', user=self.user, node=self.node, timestamp=time_now, target_user=self.project.creator)
         mock_store.assert_called_with([self.project.creator._id], 'email_transactional', 'comment_replies',
                                       self.user, self.node, time_now, target_user=self.project.creator)
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_sends_comment_reply_when_target_user_is_subscribed_via_user_settings(self, mock_store):
-        time_now = datetime.datetime.utcnow()
+        time_now = timezone.now()
         emails.notify('global_comment_replies', user=self.project.creator, node=self.node, timestamp=time_now, target_user=self.user)
         mock_store.assert_called_with([self.user._id], 'email_transactional', 'comment_replies',
                                       self.project.creator, self.node, time_now, target_user=self.user)
@@ -1432,7 +1433,7 @@ class TestSendEmails(NotificationTestCase):
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_sends_comment_event_if_comment_reply_is_not_direct_reply(self, mock_store):
         user = factories.UserFactory()
-        time_now = datetime.datetime.utcnow()
+        time_now = timezone.now()
         emails.notify('comments', user=user, node=self.node, timestamp=time_now, target_user=user)
         mock_store.assert_called_with([self.project.creator._id], 'email_transactional', 'comments', user,
                                       self.node, time_now, target_user=user)
@@ -1440,7 +1441,7 @@ class TestSendEmails(NotificationTestCase):
     @mock.patch('website.mails.send_mail')
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_does_not_send_comment_if_they_reply_to_their_own_comment(self, mock_store, mock_send_mail):
-        time_now = datetime.datetime.utcnow()
+        time_now = timezone.now()
         emails.notify('comments', user=self.project.creator, node=self.project, timestamp=time_now,
                       target_user=self.project.creator)
         assert_false(mock_store.called)
@@ -1451,7 +1452,7 @@ class TestSendEmails(NotificationTestCase):
         # Test that comment replies on components that are not direct replies to the subscriber use the
         # "comments" email template.
         user = factories.UserFactory()
-        time_now = datetime.datetime.utcnow()
+        time_now = timezone.now()
         emails.notify('comments', user, self.node, time_now, target_user=user)
         mock_store.assert_called_with([self.project.creator._id], 'email_transactional', 'comments', user,
                                       self.node, time_now, target_user=user)
@@ -1509,7 +1510,7 @@ class TestSendEmails(NotificationTestCase):
         assert_equal(node_lineage, [self.project._id, self.node._id])
 
     def test_localize_timestamp(self):
-        timestamp = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
+        timestamp = timezone.now()
         self.user.timezone = 'America/New_York'
         self.user.locale = 'en_US'
         self.user.save()
@@ -1521,7 +1522,7 @@ class TestSendEmails(NotificationTestCase):
         assert_equal(emails.localize_timestamp(timestamp, self.user), formatted_datetime)
 
     def test_localize_timestamp_empty_timezone(self):
-        timestamp = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
+        timestamp = timezone.now()
         self.user.timezone = ''
         self.user.locale = 'en_US'
         self.user.save()
@@ -1533,7 +1534,7 @@ class TestSendEmails(NotificationTestCase):
         assert_equal(emails.localize_timestamp(timestamp, self.user), formatted_datetime)
 
     def test_localize_timestamp_empty_locale(self):
-        timestamp = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
+        timestamp = timezone.now()
         self.user.timezone = 'America/New_York'
         self.user.locale = ''
         self.user.save()
@@ -1545,7 +1546,7 @@ class TestSendEmails(NotificationTestCase):
         assert_equal(emails.localize_timestamp(timestamp, self.user), formatted_datetime)
 
     def test_localize_timestamp_handles_unicode(self):
-        timestamp = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
+        timestamp = timezone.now()
         self.user.timezone = 'Europe/Moscow'
         self.user.locale = 'ru_RU'
         self.user.save()
@@ -1563,7 +1564,7 @@ class TestSendDigest(OsfTestCase):
         self.user_1 = factories.UserFactory()
         self.user_2 = factories.UserFactory()
         self.project = factories.ProjectFactory()
-        self.timestamp = datetime.datetime.utcnow()
+        self.timestamp = timezone.now()
 
     def test_group_notifications_by_user_transactional(self):
         send_type = 'email_transactional'
@@ -1673,7 +1674,7 @@ class TestSendDigest(OsfTestCase):
         d = factories.NotificationDigestFactory(
             user_id=factories.UserFactory()._id,
             send_type=send_type,
-            timestamp=datetime.datetime.utcnow(),
+            timestamp=timezone.now(),
             message='Hello',
             node_lineage=[factories.ProjectFactory()._id]
         )
@@ -1700,7 +1701,7 @@ class TestSendDigest(OsfTestCase):
     def test_remove_sent_digest_notifications(self):
         d = factories.NotificationDigestFactory(
             user_id=factories.UserFactory()._id,
-            timestamp=datetime.datetime.utcnow(),
+            timestamp=timezone.now(),
             message='Hello',
             node_lineage=[factories.ProjectFactory()._id]
         )

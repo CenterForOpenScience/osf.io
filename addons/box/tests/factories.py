@@ -1,6 +1,7 @@
 """Factory boy factories for the Box addon."""
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+from django.utils import timezone
 
 from factory import SubFactory, Sequence
 from factory.django import DjangoModelFactory
@@ -15,7 +16,7 @@ class BoxAccountFactory(ExternalAccountFactory):
     provider = 'box'
     provider_id = Sequence(lambda n: 'id-{0}'.format(n))
     oauth_key = Sequence(lambda n: 'key-{0}'.format(n))
-    expires_at = datetime.now() + relativedelta(seconds=3600)
+    expires_at = timezone.now() + relativedelta(seconds=3600)
 
 
 class BoxUserSettingsFactory(DjangoModelFactory):

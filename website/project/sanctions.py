@@ -1,6 +1,6 @@
-import datetime
 import functools
 from dateutil.parser import parse as parse_date
+from django.utils import timezone
 
 from modularodm import (
     fields,
@@ -74,7 +74,7 @@ class Sanction(StoredObject):
     UNANIMOUS = 'unanimous'
     mode = UNANIMOUS
 
-    initiation_date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
+    initiation_date = fields.DateTimeField(auto_now_add=timezone.now)
     # Expiration date-- Sanctions in the UNAPPROVED state that are older than their end_date
     # are automatically made ACTIVE by a daily cron job
     # Use end_date=None for a non-expiring Sanction
@@ -696,7 +696,7 @@ class Retraction(EmailApprovableSanction):
             node.set_privacy('public', auth=None, save=True, log=False)
             node.update_search()
 
-        parent_registration.date_modified = datetime.datetime.utcnow()
+        parent_registration.date_modified = timezone.now()
         parent_registration.save()
 
     def approve_retraction(self, user, token):

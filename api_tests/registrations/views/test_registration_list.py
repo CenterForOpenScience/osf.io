@@ -2,6 +2,8 @@ import mock
 import datetime
 import dateutil.relativedelta
 from urlparse import urlparse
+
+from django.utils import timezone
 from nose.tools import *  # flake8: noqa
 
 from website.project.model import ensure_schemas
@@ -647,7 +649,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_embargo_must_be_less_than_four_years(self, mock_enqueue):
-        today = datetime.datetime.utcnow()
+        today = timezone.now()
         five_years = (today + dateutil.relativedelta.relativedelta(years=5)).strftime('%Y-%m-%dT%H:%M:%S')
         payload = {
             "data": {
@@ -666,7 +668,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_embargo_registration(self, mock_enqueue):
-        today = datetime.datetime.utcnow()
+        today = timezone.now()
         next_week = (today + dateutil.relativedelta.relativedelta(months=1)).strftime('%Y-%m-%dT%H:%M:%S')
         payload = {
             "data": {
@@ -686,7 +688,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
         assert_equal(data['pending_embargo_approval'], True)
 
     def test_embargo_end_date_must_be_in_the_future(self):
-        today = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
+        today = timezone.now().strftime('%Y-%m-%dT%H:%M:%S')
         payload = {
             "data": {
                 "type": "registrations",
@@ -703,7 +705,7 @@ class TestRegistrationCreate(DraftRegistrationTestCase):
         assert_equal(res.json['errors'][0]['detail'], 'Embargo end date must be at least three days in the future.')
 
     def test_invalid_embargo_end_date_format(self):
-        today = datetime.datetime.utcnow().isoformat()
+        today = timezone.now().isoformat()
         payload = {
             "data": {
                 "type": "registrations",

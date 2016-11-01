@@ -5,6 +5,7 @@ from django.db import models
 from django.utils import timezone
 from osf.exceptions import ValidationValueError, ValidationTypeError
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.fields import NonNaiveDatetimeField
 
 from website import settings
 from website.project.model import User
@@ -64,7 +65,7 @@ class SpamMixin(models.Model):
     #   - User-Agent: user agent from request
     #   - Referer: referrer header from request (typo +1, rtd)
     spam_data = DateTimeAwareJSONField(default=dict, blank=True)
-    date_last_reported = models.DateTimeField(default=None, null=True, blank=True, db_index=True)
+    date_last_reported = NonNaiveDatetimeField(default=None, null=True, blank=True, db_index=True)
 
     # Reports is a dict of reports keyed on reporting user
     # Each report is a dictionary including:

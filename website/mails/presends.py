@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime
+from django.utils import timezone
 from modularodm import Q
 
 from website import settings
@@ -13,7 +13,7 @@ def no_login(email):
     sent = QueuedMail.find(Q('user', 'eq', email.user) & Q('email_type', 'eq', NO_LOGIN_TYPE) & Q('_id', 'ne', email._id))
     if sent.count():
         return False
-    return email.user.date_last_login < datetime.utcnow() - settings.NO_LOGIN_WAIT_TIME
+    return email.user.date_last_login < timezone.now() - settings.NO_LOGIN_WAIT_TIME
 
 def new_public_project(email):
     """ Will check to make sure the project that triggered this presend is still public
@@ -46,7 +46,7 @@ def welcome_osf4m(email):
     # In line import to prevent circular importing
     from website.files.models import OsfStorageFileNode
     if email.user.date_last_login:
-        if email.user.date_last_login > datetime.utcnow() - settings.WELCOME_OSF4M_WAIT_TIME_GRACE:
+        if email.user.date_last_login > timezone.now() - settings.WELCOME_OSF4M_WAIT_TIME_GRACE:
             return False
     upload = OsfStorageFileNode.load(email.data['fid'])
     if upload:

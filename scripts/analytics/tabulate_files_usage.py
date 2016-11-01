@@ -8,6 +8,8 @@ Currently outputs results to .csv files in the current working directory.
 import datetime
 import collections
 
+from django.utils import timezone
+
 from website import models
 from website.app import init_app
 
@@ -66,7 +68,7 @@ def write_counts(counts, outname):
 
 
 def main():
-    now = datetime.datetime.now().strftime('%Y-%m-%d')
+    now = timezone.now().strftime('%Y-%m-%d')
     personal, group = count_usage()
     write_counts(personal, 'usage-personal-{0}.csv'.format(now))
     write_counts(group, 'usage-group-{0}.csv'.format(now))

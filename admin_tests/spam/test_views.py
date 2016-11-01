@@ -1,8 +1,9 @@
 from django.db import transaction
 from django.test import RequestFactory
 from django.http import Http404
+from django.utils import timezone
 from nose import tools as nt
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from website.project.model import Comment
 
@@ -34,7 +35,7 @@ class TestSpamListView(AdminTestCase):
         self.project.save()
         self.user_1.save()
         self.user_2.save()
-        date = datetime.utcnow()
+        date = timezone.now()
         self.comment_1 = CommentFactory(node=self.project, user=self.user_1)
         self.comment_2 = CommentFactory(node=self.project, user=self.user_1)
         self.comment_3 = CommentFactory(node=self.project, user=self.user_1)

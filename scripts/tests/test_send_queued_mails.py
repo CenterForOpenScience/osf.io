@@ -1,5 +1,7 @@
 import mock  # noqa
 from datetime import datetime, timedelta
+
+from django.utils import timezone
 from nose.tools import *
 
 from tests.base import OsfTestCase
@@ -14,7 +16,7 @@ class TestSendQueuedMails(OsfTestCase):
         super(TestSendQueuedMails, self).setUp()
         mails.QueuedMail.remove()
         self.user = UserFactory()
-        self.user.date_last_login = datetime.utcnow()
+        self.user.date_last_login = timezone.now()
         self.user.osf_mailing_lists[settings.OSF_HELP_LIST] = True
         self.user.save()
 
@@ -22,7 +24,7 @@ class TestSendQueuedMails(OsfTestCase):
         return mails.queue_mail(
             to_addr=user.username if user else self.user.username,
             mail=mail_type,
-            send_at=send_at or datetime.utcnow(),
+            send_at=send_at or timezone.now(),
             user=user if user else self.user,
             fullname=user.fullname if user else self.user.fullname,
         )
@@ -48,7 +50,7 @@ class TestSendQueuedMails(OsfTestCase):
         user_with_multiple_emails = UserFactory()
         user_with_no_emails_sent = UserFactory()
         mail_sent = mails.QueuedMail(user=user_with_email_sent,
-                                     sent_at=datetime.utcnow() - timedelta(days=1),
+                                     sent_at=timezone.now() - timedelta(days=1),
                                      to_addr=user_with_email_sent.username)
         mail_sent.save()
         mail1 = self.queue_mail(user=user_with_email_sent)
@@ -69,7 +71,7 @@ class TestSendQueuedMails(OsfTestCase):
 
     def test_find_queued_mails_ready_to_be_sent(self):
         mail1 = self.queue_mail()
-        mail2 = self.queue_mail(send_at=datetime.utcnow()+timedelta(days=1))
-        mail3 = self.queue_mail(send_at=datetime.utcnow())
+        mail2 = self.queue_mail(send_at=timezone.now()+timedelta(days=1))
+        mail3 = self.queue_mail(send_at=timezone.now())
         mails = find_queued_mails_ready_to_be_sent()
         assert_equal(len(mails), 2)

@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import datetime
+
+from django.utils import timezone
 from nose.tools import *  # noqa
 
 from scripts import parse_citation_styles
@@ -17,7 +19,7 @@ from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
 class CitationsUtilsTestCase(OsfTestCase):
     def test_datetime_to_csl(self):
         # Convert a datetime instance to csl's date-variable schema
-        now = datetime.datetime.utcnow()
+        now = timezone.now()
 
         assert_equal(
             datetime_to_csl(now),

@@ -2,6 +2,8 @@
 
 import mock
 from datetime import datetime, timedelta
+
+from django.utils import timezone
 from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
@@ -41,7 +43,7 @@ class TestApproveEmbargoTerminations(OsfTestCase):
 
         # requesting termination and older than 48 hours
         with mock_archive(self.node, embargo=True, autoapprove=True) as registration:
-            old_time = datetime.now() - timedelta(days=5)
+            old_time = timezone.now() - timedelta(days=5)
             approval = registration.request_embargo_termination(auth=Auth(self.user))
             EmbargoTerminationApproval._storage[0].store.update(
                 {'_id': approval._id},
@@ -51,7 +53,7 @@ class TestApproveEmbargoTerminations(OsfTestCase):
 
         # requesting termination and older than 48 hours, but approved
         with mock_archive(self.node, embargo=True, autoapprove=True) as registration:
-            old_time = datetime.now() - timedelta(days=5)
+            old_time = timezone.now() - timedelta(days=5)
             approval = registration.request_embargo_termination(auth=Auth(self.user))
             EmbargoTerminationApproval._storage[0].store.update(
                 {'_id': approval._id},

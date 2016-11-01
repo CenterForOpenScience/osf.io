@@ -1,8 +1,8 @@
 """
 Metrics scripts
 """
-from django.db.models import F
-from datetime import datetime, timedelta
+from django.db.models import F, timezone
+from datetime import timedelta
 from modularodm import Q
 from website.project.model import User, Node
 from website.project.utils import CONTENT_NODE_QUERY
@@ -23,7 +23,7 @@ def get_list_of_dates(start, end):
 
 def get_previous_midnight(time=None):
     if time is None:
-        time = datetime.utcnow()
+        time = timezone.now()
     return time - timedelta(  # As close to midnight utc as possible
         hours=time.hour,
         minutes=time.minute,

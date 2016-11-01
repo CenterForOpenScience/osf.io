@@ -4,6 +4,8 @@ import mock
 import pytest
 import datetime
 
+from django.utils import timezone
+
 from osf.modm_compat import Q
 from osf.models import DraftRegistrationApproval, MetaSchema
 from osf_tests import factories
@@ -109,7 +111,7 @@ class TestDraftRegistrationApprovals:
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_on_complete_embargo_creates_registration_for_draft_initiator(self, mock_enquque):
         user = factories.UserFactory()
-        end_date = datetime.datetime.now() + datetime.timedelta(days=366)  # <- leap year
+        end_date = timezone.now() + datetime.timedelta(days=366)  # <- leap year
         approval = DraftRegistrationApproval(
             meta={
                 'registration_choice': 'embargo',

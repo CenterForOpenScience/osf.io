@@ -629,7 +629,7 @@ class User(GuidStoredObject, AddonModelMixin):
             self.emails.append(username)
         self.is_registered = True
         self.is_claimed = True
-        self.date_confirmed = dt.datetime.utcnow()
+        self.date_confirmed = timezone.now()
         self.update_search()
         self.update_search_nodes()
 
@@ -722,7 +722,7 @@ class User(GuidStoredObject, AddonModelMixin):
             return False
         valid = record['token'] == token
         if 'expires' in record:
-            valid = valid and record['expires'] > dt.datetime.utcnow()
+            valid = valid and record['expires'] > timezone.now()
         return valid
 
     def get_claim_url(self, project_id, external=False):
@@ -753,7 +753,7 @@ class User(GuidStoredObject, AddonModelMixin):
         if token and self.verification_key_v2:
             try:
                 return (self.verification_key_v2['token'] == token and
-                        self.verification_key_v2['expires'] > dt.datetime.utcnow())
+                        self.verification_key_v2['expires'] > timezone.now())
             except AttributeError:
                 return False
         return False
@@ -927,7 +927,7 @@ class User(GuidStoredObject, AddonModelMixin):
                     new_token = self.add_unconfirmed_email(email)
                     self.save()
                     return new_token
-                if not expiration or (expiration and expiration < dt.datetime.utcnow()):
+                if not expiration or (expiration and expiration < timezone.now()):
                     if not force:
                         raise ExpiredTokenError('Token for email "{0}" is expired'.format(email))
                     else:
@@ -973,7 +973,7 @@ class User(GuidStoredObject, AddonModelMixin):
         # Not all tokens are guaranteed to have expiration dates
         if (
             'expiration' in verification and
-            verification['expiration'] < dt.datetime.utcnow()
+            verification['expiration'] < timezone.now()
         ):
             raise ExpiredTokenError
 
@@ -1028,7 +1028,7 @@ class User(GuidStoredObject, AddonModelMixin):
         # Complete registration if primary email
         if email.lower() == self.username.lower():
             self.register(self.username)
-            self.date_confirmed = dt.datetime.utcnow()
+            self.date_confirmed = timezone.now()
         # Revoke token
         del self.email_verifications[token]
 
@@ -1240,7 +1240,7 @@ class User(GuidStoredObject, AddonModelMixin):
     def is_disabled(self, val):
         """Set whether or not this account has been disabled."""
         if val and not self.date_disabled:
-            self.date_disabled = dt.datetime.utcnow()
+            self.date_disabled = timezone.now()
         elif val is False:
             self.date_disabled = None
 
@@ -1376,7 +1376,7 @@ class User(GuidStoredObject, AddonModelMixin):
         log_ids = []
         # Default since to 60 days before today if since is None
         # timezone aware utcnow
-        utcnow = dt.datetime.utcnow().replace(tzinfo=pytz.utc)
+        utcnow = timezone.now()
         since_date = since or (utcnow - dt.timedelta(days=60))
         for config in self.watched:
             # Extract the timestamps for each log from the log_id (fast!)
@@ -1394,7 +1394,7 @@ class User(GuidStoredObject, AddonModelMixin):
         '''Return a generator of log ids generated in the past day
         (starting at UTC 00:00).
         '''
-        utcnow = dt.datetime.utcnow()
+        utcnow = timezone.now()
         midnight = dt.datetime(
             utcnow.year, utcnow.month, utcnow.day,
             0, 0, 0, tzinfo=pytz.utc

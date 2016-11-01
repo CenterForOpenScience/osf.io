@@ -1,6 +1,7 @@
 import datetime
 
 import mock
+from django.utils import timezone
 from nose.tools import *  # noqa
 from tests.base import fake, OsfTestCase
 from website.project.spam.model import SpamStatus
@@ -34,7 +35,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         self.project = ProjectFactory(creator=self.user)
         self.registration = RegistrationFactory(project=self.project)
         self.embargo = EmbargoFactory(user=self.user)
-        self.valid_embargo_end_date = datetime.datetime.utcnow() + datetime.timedelta(days=3)
+        self.valid_embargo_end_date = timezone.now() + datetime.timedelta(days=3)
 
     def test__require_approval_saves_approval(self):
         initial_count = RegistrationApproval.find().count()
@@ -195,7 +196,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         initial_project_logs = len(self.registration.registered_from.logs)
         self.registration.require_approval(
             self.user,
-            datetime.datetime.utcnow() + datetime.timedelta(days=10)
+            timezone.now() + datetime.timedelta(days=10)
         )
         self.registration.save()
 

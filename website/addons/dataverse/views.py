@@ -1,6 +1,8 @@
 """Views for the node settings page."""
 # -*- coding: utf-8 -*-
 import httplib as http
+
+from django.utils import timezone
 from requests.exceptions import SSLError
 
 

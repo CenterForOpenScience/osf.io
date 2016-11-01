@@ -4,6 +4,7 @@ import mock
 import os
 import time
 import unittest
+from django.utils import timezone
 
 from flask import Flask
 from nose.tools import *  # noqa (PEP8 asserts)
@@ -37,7 +38,7 @@ class TestTimeUtils(unittest.TestCase):
         assert_true(is_expired)
 
     def test_throttle_period_expired_using_datetime(self):
-        timestamp = datetime.datetime.utcnow()
+        timestamp = timezone.now()
         is_expired = throttle_period_expired(timestamp=(timestamp + datetime.timedelta(seconds=29)),  throttle=30)
         assert_false(is_expired)
 
@@ -401,7 +402,7 @@ class TestProjectUtils(OsfTestCase):
             reg = RegistrationFactory()
             reg.is_public = True
             count = count + 1
-            tdiff = datetime.datetime.now() - datetime.timedelta(days=count)
+            tdiff = timezone.now() - datetime.timedelta(days=count)
             self.set_registered_date(reg, tdiff)
         regs = [r for r in project_utils.recent_public_registrations()]
         assert_equal(len(regs), 5)
@@ -411,7 +412,7 @@ class TestProjectUtils(OsfTestCase):
             reg = RegistrationFactory()
             reg.is_public = True
             count = count + 1
-            tdiff = datetime.datetime.now() - datetime.timedelta(days=count)
+            tdiff = timezone.now() - datetime.timedelta(days=count)
             self.set_registered_date(reg, tdiff)
         regs = [r for r in project_utils.recent_public_registrations(7)]
         assert_equal(len(regs), 7)

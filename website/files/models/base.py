@@ -4,10 +4,10 @@ import os
 import bson
 import logging
 import pymongo
-import datetime
 import requests
 import functools
 
+from django.utils import timezone
 from modularodm import fields, Q
 from modularodm.exceptions import NoResultsFound
 from dateutil.parser import parse as parse_date
@@ -540,7 +540,7 @@ class FileNode(object):
         """
         self.name = data['name']
         self.materialized_path = data['materialized']
-        self.last_touched = datetime.datetime.utcnow()
+        self.last_touched = timezone.now()
         if save:
             self.save()
 
@@ -690,7 +690,7 @@ class File(FileNode):
             data['modified'] = parse_date(
                 data['modified'],
                 ignoretz=True,
-                default=datetime.datetime.utcnow()  # Just incase nothing can be parsed
+                default=timezone.now()  # Just incase nothing can be parsed
             )
 
         # if revision is none then version is the latest version
@@ -707,7 +707,7 @@ class File(FileNode):
             utils.insort(self.history, data, lambda x: x['modified'])
 
         # Finally update last touched
-        self.last_touched = datetime.datetime.utcnow()
+        self.last_touched = timezone.now()
 
         self.save()
         return version

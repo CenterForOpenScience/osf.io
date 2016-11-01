@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from datetime import datetime, timedelta
+
+from django.utils import timezone
 from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
@@ -30,10 +32,10 @@ class TestRetractRegistrations(OsfTestCase):
         # Retraction#iniation_date is read only
         self.registration.retraction._fields['initiation_date'].__set__(
             self.registration.retraction,
-            (datetime.utcnow() - timedelta(hours=47)),
+            (timezone.now() - timedelta(hours=47)),
             safe=True
         )
-        # setattr(self.registration.retraction, 'initiation_date', (datetime.utcnow() - timedelta(hours=47)))
+        # setattr(self.registration.retraction, 'initiation_date', (timezone.now() - timedelta(hours=47)))
         self.registration.retraction.save()
         assert_false(self.registration.is_retracted)
 
@@ -44,7 +46,7 @@ class TestRetractRegistrations(OsfTestCase):
         # Retraction#iniation_date is read only
         self.registration.retraction._fields['initiation_date'].__set__(
             self.registration.retraction,
-            (datetime.utcnow() - timedelta(hours=48)),
+            (timezone.now() - timedelta(hours=48)),
             safe=True
         )
         self.registration.retraction.save()
@@ -57,7 +59,7 @@ class TestRetractRegistrations(OsfTestCase):
         # Retraction#iniation_date is read only
         self.registration.retraction._fields['initiation_date'].__set__(
             self.registration.retraction,
-            (datetime.utcnow() - timedelta(days=365)),
+            (timezone.now() - timedelta(days=365)),
             safe=True
         )
         self.registration.retraction.save()
@@ -71,7 +73,7 @@ class TestRetractRegistrations(OsfTestCase):
         # Retraction#iniation_date is read only
         self.registration.retraction._fields['initiation_date'].__set__(
             self.registration.retraction,
-            (datetime.utcnow() - timedelta(days=365)),
+            (timezone.now() - timedelta(days=365)),
             safe=True
         )
         self.registration.retraction.save()

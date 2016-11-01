@@ -6,6 +6,7 @@ embargo end dates have been passed.
 import logging
 import datetime
 
+from django.utils import timezone
 from modularodm import Q
 
 from framework.celery_tasks import app as celery_app
@@ -61,7 +62,7 @@ def main(dry_run=True):
 
     active_embargoes = models.Embargo.find(Q('state', 'eq', models.Embargo.APPROVED))
     for embargo in active_embargoes:
-        if embargo.end_date < datetime.datetime.utcnow():
+        if embargo.end_date < timezone.now():
             if dry_run:
                 logger.warn('Dry run mode')
             parent_registration = models.Node.find_one(Q('embargo', 'eq', embargo))
@@ -100,7 +101,7 @@ def main(dry_run=True):
 
 def should_be_embargoed(embargo):
     """Returns true if embargo was initiated more than 48 hours prior."""
-    return (datetime.datetime.utcnow() - embargo.initiation_date) >= settings.EMBARGO_PENDING_TIME
+    return (timezone.now() - embargo.initiation_date) >= settings.EMBARGO_PENDING_TIME
 
 
 @celery_app.task(name='scripts.embargo_registrations')

@@ -3,6 +3,8 @@ import datetime
 
 import mock
 import pytest
+from django.utils import timezone
+
 from addons.base.tests.utils import MockFolder
 from framework.auth import Auth
 from framework.exceptions import HTTPError
@@ -611,7 +613,7 @@ class CitationAddonProviderTestSuiteMixin(OAuthCitationsTestSuiteMixinBase):
         # The first call to .client returns a new client
         with mock.patch.object(self.OAuthProviderClass, '_get_client') as mock_get_client:
             mock_account = mock.Mock()
-            mock_account.expires_at = datetime.datetime.now()
+            mock_account.expires_at = timezone.now()
             self.provider.account = mock_account
             self.provider.client
             mock_get_client.assert_called

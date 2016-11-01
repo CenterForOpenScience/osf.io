@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from datetime import datetime, timedelta
+
+from django.utils import timezone
 from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
@@ -29,7 +31,7 @@ class TestApproveRegistrations(OsfTestCase):
         # RegistrationApproval#iniation_date is read only
         self.registration.registration_approval._fields['initiation_date'].__set__(
             self.registration.registration_approval,
-            (datetime.utcnow() - timedelta(hours=47)),
+            (timezone.now() - timedelta(hours=47)),
             safe=True
         )
         self.registration.registration_approval.save()
@@ -43,7 +45,7 @@ class TestApproveRegistrations(OsfTestCase):
         # RegistrationApproval#iniation_date is read only
         self.registration.registration_approval._fields['initiation_date'].__set__(
             self.registration.registration_approval,
-            (datetime.utcnow() - timedelta(hours=48)),
+            (timezone.now() - timedelta(hours=48)),
             safe=True
         )
         self.registration.registration_approval.save()
@@ -57,7 +59,7 @@ class TestApproveRegistrations(OsfTestCase):
         # RegistrationApproval#iniation_date is read only
         self.registration.registration_approval._fields['initiation_date'].__set__(
             self.registration.registration_approval,
-            (datetime.utcnow() - timedelta(days=365)),
+            (timezone.now() - timedelta(days=365)),
             safe=True
         )
         self.registration.registration_approval.save()
@@ -71,7 +73,7 @@ class TestApproveRegistrations(OsfTestCase):
         # RegistrationApproval#iniation_date is read only
         self.registration.registration_approval._fields['initiation_date'].__set__(
             self.registration.registration_approval,
-            (datetime.utcnow() - timedelta(days=365)),
+            (timezone.now() - timedelta(days=365)),
             safe=True
         )
         self.registration.registration_approval.save()
