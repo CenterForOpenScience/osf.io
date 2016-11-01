@@ -88,6 +88,7 @@ INSTALLED_APPS = (
     # Addons
     'addons.osfstorage',
     'addons.box',
+    'addons.dataverse',
     'addons.dropbox',
     'addons.github',
     'addons.googledrive',
