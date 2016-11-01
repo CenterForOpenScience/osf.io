@@ -35,7 +35,7 @@ function _poTitleColumn(item) {
         e.stopImmediatePropagation();
     };
     var node = item.data; // Where actual data of the node is
-    var title = node.attributes.title.replace(/&amp;/g, '&');
+    var title = node.attributes.title.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
     var css = ''; // Keep for future expandability -- Remove: item.data.isSmartFolder ? 'project-smart-folder smart-folder' : '';
     var preprintLinkPre = '/preprints/';
     var isMypreprintsCollection = tb.options.currentView().collection.data.nodeType === 'preprints';
@@ -382,7 +382,7 @@ var tbOptions = {
         var tb = this;
         $osf.trackClick('myProjects', 'projectOrganizer', 'double-click-project');
         var node = item.data;
-        var linkObject = new LinkObject('node', node, node.attributes.title.replace(/&amp;/g, '&'));
+        var linkObject = new LinkObject('node', node, node.attributes.title.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&'));
         tb.options.fetchers[linkObject.id] = new NodeFetcher(item.data.types, item.data.relationships.children.links.related.href + '?related_counts=children&embed=contributors');
         tb.options.fetchers[linkObject.id].on(['page', 'done'], tb.options.onPageLoad);
 
