@@ -2,7 +2,10 @@ import datetime
 
 import requests
 
+from modularodm import Q
+
 from framework.celery_tasks import app as celery_app
+from framework.postcommit_tasks.handlers import run_postcommit
 
 from website import settings
 
@@ -49,3 +52,20 @@ def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=
                     }]
                 },
             }, headers={'Authorization': 'Bearer {}'.format(settings.SHARE_API_TOKEN)}).raise_for_status()
+
+
+@run_postcommit(once_per_request=False, celery=True)
+@celery_app.task(ignore_results=True)
+def institution_dashboard_display(inst):
+    from website.models import Node
+    if not inst.dashboard_display:
+        num_nodes = len(Node.find_by_institutions(inst, query=(
+            Q('is_public', 'eq', True) &
+            Q('is_folder', 'ne', True) &
+            Q('is_deleted', 'ne', True) &
+            Q('parent_node', 'eq', None) &
+            Q('is_registration', 'eq', False)
+        )))
+        if num_nodes >= settings.INSTITUTION_DISPLAY_NODE_THRESHOLD:
+            inst.node.institution_dashboard_display = True
+            inst.node.save()
