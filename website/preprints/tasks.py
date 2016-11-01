@@ -77,6 +77,7 @@ def format_contributor(preprint, user):
         '@id': '_:{}-{}'.format(preprint._id, user._id),
         '@type': 'contributor',
         'person': {'@id': '_:{}'.format(user._id), '@type': 'person'},
+        'cited_name': user.fullname,
         'creative_work': {'@id': '_:{}'.format(preprint._id), '@type': 'preprint'},
     }] + format_user(user)
 
@@ -109,12 +110,23 @@ def format_doi(preprint):
     * All DOIs will use http
     * All DOI paths will be uppercased
     """
-    return {
+    return [{
         '@id': '_:doi-{}'.format(preprint._id),
         '@type': 'link',
         'url': 'http://dx.doi.org/{}'.format(preprint.article_doi.upper().strip('/')),
         'type': 'doi'
-    }
+    }, {
+        '@id': '_:throughdoi-{}'.format(preprint._id),
+        '@type': 'throughlinks',
+        'link': {
+            '@id': '_:doi-{}'.format(preprint._id),
+            '@type': 'link'
+        },
+        'creative_work': {
+            '@id': '_:{}'.format(preprint._id),
+            '@type': 'preprint'
+        }
+    }]
 
 def format_preprint(preprint):
     preprint_parts = [
@@ -129,11 +141,23 @@ def format_preprint(preprint):
             '@type': 'link',
             'url': urlparse.urljoin(settings.DOMAIN, preprint.url),
             'type': 'provider'
+        }, {
+            '@id': '_:throughlink-{}'.format(preprint._id),
+            '@type': 'throughlinks',
+            'creative_work': {
+                '@id': '_:{}'.format(preprint._id),
+                '@type': 'preprint'
+            },
+            'link': {
+                '@id': '_:link-{}'.format(preprint._id),
+                '@type': 'link'
+            }
         }
     ]
 
     if preprint.article_doi:
-        preprint_parts.append(format_doi(preprint))
+        for part in format_doi(preprint):
+            preprint_parts.append(part)
 
     return sum([preprint_parts] + [
         format_contributor(preprint, user) for user in preprint.node.contributors
