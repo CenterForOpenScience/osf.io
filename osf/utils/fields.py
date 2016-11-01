@@ -2,7 +2,7 @@ import jwe
 from django.db import models
 from website import settings
 
-from osf.utils.datetime_aware_jsonfield import NaiveDatetimeException
+from osf.exceptions import NaiveDatetimeException
 
 SENSITIVE_DATA_KEY = jwe.kdf(settings.SENSITIVE_DATA_SECRET.encode('utf-8'),
                              settings.SENSITIVE_DATA_SALT.encode('utf-8'))

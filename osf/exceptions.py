@@ -105,3 +105,7 @@ class ValidationValueError(ValidationError, MODMValidationValueError):
 class ValidationTypeError(ValidationError, MODMValidationTypeError):
     """ Raised during validation if the value of the input is unacceptable and type is incorrect """
     pass
+
+
+class NaiveDatetimeException(Exception):
+    pass

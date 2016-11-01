@@ -7,13 +7,9 @@ from dateutil import parser
 from django.contrib.postgres import lookups
 from django.contrib.postgres.fields.jsonb import JSONField
 from django.core.serializers.json import DjangoJSONEncoder
-
-from osf.exceptions import ValidationError
 from psycopg2.extras import Json
 
-
-class NaiveDatetimeException(BaseException):
-    pass
+from osf.exceptions import ValidationError, NaiveDatetimeException
 
 
 class DateTimeAwareJSONEncoder(DjangoJSONEncoder):
