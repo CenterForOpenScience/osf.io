@@ -5,7 +5,6 @@ import requests
 from modularodm import Q
 
 from framework.celery_tasks import app as celery_app
-from framework.postcommit_tasks.handlers import run_postcommit
 
 from website import settings
 
@@ -54,7 +53,6 @@ def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=
             }, headers={'Authorization': 'Bearer {}'.format(settings.SHARE_API_TOKEN)}).raise_for_status()
 
 
-@run_postcommit(once_per_request=False, celery=True)
 @celery_app.task(ignore_results=True)
 def institution_dashboard_display(inst):
     from website.models import Node
