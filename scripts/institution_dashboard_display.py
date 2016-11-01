@@ -8,12 +8,13 @@ from scripts import utils as script_utils
 from website.app import init_app
 from website.institutions.model import Institution
 from website.project.model import Node
+from website.settings import INSTITUTION_DISPLAY_NODE_THRESHOLD
 
 
 logger = logging.getLogger(__name__)
 
 
-def set_institution_affiliated_nodes_count():
+def set_institution_dashboard_display():
     all_institutions = Institution.find()
     for inst in all_institutions:
         logger.info(
@@ -33,7 +34,8 @@ def set_institution_affiliated_nodes_count():
             'Found {} affiliated nodes for Institution with id <{}> and title <{}>'.format(
                 len(affiliated_nodes), inst._id, inst.name)
         )
-        inst.node.institution_num_nodes = len(affiliated_nodes)
+
+        inst.node.institution_dashboard_display = True if len(affiliated_nodes) >= INSTITUTION_DISPLAY_NODE_THRESHOLD else False
         inst.node.save()
 
 
@@ -41,7 +43,7 @@ def main(dry=True):
     init_app(set_backends=True, routes=False)
 
     with TokuTransaction():
-        set_institution_affiliated_nodes_count()
+        set_institution_dashboard_display()
         if dry:
             raise Exception('Abort Transaction - Dry Run')
 

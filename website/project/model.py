@@ -4026,8 +4026,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
     institution_logo_name = fields.StringField()
     institution_email_domains = fields.StringField(list=True)
     institution_banner_name = fields.StringField()
-    # cached number of affiliated nodes
-    institution_num_nodes = fields.IntegerField(default=0)
+    # cached value
+    institution_dashboard_display = fields.BooleanField(default=False)
 
     @classmethod
     def find(cls, query=None, allow_institution=False, **kwargs):

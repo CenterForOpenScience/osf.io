@@ -21,7 +21,6 @@ from website.institutions.views import view_institution
 from website.models import Guid
 from website.models import Node, Institution
 from website.project import new_bookmark_collection
-from website.settings import INSTITUTION_DISPLAY_NODE_THRESHOLD
 from website.util import permissions
 
 logger = logging.getLogger(__name__)
@@ -90,7 +89,7 @@ def index():
     dashboard_institutions = [
         {'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners}
         for inst in all_institutions
-        if inst.num_nodes >= INSTITUTION_DISPLAY_NODE_THRESHOLD
+        if inst.dashboard_display
     ]
 
     return {
