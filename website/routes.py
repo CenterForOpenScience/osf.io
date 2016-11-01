@@ -171,13 +171,10 @@ def robots():
         mimetype='text/plain'
     )
 
-def ember_app(_=None):
+def ember_app(path=None):
     """Serve the contents of the ember application"""
-    if _ and Guid.load(_):
-        return redirect(_)
-
     ember_app_folder = None
-    file = _ or 'index.html'
+    fp = path or 'index.html'
     for k in settings.EXTERNAL_EMBER_APPS.keys():
         if request.path.strip('/').startswith(k):
             ember_app_folder = os.path.abspath(os.path.join(os.getcwd(), settings.EXTERNAL_EMBER_APPS[k]['path']))
@@ -186,14 +183,14 @@ def ember_app(_=None):
     if not ember_app_folder:
         raise HTTPError(http.NOT_FOUND)
 
-    if not os.path.abspath(os.path.join(ember_app_folder, file)).startswith(ember_app_folder):
+    if not os.path.abspath(os.path.join(ember_app_folder, fp)).startswith(ember_app_folder):
         # Prevent accessing files outside of the ember build dir
         raise HTTPError(http.NOT_FOUND)
 
-    if not os.path.isfile(os.path.join(ember_app_folder, file)):
-        file = 'index.html'
+    if not os.path.isfile(os.path.join(ember_app_folder, fp)):
+        fp = 'index.html'
 
-    return send_from_directory(ember_app_folder, file)
+    return send_from_directory(ember_app_folder, fp)
 
 def goodbye():
     # Redirect to dashboard if logged in
@@ -262,7 +259,7 @@ def make_url_map(app):
         for prefix in settings.EXTERNAL_EMBER_APPS.keys():
             rules += [
                 '/{}/'.format(prefix),
-                '/{}/<path:_>'.format(prefix),
+                '/{}/<path:path>'.format(prefix),
             ]
         process_rules(app, [
             Rule(rules, 'get', ember_app, json_renderer),
