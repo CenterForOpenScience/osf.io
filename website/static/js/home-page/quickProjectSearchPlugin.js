@@ -578,7 +578,7 @@ function getAncestorDescriptor(node, nodeID, ancestor, ancestorID) {
         default:
             ancestorDescriptor = 'Name Unavailable / ';
     }
-    return ancestorDescriptor;
+    return ancestorDescriptor.replace(/&amp;/g, '&');
 }
 
 var QuickSearchNodeDisplay = {
