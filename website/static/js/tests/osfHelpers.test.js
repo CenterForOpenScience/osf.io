@@ -180,7 +180,7 @@ describe('osfHelpers', () => {
 
     describe('decodeText', () => {
         it('returns properly decoded text', () => {
-            var text = "&lt;&gt;&amp;";
+            var text = '&lt;&gt;&amp;';
             var ret = $osf.decodeText(text);
             assert.equal(ret, '<>&');
         });

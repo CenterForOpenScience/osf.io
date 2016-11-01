@@ -289,7 +289,7 @@ var mapByProperty = function(list, attr) {
   */
 var decodeText = function(text){
     return text.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
-}
+};
 
 /**
   * Return whether or not a value is an email address.
