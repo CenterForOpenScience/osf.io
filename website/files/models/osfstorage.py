@@ -107,12 +107,23 @@ class OsfStorageFileNode(FileNode):
     def is_checked_out(self):
         return self.checkout is not None
 
-    def delete(self, user=None, parent=None):
+    @property
+    def _delete_allowed(self):
         if self.node.preprint_file == self and not self.node._has_abandoned_preprint:
             raise exceptions.FileNodeIsPrimaryFile()
         if self.is_checked_out:
             raise exceptions.FileNodeCheckedOutError()
-        return super(OsfStorageFileNode, self).delete(user=user, parent=parent)
+        return True
+
+    @property
+    def delete_allowed(self):
+        try:
+            return self._delete_allowed
+        except:
+            return False
+
+    def delete(self, user=None, parent=None):
+        return super(OsfStorageFileNode, self).delete(user=user, parent=parent) if self._delete_allowed else None
 
     def move_under(self, destination_parent, name=None):
         if self.node.preprint_file == self and not self.node._has_abandoned_preprint:

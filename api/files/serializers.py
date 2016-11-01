@@ -142,6 +142,7 @@ class FileSerializer(JSONAPISerializer):
     tags = JSONAPIListField(child=FileTagField(), required=False)
     current_user_can_comment = ser.SerializerMethodField(help_text='Whether the current user is allowed to post comments')
     current_version = ser.SerializerMethodField(help_text='Latest file version')
+    delete_allowed = ser.BooleanField(read_only=True, required=False)
 
     files = NodeFileHyperLinkField(
         related_view='nodes:node-files',
