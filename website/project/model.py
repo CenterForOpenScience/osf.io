@@ -1539,6 +1539,19 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
             auth=auth,
             save=False,
         )
+        for node in self.nodes:
+            if not node.node_license:
+                node.add_log(
+                    action=NodeLog.CHANGED_LICENSE,
+                    params={
+                        'parent_node': node.parent_id,
+                        'node': node._primary_key,
+                        'new_license': node_license.name
+                    },
+                    auth=auth,
+                    save=False,
+                )
+                node.save()
 
         if save:
             self.save()
