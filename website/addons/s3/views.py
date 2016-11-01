@@ -1,9 +1,11 @@
 import httplib
 
 from boto import exception
+from django.core.exceptions import ValidationError
 from flask import request
 from modularodm import Q
 from modularodm.storage.base import KeyExistsException
+
 
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
@@ -101,11 +103,11 @@ def s3_add_user_account(auth, **kwargs):
             display_name=user_info.display_name,
         )
         account.save()
-    except KeyExistsException:
+    except ValidationError:
         # ... or get the old one
-        account = ExternalAccount.find_one(
-            Q('provider', 'eq', SHORT_NAME) &
-            Q('provider_id', 'eq', user_info.id)
+        account = ExternalAccount.objects.get(
+            provider=SHORT_NAME,
+            provider_id=user_info.id
         )
     assert account is not None
 

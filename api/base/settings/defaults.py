@@ -91,6 +91,7 @@ INSTALLED_APPS = (
     'addons.dropbox',
     'addons.github',
     'addons.googledrive',
+    'addons.s3',
     'addons.twofactor',
     'addons.wiki',
 )
