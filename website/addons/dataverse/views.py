@@ -3,11 +3,8 @@
 import httplib as http
 
 from django.utils import timezone
-from requests.exceptions import SSLError
-
-
 from django.core.exceptions import ValidationError
-from django.utils import timezone
+from requests.exceptions import SSLError
 from flask import request
 
 from framework.auth.decorators import must_be_logged_in
