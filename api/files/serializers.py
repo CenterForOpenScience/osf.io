@@ -39,7 +39,7 @@ class CheckoutField(ser.HyperlinkedRelatedField):
         kwargs['queryset'] = True
         kwargs['read_only'] = False
         kwargs['allow_null'] = True
-        kwargs['lookup_field'] = 'pk'
+        kwargs['lookup_field'] = '_id'
         kwargs['lookup_url_kwarg'] = 'user_id'
 
         self.meta = {'id': 'user_id'}
@@ -52,7 +52,7 @@ class CheckoutField(ser.HyperlinkedRelatedField):
         """
         Resolves the view when embedding.
         """
-        embed_value = resource.stored_object.checkout.pk
+        embed_value = resource.stored_object.checkout._id
         return resolve(
             reverse(
                 self.view_name,

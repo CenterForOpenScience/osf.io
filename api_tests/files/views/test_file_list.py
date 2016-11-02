@@ -73,7 +73,6 @@ class TestFileFiltering(ApiTestCase):
         nt.assert_equal(len(res.json.get('data')), 1)
 
     def test_query_non_capitalized(self):
-        import ipdb; ipdb.set_trace()
         self.file1.add_tag('New', Auth(self.user))
         res = self.app.get(
             '/{}nodes/{}/files/osfstorage/?filter[tags]=new'.format(

@@ -1883,7 +1883,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
         ExcludeWithdrawals
     )
 
-    ordering = ('materialized_path',)  # default ordering
+    ordering = ('_materialized_path',)  # default ordering
 
     serializer_class = FileSerializer
 
