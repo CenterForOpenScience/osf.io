@@ -429,7 +429,6 @@ class ListFilterMixin(FilterMixin):
         raise NotImplementedError('Must define get_default_queryset')
 
     def get_queryset_from_request(self):
-        import ipdb; ipdb.set_trace()
         default_queryset = self.get_default_queryset()
         if not self.kwargs.get('is_embedded') and self.request.query_params:
             param_queryset = self.param_queryset(self.request.query_params, default_queryset)
