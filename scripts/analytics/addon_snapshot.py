@@ -47,7 +47,7 @@ def main():
             project_id=keen_project,
             write_key=write_key,
         )
-        client.add_events({'addon_count_analytics': addon_count})
+        client.add_events({'addon_snapshot': addon_count})
     else:
         print(addon_count)
 
