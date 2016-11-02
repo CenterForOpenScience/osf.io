@@ -57,6 +57,7 @@ from website.archiver import ARCHIVER_SUCCESS
 from website.project.licenses import NodeLicense, NodeLicenseRecord, ensure_licenses
 from website.util import permissions
 from website.files.models.osfstorage import OsfStorageFile, FileVersion
+from website.exceptions import InvalidSanctionApprovalToken
 
 
 ensure_licenses = functools.partial(ensure_licenses, warn=False)
@@ -396,11 +397,15 @@ class WithdrawnRegistrationFactory(AbstractNodeFactory):
 
         registration.retract_registration(user)
         withdrawal = registration.retraction
-        token = withdrawal.approval_state.values()[0]['approval_token']
-        withdrawal.approve_retraction(user, token)
-        withdrawal.save()
 
-        return withdrawal
+        for token in withdrawal.approval_state.values():
+            try:
+                withdrawal.approve_retraction(user, token['approval_token'])
+                withdrawal.save()
+
+                return withdrawal
+            except InvalidSanctionApprovalToken:
+                continue
 
 
 class ForkFactory(ModularOdmFactory):
