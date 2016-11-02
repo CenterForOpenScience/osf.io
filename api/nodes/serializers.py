@@ -272,6 +272,11 @@ class NodeSerializer(JSONAPISerializer):
         related_view_kwargs={'node_id': '<pk>'}
     )
 
+    preprints = HideIfRegistration(RelationshipField(
+        related_view='nodes:node-preprints',
+        related_view_kwargs={'node_id': '<pk>'}
+    ))
+
     def get_current_user_permissions(self, obj):
         user = self.context['request'].user
         if user.is_anonymous():

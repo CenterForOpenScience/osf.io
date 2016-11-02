@@ -218,24 +218,8 @@ class FilterMixin(object):
                                 'source_field_name': source_field_name
                             }
                         })
-                    elif source_field_name == 'is_preprint':
-                        # TODO: Make this also include _is_preprint_orphan when value is false [#PREP-129]
-                        op = 'ne' if utils.is_truthy(value) else 'eq'
-                        query.get(key).update({
-                            field_name: {
-                                'op': op,
-                                'value': None,
-                                'source_field_name': 'preprint_file'
-                            }
-                        })
-                        if utils.is_truthy(value):
-                            query['_is_preprint_orphan'] = {
-                                field_name: {
-                                    'op': 'ne',
-                                    'value': True,
-                                    'source_field_name': '_is_preprint_orphan'
-                                }
-                            }
+                    elif self.should_parse_special_query_params(field_name):
+                        query = self.parse_special_query_params(field_name, key, value, query)
                     else:
                         query.get(key).update({
                             field_name: {
@@ -246,6 +230,16 @@ class FilterMixin(object):
                         })
 
         return query
+
+    def should_parse_special_query_params(self, field_name):
+        """ This should be overridden in subclasses for custom filtering behavior
+        """
+        return False
+
+    def parse_special_query_params(self, field_name, key, value, query):
+        """ This should be overridden in subclasses for custom filtering behavior
+        """
+        pass
 
     def convert_key(self, field_name, field):
         """Used so that that queries on fields with the source attribute set will work
@@ -353,7 +347,9 @@ class ODMFilterMixin(FilterMixin):
                 sub_query_parts = []
                 for field_name, data in field_names.iteritems():
                     # Query based on the DB field, not the name of the serializer parameter
-                    if isinstance(data, list):
+                    if self.should_convert_special_params_to_odm_query(field_name):
+                        sub_query = self.convert_special_params_to_odm_query(field_name, query_params, key, data)
+                    elif isinstance(data, list):
                         sub_query = functools.reduce(operator.and_, [
                             Q(item['source_field_name'], item['op'], item['value'])
                             for item in data
@@ -377,6 +373,16 @@ class ODMFilterMixin(FilterMixin):
             query = None
 
         return query
+
+    def should_convert_special_params_to_odm_query(self, field_name):
+        """ This should be overridden in subclasses for custom filtering behavior
+        """
+        return False
+
+    def convert_special_params_to_odm_query(self, field_name, query_params, key, data):
+        """ This should be overridden in subclasses for custom filtering behavior
+        """
+        pass
 
 
 class ListFilterMixin(FilterMixin):

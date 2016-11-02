@@ -54,6 +54,7 @@ from website.project.views.contributor import (
 from website.project.views.node import _should_show_wiki_widget, _view_project, abbrev_authors
 from website.util import api_url_for, web_url_for
 from website.util import permissions, rubeus
+from website.views import index
 
 
 class Addon(MockAddonNodeSettings):
@@ -4419,6 +4420,63 @@ class TestUserConfirmSignal(OsfTestCase):
             assert_equal(res.status_code, 302)
 
         assert_equal(mock_signals.signals_sent(), set([auth.signals.user_confirmed]))
+
+
+@unittest.skip('Unskip when institution hiding code is reimplemented')
+class TestIndexView(OsfTestCase):
+
+    def setUp(self):
+        super(TestIndexView, self).setUp()
+
+        self.inst_one = InstitutionFactory()
+        self.inst_two = InstitutionFactory()
+        self.inst_three = InstitutionFactory()
+        self.inst_four = InstitutionFactory()
+        self.inst_five = InstitutionFactory()
+
+        self.user = AuthUserFactory()
+        self.user.affiliated_institutions.append(self.inst_one)
+        self.user.affiliated_institutions.append(self.inst_two)
+        self.user.save()
+
+        # tests 5 affiliated, non-registered, public projects
+        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
+            node = ProjectFactory(creator=self.user, is_public=True)
+            node.affiliated_institutions.append(self.inst_one)
+            node.save()
+
+        # tests 4 affiliated, non-registered, public projects
+        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD - 1):
+            node = ProjectFactory(creator=self.user, is_public=True)
+            node.affiliated_institutions.append(self.inst_two)
+            node.save()
+
+        # tests 5 affiliated, registered, public projects
+        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
+            registration = RegistrationFactory(creator=self.user, is_public=True)
+            registration.affiliated_institutions.append(self.inst_three)
+            registration.save()
+
+        # tests 5 affiliated, non-registered public components
+        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
+            node = NodeFactory(creator=self.user, is_public=True)
+            node.affiliated_institutions.append(self.inst_four)
+            node.save()
+
+        # tests 5 affiliated, non-registered, private projects
+        for i in range(settings.INSTITUTION_DISPLAY_NODE_THRESHOLD):
+            node = ProjectFactory(creator=self.user)
+            node.affiliated_institutions.append(self.inst_five)
+            node.save()
+
+    def test_dashboard_institutions(self):
+        dashboard_institutions = index()['dashboard_institutions']
+        assert_equal(len(dashboard_institutions), 1)
+        assert_equal(dashboard_institutions[0]['id'], self.inst_one._id)
+        assert_not_equal(dashboard_institutions[0]['id'], self.inst_two._id)
+        assert_not_equal(dashboard_institutions[0]['id'], self.inst_three._id)
+        assert_not_equal(dashboard_institutions[0]['id'], self.inst_four._id)
+        assert_not_equal(dashboard_institutions[0]['id'], self.inst_five._id)
 
 if __name__ == '__main__':
     unittest.main()
