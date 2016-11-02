@@ -159,7 +159,7 @@ class NodeSerializer(JSONAPISerializer):
 
     license = RelationshipField(
         related_view='licenses:license-detail',
-        related_view_kwargs={'license_id': '<node_license.node_license._id>'},
+        related_view_kwargs={'license_id': '<license.node_license._id>'},
     )
 
     children = RelationshipField(

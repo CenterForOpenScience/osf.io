@@ -1120,3 +1120,6 @@ class TestNodeLicense(ApiTestCase):
         res = self.app.get(node_url, auth=self.user.auth)
         assert_false(node.node_license)
         assert_equal(self.public_project.node_license.year, res.json['data']['attributes']['node_license']['year'])
+        actual_license_url = res.json['data']['relationships']['license']['links']['related']['href']
+        expected_license_url = '/{}licenses/{}'.format(API_BASE, self.node_license._id)
+        assert_in(expected_license_url, actual_license_url)
