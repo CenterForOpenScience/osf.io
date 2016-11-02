@@ -98,6 +98,8 @@ def format_preprint(preprint):
         'title': preprint.node.title,
         'description': preprint.node.description or '',
         'is_deleted': not preprint.is_published or not preprint.node.is_public or preprint.node.is_preprint_orphan,
+        'date_updated': preprint.date_modified.isoformat(),
+        'date_published': preprint.date_published.isoformat()
     })
 
     preprint_graph.attrs['links'] = [
