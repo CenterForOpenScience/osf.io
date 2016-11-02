@@ -2,6 +2,7 @@ from django.core.urlresolvers import resolve, reverse
 import furl
 from rest_framework import serializers as ser
 import pytz
+from datetime import datetime
 
 from modularodm import Q
 
@@ -196,6 +197,9 @@ class FileSerializer(JSONAPISerializer):
         elif obj.provider != 'osfstorage' and obj.history:
             mod_dt = obj.history[-1].get('modified', None)
 
+        if self.context['request'].version >= '2.3':
+            return datetime.strftime(mod_dt, '%Y-%m-%dT%H:%M:%S.%fZ')
+
         return mod_dt and mod_dt.replace(tzinfo=pytz.utc)
 
     def get_date_created(self, obj):
@@ -206,6 +210,9 @@ class FileSerializer(JSONAPISerializer):
             # Non-osfstorage files don't store a created date, so instead get the modified date of the
             # earliest entry in the file history.
             creat_dt = obj.history[0].get('modified', None)
+
+        if self.context['request'].version >= '2.3':
+            return datetime.strftime(creat_dt, '%Y-%m-%dT%H:%M:%S.%fZ')
 
         return creat_dt and creat_dt.replace(tzinfo=pytz.utc)
 
