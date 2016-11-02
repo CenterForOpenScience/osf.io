@@ -1123,3 +1123,4 @@ class TestNodeLicense(ApiTestCase):
         actual_license_url = res.json['data']['relationships']['license']['links']['related']['href']
         expected_license_url = '/{}licenses/{}'.format(API_BASE, self.node_license._id)
         assert_in(expected_license_url, actual_license_url)
+        
