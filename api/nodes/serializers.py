@@ -133,7 +133,7 @@ class NodeSerializer(JSONAPISerializer):
     fork = ser.BooleanField(read_only=True, source='is_fork')
     collection = ser.BooleanField(read_only=True, source='is_collection')
     tags = JSONAPIListField(child=NodeTagField(), required=False)
-    node_license = NodeLicenseSerializer(read_only=True, required=False)
+    node_license = NodeLicenseSerializer(read_only=True, required=False, source='license')
     template_from = ser.CharField(required=False, allow_blank=False, allow_null=False,
                                   help_text='Specify a node id for a node you would like to use as a template for the '
                                             'new node. Templating is like forking, except that you do not copy the '
@@ -159,7 +159,7 @@ class NodeSerializer(JSONAPISerializer):
 
     license = RelationshipField(
         related_view='licenses:license-detail',
-        related_view_kwargs={'license_id': '<node_license.node_license._id>'},
+        related_view_kwargs={'license_id': '<license.node_license._id>'},
     )
 
     children = RelationshipField(
