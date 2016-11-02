@@ -248,7 +248,7 @@ class FileSerializer(JSONAPISerializer):
         if instance.provider != 'osfstorage' and 'tags' in validated_data:
             raise Conflict('File service provider {} does not support tags on the OSF.'.format(instance.provider))
         auth = get_user_auth(self.context['request'])
-        old_tags = set([tag._id for tag in instance.tags])
+        old_tags = set(instance.tags.values_list('name'))
         if 'tags' in validated_data:
             current_tags = set(validated_data.pop('tags', []))
         else:

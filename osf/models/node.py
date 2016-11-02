@@ -5,74 +5,62 @@ import operator
 import re
 import urlparse
 import warnings
-
-from django.apps import apps
-from django.contrib.contenttypes.fields import GenericRelation
 from datetime import datetime
 
 import pytz
 from dirtyfields import DirtyFieldsMixin
+from django.apps import apps
+from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.db import models, transaction, connection
-from psycopg2._psycopg import AsIs
+from django.core.urlresolvers import reverse
+from django.db import connection, models, transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 from keen import scoped_keys
 from modularodm import Q as MQ
-
-from osf.models.citation import AlternativeCitation
-from osf.models.contributor import Contributor, RecentlyAddedContributor, get_contributor_permissions
-from osf.models.identifiers import Identifier
-from osf.models.identifiers import IdentifierMixin
-from osf.models.mixins import Loggable, Taggable, AddonModelMixin, NodeLinkMixin
-from osf.models.tag import Tag
-from osf.models.nodelog import NodeLog
-from osf.models.mixins import CommentableMixin
-from osf.models.sanctions import RegistrationApproval
-from osf.models.user import OSFUser
-from osf.models.spam import SpamMixin
-from osf.models.node_relation import NodeRelation
-from osf.models.validators import validate_title, validate_doi
-from osf.modm_compat import Q
-from osf.utils.auth import Auth, get_user
-from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.exceptions import ValidationValueError
+from psycopg2._psycopg import AsIs
 from typedmodels.models import TypedModel
 
 from framework import status
-from framework.mongo.utils import to_mongo_key
-from framework.mongo import get_request_and_user_id, DummyRequest
-from framework.exceptions import PermissionsError
-from framework.sentry import log_exception
 from framework.celery_tasks.handlers import enqueue_task
-from website import settings, language
+from framework.exceptions import PermissionsError
+from framework.mongo import DummyRequest, get_request_and_user_id
+from framework.mongo.utils import to_mongo_key
+from framework.sentry import log_exception
+from osf.exceptions import ValidationValueError
+from osf.models.citation import AlternativeCitation
+from osf.models.contributor import (Contributor, RecentlyAddedContributor,
+                                    get_contributor_permissions)
+from osf.models.identifiers import Identifier, IdentifierMixin
+from osf.models.mixins import (AddonModelMixin, CommentableMixin, Loggable,
+                               NodeLinkMixin, Taggable)
+from osf.models.node_relation import NodeRelation
+from osf.models.nodelog import NodeLog
+from osf.models.sanctions import RegistrationApproval
+from osf.models.spam import SpamMixin
+from osf.models.tag import Tag
+from osf.models.user import OSFUser
+from osf.models.validators import validate_doi, validate_title
+from osf.modm_compat import Q
+from osf.utils.auth import Auth, get_user
+from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from website import language, settings
+from website.citations.utils import datetime_to_csl
+from website.exceptions import (InvalidTagError, NodeStateError,
+                                TagNotFoundError, UserNotAffiliatedError)
 from website.mails import mails
-from website.project.model import NodeUpdateError
-from website.exceptions import (
-    UserNotAffiliatedError,
-    NodeStateError,
-    InvalidTagError,
-    TagNotFoundError,
-)
 from website.project import signals as project_signals
 from website.project import tasks as node_tasks
-from website.citations.utils import datetime_to_csl
-from website.util import api_url_for, api_v2_url
-from website.util import get_headers_from_request
-from website.util import web_url_for
-from website.util import sanitize
-from website.util.permissions import (
-    expand_permissions,
-    reduce_permissions,
-    DEFAULT_CONTRIBUTOR_PERMISSIONS,
-    CREATOR_PERMISSIONS,
-    READ,
-    WRITE,
-    ADMIN,
-)
-from .base import BaseModel, GuidMixin, Guid, MODMCompatibilityQuerySet
+from website.project.model import NodeUpdateError
+from website.util import (api_url_for, api_v2_url, get_headers_from_request,
+                          sanitize, web_url_for)
+from website.util.permissions import (ADMIN, CREATOR_PERMISSIONS,
+                                      DEFAULT_CONTRIBUTOR_PERMISSIONS, READ,
+                                      WRITE, expand_permissions,
+                                      reduce_permissions)
+from .base import BaseModel, Guid, GuidMixin, MODMCompatibilityQuerySet
 
 logger = logging.getLogger(__name__)
 
@@ -742,6 +730,20 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def get_absolute_url(self):
         return self.absolute_api_v2_url
+
+    @property
+    def permissions(self):
+        contributors = self.contributor_set.all()
+        perm_dict = {}
+        for contributor in contributors:
+            perm_dict[contributor.user._id] = []
+            if contributor.write:
+                perm_dict[contributor.user._id].append('write')
+            if contributor.read:
+                perm_dict[contributor.user._id].append('read')
+            if contributor.admin:
+                perm_dict[contributor.user._id].append('admin')
+        return perm_dict
 
     def get_permissions(self, user):
         try:
@@ -2735,6 +2737,10 @@ class Node(AbstractNode):
         return django_obj
 
     # /TODO DELETE ME POST MIGRATION
+
+    @property
+    def api_v2_url(self):
+        return reverse('nodes:node-detail', kwargs={'node_id': self._id, 'version': 'v2'})
 
     @property
     def is_bookmark_collection(self):

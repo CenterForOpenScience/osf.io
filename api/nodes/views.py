@@ -1904,7 +1904,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             # We should not have gotten a file here
             raise NotFound
 
-        return list(files_list.children)
+        return files_list.children.all()
 
     # overrides ListAPIView
     def get_queryset(self):

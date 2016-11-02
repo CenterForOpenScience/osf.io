@@ -429,6 +429,7 @@ class ListFilterMixin(FilterMixin):
         raise NotImplementedError('Must define get_default_queryset')
 
     def get_queryset_from_request(self):
+        import ipdb; ipdb.set_trace()
         default_queryset = self.get_default_queryset()
         if not self.kwargs.get('is_embedded') and self.request.query_params:
             param_queryset = self.param_queryset(self.request.query_params, default_queryset)
@@ -439,14 +440,15 @@ class ListFilterMixin(FilterMixin):
     def param_queryset(self, query_params, default_queryset):
         """filters default queryset based on query parameters"""
         filters = self.parse_query_params(query_params)
-        queryset = set(default_queryset)
-
+        queryset = default_queryset
         if filters:
             for key, field_names in filters.iteritems():
                 for field_name, data in field_names.iteritems():
-                    queryset = queryset.intersection(set(self.get_filtered_queryset(field_name, data, default_queryset)))
-
-        return list(queryset)
+                    query_field_name = data['source_field_name']
+                    if query_field_name == 'tags':
+                        query_field_name = 'tags__name__iexact'
+                    queryset = queryset.filter(**{query_field_name: data['value']})
+        return queryset
 
     def get_filtered_queryset(self, field_name, params, default_queryset):
         """filters default queryset based on the serializer field type"""
@@ -470,20 +472,20 @@ class ListFilterMixin(FilterMixin):
             else:
                 # TODO: What is {}.lower()? Possible bug
                 return_val = [
-                    item for item in default_queryset
+                    item for item in default_queryset.all()
                     if params['value'].lower() in getattr(item, source_field_name, {}).lower()
                 ]
         elif isinstance(field, ser.ListField):
             return_val = [
                 item for item in default_queryset
                 if params['value'].lower() in [
-                    lowercase(i.lower) for i in getattr(item, source_field_name, [])
+                    lowercase(i.lower) for i in getattr(item, source_field_name, []).all()
                 ]
             ]
         else:
             try:
                 return_val = [
-                    item for item in default_queryset
+                    item for item in default_queryset.all()
                     if self.FILTERS[params['op']](getattr(item, source_field_name, None), params['value'])
                 ]
             except TypeError:

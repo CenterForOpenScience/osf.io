@@ -12,6 +12,7 @@ from framework.analytics import get_basic_counters
 from modularodm.exceptions import NoResultsFound
 from osf.models.base import BaseModel, Guid, OptionalGuidMixin, ObjectIDMixin
 from osf.models.comment import CommentableMixin
+from osf.models.mixins import Taggable
 from osf.models.validators import validate_location
 from osf.modm_compat import Q
 from website.util import api_v2_url
@@ -174,7 +175,7 @@ class TrashedFileNode(CommentableMixin, OptionalGuidMixin, ObjectIDMixin, BaseMo
         return restored
 
 
-class StoredFileNode(CommentableMixin, OptionalGuidMixin, ObjectIDMixin, BaseModel):
+class StoredFileNode(CommentableMixin, OptionalGuidMixin, Taggable, ObjectIDMixin, BaseModel):
     """
         The storage backend for FileNode objects.
         This class should generally not be used or created manually as FileNode
@@ -214,9 +215,6 @@ class StoredFileNode(CommentableMixin, OptionalGuidMixin, ObjectIDMixin, BaseMod
     # The User that has this file "checked out"
     # Should only be used for OsfStorage
     checkout = models.ForeignKey('OSFUser', blank=True, null=True)
-
-    # Tags for a file, currently only used for osfStorage
-    tags = models.ManyToManyField('Tag')
 
     @property
     def materialized_path(self):

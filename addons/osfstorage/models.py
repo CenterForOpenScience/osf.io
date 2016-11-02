@@ -294,6 +294,9 @@ class OsfStorageFile(OsfStorageFileNode, File):
         if self.node.is_registration:
             # Can't perform edits on a registration
             raise NodeStateError
+        # TODO does modm let you do this???!
+        if isinstance(tag, tuple):
+            tag = tag[0]
         tag_instance = Tag.objects.filter(name=tag).first()
         if not tag_instance:
             raise InvalidTagError
