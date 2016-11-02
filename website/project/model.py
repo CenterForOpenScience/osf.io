@@ -2174,6 +2174,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
                 if isinstance(v, basestring)
             }
         enqueue_task(node_tasks.on_node_updated.s(self._id, user_id, first_save, saved_fields, request_headers))
+
+        if self.preprint_file and bool(self.SEARCH_UPDATE_FIELDS.intersection(saved_fields)):
+            # avoid circular imports
+            from website.preprints.tasks import on_preprint_updated
+            from website.preprints.model import PreprintService
+            # .preprints wouldn't return a single deleted preprint
+            for preprint in PreprintService.find(Q('node', 'eq', self)):
+                enqueue_task(on_preprint_updated.s(preprint._id))
+
         user = User.load(user_id)
         if user and self.check_spam(user, saved_fields, request_headers):
             # Specifically call the super class save method to avoid recursion into model save method.
