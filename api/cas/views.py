@@ -7,7 +7,6 @@ from rest_framework.response import Response
 from api.base.views import JSONAPIBaseView
 from api.base.serializers import JSONAPISerializer
 from api.cas.auth import CasAuthentication
-from api.cas.auth import get_user_with_two_factor
 
 
 class CasLogin(JSONAPIBaseView, generics.CreateAPIView):
@@ -21,36 +20,29 @@ class CasLogin(JSONAPIBaseView, generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
 
-        # The response `data` payload is expected in the following structures
-        # {
-        #     "status": "AUTHENTICATION SUCCESS",
-        #     "userId": "",
-        #     "attributes": {
-        #         "username": "",
-        #         "givenName": "",
-        #         "familyName": "",
-        #     },
-        # }
-
         user = request.user
         if not user or isinstance(user, AnonymousUser):
             raise AuthenticationFailed
-        elif get_user_with_two_factor(user):
-            content = {
-                "status": "TWO_FACTOR_AUTHENTICATION_REQUIRED",
+
+        # The response `data` payload is expected in the following structures
+        # {
+        #     "status": "AUTHENTICATION SUCCESS",
+        #     "userId": "a6cde",
+        #     "attributes": {
+        #         "username": "testuser@fakecos.io",
+        #         "givenName": "User",
+        #         "familyName": "Test",
+        #     },
+        # }
+        content = {
+            "status": "AUTHENTICATION_SUCCESS",
+            "userId": user._id,
+            "attributes": {
                 "username": user.username,
-                "attributes": {},
+                "givenName": user.given_name,
+                "familyName": user.family_name,
             }
-        else:
-            content = {
-                "status": "AUTHENTICATION_SUCCESS",
-                "userId": user._id,
-                "attributes": {
-                    "username": user.username,
-                    "givenName": user.given_name,
-                    "familyName": user.family_name,
-                }
-            }
+        }
 
         return Response(content)
 

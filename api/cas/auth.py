@@ -20,7 +20,6 @@ from framework.auth.views import send_confirm_email
 from website.addons.twofactor.models import TwoFactorUserSettings
 
 
-
 class CasAuthentication(BaseAuthentication):
 
     media_type = 'text/plain'
@@ -29,43 +28,38 @@ class CasAuthentication(BaseAuthentication):
 
         payload = decrypt_payload(request.body)
         data = payload.get('data')
-        #The JWT `data` payload is expected in the following structures
+        # The `data` payload structure for type "LOGIN"
         # {
         #     "type": "LOGIN",
         #     "user": {
-        #         "email": "",
-        #         "passwordHash": "",
-        #         "verificationKey": "",
+        #         "email": "testuser@fakecos.io",
+        #         "password": "f@kePa$$w0rd",
+        #         "verificationKey": "ga67ptH4AF4HtMlFxVKP4do7HAaAPC",
+        #         "oneTimePassword": "123456",
+        #         "remoteAuthenticated": False,
         #     },
-        # },
-        # {
-        #     "type": "TWO_FACTOR",
-        #     "user": {
-        #         "username": "",
-        #         "oneTimePassword": "",
-        #     },
-        # },
-        # {
-        #     "type": "REGISTER",
-        #     "user": {
-        #         "fullname": "",
-        #         "email": "",
-        #         "password": "",
-        #         "campaign": "",
-        #     },
-        # },
-        # coming soon for `type == "INSTITUTION" | "EXTERNAL"
-
+        # }
         if data.get('type') == "LOGIN":
             user, error_message = handle_login(data.get('user'))
             if user and not error_message:
-                return user, None
+                if not get_user_with_two_factor(user):
+                    return user, None
+                else:
+                    error_message = verify_two_factor(user, data.get('user').get('oneTimePassword'))
+                    if error_message:
+                        raise AuthenticationFailed(detail=error_message)
+                    return user, None
             raise AuthenticationFailed(detail=error_message)
-        elif data.get('type') == "TWO_FACTOR":
-            user, error_message = handle_two_factor(data.get('user'))
-            if user and not error_message:
-                return user, None
-            raise AuthenticationFailed(detail=error_message)
+        # The `data` payload structure for type "REGISTER"
+        # {
+        #     "type": "REGISTER",
+        #     "user": {
+        #         "fullname": "User Test",
+        #         "email": "testuser@fakecos.io",
+        #         "password": "f@kePa$$w0rd",
+        #         "campaign": None,
+        #     },
+        # },
         elif data.get('type') == "REGISTER":
             user, error_message = handle_register(data.get('user'))
             if user and not error_message:
@@ -78,40 +72,38 @@ class CasAuthentication(BaseAuthentication):
 def handle_login(user):
 
     email = user.get('email')
+    remote_authenticated = user.get('remoteAuthenticated')
     verification_key = user.get('verificationKey')
-    password_hash = user.get('passwordHash')
-    if not email or not (verification_key or password_hash):
+    password = user.get('password')
+    if not email or not (remote_authenticated or verification_key or password):
         return None, 'MISSING_CREDENTIALS'
 
     user = get_user(email)
     if not user:
         return None, 'ACCOUNT_NOT_FOUND'
 
+    if remote_authenticated:
+        return user, None
+
     if verification_key:
         if verification_key == user.verification_key:
             return user, None
         return None, 'INVALID_VERIFICATION_KEY'
 
-    if password_hash:
-        if password_hash == user.password:
+    if password:
+        if user.check_password(password):
             return user, None
         return None, 'INVALID_PASSWORD'
 
 
-def handle_two_factor(user):
-    username = user.get('username')
-    one_time_password = user.get('oneTimePassword')
-    if not username or not one_time_password:
-        return None, 'MISSING_CREDENTIALS'
-
-    user = get_user(username)
-    if not user:
-        return None, 'ACCOUNT_NOT_FOUND'
+def verify_two_factor(user, one_time_password):
+    if not one_time_password:
+        return 'TWO_FACTOR_AUTHENTICATION_REQUIRED'
 
     two_factor = get_user_with_two_factor(user)
     if two_factor and two_factor.verify_code(one_time_password):
-        return user, None
-    return None, 'INVALID_ONE_TIME_PASSWORD'
+        return None
+    return 'INVALID_ONE_TIME_PASSWORD'
 
 
 def handle_register(user):
