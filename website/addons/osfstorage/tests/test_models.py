@@ -512,6 +512,21 @@ class TestOsfstorageFileNode(StorageTestCase):
             '/'+folder._id, provider='osfstorage', node=node)
         assert [] == all_guids
 
+    def test_delete_allowed(self):
+        node = self.node_settings.owner
+        file = models.OsfStorageFile(name='Godspeed', node=node)
+        file.save()
+        assert_true(file.delete_allowed)
+        node.preprint_file = file.stored_object
+        node.save()
+        assert_false(file.delete_allowed)
+        node._has_abandoned_preprint = True
+        node.save()
+        assert_true(file.delete_allowed)
+        file.check_in_or_out(self.user, self.user, save=True)
+        file.save()
+        assert_false(file.delete_allowed)
+
 
 class TestNodeSettingsModel(StorageTestCase):
 
