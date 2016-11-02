@@ -33,7 +33,7 @@ class TestFileSerializer(DbTestCase):
         assert_equal(self.date_modified_tz_aware, data['attributes']['date_modified'])
 
     def test_date_modified_formats_to_new_format(self):
-        req = make_drf_request_with_version(version='2.3')
+        req = make_drf_request_with_version(version='2.2')
         data = FileSerializer(self.file, context={'request': req}).data['data']
         assert_equal(datetime.strftime(self.date_modified, self.new_format), data['attributes']['date_modified'])
 
@@ -43,6 +43,6 @@ class TestFileSerializer(DbTestCase):
         assert_equal(self.date_created_tz_aware, data['attributes']['date_created'])
 
     def test_date_created_formats_to_new_format(self):
-        req = make_drf_request_with_version(version='2.3')
+        req = make_drf_request_with_version(version='2.2')
         data = FileSerializer(self.file, context={'request': req}).data['data']
         assert_equal(datetime.strftime(self.date_created, self.new_format), data['attributes']['date_created'])

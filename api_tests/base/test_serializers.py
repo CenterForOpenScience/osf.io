@@ -392,13 +392,13 @@ class TestDateByVersion(DbTestCase):
         )
 
     def test_old_date_formats_to_new_format(self):
-        req = make_drf_request_with_version(version='2.3')
+        req = make_drf_request_with_version(version='2.2')
         setattr(self.node, 'date_modified', self.old_date)
         data = NodeSerializer(self.node, context={'request': req}).data['data']
         assert_equal(datetime.strftime(self.old_date, self.new_format), data['attributes']['date_modified'])
 
     def test_old_date_without_microseconds_formats_to_new_format(self):
-        req = make_drf_request_with_version(version='2.3')
+        req = make_drf_request_with_version(version='2.2')
         setattr(self.node, 'date_modified', self.old_date_without_microseconds)
         data = NodeSerializer(self.node, context={'request': req}).data['data']
         assert_equal(
@@ -422,13 +422,13 @@ class TestDateByVersion(DbTestCase):
         )
 
     def test_new_date_formats_to_new_format(self):
-        req = make_drf_request_with_version(version='2.3')
+        req = make_drf_request_with_version(version='2.2')
         setattr(self.node, 'date_modified', self.new_date)
         data = NodeSerializer(self.node, context={'request': req}).data['data']
         assert_equal(datetime.strftime(self.new_date, self.new_format), data['attributes']['date_modified'])
 
     def test_new_date_without_microseconds_formats_to_new_format(self):
-        req = make_drf_request_with_version(version='2.3')
+        req = make_drf_request_with_version(version='2.2')
         setattr(self.node, 'date_modified', self.new_date_without_microseconds)
         data = NodeSerializer(self.node, context={'request': req}).data['data']
         assert_equal(

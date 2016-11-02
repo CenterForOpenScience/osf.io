@@ -247,12 +247,12 @@ def _url_val(val, obj, serializer, request, **kwargs):
 
 class DateByVersion(ser.DateTimeField):
     """
-    Document me pls.
+    Custom DateTimeField that forces dates into the ISO-8601 format with timezone information in version 2.2.
     """
     def to_representation(self, value):
         request = self.context.get('request')
         if request:
-            if request.version >= '2.3':
+            if request.version >= '2.2':
                 self.format = '%Y-%m-%dT%H:%M:%S.%fZ'
             else:
                 self.format = '%Y-%m-%dT%H:%M:%S.%f' if value.microsecond else '%Y-%m-%dT%H:%M:%S'

@@ -98,7 +98,7 @@ REST_FRAMEWORK = {
     'ALLOWED_VERSIONS': (
         '2.0',
         '2.1',
-        '2.3',
+        '2.2',
     ),
     'DEFAULT_FILTER_BACKENDS': ('api.base.filters.ODMOrderingFilter',),
     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',
