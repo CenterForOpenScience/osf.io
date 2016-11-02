@@ -251,8 +251,11 @@ class DateByVersion(ser.DateTimeField):
     """
     def to_representation(self, value):
         request = self.context.get('request')
-        if request and request.version >= '2.3':
-            self.format = '%Y-%m-%dT%H:%M:%S.%fZ'
+        if request:
+            if request.version >= '2.3':
+                self.format = '%Y-%m-%dT%H:%M:%S.%fZ'
+            else:
+                self.format = '%Y-%m-%dT%H:%M:%S.%f' if value.microsecond else '%Y-%m-%dT%H:%M:%S'
         return super(DateByVersion, self).to_representation(value)
 
 
