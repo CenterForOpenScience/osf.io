@@ -152,37 +152,29 @@ def get_log_counts(users):
 def get_projects():
     # This count includes projects, forks, and registrations
     projects = Node.find(
-        # Top-level project have root equal to themselves
-        Q('root_id', 'eq', F('id')) &
         CONTENT_NODE_QUERY
-    )
+    ).get_roots()
     return projects
 
 def get_projects_forked():
     projects_forked = Node.find(
-        # Top-level project have root equal to themselves
-        Q('root_id', 'eq', F('id')) &
         Q('is_fork', 'eq', True) &
         CONTENT_NODE_QUERY
-    )
+    ).get_roots()
     return projects_forked
 
 def get_projects_registered():
     projects_registered = Node.find(
-        # Top-level project have root equal to themselves
-        Q('root_id', 'eq', F('id')) &
         Q('is_registration', 'eq', True) &
         CONTENT_NODE_QUERY
-    )
+    ).get_roots()
     return projects_registered
 
 def get_projects_public():
     projects_public = Node.find(
-        # Top-level project have root equal to themselves
-        Q('root_id', 'eq', F('id')) &
         Q('is_public', 'eq', True) &
         CONTENT_NODE_QUERY
-    )
+    ).get_roots()
     return projects_public
 
 

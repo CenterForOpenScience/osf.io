@@ -271,7 +271,6 @@ class TestAppJSONAPI(TestApp, JSONAPIWrapper):
     delete_json_api = json_api_method('DELETE')
 
 
-@override_settings(DEBUG_PROPAGATE_EXCEPTIONS=True)
 class ApiAppTestCase(TransactionTestCase):
     """Base `TestCase` for OSF API v2 tests that require the WSGI app (but no database).
     """

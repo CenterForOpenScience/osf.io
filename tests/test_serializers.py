@@ -2,12 +2,14 @@
 
 from nose.tools import *  # noqa (PEP8 asserts)
 
-from tests.factories import (
+import pytest
+from osf_tests.factories import (
     ProjectFactory,
     UserFactory,
     RegistrationFactory,
     NodeFactory,
     CollectionFactory,
+    BookmarkCollectionFactory,
 )
 from tests.base import OsfTestCase
 
@@ -16,14 +18,17 @@ from framework import utils as framework_utils
 from website.project.views.node import _get_summary, _view_project, _serialize_node_search, _get_children
 from website.views import _render_node
 from website.profile import utils
+from website import filters, settings
 from website.util import permissions
+
+pytestmark = pytest.mark.django_db
 
 class TestUserSerializers(OsfTestCase):
     def test_serialize_user(self):
         master = UserFactory()
         user = UserFactory.build()
         master.merge_user(user)
-        d = serialize_user(user)
+        d = utils.serialize_user(user)
         assert_equal(d['id'], user._primary_key)
         assert_equal(d['url'], user.url)
         assert_equal(d.get('username', None), None)
@@ -33,11 +38,23 @@ class TestUserSerializers(OsfTestCase):
         assert_equal(d['date_registered'], user.date_registered.strftime('%Y-%m-%d'))
         assert_equal(d['active'], user.is_active)
 
-    def test_serialize_user_full(self):
+    def test_serialize_user_merged(self):
         master = UserFactory()
         user = UserFactory.build()
         master.merge_user(user)
-        d = serialize_user(user, full=True)
+        d = utils.serialize_user(user, full=True)
+        assert_true(d['is_merged'])
+        assert_equal(d['merged_by']['url'], user.merged_by.url)
+        assert_equal(d['merged_by']['absolute_url'], user.merged_by.absolute_url)
+
+    def test_serialize_user_full(self):
+        user = UserFactory()
+        ProjectFactory(creator=user, is_public=False)
+        NodeFactory(creator=user)
+        ProjectFactory(creator=user, is_public=True)
+        CollectionFactory(creator=user)
+        BookmarkCollectionFactory(creator=user)
+        d = utils.serialize_user(user, full=True)
         gravatar = filters.gravatar(
             user,
             use_ssl=True,
@@ -51,9 +68,6 @@ class TestUserSerializers(OsfTestCase):
         assert_equal(d['gravatar_url'], gravatar)
         assert_equal(d['absolute_url'], user.absolute_url)
         assert_equal(d['date_registered'], user.date_registered.strftime('%Y-%m-%d'))
-        assert_equal(d['is_merged'], user.is_merged)
-        assert_equal(d['merged_by']['url'], user.merged_by.url)
-        assert_equal(d['merged_by']['absolute_url'], user.merged_by.absolute_url)
         projects = [
             node
             for node in user.contributed
