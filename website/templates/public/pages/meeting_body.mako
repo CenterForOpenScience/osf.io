@@ -2,6 +2,21 @@
     ${meeting['field_names']['meeting_title_type'] if meeting['poster'] and meeting['talk'] else meeting['field_names']['submission1_plural'].capitalize() if meeting['poster'] else meeting['field_names']['submission2_plural'].capitalize()}
 </h2>
 
+<div>
+    % if meeting['location']:
+       <span>${meeting['location']}</span>
+    % endif
+    % if meeting['location'] and meeting['start_date']:
+        |
+    % endif
+    % if meeting['start_date']:
+        <span>${meeting['start_date'].strftime('%m/%d/%Y')}</span>
+        %if meeting['end_date']:
+            - <span>${meeting['end_date'].strftime('%m/%d/%Y')}</span>
+        %endif
+    % endif
+</div>
+
 % if meeting['logo_url']:
     <img src="${ meeting['logo_url'] }" class="img-responsive" />
     <br /><br />
