@@ -1,6 +1,7 @@
 import logging
 from modularodm import Q
 
+from website.app import init_app
 from scripts.analytics.base import SnapshotAnalytics
 
 logger = logging.getLogger(__name__)
@@ -47,6 +48,7 @@ class AddonSnapshot(SnapshotAnalytics):
 
 
 if __name__ == '__main__':
+    init_app()
     addon_snapshot = AddonSnapshot()
     events = addon_snapshot.get_events()
     addon_snapshot.send_events(events)
