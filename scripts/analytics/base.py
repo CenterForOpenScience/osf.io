@@ -1,7 +1,9 @@
 import time
 import logging
 import argparse
+import importlib
 from datetime import datetime
+from dateutil.parser import parse
 
 from website.app import init_app
 from website.settings import KEEN as keen_settings
@@ -12,9 +14,6 @@ logging.basicConfig(level=logging.INFO)
 
 
 class BaseAnalytics(object):
-
-    def __init__(self):
-        init_app()
 
     @property
     def collection_name(self):
@@ -84,7 +83,7 @@ class SummaryAnalytics(BaseAnalytics):
                 self.collection_name
             )
         )
-        parser.add_argument('-d', '--date', dest='date', required=False)
+        parser.add_argument('-d', '--date', dest='date', required=True)
 
         return parser.parse_args()
 
@@ -123,3 +122,82 @@ class EventAnalytics(SummaryAnalytics):
                 )
             )
             print(events)
+
+
+class BaseAnalyticsHarness(object):
+
+    def __init__(self):
+        init_app()
+
+    @property
+    def analytics_classes(self):
+        raise NotImplementedError("Please specify a default set of classes to run with this analytics harness")
+
+    def parse_args(self):
+        parser = argparse.ArgumentParser(description='Populate keen analytics!')
+        parser.add_argument(
+            '-as', '--analytics_scripts', nargs='+', dest='analytics_scripts', required=False,
+            help='Enter the names of scripts inside scripts/analytics you would like to run separated by spaces (ex: -as user_summary node_summary)'
+        )
+        return parser.parse_args()
+
+    def try_to_import_from_args(self, entered_scripts):
+        import scripts  # flake8: noqa
+        imported_script_classes = []
+        for script in entered_scripts:
+            try:
+                # I am so sorry
+                script_class_name = ''.join([item.capitalize() for item in script.split('_')])
+                script_events = importlib.import_module('scripts.analytics.{}'.format(script))
+                script_class = eval('{}.{}'.format(script_events.__name__, script_class_name))
+                imported_script_classes.append(script_class)
+            except (ImportError, NameError) as e:
+                logger.error(e)
+                logger.error(
+                    'Error importing script - make sure the script specified is inside of scripts/analytics. '
+                    'Also make sure the main analytics class name is the same as the script name but in camel case. '
+                    'For example, the script named  scripts/analytics/addon_snapshot.py has class AddonSnapshot'
+                )
+
+            return imported_script_classes
+
+    def main(self):
+        args = self.parse_args()
+        entered_scripts = args.analytics_scripts
+        if entered_scripts:
+            analytics_classes = self.try_to_import_from_args(entered_scripts)
+        else:
+            analytics_classes = self.analytics_classes
+
+        for analytics_class in analytics_classes:
+            class_instance = analytics_class()
+            events = class_instance.get_events()
+            class_instance.send_events(events)
+
+
+class DateAnalyticsHarness(BaseAnalyticsHarness):
+
+    def parse_args(self):
+        parser = argparse.ArgumentParser(description='Populate keen analytics!')
+        parser.add_argument(
+            '-as', '--analytics_scripts', nargs='+', dest='analytics_scripts', required=False,
+            help='Enter the names of scripts inside scripts/analytics you would like to run separated by spaces (ex: -as user_summary node_summary)'
+        )
+        parser.add_argument('-d', '--date', dest='date', required=True)
+        return parser.parse_args()
+
+
+    def main(self, date=None):
+        args = self.parse_args()
+        entered_scripts = args.analytics_scripts
+        if not date:
+            date = parse(args.date).date()
+        if entered_scripts:
+            analytics_classes = self.try_to_import_from_args(entered_scripts)
+        else:
+            analytics_classes = self.analytics_classes
+
+        for analytics_class in analytics_classes:
+            class_instance = analytics_class()
+            events = class_instance.get_events(date)
+            class_instance.send_events(events)
