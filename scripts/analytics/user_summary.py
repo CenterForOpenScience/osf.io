@@ -29,28 +29,30 @@ class UserSummary(SummaryAnalytics):
             'keen': {
                 'timestamp': timestamp_datetime.isoformat()
             },
-            'active_users': User.find(
-                Q('is_registered', 'eq', True) &
-                Q('password', 'ne', None) &
-                Q('merged_by', 'eq', None) &
-                Q('date_disabled', 'eq', None) &
-                Q('date_confirmed', 'ne', None) &
-                Q('date_confirmed', 'lt', query_datetime)
-            ).count(),
-            'unconfirmed_users': User.find(
-                Q('date_registered', 'lt', query_datetime) &
-                Q('date_confirmed', 'eq', None)
-            ).count(),
-            'deactivated_users': User.find(
-                Q('date_disabled', 'ne', None) &
-                Q('date_disabled', 'lt', query_datetime)
-            ).count()
+            'status': {
+                'active': User.find(
+                    Q('is_registered', 'eq', True) &
+                    Q('password', 'ne', None) &
+                    Q('merged_by', 'eq', None) &
+                    Q('date_disabled', 'eq', None) &
+                    Q('date_confirmed', 'ne', None) &
+                    Q('date_confirmed', 'lt', query_datetime)
+                ).count(),
+                'unconfirmed': User.find(
+                    Q('date_registered', 'lt', query_datetime) &
+                    Q('date_confirmed', 'eq', None)
+                ).count(),
+                'deactivated': User.find(
+                    Q('date_disabled', 'ne', None) &
+                    Q('date_disabled', 'lt', query_datetime)
+                ).count()
+            }
         }
         logger.info(
             'Users counted. Active: {}, Unconfirmed: {}, Deactivated: {}'.format(
-                counts['active_users'],
-                counts['unconfirmed_users'],
-                counts['deactivated_users']
+                counts['status']['active'],
+                counts['status']['unconfirmed'],
+                counts['status']['deactivated']
             )
         )
         return [counts]
