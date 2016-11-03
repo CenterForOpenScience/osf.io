@@ -10,9 +10,9 @@
         |
     % endif
     % if meeting['start_date']:
-        <span>${meeting['start_date'].strftime('%m/%d/%Y')}</span>
+        <span>${meeting['start_date'].strftime('%b %d, %Y')}</span>
         %if meeting['end_date']:
-            - <span>${meeting['end_date'].strftime('%m/%d/%Y')}</span>
+            - <span>${meeting['end_date'].strftime('%b %d, %Y')}</span>
         %endif
     % endif
 </div>
