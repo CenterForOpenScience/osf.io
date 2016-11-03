@@ -1,7 +1,7 @@
 import logging
 from modularodm import Q
-from datetime import datetime
 from dateutil.parser import parse
+from datetime import datetime, timedelta
 
 from website.models import Node
 from scripts.analytics.base import SummaryAnalytics
@@ -20,13 +20,14 @@ class NodeSummary(SummaryAnalytics):
     def get_events(self, date):
         super(NodeSummary, self).get_events(date)
 
-        # In the end, turn the date back into a datetime for queries
-        date = datetime(date.year, date.month, date.day)
+        # Convert to a datetime at midnight for queries and the timestamp
+        timestamp_datetime = datetime(date.year, date.month, date.day)
+        query_datetime = timestamp_datetime + timedelta(1)
 
         node_query = (
             Q('is_deleted', 'ne', True) &
             Q('is_folder', 'ne', True) &
-            Q('date_created', 'lt', date)
+            Q('date_created', 'lt', query_datetime)
         )
 
         registration_query = node_query & Q('is_registration', 'eq', True)
@@ -48,6 +49,9 @@ class NodeSummary(SummaryAnalytics):
         registered_project_retracted_query = registered_project_query & retracted_query
 
         totals = {
+            'keen': {
+                'timestamp': timestamp_datetime.isoformat()
+            },
             'nodes': {
                 'total': Node.find(node_query).count(),
                 'public': Node.find(node_public_query).count(),

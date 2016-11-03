@@ -1,6 +1,6 @@
 import logging
-from datetime import datetime
 from dateutil.parser import parse
+from datetime import datetime, timedelta
 
 from modularodm import Q
 
@@ -20,12 +20,13 @@ class UserSummary(SummaryAnalytics):
     def get_events(self, date):
         super(UserSummary, self).get_events(date)
 
-        # In the end, turn the date back into a datetime for queries
-        date = datetime(date.year, date.month, date.day)
+        # Convert to a datetime at midnight for queries and the timestamp
+        timestamp_datetime = datetime(date.year, date.month, date.day)
+        query_datetime = timestamp_datetime + timedelta(1)
 
         counts = {
             'keen': {
-                'timestamp': date.isoformat()
+                'timestamp': timestamp_datetime.isoformat()
             },
             'active_users': User.find(
                 Q('is_registered', 'eq', True) &
@@ -33,15 +34,15 @@ class UserSummary(SummaryAnalytics):
                 Q('merged_by', 'eq', None) &
                 Q('date_disabled', 'eq', None) &
                 Q('date_confirmed', 'ne', None) &
-                Q('date_confirmed', 'lt', date)
+                Q('date_confirmed', 'lt', query_datetime)
             ).count(),
             'unconfirmed_users': User.find(
-                Q('date_registered', 'lt', date) &
+                Q('date_registered', 'lt', query_datetime) &
                 Q('date_confirmed', 'eq', None)
             ).count(),
             'deactivated_users': User.find(
                 Q('date_disabled', 'ne', None) &
-                Q('date_disabled', 'lt', date)
+                Q('date_disabled', 'lt', query_datetime)
             ).count()
         }
         logger.info(
