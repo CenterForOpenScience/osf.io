@@ -90,7 +90,7 @@ class Loggable(models.Model):
 
 class Taggable(models.Model):
 
-    tags = models.ManyToManyField('Tag', related_name='tagged')
+    tags = models.ManyToManyField('Tag', related_name='%(class)s_tagged')
 
     def add_tag(self, tag, auth=None, save=True, log=True, system=False):
         if not system and not auth:
