@@ -9,19 +9,20 @@ from framework.auth.core import Auth
 from website.util.permissions import READ, WRITE, ADMIN
 
 from tests.base import ApiAddonTestCase
-from tests.factories import AuthUserFactory
-from website.addons.box.tests.factories import BoxAccountFactory, BoxNodeSettingsFactory
-from website.addons.dataverse.tests.factories import DataverseAccountFactory, DataverseNodeSettingsFactory
-from website.addons.dropbox.tests.factories import DropboxAccountFactory, DropboxNodeSettingsFactory
-from website.addons.forward.tests.factories import ForwardSettingsFactory
-from website.addons.github.tests.factories import GitHubAccountFactory, GitHubNodeSettingsFactory
-from website.addons.googledrive.tests.factories import GoogleDriveAccountFactory, GoogleDriveNodeSettingsFactory
-from website.addons.mendeley.tests.factories import MendeleyAccountFactory, MendeleyNodeSettingsFactory
-from website.addons.s3.tests.factories import S3AccountFactory, S3NodeSettingsFactory
-from website.addons.zotero.tests.factories import ZoteroAccountFactory, ZoteroNodeSettingsFactory
-from website.addons.owncloud.tests.factories import OwnCloudAccountFactory, OwnCloudNodeSettingsFactory
+from osf_tests.factories import AuthUserFactory
+from addons.box.tests.factories import BoxAccountFactory, BoxNodeSettingsFactory
+from addons.dataverse.tests.factories import DataverseAccountFactory, DataverseNodeSettingsFactory
+from addons.dropbox.tests.factories import DropboxAccountFactory, DropboxNodeSettingsFactory
+from addons.github.tests.factories import GitHubAccountFactory, GitHubNodeSettingsFactory
+from addons.googledrive.tests.factories import GoogleDriveAccountFactory, GoogleDriveNodeSettingsFactory
+from addons.s3.tests.factories import S3AccountFactory, S3NodeSettingsFactory
+from addons.owncloud.tests.factories import OwnCloudAccountFactory, OwnCloudNodeSettingsFactory
 
-pytestmark = pytest.mark.skip
+from website.addons.forward.tests.factories import ForwardSettingsFactory
+from website.addons.mendeley.tests.factories import MendeleyAccountFactory, MendeleyNodeSettingsFactory
+from website.addons.zotero.tests.factories import ZoteroAccountFactory, ZoteroNodeSettingsFactory
+
+pytestmark = pytest.mark.django_db
 
 # Varies between addons. Some need to make a call to get the root,
 # 'FAKEROOTID' should be the result of a mocked call in that case.
@@ -522,12 +523,16 @@ class NodeAddonFolderMixin(object):
         assert_equal(res.status_code, 403)
 
     def test_folder_list_GET_raises_error_admin_not_authorizer(self):
+        wrong_type = self.should_expect_errors(success_types=('CONFIGURABLE',))
         admin_user = AuthUserFactory()
         self.node.add_contributor(admin_user, permissions=[ADMIN], auth=self.auth)
         res = self.app.get(self.folder_url,
             auth=admin_user.auth,
             expect_errors=True)
-        assert_equal(res.status_code, 403)
+        if not wrong_type:
+            assert_equal(res.status_code, 403)
+        else:
+            assert_in(res.status_code, [404, 501])
 
 
 class NodeAddonTestSuiteMixin(NodeAddonListMixin, NodeAddonDetailMixin, NodeAddonFolderMixin):
@@ -649,13 +654,14 @@ class TestNodeGitHubAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
             'owner': self.node
         }
 
-
+@pytest.mark.skip
 class TestNodeMendeleyAddon(NodeOAuthCitationAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'mendeley'
     AccountFactory = MendeleyAccountFactory
     NodeSettingsFactory = MendeleyNodeSettingsFactory
 
 
+@pytest.mark.skip
 class TestNodeZoteroAddon(NodeOAuthCitationAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'zotero'
     AccountFactory = ZoteroAccountFactory
@@ -677,14 +683,14 @@ class TestNodeBoxAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
             'id': '0'
         }
 
-    @mock.patch('website.addons.box.model.BoxClient.get_folder')
+    @mock.patch('addons.box.models.BoxClient.get_folder')
     def test_settings_detail_PUT_all_sets_settings(self, mock_get):
         mock_get.return_value = {
             'id': self._mock_folder_info['folder_id'],
             'name': 'FAKEFOLDERNAME',
             'path_collection': {'entries': {}}
         }
-        with mock.patch('website.addons.box.model.Box.refresh_oauth_key') as mock_update:
+        with mock.patch('addons.box.models.Provider.refresh_oauth_key') as mock_update:
             super(TestNodeBoxAddon, self).test_settings_detail_PUT_all_sets_settings()
 
 
@@ -749,13 +755,13 @@ class TestNodeS3Addon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
             'id': 'a.bucket'
         }
 
-    @mock.patch('website.addons.s3.model.get_bucket_names')
+    @mock.patch('addons.s3.models.get_bucket_names')
     def test_folder_list_GET_expected_behavior(self, mock_names):
         mock_names.return_value = ['a.bucket']
         super(TestNodeS3Addon, self).test_folder_list_GET_expected_behavior()
 
-    @mock.patch('website.addons.s3.model.bucket_exists')
-    @mock.patch('website.addons.s3.model.get_bucket_location_or_error')
+    @mock.patch('addons.s3.models.bucket_exists')
+    @mock.patch('addons.s3.models.get_bucket_location_or_error')
     def test_settings_detail_PUT_all_sets_settings(self, mock_location, mock_exists):
         mock_exists.return_value = True
         mock_location.return_value = ''
@@ -856,6 +862,7 @@ class TestNodeGoogleDriveAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTest
              res.json['errors'][0]['detail'])
 
 
+@pytest.mark.skip
 class TestNodeForwardAddon(NodeUnmanageableAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'forward'
 

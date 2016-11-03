@@ -1,23 +1,24 @@
 # -*- coding: utf-8 -*-
 import abc
-import pytest
 from nose.tools import *  # flake8: noqa
 import re
+import pytest
 
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiAddonTestCase
 from osf_tests.factories import AuthUserFactory
 
-from website.addons.box.tests.factories import BoxAccountFactory
-from website.addons.dataverse.tests.factories import DataverseAccountFactory
-from website.addons.dropbox.tests.factories import DropboxAccountFactory
-from website.addons.github.tests.factories import GitHubAccountFactory
-from website.addons.googledrive.tests.factories import GoogleDriveAccountFactory
+from addons.box.tests.factories import BoxAccountFactory
+from addons.dataverse.tests.factories import DataverseAccountFactory
+from addons.dropbox.tests.factories import DropboxAccountFactory
+from addons.github.tests.factories import GitHubAccountFactory
+from addons.googledrive.tests.factories import GoogleDriveAccountFactory
+from addons.s3.tests.factories import S3AccountFactory
+from addons.owncloud.tests.factories import OwnCloudAccountFactory
 from website.addons.mendeley.tests.factories import MendeleyAccountFactory
-from website.addons.s3.tests.factories import S3AccountFactory
 from website.addons.zotero.tests.factories import ZoteroAccountFactory
-from website.addons.owncloud.tests.factories import OwnCloudAccountFactory
+
 
 class UserAddonListMixin(object):
     def set_setting_list_url(self):
@@ -403,7 +404,6 @@ class TestUserGoogleDriveAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'googledrive'
     AccountFactory = GoogleDriveAccountFactory
 
-
 @pytest.mark.skip('Unskip when zotero addon is implemented')
 class TestUserMendeleyAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'mendeley'
@@ -413,7 +413,6 @@ class TestUserMendeleyAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
 class TestUserS3Addon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 's3'
     AccountFactory = S3AccountFactory
-
 
 @pytest.mark.skip('Unskip when zotero addon is implemented')
 class TestUserZoteroAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
