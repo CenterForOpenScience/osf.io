@@ -103,6 +103,8 @@ def create_preprint_service_from_node(document, swap_cutoff):
                     'preprint_created': ''
                 }}
             )
+            node.reload()
+            preprint.reload()
             if preprint.provider._id == 'osf':
                 # Give Guid retention priotity to OSF-provider
                 if should_swap_guids(node, preprint, swap_cutoff):
@@ -117,6 +119,12 @@ def create_preprint_service_from_node(document, swap_cutoff):
             validate_node_preprint_subjects(preprint.node)
             preprint.node.reload()
             enumerate_and_set_subject_hierarchies(preprint)
+            database['preprintservice'].find_and_modify(
+                {'_id': preprint._id},
+                {'$set': {
+                    'date_modified': document['preprint_created'],
+                }}
+            )
             created.update({preprint._id: (node._id, non_osf_provider)})
 
     return created
@@ -827,7 +835,8 @@ def update_foreign_fields(old_id, node):
             new_id = replacement.pop('_id')
             database['notificationsubscription'].find_and_modify(
                 {'_id': new_id},
-                {'$set':replacement}
+                {'$set':replacement},
+                upsert=True
             )
             database['notificationsubscription'].remove({'_id': doc['_id']})
 
@@ -891,7 +900,8 @@ def update_foreign_fields(old_id, node):
             new_id = replacement.pop('_id')
             database['pagecounters'].find_and_modify(
                 {'_id': new_id},
-                {'$set':replacement}
+                {'$set':replacement},
+                upsert=True
             )
             database['pagecounters'].remove({'_id': doc['_id']})
 
