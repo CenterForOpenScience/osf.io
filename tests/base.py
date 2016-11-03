@@ -396,9 +396,9 @@ class ApiAddonTestCase(ApiTestCase):
             ProjectFactory,
             AuthUserFactory,
         )
-        from.addons.base.models import (
-            BaseOAuthUserSettings,
-            BaseOAuthNodeSettings
+        from addons.base.models import (
+            BaseOAuthNodeSettings,
+            BaseOAuthUserSettings
         )
         assert self.addon_type in ('CONFIGURABLE', 'OAUTH', 'UNMANAGEABLE', 'INVALID')
         self.account = None
@@ -424,6 +424,8 @@ class ApiAddonTestCase(ApiTestCase):
         if self.addon_type in ('OAUTH', 'CONFIGURABLE'):
             assert isinstance(self.node_settings, BaseOAuthNodeSettings)
             assert isinstance(self.user_settings, BaseOAuthUserSettings)
+            self.node_settings.reload()
+            self.user_settings.reload()
 
         self.account_id = self.account._id if self.account else None
         self.set_urls()

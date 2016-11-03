@@ -11,6 +11,8 @@ class OSFStorageAddonConfig(BaseAddonConfig):
     label = 'addons_osfstorage'
     full_name = 'OSFStorage'
     short_name = 'osfstorage'
+    added_default = ['node']
+    added_mandatory = ['node']
 
     has_hgrid_files = True
 
