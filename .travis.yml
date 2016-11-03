@@ -53,6 +53,8 @@ before_install:
       export LD_LIBRARY_PATH=/tmp/libxml2/usr/lib/x86_64-linux-gnu
       /tmp/postgres/usr/lib/postgresql/9.5/bin/initdb /tmp/postgres/data --nosync -U postgres
       sed -i -e 's/#fsync.*/fsync = off/' /tmp/postgres/data/postgresql.conf
+      sed -i -e 's/#synchronous_commit.*/synchronous_commit = off/' /tmp/postgres/data/postgresql.conf
+      sed -i -e 's/#full_page_writes.*/full_page_writes = off/' /tmp/postgres/data/postgresql.conf
       /tmp/postgres/usr/lib/postgresql/9.5/bin/postgres -k /tmp -D /tmp/postgres/data -p 54321 > /dev/null &
     # elasticsearch
     - |
