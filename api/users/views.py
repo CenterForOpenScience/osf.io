@@ -520,7 +520,7 @@ class UserPreprints(UserNodes):
 
         query = (
             Q('is_deleted', 'ne', True) &
-            Q('contributors', 'eq', user._id) &
+            Q('contributors', 'eq', user) &
             Q('preprint_file', 'ne', None) &
             Q('is_public', 'eq', True)
         )

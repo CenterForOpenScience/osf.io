@@ -18,7 +18,7 @@ class TaxonomySerializer(JSONAPISerializer):
         'parents',
         'id'
     ])
-    id = ser.CharField(source='guid.object_id', required=True)
+    id = ser.CharField(source='_id', required=True)
     text = ser.CharField(max_length=200)
     parents = JSONAPIListField(child=TaxonomyField())
     child_count = ser.IntegerField()

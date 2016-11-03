@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import abc
+import pytest
 from nose.tools import *  # flake8: noqa
 import re
 
@@ -403,6 +404,7 @@ class TestUserGoogleDriveAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
     AccountFactory = GoogleDriveAccountFactory
 
 
+@pytest.mark.skip('Unskip when zotero addon is implemented')
 class TestUserMendeleyAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'mendeley'
     AccountFactory = MendeleyAccountFactory
@@ -413,6 +415,7 @@ class TestUserS3Addon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
     AccountFactory = S3AccountFactory
 
 
+@pytest.mark.skip('Unskip when zotero addon is implemented')
 class TestUserZoteroAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'zotero'
     AccountFactory = ZoteroAccountFactory
