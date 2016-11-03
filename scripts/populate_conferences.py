@@ -34,6 +34,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'asb2014': {
         'name': 'Association of Southeastern Biologists 2014',
@@ -47,6 +48,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'aps2014': {
         'name': 'Association for Psychological Science 2014',
@@ -60,6 +62,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'annopeer2014': {
         'name': '#annopeer',
@@ -73,6 +76,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'cpa2014': {
         'name': 'Canadian Psychological Association 2014',
@@ -86,6 +90,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'filaments2014': {
         'name': 'National Radio Astronomy Observatory Filaments 2014',
@@ -103,6 +108,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'bitss2014': {
         'name': 'Berkeley Initiative for Transparency in the Social Sciences Research Transparency Forum 2014',
@@ -124,6 +130,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': False,
         'talk': True,
+        'is_meeting': True
     },
     'spsp2015': {
         'name': 'Society for Personality and Social Psychology 2015',
@@ -138,6 +145,7 @@ MEETING_DATA = {
         ],
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'aps2015': {
         'name': 'Association for Psychological Science 2015',
@@ -151,6 +159,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'icps2015': {
         'name': 'International Convention of Psychological Science 2015',
@@ -164,6 +173,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'mpa2015': {
         'name': 'Midwestern Psychological Association 2015',
@@ -179,6 +189,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'NCCC2015': {
         'name': 'North Carolina Cognition Conference 2015',
@@ -194,6 +205,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'VPRSF2015': {
         'name': 'Virginia Piedmont Regional Science Fair 2015',
@@ -209,6 +221,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'APRS2015': {
         'name': 'UVA Annual Postdoctoral Research Symposium 2015',
@@ -224,6 +237,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'ASB2015': {
         'name': 'Association of Southeastern Biologists 2015',
@@ -239,6 +253,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'TeaP2015': {
         'name': 'Tagung experimentell arbeitender Psychologen 2015',
@@ -252,6 +267,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'VSSEF2015': {
         'name': 'Virginia State Science and Engineering Fair 2015',
@@ -265,6 +281,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'RMPA2015': {
         'name': 'Rocky Mountain Psychological Association 2015',
@@ -278,6 +295,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'ARP2015': {
         'name': 'Association for Research in Personality 2015',
@@ -291,6 +309,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'SEP2015': {
         'name': 'Society of Experimental Psychologists Meeting 2015',
@@ -304,6 +323,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'Reid2015': {
         'name': 'L. Starling Reid Undergraduate Psychology Conference 2015',
@@ -317,6 +337,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'NEEPS2015': {
         'name': 'Northeastern Evolutionary Psychology Conference 2015',
@@ -330,6 +351,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'VaACS2015': {
         'name': 'Virginia Section American Chemical Society Student Poster Session 2015',
@@ -343,6 +365,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'MADSSCi2015': {
         'name': 'Mid-Atlantic Directors and Staff of Scientific Cores & Southeastern Association of Shared Services 2015',
@@ -356,6 +379,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'NRAO2015': {
         'name': 'National Radio Astronomy Observatory Accretion 2015',
@@ -369,6 +393,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'ARCS2015': {
         'name': 'Advancing Research Communication and Scholarship 2015',
@@ -382,6 +407,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'singlecasedesigns2015': {
         'name': 'Single Case Designs in Clinical Psychology: Uniting Research and Practice',
@@ -395,6 +421,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'OSFM2015': {
         'name': 'OSF for Meetings 2015',
@@ -408,6 +435,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'JSSP2015': {
         'name': 'Japanese Society of Social Psychology 2015',
@@ -421,6 +449,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     '4S2015': {
         'name': 'Society for Social Studies of Science 2015',
@@ -434,6 +463,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'IARR2016': {
         'name': 'International Association for Relationship Research 2016',
@@ -447,6 +477,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'IA2015': {
         'name': 'Inclusive Astronomy 2015',
@@ -460,6 +491,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'R2RC': {
         'name': 'Right to Research Coalition',
@@ -473,6 +505,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'OpenCon2015': {
         'name': 'OpenCon2015',
@@ -486,6 +519,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'ESIP2015': {
         'name': 'Earth Science Information Partners 2015',
@@ -499,6 +533,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'SPSP2016': {
         'name': 'Society for Personality and Social Psychology 2016 ',
@@ -512,6 +547,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'NACIII': {
         'name': '2015 National Astronomy Consortium (NAC) III Workshop',
@@ -525,6 +561,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'CDS2015': {
         'name': 'Cognitive Development Society 2015',
@@ -538,6 +575,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'SEASR2016': {
         'name': 'Southeastern Association of Shared Resources 2016',
@@ -551,6 +589,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'Accretion2015': {
         'name': 'Observational Evidence of Gas Accretion onto Galaxies?',
@@ -564,6 +603,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     '2020Futures': {
         'name': 'U.S. Radio/Millimeter/Submillimeter Science Futures in the 2020s',
@@ -577,6 +617,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'RMPA2016': {
         'name': 'Rocky Mountain Psychological Association 2016',
@@ -590,6 +631,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'CNI2015': {
         'name': 'Coalition for Networked Information (CNI) Fall Membership Meeting 2015',
@@ -603,6 +645,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': False,
         'talk': True,
+        'is_meeting': True
     },
     'SWPA2016': {
         'name': 'Southwestern Psychological Association Convention 2016',
@@ -616,6 +659,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'ESIP2016W': {
         'name': 'Earth Science Information Partners Winter Meeting 2016',
@@ -629,6 +673,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'MiamiBrainhack15': {
         'name': 'University of Miami Brainhack 2015',
@@ -642,6 +687,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'PsiChiRepository': {
         'name': 'Psi Chi',
@@ -665,6 +711,7 @@ MEETING_DATA = {
             'mail_message_body': 'Measure or material short description',
             'mail_attachment': 'Your measure/scale or material file(s)'
         },
+        'is_meeting': False
     },
     'GI2015': {
         'name': 'Genome Informatics 2015',
@@ -678,6 +725,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'MADSSCi2016': {
         'name': 'Mid-Atlantic Directors and Staff of Scientific Cores & Southeastern Association of Shared Services 2016',
@@ -688,6 +736,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'SMM2015': {
         'name': 'The Society for Marine Mammalogy',
@@ -698,6 +747,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'TESS': {
         'name': 'Time-sharing Experiments for the Social Sciences',
@@ -715,7 +765,8 @@ MEETING_DATA = {
             'submission2_plural': 'studies',
             'meeting_title_type': 'Studies',
             'add_submission': 'studies',
-        }
+        },
+        'is_meeting': False
     },
     'ASCERM2016': {
         'name': 'ASCE Rocky Mountain Student Conference 2016',
@@ -726,6 +777,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': False,
         'talk': True,
+        'is_meeting': True
     },
     'ARCA2016': {
         'name': '5th Applied Research Conference in Africa',
@@ -736,6 +788,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': False,
         'talk': True,
+        'is_meeting': True
     },
     'CURCONF2016': {
         'name': 'CUR Biennial Conference 2016',
@@ -746,6 +799,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'CATALISE2016': {
         'name': 'Criteria and Terminology Applied to Language Impairments: Synthesising the Evidence (CATALISE) 2016',
@@ -756,6 +810,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'Emergy2016': {
         'name': '9th Biennial Emergy Research Conference',
@@ -766,6 +821,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'aps2016': {
         'name': 'Association for Psychological Science 2016',
@@ -776,6 +832,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'jssp2016': {
         'name': 'Japanese Society of Social Psychology 2016',
@@ -786,6 +843,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'sepech2016': {
         'name': 'XI SEPECH - Research Seminar in Human Sciences (Seminário de Pesquisa em Ciências Humanas)',
@@ -796,6 +854,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'etmaal2016': {
         'name': 'Etmaal van de Communicatiewetenschap 2016 - Media Psychology',
@@ -806,6 +865,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'WSAN2016': {
         'name': 'WSAN2016 Erasmus University Rotterdam',
@@ -816,6 +876,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'ContainerStrategies': {
         'name': 'Container Strategies for Data & Software Preservation',
@@ -825,6 +886,7 @@ MEETING_DATA = {
         'admins': [],
         'public_projects': True,
         'poster': True,
+        'is_meeting': True
     },
     'CNI2016': {
         'name': 'Coalition for Networked Information (CNI) Spring Membership Meeting 2016',
@@ -835,6 +897,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': False,
         'talk': True,
+        'is_meeting': True
     },
     'XGAL2016': {
         'name': 'Molecular Gas in Galactic Environments 2016',
@@ -845,6 +908,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'DLF2016': {
         'name': 'Digital Library Federation 2016 DLF Forum',
@@ -858,6 +922,7 @@ MEETING_DATA = {
         'start_date': 'Nov 7 2016',
         'end_date': 'Nov 9 2016',
         'locztion': 'Milwaukee, Wisconsin',
+        'is_meeting': True
     },
     'ESCAN2016': {
         'name': 'European Society for Cognitive and Affective Neuroscience (ESCAN) 2016',
@@ -868,6 +933,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'Reid2016': {
         'name': 'L. Starling Reid Undergraduate Psychology Conference 2016',
@@ -878,6 +944,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'CNS2016': {
         'name': 'The Cognitive Neuroscience Society (CNS) 2016',
@@ -888,6 +955,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'HEPA2016': {
         'name': 'HEPA Europe Annual Meeting 2016',
@@ -898,6 +966,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
     'OGH': {
         'name': 'Open Global Health',
@@ -908,6 +977,7 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+        'is_meeting': True
     },
 }
 
