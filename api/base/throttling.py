@@ -37,7 +37,7 @@ class NonCookieAuthThrottle(BaseThrottle, AnonRateThrottle):
         if bool(request.COOKIES):
             return True
 
-        super(NonCookieAuthThrottle, self).allow_request(request, view)
+        return super(NonCookieAuthThrottle, self).allow_request(request, view)
 
 
 class AddContributorThrottle(BaseThrottle, UserRateThrottle):
@@ -51,7 +51,7 @@ class AddContributorThrottle(BaseThrottle, UserRateThrottle):
         if not request.method == 'POST' and not request.query_params.get('send_email') != 'false':
             return True
 
-        super(AddContributorThrottle, self).allow_request(request, view)
+        return super(AddContributorThrottle, self).allow_request(request, view)
 
 
 class CreateGuidThrottle(BaseThrottle, UserRateThrottle):
@@ -65,7 +65,7 @@ class CreateGuidThrottle(BaseThrottle, UserRateThrottle):
         if not request.query_params.get('create_guid'):
             return True
 
-        super(CreateGuidThrottle, self).allow_request(request, view)
+        return super(CreateGuidThrottle, self).allow_request(request, view)
 
 
 class RootAnonThrottle(AnonRateThrottle):
