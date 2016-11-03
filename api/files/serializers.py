@@ -1,33 +1,20 @@
-from django.core.urlresolvers import resolve, reverse
 import furl
-from rest_framework import serializers as ser
 import pytz
-
-from modularodm import Q
-
+from api.base.exceptions import Conflict
+from api.base.serializers import (FileCommentRelationshipField, IDField,
+                                  JSONAPIListField, JSONAPISerializer, Link,
+                                  LinksField, NodeFileHyperLinkField,
+                                  RelationshipField, TypeField,
+                                  WaterbutlerLink, format_relationship_links)
+from api.base.utils import absolute_reverse, get_user_auth
+from django.core.urlresolvers import resolve, reverse
 from framework.auth.core import Auth, User
-from website import settings
-
+from modularodm import Q
 from osf.models import FileNode
+from rest_framework import serializers as ser
+from website import settings
 from website.project.model import Comment
 from website.util import api_v2_url
-
-from api.base.serializers import (
-    FileCommentRelationshipField,
-    format_relationship_links,
-    IDField,
-    JSONAPIListField,
-    JSONAPISerializer,
-    Link,
-    LinksField,
-    NodeFileHyperLinkField,
-    RelationshipField,
-    TypeField,
-    WaterbutlerLink,
-)
-from api.base.exceptions import Conflict
-from api.base.utils import absolute_reverse
-from api.base.utils import get_user_auth
 
 
 class CheckoutField(ser.HyperlinkedRelatedField):
@@ -248,7 +235,7 @@ class FileSerializer(JSONAPISerializer):
         if instance.provider != 'osfstorage' and 'tags' in validated_data:
             raise Conflict('File service provider {} does not support tags on the OSF.'.format(instance.provider))
         auth = get_user_auth(self.context['request'])
-        old_tags = set(instance.tags.values_list('name'))
+        old_tags = set(instance.tags.values_list('name', flat=True))
         if 'tags' in validated_data:
             current_tags = set(validated_data.pop('tags', []))
         else:

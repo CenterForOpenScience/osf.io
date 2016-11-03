@@ -1,21 +1,18 @@
 import logging
 import os
 
+from addons.base.models import BaseNodeSettings, BaseStorageAddon
+from django.apps import apps
 from django.db import models
 from modularodm import Q
-
-from addons.base.models import BaseStorageAddon, BaseNodeSettings
-from osf.exceptions import NodeStateError, InvalidTagError, TagNotFoundError
-from osf.models import File
-from osf.models import FileNode, Guid, TrashedFileNode
-from osf.models import FileVersion
-from osf.models import Folder
+from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
+from osf.models import (File, FileNode, FileVersion, Folder, Guid,
+                        TrashedFileNode)
 from osf.utils.auth import Auth
 from website.files import utils as files_utils
 from website.files import exceptions
 from website.util import permissions
 
-from django.apps import apps
 settings = apps.get_app_config('addons_osfstorage')
 
 logger = logging.getLogger(__name__)
@@ -294,9 +291,6 @@ class OsfStorageFile(OsfStorageFileNode, File):
         if self.node.is_registration:
             # Can't perform edits on a registration
             raise NodeStateError
-        # TODO does modm let you do this???!
-        if isinstance(tag, tuple):
-            tag = tag[0]
         tag_instance = Tag.objects.filter(name=tag).first()
         if not tag_instance:
             raise InvalidTagError
