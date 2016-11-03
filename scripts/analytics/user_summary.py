@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 
 from modularodm import Q
 
+from website.app import init_app
 from website.models import User
 from scripts.analytics.base import SummaryAnalytics
 
@@ -56,6 +57,7 @@ class UserSummary(SummaryAnalytics):
 
 
 if __name__ == '__main__':
+    init_app()
     user_summary = UserSummary()
     args = user_summary.parse_args()
     date = parse(args.date).date() if args.date else None

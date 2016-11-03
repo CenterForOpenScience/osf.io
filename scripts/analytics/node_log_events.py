@@ -3,6 +3,7 @@ from modularodm import Q
 from dateutil.parser import parse
 from datetime import datetime, timedelta
 
+from website.app import init_app
 from website.project.model import NodeLog
 from scripts.analytics.base import EventAnalytics
 
@@ -50,9 +51,9 @@ class NodeLogEvents(EventAnalytics):
 
 
 if __name__ == '__main__':
+    init_app()
     node_log_events = NodeLogEvents()
     args = node_log_events.parse_args()
     date = parse(args.date).date() if args.date else None
     events = node_log_events.get_events(date)
     node_log_events.send_events(events)
-

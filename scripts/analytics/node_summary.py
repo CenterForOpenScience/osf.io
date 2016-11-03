@@ -3,6 +3,7 @@ from modularodm import Q
 from dateutil.parser import parse
 from datetime import datetime, timedelta
 
+from website.app import init_app
 from website.models import Node
 from scripts.analytics.base import SummaryAnalytics
 
@@ -89,6 +90,7 @@ class NodeSummary(SummaryAnalytics):
 
 
 if __name__ == '__main__':
+    init_app()
     node_summary = NodeSummary()
     args = node_summary.parse_args()
     date = parse(args.date).date() if args.date else None
