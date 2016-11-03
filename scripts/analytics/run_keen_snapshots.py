@@ -22,14 +22,15 @@ def main(me_scripts):
     and only for that time. Cannot be back-dated.
     """
     args = parse_args()
-    me_scripts = args.analytics_scripts
+    entered_scripts = args.analytics_scripts
     snapshot_classes = []
-    if me_scripts:
-        for one_script in me_scripts:
+    if entered_scripts:
+        import scripts
+        for script in entered_scripts:
             try:
-                import scripts
-                script_class_name = ''.join([item.capitalize() for item in one_script.split('_')])
-                script_events = importlib.import_module('scripts.analytics.{}'.format(one_script))
+                # I am so sorry
+                script_class_name = ''.join([item.capitalize() for item in script.split('_')])
+                script_events = importlib.import_module('scripts.analytics.{}'.format(script))
                 script_class = eval('{}.{}'.format(script_events.__name__, script_class_name))
                 snapshot_classes.append(script_class)
             except ImportError as e:
