@@ -89,6 +89,10 @@ class NodeSummary(SummaryAnalytics):
         return [totals]
 
 
+def get_class():
+    return NodeSummary
+
+
 if __name__ == '__main__':
     init_app()
     node_summary = NodeSummary()

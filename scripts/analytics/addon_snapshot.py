@@ -47,6 +47,10 @@ class AddonSnapshot(SnapshotAnalytics):
         return counts
 
 
+def get_class():
+    return AddonSnapshot
+
+
 if __name__ == '__main__':
     init_app()
     addon_snapshot = AddonSnapshot()

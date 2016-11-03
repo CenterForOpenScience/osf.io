@@ -50,6 +50,10 @@ class NodeLogEvents(EventAnalytics):
         return node_log_events
 
 
+def get_class():
+    return NodeLogEvents
+
+
 if __name__ == '__main__':
     init_app()
     node_log_events = NodeLogEvents()

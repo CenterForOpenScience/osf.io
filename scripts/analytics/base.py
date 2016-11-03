@@ -142,15 +142,11 @@ class BaseAnalyticsHarness(object):
         return parser.parse_args()
 
     def try_to_import_from_args(self, entered_scripts):
-        import scripts  # flake8: noqa
         imported_script_classes = []
         for script in entered_scripts:
             try:
-                # I am so sorry
-                script_class_name = ''.join([item.capitalize() for item in script.split('_')])
                 script_events = importlib.import_module('scripts.analytics.{}'.format(script))
-                script_class = eval('{}.{}'.format(script_events.__name__, script_class_name))
-                imported_script_classes.append(script_class)
+                imported_script_classes.append(script_events.get_class())
             except (ImportError, NameError) as e:
                 logger.error(e)
                 logger.error(

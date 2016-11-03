@@ -58,6 +58,10 @@ class UserSummary(SummaryAnalytics):
         return [counts]
 
 
+def get_class():
+    return UserSummary
+
+
 if __name__ == '__main__':
     init_app()
     user_summary = UserSummary()
