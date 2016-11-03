@@ -1,5 +1,3 @@
-from framework.mongo import database
-
 import datetime
 from framework.auth.core import User
 from tests.base import OsfTestCase
@@ -31,7 +29,6 @@ class TestNodeLogAnalytics(OsfTestCase):
         for node_log in NodeLog.find():
             node_log.date = self.end_date - datetime.timedelta(0.1)
             node_log.save()
-            node_log.reload()
 
         self.results = NodeLogEvents().get_events(self.end_date.date())
 
@@ -39,7 +36,6 @@ class TestNodeLogAnalytics(OsfTestCase):
         self.node_log_file_added.reload()
         self.node_log_wiki_updated.reload()
         self.node_log_project_created.reload()
-
 
     def tearDown(self):
         super(TestNodeLogAnalytics, self).tearDown()
