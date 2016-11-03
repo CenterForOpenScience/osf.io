@@ -71,7 +71,7 @@ class SummaryAnalytics(BaseAnalytics):
         if type(date) != type(today):
             raise AttributeError('Please call the script using a date object, not a datetime object')
 
-        logger.info('Gathering {} analytics for the {} collection up until {}'.format(
+        logger.info('Gathering {} analytics for the {} collection for {}'.format(
             self.analytic_type,
             self.collection_name,
             date.isoformat()
