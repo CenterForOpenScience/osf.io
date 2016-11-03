@@ -3,17 +3,15 @@
 import datetime
 
 from django.utils import timezone
-from nose.tools import *  # noqa
-
-from scripts import parse_citation_styles
+from flask import redirect
 from framework.auth.core import Auth
-from website.util import api_url_for
+from nose.tools import *  # noqa
+from scripts import parse_citation_styles
+from tests.base import OsfTestCase
+from tests.factories import AuthUserFactory, ProjectFactory, UserFactory
 from website.citations.utils import datetime_to_csl
 from website.models import Node, User
-from flask import redirect
-
-from tests.base import OsfTestCase
-from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
+from website.util import api_url_for
 
 
 class CitationsUtilsTestCase(OsfTestCase):
@@ -48,7 +46,7 @@ class CitationsNodeTestCase(OsfTestCase):
                     'family': self.node.creator.family_name,
                 }],
                 'URL': self.node.display_absolute_url,
-                'issued': datetime_to_csl(self.node.logs[-1].date),
+                'issued': datetime_to_csl(self.node.logs.latest().date),
                 'title': self.node.title,
                 'type': 'webpage',
                 'id': self.node._id,
@@ -76,7 +74,7 @@ class CitationsNodeTestCase(OsfTestCase):
                     }
                 ],
                 'URL': self.node.display_absolute_url,
-                'issued': datetime_to_csl(self.node.logs[-1].date),
+                'issued': datetime_to_csl(self.node.logs.latest().date),
                 'title': self.node.title,
                 'type': 'webpage',
                 'id': self.node._id,
@@ -164,4 +162,3 @@ class CitationsViewsTestCase(OsfTestCase):
         node.save()
         response = self.app.get("/api/v1" + "/project/" + node._id + "/citation/", auto_follow=True, auth=user.auth)
         assert_true(response.json)
-

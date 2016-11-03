@@ -1,31 +1,27 @@
 # -*- coding: utf-8 -*-
-import httplib as http
-
-import mock
 import datetime
+import httplib as http
 import unittest
 
+import mock
 from django.utils import timezone
+from framework.auth import Auth
+from framework.exceptions import HTTPError
+from github3.repos.branch import Branch
 from nose.tools import *  # noqa (PEP8 asserts)
 from tests.base import OsfTestCase, get_default_metaschema
-from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
-
-from github3.repos.branch import Branch
-
-from framework.exceptions import HTTPError
-from framework.auth import Auth
-
-from website.util import api_url_for
-from website.addons.base.testing.views import (
-    OAuthAddonAuthViewsTestCaseMixin, OAuthAddonConfigViewsTestCaseMixin
-)
-from website.addons.github import views, utils
+from tests.factories import AuthUserFactory, ProjectFactory, UserFactory
+from website.addons.base.testing.views import (OAuthAddonAuthViewsTestCaseMixin,
+                                               OAuthAddonConfigViewsTestCaseMixin)
+from website.addons.github import utils, views
 from website.addons.github.api import GitHubClient
 from website.addons.github.model import GitHubProvider
 from website.addons.github.serializer import GitHubSerializer
-from website.addons.github.utils import check_permissions
-from website.addons.github.tests.utils import create_mock_github, GitHubAddonTestCase
 from website.addons.github.tests.factories import GitHubAccountFactory
+from website.addons.github.tests.utils import (GitHubAddonTestCase,
+                                               create_mock_github)
+from website.addons.github.utils import check_permissions
+from website.util import api_url_for
 
 
 class TestGitHubAuthViews(GitHubAddonTestCase, OAuthAddonAuthViewsTestCaseMixin):
@@ -72,7 +68,7 @@ class TestGitHubConfigViews(GitHubAddonTestCase, OAuthAddonConfigViewsTestCaseMi
         assert_equal(res.status_code, http.OK)
         self.project.reload()
         assert_equal(
-            self.project.logs[-1].action,
+            self.project.logs.latest().action,
             '{0}_repo_linked'.format(self.ADDON_SHORT_NAME)
         )
         mock_add_hook.assert_called_once()
@@ -285,8 +281,8 @@ class TestGithubViews(OsfTestCase):
             content_type="application/json",
         ).maybe_follow()
         self.project.reload()
-        assert_equal(self.project.logs[-1].action, "github_file_added")
-        urls = self.project.logs[-1].params['urls']
+        assert_equal(self.project.logs.latest().action, "github_file_added")
+        urls = self.project.logs.latest().params['urls']
         self.check_hook_urls(
             urls,
             self.project,
@@ -312,8 +308,8 @@ class TestGithubViews(OsfTestCase):
                               "added": [], "removed":[], "modified":["PRJWN3TV"]}]},
             content_type="application/json").maybe_follow()
         self.project.reload()
-        assert_equal(self.project.logs[-1].action, "github_file_updated")
-        urls = self.project.logs[-1].params['urls']
+        assert_equal(self.project.logs.latest().action, "github_file_updated")
+        urls = self.project.logs.latest().params['urls']
         self.check_hook_urls(
             urls,
             self.project,
@@ -338,8 +334,8 @@ class TestGithubViews(OsfTestCase):
                           "added": [], "removed": ["PRJWN3TV"], "modified":[]}]},
             content_type="application/json").maybe_follow()
         self.project.reload()
-        assert_equal(self.project.logs[-1].action, "github_file_removed")
-        urls = self.project.logs[-1].params['urls']
+        assert_equal(self.project.logs.latest().action, "github_file_removed")
+        urls = self.project.logs.latest().params['urls']
         assert_equal(urls, {})
 
     @mock.patch('website.addons.github.views.verify_hook_signature')
@@ -358,7 +354,7 @@ class TestGithubViews(OsfTestCase):
                           "added": ["PRJWN3TV"], "removed":[], "modified":[]}]},
             content_type="application/json").maybe_follow()
         self.project.reload()
-        assert_not_equal(self.project.logs[-1].action, "github_file_added")
+        assert_not_equal(self.project.logs.latest().action, "github_file_added")
 
     @mock.patch('website.addons.github.views.verify_hook_signature')
     def test_hook_callback_modify_file_thro_osf(self, mock_verify):
@@ -376,7 +372,7 @@ class TestGithubViews(OsfTestCase):
                           "added": [], "removed":[], "modified":["PRJWN3TV"]}]},
             content_type="application/json").maybe_follow()
         self.project.reload()
-        assert_not_equal(self.project.logs[-1].action, "github_file_updated")
+        assert_not_equal(self.project.logs.latest().action, "github_file_updated")
 
     @mock.patch('website.addons.github.views.verify_hook_signature')
     def test_hook_callback_remove_file_thro_osf(self, mock_verify):
@@ -394,7 +390,7 @@ class TestGithubViews(OsfTestCase):
                           "added": [], "removed":["PRJWN3TV"], "modified":[]}]},
             content_type="application/json").maybe_follow()
         self.project.reload()
-        assert_not_equal(self.project.logs[-1].action, "github_file_removed")
+        assert_not_equal(self.project.logs.latest().action, "github_file_removed")
 
 
 class TestRegistrationsWithGithub(OsfTestCase):
@@ -457,7 +453,7 @@ class TestGithubSettings(OsfTestCase):
 
         assert_equal(self.node_settings.user, 'queen')
         assert_equal(self.node_settings.repo, 'night at the opera')
-        assert_equal(self.project.logs[-1].action, 'github_repo_linked')
+        assert_equal(self.project.logs.latest().action, 'github_repo_linked')
         mock_add_hook.assert_called_once()
 
     @mock.patch('website.addons.github.model.GitHubNodeSettings.add_hook')
@@ -554,7 +550,7 @@ class TestGithubSettings(OsfTestCase):
         assert_equal(self.node_settings.repo, None)
         assert_equal(self.node_settings.user_settings, None)
 
-        assert_equal(self.project.logs[-1].action, 'github_node_deauthorized')
+        assert_equal(self.project.logs.latest().action, 'github_node_deauthorized')
 
 
 if __name__ == '__main__':

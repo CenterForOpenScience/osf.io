@@ -692,22 +692,22 @@ class TestOsfStorageCheckout(StorageTestCase):
         self.file.reload()
         self.node.reload()
         assert_equal(self.file.checkout, non_admin)
-        assert_equal(self.node.logs[-1].action, 'checked_out')
-        assert_equal(self.node.logs[-1].user, non_admin)
+        assert_equal(self.node.logs.latest().action, 'checked_out')
+        assert_equal(self.node.logs.latest().user, non_admin)
 
         self.file.check_in_or_out(self.user, None, save=True)
         self.file.reload()
         self.node.reload()
         assert_equal(self.file.checkout, None)
-        assert_equal(self.node.logs[-1].action, 'checked_in')
-        assert_equal(self.node.logs[-1].user, self.user)
+        assert_equal(self.node.logs.latest().action, 'checked_in')
+        assert_equal(self.node.logs.latest().user, self.user)
 
         self.file.check_in_or_out(self.user, self.user, save=True)
         self.file.reload()
         self.node.reload()
         assert_equal(self.file.checkout, self.user)
-        assert_equal(self.node.logs[-1].action, 'checked_out')
-        assert_equal(self.node.logs[-1].user, self.user)
+        assert_equal(self.node.logs.latest().action, 'checked_out')
+        assert_equal(self.node.logs.latest().user, self.user)
 
         with assert_raises(FileNodeCheckedOutError):
             self.file.check_in_or_out(non_admin, None, save=True)
