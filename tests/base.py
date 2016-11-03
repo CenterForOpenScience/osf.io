@@ -10,6 +10,7 @@ import functools
 import datetime as dt
 from json import dumps
 
+import pytest
 import blinker
 import httpretty
 from webtest_plus import TestApp
@@ -98,6 +99,7 @@ def teardown_database(client=None, database=None):
     client.drop_database(database)
 
 
+@pytest.mark.django_db
 class DbTestCase(unittest.TestCase):
     """Base `TestCase` for tests that require a scratch database.
     """
@@ -394,9 +396,9 @@ class ApiAddonTestCase(ApiTestCase):
             ProjectFactory,
             AuthUserFactory,
         )
-        from website.addons.base import (
-            AddonOAuthNodeSettingsBase, AddonNodeSettingsBase,
-            AddonOAuthUserSettingsBase, AddonUserSettingsBase
+        from.addons.base.models import (
+            BaseOAuthUserSettings,
+            BaseOAuthNodeSettings
         )
         assert self.addon_type in ('CONFIGURABLE', 'OAUTH', 'UNMANAGEABLE', 'INVALID')
         self.account = None
@@ -420,8 +422,8 @@ class ApiAddonTestCase(ApiTestCase):
                 self._apply_auth_configuration()
 
         if self.addon_type in ('OAUTH', 'CONFIGURABLE'):
-            assert isinstance(self.node_settings, AddonOAuthNodeSettingsBase)
-            assert isinstance(self.user_settings, AddonOAuthUserSettingsBase)
+            assert isinstance(self.node_settings, BaseOAuthNodeSettings)
+            assert isinstance(self.user_settings, BaseOAuthUserSettings)
 
         self.account_id = self.account._id if self.account else None
         self.set_urls()
@@ -469,7 +471,7 @@ class ApiWikiTestCase(ApiTestCase):
         self.non_contributor = AuthUserFactory()
 
     def _add_project_wiki_page(self, node, user):
-        from osf_tests.factories import NodeWikiFactory
+        from addons.wiki.tests.factories import NodeWikiFactory
         # API will only return current wiki pages
         # Mock out update_search. TODO: Remove when StoredFileNode is implemented
         with mock.patch('osf.models.AbstractNode.update_search'):
