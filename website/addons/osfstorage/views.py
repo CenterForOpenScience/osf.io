@@ -101,6 +101,11 @@ def osfstorage_move_hook(source, destination, name=None, **kwargs):
         raise HTTPError(httplib.METHOD_NOT_ALLOWED, data={
             'message_long': 'Cannot move file as it is checked out.'
         })
+    except exceptions.FileNodeIsPrimaryFile:
+        raise HTTPError(httplib.FORBIDDEN, data={
+            'message_long': 'Cannot move file as it is the primary file of preprint.'
+        })
+
 
 @must_be_signed
 @decorators.autoload_filenode(default_root=True)
@@ -217,6 +222,10 @@ def osfstorage_delete(file_node, payload, node_addon, **kwargs):
 
     except exceptions.FileNodeCheckedOutError:
         raise HTTPError(httplib.FORBIDDEN)
+    except exceptions.FileNodeIsPrimaryFile:
+        raise HTTPError(httplib.FORBIDDEN, data={
+            'message_long': 'Cannot delete file as it is the primary file of preprint.'
+        })
 
     return {'status': 'success'}
 
