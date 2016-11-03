@@ -4,20 +4,24 @@ from website import settings
 import time
 
 def _get_embeddable_hosts():
+    """Return the embeddable host list from the Discourse configuration
+    :return list: list of embeddable hosts configured for Discourse to be used with
+    """
     result = request('get', '/admin/customize/embedding.json')
     return result['embeddable_hosts']
 
 def configure_embeddable_host():
-    # just make sure one exists...
+    """Make sure Discourse is configured to have an embeddable host (it should be settings.DOMAIN)"""
     embeddable_hosts = _get_embeddable_hosts()
     if len(embeddable_hosts):
         return
 
     data = {}
     data['embeddable_host[host]'] = settings.DOMAIN
-    return request('post', '/admin/embeddable_hosts', data)
+    request('post', '/admin/embeddable_hosts', data)
 
 def configure_server_settings():
+    """Sets Discourse site settings (available in the admin panel) from settings.DISCOURSE_SERVER_SETTINGS"""
     for key, val in settings.DISCOURSE_SERVER_SETTINGS.items():
         data = {}
         data[key] = val
@@ -26,6 +30,7 @@ def configure_server_settings():
         time.sleep(0.1)
 
 def configure_intro_topic():
+    """Sets Discourse intro topic text to be settings.DISCOURSE_WELCOME_TOPIC"""
     post_id = request('get', '/t/welcome-to-discourse.json')['post_stream']['posts'][0]['id']
 
     data = {}

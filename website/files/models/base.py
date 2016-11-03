@@ -317,7 +317,8 @@ class StoredFileNode(StoredObject, Commentable):
         if self.discourse_topic_id:
             try:
                 discourse.sync_topic(self, should_save=False)
-            except (discourse.DiscourseException, requests.exceptions.ConnectionError):
+            except Exception:
+                # We catch Exception so that Discourse can not accidentally cause the user action to fail completely
                 logger.exception('Error syncing/creating Discourse topic')
 
         value = super(StoredFileNode, self).save()

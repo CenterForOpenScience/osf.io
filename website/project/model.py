@@ -958,6 +958,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
     discourse_topic_parent_guids = fields.StringField(default=None, list=True)
     discourse_topic_deleted = fields.BooleanField(default=False)
     discourse_post_id = fields.StringField(default=None)
+    discourse_project_deleted = fields.BooleanField(default=False)
 
     _meta = {
         'optimistic': True,
@@ -1675,12 +1676,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
         first_save = not self._is_loaded
 
+        # No guid yet if on the first save.
         if not first_save:
-            # For project public/private, contributors, project name, etc... no-op if everything is already synced
             try:
-                # We are already in the save function! no need to save again...
                 discourse.sync_project(self, should_save=False)
-            except (discourse.DiscourseException, requests.exceptions.ConnectionError):
+            except Exception:
                 logger.exception('Error syncing/creating Discourse project')
 
         if first_save and self.is_bookmark_collection:
@@ -1751,12 +1751,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
         # We have to wait until now to save, and then save again, because we won't have a guid until after the first save
         if first_save:
-            # For project public/private, contributors, project name, etc... no-op if everything is already synced
             try:
-                # We are already in the save function! no need to save again...
                 discourse.sync_project(self, should_save=False)
                 saved_fields |= set(super(Node, self).save(*args, **kwargs))
-            except (discourse.DiscourseException, requests.exceptions.ConnectionError):
+            except Exception:
                 logger.exception('Error syncing/creating Discourse project')
 
         # Return expected value for StoredObject::save
