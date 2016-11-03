@@ -48,7 +48,7 @@ class AddContributorThrottle(BaseThrottle, UserRateThrottle):
         """
         Allow all add contributor requests that do not send contributor emails.
         """
-        if not request.method == 'POST' and not request.query_params.get('send_email') != 'false':
+        if request.method == 'POST' and request.query_params.get('send_email') == 'false':
             return True
 
         return super(AddContributorThrottle, self).allow_request(request, view)
