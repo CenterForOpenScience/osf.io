@@ -36,6 +36,8 @@ class BaseAddonConfig(AppConfig):
     node_settings_template = NODE_SETTINGS_TEMPLATE_DEFAULT
     user_settings_template = USER_SETTINGS_TEMPLATE_DEFAULT
     views = []
+    added_default = []
+    added_mandatory = []
     include_js = {}  # TODO: Deprecate these elsewhere and remove
     include_css = {}  # TODO: Deprecate these elsewhere and remove
     configs = []
