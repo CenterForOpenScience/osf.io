@@ -575,7 +575,7 @@ function humanFileSize(bytes, si) {
 /**
 *  returns a random name from this list to use as a confirmation string
 */
-var _confirmationString = function() {
+var getConfirmationString = function() {
     // TODO: Generate a random string here instead of using pre-set values
     //       per Jeff, use ~10 characters
     var scientists = [
@@ -654,7 +654,7 @@ var confirmDangerousAction = function (options) {
     //       sustained attention and will prevent the user from copy/pasting a
     //       random string.
 
-    var confirmationString = _confirmationString();
+    var confirmationString = getConfirmationString();
 
     // keep the users' callback for re-use; we'll pass ours to bootbox
     var callback = options.callback;
@@ -987,5 +987,6 @@ module.exports = window.$.osf = {
     onScrollToBottom: onScrollToBottom,
     getDomain: getDomain,
     toRelativeUrl: toRelativeUrl,
-    linkifyText: linkifyText
+    linkifyText: linkifyText,
+    getConfirmationString: getConfirmationString
 };

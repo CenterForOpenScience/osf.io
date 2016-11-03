@@ -44,6 +44,7 @@ class PreprintSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'id',
         'date_created',
+        'date_modified',
         'date_published',
         'provider',
         'is_published',
@@ -52,6 +53,7 @@ class PreprintSerializer(JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
     subjects = JSONAPIListField(child=JSONAPIListField(child=TaxonomyField()), allow_null=True, required=False)
     date_created = ser.DateTimeField(read_only=True)
+    date_modified = ser.DateTimeField(read_only=True)
     date_published = ser.DateTimeField(read_only=True)
     doi = ser.CharField(source='article_doi', required=False, allow_null=True)
     is_published = ser.BooleanField(required=False)
@@ -112,8 +114,9 @@ class PreprintSerializer(JSONAPISerializer):
         if primary_file:
             self.set_field(preprint.set_primary_file, primary_file, auth)
             save_node = True
-        subjects = validated_data.pop('subjects', None)
-        if subjects:
+
+        if 'subjects' in validated_data:
+            subjects = validated_data.pop('subjects', None)
             self.set_field(preprint.set_subjects, subjects, auth)
             save_preprint = True
 
@@ -183,5 +186,7 @@ class PreprintCreateSerializer(PreprintSerializer):
 
         preprint = PreprintService(node=node, provider=provider)
         self.set_field(preprint.set_primary_file, primary_file, auth, save=True)
+        preprint.node._has_abandoned_preprint = True
+        preprint.node.save()
 
         return self.update(preprint, validated_data)

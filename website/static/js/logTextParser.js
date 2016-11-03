@@ -640,7 +640,8 @@ var LogPieces = {
             }
             // Comment left on wiki
             if (wiki) {
-                return m('span', ['on wiki page ', m('a', {href: $osf.toRelativeUrl(wiki.url, window)}, wiki.name)]);
+                var name = (wiki.name === 'home') ? 'Home' : wiki.name;
+                return m('span', ['on wiki page ', m('a', {href: $osf.toRelativeUrl(wiki.url, window)}, name)]);
             }
             // Comment left on project
             return m('span', '');

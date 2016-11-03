@@ -21,6 +21,7 @@ class PreprintService(GuidStoredObject):
 
     _id = fields.StringField(primary=True)
     date_created = fields.DateTimeField(auto_now_add=True)
+    date_modified = fields.DateTimeField(auto_now=True)
     provider = fields.ForeignField('PreprintProvider', index=True)
     node = fields.ForeignField('Node', index=True)
     is_published = fields.BooleanField(default=False, index=True)
@@ -147,6 +148,9 @@ class PreprintService(GuidStoredObject):
             if not self.subjects:
                 raise ValueError('Preprint must have at least one subject to be published.')
             self.date_published = datetime.datetime.utcnow()
+            self.node._has_abandoned_preprint = False
+
+            self.node.add_log(action=NodeLog.PREPRINT_INITIATED, params={}, auth=auth, save=False)
 
             if not self.node.is_public:
                 self.node.set_privacy(
@@ -156,6 +160,7 @@ class PreprintService(GuidStoredObject):
                 )
 
         if save:
+            self.node.save()
             self.save()
 
     def save(self, *args, **kwargs):

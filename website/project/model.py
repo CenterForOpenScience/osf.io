@@ -756,8 +756,7 @@ class NodeUpdateError(Exception):
 
 
 def validate_doi(value):
-    # DOI must start with 10 and have a slash in it - avoided getting too complicated
-    if value and not re.match('10\\.\\S*\\/', value):
+    if value and not re.match(r'\b(10\.\d{4,}(?:\.\d+)*/\S+(?:(?!["&\'<>])\S))\b', value):
         raise ValidationValueError('"{}" is not a valid DOI'.format(value))
     return True
 
@@ -887,6 +886,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
     preprint_file = fields.ForeignField('StoredFileNode')
     preprint_article_doi = fields.StringField(validate=validate_doi)
     _is_preprint_orphan = fields.BooleanField(default=False)
+    _has_abandoned_preprint = fields.BooleanField(default=False)
 
     # A list of all MetaSchemas for which this Node has registered_meta
     registered_schema = fields.ForeignField('metaschema', list=True, default=list)
@@ -1192,6 +1192,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         if not self.is_preprint:
             return []
         return PreprintService.find(Q('node', 'eq', self))
+
+    @property
+    def preprint_url(self):
+        if self.is_preprint:
+            try:
+                return self.preprints[0].url
+            except IndexError:
+                pass
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
@@ -2166,6 +2174,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
                 if isinstance(v, basestring)
             }
         enqueue_task(node_tasks.on_node_updated.s(self._id, user_id, first_save, saved_fields, request_headers))
+
+        if self.preprint_file and bool(self.SEARCH_UPDATE_FIELDS.intersection(saved_fields)):
+            # avoid circular imports
+            from website.preprints.tasks import on_preprint_updated
+            from website.preprints.model import PreprintService
+            # .preprints wouldn't return a single deleted preprint
+            for preprint in PreprintService.find(Q('node', 'eq', self)):
+                enqueue_task(on_preprint_updated.s(preprint._id))
+
         user = User.load(user_id)
         if user and self.check_spam(user, saved_fields, request_headers):
             # Specifically call the super class save method to avoid recursion into model save method.

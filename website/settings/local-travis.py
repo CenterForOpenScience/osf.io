@@ -23,7 +23,6 @@ SEARCH_ENGINE = 'elastic'
 
 USE_EMAIL = False
 USE_CELERY = False
-USE_GNUPG = False
 
 # Email
 MAIL_SERVER = 'localhost:1025'  # For local testing
@@ -71,3 +70,5 @@ KEEN = {
 }
 
 NEW_AND_NOTEWORTHY_LINKS_NODE = 'helloo'
+POPULAR_LINKS_NODE = 'hiyah'
+POPULAR_LINKS_REGISTRATIONS = 'woooo'

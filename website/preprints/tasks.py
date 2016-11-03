@@ -1,5 +1,6 @@
 import datetime
 import logging
+import uuid
 import urlparse
 
 import requests
@@ -27,107 +28,118 @@ def on_preprint_updated(preprint_id):
         logger.debug(resp.content)
         resp.raise_for_status()
 
-def format_institution(institution):
-    return [{
-        '@id': '_:{}'.format(institution._id),
-        '@type': 'institution',
-        'name': institution.title,
-    }]
+
+class GraphNode(object):
+
+    @property
+    def ref(self):
+        return {'@id': self.id, '@type': self.type}
+
+    def __init__(self, type_, **attrs):
+        self.id = '_:{}'.format(uuid.uuid4())
+        self.type = type_.lower()
+        self.attrs = attrs
+
+    def get_related(self):
+        for value in self.attrs.values():
+            if isinstance(value, GraphNode):
+                yield value
+            elif isinstance(value, list):
+                for val in value:
+                    yield val
+
+    def serialize(self):
+        ser = {}
+        for key, value in self.attrs.items():
+            if isinstance(value, list):
+                ser[key] = [v.ref for v in value]
+            elif isinstance(value, GraphNode):
+                ser[key] = value.ref
+            else:
+                ser[key] = value
+
+        return dict(self.ref, **ser)
 
 
 def format_user(user):
-    return sum([[{
-        '@id': '_:{}'.format(user._id),
-        '@type': 'person',
+    person = GraphNode('person', **{
         'suffix': user.suffix,
         'given_name': user.given_name,
         'family_name': user.family_name,
         'additional_name': user.middle_names,
-    }, {
-        '@id': '_:throughidentifier-{}'.format(user._id),
-        '@type': 'throughidentifiers',
-        'person': {
-            '@id': '_:{}'.format(user._id),
-            '@type': 'person',
-        },
-        'identifier': {
-            '@id': '_:identifier-{}'.format(user._id),
-            '@type': 'identifier',
-        }
-    }, {
-        '@id': '_:identifier-{}'.format(user._id),
-        '@type': 'identifier',
-        'url': urlparse.urljoin(settings.DOMAIN, user.profile_url),
-        'base_url': settings.DOMAIN
-    }]] + [[{
-        '@id': '_:{}-{}'.format(user._id, institution._id),
-        '@type': 'affiliation',
-        'entity': {
-            '@id': '_:{}'.format(institution._id),
-            '@type': 'institution',
-        },
-        'person': {
-            '@id': '_:{}'.format(user._id),
-            '@type': 'person',
-        }
-    }] + format_institution(institution) for institution in user.affiliated_institutions], [])
+    })
 
-def format_contributor(preprint, user):
-    return [{
-        '@id': '_:{}-{}'.format(preprint._id, user._id),
-        '@type': 'contributor',
-        'person': {'@id': '_:{}'.format(user._id), '@type': 'person'},
-        'creative_work': {'@id': '_:{}'.format(preprint._id), '@type': 'preprint'},
-    }] + format_user(user)
+    person.attrs['identifiers'] = [
+        GraphNode('throughidentifiers', person=person, identifier=GraphNode('identifier', **{
+            'url': urlparse.urljoin(settings.DOMAIN, user.profile_url),
+            'base_url': settings.DOMAIN
+        }))
+    ]
 
-def format_subjects(preprint):
-    flat_subjs = []
-    summed_subjs = sum(sum([[[{
-        '@id': '_:{}'.format(subject['id']),
-        '@type': 'subject',
-        'name': subject['text']
-    }, {
-        '@id': '_:throughsubject-{}'.format(subject['id']),
-        '@type': 'throughsubjects',
-        'subject': {
-            '@id': '_:{}'.format(subject['id']),
-            '@type': 'subject',
-        },
-        'creative_work': {
-            '@id': '_:{}'.format(preprint._id),
-            '@type': 'preprint'
-        }
-    }] for subject in subject_hier] for subject_hier in preprint.get_subjects()], []), [])
-    for s in summed_subjs:
-        if s not in flat_subjs:
-            flat_subjs.append(s)
-    return flat_subjs
+    person.attrs['affiliations'] = [GraphNode('affiliation', person=person, entity=GraphNode('institution', name=institution.name)) for institution in user.affiliated_institutions]
+
+    return person
+
+
+def format_contributor(preprint, user, index):
+    person = format_user(user)
+
+    return GraphNode(
+        'contributor',
+        person=person,
+        order_cited=index,
+        creative_work=preprint,
+        cited_name=user.fullname,
+    )
+
 
 def format_preprint(preprint):
-    return sum([[{
-        '@id': '_:{}'.format(preprint._id),
-        '@type': 'preprint',
+    preprint_graph = GraphNode('preprint', **{
         'title': preprint.node.title,
         'description': preprint.node.description or '',
-        'is_deleted': not preprint.is_published or not preprint.node.is_public or preprint.node.is_preprint_orphan
-    }, {
-        '@id': '_:link-{}'.format(preprint._id),
-        '@type': 'link',
-        'url': urlparse.urljoin(settings.DOMAIN, preprint.url),
-        'type': 'provider'
-    }]] + [
-        format_contributor(preprint, user) for user in preprint.node.contributors
-    ] + [
-        format_subjects(preprint)
-    ] + [[{
-        '@id': '_:{}-{}'.format(preprint._id, institution._id),
-        '@type': 'association',
-        'entity': {
-            '@id': '_:{}'.format(institution._id),
-            '@type': 'institution',
-        },
-        'creative_work': {
-            '@id': '_:{}'.format(preprint._id),
-            '@type': 'preprint',
-        }
-    }] + format_institution(institution) for institution in preprint.node.affiliated_institutions], [])
+        'is_deleted': not preprint.is_published or not preprint.node.is_public or preprint.node.is_preprint_orphan,
+        'date_updated': preprint.date_modified.isoformat(),
+        'date_published': preprint.date_published.isoformat()
+    })
+
+    preprint_graph.attrs['links'] = [
+        GraphNode('throughlinks', creative_work=preprint_graph, link=GraphNode('link', **{
+            'type': 'provider',
+            'url': urlparse.urljoin(settings.DOMAIN, preprint.url),
+        }))
+    ]
+
+    if preprint.article_doi:
+        preprint_graph.attrs['links'].append(
+            GraphNode('throughlinks', creative_work=preprint_graph, link=GraphNode('link', **{
+                'type': 'doi',
+                'url': 'http://dx.doi.org/{}'.format(preprint.article_doi.upper().strip('/')),
+            }))
+        )
+
+    preprint_graph.attrs['subjects'] = [
+        GraphNode('throughsubjects', creative_work=preprint_graph, subject=GraphNode('subject', name=tag._id))
+        for tag in preprint.node.tags
+    ]
+
+    preprint_graph.attrs['subjects'] = [
+        GraphNode('throughsubjects', creative_work=preprint_graph, subject=GraphNode('subject', name=subject))
+        for subject in set(x['text'] for hier in preprint.get_subjects() for x in hier)
+    ]
+
+    preprint_graph.attrs['contributors'] = [format_contributor(preprint_graph, user, i) for i, user in enumerate(preprint.node.contributors)]
+    preprint_graph.attrs['institutions'] = [GraphNode('association', creative_work=preprint_graph, entity=GraphNode('institution', name=institution.name)) for institution in preprint.node.affiliated_institutions]
+
+    visited = set()
+    to_visit = list(preprint_graph.get_related())
+
+    while True:
+        if not to_visit:
+            break
+        n = to_visit.pop(0)
+        if n in visited:
+            continue
+        visited.add(n)
+        to_visit.extend(list(n.get_related()))
+
+    return [node.serialize() for node in visited]
