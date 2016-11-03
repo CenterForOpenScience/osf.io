@@ -1,28 +1,23 @@
-import re
+import datetime
 import functools
 import operator
-import datetime
+import re
 
 import pytz
+from api.base import utils
+from api.base.exceptions import (InvalidFilterComparisonType,
+                                 InvalidFilterError, InvalidFilterFieldError,
+                                 InvalidFilterMatchType, InvalidFilterOperator,
+                                 InvalidFilterValue)
+from api.base.serializers import RelationshipField, TargetField
 from dateutil import parser as date_parser
-
-from django.db.models import QuerySet as DjangoQuerySet
 from django.core.exceptions import ValidationError
+from django.db.models import QuerySet as DjangoQuerySet
 from modularodm import Q
 from modularodm.query import queryset as modularodm_queryset
-from rest_framework.filters import OrderingFilter
 from rest_framework import serializers as ser
+from rest_framework.filters import OrderingFilter
 
-from api.base.exceptions import (
-    InvalidFilterError,
-    InvalidFilterOperator,
-    InvalidFilterComparisonType,
-    InvalidFilterMatchType,
-    InvalidFilterValue,
-    InvalidFilterFieldError
-)
-from api.base import utils
-from api.base.serializers import RelationshipField, TargetField
 
 def lowercase(lower):
     if hasattr(lower, '__call__'):
@@ -439,15 +434,24 @@ class ListFilterMixin(FilterMixin):
     def param_queryset(self, query_params, default_queryset):
         """filters default queryset based on query parameters"""
         filters = self.parse_query_params(query_params)
+        import ipdb; ipdb.set_trace()
         queryset = default_queryset
         if filters:
             for key, field_names in filters.iteritems():
                 for field_name, data in field_names.iteritems():
                     query_field_name = data['source_field_name']
-                    if query_field_name == 'tags':
-                        query_field_name = 'tags__name__iexact'
                     queryset = queryset.filter(**{query_field_name: data['value']})
         return queryset
+
+    def postprocess_query_param(self, key, field_name, operation):
+        # tag queries will usually be on Tag.name,
+        # ?filter[tags]=foo should be translated to Q('tags__name', 'eq', 'foo')
+        # But queries on lists should be tags, e.g.
+        # ?filter[tags]=foo,bar should be translated to Q('tags', 'isnull', True)
+        # ?filter[tags]=[] should be translated to Q('tags', 'isnull', True)
+        if field_name == 'tags':
+            if operation['value'] not in (list(), tuple()):
+                operation['source_field_name'] = 'tags__name__iexact'
 
     def get_filtered_queryset(self, field_name, params, default_queryset):
         """filters default queryset based on the serializer field type"""
