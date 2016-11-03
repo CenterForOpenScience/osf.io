@@ -20,7 +20,7 @@ from faker import Factory
 from nose.tools import *  # noqa (PEP8 asserts)
 from pymongo.errors import OperationFailure
 from django.test import TransactionTestCase, override_settings
-from django.test import TestCase as DjangoTestCase
+from django.test import TestCase as DjangoTestCase, SimpleTestCase
 
 from framework.auth import User
 from framework.auth.core import Auth
@@ -271,9 +271,10 @@ class TestAppJSONAPI(TestApp, JSONAPIWrapper):
     delete_json_api = json_api_method('DELETE')
 
 
-class ApiAppTestCase(TransactionTestCase):
+class ApiAppTestCase(SimpleTestCase):
     """Base `TestCase` for OSF API v2 tests that require the WSGI app (but no database).
     """
+    allow_database_queries = True
 
     def setUp(self):
         super(ApiAppTestCase, self).setUp()
