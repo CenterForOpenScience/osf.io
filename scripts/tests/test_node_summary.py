@@ -10,6 +10,16 @@ from website.project.model import Node
 from scripts.analytics.node_summary import NodeSummary
 
 
+def modify_node_dates_in_mongo(new_date):
+    with TokuTransaction():
+        for node in database.node.find():
+            database['node'].find_and_modify(
+                {'_id': node['_id']},
+                {'$set': {
+                    'date_created': new_date
+                }}
+            )
+
 class TestNodeCount(OsfTestCase):
 
     def setUp(self):
@@ -48,14 +58,7 @@ class TestNodeCount(OsfTestCase):
 
         self.date = datetime.datetime.utcnow() - datetime.timedelta(1)
 
-        with TokuTransaction():
-            for node in database.node.find():
-                database['node'].find_and_modify(
-                    {'_id': node['_id']},
-                    {'$set': {
-                        'date_created': self.date - datetime.timedelta(0.1)
-                    }}
-                )
+        modify_node_dates_in_mongo(self.date - datetime.timedelta(0.1))
 
         self.results = NodeSummary().get_events(self.date.date())[0]
 
