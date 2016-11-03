@@ -40,15 +40,31 @@ class CasAuthentication(BaseAuthentication):
         #     },
         # }
         if data.get('type') == "LOGIN":
+            # initial verification:
             user, error_message = handle_login(data.get('user'))
             if user and not error_message:
+                # initial verification success, check two-factor
                 if not get_user_with_two_factor(user):
-                    return user, None
-                else:
-                    error_message = verify_two_factor(user, data.get('user').get('oneTimePassword'))
+                    # two-factor not required, check user status
+                    error_message = verify_user_status(user)
                     if error_message:
+                        # invalid user status
                         raise AuthenticationFailed(detail=error_message)
+                    # valid user status
                     return user, None
+                # two-factor required
+                error_message = verify_two_factor(user, data.get('user').get('oneTimePassword'))
+                if error_message:
+                    # two-factor verification failed
+                    raise AuthenticationFailed(detail=error_message)
+                # two-factor success, check user status
+                error_message = verify_user_status(user)
+                if error_message:
+                    # invalid user status
+                    raise AuthenticationFailed(detail=error_message)
+                # valid user status
+                return user, None
+            # first step fails
             raise AuthenticationFailed(detail=error_message)
         # The `data` payload structure for type "REGISTER"
         # {
@@ -94,16 +110,6 @@ def handle_login(user):
         if user.check_password(password):
             return user, None
         return None, 'INVALID_PASSWORD'
-
-
-def verify_two_factor(user, one_time_password):
-    if not one_time_password:
-        return 'TWO_FACTOR_AUTHENTICATION_REQUIRED'
-
-    two_factor = get_user_with_two_factor(user)
-    if two_factor and two_factor.verify_code(one_time_password):
-        return None
-    return 'INVALID_ONE_TIME_PASSWORD'
 
 
 def handle_register(user):
@@ -154,3 +160,27 @@ def get_user_with_two_factor(user):
         return TwoFactorUserSettings.find_one(Q('owner', 'eq', user._id))
     except ModularOdmException:
         return None
+
+
+def verify_two_factor(user, one_time_password):
+    if not one_time_password:
+        return 'TWO_FACTOR_AUTHENTICATION_REQUIRED'
+
+    two_factor = get_user_with_two_factor(user)
+    if two_factor and two_factor.verify_code(one_time_password):
+        return None
+    return 'INVALID_ONE_TIME_PASSWORD'
+
+
+def verify_user_status(user):
+    if not user.is_registered:
+        return 'USER_NOT_REGISTERED'
+    if not user.is_claimed:
+        return 'USER_NOT_CLAIMED'
+    if user.is_merged:
+        return 'USER_MERGED'
+    if user.is_disabled:
+        return 'USER_DISABLED'
+    if not user.is_active:
+        return 'USER_NOT_ACTIVE'
+    return None
