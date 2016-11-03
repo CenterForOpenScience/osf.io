@@ -223,7 +223,7 @@ def osfstorage_delete(file_node, payload, node_addon, **kwargs):
     except exceptions.FileNodeCheckedOutError:
         raise HTTPError(httplib.FORBIDDEN)
     except exceptions.FileNodeIsPrimaryFile:
-        raise HTTPError(httplib.METHOD_NOT_ALLOWED, data={
+        raise HTTPError(httplib.FORBIDDEN, data={
             'message_long': 'Cannot delete file as it is the primary file of preprint.'
         })
 

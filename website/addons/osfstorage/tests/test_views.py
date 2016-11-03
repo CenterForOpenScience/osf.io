@@ -583,7 +583,7 @@ class TestDeleteHook(HookTestCase):
         self.node.save()
         res = self.delete(file, expect_errors=True)
 
-        assert_equal(res.status_code, 405)
+        assert_equal(res.status_code, 403)
 
 
 class TestMoveHook(HookTestCase):

@@ -127,6 +127,7 @@ class OsfStorageFileNode(FileNode):
 
     def move_under(self, destination_parent, name=None):
         if self.node.preprint_file == self and not self.node._has_abandoned_preprint:
+            self.copy_under(destination_parent, name)
             raise exceptions.FileNodeIsPrimaryFile()
         if self.is_checked_out:
             raise exceptions.FileNodeCheckedOutError()

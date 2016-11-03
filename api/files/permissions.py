@@ -1,9 +1,7 @@
-from modularodm import Q
 from rest_framework import permissions
 
 from api.base.utils import get_user_auth
 from website.files.models import FileNode
-from website.models import Node
 
 class CheckedOutOrAdmin(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
@@ -25,7 +23,7 @@ class IsPreprintFile(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         assert isinstance(obj, FileNode), 'obj must be a FileNode, got {}'.format(obj)
 
-        if request.method not in permissions.SAFE_METHODS and len(Node.find(Q('preprint_file', 'eq', obj) & Q('_has_abandoned_preprint', 'eq', False))):
+        if request.method not in permissions.SAFE_METHODS and obj.node.preprint_file == obj and not obj.node._has_abandoned_preprint:
             return False
 
         return True
