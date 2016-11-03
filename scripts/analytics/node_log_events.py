@@ -26,16 +26,16 @@ class NodeLogEvents(EventAnalytics):
         date = datetime(date.year, date.month, date.day)
 
         logger.info('Gathering node logs between {} and {}'.format(
-            (date - timedelta(1)).isoformat(), date.isoformat()
+            date, (date + timedelta(1)).isoformat()
         ))
 
-        node_log_query = Q('date', 'lt', date) & Q('date', 'gte', date - timedelta(1))
+        node_log_query = Q('date', 'lt', date + timedelta(1)) & Q('date', 'gte', date)
 
         node_logs = NodeLog.find(node_log_query)
         node_log_events = []
         for node_log in node_logs:
             event = {
-                'keen': {'timestamp': date.isoformat()},
+                'keen': {'timestamp': node_log.date.isoformat()},
                 'date': node_log.date.isoformat(),
                 'action': node_log.action
             }
