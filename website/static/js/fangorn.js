@@ -2410,13 +2410,22 @@ function isInvalidDropItem(folder, item, cannotBeFolder, mustBeIntra) {
     return false;
 }
 
-function allowedToMove(folder, item, mustBeIntra) {
+function allowedToMove(folder, item, mustBeIntra, preprintPath) {
     return (
         item.data.permissions.edit &&
+        preprintPath !== item.data.path &&
         //Can only COPY OUT of figshare
         item.data.provider !== 'figshare' &&
         (!mustBeIntra || (item.data.provider === folder.data.provider && item.data.nodeId === folder.data.nodeId))
     );
+}
+
+// this is a function so it is easier to test with contextvars
+function getPreprintPath(isPreprint, preprintFileId){
+    if (isPreprint){
+        return '/' + preprintFileId;
+    }
+    return null;
 }
 
 function getCopyMode(folder, items) {
@@ -2425,6 +2434,8 @@ function getCopyMode(folder, items) {
     if (typeof folder.data === 'undefined'){
         return 'forbidden';
     }
+
+    var preprintPath = getPreprintPath(contextVars.node.isPreprint, contextVars.node.preprintFileId);
     var canMove = true;
     var mustBeIntra = (folder.data.provider === 'github');
     var cannotBeFolder = (folder.data.provider === 'figshare' || folder.data.provider === 'dataverse');
@@ -2444,7 +2455,7 @@ function getCopyMode(folder, items) {
 
         if(canMove){
             mustBeIntra = mustBeIntra || item.data.provider === 'github';
-            canMove = allowedToMove(folder, item, mustBeIntra);
+            canMove = allowedToMove(folder, item, mustBeIntra, preprintPath);
         }
     }
 

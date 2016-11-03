@@ -251,28 +251,35 @@ describe('fangorn', () => {
             it('can move', () => {
                 folder = getItem('folder', 2);
                 item = getItem('file', 3);
-                assert.equal(Fangorn.allowedToMove(folder, item, false), true);
+                assert.equal(Fangorn.allowedToMove(folder, item, false, null), true);
             });
 
             it('cannot move if figshare', () => {
                 folder = getItem('folder', 2);
                 item = getItem('file', 3);
                 item.data.provider = 'figshare';
-                assert.equal(Fangorn.allowedToMove(folder, item, false), false);
+                assert.equal(Fangorn.allowedToMove(folder, item, false, null), false);
+            });
+
+            it('cannot move if preprint primary file', () => {
+                folder = getItem('folder', 2);
+                item = getItem('file', 3);
+                item.data.path = 'abcde';
+                assert.equal(Fangorn.allowedToMove(folder, item, true, 'abcde'), false);
             });
 
             it('cannot move if edit false', () => {
                 folder = getItem('folder', 2);
                 item = getItem('file', 3);
                 item.data.permissions.edit = false;
-                assert.equal(Fangorn.allowedToMove(folder, item, false), false);
+                assert.equal(Fangorn.allowedToMove(folder, item, false, null), false);
             });
 
             it('cannot move if mustBeIntra and not same provider', () => {
                 folder = getItem('folder', 2);
                 item = getItem('file', 3);
                 item.data.provider = 'google';
-                assert.equal(Fangorn.allowedToMove(folder, item, true), false);
+                assert.equal(Fangorn.allowedToMove(folder, item, true, null), false);
             });
 
             it('cannot move if mustBeIntra and not same node', () => {
@@ -280,7 +287,7 @@ describe('fangorn', () => {
                 item = getItem('file', 3);
                 folder.data.nodeId = 'abcde';
                 item.data.nodeId = 'ebcde';
-                assert.equal(Fangorn.allowedToMove(folder, item, true), false);
+                assert.equal(Fangorn.allowedToMove(folder, item, true, null), false);
             });
 
             it('can move if mustBeIntra and same provider, same node', () => {
@@ -288,8 +295,8 @@ describe('fangorn', () => {
                 item = getItem('file', 3);
                 folder.data.nodeId = 'abcde';
                 item.data.nodeId = 'abcde';
-                assert.equal(Fangorn.allowedToMove(folder, item, true), true);
-            });
+                assert.equal(Fangorn.allowedToMove(folder, item, true, null), true);
+            });            
         });
 
         describe('hasInvalidChildren', () => {
