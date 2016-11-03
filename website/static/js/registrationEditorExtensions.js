@@ -4,7 +4,7 @@ var m = require('mithril');
 var bootbox = require('bootbox');  // TODO: Why is this required? Is it? See [#OSF-6100]
 
 var FilesWidget = require('js/filesWidget');
-var Fangorn = require('js/fangorn');
+var Fangorn = require('js/fangorn').Fangorn;
 var $osf = require('js/osfHelpers');
 var ContribAdder = require('js/contribAdder');
 
