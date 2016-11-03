@@ -198,6 +198,9 @@ class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
     view_category = 'preprint_providers'
     view_name = 'taxonomy-list'
 
+    required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
+    required_write_scopes = [CoreScopes.NULL]
+
     serializer_class = TaxonomySerializer
 
     def is_valid_subject(self, allows_children, allowed_parents, sub):
@@ -225,11 +228,6 @@ class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
 
 
 class PreprintProviderLicenseList(LicenseList):
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-    )
-
     view_category = 'preprint_providers'
 
     def get_queryset(self):
