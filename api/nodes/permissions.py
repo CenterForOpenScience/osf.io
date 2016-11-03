@@ -2,7 +2,7 @@
 from rest_framework import permissions
 from rest_framework import exceptions
 
-from website.addons.base import AddonSettingsBase
+from addons.base.models import BaseAddonSettings
 from website.models import Node, Pointer, User, Institution, DraftRegistration, PrivateLink
 from website.project.metadata.utils import is_prereg_admin
 from website.util import permissions as osf_permissions
@@ -13,7 +13,7 @@ from api.base.utils import get_user_auth, is_deprecated
 class ContributorOrPublic(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        if isinstance(obj, AddonSettingsBase):
+        if isinstance(obj, BaseAddonSettings):
             obj = obj.owner
         assert isinstance(obj, (Node, Pointer)), 'obj must be a Node, Pointer, or AddonSettings; got {}'.format(obj)
         auth = get_user_auth(request)
@@ -55,7 +55,7 @@ class IsAdminOrReviewer(permissions.BasePermission):
 class AdminOrPublic(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (Node, User, Institution, AddonSettingsBase, DraftRegistration, PrivateLink)), 'obj must be a Node, User, Institution, Draft Registration, PrivateLink, or AddonSettings; got {}'.format(obj)
+        assert isinstance(obj, (Node, User, Institution, BaseAddonSettings, DraftRegistration, PrivateLink)), 'obj must be a Node, User, Institution, Draft Registration, PrivateLink, or AddonSettings; got {}'.format(obj)
         auth = get_user_auth(request)
         node = Node.load(request.parser_context['kwargs'][view.node_lookup_url_kwarg])
         if request.method in permissions.SAFE_METHODS:
