@@ -25,8 +25,7 @@ def get_count_by_institutions():
 
         registration_query = node_query & Q('is_registration', 'eq', True)
         non_registration_query = node_query & Q('is_registration', 'eq', False)
-        project_query = non_registration_query & Q('root_id', 'eq', F('id'))  # top-level
-        registered_project_query = registration_query & Q('root_id', 'eq', F('id'))  # top-level
+        project_query = non_registration_query
         public_query = Q('is_public', 'eq', True)
         private_query = Q('is_public', 'eq', False)
         node_public_query = non_registration_query & public_query
@@ -35,8 +34,8 @@ def get_count_by_institutions():
         project_private_query = project_query & private_query
         registered_node_public_query = registration_query & public_query
         registered_node_private_query = registration_query & private_query
-        registered_project_public_query = registered_project_query & public_query
-        registered_project_private_query = registered_project_query & private_query
+        registered_project_public_query = registered_query & public_query
+        registered_project_private_query = registered_query & private_query
         count = {
             'institution':{
                 'id': institution._id,
@@ -51,7 +50,7 @@ def get_count_by_institutions():
                 'private': Node.find_by_institutions(institution, node_private_query).count(),
             },
             'projects': {
-                'total': Node.find_by_institutions(institution, project_query).count(),
+                'total': Node.find_by_institutions(institution, project_query).get_roots().count(),
                 'public': Node.find_by_institutions(institution, project_public_query).count(),
                 'private': Node.find_by_institutions(institution, project_private_query).count(),
             },
@@ -62,8 +61,8 @@ def get_count_by_institutions():
             },
             'registered_projects': {
                 'total': Node.find_by_institutions(institution, registered_project_query).count(),
-                'public': Node.find_by_institutions(institution, registered_project_public_query).count(),
-                'embargoed': Node.find_by_institutions(institution, registered_project_private_query).count(),
+                'public': Node.find_by_institutions(institution, registered_project_public_query).get_roots().count(),
+                'embargoed': Node.find_by_institutions(institution, registered_project_private_query).get_roots().count(),
             },
         }
         counts.append(count)

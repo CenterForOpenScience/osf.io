@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Various node-related utilities."""
 from django.apps import apps
-from django.db.models import F
 from modularodm import Q
 
 from website import settings
@@ -22,21 +21,14 @@ CONTENT_NODE_QUERY = (
 
 PROJECT_QUERY = CONTENT_NODE_QUERY
 
-TOP_LEVEL_PROJECT_QUERY = (
-    # Top level project is defined based on whether its root is itself, i.e. it has no parents
-    Q('root_id', 'eq', F('id')) &
-    PROJECT_QUERY
-)
-
 
 def recent_public_registrations(n=10):
     Node = apps.get_model('osf.AbstractNode')
     registrations = Node.find(
         CONTENT_NODE_QUERY &
-        Q('root_id', 'eq', F('id')) &
         Q('is_public', 'eq', True) &
         Q('is_registration', 'eq', True)
-    ).sort(
+    ).get_roots().sort(
         '-registered_date'
     )
     for reg in registrations:

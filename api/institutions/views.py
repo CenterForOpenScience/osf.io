@@ -1,4 +1,3 @@
-from django.db.models import F
 from django.apps import apps
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
@@ -157,8 +156,6 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
 
     base_node_query = (
         Q('is_deleted', 'ne', True) &
-        # Top-level projects as root id equal to themselves
-        Q('root_id', 'eq', F('id')) &
         Q('is_public', 'eq', True)
     )
 
@@ -171,7 +168,7 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
         ConcreteNode = apps.get_model('osf.Node')
         inst = self.get_institution()
         query = self.get_query_from_request()
-        return ConcreteNode.find_by_institutions(inst, query)
+        return ConcreteNode.find_by_institutions(inst, query).get_roots()
 
 
 class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView, InstitutionMixin):

@@ -463,7 +463,7 @@ class TestNodeFiltering(ApiTestCase):
         res = self.app.get(url, auth=new_user.auth)
         assert_equal(res.status_code, 200)
 
-        public_root_nodes = Node.find(Q('is_public', 'eq', True) & Q('parent_nodes', 'isnull', True))
+        public_root_nodes = Node.find(Q('is_public', 'eq', True)).get_roots()
         assert_equal(len(res.json['data']), public_root_nodes.count())
 
         guids = [each['id'] for each in res.json['data']]

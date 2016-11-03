@@ -4,7 +4,6 @@ import httplib
 import httplib as http  # TODO: Inconsistent usage of aliased import
 from dateutil.parser import parse as parse_date
 
-from django.db.models import F
 from django.utils import timezone
 from flask import request
 import markupsafe
@@ -27,7 +26,7 @@ from website import mails
 from website import mailchimp_utils
 from website import settings
 from website.project.model import Node
-from website.project.utils import PROJECT_QUERY, TOP_LEVEL_PROJECT_QUERY
+from website.project.utils import PROJECT_QUERY
 from website.models import ApiOAuth2Application, ApiOAuth2PersonalToken, User
 from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
@@ -44,13 +43,7 @@ logger = logging.getLogger(__name__)
 def get_public_projects(uid=None, user=None):
     user = user or User.load(uid)
     # In future redesign, should be limited for users with many projects / components
-    nodes = Node.find_for_user(
-        user,
-        subquery=(
-            TOP_LEVEL_PROJECT_QUERY &
-            Q('is_public', 'eq', True)
-        )
-    )
+    nodes = Node.find_for_user(user, PROJECT_QUERY).filter(is_public=True).get_roots()
     return _render_nodes(list(nodes))
 
 
@@ -63,8 +56,7 @@ def get_public_components(uid=None, user=None):
             user,
             subquery=(
                 PROJECT_QUERY &
-                # A project is top-level if its root is equal to itself
-                Q('root_id', 'ne', F('id')) &
+                Q('parent_nodes', 'isnull', False) &
                 Q('is_public', 'eq', True)
             )
         )

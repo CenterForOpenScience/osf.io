@@ -95,7 +95,7 @@ def main(send_email=False):
     projects = {}
     users = defaultdict(lambda: (0, 0))
 
-    top_level_nodes = Node.find(Q('root_id', 'eq', F('id')))
+    top_level_nodes = Node.objects.get_roots()
     progress_bar = progressbar.ProgressBar(maxval=top_level_nodes.count()).start()
 
     for i, node in enumerate(top_level_nodes):

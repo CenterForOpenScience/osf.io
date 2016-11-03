@@ -310,12 +310,6 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
             if operation['value'] not in (list(), tuple()):
                 operation['source_field_name'] = 'tags__name'
 
-        # # Handle filter[parent]=null
-        # if field_name == 'parent':
-        #     if not operation['value']:
-        #         operation['source_field_name'] = 'root_id'
-        #         operation['value'] = F('id')
-
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         user = self.request.user
