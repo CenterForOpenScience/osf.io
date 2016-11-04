@@ -288,7 +288,6 @@ var _githubItemButtons = {
                     onclick: function() {
                         tb.toolbarMode(Fangorn.Components.toolbarModes.RENAME);
                     },
-                    tooltip: 'Change the name of the item',
                     icon: 'fa fa-pencil',
                     className : 'text-info'
                 }, 'Rename')
