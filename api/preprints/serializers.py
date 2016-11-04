@@ -112,8 +112,9 @@ class PreprintSerializer(JSONAPISerializer):
 
         primary_file = validated_data.pop('primary_file', None)
         if primary_file:
-            self.set_field(preprint.set_primary_file, primary_file, auth)
-            save_node = True
+            raise exceptions.ValidationError(
+                detail='You may not change the primary file of a preprint. Please update the version of the file instead.'
+            )
 
         if 'subjects' in validated_data:
             subjects = validated_data.pop('subjects', None)
