@@ -327,8 +327,7 @@ class AuthorizedCharField(ser.CharField):
         content = AuthorizedCharField(source='get_content')
     """
 
-    def __init__(self, source=None, **kwargs):
-        assert source is not None, 'The `source` argument is required.'
+    def __init__(self, source, **kwargs):
         self.source = source
         super(AuthorizedCharField, self).__init__(source=self.source, **kwargs)
 
@@ -347,12 +346,9 @@ class AnonymizedRegexField(AuthorizedCharField):
         content = AnonymizedRegexField(source='get_content', regex='\[@[^\]]*\]\([^\) ]*\)', replace='@A User')
     """
 
-    def __init__(self, source=None, regex=None, replace=None, **kwargs):
-        assert source is not None, 'The `source` argument is required.'
+    def __init__(self, source, regex, replace, **kwargs):
         self.source = source
-        assert regex is not None, 'The `regex` argument is required.'
         self.regex = regex
-        assert replace is not None, 'The `replace` argument is required.'
         self.replace = replace
         super(AnonymizedRegexField, self).__init__(source=self.source, **kwargs)
 
