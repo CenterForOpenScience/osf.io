@@ -116,7 +116,8 @@ class TestPreprintUpdate(ApiTestCase):
         self.preprint.reload()
         assert_equal(self.preprint.subjects, subjects)
 
-    def test_update_primary_file(self):
+    def test_update_primary_file_fails(self):
+        original_file = self.preprint.primary_file
         new_file = test_utils.create_test_file(self.preprint.node, 'openupthatwindow.pdf')
         relationships = {
             "primary_file": {
@@ -129,11 +130,11 @@ class TestPreprintUpdate(ApiTestCase):
         assert_not_equal(self.preprint.primary_file, new_file)
         update_file_payload = build_preprint_update_payload(self.preprint._id, relationships=relationships)
 
-        res = self.app.patch_json_api(self.url, update_file_payload, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
+        res = self.app.patch_json_api(self.url, update_file_payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
 
         self.preprint.node.reload()
-        assert_equal(self.preprint.primary_file, new_file)
+        assert_equal(self.preprint.primary_file, original_file)
 
     def test_new_primary_not_in_node(self):
         project = ProjectFactory()
