@@ -90,6 +90,18 @@ class CommentDetailMixin(object):
         assert_equal(self.comment.content, res.json['data']['attributes']['content'])
         assert_not_in('user', res.json['data']['relationships'])
 
+    def test_private_node_user_with_anonymous_link_cannot_see_mention_info(self):
+        self._set_up_private_project_with_comment()
+        self.comment.content = 'test with [@username](userlink) and @mention'
+        self.comment.save()
+        private_link = PrivateLinkFactory(anonymous=True)
+        private_link.nodes.append(self.private_project)
+        private_link.save()
+        res = self.app.get('/{}comments/{}/'.format(API_BASE, self.comment._id), {'view_only': private_link.key})
+        assert_equal(res.status_code, 200)
+        assert_equal(self.comment._id, res.json['data']['id'])
+        assert_equal( 'test with @A User and @mention', res.json['data']['attributes']['content'])
+
     def test_public_node_logged_in_contributor_can_view_comment(self):
         self._set_up_public_project_with_comment()
         res = self.app.get(self.public_url, auth=self.user.auth)

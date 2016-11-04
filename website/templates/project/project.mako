@@ -234,7 +234,7 @@
 
 <%include file="project/modal_add_pointer.mako"/>
 
-% if user['can_comment'] or node['has_comments']:
+% if (user['can_comment'] or node['has_comments']) and not node['anonymous']:
     <%include file="include/comment_pane_template.mako"/>
 % endif
 
@@ -254,7 +254,7 @@
     <div class="col-xs-12">
         <div class="pp-notice pp-warning m-b-md p-md clearfix">
             This project used to represent a preprint, but the primary preprint file has been moved or deleted. <a href="/preprints/submit/" class="btn btn-default btn-sm m-r-xs pull-right">Create a new preprint</a>
-        </div> 
+        </div>
     </div>
 </div>
 % endif
