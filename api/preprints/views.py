@@ -196,6 +196,14 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
                                 "subjects":     [({root_subject_id}, {child_subject_id}), ...]  # optional
                                 "is_published": true,                                           # optional
                                 "doi":          {valid_doi}                                     # optional
+                            },
+                            "relationships": {
+                                "primary_file": {                                               # optional
+                                    "data": {
+                                        "type": "primary_files",
+                                        "id": {file_id}
+                                    }
+                                }
                             }
                         }
                     }
