@@ -185,6 +185,7 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
     ###Updating Preprints
 
     Update a preprint by sending a patch request to the guid of the existing preprint node that you'd like to update.
+    Updating a preprint's primary_file by patch is only possible if the preprint hasn't already been published.
 
         Method:        PATCH
         URL:           /preprints/{node_id}/
