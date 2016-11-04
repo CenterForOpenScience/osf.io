@@ -102,6 +102,9 @@ class PreprintService(GuidStoredObject):
         if not self.node.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can change a preprint\'s primary file.')
 
+        if self.is_published:
+            raise ValueError('You may not change the primary file of a preprint. Please update the version of the file instead')
+
         if not isinstance(preprint_file, StoredFileNode):
             preprint_file = preprint_file.stored_object
 
