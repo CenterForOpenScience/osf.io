@@ -53,6 +53,7 @@ DOC_TYPE_TO_MODEL = {
     'component': Node,
     'project': Node,
     'registration': Node,
+    'preprint': Node,
     'user': User,
     'file': FileNode,
 }
