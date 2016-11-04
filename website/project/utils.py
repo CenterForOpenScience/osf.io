@@ -84,21 +84,13 @@ def activity():
     Node = apps.get_model('osf.AbstractNode')
     popular_public_projects = []
     popular_public_registrations = []
-    max_popular_projects = 20
+    max_projects_to_display = settings.MAX_POPULAR_PROJECTS
 
     if settings.KEEN['public']['read_key']:
         keen_activity = get_keen_activity()
-        node_pageviews = keen_activity['node_pageviews']
         node_visits = keen_activity['node_visits']
 
-        node_data = [{'node': x['node.id'], 'views': x['result']} for x in node_pageviews[0:max_popular_projects]]
-
-        # Even though view counts won't be used, still gather this data for sorting
-        for node_visit in node_visits[0:max_popular_projects]:
-            for node_result in node_data:
-                if node_visit['node.id'] == node_result['node']:
-                    node_result.update({'visits': node_visit['result']})
-
+        node_data = [{'node': x['node.id'], 'views': x['result']} for x in node_visits]
         node_data.sort(key=lambda datum: datum['views'], reverse=True)
 
         node_data = [node_dict['node'] for node_dict in node_data]
@@ -108,12 +100,12 @@ def activity():
             if node is None:
                 continue
             if node.is_public and not node.is_registration and not node.is_deleted:
-                if len(popular_public_projects) < 10:
+                if len(popular_public_projects) < max_projects_to_display:
                     popular_public_projects.append(node)
             elif node.is_public and node.is_registration and not node.is_deleted and not node.is_retracted:
-                if len(popular_public_registrations) < 10:
+                if len(popular_public_registrations) < max_projects_to_display:
                     popular_public_registrations.append(node)
-            if len(popular_public_projects) >= 10 and len(popular_public_registrations) >= 10:
+            if len(popular_public_projects) >= max_projects_to_display and len(popular_public_registrations) >= max_projects_to_display:
                 break
 
     # New and Noteworthy projects are updated manually

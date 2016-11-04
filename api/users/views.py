@@ -17,6 +17,7 @@ from api.base.serializers import AddonAccountSerializer
 from api.base.views import JSONAPIBaseView
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
+from api.nodes.filters import NodePreprintsFilterMixin
 from api.nodes.serializers import NodeSerializer
 from api.preprints.serializers import PreprintSerializer
 from api.institutions.serializers import InstitutionSerializer
@@ -424,7 +425,7 @@ class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixi
         return account
 
 
-class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin):
+class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodePreprintsFilterMixin):
     """List of nodes that the user contributes to. *Read-only*.
 
     Paginated list of nodes that the user contributes to ordered by `date_modified`.  User registrations are not available
@@ -529,11 +530,14 @@ class UserPreprints(UserNodes):
 
     def get_queryset(self):
         nodes = Node.find(self.get_query_from_request())
-        # TODO: Rearchitect how `.is_preprint` is determined,
+        preprints = []
+        # TODO [OSF-7090]: Rearchitect how `.is_preprint` is determined,
         # so that a query that is guaranteed to return only
-        # preprints can be contructed. Use generator in meantime.
-        return (node for node in nodes if node.is_preprint)
-
+        # preprints can be constructed.
+        for node in nodes:
+            for preprint in node.preprints:
+                preprints.append(preprint)
+        return preprints
 
 class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     permission_classes = (

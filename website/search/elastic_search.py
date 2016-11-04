@@ -80,12 +80,15 @@ except ConnectionError as e:
         'was a problem starting the elasticsearch interface. Is '
         'elasticsearch running?'
     )
-    try:
-        sentry.log_exception()
-        sentry.log_message(message)
-    except AssertionError:  # App has not yet been initialized
-        logger.exception(message)
-    es = None
+    if settings.SENTRY_DSN:
+        try:
+            sentry.log_exception()
+            sentry.log_message(message)
+        except AssertionError:  # App has not yet been initialized
+            logger.exception(message)
+    else:
+        logger.error(message)
+    exit(1)
 
 
 def requires_search(func):

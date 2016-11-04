@@ -4666,6 +4666,7 @@ class TestResetPassword(OsfTestCase):
         assert_in('logout?service=', location)
         assert_in('resetpassword', location)
 
+@unittest.skip('Unskip when institution hiding code is reimplemented')
 class TestIndexView(OsfTestCase):
 
     def setUp(self):
