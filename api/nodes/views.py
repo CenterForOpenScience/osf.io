@@ -1709,7 +1709,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     OSF Storage is the only provider that has all file attributes (except "last_touched" which only applies to non-osfstorage files).
 
     ###Dataverse
-    Dataverse does not store metadata for the following fields:
+    Dataverse returns `null` for the following fields:
 
     - `last_touched`
     - `date_modified`
@@ -1720,7 +1720,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     - `size`
 
     ###Dropbox
-    Dropbox does not return metadata for the following fields:
+    Dropbox returns `null` for the following fields:
 
     - hashes
         - `md5`
@@ -1728,7 +1728,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     - `size`
 
     ###figshare
-    figshare does not store metadata for the following fields:
+    figshare returns `null` for the following fields:
 
     - `last_touched`
     - `date_modified`
@@ -1739,7 +1739,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     - `size`
 
     ###GitHub
-    GitHub does not store metadata for the following fields:
+    GitHub returns `null` for the following fields:
 
     - hashes
         - `md5`
@@ -1760,7 +1760,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
 
     ###Google Drive
-    GoogleDrive does not store metadata for the following fields:
+    returns `null` for the following fields:
 
     - hashes
         - `md5`
@@ -1772,7 +1772,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
 
     ###Amazon S3
-    Amazon s3 does not store metadata for the following fields:
+    Amazon s3 returns `null` for the following fields:
 
     - hashes
         - `sha256`
