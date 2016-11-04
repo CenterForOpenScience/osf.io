@@ -1742,12 +1742,37 @@ var FGItemButtons = {
                         className: 'text-success'
                     }, 'Create Folder'));
                 if (item.data.path) {
-                    rowButtons.push(
-                        m.component(FGButton, {
-                            onclick: function(event) {_removeEvent.call(tb, event, [item]); },
-                            icon: 'fa fa-trash',
-                            className : 'text-danger'
-                        }, 'Delete Folder'));
+                    var preprintPath = getPreprintPath(window.contextVars.node.isPreprint, window.contextVars.node.preprintFileId);
+                    var showDelete = true;
+                    if(preprintPath){
+                        // TODO: This will only get children of open folders  -ajs
+                        var children = getAllChildren(item);
+                        if (preprintPath){
+                            for (var c = 0; c < children.length; c++) {
+                              if (children[c].data.path === preprintPath){
+                                    showDelete = false;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (showDelete){
+                        console.log(item)
+                        rowButtons.push(
+                            m.component(FGButton, {
+                                onclick: function(event) {_removeEvent.call(tb, event, [item]); },
+                                icon: 'fa fa-trash',
+                                className : 'text-danger'
+                            }, 'Delete Folder'));                        
+                    }else{
+                        rowButtons.push(
+                            m.component(FGButton, {
+                                icon: 'fa fa-trash',
+                                tooltip: 'This folder contains a Preprint. You cannot delete Preprints, but you can upload a new version.',                                        
+                                className: 'tb-disabled'
+                            }, 'Delete Folder'));
+                        reapplyTooltips();
+                    }
                 }
             }
             if (item.kind === 'file') {
@@ -2347,25 +2372,6 @@ function _dragLogic(event, items, ui) {
 
 }
 
-function hasInvalidChildren(folder, item){
-    var c;
-    var current;
-    var remaining = [];
-    for(c in item.children){
-        remaining.push(item.children[c]);
-    }
-    while(remaining.length > 0){
-        current = remaining.pop();
-        if(current.inProgress || current.id === folder.id){
-            return true;
-        }
-        for(c in current.children){
-            remaining.push(current.children[c]);
-        }
-    }
-    return false;
-}
-
 function getAllChildren(item){
     var c;
     var current;
@@ -2376,7 +2382,7 @@ function getAllChildren(item){
     }
     while(remaining.length > 0){
         current = remaining.pop();
-        children.push(current)
+        children.push(current);
         for(c in current.children){
             remaining.push(current.children[c]);
         }
@@ -2443,7 +2449,6 @@ function isInvalidDropItem(folder, item, cannotBeFolder, mustBeIntra) {
 function allowedToMove(folder, item, mustBeIntra, preprintPath) {
     return (
         item.data.permissions.edit &&
-        preprintPath !== item.data.path &&
         //Can only COPY OUT of figshare
         item.data.provider !== 'figshare' &&
         (!mustBeIntra || (item.data.provider === folder.data.provider && item.data.nodeId === folder.data.nodeId))
@@ -2465,7 +2470,7 @@ function getCopyMode(folder, items) {
         return 'forbidden';
     }
 
-    var preprintPath = getPreprintPath(contextVars.node.isPreprint, contextVars.node.preprintFileId);
+    var preprintPath = getPreprintPath(window.contextVars.node.isPreprint, window.contextVars.node.preprintFileId);
     var canMove = true;
     var mustBeIntra = (folder.data.provider === 'github');
     var cannotBeFolder = (folder.data.provider === 'figshare' || folder.data.provider === 'dataverse');
@@ -2482,15 +2487,15 @@ function getCopyMode(folder, items) {
         var children = getAllChildren(item);
         for (var c = 0; c < children.length; c++) {
             if (children[c].inProgress || children[c].id === folder.id) {
-                return 'forbidden'
+                return 'forbidden';
             }
-            if (children[c].path === preprintPath){
-                canMove = false;
+            if (children[c].data.path === preprintPath){
+                mustBeIntra = true;
             }
         }
-
+        
         if(canMove){
-            mustBeIntra = mustBeIntra || item.data.provider === 'github';
+            mustBeIntra = mustBeIntra || item.data.provider === 'github' || preprintPath === item.data.path;
             canMove = allowedToMove(folder, item, mustBeIntra, preprintPath);
         }
     }

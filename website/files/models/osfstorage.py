@@ -131,7 +131,8 @@ class OsfStorageFileNode(FileNode):
 
     def move_under(self, destination_parent, name=None):
         if self.is_preprint_primary:
-            raise exceptions.FileNodeIsPrimaryFile()
+            if self.node._id != destination_parent.node._id or self.provider != destination_parent.provider:
+                raise exceptions.FileNodeIsPrimaryFile()
         if self.is_checked_out:
             raise exceptions.FileNodeCheckedOutError()
         return super(OsfStorageFileNode, self).move_under(destination_parent, name)
