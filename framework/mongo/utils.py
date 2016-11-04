@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 import functools
 import httplib as http
-import re
 
 from django.core.paginator import Paginator
+
 import markupsafe
 import pymongo
 from modularodm.query import QueryBase
-from modularodm.exceptions import ValidationValueError, NoResultsFound, MultipleResultsFound
+from modularodm.exceptions import NoResultsFound, MultipleResultsFound
 
 from framework.exceptions import HTTPError
 
@@ -34,12 +34,6 @@ def from_mongo(item):
     for key, value in mongo_map.items():
         item = item.replace(value, key)
     return item
-
-
-sanitize_pattern = re.compile(r'<\/?[^>]+>')
-def sanitized(value):
-    if value != sanitize_pattern.sub('', value):
-        raise ValidationValueError('Unsanitary string')
 
 
 def unique_on(*groups):

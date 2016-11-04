@@ -3,7 +3,7 @@
 import httplib as http
 
 from flask import request
-from modularodm.exceptions import ValidationError
+from osf.exceptions import ValidationValueError
 
 from framework.exceptions import HTTPError
 
@@ -43,12 +43,13 @@ def forward_config_put(auth, node_addon, **kwargs):
 
     # Save settings and get changed fields; crash if validation fails
     try:
-        saved_fields = node_addon.save()
-    except ValidationError:
+        dirty_fields = node_addon.get_dirty_fields()
+        node_addon.save()
+    except ValidationValueError:
         raise HTTPError(http.BAD_REQUEST)
 
     # Log change if URL updated
-    if 'url' in saved_fields:
+    if 'url' in dirty_fields:
         node_addon.owner.add_log(
             action='forward_url_changed',
             params=dict(
