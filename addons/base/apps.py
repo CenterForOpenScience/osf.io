@@ -49,11 +49,16 @@ class BaseAddonConfig(AppConfig):
     def __init__(self, *args, **kwargs):
         ret = super(BaseAddonConfig, self).__init__(*args, **kwargs).__init__()
         # Build template lookup
+        paths = [settings.TEMPLATES_PATH]
+        if self.user_settings_template:
+            paths.append(os.path.dirname(self.user_settings_template))
+        if self.node_settings_template:
+            paths.append(os.path.dirname(self.node_settings_template))
         template_dirs = list(
             set(
                 [
                     path
-                    for path in [os.path.dirname(self.user_settings_template), os.path.dirname(self.node_settings_template), settings.TEMPLATES_PATH]
+                    for path in paths
                     if os.path.exists(path)
                 ]
             )

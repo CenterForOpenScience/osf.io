@@ -6,7 +6,7 @@ from modularodm.validators import (
 )
 from modularodm.exceptions import ValidationValueError
 
-from framework.mongo.utils import sanitized
+from osf.models.validators import validate_no_html
 
 from website.addons.base import AddonNodeSettingsBase
 
@@ -17,7 +17,7 @@ class ForwardNodeSettings(AddonNodeSettingsBase):
     has_auth = True
 
     url = fields.StringField(validate=URLValidator())
-    label = fields.StringField(validate=sanitized)
+    label = fields.StringField(validate=validate_no_html)
 
     @property
     def link_text(self):

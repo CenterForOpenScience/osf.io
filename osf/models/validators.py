@@ -84,6 +84,13 @@ class CommentMaxLength(object):
         return True
 
 
+sanitize_pattern = re.compile(r'<\/?[^>]+>')
+def validate_no_html(value):
+    if value != sanitize_pattern.sub('', value):
+        raise ValidationError('Unsanitary string')
+    return True
+
+
 def validate_doi(value):
     # DOI must start with 10 and have a slash in it - avoided getting too complicated
     if not re.match('10\\.\\S*\\/', value):
