@@ -39,13 +39,14 @@ logger = logging.getLogger(__name__)
 
 # These are the doc_types that exist in the search database
 ALIASES = {
-    'project': 'Projects',
     'component': 'Components',
-    'registration': 'Registrations',
-    'user': 'Users',
-    'total': 'Total',
     'file': 'Files',
     'institution': 'Institutions',
+    'project': 'Projects',
+    'preprint': 'Preprints',
+    'registration': 'Registrations',
+    'total': 'Total',
+    'user': 'Users',
 }
 
 DOC_TYPE_TO_MODEL = {
@@ -224,7 +225,7 @@ def format_results(results):
             parent_info = load_parent(result.get('parent_id'))
             result['parent_url'] = parent_info.get('url') if parent_info else None
             result['parent_title'] = parent_info.get('title') if parent_info else None
-        elif result.get('category') in {'project', 'component', 'registration'}:
+        elif result.get('category') in {'project', 'component', 'registration', 'preprint'}:
             result = format_result(result, result.get('parent_id'))
         elif not result.get('category'):
             continue
@@ -284,6 +285,8 @@ COMPONENT_CATEGORIES = set(settings.NODE_CATEGORY_MAP.keys())
 def get_doctype_from_node(node):
     if node.is_registration:
         return 'registration'
+    elif node.is_preprint:
+        return 'preprint'
     elif node.parent_node is None:
         # ElasticSearch categorizes top-level projects differently than children
         return 'project'
@@ -374,7 +377,7 @@ def bulk_update_nodes(serialize, nodes, index=None):
     """Updates the list of input projects
 
     :param function Node-> dict serialize:
-    :param Node[] nodes: Projects, components or registrations
+    :param Node[] nodes: Projects, components, registrations, or preprints
     :param str index: Index of the nodes
     :return:
     """
@@ -535,12 +538,13 @@ def delete_index(index):
 
 @requires_search
 def create_index(index=None):
-    '''Creates index with some specified mappings to begin with,
-    all of which are applied to all projects, components, and registrations.
-    '''
+    """
+    Creates index with some specified mappings to begin with,
+    all of which are applied to all projects, components, preprints and registrations.
+    """
     index = index or INDEX
-    document_types = ['project', 'component', 'registration', 'user', 'file', 'institution']
-    project_like_types = ['project', 'component', 'registration']
+    document_types = ['project', 'component', 'registration', 'user', 'file', 'institution', 'preprint']
+    project_like_types = ['project', 'component', 'registration', 'preprint']
     analyzed_fields = ['title', 'description']
 
     es.indices.create(index, ignore=[400])  # HTTP 400 if index already exists
@@ -586,7 +590,13 @@ def create_index(index=None):
 @requires_search
 def delete_doc(elastic_document_id, node, index=None, category=None):
     index = index or INDEX
-    category = category or 'registration' if node.is_registration else node.project_or_component
+    if not category:
+        if node.is_registration:
+            category = 'registration'
+        elif node.is_preprint:
+            category = 'preprint'
+        else:
+            category = node.project_or_component
     es.delete(index=index, doc_type=category, id=elastic_document_id, refresh=True, ignore=[404])
 
 

@@ -138,10 +138,10 @@ var ViewModel = function(params) {
         });
     });
     self.showLicenses = ko.computed(function() {
-        return ['project', 'registration', 'component'].indexOf(self.category().name) >= 0;
+        return ['project', 'registration', 'component', 'preprint'].indexOf(self.category().name) >= 0;
     });
     self.category.subscribe(function(value) {
-        if (['project', 'registration', 'component'].indexOf(value) < 0) {
+        if (['project', 'registration', 'component', 'preprint'].indexOf(value) < 0) {
             $.each(self.licenses(), function(i, license) {
                 license.active(false);
             });
