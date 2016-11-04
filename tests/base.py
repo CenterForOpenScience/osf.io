@@ -8,21 +8,17 @@ import logging
 import unittest
 import functools
 import datetime as dt
-from json import dumps
 
 import pytest
 import blinker
 import httpretty
+from django.test import TestCase as DjangoTestCase
 from webtest_plus import TestApp
-from webtest.utils import NoDefault
 
 import mock
 from faker import Factory
 from nose.tools import *  # noqa (PEP8 asserts)
 from pymongo.errors import OperationFailure
-from django.test import TransactionTestCase, override_settings
-from django.test import TestCase as DjangoTestCase, SimpleTestCase
-
 from framework.auth import User
 from framework.auth.core import Auth
 from framework.sessions.model import Session
@@ -46,6 +42,8 @@ from website.project.signals import contributor_added, project_created
 from website.app import init_app
 from website.addons.base import AddonConfig
 from website.project.views.contributor import notify_added_contributor
+
+from .json_api_test_app import JSONAPITestApp
 
 
 def get_default_metaschema():
@@ -222,66 +220,14 @@ class AppTestCase(unittest.TestCase):
                 signal.connect(receiver)
 
 
-class JSONAPIWrapper(object):
-    """
-    Creates wrapper with stated content_type.
-    """
-    def make_wrapper(self, url, method, content_type, params=NoDefault, **kw):
-        """
-        Helper method for generating wrapper method.
-        """
-
-        if params is not NoDefault:
-            params = dumps(params, cls=self.JSONEncoder)
-        kw.update(
-            params=params,
-            content_type=content_type,
-            upload_files=None,
-        )
-        wrapper = self._gen_request(method, url, **kw)
-
-        subst = dict(lmethod=method.lower(), method=method)
-        wrapper.__name__ = str('%(lmethod)s_json_api' % subst)
-
-        return wrapper
-
-
-class TestAppJSONAPI(TestApp, JSONAPIWrapper):
-    """
-    Extends TestApp to add json_api_methods(post, put, patch, and delete)
-    which put content_type 'application/vnd.api+json' in header. Adheres to
-    JSON API spec.
-    """
-
-    def __init__(self, app, *args, **kwargs):
-        super(TestAppJSONAPI, self).__init__(app, *args, **kwargs)
-        self.auth = None
-        self.auth_type = 'basic'
-
-    def json_api_method(method):
-
-        def wrapper(self, url, params=NoDefault, bulk=False, **kw):
-            content_type = 'application/vnd.api+json'
-            if bulk:
-                content_type = 'application/vnd.api+json; ext=bulk'
-            return JSONAPIWrapper.make_wrapper(self, url, method, content_type, params, **kw)
-        return wrapper
-
-    post_json_api = json_api_method('POST')
-    put_json_api = json_api_method('PUT')
-    patch_json_api = json_api_method('PATCH')
-    delete_json_api = json_api_method('DELETE')
-
-
-class ApiAppTestCase(SimpleTestCase):
+class ApiAppTestCase(unittest.TestCase):
     """Base `TestCase` for OSF API v2 tests that require the WSGI app (but no database).
     """
     allow_database_queries = True
 
     def setUp(self):
         super(ApiAppTestCase, self).setUp()
-        from api.base.wsgi import application as api_django_app
-        self.app = TestAppJSONAPI(api_django_app)
+        self.app = JSONAPITestApp()
 
 
 class UploadTestCase(unittest.TestCase):
@@ -533,7 +479,7 @@ def capture_signals():
     return CaptureSignals(ALL_SIGNALS)
 
 
-def assert_is_redirect(response, msg="Response is a redirect."):
+def assert_is_redirect(response, msg='Response is a redirect.'):
     assert 300 <= response.status_code < 400, msg
 
 

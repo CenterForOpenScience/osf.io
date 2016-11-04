@@ -11,7 +11,6 @@ import pytz
 from framework.exceptions import PermissionsError
 from website.util.permissions import READ, WRITE, ADMIN, expand_permissions
 from website.project.signals import contributor_added, contributor_removed
-from website.project.utils import TOP_LEVEL_PROJECT_QUERY
 from website.exceptions import NodeStateError
 from website.util import permissions, disconnected_from_listeners
 from website.citations.utils import datetime_to_csl

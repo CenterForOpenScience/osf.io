@@ -1,3 +1,4 @@
+import pytest
 from nose.tools import *  # flake8: noqa
 import json
 
