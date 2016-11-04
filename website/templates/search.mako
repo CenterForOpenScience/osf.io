@@ -263,6 +263,52 @@
     <script type="text/html" id="component">
       <div data-bind="template: {name: 'node', data: $data}"></div>
     </script>
+    <script type="text/html" id="preprint">
+      <!-- ko if: parent_url -->
+      <h4><a data-bind="attr: {href: parent_url}, text: parent_title"></a> / <a data-bind="attr: {href: url}, text: title"></a></h4>
+        <!-- /ko -->
+        <!-- ko if: !parent_url -->
+        <h4><span data-bind="if: parent_title"><span data-bind="text: parent_title"></span> /</span> <a data-bind="attr: {href: url}, text: title"></a></h4>
+        <!-- /ko -->
+
+        <p data-bind="visible: description"><strong>Description:</strong> <span data-bind="fitText: {text: description, length: 500}"></span></p>
+
+        <!-- ko if: contributors.length > 0 -->
+        <p>
+            <strong>Contributors:</strong> <span data-bind="foreach: contributors">
+                <!-- ko if: url -->
+                    <a data-bind="attr: {href: url}, text: fullname"></a>
+                <!-- /ko-->
+                <!-- ko ifnot: url -->
+                    <span data-bind="text: fullname"></span>
+                <!-- /ko -->
+            <!-- ko if: ($index()+1) < ($parent.contributors.length) -->&nbsp;- <!-- /ko -->
+            </span>
+        </p>
+        <!-- /ko -->
+      <!-- ko if: affiliated_institutions ? affiliated_institutions.length > 0 : false -->
+        <p><strong>Affiliated institutions:</strong>
+            <!-- ko foreach {data: affiliated_institutions, as: 'item'} -->
+                <!-- ko if: item == $parent.affiliated_institutions[$parent.affiliated_institutions.length -1] -->
+                <span data-bind="text: item"></span>
+                <!-- /ko -->
+                <!-- ko if: item != $parent.affiliated_institutions[$parent.affiliated_institutions.length -1] -->
+                <span data-bind="text: item"></span>,
+                <!-- /ko -->
+            <!-- /ko -->
+        </p>
+        <!-- /ko -->
+        <!-- ko if: tags.length > 0 -->
+        <div data-bind="template: 'tag-cloud'"></div>
+        <!-- /ko -->
+        <p><strong>Jump to:</strong>
+            <a data-bind="attr: {href: preprintUrl}">Preprint</a> -
+            <!-- ko if: n_wikis > 0 -->
+            <a data-bind="attr: {href: wikiUrl}">Wiki</a> -
+            <!-- /ko -->
+            <a data-bind="attr: {href: filesUrl}">Files</a>
+        </p>
+    </script>
     <script type="text/html" id="registration">
         <!-- ko if: parent_url -->
         <h4><a data-bind="attr: {href: parent_url}, text: parent_title"></a> / <a data-bind="attr: {href: url}, text: title"></a>  (<span class="text-danger" data-bind="if: is_retracted">Withdrawn </span>Registration)</h4>

@@ -257,6 +257,7 @@ def format_result(result, parent_id=None):
         'n_wikis': len(result['wikis']),
         'license': result.get('license'),
         'affiliated_institutions': result.get('affiliated_institutions'),
+        'preprint_url': result.get('preprint_url'),
     }
 
     return formatted_result
@@ -345,6 +346,7 @@ def serialize_node(node, category):
         'affiliated_institutions': [inst.name for inst in node.affiliated_institutions],
         'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         'extra_search_terms': clean_splitters(node.title),
+        'preprint_url': node.preprint_url,
     }
     if not node.is_retracted:
         for wiki in [
