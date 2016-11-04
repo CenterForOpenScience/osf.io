@@ -1,5 +1,4 @@
 import logging
-from osf_tests.conftest import patched_models
 
 # Silence some 3rd-party logging and some "loud" internal loggers
 SILENT_LOGGERS = [
