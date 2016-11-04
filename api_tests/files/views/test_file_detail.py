@@ -2,25 +2,19 @@ from __future__ import unicode_literals
 
 import itsdangerous
 import mock
-from nose.tools import *  # flake8: noqa
 import pytz
-
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils
 from framework.auth.core import Auth
 from framework.sessions.model import Session
-
+from nose.tools import *  # flake8: noqa
+from osf_tests.factories import (AuthUserFactory, CommentFactory,
+                                 ProjectFactory, UserFactory)
 from tests.base import ApiTestCase, capture_signals
-from osf_tests.factories import (
-    ProjectFactory,
-    UserFactory,
-    AuthUserFactory,
-    CommentFactory
-)
 from website import settings as website_settings
 from website.addons.osfstorage import settings as osfstorage_settings
-from website.project.signals import contributor_removed
 from website.project.model import NodeLog
+from website.project.signals import contributor_removed
 
 
 # stolen from^W^Winspired by DRF rest_framework.fields.DateTimeField.to_representation
@@ -340,7 +334,7 @@ class TestFileView(ApiTestCase):
     def test_noncontrib_cannot_checkout(self):
         user = AuthUserFactory()
         assert_equal(self.file.checkout, None)
-        assert user._id not in self.node.permissions.keys()
+        assert_false(self.node.has_permission(user, 'read'))
         res = self.app.put_json_api(
             self.file_url,
             {'data': {'id': self.file._id, 'type': 'files', 'attributes': {'checkout': self.user._id}}},
@@ -574,4 +568,3 @@ class TestFileTagging(ApiTestCase):
         self.app.put_json_api(self.url, self.payload, auth=self.user.auth)
         assert_equal(self.node.logs.count(), count + 1)
         assert_equal(NodeLog.FILE_TAG_REMOVED, self.node.logs.latest().action)
-

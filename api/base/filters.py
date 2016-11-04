@@ -434,7 +434,6 @@ class ListFilterMixin(FilterMixin):
     def param_queryset(self, query_params, default_queryset):
         """filters default queryset based on query parameters"""
         filters = self.parse_query_params(query_params)
-        import ipdb; ipdb.set_trace()
         queryset = default_queryset
         if filters:
             for key, field_names in filters.iteritems():

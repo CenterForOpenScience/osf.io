@@ -731,20 +731,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def get_absolute_url(self):
         return self.absolute_api_v2_url
 
-    @property
-    def permissions(self):
-        contributors = self.contributor_set.all()
-        perm_dict = {}
-        for contributor in contributors:
-            perm_dict[contributor.user._id] = []
-            if contributor.write:
-                perm_dict[contributor.user._id].append('write')
-            if contributor.read:
-                perm_dict[contributor.user._id].append('read')
-            if contributor.admin:
-                perm_dict[contributor.user._id].append('admin')
-        return perm_dict
-
     def get_permissions(self, user):
         try:
             contrib = user.contributor_set.get(node=self)
