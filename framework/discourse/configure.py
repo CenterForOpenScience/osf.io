@@ -1,4 +1,4 @@
-from .common import request
+from framework.discourse import common
 
 from website import settings
 import time

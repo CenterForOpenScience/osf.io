@@ -949,9 +949,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
     notification_settings_dirty = fields.BooleanField(default=False)
 
-    discourse_group_id = fields.StringField(default=None)
-    discourse_group_public = fields.BooleanField(default=False)
-    discourse_group_users = fields.StringField(default=None, list=True)
+    discourse_project_created = fields.BooleanField(default=False)
+    discourse_project_public = fields.BooleanField(default=False)
+    discourse_project_contributors = fields.StringField(default=None, list=True)
     discourse_view_only_keys = fields.StringField(default=None, list=True)
     discourse_topic_id = fields.StringField(default=None)
     discourse_topic_title = fields.StringField(default=None)

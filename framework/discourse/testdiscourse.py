@@ -1,11 +1,9 @@
-from . import sync_project, delete_project, undelete_project  # noqa
-from .comments import create_comment, edit_comment, delete_comment, undelete_comment  # noqa
-from .common import DiscourseException, request  # noqa
-from .groups import create_group, update_group_privacy, sync_group, delete_group, retrieve_group_user_info  # noqa
-from .topics import get_or_create_topic_id, sync_topic, delete_topic, undelete_topic, get_topic  # noqa
-from .users import get_username, get_user_apikey, logout, delete_user  # noqa
-
-import common
+from framework.discourse.projects import get_project, sync_project, delete_project, undelete_project  # noqa
+from framework.discourse import common
+from framework.discourse.comments import create_comment, edit_comment, delete_comment, undelete_comment  # noqa
+from framework.discourse.common import DiscourseException, request  # noqa
+from framework.discourse.topics import get_or_create_topic_id, sync_topic, delete_topic, undelete_topic, get_topic  # noqa
+from framework.discourse.users import get_username, get_user_apikey, logout, delete_user  # noqa
 
 import time
 from datetime import datetime
@@ -32,10 +30,10 @@ class TestDiscourse(DbTestCase):
         self.user1 = UserFactory()
         self.user2 = UserFactory()
         self.user2.discourse_user_created = False
-        self.project_node = literal(label='The Test Project', _id='test1234',
+        self.project_node = literal(label='The Test Project', _id='test123',
                                contributors=[self.user1], is_public=False,
-                               discourse_group_id=None, discourse_topic_id=None,
-                               discourse_group_public=False, discourse_group_users=None,
+                               discourse_project_created=False, discourse_topic_id=None,
+                               discourse_project_public=False, discourse_project_users=None,
                                discourse_topic_title=None, discourse_topic_parent_guids=None,
                                discourse_project_deleted=False, discourse_topic_deleted=False,
                                discourse_post_id=None, category='Project',
@@ -46,10 +44,10 @@ class TestDiscourse(DbTestCase):
         self.project_node.guid_id = self.project_node._id
         self.project_node.save = lambda *args: None
 
-        self.component_node = literal(label='The Test Analysis', _id='analysis1234',
+        self.component_node = literal(label='The Test Analysis', _id='analysis123',
                                contributors=[self.user1], is_public=False,
-                               discourse_group_id=None, discourse_topic_id=None,
-                               discourse_group_public=False, discourse_group_users=None,
+                               discourse_project_created=False, discourse_topic_id=None,
+                               discourse_project_public=False, discourse_project_users=None,
                                discourse_topic_title=None, discourse_topic_parent_guids=None,
                                discourse_project_deleted=False, discourse_topic_deleted=False,
                                discourse_post_id=None, category='Analysis',
@@ -69,51 +67,38 @@ class TestDiscourse(DbTestCase):
         self.file_node.guid_id = 'a' + str(random.randint(0, 99999))
         self.file_node.save = lambda *args: None
 
-        self.saved_group_id = None
-
     def tearDown(self):
-        if self.project_node.discourse_group_id != self.saved_group_id:
-            newer_group_id = self.project_node.discourse_group_id
-            self.project_node.discourse_group_id = self.saved_group_id
-            delete_group(self.project_node)
-            self.project_node.discourse_group_id = newer_group_id
-
-        delete_group(self.project_node)
-        delete_group(self.component_node)
         delete_topic(self.project_node)
         delete_topic(self.component_node)
         delete_topic(self.file_node)
+        time.sleep(0.125)
+        delete_project(self.component_node)
+        delete_project(self.project_node)
+        time.sleep(0.125)
         delete_user(self.user1)
         delete_user(self.user2)
 
-    def test_groups(self):
-        delete_group(self.project_node)
-        time.sleep(0.125)
-
+    def test_contributors(self):
+        """ The contributors of a project should persist.
+        """
         self.project_node.contributors = [self.user1, self.user2]
-        sync_group(self.project_node)
-        self.assertEquals(len(retrieve_group_user_info(self.project_node)), 2)
+        sync_project(self.project_node)
+        self.assertEquals(len(get_project(self.project_node)['contributors']), 2)
         time.sleep(0.125)
 
         self.project_node.contributors = [self.user1]
-        sync_group(self.project_node)
-        self.assertEquals(len(retrieve_group_user_info(self.project_node)), 1)
-        time.sleep(0.125)
-
-        self.project_node.contributors = [self.user1, self.user2]
-        sync_group(self.project_node)
-        self.assertEquals(len(retrieve_group_user_info(self.project_node)), 2)
+        sync_project(self.project_node)
+        self.assertEquals(len(get_project(self.project_node)['contributors']), 1)
         time.sleep(0.125)
 
         self.project_node.contributors = []
-        sync_group(self.project_node)
-        self.assertEquals(len(retrieve_group_user_info(self.project_node)), 0)
+        sync_project(self.project_node)
+        self.assertEquals(len(get_project(self.project_node)['contributors']), 0)
         time.sleep(0.125)
 
-        delete_group(self.project_node)
-        self.assertIs(self.project_node.discourse_group_id, None)
-
     def test_comments(self):
+        """ Comments can be created on a topic, edit, deleted, and undeleted
+        """
         comment_id = create_comment(self.file_node, 'I think your robot is the coolest little bugger ever!', self.user1)
         edit_comment(comment_id, 'Actually, your robot is the coolest little bugger ever!')
         delete_comment(comment_id)
@@ -121,7 +106,10 @@ class TestDiscourse(DbTestCase):
         delete_comment(comment_id)
 
     def test_custom_fields(self):
+        """ custom information set in the project and topic should persist when the topic is returned
+        """
         self.project_node.is_public = True
+
         sync_topic(self.project_node)
         topic_json = get_topic(self.project_node)
         self.assertEquals(topic_json['topic_guid'], self.project_node._id)
@@ -144,14 +132,17 @@ class TestDiscourse(DbTestCase):
         topic_json = get_topic(self.project_node)
         self.assertEquals(topic_json['topic_guid'], self.project_node._id)
 
-    def test_recover_lost_group(self):
-        create_group(self.project_node)
-        self.saved_group_id = self.project_node.discourse_group_id
-        self.project_node.discourse_group_id = None
-        create_group(self.project_node)
-        self.assertEquals(self.project_node.discourse_group_id, self.saved_group_id)
+    def test_recover_lost_project(self):
+        """ Asking Discourse to recreate an existing project should not cause errors.
+        """
+        sync_project(self.project_node)
+        self.project_node.discourse_project_created = False
+        sync_project(self.project_node)
+        self.assertEquals(self.project_node.discourse_project_created, True)
 
     def test_multiple_sync_free(self):
+        """ sync_project and sync_topic should cost nothing when there are no new changes to push to Discourse.
+        """
         sync_topic(self.project_node)
 
         start_time = time.time()
@@ -170,24 +161,17 @@ class TestDiscourse(DbTestCase):
         sync_time = time.time() - start_time
         self.assertLess(sync_time, 0.01)
 
-    def test_delete_recover_project_1(self):
-        sync_project(self.project_node)
-
-        delete_project(self.project_node)
-
-        with self.assertRaises(DiscourseException):
-            get_topic(self.project_node)
-
-        undelete_project(self.project_node)
-
-        get_topic(self.project_node)
-
-    def test_delete_recover_project(self):
+    def test_delete_undelete_project(self):
+        """ a deleted project should be innacessible until it is undeleted
+        """
         sync_project(self.project_node)
         sync_project(self.component_node)
         sync_topic(self.file_node)
 
         delete_project(self.project_node)
+
+        with self.assertRaises(DiscourseException):
+            get_project(self.project_node)
 
         with self.assertRaises(DiscourseException):
             get_topic(self.project_node)
@@ -200,6 +184,7 @@ class TestDiscourse(DbTestCase):
 
         undelete_project(self.project_node)
 
+        get_project(self.project_node)
         get_topic(self.project_node)
         get_topic(self.component_node)
         get_topic(self.file_node)

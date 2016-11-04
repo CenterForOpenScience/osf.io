@@ -38,9 +38,9 @@ def import_discourse_ids(in_file, dry_run):
             target.discourse_user_id = obj['user_id']
             target.discourse_user_created = True
         elif obj['type'] == 'project':
-            target.discourse_group_id = obj['group_id']
-            target.discourse_group_public = obj['group_public']
-            target.discourse_group_users = obj['group_users']
+            target.discourse_project_created = True
+            target.discourse_project_public = obj['project_public']
+            target.discourse_project_contributors = obj['project_contributors']
         elif obj['type'] == 'topic':
             target.discourse_topic_id = obj['topic_id']
             target.discourse_topic_title = obj['topic_title']

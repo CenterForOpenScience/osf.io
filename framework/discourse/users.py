@@ -1,4 +1,4 @@
-from .common import request
+from framework.discourse.common import request
 
 import api.sso
 from framework.sessions import session

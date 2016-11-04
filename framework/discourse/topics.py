@@ -1,7 +1,7 @@
-import common
-from .common import DiscourseException, request
-from .categories import file_category, wiki_category, project_category
-from .groups import get_or_create_group_id
+import framework.discourse.common
+from framework.discourse.common import DiscourseException, request
+from framework.discourse.categories import file_category, wiki_category, project_category
+import framework.discourse.projects
 
 from website import settings
 
@@ -76,7 +76,6 @@ def _create_topic(node, should_save=True):
     :return int: the topic ID of the created topic
     """
     data = {}
-    project_node = _get_project_node(node)
 
     if wiki_category is None:
         categories.load_basic_categories()
@@ -86,7 +85,6 @@ def _create_topic(node, should_save=True):
     # privacy is completely relegated to the group with the corresponding project_guid
     data['archetype'] = 'regular'
 
-    get_or_create_group_id(project_node, should_save = node != project_node)  # ensure existance of the group
     data['title'] = node.label
     data['raw'] = _make_topic_content(node)
     data['parent_guids[]'] = _get_parent_guids(node)
@@ -138,8 +136,12 @@ def sync_topic(node, should_save=True):
     :param Node/StoredFileNode/NodeWikiPage node: the project/file/wiki whose topic should be synchronized
     :param bool should_save: Whether the function should call node.save()
     """
-    if common.in_migration:
+    if framework.discourse.common.in_migration:
         return
+
+    project_node = _get_project_node(node)
+    if not project_node.discourse_project_created:
+        framework.discourse.projects._sync_project(project_node)
 
     if node.discourse_topic_id is None:
         _create_topic(node, should_save)
@@ -181,13 +183,21 @@ def get_topic(node):
     """
     return request('get', '/t/' + str(node.discourse_topic_id) + '.json')
 
+def _parent_is_deleted(node):
+    parent_node = _get_project_node(node)
+    while parent_node:
+        if parent_node.discourse_project_deleted:
+            return True
+        parent_node = parent_node.parent_node
+    return False
+
 def delete_topic(node, should_save=True):
     """Delete the topic of the project/file/wiki
 
     :param Node/StoredFileNode/NodeWikiPage node: the project/file/wiki whose topic should be deleted
     :param bool should_save: Whether the function should call node.save()
     """
-    if node.discourse_topic_id is None or node.discourse_topic_deleted:
+    if node.discourse_topic_id is None or node.discourse_topic_deleted or _parent_is_deleted(node):
         return
 
     request('delete', '/t/' + str(node.discourse_topic_id) + '.json')
@@ -202,7 +212,7 @@ def undelete_topic(node, should_save=True):
     :param Node/StoredFileNode/NodeWikiPage node: the project/file/wiki whose topic should be undeleted
     :param bool should_save: Whether the function should call node.save()
     """
-    if node.discourse_topic_id is None or not node.discourse_topic_deleted:
+    if node.discourse_topic_id is None or not node.discourse_topic_deleted or _parent_is_deleted(node):
         return
 
     request('put', '/t/' + str(node.discourse_topic_id) + '/recover')
