@@ -1771,12 +1771,24 @@ var FGItemButtons = {
                 if (item.data.permissions && item.data.permissions.edit) {
                     if (item.data.provider === 'osfstorage') {
                         if (!item.data.extra.checkout){
-                            rowButtons.push(
-                                m.component(FGButton, {
-                                    onclick: function(event) { _removeEvent.call(tb, event, [item]); },
-                                    icon: 'fa fa-trash',
-                                    className : 'text-danger'
-                                }, 'Delete'));
+                            if (window.contextVars.node.isPreprint && ('/' + window.contextVars.node.preprintFileId) === item.data.path){
+                                // Block delete for preprint files
+                                rowButtons.push(
+                                    m.component(FGButton, {
+                                        icon: 'fa fa-trash',
+                                        tooltip: 'This file is a Preprint. You cannot delete Preprints, but you can upload a new version.',                                        
+                                        className: 'tb-disabled'
+                                    }, 'Delete'));
+                                // Tooltips don't seem to auto reapply, this forces them.
+                                reapplyTooltips();
+                            }else{
+                                rowButtons.push(
+                                    m.component(FGButton, {
+                                        onclick: function(event) { _removeEvent.call(tb, event, [item]); },
+                                        icon: 'fa fa-trash',
+                                        className: 'text-danger'
+                                    }, 'Delete'));
+                            }
                             rowButtons.push(
                                 m.component(FGButton, {
                                     onclick: function(event) {
@@ -2354,6 +2366,24 @@ function hasInvalidChildren(folder, item){
     return false;
 }
 
+function getAllChildren(item){
+    var c;
+    var current;
+    var children = [];
+    var remaining = [];
+    for(c in item.children){
+        remaining.push(item.children[c]);
+    }
+    while(remaining.length > 0){
+        current = remaining.pop();
+        children.push(current)
+        for(c in current.children){
+            remaining.push(current.children[c]);
+        }
+    }
+    return children;
+}
+
 function isInvalidDropFolder(folder) {
     if (
         // cannot drop on root line
@@ -2448,9 +2478,15 @@ function getCopyMode(folder, items) {
         if(isInvalidDropItem(folder, item, cannotBeFolder, mustBeIntra)){
             return 'forbidden';
         }
-        // prevent dragging parent into child
-        if(hasInvalidChildren(folder, item)){
-            return 'forbidden';
+
+        var children = getAllChildren(item);
+        for (var c = 0; c < children.length; c++) {
+            if (children[c].inProgress || children[c].id === folder.id) {
+                return 'forbidden'
+            }
+            if (children[c].path === preprintPath){
+                canMove = false;
+            }
         }
 
         if(canMove){
@@ -2726,7 +2762,7 @@ Fangorn.DefaultOptions = tbOptions;
 module.exports = {
     Fangorn : Fangorn,
     allowedToMove : allowedToMove,
-    hasInvalidChildren : hasInvalidChildren,    
+    getAllChildren : getAllChildren,
     isInvalidDropFolder : isInvalidDropFolder,
     isInvalidDropItem : isInvalidDropItem,
     isInvalidFigshareDrop : isInvalidFigshareDrop,

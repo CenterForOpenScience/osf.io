@@ -82,6 +82,15 @@ describe('fangorn', () => {
                 item.children = [folder];
                 assert.equal(Fangorn.getCopyMode(folder, [item]), 'forbidden');
             });
+
+            it('invalid drop if child in progress', () => {
+                folder = getItem('folder', 2);
+                item = getItem('folder', 3);
+                item.inProgress = true;
+                folder.children = [item];
+                assert.equal(Fangorn.getCopyMode(folder, [item]), 'forbidden');
+            });
+
         });
 
         describe('isInvalidDropFolder', () => {
@@ -299,27 +308,26 @@ describe('fangorn', () => {
             });            
         });
 
-        describe('hasInvalidChildren', () => {
-            it('valid drop if no children', () => {
+        describe('getAllChildren', () => {
+            it('gets no children', () => {
                 folder = getItem('folder', 2);
-                item = getItem('file', 3);
-                assert.equal(Fangorn.hasInvalidChildren(folder, item), false);
+                assert.equal(Fangorn.getAllChildren(item).length, 0);
             });
 
-            it('invalid drop if item is parent', () => {
+            it('gets 1 child', () => {
                 folder = getItem('folder', 2);
                 item = getItem('file', 3);
                 item.children = [folder];
-                assert.equal(Fangorn.hasInvalidChildren(folder, item), true);
+                assert.equal(Fangorn.getAllChildren(item).length, 1);
             });
 
-            it('invalid drop if child inProgess', () => {
+            it('gets nested children', () => {
                 folder = getItem('folder', 2);
-                item = getItem('file', 3);
-                var item2 = getItem('file', 4);
-                item2.inProgress = true;
-                item.children = [item2];
-                assert.equal(Fangorn.hasInvalidChildren(folder, item), true);
+                var folder2 = getItem('folder', 3);
+                item = getItem('file', 4);
+                folder2.children = [item];
+                folder.children = [folder2];
+                assert.equal(Fangorn.getAllChildren(folder).length, 2);
             });              
         });
     });
