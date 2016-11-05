@@ -15,6 +15,7 @@ def serialize_user(user):
         'registered': user.date_registered,
         'disabled': user.date_disabled if user.is_disabled else False,
         'two_factor': user.has_addon('twofactor'),
+        'osf_link': user.absolute_url,
         'system_tags': user.system_tags,
     }
 

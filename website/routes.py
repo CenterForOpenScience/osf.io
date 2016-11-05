@@ -2,12 +2,10 @@
 import os
 import httplib as http
 
-from flask import request, Response
+from flask import request
 from flask import send_from_directory
 
-import requests
 from geoip import geolite2
-from furl import furl
 
 from framework import status
 from framework import sentry
@@ -57,7 +55,6 @@ def get_globals():
     user = _get_current_user()
 
     user_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in user.affiliated_institutions] if user else []
-    all_institutions = [{'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners} for inst in Institution.find().sort('name')]
     location = geolite2.lookup(request.remote_addr) if request.remote_addr else None
     if request.host_url != settings.DOMAIN:
         try:
@@ -80,7 +77,6 @@ def get_globals():
         'user_api_url': user.api_url if user else '',
         'user_entry_point': metrics.get_entry_point(user) if user else '',
         'user_institutions': user_institutions if user else None,
-        'all_institutions': all_institutions,
         'display_name': get_display_name(user.fullname) if user else '',
         'anon': {
             'continent': getattr(location, 'continent', None),
@@ -174,25 +170,26 @@ def robots():
         mimetype='text/plain'
     )
 
-
-def external_ember_app(_=None):
+def ember_app(path=None):
     """Serve the contents of the ember application"""
-    external_app_url = None
-
+    ember_app_folder = None
+    fp = path or 'index.html'
     for k in settings.EXTERNAL_EMBER_APPS.keys():
-        if request.path.startswith(k):
-            external_app_url = settings.EXTERNAL_EMBER_APPS[k]
+        if request.path.strip('/').startswith(k):
+            ember_app_folder = os.path.abspath(os.path.join(os.getcwd(), settings.EXTERNAL_EMBER_APPS[k]['path']))
             break
 
-    if not external_app_url:
+    if not ember_app_folder:
         raise HTTPError(http.NOT_FOUND)
 
-    url = furl(external_app_url).add(path=request.path)
-    resp = requests.get(url, headers={'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'})
-    excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
-    headers = [(name, value) for (name, value) in resp.raw.headers.items() if name.lower() not in excluded_headers]
-    return Response(resp.content, resp.status_code, headers)
+    if not os.path.abspath(os.path.join(ember_app_folder, fp)).startswith(ember_app_folder):
+        # Prevent accessing files outside of the ember build dir
+        raise HTTPError(http.NOT_FOUND)
 
+    if not os.path.isfile(os.path.join(ember_app_folder, fp)):
+        fp = 'index.html'
+
+    return send_from_directory(ember_app_folder, fp)
 
 def goodbye():
     # Redirect to dashboard if logged in
@@ -260,11 +257,11 @@ def make_url_map(app):
         rules = []
         for prefix in settings.EXTERNAL_EMBER_APPS.keys():
             rules += [
-                prefix,
-                '{}<path:_>'.format(prefix),
+                '/{}/'.format(prefix),
+                '/{}/<path:path>'.format(prefix),
             ]
         process_rules(app, [
-            Rule(rules, 'get', external_ember_app, json_renderer),
+            Rule(rules, 'get', ember_app, json_renderer),
         ])
 
     ### Base ###

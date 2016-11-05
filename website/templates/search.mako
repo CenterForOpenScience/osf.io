@@ -205,7 +205,7 @@
     <script type="text/html" id="institution">
         <div class="row">
             <div class="col-md-2">
-                <img class="img-circle" height="75px" width="75px" data-bind="attr: {src: logo_path}">
+                <img height="75px" width="75px" data-bind="attr: {src: logo_path}">
             </div>
             <div class="col-md-10">
                 <h4><a data-bind="attr: {href: url}, text: name"></a></h4>
