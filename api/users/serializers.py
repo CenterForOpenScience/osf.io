@@ -9,7 +9,7 @@ from api.base.serializers import JSONAPIRelationshipSerializer, HideIfDisabled
 from website.models import User
 
 from api.base.serializers import (
-    JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField, ListLinksField
+    JSONAPISerializer, LinksField, RelationshipField, DevOnly, IDField, TypeField, ListDictField
 )
 from api.base.utils import absolute_reverse, get_user_auth
 
@@ -60,27 +60,26 @@ class UserSerializer(JSONAPISerializer):
     suffix = HideIfDisabled(ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations'))
     date_registered = HideIfDisabled(ser.DateTimeField(read_only=True))
     active = HideIfDisabled(ser.BooleanField(read_only=True, source='is_active'))
-
     timezone = HideIfDisabled(ser.CharField(required=False, help_text="User's timezone, e.g. 'Etc/UTC"))
     locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))
-
-    social = HideIfDisabled(ListLinksField(
-        {
-            'personal_website': 'personal_website_url',
-            'github': 'github_url',
-            'scholar': 'scholar_url',
-            'twitter': 'twitter_url',
-            'linkedin': 'linkedin_url',
-            'impactstory': 'impactstory_url',
-            'orcid': 'orcid_url',
-            'researcherid': 'researcherid_url',
-            'researchgate': 'researchgate_url',
-            'academia_institution': 'academia_institution_url',
-            'academia_profile_id': 'academia_profile_id_url',
-            'baiduscholar': 'baiduscholar_url',
-            'ssrn': 'ssrn_url',
-        }
-    ))
+    social = ListDictField(required=False)
+    # social = HideIfDisabled(ListLinksField(
+    #     {
+    #         'personal_website': 'personal_website_url',
+    #         'github': 'github_url',
+    #         'scholar': 'scholar_url',
+    #         'twitter': 'twitter_url',
+    #         'linkedin': 'linkedin_url',
+    #         'impactstory': 'impactstory_url',
+    #         'orcid': 'orcid_url',
+    #         'researcherid': 'researcherid_url',
+    #         'researchgate': 'researchgate_url',
+    #         'academia_institution': 'academia_institution_url',
+    #         'academia_profile_id': 'academia_profile_id_url',
+    #         'baiduscholar': 'baiduscholar_url',
+    #         'ssrn': 'ssrn_url',
+    #     }
+    # ))
 
     links = HideIfDisabled(LinksField(
         {

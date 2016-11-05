@@ -5,6 +5,7 @@ import furl
 from django.core.urlresolvers import resolve, reverse, NoReverseMatch
 from django.core.exceptions import ImproperlyConfigured
 from django.http.request import QueryDict
+from django.utils import six
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 from rest_framework.fields import SkipField
@@ -793,6 +794,27 @@ class LinksField(ser.Field):
         return ret
 
 
+class ListDictField(ser.DictField):
+
+    def __init__(self, **kwargs):
+        super(ListDictField, self).__init__(**kwargs)
+
+    def to_representation(self, value):
+        """
+        List of object instances -> List of dicts of primitive datatypes.
+        """
+        res = {}
+        for key, val in value.items():
+            if isinstance(self.child.to_representation(val), list):
+                res[six.text_type(key)] = self.child.to_representation(val)
+            else:
+                if self.child.to_representation(val):
+                    res[six.text_type(key)] = [self.child.to_representation(val)]
+                else:
+                    res[six.text_type(key)] = []
+        return res
+
+
 class ListLinksField(ser.Field):
     """Links field that resolves to a links object. Used in conjunction with `List of Link`.
     If the object to be serialized implements `get_absolute_url`, then the return value
@@ -1095,7 +1117,9 @@ class JSONAPISerializer(ser.Serializer):
         data = {
             'id': '',
             'type': type_,
-            'attributes': {},
+            'attributes': {
+                'social':{}
+            },
             'relationships': {},
             'embeds': {},
             'links': {},
