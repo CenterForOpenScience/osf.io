@@ -118,37 +118,10 @@ class UserSerializer(JSONAPISerializer):
         for attr, value in validated_data.items():
             if 'social' == attr:
                 for key, val in value.items():
-                    if key == 'github':
-                        update_social_id(instance, val, key, 'http://github.com/')
-                    elif key == 'scholar':
-                        update_social_id(instance, val, key, 'http://scholar.google.com/citations?user=')
-                    elif key == 'personal_website':
-                        if not isinstance(val, list):
-                            instance.social['profileWebsites'] = ast.literal_eval(val)
-                        else:
-                            instance.social['profileWebsites'] = val
-                    elif key == 'twitter':
-                        update_social_id(instance, val, key, 'http://twitter.com/')
-                    elif key == 'linkedIn':
-                        update_social_id(instance, val, key, 'https://www.linkedin.com/')
-                    elif key == 'orcid':
-                        update_social_id(instance, val, key, 'http://orcid.org/')
-                    elif key == 'impactStory':
-                        update_social_id(instance, val, key, 'https://impactstory.org/')
-                    elif key == 'researcherId':
-                        update_social_id(instance, val, key, 'http://researcherid.com/rid/')
-                    elif key == 'researchGate':
-                        update_social_id(instance, val, key, 'https://researchgate.net/profile/')
-                    elif key == 'academiaInstitution':
-                        update_social_id(instance, val, key, 'https://')
-                    elif key == 'academiaProfileID':
-                        update_social_id(instance, val, key, '.academia.edu/')
-                    elif key == 'baiduScholar':
-                        update_social_id(instance, val, key, 'http://xueshu.baidu.com/scholarID/')
-                    elif key == 'ssrn':
-                        update_social_id(instance, val, key, 'http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id=')
+                    if key == 'profileWebsites':
+                        instance.social[key] = val
                     else:
-                        raise KeyError('Invalid social key')
+                        instance.social[key] = val[0]
             else:
                 setattr(instance, attr, value)
         try:

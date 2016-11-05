@@ -1060,7 +1060,7 @@ class JSONAPISerializer(ser.Serializer):
             'id': '',
             'type': type_,
             'attributes': {
-                'social':{}
+                'social': {},
             },
             'relationships': {},
             'embeds': {},

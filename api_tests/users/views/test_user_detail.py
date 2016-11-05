@@ -35,7 +35,7 @@ class TestUserDetail(ApiTestCase):
         res = self.app.get(url)
         user_json = res.json['data']
         assert_equal(user_json['attributes']['full_name'], self.user_one.fullname)
-        assert_equal(user_json['social']['twitter'], ['http://twitter.com/{}'.format(self.user_one.social['twitter'])])
+        assert_in(self.user_one.social['twitter'], user_json['attributes']['social']['twitter'])
 
     def test_get_incorrect_pk_user_logged_in(self):
         url = "/{}users/{}/".format(API_BASE, self.user_two._id)
@@ -54,16 +54,8 @@ class TestUserDetail(ApiTestCase):
         url = "/{}users/{}/".format(API_BASE, self.user_two._id)
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
-        user_json = res.json['data']['social']
         assert_equal(res.json['data']['attributes']['full_name'], self.user_two.fullname)
-        assert_equal(user_json['github'], [])
-        assert_equal(user_json['scholar'], [])
-        assert_equal(user_json['personal_website'], [])
-        assert_equal(user_json['twitter'], [])
-        assert_equal(user_json['linkedin'], [])
-        assert_equal(user_json['impactstory'], [])
-        assert_equal(user_json['orcid'], [])
-        assert_equal(user_json['researcherid'], [])
+        assert_equal(res.json['data']['attributes']['social'], {})
 
     def test_get_incorrect_pk_user_not_logged_in(self):
         url = "/{}users/{}/".format(API_BASE, self.user_two._id)
@@ -300,17 +292,17 @@ class TestUserUpdate(ApiTestCase):
                     'middle_names': 'Malik el-Shabazz',
                     'family_name': 'X',
                     'suffix': 'Sr.',
+                    'social': {
+                        'github': ['http://github.com/even_newer_github/'],
+                        'scholar': ['http://scholar.google.com/citations?user=newScholar'],
+                        'profileWebsites': ['http://www.newpersonalwebsite.com'],
+                        'twitter': ['http://twitter.com/newtwitter'],
+                        'linkedIn': ['https://www.linkedin.com/newLinkedIn'],
+                        'impactStory': ['https://impactstory.org/newImpactStory'],
+                        'orcid': ['http://orcid.org/newOrcid'],
+                        'researcherId': ['http://researcherid.com/rid/newResearcherId'],
+                    }
                 },
-                'social': {
-                    'github': ['http://github.com/even_newer_github/'],
-                    'scholar': ['http://scholar.google.com/citations?user=newScholar'],
-                    'personal_website': ['http://www.newpersonalwebsite.com'],
-                    'twitter': ['http://twitter.com/newtwitter'],
-                    'linkedIn': ['https://www.linkedin.com/newLinkedIn'],
-                    'impactStory': ['https://impactstory.org/newImpactStory'],
-                    'orcid': ['http://orcid.org/newOrcid'],
-                    'researcherId': ['http://researcherid.com/rid/newResearcherId'],
-                }
             }
         }
 
@@ -472,26 +464,28 @@ class TestUserUpdate(ApiTestCase):
                 'type': 'users',
                 'attributes': {
                     'full_name': 'new_fullname',
-                    'suffix': 'The Millionth'
+                    'suffix': 'The Millionth',
+                    'social': {
+                        'github': ['even_newer_github'],
+                    }
                 },
-                'social': {
-                    'github': ['http://github.com/even_newer_github/'],
-                }
+
         }}, auth=self.user_one.auth)
         self.user_one.reload()
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['attributes']['full_name'], 'new_fullname')
         assert_equal(res.json['data']['attributes']['suffix'], 'The Millionth')
-        assert_in('even_newer_github', res.json['data']['social']['github'][0])
+        social = res.json['data']['attributes']['social']
+        assert_in('even_newer_github', social['github'][0])
         assert_equal(res.json['data']['attributes']['given_name'], self.user_one.given_name)
         assert_equal(res.json['data']['attributes']['middle_names'], self.user_one.middle_names)
         assert_equal(res.json['data']['attributes']['family_name'], self.user_one.family_name)
-        assert_equal(self.user_one.social['profileWebsites'], res.json['data']['social']['personal_website'])
-        assert_in(self.user_one.social['twitter'], res.json['data']['social']['twitter'][0])
-        assert_in(self.user_one.social['linkedIn'], res.json['data']['social']['linkedin'][0])
-        assert_in(self.user_one.social['impactStory'], res.json['data']['social']['impactstory'][0])
-        assert_in(self.user_one.social['orcid'], res.json['data']['social']['orcid'][0])
-        assert_in(self.user_one.social['researcherId'], res.json['data']['social']['researcherid'][0])
+        assert_equal(self.user_one.social['profileWebsites'], social['profileWebsites'])
+        assert_in(self.user_one.social['twitter'], social['twitter'][0])
+        assert_in(self.user_one.social['linkedIn'], social['linkedIn'][0])
+        assert_in(self.user_one.social['impactStory'], social['impactStory'][0])
+        assert_in(self.user_one.social['orcid'], social['orcid'][0])
+        assert_in(self.user_one.social['researcherId'], social['researcherId'][0])
         assert_equal(self.user_one.fullname, 'new_fullname')
         assert_equal(self.user_one.suffix, 'The Millionth')
         assert_equal(self.user_one.social['github'], 'even_newer_github')
@@ -505,26 +499,27 @@ class TestUserUpdate(ApiTestCase):
                 'attributes': {
                     'full_name': 'new_fullname',
                     'suffix': 'The Millionth',
+                    'social': {
+                        'github': ['even_newer_github'],
+                    }
                 },
-                'social': {
-                    'github': ['http://github.com/even_newer_github/'],
-                }
             }
         }, auth=self.user_one.auth)
         self.user_one.reload()
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['attributes']['full_name'], 'new_fullname')
         assert_equal(res.json['data']['attributes']['suffix'], 'The Millionth')
-        assert_in(self.user_one.social['github'], res.json['data']['social']['github'][0])
+        social = res.json['data']['attributes']['social']
+        assert_in(self.user_one.social['github'], social['github'][0])
         assert_equal(res.json['data']['attributes']['given_name'], self.user_one.given_name)
         assert_equal(res.json['data']['attributes']['middle_names'], self.user_one.middle_names)
         assert_equal(res.json['data']['attributes']['family_name'], self.user_one.family_name)
-        assert_equal(self.user_one.social['profileWebsites'], res.json['data']['social']['personal_website'])
-        assert_in(self.user_one.social['twitter'], res.json['data']['social']['twitter'][0])
-        assert_in(self.user_one.social['linkedIn'], res.json['data']['social']['linkedin'][0])
-        assert_in(self.user_one.social['impactStory'], res.json['data']['social']['impactstory'][0])
-        assert_in(self.user_one.social['orcid'], res.json['data']['social']['orcid'][0])
-        assert_in(self.user_one.social['researcherId'], res.json['data']['social']['researcherid'][0])
+        assert_equal(self.user_one.social['profileWebsites'], social['profileWebsites'])
+        assert_in(self.user_one.social['twitter'], social['twitter'][0])
+        assert_in(self.user_one.social['linkedIn'], social['linkedIn'][0])
+        assert_in(self.user_one.social['impactStory'], social['impactStory'][0])
+        assert_in(self.user_one.social['orcid'], social['orcid'][0])
+        assert_in(self.user_one.social['researcherId'], social['researcherId'][0])
         assert_equal(self.user_one.fullname, 'new_fullname')
         assert_equal(self.user_one.suffix, 'The Millionth')
         assert_equal(self.user_one.social['github'], self.user_one.social['github'])
@@ -537,18 +532,18 @@ class TestUserUpdate(ApiTestCase):
                 'type': 'users',
                 'attributes': {
                     'full_name': 'new_fullname',
-                    'suffix': 'The Millionth'
+                    'suffix': 'The Millionth',
+                    'social': {
+                        'github': ['even_newer_github'],
+                    }
                 },
-                'social': {
-                    'github': ['http://github.com/even_newer_github/'],
-                }
             }
         }, auth=self.user_one.auth)
         self.user_one.reload()
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['attributes']['full_name'], 'new_fullname')
         assert_equal(res.json['data']['attributes']['suffix'], 'The Millionth')
-        assert_in('even_newer_github', res.json['data']['social']['github'][0])
+        assert_in('even_newer_github', res.json['data']['attributes']['social']['github'][0])
         assert_equal(res.json['data']['attributes']['given_name'], self.user_one.given_name)
         assert_equal(res.json['data']['attributes']['middle_names'], self.user_one.middle_names)
         assert_equal(res.json['data']['attributes']['family_name'], self.user_one.family_name)
@@ -565,26 +560,27 @@ class TestUserUpdate(ApiTestCase):
         assert_equal(res.json['data']['attributes']['middle_names'], self.new_user_one_data['data']['attributes']['middle_names'])
         assert_equal(res.json['data']['attributes']['family_name'], self.new_user_one_data['data']['attributes']['family_name'])
         assert_equal(res.json['data']['attributes']['suffix'], self.new_user_one_data['data']['attributes']['suffix'])
-        assert_in('even_newer_github', res.json['data']['social']['github'][0])
-        assert_in('http://www.newpersonalwebsite.com', res.json['data']['social']['personal_website'][0])
-        assert_in('newtwitter', res.json['data']['social']['twitter'][0])
-        assert_in('newLinkedIn', res.json['data']['social']['linkedin'][0])
-        assert_in('newImpactStory', res.json['data']['social']['impactstory'][0])
-        assert_in('newOrcid', res.json['data']['social']['orcid'][0])
-        assert_in('newResearcherId', res.json['data']['social']['researcherid'][0])
+        social = res.json['data']['attributes']['social']
+        assert_in('even_newer_github', social['github'][0])
+        assert_in('http://www.newpersonalwebsite.com', social['profileWebsites'][0])
+        assert_in('newtwitter', social['twitter'][0])
+        assert_in('newLinkedIn', social['linkedIn'][0])
+        assert_in('newImpactStory', social['impactStory'][0])
+        assert_in('newOrcid', social['orcid'][0])
+        assert_in('newResearcherId', social['researcherId'][0])
         self.user_one.reload()
         assert_equal(self.user_one.fullname, self.new_user_one_data['data']['attributes']['full_name'])
         assert_equal(self.user_one.given_name, self.new_user_one_data['data']['attributes']['given_name'])
         assert_equal(self.user_one.middle_names, self.new_user_one_data['data']['attributes']['middle_names'])
         assert_equal(self.user_one.family_name, self.new_user_one_data['data']['attributes']['family_name'])
         assert_equal(self.user_one.suffix, self.new_user_one_data['data']['attributes']['suffix'])
-        assert_in('even_newer_github', res.json['data']['social']['github'][0])
-        assert_in('http://www.newpersonalwebsite.com', res.json['data']['social']['personal_website'][0])
-        assert_in('newtwitter', res.json['data']['social']['twitter'][0])
-        assert_in('newLinkedIn', res.json['data']['social']['linkedin'][0])
-        assert_in('newImpactStory', res.json['data']['social']['impactstory'][0])
-        assert_in('newOrcid', res.json['data']['social']['orcid'][0])
-        assert_in('newResearcherId', res.json['data']['social']['researcherid'][0])
+        assert_in('even_newer_github', social['github'][0])
+        assert_in('http://www.newpersonalwebsite.com', social['profileWebsites'][0])
+        assert_in('newtwitter', social['twitter'][0])
+        assert_in('newLinkedIn', social['linkedIn'][0])
+        assert_in('newImpactStory', social['impactStory'][0])
+        assert_in('newOrcid', social['orcid'][0])
+        assert_in('newResearcherId', social['researcherId'][0])
 
     def test_put_user_logged_out(self):
         res = self.app.put_json_api(self.user_one_url, self.new_user_one_data, expect_errors=True)
