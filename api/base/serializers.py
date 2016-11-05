@@ -750,7 +750,9 @@ class LinksField(ser.Field):
     """Links field that resolves to a links object. Used in conjunction with `Link`.
     If the object to be serialized implements `get_absolute_url`, then the return value
     of that method is used for the `self` link.
+
     Example: ::
+
         links = LinksField({
             'html': 'absolute_url',
             'children': {

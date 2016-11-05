@@ -1,5 +1,3 @@
-import ast
-import re
 from rest_framework import serializers as ser
 
 from modularodm.exceptions import ValidationValueError
@@ -14,32 +12,6 @@ from api.base.serializers import (
 from api.base.utils import absolute_reverse, get_user_auth
 
 from framework.auth.views import send_confirm_email
-
-
-def account_url_list(obj, key, social_base_url):
-    try:
-        social = obj.social[key]
-    except KeyError:
-        social = None
-    account_list = []
-    if social:
-        if isinstance(social, list):
-            for account in social:
-                account_list.append(social_base_url.format(account))
-            return account_list
-        else:
-            return [social_base_url.format(social)]
-    return account_list
-
-
-def update_social_id(instance, val, key, social_strip_url):
-    if not isinstance(val, list):
-        social_url = ast.literal_eval(val)
-    else:
-        social_url = val
-    # TODO: when social data remodel to be a list change this update function
-    social_id = re.sub(social_strip_url, '', social_url[0][:-1] if social_url[0].endswith('/') else social_url[0])
-    instance.social[key] = social_id
 
 
 class UserSerializer(JSONAPISerializer):
