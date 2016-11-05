@@ -815,64 +815,6 @@ class ListDictField(ser.DictField):
         return res
 
 
-class ListLinksField(ser.Field):
-    """Links field that resolves to a links object. Used in conjunction with `List of Link`.
-    If the object to be serialized implements `get_absolute_url`, then the return value
-    of that method is used for the `self` link.
-
-    Example: ::
-
-        links = LinksField({
-            'html': 'absolute_url',
-            'children': {
-                'related': list of Link('nodes:node-children', node_id='<pk>'),
-                'count': 'get_node_count'
-            },
-            'contributors': {
-                'related': list of Link('nodes:node-contributors', node_id='<pk>'),
-                'count': 'get_contrib_count'
-            },
-            'registrations': {
-                'related': list of Link('nodes:node-registrations', node_id='<pk>'),
-                'count': 'get_registration_count'
-            },
-        })
-    """
-
-    def __init__(self, links, *args, **kwargs):
-        ser.Field.__init__(self, read_only=True, *args, **kwargs)
-        self.links = links
-
-    def get_attribute(self, obj):
-        # We pass the object instance onto `to_representation`,
-        # not just the field attribute.
-        return obj
-
-    def to_representation(self, obj):
-        ret = {}
-        for name, value in self.links.iteritems():
-            if isinstance(value, list):
-                url_list = []
-                for val in value:
-                    try:
-                        url = _url_val(val, obj=obj, serializer=self.parent)
-                    except SkipField:
-                        continue
-                    else:
-                        url_list.append(url)
-                ret[name] = url_list
-            else:
-                try:
-                    url = _url_val(value, obj=obj, serializer=self.parent)
-                except SkipField:
-                    ret[name] = []
-                else:
-                    ret[name] = url
-        if hasattr(obj, 'get_absolute_url') and 'self' not in self.links:
-            ret['self'] = obj.get_absolute_url()
-        return ret
-
-
 _tpl_pattern = re.compile(r'\s*<\s*(\S*)\s*>\s*')
 
 

@@ -63,23 +63,6 @@ class UserSerializer(JSONAPISerializer):
     timezone = HideIfDisabled(ser.CharField(required=False, help_text="User's timezone, e.g. 'Etc/UTC"))
     locale = HideIfDisabled(ser.CharField(required=False, help_text="User's locale, e.g.  'en_US'"))
     social = ListDictField(required=False)
-    # social = HideIfDisabled(ListLinksField(
-    #     {
-    #         'personal_website': 'personal_website_url',
-    #         'github': 'github_url',
-    #         'scholar': 'scholar_url',
-    #         'twitter': 'twitter_url',
-    #         'linkedin': 'linkedin_url',
-    #         'impactstory': 'impactstory_url',
-    #         'orcid': 'orcid_url',
-    #         'researcherid': 'researcherid_url',
-    #         'researchgate': 'researchgate_url',
-    #         'academia_institution': 'academia_institution_url',
-    #         'academia_profile_id': 'academia_profile_id_url',
-    #         'baiduscholar': 'baiduscholar_url',
-    #         'ssrn': 'ssrn_url',
-    #     }
-    # ))
 
     links = HideIfDisabled(LinksField(
         {
@@ -105,45 +88,6 @@ class UserSerializer(JSONAPISerializer):
         self_view='users:user-institutions-relationship',
         self_view_kwargs={'user_id': '<pk>'},
     ))
-
-    def github_url(self, obj):
-        return account_url_list(obj, 'github', 'http://github.com/{}/')
-
-    def scholar_url(self, obj):
-        return account_url_list(obj, 'scholar', 'http://scholar.google.com/citations?user={}')
-
-    def personal_website_url(self, obj):
-        return account_url_list(obj, 'profileWebsites', '{}')
-
-    def twitter_url(sel, obj):
-        return account_url_list(obj, 'twitter', 'http://twitter.com/{}')
-
-    def linkedin_url(self, obj):
-        return account_url_list(obj, 'linkedIn', 'https://www.linkedin.com/{}')
-
-    def orcid_url(self, obj):
-        return account_url_list(obj, 'orcid', 'http://orcid.org/{}')
-
-    def impactstory_url(self, obj):
-        return account_url_list(obj, 'impactStory', 'https://impactstory.org/{}')
-
-    def researcherid_url(self, obj):
-        return account_url_list(obj, 'researcherId', 'http://researcherid.com/rid/{}')
-
-    def researchgate_url(self, obj):
-        return account_url_list(obj, 'researchGate', 'https://researchgate.net/profile/{}')
-
-    def academia_institution_url(self, obj):
-        return account_url_list(obj, 'academiaInstitution', 'https://{}')
-
-    def academia_profile_id_url(self, obj):
-        return account_url_list(obj, 'academiaProfileID', '.academia.edu/{}')
-
-    def baiduscholar_url(self, obj):
-        return account_url_list(obj, 'baiduScholar', 'http://xueshu.baidu.com/scholarID/{}')
-
-    def ssrn_url(self, obj):
-        return account_url_list(obj, 'ssrn', 'http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id={}')
 
     class Meta:
         type_ = 'users'
