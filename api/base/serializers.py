@@ -803,7 +803,7 @@ class ListDictField(ser.DictField):
 
     def to_representation(self, value):
         """
-        List of object instances -> List of dicts of primitive datatypes.
+        Ensure the value of each key in the Dict to be a list
         """
         res = {}
         for key, val in value.items():
