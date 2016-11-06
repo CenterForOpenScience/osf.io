@@ -1726,6 +1726,7 @@ var FGItemButtons = {
         var item = args.item;
         var rowButtons = [];
         var mode = args.mode;
+        var preprintPath = getPreprintPath(window.contextVars.node.isPreprint, window.contextVars.node.preprintFileId);
         if (tb.options.placement !== 'fileview') {
             if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions && item.data.permissions.edit) {
                 rowButtons.push(
@@ -1742,7 +1743,6 @@ var FGItemButtons = {
                         className: 'text-success'
                     }, 'Create Folder'));
                 if (item.data.path) {
-                    var preprintPath = getPreprintPath(window.contextVars.node.isPreprint, window.contextVars.node.preprintFileId);
                     if (preprintPath && folderContainsPreprint(item, preprintPath)) {
                         rowButtons.push(
                             m.component(FGButton, {
@@ -1782,7 +1782,6 @@ var FGItemButtons = {
                 if (item.data.permissions && item.data.permissions.edit) {
                     if (item.data.provider === 'osfstorage') {
                         if (!item.data.extra.checkout){
-                            var preprintPath = getPreprintPath(window.contextVars.node.isPreprint, window.contextVars.node.preprintFileId);
                             if (preprintPath && preprintPath === item.data.path) {
                                 // Block delete for preprint files
                                 rowButtons.push(
@@ -2118,7 +2117,6 @@ function filterRows(rows) {
     return newRows;
 }
 
-
 /**
  * Helper function that turns parent open values to true to respective redraws can open the folder
  * @this Treebeard.controller
@@ -2390,7 +2388,6 @@ function isInvalidDropFolder(folder) {
         !folder.data.permissions.edit ||
         // must have a provider
         !folder.data.provider ||
-        // what is status??
         folder.data.status ||
         // cannot add to dataverse
         folder.data.provider === 'dataverse'
@@ -2475,7 +2472,6 @@ function multiselectContainsPreprint(items, preprintPath) {
     return false;
 }
 
-// this is a function so it is easier to test with contextvars
 function getPreprintPath(isPreprint, preprintFileId) {
     if (isPreprint) {
         return '/' + preprintFileId;
@@ -2494,7 +2490,7 @@ function getCopyMode(folder, items) {
     var canMove = true;
     var mustBeIntra = (folder.data.provider === 'github');
     var cannotBeFolder = (folder.data.provider === 'figshare' || folder.data.provider === 'dataverse');
-    if (isInvalidDropFolder(folder) || isInvalidFigshareDrop(folder)){
+    if (isInvalidDropFolder(folder) || isInvalidFigshareDrop(folder)) {
         return 'forbidden';
     }
 
