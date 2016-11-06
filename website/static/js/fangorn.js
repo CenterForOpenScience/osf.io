@@ -1743,28 +1743,20 @@ var FGItemButtons = {
                     }, 'Create Folder'));
                 if (item.data.path) {
                     var preprintPath = getPreprintPath(window.contextVars.node.isPreprint, window.contextVars.node.preprintFileId);
-                    var showDelete = true;
+                    var showPreprintDelete = false;
                     if(preprintPath){
                         // TODO: This will only get children of open folders  -ajs
                         var children = getAllChildren(item);
                         if (preprintPath){
                             for (var c = 0; c < children.length; c++) {
                               if (children[c].data.path === preprintPath){
-                                    showDelete = false;
+                                    showPreprintDelete = true;
                                     break;
                                 }
                             }
                         }
                     }
-                    if (showDelete){
-                        console.log(item)
-                        rowButtons.push(
-                            m.component(FGButton, {
-                                onclick: function(event) {_removeEvent.call(tb, event, [item]); },
-                                icon: 'fa fa-trash',
-                                className : 'text-danger'
-                            }, 'Delete Folder'));                        
-                    }else{
+                    if (showPreprintDelete){
                         rowButtons.push(
                             m.component(FGButton, {
                                 icon: 'fa fa-trash',
@@ -1772,6 +1764,13 @@ var FGItemButtons = {
                                 className: 'tb-disabled'
                             }, 'Delete Folder'));
                         reapplyTooltips();
+                    } else {
+                        rowButtons.push(
+                            m.component(FGButton, {
+                                onclick: function(event) {_removeEvent.call(tb, event, [item]); },
+                                icon: 'fa fa-trash',
+                                className : 'text-danger'
+                            }, 'Delete Folder'));
                     }
                 }
             }
@@ -2015,6 +2014,8 @@ var FGToolbar = {
         if(items.length > 1 && ctrl.tb.multiselected()[0].data.provider !== 'github' && ctrl.tb.options.placement !== 'fileview' && !(ctrl.tb.multiselected()[0].data.provider === 'dataverse' && ctrl.tb.multiselected()[0].parent().data.version === 'latest-published') ) {
             // Special cased to not show 'delete multiple' for github or published dataverses
             var showDelete = false;
+            var preprintPath = getPreprintPath(window.contextVars.node.isPreprint, window.contextVars.node.preprintFileId);
+            var showPreprintDelete = false;
             var each, i, len;
             // Only show delete button if user has edit permissions on at least one selected file
             for (i = 0, len = items.length; i < len; i++) {
@@ -2024,17 +2025,36 @@ var FGToolbar = {
                     break;
                 }
             }
+            if (preprintPath){
+                for (i = 0, len = items.length; i < len; i++) {
+                each = items[i];
+                if(each.data.path === preprintPath){
+                    showPreprintDelete = true;
+                    break
+                }
+            }
+            }
             if(showDelete){
-                generalButtons.push(
-                    m.component(FGButton, {
-                        onclick: function(event) {
-                            var configOption = resolveconfigOption.call(ctrl.tb, item, 'removeEvent', [event, items]); // jshint ignore:line
-                            if(!configOption){ _removeEvent.call(ctrl.tb, null, items); }
-                        },
-                        icon: 'fa fa-trash',
-                        className : 'text-danger'
-                    }, 'Delete Multiple')
-                );
+                if(showPreprintDelete){
+                    generalButtons.push(
+                        m.component(FGButton, {
+                            icon: 'fa fa-trash',
+                            tooltip: 'One of these files is a Preprint. You cannot delete Preprints, but you can upload a new version.',                                        
+                            className: 'tb-disabled'
+                        }, 'Delete Multiple')
+                    );                    
+                }else{
+                    generalButtons.push(
+                        m.component(FGButton, {
+                            onclick: function(event) {
+                                var configOption = resolveconfigOption.call(ctrl.tb, item, 'removeEvent', [event, items]); // jshint ignore:line
+                                if(!configOption){ _removeEvent.call(ctrl.tb, null, items); }
+                            },
+                            icon: 'fa fa-trash',
+                            className : 'text-danger'
+                        }, 'Delete Multiple')
+                    );
+                }
             }
         }
         generalButtons.push(
@@ -2394,9 +2414,11 @@ function isInvalidDropFolder(folder) {
     if (
         // cannot drop on root line
         folder.parentID === 0 ||
+        folder.parentId === 0 ||
         // don't drop if changed
         folder.inProgress ||
         // cannot drop on files
+        folder.data.nodeType ||
         folder.data.kind !== 'folder' ||
         // must have permission
         !folder.data.permissions.edit ||
