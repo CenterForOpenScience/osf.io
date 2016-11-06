@@ -636,7 +636,7 @@ class TestMoveHook(HookTestCase):
         )
         assert_equal(res.status_code, 405)
 
-    def test_attempt_move_while_preprint(self):
+    def test_within_node_move_while_preprint(self):
 
         file = self.root_node.append_file('Self Control')
         self.node.preprint_file = file.stored_object
@@ -658,7 +658,7 @@ class TestMoveHook(HookTestCase):
             method='post_json',
             expect_errors=True,
         )
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 200)
 
 
 class TestFileTags(StorageTestCase):
