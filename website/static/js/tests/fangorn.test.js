@@ -13,7 +13,7 @@ var Raven = require('raven-js');
 var language = require('js/osfLanguage').projectSettings;
 
 describe('fangorn', () => {
-    describe('FangornMoveUnitTests', () => {
+    describe('FangornMoveAndDeleteUnitTests', () => {
         // folder setup
         var folder;
         var item;
@@ -260,35 +260,28 @@ describe('fangorn', () => {
             it('can move', () => {
                 folder = getItem('folder', 2);
                 item = getItem('file', 3);
-                assert.equal(Fangorn.allowedToMove(folder, item, false, null), true);
+                assert.equal(Fangorn.allowedToMove(folder, item, false), true);
             });
 
             it('cannot move if figshare', () => {
                 folder = getItem('folder', 2);
                 item = getItem('file', 3);
                 item.data.provider = 'figshare';
-                assert.equal(Fangorn.allowedToMove(folder, item, false, null), false);
-            });
-
-            it('cannot move if preprint primary file', () => {
-                folder = getItem('folder', 2);
-                item = getItem('file', 3);
-                item.data.path = 'abcde';
-                assert.equal(Fangorn.allowedToMove(folder, item, true, 'abcde'), false);
+                assert.equal(Fangorn.allowedToMove(folder, item, false), false);
             });
 
             it('cannot move if edit false', () => {
                 folder = getItem('folder', 2);
                 item = getItem('file', 3);
                 item.data.permissions.edit = false;
-                assert.equal(Fangorn.allowedToMove(folder, item, false, null), false);
+                assert.equal(Fangorn.allowedToMove(folder, item, false), false);
             });
 
             it('cannot move if mustBeIntra and not same provider', () => {
                 folder = getItem('folder', 2);
                 item = getItem('file', 3);
                 item.data.provider = 'google';
-                assert.equal(Fangorn.allowedToMove(folder, item, true, null), false);
+                assert.equal(Fangorn.allowedToMove(folder, item, true), false);
             });
 
             it('cannot move if mustBeIntra and not same node', () => {
@@ -296,7 +289,7 @@ describe('fangorn', () => {
                 item = getItem('file', 3);
                 folder.data.nodeId = 'abcde';
                 item.data.nodeId = 'ebcde';
-                assert.equal(Fangorn.allowedToMove(folder, item, true, null), false);
+                assert.equal(Fangorn.allowedToMove(folder, item, true), false);
             });
 
             it('can move if mustBeIntra and same provider, same node', () => {
@@ -304,7 +297,7 @@ describe('fangorn', () => {
                 item = getItem('file', 3);
                 folder.data.nodeId = 'abcde';
                 item.data.nodeId = 'abcde';
-                assert.equal(Fangorn.allowedToMove(folder, item, true, null), true);
+                assert.equal(Fangorn.allowedToMove(folder, item, true), true);
             });            
         });
 
@@ -330,5 +323,82 @@ describe('fangorn', () => {
                 assert.equal(Fangorn.getAllChildren(folder).length, 2);
             });              
         });
+
+        describe('folderContainsPreprint', () => {
+            it('no children returns false', () => {
+                folder = getItem('folder', 2);
+                assert.equal(Fangorn.folderContainsPreprint(folder, 'abcdefg'), false);
+            });
+
+            it('no preprint children returns false', () => {
+                folder = getItem('folder', 2);
+                item = getItem('file', 3);
+                item.data.path = 'gfedcba';
+                folder.children = [item];
+                assert.equal(Fangorn.folderContainsPreprint(folder, 'abcdefg'), false);
+            });
+
+            it('preprint child returns true', () => {
+                folder = getItem('folder', 2);
+                item = getItem('file', 3);
+                item.data.path = 'abcdefg';
+                folder.children = [item];
+                assert.equal(Fangorn.folderContainsPreprint(folder, 'abcdefg'), true);
+            });
+
+            it('nested preprint child returns true', () => {
+                folder = getItem('folder', 2);
+                var folder2 = getItem('folder', 3);
+                item = getItem('file', 4);
+                item.data.path = 'abcdefg';
+                folder2.children = [item];
+                folder.children = [folder2];
+                assert.equal(Fangorn.folderContainsPreprint(folder, 'abcdefg'), true);
+            });           
+        });
+
+        describe('multiselectContainsPreprint', () => {
+            it('contains preprint', () => {
+                folder = getItem('folder', 2);
+                folder.data.path = 'aaaaaaa';
+                item = getItem('file', 3);
+                item.data.path = 'abcdefg';
+                assert.equal(Fangorn.multiselectContainsPreprint([folder, item], 'abcdefg'), true);
+            });
+
+            it('contains no preprint', () => {
+                folder = getItem('folder', 2);
+                folder.data.path = 'aaaaaaa';
+                item = getItem('file', 3);
+                item.data.path = 'bbbbbbb';
+                assert.equal(Fangorn.multiselectContainsPreprint([folder, item], 'abcdefg'), false);
+            });                       
+        });
+
+        describe('showDeleteMultiple', () => {
+            it('no edit permissions returns false', () => {
+                folder = getItem('folder', 2);
+                folder.data.permissions.edit = false;
+                item = getItem('file', 3);
+                item.data.permissions.edit = false;
+                assert.equal(Fangorn.showDeleteMultiple([folder, item]), false);
+            });
+
+            it('one edit permissions returns true', () => {
+                folder = getItem('folder', 2);
+                folder.data.permissions.edit = false;
+                item = getItem('file', 3);
+                item.data.permissions.edit = true;
+                assert.equal(Fangorn.showDeleteMultiple([folder, item]), true);
+            });
+
+            it('two edit permissions returns true', () => {
+                folder = getItem('folder', 2);
+                folder.data.permissions.edit = true;
+                item = getItem('file', 3);
+                item.data.permissions.edit = true;
+                assert.equal(Fangorn.showDeleteMultiple([folder, item]), true);
+            });            
+        });        
     });
 });

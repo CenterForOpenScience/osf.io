@@ -1743,20 +1743,7 @@ var FGItemButtons = {
                     }, 'Create Folder'));
                 if (item.data.path) {
                     var preprintPath = getPreprintPath(window.contextVars.node.isPreprint, window.contextVars.node.preprintFileId);
-                    var showPreprintDelete = false;
-                    if(preprintPath){
-                        // TODO: This will only get children of open folders  -ajs
-                        var children = getAllChildren(item);
-                        if (preprintPath){
-                            for (var c = 0; c < children.length; c++) {
-                              if (children[c].data.path === preprintPath){
-                                    showPreprintDelete = true;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    if (showPreprintDelete){
+                    if (preprintPath && folderContainsPreprint(item, preprintPath)) {
                         rowButtons.push(
                             m.component(FGButton, {
                                 icon: 'fa fa-trash',
@@ -1795,7 +1782,8 @@ var FGItemButtons = {
                 if (item.data.permissions && item.data.permissions.edit) {
                     if (item.data.provider === 'osfstorage') {
                         if (!item.data.extra.checkout){
-                            if (window.contextVars.node.isPreprint && ('/' + window.contextVars.node.preprintFileId) === item.data.path){
+                            var preprintPath = getPreprintPath(window.contextVars.node.isPreprint, window.contextVars.node.preprintFileId);
+                            if (preprintPath && preprintPath === item.data.path) {
                                 // Block delete for preprint files
                                 rowButtons.push(
                                     m.component(FGButton, {
@@ -1805,7 +1793,7 @@ var FGItemButtons = {
                                     }, 'Delete'));
                                 // Tooltips don't seem to auto reapply, this forces them.
                                 reapplyTooltips();
-                            }else{
+                            } else {
                                 rowButtons.push(
                                     m.component(FGButton, {
                                         onclick: function(event) { _removeEvent.call(tb, event, [item]); },
@@ -2010,32 +1998,12 @@ var FGToolbar = {
                 }, 'Cancel Pending Uploads')
             );
         }
-        //multiple selection icons
+        // multiple selection icons
+        // Special cased to not show 'delete multiple' for github or published dataverses
         if(items.length > 1 && ctrl.tb.multiselected()[0].data.provider !== 'github' && ctrl.tb.options.placement !== 'fileview' && !(ctrl.tb.multiselected()[0].data.provider === 'dataverse' && ctrl.tb.multiselected()[0].parent().data.version === 'latest-published') ) {
-            // Special cased to not show 'delete multiple' for github or published dataverses
-            var showDelete = false;
-            var preprintPath = getPreprintPath(window.contextVars.node.isPreprint, window.contextVars.node.preprintFileId);
-            var showPreprintDelete = false;
-            var each, i, len;
-            // Only show delete button if user has edit permissions on at least one selected file
-            for (i = 0, len = items.length; i < len; i++) {
-                each = items[i];
-                if (each.data.permissions.edit && !each.data.isAddonRoot && !each.data.nodeType) {
-                    showDelete = true;
-                    break;
-                }
-            }
-            if (preprintPath){
-                for (i = 0, len = items.length; i < len; i++) {
-                each = items[i];
-                if(each.data.path === preprintPath){
-                    showPreprintDelete = true;
-                    break
-                }
-            }
-            }
-            if(showDelete){
-                if(showPreprintDelete){
+            if (showDeleteMultiple(items)) {
+                var preprintPath = getPreprintPath(window.contextVars.node.isPreprint, window.contextVars.node.preprintFileId);
+                if (preprintPath && multiselectContainsPreprint(items, preprintPath)) {
                     generalButtons.push(
                         m.component(FGButton, {
                             icon: 'fa fa-trash',
@@ -2043,7 +2011,7 @@ var FGToolbar = {
                             className: 'tb-disabled'
                         }, 'Delete Multiple')
                     );                    
-                }else{
+                } else {
                     generalButtons.push(
                         m.component(FGButton, {
                             onclick: function(event) {
@@ -2246,7 +2214,6 @@ function _fangornDrop(event, ui) {
 
     // Run drop logic here
         _dropLogic.call(tb, event, items, folder);
-
 }
 
 /**
@@ -2392,18 +2359,18 @@ function _dragLogic(event, items, ui) {
 
 }
 
-function getAllChildren(item){
+function getAllChildren(item) {
     var c;
     var current;
     var children = [];
     var remaining = [];
-    for(c in item.children){
+    for (c in item.children) {
         remaining.push(item.children[c]);
     }
-    while(remaining.length > 0){
+    while (remaining.length > 0) {
         current = remaining.pop();
         children.push(current);
-        for(c in current.children){
+        for (c in current.children) {
             remaining.push(current.children[c]);
         }
     }
@@ -2414,7 +2381,6 @@ function isInvalidDropFolder(folder) {
     if (
         // cannot drop on root line
         folder.parentID === 0 ||
-        folder.parentId === 0 ||
         // don't drop if changed
         folder.inProgress ||
         // cannot drop on files
@@ -2468,7 +2434,7 @@ function isInvalidDropItem(folder, item, cannotBeFolder, mustBeIntra) {
     return false;
 }
 
-function allowedToMove(folder, item, mustBeIntra, preprintPath) {
+function allowedToMove(folder, item, mustBeIntra) {
     return (
         item.data.permissions.edit &&
         //Can only COPY OUT of figshare
@@ -2477,9 +2443,41 @@ function allowedToMove(folder, item, mustBeIntra, preprintPath) {
     );
 }
 
+function folderContainsPreprint(item, preprintPath) {
+    // TODO This will only get children of open folders  -ajs
+    var children = getAllChildren(item);
+    for (var c = 0; c < children.length; c++) {
+        if (children[c].data.path === preprintPath) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function showDeleteMultiple(items) {
+    // Only show delete button if user has edit permissions on at least one selected file
+    for (var i = 0; i < items.length; i++) {
+        var each = items[i].data;
+        if (each.permissions.edit && !each.isAddonRoot && !each.nodeType) {
+            return true;
+        }
+    }    
+    return false;
+}
+
+function multiselectContainsPreprint(items, preprintPath) {
+    for (var i = 0; i < items.length; i++) {
+        var each = items[i];
+        if (each.data.path === preprintPath) {
+            return true;
+        }
+    }
+    return false;
+}
+
 // this is a function so it is easier to test with contextvars
-function getPreprintPath(isPreprint, preprintFileId){
-    if (isPreprint){
+function getPreprintPath(isPreprint, preprintFileId) {
+    if (isPreprint) {
         return '/' + preprintFileId;
     }
     return null;
@@ -2488,7 +2486,7 @@ function getPreprintPath(isPreprint, preprintFileId){
 function getCopyMode(folder, items) {
     var tb = this;
     // Prevents side effects from rare instance where folders not fully populated
-    if (typeof folder.data === 'undefined'){
+    if (typeof folder.data === 'undefined') {
         return 'forbidden';
     }
 
@@ -2500,9 +2498,9 @@ function getCopyMode(folder, items) {
         return 'forbidden';
     }
 
-    for(var i = 0; i < items.length; i++) {
+    for (var i = 0; i < items.length; i++) {
         var item = items[i];
-        if(isInvalidDropItem(folder, item, cannotBeFolder, mustBeIntra)){
+        if (isInvalidDropItem(folder, item, cannotBeFolder, mustBeIntra)) {
             return 'forbidden';
         }
 
@@ -2516,9 +2514,9 @@ function getCopyMode(folder, items) {
             }
         }
         
-        if(canMove){
+        if (canMove) {
             mustBeIntra = mustBeIntra || item.data.provider === 'github' || preprintPath === item.data.path;
-            canMove = allowedToMove(folder, item, mustBeIntra, preprintPath);
+            canMove = allowedToMove(folder, item, mustBeIntra);
         }
     }
 
@@ -2789,9 +2787,12 @@ Fangorn.DefaultOptions = tbOptions;
 module.exports = {
     Fangorn : Fangorn,
     allowedToMove : allowedToMove,
+    folderContainsPreprint : folderContainsPreprint,
     getAllChildren : getAllChildren,
     isInvalidDropFolder : isInvalidDropFolder,
     isInvalidDropItem : isInvalidDropItem,
     isInvalidFigshareDrop : isInvalidFigshareDrop,
-    getCopyMode : getCopyMode
+    getCopyMode : getCopyMode,
+    multiselectContainsPreprint : multiselectContainsPreprint,
+    showDeleteMultiple : showDeleteMultiple
 };
