@@ -68,7 +68,7 @@ class TestLogDetail(LogsTestCase):
         assert_equal(res.status_code, 403)
 
     def test_log_detail_public_not_logged_in_can_access_logs(self):
-        res = self.app.get(self.public_log_detail, expect_errors=True)
+        res = self.app.get(self.public_log_detail)
         assert_equal(res.status_code, 200)
         json_data = res.json['data']
         assert_equal(json_data['id'], self.public_log._id)
