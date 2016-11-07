@@ -33,8 +33,6 @@ from osf.models.mixins import CommentableMixin
 from osf.models.sanctions import RegistrationApproval
 from osf.models.user import OSFUser
 from osf.models.spam import SpamMixin
-from osf.models.subject import Subject
-from osf.models.preprint_provider import PreprintProvider
 from osf.models.node_relation import NodeRelation
 from osf.models.validators import validate_title, validate_doi
 from osf.modm_compat import Q
@@ -358,13 +356,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     preprint_file = models.ForeignKey('osf.StoredFileNode',
                                       on_delete=models.SET_NULL,
                                       null=True, blank=True)
-    preprint_created = models.DateTimeField(null=True, blank=True)
-    preprint_subjects = models.ManyToManyField(Subject, related_name='preprints')
-    preprint_providers = models.ManyToManyField(PreprintProvider, related_name='preprints')
-    preprint_doi = models.CharField(max_length=128, null=True, blank=True, validators=[validate_doi])
+    preprint_article_doi = models.CharField(max_length=128,
+                                            validators=[validate_doi],
+                                            null=True, blank=True)
+    _is_preprint_orphan = models.NullBooleanField(default=False)
+    _has_abandoned_preprint = models.BooleanField(default=False)
 
     keenio_read_key = models.CharField(max_length=1000, null=True, blank=True)
-    _is_preprint_orphan = models.NullBooleanField(default=False)
 
     def __init__(self, *args, **kwargs):
         self._parent = kwargs.pop('parent', None)
@@ -395,8 +393,18 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def is_preprint_orphan(self):
-        """For v1 compat."""
+        """For v1 compat"""
+        if (not self.is_preprint) and self._is_preprint_orphan:
+            return True
         return False
+
+    @property
+    def preprint_url(self):
+        if self.is_preprint:
+            try:
+                return self.preprint.url
+            except IndexError:
+                pass
 
     @property
     def is_collection(self):

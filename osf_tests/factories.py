@@ -20,6 +20,7 @@ from osf import models
 from osf.models.sanctions import Sanction
 from osf.utils.names import impute_names_model
 from osf.modm_compat import Q
+from addons.osfstorage.models import OsfStorageFile
 
 fake = Factory.create()
 ensure_licenses = functools.partial(ensure_licenses, warn=False)
@@ -483,8 +484,6 @@ class PreprintProviderFactory(DjangoModelFactory):
 
 
 class PreprintFactory(DjangoModelFactory):
-    creator = None
-    category = 'project'
     doi = factory.Sequence(lambda n: '10.123/{}'.format(n))
     provider = factory.SubFactory(PreprintProviderFactory)
     external_url = 'http://hello.org'
@@ -501,7 +500,7 @@ class PreprintFactory(DjangoModelFactory):
         user = kwargs.get('user') or kwargs.get('creator') or user or UserFactory()
         kwargs['creator'] = user
         # Original project to be converted to a preprint
-        project = project or target_class(*args, **kwargs)
+        project = project or ProjectFactory(*args, **kwargs)
         project.save()
         if not project.is_contributor(user):
             project.add_contributor(
@@ -511,15 +510,13 @@ class PreprintFactory(DjangoModelFactory):
                 save=True
             )
 
-        # TODO: Uncomment when OsfStorageFile is implemented
-        # file = OsfStorageFile.create(
-        #     is_file=True,
-        #     node=project,
-        #     path='/{}'.format(filename),
-        #     name=filename,
-        #     materialized_path='/{}'.format(filename))
-        # file.save()
-        # project.set_preprint_file(file, auth=Auth(project.creator))
+        file = OsfStorageFile.create(
+            is_file=True,
+            node=project,
+            path='/{}'.format(filename),
+            name=filename,
+            materialized_path='/{}'.format(filename))
+        file.save()
 
         preprint = target_class(node=project, provider=provider)
 
