@@ -1778,6 +1778,21 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
         - `sha256`
     - `size`
 
+    ###Box
+    Box returns `null` for the following fields:
+
+    - hashes
+        - `md5`
+        - `sha256`
+    - `size`
+
+    ###ownCloud
+    ownCloud returns `null` for the following fields:
+
+    - hashes
+        - `md5`
+        - `sha256`
+
     ##Links
 
     See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
