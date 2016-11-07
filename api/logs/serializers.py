@@ -1,4 +1,5 @@
 from rest_framework import serializers as ser
+from django.contrib.auth.models import AnonymousUser
 
 from api.base.serializers import (
     JSONAPISerializer,
@@ -34,7 +35,7 @@ class NodeLogFileParamsSerializer(RestrictedDictSerializer):
         user = self.context['request'].user
         node_title = obj['node']['title']
         node = Node.load(obj['node']['_id'])
-        if node.has_permission(user, osf_permissions.READ):
+        if node.is_public or node.has_permission(user, osf_permissions.READ):
             return node_title
         return 'Private Component'
 
