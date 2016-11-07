@@ -1,22 +1,16 @@
 # -*- coding: utf-8 -*-
-import pytest
 import mock
-from nose.tools import *  # flake8: noqa
-
+import pytest
+from addons.wiki.tests.factories import NodeWikiFactory
+from api.base.settings import osf_settings
+from api.base.settings.defaults import API_BASE
+from api_tests import utils as test_utils
 from framework.auth import core
 from framework.guid.model import Guid
-
-from api.base.settings.defaults import API_BASE
-from api.base.settings import osf_settings
-from api_tests import utils as test_utils
+from nose.tools import *  # flake8: noqa
+from osf_tests.factories import (AuthUserFactory, CommentFactory,
+                                 ProjectFactory, RegistrationFactory)
 from tests.base import ApiTestCase
-from osf_tests.factories import (
-    ProjectFactory,
-    RegistrationFactory,
-    AuthUserFactory,
-    CommentFactory,
-)
-from addons.wiki.tests.factories import NodeWikiFactory
 
 
 class NodeCommentsListMixin(object):
