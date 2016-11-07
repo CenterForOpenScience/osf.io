@@ -50,30 +50,30 @@ class TestPreprintDelete(ApiTestCase):
         self.url = '/{}preprints/{{}}/'.format(API_BASE)
 
     def test_can_delete_unpublished(self):
-        previous_ids = [doc['_id'] for doc in db['preprintservice'].find({}, {'_id':1})]
+        previous_ids = list(PreprintService.objects.all().values_list('pk', flat=True))
         self.app.delete(self.url.format(self.unpublished_preprint._id), auth=self.user.auth)
-        remaining_ids = [doc['_id'] for doc in db['preprintservice'].find({}, {'_id':1})]
-        assert_in(self.unpublished_preprint._id, previous_ids)
-        assert_not_in(self.unpublished_preprint._id, remaining_ids)
+        remaining_ids = list(PreprintService.objects.all().values_list('pk', flat=True))
+        assert_in(self.unpublished_preprint.pk, previous_ids)
+        assert_not_in(self.unpublished_preprint.pk, remaining_ids)
 
     def test_cannot_delete_published(self):
-        previous_ids = [doc['_id'] for doc in db['preprintservice'].find({}, {'_id':1})]
+        previous_ids = list(PreprintService.objects.all().values_list('pk', flat=True))
         res = self.app.delete(self.url.format(self.published_preprint._id), auth=self.user.auth, expect_errors=True)
-        remaining_ids = [doc['_id'] for doc in db['preprintservice'].find({}, {'_id':1})]
+        remaining_ids = list(PreprintService.objects.all().values_list('pk', flat=True))
         assert_equal(res.status_code, 409)
         assert_equal(previous_ids, remaining_ids)
-        assert_in(self.published_preprint._id, remaining_ids)
+        assert_in(self.published_preprint.pk, remaining_ids)
 
     def test_deletes_only_requested_document(self):
-        previous_ids = [doc['_id'] for doc in db['preprintservice'].find({}, {'_id':1})]
+        previous_ids = list(PreprintService.objects.all().values_list('pk', flat=True))
         res = self.app.delete(self.url.format(self.unpublished_preprint._id), auth=self.user.auth)
-        remaining_ids = [doc['_id'] for doc in db['preprintservice'].find({}, {'_id':1})]
+        remaining_ids = list(PreprintService.objects.all().values_list('pk', flat=True))
 
-        assert_in(self.unpublished_preprint._id, previous_ids)
-        assert_in(self.published_preprint._id, previous_ids)
+        assert_in(self.unpublished_preprint.pk, previous_ids)
+        assert_in(self.published_preprint.pk, previous_ids)
 
-        assert_not_in(self.unpublished_preprint._id, remaining_ids)
-        assert_in(self.published_preprint._id, remaining_ids)
+        assert_not_in(self.unpublished_preprint.pk, remaining_ids)
+        assert_in(self.published_preprint.pk, remaining_ids)
 
 
 class TestPreprintUpdate(ApiTestCase):
@@ -105,7 +105,7 @@ class TestPreprintUpdate(ApiTestCase):
         assert_equal(res.status_code, 200)
 
         self.preprint.reload()
-        assert_equal(self.preprint.subjects.first(), [self.subject._id])
+        assert_equal(self.preprint.subjects[0], [self.subject._id])
 
     def test_update_invalid_subjects(self):
         subjects = self.preprint.subjects
@@ -117,9 +117,8 @@ class TestPreprintUpdate(ApiTestCase):
         self.preprint.reload()
         assert_equal(self.preprint.subjects, subjects)
 
-    @pytest.mark.skip('Unskip when StoredFileNode is implemented')
     def test_update_primary_file(self):
-        new_file = test_utils.create_test_file(self.preprint.node, 'openupthatwindow.pdf')
+        new_file = test_utils.create_test_file(self.preprint.node, self.user,  filename='openupthatwindow.pdf')
         relationships = {
             "primary_file": {
                 "data": {
@@ -135,12 +134,11 @@ class TestPreprintUpdate(ApiTestCase):
         assert_equal(res.status_code, 200)
 
         self.preprint.node.reload()
-        assert_equal(self.preprint.primary_file, new_file)
+        assert_equal(self.preprint.primary_file.wrapped(), new_file)
 
-    @pytest.mark.skip('Unskip when StoredFileNode is implemented')
     def test_new_primary_not_in_node(self):
         project = ProjectFactory()
-        file_for_project = test_utils.create_test_file(project, 'letoutthatantidote.pdf')
+        file_for_project = test_utils.create_test_file(project, self.user, filename='letoutthatantidote.pdf')
 
         relationships = {
             "primary_file": {
@@ -157,7 +155,7 @@ class TestPreprintUpdate(ApiTestCase):
         assert_equal(res.status_code, 400)
 
         self.preprint.reload()
-        assert_not_equal(self.preprint.primary_file, file_for_project)
+        assert_not_equal(self.preprint.primary_file.wrapped(), file_for_project)
 
     def test_update_doi(self):
         new_doi = '10.1234/ASDFASDF'
@@ -176,7 +174,7 @@ class TestPreprintUpdate(ApiTestCase):
     def test_write_contrib_cannot_set_primary_file(self):
         user_two = AuthUserFactory()
         self.preprint.node.add_contributor(user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
-        new_file = test_utils.create_test_file(self.preprint.node, 'openupthatwindow.pdf')
+        new_file = test_utils.create_test_file(self.preprint.node, self.user, filename='openupthatwindow.pdf')
 
         data = {
             'data':{
@@ -199,7 +197,7 @@ class TestPreprintUpdate(ApiTestCase):
 
     def test_noncontrib_cannot_set_primary_file(self):
         user_two = AuthUserFactory()
-        new_file = test_utils.create_test_file(self.preprint.node, 'openupthatwindow.pdf')
+        new_file = test_utils.create_test_file(self.preprint.node, self.user, filename='openupthatwindow.pdf')
 
         data = {
             'data':{
@@ -224,7 +222,7 @@ class TestPreprintUpdate(ApiTestCase):
         user_two = AuthUserFactory()
         self.preprint.node.add_contributor(user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
 
-        assert_not_equal(self.preprint.subjects.first(), self.subject._id)
+        assert_not_equal(self.preprint.subjects[0][0], self.subject._id)
         update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"subjects": [[self.subject._id]]})
 
         res = self.app.patch_json_api(self.url, update_subjects_payload, auth=user_two.auth, expect_errors=True)
@@ -236,10 +234,10 @@ class TestPreprintUpdate(ApiTestCase):
         user_two = AuthUserFactory()
         self.preprint.node.add_contributor(user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
 
-        assert_not_equal(self.preprint.subjects.first(), self.subject._id)
+        assert_not_equal(self.preprint.subjects[0][0], self.subject._id)
         update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"subjects": [[self.subject._id]]})
 
         res = self.app.patch_json_api(self.url, update_subjects_payload, auth=user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-        assert_not_equal(self.preprint.subjects.first(), self.subject._id)
+        assert_not_equal(self.preprint.subjects[0][0], self.subject._id)
