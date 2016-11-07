@@ -95,7 +95,9 @@ class UserSerializer(JSONAPISerializer):
                         instance.social[key] = val
                     else:
                         if len(val) > 1:
-                            raise InvalidModelValueError(detail="{} only accept a list of one single value". format(key))
+                            raise InvalidModelValueError(
+                                detail="{} only accept a list of one single value". format(key)
+                            )
                         instance.social[key] = val[0]
             else:
                 setattr(instance, attr, value)
