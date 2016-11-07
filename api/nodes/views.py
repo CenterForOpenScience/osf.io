@@ -1789,9 +1789,12 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     ###ownCloud
     ownCloud returns `null` for the following fields:
 
+    - `date_modified`
+    - `date_created`
     - hashes
         - `md5`
         - `sha256`
+    - `size`
 
     ##Links
 
