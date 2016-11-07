@@ -108,8 +108,12 @@ class OsfStorageFileNode(FileNode):
         return self.checkout is not None
 
     @property
+    def is_preprint_primary(self):
+        return self.node.preprint_file == self and not self.node._has_abandoned_preprint
+
+    @property
     def _delete_allowed(self):
-        if self.node.preprint_file == self and not self.node._has_abandoned_preprint:
+        if self.is_preprint_primary:
             raise exceptions.FileNodeIsPrimaryFile()
         if self.is_checked_out:
             raise exceptions.FileNodeCheckedOutError()
@@ -126,8 +130,9 @@ class OsfStorageFileNode(FileNode):
         return super(OsfStorageFileNode, self).delete(user=user, parent=parent) if self._delete_allowed else None
 
     def move_under(self, destination_parent, name=None):
-        if self.node.preprint_file == self and not self.node._has_abandoned_preprint:
-            raise exceptions.FileNodeIsPrimaryFile()
+        if self.is_preprint_primary:
+            if self.node._id != destination_parent.node._id or self.provider != destination_parent.provider:
+                raise exceptions.FileNodeIsPrimaryFile()
         if self.is_checked_out:
             raise exceptions.FileNodeCheckedOutError()
         return super(OsfStorageFileNode, self).move_under(destination_parent, name)
@@ -305,6 +310,14 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
         for child in self.children:
             if child.is_checked_out:
                 return True
+        return False
+
+    @property
+    def is_preprint_primary(self):
+        if self.node.is_preprint:
+            for child in self.children:
+                if child.is_preprint_primary:
+                    return True
         return False
 
     def serialize(self, include_full=False, version=None):
