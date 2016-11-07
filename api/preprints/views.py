@@ -156,6 +156,9 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
             if operation['value'] not in (list(), tuple()):
                 operation['source_field_name'] = 'tags__name'
 
+        if field_name == 'provider':
+            operation['source_field_name'] = 'provider___id'
+
     def get_serializer_class(self):
         if self.request.method == 'POST':
             return PreprintCreateSerializer

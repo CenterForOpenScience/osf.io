@@ -163,7 +163,7 @@ class PreprintCreateSerializer(PreprintSerializer):
     id = IDField(source='_id', required=False, allow_null=True)
 
     def create(self, validated_data):
-        node = Node.load(validated_data.pop('node', None))
+        node = validated_data.pop('node', None)
         if not node:
             raise exceptions.NotFound('Unable to find Node with specified id.')
 

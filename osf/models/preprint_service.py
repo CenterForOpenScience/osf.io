@@ -1,5 +1,4 @@
-
-import datetime
+# -*- coding: utf-8 -*-
 import urlparse
 
 from django.db import models
@@ -31,7 +30,7 @@ class PreprintService(GuidMixin, BaseModel):
                                  on_delete=models.SET_NULL,
                                  related_name='preprint_services',
                                  null=True, blank=True, db_index=True)
-    node = models.OneToOneField('osf.AbstractNode', db_index=True)
+    node = models.OneToOneField('osf.AbstractNode', related_name='preprint', db_index=True)
     is_published = models.BooleanField(default=False, db_index=True)
     date_published = models.DateTimeField(null=True, blank=True)
 
@@ -153,7 +152,7 @@ class PreprintService(GuidMixin, BaseModel):
                 raise ValueError('Preprint provider not specified; cannot publish.')
             if not self.subjects:
                 raise ValueError('Preprint must have at least one subject to be published.')
-            self.date_published = datetime.datetime.utcnow()
+            self.date_published = timezone.now()
             self.node._has_abandoned_preprint = False
 
             if not self.node.is_public:

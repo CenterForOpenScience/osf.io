@@ -169,7 +169,7 @@ class TestPreprintCreate(ApiTestCase):
         assert_in(self.other_user, self.public_project.contributors)
 
         preprint = PreprintFactory(creator=self.user)
-        preprint.node.add_contributor(self.other_user, permissions=[permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS], save=True)
+        preprint.node.add_contributor(self.other_user, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
         file_one_preprint = test_utils.create_test_file(preprint.node, self.user, 'openupthatwindow.pdf')
 
         already_preprint_payload = build_preprint_create_payload(preprint.node._id, self.provider._id, file_one_preprint._id)
