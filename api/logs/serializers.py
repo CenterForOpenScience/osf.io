@@ -1,5 +1,4 @@
 from rest_framework import serializers as ser
-from django.contrib.auth.models import AnonymousUser
 
 from api.base.serializers import (
     JSONAPISerializer,
