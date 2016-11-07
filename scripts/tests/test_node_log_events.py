@@ -1,3 +1,4 @@
+import pytz
 import datetime
 from framework.auth.core import User
 from tests.base import OsfTestCase
@@ -45,26 +46,26 @@ class TestNodeLogAnalytics(OsfTestCase):
     def test_results_structure(self):
         expected = [
             {
-                'keen': {'timestamp': self.node_log_node_created.date.isoformat()},
-                'date': self.node_log_node_created.date.isoformat(),
+                'keen': {'timestamp': self.node_log_node_created.date.replace(tzinfo=pytz.UTC).isoformat()},
+                'date': self.node_log_node_created.date.replace(tzinfo=pytz.UTC).isoformat(),
                 'action': 'node_created',
                 'user_id': self.user_one._id
             },
             {
-                'keen': {'timestamp': self.node_log_file_added.date.isoformat()},
-                'date': self.node_log_file_added.date.isoformat(),
+                'keen': {'timestamp': self.node_log_file_added.date.replace(tzinfo=pytz.UTC).isoformat()},
+                'date': self.node_log_file_added.date.replace(tzinfo=pytz.UTC).isoformat(),
                 'action': 'file_added',
                 'user_id': self.user_one._id
             },
             {
-                'keen': {'timestamp': self.node_log_wiki_updated.date.isoformat()},
-                'date': self.node_log_wiki_updated.date.isoformat(),
+                'keen': {'timestamp': self.node_log_wiki_updated.date.replace(tzinfo=pytz.UTC).isoformat()},
+                'date': self.node_log_wiki_updated.date.replace(tzinfo=pytz.UTC).isoformat(),
                 'action': 'wiki_updated',
                 'user_id': self.user_two._id
             },
             {
-                'keen': {'timestamp': self.node_log_project_created.date.isoformat()},
-                'date': self.node_log_project_created.date.isoformat(),
+                'keen': {'timestamp': self.node_log_project_created.date.replace(tzinfo=pytz.UTC).isoformat()},
+                'date': self.node_log_project_created.date.replace(tzinfo=pytz.UTC).isoformat(),
                 'action': 'project_created',
                 'user_id': self.user_two._id
             }
