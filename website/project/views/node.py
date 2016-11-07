@@ -741,7 +741,8 @@ def _view_project(node, auth, primary=False):
             'contributors': list(node.contributors.values_list('guids___id', flat=True)),
             'is_preprint': node.is_preprint,
             'is_preprint_orphan': node.is_preprint_orphan,
-            'preprint_file_id': node.preprint_file._id if node.preprint_file else None
+            'preprint_file_id': node.preprint_file._id if node.preprint_file else None,
+            'preprint_url': node.preprint_url
         },
         'parent_node': {
             'exists': parent is not None,

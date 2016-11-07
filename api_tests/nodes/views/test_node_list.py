@@ -511,7 +511,7 @@ class TestNodeFiltering(ApiTestCase):
 
         preprints = Node.find(Q('preprint_file', 'ne', None) & Q('preprint_orphan', 'ne', True))
         assert_equal(len(data), len(preprints))
-        assert_in(self.preprint._id, ids)
+        assert_in(self.preprint.node._id, ids)
         assert_not_in(self.project_one._id, ids)
         assert_not_in(self.project_two._id, ids)
         assert_not_in(self.project_three._id, ids)
@@ -525,14 +525,14 @@ class TestNodeFiltering(ApiTestCase):
 
         ids = [each['id'] for each in data]
 
-        assert_not_in(self.preprint._id, ids)
+        assert_not_in(self.preprint.node._id, ids)
         assert_in(self.project_one._id, ids)
         assert_in(self.project_two._id, ids)
         assert_in(self.project_three._id, ids)
 
     @pytest.mark.skip('Preprint undergoing implementation changes')
     def test_preprint_filter_excludes_orphans(self):
-        orphan = PreprintFactory(creator=self.preprint.creator)
+        orphan = PreprintFactory(creator=self.preprint.node.creator)
         orphan._is_preprint_orphan = True
         orphan.save()
 
@@ -543,7 +543,7 @@ class TestNodeFiltering(ApiTestCase):
 
         ids = [each['id'] for each in data]
 
-        assert_in(self.preprint._id, ids)
+        assert_in(self.preprint.node._id, ids)
         assert_not_in(orphan._id, ids)
         assert_not_in(self.project_one._id, ids)
         assert_not_in(self.project_two._id, ids)

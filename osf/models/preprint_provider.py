@@ -7,7 +7,7 @@ from osf.models.base import BaseModel, ObjectIDMixin
 
 class PreprintProvider(ObjectIDMixin, BaseModel):
     # TODO REMOVE AFTER MIGRATION
-    modm_model_path = 'website.project.model.PreprintProvider'
+    modm_model_path = 'website.preprints.model.PreprintProvider'
     modm_query = None
     # /TODO REMOVE AFTER MIGRATION
 

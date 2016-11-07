@@ -280,6 +280,8 @@ POPULAR_LINKS_NODE = None  # TODO Override in local.py in production.
 POPULAR_LINKS_REGISTRATIONS = None  # TODO Override in local.py in production.
 NEW_AND_NOTEWORTHY_LINKS_NODE = None  # TODO Override in local.py in production.
 
+MAX_POPULAR_PROJECTS = 10
+
 NEW_AND_NOTEWORTHY_CONTRIBUTOR_BLACKLIST = []  # TODO Override in local.py in production.
 
 # FOR EMERGENCIES ONLY: Setting this to True will disable forks, registrations,

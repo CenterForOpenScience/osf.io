@@ -26,8 +26,8 @@
 
 <style>
 .preview {
-    max-height:300px; 
-    overflow-y: scroll; 
+    max-height: 300px;
+    overflow-y: auto;
     padding-right: 10px;
 }
 </style>
