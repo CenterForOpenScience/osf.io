@@ -92,7 +92,7 @@ class AddonTestCase(object):
         self.create_user_settings()
         self.create_node_settings()
 
-class OAuthAddonTestCaseMixin:
+class OAuthAddonTestCaseMixin(object):
 
     @property
     def ExternalAccountFactory(self):
