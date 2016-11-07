@@ -12,13 +12,11 @@ from framework.auth import Auth
 from framework.exceptions import PermissionsError
 
 from website import settings
-from website.project.model import (
-    NodeLog,
-    NodeStateError
-)
+from osf.models import NodeLog
+from osf.exceptions import NodeStateError
 
 from tests.base import OsfTestCase
-from tests.factories import (
+from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
     PreprintFactory,
@@ -110,13 +108,13 @@ class TestSetPreprintFile(OsfTestCase):
 
     def test_add_primary_file(self):
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
-        assert_equal(self.project.preprint_file, self.file)
+        assert_equal(self.project.preprint_file.wrapped(), self.file)
         assert_equal(type(self.project.preprint_file), type(self.file.stored_object))
 
     @assert_logs(NodeLog.PREPRINT_FILE_UPDATED, 'project')
     def test_change_primary_file(self):
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
-        assert_equal(self.project.preprint_file, self.file)
+        assert_equal(self.project.preprint_file.wrapped(), self.file)
 
         self.preprint.set_primary_file(self.file_two, auth=self.auth, save=True)
         assert_equal(self.project.preprint_file._id, self.file_two._id)
@@ -232,7 +230,7 @@ class TestPreprintServicePermissions(OsfTestCase):
 class TestPreprintProviders(OsfTestCase):
     def setUp(self):
         super(TestPreprintProviders, self).setUp()
-        self.preprint = PreprintFactory(providers=[])
+        self.preprint = PreprintFactory(provider=None, is_published=False)
         self.provider = PreprintProviderFactory(name='WWEArxiv')
 
     def test_add_provider(self):

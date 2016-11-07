@@ -559,6 +559,7 @@ def test_module(ctx, module=None):
 CORE_TESTS = [
     'tests/test_views.py',
     'tests/test_subjects.py',
+    'tests/test_preprints.py',
 ]
 @task
 def test_osf(ctx):
