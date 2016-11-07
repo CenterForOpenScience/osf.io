@@ -1061,9 +1061,7 @@ class JSONAPISerializer(ser.Serializer):
         data = {
             'id': '',
             'type': type_,
-            'attributes': {
-                'social': {},
-            },
+            'attributes': {},
             'relationships': {},
             'embeds': {},
             'links': {},

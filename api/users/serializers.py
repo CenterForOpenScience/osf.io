@@ -90,9 +90,12 @@ class UserSerializer(JSONAPISerializer):
         for attr, value in validated_data.items():
             if 'social' == attr:
                 for key, val in value.items():
+                    # currently only profileWebsites are a list, the rest of the social key only has one value
                     if key == 'profileWebsites':
                         instance.social[key] = val
                     else:
+                        if len(val) > 1:
+                            raise InvalidModelValueError(detail="{} only accept a list of one single value". format(key))
                         instance.social[key] = val[0]
             else:
                 setattr(instance, attr, value)

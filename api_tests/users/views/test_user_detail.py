@@ -624,6 +624,24 @@ class TestUserUpdate(ApiTestCase):
         assert_equal(res.json['data']['attributes']['full_name'], strip_html(bad_fullname))
         assert_equal(res.json['data']['attributes']['family_name'], strip_html(bad_family_name))
 
+    def test_update_user_social_with_invalid_value(self):
+        """update the social key which is not profileWebsites with more than one value should throw an error"""
+        res = self.app.patch_json_api(self.user_one_url, {
+            'data': {
+                'id': self.user_one._id,
+                'type': 'users',
+                'attributes': {
+                    'full_name': 'new_fullname',
+                    'suffix': 'The Millionth',
+                    'social': {
+                        'github': ['even_newer_github', 'bad_github'],
+                    }
+                },
+            }
+        }, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal('github only accept a list of one single value', res.json['errors'][0]['detail'])
+
 
 class TestDeactivatedUser(ApiTestCase):
 
