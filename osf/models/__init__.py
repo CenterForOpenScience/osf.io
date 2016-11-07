@@ -21,6 +21,7 @@ from osf.models.private_link import PrivateLink  # noqa
 from osf.models.notifications import NotificationDigest, NotificationSubscription  # noqa
 from osf.models.subject import Subject  # noqa
 from osf.models.preprint_provider import PreprintProvider  # noqa
+from osf.models.preprint_service import PreprintService  # noqa
 from osf.models.identifiers import Identifier  # noqa
 from osf.models.files import (  # noqa
     File, Folder, FileNode, FileNodeMeta,  # noqa
