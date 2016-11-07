@@ -23,7 +23,7 @@ class IsPreprintFile(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         assert isinstance(obj, FileNode), 'obj must be a FileNode, got {}'.format(obj)
 
-        if request.method not in permissions.SAFE_METHODS and obj.node.preprint_file == obj and not obj.node._has_abandoned_preprint:
+        if request.method == 'DELETE' and obj.node.preprint_file == obj and not obj.node._has_abandoned_preprint:
             return False
 
         return True
