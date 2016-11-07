@@ -2006,7 +2006,7 @@ var FGToolbar = {
                     generalButtons.push(
                         m.component(FGButton, {
                             icon: 'fa fa-trash',
-                            tooltip: 'One of these files is a Preprint. You cannot delete Preprints, but you can upload a new version.',                                        
+                            tooltip: 'One of these items is a Preprint or contains a Preprint. You cannot delete Preprints, but you can upload a new version.',                                        
                             className: 'tb-disabled'
                         }, 'Delete Multiple')
                     );                    
@@ -2465,7 +2465,11 @@ function showDeleteMultiple(items) {
 function multiselectContainsPreprint(items, preprintPath) {
     for (var i = 0; i < items.length; i++) {
         var each = items[i];
-        if (each.data.path === preprintPath) {
+        if (each.data.kind === 'folder') {
+            if (folderContainsPreprint(each, preprintPath)) {
+                return true;
+            }
+        } else if (each.data.path === preprintPath) {
             return true;
         }
     }

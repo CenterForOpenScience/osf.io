@@ -585,6 +585,14 @@ class TestDeleteHook(HookTestCase):
 
         assert_equal(res.status_code, 403)
 
+    def test_attempt_delete_folder_with_preprint(self):
+        folder = self.root_node.append_folder('Fishes')
+        file = folder.append_file('Fish')
+        self.node.preprint_file = file.stored_object
+        self.node.save()
+        res = self.delete(folder, expect_errors=True)
+
+        assert_equal(res.status_code, 403)
 
 class TestMoveHook(HookTestCase):
 
