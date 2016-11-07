@@ -258,7 +258,7 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
             assert_equal(res.status_code, http.OK)
             self.project.reload()
             assert_equal(
-                self.project.logs[-1].action,
+                self.project.logs.latest().action,
                 '{0}_folder_selected'.format(self.ADDON_SHORT_NAME)
             )
             assert_equal(res.json['result']['folder']['name'], self.folder.name)
