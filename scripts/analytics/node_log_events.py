@@ -1,3 +1,4 @@
+import pytz
 import logging
 from modularodm import Q
 from dateutil.parser import parse
@@ -24,7 +25,7 @@ class NodeLogEvents(EventAnalytics):
         super(NodeLogEvents, self).get_events(date)
 
         # In the end, turn the date back into a datetime at midnight for queries
-        date = datetime(date.year, date.month, date.day)
+        date = datetime(date.year, date.month, date.day).replace(tzinfo=pytz.UTC)
 
         logger.info('Gathering node logs between {} and {}'.format(
             date, (date + timedelta(1)).isoformat()
@@ -35,9 +36,10 @@ class NodeLogEvents(EventAnalytics):
         node_logs = NodeLog.find(node_log_query)
         node_log_events = []
         for node_log in node_logs:
+            log_date = node_log.date.replace(tzinfo=pytz.UTC)
             event = {
-                'keen': {'timestamp': node_log.date.isoformat()},
-                'date': node_log.date.isoformat(),
+                'keen': {'timestamp': log_date.isoformat()},
+                'date': log_date.isoformat(),
                 'action': node_log.action
             }
 

@@ -1,3 +1,4 @@
+import pytz
 import logging
 from dateutil.parser import parse
 from datetime import datetime, timedelta
@@ -22,7 +23,7 @@ class UserSummary(SummaryAnalytics):
         super(UserSummary, self).get_events(date)
 
         # Convert to a datetime at midnight for queries and the timestamp
-        timestamp_datetime = datetime(date.year, date.month, date.day)
+        timestamp_datetime = datetime(date.year, date.month, date.day).replace(tzinfo=pytz.UTC)
         query_datetime = timestamp_datetime + timedelta(1)
 
         counts = {

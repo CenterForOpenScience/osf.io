@@ -1,3 +1,4 @@
+import pytz
 import logging
 from modularodm import Q
 from dateutil.parser import parse
@@ -29,7 +30,7 @@ class InstitutionSummary(SummaryAnalytics):
         counts = []
 
         # Convert to a datetime at midnight for queries and the timestamp
-        timestamp_datetime = datetime(date.year, date.month, date.day)
+        timestamp_datetime = datetime(date.year, date.month, date.day).replace(tzinfo=pytz.UTC)
         query_datetime = timestamp_datetime + timedelta(1)
 
         for institution in institutions:
@@ -82,6 +83,9 @@ class InstitutionSummary(SummaryAnalytics):
                     'public': Node.find_by_institutions(institution, registered_project_public_query).count(),
                     'embargoed': Node.find_by_institutions(institution, registered_project_private_query).count(),
                 },
+                'keen': {
+                    'timestamp': timestamp_datetime.isoformat()
+                }
             }
 
             logger.info(
