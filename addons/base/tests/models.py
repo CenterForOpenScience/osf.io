@@ -542,7 +542,7 @@ class OAuthCitationsNodeSettingsTestSuiteMixin(
             )
         )
 
-        log = self.node.logs[-1]
+        log = self.node.logs.latest()
         assert_equal(log.action, '{}_folder_selected'.format(self.short_name))
         assert_equal(log.params['folder_id'], folder_id)
         assert_equal(log.params['folder_name'], folder_name)
@@ -552,7 +552,8 @@ class OAuthCitationsNodeSettingsTestSuiteMixin(
         contributor = UserFactory()
         self.node.add_contributor(contributor, permissions=['read', 'write', 'admin'])
         self.node.remove_contributor(self.node.creator, auth=Auth(user=contributor))
-
+        self.node_settings.reload()
+        self.user_settings.reload()
         assert_false(self.node_settings.has_auth)
         assert_false(self.user_settings.verify_oauth_access(self.node, self.external_account))
 
