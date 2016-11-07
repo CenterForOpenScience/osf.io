@@ -776,6 +776,7 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
 
             # Delete OAuth tokens
             self.user_settings.oauth_grants[self.owner._id].pop(self.external_account._id)
+            self.user_settings.save()
             self.clear_auth()
             message = (
                 u'Because the {addon} add-on for {category} "{title}" was authenticated '
