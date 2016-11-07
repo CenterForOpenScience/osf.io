@@ -93,10 +93,12 @@ INSTALLED_APPS = (
     'addons.forward',
     'addons.github',
     'addons.googledrive',
+    'addons.mendeley',
     'addons.owncloud',
     'addons.s3',
     'addons.twofactor',
     'addons.wiki',
+    'addons.zotero',
 )
 
 # local development using https
