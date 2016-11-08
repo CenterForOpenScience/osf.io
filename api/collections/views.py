@@ -29,7 +29,7 @@ from api.nodes.permissions import (
 from osf.models import NodeRelation
 
 from website.exceptions import NodeStateError
-from osf.models import Collection, Node
+from osf.models import Collection
 from website.util.permissions import ADMIN
 
 
