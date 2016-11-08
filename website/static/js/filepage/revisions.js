@@ -133,7 +133,7 @@ var FileRevisionsTable = {
                     m('td', revision.extra.user.url ?
                             m('a', {href: revision.extra.user.url}, revision.extra.user.name) :
                             revision.extra.user.name
-                    ) : m('td', 'anonymous contributor'),
+                    ) : m('td', 'Anonymous Contributor'),
                 m('td', revision.extra.downloads > -1 ? m('.badge', revision.extra.downloads) : ''),
                 m('td',
                     m('a.btn.btn-primary.btn-sm.file-download', {
