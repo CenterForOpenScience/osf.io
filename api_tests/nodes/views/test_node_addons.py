@@ -1,25 +1,26 @@
 # -*- coding: utf-8 -*-
 import abc
+
 import mock
-from nose.tools import *  # flake8: noqa
 import pytest
+from nose.tools import *  # flake8: noqa
 
-from api.base.settings.defaults import API_BASE
-from framework.auth.core import Auth
-from website.util.permissions import READ, WRITE, ADMIN
-
-from tests.base import ApiAddonTestCase
-from osf_tests.factories import AuthUserFactory
 from addons.box.tests.factories import BoxAccountFactory, BoxNodeSettingsFactory
 from addons.dataverse.tests.factories import DataverseAccountFactory, DataverseNodeSettingsFactory
 from addons.dropbox.tests.factories import DropboxAccountFactory, DropboxNodeSettingsFactory
-from addons.forward.tests.factories import ForwardSettingsFactory
 from addons.github.tests.factories import GitHubAccountFactory, GitHubNodeSettingsFactory
 from addons.googledrive.tests.factories import GoogleDriveAccountFactory, GoogleDriveNodeSettingsFactory
 from addons.mendeley.tests.factories import MendeleyAccountFactory, MendeleyNodeSettingsFactory
-from addons.s3.tests.factories import S3AccountFactory, S3NodeSettingsFactory
 from addons.owncloud.tests.factories import OwnCloudAccountFactory, OwnCloudNodeSettingsFactory
+from addons.s3.tests.factories import S3AccountFactory, S3NodeSettingsFactory
 from addons.zotero.tests.factories import ZoteroAccountFactory, ZoteroNodeSettingsFactory
+from api.base.settings.defaults import API_BASE
+from osf_tests.factories import AuthUserFactory
+from tests.base import ApiAddonTestCase
+from website.addons.mendeley.tests.factories import (MendeleyAccountFactory,
+                                                     MendeleyNodeSettingsFactory)
+from website.addons.zotero.tests.factories import (ZoteroAccountFactory,
+                                                   ZoteroNodeSettingsFactory)
 
 pytestmark = pytest.mark.django_db
 

@@ -1,13 +1,18 @@
 from __future__ import absolute_import
+
 from collections import OrderedDict
-from nose.tools import *  # noqa PEP8 asserts
-from nose_parameterized import parameterized
-from modularodm.exceptions import ValidationValueError, ValidationError
-from modularodm import Q
 
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from framework.guid.model import Guid
+from modularodm import Q
+from modularodm.exceptions import ValidationError, ValidationValueError
+from nose.tools import *  # noqa PEP8 asserts
+from nose_parameterized import parameterized
+from tests.base import OsfTestCase, capture_signals
+from tests.factories import (AuthUserFactory, CommentFactory, NodeFactory,
+                             ProjectFactory, UserFactory)
+from website import settings
 from website.addons.osfstorage import settings as osfstorage_settings
 from website.files.models import FileNode
 from website.files.models.box import BoxFile
@@ -17,19 +22,10 @@ from website.files.models.googledrive import GoogleDriveFile
 from website.files.models.osfstorage import OsfStorageFile
 from website.files.models.s3 import S3File
 from website.project.model import Comment, NodeLog
-from website.project.signals import comment_added, mention_added, contributor_added
+from website.project.signals import (comment_added, contributor_added,
+                                     mention_added)
 from website.project.views.comment import update_file_guid_referent
 from website.util import permissions
-from website import settings
-
-
-from tests.base import (
-    OsfTestCase,
-    capture_signals
-)
-from tests.factories import (
-    UserFactory, ProjectFactory, AuthUserFactory, CommentFactory, NodeFactory
-)
 
 
 class TestCommentModel(OsfTestCase):
@@ -54,7 +50,7 @@ class TestCommentModel(OsfTestCase):
         assert_equal(comment.node, self.comment.node)
         assert_equal(comment.target, self.comment.target)
         assert_equal(len(comment.node.logs), 2)
-        assert_equal(comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
+        assert_equal(comment.node.logs.latest().action, NodeLog.COMMENT_ADDED)
         assert_equal([], self.comment.ever_mentioned)
 
     def test_create_comment_content_cannot_exceed_max_length_simple(self):
@@ -209,7 +205,7 @@ class TestCommentModel(OsfTestCase):
         assert_equal(self.comment.content, 'edited')
         assert_true(self.comment.modified)
         assert_equal(len(self.comment.node.logs), 2)
-        assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_UPDATED)
+        assert_equal(self.comment.node.logs.latest().action, NodeLog.COMMENT_UPDATED)
 
     def test_edit_sends_mention_added_signal_if_mentions(self):
         with capture_signals() as mock_signals:
@@ -275,14 +271,14 @@ class TestCommentModel(OsfTestCase):
         self.comment.delete(auth=self.auth, save=True)
         assert_equal(self.comment.is_deleted, True)
         assert_equal(len(self.comment.node.logs), 2)
-        assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_REMOVED)
+        assert_equal(self.comment.node.logs.latest().action, NodeLog.COMMENT_REMOVED)
 
     def test_undelete(self):
         self.comment.delete(auth=self.auth, save=True)
         self.comment.undelete(auth=self.auth, save=True)
         assert_equal(self.comment.is_deleted, False)
         assert_equal(len(self.comment.node.logs), 3)
-        assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_RESTORED)
+        assert_equal(self.comment.node.logs.latest().action, NodeLog.COMMENT_RESTORED)
 
     def test_read_permission_contributor_can_comment(self):
         project = ProjectFactory()

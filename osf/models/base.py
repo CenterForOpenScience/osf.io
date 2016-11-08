@@ -41,6 +41,11 @@ def generate_object_id():
     return str(bson.ObjectId())
 
 class MODMCompatibilityQuerySet(models.QuerySet):
+    def __init__(self, model=None, query=None, using=None, hints=None):
+        super(MODMCompatibilityQuerySet, self).__init__(model=model, query=query, using=using, hints=hints)
+        if issubclass(self.model, (GuidMixin, OptionalGuidMixin)):
+            self._prefetch_related_lookups = ['guids']
+
     def __getitem__(self, k):
         item = super(MODMCompatibilityQuerySet, self).__getitem__(k)
         if hasattr(item, 'wrapped'):

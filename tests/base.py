@@ -1,48 +1,41 @@
 # -*- coding: utf-8 -*-
 '''Base TestCase class for OSF unittests. Uses a temporary MongoDB database.'''
 import abc
-import os
-import re
-import shutil
-import logging
-import unittest
-import functools
 import datetime as dt
+import functools
+import logging
+import os
+import shutil
 
-import pytest
 import blinker
 import httpretty
+import mock
+import pytest
 from django.test import TestCase as DjangoTestCase
+from faker import Factory
+from nose.tools import *  # noqa (PEP8 asserts); noqa (PEP8 asserts)
+from pymongo.errors import OperationFailure
 from webtest_plus import TestApp
 
-import mock
-from faker import Factory
-from nose.tools import *  # noqa (PEP8 asserts)
-from pymongo.errors import OperationFailure
 from framework.auth import User
 from framework.auth.core import Auth
-from framework.sessions.model import Session
+from framework.celery_tasks.handlers import celery_before_request
 from framework.guid.model import Guid
 from framework.mongo import client as client_proxy
 from framework.mongo import database as database_proxy
+from framework.sessions.model import Session
 from framework.transactions import commands, messages, utils
-from framework.celery_tasks.handlers import celery_before_request
-
-from website.project.model import (
-    Node, NodeLog, Tag, WatchConfig, MetaSchema,
-    ensure_schemas,
-)
 from website import settings
-
-from website.addons.wiki.model import NodeWikiPage
-
-from website.notifications.listeners import subscribe_contributor, subscribe_creator
-from website.signals import ALL_SIGNALS
-from website.project.signals import contributor_added, project_created
-from website.app import init_app
 from website.addons.base import AddonConfig
+from website.addons.wiki.model import NodeWikiPage
+from website.app import init_app
+from website.notifications.listeners import (subscribe_contributor,
+                                             subscribe_creator)
+from website.project.model import (MetaSchema, Node, NodeLog, Tag, WatchConfig,
+                                   ensure_schemas)
+from website.project.signals import contributor_added, project_created
 from website.project.views.contributor import notify_added_contributor
-
+from website.signals import ALL_SIGNALS
 from .json_api_test_app import JSONAPITestApp
 
 

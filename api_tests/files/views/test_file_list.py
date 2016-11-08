@@ -29,7 +29,7 @@ class TestFileFiltering(ApiTestCase):
 
     def test_get_all_files(self):
         res = self.app.get(
-            '/{}nodes/{}/files/osfstorage/'.format(API_BASE, self.node.pk),
+            '/{}nodes/{}/files/osfstorage/'.format(API_BASE, self.node._id),
             auth=self.user.auth
         )
         data = res.json.get('data')
@@ -40,7 +40,7 @@ class TestFileFiltering(ApiTestCase):
         self.file2.add_tag('new', Auth(self.user))
         res = self.app.get(
             '/{}nodes/{}/files/osfstorage/?filter[tags]=new'.format(
-                API_BASE, self.node.pk
+                API_BASE, self.node._id
             ),
             auth=self.user.auth
         )
@@ -56,7 +56,7 @@ class TestFileFiltering(ApiTestCase):
         self.file1.add_tag('new', Auth(self.user))
         res = self.app.get(
             '/{}nodes/{}/files/osfstorage/?filter[tags]=new'.format(
-                API_BASE, self.node.pk
+                API_BASE, self.node._id
             ),
             auth=self.user.auth
         )
@@ -66,7 +66,7 @@ class TestFileFiltering(ApiTestCase):
         self.file1.add_tag('new', Auth(self.user))
         res = self.app.get(
             '/{}nodes/{}/files/osfstorage/?filter[tags]=New'.format(
-                API_BASE, self.node.pk
+                API_BASE, self.node._id
             ),
             auth=self.user.auth
         )
@@ -76,7 +76,7 @@ class TestFileFiltering(ApiTestCase):
         self.file1.add_tag('New', Auth(self.user))
         res = self.app.get(
             '/{}nodes/{}/files/osfstorage/?filter[tags]=new'.format(
-                API_BASE, self.node.pk
+                API_BASE, self.node._id
             ),
             auth=self.user.auth
         )

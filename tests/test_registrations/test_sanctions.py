@@ -1,25 +1,24 @@
 # -*- coding: utf-8 -*-
+import datetime
 import httplib as http
-import mock
 import unittest  # noqa
 
+import mock
 from django.utils import timezone
-from nose.tools import *  # noqa (PEP8 asserts)
-
-import datetime
-from modularodm import fields, Q
-
-from tests.base import OsfTestCase
-from tests import factories
-from tests.utils import mock_archive, assert_logs
-
 from framework.auth import Auth
 from framework.mongo import handlers, storage
-
+from modularodm import Q, fields
+from nose.tools import *  # noqa (PEP8 asserts)
+from tests import factories
+from tests.base import OsfTestCase
+from tests.utils import assert_logs, mock_archive
 from website.exceptions import NodeStateError
-from website.project.model import ensure_schemas, Node, NodeLog
+from website.project.model import Node, NodeLog, ensure_schemas
+from website.project.sanctions import (EmailApprovableSanction,
+                                       PreregCallbackMixin, Sanction,
+                                       TokenApprovableSanction)
 from website.project.spam.model import SpamStatus
-from website.project.sanctions import Sanction, TokenApprovableSanction, EmailApprovableSanction, PreregCallbackMixin
+
 
 def valid_user():
     return factories.UserFactory(system_tags=['flag'])
@@ -489,6 +488,6 @@ class TestNodeEmbargoTerminations(OsfTestCase):
 
     def test_terminate_embargo_log_is_nouser(self):
         self.registration.terminate_embargo(Auth(self.user))
-        last_log = self.node.logs[-1]
+        last_log = self.node.logs.latest()
         assert_equal(last_log.action, NodeLog.EMBARGO_TERMINATED)
         assert_equal(last_log.user, None)

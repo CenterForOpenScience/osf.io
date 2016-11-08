@@ -1,39 +1,38 @@
 # -*- coding: utf-8 -*-
 
-import time
-import mock
 import datetime
-import unittest
-from nose.tools import *  # noqa
 import httplib as http
-from django.utils import timezone
+import time
+import unittest
 
-import jwe
-import jwt
 import furl
 import itsdangerous
-from modularodm import storage, Q
-
-from framework.auth import cas
-from framework.auth import signing
+import jwe
+import jwt
+import mock
+from django.utils import timezone
+from framework.auth import cas, signing
 from framework.auth.core import Auth
 from framework.exceptions import HTTPError
-from framework.sessions.model import Session
 from framework.mongo import set_up_storage
+from framework.sessions.model import Session
+from modularodm import Q, storage
+from nose.tools import *  # noqa
 from tests import factories
-
-from website import settings
-from website.files import models
-from website.files.models.base import PROVIDER_MAP, StoredFileNode, TrashedFileNode
-from website.project.model import MetaSchema, ensure_schemas
-from website.util import api_url_for, rubeus
-from website.project import new_private_link
-from website.project.views.node import _view_project as serialize_node
-from website.addons.base import AddonConfig, AddonNodeSettingsBase, views
 from tests.base import OsfTestCase, get_default_metaschema
-from tests.factories import AuthUserFactory, ProjectFactory, RegistrationFactory
+from tests.factories import (AuthUserFactory, ProjectFactory,
+                             RegistrationFactory)
+from website import settings
+from website.addons.base import AddonConfig, AddonNodeSettingsBase, views
 from website.addons.github.exceptions import ApiError
 from website.addons.github.tests.factories import GitHubAccountFactory
+from website.files import models
+from website.files.models.base import (PROVIDER_MAP, StoredFileNode,
+                                       TrashedFileNode)
+from website.project import new_private_link
+from website.project.model import MetaSchema, ensure_schemas
+from website.project.views.node import _view_project as serialize_node
+from website.util import api_url_for, rubeus
 
 
 class TestAddonConfig(unittest.TestCase):
@@ -316,7 +315,7 @@ class TestAddonLogs(OsfTestCase):
         self.node.reload()
 
         assert_equal(
-            self.node.logs[-1].action,
+            self.node.logs.latest().action,
             'github_addon_file_renamed',
         )
 

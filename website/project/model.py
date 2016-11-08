@@ -2613,7 +2613,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
         if len(self.logs) == 1:
             self.date_modified = log.date.replace(tzinfo=None)
         else:
-            self.date_modified = self.logs[-1].date.replace(tzinfo=None)
+            self.date_modified = self.logs.latest().date.replace(tzinfo=None)
 
         if save:
             self.save()
@@ -2722,7 +2722,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
             csl['DOI'] = doi
 
         if self.logs:
-            csl['issued'] = datetime_to_csl(self.logs[-1].date)
+            csl['issued'] = datetime_to_csl(self.logs.latest().date)
 
         return csl
 
