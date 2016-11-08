@@ -6,7 +6,7 @@
 var m = require('mithril');
 var $ = require('jquery');
 var URI = require('URIjs');
-var Fangorn = require('js/fangorn');
+var Fangorn = require('js/fangorn').Fangorn;
 var waterbutler = require('js/waterbutler');
 var $osf = require('js/osfHelpers');
 
