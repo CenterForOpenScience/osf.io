@@ -144,8 +144,12 @@ def _register(*a, **kw):
     mock_archive(*a, **kw).__enter__()  # gooooooofffyyyyyy
     return 'flim', 'registration', 'title', 'Flim Flammity'
 
-def name_regfunc(embargo, autoapprove, autocomplete, **_):
-    return '{}_{}_{}_registration_of'.format(
+def name_regfunc(embargo, autoapprove, autocomplete, retraction, autoapprove_retraction, **_):
+    retraction_part = '' if not retraction else \
+                      '{}_retraction_of_an_'.format('approved' if autoapprove_retraction else
+                                                    'unapproved')
+    return '{}{}_{}_{}_registration_of'.format(
+        retraction_part,
         'embargoed' if embargo else 'unembargoed',
         'approved' if autoapprove else 'unapproved',
         'complete' if autocomplete else 'incomplete',
