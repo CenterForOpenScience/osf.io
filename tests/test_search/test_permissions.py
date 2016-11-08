@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+import re
 import sys
 import unittest
 import unittest.case
@@ -213,6 +214,11 @@ class TestVaryFuncs(DbIsolationMixin, OsfTestCase):
 
     def test_number_of_regfuncs(self):
         assert_equal(len(REGFUNCS), 8)
+
+    def test_number_of_regfunc_tests(self):
+        is_regfunc_test = lambda n: re.match('test_.*makes_an_.*_registration_of_a_node', n)
+        regfunc_tests = filter(is_regfunc_test, self.__class__.__dict__.keys())
+        assert_equal(len(regfunc_tests), len(REGFUNCS))
 
     def test_uacro_makes_an_unembargoed_approved_complete_registration_of_a_node(self):
         unembargoed_approved_complete_registration_of(self.F())
