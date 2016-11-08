@@ -23,11 +23,10 @@ PROJECT_QUERY = CONTENT_NODE_QUERY
 
 
 def recent_public_registrations(n=10):
-    Node = apps.get_model('osf.AbstractNode')
-    registrations = Node.find(
+    Registration = apps.get_model('osf.Registration')
+    registrations = Registration.find(
         CONTENT_NODE_QUERY &
-        Q('is_public', 'eq', True) &
-        Q('is_registration', 'eq', True)
+        Q('is_public', 'eq', True)
     ).get_roots().sort(
         '-registered_date'
     )
