@@ -16,10 +16,11 @@ from framework.auth import exceptions as auth_exc
 from framework.auth.core import Auth
 from tests.base import OsfTestCase
 from tests.base import fake
-from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory, WatchConfigFactory, NodeFactory,
-                             NodeWikiFactory, RegistrationFactory,  UnregUserFactory, UnconfirmedUserFactory,
+from osf_tests.factories import (UserFactory, AuthUserFactory, ProjectFactory, NodeFactory,
+                             RegistrationFactory,  UnregUserFactory, UnconfirmedUserFactory,
                              PrivateLinkFactory)
-from website.project import Node
+from addons.wiki.tests.factories import NodeWikiFactory
+from osf.models import AbstractNode as Node
 from website import settings, language
 from website.util import web_url_for, api_url_for
 
@@ -364,7 +365,7 @@ class TestPrivateLinkView(OsfTestCase):
         self.user = AuthUserFactory()  # Is NOT a contributor
         self.project = ProjectFactory(is_public=False)
         self.link = PrivateLinkFactory(anonymous=True)
-        self.link.nodes.append(self.project)
+        self.link.nodes.add(self.project)
         self.link.save()
         self.project_url = self.project.web_url_for('view_project')
 
@@ -379,7 +380,7 @@ class TestPrivateLinkView(OsfTestCase):
 
     def test_no_warning_for_read_only_user_with_valid_link(self):
         link2 = PrivateLinkFactory(anonymous=False)
-        link2.nodes.append(self.project)
+        link2.nodes.add(self.project)
         link2.save()
         self.project.add_contributor(
             self.user,
@@ -513,9 +514,7 @@ class TestShortUrls(OsfTestCase):
         self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
         # A non-project componenet
-        self.component = NodeFactory(category='hypothesis', creator=self.user)
-        self.project.nodes.append(self.component)
-        self.component.save()
+        self.component = NodeFactory(parent=self.project, category='hypothesis', creator=self.user)
         # Hack: Add some logs to component; should be unnecessary pending
         # improvements to factories from @rliebz
         self.component.set_privacy('public', auth=self.consolidate_auth)
@@ -742,7 +741,7 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
         self.project.save()
 
     def test_claim_user_registered_with_correct_password(self):
-        reg_user = AuthUserFactory()  # NOTE: AuthUserFactory sets password as 'password'
+        reg_user = AuthUserFactory()  # NOTE: AuthUserFactory sets password as 'queenfan86'
         url = self.user.get_claim_url(self.project._primary_key)
         # Follow to password re-enter page
         res = self.app.get(url, auth=reg_user.auth).follow(auth=reg_user.auth)
@@ -751,19 +750,20 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
         assert_in('Claim Contributor', res.body)
 
         form = res.forms['claimContributorForm']
-        form['password'] = 'password'
-        res = form.submit(auth=reg_user.auth).follow(auth=reg_user.auth)
+        form['password'] = 'queenfan86'
+        res = form.submit(auth=reg_user.auth)
+        res = res.follow(auth=reg_user.auth)
 
         self.project.reload()
         self.user.reload()
         # user is now a contributor to the project
-        assert_in(reg_user._primary_key, self.project.contributors)
+        assert_in(reg_user, self.project.contributors)
 
         # the unregistered user (self.user) is removed as a contributor, and their
-        assert_not_in(self.user._primary_key, self.project.contributors)
+        assert_not_in(self.user, self.project.contributors)
 
         # unclaimed record for the project has been deleted
-        assert_not_in(self.project._primary_key, self.user.unclaimed_records)
+        assert_not_in(self.project, self.user.unclaimed_records)
 
 
 class TestExplorePublicActivity(OsfTestCase):
@@ -774,25 +774,22 @@ class TestExplorePublicActivity(OsfTestCase):
         self.registration = RegistrationFactory(project=self.project)
         self.private_project = ProjectFactory(title="Test private project")
         self.popular_project = ProjectFactory(is_public=True)
-        self.popular_registration = RegistrationFactory(project=self.project)
+        self.popular_registration = RegistrationFactory(project=self.project, is_public=True)
 
         # Add project to new and noteworthy projects
-        self.new_and_noteworthy_links_node = ProjectFactory()
+        self.new_and_noteworthy_links_node = ProjectFactory(is_public=True)
         self.new_and_noteworthy_links_node._id = settings.NEW_AND_NOTEWORTHY_LINKS_NODE
         self.new_and_noteworthy_links_node.add_pointer(self.project, auth=Auth(self.new_and_noteworthy_links_node.creator), save=True)
 
         # Set up popular projects and registrations
-        self.popular_links_node = ProjectFactory()
-        self.popular_links_node._id = settings.POPULAR_LINKS_NODE
+        self.popular_links_node = ProjectFactory(is_public=True)
+        settings.POPULAR_LINKS_NODE = self.popular_links_node._id
         self.popular_links_node.add_pointer(self.popular_project, auth=Auth(self.popular_links_node.creator), save=True)
 
-        self.popular_links_registrations = ProjectFactory()
-        self.popular_links_registrations._id = settings.POPULAR_LINKS_REGISTRATIONS
+        self.popular_links_registrations = ProjectFactory(is_public=True)
+        settings.POPULAR_LINKS_REGISTRATIONS = self.popular_links_registrations._id
         self.popular_links_registrations.add_pointer(self.popular_registration, auth=Auth(self.popular_links_registrations.creator), save=True)
 
-    def tearDown(self):
-        super(TestExplorePublicActivity, self).tearDown()
-        Node.remove()
 
     def test_explore_page_loads_when_settings_not_configured(self):
 
@@ -812,6 +809,7 @@ class TestExplorePublicActivity(OsfTestCase):
 
         url = self.project.web_url_for('activity')
         res = self.app.get(url)
+        assert_equal(res.status_code, 200)
 
         # New and Noteworthy
         assert_in(str(self.project.title), res)
@@ -1003,7 +1001,7 @@ class TestAUserProfile(OsfTestCase):
         self.user = AuthUserFactory()
         self.me = AuthUserFactory()
         self.project = ProjectFactory(creator=self.me, is_public=True, title=fake.bs())
-        self.component = NodeFactory(creator=self.me, project=self.project, is_public=True, title=fake.bs())
+        self.component = NodeFactory(creator=self.me, parent=self.project, is_public=True, title=fake.bs())
 
     # regression test for https://github.com/CenterForOpenScience/osf.io/issues/2623
     def test_has_public_projects_and_components(self):

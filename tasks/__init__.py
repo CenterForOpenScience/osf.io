@@ -557,9 +557,11 @@ def test_module(ctx, module=None):
 
 # TODO: Add to this list when more modules are ported for djangosf compat
 CORE_TESTS = [
+    'osf_tests',
     'tests/test_views.py',
     'tests/test_subjects.py',
     'tests/test_preprints.py',
+    'tests/test_webtests.py',
 ]
 @task
 def test_osf(ctx):
