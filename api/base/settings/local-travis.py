@@ -41,17 +41,6 @@ REST_FRAMEWORK = {
         'api.base.authentication.drf.OSFSessionAuthentication',
         'api.base.authentication.drf.OSFCASAuthentication'
     ),
-    'DEFAULT_THROTTLE_CLASSES': (
-        'rest_framework.throttling.UserRateThrottle',
-        'api.base.throttling.NonCookieAuthThrottle',
-    ),
-    'DEFAULT_THROTTLE_RATES': {
-        'user': '1000000/hour',
-        'non-cookie-auth': '1000000/hour',
-        'add-contributor': '10/second',
-        'create-guid': '1000/hour',
-        'root-anon-throttle': '1000/hour',
-        'test-user': '2/hour',
-        'test-anon': '1/hour',
-    }
+    'DEFAULT_THROTTLE_CLASSES': [],
+    'DEFAULT_THROTTLE_RATES': {}
 }

@@ -33,8 +33,6 @@ from osf.models.mixins import CommentableMixin
 from osf.models.sanctions import RegistrationApproval
 from osf.models.user import OSFUser
 from osf.models.spam import SpamMixin
-from osf.models.subject import Subject
-from osf.models.preprint_provider import PreprintProvider
 from osf.models.node_relation import NodeRelation
 from osf.models.validators import validate_title, validate_doi
 from osf.modm_compat import Q
@@ -358,13 +356,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     preprint_file = models.ForeignKey('osf.StoredFileNode',
                                       on_delete=models.SET_NULL,
                                       null=True, blank=True)
-    preprint_created = models.DateTimeField(null=True, blank=True)
-    preprint_subjects = models.ManyToManyField(Subject, related_name='preprints')
-    preprint_providers = models.ManyToManyField(PreprintProvider, related_name='preprints')
-    preprint_doi = models.CharField(max_length=128, null=True, blank=True, validators=[validate_doi])
+    preprint_article_doi = models.CharField(max_length=128,
+                                            validators=[validate_doi],
+                                            null=True, blank=True)
+    _is_preprint_orphan = models.NullBooleanField(default=False)
+    _has_abandoned_preprint = models.BooleanField(default=False)
 
     keenio_read_key = models.CharField(max_length=1000, null=True, blank=True)
-    _is_preprint_orphan = models.NullBooleanField(default=False)
 
     def __init__(self, *args, **kwargs):
         self._parent = kwargs.pop('parent', None)
@@ -395,8 +393,18 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def is_preprint_orphan(self):
-        """For v1 compat."""
+        """For v1 compat"""
+        if (not self.is_preprint) and self._is_preprint_orphan:
+            return True
         return False
+
+    @property
+    def preprint_url(self):
+        if self.is_preprint:
+            try:
+                return self.preprint.url
+            except IndexError:
+                pass
 
     @property
     def is_collection(self):
@@ -2601,75 +2609,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             save=False,
         )
         self.save()
-
-    ##### Preprint methods #####
-    def add_preprint_provider(self, preprint_provider, user, save=False):
-        if not self.has_permission(user, ADMIN):
-            raise PermissionsError('Only admins can update a preprint provider.')
-        if not preprint_provider:
-            raise ValueError('Must specify a provider to set as the preprint_provider')
-        self.preprint_providers.add(preprint_provider)
-        if save:
-            self.save()
-
-    def remove_preprint_provider(self, preprint_provider, user, save=False):
-        if not self.has_permission(user, ADMIN):
-            raise PermissionsError('Only admins can remove a preprint provider.')
-        if not preprint_provider:
-            raise ValueError('Must specify a provider to remove from this preprint.')
-        if self.preprint_providers.filter(id=preprint_provider.id).exists():
-            self.preprint_providers.remove(preprint_provider)
-            if save:
-                self.save()
-            return True
-        return False
-
-    def set_preprint_subjects(self, preprint_subjects, auth, save=False):
-        if not self.has_permission(auth.user, ADMIN):
-            raise PermissionsError('Only admins can change a preprint\'s subjects.')
-
-        self.preprint_subjects.clear()
-        subject_pks = Subject.objects.filter(_id__in=preprint_subjects).values_list('pk', flat=True)
-        if len(subject_pks) < len(preprint_subjects):
-            raise ValidationValueError('Invalid subject ID passed')
-        self.preprint_subjects.add(*subject_pks)
-        if save:
-            self.save()
-
-    def set_preprint_file(self, preprint_file, auth, save=False):
-        from osf.models import StoredFileNode
-
-        if not self.has_permission(auth.user, ADMIN):
-            raise PermissionsError('Only admins can change a preprint\'s primary file.')
-
-        if not isinstance(preprint_file, StoredFileNode):
-            preprint_file = preprint_file.stored_object
-
-        if preprint_file.node != self or preprint_file.provider != 'osfstorage':
-            raise ValueError('This file is not a valid primary file for this preprint.')
-
-        # there is no preprint file yet! This is the first time!
-        if not self.preprint_file:
-            self.preprint_file = preprint_file
-            self.preprint_created = timezone.now()
-            self.add_log(action=NodeLog.PREPRINT_INITIATED, params={}, auth=auth, save=False)
-        elif preprint_file != self.preprint_file:
-            # if there was one, check if it's a new file
-            self.preprint_file = preprint_file
-            self.add_log(
-                action=NodeLog.PREPRINT_FILE_UPDATED,
-                params={},
-                auth=auth,
-                save=False,
-            )
-        if not self.is_public:
-            self.set_privacy(
-                Node.PUBLIC,
-                auth=None,
-                log=True
-            )
-        if save:
-            self.save()
 
     def add_addon(self, name, auth, log=True):
         ret = super(AbstractNode, self).add_addon(name, auth)

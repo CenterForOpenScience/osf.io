@@ -16,7 +16,8 @@ from website.app import init_app
 import website.search.search as search
 from scripts import utils as script_utils
 from website.search.elastic_search import es
-
+from website.search.search import update_institution
+from website.institutions.model import Institution
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +49,9 @@ def migrate_users(index):
 
     logger.info('Users iterated: {0}\nUsers migrated: {1}'.format(n_iter, n_migr))
 
+def migrate_institutions(index):
+    for inst in Institution.find(Q('is_deleted', 'ne', True)):
+        update_institution(inst, index)
 
 def migrate(delete, index=None, app=None):
     index = index or settings.ELASTIC_INDEX
@@ -62,6 +66,8 @@ def migrate(delete, index=None, app=None):
 
     new_index = set_up_index(index)
 
+    if settings.ENABLE_INSTITUTIONS:
+        migrate_institutions(new_index)
     migrate_nodes(new_index)
     migrate_users(new_index)
 

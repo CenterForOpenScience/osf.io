@@ -70,6 +70,8 @@ django-cors-headers==1.1.0
 django-rest-swagger==0.3.6
 djangorestframework-bulk==0.2.1
 pyjwt==1.4.0
+# Issue: sorry, but this version only supports 100 named groups (https://github.com/eliben/pycparser/issues/147)
+pycparser==2.13
 pyjwe==1.0.0
 jsonschema==2.5.1
 django-sslserver==0.19

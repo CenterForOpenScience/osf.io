@@ -20,6 +20,7 @@ from osf import models
 from osf.models.sanctions import Sanction
 from osf.utils.names import impute_names_model
 from osf.modm_compat import Q
+from addons.osfstorage.models import OsfStorageFile
 
 fake = Factory.create()
 ensure_licenses = functools.partial(ensure_licenses, warn=False)
@@ -458,7 +459,7 @@ class CommentFactory(DjangoModelFactory):
 
 
 class SubjectFactory(DjangoModelFactory):
-    text = factory.Faker('word')
+    text = factory.Sequence(lambda n: 'Example Subject #{}'.format(n))
 
     class Meta:
         model = models.Subject
@@ -483,28 +484,23 @@ class PreprintProviderFactory(DjangoModelFactory):
 
 
 class PreprintFactory(DjangoModelFactory):
-    title = factory.Faker('catch_phrase')
-    description = factory.Faker('sentence')
-    date_created = factory.LazyFunction(timezone.now)
-    preprint_created = factory.LazyFunction(timezone.now)
-    creator = factory.SubFactory(UserFactory)
-    creator = None
-    category = 'project'
     doi = factory.Sequence(lambda n: '10.123/{}'.format(n))
-    is_public = True
+    provider = factory.SubFactory(PreprintProviderFactory)
+    external_url = 'http://hello.org'
 
     class Meta:
-        model = models.Node
+        model = models.PreprintService
 
     @classmethod
-    def _create(cls, target_class, project=None, filename='preprint_file.txt', providers=None, doi=None, external_url=None, *args, **kwargs):
+    def _create(cls, target_class, project=None, filename='preprint_file.txt', provider=None,
+                doi=None, external_url=None, is_published=True, subjects=None, finish=True, *args, **kwargs):
         user = None
         if project:
             user = project.creator
         user = kwargs.get('user') or kwargs.get('creator') or user or UserFactory()
         kwargs['creator'] = user
         # Original project to be converted to a preprint
-        project = project or target_class(*args, **kwargs)
+        project = project or ProjectFactory(*args, **kwargs)
         project.save()
         if not project.is_contributor(user):
             project.add_contributor(
@@ -514,24 +510,32 @@ class PreprintFactory(DjangoModelFactory):
                 save=True
             )
 
-        # TODO: Uncomment when OsfStorageFile is implemented
-        # file = OsfStorageFile.create(
-        #     is_file=True,
-        #     node=project,
-        #     path='/{}'.format(filename),
-        #     name=filename,
-        #     materialized_path='/{}'.format(filename))
-        # file.save()
-        # project.set_preprint_file(file, auth=Auth(project.creator))
+        file = OsfStorageFile.create(
+            is_file=True,
+            node=project,
+            path='/{}'.format(filename),
+            name=filename,
+            materialized_path='/{}'.format(filename))
+        file.save()
 
-        project.preprint_subjects.add(SubjectFactory())  # this is a m2m, you can't do that.
-        if providers:
-            project.preprint_providers.add(*providers)
-        project.preprint_doi = doi
-        project.preprint_created = timezone.now()
+        preprint = target_class(node=project, provider=provider)
+
+        auth = Auth(project.creator)
+
+        if finish:
+            preprint.set_primary_file(file, auth=auth)
+            subjects = subjects or [[SubjectFactory()._id]]
+            preprint.set_subjects(subjects, auth=auth)
+            preprint.set_published(is_published, auth=auth)
+
+        if not preprint.is_published:
+            project._has_abandoned_preprint = True
+
+        project.preprint_article_doi = doi
         project.save()
+        preprint.save()
 
-        return project
+        return preprint
 
 
 class TagFactory(DjangoModelFactory):
@@ -630,4 +634,3 @@ class ExternalAccountFactory(DjangoModelFactory):
     display_name = factory.Sequence(lambda n: 'user-{0}'.format(n))
     profile_url = 'http://wutwut.com/'
     refresh_token = 'some-sillier-key'
-
