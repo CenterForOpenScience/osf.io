@@ -261,28 +261,24 @@ class TestVaryFuncs(DbIsolationMixin, OsfTestCase):
     def test_eacro_makes_an_embargoed_approved_complete_registration_of_a_node(self):
         reg = self.Reg(embargoed_approved_complete_registration_of)
         ok_(reg.retraction is None)
-        ok_(reg.embargo)
         assert_equal(reg.embargo.state, 'approved')
         ok_(reg.archive_job.done)
 
     def test_eairo_makes_an_embargoed_approved_incomplete_registration_of_a_node(self):
         reg = self.Reg(embargoed_approved_incomplete_registration_of)
         ok_(reg.retraction is None)
-        ok_(reg.embargo)
         assert_equal(reg.embargo.state, 'approved')
         ok_(not reg.archive_job.done)
 
     def test_eucro_makes_an_embargoed_unapproved_complete_registration_of_a_node(self):
         reg = self.Reg(embargoed_unapproved_complete_registration_of)
         ok_(reg.retraction is None)
-        ok_(reg.embargo)
         assert_equal(reg.embargo.state, 'unapproved')
         ok_(reg.archive_job.done)
 
     def test_euiro_makes_an_embargoed_unapproved_incomplete_registration_of_a_node(self):
         reg = self.Reg(embargoed_unapproved_incomplete_registration_of)
         ok_(reg.retraction is None)
-        ok_(reg.embargo)
         assert_equal(reg.embargo.state, 'unapproved')
         ok_(not reg.archive_job.done)
 
@@ -304,28 +300,24 @@ class TestVaryFuncs(DbIsolationMixin, OsfTestCase):
     def test_uroeacro_makes_an_unapproved_retraction_of_an_embargoed_approved_complete_registration_of_a_node(self):
         reg = self.Reg(unapproved_retraction_of_an_embargoed_approved_complete_registration_of)
         assert_equal(reg.retraction.state, 'unapproved')
-        ok_(reg.embargo)
         assert_equal(reg.embargo.state, 'approved')
         ok_(reg.archive_job.done)
 
     def test_uroeairo_makes_an_unapproved_retraction_of_an_embargoed_approved_incomplete_registration_of_a_node(self):
         reg = self.Reg(unapproved_retraction_of_an_embargoed_approved_incomplete_registration_of)
         assert_equal(reg.retraction.state, 'unapproved')
-        ok_(reg.embargo)
         assert_equal(reg.embargo.state, 'approved')
         ok_(not reg.archive_job.done)
 
     def test_uroeucro_makes_an_unapproved_retraction_of_an_embargoed_unapproved_complete_registration_of_a_node(self):
         reg = self.Reg(unapproved_retraction_of_an_embargoed_unapproved_complete_registration_of)
         assert_equal(reg.retraction.state, 'unapproved')
-        ok_(reg.embargo)
         assert_equal(reg.embargo.state, 'unapproved')
         ok_(reg.archive_job.done)
 
     def test_uroeuiro_makes_an_unapproved_retraction_of_an_embargoed_unapproved_incomplete_registration_of_a_node(self):
         reg = self.Reg(unapproved_retraction_of_an_embargoed_unapproved_incomplete_registration_of)
         assert_equal(reg.retraction.state, 'unapproved')
-        ok_(reg.embargo)
         assert_equal(reg.embargo.state, 'unapproved')
         ok_(not reg.archive_job.done)
 
