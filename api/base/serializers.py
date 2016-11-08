@@ -583,6 +583,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                         formatted_filter = self.format_filter(obj)
                         if formatted_filter:
                             url = extend_querystring_params(url, {'filter': formatted_filter})
+                            url = url.replace('?filter=', '?filter')
                         else:
                             url = None
 
