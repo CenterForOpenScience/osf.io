@@ -2181,6 +2181,8 @@ var copyMode = null;
  * @private
  */
 function _fangornDragStart(event, ui) {
+    // Sync up the toolbar in case item was drag-clicked and not released
+    m.redraw(); 
     var itemID = $(event.target).attr('data-id'),
         item = this.find(itemID);
     if (this.multiselected().length < 2) {
