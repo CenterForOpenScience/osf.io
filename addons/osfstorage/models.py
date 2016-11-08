@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import logging
 import os
 
@@ -362,6 +364,7 @@ class NodeSettings(BaseStorageAddon, BaseNodeSettings):
         if self.root_node:
             return
 
+
         # A save is required here to both create and attach the root_node
         # When on_add is called the model that self refers to does not yet exist
         # in the database and thus odm cannot attach foreign fields to it
@@ -387,6 +390,7 @@ class NodeSettings(BaseStorageAddon, BaseNodeSettings):
     def after_register(self, node, registration, user, save=True):
         clone = self.clone()
         clone.owner = registration
+
         clone.on_add()
         clone.save()
 

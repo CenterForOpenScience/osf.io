@@ -919,7 +919,6 @@ class TestCollectionNodeLinkCreate(ApiTestCase):
         assert_equal(res.json['errors'][0]['detail'], 'This resource has a type of "node_links", but you set the json body\'s type field to "wrong_type". You probably need to change the type field to match the resource\'s type.')
 
 
-@pytest.mark.skip('Unskip when node links are properl implemented')
 class TestCollectionNodeLinkDetail(ApiTestCase):
 
     def setUp(self):
@@ -1013,7 +1012,8 @@ class TestCollectionNodeLinkDetail(ApiTestCase):
     def test_delete_node_link_no_permissions_for_target_node(self):
         pointer_project = CollectionFactory(creator=self.user_two)
         pointer = self.collection.add_pointer(pointer_project, auth=Auth(self.user_one), save=True)
-        assert_in(pointer, self.collection.linked_nodes.all())
+        # linked_nodes is a list of nodes, need to use the child of the pointer
+        assert_in(pointer.child, self.collection.linked_nodes.all())
         url = '/{}collections/{}/node_links/{}/'.format(API_BASE, self.collection._id, pointer._id)
         res = self.app.delete_json_api(url, auth=self.user_one.auth)
         assert_equal(res.status_code, 204)
@@ -1355,7 +1355,7 @@ class TestCollectionBulkUpdate(ApiTestCase):
     def test_bulk_update_collections_one_not_found(self):
         empty_payload = {'data': [
             {
-                'id': 12345,
+                'id': '12345',
                 'type': 'collections',
                 'attributes': {
                     'title': self.new_title
@@ -1927,7 +1927,6 @@ class TestBulkDeleteCollectionNodeLinks(ApiTestCase):
         assert_equal(node_count_before - 2, self.collection_two.nodes_pointer.count())
         self.collection_two.reload()
 
-    @pytest.mark.skip('Unskip when node links are properl implemented')
     def test_return_bulk_deleted_collection_node_pointer(self):
         res = self.app.delete_json_api(self.collection_two_url, self.collection_two_payload, auth=self.user.auth, bulk=True)
         self.collection_two.reload()  # Update the model to reflect changes made by post request

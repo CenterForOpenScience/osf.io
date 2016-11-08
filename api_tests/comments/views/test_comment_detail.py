@@ -10,6 +10,7 @@ from framework.guid.model import Guid
 from api.base.settings.defaults import API_BASE
 from api.base.settings import osf_settings
 from api_tests import utils as test_utils
+from osf.models import Comment
 from tests.base import ApiTestCase
 from osf_tests.factories import (
     ProjectFactory,
@@ -147,6 +148,7 @@ class CommentDetailMixin(object):
         assert_equal(urlparse(url).path, expected_url)
 
     def test_registration_comment_has_node_link(self):
+        import ipdb;ipdb.set_trace()
         self._set_up_registration_with_comment()
         res = self.app.get(self.comment_url, auth=self.user.auth)
         url = res.json['data']['relationships']['node']['links']['related']['href']
@@ -239,7 +241,7 @@ class CommentDetailMixin(object):
         self._set_up_private_project_with_comment()
         reply_target = Guid.load(self.comment._id)
         reply = CommentFactory(node=self.private_project, target=reply_target, user=self.user)
-        reply_url = '/{}comments/{}/'.format(API_BASE, reply)
+        reply_url = '/{}comments/{}/'.format(API_BASE, reply._id)
         res = self.app.delete_json_api(reply_url, auth=self.user.auth)
         assert_equal(res.status_code, 204)        
 
@@ -247,7 +249,7 @@ class CommentDetailMixin(object):
         self._set_up_private_project_with_comment()
         reply_target = Guid.load(self.comment._id)
         reply = CommentFactory(node=self.private_project, target=reply_target, user=self.user)
-        reply_url = '/{}comments/{}/'.format(API_BASE, reply)
+        reply_url = '/{}comments/{}/'.format(API_BASE, reply._id)
         reply.is_deleted = True
         reply.save()
         payload = self._set_up_payload(reply._id, has_content=False)
@@ -545,7 +547,6 @@ class TestCommentDetailView(CommentDetailMixin, ApiTestCase):
         assert_in(self.registration._id, node_res.json['data']['id'])
 
 
-@pytest.mark.skip('Files not yet implemented')
 class TestFileCommentDetailView(CommentDetailMixin, ApiTestCase):
 
     def _set_up_private_project_with_comment(self):
@@ -565,9 +566,13 @@ class TestFileCommentDetailView(CommentDetailMixin, ApiTestCase):
         self.public_comment_payload = self._set_up_payload(self.public_comment._id)
 
     def _set_up_registration_with_comment(self):
-        self.registration = RegistrationFactory(creator=self.user, comment_level='private')
-        self.registration_file = test_utils.create_test_file(self.registration, self.user)
-        self.registration_comment = CommentFactory(node=self.registration, target=self.registration_file.get_guid(), user=self.user)
+        import ipdb;ipdb.set_trace()
+        self.project = ProjectFactory.create(creator=self.user, is_public=True, comment_level='private')
+        self.project_file = test_utils.create_test_file(self.project, self.user)
+        self.project_comment = CommentFactory(node=self.project, target=self.project_file.get_guid(), user=self.user)
+        self.registration = RegistrationFactory(project=self.project)
+        self.registration_file = None
+        self.registration_comment = Comment.objects.filter(node=self.registration, )
         self.comment_url = '/{}comments/{}/'.format(API_BASE, self.registration_comment._id)
         reply_target = Guid.load(self.registration_comment._id)
         self.registration_comment_reply = CommentFactory(node=self.registration, target=reply_target, user=self.user)
@@ -617,8 +622,7 @@ class TestFileCommentDetailView(CommentDetailMixin, ApiTestCase):
         self._set_up_private_project_with_comment()
         # Delete commented file
         osfstorage = self.private_project.get_addon('osfstorage')
-        root_node = osfstorage.get_root()
-        root_node.delete(self.file)
+        self.file.delete(user=self.user)
         res = self.app.get(self.private_url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
