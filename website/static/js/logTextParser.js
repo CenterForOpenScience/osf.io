@@ -646,6 +646,26 @@ var LogPieces = {
             // Comment left on project
             return m('span', '');
         }
+    },
+
+    preprint: {
+        view: function(ctrl, logObject) {
+            var preprint = logObject.attributes.preprint;
+            if (paramIsReturned(preprint, logObject)) {
+                return m('a', {href: '/' + preprint.id + '/'}, 'preprint');
+            }
+            return m('span', 'preprint');
+        }
+    },
+
+    service: {
+        view: function(ctrl, logObject) {
+            var service = logObject.attributes.service;
+            if (paramIsReturned(service, logObject)) {
+                return m('span', 'the ' + service.name);
+            }
+            return m('span', 'a preprint');
+        }
     }
 };
 

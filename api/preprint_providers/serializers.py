@@ -15,12 +15,29 @@ class PreprintProviderSerializer(JSONAPISerializer):
     name = ser.CharField(required=True)
     description = ser.CharField(required=False)
     id = ser.CharField(max_length=200, source='_id')
-
+    advisory_board = ser.CharField(required=False, allow_null=True)
+    email_contact = ser.CharField(required=False, allow_null=True)
+    email_support = ser.CharField(required=False, allow_null=True)
+    social_twitter = ser.CharField(required=False, allow_null=True)
+    social_facebook = ser.CharField(required=False, allow_null=True)
+    social_instagram = ser.CharField(required=False, allow_null=True)
+    header_text = ser.CharField(required=False, allow_null=True)
+    subjects_acceptable = ser.JSONField(required=False, allow_null=True)
     logo_path = ser.CharField(read_only=True)
     banner_path = ser.CharField(read_only=True)
 
     preprints = RelationshipField(
         related_view='preprint_providers:preprints-list',
+        related_view_kwargs={'provider_id': '<_id>'}
+    )
+
+    taxonomies = RelationshipField(
+        related_view='preprint_providers:taxonomy-list',
+        related_view_kwargs={'provider_id': '<_id>'}
+    )
+
+    licenses_acceptable = RelationshipField(
+        related_view='preprint_providers:license-list',
         related_view_kwargs={'provider_id': '<_id>'}
     )
 

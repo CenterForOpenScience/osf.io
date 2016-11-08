@@ -5,13 +5,15 @@ from modularodm import Q
 
 from framework.auth.oauth_scopes import CoreScopes
 
-from website.models import Node, PreprintService, PreprintProvider
+from website.models import Node, Subject, PreprintService, PreprintProvider
 
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.pagination import MaxSizePagination
 
+from api.licenses.views import LicenseList
+from api.taxonomies.serializers import TaxonomySerializer
 from api.preprint_providers.serializers import PreprintProviderSerializer
 from api.preprints.serializers import PreprintSerializer
 
@@ -168,7 +170,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFil
     required_read_scopes = [CoreScopes.NODE_PREPRINTS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    view_category = 'preprints'
+    view_category = 'preprint_providers'
     view_name = 'preprints-list'
 
     # overrides ODMFilterMixin
@@ -185,3 +187,49 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, ODMFil
     def get_queryset(self):
         query = self.get_query_from_request()
         return PreprintService.find(query)
+
+
+class PreprintProviderSubjectList(JSONAPIBaseView, generics.ListAPIView):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    view_category = 'preprint_providers'
+    view_name = 'taxonomy-list'
+
+    required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = TaxonomySerializer
+
+    def is_valid_subject(self, allows_children, allowed_parents, sub):
+        if sub._id in allowed_parents:
+            return True
+        for parent in sub.parents:
+            if parent._id in allows_children:
+                return True
+            for grandpa in parent.parents:
+                if grandpa._id in allows_children:
+                    return True
+        return False
+
+    def get_queryset(self):
+        parent = self.request.query_params.get('filter[parents]', None)
+        provider = PreprintProvider.load(self.kwargs['provider_id'])
+        if parent:
+            if parent == 'null':
+                return provider.top_level_subjects
+            #  Calculate this here to only have to do it once.
+            allowed_parents = [id_ for sublist in provider.subjects_acceptable for id_ in sublist[0]]
+            allows_children = [subs[0][-1] for subs in provider.subjects_acceptable if subs[1]]
+            return [sub for sub in Subject.find(Q('parents', 'eq', parent)) if provider.subjects_acceptable == [] or self.is_valid_subject(allows_children=allows_children, allowed_parents=allowed_parents, sub=sub)]
+        return provider.all_subjects
+
+
+class PreprintProviderLicenseList(LicenseList):
+    view_category = 'preprint_providers'
+
+    def get_queryset(self):
+        provider = PreprintProvider.load(self.kwargs['provider_id'])
+        return provider.licenses_acceptable if len(provider.licenses_acceptable) else super(PreprintProviderLicenseList, self).get_queryset()
