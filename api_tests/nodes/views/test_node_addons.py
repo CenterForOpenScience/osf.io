@@ -13,14 +13,13 @@ from osf_tests.factories import AuthUserFactory
 from addons.box.tests.factories import BoxAccountFactory, BoxNodeSettingsFactory
 from addons.dataverse.tests.factories import DataverseAccountFactory, DataverseNodeSettingsFactory
 from addons.dropbox.tests.factories import DropboxAccountFactory, DropboxNodeSettingsFactory
+from addons.forward.tests.factories import ForwardSettingsFactory
 from addons.github.tests.factories import GitHubAccountFactory, GitHubNodeSettingsFactory
 from addons.googledrive.tests.factories import GoogleDriveAccountFactory, GoogleDriveNodeSettingsFactory
+from addons.mendeley.tests.factories import MendeleyAccountFactory, MendeleyNodeSettingsFactory
 from addons.s3.tests.factories import S3AccountFactory, S3NodeSettingsFactory
 from addons.owncloud.tests.factories import OwnCloudAccountFactory, OwnCloudNodeSettingsFactory
-
-from website.addons.forward.tests.factories import ForwardSettingsFactory
-from website.addons.mendeley.tests.factories import MendeleyAccountFactory, MendeleyNodeSettingsFactory
-from website.addons.zotero.tests.factories import ZoteroAccountFactory, ZoteroNodeSettingsFactory
+from addons.zotero.tests.factories import ZoteroAccountFactory, ZoteroNodeSettingsFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -523,7 +522,7 @@ class NodeAddonFolderMixin(object):
         assert_equal(res.status_code, 403)
 
     def test_folder_list_GET_raises_error_admin_not_authorizer(self):
-        wrong_type = self.should_expect_errors(success_types=('CONFIGURABLE',))
+        wrong_type = self.should_expect_errors()
         admin_user = AuthUserFactory()
         self.node.add_contributor(admin_user, permissions=[ADMIN], auth=self.auth)
         res = self.app.get(self.folder_url,
@@ -654,14 +653,12 @@ class TestNodeGitHubAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
             'owner': self.node
         }
 
-@pytest.mark.skip
 class TestNodeMendeleyAddon(NodeOAuthCitationAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'mendeley'
     AccountFactory = MendeleyAccountFactory
     NodeSettingsFactory = MendeleyNodeSettingsFactory
 
 
-@pytest.mark.skip
 class TestNodeZoteroAddon(NodeOAuthCitationAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'zotero'
     AccountFactory = ZoteroAccountFactory
@@ -862,7 +859,6 @@ class TestNodeGoogleDriveAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTest
              res.json['errors'][0]['detail'])
 
 
-@pytest.mark.skip
 class TestNodeForwardAddon(NodeUnmanageableAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'forward'
 
@@ -881,6 +877,16 @@ class TestNodeForwardAddon(NodeUnmanageableAddonTestSuiteMixin, ApiAddonTestCase
         self.node_settings.save()
 
     ## Overrides
+
+
+    def test_folder_list_GET_raises_error_admin_not_authorizer(self):
+        wrong_type = self.should_expect_errors()
+        admin_user = AuthUserFactory()
+        self.node.add_contributor(admin_user, permissions=[ADMIN], auth=self.auth)
+        res = self.app.get(self.folder_url,
+            auth=admin_user.auth,
+            expect_errors=True)
+        assert_equal(res.status_code, 501)
 
     def test_settings_detail_GET_enabled(self):
         res = self.app.get(
@@ -908,7 +914,7 @@ class TestNodeForwardAddon(NodeUnmanageableAddonTestSuiteMixin, ApiAddonTestCase
         assert_equal(addon_data['label'], None)
 
         self.node.reload()
-        assert_not_equal(self.node.logs[-1].action, 'forward_url_changed')
+        assert_not_equal(self.node.logs.latest().action, 'forward_url_changed')
 
     def test_settings_detail_noncontrib_public_can_view(self):
         self.node.set_privacy('public', auth=self.auth)
@@ -974,7 +980,7 @@ class TestNodeForwardAddon(NodeUnmanageableAddonTestSuiteMixin, ApiAddonTestCase
         assert_equal(addon_data['label'], self._mock_folder_info['label'])
 
         self.node.reload()
-        assert_equal(self.node.logs[-1].action, 'forward_url_changed')
+        assert_equal(self.node.logs.latest().action, 'forward_url_changed')
 
     def test_settings_detail_PUT_none_and_enabled_clears_settings(self):
         res = self.app.put_json_api(self.setting_detail_url,
@@ -991,7 +997,7 @@ class TestNodeForwardAddon(NodeUnmanageableAddonTestSuiteMixin, ApiAddonTestCase
         assert_false(addon_data['url'])
         assert_false(addon_data['label'])
 
-        assert_not_equal(self.node.logs[-1].action, 'forward_url_changed')
+        assert_not_equal(self.node.logs.latest().action, 'forward_url_changed')
 
     def test_settings_detail_PUT_only_label_and_enabled_clears_settings(self):
         res = self.app.put_json_api(self.setting_detail_url,
@@ -1026,7 +1032,7 @@ class TestNodeForwardAddon(NodeUnmanageableAddonTestSuiteMixin, ApiAddonTestCase
         assert_false(addon_data['label'])
 
         self.node.reload()
-        assert_equal(self.node.logs[-1].action, 'forward_url_changed')
+        assert_equal(self.node.logs.latest().action, 'forward_url_changed')
 
     def test_settings_detail_PUT_none_and_disabled_deauthorizes(self):
         # This test doesn't apply forward, as it does not use ExternalAccounts.

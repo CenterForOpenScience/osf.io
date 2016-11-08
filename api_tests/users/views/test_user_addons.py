@@ -14,10 +14,10 @@ from addons.dataverse.tests.factories import DataverseAccountFactory
 from addons.dropbox.tests.factories import DropboxAccountFactory
 from addons.github.tests.factories import GitHubAccountFactory
 from addons.googledrive.tests.factories import GoogleDriveAccountFactory
-from addons.s3.tests.factories import S3AccountFactory
+from addons.mendeley.tests.factories import MendeleyAccountFactory
 from addons.owncloud.tests.factories import OwnCloudAccountFactory
-from website.addons.mendeley.tests.factories import MendeleyAccountFactory
-from website.addons.zotero.tests.factories import ZoteroAccountFactory
+from addons.s3.tests.factories import S3AccountFactory
+from addons.zotero.tests.factories import ZoteroAccountFactory
 
 
 class UserAddonListMixin(object):
@@ -404,17 +404,14 @@ class TestUserGoogleDriveAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'googledrive'
     AccountFactory = GoogleDriveAccountFactory
 
-@pytest.mark.skip('Unskip when zotero addon is implemented')
 class TestUserMendeleyAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'mendeley'
     AccountFactory = MendeleyAccountFactory
-
 
 class TestUserS3Addon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 's3'
     AccountFactory = S3AccountFactory
 
-@pytest.mark.skip('Unskip when zotero addon is implemented')
 class TestUserZoteroAddon(UserOAuthAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'zotero'
     AccountFactory = ZoteroAccountFactory

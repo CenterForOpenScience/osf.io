@@ -1982,7 +1982,7 @@ class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, Node
     def get_default_queryset(self):
         qs = []
         for addon in ADDONS_OAUTH:
-            obj = self.get_addon_settings(provider=addon, fail_if_absent=False)
+            obj = self.get_addon_settings(provider=addon, fail_if_absent=False, check_object_permissions=False)
             if obj:
                 qs.append(obj)
         qs.sort()
@@ -2077,7 +2077,7 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, ge
     view_name = 'node-addon-detail'
 
     def get_object(self):
-        return self.get_addon_settings()
+        return self.get_addon_settings(check_object_permissions=False)
 
     def perform_create(self, serializer):
         addon = self.kwargs['provider']

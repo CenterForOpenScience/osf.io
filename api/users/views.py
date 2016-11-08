@@ -330,7 +330,7 @@ class UserAddonDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin, Addo
     view_name = 'user-addon-detail'
 
     def get_object(self):
-        return self.get_addon_settings()
+        return self.get_addon_settings(check_object_permissions=False)
 
 
 class UserAddonAccountList(JSONAPIBaseView, generics.ListAPIView, UserMixin, AddonSettingsMixin):
@@ -373,7 +373,7 @@ class UserAddonAccountList(JSONAPIBaseView, generics.ListAPIView, UserMixin, Add
     view_name = 'user-external_accounts'
 
     def get_queryset(self):
-        return self.get_addon_settings().external_accounts
+        return self.get_addon_settings(check_object_permissions=False).external_accounts
 
 class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin, AddonSettingsMixin):
     """Detail of an individual external_account authorized by this user *Read-only*
@@ -415,7 +415,7 @@ class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixi
     view_name = 'user-external_account-detail'
 
     def get_object(self):
-        user_settings = self.get_addon_settings()
+        user_settings = self.get_addon_settings(check_object_permissions=False)
         account_id = self.kwargs['account_id']
 
         account = ExternalAccount.load(account_id)
