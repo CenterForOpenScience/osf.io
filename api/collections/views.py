@@ -508,7 +508,7 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
     serializer_class = CollectionNodeLinkSerializer
     view_category = 'collections'
     view_name = 'node-pointers'
-    model_class = Node
+    model_class = NodeRelation
 
     def get_queryset(self):
         return NodeRelation.objects.filter(

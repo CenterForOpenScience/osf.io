@@ -1355,7 +1355,7 @@ class TestCollectionBulkUpdate(ApiTestCase):
     def test_bulk_update_collections_one_not_found(self):
         empty_payload = {'data': [
             {
-                'id': 12345,
+                'id': '12345',
                 'type': 'collections',
                 'attributes': {
                     'title': self.new_title
