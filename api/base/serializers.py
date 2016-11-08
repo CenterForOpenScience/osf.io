@@ -580,10 +580,13 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     kwargs.update({'version': request.parser_context['kwargs']['version']})
                     url = self.reverse(view, kwargs=kwargs, request=request, format=format)
                     if self.filter:
-                        formatted_filter = self.format_filter(obj)
-                        if formatted_filter:
-                            url = extend_querystring_params(url, {'filter': formatted_filter})
-                            url = url.replace('?filter=', '?filter')
+                        formatted_filters = self.format_filter(obj)
+                        if formatted_filters:
+                            for filter in formatted_filters:
+                                url = extend_querystring_params(
+                                    url,
+                                    {'filter[{}]'.format(filter['field_name']): filter['value']}
+                                )
                         else:
                             url = None
 
@@ -611,8 +614,8 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 return '<esi:include src="{}"/>'.format(esi_url)
 
     def format_filter(self, obj):
-        qd = QueryDict(mutable=True)
         filter_fields = self.filter.keys()
+        filters = []
         for field_name in filter_fields:
             try:
                 # check if serializer method passed in
@@ -623,10 +626,8 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 value = serializer_method(obj)
             if not value:
                 continue
-            qd.update({'[{}]'.format(field_name): value})
-        if not qd.keys():
-            return None
-        return qd.urlencode(safe=['[', ']'])
+            filters.append({'field_name': field_name, 'value': value})
+        return filters if filters else None
 
     # Overrides HyperlinkedIdentityField
     def to_representation(self, value):
