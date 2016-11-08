@@ -252,7 +252,6 @@ class TestReportDetailView(ReportDetailViewMixin, ApiTestCase):
         self.public_url = '/{}comments/{}/reports/{}/'.format(API_BASE, self.public_comment._id, self.user._id)
 
 
-@pytest.mark.skip('Files not yet implemented')
 class TestFileCommentReportDetailView(ReportDetailViewMixin, ApiTestCase):
 
     def _set_up_private_project_comment_reports(self):

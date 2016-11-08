@@ -176,7 +176,7 @@ class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Comm
         elif isinstance(comment.target.referent, (NodeWikiPage,
                                                   StoredFileNode)):
             comment_node = comment.target.referent.node
-
+        import ipdb;ipdb.set_trace()
         if comment_node and comment_node.is_registration:
             self.serializer_class = RegistrationCommentDetailSerializer
 
