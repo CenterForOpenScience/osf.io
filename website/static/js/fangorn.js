@@ -1270,8 +1270,19 @@ function _fangornLazyLoadOnLoad (tree, event) {
  * @private
  */
 function orderFolder(tree) {
-    var sortColumn = this.isSorted[1].asc || this.isSorted[1].desc ? 1 : 0; 
-    var sortDirection = this.isSorted[sortColumn].desc ? 'desc' : 'asc';
+    var sortColumn;
+    var sortDirection;
+
+    if(typeof this.isSorted !== 'undefined' && typeof this.isSorted[0] !== 'undefined'){
+        sortColumn = Object.keys(this.isSorted)[0]; // default to whatever column is first
+        for (var column in this.isSorted){
+            sortColumn = this.isSorted[column].asc || this.isSorted[column].desc ? column : sortColumn; 
+        }
+        sortDirection = this.isSorted[sortColumn].desc ? 'desc' : 'asc'; // default to ascending
+    }else{
+        sortColumn = 0;
+        sortDirection = 'asc';
+    }
     tree.sortChildren(this, sortDirection, 'text', sortColumn, 1);
     this.redraw();
 }

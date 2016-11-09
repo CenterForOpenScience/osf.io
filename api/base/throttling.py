@@ -5,9 +5,6 @@ from api.base import settings
 
 class BaseThrottle(SimpleRateThrottle):
 
-    def failure(self, request):
-        return False
-
     def get_ident(self, request):
         if request.META.get('HTTP_X_THROTTLE_TOKEN'):
             return request.META['HTTP_X_THROTTLE_TOKEN']
@@ -35,7 +32,7 @@ class BaseThrottle(SimpleRateThrottle):
             self.history.pop()
 
         if len(self.history) >= self.num_requests:
-            return self.failure(request)
+            return self.throttle_failure()
         return self.throttle_success()
 
 
@@ -43,28 +40,42 @@ class NonCookieAuthThrottle(BaseThrottle, AnonRateThrottle):
 
     scope = 'non-cookie-auth'
 
-    def failure(self, request):
-        return bool(request.COOKIES)
+    def allow_request(self, request, view):
+        """
+        Allow all unauthenticated requests that are made with a cookie.
+        """
+        if bool(request.COOKIES):
+            return True
+
+        return super(NonCookieAuthThrottle, self).allow_request(request, view)
 
 
 class AddContributorThrottle(BaseThrottle, UserRateThrottle):
 
     scope = 'add-contributor'
 
-    def failure(self, request):
-        if request.method == 'POST' and request.query_params.get('send_email') != 'false':
-            return False
-        return True
+    def allow_request(self, request, view):
+        """
+        Allow all add contributor requests that do not send contributor emails.
+        """
+        if request.method == 'POST' and request.query_params.get('send_email') == 'false':
+            return True
+
+        return super(AddContributorThrottle, self).allow_request(request, view)
 
 
 class CreateGuidThrottle(BaseThrottle, UserRateThrottle):
 
     scope = 'create-guid'
 
-    def failure(self, request):
-        if request.query_params.get('create_guid'):
-            return False
-        return True
+    def allow_request(self, request, view):
+        """
+        Allow all create file requests that do not create new guids.
+        """
+        if not request.query_params.get('create_guid'):
+            return True
+
+        return super(CreateGuidThrottle, self).allow_request(request, view)
 
 
 class RootAnonThrottle(AnonRateThrottle):

@@ -44,8 +44,6 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
         popular_nodes = [self.pop1, self.pop2]
         popular_registrations = [self.popreg1, self.popreg2]
 
-        # mock_client.count.return_value = {
-
         node_pageviews = [
             {
                 'result': 5,
