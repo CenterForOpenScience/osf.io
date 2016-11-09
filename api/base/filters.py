@@ -105,11 +105,12 @@ class FilterMixin(object):
 
         :raises InvalidFilterError: If the filter field is not valid
         """
-        if field_name not in self.serializer_class._declared_fields:
+        serializer_class = self.get_serializer_class()
+        if field_name not in serializer_class._declared_fields:
             raise InvalidFilterError(detail="'{0}' is not a valid field for this endpoint.".format(field_name))
-        if field_name not in getattr(self.serializer_class, 'filterable_fields', set()):
+        if field_name not in getattr(serializer_class, 'filterable_fields', set()):
             raise InvalidFilterFieldError(parameter='filter', value=field_name)
-        return self.serializer_class._declared_fields[field_name]
+        return serializer_class._declared_fields[field_name]
 
     def _validate_operator(self, field, field_name, op):
         """
@@ -195,7 +196,6 @@ class FilterMixin(object):
                 fields = match_dict['fields']
                 field_names = re.findall(self.FILTER_FIELDS, fields.strip())
                 query.update({key: {}})
-
                 for field_name in field_names:
                     field = self._get_field_or_error(field_name)
                     op = match_dict.get('op') or self._get_default_operator(field)
