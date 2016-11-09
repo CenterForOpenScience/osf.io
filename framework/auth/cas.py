@@ -114,8 +114,8 @@ class CasClient(object):
         url = urlparse.urlparse(self.BASE_URL)
         url = url._replace(path='/p3/serviceValidate')
         query = {
-            "service": service_url,
-            "ticket": ticket
+            'service': service_url,
+            'ticket': ticket
         }
         url = url._replace(query=urllib.urlencode(query, True))
 
