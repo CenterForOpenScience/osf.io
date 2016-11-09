@@ -613,6 +613,11 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 return '<esi:include src="{}"/>'.format(esi_url)
 
     def format_filter(self, obj):
+        """ Take filters specified in self.filter and format them in a way that can be easily parametrized
+
+        :param obj: RelationshipField object
+        :return: list of dictionaries with 'field_name' and 'value' for each filter
+        """
         filter_fields = self.filter.keys()
         filters = []
         for field_name in filter_fields:
