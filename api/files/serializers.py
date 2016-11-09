@@ -181,19 +181,19 @@ class FileSerializer(JSONAPISerializer):
         return 1
 
     def get_size(self, obj):
-        if obj.versions:
-            self.size = obj.versions.last().size
+        if obj.versions.count():
+            self.size = obj.versions.latest().size
             return self.size
         return None
 
     def get_date_modified(self, obj):
         mod_dt = None
-        if obj.provider == 'osfstorage' and obj.versions:
+        if obj.provider == 'osfstorage' and obj.versions.count():
             # Each time an osfstorage file is added or uploaded, a new version object is created with its
             # date_created equal to the time of the update.  The date_modified is the modified date
             # from the backend the file is stored on.  This field refers to the modified date on osfstorage,
             # so prefer to use the date_created of the latest version.
-            mod_dt = obj.versions.last().date_created
+            mod_dt = obj.versions.latest().date_created
         elif obj.provider != 'osfstorage' and obj.history:
             mod_dt = obj.history[-1].get('modified', None)
 
@@ -204,7 +204,7 @@ class FileSerializer(JSONAPISerializer):
 
     def get_date_created(self, obj):
         creat_dt = None
-        if obj.provider == 'osfstorage' and obj.versions:
+        if obj.provider == 'osfstorage' and obj.versions.count():
             creat_dt = obj.versions.first().date_created
         elif obj.provider != 'osfstorage' and obj.history:
             # Non-osfstorage files don't store a created date, so instead get the modified date of the
@@ -218,8 +218,8 @@ class FileSerializer(JSONAPISerializer):
 
     def get_extra(self, obj):
         metadata = {}
-        if obj.provider == 'osfstorage' and obj.versions:
-            metadata = obj.versions.last().metadata
+        if obj.provider == 'osfstorage' and obj.versions.count():
+            metadata = obj.versions.latest().metadata
         elif obj.provider != 'osfstorage' and obj.history:
             metadata = obj.history[-1].get('extra', {})
 
@@ -288,6 +288,21 @@ class FileSerializer(JSONAPISerializer):
     def get_absolute_url(self, obj):
         return api_v2_url('files/{}/'.format(obj._id))
 
+
+class OsfStorageFileSerializer(FileSerializer):
+    """ Overrides `filterable_fields` to make `last_touched` non-filterable
+    """
+    filterable_fields = frozenset([
+        'id',
+        'name',
+        'node',
+        'kind',
+        'path',
+        'materialized_path',
+        'size',
+        'provider',
+        'tags',
+    ])
 
 class FileDetailSerializer(FileSerializer):
     """
