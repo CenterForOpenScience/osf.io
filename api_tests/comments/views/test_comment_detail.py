@@ -239,7 +239,7 @@ class CommentDetailMixin(object):
         self._set_up_private_project_with_comment()
         reply_target = Guid.load(self.comment._id)
         reply = CommentFactory(node=self.private_project, target=reply_target, user=self.user)
-        reply_url = '/{}comments/{}/'.format(API_BASE, reply)
+        reply_url = '/{}comments/{}/'.format(API_BASE, reply._id)
         res = self.app.delete_json_api(reply_url, auth=self.user.auth)
         assert_equal(res.status_code, 204)        
 
@@ -247,7 +247,7 @@ class CommentDetailMixin(object):
         self._set_up_private_project_with_comment()
         reply_target = Guid.load(self.comment._id)
         reply = CommentFactory(node=self.private_project, target=reply_target, user=self.user)
-        reply_url = '/{}comments/{}/'.format(API_BASE, reply)
+        reply_url = '/{}comments/{}/'.format(API_BASE, reply._id)
         reply.is_deleted = True
         reply.save()
         payload = self._set_up_payload(reply._id, has_content=False)
@@ -545,7 +545,6 @@ class TestCommentDetailView(CommentDetailMixin, ApiTestCase):
         assert_in(self.registration._id, node_res.json['data']['id'])
 
 
-@pytest.mark.skip('Files not yet implemented')
 class TestFileCommentDetailView(CommentDetailMixin, ApiTestCase):
 
     def _set_up_private_project_with_comment(self):
@@ -618,7 +617,7 @@ class TestFileCommentDetailView(CommentDetailMixin, ApiTestCase):
         # Delete commented file
         osfstorage = self.private_project.get_addon('osfstorage')
         root_node = osfstorage.get_root()
-        root_node.delete(self.file)
+        self.file.delete()
         res = self.app.get(self.private_url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
@@ -666,7 +665,7 @@ class TestWikiCommentDetailView(CommentDetailMixin, ApiTestCase):
     def test_public_node_non_contributor_commenter_can_update_wiki_comment(self):
         project = ProjectFactory(is_public=True)
         test_wiki = NodeWikiFactory(node=project, user=self.user)
-        comment = CommentFactory(node=project, target=Guid.load(test_wiki), user=self.non_contributor)
+        comment = CommentFactory(node=project, target=Guid.load(test_wiki._id), user=self.non_contributor)
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
         payload = self._set_up_payload(comment._id)
         res = self.app.put_json_api(url, payload, auth=self.non_contributor.auth)
@@ -676,7 +675,7 @@ class TestWikiCommentDetailView(CommentDetailMixin, ApiTestCase):
     def test_public_node_non_contributor_commenter_cannot_update_own_wiki_comment_if_comment_level_private(self):
         project = ProjectFactory(is_public=True)
         test_wiki = NodeWikiFactory(node=project, user=self.user)
-        comment = CommentFactory(node=project, target=Guid.load(test_wiki), user=self.non_contributor)
+        comment = CommentFactory(node=project, target=Guid.load(test_wiki._id), user=self.non_contributor)
         project.comment_level = 'private'
         project.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
@@ -688,7 +687,7 @@ class TestWikiCommentDetailView(CommentDetailMixin, ApiTestCase):
     def test_public_node_non_contributor_commenter_can_delete_wiki_comment(self):
         project = ProjectFactory(is_public=True, comment_level='public')
         test_wiki = NodeWikiFactory(node=project, user=self.user)
-        comment = CommentFactory(node=project, target=Guid.load(test_wiki), user=self.non_contributor)
+        comment = CommentFactory(node=project, target=Guid.load(test_wiki._id), user=self.non_contributor)
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
         res = self.app.delete_json_api(url, auth=self.non_contributor.auth)
         assert_equal(res.status_code, 204)

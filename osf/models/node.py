@@ -1433,7 +1433,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             )
         if self.is_collection:
             raise NodeStateError('Folders may not be registered')
-
         original = self.load(self._primary_key)
 
         # Note: Cloning a node will clone each node wiki page version and add it to
@@ -1457,8 +1456,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered.copy_contributors_from(self)
         registered.forked_from = self.forked_from
         registered.creator = self.creator
-        registered.tags.add(*self.tags.all())
-        registered.affiliated_institutions.add(*self.affiliated_institutions.all())
+        registered.tags.add(*self.tags.values_list('pk', flat=True))
+        registered.affiliated_institutions.add(*self.affiliated_institutions.values_list('pk', flat=True))
         registered.alternative_citations.add(*self.alternative_citations.values_list('pk', flat=True))
         registered.node_license = original.license.copy() if original.license else None
         registered.wiki_private_uuids = {}

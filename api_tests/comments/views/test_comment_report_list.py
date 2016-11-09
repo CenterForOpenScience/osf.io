@@ -309,7 +309,6 @@ class TestWikiCommentReportsView(CommentReportsMixin, ApiTestCase):
         self.public_comment.save()
         self.public_url = '/{}comments/{}/reports/'.format(API_BASE, self.public_comment._id)
 
-@pytest.mark.skip('Files not yet implemented')
 class TestFileCommentReportsView(CommentReportsMixin, ApiTestCase):
 
     def _set_up_private_project_comment_reports(self):
