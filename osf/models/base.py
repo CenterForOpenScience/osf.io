@@ -10,6 +10,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError as DjangoValidationError, MultipleObjectsReturned
 from django.db import models
+from django.db.models import ForeignKey
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -171,6 +172,12 @@ class BaseModel(models.Model):
         """Create a new, unsaved copy of this object."""
         copy = self.__class__.objects.get(pk=self.pk)
         copy.id = None
+
+        # empty all the fks
+        fk_field_names = [f.name for f in self._meta.model._meta.get_fields() if isinstance(f, (ForeignKey, GenericForeignKey))]
+        for field_name in fk_field_names:
+            setattr(copy, field_name, None)
+
         try:
             copy._id = bson.ObjectId()
         except AttributeError:

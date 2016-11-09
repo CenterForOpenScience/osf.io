@@ -134,7 +134,7 @@ class OsfStorageFileNode(FileNode):
         return self.checkout is not None
 
     def delete(self, user=None, parent=None):
-        if self.node.preprint_file.pk == self.pk:
+        if self.node.preprint_file and self.node.preprint_file.pk == self.pk:
             self.node._is_preprint_orphan = True
             self.node.save()
         if self.is_checked_out:
