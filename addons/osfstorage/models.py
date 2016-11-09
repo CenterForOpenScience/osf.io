@@ -358,12 +358,6 @@ class NodeSettings(BaseStorageAddon, BaseNodeSettings):
     def get_root(self):
         return self.root_node.wrapped()
 
-    # def clone(self):
-    #     clone = super(NodeSettings, self).clone()
-    #     clone.root_node = None
-    #     clone.save()
-    #     return clone
-
     def on_add(self):
         if self.root_node:
             return
