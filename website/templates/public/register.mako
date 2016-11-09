@@ -34,11 +34,77 @@
         </div>
     %endif
 
+    %if campaign == "socarxiv-preprints":
+        <div class="text-center m-t-lg">
+            <h3>SocArXiv Preprint Service</h3>
+            <hr>
+            <p>
+                Please login to the Open Science Framework or create a free account to contribute to SocArXiv Preprints.
+            </p>
+        </div>
+    %endif
+
+    %if campaign == "engrxiv-preprints":
+        <div class="text-center m-t-lg">
+            <h3>engrXiv Preprint Service</h3>
+            <hr>
+            <p>
+                Please login to the Open Science Framework or create a free account to contribute to engrXiv Preprints.
+            </p>
+        </div>
+    %endif
+
+    %if campaign == "psyarxiv-preprints":
+        <div class="text-center m-t-lg">
+            <h3>PsyArXiv Preprint Service</h3>
+            <hr>
+            <p>
+                Please login to the Open Science Framework or create a free account to contribute to PsyArXiv Preprints.
+            </p>
+        </div>
+    %endif
+
     <div class="row m-t-xl">
     %if campaign != "institution" or not enable_institutions:
         <div id="signUpScope" class="col-sm-10 col-sm-offset-1 col-md-9 col-md-offset-2 col-lg-8 col-lg-offset-3 signup-form p-b-md m-b-m bg-color-light">
             <form data-bind="submit: submit" class="form-horizontal">
-                <h3 class="m-b-lg"> Create a free account </h3>
+
+                %if campaign == "osf-preprints":
+                     <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
+                        <tr>
+                            <td><img src="/static/img/preprint_providers/osf-preprints-login.png" style="width: 200px; margin-top: 15px" /></td>
+                            <td><h3> Create a free OSF account</h3></td>
+                        </tr>
+                    </table>
+                %endif
+
+                %if campaign == "socarxiv-preprints":
+                    <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
+                        <tr>
+                            <td><img src="/static/img/preprint_providers/socarxiv-login.png" style="width: 150px; background: darkred;" /></td>
+                            <td><h3>Create a free OSF account to access SorArXiv</h3></td>
+                        </tr>
+                    </table>
+                %endif
+
+                 %if campaign == "engrxiv-preprints":
+                    <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
+                        <tr>
+                            <td><img src="/static/img/preprint_providers/engrxiv-login.png" style="width: 150px; background: darkred;" /></td>
+                            <td><h3>Create a free OSF account to access engrXiv</h3></td>
+                        </tr>
+                    </table>
+                %endif
+
+                 %if campaign == "psyarxiv-preprints":
+                    <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
+                        <tr>
+                            <td><img src="/static/img/preprint_providers/psyarxiv-login.png" style="width: 150px; background: darkred;" /></td>
+                            <td><h3>Create a free OSF account to access psyArXiv</h3></td>
+                        </tr>
+                    </table>
+                %endif
+
                 <div class="form-group" data-bind=" css: { 'has-error': fullName() && !fullName.isValid(), 'has-success': fullName() && fullName.isValid() }">
                     <label for="inputName" class="col-sm-4 control-label">Full Name</label>
                     <div class="col-sm-8">
