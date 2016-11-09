@@ -137,6 +137,9 @@ CONFIRM_EMAIL = Mail('confirm', subject='Add a new email to your OSF account')
 CONFIRM_EMAIL_PREREG = Mail('confirm_prereg', subject='Open Science Framework Account Verification, Preregistration Challenge')
 CONFIRM_EMAIL_ERPC = Mail('confirm_erpc', subject='Open Science Framework Account Verification, Election Research Preacceptance Competition')
 CONFIRM_EMAIL_PREPRINTS_OSF = Mail('confirm_preprints_osf', subject='Open Science Framework Account Verification, Preprints Service')
+CONFIRM_EMAIL_PREPRINTS_SOCARXIV = Mail('confirm_preprints_socarxiv', subject='Open Science Framework Account Verification, SocArXiv Preprints Service')
+CONFIRM_EMAIL_PREPRINTS_ENGRXIV = Mail('confirm_preprints_engrxiv', subject='Open Science Framework Account Verification, engrXiv Preprints Service')
+CONFIRM_EMAIL_PREPRINTS_PSYARXIV = Mail('confirm_preprints_psyarxiv', subject='Open Science Framework Account Verification, PsyArXiv Preprints Service')
 
 CONFIRM_MERGE = Mail('confirm_merge', subject='Confirm account merge')
 

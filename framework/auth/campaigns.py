@@ -29,6 +29,24 @@ CAMPAIGNS = ImmutableDict({
         'redirect_url': lambda: furl.furl(DOMAIN).add(path='preprints/').url,
         'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS_OSF,
         'proxy_login': True,
+    },
+    'socarxiv-preprints': {
+        'system_tag': 'socarxiv-preprints',
+        'redirect_url': lambda: furl.furl(DOMAIN).add(path='preprints/socarxiv').url,
+        'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS_SOCARXIV,
+        'proxy_login': True,
+    },
+    'engrxiv-preprints': {
+        'system_tag': 'socarxiv-preprints',
+        'redirect_url': lambda: furl.furl(DOMAIN).add(path='preprints/engrxiv').url,
+        'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS_ENGRXIV,
+        'proxy_login': True,
+    },
+    'psyarxiv-preprints': {
+        'system_tag': 'socarxiv-preprints',
+        'redirect_url': lambda: furl.furl(DOMAIN).add(path='preprints/psyarxiv').url,
+        'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS_PSYARXIV,
+        'proxy_login': True,
     }
 })
 
