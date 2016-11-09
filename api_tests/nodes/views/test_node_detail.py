@@ -747,7 +747,6 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Title cannot exceed 200 characters.')
 
-    @pytest.mark.skip('Addons not yet implemented')
     def test_public_project_with_publicly_editable_wiki_turns_private(self):
         wiki = self.public_project.get_addon('wiki')
         wiki.set_editing(permissions=True, auth=Auth(user=self.user), log=True)
