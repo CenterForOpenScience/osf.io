@@ -8,7 +8,6 @@ import urlparse
 import bson.objectid
 import itsdangerous
 from flask import request
-import furl
 from weakref import WeakKeyDictionary
 from werkzeug.local import LocalProxy
 
@@ -119,11 +118,14 @@ def before_request():
 
     # Central Authentication Server Ticket Validation and Authentication
     ticket = request.args.get('ticket')
+    request_url = urlparse.urlparse(request.url)
+    query = urlparse.parse_qs(request_url.query)
     if ticket:
-        service_url = furl.furl(request.url)
-        service_url.args.pop('ticket')
+        query.pop('ticket', None)
+        request_url = request_url._replace(query=urllib.urlencode(query, True))
+        service_url = request_url.geturl()
         # Attempt to authenticate wih CAS, and return a proper redirect response
-        return cas.make_response_from_ticket(ticket=ticket, service_url=service_url.url)
+        return cas.make_response_from_ticket(ticket=ticket, service_url=service_url)
 
     if request.authorization:
         user = get_user(

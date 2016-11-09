@@ -4,6 +4,7 @@ import furl
 import httplib as http
 import json
 import urllib
+import urlparse
 
 from lxml import etree
 import requests
@@ -102,7 +103,7 @@ class CasClient(object):
 
     def service_validate(self, ticket, service_url):
         """
-        Send request to CAS to validate ticket.
+        Send request to CAS to validate ticket. Return a parsed response if success, raise error otherwise.
 
         :param str ticket: CAS service ticket
         :param str service_url: Service URL from which the authentication request originates
@@ -110,12 +111,15 @@ class CasClient(object):
         :raises: CasError if an unexpected response is returned
         """
 
-        url = furl.furl(self.BASE_URL)
-        url.path.segments.extend(('p3', 'serviceValidate',))
-        url.args['ticket'] = ticket
-        url.args['service'] = service_url
+        url = urlparse.urlparse(self.BASE_URL)
+        url = url._replace(path='/p3/serviceValidate')
+        query = {
+            "service": service_url,
+            "ticket": ticket
+        }
+        url = url._replace(query=urllib.urlencode(query, True))
 
-        resp = requests.get(url.url)
+        resp = requests.get(url.geturl())
         if resp.status_code == 200:
             return self._parse_service_validation(resp.content)
         else:
@@ -254,11 +258,8 @@ def make_response_from_ticket(ticket, service_url):
     :return: redirect response
     """
 
-    service_furl = furl.furl(service_url)
-    if 'ticket' in service_furl.args:
-        service_furl.args.pop('ticket')
     client = get_client()
-    cas_resp = client.service_validate(ticket, service_furl.url)
+    cas_resp = client.service_validate(ticket, service_url)
     if cas_resp.authenticated:
         user, external_credential, action = get_user_from_cas_resp(cas_resp)
         # user found and authenticated
@@ -284,7 +285,7 @@ def make_response_from_ticket(ticket, service_url):
             return authenticate(
                 user,
                 cas_resp.attributes['accessToken'],
-                redirect(service_furl.url)
+                redirect(service_url)
             )
         # first time login from external identity provider
         if not user and external_credential and action == 'external_first_login':
@@ -304,7 +305,7 @@ def make_response_from_ticket(ticket, service_url):
                 redirect(web_url_for('external_login_email_get'))
             )
     # Unauthorized: ticket could not be validated, or user does not exist.
-    return redirect(service_furl.url)
+    return redirect(service_url)
 
 
 def get_user_from_cas_resp(cas_resp):
