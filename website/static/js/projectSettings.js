@@ -158,11 +158,6 @@ var getConfirmationCode = function(nodeType) {
     // point; only construct the HTML for the list of contributors if the contribs list is populated
     var message = '<p>It will no longer be available to other contributors on the project.';
 
-    if (window.contextVars.node.isPreprint) {
-        message += '<p>This project represents a preprint.</p>' +
-            '<p><strong>Deleting this project will remove the preprint from circulation.</strong></p>';
-    }
-
     $osf.confirmDangerousAction({
         title: 'Are you sure you want to delete this ' + nodeType + '?',
         message: message,
