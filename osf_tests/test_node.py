@@ -24,6 +24,7 @@ from osf.models import (
     Contributor,
     Sanction,
     NodeRelation,
+    Registration,
 )
 from addons.wiki.models import NodeWikiPage
 from osf.exceptions import ValidationError
@@ -41,6 +42,7 @@ from .factories import (
     NodeRelationFactory,
     InstitutionFactory,
 )
+from .factories import get_default_metaschema
 from addons.wiki.tests.factories import NodeWikiFactory
 from .utils import capture_signals, assert_datetime_equal, mock_archive
 
@@ -922,6 +924,13 @@ class TestPermissionMethods:
     #     )
     #     self.project.save()
     #     assert_true(self.project.is_contributor(unreg))
+
+class TestRegisterNode:
+
+    def test_register_node_creates_new_registration(self, node, auth):
+        registration = node.register_node(get_default_metaschema(), auth, '', None)
+        assert type(registration) is Registration
+        assert node._id != registration._id
 
 # Copied from tests/test_models.py
 class TestAddUnregisteredContributor:
