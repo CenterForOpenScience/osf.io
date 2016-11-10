@@ -22,7 +22,7 @@ from api.base.utils import get_user_auth, get_object_or_error, absolute_reverse,
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
                                   TargetTypeField, JSONAPIListField, LinksField, RelationshipField,
                                   HideIfRegistration, RestrictedDictSerializer,
-                                  JSONAPIRelationshipSerializer, relationship_diff, ShowIfVersion,)
+                                  JSONAPIRelationshipSerializer, relationship_diff, ShowIfVersion, DateByVersion,)
 from api.base.exceptions import (InvalidModelValueError,
                                  RelationshipPostMakesNoChanges, Conflict,
                                  EndpointNotImplementedError)
@@ -126,8 +126,8 @@ class NodeSerializer(JSONAPISerializer):
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category = ser.ChoiceField(choices=category_choices, help_text='Choices: ' + category_choices_string)
-    date_created = ser.DateTimeField(read_only=True)
-    date_modified = ser.DateTimeField(read_only=True)
+    date_created = DateByVersion(read_only=True)
+    date_modified = DateByVersion(read_only=True)
     registration = ser.BooleanField(read_only=True, source='is_registration')
     preprint = ser.BooleanField(read_only=True, source='is_preprint')
     fork = ser.BooleanField(read_only=True, source='is_fork')
@@ -613,7 +613,7 @@ class NodeForksSerializer(NodeSerializer):
 
     title = ser.CharField(required=False)
     category = ser.ChoiceField(read_only=True, choices=category_choices, help_text='Choices: ' + category_choices_string)
-    forked_date = ser.DateTimeField(read_only=True)
+    forked_date = DateByVersion(read_only=True)
 
     def create(self, validated_data):
         node = validated_data.pop('node')
@@ -1047,8 +1047,8 @@ class DraftRegistrationSerializer(JSONAPISerializer):
     type = TypeField()
     registration_supplement = ser.CharField(source='registration_schema._id', required=True)
     registration_metadata = ser.DictField(required=False)
-    datetime_initiated = ser.DateTimeField(read_only=True)
-    datetime_updated = ser.DateTimeField(read_only=True)
+    datetime_initiated = DateByVersion(read_only=True)
+    datetime_updated = DateByVersion(read_only=True)
 
     branched_from = RelationshipField(
         related_view='nodes:node-detail',
@@ -1146,7 +1146,7 @@ class NodeViewOnlyLinkSerializer(JSONAPISerializer):
 
     key = ser.CharField(read_only=True)
     id = IDField(source='_id', read_only=True)
-    date_created = ser.DateTimeField(read_only=True)
+    date_created = DateByVersion(read_only=True)
     anonymous = ser.BooleanField(required=False, default=False)
     name = ser.CharField(required=False, default='Shared project link')
 
