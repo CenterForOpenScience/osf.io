@@ -111,7 +111,7 @@ class FilterMixin(object):
         if field_name not in getattr(serializer_class, 'filterable_fields', set()):
             raise InvalidFilterFieldError(parameter='filter', value=field_name)
         return serializer_class._declared_fields[field_name]
-    
+
     def _validate_operator(self, field, field_name, op):
         """
         Check that the operator and field combination is valid

@@ -1912,8 +1912,6 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
     # overrides ListAPIView
     def get_queryset(self):
-        import ipdb;ipdb.set_trace()
-
         return self.get_queryset_from_request()
 
 
