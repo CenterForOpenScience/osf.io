@@ -1295,7 +1295,20 @@ function gotoFileEvent (item, toUrl) {
     var redir = new URI(item.data.nodeUrl);
     redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
     var fileurl  = redir.toString() + toUrl;
-    if(COMMAND_KEYS.indexOf(tb.pressedKey) !== -1) {
+
+    // construct view only link into file url as it gets removed from url params in IE
+    if ($osf.isIE()) {
+        var viewOnly = $osf.urlParams().view_only;
+        if (viewOnly) {
+            if (fileurl.indexof('?') !== -1) {
+                fileurl += '&view_only=' + viewOnly;
+            }else {
+                fileurl += '?view_only=' + viewOnly;
+            }
+        }
+    }
+
+    if (COMMAND_KEYS.indexOf(tb.pressedKey) !== -1) {
         window.open(fileurl, '_blank');
     } else {
         window.open(fileurl, '_self');
