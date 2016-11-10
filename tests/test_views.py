@@ -3630,18 +3630,23 @@ class TextExternalAuthViews(OsfTestCase):
         resp = self.app.get(url, expect_errors=True)
         assert_equal(resp.status_code, 401)
 
-    def test_external_login_email_get_with_another_user_logged_in(self):
+    def test_external_login_confirm_email_get_with_another_user_logged_in(self):
         another_user = AuthUserFactory()
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service')
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service', destination='dashboard')
         res = self.app.get(url, auth=another_user.auth)
         assert_equal(res.status_code, 302, 'redirects to cas logout')
         assert_in('/logout?service=', res.location)
         assert_in(url, res.location)
 
+    def test_external_login_confirm_email_get_without_destination(self):
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service')
+        res = self.app.get(url, auth=self.auth, expect_errors=True)
+        assert_equal(res.status_code, 400, 'bad request')
+
     @mock.patch('website.mails.send_mail')
     def test_external_login_confirm_email_get_create(self, mock_welcome):
         assert_false(self.user.is_registered)
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service')
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service', destination='dashboard')
         res = self.app.get(url, auth=self.auth)
         assert_equal(res.status_code, 302, 'redirects to cas login')
         assert_in('/login?service=', res.location)
@@ -3658,7 +3663,7 @@ class TextExternalAuthViews(OsfTestCase):
         self.user.external_identity['service'][self.provider_id] = 'LINK'
         self.user.save()
         assert_false(self.user.is_registered)
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service')
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service', destination='dashboard')
         res = self.app.get(url, auth=self.auth)
         assert_equal(res.status_code, 302, 'redirects to cas login')
         assert_in('/login?service=', res.location)
@@ -3675,7 +3680,7 @@ class TextExternalAuthViews(OsfTestCase):
         dupe_user = UserFactory(external_identity={'service': {self.provider_id: 'CREATE'}})
         assert_equal(dupe_user.external_identity, self.user.external_identity)
         
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service')
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service', destination='dashboard')
         res = self.app.get(url, auth=self.auth)
         assert_equal(res.status_code, 302, 'redirects to cas login')
         assert_in('/login?service=', res.location)
@@ -3692,7 +3697,7 @@ class TextExternalAuthViews(OsfTestCase):
     def test_external_login_confirm_email_get_duping_id(self, mock_confirm):
         dupe_user = UserFactory(external_identity={'service': {self.provider_id: 'VERIFIED'}})
         
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service')
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='service', destination='dashboard')
         res = self.app.get(url, auth=self.auth, expect_errors=True)
         assert_equal(res.status_code, 403, 'only allows one user to link an id')
 
