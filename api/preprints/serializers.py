@@ -6,7 +6,7 @@ from rest_framework import serializers as ser
 from api.base.exceptions import Conflict
 from api.base.serializers import (
     JSONAPISerializer, IDField, JSONAPIListField,
-    LinksField, RelationshipField
+    LinksField, RelationshipField, DateByVersion,
 )
 from api.base.utils import absolute_reverse, get_user_auth
 from api.taxonomies.serializers import TaxonomyField
@@ -52,9 +52,9 @@ class PreprintSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     subjects = JSONAPIListField(child=JSONAPIListField(child=TaxonomyField()), allow_null=True, required=False)
-    date_created = ser.DateTimeField(read_only=True)
-    date_modified = ser.DateTimeField(read_only=True)
-    date_published = ser.DateTimeField(read_only=True)
+    date_created = DateByVersion(read_only=True)
+    date_modified = DateByVersion(read_only=True)
+    date_published = DateByVersion(read_only=True)
     doi = ser.CharField(source='article_doi', required=False, allow_null=True)
     is_published = ser.BooleanField(required=False)
     is_preprint_orphan = ser.BooleanField(read_only=True)
@@ -64,6 +64,7 @@ class PreprintSerializer(JSONAPISerializer):
         related_view_kwargs={'node_id': '<node._id>'},
         read_only=False
     )
+
     provider = PreprintProviderRelationshipField(
         related_view='preprint_providers:preprint_provider-detail',
         related_view_kwargs={'provider_id': '<provider._id>'},

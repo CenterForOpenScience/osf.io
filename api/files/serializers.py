@@ -1,21 +1,34 @@
+from datetime import datetime
+
+from django.core.urlresolvers import resolve, reverse
+from modularodm import Q
 import furl
 import pytz
-from api.base.exceptions import Conflict
-from api.base.serializers import (FileCommentRelationshipField, IDField,
-                                  JSONAPIListField, JSONAPISerializer, Link,
-                                  LinksField, NodeFileHyperLinkField,
-                                  RelationshipField, TypeField,
-                                  WaterbutlerLink, format_relationship_links)
-from api.base.utils import absolute_reverse, get_user_auth
-from django.core.urlresolvers import resolve, reverse
+
 from framework.auth.core import Auth, User
-from modularodm import Q
 from osf.models import FileNode
 from rest_framework import serializers as ser
 from website import settings
 from website.project.model import Comment
 from website.util import api_v2_url
 
+from api.base.serializers import (
+    FileCommentRelationshipField,
+    format_relationship_links,
+    IDField,
+    JSONAPIListField,
+    JSONAPISerializer,
+    Link,
+    LinksField,
+    NodeFileHyperLinkField,
+    RelationshipField,
+    TypeField,
+    WaterbutlerLink,
+    DateByVersion,
+)
+from api.base.exceptions import Conflict
+from api.base.utils import absolute_reverse
+from api.base.utils import get_user_auth
 
 class CheckoutField(ser.HyperlinkedRelatedField):
 
@@ -122,13 +135,14 @@ class FileSerializer(JSONAPISerializer):
     provider = ser.CharField(read_only=True, help_text='The Add-on service this file originates from')
     materialized_path = ser.CharField(
         read_only=True, help_text='The Unix-style path of this object relative to the provider root')
-    last_touched = ser.DateTimeField(read_only=True, help_text='The last time this file had information fetched about it via the OSF')
+    last_touched = DateByVersion(read_only=True, help_text='The last time this file had information fetched about it via the OSF')
     date_modified = ser.SerializerMethodField(read_only=True, help_text='Timestamp when the file was last modified')
     date_created = ser.SerializerMethodField(read_only=True, help_text='Timestamp when the file was created')
     extra = ser.SerializerMethodField(read_only=True, help_text='Additional metadata about this file')
     tags = JSONAPIListField(child=FileTagField(), required=False)
     current_user_can_comment = ser.SerializerMethodField(help_text='Whether the current user is allowed to post comments')
     current_version = ser.SerializerMethodField(help_text='Latest file version')
+    delete_allowed = ser.BooleanField(read_only=True, required=False)
 
     files = NodeFileHyperLinkField(
         related_view='nodes:node-files',
@@ -183,6 +197,9 @@ class FileSerializer(JSONAPISerializer):
         elif obj.provider != 'osfstorage' and obj.history:
             mod_dt = obj.history[-1].get('modified', None)
 
+        if self.context['request'].version >= '2.2':
+            return datetime.strftime(mod_dt, '%Y-%m-%dT%H:%M:%S.%fZ')
+
         return mod_dt and mod_dt.replace(tzinfo=pytz.utc)
 
     def get_date_created(self, obj):
@@ -193,6 +210,9 @@ class FileSerializer(JSONAPISerializer):
             # Non-osfstorage files don't store a created date, so instead get the modified date of the
             # earliest entry in the file history.
             creat_dt = obj.history[0].get('modified', None)
+
+        if self.context['request'].version >= '2.2':
+            return datetime.strftime(creat_dt, '%Y-%m-%dT%H:%M:%S.%fZ')
 
         return creat_dt and creat_dt.replace(tzinfo=pytz.utc)
 

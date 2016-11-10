@@ -4,7 +4,7 @@ from framework.auth.core import Auth
 from tests.base import ApiTestCase
 from api.base.settings.defaults import API_BASE
 
-from addons.osfstorage.models import OsfStorageFile
+from website.files.models.osfstorage import OsfStorageFile
 from osf_tests.factories import PreprintFactory, AuthUserFactory, ProjectFactory, SubjectFactory
 from api_tests import utils as test_utils
 

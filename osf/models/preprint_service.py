@@ -121,7 +121,6 @@ class PreprintService(GuidMixin, BaseModel):
         # there is no preprint file yet! This is the first time!
         if not self.node.preprint_file:
             self.node.preprint_file = preprint_file
-            self.node.add_log(action=NodeLog.PREPRINT_INITIATED, params={}, auth=auth, save=False)
         elif preprint_file != self.node.preprint_file:
             # if there was one, check if it's a new file
             self.node.preprint_file = preprint_file
@@ -154,6 +153,8 @@ class PreprintService(GuidMixin, BaseModel):
                 raise ValueError('Preprint must have at least one subject to be published.')
             self.date_published = timezone.now()
             self.node._has_abandoned_preprint = False
+
+            self.node.add_log(action=NodeLog.PREPRINT_INITIATED, params={}, auth=auth, save=False)
 
             if not self.node.is_public:
                 self.node.set_privacy(

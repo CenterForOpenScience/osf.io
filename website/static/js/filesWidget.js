@@ -3,7 +3,7 @@ var Raven = require('raven-js');
 
 var $osf = require('js/osfHelpers');
 var osfLanguage = require('js/osfLanguage');
-var Fangorn = require('js/fangorn');
+var Fangorn = require('js/fangorn').Fangorn;
 
 /**
  * @class FilesWidget

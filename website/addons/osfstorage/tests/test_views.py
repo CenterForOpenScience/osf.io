@@ -577,6 +577,23 @@ class TestDeleteHook(HookTestCase):
         res = self.delete(file_checked, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+    def test_attempt_delete_while_preprint(self):
+        file = self.root_node.append_file('Nights')
+        self.node.preprint_file = file.stored_object
+        self.node.save()
+        res = self.delete(file, expect_errors=True)
+
+        assert_equal(res.status_code, 403)
+
+    def test_attempt_delete_folder_with_preprint(self):
+        folder = self.root_node.append_folder('Fishes')
+        file = folder.append_file('Fish')
+        self.node.preprint_file = file.stored_object
+        self.node.save()
+        res = self.delete(folder, expect_errors=True)
+
+        assert_equal(res.status_code, 403)
+
 class TestMoveHook(HookTestCase):
 
     def setUp(self):
@@ -626,6 +643,31 @@ class TestMoveHook(HookTestCase):
             expect_errors=True,
         )
         assert_equal(res.status_code, 405)
+
+    def test_within_node_move_while_preprint(self):
+
+        file = self.root_node.append_file('Self Control')
+        self.node.preprint_file = file.stored_object
+        self.node.save()
+        folder = self.root_node.append_folder('Frank Ocean')
+        res = self.send_hook(
+            'osfstorage_move_hook',
+            {'nid': self.root_node.node._id},
+            payload={
+                'source': file._id,
+                'node': self.root_node._id,
+                'user': self.user._id,
+                'destination': {
+                    'parent': folder._id,
+                    'node': folder.node._id,
+                    'name': folder.name,
+                }
+            },
+            method='post_json',
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 200)
+
 
 class TestFileTags(StorageTestCase):
 

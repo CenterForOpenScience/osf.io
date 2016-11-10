@@ -2,6 +2,13 @@
 Changelog
 *********
 
+<<<<<<< HEAD
+=======
+0.100.0 (2016-11-09)
+====================
+- Support for editing preprints
+
+>>>>>>> develop
 0.99.0 (2016-11-01)
 ===================
 - Preprint service and migration

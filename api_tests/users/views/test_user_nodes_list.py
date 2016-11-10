@@ -106,7 +106,6 @@ class TestUserNodesPreprintsFiltering(ApiTestCase):
     def setUp(self):
         super(TestUserNodesPreprintsFiltering, self).setUp()
         self.user = AuthUserFactory()
-
         self.no_preprints_node = ProjectFactory(creator=self.user)
         self.valid_preprint_node = ProjectFactory(creator=self.user)
         self.orphaned_preprint_node = ProjectFactory(creator=self.user)

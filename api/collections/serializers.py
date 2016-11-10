@@ -7,7 +7,7 @@ from website.models import Node
 from osf.models import Collection
 from osf.exceptions import ValidationError
 from api.base.serializers import LinksField, RelationshipField
-from api.base.serializers import JSONAPISerializer, IDField, TypeField
+from api.base.serializers import JSONAPISerializer, IDField, TypeField, DateByVersion
 from api.base.exceptions import InvalidModelValueError
 from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import NodeLinksSerializer
@@ -24,8 +24,8 @@ class CollectionSerializer(JSONAPISerializer):
     type = TypeField()
 
     title = ser.CharField(required=True)
-    date_created = ser.DateTimeField(read_only=True)
-    date_modified = ser.DateTimeField(read_only=True)
+    date_created = DateByVersion(read_only=True)
+    date_modified = DateByVersion(read_only=True)
     bookmarks = ser.BooleanField(read_only=False, default=False, source='is_bookmark_collection')
 
     links = LinksField({})

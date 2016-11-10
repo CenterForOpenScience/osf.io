@@ -8,8 +8,8 @@ from api.base.settings.defaults import API_BASE
 from api.base.exceptions import Conflict
 
 from website.files.models.osfstorage import OsfStorageFile
-from osf_tests.factories import PreprintFactory, AuthUserFactory, ProjectFactory, SubjectFactory
 from website.preprints.model import PreprintService
+from osf_tests.factories import PreprintFactory, AuthUserFactory, ProjectFactory, SubjectFactory
 from api_tests import utils as test_utils
 
 def build_preprint_update_payload(node_id, attributes=None, relationships=None):
@@ -74,7 +74,6 @@ class TestPreprintDelete(ApiTestCase):
 
         assert_not_in(self.unpublished_preprint.pk, remaining_ids)
         assert_in(self.published_preprint.pk, remaining_ids)
-
 
 class TestPreprintUpdate(ApiTestCase):
     def setUp(self):
@@ -155,7 +154,11 @@ class TestPreprintUpdate(ApiTestCase):
         assert_equal(res.status_code, 400)
 
         self.preprint.reload()
+<<<<<<< HEAD
         assert_not_equal(self.preprint.primary_file.wrapped(), file_for_project)
+=======
+        assert_not_equal(self.preprint.primary_file, file_for_project)
+>>>>>>> develop
 
     def test_update_doi(self):
         new_doi = '10.1234/ASDFASDF'
@@ -174,7 +177,11 @@ class TestPreprintUpdate(ApiTestCase):
     def test_write_contrib_cannot_set_primary_file(self):
         user_two = AuthUserFactory()
         self.preprint.node.add_contributor(user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
+<<<<<<< HEAD
         new_file = test_utils.create_test_file(self.preprint.node, self.user, filename='openupthatwindow.pdf')
+=======
+        new_file = test_utils.create_test_file(self.preprint.node, 'openupthatwindow.pdf')
+>>>>>>> develop
 
         data = {
             'data':{
@@ -197,7 +204,11 @@ class TestPreprintUpdate(ApiTestCase):
 
     def test_noncontrib_cannot_set_primary_file(self):
         user_two = AuthUserFactory()
+<<<<<<< HEAD
         new_file = test_utils.create_test_file(self.preprint.node, self.user, filename='openupthatwindow.pdf')
+=======
+        new_file = test_utils.create_test_file(self.preprint.node, 'openupthatwindow.pdf')
+>>>>>>> develop
 
         data = {
             'data':{
@@ -221,8 +232,13 @@ class TestPreprintUpdate(ApiTestCase):
     def test_write_contrib_cannot_set_subjects(self):
         user_two = AuthUserFactory()
         self.preprint.node.add_contributor(user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
+<<<<<<< HEAD
 
         assert_not_equal(self.preprint.subjects[0][0], self.subject._id)
+=======
+        
+        assert_not_equal(self.preprint.subjects[0], self.subject._id)
+>>>>>>> develop
         update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"subjects": [[self.subject._id]]})
 
         res = self.app.patch_json_api(self.url, update_subjects_payload, auth=user_two.auth, expect_errors=True)
@@ -233,11 +249,20 @@ class TestPreprintUpdate(ApiTestCase):
     def test_noncontrib_cannot_set_subjects(self):
         user_two = AuthUserFactory()
         self.preprint.node.add_contributor(user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
+<<<<<<< HEAD
 
         assert_not_equal(self.preprint.subjects[0][0], self.subject._id)
+=======
+        
+        assert_not_equal(self.preprint.subjects[0], self.subject._id)
+>>>>>>> develop
         update_subjects_payload = build_preprint_update_payload(self.preprint._id, attributes={"subjects": [[self.subject._id]]})
 
         res = self.app.patch_json_api(self.url, update_subjects_payload, auth=user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+<<<<<<< HEAD
         assert_not_equal(self.preprint.subjects[0][0], self.subject._id)
+=======
+        assert_not_equal(self.preprint.subjects[0], self.subject._id)
+>>>>>>> develop

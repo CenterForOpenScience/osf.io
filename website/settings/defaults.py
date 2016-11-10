@@ -489,6 +489,20 @@ else:
             'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m.
             'kwargs': {'dry_run': False}
         },
+        'run_keen_summaries': {
+            'task': 'scripts.analytics.run_keen_summaries',
+            'schedule': crontab(minute=00, hour=2),  # Daily 2:00 a.m.
+            'kwargs': {'date': (datetime.datetime.utcnow() - datetime.timedelta(1)).date()}
+        },
+        'run_keen_snapshots': {
+            'task': 'scripts.analytics.run_keen_snapshots',
+            'schedule': crontab(minute=0, hour=3),  # Daily 3:00 a.m.
+        },
+        'run_keen_events': {
+            'task': 'scripts.analytics.run_keen_events',
+            'schedule': crontab(minute=0, hour=4),
+            'kwargs': {'date': (datetime.datetime.utcnow() - datetime.timedelta(1)).date()}
+        }
     }
 
     # Tasks that need metrics and release requirements
