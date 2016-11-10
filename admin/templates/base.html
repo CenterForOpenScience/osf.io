@@ -65,16 +65,21 @@
                   </span>
                 </a>
                 <ul class="dropdown-menu user-menu">
-                    <li>
-                        <a href="{% url 'auth:password_change' %}">
-                            Change Password
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% url 'auth:register' %}">
-                            Admin-User Registration
-                        </a>
-                    </li>
+                  <li>
+                    <a href="{% url 'auth:password_change' %}">
+                      Change Password
+                    </a>
+                  </li>
+                  <li>
+                    <a href="{% url 'auth:register' %}">
+                      Admin-User Registration
+                    </a>
+                  </li>
+                  <li>
+                    <a href="{% url 'auth:desk' %}">
+                      Desk information
+                    </a>
+                  </li>
                 </ul>
               </li>
               <li>

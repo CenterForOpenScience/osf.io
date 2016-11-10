@@ -275,7 +275,10 @@ ALL_MY_REGISTRATIONS_NAME = 'All my registrations'
 
 # Most Popular and New and Noteworthy Nodes
 POPULAR_LINKS_NODE = None  # TODO Override in local.py in production.
+POPULAR_LINKS_REGISTRATIONS = None  # TODO Override in local.py in production.
 NEW_AND_NOTEWORTHY_LINKS_NODE = None  # TODO Override in local.py in production.
+
+MAX_POPULAR_PROJECTS = 10
 
 NEW_AND_NOTEWORTHY_CONTRIBUTOR_BLACKLIST = []  # TODO Override in local.py in production.
 
@@ -342,6 +345,7 @@ LOW_PRI_MODULES = {
     'scripts.osfstorage.files_audit',
     'scripts.osfstorage.glacier_audit',
     'scripts.populate_new_and_noteworthy_projects',
+    'scripts.populate_popular_projects_and_registrations',
     'website.search.elastic_search',
 }
 
@@ -400,6 +404,7 @@ CELERY_IMPORTS = (
     'website.search.search',
     'website.project.tasks',
     'scripts.populate_new_and_noteworthy_projects',
+    'scripts.populate_popular_projects_and_registrations',
     'scripts.refresh_addon_tokens',
     'scripts.retract_registrations',
     'scripts.embargo_registrations',
@@ -477,6 +482,25 @@ else:
             'schedule': crontab(minute=0, hour=2, day_of_week=6),  # Saturday 2:00 a.m.
             'kwargs': {'dry_run': False}
         },
+        'update_popular_nodes': {
+            'task': 'scripts.populate_popular_projects_and_registrations',
+            'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m.
+            'kwargs': {'dry_run': False}
+        },
+        'run_keen_summaries': {
+            'task': 'scripts.analytics.run_keen_summaries',
+            'schedule': crontab(minute=00, hour=2),  # Daily 2:00 a.m.
+            'kwargs': {'date': (datetime.datetime.utcnow() - datetime.timedelta(1)).date()}
+        },
+        'run_keen_snapshots': {
+            'task': 'scripts.analytics.run_keen_snapshots',
+            'schedule': crontab(minute=0, hour=3),  # Daily 3:00 a.m.
+        },
+        'run_keen_events': {
+            'task': 'scripts.analytics.run_keen_events',
+            'schedule': crontab(minute=0, hour=4),
+            'kwargs': {'date': (datetime.datetime.utcnow() - datetime.timedelta(1)).date()}
+        }
     }
 
     # Tasks that need metrics and release requirements
@@ -1746,3 +1770,6 @@ SPAM_FLAGGED_MAKE_NODE_PRIVATE = False
 SPAM_FLAGGED_REMOVE_FROM_SEARCH = False
 
 SHARE_API_TOKEN = None
+
+# number of nodes that need to be affiliated with an institution before the institution logo is shown on the dashboard
+INSTITUTION_DISPLAY_NODE_THRESHOLD = 5

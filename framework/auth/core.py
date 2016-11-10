@@ -770,7 +770,7 @@ class User(GuidStoredObject, AddonModelMixin):
         :rtype: list
         :returns: Changed fields from the user save
         """
-        had_existing_password = bool(self.password)
+        had_existing_password = bool(self.password and self.is_confirmed)
         self.password = generate_password_hash(raw_password)
         if self.username == raw_password:
             raise ChangePasswordError(['Password cannot be the same as your email address'])

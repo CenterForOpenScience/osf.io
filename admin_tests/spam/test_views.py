@@ -1,5 +1,3 @@
-import mock
-
 from django.db import transaction
 from django.test import RequestFactory
 from django.http import Http404
@@ -9,7 +7,7 @@ from datetime import datetime, timedelta
 from website.project.model import Comment
 
 from admin.common_auth.logs import OSFLogEntry
-from admin.spam.forms import ConfirmForm, EmailForm
+from admin.spam.forms import ConfirmForm
 from tests.base import AdminTestCase
 from tests.factories import CommentFactory, AuthUserFactory, ProjectFactory
 from admin_tests.utilities import setup_view, setup_form_view
@@ -19,7 +17,7 @@ from admin.spam.views import (
     SpamList,
     UserSpamList,
     SpamDetail,
-    EmailFormView,
+    EmailView,
 )
 from website.project.spam.model import SpamStatus
 
@@ -162,48 +160,19 @@ class TestSpamDetail(AdminTestCase):
             view.get_context_data()
 
 
-class TestEmailFormView(AdminTestCase):
+class TestEmailView(AdminTestCase):
     def setUp(self):
-        super(TestEmailFormView, self).setUp()
+        super(TestEmailView, self).setUp()
         self.comment = CommentFactory()
         self.comment.report_abuse(user=AuthUserFactory(), save=True,
                                   category='spam')
         self.request = RequestFactory().post('/fake_path')
         self.request.user = UserFactory()
-        self.view = EmailFormView()
-        self.form = EmailForm(data={
-            'author': 'Nemo',
-            'message': 'A message for spammers.',
-            'subject': 'stop spamming',
-            'email': ('email@email.org', 'email@email.org')
-        })
-        self.view = setup_form_view(self.view, self.request, self.form,
-                                    spam_id=self.comment._id)
 
-    @mock.patch('admin.spam.views.render')
-    def test_get_context_data(self, mock_render):
-        res = self.view.get_context_data()
-        nt.assert_equal(res['status'], '1')
-        nt.assert_equal(res['page_number'], '1')
-        nt.assert_is_instance(res['comment'], dict)
-
-    def test_get_context_data_bad_id(self):
-        view = setup_view(EmailFormView(), self.request, spam_id='a1')
+    def test_get_object_bad_id(self):
+        view = setup_view(EmailView(), self.request, spam_id='a1')
         with nt.assert_raises(Http404):
-            view.get_context_data()
-
-    @mock.patch('admin.spam.views.render')
-    def test_get_initial(self, mock_render):
-        self.view.get_initial()
-        res = self.view.initial
-        nt.assert_is_instance(res, dict)
-        nt.assert_is_instance(res['email'], list)
-        nt.assert_is_instance(res['email'][0], tuple)
-
-    def test_get_initial_bad_id(self):
-        view = setup_view(EmailFormView(), self.request, spam_id='a1')
-        with nt.assert_raises(Http404):
-            view.get_initial()
+            view.get_object()
 
 
 class TestUserSpamListView(AdminTestCase):

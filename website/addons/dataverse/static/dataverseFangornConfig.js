@@ -5,7 +5,7 @@ var URI = require('URIjs');
 var $ = require('jquery');
 var Raven = require('raven-js');
 
-var Fangorn = require('js/fangorn');
+var Fangorn = require('js/fangorn').Fangorn;
 var waterbutler = require('js/waterbutler');
 var $osf = require('js/osfHelpers');
 

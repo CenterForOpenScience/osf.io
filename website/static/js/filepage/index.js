@@ -37,6 +37,10 @@ var CopyButton = {
     }
 };
 
+var formatUrl = function(urlParams, showParam) {
+    return 'view_only' in urlParams ? '?show=' + showParam + '&view_only=' + urlParams.view_only : '?show=' + showParam;
+};
+
 var SharePopover =  {
     view: function(ctrl, params) {
         var copyButtonHeight = '34px';
@@ -67,7 +71,11 @@ var SharePopover =  {
                         m('.tab-pane#embed', [
                             m('p', 'Dynamically render iframe with JavaScript'),
                             m('textarea.form-control[readonly][type="text"][value="' +
-                                '<script>window.jQuery || document.write(\'<script src="//code.jquery.com/jquery-1.11.2.min.js">\\x3C/script>\') </script>'+
+                                '<style>' +
+                                '.embed-responsive{position:relative;height:100%;}' +
+                                '.embed-responsive iframe{position:absolute;height:100%;}' +
+                                '</style>' +
+                                '<script>window.jQuery || document.write(\'<script src="//code.jquery.com/jquery-1.11.2.min.js">\\x3C/script>\') </script>' +
                                 '<link href="' + mfrHost + 'static/css/mfr.css" media="all" rel="stylesheet">' +
                                 '<div id="mfrIframe" class="mfr mfr-file"></div>' +
                                 '<script src="' + mfrHost + 'static/js/mfr.js">' +
@@ -152,7 +160,7 @@ var FileViewPage = {
             delete: waterbutler.buildDeleteUrl(self.file.path, self.file.provider, self.node.id),
             metadata: waterbutler.buildMetadataUrl(self.file.path, self.file.provider, self.node.id),
             revisions: waterbutler.buildRevisionsUrl(self.file.path, self.file.provider, self.node.id),
-            content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {accept_url: false, mode: 'render'})
+            content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {direct: true, mode: 'render'})
         });
 
         if ($osf.urlParams().branch) {
@@ -166,7 +174,7 @@ var FileViewPage = {
                 window.contextVars.file.urls.external = response.data.extra.webView;
             });
             self.file.urls.revisions = waterbutler.buildRevisionsUrl(self.file.path, self.file.provider, self.node.id, {sha: $osf.urlParams().branch});
-            self.file.urls.content = waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {accept_url: false, mode: 'render', branch: $osf.urlParams().branch});
+            self.file.urls.content = waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {direct: true, mode: 'render', branch: $osf.urlParams().branch});
         }
 
         $(document).on('fileviewpage:delete', function() {
@@ -175,13 +183,7 @@ var FileViewPage = {
                     'Are you sure you want to delete <strong>' +
                     self.file.safeName + '</strong>?' + '</p>';
 
-            if (self.file.id === self.node.preprintFileId) {
-                title = 'Delete primary preprint file?';
-                message = '<p class="overflow">' +
-                    'Are you sure you want to delete <strong>' +
-                    self.file.safeName + '</strong>?' + ' It is currently the primary file ' +
-                    'for a preprint.</p> <p><strong>Deleting this file will remove this preprint from circulation.</strong></p>';
-            }
+
             bootbox.confirm({
                 title: title,
                 message: message,
@@ -370,8 +372,8 @@ var FileViewPage = {
                 return;
             }
             var fileType = mime.lookup(self.file.name.toLowerCase());
-            // Only allow files < 1MB to be editable
-            if (self.file.size < 1048576 && fileType) { //May return false
+            // Only allow files < 64k to be editable
+            if (self.file.size < 65536 && fileType) { //May return false
                 var editor = EDITORS[fileType.split('/')[0]];
                 if (editor) {
                     self.editor = new Panel('Edit', self.editHeader, editor, [self.file.urls.content, self.file.urls.sharejs, self.editorMeta, self.shareJSObservables], false);
@@ -402,11 +404,11 @@ var FileViewPage = {
             if (viewable){
                 self.mfrIframeParent.toggle();
                 self.revisions.selected = true;
-                url = '?show=revision';
+                url = formatUrl(self.urlParams, 'revision');
             } else {
                 self.mfrIframeParent.toggle();
                 self.revisions.selected = false;
-                url = '?show=view';
+                url = formatUrl(self.urlParams, 'view');
             }
             var state = {
                 scrollTop: $(window).scrollTop(),
@@ -419,13 +421,13 @@ var FileViewPage = {
             m.render(document.getElementById('versionLink'), m('a', {onclick: toggleRevisions}, document.getElementById('versionLink').innerHTML));
         }
 
-        var urlParams = $osf.urlParams();
+        self.urlParams = $osf.urlParams();
         // The parser found a query so lets check what we need to do
-        if ('show' in urlParams){
-            if(urlParams.show === 'revision'){
+        if ('show' in self.urlParams){
+            if(self.urlParams.show === 'revision'){
                 self.mfrIframeParent.toggle();
                 self.revisions.selected = true;
-            } else if (urlParams.show === 'view' || urlParams.show === 'edit'){
+            } else if (self.urlParams.show === 'view' || self.urlParams.show === 'edit'){
                self.revisions.selected = false;
            }
         }
@@ -486,7 +488,7 @@ var FileViewPage = {
                         if ((!ctrl.editor.selected || panelsShown > 1)) {
                             ctrl.editor.selected = !ctrl.editor.selected;
                             ctrl.revisions.selected = false;
-                            var url = '?show=view';
+                            var url = formatUrl(ctrl.urlParams, 'view');
                             state = {
                                 scrollTop: $(window).scrollTop(),
                             };
@@ -503,7 +505,8 @@ var FileViewPage = {
 
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
             // Special case whether or not to show the delete button for published Dataverse files
-            (ctrl.canEdit() && (ctrl.file.provider !== 'osfstorage' || !ctrl.file.checkoutUser) && ctrl.requestDone && $(document).context.URL.indexOf('version=latest-published') < 0 ) ? m('.btn-group.m-l-xs.m-t-xs', [
+            // Special case to not show delete if file is preprint primary file
+            (ctrl.canEdit() && !(ctrl.node.isPreprint && ctrl.node.preprintFileId === ctrl.file.id) && (ctrl.file.provider !== 'osfstorage' || !ctrl.file.checkoutUser) && ctrl.requestDone && $(document).context.URL.indexOf('version=latest-published') < 0 ) ? m('.btn-group.m-l-xs.m-t-xs', [
                 ctrl.isLatestVersion ? m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete') }, 'Delete') : null
             ]) : '',
             ctrl.context.currentUser.canEdit && (!ctrl.canEdit()) && ctrl.requestDone && (ctrl.context.currentUser.isAdmin) ? m('.btn-group.m-l-xs.m-t-xs', [
@@ -531,11 +534,11 @@ var FileViewPage = {
                         if (!ctrl.mfrIframeParent.is(':visible') || panelsShown > 1) {
                             ctrl.mfrIframeParent.toggle();
                             ctrl.revisions.selected = false;
-                            History.pushState(state, 'OSF | ' + window.contextVars.file.name, '?show=view');
+                            History.pushState(state, 'OSF | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'view'));
                         } else if (ctrl.mfrIframeParent.is(':visible') && !ctrl.editor){
                             ctrl.mfrIframeParent.toggle();
                             ctrl.revisions.selected = true;
-                            History.pushState(state, 'OSF | ' + window.contextVars.file.name, '?show=revision');
+                            History.pushState(state, 'OSF | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'revision'));
                         }
                     }
                 }, 'View'), editButton())
@@ -552,14 +555,14 @@ var FileViewPage = {
                             ctrl.editor.selected = false;
                         }
                         ctrl.revisions.selected = true;
-                        History.pushState(state, 'OSF | ' + window.contextVars.file.name, '?show=revision');
+                        History.pushState(state, 'OSF | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'revision'));
                     } else {
                         ctrl.mfrIframeParent.toggle();
                         if (ctrl.editor) {
                             ctrl.editor.selected = false;
                         }
                         ctrl.revisions.selected = false;
-                        History.pushState(state, 'OSF | ' + window.contextVars.file.name, '?show=view');
+                        History.pushState(state, 'OSF | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'view'));
                     }
                 }}, 'Revisions')
             ])

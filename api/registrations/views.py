@@ -41,6 +41,7 @@ from api.nodes.views import (
 )
 
 from api.registrations.serializers import RegistrationNodeLinksSerializer, RegistrationFileSerializer
+from api.wikis.serializers import RegistrationWikiSerializer
 
 from api.base.utils import get_object_or_error
 
@@ -865,6 +866,8 @@ class RegistrationWikiList(NodeWikiList, RegistrationMixin):
     """List of wikis for a registration."""
     view_category = 'registrations'
     view_name = 'registration-wikis'
+
+    serializer_class = RegistrationWikiSerializer
 
 
 class RegistrationLinkedNodesList(LinkedNodesList, RegistrationMixin):

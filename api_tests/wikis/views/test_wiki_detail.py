@@ -218,3 +218,35 @@ class TestWikiDetailView(ApiWikiTestCase):
         url = '/{}wikis/{}/'.format(API_BASE, old_version._id)
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 404)
+
+    def test_public_node_wiki_relationship_links(self):
+        self._set_up_public_project_with_wiki_page()
+        res = self.app.get(self.public_url)
+        expected_nodes_relationship_url = '{}nodes/{}/'.format(API_BASE, self.public_project._id)
+        expected_comments_relationship_url = '{}nodes/{}/comments/'.format(API_BASE, self.public_project._id)
+        assert_in(expected_nodes_relationship_url, res.json['data']['relationships']['node']['links']['related']['href'])
+        assert_in(expected_comments_relationship_url, res.json['data']['relationships']['comments']['links']['related']['href'])
+
+    def test_private_node_wiki_relationship_links(self):
+        self._set_up_private_project_with_wiki_page()
+        res = self.app.get(self.private_url, auth=self.user.auth)
+        expected_nodes_relationship_url = '{}nodes/{}/'.format(API_BASE, self.private_project._id)
+        expected_comments_relationship_url = '{}nodes/{}/comments/'.format(API_BASE, self.private_project._id)
+        assert_in(expected_nodes_relationship_url, res.json['data']['relationships']['node']['links']['related']['href'])
+        assert_in(expected_comments_relationship_url, res.json['data']['relationships']['comments']['links']['related']['href'])
+
+    def test_public_registration_wiki_relationship_links(self):
+        self._set_up_public_registration_with_wiki_page()
+        res = self.app.get(self.public_registration_url)
+        expected_nodes_relationship_url = '{}registrations/{}/'.format(API_BASE, self.public_registration._id)
+        expected_comments_relationship_url = '{}registrations/{}/comments/'.format(API_BASE, self.public_registration._id)
+        assert_in(expected_nodes_relationship_url, res.json['data']['relationships']['node']['links']['related']['href'])
+        assert_in(expected_comments_relationship_url, res.json['data']['relationships']['comments']['links']['related']['href'])
+
+    def test_private_registration_wiki_relationship_links(self):
+        self._set_up_private_registration_with_wiki_page()
+        res = self.app.get(self.private_registration_url, auth=self.user.auth)
+        expected_nodes_relationship_url = '{}registrations/{}/'.format(API_BASE, self.private_registration._id)
+        expected_comments_relationship_url = '{}registrations/{}/comments/'.format(API_BASE, self.private_registration._id)
+        assert_in(expected_nodes_relationship_url, res.json['data']['relationships']['node']['links']['related']['href'])
+        assert_in(expected_comments_relationship_url, res.json['data']['relationships']['comments']['links']['related']['href'])

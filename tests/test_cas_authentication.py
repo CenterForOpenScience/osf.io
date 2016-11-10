@@ -28,14 +28,14 @@ def make_failure_response():
     )
 
 
-def make_external_response(release=True):
+def make_external_response(release=True, unicode=False):
     attributes = {
             'accessToken': fake.md5(),
     }
     if release:
         attributes.update({
-            'given-names': fake.first_name(),
-            'family-name': fake.last_name(),
+            'given-names': fake.first_name() if not unicode else u'нет',
+            'family-name': fake.last_name() if not unicode else u'Да',
         })
     return cas.CasResponse(
         authenticated=True,
@@ -327,3 +327,29 @@ class TestCASExternalLogin(OsfTestCase):
         verification_key = self.user.verification_key
         resp = cas.make_response_from_ticket(ticket, service_url)
         assert_not_equal(self.user.verification_key, verification_key)
+
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_make_response_from_ticket_handles_unicode(self, mock_service_validate):
+        mock_response = make_external_response(unicode=True)
+        mock_service_validate.return_value = mock_response
+        ticket = fake.md5()
+        service_url = 'http://accounts.osf.io/?ticket=' + ticket
+        resp = cas.make_response_from_ticket(ticket, service_url)
+        assert_equal(resp.status_code, 302)
+        assert_equal(mock_service_validate.call_count, 1)
+        first_call_args = mock_service_validate.call_args[0]
+        assert_equal(first_call_args[0], ticket)
+        assert_equal(first_call_args[1], 'http://accounts.osf.io/')
+
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_make_response_from_ticket_handles_non_unicode(self, mock_service_validate):
+        mock_response = make_external_response()
+        mock_service_validate.return_value = mock_response
+        ticket = fake.md5()
+        service_url = 'http://accounts.osf.io/?ticket=' + ticket
+        resp = cas.make_response_from_ticket(ticket, service_url)
+        assert_equal(resp.status_code, 302)
+        assert_equal(mock_service_validate.call_count, 1)
+        first_call_args = mock_service_validate.call_args[0]
+        assert_equal(first_call_args[0], ticket)
+        assert_equal(first_call_args[1], 'http://accounts.osf.io/')

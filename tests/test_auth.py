@@ -34,6 +34,7 @@ from website.project.decorators import (
     must_be_contributor_or_public_but_not_anonymized,
     must_have_addon, must_be_addon_authorizer,
 )
+from website.util import api_url_for
 
 from tests.test_cas_authentication import make_external_response, generate_external_user_with_resp
 
@@ -200,6 +201,35 @@ class TestAuthUtils(OsfTestCase):
     def test_validate_recaptcha_empty_response(self, req_post):
         # ensure None short circuits execution (no call to google)
         assert_false(validate_recaptcha(None))
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_sign_up_twice_sends_two_confirmation_emails_only(self, mock_mail):
+        # Regression test for https://openscience.atlassian.net/browse/OSF-7060
+        url = api_url_for('register_user')
+        sign_up_data = {
+            'fullName': 'Julius Caesar',
+            'email1': 'caesar@romanempire.com',
+            'email2': 'caesar@romanempire.com',
+            'password': 'brutusisajerk'
+        }
+
+        self.app.post_json(url, sign_up_data)
+        assert_equal(len(mock_mail.call_args_list), 1)
+        args, kwargs = mock_mail.call_args
+        assert_equal(args, (
+            'caesar@romanempire.com',
+            mails.INITIAL_CONFIRM_EMAIL,
+            'plain'
+        ))
+
+        self.app.post_json(url, sign_up_data)
+        assert_equal(len(mock_mail.call_args_list), 2)
+        args, kwargs = mock_mail.call_args
+        assert_equal(args, (
+            'caesar@romanempire.com',
+            mails.INITIAL_CONFIRM_EMAIL,
+            'plain'
+        ))
 
 
 class TestAuthObject(OsfTestCase):

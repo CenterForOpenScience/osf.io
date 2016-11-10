@@ -1,6 +1,8 @@
 from __future__ import unicode_literals
 
 from furl import furl
+import csv
+from datetime import datetime, timedelta
 from django.views.generic import FormView, DeleteView, ListView
 from django.core.mail import send_mail
 from django.shortcuts import redirect
@@ -11,8 +13,9 @@ from website.project.spam.model import SpamStatus
 from website.settings import SUPPORT_EMAIL, DOMAIN
 from website.security import random_string
 from framework.auth import get_user
+from framework.auth.utils import impute_names
 
-from website.project.model import User
+from website.project.model import User, NodeLog, Node
 from website.mailchimp_utils import subscribe_on_confirm
 
 from admin.base.views import GuidFormView, GuidView
@@ -27,7 +30,7 @@ from admin.common_auth.logs import (
     CONFIRM_SPAM)
 
 from admin.users.serializers import serialize_user
-from admin.users.forms import EmailResetForm
+from admin.users.forms import EmailResetForm, WorkshopForm
 
 
 class UserDeleteView(OSFAdmin, DeleteView):
@@ -261,6 +264,110 @@ class UserView(OSFAdmin, GuidView):
 
     def get_object(self, queryset=None):
         return serialize_user(User.load(self.kwargs.get('guid')))
+
+
+class UserWorkshopFormView(OSFAdmin, FormView):
+    form_class = WorkshopForm
+    object_type = 'user'
+    template_name = 'users/workshop.html'
+
+    def form_valid(self, form):
+        csv_file = form.cleaned_data['document']
+        final = self.parse(csv_file)
+        file_name = csv_file.name
+        results_file_name = '{}_user_stats.csv'.format(file_name.replace(' ', '_').strip('.csv'))
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="{}"'.format(results_file_name)
+        writer = csv.writer(response)
+        for row in final:
+            writer.writerow(row)
+        return response
+
+    @staticmethod
+    def find_user_by_email(email):
+        user_list = User.find_by_email(email=email)
+        return user_list[0] if user_list else None
+
+    @staticmethod
+    def find_user_by_full_name(full_name):
+        user_list = User.find(Q('fullname', 'eq', full_name))
+        return user_list[0] if user_list.count() == 1 else None
+
+    @staticmethod
+    def find_user_by_family_name(family_name):
+        user_list = User.find(Q('family_name', 'eq', family_name))
+        return user_list[0] if user_list.count() == 1 else None
+
+    @staticmethod
+    def get_user_logs_since_workshop(user, workshop_date):
+        query_date = workshop_date + timedelta(days=1)
+        query = Q('user', 'eq', user._id) & Q('date', 'gt', query_date)
+        return list(NodeLog.find(query=query))
+
+    @staticmethod
+    def get_user_nodes_since_workshop(user, workshop_date):
+        query_date = workshop_date + timedelta(days=1)
+        query = Q('creator', 'eq', user._id) & Q('date_created', 'gt', query_date)
+        return list(Node.find(query=query))
+
+    def parse(self, csv_file):
+        """ Parse and add to csv file.
+
+        :param csv_file: Comma separated
+        :return: A list
+        """
+        result = []
+        csv_reader = csv.reader(csv_file)
+
+        for index, row in enumerate(csv_reader):
+            if index == 0:
+                row.extend([
+                    'OSF ID', 'Logs Since Workshop', 'Nodes Created Since Workshop', 'Last Log Date'
+                ])
+                result.append(row)
+                continue
+
+            email = row[5]
+            user_by_email = self.find_user_by_email(email)
+
+            if not user_by_email:
+                full_name = row[4]
+                try:
+                    family_name = impute_names(full_name)['family']
+                except UnicodeDecodeError:
+                    row.extend(['Unable to parse name'])
+                    result.append(row)
+                    continue
+
+                user_by_name = self.find_user_by_full_name(full_name) or self.find_user_by_family_name(family_name)
+                if not user_by_name:
+                    row.extend(['', 0, 0, ''])
+                    result.append(row)
+                    continue
+                else:
+                    user = user_by_name
+
+            else:
+                user = user_by_email
+
+            workshop_date = datetime.strptime(row[1], '%m/%d/%y')
+            nodes = self.get_user_nodes_since_workshop(user, workshop_date)
+            user_logs = self.get_user_logs_since_workshop(user, workshop_date)
+
+            try:
+                last_log_date = user_logs[-1].date.strftime('%m/%d/%y')
+            except IndexError:
+                last_log_date = ''
+
+            row.extend([
+                user.pk, len(user_logs), len(nodes), last_log_date
+            ])
+            result.append(row)
+
+        return result
+
+    def form_invalid(self, form):
+        super(UserWorkshopFormView, self).form_invalid(form)
 
 
 class ResetPasswordView(OSFAdmin, FormView):
