@@ -73,36 +73,32 @@
                      <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
                         <tr>
                             <td><img src="/static/img/preprint_providers/osf-preprints-login.png" style="width: 200px; margin-top: 15px" /></td>
-                            <td><h3> Create a free OSF account</h3></td>
+                            <td><h3>Create a free OSF account</h3></td>
                         </tr>
                     </table>
-                %endif
-
-                %if campaign == "socarxiv-preprints":
+                %elif campaign == "socarxiv-preprints":
                     <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
                         <tr>
                             <td><img src="/static/img/preprint_providers/socarxiv-login.png" style="width: 150px; background: darkred;" /></td>
                             <td><h3>Create a free OSF account to access SorArXiv</h3></td>
                         </tr>
                     </table>
-                %endif
-
-                 %if campaign == "engrxiv-preprints":
+                %elif campaign == "engrxiv-preprints":
                     <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
                         <tr>
                             <td><img src="/static/img/preprint_providers/engrxiv-login.png" style="width: 150px; background: darkred;" /></td>
                             <td><h3>Create a free OSF account to access engrXiv</h3></td>
                         </tr>
                     </table>
-                %endif
-
-                 %if campaign == "psyarxiv-preprints":
+                %elif campaign == "psyarxiv-preprints":
                     <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
                         <tr>
                             <td><img src="/static/img/preprint_providers/psyarxiv-login.png" style="width: 150px; background: darkred;" /></td>
                             <td><h3>Create a free OSF account to access psyArXiv</h3></td>
                         </tr>
                     </table>
+                %else:
+                    <h3 class="m-b-lg"> Create a free account </h3>
                 %endif
 
                 <div class="form-group" data-bind=" css: { 'has-error': fullName() && !fullName.isValid(), 'has-success': fullName() && fullName.isValid() }">
