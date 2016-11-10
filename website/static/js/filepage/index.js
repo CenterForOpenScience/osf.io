@@ -37,6 +37,10 @@ var CopyButton = {
     }
 };
 
+var formatUrl = function(urlParams, showParam) {
+    return 'view_only' in urlParams ? '?show=' + showParam + '&view_only=' + urlParams.view_only : '?show=' + showParam;
+};
+
 var SharePopover =  {
     view: function(ctrl, params) {
         var copyButtonHeight = '34px';
@@ -400,11 +404,11 @@ var FileViewPage = {
             if (viewable){
                 self.mfrIframeParent.toggle();
                 self.revisions.selected = true;
-                url = '?show=revision';
+                url = formatUrl(self.urlParams, 'revision');
             } else {
                 self.mfrIframeParent.toggle();
                 self.revisions.selected = false;
-                url = '?show=view';
+                url = formatUrl(self.urlParams, 'view');
             }
             var state = {
                 scrollTop: $(window).scrollTop(),
@@ -417,13 +421,13 @@ var FileViewPage = {
             m.render(document.getElementById('versionLink'), m('a', {onclick: toggleRevisions}, document.getElementById('versionLink').innerHTML));
         }
 
-        var urlParams = $osf.urlParams();
+        self.urlParams = $osf.urlParams();
         // The parser found a query so lets check what we need to do
-        if ('show' in urlParams){
-            if(urlParams.show === 'revision'){
+        if ('show' in self.urlParams){
+            if(self.urlParams.show === 'revision'){
                 self.mfrIframeParent.toggle();
                 self.revisions.selected = true;
-            } else if (urlParams.show === 'view' || urlParams.show === 'edit'){
+            } else if (self.urlParams.show === 'view' || self.urlParams.show === 'edit'){
                self.revisions.selected = false;
            }
         }
@@ -484,7 +488,7 @@ var FileViewPage = {
                         if ((!ctrl.editor.selected || panelsShown > 1)) {
                             ctrl.editor.selected = !ctrl.editor.selected;
                             ctrl.revisions.selected = false;
-                            var url = '?show=view';
+                            var url = formatUrl(ctrl.urlParams, 'view');
                             state = {
                                 scrollTop: $(window).scrollTop(),
                             };
@@ -530,11 +534,11 @@ var FileViewPage = {
                         if (!ctrl.mfrIframeParent.is(':visible') || panelsShown > 1) {
                             ctrl.mfrIframeParent.toggle();
                             ctrl.revisions.selected = false;
-                            History.pushState(state, 'OSF | ' + window.contextVars.file.name, '?show=view');
+                            History.pushState(state, 'OSF | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'view'));
                         } else if (ctrl.mfrIframeParent.is(':visible') && !ctrl.editor){
                             ctrl.mfrIframeParent.toggle();
                             ctrl.revisions.selected = true;
-                            History.pushState(state, 'OSF | ' + window.contextVars.file.name, '?show=revision');
+                            History.pushState(state, 'OSF | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'revision'));
                         }
                     }
                 }, 'View'), editButton())
@@ -551,14 +555,14 @@ var FileViewPage = {
                             ctrl.editor.selected = false;
                         }
                         ctrl.revisions.selected = true;
-                        History.pushState(state, 'OSF | ' + window.contextVars.file.name, '?show=revision');
+                        History.pushState(state, 'OSF | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'revision'));
                     } else {
                         ctrl.mfrIframeParent.toggle();
                         if (ctrl.editor) {
                             ctrl.editor.selected = false;
                         }
                         ctrl.revisions.selected = false;
-                        History.pushState(state, 'OSF | ' + window.contextVars.file.name, '?show=view');
+                        History.pushState(state, 'OSF | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'view'));
                     }
                 }}, 'Revisions')
             ])

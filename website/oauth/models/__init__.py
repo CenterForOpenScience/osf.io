@@ -63,6 +63,7 @@ class ExternalAccount(StoredObject):
 
     # Used for OAuth2 only
     refresh_token = EncryptedStringField()
+    date_last_refreshed = fields.DateTimeField()
     expires_at = fields.DateTimeField()
     scopes = fields.StringField(list=True, default=lambda: list())
 
@@ -299,6 +300,7 @@ class ExternalProvider(object):
         # only for OAuth2
         self.account.expires_at = info.get('expires_at')
         self.account.refresh_token = info.get('refresh_token')
+        self.account.date_last_refreshed = datetime.datetime.utcnow()
 
         # additional information
         self.account.display_name = info.get('display_name')
@@ -424,6 +426,7 @@ class ExternalProvider(object):
         self.account.oauth_key = token[resp_auth_token_key]
         self.account.refresh_token = token[resp_refresh_token_key]
         self.account.expires_at = resp_expiry_fn(token)
+        self.account.date_last_refreshed = datetime.datetime.utcnow()
         self.account.save()
         return True
 

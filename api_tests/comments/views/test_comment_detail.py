@@ -463,6 +463,8 @@ class TestCommentDetailView(CommentDetailMixin, ApiTestCase):
         self.public_project = ProjectFactory.create(is_public=True, creator=self.user)
         self.public_project.add_contributor(self.contributor, save=True)
         self.public_comment = CommentFactory(node=self.public_project, user=self.user)
+        reply_target = Guid.load(self.public_comment._id)
+        self.public_comment_reply = CommentFactory(node=self.public_project, target=reply_target, user=self.user)
         self.public_url = '/{}comments/{}/'.format(API_BASE, self.public_comment._id)
         self.public_comment_payload = self._set_up_payload(self.public_comment._id)
 
@@ -557,6 +559,8 @@ class TestFileCommentDetailView(CommentDetailMixin, ApiTestCase):
         self.public_project.add_contributor(self.contributor, save=True)
         self.public_file = test_utils.create_test_file(self.public_project, self.user)
         self.public_comment = CommentFactory(node=self.public_project, target=self.public_file.get_guid(), user=self.user)
+        reply_target = Guid.load(self.public_comment._id)
+        self.public_comment_reply = CommentFactory(node=self.public_project, target=reply_target, user=self.user)
         self.public_url = '/{}comments/{}/'.format(API_BASE, self.public_comment._id)
         self.public_comment_payload = self._set_up_payload(self.public_comment._id)
 
@@ -634,6 +638,8 @@ class TestWikiCommentDetailView(CommentDetailMixin, ApiTestCase):
         self.public_project.add_contributor(self.contributor, save=True)
         self.public_wiki = NodeWikiFactory(node=self.public_project, user=self.user)
         self.public_comment = CommentFactory(node=self.public_project, target=Guid.load(self.public_wiki._id), user=self.user)
+        reply_target = Guid.load(self.public_comment._id)
+        self.public_comment_reply = CommentFactory(node=self.public_project, target=reply_target, user=self.user)
         self.public_url = '/{}comments/{}/'.format(API_BASE, self.public_comment._id)
         self.public_comment_payload = self._set_up_payload(self.public_comment._id)
 
