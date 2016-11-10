@@ -4,17 +4,29 @@
 
 import logging
 
+from modularodm import Q
 from framework.transactions.context import TokuTransaction
 from website.app import init_app
-from website.models import PreprintProvider
+from website.models import Subject, PreprintProvider
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
+SUBJECTS_CACHE = {}
+
+def get_subject_id(name):
+    if not name in SUBJECTS_CACHE:
+        SUBJECTS_CACHE[name] = Subject.find(Q('text', 'eq', name))[0]._id
+
+    return SUBJECTS_CACHE[name]
 
 def update_or_create(provider_data):
     provider = PreprintProvider.load(provider_data['_id'])
     if provider:
+        provider_data['subjects_acceptable'] = map(
+            lambda rule: (map(get_subject_id, rule[0]), rule[1]),
+            provider_data['subjects_acceptable']
+        )
         for key, val in provider_data.iteritems():
             setattr(provider, key, val)
         changed_fields = provider.save()
@@ -27,7 +39,6 @@ def update_or_create(provider_data):
         provider = PreprintProvider.load(new_provider._id)
         print('Added new preprint provider: {}'.format(provider._id))
         return new_provider, True
-
 
 def main():
     PREPRINT_PROVIDERS = [
@@ -86,7 +97,10 @@ def main():
             'social_instagram': 'engrxiv',
             'licenses_acceptable': [],
             'header_text': '',
-            'subjects_acceptable': [],
+            'subjects_acceptable': [
+                (['Computer and information sciences', 'Software engineering'], True),
+                (['Engineering and technology'], True)
+            ],
         },
         {
             '_id': 'psyarxiv',
@@ -128,7 +142,10 @@ def main():
             'social_instagram': 'psyarxiv',
             'licenses_acceptable': [],
             'header_text': '',
-            'subjects_acceptable': [],
+            'subjects_acceptable': [
+                (['Social and behavioral sciences'], True),
+                (['Arts and Humanities'], True)
+            ],
         },
         {
             '_id': 'socarxiv',
@@ -168,15 +185,20 @@ def main():
             'social_instagram': 'socarxiv',
             'licenses_acceptable': [],
             'header_text': '',
-            'subjects_acceptable': [],
+            'subjects_acceptable': [
+                (['Social and behavioral sciences'], True),
+                (['Law'], True),
+                (['Education'], True),
+                (['Arts and Humanities'], True)
+            ],
         },
     ]
 
-    init_app(routes=False)
     with TokuTransaction():
         for provider_data in PREPRINT_PROVIDERS:
             update_or_create(provider_data)
 
 
 if __name__ == '__main__':
+    init_app(set_backends=True, routes=False)
     main()
