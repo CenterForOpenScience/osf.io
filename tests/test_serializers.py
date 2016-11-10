@@ -26,7 +26,7 @@ pytestmark = pytest.mark.django_db
 class TestUserSerializers(OsfTestCase):
     def test_serialize_user(self):
         master = UserFactory()
-        user = UserFactory.build()
+        user = UserFactory()
         master.merge_user(user)
         d = utils.serialize_user(user)
         assert_equal(d['id'], user._primary_key)
@@ -40,7 +40,7 @@ class TestUserSerializers(OsfTestCase):
 
     def test_serialize_user_merged(self):
         master = UserFactory()
-        user = UserFactory.build()
+        user = UserFactory()
         master.merge_user(user)
         d = utils.serialize_user(user, full=True)
         assert_true(d['is_merged'])
