@@ -79,16 +79,14 @@ from api.preprints.serializers import PreprintSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.users.views import UserMixin
 from api.wikis.serializers import NodeWikiSerializer
-from framework.auth.core import User
 from framework.auth.oauth_scopes import CoreScopes
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
-from osf.models import (Node, PrivateLink)
+from osf.models import (Node, PrivateLink, NodeLog, Institution, Comment, DraftRegistration, PreprintService, FileNode)
+from osf.models import OSFUser as User
 from osf.models import NodeRelation, AlternativeCitation, Guid
 from osf.models import StoredFileNode
 from website.addons.wiki.model import NodeWikiPage
 from website.exceptions import NodeStateError
-from website.files.models import FileNode
-from website.models import Node, Comment, NodeLog, Institution, DraftRegistration, PrivateLink, PreprintService
 from website.util.permissions import ADMIN
 
 
