@@ -404,12 +404,11 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
         """
         for node in self.get_nodes_with_oauth_grants(external_account):
             try:
-                addon_settings = node.get_addon(external_account.provider, deleted=True)
+                node.get_addon(external_account.provider, deleted=True).deauthorize(auth=auth)
             except AttributeError:
                 # No associated addon settings despite oauth grant
+                # Remove grant in `for` loop below
                 pass
-            else:
-                addon_settings.deauthorize(auth=auth)
 
         if User.find(Q('external_accounts', 'eq', external_account._id)).count() == 1:
             # Only this user is using the account, so revoke remote access as well.
