@@ -1,7 +1,7 @@
 import datetime
 import urlparse
 
-from modularodm import fields, Q
+from modularodm import fields, Q, exceptions
 
 from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import PermissionsError
@@ -11,6 +11,7 @@ from framework.mongo.utils import unique_on
 from website.files.models import StoredFileNode
 from website.preprints.tasks import on_preprint_updated
 from website.project.model import NodeLog
+from website.project.licenses import NodeLicense, NodeLicenseRecord
 from website.project.taxonomies import Subject, validate_subject_hierarchy
 from website.util import api_v2_url
 from website.util.permissions import ADMIN
@@ -26,6 +27,7 @@ class PreprintService(GuidStoredObject):
     node = fields.ForeignField('Node', index=True)
     is_published = fields.BooleanField(default=False, index=True)
     date_published = fields.DateTimeField()
+    license = fields.ForeignField('NodeLicenseRecord')
 
     # This is a list of tuples of Subject id's. MODM doesn't do schema
     # validation for DictionaryFields, but would unsuccessfully attempt
@@ -161,6 +163,38 @@ class PreprintService(GuidStoredObject):
 
         if save:
             self.node.save()
+            self.save()
+
+    def set_preprint_license(self, license_id, year, copyright_holders, auth, save=False):
+        if not self.has_permission(auth.user, ADMIN):
+            raise PermissionsError('Only admins can change a preprint\'s license.')
+        try:
+            node_license = NodeLicense.find_one(
+                Q('id', 'eq', license_id)
+            )
+        except exceptions.NoResultsFound:
+            raise Exception
+
+        if node_license not in self.provider.licenses_acceptable and self.provider.licenses_acceptable is not None:
+            raise Exception
+
+        record = self.node_license
+        if record is None:
+            record = NodeLicenseRecord(
+                node_license=node_license
+            )
+        record.node_license = node_license
+        record.year = year
+        record.copyright_holders = copyright_holders or []
+        record.save()
+        self.license = record
+        # self.add_log(
+        #     Add log information
+        #     auth=auth,
+        #     save=False,
+        # )
+
+        if save:
             self.save()
 
     def save(self, *args, **kwargs):
