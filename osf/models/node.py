@@ -1510,6 +1510,33 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         return registered
 
+    def path_above(self, auth):
+        parents = self.parents
+        return '/' + '/'.join([p.title if p.can_view(auth) else '-- private project --' for p in reversed(parents)])
+
+    # TODO: Deprecate this; it duplicates much of what serialize_project already
+    # does
+    def serialize(self, auth=None):
+        """Dictionary representation of node that is nested within a NodeLog's
+        representation.
+        """
+        # TODO: incomplete implementation
+        return {
+            'id': str(self._primary_key),
+            'category': self.category_display,
+            'node_type': self.project_or_component,
+            'url': self.url,
+            # TODO: Titles shouldn't contain escaped HTML in the first place
+            'title': sanitize.unescape_entities(self.title),
+            'path': self.path_above(auth),
+            'api_url': self.api_url,
+            'is_public': self.is_public,
+            'is_registration': self.is_registration,
+        }
+
+    def has_node_link_to(self, node):
+        return self.node_relations.filter(child=node, is_node_link=True).exists()
+
     def _initiate_approval(self, user, notify_initiator_on_complete=False):
         end_date = timezone.now() + settings.REGISTRATION_APPROVAL_TIME
         self.registration_approval = RegistrationApproval.objects.create(

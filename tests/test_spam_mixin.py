@@ -3,12 +3,12 @@ from datetime import datetime
 
 from django.utils import timezone
 from nose.tools import *  # noqa PEP8 asserts
-from modularodm.exceptions import ValidationValueError, ValidationTypeError
+from modularodm.exceptions import ValidationError
 
 from framework.auth import Auth
 
 from tests.base import OsfTestCase
-from tests.factories import UserFactory, CommentFactory
+from osf_tests.factories import UserFactory, CommentFactory
 from website.project.spam.model import SpamStatus
 
 
@@ -123,15 +123,15 @@ class TestSpamMixin(OsfTestCase):
 
     def test_validate_reports_bad_key(self):
         self.comment.reports[None] = {'category': 'spam', 'text': 'ads'}
-        with assert_raises(ValidationValueError):
+        with assert_raises(ValidationError):
             self.comment.save()
 
     def test_validate_reports_bad_type(self):
         self.comment.reports[self.comment.user._id] = 'not a dict'
-        with assert_raises(ValidationTypeError):
+        with assert_raises(ValidationError):
             self.comment.save()
 
     def test_validate_reports_bad_value(self):
         self.comment.reports[self.comment.user._id] = {'foo': 'bar'}
-        with assert_raises(ValidationValueError):
+        with assert_raises(ValidationError):
             self.comment.save()

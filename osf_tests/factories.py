@@ -76,6 +76,11 @@ class AuthUserFactory(UserFactory):
     def add_auth(self, create, extracted):
         self.auth = (self.username, 'queenfan86')
 
+class AuthFactory(factory.base.Factory):
+    class Meta:
+        model = Auth
+    user = factory.SubFactory(UserFactory)
+
 class UnregUserFactory(DjangoModelFactory):
     email = factory.Faker('email')
     fullname = factory.Faker('name')

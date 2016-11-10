@@ -561,6 +561,11 @@ CORE_TESTS = [
     'tests/test_views.py',
     'tests/test_subjects.py',
     'tests/test_preprints.py',
+    'tests/test_rubeus.py',
+    'tests/test_sanitize.py',
+    'tests/test_security',
+    'tests/test_serializers.py',
+    'tests/test_spam_mixin.py',
     'tests/test_tokens.py',
     'tests/test_webtests.py',
 ]
