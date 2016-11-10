@@ -4,39 +4,55 @@ from django.apps import apps
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed
-from rest_framework.status import HTTP_204_NO_CONTENT
 from rest_framework.response import Response
+from rest_framework.status import HTTP_204_NO_CONTENT
 
-from framework.auth.oauth_scopes import CoreScopes
-from framework.postcommit_tasks.handlers import enqueue_postcommit_task
-
+from api.addons.serializers import NodeAddonFolderSerializer
+from api.addons.views import AddonSettingsMixin
 from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
 from api.base.exceptions import InvalidModelValueError, JSONAPIException, Gone
+from api.base.exceptions import RelationshipPostMakesNoChanges, EndpointNotImplementedError
 from api.base.filters import ODMFilterMixin, ListFilterMixin
-from api.base.views import JSONAPIBaseView
+from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination
 from api.base.parsers import (
     JSONAPIRelationshipParser,
     JSONAPIRelationshipParserForRegularJSON,
 )
-from api.base.exceptions import RelationshipPostMakesNoChanges, EndpointNotImplementedError
-from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination
-from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
 from api.base.settings import ADDONS_OAUTH, API_BASE
-from api.caching.tasks import ban_url
-from api.addons.views import AddonSettingsMixin
-from api.files.serializers import FileSerializer
-from api.comments.serializers import NodeCommentSerializer, CommentCreateSerializer
-from api.comments.permissions import CanCommentOrPublic
-from api.users.views import UserMixin
-from api.wikis.serializers import NodeWikiSerializer
-from api.base.views import LinkedNodesRelationship, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList, BaseLinkedList
 from api.base.throttling import (
     UserRateThrottle,
     NonCookieAuthThrottle,
     AddContributorThrottle,
 )
+from api.base.utils import default_node_list_query, default_node_permission_query
+from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
+from api.base.views import JSONAPIBaseView
+from api.base.views import LinkedNodesRelationship, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList, BaseLinkedList
+from api.caching.tasks import ban_url
+from api.citations.utils import render_citation
+from api.comments.permissions import CanCommentOrPublic
+from api.comments.serializers import (CommentCreateSerializer,
+                                      NodeCommentSerializer)
+from api.files.serializers import FileSerializer, OsfStorageFileSerializer
+from api.identifiers.serializers import NodeIdentifierSerializer
+from api.identifiers.views import IdentifierList
+from api.institutions.serializers import InstitutionSerializer
+from api.logs.serializers import NodeLogSerializer
 from api.nodes.filters import NodePreprintsFilterMixin
+from api.nodes.permissions import (
+    IsAdmin,
+    IsPublic,
+    AdminOrPublic,
+    ContributorOrPublic,
+    RegistrationAndPermissionCheckForPointers,
+    ContributorDetailPermissions,
+    ReadOnlyIfRegistration,
+    IsAdminOrReviewer,
+    WriteOrPublicForRelationshipInstitutions,
+    ExcludeWithdrawals,
+    NodeLinksShowIfVersion,
+)
 from api.nodes.serializers import (
     NodeSerializer,
     ForwardNodeAddonSettingsSerializer,
@@ -58,38 +74,22 @@ from api.nodes.serializers import (
     NodeCitationStyleSerializer
 )
 from api.nodes.utils import get_file_object
-from api.citations.utils import render_citation
-
-from api.addons.serializers import NodeAddonFolderSerializer
-from api.registrations.serializers import RegistrationSerializer
-from api.institutions.serializers import InstitutionSerializer
-from api.identifiers.serializers import NodeIdentifierSerializer
-from api.identifiers.views import IdentifierList
-from api.nodes.permissions import (
-    IsAdmin,
-    IsPublic,
-    AdminOrPublic,
-    ContributorOrPublic,
-    RegistrationAndPermissionCheckForPointers,
-    ContributorDetailPermissions,
-    ReadOnlyIfRegistration,
-    IsAdminOrReviewer,
-    WriteOrPublicForRelationshipInstitutions,
-    ExcludeWithdrawals,
-    NodeLinksShowIfVersion,
-)
-from api.logs.serializers import NodeLogSerializer
 from api.preprints.parsers import PreprintsJSONAPIParser, PreprintsJSONAPIParserForRegularJSON
 from api.preprints.serializers import PreprintSerializer
-
+from api.registrations.serializers import RegistrationSerializer
+from api.users.views import UserMixin
+from api.wikis.serializers import NodeWikiSerializer
+from framework.auth.core import User
+from framework.auth.oauth_scopes import CoreScopes
+from framework.postcommit_tasks.handlers import enqueue_postcommit_task
+from osf.models import (Node, PrivateLink)
+from osf.models import NodeRelation, AlternativeCitation, Guid
+from osf.models import StoredFileNode
 from website.addons.wiki.model import NodeWikiPage
 from website.exceptions import NodeStateError
-from website.util.permissions import ADMIN
-from website.models import Node, Comment, NodeLog, Institution, DraftRegistration, PrivateLink, PreprintService
-from osf.models import NodeRelation, AlternativeCitation, Guid
 from website.files.models import FileNode
-from framework.auth.core import User
-from api.base.utils import default_node_list_query, default_node_permission_query
+from website.models import Node, Comment, NodeLog, Institution, DraftRegistration, PrivateLink, PreprintService
+from website.util.permissions import ADMIN
 
 
 class NodeMixin(object):
@@ -1886,20 +1886,23 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
     ordering = ('_materialized_path',)  # default ordering
 
-    serializer_class = FileSerializer
-
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
     view_category = 'nodes'
     view_name = 'node-files'
 
+    def get_serializer_class(self):
+        if self.kwargs[self.provider_lookup_url_kwarg] == 'osfstorage':
+            return OsfStorageFileSerializer
+        return FileSerializer
+
     def get_default_queryset(self):
         # Don't bother going to waterbutler for osfstorage
         files_list = self.fetch_from_waterbutler()
 
         if isinstance(files_list, list):
-            return [self.get_file_item(file) for file in files_list]
+            return StoredFileNode.objects.filter(id__in=[self.get_file_item(file).id for file in files_list])
 
         if isinstance(files_list, dict) or getattr(files_list, 'is_file', False):
             # We should not have gotten a file here
@@ -1909,6 +1912,8 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
     # overrides ListAPIView
     def get_queryset(self):
+        import ipdb;ipdb.set_trace()
+
         return self.get_queryset_from_request()
 
 

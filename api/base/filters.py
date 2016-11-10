@@ -105,12 +105,13 @@ class FilterMixin(object):
 
         :raises InvalidFilterError: If the filter field is not valid
         """
-        if field_name not in self.serializer_class._declared_fields:
+        serializer_class = self.get_serializer_class()
+        if field_name not in serializer_class._declared_fields:
             raise InvalidFilterError(detail="'{0}' is not a valid field for this endpoint.".format(field_name))
-        if field_name not in getattr(self.serializer_class, 'filterable_fields', set()):
+        if field_name not in getattr(serializer_class, 'filterable_fields', set()):
             raise InvalidFilterFieldError(parameter='filter', value=field_name)
-        return self.serializer_class._declared_fields[field_name]
-
+        return serializer_class._declared_fields[field_name]
+    
     def _validate_operator(self, field, field_name, op):
         """
         Check that the operator and field combination is valid
@@ -439,6 +440,10 @@ class ListFilterMixin(FilterMixin):
             for key, field_names in filters.iteritems():
                 for field_name, data in field_names.iteritems():
                     query_field_name = data['source_field_name']
+                    if query_field_name == 'kind':
+                        query_field_name = 'is_file'
+                        data['value'] = data['value'] == 'file'
+                    query_field_name = '{}__{}'.format(query_field_name, data['op'])
                     queryset = queryset.filter(**{query_field_name: data['value']})
         return queryset
 
