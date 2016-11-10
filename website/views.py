@@ -3,11 +3,12 @@ import itertools
 import httplib as http
 import logging
 import math
+import os
 import urllib
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
-from flask import request
+from flask import request, send_from_directory
 
 from framework import utils, sentry
 from framework.auth.decorators import must_be_logged_in
@@ -19,8 +20,9 @@ from framework.routing import proxy_url
 from website.institutions.views import view_institution
 
 from website.models import Guid
-from website.models import Node, Institution
+from website.models import Node, Institution, PreprintService
 from website.project import new_bookmark_collection
+from website.settings import EXTERNAL_EMBER_APPS
 from website.util import permissions
 
 logger = logging.getLogger(__name__)
@@ -74,17 +76,28 @@ def _render_nodes(nodes, auth=None, show_path=False):
 def index():
     try:
         #TODO : make this way more robust
-        inst = Institution.find_one(Q('domains', 'eq', request.host.lower()))
-        inst_dict = view_institution(inst._id)
+        institution = Institution.find_one(Q('domains', 'eq', request.host.lower()))
+        inst_dict = view_institution(institution._id)
         inst_dict.update({
             'home': False,
             'institution': True,
-            'redirect_url': '/institutions/{}/'.format(inst._id)
+            'redirect_url': '/institutions/{}/'.format(institution._id)
         })
+
         return inst_dict
     except NoResultsFound:
         pass
-    return {'home': True}
+
+    all_institutions = Institution.find().sort('name')
+    dashboard_institutions = [
+        {'id': inst._id, 'name': inst.name, 'logo_path': inst.logo_path_rounded_corners}
+        for inst in all_institutions
+    ]
+
+    return {
+        'home': True,
+        'dashboard_institutions': dashboard_institutions
+    }
 
 
 def find_bookmark_collection(user):
@@ -179,6 +192,11 @@ def resolve_guid(guid, suffix=None):
             raise HTTPError(http.NOT_FOUND)
         if not referent.deep_url:
             raise HTTPError(http.NOT_FOUND)
+        if isinstance(referent, PreprintService):
+            return send_from_directory(
+                os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path'])),
+                'index.html'
+            )
         url = _build_guid_url(urllib.unquote(referent.deep_url), suffix)
         return proxy_url(url)
 

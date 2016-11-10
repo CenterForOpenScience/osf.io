@@ -4,7 +4,8 @@ from rest_framework.exceptions import PermissionDenied, NotFound
 from api.base.exceptions import RelationshipPostMakesNoChanges, NonDescendantNodeError
 from api.base.serializers import (
     JSONAPISerializer, IDField, RelationshipField,
-    JSONAPIRelationshipSerializer, LinksField, relationship_diff
+    JSONAPIRelationshipSerializer, LinksField, relationship_diff,
+    DateByVersion,
 )
 from api.base.utils import absolute_reverse
 
@@ -14,7 +15,7 @@ from website.project.model import Node
 class ViewOnlyLinkDetailSerializer(JSONAPISerializer):
     key = ser.CharField(read_only=True)
     id = IDField(source='_id', read_only=True)
-    date_created = ser.DateTimeField(read_only=True)
+    date_created = DateByVersion(read_only=True)
     anonymous = ser.BooleanField(required=False)
     name = ser.CharField(required=False)
 
