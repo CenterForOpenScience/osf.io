@@ -1703,13 +1703,13 @@ var FGInput = {
         var helpTextId = args.helpTextId || '';
         var oninput = args.oninput || noop;
         var onkeypress = args.onkeypress || noop;
-        var value = args.value ? '[value="' + args.value + '"]' : '';
         return m('span', [
-            m('input' + value, {
+            m('input', {
                 'id' : id,
                 className: 'pull-right form-control' + extraCSS,
                 oninput: oninput,
                 onkeypress: onkeypress,
+                'value': args.value || '',
                 'data-toggle': tooltipText ? 'tooltip' : '',
                 'title': tooltipText,
                 'data-placement' : 'bottom',
