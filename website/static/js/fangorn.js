@@ -374,6 +374,10 @@ function inheritFromParent(item, parent, fields) {
     inheritedFields.concat(fields || []).forEach(function(field) {
         item.data[field] = item.data[field] || parent.data[field];
     });
+
+    if(item.data.provider === 'github'){
+        item.data.branch = parent.data.branch;
+    }
 }
 
 /**
@@ -520,13 +524,19 @@ function doItemOp(operation, to, from, rename, conflict) {
         };
     }
 
+    var options = {};
+    if(from.data.provider === 'github'){
+        options.branch = from.data.branch;
+        moveSpec.branch = from.data.branch;
+    }
+
     from.inProgress = true;
     tb.clearMultiselect();
 
     $.ajax({
         type: 'POST',
         beforeSend: $osf.setXHRAuthorization,
-        url: waterbutler.buildTreeBeardFileOp(from),
+        url: waterbutler.buildTreeBeardFileOp(from, options),
         headers: {
             'Content-Type': 'Application/json'
         },
@@ -990,9 +1000,10 @@ function _createFolder(event, dismissCallback, helpText) {
     var extra = {};
     var path = parent.data.path || '/';
     var options = {name: val, kind: 'folder'};
-
+    
     if (parent.data.provider === 'github') {
         extra.branch = parent.data.branch;
+        options.branch = parent.data.branch;
     }
 
     m.request({
