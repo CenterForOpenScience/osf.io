@@ -2101,6 +2101,9 @@ var FGToolbar = {
  * @returns {Array} newRows Returns the revised list of rows
  */
 function filterRows(rows) {
+    if(rows.len === 0){
+        return;
+    }
     var tb = this;
     var i, newRows = [],
         originalRow = tb.find(tb.multiselected()[0].id),
