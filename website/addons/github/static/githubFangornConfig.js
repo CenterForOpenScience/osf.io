@@ -6,7 +6,7 @@
 var m = require('mithril');
 var $ = require('jquery');
 var URI = require('URIjs');
-var Fangorn = require('js/fangorn');
+var Fangorn = require('js/fangorn').Fangorn;
 var waterbutler = require('js/waterbutler');
 var $osf = require('js/osfHelpers');
 
@@ -166,7 +166,7 @@ var _githubItemButtons = {
         var buttons = [];
         function _downloadEvent(event, item, col) {
             event.stopPropagation();
-            window.location = waterbutler.buildTreeBeardDownload(item, {fileSha: item.data.extra.fileSha});
+            window.location = waterbutler.buildTreeBeardDownload(item, {fileSha: item.data.extra.fileSha, branch: item.data.branch});
         }
         // Download Zip File
         if (item.kind === 'folder') {
@@ -226,7 +226,7 @@ var _githubItemButtons = {
                     buttons.push(
                         m.component(Fangorn.Components.button, {
                             onclick: function (event) {
-                                window.location = item.data.urls.zip;
+                                window.location = waterbutler.buildTreeBeardDownloadZip(item, {'branch': item.data.branch});
                             },
                             icon: 'fa fa-download',
                             className: 'text-primary'
@@ -288,7 +288,6 @@ var _githubItemButtons = {
                     onclick: function() {
                         tb.toolbarMode(Fangorn.Components.toolbarModes.RENAME);
                     },
-                    tooltip: 'Change the name of the item',
                     icon: 'fa fa-pencil',
                     className : 'text-info'
                 }, 'Rename')

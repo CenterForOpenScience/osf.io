@@ -2,6 +2,14 @@
 Changelog
 *********
 
+0.100.0 (2016-11-09)
+====================
+- Support for editing preprints
+
+0.99.0 (2016-11-01)
+===================
+- Preprint service and migration
+
 0.98.0 (2016-10-31)
 ===================
 - Keep the file editor widget on file view page from sometimes being created twice

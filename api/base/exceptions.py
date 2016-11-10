@@ -116,7 +116,7 @@ class Gone(JSONAPIException):
     default_detail = ('The requested resource is no longer available.')
 
 
-class Conflict(APIException):
+class Conflict(JSONAPIException):
     status_code = status.HTTP_409_CONFLICT
     default_detail = ('Resource identifier does not match server endpoint.')
 

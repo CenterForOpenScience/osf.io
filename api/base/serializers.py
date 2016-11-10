@@ -245,6 +245,20 @@ def _url_val(val, obj, serializer, request, **kwargs):
         return url
 
 
+class DateByVersion(ser.DateTimeField):
+    """
+    Custom DateTimeField that forces dates into the ISO-8601 format with timezone information in version 2.2.
+    """
+    def to_representation(self, value):
+        request = self.context.get('request')
+        if request:
+            if request.version >= '2.2':
+                self.format = '%Y-%m-%dT%H:%M:%S.%fZ'
+            else:
+                self.format = '%Y-%m-%dT%H:%M:%S.%f' if value.microsecond else '%Y-%m-%dT%H:%M:%S'
+        return super(DateByVersion, self).to_representation(value)
+
+
 class IDField(ser.CharField):
     """
     ID field that validates that 'id' in the request body is the same as the instance 'id' for single requests.

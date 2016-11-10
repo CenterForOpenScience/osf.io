@@ -7,7 +7,7 @@ require('bootstrap-editable');
 require('js/osfToggleHeight');
 
 var m = require('mithril');
-var Fangorn = require('js/fangorn');
+var Fangorn = require('js/fangorn').Fangorn;
 var Raven = require('raven-js');
 var lodashGet  = require('lodash.get');
 require('truncate');

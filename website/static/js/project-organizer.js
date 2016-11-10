@@ -70,7 +70,7 @@ function _poContributors(item) {
     if (contributorList.length === 0) {
         return '';
     }
-    var totalContributors = lodashGet(item, 'data.embeds.contributors.links.meta.total');
+    var totalContributors = lodashGet(item, 'data.embeds.contributors.meta.total');
     var isContributor = lodashFind(contributorList, ['id', window.contextVars.currentUser.id]);
 
     if (!isContributor) {
@@ -78,7 +78,7 @@ function _poContributors(item) {
         contributorList = contributorList.filter(function (contrib) {
             return contrib.attributes.bibliographic;
         });
-        totalContributors = item.data.embeds.contributors.links.meta.total_bibliographic;
+        totalContributors = item.data.embeds.contributors.meta.total_bibliographic;
     }
 
     return contributorList.map(function (person, index, arr) {
