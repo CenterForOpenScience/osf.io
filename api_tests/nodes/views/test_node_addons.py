@@ -21,6 +21,7 @@ from website.addons.mendeley.tests.factories import (MendeleyAccountFactory,
                                                      MendeleyNodeSettingsFactory)
 from website.addons.zotero.tests.factories import (ZoteroAccountFactory,
                                                    ZoteroNodeSettingsFactory)
+from website.util.permissions import WRITE, READ, ADMIN
 
 pytestmark = pytest.mark.django_db
 

@@ -1264,7 +1264,7 @@ class NodeChildrenList(JSONAPIBaseView, bulk_views.ListBulkCreateJSONAPIView, No
         node = self.get_node()
         req_query = self.get_query_from_request()
 
-        node_pks = node.node_relations.select_related('child')\
+        node_pks = node.node_relations.filter(is_node_link=False).select_related('child')\
                 .values_list('child__pk', flat=True)
         query = (
             Q('pk', 'in', node_pks) &
@@ -1892,7 +1892,8 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     view_category = 'nodes'
     view_name = 'node-files'
 
-    def get_serializer_class(self):
+    @property
+    def serializer_class(self):
         if self.kwargs[self.provider_lookup_url_kwarg] == 'osfstorage':
             return OsfStorageFileSerializer
         return FileSerializer
