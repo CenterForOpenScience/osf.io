@@ -333,23 +333,23 @@ class TestCASExternalLogin(OsfTestCase):
         mock_response = make_external_response(unicode=True)
         mock_service_validate.return_value = mock_response
         ticket = fake.md5()
-        service_url = 'http://accounts.osf.io/?ticket=' + ticket
+        service_url = 'http://localhost:5000/'
         resp = cas.make_response_from_ticket(ticket, service_url)
         assert_equal(resp.status_code, 302)
         assert_equal(mock_service_validate.call_count, 1)
         first_call_args = mock_service_validate.call_args[0]
         assert_equal(first_call_args[0], ticket)
-        assert_equal(first_call_args[1], 'http://accounts.osf.io/')
+        assert_equal(first_call_args[1], 'http://localhost:5000/')
 
     @mock.patch('framework.auth.cas.CasClient.service_validate')
     def test_make_response_from_ticket_handles_non_unicode(self, mock_service_validate):
         mock_response = make_external_response()
         mock_service_validate.return_value = mock_response
         ticket = fake.md5()
-        service_url = 'http://accounts.osf.io/?ticket=' + ticket
+        service_url = 'http://localhost:5000/'
         resp = cas.make_response_from_ticket(ticket, service_url)
         assert_equal(resp.status_code, 302)
         assert_equal(mock_service_validate.call_count, 1)
         first_call_args = mock_service_validate.call_args[0]
         assert_equal(first_call_args[0], ticket)
-        assert_equal(first_call_args[1], 'http://accounts.osf.io/')
+        assert_equal(first_call_args[1], 'http://localhost:5000/')
