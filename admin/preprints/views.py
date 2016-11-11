@@ -6,7 +6,6 @@ from admin.base.utils import OSFAdmin
 
 from admin.nodes.templatetags.node_extras import reverse_preprint
 from admin.preprints.serializers import serialize_preprint
-from website.project.spam.model import SpamStatus
 
 
 class PreprintFormView(OSFAdmin, GuidFormView):
