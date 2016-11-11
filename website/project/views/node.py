@@ -235,6 +235,7 @@ def project_before_template(auth, node, **kwargs):
     return {'prompts': prompts}
 
 
+# TODO: @caseyrollins, delete me?
 @must_be_logged_in
 @must_be_valid_project
 @http_error_if_disk_saving_mode

@@ -43,16 +43,28 @@ NodeActions.forkNode = function() {
     NodeActions.beforeForkNode(ctx.node.urls.api + 'fork/before/', function() {
         // Block page
         $osf.block();
+        var payload = {
+            data: {
+                type: 'nodes'
+            }
+        };
         // Fork node
-        $osf.postJSON(
-            ctx.node.urls.api + 'fork/',
-            {}
+        $osf.ajaxJSON(
+            'POST',
+            $osf.apiV2Url('nodes/' + ctx.node.id + '/forks/'),
+            {
+                isCors: true,
+                data: payload
+            }
         ).done(function(response) {
-            window.location = response;
+            window.location = response.data.links.html;
         }).fail(function(response) {
             $osf.unblock();
             if (response.status === 403) {
                 $osf.growl('Sorry:', 'you do not have permission to fork this project');
+            } else if (response.status === 504) {
+                $osf.growl('Sorry:', 'This is taking longer than normal. </br>' +
+                    'Please check back later to access your new fork and if still unavailable, contact support@cos.io');
             } else {
                 $osf.growl('Error:', 'Forking failed');
                 Raven.captureMessage('Error occurred during forking');
