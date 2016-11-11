@@ -1119,7 +1119,7 @@ var Collections = {
                 var node = result.data;
                 var count = node.relationships.linked_nodes.links.related.meta.count || 0;
 
-                self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children' }, node : node, count : m.prop(count), nodeType : 'collection' }, $osf.decodeText(node.attributes.title));
+                self.collections().push(new LinkObject('collection', { path : 'collections/' + node.id + '/linked_nodes/', query : { 'related_counts' : 'children' }, node : node, count : m.prop(count), nodeType : 'collection' }, $osf.decodeText(node.attributes.title)));
                 var link = $osf.apiV2Url('collections/' + node.id + '/linked_nodes/', { query : { 'related_counts' : 'children', 'embed' : 'contributors'}});
 
                 args.fetchers[self.collections()[self.collections().length-1].id] = new NodeFetcher('nodes', link);
