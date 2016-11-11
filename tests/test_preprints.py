@@ -277,7 +277,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
                 assert_equal(set(graph_node.keys()), set(['@id', '@type', 'identifier', 'person']))
             if graph_node['@type'] == 'preprint':
                 assert_equal(set(graph_node.keys()), set([
-                    '@id', '@type', 'contributors', 'title',
+                    '@id', '@type', 'contributors', 'title', 'tags',
                     'date_published', 'date_updated', 'description',
                     'institutions', 'is_deleted', 'links', 'subjects',
                 ]))
