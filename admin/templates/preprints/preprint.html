@@ -65,6 +65,39 @@
                 </td>
             </tr>
             <tr>
+                <td>Provider</td>
+                <td>{{ preprint.provider.name }}</td>
+            </tr>
+            <tr>
+                <td>Subjects</td>
+                <td>
+                    <ul>
+                        {%  for subject in preprint.subjects %}
+                        <li>{{ subject }}</li>
+                        {%  endfor %}
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <td>Date Created</td>
+                <td>{{ preprint.date_created }} UTC</td>
+            </tr>
+            <tr>
+                <td>Date Modified</td>
+                <td>{{ preprint.date_created }} UTC</td>
+            </tr>
+            <tr>
+                <td>Published</td>
+                <td>{{ preprint.is_published }}</td>
+            </tr>
+            {%  if preprint.is_published %}
+            <tr>
+                <td>Date Published</td>
+                <td>{{ preprint.date_published }} UTC</td>
+            </tr>
+            {%  endif %}
+
+            <tr>
                 <td>Creator</td>
                 <td>
                      <a href="{{ preprint.node.creator | reverse_user }}">
