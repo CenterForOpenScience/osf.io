@@ -81,7 +81,7 @@ def format_user(user):
     return person
 
 
-def format_contributor(preprint, user, index):
+def format_contributor(preprint, user, bibliographic, index):
     person = format_user(user)
 
     return GraphNode(
@@ -90,6 +90,7 @@ def format_contributor(preprint, user, index):
         order_cited=index,
         creative_work=preprint,
         cited_name=user.fullname,
+        bibliographic=bibliographic,
     )
 
 
@@ -117,8 +118,8 @@ def format_preprint(preprint):
             }))
         )
 
-    preprint_graph.attrs['subjects'] = [
-        GraphNode('throughsubjects', creative_work=preprint_graph, subject=GraphNode('subject', name=tag._id))
+    preprint_graph.attrs['tags'] = [
+        GraphNode('throughtags', creative_work=preprint_graph, subject=GraphNode('tag', name=tag._id))
         for tag in preprint.node.tags
     ]
 
@@ -127,7 +128,7 @@ def format_preprint(preprint):
         for subject in set(x['text'] for hier in preprint.get_subjects() for x in hier)
     ]
 
-    preprint_graph.attrs['contributors'] = [format_contributor(preprint_graph, user, i) for i, user in enumerate(preprint.node.contributors)]
+    preprint_graph.attrs['contributors'] = [format_contributor(preprint_graph, user, bool(user._id in preprint.node.visible_contributor_ids), i) for i, user in enumerate(preprint.node.contributors)]
     preprint_graph.attrs['institutions'] = [GraphNode('association', creative_work=preprint_graph, entity=GraphNode('institution', name=institution.name)) for institution in preprint.node.affiliated_institutions]
 
     visited = set()
