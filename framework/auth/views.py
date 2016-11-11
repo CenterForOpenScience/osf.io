@@ -874,7 +874,8 @@ def external_login_email_post():
                 campaign_url = furl.furl(web_url_for('auth_login', next=campaign_url, _absolute=True)).url
             if service_url.startswith(campaign_url):
                 destination = campaign
-                break
+                if campaign != 'osf-preprints':
+                    break
 
     if form.validate():
         clean_email = form.email.data
