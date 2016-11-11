@@ -1750,7 +1750,7 @@ var FGItemButtons = {
         var item = args.item;
         var rowButtons = [];
         var mode = args.mode;
-        var preprintPath = getPreprintPath(window.contextVars.node.isPreprint, window.contextVars.node.preprintFileId);
+        var preprintPath = getPreprintPath(window.contextVars.node.preprintFileId);
         if (tb.options.placement !== 'fileview') {
             if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions && item.data.permissions.edit) {
                 rowButtons.push(
@@ -2025,7 +2025,7 @@ var FGToolbar = {
         // Special cased to not show 'delete multiple' for github or published dataverses
         if(items.length > 1 && ctrl.tb.multiselected()[0].data.provider !== 'github' && ctrl.tb.options.placement !== 'fileview' && !(ctrl.tb.multiselected()[0].data.provider === 'dataverse' && ctrl.tb.multiselected()[0].parent().data.version === 'latest-published') ) {
             if (showDeleteMultiple(items)) {
-                var preprintPath = getPreprintPath(window.contextVars.node.isPreprint, window.contextVars.node.preprintFileId);
+                var preprintPath = getPreprintPath(window.contextVars.node.preprintFileId);
                 if (preprintPath && multiselectContainsPreprint(items, preprintPath)) {
                     generalButtons.push(
                         m.component(FGButton, {
@@ -2502,8 +2502,8 @@ function multiselectContainsPreprint(items, preprintPath) {
     return false;
 }
 
-function getPreprintPath(isPreprint, preprintFileId) {
-    if (isPreprint) {
+function getPreprintPath(preprintFileId) {
+    if (preprintFileId) {
         return '/' + preprintFileId;
     }
     return null;
@@ -2516,7 +2516,7 @@ function getCopyMode(folder, items) {
         return 'forbidden';
     }
 
-    var preprintPath = getPreprintPath(window.contextVars.node.isPreprint, window.contextVars.node.preprintFileId);
+    var preprintPath = getPreprintPath(window.contextVars.node.preprintFileId);
     var canMove = true;
     var mustBeIntra = (folder.data.provider === 'github');
     var cannotBeFolder = (folder.data.provider === 'figshare' || folder.data.provider === 'dataverse');
