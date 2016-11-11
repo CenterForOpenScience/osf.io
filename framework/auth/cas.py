@@ -258,6 +258,9 @@ def make_response_from_ticket(ticket, service_url):
     :return: redirect response
     """
 
+    # `service_url` is guaranteed to be removed of `ticket` parameter, which has been pulled off in
+    # `framework.sessions.before_request()`. There is no need to check ticket again.
+
     client = get_client()
     cas_resp = client.service_validate(ticket, service_url)
     if cas_resp.authenticated:
@@ -291,7 +294,7 @@ def make_response_from_ticket(ticket, service_url):
         if not user and external_credential and action == 'external_first_login':
             from website.util import web_url_for
             # orcid attributes can be marked private and not shared, default to orcid otherwise
-            fullname = '{} {}'.format(cas_resp.attributes.get('given-names', ''), cas_resp.attributes.get('family-name', '')).strip()
+            fullname = u'{} {}'.format(cas_resp.attributes.get('given-names', ''), cas_resp.attributes.get('family-name', '')).strip()
             if not fullname:
                 fullname = external_credential['id']
             user = {
@@ -299,6 +302,7 @@ def make_response_from_ticket(ticket, service_url):
                 'external_id': external_credential['id'],
                 'fullname': fullname,
                 'access_token': cas_resp.attributes['accessToken'],
+                'service_url': service_url,
             }
             return external_first_login_authenticate(
                 user,
