@@ -140,29 +140,6 @@ class TestSetPreprintFile(OsfTestCase):
             self.preprint.set_primary_file(self.file_two, auth=self.read_write_user_auth, save=True)
         assert_equal(self.project.preprint_file._id, self.file._id)
 
-    def test_public_private_preprint_banner_on_file_exist(self):
-        url = self.project.web_url_for('view_project')
-        
-        res = self.app.get(url, auth=self.user.auth)
-        assert_not_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
-
-        self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
-        with assert_raises(ValueError):
-            self.preprint.set_published(True, auth=self.auth, save=True)
-        self.preprint.provider = PreprintProviderFactory()
-        self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth, save=True)
-        self.preprint.set_published(True, auth=self.auth, save=True)
-        self.project.reload()
-
-        res = self.app.get(url, auth=self.user.auth)
-        assert_not_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
-
-        self.project.is_public = False
-        self.project.save()
-
-        res = self.app.get(url, auth=self.user.auth)
-        assert_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
-
 
 class TestPreprintServicePermissions(OsfTestCase):
     def setUp(self):

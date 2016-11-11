@@ -20,10 +20,11 @@ from tests.base import OsfTestCase
 from tests.base import fake
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory, WatchConfigFactory, NodeFactory,
                              NodeWikiFactory, RegistrationFactory,  UnregUserFactory, UnconfirmedUserFactory,
-                             PrivateLinkFactory)
+                             PrivateLinkFactory, PreprintFactory, PreprintProviderFactory, SubjectFactory)
 from website.project import Node
 from website import settings, language
-from website.util import web_url_for, api_url_for
+from website.files.models.osfstorage import OsfStorageFile
+from website.util import web_url_for, api_url_for, permissions
 
 logging.getLogger('website.project.model').setLevel(logging.ERROR)
 
@@ -1129,6 +1130,48 @@ class TestAUserProfile(OsfTestCase):
         res = self.app.get(url, auth=self.me.auth)
         assert_in('This user has no public projects', res)
         assert_in('This user has no public components', res)
+
+class TestPreprint(OsfTestCase):
+    def setUp(self):
+        super(TestPreprint, self).setUp()
+
+        self.user = AuthUserFactory()
+        self.auth = Auth(user=self.user)
+
+        self.project = ProjectFactory(creator=self.user) # used
+        self.file = OsfStorageFile.create(
+            is_file=True,
+            node=self.project,
+            path='/panda.txt',
+            name='panda.txt',
+            materialized_path='/panda.txt')
+        self.file.save()
+
+        self.preprint = PreprintFactory(project=self.project, finish=False)    
+
+    def test_public_private_preprint_banner_on_file_exist(self):
+        url = self.project.web_url_for('view_project')
+        
+        res = self.app.get(url, auth=self.user.auth)
+        assert_not_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
+
+        self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
+        with assert_raises(ValueError):
+            self.preprint.set_published(True, auth=self.auth, save=True)
+        self.preprint.provider = PreprintProviderFactory()
+        self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth, save=True)
+        self.preprint.set_published(True, auth=self.auth, save=True)
+        self.project.reload()
+
+        res = self.app.get(url, auth=self.user.auth)
+        assert_not_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
+
+        self.project.is_public = False
+        self.project.save()
+
+        res = self.app.get(url, auth=self.user.auth)
+        assert_in('has a preprint, but has been made Private. Make your preprint discoverable by making this', res.body)
+
 
 if __name__ == '__main__':
     unittest.main()
