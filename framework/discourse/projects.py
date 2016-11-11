@@ -40,13 +40,28 @@ def sync_project(project_node, should_save=True):
         return
 
     _sync_project(project_node)
+
     framework.discourse.topics.sync_topic(project_node, False)
+
+    if project_node.discourse_project_deleted and not project_node.is_deleted:
+        undelete_project(project_node, False)
+    elif not project_node.discourse_project_deleted and project_node.is_deleted:
+        delete_project(project_node, True)
 
     if should_save:
         project_node.save()
 
-def get_project(project_node):
-    return request('get', '/forum/' + str(project_node._id) + '.json')['topic_list']
+def get_project(project_node, user=None, view_only=None):
+    """ Get the first page of the latest topics in the project
+
+    :param Node projecT_node: Project Node to query on Discourse
+    :param User user: The user to request the project as, or None for admin access
+    """
+    data = {}
+    if view_only:
+        data['view_only'] = view_only
+    username = get_username(user)
+    return request('get', '/forum/' + str(project_node._id) + '.json', data, username=username)['topic_list']
 
 def delete_project(project_node, should_save=True):
     """Delete project topics from Discourse. This makes them inaccessible,

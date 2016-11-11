@@ -213,6 +213,12 @@ def project_wiki_delete(auth, wname, **kwargs):
         raise HTTPError(http.NOT_FOUND)
     node.delete_node_wiki(wiki_name, auth)
     wiki_utils.broadcast_to_sharejs('delete', sharejs_uuid, node)
+
+    try:
+        discourse.delete_topic(wiki_page)
+    except (discourse.DiscourseException, requests.exceptions.ConnectionError):
+        logger.exception('Error deleting wiki page')
+
     return {}
 
 

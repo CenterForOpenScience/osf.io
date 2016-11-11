@@ -4168,6 +4168,11 @@ class PrivateLink(StoredObject):
             'anonymous': self.anonymous
         }
 
+    def save(self, *args, **kwargs):
+        super(PrivateLink, self).save(*args, **kwargs)
+        for node in self.nodes:
+            discourse.sync_project(node)
+
 
 class AlternativeCitation(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))

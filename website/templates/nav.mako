@@ -99,34 +99,40 @@
 </nav>
 
 <script>
-//doesnt block the load event
-function discourseAutoLogin(){
-    // Ensure the user is automatically logged into the forum
-    var discourseLoggedIn = false;
-
-    if(typeof(Storage) !== "undefined") {
-        if (contextVars.currentUser.id) {
-            discourseLoggedIn = localStorage.discourseLoggedIn == "true";
-        } else {
-            localStorage.discourseLoggedIn = "false";
-        }
-    }
-
-    if (contextVars.currentUser.id && !discourseLoggedIn) {
-        var i = document.createElement("iframe");
-        i.style.display = 'none';
-        i.src = '${settings.DISCOURSE_SERVER_URL}/session/sso';
-        i.addEventListener('load', function(e) {
-            this.parentNode.removeChild(this);
-            if(typeof(Storage) !== "undefined") {
-                localStorage.discourseLoggedIn = "true";
+function performDiscourseLogin() {
+    var iframe = document.createElement("iframe");
+    iframe.style.display = 'none';
+    iframe.src = '${settings.DISCOURSE_SERVER_URL}/session/sso';
+    iframe.addEventListener('load', function(e) {
+        this.parentNode.removeChild(this);
+        // Verify log-in
+        $.ajax({
+            url: "http://localhost:4000/session/current.json",
+            xhrFields: { withCredentials: true }}
+        ).then(function(json) {
+            if (json.current_user && json.current_user.username == contextVars.currentUser.id) {
+                if(typeof(Storage) !== "undefined") {
+                    sessionStorage.discourseLoggedIn = "true";
+                }
             }
         });
-        document.body.appendChild(i);
+    });
+    document.body.appendChild(iframe);
+}
+
+function discourseAutoLogin() {
+    if (contextVars.currentUser.id) {
+        if (typeof(Storage) !== "undefined" && sessionStorage.discourseLoggedIn == "true") {
+            return;
+        } else {
+            performDiscourseLogin();
+        }
+    } else if (typeof(Storage) !== "undefined") {
+        sessionStorage.discourseLoggedIn = "false";
+        return;
     }
 };
 
-// Check for browser support of event handling capability
 if (window.addEventListener) {
     window.addEventListener("load", discourseAutoLogin, false);
 } else if (window.attachEvent) {

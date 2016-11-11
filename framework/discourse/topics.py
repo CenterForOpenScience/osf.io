@@ -152,10 +152,19 @@ def sync_topic(node, should_save=True):
     # We don't want problems with case, since discourse change case sometimes.
     title_changed = node.label.lower() != node.discourse_topic_title.lower()
 
-    if guids_changed or title_changed:
+    deletion_changed = node.is_deleted != node.discourse_topic_deleted
+
+    if guids_changed or title_changed or deletion_changed:
         if title_changed:
             _update_topic_content(node)
-        _update_topic_metadata(node)
+        if guids_changed or title_changed:
+            _update_topic_metadata(node)
+
+        if deletion_changed:
+            if node.is_deleted:
+                delete_topic(node, False)
+            else:
+                undelete_topic(node, False)
 
         node.discourse_topic_title = node.label
         node.discourse_topic_parent_guids = parent_guids

@@ -22,16 +22,18 @@ class literal(object):
     def __str__(self):
         return repr(self)
 
-class TestDiscourse(DbTestCase):
+def randomGuid():
+    return str(random.randint(0, 99999))
 
+class TestDiscourse(DbTestCase):
     def setUp(self):
         common.log_requests = True
 
         self.user1 = UserFactory()
         self.user2 = UserFactory()
         self.user2.discourse_user_created = False
-        self.project_node = literal(label='The Test Project', _id='test123',
-                               contributors=[self.user1], is_public=False,
+        self.project_node = literal(label='The Test Project', _id='testproject' + randomGuid(),
+                               contributors=[self.user1], is_public=False, is_deleted=False,
                                discourse_project_created=False, discourse_topic_id=None,
                                discourse_project_public=False, discourse_project_users=None,
                                discourse_topic_title=None, discourse_topic_parent_guids=None,
@@ -44,8 +46,8 @@ class TestDiscourse(DbTestCase):
         self.project_node.guid_id = self.project_node._id
         self.project_node.save = lambda *args: None
 
-        self.component_node = literal(label='The Test Analysis', _id='analysis123',
-                               contributors=[self.user1], is_public=False,
+        self.component_node = literal(label='The Test Analysis', _id='testanalysis' + randomGuid(),
+                               contributors=[self.user1], is_public=False, is_deleted=False,
                                discourse_project_created=False, discourse_topic_id=None,
                                discourse_project_public=False, discourse_project_users=None,
                                discourse_topic_title=None, discourse_topic_parent_guids=None,
@@ -58,13 +60,14 @@ class TestDiscourse(DbTestCase):
         self.component_node.guid_id = self.component_node._id
         self.component_node.save = lambda *args: None
 
-        self.file_node = literal(_id='573cb78e96f6d02370c991a9', label='superRickyRobot.jpg', node=self.project_node,
+        self.file_node = literal(_id='testfile' + randomGuid(), label='superRickyRobot.jpg', node=self.project_node,
+                                is_deleted=False,
                                 discourse_topic_id=None, discourse_post_id=None,
                                 discourse_topic_title=None, discourse_topic_parent_guids=None,
                                 discourse_topic_deleted=False,
                                 date_created=datetime.today())
         self.file_node.target_type = 'files'
-        self.file_node.guid_id = 'a' + str(random.randint(0, 99999))
+        self.file_node.guid_id = 'a' + randomGuid()
         self.file_node.save = lambda *args: None
 
     def tearDown(self):
@@ -96,6 +99,35 @@ class TestDiscourse(DbTestCase):
         self.assertEquals(len(get_project(self.project_node)['contributors']), 0)
         time.sleep(0.125)
 
+    def test_project_publicity(self):
+        """ A private project should be visible only to the contributors
+        """
+        self.project_node.is_public = False
+        self.project_node.contributors = [self.user1]
+
+        sync_project(self.project_node)
+        get_project(self.project_node, user=self.user1)
+
+        with self.assertRaises(DiscourseException):
+            get_project(self.project_node, user=self.user2)
+
+        self.project_node.is_public = True
+        sync_project(self.project_node)
+        get_project(self.project_node, user=self.user2)
+
+    def test_project_viewonly(self):
+        """ A private project should be visible to anyone with a view_only link
+        """
+        self.project_node.is_public = False
+        self.project_node.private_links_active = [literal(key='abcdefghijk', anonymous=False)]
+        self.project_node.contributors = [self.user1]
+
+        sync_project(self.project_node)
+        get_project(self.project_node, user=self.user2, view_only='abcdefghijk')
+
+        with self.assertRaises(DiscourseException):
+            get_project(self.project_node, user=self.user2, view_only='abc')
+
     def test_comments(self):
         """ Comments can be created on a topic, edit, deleted, and undeleted
         """
@@ -105,7 +137,7 @@ class TestDiscourse(DbTestCase):
         undelete_comment(comment_id)
         delete_comment(comment_id)
 
-    def test_custom_fields(self):
+    def test_topic_custom_fields(self):
         """ custom information set in the project and topic should persist when the topic is returned
         """
         self.project_node.is_public = True
@@ -160,6 +192,16 @@ class TestDiscourse(DbTestCase):
         sync_project(self.project_node)
         sync_time = time.time() - start_time
         self.assertLess(sync_time, 0.01)
+
+    def test_delete_topic(self):
+        """ a topic can be deleted independant of a project
+        """
+        sync_project(self.project_node)
+        delete_topic(self.project_node)
+
+        with self.assertRaises(DiscourseException):
+            get_topic(self.project_node)
+
 
     def test_delete_undelete_project(self):
         """ a deleted project should be innacessible until it is undeleted
