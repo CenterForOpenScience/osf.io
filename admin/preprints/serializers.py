@@ -19,9 +19,11 @@ def serialize_preprint(preprint):
 def serialize_subjects(subjects):
     serialized_subjects = []
     for subject in subjects:
-        subject = Subject.load(subject[0])
-        serialized_subjects.append({
-            'id': subject._id,
-            'text': subject.text
-        })
+        if len(subject) == 1:
+            subject = Subject.load(subject[0])
+            if subject:
+                serialized_subjects.append({
+                    'id': subject._id,
+                    'text': subject.text
+                })
     return serialized_subjects
