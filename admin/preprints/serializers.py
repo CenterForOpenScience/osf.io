@@ -1,5 +1,6 @@
-
+from website.project.taxonomies import Subject
 from admin.nodes.serializers import serialize_node
+
 
 def serialize_preprint(preprint):
 
@@ -11,5 +12,16 @@ def serialize_preprint(preprint):
         'node': serialize_node(preprint.node),
         'is_published': preprint.is_published,
         'date_published': preprint.date_published,
-        'subjects': preprint.subjects,
+        'subjects': serialize_subjects(preprint.subjects),
     }
+
+
+def serialize_subjects(subjects):
+    serialized_subjects = []
+    for subject in subjects:
+        subject = Subject.load(subject[0])
+        serialized_subjects.append({
+            'id': subject._id,
+            'text': subject.text
+        })
+    return serialized_subjects
