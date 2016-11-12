@@ -25,9 +25,6 @@ from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, 
 from api.base.settings import ADDONS_OAUTH, API_BASE
 from api.caching.tasks import ban_url
 from api.addons.views import AddonSettingsMixin
-from api.files.serializers import FileSerializer
-from api.comments.serializers import NodeCommentSerializer, CommentCreateSerializer
-from api.comments.permissions import CanCommentOrPublic
 from api.users.views import UserMixin
 from api.wikis.serializers import NodeWikiSerializer
 from api.base.views import LinkedNodesRelationship, BaseContributorDetail, BaseContributorList, BaseNodeLinksDetail, BaseNodeLinksList, BaseLinkedList
@@ -59,10 +56,13 @@ from api.nodes.serializers import (
 )
 from api.nodes.utils import get_file_object
 from api.citations.utils import render_citation
-
 from api.addons.serializers import NodeAddonFolderSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.institutions.serializers import InstitutionSerializer
+from api.comments.permissions import CanCommentOrPublic
+from api.comments.serializers import (CommentCreateSerializer,
+                                      NodeCommentSerializer)
+from api.files.serializers import FileSerializer, OsfStorageFileSerializer
 from api.identifiers.serializers import NodeIdentifierSerializer
 from api.identifiers.views import IdentifierList
 from api.nodes.permissions import (
@@ -1893,6 +1893,11 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
     view_category = 'nodes'
     view_name = 'node-files'
+
+    def get_serializer_class(self):
+        if self.kwargs[self.provider_lookup_url_kwarg] == 'osfstorage':
+            return OsfStorageFileSerializer
+        return FileSerializer
 
     def get_default_queryset(self):
         # Don't bother going to waterbutler for osfstorage

@@ -20,7 +20,7 @@ from osf_tests.factories import (
 )
 
 
-pytestmark = pytest.mark.skip('Unskip when addons are implemented')
+pytestmark = pytest.mark.django_db
 
 def prepare_mock_wb_response(
         node=None,
@@ -56,6 +56,7 @@ def prepare_mock_wb_response(
         u'provider': provider,
         u'size': None,
         u'materialized': '/',
+        u'etag': u'NewEtag'
     }
 
     if len(files):
@@ -111,7 +112,7 @@ class TestNodeFilesList(ApiTestCase):
         oauth_settings = GitHubAccountFactory()
         oauth_settings.save()
         self.user.add_addon('github')
-        self.user.external_accounts.append(oauth_settings)
+        self.user.external_accounts.add(oauth_settings)
         self.user.save()
         addon.user_settings = self.user.get_addon('github')
         addon.save()
@@ -193,7 +194,7 @@ class TestNodeFilesList(ApiTestCase):
         oauth_settings = GitHubAccountFactory()
         oauth_settings.save()
         self.user.add_addon('github')
-        self.user.external_accounts.append(oauth_settings)
+        self.user.external_accounts.add(oauth_settings)
         self.user.save()
         addon.user_settings = self.user.get_addon('github')
         addon.save()
@@ -338,7 +339,7 @@ class TestNodeFilesListFiltering(ApiTestCase):
         oauth_settings = GitHubAccountFactory()
         oauth_settings.save()
         self.user.add_addon('github')
-        self.user.external_accounts.append(oauth_settings)
+        self.user.external_accounts.add(oauth_settings)
         self.user.save()
         addon.user_settings = self.user.get_addon('github')
         addon.save()
@@ -419,7 +420,7 @@ class TestNodeFilesListPagination(ApiTestCase):
         oauth_settings = GitHubAccountFactory()
         oauth_settings.save()
         self.user.add_addon('github')
-        self.user.external_accounts.append(oauth_settings)
+        self.user.external_accounts.add(oauth_settings)
         self.user.save()
         addon.user_settings = self.user.get_addon('github')
         addon.save()
