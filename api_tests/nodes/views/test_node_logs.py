@@ -83,7 +83,6 @@ class TestNodeLogList(ApiTestCase):
                               self.private_project.logs.first().date)
         assert_equal(res.json['data'][API_FIRST]['attributes']['action'], self.private_project.logs.first().action)
 
-    @pytest.mark.skip('Addons not yet implemented')
     def test_add_addon(self):
         self.public_project.add_addon('github', auth=self.user_auth)
         assert_equal('addon_added', self.public_project.logs.latest().action)
@@ -106,7 +105,6 @@ class TestNodeLogList(ApiTestCase):
         assert_equal(res.json['data'][API_LATEST]['attributes']['action'], 'contributor_removed')
         assert_equal(res.json['data'][1]['attributes']['action'], 'contributor_added')
 
-    @pytest.mark.skip('Addons not yet implemented')
     def test_remove_addon(self):
         self.public_project.add_addon('github', auth=self.user_auth)
         assert_equal('addon_added', self.public_project.logs.latest().action)

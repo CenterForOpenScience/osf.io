@@ -16,6 +16,7 @@ Factory boy docs: http://factoryboy.readthedocs.org/
 import datetime
 import functools
 
+from django.utils import timezone
 from factory import base, Sequence, SubFactory, post_generation, LazyAttribute
 import mock
 from mock import patch, Mock
@@ -115,7 +116,7 @@ class UserFactory(ModularOdmFactory):
     fullname = Sequence(lambda n: 'Freddie Mercury{0}'.format(n))
     is_registered = True
     is_claimed = True
-    date_confirmed = datetime.datetime(2014, 2, 21)
+    date_confirmed = timezone.now()
     merged_by = None
     email_verifications = {}
     verification_key = None

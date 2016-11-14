@@ -501,7 +501,6 @@ class TestNodeFiltering(ApiTestCase):
         assert_in(self.project_three.description, descriptions)
         assert_in(self.private_project_user_one.description, descriptions)
 
-    @pytest.mark.skip('Preprint undergoing implementation changes')
     def test_filtering_on_preprint(self):
         url = '/{}nodes/?filter[preprint]=true'.format(API_BASE)
         res = self.app.get(url, auth=self.user_one.auth)
@@ -516,7 +515,6 @@ class TestNodeFiltering(ApiTestCase):
         assert_not_in(self.project_two._id, ids)
         assert_not_in(self.project_three._id, ids)
 
-    @pytest.mark.skip('Preprint undergoing implementation changes')
     def test_filtering_out_preprint(self):
         url = '/{}nodes/?filter[preprint]=false'.format(API_BASE)
         res = self.app.get(url, auth=self.user_one.auth)
@@ -530,7 +528,6 @@ class TestNodeFiltering(ApiTestCase):
         assert_in(self.project_two._id, ids)
         assert_in(self.project_three._id, ids)
 
-    @pytest.mark.skip('Preprint undergoing implementation changes')
     def test_preprint_filter_excludes_orphans(self):
         orphan = PreprintFactory(creator=self.preprint.node.creator)
         orphan._is_preprint_orphan = True

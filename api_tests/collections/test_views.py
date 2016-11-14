@@ -919,7 +919,6 @@ class TestCollectionNodeLinkCreate(ApiTestCase):
         assert_equal(res.json['errors'][0]['detail'], 'This resource has a type of "node_links", but you set the json body\'s type field to "wrong_type". You probably need to change the type field to match the resource\'s type.')
 
 
-@pytest.mark.skip('Unskip when node links are properl implemented')
 class TestCollectionNodeLinkDetail(ApiTestCase):
 
     def setUp(self):
@@ -1927,7 +1926,6 @@ class TestBulkDeleteCollectionNodeLinks(ApiTestCase):
         assert_equal(node_count_before - 2, self.collection_two.nodes_pointer.count())
         self.collection_two.reload()
 
-    @pytest.mark.skip('Unskip when node links are properl implemented')
     def test_return_bulk_deleted_collection_node_pointer(self):
         res = self.app.delete_json_api(self.collection_two_url, self.collection_two_payload, auth=self.user.auth, bulk=True)
         self.collection_two.reload()  # Update the model to reflect changes made by post request

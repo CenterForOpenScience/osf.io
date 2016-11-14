@@ -2804,7 +2804,6 @@ class Collection(AbstractNode):
 
 
 ##### Signal listeners #####
-
 @receiver(post_save, sender=Collection)
 @receiver(post_save, sender=Node)
 def add_creator_as_contributor(sender, instance, created, **kwargs):

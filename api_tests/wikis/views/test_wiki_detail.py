@@ -119,7 +119,6 @@ class TestWikiDetailView(ApiWikiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['id'], self.public_registration_wiki_id)
 
-    @pytest.mark.skip('Unskip this test when addons and hooks (i.e. after_register) are implemented')
     def test_user_cannot_view_withdrawn_registration_wikis(self):
         self._set_up_public_registration_with_wiki_page()
         # TODO: Remove mocking when StoredFileNode is implemented

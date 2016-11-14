@@ -436,6 +436,7 @@ class ListFilterMixin(FilterMixin):
         """filters default queryset based on query parameters"""
         filters = self.parse_query_params(query_params)
         queryset = default_queryset
+
         if filters:
             for key, field_names in filters.iteritems():
                 for field_name, data in field_names.iteritems():
@@ -443,8 +444,11 @@ class ListFilterMixin(FilterMixin):
                     if query_field_name == 'kind':
                         query_field_name = 'is_file'
                         data['value'] = data['value'] == 'file'
-                    query_field_name = '{}__{}'.format(query_field_name, data['op'])
-                    queryset = queryset.filter(**{query_field_name: data['value']})
+                    if isinstance(queryset, list):
+                        queryset = self.get_filtered_queryset(field_name, data, queryset)
+                    else:
+                        query_field_name = '{}__{}'.format(query_field_name, data['op'])
+                        queryset = queryset.filter(**{query_field_name: data['value']})
         return queryset
 
     def postprocess_query_param(self, key, field_name, operation):
@@ -479,20 +483,20 @@ class ListFilterMixin(FilterMixin):
             else:
                 # TODO: What is {}.lower()? Possible bug
                 return_val = [
-                    item for item in default_queryset.all()
+                    item for item in default_queryset
                     if params['value'].lower() in getattr(item, source_field_name, {}).lower()
                 ]
         elif isinstance(field, ser.ListField):
             return_val = [
                 item for item in default_queryset
                 if params['value'].lower() in [
-                    lowercase(i.lower) for i in getattr(item, source_field_name, []).all()
+                    lowercase(i.lower) for i in getattr(item, source_field_name, [])
                 ]
             ]
         else:
             try:
                 return_val = [
-                    item for item in default_queryset.all()
+                    item for item in default_queryset
                     if self.FILTERS[params['op']](getattr(item, source_field_name, None), params['value'])
                 ]
             except TypeError:

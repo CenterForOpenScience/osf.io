@@ -66,7 +66,6 @@ class TestWikiContentView(ApiWikiTestCase):
         assert_equal(res.content_type, 'text/markdown')
         assert_equal(res.body, self.private_wiki.content)
 
-    @pytest.mark.skip('Unskip this test when addons and hooks (i.e. after_register) are implemented')
     def test_user_cannot_get_withdrawn_registration_wiki_content(self):
         self._set_up_public_registration_with_wiki_page()
         withdrawal = self.public_registration.retract_registration(user=self.user, save=True)

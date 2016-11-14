@@ -28,7 +28,7 @@ from api.nodes.permissions import (
 )
 
 from website.exceptions import NodeStateError
-from osf.models import Collection, Node
+from osf.models import Collection, Node, NodeRelation
 from website.util.permissions import ADMIN
 
 
@@ -433,9 +433,10 @@ class LinkedRegistrationsList(BaseLinkedList, CollectionMixin):
     view_name = 'linked-registrations'
 
     def get_queryset(self):
-        return [node for node in
-            super(LinkedRegistrationsList, self).get_queryset()
-            if node.is_registration]
+        return super(LinkedRegistrationsList, self).get_queryset().filter(type='osf.registration')
+        # return [node for node in
+        #     super(LinkedRegistrationsList, self).get_queryset()
+        #     if node.is_registration]
 
     # overrides APIView
     def get_parser_context(self, http_request):
@@ -511,15 +512,10 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
     serializer_class = CollectionNodeLinkSerializer
     view_category = 'collections'
     view_name = 'node-pointers'
-    model_class = Node
+    model_class = NodeRelation
 
     def get_queryset(self):
-        return [
-            pointer for pointer in
-            self.get_node().linked_nodes
-                .filter(is_deleted=False)
-                .exclude(type='osf.collection')
-        ]
+        return self.get_node().node_relations.filter(child__is_deleted=False).exclude(child__type='osf.collection')
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
@@ -593,7 +589,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
     def get_object(self):
         node_link_lookup_url_kwarg = 'node_link_id'
         node_link = get_object_or_error(
-            Node,
+            NodeRelation,
             self.kwargs[node_link_lookup_url_kwarg],
             'node link'
         )
