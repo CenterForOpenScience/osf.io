@@ -1598,7 +1598,7 @@ class TestCollectionLinksBulkCreate(ApiTestCase):
             'data': [{
                 "type": "node_links",
                 "relationships": {
-                    'nodes': {
+                    'target_node': {
                         'data': {
                             "id": self.private_pointer_project._id,
                             "type": 'nodes'
@@ -1609,7 +1609,7 @@ class TestCollectionLinksBulkCreate(ApiTestCase):
             {
                 "type": "node_links",
                 "relationships": {
-                    'nodes': {
+                    'target_node': {
                         'data': {
                             "id": self.private_pointer_project_two._id,
                             "type": 'nodes'
@@ -1620,7 +1620,7 @@ class TestCollectionLinksBulkCreate(ApiTestCase):
             {
                 "type": "node_links",
                 "relationships": {
-                    'nodes': {
+                    'target_node': {
                         'data': {
                             "id": self.private_pointer_registration._id,
                             "type": 'nodes'
@@ -1631,7 +1631,7 @@ class TestCollectionLinksBulkCreate(ApiTestCase):
             {
                 "type": "node_links",
                 "relationships": {
-                    'nodes': {
+                    'target_node': {
                         'data': {
                             "id": self.private_pointer_registration_two._id,
                             "type": 'nodes'
