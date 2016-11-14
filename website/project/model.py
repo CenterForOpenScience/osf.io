@@ -3310,6 +3310,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
             contributor = User.load(user_id)
             if not contributor:
                 raise ValueError('User with id {} was not found.'.format(user_id))
+            if contributor.is_disabled:
+                raise ValidationValueError('Deactivated users cannot be added as contributors.')
             if contributor in self.contributors:
                 raise ValidationValueError('{} is already a contributor.'.format(contributor.fullname))
             self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
