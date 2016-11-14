@@ -297,8 +297,8 @@ def make_url_map(app):
         Rule(
             '/explore/',
             'get',
-            {},
-            OsfWebRenderer('public/explore.mako', trust=False)
+            discovery_views.redirect_explore_to_activity,
+            notemplate
         ),
 
         Rule(
@@ -494,6 +494,13 @@ def make_url_map(app):
 
         Rule(
             '/explore/activity/',
+            'get',
+            discovery_views.redirect_explore_activity_to_activity,
+            notemplate
+        ),
+
+        Rule(
+            '/activity/',
             'get',
             discovery_views.activity,
             OsfWebRenderer('public/pages/active_nodes.mako', trust=False)

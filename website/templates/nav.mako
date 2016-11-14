@@ -30,7 +30,7 @@
         <li class="dropdown">
           <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Browse <span class="caret"></span></a>
           <ul class="dropdown-menu" role="menu">
-              <li><a href="${domain}explore/activity/">New Projects</a></li>
+              <li><a href="${domain}activity/">New Projects</a></li>
               <li><a href="${domain}search/?q=*&amp;filter=registration">Registry</a></li>
               <li><a href="${web_url_for('conference_view', _absolute=True)}">Meetings</a></li>
               <li><a href="${domain}preprints/">Preprints</a></li>
