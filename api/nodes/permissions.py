@@ -103,7 +103,7 @@ class ContributorOrPublicForPointers(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             has_parent_auth = parent_node.can_view(auth)
             has_pointer_auth = pointer_node.can_view(auth)
-            public = obj.is_public
+            public = pointer_node.is_public
             has_auth = public or (has_parent_auth and has_pointer_auth)
             return has_auth
         else:

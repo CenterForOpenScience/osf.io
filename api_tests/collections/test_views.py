@@ -1012,7 +1012,7 @@ class TestCollectionNodeLinkDetail(ApiTestCase):
     def test_delete_node_link_no_permissions_for_target_node(self):
         pointer_project = CollectionFactory(creator=self.user_two)
         pointer = self.collection.add_pointer(pointer_project, auth=Auth(self.user_one), save=True)
-        assert_in(pointer, self.collection.linked_nodes.all())
+        assert_in(pointer.child, self.collection.linked_nodes.all())
         url = '/{}collections/{}/node_links/{}/'.format(API_BASE, self.collection._id, pointer._id)
         res = self.app.delete_json_api(url, auth=self.user_one.auth)
         assert_equal(res.status_code, 204)
