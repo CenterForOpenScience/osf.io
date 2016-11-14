@@ -2122,7 +2122,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         user = User.load(user_id)
         if user and self.check_spam(user, saved_fields, request_headers):
             # Specifically call the super class save method to avoid recursion into model save method.
-            super(Node, self).save()
+            super(AbstractNode, self).save()
 
     def _get_spam_content(self, saved_fields):
         NodeWikiPage = apps.get_model('addons_wiki.NodeWikiPage')
