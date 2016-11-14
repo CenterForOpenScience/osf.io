@@ -333,30 +333,23 @@ class AddonFigShareNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
         :param Node fork: Forked node
         :param User user: User creating fork
         :param bool save: Save settings after callback
-        :return tuple: Tuple of cloned settings and alert message
+        :return the cloned settings
 
         """
-        clone, _ = super(AddonFigShareNodeSettings, self).after_fork(
+        clone = super(AddonFigShareNodeSettings, self).after_fork(
             node, fork, user, save=False
         )
 
         # Copy authentication if authenticated by forking user
         if self.user_settings and self.user_settings.owner == user:
             clone.user_settings = self.user_settings
-            message = messages.AFTER_FORK_OWNER.format(
-                category=markupsafe.escape(fork.project_or_component),
-            )
         else:
-            message = messages.AFTER_FORK_NOT_OWNER.format(
-                category=markupsafe.escape(fork.project_or_component),
-                url=fork.url + 'settings/'
-            )
-            return AddonFigShareNodeSettings(), message
+            return AddonFigShareNodeSettings()
 
         if save:
             clone.save()
 
-        return clone, message
+        return clone
 
     def before_make_public(self, node):
         return (

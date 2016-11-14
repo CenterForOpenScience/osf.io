@@ -657,14 +657,13 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         if hasattr(self, 'user_settings'):
             if self.user_settings is None:
                 return (
-                    u'Because you have not configured the authorization for this {addon} add-on, this '
-                    u'{category} will not transfer your authentication to '
-                    u'the forked {category}.'
+                    u'Because you have not configured the {addon} add-on, your authentication will not be '
+                    u'transferred to the forked {category}. You may authorize and configure the {addon} add-on '
+                    u'in the new fork on the settings page.'
                 ).format(
                     addon=self.config.full_name,
-                    category=node.project_or_component,
+                    category=node.project_or_component
                 )
-
             elif self.user_settings and self.user_settings.owner == user:
                 return (
                     u'Because you have authorized the {addon} add-on for this '
@@ -678,7 +677,8 @@ class AddonNodeSettingsBase(AddonSettingsBase):
                 return (
                     u'Because the {addon} add-on has been authorized by a different '
                     u'user, forking it will not transfer authentication to the forked '
-                    u'{category}.'
+                    u'{category}. You may authorize and configure the {addon} add-on '
+                    u'in the new fork on the settings page.'
                 ).format(
                     addon=self.config.full_name,
                     category=node.project_or_component,
@@ -691,7 +691,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         :param Node fork:
         :param User user:
         :param bool save:
-        :returns: Tuple of cloned settings and alert message
+        :returns: cloned settings
 
         """
         clone = self.clone()
@@ -700,7 +700,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         if save:
             clone.save()
 
-        return clone, None
+        return clone
 
     def before_register(self, node, user):
         """
@@ -982,9 +982,9 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
         """After forking, copy user settings if the user is the one who authorized
         the addon.
 
-        :return: A tuple of the form (cloned_settings, message)
+        :return: the cloned settings
         """
-        clone, _ = super(AddonOAuthNodeSettingsBase, self).after_fork(
+        clone = super(AddonOAuthNodeSettingsBase, self).after_fork(
             node=node,
             fork=fork,
             user=user,
@@ -998,23 +998,9 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
                 except (KeyError, AttributeError):
                     pass
             clone.set_auth(self.external_account, user, metadata=metadata, log=False)
-            message = '{addon} authorization copied to forked {category}.'.format(
-                addon=self.config.full_name,
-                category=fork.project_or_component,
-            )
-        else:
-            message = (
-                u'{addon} authorization not copied to forked {category}. You may '
-                u'authorize this fork on the <u><a href="{url}">Settings</a></u> '
-                u'page.'
-            ).format(
-                addon=self.config.full_name,
-                url=fork.web_url_for('node_setting'),
-                category=fork.project_or_component,
-            )
         if save:
             clone.save()
-        return clone, message
+        return clone
 
     def before_register_message(self, node, user):
         """Return warning text to display if user auth will be copied to a

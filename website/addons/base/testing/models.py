@@ -356,7 +356,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
 
     def test_after_fork_by_authorized_user(self):
         fork = ProjectFactory()
-        clone, message = self.node_settings.after_fork(
+        clone = self.node_settings.after_fork(
             node=self.node, fork=fork, user=self.user_settings.owner
         )
         assert_equal(clone.user_settings._id, self.user_settings._id)
@@ -364,16 +364,11 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
     def test_after_fork_by_unauthorized_user(self):
         fork = ProjectFactory()
         user = UserFactory()
-        clone, message = self.node_settings.after_fork(
+        clone = self.node_settings.after_fork(
             node=self.node, fork=fork, user=user,
             save=True
         )
         assert_is(clone.user_settings, None)
-
-    def test_before_fork(self):
-        node = ProjectFactory()
-        message = self.node_settings.before_fork(node, self.user)
-        assert_true(message)
 
     def test_before_remove_contributor_message(self):
         message = self.node_settings.before_remove_contributor(

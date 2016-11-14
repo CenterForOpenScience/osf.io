@@ -2392,9 +2392,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, Commentable, Spam
 
         # After fork callback
         for addon in original.get_addons():
-            _, message = addon.after_fork(original, forked, user)
-            if message:
-                status.push_status_message(message, kind='info', trust=True)
+            addon.after_fork(original, forked, user)
 
         return forked
 
