@@ -13,6 +13,7 @@ var $osf = require('js/osfHelpers');
 var ctx = window.contextVars;
 var NodeActions = {}; // Namespace for NodeActions
 require('loaders.css/loaders.min.css');
+require('css/add-project-plugin.css');
 
 
 // TODO: move me to the NodeControl or separate module
@@ -57,7 +58,25 @@ NodeActions.forkNode = function() {
                 data: payload
             }
         ).done(function(response) {
-            window.location = response.data.links.html;
+            $osf.unblock();
+            bootbox.confirm({
+                message: '<h4 class="add-project-success text-success">Fork created successfully!</h4>',
+                callback: function(result) {
+                    if(result) {
+                        window.location = response.data.links.html;
+                    }
+                },
+                buttons: {
+                    confirm: {
+                        label: 'Go to new fork',
+                        className: 'btn-success'
+                    },
+                    cancel: {
+                        label: 'Keep working here'
+                    }
+                },
+                closeButton: false
+            });
         }).fail(function(response) {
             $osf.unblock();
             if (response.status === 403) {
