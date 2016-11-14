@@ -535,7 +535,8 @@ class UserPreprints(UserNodes):
         # so that a query that is guaranteed to return only
         # preprints can be constructed.
         for node in nodes:
-            preprints.append(node.preprint)
+            for preprint in node.preprints.all():
+                preprints.append(preprint)
         return preprints
 
 class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):

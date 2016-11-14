@@ -30,7 +30,9 @@ class PreprintService(GuidMixin, BaseModel):
                                  on_delete=models.SET_NULL,
                                  related_name='preprint_services',
                                  null=True, blank=True, db_index=True)
-    node = models.OneToOneField('osf.AbstractNode', related_name='preprint', db_index=True)
+    node = models.ForeignKey('osf.AbstractNode', on_delete=models.SET_NULL,
+                             related_name='preprints',
+                             null=True, blank=True, db_index=True)
     is_published = models.BooleanField(default=False, db_index=True)
     date_published = models.DateTimeField(null=True, blank=True)
 
