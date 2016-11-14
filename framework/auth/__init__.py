@@ -68,6 +68,7 @@ def external_first_login_authenticate(user, response):
         'auth_user_fullname': user['fullname'],
         'auth_user_access_token': user['access_token'],
         'auth_user_external_first_login': True,
+        'service_url': user['service_url'],
     })
     response = create_session(response, data=data)
     return response
