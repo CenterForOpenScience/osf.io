@@ -202,7 +202,7 @@ class StoredFileNode(StoredObject, Commentable):
     checkout = fields.AbstractForeignField('User')
 
     # Only for OSFStorage to prevent folders with preprints and checkouts from being deleted
-    undeletable = fields.ForeignField('Node', list=True, required=False)
+    undeletable_contents = fields.ForeignField('Node', list=True, required=False)
 
     #Tags for a file, currently only used for osfStorage
     tags = fields.ForeignField('Tag', list=True)
@@ -245,13 +245,13 @@ class StoredFileNode(StoredObject, Commentable):
 
     def add_undeletable(self, parent):
         if parent and parent.parent:
-            parent.undeletable.append(self._id)
+            parent.undeletable_contents.append(self._id)
             parent.save()
             self.add_undeletable(parent.parent)
 
     def remove_undeletable(self, parent):
         if parent and parent.parent:
-            parent.undeletable = filter(lambda x: x != self._id, self.undeletable)
+            parent.undeletable_contents = filter(lambda x: x != self._id, self.undeletable_contents)
             parent.save()
             self.remove_undeletable(parent.parent)
 
@@ -776,10 +776,6 @@ class Folder(FileNode):
         """
         return FileNode.find(Q('parent', 'eq', self._id))
 
-    @property
-    def undeletable(self):
-        return self.undeletable
-
     def delete(self, recurse=True, user=None, parent=None):
         trashed = self._create_trashed(user=user, parent=parent)
         if recurse:
@@ -813,6 +809,15 @@ class Folder(FileNode):
             Q('name', 'eq', name) &
             Q('parent', 'eq', self)
         )
+
+    def serialize(self, **kwargs):
+        return {
+            'id': self._id,
+            'path': self.path,
+            'name': self.name,
+            'kind': self.kind,
+            'undeletable_contents': self.undeletable_contents._to_data(),
+        }
 
 
 class FileVersion(StoredObject):
