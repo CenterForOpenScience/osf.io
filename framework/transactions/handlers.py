@@ -70,7 +70,7 @@ def transaction_teardown_request(error=None):
     """
     if view_has_annotation(NO_AUTO_TRANSACTION_ATTR):
         return
-    if error is not None:
+    if error is not None and current_atomic:
         current_atomic.__exit__(error.__class__, error, None)
 
 
