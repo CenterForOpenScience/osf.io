@@ -67,7 +67,7 @@ def main(env):
             {
                 '_id': 'colorado',
                 'name': 'University of Colorado Boulder',
-                'description': 'This service is supported by CU Boulder <a href="https://data.colorado.edu/">Research Data Services</a>, a partnership between <a href="https://www.rc.colorado.edu/">Research Computing</a> and the <a href="http://www.colorado.edu/libraries/">University Libraries</a>.',
+                'description': 'This service is supported by the Center for Research Data and Digital Scholarship, which is led by <a href="https://www.rc.colorado.edu/">Research Computing</a> and the <a href="http://www.colorado.edu/libraries/">University Libraries</a>.',
                 'banner_name': 'colorado-banner.png',
                 'logo_name': 'colorado-shield.png',
                 'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://fedauth.colorado.edu/idp/shibboleth')),
@@ -284,7 +284,7 @@ def main(env):
             {
                 '_id': 'colorado',
                 'name': 'University of Colorado Boulder [Test]',
-                'description': 'This service is supported by CU Boulder <a href="https://data.colorado.edu/">Research Data Services</a>, a partnership between <a href="https://www.rc.colorado.edu/">Research Computing</a> and the <a href="http://www.colorado.edu/libraries/">University Libraries</a>.',
+                'description': 'This service is supported by the Center for Research Data and Digital Scholarship, which is led by <a href="https://www.rc.colorado.edu/">Research Computing</a> and the <a href="http://www.colorado.edu/libraries/">University Libraries</a>.',
                 'banner_name': 'colorado-banner.png',
                 'logo_name': 'colorado-shield.png',
                 'auth_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://fedauth.colorado.edu/idp/shibboleth')),
