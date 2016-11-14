@@ -13,7 +13,7 @@ from framework.utils import iso8601format
 from framework.mongo import StoredObject
 from framework.flask import redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
-from framework.exceptions import HTTPError, PermissionsError
+from framework.exceptions import HTTPError
 
 from website import language
 
@@ -27,7 +27,6 @@ from website.project.decorators import (
     must_be_valid_project,
     must_have_permission,
     must_not_be_registration,
-    http_error_if_disk_saving_mode
 )
 from website.tokens import process_token_or_pass
 from website.util.permissions import ADMIN, READ, WRITE, CREATOR_PERMISSIONS
