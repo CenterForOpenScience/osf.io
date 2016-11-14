@@ -639,3 +639,23 @@ class ExternalAccountFactory(DjangoModelFactory):
     display_name = factory.Sequence(lambda n: 'user-{0}'.format(n))
     profile_url = 'http://wutwut.com/'
     refresh_token = 'some-sillier-key'
+
+
+class MockOAuth2Provider(models.ExternalProvider):
+    name = "Mock OAuth 2.0 Provider"
+    short_name = "mock2"
+
+    client_id = "mock2_client_id"
+    client_secret = "mock2_client_secret"
+
+    auth_url_base = "https://mock2.com/auth"
+    callback_url = "https://mock2.com/callback"
+    auto_refresh_url = "https://mock2.com/callback"
+    refresh_time = 300
+    expiry_time = 9001
+
+    def handle_callback(self, response):
+        return {
+            'provider_id': 'mock_provider_id'
+        }
+
