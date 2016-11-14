@@ -235,25 +235,6 @@ def project_before_template(auth, node, **kwargs):
     return {'prompts': prompts}
 
 
-# TODO: @caseyrollins, delete me?
-@must_be_logged_in
-@must_be_valid_project
-@http_error_if_disk_saving_mode
-def node_fork_page(auth, node, **kwargs):
-    try:
-        fork = node.fork_node(auth)
-    except PermissionsError:
-        raise HTTPError(
-            http.FORBIDDEN,
-            redirect_url=node.url
-        )
-    message = '{} has been successfully forked.'.format(
-        node.project_or_component.capitalize()
-    )
-    status.push_status_message(message, kind='success', trust=False)
-    return fork.url
-
-
 @must_be_valid_project
 @must_be_contributor_or_public_but_not_anonymized
 def node_registrations(auth, node, **kwargs):

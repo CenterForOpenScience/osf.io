@@ -4090,33 +4090,6 @@ class TestForkViews(OsfTestCase):
         self.user.save()
         self.project.save()
 
-    def test_fork_private_project_non_contributor(self):
-        self.project.set_privacy("private")
-        self.project.save()
-
-        url = self.project.api_url_for('node_fork_page')
-        non_contributor = AuthUserFactory()
-        res = self.app.post_json(url,
-                                 auth=non_contributor.auth,
-                                 expect_errors=True)
-        assert_equal(res.status_code, http.FORBIDDEN)
-
-    def test_fork_public_project_non_contributor(self):
-        url = self.project.api_url_for('node_fork_page')
-        non_contributor = AuthUserFactory()
-        res = self.app.post_json(url, auth=non_contributor.auth)
-        assert_equal(res.status_code, 200)
-
-    def test_fork_project_contributor(self):
-        contributor = AuthUserFactory()
-        self.project.set_privacy("private")
-        self.project.add_contributor(contributor)
-        self.project.save()
-
-        url = self.project.api_url_for('node_fork_page')
-        res = self.app.post_json(url, auth=contributor.auth)
-        assert_equal(res.status_code, 200)
-
     def test_registered_forks_dont_show_in_fork_list(self):
         fork = self.project.fork_node(self.consolidated_auth)
         RegistrationFactory(project=fork)

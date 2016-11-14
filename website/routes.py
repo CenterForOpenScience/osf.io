@@ -1471,12 +1471,6 @@ def make_url_map(app):
         ),
         Rule(
             [
-                '/project/<pid>/fork/',
-                '/project/<pid>/node/<nid>/fork/',
-            ], 'post', project_views.node.node_fork_page, json_renderer,
-        ),
-        Rule(
-            [
                 '/project/<pid>/pointer/fork/',
                 '/project/<pid>/node/<nid>/pointer/fork/',
             ], 'post', project_views.node.fork_pointer, json_renderer,
