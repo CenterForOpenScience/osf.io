@@ -498,15 +498,17 @@ class GuidMixin(BaseIDMixin):
 def ensure_guid(sender, instance, created, **kwargs):
     if not issubclass(sender, GuidMixin):
         return False
-    if not Guid.objects.filter(object_id=instance.pk).exists() and instance.guid_string is None:
+    existing_guids = Guid.objects.filter(object_id=instance.pk, content_type=ContentType.objects.get_for_model(instance))
+    has_cached_guids = hasattr(instance, '_prefetched_objects_cache') and 'guids' in instance._prefetched_objects_cache
+    if not existing_guids.exists() and instance.guid_string is None:
         # Clear query cache of instance.guids
-        if hasattr(instance, '_prefetched_objects_cache') and 'guids' in instance._prefetched_objects_cache:
+        if has_cached_guids:
             del instance._prefetched_objects_cache['guids']
         Guid.objects.create(object_id=instance.pk, content_type=ContentType.objects.get_for_model(instance),
                             _id=generate_guid(instance.__guid_min_length__))
-    elif not Guid.objects.filter(object_id=instance.pk).exists() and instance.guid_string is not None:
+    elif not existing_guids.exists() and instance.guid_string is not None:
         # Clear query cache of instance.guids
-        if hasattr(instance, '_prefetched_objects_cache') and 'guids' in instance._prefetched_objects_cache:
+        if has_cached_guids:
             del instance._prefetched_objects_cache['guids']
         Guid.objects.create(object_id=instance.pk, content_type_id=instance.content_type_pk,
                             _id=instance.guid_string)
