@@ -182,7 +182,7 @@ def get_configured_projects(user):
 
         if (
             not isinstance(node, Node) or
-            (user in subscription.none and not node.parent_id) or
+            (subscription.none.filter(id=user.id).exists() and not node.parent_id) or
             node._id not in user.notifications_configured or
             node.is_collection
         ):
@@ -200,7 +200,7 @@ def get_configured_projects(user):
 def check_project_subscriptions_are_all_none(user, node):
     node_subscriptions = get_all_node_subscriptions(user, node)
     for s in node_subscriptions:
-        if user not in s.none:
+        if not s.none.filter(id=user.id).exists():
             return False
     return True
 
@@ -366,8 +366,8 @@ def get_parent_notification_type(node, event, user):
     :param obj user: modular odm User object
     :return: str notification type (e.g. 'email_transactional')
     """
-    parent = node.parent_node
-    if node and isinstance(node, Node) and parent and parent.has_permission(user, 'read'):
+    if node and isinstance(node, Node) and node.parent_node and node.parent_node.has_permission(user, 'read'):
+        parent = node.parent_node
         key = to_subscription_key(parent._id, event)
         try:
             subscription = model.NotificationSubscription.find_one(Q('_id', 'eq', key))

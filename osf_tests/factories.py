@@ -659,3 +659,12 @@ class MockOAuth2Provider(models.ExternalProvider):
             'provider_id': 'mock_provider_id'
         }
 
+
+class NotificationSubscriptionFactory(DjangoModelFactory):
+    class Meta:
+        model = models.NotificationSubscription
+
+
+class NotificationDigestFactory(DjangoModelFactory):
+    class Meta:
+        model = models.NotificationDigest
