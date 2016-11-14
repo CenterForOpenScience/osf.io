@@ -79,21 +79,21 @@
                 %elif campaign == "socarxiv-preprints":
                     <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
                         <tr>
-                            <td><img src="/static/img/preprint_providers/socarxiv-login.png" style="width: 150px; background: darkred;" /></td>
+                            <td><img src="/static/img/preprint_providers/socarxiv-login.png" style="width: 150px; background: #e14b5a;" /></td>
                             <td><h3>Create a free OSF account to access SocArXiv</h3></td>
                         </tr>
                     </table>
                 %elif campaign == "engrxiv-preprints":
                     <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
                         <tr>
-                            <td><img src="/static/img/preprint_providers/engrxiv-login.png" style="width: 150px; background: darkred;" /></td>
+                            <td><img src="/static/img/preprint_providers/engrxiv-login.png" style="width: 150px; background: #222F38;" /></td>
                             <td><h3>Create a free OSF account to access engrXiv</h3></td>
                         </tr>
                     </table>
                 %elif campaign == "psyarxiv-preprints":
                     <table style="border-collapse: separate; border-spacing: 30px 0; margin-top: 20px;  margin-bottom: 10px;">
                         <tr>
-                            <td><img src="/static/img/preprint_providers/psyarxiv-login.png" style="width: 150px; background: darkred;" /></td>
+                            <td><img src="/static/img/preprint_providers/psyarxiv-login.png" style="width: 150px; background: #a9a9a9; padding: 0 10px 0 10px;" /></td>
                             <td><h3>Create a free OSF account to access PsyArXiv</h3></td>
                         </tr>
                     </table>
