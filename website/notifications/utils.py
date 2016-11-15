@@ -129,7 +129,7 @@ def users_to_remove(source_event, source_node, new_node):
     if not old_sub and not old_node_sub:
         return removed_users
     for notification_type in constants.NOTIFICATION_TYPES:
-        users = list(getattr(old_sub, notification_type).all()) + list(getattr(old_node_sub, notification_type).all())
+        users = list(getattr(old_sub, notification_type).values_list('guids___id', flat=True)) + list(getattr(old_node_sub, notification_type).values_list('guids___id', flat=True))
         subbed, removed_users[notification_type] = separate_users(new_node, users)
     return removed_users
 
@@ -150,8 +150,9 @@ def move_subscription(remove_users, source_event, source_node, new_event, new_no
     if not old_sub:
         return
     elif old_sub:
-        old_sub.update_fields(_id=to_subscription_key(new_node._id, new_event), event_name=new_event,
-                              owner=new_node)
+        old_sub._id = to_subscription_key(new_node._id, new_event)
+        old_sub.event_name = new_event
+        old_sub.owner = new_node
     new_sub = old_sub
     # Remove users that don't have permission on the new node.
     for notification_type in constants.NOTIFICATION_TYPES:
