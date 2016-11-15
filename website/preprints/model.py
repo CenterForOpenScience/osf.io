@@ -11,6 +11,7 @@ from framework.mongo.utils import unique_on
 from website.files.models import StoredFileNode
 from website.preprints.tasks import on_preprint_updated
 from website.project.model import NodeLog
+from website.exceptions import NodeStateError
 from website.project.licenses import NodeLicense, NodeLicenseRecord
 from website.project.taxonomies import Subject, validate_subject_hierarchy
 from website.util import api_v2_url
@@ -176,10 +177,10 @@ class PreprintService(GuidStoredObject):
                 Q('id', 'eq', license_id)
             )
         except exceptions.NoResultsFound:
-            raise Exception
+            raise PreprintStateError
 
         if node_license not in self.provider.licenses_acceptable and len(self.provider.licenses_acceptable) != 0:
-            raise Exception
+            raise PermissionsError
 
         record = self.license
         if record is None:

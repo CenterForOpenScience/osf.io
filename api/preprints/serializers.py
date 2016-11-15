@@ -13,6 +13,7 @@ from api.taxonomies.serializers import TaxonomyField
 from api.nodes.serializers import NodeLicenseSerializer
 from framework.exceptions import PermissionsError
 from website.util import permissions
+from website.exceptions import NodeStateError
 from website.project import signals as project_signals
 from website.models import StoredFileNode, PreprintService, PreprintProvider, Node, NodeLicense
 
@@ -153,7 +154,12 @@ class PreprintSerializer(JSONAPISerializer):
                 license_holders = validated_data['license'].get('copyright_holders', license_holders)
             if 'license_type' in validated_data:
                 license_id = validated_data['license_type'].id
-            preprint.set_preprint_license(license_id, license_year, license_holders, auth)
+            try:
+                preprint.set_preprint_license(license_id, license_year, license_holders, auth)
+            except NodeStateError:
+                raise exceptions.ValidationError()
+            except PermissionsError:
+                raise exceptions.PermissionDenied()
             save_preprint = True
 
         if save_node:
