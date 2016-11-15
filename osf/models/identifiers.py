@@ -39,7 +39,8 @@ class IdentifierMixin(models.Model):
         return identifier.value if identifier else None
 
     def set_identifier_value(self, category, value):
-        identifier, created = Identifier.objects.get_or_create(referent=self,
+        identifier, created = Identifier.objects.get_or_create(object_id=self.pk,
+                                                               content_type=ContentType.objects.get_for_model(self),
                                                                category=category,
                                                                defaults=dict(value=value))
         if not created:
