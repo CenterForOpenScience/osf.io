@@ -159,8 +159,6 @@ class OsfStorageFileNode(FileNode):
         if self.is_checked_out and action == NodeLog.CHECKED_IN or not self.is_checked_out and action == NodeLog.CHECKED_OUT:
             self.checkout = checkout
 
-            self.remove_undeletable(self.parent) if action == NodeLog.CHECKED_IN else self.add_undeletable(self.parent)
-
             self.node.add_log(
                 action=action,
                 params={
@@ -304,10 +302,6 @@ class OsfStorageFile(OsfStorageFileNode, File):
         return ret
 
 class OsfStorageFolder(OsfStorageFileNode, Folder):
-
-    @property
-    def is_undeletable(self):
-        return self.undeletable
 
     @property
     def is_checked_out(self):

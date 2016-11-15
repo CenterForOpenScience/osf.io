@@ -201,9 +201,6 @@ class StoredFileNode(StoredObject, Commentable):
     # Should only be used for OsfStorage
     checkout = fields.AbstractForeignField('User')
 
-    # Only for OSFStorage to prevent folders with preprints and checkouts from being deleted
-    undeletable = fields.ForeignField('Node', list=True, required=False)
-
     #Tags for a file, currently only used for osfStorage
     tags = fields.ForeignField('Tag', list=True)
 
@@ -242,18 +239,6 @@ class StoredFileNode(StoredObject, Commentable):
     def is_deleted(self):
         if self.provider == 'osfstorage':
             return False
-
-    def add_undeletable(self, parent):
-        if parent and parent.parent:
-            parent.undeletable.append(self._id)
-            parent.save()
-            self.add_undeletable(parent.parent)
-
-    def remove_undeletable(self, parent):
-        if parent and parent.parent:
-            parent.undeletable = filter(lambda x: x != self._id, self.undeletable)
-            parent.save()
-            self.remove_undeletable(parent.parent)
 
     def belongs_to_node(self, node_id):
         """Check whether the file is attached to the specified node."""
@@ -542,9 +527,6 @@ class FileNode(object):
         return utils.copy_files(self, destination_parent.node, destination_parent, name=name)
 
     def move_under(self, destination_parent, name=None):
-        if self.is_checked_out or self.is_preprint_primary:
-            self.remove_undeletable(self.parent)
-            self.add_undeletable(destination_parent.stored_object)
         self.name = name or self.name
         self.parent = destination_parent.stored_object
         self._update_node(save=True)  # Trust _update_node to save us
