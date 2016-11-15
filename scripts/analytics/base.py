@@ -83,7 +83,8 @@ class SummaryAnalytics(BaseAnalytics):
                 self.collection_name
             )
         )
-        parser.add_argument('-d', '--date', dest='date', required=True)
+        parser.add_argument('-d', '--date', dest='date')
+        parser.add_argument('-y', '--yesterday', dest='yesterday', action='store_true')
 
         return parser.parse_args()
 
