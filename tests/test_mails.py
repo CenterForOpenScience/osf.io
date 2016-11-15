@@ -6,7 +6,7 @@ from django.utils import timezone
 from nose.tools import *  # PEP 8 sserts
 
 from website import mails, settings
-from tests import factories
+from osf_tests import factories
 from tests.base import OsfTestCase
 
 def test_plain_mail():
@@ -108,7 +108,7 @@ class TestQueuedMail(OsfTestCase):
     @mock.patch('website.mails.queued_mails.send_mail')
     def test_user_is_active(self, mock_mail):
         user = factories.UserFactory()
-        user.password = 'poo'
+        user.set_password('myprecious')
         user.is_registered = True
         user.merged_by = None
         user.date_disabled = None
@@ -123,7 +123,7 @@ class TestQueuedMail(OsfTestCase):
     @mock.patch('website.mails.queued_mails.send_mail')
     def test_user_is_not_active_no_password(self, mock_mail):
         user = factories.UserFactory()
-        user.password = None
+        user.set_unusable_password()
         user.save()
         mail = self.queue_mail(
             user=user,
