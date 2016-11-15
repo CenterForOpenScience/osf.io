@@ -72,6 +72,9 @@ class PreprintService(GuidStoredObject):
         path = '/preprints/{}/'.format(self._id)
         return api_v2_url(path)
 
+    def has_permission(self, *args, **kwargs):
+        return self.node.has_permission(*args, **kwargs)
+
     def get_subjects(self):
         ret = []
         for subj_list in self.subjects:
@@ -175,10 +178,10 @@ class PreprintService(GuidStoredObject):
         except exceptions.NoResultsFound:
             raise Exception
 
-        if node_license not in self.provider.licenses_acceptable and self.provider.licenses_acceptable is not None:
+        if node_license not in self.provider.licenses_acceptable and len(self.provider.licenses_acceptable) != 0:
             raise Exception
 
-        record = self.node_license
+        record = self.license
         if record is None:
             record = NodeLicenseRecord(
                 node_license=node_license

@@ -10,10 +10,11 @@ from api.base.serializers import (
 )
 from api.base.utils import absolute_reverse, get_user_auth
 from api.taxonomies.serializers import TaxonomyField
+from api.nodes.serializers import NodeLicenseSerializer
 from framework.exceptions import PermissionsError
 from website.util import permissions
 from website.project import signals as project_signals
-from website.models import StoredFileNode, PreprintService, PreprintProvider, Node
+from website.models import StoredFileNode, PreprintService, PreprintProvider, Node, NodeLicense
 
 
 class PrimaryFileRelationshipField(RelationshipField):
@@ -40,6 +41,13 @@ class PreprintProviderRelationshipField(RelationshipField):
         provider = self.get_object(data)
         return {'provider': provider}
 
+
+class PreprintLicenseRelationshipField(RelationshipField):
+    def to_internal_value(self, license_id):
+        license = NodeLicense.load(license_id)
+        return {'license_type': license}
+
+
 class PreprintSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'id',
@@ -58,10 +66,17 @@ class PreprintSerializer(JSONAPISerializer):
     doi = ser.CharField(source='article_doi', required=False, allow_null=True)
     is_published = ser.BooleanField(required=False)
     is_preprint_orphan = ser.BooleanField(read_only=True)
+    license_record = NodeLicenseSerializer(required=False, source='license')
 
     node = NodeRelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<node._id>'},
+        read_only=False
+    )
+
+    license = PreprintLicenseRelationshipField(
+        related_view='licenses:license-detail',
+        related_view_kwargs={'license_id': '<license.node_license._id>'},
         read_only=False
     )
 
@@ -101,7 +116,6 @@ class PreprintSerializer(JSONAPISerializer):
     def update(self, preprint, validated_data):
         assert isinstance(preprint, PreprintService), 'You must specify a valid preprint to be updated'
         assert isinstance(preprint.node, Node), 'You must specify a preprint with a valid node to be updated.'
-
         auth = get_user_auth(self.context['request'])
         if not preprint.node.has_permission(auth.user, 'admin'):
             raise exceptions.PermissionDenied(detail='User must be an admin to update a preprint.')
@@ -129,6 +143,18 @@ class PreprintSerializer(JSONAPISerializer):
             self.set_field(preprint.set_published, published, auth)
             save_preprint = True
             recently_published = published
+
+        if 'license' in validated_data or 'license_type' in validated_data:
+            license_id = preprint.license.node_license.id if preprint.license else None
+            license_year = preprint.license.year if preprint.license else None
+            license_holders = preprint.license.copyright_holders if preprint.license else []
+            if 'license' in validated_data:
+                license_year = validated_data['license'].get('year', license_year)
+                license_holders = validated_data['license'].get('copyright_holders', license_holders)
+            if 'license_type' in validated_data:
+                license_id = validated_data['license_type'].id
+            preprint.set_preprint_license(license_id, license_year, license_holders, auth)
+            save_preprint = True
 
         if save_node:
             try:
