@@ -124,6 +124,9 @@ class Q(BaseQ, query.RawQuery):
     def op(self):
         if self.__val is None:
             return 'isnull'
+        if 'iexact' in self.key:
+            self.__key = self.__key[:-8]
+            return 'iexact'
         return self.QUERY_MAP.get(self.__op, self.__op)
 
     @property

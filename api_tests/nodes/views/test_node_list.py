@@ -508,7 +508,7 @@ class TestNodeFiltering(ApiTestCase):
         data = res.json['data']
         ids = [each['id'] for each in data]
 
-        preprints = Node.find(Q('preprint_file', 'ne', None) & Q('preprint_orphan', 'ne', True))
+        preprints = Node.find(Q('preprint_file', 'ne', None) & Q('_is_preprint_orphan', 'ne', True))
         assert_equal(len(data), len(preprints))
         assert_in(self.preprint.node._id, ids)
         assert_not_in(self.project_one._id, ids)
@@ -737,7 +737,7 @@ class TestNodeCreate(ApiTestCase):
     def test_create_component_inherit_contributors_with_unregistered_contributor(self):
         parent_project = ProjectFactory(creator=self.user_one)
         parent_project.add_unregistered_contributor(
-            fullname='far', email='bar', permissions=[permissions.READ],
+            fullname='far', email='foo@bar', permissions=[permissions.READ],
             auth= Auth(user=self.user_one), save=True
         )
         url = '/{}nodes/{}/children/?inherit_contributors=true'.format(API_BASE, parent_project._id)
