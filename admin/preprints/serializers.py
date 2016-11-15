@@ -16,11 +16,11 @@ def serialize_preprint(preprint):
     }
 
 
-def serialize_subjects(subjects):
+def serialize_subjects(subject_chains):
     serialized_subjects = []
-    for subject in subjects:
-        if len(subject) == 1:
-            subject = Subject.load(subject[0])
+    for subject_chain in subject_chains:
+        for subject in subject_chain:
+            subject = Subject.load(subject)
             if subject:
                 serialized_subjects.append({
                     'id': subject._id,
