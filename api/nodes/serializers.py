@@ -336,7 +336,6 @@ class NodeSerializer(JSONAPISerializer):
         }
 
     def create(self, validated_data):
-        import ipdb;ipdb.set_trace()
         request = self.context['request']
         user = request.user
         Node = apps.get_model('osf.Node')
