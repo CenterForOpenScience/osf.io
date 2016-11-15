@@ -85,7 +85,7 @@ def main():
                     <ul>
                         <li><a href="http://directory.uark.edu/people/dcjensen">David Jensen</a>, mechanical engineer, University of Arkansas</li>
                         <li><a href="http://biomech.media.mit.edu/people/">Kevin Moerman</a>, biomechanical engineer, Massachusetts Institute of Technology</li>
-                        <li><a href="http://mime.oregonstate.edu/people/kyle-niemeyer">Kyle Niemeyer</a>, mechanical engineer, Oregon State University</li>
+                        <li><a href="http://kyleniemeyer.com/">Kyle Niemeyer</a>, mechanical engineer, Oregon State University</li>
                         <li><a href="http://www.douglasvanbossuyt.com/">Douglas Van Bossuyt</a>, mechanical engineer, Colorado School of Mines</li>
                     </ul>
                 </div>
