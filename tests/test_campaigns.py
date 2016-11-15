@@ -25,7 +25,7 @@ class TestCampaignsAuthViews(OsfTestCase):
                 'title_landing': 'Welcome to the Election Research Preacceptance Competition!'
             },
             'osf-preprints': {
-                'title_register': 'OSF Preprint Service',
+                'title_register': 'OSF Preprints',
                 'title_landing': 'OSF Preprints'
             }
         }

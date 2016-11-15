@@ -354,7 +354,12 @@ def auth_register(auth):
     if data['status_code'] == http.OK:
         if data['must_login_warning']:
             status.push_status_message(language.MUST_LOGIN, trust=False)
-        context['non_institution_login_url'] = cas.get_login_url(data['next_url'])
+        destination = cas.get_login_url(data['next_url'])
+        # "Already have and account?" link
+        context['non_institution_login_url'] = destination
+        # "Sign In" button in navigation bar, overwrite the default value set in routes.py
+        context['login_url'] = destination
+        # "Login through your institution" link
         context['institution_login_url'] = cas.get_login_url(data['next_url'], campaign='institution')
         context['campaign'] = data['campaign']
         return context, http.OK
