@@ -758,10 +758,6 @@ class Folder(FileNode):
         """
         return FileNode.find(Q('parent', 'eq', self._id))
 
-    @property
-    def undeletable(self):
-        return self.undeletable
-
     def delete(self, recurse=True, user=None, parent=None):
         trashed = self._create_trashed(user=user, parent=parent)
         if recurse:
