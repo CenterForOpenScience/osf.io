@@ -822,7 +822,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert_equal(res.json['data']['attributes']['unregistered_contributor'], 'John Doe')
         assert_equal(res.json['data']['attributes']['email'], None)
         assert_in(res.json['data']['embeds']['users']['data']['id'],
-                  self.public_project.contributors.values_list('guid__guid', flat=True))
+                  self.public_project.contributors.values_list('guids___id', flat=True))
 
     @assert_logs(NodeLog.CONTRIB_ADDED, 'public_project')
     def test_add_contributor_with_fullname_and_email_unregistered_user(self):
@@ -844,7 +844,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert_equal(res.json['data']['attributes']['permission'], permissions.WRITE)
         assert_in(
             res.json['data']['embeds']['users']['data']['id'],
-            self.public_project.contributors.values_list('guid__guid', flat=True)
+            self.public_project.contributors.values_list('guids___id', flat=True)
         )
 
     @assert_logs(NodeLog.CONTRIB_ADDED, 'public_project')
@@ -868,7 +868,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert_equal(res.json['data']['attributes']['bibliographic'], False)
         assert_equal(res.json['data']['attributes']['permission'], permissions.READ)
         assert_in(res.json['data']['embeds']['users']['data']['id'],
-                  self.public_project.contributors.values_list('guid__guid', flat=True))
+                  self.public_project.contributors.values_list('guids___id', flat=True))
 
     @assert_logs(NodeLog.CONTRIB_ADDED, 'public_project')
     def test_add_contributor_with_fullname_and_email_registered_user(self):

@@ -721,9 +721,9 @@ class File(FileNode):
         # return self.update(revision, json.loads(resp.headers['x-waterbutler-metadata']))
 
     def update(self, revision, data, user=None):
-        """Using revision and data update all data pretaining to self
+        """Using revision and data update all data pertaining to self
         :param str or None revision: The revision that data points to
-        :param dict data: Metadata recieved from waterbutler
+        :param dict data: Metadata received from waterbutler
         :returns: FileVersion
         """
         self.name = data['name']
@@ -747,7 +747,7 @@ class File(FileNode):
             self.versions.append(version)
 
         for entry in self.history:
-            if entry['etag'] == data['etag']:
+            if 'etag' in entry and 'etag' in data and entry['etag'] == data['etag']:
                 break
         else:
             # Insert into history if there is no matching etag

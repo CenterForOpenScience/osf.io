@@ -549,13 +549,18 @@ class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ODMFilterM
         node = self.get_node()
         req_query = self.get_query_from_request()
 
+        node_pks = node.node_relations.filter(is_node_link=False).select_related('child').values_list('child__pk', flat=True)
+
+
         query = (
-            Q('pk', 'in', node.nodes.values_list('pk', flat=True)) &
+            Q('pk', 'in', node_pks) &
             req_query
         )
-        nodes = Node.find(query)
+        nodes = Node.find(query).order_by('-date_modified')
         auth = get_user_auth(self.request)
-        return sorted([each for each in nodes if each.can_view(auth)], key=lambda n: n.date_modified, reverse=True)
+        pks = [each.pk for each in nodes if each.can_view(auth)]
+        return Node.objects.filter(pk__in=pks).order_by('-date_modified')
+
 
 
 class RegistrationCitationDetail(NodeCitationDetail, RegistrationMixin):
