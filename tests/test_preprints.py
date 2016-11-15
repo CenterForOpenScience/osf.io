@@ -6,7 +6,6 @@ from modularodm.exceptions import NoResultsFound, ValidationValueError
 
 from website.addons.osfstorage import settings as osfstorage_settings
 from website.files.models.osfstorage import OsfStorageFile
-
 from website.preprints.tasks import format_preprint
 from website.util import permissions
 
