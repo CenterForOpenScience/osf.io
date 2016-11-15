@@ -445,7 +445,11 @@ else:
         'refresh_addons': {
             'task': 'scripts.refresh_addon_tokens',
             'schedule': crontab(minute=0, hour= 2),  # Daily 2:00 a.m
-            'kwargs': {'dry_run': False, 'addons': {'box': 60, 'googledrive': 14, 'mendeley': 14}},
+            'kwargs': {'dry_run': False, 'addons': {
+                'box': 60,          # https://docs.box.com/docs/oauth-20#section-6-using-the-access-and-refresh-tokens
+                'googledrive': 14,  # https://developers.google.com/identity/protocols/OAuth2#expiration
+                'mendeley': 14      # http://dev.mendeley.com/reference/topics/authorization_overview.html
+            }},
         },
         'retract_registrations': {
             'task': 'scripts.retract_registrations',
@@ -487,6 +491,20 @@ else:
             'schedule': crontab(minute=0, hour=2),  # Daily 2:00 a.m.
             'kwargs': {'dry_run': False}
         },
+        'run_keen_summaries': {
+            'task': 'scripts.analytics.run_keen_summaries',
+            'schedule': crontab(minute=00, hour=2),  # Daily 2:00 a.m.
+            'kwargs': {'date': (datetime.datetime.utcnow() - datetime.timedelta(1)).date()}
+        },
+        'run_keen_snapshots': {
+            'task': 'scripts.analytics.run_keen_snapshots',
+            'schedule': crontab(minute=0, hour=3),  # Daily 3:00 a.m.
+        },
+        'run_keen_events': {
+            'task': 'scripts.analytics.run_keen_events',
+            'schedule': crontab(minute=0, hour=4),
+            'kwargs': {'date': (datetime.datetime.utcnow() - datetime.timedelta(1)).date()}
+        }
     }
 
     # Tasks that need metrics and release requirements
