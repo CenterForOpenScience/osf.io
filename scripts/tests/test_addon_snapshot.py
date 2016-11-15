@@ -49,7 +49,7 @@ class TestAddonCount(OsfTestCase):
     def test_one_user_one_node_one_addon(self):
         results = AddonSnapshot().get_events()
         github_res = [res for res in results if res['provider']['name'] == 'github'][0]
-        assert_equal(github_res['users']['total'], 1)
+        assert_equal(github_res['users']['enabled'], 1)
         assert_equal(github_res['nodes']['total'], 1)
 
     def test_one_user_with_multiple_githubs(self):
@@ -59,14 +59,14 @@ class TestAddonCount(OsfTestCase):
         self.user.save()
         results = AddonSnapshot().get_events()
         github_res = [res for res in results if res['provider']['name'] == 'github'][0]
-        assert_equal(github_res['users']['total'], 1)
+        assert_equal(github_res['users']['enabled'], 1)
 
     def test_one_user_with_multiple_addons(self):
         results = AddonSnapshot().get_events()
         github_res = [res for res in results if res['provider']['name'] == 'github'][0]
         googledrive_res = [res for res in results if res['provider']['name'] == 'googledrive'][0]
-        assert_equal(github_res['users']['total'], 1)
-        assert_equal(googledrive_res['users']['total'], 0)
+        assert_equal(github_res['users']['enabled'], 1)
+        assert_equal(googledrive_res['users']['enabled'], 0)
 
         self.user.add_addon('googledrive')
         oauth_settings = GoogleDriveAccountFactory()
@@ -76,8 +76,8 @@ class TestAddonCount(OsfTestCase):
         results = AddonSnapshot().get_events()
         github_res = [res for res in results if res['provider']['name'] == 'github'][0]
         googledrive_res = [res for res in results if res['provider']['name'] == 'googledrive'][0]
-        assert_equal(github_res['users']['total'], 1)
-        assert_equal(googledrive_res['users']['total'], 1)
+        assert_equal(github_res['users']['enabled'], 1)
+        assert_equal(googledrive_res['users']['enabled'], 1)
 
     def test_many_users_each_with_a_different_github(self):
         user = AuthUserFactory()
@@ -88,7 +88,7 @@ class TestAddonCount(OsfTestCase):
         user.save()
         results = AddonSnapshot().get_events()
         github_res = [res for res in results if res['provider']['name'] == 'github'][0]
-        assert_equal(github_res['users']['total'], 2)
+        assert_equal(github_res['users']['enabled'], 2)
 
     def test_many_users_each_with_the_same_github(self):
         user = AuthUserFactory()
@@ -97,7 +97,7 @@ class TestAddonCount(OsfTestCase):
         user.save()
         results = AddonSnapshot().get_events()
         github_res = [res for res in results if res['provider']['name'] == 'github'][0]
-        assert_equal(github_res['users']['total'], 2)
+        assert_equal(github_res['users']['enabled'], 2)
 
     def test_one_node_with_multiple_addons(self):
         results = AddonSnapshot().get_events()
