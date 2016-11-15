@@ -237,26 +237,28 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
                 else:
                     data['next_url'] = cas.get_login_url(next_url, campaign='institution')
             # for non-institution campaigns
-            elif auth.logged_in:
-                # if user is already logged in, go to the campaign landing page
-                data['status_code'] = http.FOUND
-                data['next_url'] = campaigns.campaign_url_for(campaign)
             else:
-                # if user is logged out, go to the osf register page with campaign context
-                if login:
-                    # `GET /login?campaign=...`
-                    data['next_url'] = web_url_for('auth_register', campaign=campaign)
+                destination = next_url if next_url else campaigns.campaign_url_for(campaign)
+                if auth.logged_in:
+                    # if user is already logged in, go to the campaign landing page
+                    data['status_code'] = http.FOUND
+                    data['next_url'] = destination
                 else:
-                    # `GET /register?campaign=...`
-                    data['campaign'] = campaign
-                    if campaigns.is_proxy_login(campaign):
-                        data['next_url'] = web_url_for(
-                            'auth_login',
-                            next=campaigns.campaign_url_for(campaign),
-                            _absolute=True
-                        )
+                    # if user is logged out, go to the osf register page with campaign context
+                    if login:
+                        # `GET /login?campaign=...`
+                        data['next_url'] = web_url_for('auth_register', campaign=campaign, next=destination)
                     else:
-                        data['next_url'] = campaigns.campaign_url_for(campaign)
+                        # `GET /register?campaign=...`
+                        data['campaign'] = campaign
+                        if campaigns.is_proxy_login(campaign):
+                            data['next_url'] = web_url_for(
+                                'auth_login',
+                                next=destination,
+                                _absolute=True
+                            )
+                        else:
+                            data['next_url'] = destination
         else:
             # invalid campaign
             raise HTTPError(http.BAD_REQUEST)
@@ -294,22 +296,21 @@ def auth_login(auth):
     View (no template) for OSF Login.
     Redirect user based on `data` returned from `login_and_register_handler`.
 
+    `/login` only takes valid campaign, valid next, or no query parameter
+    `login_and_register_handler()` handles the following cases:
+        if campaign and logged in, go to campaign landing page (or valid next_url if presents)
+        if campaign and logged out, go to campaign register page (with next_url if presents)
+        if next_url and logged in, go to next url
+        if next_url and logged out, go to cas login page with current request url as service parameter
+        if none, go to `/dashboard` which is decorated by `@must_be_logged_in`
+
     :param auth: the auth context
     :return: redirects
     """
 
-    # `/login` only takes valid campaign, valid next, or none query parameter
-    # login_and_register_handler handles the following cases:
-    #     if campaign and logged in, go to campaign landing page
-    #     if campaign and logged out, go to register page with campaign title
-    #     if next_url and logged in, got to next url
-    #     if next_url and logged out, go to cas login page with current request url as service parameter
-    #     if none, go to `/dashboard` which is decorated by `@must_be_logged_in`
     campaign = request.args.get('campaign')
     next_url = request.args.get('next')
-    # campaign and next_url are mutually exclusive
-    if campaign and next_url:
-        raise HTTPError(http.BAD_REQUEST)
+
     data = login_and_register_handler(auth, login=True, campaign=campaign, next_url=next_url)
     if data['status_code'] == http.FOUND:
         return redirect(data['next_url'])
@@ -320,6 +321,15 @@ def auth_register(auth):
     """
     View for OSF register. Land on the register page, redirect or go to `auth_logout`
     depending on `data` returned by `login_and_register_handler`.
+
+    `/register` only takes a valid campaign, a valid next, the logout flag or no query parameter
+    `login_and_register_handler()` handles the following cases:
+        if campaign and logged in, go to campaign landing page (or valid next_url if presents)
+        if campaign and logged out, go to campaign register page (with next_url if presents)
+        if next_url and logged in, go to next url
+        if next_url and logged out, go to cas login page with current request url as service parameter
+        if next_url and logout flag, log user out first and then go to the next_url
+        if none, go to `/dashboard` which is decorated by `@must_be_logged_in`
 
     :param auth: the auth context
     :return: land, redirect or `auth_logout`
@@ -333,10 +343,6 @@ def auth_register(auth):
     next_url = request.args.get('next')
     # used only for `claim_user_registered`
     logout = request.args.get('logout')
-
-    # campaign and next_url are mutually exclusive
-    if campaign and next_url:
-        raise HTTPError(http.BAD_REQUEST)
 
     # logout must have next_url
     if logout and not next_url:
