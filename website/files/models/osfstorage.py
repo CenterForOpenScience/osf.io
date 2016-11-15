@@ -306,6 +306,10 @@ class OsfStorageFile(OsfStorageFileNode, File):
 class OsfStorageFolder(OsfStorageFileNode, Folder):
 
     @property
+    def is_undeletable(self):
+        return self.undeletable
+
+    @property
     def is_checked_out(self):
         if self.checkout:
             return True
