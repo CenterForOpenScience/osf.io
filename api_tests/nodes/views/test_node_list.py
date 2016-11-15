@@ -1102,7 +1102,7 @@ class TestNodeBulkUpdate(ApiTestCase):
     def test_bulk_update_public_projects_one_not_found(self):
         empty_payload = {'data': [
             {
-                'id': 12345,
+                'id': '12345',
                 'type': 'nodes',
                 'attributes': {
                     'title': self.new_title,
@@ -1355,7 +1355,7 @@ class TestNodeBulkPartialUpdate(ApiTestCase):
     def test_bulk_partial_update_public_projects_one_not_found(self):
         empty_payload = {'data': [
             {
-                'id': 12345,
+                'id': '12345',
                 'type': 'nodes',
                 'attributes': {
                     'title': self.new_title

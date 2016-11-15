@@ -888,7 +888,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert_equal(res.json['data']['attributes']['unregistered_contributor'], None)
         assert_equal(res.json['data']['attributes']['email'], user.username)
         assert_in(res.json['data']['embeds']['users']['data']['id'],
-                  self.public_project.contributors.values_list('guid__guid', flat=True))
+                  self.public_project.contributors.values_list('guids___id', flat=True))
 
     def test_add_unregistered_contributor_already_contributor(self):
         name, email = fake.name(), fake.email()
