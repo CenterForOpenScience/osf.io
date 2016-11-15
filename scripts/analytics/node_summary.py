@@ -98,6 +98,10 @@ if __name__ == '__main__':
     init_app()
     node_summary = NodeSummary()
     args = node_summary.parse_args()
-    date = parse(args.date).date() if args.date else None
+    yesterday = args.yesterday
+    if not yesterday:
+        date = parse(args.date).date() if args.date else None
+    else:
+        date = (datetime.today() - timedelta(1)).date()
     events = node_summary.get_events(date)
     node_summary.send_events(events)
