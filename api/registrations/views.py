@@ -551,7 +551,6 @@ class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ODMFilterM
 
         node_pks = node.node_relations.filter(is_node_link=False).select_related('child').values_list('child__pk', flat=True)
 
-
         query = (
             Q('pk', 'in', node_pks) &
             req_query
