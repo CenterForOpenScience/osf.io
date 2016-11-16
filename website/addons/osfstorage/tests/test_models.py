@@ -65,6 +65,7 @@ class TestOsfstorageFileNode(StorageTestCase):
             u'downloads': 0,
             u'size': None,
             u'modified': None,
+            u'created': None,
             u'contentType': None,
             u'checkout': None,
             u'md5': None,
