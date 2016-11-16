@@ -19,7 +19,7 @@ LOG_THRESHOLD = 11
 def count_user_logs(user):
     logs = NodeLog.find(Q('user', 'eq', user._id))
     length = logs.count()
-    if length >= LOG_THRESHOLD:
+    if length == LOG_THRESHOLD:
         item = logs[0]
         if item.action == 'project_created' and item.node.is_bookmark_collection:
             length -= 1
