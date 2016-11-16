@@ -2,17 +2,20 @@
 
 import datetime
 
+import pytest
 from django.utils import timezone
 from flask import redirect
-from framework.auth.core import Auth
 from nose.tools import *  # noqa
+
+from framework.auth.core import Auth
+from osf_tests.factories import AuthUserFactory, ProjectFactory, UserFactory
 from scripts import parse_citation_styles
 from tests.base import OsfTestCase
-from tests.factories import AuthUserFactory, ProjectFactory, UserFactory
 from website.citations.utils import datetime_to_csl
 from website.models import Node, User
 from website.util import api_url_for
 
+pytestmark = pytest.mark.django_db
 
 class CitationsUtilsTestCase(OsfTestCase):
     def test_datetime_to_csl(self):
@@ -116,9 +119,9 @@ class CitationsUserTestCase(OsfTestCase):
 
 
 class CitationsViewsTestCase(OsfTestCase):
-    @classmethod
-    def setUpClass(cls):
-        super(CitationsViewsTestCase, cls).setUpClass()
+
+    @pytest.fixture(autouse=True)
+    def _parsed_citation_styles(self):
         # populate the DB with parsed citation styles
         try:
             parse_citation_styles.main()
