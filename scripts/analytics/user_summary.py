@@ -98,9 +98,9 @@ if __name__ == '__main__':
     user_summary = UserSummary()
     args = user_summary.parse_args()
     yesterday = args.yesterday
-    if not yesterday:
-        date = parse(args.date).date() if args.date else None
-    else:
+    if yesterday:
         date = (datetime.today() - timedelta(1)).date()
+    else:
+        date = parse(args.date).date() if args.date else None
     events = user_summary.get_events(date)
     user_summary.send_events(events)

@@ -111,9 +111,9 @@ if __name__ == '__main__':
     institution_summary = InstitutionSummary()
     args = institution_summary.parse_args()
     yesterday = args.yesterday
-    if not yesterday:
-        date = parse(args.date).date() if args.date else None
-    else:
+    if yesterday:
         date = (datetime.today() - timedelta(1)).date()
+    else:
+        date = parse(args.date).date() if args.date else None
     events = institution_summary.get_events(date)
     institution_summary.send_events(events)
