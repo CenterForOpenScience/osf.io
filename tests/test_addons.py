@@ -14,18 +14,17 @@ from django.utils import timezone
 from framework.auth import cas, signing
 from framework.auth.core import Auth
 from framework.exceptions import HTTPError
-from framework.mongo import set_up_storage
 from framework.sessions.model import Session
-from modularodm import Q, storage
+from modularodm import Q
 from nose.tools import *  # noqa
-from tests import factories
+from osf_tests import factories
 from tests.base import OsfTestCase, get_default_metaschema
-from tests.factories import (AuthUserFactory, ProjectFactory,
+from osf_tests.factories import (AuthUserFactory, ProjectFactory,
                              RegistrationFactory)
 from website import settings
 from website.addons.base import AddonConfig, AddonNodeSettingsBase, views
 from website.addons.github.exceptions import ApiError
-from website.addons.github.tests.factories import GitHubAccountFactory
+from addons.github.tests.factories import GitHubAccountFactory
 from website.files import models
 from website.files.models.base import (PROVIDER_MAP, StoredFileNode,
                                        TrashedFileNode)
@@ -95,7 +94,7 @@ class TestAddonAuth(OsfTestCase):
         self.user_addon = self.user.get_addon('github')
         self.oauth_settings = GitHubAccountFactory(display_name='john')
         self.oauth_settings.save()
-        self.user.external_accounts.append(self.oauth_settings)
+        self.user.external_accounts.add(self.oauth_settings)
         self.user.save()
         self.node.add_addon('github', self.auth_obj)
         self.node_addon = self.node.get_addon('github')
@@ -180,7 +179,7 @@ class TestAddonLogs(OsfTestCase):
         self.user_addon = self.user.get_addon('github')
         self.oauth_settings = GitHubAccountFactory(display_name='john')
         self.oauth_settings.save()
-        self.user.external_accounts.append(self.oauth_settings)
+        self.user.external_accounts.add(self.oauth_settings)
         self.user.save()
         self.node.add_addon('github', self.auth_obj)
         self.node_addon = self.node.get_addon('github')
@@ -396,8 +395,8 @@ class TestCheckPreregAuth(OsfTestCase):
         self.prereg_challenge_admin_user.add_system_tag(settings.PREREG_ADMIN_TAG)
         self.prereg_challenge_admin_user.save()
         prereg_schema = MetaSchema.find_one(
-                Q('name', 'eq', 'Prereg Challenge') &
-                Q('schema_version', 'eq', 2)
+            Q('name', 'eq', 'Prereg Challenge') &
+            Q('schema_version', 'eq', 2)
         )
 
         self.user = AuthUserFactory()
@@ -585,7 +584,7 @@ class TestAddonFileViews(OsfTestCase):
         self.oauth = GitHubAccountFactory()
         self.oauth.save()
 
-        self.user.external_accounts.append(self.oauth)
+        self.user.external_accounts.add(self.oauth)
         self.user.save()
 
         self.node_addon.user_settings = self.user_addon
@@ -604,15 +603,14 @@ class TestAddonFileViews(OsfTestCase):
     def get_test_file(self):
         version = models.FileVersion(identifier='1')
         version.save()
-        versions = [version]
         ret = TestFile(
             name='Test',
             node=self.project,
             path='/test/Test',
             materialized_path='/test/Test',
-            versions=versions
         )
         ret.save()
+        ret.versions.add(version)
         return ret
 
     def get_second_test_file(self):
@@ -623,9 +621,9 @@ class TestAddonFileViews(OsfTestCase):
             node=self.project,
             path='/test/Test2',
             materialized_path='/test/Test2',
-            versions=[version]
         )
         ret.save()
+        ret.versions.add(version)
         return ret
 
     def get_mako_return(self):
@@ -870,7 +868,6 @@ class TestAddonFileViews(OsfTestCase):
             node=self.project,
             path='/test/folder/',
             materialized_path='/test/folder/',
-            versions=[]
         )
         subfolder.save()
         payload = {
