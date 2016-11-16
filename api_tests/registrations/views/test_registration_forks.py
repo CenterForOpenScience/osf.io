@@ -24,8 +24,7 @@ class TestRegistrationForksList(ApiTestCase):
     def setUp(self):
         super(TestRegistrationForksList, self).setUp()
         self.user = AuthUserFactory()
-        self.private_project = ProjectFactory()
-        self.private_project.add_contributor(self.user, permissions=[permissions.READ, permissions.WRITE])
+        self.private_project = ProjectFactory(creator=self.user)
         self.private_project.save()
         self.component = NodeFactory(parent=self.private_project, creator=self.user)
         self.pointer = ProjectFactory(creator=self.user)
@@ -99,7 +98,6 @@ class TestRegistrationForksList(ApiTestCase):
         assert_equal(res.status_code, 401)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
 
-    @pytest.mark.skip
     def test_authenticated_contributor_can_access_private_registration_forks_list(self):
         res = self.app.get(self.private_registration_url + '?embed=children&embed=node_links&embed=logs&embed=contributors&embed=forked_from', auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -113,8 +111,7 @@ class TestRegistrationForksList(ApiTestCase):
         assert_equal(fork_contributors['id'], self.user._id)
 
         forked_children = data['embeds']['children']['data'][0]
-        # TODO how did this ever work?
-        assert_equal(forked_children['id'], self.private_registration.nodes.first().forks.first()._id)
+        assert_equal(forked_children['id'], self.private_registration.forks.first().nodes.first()._id)
         assert_equal(forked_children['attributes']['title'], self.component.title)
 
         forked_node_links = data['embeds']['node_links']['data'][0]['embeds']['target_node']['data']

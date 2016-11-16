@@ -1425,7 +1425,7 @@ class NodeLinksList(BaseNodeLinksList, bulk_views.BulkDestroyJSONAPIView, bulk_v
     view_name = 'node-pointers'
 
     def get_queryset(self):
-        return self.get_node().node_relations.select_related('child').filter(child__is_deleted=False)
+        return self.get_node().node_relations.select_related('child').filter(is_node_link=True, child__is_deleted=False)
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):

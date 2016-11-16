@@ -306,9 +306,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """
         # Prepend 'child__' to kwargs for filtering
         filter_kwargs = {'child__{}'.format(key): val for key, val in kwargs.items()}
-        return Node.objects.filter(id__in=NodeRelation.objects.filter(parent=self,
+        return AbstractNode.objects.filter(id__in=NodeRelation.objects.filter(parent=self,
                                                                       **filter_kwargs).select_related(
-            'child').values_list('child', flat=True))
+            'child').values_list('child', flat=True)).order_by('noderelation___order').distinct()
 
     @property
     def linked_nodes(self):
@@ -1477,7 +1477,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             node.save()
 
         if parent:
-            NodeRelation.objects.get_or_create(parent=parent, child=registered)
+            node_relation = NodeRelation.objects.get(parent=parent.registered_from, child=original)
+            NodeRelation.objects.get_or_create(_order=node_relation._order, parent=parent, child=registered)
 
         # After register callback
         for addon in original.get_addons():
