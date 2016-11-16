@@ -257,7 +257,7 @@ describe('fangorn', () => {
         });
 
         describe('allowedToMove', () => {
-            it('can move', () => {
+            it('can move if valid', () => {
                 folder = getItem('folder', 2);
                 item = getItem('file', 3);
                 assert.equal(Fangorn.allowedToMove(folder, item, false), true);
@@ -369,7 +369,7 @@ describe('fangorn', () => {
         });
 
         describe('showDeleteMultiple', () => {
-            it('do not show multi delete if no edit permissions', () => {
+            it('does not show multi delete if no edit permissions', () => {
                 folder = getItem('folder', 2);
                 folder.data.permissions.edit = false;
                 item = getItem('file', 3);
@@ -377,7 +377,7 @@ describe('fangorn', () => {
                 assert.equal(Fangorn.showDeleteMultiple([folder, item]), false);
             });
 
-            it('do show multi delete if edit permissions for at least one selected', () => {
+            it('does show multi delete if edit permissions for at least one selected', () => {
                 folder = getItem('folder', 2);
                 folder.data.permissions.edit = false;
                 item = getItem('file', 3);
@@ -385,7 +385,7 @@ describe('fangorn', () => {
                 assert.equal(Fangorn.showDeleteMultiple([folder, item]), true);
             });
 
-            it('do show multi delete if edit permissions for all selected', () => {
+            it('does show multi delete if edit permissions for all selected', () => {
                 folder = getItem('folder', 2);
                 folder.data.permissions.edit = true;
                 item = getItem('file', 3);
