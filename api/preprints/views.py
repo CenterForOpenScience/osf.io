@@ -39,9 +39,6 @@ class PreprintMixin(NodeMixin):
 class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
     """Preprints that represent a special kind of preprint node. *Writeable*.
 
-    ##Note
-    **This API endpoint is under active development, and is subject to change in the future.**
-
     Paginated list of preprints ordered by their `date_created`.  Each resource contains a representation of the
     preprint.
 
@@ -55,8 +52,8 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
         date_modified                   iso8601 timestamp                   timestamp that the preprint was last modified
         date_published                  iso8601 timestamp                   timestamp when the preprint was published
         is_published                    boolean                             whether or not this preprint is published
-        subjects                        list of lists of dictionaries       ids of Subject in the PLOS taxonomy. Dictrionary, containing the subject text and subject ID
-        provider                        string                              original source of the preprint
+        is_preprint_orphan              boolean                             whether or not this preprint is orphaned
+        subjects                        list of lists of dictionaries       ids of Subject in the PLOS taxonomy. Dictionary, containing the subject text and subject ID
         doi                             string                              bare DOI for the manuscript, as entered by the user
 
     ##Relationships
@@ -164,9 +161,6 @@ class PreprintList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
 class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, PreprintMixin, WaterButlerMixin):
     """Preprint Detail  *Writeable*.
 
-    ##Note
-    **This API endpoint is under active development, and is subject to change in the future.**
-
     ##Preprint Attributes
 
     OSF Preprint entities have the "preprints" `type`.
@@ -178,11 +172,26 @@ class PreprintDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Pre
         date_published                  iso8601 timestamp                   timestamp when the preprint was published
         is_published                    boolean                             whether or not this preprint is published
         is_preprint_orphan              boolean                             whether or not this preprint is orphaned
-        subjects                        array of tuples of dictionaries     ids of Subject in the PLOS taxonomy. Dictrionary, containing the subject text and subject ID
-        provider                        string                              original source of the preprint
+        subjects                        array of tuples of dictionaries     ids of Subject in the PLOS taxonomy. Dictionary, containing the subject text and subject ID
         doi                             string                              bare DOI for the manuscript, as entered by the user
 
-    ###Updating Preprints
+    ##Relationships
+
+    ###Node
+    The node that this preprint was created for
+
+    ###Primary File
+    The file that is designated as the preprint's primary file, or the manuscript of the preprint.
+
+    ###Provider
+    Link to preprint_provider detail for this preprint
+
+    ##Links
+    - `self` -- Preprint detail page for the current preprint
+    - `html` -- Project on the OSF corresponding to the current preprint
+    - `doi` -- URL representation of the DOI entered by the user for the preprint manuscript
+
+    ##Updating Preprints
 
     Update a preprint by sending a patch request to the guid of the existing preprint node that you'd like to update.
 
