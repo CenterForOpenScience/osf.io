@@ -1721,6 +1721,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     forked_node = node_contained.fork_node(auth=auth, title='')
                 except PermissionsError:
                     pass  # If this exception is thrown omit the node from the result set
+                    forked_node = None
                 if forked_node is not None:
                     NodeRelation.objects.get_or_create(
                         is_node_link=False,
