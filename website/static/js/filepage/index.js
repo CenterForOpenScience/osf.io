@@ -183,13 +183,7 @@ var FileViewPage = {
                     'Are you sure you want to delete <strong>' +
                     self.file.safeName + '</strong>?' + '</p>';
 
-            if (self.file.id === self.node.preprintFileId) {
-                title = 'Delete primary preprint file?';
-                message = '<p class="overflow">' +
-                    'Are you sure you want to delete <strong>' +
-                    self.file.safeName + '</strong>?' + ' It is currently the primary file ' +
-                    'for a preprint.</p> <p><strong>Deleting this file will remove this preprint from circulation.</strong></p>';
-            }
+
             bootbox.confirm({
                 title: title,
                 message: message,
@@ -511,7 +505,8 @@ var FileViewPage = {
 
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
             // Special case whether or not to show the delete button for published Dataverse files
-            (ctrl.canEdit() && (ctrl.file.provider !== 'osfstorage' || !ctrl.file.checkoutUser) && ctrl.requestDone && $(document).context.URL.indexOf('version=latest-published') < 0 ) ? m('.btn-group.m-l-xs.m-t-xs', [
+            // Special case to not show delete if file is preprint primary file
+            (ctrl.canEdit() && !(ctrl.node.isPreprint && ctrl.node.preprintFileId === ctrl.file.id) && (ctrl.file.provider !== 'osfstorage' || !ctrl.file.checkoutUser) && ctrl.requestDone && $(document).context.URL.indexOf('version=latest-published') < 0 ) ? m('.btn-group.m-l-xs.m-t-xs', [
                 ctrl.isLatestVersion ? m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete') }, 'Delete') : null
             ]) : '',
             ctrl.context.currentUser.canEdit && (!ctrl.canEdit()) && ctrl.requestDone && (ctrl.context.currentUser.isAdmin) ? m('.btn-group.m-l-xs.m-t-xs', [

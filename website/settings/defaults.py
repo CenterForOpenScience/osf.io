@@ -33,7 +33,7 @@ with open(os.path.join(APP_PATH, 'package.json'), 'r') as fobj:
 
 # Expiration time for verification key
 EXPIRATION_TIME_DICT = {
-    'password': 30,         # 30 minutes for forgot and reset password
+    'password': 24 * 60,    # 24 hours in minutes for forgot and reset password
     'confirm': 24 * 60,     # 24 hours in minutes for confirm account and email
     'claim': 30 * 24 * 60   # 30 days in minutes for claim contributor-ship
 }
@@ -445,7 +445,11 @@ else:
         'refresh_addons': {
             'task': 'scripts.refresh_addon_tokens',
             'schedule': crontab(minute=0, hour= 2),  # Daily 2:00 a.m
-            'kwargs': {'dry_run': False, 'addons': {'box': 60, 'googledrive': 14, 'mendeley': 14}},
+            'kwargs': {'dry_run': False, 'addons': {
+                'box': 60,          # https://docs.box.com/docs/oauth-20#section-6-using-the-access-and-refresh-tokens
+                'googledrive': 14,  # https://developers.google.com/identity/protocols/OAuth2#expiration
+                'mendeley': 14      # http://dev.mendeley.com/reference/topics/authorization_overview.html
+            }},
         },
         'retract_registrations': {
             'task': 'scripts.retract_registrations',

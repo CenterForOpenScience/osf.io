@@ -255,6 +255,7 @@ def make_response_from_ticket(ticket, service_url):
     """
 
     service_furl = furl.furl(service_url)
+    # `ticket` has already been pulled off in `framework.sessions.before_request()` which calls this method
     if 'ticket' in service_furl.args:
         service_furl.args.pop('ticket')
     client = get_client()
@@ -290,7 +291,7 @@ def make_response_from_ticket(ticket, service_url):
         if not user and external_credential and action == 'external_first_login':
             from website.util import web_url_for
             # orcid attributes can be marked private and not shared, default to orcid otherwise
-            fullname = '{} {}'.format(cas_resp.attributes.get('given-names', ''), cas_resp.attributes.get('family-name', '')).strip()
+            fullname = u'{} {}'.format(cas_resp.attributes.get('given-names', ''), cas_resp.attributes.get('family-name', '')).strip()
             if not fullname:
                 fullname = external_credential['id']
             user = {
@@ -298,6 +299,7 @@ def make_response_from_ticket(ticket, service_url):
                 'external_id': external_credential['id'],
                 'fullname': fullname,
                 'access_token': cas_resp.attributes['accessToken'],
+                'service_url': service_furl.url,
             }
             return external_first_login_authenticate(
                 user,
