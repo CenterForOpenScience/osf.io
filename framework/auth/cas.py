@@ -291,13 +291,17 @@ def make_response_from_ticket(ticket, service_url):
         if not user and external_credential and action == 'external_first_login':
             from website.util import web_url_for
             # orcid attributes can be marked private and not shared, default to orcid otherwise
-            fullname = u'{} {}'.format(cas_resp.attributes.get('given-names', ''), cas_resp.attributes.get('family-name', '')).strip()
+            given_names = cas_resp.attributes.get('given-names', '')
+            family_name = cas_resp.attributes.get('family-name', '')
+            fullname = u'{} {}'.format(given_names, family_name).strip()
             if not fullname:
                 fullname = external_credential['id']
             user = {
                 'external_id_provider': external_credential['provider'],
                 'external_id': external_credential['id'],
                 'fullname': fullname,
+                'given_names': given_names,
+                'family_name': family_name,
                 'access_token': cas_resp.attributes['accessToken'],
                 'service_url': service_furl.url,
             }

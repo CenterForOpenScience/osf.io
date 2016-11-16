@@ -864,6 +864,8 @@ def external_login_email_post():
     external_id_provider = session.data['auth_user_external_id_provider']
     external_id = session.data['auth_user_external_id']
     fullname = session.data['auth_user_fullname']
+    given_names = session.data['auth_user_given_names']
+    family_name = session.data['auth_user_family_name']
     service_url = session.data['service_url']
 
     destination = 'dashboard'
@@ -923,6 +925,8 @@ def external_login_email_post():
                 external_identity=external_identity,
                 campaign=None
             )
+            user.given_name = given_names
+            user.family_name = family_name
             # TODO: [#OSF-6934] update social fields, verified social fields cannot be modified
             user.save()
             # 3. send confirmation email
