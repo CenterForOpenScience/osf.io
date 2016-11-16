@@ -434,9 +434,6 @@ class LinkedRegistrationsList(BaseLinkedList, CollectionMixin):
 
     def get_queryset(self):
         return super(LinkedRegistrationsList, self).get_queryset().filter(type='osf.registration')
-        # return [node for node in
-        #     super(LinkedRegistrationsList, self).get_queryset()
-        #     if node.is_registration]
 
     # overrides APIView
     def get_parser_context(self, http_request):
