@@ -62,6 +62,7 @@ class TestUserCount(OsfTestCase):
         assert_equal(data['status']['unconfirmed'], 2)
         assert_equal(data['status']['deactivated'], 2)
         assert_equal(data['status']['depth'], 2)
+        assert_equal(data['status']['merged'], 0)
 
     def test_gets_only_users_from_given_date(self):
         data = UserSummary().get_events(self.a_while_ago.date())[0]
@@ -69,3 +70,20 @@ class TestUserCount(OsfTestCase):
         assert_equal(data['status']['unconfirmed'], 0)
         assert_equal(data['status']['deactivated'], 1)
         assert_equal(data['status']['depth'], 1)
+        assert_equal(data['status']['merged'], 0)
+
+    def test_merged_user(self):
+        user = AuthUserFactory(fullname='Annie Lennox')
+        merged_user = AuthUserFactory(fullname='Lisa Stansfield')
+        user.save()
+        merged_user.save()
+
+        user.merge_user(merged_user)
+        user.save()
+        merged_user.save()
+        user.reload()
+        merged_user.reload()
+        modify_user_dates_in_mongo(self.yesterday)
+
+        data = UserSummary().get_events(self.yesterday.date())[0]
+        assert_equal(data['status']['merged'], 1)

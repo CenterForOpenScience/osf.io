@@ -19,7 +19,7 @@ LOG_THRESHOLD = 11
 def count_user_logs(user):
     logs = NodeLog.find(Q('user', 'eq', user._id))
     length = logs.count()
-    if length > 0:
+    if length >= LOG_THRESHOLD:
         item = logs[0]
         if item.action == 'project_created' and item.node.is_bookmark_collection:
             length -= 1
@@ -75,15 +75,20 @@ class UserSummary(SummaryAnalytics):
                 'deactivated': User.find(
                     Q('date_disabled', 'ne', None) &
                     Q('date_disabled', 'lt', query_datetime)
+                ).count(),
+                'merged': User.find(
+                    Q('date_registered', 'lt', query_datetime) &
+                    Q('merged_by', 'ne', None)
                 ).count()
             }
         }
         logger.info(
-            'Users counted. Active: {}, Depth: {}, Unconfirmed: {}, Deactivated: {}'.format(
+            'Users counted. Active: {}, Depth: {}, Unconfirmed: {}, Deactivated: {}, Merged: {}'.format(
                 counts['status']['active'],
                 counts['status']['depth'],
                 counts['status']['unconfirmed'],
-                counts['status']['deactivated']
+                counts['status']['deactivated'],
+                counts['status']['merged']
             )
         )
         return [counts]
