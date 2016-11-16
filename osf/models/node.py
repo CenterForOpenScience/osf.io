@@ -1777,9 +1777,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         # TODO: Optimize me
         for citation in self.alternative_citations.all():
+            cloned_citation = citation.clone()
+            cloned_citation.save()
             forked.add_citation(
                 auth=auth,
-                citation=citation.clone(),
+                citation=cloned_citation,
                 log=False,
                 save=False
             )
