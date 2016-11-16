@@ -730,6 +730,7 @@ class File(FileNode):
                 size=None,
                 version=None,
                 modified=None,
+                created=None,
                 contentType=None,
                 downloads=self.get_download_count(),
                 checkout=self.checkout._id if self.checkout else None,
