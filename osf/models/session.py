@@ -1,3 +1,5 @@
+from django.utils import timezone
+
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.fields import NonNaiveDatetimeField
@@ -9,7 +11,7 @@ class Session(ObjectIDMixin, BaseModel):
     modm_query = None
     migration_page_size = 30000
     # /TODO DELETE ME POST MIGRATION
-    date_created = NonNaiveDatetimeField(auto_now_add=True)
+    date_created = NonNaiveDatetimeField(default=timezone.now)
     date_modified = NonNaiveDatetimeField(auto_now=True)
     data = DateTimeAwareJSONField(default=dict, blank=True)
 

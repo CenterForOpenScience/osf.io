@@ -559,6 +559,11 @@ def test_module(ctx, module=None):
 CORE_TESTS = [
     'osf_tests',
     'tests/test_views.py',
+    'tests/test_auth.py',
+    'tests/test_auth_basic_auth.py',
+    'tests/test_auth_forms.py',
+    'tests/test_campaigns.py',
+    'tests/test_cas_authentication.py',
     'tests/test_citations.py',
     'tests/test_conferences.py',
     'tests/test_contributors_views.py',

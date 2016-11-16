@@ -8,7 +8,7 @@ import furl
 from framework.auth import cas
 
 from tests.base import OsfTestCase, fake
-from tests.factories import UserFactory
+from osf_tests.factories import UserFactory
 
 
 def make_successful_response(user):

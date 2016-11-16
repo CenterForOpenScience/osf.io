@@ -714,7 +714,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
         :rtype: list
         :returns: Changed fields from the user save
         """
-        had_existing_password = self.has_usable_password()
+        had_existing_password = bool(self.has_usable_password() and self.is_confirmed)
         if self.username == raw_password:
             raise ChangePasswordError(['Password cannot be the same as your email address'])
         super(OSFUser, self).set_password(raw_password)

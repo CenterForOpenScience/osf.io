@@ -5,7 +5,7 @@ from nose.tools import *  # noqa (PEP8 asserts)
 from framework.auth import campaigns, views as auth_views, cas
 from website.util import web_url_for
 from website.project.model import ensure_schemas
-from tests import factories
+from osf_tests import factories
 from tests.base import OsfTestCase
 from tests.utils import mock_auth
 
@@ -86,7 +86,7 @@ class TestRegistrationThroughCampaigns(OsfTestCase):
     def test_confirm_email_get_with_campaign(self):
         for key, value in campaigns.CAMPAIGNS.items():
             user = factories.UnconfirmedUserFactory()
-            user.add_system_tag(CAMPAIGNS[key]['system_tag'])
+            user.add_system_tag(campaigns.CAMPAIGNS[key]['system_tag'])
             user.save()
             token = user.get_confirmation_token(user.username)
             kwargs = {
