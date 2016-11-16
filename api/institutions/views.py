@@ -154,13 +154,12 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
 
     ordering = ('-date_modified', )
 
-
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         return (
-        Q('is_deleted', 'ne', True) &
-        Q('is_public', 'eq', True)
-    )
+            Q('is_deleted', 'ne', True) &
+            Q('is_public', 'eq', True)
+        )
 
     # overrides RetrieveAPIView
     def get_queryset(self):
