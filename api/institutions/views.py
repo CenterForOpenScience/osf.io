@@ -154,30 +154,23 @@ class InstitutionNodeList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView,
 
     ordering = ('-date_modified', )
 
-    base_node_query_deprecated = (
-        Q('is_deleted', 'ne', True) &
-        Q('is_public', 'eq', True)
-    )
-
-    base_node_query = (
-        Q('is_deleted', 'ne', True) &
-        Q('is_collection', 'ne', True) &
-        Q('is_registration', 'eq', False) &
-        Q('is_public', 'eq', True)
-    )
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
-        if self.request.version < '2.2':
-            return self.base_node_query_deprecated
-        return self.base_node_query
+        return (
+        Q('is_deleted', 'ne', True) &
+        Q('is_public', 'eq', True)
+    )
 
     # overrides RetrieveAPIView
     def get_queryset(self):
         ConcreteNode = apps.get_model('osf.Node')
         inst = self.get_institution()
         query = self.get_query_from_request()
-        return ConcreteNode.find_by_institutions(inst, query).get_roots()
+        if self.request.version < '2.2':
+            return ConcreteNode.find_by_institutions(inst, query).get_roots()
+        else:
+            return ConcreteNode.find_by_institutions(inst, query)
 
 
 class InstitutionUserList(JSONAPIBaseView, ODMFilterMixin, generics.ListAPIView, InstitutionMixin):
