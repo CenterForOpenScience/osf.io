@@ -561,7 +561,6 @@ class RegistrationChildrenList(JSONAPIBaseView, generics.ListAPIView, ODMFilterM
         return Node.objects.filter(pk__in=pks).order_by('-date_modified')
 
 
-
 class RegistrationCitationDetail(NodeCitationDetail, RegistrationMixin):
     """ The registration citation for a registration in CSL format *read only*
 

@@ -1,4 +1,3 @@
-import pytest
 from django.apps import apps
 
 import requests
