@@ -51,9 +51,10 @@ class Conference(ObjectIDMixin, BaseModel):
     name = models.CharField(max_length=255)
     info_url = models.URLField(blank=True)
     logo_url = models.URLField(blank=True)
-    location = models.CharField(max_length=2048, blank=True)
+    location = models.CharField(max_length=2048, null=True, blank=True)
     start_date = models.DateTimeField(blank=True, null=True)
     end_date = models.DateTimeField(blank=True, null=True)
+    is_meeting = models.BooleanField(default=True)
     active = models.BooleanField()
     admins = models.ManyToManyField('OSFUser')
     #: Whether to make submitted projects public

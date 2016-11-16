@@ -668,3 +668,17 @@ class NotificationSubscriptionFactory(DjangoModelFactory):
 class NotificationDigestFactory(DjangoModelFactory):
     class Meta:
         model = models.NotificationDigest
+
+
+class ConferenceFactory(DjangoModelFactory):
+    class Meta:
+        model = models.Conference
+
+    endpoint = factory.Sequence(lambda n: 'conference{0}'.format(n))
+    name = factory.Faker('catch_phrase')
+    active = True
+    is_meeting = True
+
+    @factory.post_generation
+    def admins(self, create, extracted, **kwargs):
+        self.admins = extracted or [UserFactory()]

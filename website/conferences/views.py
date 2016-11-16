@@ -81,6 +81,7 @@ def add_poster_by_email(conference, message):
             is_spam=message.is_spam,
         )
         if user_created:
+            user.save()  # need to save in order to access m2m fields (e.g. tags)
             users_created.append(user)
             user.add_system_tag('osf4m')
             user.date_last_login = timezone.now()
@@ -164,7 +165,7 @@ def _render_conference_node(node, idx, conf):
         download_count = 0
 
     author = node.visible_contributors[0]
-    tags = [tag._id for tag in node.tags]
+    tags = list(node.tags.values_list('name', flat=True))
 
     return {
         'id': idx,
@@ -189,7 +190,7 @@ def conference_data(meeting):
         raise HTTPError(httplib.NOT_FOUND)
 
     nodes = Node.find(
-        Q('tags', 'iexact', meeting) &
+        Q('tags__name', 'iexact', meeting) &
         Q('is_public', 'eq', True) &
         Q('is_deleted', 'eq', False)
     )
@@ -203,6 +204,26 @@ def conference_data(meeting):
 
 def redirect_to_meetings(**kwargs):
     return redirect('/meetings/')
+
+
+def serialize_conference(conf):
+    return {
+        'active': conf.active,
+        'admins': list(conf.admins.all().values_list('guids___id', flat=True)),
+        'end_date': conf.end_date,
+        'endpoint': conf.endpoint,
+        'field_names': conf.field_names,
+        'info_url': conf.info_url,
+        'is_meeting': conf.is_meeting,
+        'location': conf.location,
+        'logo_url': conf.logo_url,
+        'name': conf.name,
+        'num_submissions': conf.num_submissions,
+        'poster': conf.poster,
+        'public_projects': conf.public_projects,
+        'start_date': conf.start_date,
+        'talk': conf.talk,
+    }
 
 
 def conference_results(meeting):
@@ -220,7 +241,7 @@ def conference_results(meeting):
     return {
         'data': data,
         'label': meeting,
-        'meeting': conf.to_storage(),
+        'meeting': serialize_conference(conf),
         # Needed in order to use base.mako namespace
         'settings': settings,
     }
@@ -240,7 +261,7 @@ def conference_submissions(**kwargs):
         # instead of doing a single Node query
         projects = set()
 
-        tags = Tag.find(Q('lower', 'eq', conf.endpoint.lower())).get_keys()
+        tags = Tag.find(Q('name', 'iexact', conf.endpoint.lower())).values_list('pk', flat=True)
         nodes = Node.find(
             Q('tags', 'in', tags) &
             Q('is_public', 'eq', True) &

@@ -693,6 +693,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel,
 
     @classmethod
     def create(cls, username, password, fullname):
+        validate_email(username)  # Raises ValidationError if spam address
+
         user = cls(
             username=username,
             fullname=fullname,

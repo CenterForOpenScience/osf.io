@@ -127,5 +127,6 @@ def get_or_create_user(fullname, address, reset_password=True, is_spam=False):
         if password:
             user.verification_key_v2 = generate_verification_key(verification_type='password')
         if is_spam:
+            user.save()  # need to save in order to add a tag
             user.add_system_tag('is_spam')
         return user, True
