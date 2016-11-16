@@ -459,7 +459,8 @@ class ListFilterMixin(FilterMixin):
         # ?filter[tags]=[] should be translated to Q('tags', 'isnull', True)
         if field_name == 'tags':
             if operation['value'] not in (list(), tuple()):
-                operation['source_field_name'] = 'tags__name__iexact'
+                operation['source_field_name'] = 'tags__name'
+                operation['op'] = 'iexact'
 
     def get_filtered_queryset(self, field_name, params, default_queryset):
         """filters default queryset based on the serializer field type"""

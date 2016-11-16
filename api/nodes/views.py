@@ -311,7 +311,8 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         # ?filter[tags]=[] should be translated to Q('tags', 'isnull', True)
         if field_name == 'tags':
             if operation['value'] not in (list(), tuple()):
-                operation['source_field_name'] = 'tags__name__iexact'
+                operation['source_field_name'] = 'tags__name'
+                operation['op'] = 'iexact'
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
