@@ -2415,8 +2415,8 @@ function isInvalidDropFolder(folder) {
         // must have a provider
         !folder.data.provider ||
         folder.data.status ||
-        // cannot add to dataverse
-        folder.data.provider === 'dataverse'
+        // cannot add to published dataverse
+        (folder.data.provider === 'dataverse' && folder.data.dataverseIsPublished)
     ) {
         return true;
     }
@@ -2443,8 +2443,10 @@ function isInvalidDropItem(folder, item, cannotBeFolder, mustBeIntra) {
         item.id === folder.id ||
         // no dropping on direct parent
         item.parentID === folder.id ||
-        // no moving items from dataverse
-        item.data.provider === 'dataverse' ||
+        // no moving published items from dataverse
+        (item.data.provider === 'dataverse' && item.data.extra.hasPublishedVersion) ||
+        // no moving folders into dataverse
+        (folder.data.provider === 'dataverse' && item.data.kind === 'folder') ||
         // no dropping if waiting on waterbutler ajax
         item.inProgress ||
         (cannotBeFolder && item.data.kind === 'folder') ||
