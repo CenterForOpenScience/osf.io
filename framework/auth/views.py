@@ -2,6 +2,7 @@
 import datetime
 import furl
 import httplib as http
+import re
 import urllib
 
 import markupsafe
@@ -880,13 +881,22 @@ def external_login_email_post():
     destination = 'dashboard'
     for campaign in campaigns.CAMPAIGNS:
         if campaign != 'institution':
+            # Handle different url encoding schemes between `furl` and `urlparse/urllib`.
+            # OSF use `furl` to parse service url during service validation with CAS. However, `web_url_for()` uses
+            # `urlparse/urllib` to generate service url. `furl` handles `urlparser/urllib` generated urls while ` but
+            # not vice versa.
             campaign_url = furl.furl(campaigns.campaign_url_for(campaign)).url
             if campaigns.is_proxy_login(campaign):
-                campaign_url = furl.furl(web_url_for('auth_login', next=campaign_url, _absolute=True)).url
-            if service_url.startswith(campaign_url):
+                # proxy campaigns: OSF Preprints and branded ones
+                if check_service_url_with_proxy_campaign(service_url, campaign_url):
+                    destination = campaign
+                    # continue to check branded preprints even service url matches osf preprints
+                    if campaign != 'osf-preprints':
+                        break
+            elif service_url.startswith(campaign_url):
+                # osf campaigns: OSF Prereg and ERPC
                 destination = campaign
-                if campaign != 'osf-preprints':
-                    break
+                break
 
     if form.validate():
         clean_email = form.email.data
@@ -996,3 +1006,16 @@ def validate_next_url(next_url):
             next_url.startswith(settings.MFR_SERVER_URL)):
         return False
     return True
+
+
+def check_service_url_with_proxy_campaign(service_url, campaign_url):
+    """
+    Check if service url belongs to proxy campaigns: OSF Preprints and branded ones.
+    Both service_url and campaign_url are parsed using `furl` encoding scheme.
+
+    :param service_url: the `furl` formatted service url
+    :param campaign_url: the `furl` formatted campaign url
+    :return: the matched object or None
+    """
+    regex = '^' + settings.DOMAIN + 'login/?\\?next=' + campaign_url
+    return re.match(regex, service_url)
