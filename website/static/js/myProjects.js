@@ -1809,6 +1809,7 @@ var Information = {
     view : function (ctrl, args) {
 
         var template = '';
+        var category;
         var showRemoveFromCollection;
         var collectionFilter = args.currentView().collection;
         if (args.selected().length === 0) {
@@ -1818,9 +1819,7 @@ var Information = {
             var item = args.selected()[0].data;
             var permission = item.attributes.current_user_permissions.slice(-1)[0];
             showRemoveFromCollection = collectionFilter.data.nodeType === 'collection' && args.selected()[0].depth === 1 && args.fetchers[collectionFilter.id]._flat.indexOf(item) !== -1; // Be able to remove top level items but not their children
-            if(item.attributes.category === ''){
-                item.attributes.category = 'Uncategorized';
-            }
+            category = item.attributes.category === '' ? 'Uncategorized' : item.attributes.category;
             template = m('.p-sm', [
                 showRemoveFromCollection ? m('.clearfix', m('.btn.btn-default.btn-sm.btn.p-xs.text-danger.pull-right', { onclick : function() {
                     args.removeProjectFromCollections();
@@ -1844,7 +1843,7 @@ var Information = {
                             m('p.db-info-meta.text-muted', [
                                 item.attributes.preprint ? m('.fangorn-preprint.p-xs.m-b-xs', 'This project is a Preprint') : '',
                                 m('', 'Visibility : ' + (item.attributes.public ? 'Public' : 'Private')),
-                                m('.text-capitalize', 'Category: ' + item.attributes.category),
+                                m('.text-capitalize', 'Category: ' + category),
                                 m('.text-capitalize', 'Permission: ' + permission),
                                 m('', 'Last Modified on: ' + (item.date ? item.date.local : ''))
                             ]),
@@ -1876,12 +1875,13 @@ var Information = {
                     $osf.trackClick('myProjects', 'information-panel', 'remove-multiple-projects-from-collections');
                 } }, 'Remove selected from collection')) : '',
                 args.selected().map(function(item){
+                    category = item.data.attributes.category === '' ? 'uncategorized' : item.data.attributes.category;
                     return m('.db-info-multi', [
                         m('h4', m('a', { href : item.data.links.html, onclick: function(){
                             $osf.trackClick('myProjects', 'information-panel', 'navigate-to-project-multiple-selected');
                         }}, item.data.attributes.title)),
                         m('p.db-info-meta.text-muted', [
-                            m('span', item.data.attributes.public ? 'Public' : 'Private' + ' ' + item.data.attributes.category),
+                            m('span', (item.data.attributes.public ? 'Public' : 'Private') + ' ' + category),
                             m('span', ', Last Modified on ' + item.data.date.local)
                         ])
                     ]);
